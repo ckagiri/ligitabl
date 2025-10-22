@@ -1,0 +1,61 @@
+{
+  "name": "LigiTabl Dev",
+  // Use a self-contained Dev Container image with Java 21
+  "image": "mcr.microsoft.com/devcontainers/java:1-21-bullseye",
+
+  // Add common features (Maven, Git) inside the container
+  "features": {
+    "ghcr.io/devcontainers/features/maven:1": {
+      "version": "3.9"
+    },
+    "ghcr.io/devcontainers/features/git:1": {},
+    // Allow using the host's Docker daemon from the Dev Container
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1": {}
+  },
+
+  // Default workspace folder (VS Code will mount the repo here)
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+
+  // Improve Maven performance by caching the local repository across rebuilds
+  "mounts": [
+    "type=volume,source=maven-repo,target=/home/vscode/.m2/repository"
+  ],
+
+  // VS Code customizations (settings and extensions)
+  "customizations": {
+    "vscode": {
+      "settings": {
+        // Rely on JAVA_HOME in the image; still enable save formatting
+        "editor.formatOnSave": true
+      },
+      "extensions": [
+        "vscjava.vscode-java-pack",
+        "pivotal.vscode-spring-boot",
+        "liquibase.liquibase-for-vscode",
+        "ms-azuretools.vscode-docker",
+        "ms-vscode.makefile-tools",
+        "redhat.vscode-xml"
+      ]
+    }
+  },
+
+  // Common Spring Boot ports and Java debug
+  "forwardPorts": [8080, 5005, 5432],
+  "portsAttributes": {
+    "8080": { "label": "App (HTTP)" },
+    "5005": { "label": "Java Debug" },
+    "5432": { "label": "PostgreSQL" }
+  },
+
+  // Ensure container shell loads env (JAVA_HOME, MAVEN) properly
+  "userEnvProbe": "loginInteractiveShell",
+
+  // Post-create: show Maven/Java versions; make wrapper executable if present
+  "postCreateCommand": "bash -lc 'chmod +x ./mvnw 2>/dev/null || true; (./mvnw -v || mvn -v); java -version'",
+
+  // Keep the recommended user provided by the Dev Container image
+  "remoteUser": "vscode",
+
+  // Let the image entrypoint run as-is
+  "overrideCommand": false
+}

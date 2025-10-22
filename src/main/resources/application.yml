@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: ligitabl
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ligi}
+    username: ${SPRING_DATASOURCE_USERNAME:ligitabl}
+    password: ${SPRING_DATASOURCE_PASSWORD:ligitabl}
+    driver-class-name: org.postgresql.Driver
+
+  jooq:
+    sql-dialect: POSTGRES
+
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+
+server:
+  port: ${PORT:8080}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      probes:
+        enabled: true
