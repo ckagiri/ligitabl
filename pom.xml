@@ -10,7 +10,7 @@
         <relativePath/>
     </parent>
 
-    <groupId>com.ckagiri</groupId>
+    <groupId>com.ligitabl</groupId>
     <artifactId>ligitabl</artifactId>
     <version>0.1.0-SNAPSHOT</version>
     <name>LigiTabl</name>
