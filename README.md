@@ -27,6 +27,7 @@ You can run the app with a local Postgres you manage, or let Docker Compose star
 ### Option A: Docker Compose (recommended)
 
 ```bash
+cp .env.example .env   # optional: then tweak values
 make compose-up
 # Check endpoint
 curl http://localhost:8080/api/status
@@ -37,6 +38,7 @@ make compose-down
 Notes:
 - Compose wires the app to the `db` container (Postgres 16) with default creds defined in `application.yml`.
 - Liquibase is disabled by default in Compose until changelogs are added.
+- Compose reads variables from a local `.env` file automatically and also passes them into the containers via `env_file`.
 
 ### Option B: Local Postgres
 
@@ -60,6 +62,7 @@ Build and run the image:
 
 ```bash
 make docker-build
+cp .env.example .env   # optional
 make docker-run
 # Stop container
 make docker-stop
@@ -76,9 +79,8 @@ JAVA_OPTS="-Xms256m -Xmx512m" make docker-run
 Requires providing DB connection details via environment variables:
 
 ```bash
-export JOOQ_DB_URL="jdbc:postgresql://localhost:5432/ligi"
-export JOOQ_DB_USER="ligitabl"
-export JOOQ_DB_PASSWORD="ligitabl"
+cp .env.example .env   # optional: then tweak values
+export $(grep -v '^#' .env | xargs)  # load .env into the shell
 make codegen
 ```
 
@@ -90,3 +92,4 @@ make codegen
 
 - Spring Boot 3.5.3 (Java 21)
 - Liquibase changelog path is configured but not yet present. Keep it disabled until you add changelogs (or I can scaffold them for you).
+- A `.env.example` file is provided. Create your own `.env` (not committed) to customize PORT, DB credentials, and Spring datasource.

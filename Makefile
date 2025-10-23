@@ -7,6 +7,12 @@ IMAGE ?= $(APP_NAME):dev
 PORT ?= 8080
 DOCKER_COMPOSE ?= docker compose
 
+# Load variables from .env if present
+ifneq (,$(wildcard .env))
+	include .env
+	export
+endif
+
 .PHONY: help build test clean run run-no-db docker-build docker-run docker-stop compose-up compose-down codegen
 
 help: ## Show this help
@@ -34,7 +40,14 @@ docker-build: ## Build Docker image
 	docker build -t $(IMAGE) .
 
 docker-run: ## Run container on port $(PORT)
-	docker run --rm -p $(PORT):8080 --name $(APP_NAME) -e JAVA_OPTS="$(JAVA_OPTS)" $(IMAGE)
+	@if [ -f .env ]; then ENV_FILE='--env-file .env'; else ENV_FILE=''; fi; \
+	  docker run --rm $$ENV_FILE -p $(PORT):8080 --name $(APP_NAME) -e JAVA_OPTS="$(JAVA_OPTS)" $(IMAGE)
+
+docker-run-no-db: ## Run container without requiring DB (skips DataSource auto-config)
+	@if [ -f .env ]; then ENV_FILE='--env-file .env'; else ENV_FILE=''; fi; \
+	  docker run --rm $$ENV_FILE -p $(PORT):8080 --name $(APP_NAME) -e JAVA_OPTS="$(JAVA_OPTS)" \
+	  -e SPRING_AUTOCONFIGURE_EXCLUDE=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration \
+	  $(IMAGE)
 
 docker-stop: ## Stop running container
 	- docker rm -f $(APP_NAME)

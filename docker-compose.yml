@@ -2,14 +2,16 @@ services:
   db:
     image: postgres:16
     container_name: ligitabl-db
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: ligi
-      POSTGRES_USER: ligitabl
-      POSTGRES_PASSWORD: ligitabl
+      POSTGRES_DB: ${DB_NAME:-ligi}
+      POSTGRES_USER: ${DB_USER:-ligitabl}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-ligitabl}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ligitabl -d ligi"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-ligitabl} -d ${DB_NAME:-ligi}"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -24,17 +26,19 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
-      # Point Spring to the db container
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/ligi
-      SPRING_DATASOURCE_USERNAME: ligitabl
-      SPRING_DATASOURCE_PASSWORD: ligitabl
+      # Point Spring to the db container (default) or override via .env
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://db:5432/ligi}
+      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-ligitabl}
+      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-ligitabl}
       # Disable Liquibase until changelogs exist; remove to enable migrations
-      SPRING_LIQUIBASE_ENABLED: "false"
-      # Allow overriding extra JVM args at runtime via env file or compose overrides
-      JAVA_OPTS: ""
+      SPRING_LIQUIBASE_ENABLED: ${SPRING_LIQUIBASE_ENABLED:-false}
+      # Allow extra JVM args at runtime
+      JAVA_OPTS: ${JAVA_OPTS:-}
     ports:
-      - "8080:8080"
+      - "${PORT:-8080}:8080"
 
 volumes:
   pgdata:
