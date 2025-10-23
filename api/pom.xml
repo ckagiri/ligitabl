@@ -22,6 +22,8 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <!-- Align jOOQ codegen with Boot-managed runtime jOOQ where possible -->
         <jooq.version>3.19.10</jooq.version>
+        <!-- Version for JDBC driver used during jOOQ code generation (plugin dependency is not BOM-managed) -->
+        <postgresql.version>42.7.4</postgresql.version>
     </properties>
 
     <dependencies>
@@ -105,6 +107,7 @@
                             <dependency>
                                 <groupId>org.postgresql</groupId>
                                 <artifactId>postgresql</artifactId>
+                                <version>${postgresql.version}</version>
                             </dependency>
                         </dependencies>
                     </plugin>

@@ -5,13 +5,13 @@ services:
     env_file:
       - .env
     environment:
-      POSTGRES_DB: ${DB_NAME:-ligi}
+      POSTGRES_DB: ${DB_NAME:-ligitabl}
       POSTGRES_USER: ${DB_USER:-ligitabl}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-ligitabl}
     ports:
       - "${DB_PORT:-5432}:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-ligitabl} -d ${DB_NAME:-ligi}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-ligitabl} -d ${DB_NAME:-ligitabl}"]
       interval: 5s
       timeout: 3s
       retries: 20
@@ -20,7 +20,8 @@ services:
 
   app:
     build:
-      context: .
+      context: ./api
+      dockerfile: Dockerfile
     image: ligitabl:dev
     container_name: ligitabl-app
     depends_on:
@@ -30,7 +31,7 @@ services:
       - .env
     environment:
       # Point Spring to the db container (default) or override via .env
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://db:5432/ligi}
+      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://db:5432/ligitabl}
       SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-ligitabl}
       SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-ligitabl}
       # Disable Liquibase until changelogs exist; remove to enable migrations

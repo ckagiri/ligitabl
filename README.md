@@ -1,6 +1,10 @@
-# LigiTabl
+# LigiTabl Monorepo
 
-Spring Boot service for football standings prediction.
+Repository layout for backend and frontends:
+
+- `api/` — Spring Boot (Java 21) REST API
+- `admin/` — React admin UI (placeholder for now)
+- `app/` — React game app (placeholder for now)
 
 ## Requirements
 
@@ -36,7 +40,7 @@ make compose-down
 ```
 
 Notes:
-- Compose wires the app to the `db` container (Postgres 16) with default creds defined in `application.yml`.
+- Compose builds the API from `./api` and wires it to the `db` container (Postgres 16).
 - Liquibase is disabled by default in Compose until changelogs are added.
 - Compose reads variables from a local `.env` file automatically and also passes them into the containers via `env_file`.
 
@@ -49,7 +53,7 @@ brew services start postgresql@16
 
 # Create DB and user
 psql postgres -c "CREATE USER ligitabl WITH PASSWORD 'ligitabl';" || true
-psql postgres -c "CREATE DATABASE ligi OWNER ligitabl;" || true
+psql postgres -c "CREATE DATABASE ligitabl OWNER ligitabl;" || true
 
 # Run app
 make build
@@ -61,7 +65,7 @@ make run
 Build and run the image:
 
 ```bash
-make docker-build
+make docker-build  # builds using ./api/Dockerfile
 cp .env.example .env   # optional
 make docker-run
 # Stop container
@@ -81,7 +85,7 @@ Requires providing DB connection details via environment variables:
 ```bash
 cp .env.example .env   # optional: then tweak values
 export $(grep -v '^#' .env | xargs)  # load .env into the shell
-make codegen
+make codegen  # runs against the Maven project in ./api
 ```
 
 ## Endpoints
