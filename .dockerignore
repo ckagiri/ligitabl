@@ -1,0 +1,17 @@
+# Build outputs
+/target
+
+# Git
+.git
+.gitignore
+
+# IDE/editor
+.idea
+.vscode
+*.iml
+
+# OS
+.DS_Store
+
+# Misc
+.env
