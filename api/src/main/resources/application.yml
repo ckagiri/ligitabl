@@ -3,7 +3,7 @@ spring:
     name: ligitabl
 
   datasource:
-    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ligi}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://localhost:5432/ligitabl}
     username: ${SPRING_DATASOURCE_USERNAME:ligitabl}
     password: ${SPRING_DATASOURCE_PASSWORD:ligitabl}
     driver-class-name: org.postgresql.Driver

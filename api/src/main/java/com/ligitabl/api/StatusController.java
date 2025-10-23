@@ -1,4 +1,4 @@
-package com.ckagiri.ligitabl.api;
+package com.ligitabl.api;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
