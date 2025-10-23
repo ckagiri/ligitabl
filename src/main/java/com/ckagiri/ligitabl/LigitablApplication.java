@@ -1,11 +1,5 @@
+// Legacy placeholder after package refactor to com.ligitabl.
+// Intentionally left without a main() method to avoid duplicate Boot entry points.
 package com.ckagiri.ligitabl;
 
-import org.springframework.boot.SpringApplication;
-import org.springframework.boot.autoconfigure.SpringBootApplication;
-
-@SpringBootApplication
-public class LigitablApplication {
-    public static void main(String[] args) {
-        SpringApplication.run(LigitablApplication.class, args);
-    }
-}
+public class LigitablApplication { }
