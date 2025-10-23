@@ -64,4 +64,5 @@ codegen: ## Run jOOQ code generation (requires JOOQ_DB_URL, JOOQ_DB_USER, JOOQ_D
 		echo "Missing JOOQ DB env vars. Set JOOQ_DB_URL, JOOQ_DB_USER, JOOQ_DB_PASSWORD"; \
 		exit 1; \
 	fi
+	mvn -q -DskipTests -f $(API_DIR)/pom.xml compile
 	mvn -q -Pcodegen -DskipTests -f $(API_DIR)/pom.xml generate-sources

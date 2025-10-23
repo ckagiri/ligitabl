@@ -47,6 +47,13 @@
             <groupId>org.postgresql</groupId>
             <artifactId>postgresql</artifactId>
         </dependency>
+        <!-- Provided only: needed to compile custom jOOQ codegen strategy, not used at runtime -->
+        <dependency>
+            <groupId>org.jooq</groupId>
+            <artifactId>jooq-codegen</artifactId>
+            <version>${jooq.version}</version>
+            <scope>provided</scope>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>
@@ -92,11 +99,18 @@
                                             <name>org.jooq.meta.postgres.PostgresDatabase</name>
                                             <inputSchema>public</inputSchema>
                                         </database>
+                                        <strategy>
+                                            <name>com.ligitabl.util.db.JooqGeneratorNamingStrategy</name>
+                                        </strategy>
                                         <target>
                                             <packageName>com.ligitabl.jooq</packageName>
                                             <directory>${project.build.directory}/generated-sources/jooq</directory>
                                         </target>
                                     </generator>
+                                    <!-- Try to ensure project output and dependencies are visible to the plugin -->
+                                    <includeProjectDependencies>true</includeProjectDependencies>
+                                    <includeTransitiveDependencies>true</includeTransitiveDependencies>
+                                    <includeProjectBuildOutput>true</includeProjectBuildOutput>
                                 </configuration>
 
                                 <inherited>false</inherited>
