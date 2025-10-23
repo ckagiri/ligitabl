@@ -30,12 +30,13 @@ services:
     env_file:
       - .env
     environment:
-      # Point Spring to the db container (default) or override via .env
-      SPRING_DATASOURCE_URL: ${SPRING_DATASOURCE_URL:-jdbc:postgresql://db:5432/ligitabl}
-      SPRING_DATASOURCE_USERNAME: ${SPRING_DATASOURCE_USERNAME:-ligitabl}
-      SPRING_DATASOURCE_PASSWORD: ${SPRING_DATASOURCE_PASSWORD:-ligitabl}
-      # Disable Liquibase until changelogs exist; remove to enable migrations
-      SPRING_LIQUIBASE_ENABLED: ${SPRING_LIQUIBASE_ENABLED:-false}
+      # Inside the container, connect to the 'db' service directly
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_USER: ${DB_USER:-ligitabl}
+      DB_PASSWORD: ${DB_PASSWORD:-ligitabl}
+  # To enable Liquibase during app startup, set the liquibase Spring profile:
+  # SPRING_PROFILES_ACTIVE: liquibase
       # Allow extra JVM args at runtime
       JAVA_OPTS: ${JAVA_OPTS:-}
     ports:

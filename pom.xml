@@ -11,6 +11,7 @@
     <description>Aggregator for the LigiTabl monorepo</description>
 
     <modules>
+        <module>model</module>
         <module>api</module>
     </modules>
 </project>

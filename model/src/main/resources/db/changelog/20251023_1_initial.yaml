@@ -1,0 +1,31 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20251023_1_initial
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: t_team
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: t_team
+            schemaName: public
+            columns:
+              - column:
+                  name: pk_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: c_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_short_name
+                  type: varchar(100)
+                  constraints:
+                    nullable: false

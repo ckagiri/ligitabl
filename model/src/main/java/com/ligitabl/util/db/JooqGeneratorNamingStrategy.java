@@ -1,7 +1,6 @@
 package com.ligitabl.util.db;
 
 import org.jooq.codegen.DefaultGeneratorStrategy;
-import org.jooq.codegen.GeneratorStrategy.Mode;
 import org.jooq.meta.Definition;
 import org.jooq.tools.StringUtils;
 
