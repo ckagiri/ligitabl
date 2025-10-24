@@ -18,7 +18,7 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-.PHONY: help build test clean run run-no-db docker-build docker-run docker-stop compose-up compose-up-db compose-down codegen migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap
+.PHONY: help build test clean run run-no-db run-app docker-build docker-run docker-stop compose-up compose-up-db compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -37,6 +37,10 @@ run: $(JAR) ## Run the built JAR (DB required unless liquibase disabled)
 
 run-no-db: $(JAR) ## Run without requiring DB (skips DataSource auto-config)
 	java -jar $(JAR) --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
+
+run-app: ## Start DB (compose) and run the app JAR
+	$(MAKE) compose-up-db
+	$(MAKE) run
 
 $(JAR):
 	mvn -q -DskipTests -f $(API_DIR)/pom.xml package
@@ -66,11 +70,13 @@ compose-up-db: ## Start only postgres via Docker Compose with host port $(HOST_D
 compose-down: ## Stop and remove compose services/volumes
 	$(DOCKER_COMPOSE) down -v
 
-codegen: ## Run jOOQ code generation in model/ (uses DB_* from .env)
-	# Build and install model so the plugin can resolve the strategy from the model jar
-	mvn -q -pl model -am -DskipTests install
-	# Run codegen in the model module
-	mvn -q -Pcodegen -DskipTests -f model/pom.xml generate-sources
+codegen: ## Run jOOQ code generation in model/ (full, robust)
+	# Ensure the jOOQ codegen strategy module is installed, then run codegen in model
+	mvn -q -DskipTests -pl jooq-codegen -am install
+	mvn -q -DskipTests -pl model -am generate-sources
+
+codegen-fast: ## Run jOOQ code generation (lean) - assumes jooq-codegen is already installed
+	mvn -q -DskipTests -pl model -am generate-sources
 
 .PHONY: migrate
 migrate: ## Run Liquibase migrations in model/ (uses DB_* from .env)

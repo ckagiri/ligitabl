@@ -10,7 +10,24 @@
     <name>LigiTabl Parent</name>
     <description>Aggregator for the LigiTabl monorepo</description>
 
+    <properties>
+        <!-- Centralized versions -->
+        <lombok.version>1.18.32</lombok.version>
+    </properties>
+
+    <dependencyManagement>
+        <dependencies>
+            <!-- Pin Lombok version for all modules -->
+            <dependency>
+                <groupId>org.projectlombok</groupId>
+                <artifactId>lombok</artifactId>
+                <version>${lombok.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
+
     <modules>
+        <module>jooq-codegen</module>
         <module>model</module>
         <module>api</module>
     </modules>

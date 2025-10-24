@@ -1,6 +1,6 @@
-package com.ligitabl.model.dao;
+package com.ligitabl.model.repo;
 
-public interface BaseCrudDao<T, ID> {
+public interface BaseCrudRepo<T, ID> {
     T findById(ID id);
     T create(T model);
     T update(T model);

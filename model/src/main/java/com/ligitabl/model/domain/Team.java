@@ -1,4 +1,4 @@
-package com.ligitabl.model;
+package com.ligitabl.model.domain;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
