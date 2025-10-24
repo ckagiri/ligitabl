@@ -12,10 +12,10 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GetTeamsUseCase implements UseCase<Void, List<Team>> {
 
-    private final TeamRepo teamDao;
+    private final TeamRepo teamRepo;
 
     @Override
     public List<Team> execute(Void unused) {
-        return teamDao.findAll();
+        return teamRepo.findAll();
     }
 }
