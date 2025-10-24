@@ -1,4 +1,4 @@
-package com.ligitabl.model.dao;
+package com.ligitabl.model.repo.impl;
 
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.repo.TeamRepo;
