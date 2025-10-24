@@ -23,8 +23,8 @@ endif
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
 
-build: ## Build the project (skip tests)
-	mvn -q -DskipTests -f $(API_DIR)/pom.xml clean package
+build: ## Build the project (skip tests) - builds api and required modules (model, jooq-codegen)
+	mvn -q -DskipTests -pl $(API_DIR) -am clean package
 
 test: ## Run tests
 	mvn -f $(API_DIR)/pom.xml test
@@ -80,7 +80,6 @@ codegen-fast: ## Run jOOQ code generation (lean) - assumes jooq-codegen is alrea
 
 .PHONY: migrate
 migrate: ## Run Liquibase migrations in model/ (uses DB_* from .env)
-	mvn -q -pl model -am -DskipTests install
 	mvn -q -Pliquibase -DskipTests -f model/pom.xml liquibase:update
 
 seed: ## Seed teams using Dockerized Postgres (reads .env for DB creds)
