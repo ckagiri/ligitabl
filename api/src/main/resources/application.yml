@@ -4,7 +4,7 @@ spring:
 
   datasource:
     # Prefer explicit SPRING_* if set; otherwise build from DB_* (host defaults to localhost)
-  url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:55432}/${DB_NAME:ligitabl}}
+    url: ${SPRING_DATASOURCE_URL:jdbc:postgresql://${DB_HOST:localhost}:${DB_PORT:55432}/${DB_NAME:ligitabl}}
     username: ${SPRING_DATASOURCE_USERNAME:${DB_USER:ligitabl}}
     password: ${SPRING_DATASOURCE_PASSWORD:${DB_PASSWORD:ligitabl}}
     driver-class-name: org.postgresql.Driver

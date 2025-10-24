@@ -84,10 +84,10 @@
                                     <inputSchema>public</inputSchema>
                                 </database>
                                 <strategy>
-                                    <name>com.ligitabl.model.utils.db.JooqGeneratorNamingStrategy</name>
+                                    <name>com.ligitabl.jooq.JooqGeneratorNamingStrategy</name>
                                 </strategy>
                                 <target>
-                                    <packageName>com.ligitabl.db</packageName>
+                                    <packageName>com.ligitabl.model.db</packageName>
                                     <directory>${project.build.directory}/generated-sources/jooq</directory>
                                 </target>
                             </generator>

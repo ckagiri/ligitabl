@@ -1,4 +1,4 @@
-package com.ligitabl.model.utils.db;
+package com.ligitabl.jooq;
 
 import org.jooq.codegen.DefaultGeneratorStrategy;
 import org.jooq.meta.Definition;

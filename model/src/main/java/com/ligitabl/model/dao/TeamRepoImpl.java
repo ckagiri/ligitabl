@@ -1,20 +1,17 @@
-package com.ligitabl.api.repo;
+package com.ligitabl.model.dao;
 
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.repo.TeamRepo;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
-import org.springframework.stereotype.Repository;
 
 import java.util.List;
 import java.util.UUID;
 
-import static com.ligitabl.db.tables.TTeam.T_TEAM;
+import static com.ligitabl.model.db.tables.TTeam.T_TEAM;
 
-@Repository
 @RequiredArgsConstructor
 public class TeamRepoImpl implements TeamRepo {
-
     private final DSLContext dsl;
 
     @Override
