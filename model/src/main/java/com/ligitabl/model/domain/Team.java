@@ -1,20 +1,23 @@
 package com.ligitabl.model.domain;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @Data
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 public class Team extends AbstractModel<UUID> {
     @NotNull
     private String name;
     @NotNull
     private String shortName;
+
+    // Populated by the database (defaults/triggers)
+    private OffsetDateTime createDate;
+    private OffsetDateTime updateDate;
 }

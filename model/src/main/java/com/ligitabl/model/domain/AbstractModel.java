@@ -1,12 +1,14 @@
 package com.ligitabl.model.domain;
 
-import jakarta.validation.constraints.NotNull;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
+@SuperBuilder// Add equality logic based on 'id'
+@EqualsAndHashCode(of = "id")
 public abstract class AbstractModel<ID> {
-    @NotNull
     protected ID id;
 }

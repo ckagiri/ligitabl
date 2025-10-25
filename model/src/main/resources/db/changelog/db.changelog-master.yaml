@@ -1,3 +1,5 @@
 databaseChangeLog:
     - include:
             file: db/changelog/20251023_1_initial.yaml
+    - include:
+            file: db/changelog/20251025_1_team_timestamps.yaml

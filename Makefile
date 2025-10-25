@@ -18,13 +18,16 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-.PHONY: help build test clean run run-no-db run-app docker-build docker-run docker-stop compose-up compose-up-db compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap
+.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
 
 build: ## Build the project (skip tests) - builds api and required modules (model, jooq-codegen)
 	mvn -q -DskipTests -pl $(API_DIR) -am clean package
+
+api-build: ## Build the API module (skip tests) - includes dependencies (model, jooq-codegen)
+	mvn -q -DskipTests -pl $(API_DIR) -am package
 
 test: ## Run tests
 	mvn -f $(API_DIR)/pom.xml test
@@ -40,6 +43,10 @@ run-no-db: $(JAR) ## Run without requiring DB (skips DataSource auto-config)
 
 run-app: ## Start DB (compose) and run the app JAR
 	$(MAKE) compose-up-db
+	$(MAKE) run
+
+bootstrap-run: ## Bootstrap DB (reset+migrate+codegen+seed) then run the app
+	$(MAKE) db-bootstrap
 	$(MAKE) run
 
 $(JAR):
@@ -77,6 +84,9 @@ codegen: ## Run jOOQ code generation in model/ (full, robust)
 
 codegen-fast: ## Run jOOQ code generation (lean) - assumes jooq-codegen is already installed
 	mvn -q -DskipTests -pl model -am generate-sources
+
+model-compile: ## Regenerate jOOQ and compile the model (ensures generated getters are available)
+	mvn -q -DskipTests -pl model -am generate-sources compile
 
 .PHONY: migrate
 migrate: ## Run Liquibase migrations in model/ (uses DB_* from .env)

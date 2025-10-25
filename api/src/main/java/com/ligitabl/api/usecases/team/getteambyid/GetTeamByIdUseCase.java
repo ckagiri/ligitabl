@@ -17,7 +17,6 @@ public class GetTeamByIdUseCase implements UseCase<UUID, Team> {
 
     @Override
     public Team execute(UUID id) {
-        var team = teamRepo.findById(id);
-        return modelValidator.requireFound(team);
+        return teamRepo.findById(id).orElseThrow();
     }
 }

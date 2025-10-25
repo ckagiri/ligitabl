@@ -40,12 +40,13 @@ make compose-down
 ```
 
 Notes:
+
 - Compose builds the API from `./api` and wires it to the `db` container (Postgres 16).
 - Liquibase is disabled by default; enable it at runtime with the Spring profile `liquibase`:
-	- Temporary: `SPRING_PROFILES_ACTIVE=liquibase docker compose up -d app`
-	- Or add `SPRING_PROFILES_ACTIVE: liquibase` under `app.environment` in `docker-compose.yml`.
+  - Temporary: `SPRING_PROFILES_ACTIVE=liquibase docker compose up -d app`
+  - Or add `SPRING_PROFILES_ACTIVE: liquibase` under `app.environment` in `docker-compose.yml`.
 - Compose reads variables from a local `.env` file automatically and also passes them into the containers via `env_file`.
- - Default local DB port mapping is `55432` (host) -> `5432` (container). The app falls back to port `55432` when DB_PORT isn't set.
+- Default local DB port mapping is `55432` (host) -> `5432` (container). The app falls back to port `55432` when DB_PORT isn't set.
 
 ### Option B: Local Postgres
 
@@ -83,7 +84,7 @@ JAVA_OPTS="-Xms256m -Xmx512m" make docker-run
 
 ## jOOQ code generation
 
-Code is generated in the `model` module. Connection info is taken from DB_* in `.env`.
+Code is generated in the `model` module. Connection info is taken from DB\_\* in `.env`.
 
 ```bash
 cp .env.example .env   # optional: adjust DB_* if needed
@@ -114,9 +115,9 @@ This runs: compose-up-db → reset-db → migrate → codegen → seed.
 We use Liquibase in the `model` module.
 
 - Master changelog: `model/src/main/resources/db/changelog/db.changelog-master.yaml`
-- Initial changeset (creates `public.t_team`): `20251023-initial.yaml`
-	- Naming convention: `YYYYMMDD-description.yaml`
-	- Precondition: will be marked as ran if the table already exists.
+  - Initial changeset (creates `public.t_team`): `20251023_1_initial.yaml`
+  - Naming convention: `YYYYMMDD-description.yaml`
+  - Precondition: will be marked as ran if the table already exists.
 
 Common tasks:
 
@@ -134,6 +135,7 @@ You can seed sample teams using either Docker (recommended when using Compose) o
 ### Option A: Docker (Compose DB)
 
 Prereqs:
+
 - Docker Compose DB is running (`ligitabl-db`). If not, start it with:
 
 ```bash
@@ -150,6 +152,7 @@ make seed       # inserts/updates sample teams
 ### Option B: Local psql client
 
 Prereqs:
+
 - `psql` installed locally.
 - `.env` has `DB_*` values (for Compose-exposed DB, set `DB_PORT=55432`).
 
@@ -161,6 +164,7 @@ make seed-local
 ```
 
 Troubleshooting:
+
 - If the Docker targets complain the DB isn’t running, do `docker compose up -d db`.
 - For local targets, ensure `psql` is installed and `DB_PASSWORD` is set in your `.env`.
 - Connection/auth errors: verify `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` in `.env`.
@@ -182,6 +186,39 @@ Alternatively, add this to `api/src/main/resources/application-liquibase.yml` is
 ## Endpoints
 
 - `GET /api/status` — simple status check
+
+## DSLContext: auto-config, codegen, and troubleshooting
+
+- You do NOT need to define a `@Bean` for `DSLContext`. Spring Boot autoconfigures it via `spring-boot-starter-jooq` when a `DataSource` is present. In this codebase, `RepositoryConfig.teamDao(DSLContext)` correctly relies on the auto-provided bean.
+- jOOQ code generation is a build-time task in the `model` module and is unrelated to runtime injection of `DSLContext`. Codegen runs during `generate-sources` (e.g., `make codegen` / `make model-compile`) based on your DB schema; the generated classes are then consumed at runtime but don’t affect auto-wiring.
+- If `spring.datasource.*` is misconfigured or the JDBC driver is missing, `DSLContext` won’t be created and the app will fail at startup.
+
+Quick checklist if startup fails or `curl` can’t connect:
+
+1. Ensure the app is actually running
+
+   - Use:
+     - `make run-app` to start Postgres (Compose) and run the JAR, or
+     - `make run` if your local Postgres is already up.
+   - Optional: run everything in one go: `make bootstrap-run` (starts DB, reset+migrate+codegen+seed, then runs the app).
+   - Healthcheck: `curl http://localhost:${PORT:-8080}/actuator/health` should return `{"status":"UP"}` when the app is ready.
+
+2. Verify datasource settings
+
+   - The app reads `SPRING_DATASOURCE_URL` directly, or builds it from `DB_*` (host defaults to `localhost`, port defaults to `55432`).
+   - Confirm env variables (or `.env` loaded by Makefile/Compose): `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`.
+   - Example URL: `jdbc:postgresql://localhost:55432/ligitabl`.
+
+3. Confirm the Postgres driver is on the classpath
+
+   - The API includes `org.postgresql:postgresql`; building with `mvn -pl api -am package` produces a runnable JAR with the driver.
+
+4. Check logs for autoconfiguration hints
+
+   - On failure you’ll typically see messages like “Failed to configure a DataSource” or “No qualifying bean of type ‘org.jooq.DSLContext’”. These indicate the datasource couldn’t be created (bad URL/creds/DB down) or the driver is missing.
+
+5. Port already in use
+   - If the server can’t start on `8080`, set a different port: `PORT=8081 make run-app` and curl `http://localhost:8081/...`.
 
 ## Notes
 
