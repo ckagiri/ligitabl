@@ -1,8 +1,7 @@
 package com.ligitabl.api.usecases.team.getteambyid;
 
-
 import com.ligitabl.api.shared.exceptions.BusinessFailureException;
-import com.ligitabl.model.domain.Team;
+import com.ligitabl.api.usecases.team.TeamResponseDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,13 +17,14 @@ public class GetTeamByIdController {
     private final GetTeamByIdUseCase getTeamByIdUseCase;
 
     @GetMapping("/{id}")
-    public ResponseEntity<Team> get(@PathVariable("id") String id) {
+    public ResponseEntity<TeamResponseDto> get(@PathVariable("id") String id) {
         var query = new GetTeamByIdQuery(id);
         var result = getTeamByIdUseCase.execute(query);
 
         return result.fold(
-            error -> { throw new BusinessFailureException(error); },
-            team -> ResponseEntity.ok(result.getValue())
-        );
+                error -> {
+                    throw new BusinessFailureException(error);
+                },
+                team -> ResponseEntity.ok(TeamResponseDto.from(result.getValue())));
     }
 }

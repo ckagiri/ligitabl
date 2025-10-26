@@ -18,7 +18,7 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap
+.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-ps compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -73,6 +73,25 @@ compose-up: ## Start app + postgres via Docker Compose
 
 compose-up-db: ## Start only postgres via Docker Compose with host port $(HOST_DB_PORT) -> 5432
 	DB_PORT=$(HOST_DB_PORT) $(DOCKER_COMPOSE) up -d db
+
+compose-up-app: ## Start only the app (and its db dependency) via Docker Compose in the background
+	$(MAKE) api-build
+	$(DOCKER_COMPOSE) up -d --build app
+
+compose-up-app-fast: ## Start only the app without rebuild (requires image to exist)
+	$(DOCKER_COMPOSE) up -d app
+
+compose-logs-app: ## Tail logs from the dockerized app (Ctrl+C to stop following)
+	$(DOCKER_COMPOSE) logs -f app
+
+compose-stop-app: ## Stop the dockerized app container (db keeps running)
+	$(DOCKER_COMPOSE) stop app
+
+compose-restart-app: ## Restart the dockerized app container
+	$(DOCKER_COMPOSE) restart app
+
+compose-ps: ## Show status of compose services
+	$(DOCKER_COMPOSE) ps
 
 compose-down: ## Stop and remove compose services/volumes
 	$(DOCKER_COMPOSE) down -v

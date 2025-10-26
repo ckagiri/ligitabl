@@ -29,3 +29,14 @@ databaseChangeLog:
                   type: varchar(100)
                   constraints:
                     nullable: false
+              - column:
+                  name: c_slug
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: c_tla
+                  type: char(3)
+                  constraints:
+                    nullable: false

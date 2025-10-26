@@ -1,4 +1,4 @@
-package com.ligitabl.api.shared;
+package com.ligitabl.model.shared;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -34,6 +34,30 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
         return left;
     }
 
+    // --- transform the Left side ---
+    default <L2> Either<L2, R> mapLeft(Function<? super L, ? extends L2> mapper) {
+        if (this instanceof Left<L, R> left) {
+            return Either.left(mapper.apply(left.value()));
+        }
+        @SuppressWarnings("unchecked")
+        Either<L2, R> right = (Either<L2, R>) this;
+        return right;
+    }
+
+    /**
+     * Transform both sides of the Either.
+     * If Left, apply leftMapper; if Right, apply rightMapper.
+     */
+    default <L2, R2> Either<L2, R2> bimap(Function<? super L, ? extends L2> leftMapper,
+                                          Function<? super R, ? extends R2> rightMapper) {
+        if (this instanceof Left<L, R> left) {
+            return Either.left(leftMapper.apply(left.value()));
+        } else {
+            R value = ((Right<L, R>) this).value();
+            return Either.right(rightMapper.apply(value));
+        }
+    }
+
     default <T> T fold(Function<? super L, ? extends T> leftMapper,
                        Function<? super R, ? extends T> rightMapper) {
         return this instanceof Left<L, R> left
@@ -41,13 +65,15 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
             : rightMapper.apply(((Right<L, R>) this).value());
     }
 
-    // --- Side-effect helpers ---
-    default void ifLeft(Consumer<? super L> action) {
-        if (this instanceof Left<L, R> left) action.accept(left.value());
+    // --- Fluent side-effect helpers ---
+    default Either<L, R> peek(Consumer<? super R> action) {
+        if (this instanceof Right<L, R> right) action.accept(right.value());
+        return this;
     }
 
-    default void ifRight(Consumer<? super R> action) {
-        if (this instanceof Right<L, R> right) action.accept(right.value());
+    default Either<L, R> peekLeft(Consumer<? super L> action) {
+        if (this instanceof Left<L, R> left) action.accept(left.value());
+        return this;
     }
 
     // --- Factory methods ---
@@ -67,6 +93,11 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
             }
         }
         return Either.right(Unit.INSTANCE);
+    }
+
+    @SuppressWarnings("unchecked")
+    static <Super, Sub extends Super, R> Either<Super, R> widenLeft(Either<Sub, R> either) {
+        return (Either<Super, R>) either;
     }
 
     // --- Variants ---

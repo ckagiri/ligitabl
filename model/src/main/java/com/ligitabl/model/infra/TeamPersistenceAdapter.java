@@ -33,15 +33,18 @@ public class TeamPersistenceAdapter implements TeamRepo {
 
     @Override
     public Team create(Team model) {
-        // Use UpdatableRecord to leverage DB defaults/triggers (e.g., create_date/update_date)
+        // Use UpdatableRecord to leverage DB defaults/triggers (e.g.,
+        // create_date/update_date)
         if (model.getId() != null) {
-            throw new IllegalArgumentException(String.format("Team.id must be null on create (received %s)", model.getId()));
+            throw new IllegalArgumentException(
+                    String.format("Team.id must be null on create (received %s)", model.getId()));
         }
         UUID id = UUID.randomUUID();
         TeamRecord rec = dsl.newRecord(T_TEAM);
         rec.setId(id);
         copyModelToRecord(model, rec);
-        // Persist first, then refresh to fetch DB-populated fields (portable across dialects)
+        // Persist first, then refresh to fetch DB-populated fields (portable across
+        // dialects)
         rec.store();
         rec.refresh();
         return MAPPER.map(rec);
@@ -57,7 +60,8 @@ public class TeamPersistenceAdapter implements TeamRepo {
             throw new NoSuchElementException(String.format("Team with id %s not found", model.getId()));
         }
         copyModelToRecord(model, rec);
-        // Persist first, then refresh to ensure DB-side changes (e.g., update_date triggers) are visible
+        // Persist first, then refresh to ensure DB-side changes (e.g., update_date
+        // triggers) are visible
         rec.store();
         rec.refresh();
         return MAPPER.map(rec);
@@ -79,6 +83,16 @@ public class TeamPersistenceAdapter implements TeamRepo {
                 .map(MAPPER::map);
     }
 
+    @Override
+    public Optional<Team> findBySlug(String slug) {
+        var record = dsl
+                .selectFrom(T_TEAM)
+                .where(T_TEAM.C_SLUG.eq(slug))
+                .fetchOne();
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
     private static class TeamRecordMapper implements RecordMapper<TeamRecord, Team> {
         @Override
         public Team map(TeamRecord record) {
@@ -90,16 +104,22 @@ public class TeamPersistenceAdapter implements TeamRepo {
                     .id(record.getId())
                     .name(record.getName())
                     .shortName(record.getShortName())
+                    .slug(record.getSlug())
+                    .tla(record.getTla())
                     .createDate(record.getCreateDate())
                     .updateDate(record.getUpdateDate())
                     .build();
         }
     }
 
-    // Centralise mutable field mapping from domain -> record to avoid repetition as fields grow
+    // Centralise mutable field mapping from domain -> record to avoid repetition as
+    // fields grow
     private static void copyModelToRecord(Team model, TeamRecord rec) {
-        if (model == null || rec == null) return;
+        if (model == null || rec == null)
+            return;
         rec.setName(model.getName());
         rec.setShortName(model.getShortName());
+        rec.setSlug(model.getSlug());
+        rec.setTla(model.getTla());
     }
 }

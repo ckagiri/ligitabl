@@ -20,8 +20,8 @@ services:
 
   app:
     build:
-      context: ./api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: api/Dockerfile
     image: ligitabl:dev
     container_name: ligitabl-app
     depends_on:

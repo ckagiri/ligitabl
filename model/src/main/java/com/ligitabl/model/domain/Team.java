@@ -1,6 +1,7 @@
 package com.ligitabl.model.domain;
 
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
@@ -16,6 +17,15 @@ public class Team extends AbstractModel<UUID> {
     private String name;
     @NotNull
     private String shortName;
+
+    // URL-friendly identifier (e.g., "manchester-united"), unique
+    @NotNull
+    private String slug;
+
+    // Three-letter acronym (required, e.g., "MUN"); exactly 3 characters
+    @NotNull
+    @Size(min = 3, max = 3)
+    private String tla;
 
     // Populated by the database (defaults/triggers)
     private OffsetDateTime createDate;

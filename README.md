@@ -42,6 +42,9 @@ make compose-down
 Notes:
 
 - Compose builds the API from `./api` and wires it to the `db` container (Postgres 16).
+- To run only the API in the background (and auto-start DB), use: `make compose-up-app`.
+- View app logs with: `make compose-logs-app`. Stop just the app: `make compose-stop-app`. Status: `make compose-ps`.
+  - Faster start without rebuild: `make compose-up-app-fast` (uses existing image; won’t pick up new code).
 - Liquibase is disabled by default; enable it at runtime with the Spring profile `liquibase`:
   - Temporary: `SPRING_PROFILES_ACTIVE=liquibase docker compose up -d app`
   - Or add `SPRING_PROFILES_ACTIVE: liquibase` under `app.environment` in `docker-compose.yml`.
@@ -186,6 +189,9 @@ Alternatively, add this to `api/src/main/resources/application-liquibase.yml` is
 ## Endpoints
 
 - `GET /api/status` — simple status check
+- `GET /api/teams` — list all teams
+- `GET /api/teams/{id}` — get team by UUID
+- `GET /api/teams/slug/{slug}` — get team by slug
 
 ## DSLContext: auto-config, codegen, and troubleshooting
 
