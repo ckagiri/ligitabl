@@ -18,7 +18,7 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh-app compose-refresh-app-migrate compose-ps compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap
+.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -93,14 +93,21 @@ compose-stop-app: ## Stop the dockerized app container (db keeps running)
 compose-restart-app: ## Restart the dockerized app container
 	$(DOCKER_COMPOSE) restart app
 
-compose-refresh-app: ## Stop app + db, start db, run codegen, then start app in background (rebuild image)
+# Short, primary refresh targets
+compose-refresh: ## Stop app+db, start db, then start app (rebuild image) — no codegen
+	$(MAKE) compose-stop-app
+	$(MAKE) compose-stop-db
+	$(MAKE) compose-up-db
+	$(MAKE) compose-up-app
+
+compose-refresh-gen: ## Stop app+db, start db, run codegen, then start app (rebuild image)
 	$(MAKE) compose-stop-app
 	$(MAKE) compose-stop-db
 	$(MAKE) compose-up-db
 	$(MAKE) codegen
 	$(MAKE) compose-up-app
 
-compose-refresh-app-migrate: ## Stop app+db, start db, run migrate+codegen, then start app (rebuild image)
+compose-refresh-db: ## Stop app+db, start db, run migrate+codegen, then start app (rebuild image)
 	$(MAKE) compose-stop-app
 	$(MAKE) compose-stop-db
 	$(MAKE) compose-up-db
@@ -108,8 +115,12 @@ compose-refresh-app-migrate: ## Stop app+db, start db, run migrate+codegen, then
 	$(MAKE) codegen
 	$(MAKE) compose-up-app
 
+
 compose-ps: ## Show status of compose services
 	$(DOCKER_COMPOSE) ps
+
+compose-stop: ## Stop all compose services (keeps volumes)
+	$(DOCKER_COMPOSE) stop
 
 compose-down: ## Stop and remove compose services/volumes
 	$(DOCKER_COMPOSE) down -v

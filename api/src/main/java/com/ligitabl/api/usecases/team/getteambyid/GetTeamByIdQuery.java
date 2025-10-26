@@ -1,6 +1,6 @@
 package com.ligitabl.api.usecases.team.getteambyid;
 
-import com.ligitabl.api.shared.validator.ValidUUID;
+import com.ligitabl.model.validator.ValidUUID;
 
 import java.util.UUID;
 

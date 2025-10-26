@@ -46,8 +46,9 @@ Notes:
 - View app logs with: `make compose-logs-app`. Stop just the app: `make compose-stop-app`. Status: `make compose-ps`.
   - Faster start without rebuild: `make compose-up-app-fast` (uses existing image; won’t pick up new code).
   - Stop only the DB: `make compose-stop-db`.
-  - End-to-end refresh: `make compose-refresh-app` (stops app+db, brings DB up, runs codegen, then rebuilds and starts the app in background).
-  - Refresh with migrations: `make compose-refresh-app-migrate` (stops app+db, brings DB up, runs Liquibase migrations, then jOOQ codegen, then rebuilds and starts the app in background). Use this after changing changelogs.
+  - Refresh without codegen: `make compose-refresh` (stops app+db, starts DB, rebuilds and starts the app). Use when you have app code changes but no DB/schema changes.
+  - Refresh with codegen: `make compose-refresh-gen` (runs jOOQ codegen before rebuild).
+  - Refresh with migrations: `make compose-refresh-db` (runs Liquibase migrations then jOOQ codegen before rebuild). Use this after changing changelogs.
 - Liquibase is disabled by default; enable it at runtime with the Spring profile `liquibase`:
   - Temporary: `SPRING_PROFILES_ACTIVE=liquibase docker compose up -d app`
   - Or add `SPRING_PROFILES_ACTIVE: liquibase` under `app.environment` in `docker-compose.yml`.

@@ -3,9 +3,8 @@ package com.ligitabl.api.usecases.team.getteambyslug;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.NotFoundError;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.shared.errors.ValidationError;
+import com.ligitabl.api.shared.validator.RequestValidator;
 import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.TeamSlug;
 import com.ligitabl.model.repo.TeamRepo;
 import com.ligitabl.model.shared.Either;
 import lombok.RequiredArgsConstructor;
@@ -17,14 +16,14 @@ import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 @RequiredArgsConstructor
 public class GetTeamBySlugUseCase implements UseCase<GetTeamBySlugQuery, Either<UseCaseError, Team>> {
     private final TeamRepo teamRepo;
+    private final RequestValidator requestValidator;
 
     @Override
     public Either<UseCaseError, Team> execute(GetTeamBySlugQuery query) {
-        return TeamSlug.of(query.slug())
-         .mapLeft(error -> (UseCaseError) new ValidationError(error.message()))
-         .flatMap(slug -> requireFound(
-             teamRepo.findBySlug(slug.value()),
-             new NotFoundError("Team", "slug", slug.value())
-         ));
+        return requestValidator.validate(query)
+                .map(GetTeamBySlugQuery::slug)
+                .flatMap(slug -> requireFound(
+                        teamRepo.findBySlug(slug),
+                        new NotFoundError("Team", "slug", slug)));
     }
 }

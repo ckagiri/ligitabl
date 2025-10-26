@@ -15,8 +15,8 @@ import org.springframework.web.bind.annotation.RestController;
 public class GetTeamBySlugController {
   private final GetTeamBySlugUseCase getTeamBySlugUseCase;
 
-  @GetMapping("/slug/{slug}")
-  public ResponseEntity<TeamResponseDto> getTeamBySlug(@PathVariable String slug) {
+  @GetMapping("/{slug}")
+  public ResponseEntity<TeamResponseDto> getBySlug(@PathVariable String slug) {
     var query = new GetTeamBySlugQuery(slug);
     var result = getTeamBySlugUseCase.execute(query);
 

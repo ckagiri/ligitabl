@@ -1,4 +1,4 @@
-package com.ligitabl.api.shared.validator;
+package com.ligitabl.model.validator;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
