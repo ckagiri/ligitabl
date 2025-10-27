@@ -45,11 +45,11 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     }
 
     /**
-     * Transform both sides of the Either.
-     * If Left, apply leftMapper; if Right, apply rightMapper.
+     * Transform both sides of the Either. If Left, apply leftMapper; if Right,
+     * apply rightMapper.
      */
     default <L2, R2> Either<L2, R2> bimap(Function<? super L, ? extends L2> leftMapper,
-                                          Function<? super R, ? extends R2> rightMapper) {
+        Function<? super R, ? extends R2> rightMapper) {
         if (this instanceof Left<L, R> left) {
             return Either.left(leftMapper.apply(left.value()));
         } else {
@@ -59,7 +59,7 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     }
 
     default <T> T fold(Function<? super L, ? extends T> leftMapper,
-                       Function<? super R, ? extends T> rightMapper) {
+        Function<? super R, ? extends T> rightMapper) {
         return this instanceof Left<L, R> left
             ? leftMapper.apply(left.value())
             : rightMapper.apply(((Right<L, R>) this).value());
@@ -67,12 +67,14 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
 
     // --- Fluent side-effect helpers ---
     default Either<L, R> peek(Consumer<? super R> action) {
-        if (this instanceof Right<L, R> right) action.accept(right.value());
+        if (this instanceof Right<L, R> right)
+            action.accept(right.value());
         return this;
     }
 
     default Either<L, R> peekLeft(Consumer<? super L> action) {
-        if (this instanceof Left<L, R> left) action.accept(left.value());
+        if (this instanceof Left<L, R> left)
+            action.accept(left.value());
         return this;
     }
 
@@ -102,16 +104,40 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
 
     // --- Variants ---
     record Left<L, R>(L value) implements Either<L, R> {
-        @Override public boolean isLeft() { return true; }
-        @Override public boolean isRight() { return false; }
-        @Override public L getLeft() { return value; }
-        @Override public R getRight() { throw new IllegalStateException("No Right value present"); }
+        @Override
+        public boolean isLeft() {
+            return true;
+        }
+        @Override
+        public boolean isRight() {
+            return false;
+        }
+        @Override
+        public L getLeft() {
+            return value;
+        }
+        @Override
+        public R getRight() {
+            throw new IllegalStateException("No Right value present");
+        }
     }
 
     record Right<L, R>(R value) implements Either<L, R> {
-        @Override public boolean isLeft() { return false; }
-        @Override public boolean isRight() { return true; }
-        @Override public L getLeft() { throw new IllegalStateException("No Left value present"); }
-        @Override public R getRight() { return value; }
+        @Override
+        public boolean isLeft() {
+            return false;
+        }
+        @Override
+        public boolean isRight() {
+            return true;
+        }
+        @Override
+        public L getLeft() {
+            throw new IllegalStateException("No Left value present");
+        }
+        @Override
+        public R getRight() {
+            return value;
+        }
     }
 }

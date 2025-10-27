@@ -1,13 +1,13 @@
 package com.ligitabl.model.validator;
 
+import java.lang.annotation.*;
+
 import jakarta.validation.Constraint;
 import jakarta.validation.Payload;
 
-import java.lang.annotation.*;
-
 @Documented
 @Constraint(validatedBy = SlugValidator.class)
-@Target({ ElementType.FIELD, ElementType.PARAMETER })
+@Target({ElementType.FIELD, ElementType.PARAMETER})
 @Retention(RetentionPolicy.RUNTIME)
 public @interface ValidSlug {
     String message() default "Invalid slug format. Must be lowercase alphanumeric with dashes";

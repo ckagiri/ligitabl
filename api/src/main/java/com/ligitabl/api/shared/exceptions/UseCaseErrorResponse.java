@@ -1,11 +1,12 @@
 package com.ligitabl.api.shared.exceptions;
 
-import lombok.Builder;
-import lombok.Data;
+import java.time.LocalDateTime;
+
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 
-import java.time.LocalDateTime;
+import lombok.Builder;
+import lombok.Data;
 
 @Data
 @Builder

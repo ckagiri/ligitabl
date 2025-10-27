@@ -1,13 +1,13 @@
 package com.ligitabl.model.domain;
 
+import java.time.OffsetDateTime;
+import java.util.UUID;
+
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
-
-import java.time.OffsetDateTime;
-import java.util.UUID;
 
 @Data
 @EqualsAndHashCode(callSuper = true)

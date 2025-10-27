@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<profiles version="21">
+    <profile kind="CodeFormatterProfile" name="Ligitabl 4 Spaces" version="21">
+        <!-- Indentation settings -->
+        <setting id="org.eclipse.jdt.core.formatter.tabulation.char" value="space"/>
+        <setting id="org.eclipse.jdt.core.formatter.tabulation.size" value="4"/>
+        <setting id="org.eclipse.jdt.core.formatter.indentation.size" value="4"/>
+        <setting id="org.eclipse.jdt.core.formatter.continuation_indentation" value="1"/>
+        <setting id="org.eclipse.jdt.core.formatter.continuation_indentation_for_array_initializer" value="1"/>
+
+    <!-- Line splitting -->
+    <setting id="org.eclipse.jdt.core.formatter.lineSplit" value="100"/>
+
+        <!-- Braces and whitespace (keep defaults reasonable) -->
+        <setting id="org.eclipse.jdt.core.formatter.brace_position_for_type_declaration" value="end_of_line"/>
+        <setting id="org.eclipse.jdt.core.formatter.brace_position_for_method_declaration" value="end_of_line"/>
+        <setting id="org.eclipse.jdt.core.formatter.brace_position_for_anonymous_type_declaration" value="end_of_line"/>
+        <setting id="org.eclipse.jdt.core.formatter.brace_position_for_block" value="end_of_line"/>
+        <setting id="org.eclipse.jdt.core.formatter.brace_position_for_block_in_case" value="end_of_line"/>
+
+        <!-- Spaces around operators -->
+        <setting id="org.eclipse.jdt.core.formatter.insert_space_before_binary_operator" value="insert"/>
+        <setting id="org.eclipse.jdt.core.formatter.insert_space_after_binary_operator" value="insert"/>
+
+        <!-- Preserve existing formatting in comments as much as possible -->
+        <setting id="org.eclipse.jdt.core.formatter.comment.format_javadoc_comments" value="true"/>
+        <setting id="org.eclipse.jdt.core.formatter.comment.format_line_comments" value="true"/>
+        <setting id="org.eclipse.jdt.core.formatter.comment.format_block_comments" value="true"/>
+    </profile>
+</profiles>

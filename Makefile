@@ -18,7 +18,7 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap
+.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap format format-check format-all
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -198,3 +198,11 @@ db-bootstrap: ## Compose up DB, reset DB, migrate, codegen, then seed
 	$(MAKE) migrate
 	$(MAKE) codegen
 	$(MAKE) seed
+
+format: ## Format all Java sources (api, model) using Spotless (4-space indentation)
+	mvn -q -pl api,model com.diffplug.spotless:spotless-maven-plugin:2.44.0:apply
+
+format-check: ## Check formatting without changing files (fails if formatting needed)
+	mvn -q -pl api,model com.diffplug.spotless:spotless-maven-plugin:2.44.0:check
+
+format-all: format ## Alias: format api and model modules

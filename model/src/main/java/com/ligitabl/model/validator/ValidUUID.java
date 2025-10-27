@@ -1,16 +1,16 @@
 package com.ligitabl.model.validator;
 
-import jakarta.validation.Constraint;
-import jakarta.validation.Payload;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.Target;
-
 import static java.lang.annotation.ElementType.FIELD;
 import static java.lang.annotation.ElementType.PARAMETER;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
-@Target({ FIELD, PARAMETER })
+import java.lang.annotation.Retention;
+import java.lang.annotation.Target;
+
+import jakarta.validation.Constraint;
+import jakarta.validation.Payload;
+
+@Target({FIELD, PARAMETER})
 @Retention(RUNTIME)
 @Constraint(validatedBy = UUIDValidator.class)
 public @interface ValidUUID {

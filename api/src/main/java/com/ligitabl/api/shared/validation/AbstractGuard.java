@@ -1,10 +1,10 @@
 package com.ligitabl.api.shared.validation;
 
+import java.util.function.Supplier;
+
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.ValidationError;
 import com.ligitabl.model.shared.Either;
-
-import java.util.function.Supplier;
 
 public abstract class AbstractGuard<T> implements Guard<T> {
 

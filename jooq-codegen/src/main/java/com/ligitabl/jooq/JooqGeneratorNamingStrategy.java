@@ -8,7 +8,8 @@ import org.jooq.tools.StringUtils;
 public class JooqGeneratorNamingStrategy extends DefaultGeneratorStrategy {
 
     private static final String FIELD_REPLACE_REGEX = "^(C_|FK_|PK_|c_|fk_|pk_)";
-    // Strip a leading 'T' or 'J' from type names (e.g., t_team -> Team, j_job -> Job)
+    // Strip a leading 'T' or 'J' from type names (e.g., t_team -> Team, j_job ->
+    // Job)
     private static final String OBJECT_REPLACE_REGEX = "^[TJ]";
 
     @Override
@@ -24,8 +25,10 @@ public class JooqGeneratorNamingStrategy extends DefaultGeneratorStrategy {
     @Override
     public String getJavaClassName(Definition definition, Mode mode) {
         String name = super.getJavaClassName(definition, mode);
-        // Keep leading 'T' or 'J' ONLY for table classes in DEFAULT mode (i.e., the table type itself).
-        // For other modes (RECORD/POJO/etc.), even when definition is a TableDefinition, strip the prefix.
+        // Keep leading 'T' or 'J' ONLY for table classes in DEFAULT mode (i.e., the
+        // table type itself).
+        // For other modes (RECORD/POJO/etc.), even when definition is a
+        // TableDefinition, strip the prefix.
         if (definition instanceof TableDefinition && mode == Mode.DEFAULT) {
             return name; // e.g., t_team -> TTeam (keeps the prefix for table class)
         }

@@ -3,7 +3,12 @@
   "editor.formatOnSave": true,
   "files.insertFinalNewline": true,
   "files.trimTrailingWhitespace": true,
+  "editor.detectIndentation": false,
   "[java]": {
-    "editor.defaultFormatter": "redhat.java"
-  }
+    "editor.defaultFormatter": "redhat.java",
+    "editor.tabSize": 4
+  },
+  // Use a shared Eclipse formatter profile for consistent Java formatting across IDEs
+  "java.format.settings.url": "${workspaceFolder}/config/formatter/eclipse-java-formatter.xml",
+  "java.format.settings.profile": "Ligitabl 4 Spaces"
 }

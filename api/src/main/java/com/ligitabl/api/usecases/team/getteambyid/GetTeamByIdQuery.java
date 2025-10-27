@@ -1,8 +1,8 @@
 package com.ligitabl.api.usecases.team.getteambyid;
 
-import com.ligitabl.model.validator.ValidUUID;
-
 import java.util.UUID;
+
+import com.ligitabl.model.validator.ValidUUID;
 
 public record GetTeamByIdQuery(@ValidUUID String id) {
     public UUID getUuid() {

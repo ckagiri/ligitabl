@@ -1,12 +1,14 @@
 package com.ligitabl.api.usecases.team.getteams;
 
-import com.ligitabl.api.shared.UseCase;
-import com.ligitabl.model.repo.TeamRepo;
-import com.ligitabl.model.domain.Team;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import com.ligitabl.api.shared.UseCase;
+import com.ligitabl.model.domain.Team;
+import com.ligitabl.model.repo.TeamRepo;
+
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor

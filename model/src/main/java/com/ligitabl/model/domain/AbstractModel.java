@@ -7,7 +7,7 @@ import lombok.experimental.SuperBuilder;
 
 @Getter
 @Setter
-@SuperBuilder// Add equality logic based on 'id'
+@SuperBuilder // Add equality logic based on 'id'
 @EqualsAndHashCode(of = "id")
 public abstract class AbstractModel<ID> {
     protected ID id;

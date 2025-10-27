@@ -19,4 +19,3 @@ public class SlugValidator implements ConstraintValidator<ValidSlug, String> {
         return normalized.matches(SLUG_PATTERN);
     }
 }
-

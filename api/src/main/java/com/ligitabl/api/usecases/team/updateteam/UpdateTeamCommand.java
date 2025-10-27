@@ -1,11 +1,12 @@
 package com.ligitabl.api.usecases.team.updateteam;
 
+import java.util.UUID;
+
 import com.ligitabl.api.usecases.team.TeamPayload;
 import com.ligitabl.model.validator.ValidUUID;
+
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-
-import java.util.UUID;
 
 @Getter
 @EqualsAndHashCode(callSuper = true)
@@ -20,13 +21,7 @@ public class UpdateTeamCommand extends TeamPayload {
     }
 
     public static UpdateTeamCommand of(String id, TeamPayload data) {
-        return UpdateTeamCommand.builder()
-            .id(id)
-            .name(data.getName())
-            .shortName(data.getShortName())
-            .slug(data.getSlug())
-            .tla(data.getTla())
-            .build();
+        return UpdateTeamCommand.builder().id(id).name(data.getName())
+            .shortName(data.getShortName()).slug(data.getSlug()).tla(data.getTla()).build();
     }
 }
-

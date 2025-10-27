@@ -13,6 +13,33 @@ Repository layout for backend and frontends:
 - Docker (optional, for containers)
 - Docker Compose (optional, for app + Postgres)
 
+## Formatting (4 spaces, 100-col width, consistent across IDEs)
+
+This repo standardizes Java formatting to 4 spaces using a shared Eclipse profile and Spotless.
+
+- Format code (api, model):
+
+```bash
+make format
+```
+
+- Check formatting without modifying files (fails if changes are needed):
+
+```bash
+make format-check
+```
+
+Details:
+
+- Shared formatter profile: `config/formatter/eclipse-java-formatter.xml` (line width 100, 4-space indents, 4-space continuation indents)
+- `.editorconfig` enforces 4 spaces and max line length 100 for Java and aligns IntelliJ continuation indent to 4
+- VS Code: `.vscode/settings.json` points the Java formatter to the shared profile and sets tab size to 4
+- IntelliJ: honors `.editorconfig` by default; you can also import the Eclipse profile manually if desired
+
+Note:
+
+- Formatting targets intentionally exclude `jooq-codegen/` as it is a small helper module and considered complete.
+
 ## Quick start (no DB)
 
 Build and run without needing Postgres (skips JDBC):
