@@ -9,8 +9,6 @@ import com.ligitabl.model.shared.Either;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
-import static com.ligitabl.api.shared.ValidationUtils.requireFound;
-
 @Service
 @RequiredArgsConstructor
 public class TeamGuard extends AbstractGuard<Team> {
@@ -18,14 +16,12 @@ public class TeamGuard extends AbstractGuard<Team> {
 
     @Override
     public Either<UseCaseError, Team> forCreate(Team candidate) {
-        return ensureIdIsNull(candidate, candidate::getId)
-            .flatMap(this::ensureSlugIsUnique);
+        return ensureIdIsNull(candidate, candidate::getId).flatMap(this::ensureSlugIsUnique);
     }
 
     @Override
     public Either<UseCaseError, Team> forUpdate(Team candidate) {
-        return ensureIdIsNotNull(candidate, candidate::getId)
-            .flatMap(this::requireTeamExists)
+        return ensureIdIsNotNull(candidate, candidate::getId).flatMap(this::requireTeamExists)
             .flatMap(this::ensureSlugIsUniqueForUpdate);
     }
 
@@ -37,19 +33,16 @@ public class TeamGuard extends AbstractGuard<Team> {
     }
 
     private Either<UseCaseError, Team> ensureSlugIsUniqueForUpdate(Team team) {
-        return teamRepo.findBySlug(team.getSlug())
-            .filter(existing -> !existing.getId().equals(team.getId()))
-            .<Either<UseCaseError, Team>>map(conflict ->
-                Either.left(UseCaseErrors.conflict("Slug '" + team.getSlug() + "' is already used by another team"))
-            )
+        return teamRepo.findBySlug(team.getSlug()).filter(existing -> !existing.getId().equals(team.getId()))
+            .<Either<UseCaseError, Team>>map(conflict -> Either
+                .left(UseCaseErrors.conflict("Slug '" + team.getSlug() + "' is already used by another team")))
             .orElse(Either.right(team));
     }
 
     private Either<UseCaseError, Team> requireTeamExists(Team team) {
-        return requireFound(
-            teamRepo.findById(team.getId()),
-            UseCaseErrors.notFound("Team", team.getId())
-        );
+        // Only ensure existence, but keep passing through the caller's candidate
+        // so that updated field values are not lost.
+        return teamRepo.findById(team.getId()).<Either<UseCaseError, Team>>map(found -> Either.right(team))
+            .orElse(Either.left(UseCaseErrors.notFound("Team", team.getId())));
     }
 }
-
