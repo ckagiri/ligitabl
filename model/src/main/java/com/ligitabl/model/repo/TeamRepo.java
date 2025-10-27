@@ -9,4 +9,5 @@ import java.util.UUID;
 public interface TeamRepo extends BaseCrudRepo<Team, UUID> {
     List<Team> findAll();
     Optional<Team> findBySlug(String slug);
+    boolean existsBySlug(String slug);
 }

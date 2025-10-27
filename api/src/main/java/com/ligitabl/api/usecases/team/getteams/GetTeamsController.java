@@ -1,6 +1,6 @@
 package com.ligitabl.api.usecases.team.getteams;
 
-import com.ligitabl.api.usecases.team.TeamResponseDto;
+import com.ligitabl.api.usecases.team.TeamDto;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -19,8 +19,8 @@ public class GetTeamsController {
     private final GetTeamsUseCase getTeamsUseCase;
 
     @GetMapping
-    public ResponseEntity<List<TeamResponseDto>> list() {
+    public ResponseEntity<List<TeamDto>> list() {
         var teams = getTeamsUseCase.execute(NO_INPUT);
-        return ResponseEntity.ok(TeamResponseDto.listOf(teams));
+        return ResponseEntity.ok(TeamDto.listOf(teams));
     }
 }

@@ -10,30 +10,28 @@ import java.util.UUID;
 
 @Value
 @Builder
-public class TeamResponseDto {
+public class TeamDto {
     UUID id;
     String name;
     String shortName;
     String slug;
     String tla;
-    OffsetDateTime createDate;
     OffsetDateTime updateDate;
 
-    public static TeamResponseDto from(Team team) {
+    public static TeamDto from(Team team) {
         if (team == null)
             return null;
-        return TeamResponseDto.builder()
+        return TeamDto.builder()
                 .id(team.getId())
                 .name(team.getName())
                 .shortName(team.getShortName())
                 .slug(team.getSlug())
                 .tla(team.getTla())
-                .createDate(team.getCreateDate())
                 .updateDate(team.getUpdateDate())
                 .build();
     }
 
-    public static List<TeamResponseDto> listOf(List<Team> teams) {
-        return teams.stream().map(TeamResponseDto::from).toList();
+    public static List<TeamDto> listOf(List<Team> teams) {
+        return teams.stream().map(TeamDto::from).toList();
     }
 }

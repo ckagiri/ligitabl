@@ -1,4 +1,4 @@
-package com.ligitabl.api.shared.validator;
+package com.ligitabl.api.shared.validation;
 
 import com.ligitabl.model.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;

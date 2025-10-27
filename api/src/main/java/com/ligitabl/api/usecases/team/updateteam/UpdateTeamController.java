@@ -1,0 +1,33 @@
+package com.ligitabl.api.usecases.team.updateteam;
+
+import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.api.shared.exceptions.BusinessFailureException;
+import com.ligitabl.api.usecases.team.TeamDto;
+import com.ligitabl.api.usecases.team.TeamPayload;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.net.URI;
+
+@RestController
+@RequestMapping("/api/teams")
+@RequiredArgsConstructor
+public class UpdateTeamController {
+    private final UpdateTeamUseCase updateTeamUseCase;
+
+    @PutMapping("/{id}")
+    public ResponseEntity<TeamDto> updateTeam(@PathVariable String id,
+                                          @RequestBody TeamPayload payload) {
+
+        var command = UpdateTeamCommand.of(id, payload);
+        var result = updateTeamUseCase.execute(command);
+
+        return result.fold(
+            error -> {
+                throw new BusinessFailureException(error);
+            },
+            dto -> ResponseEntity.ok(dto)
+        );
+    }
+}

@@ -6,6 +6,7 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
+        <module name="jooq-codegen" />
         <module name="ligitabl-api" />
       </profile>
       <profile name="Annotation profile for LigiTabl Parent" enabled="true">

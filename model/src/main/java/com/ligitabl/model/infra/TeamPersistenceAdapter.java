@@ -14,6 +14,7 @@ import java.util.UUID;
 import java.util.NoSuchElementException;
 
 import static com.ligitabl.model.db.tables.TTeam.T_TEAM;
+import static org.jooq.impl.DSL.one;
 
 @RequiredArgsConstructor
 public class TeamPersistenceAdapter implements TeamRepo {
@@ -91,6 +92,16 @@ public class TeamPersistenceAdapter implements TeamRepo {
                 .fetchOne();
 
         return Optional.ofNullable(MAPPER.map(record));
+    }
+
+    @Override
+    public boolean existsBySlug(String slug) {
+        return dsl.select(one())
+            .from(T_TEAM)
+            .where(T_TEAM.C_SLUG.eq(slug))
+            .limit(1)
+            .fetchOptional()
+            .isPresent();
     }
 
     private static class TeamRecordMapper implements RecordMapper<TeamRecord, Team> {
