@@ -15,9 +15,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class UpdateTeamUseCase
-    implements
-        UseCase<UpdateTeamCommand, Either<UseCaseError, TeamDto>> {
+public class UpdateTeamUseCase implements UseCase<UpdateTeamCommand, Either<UseCaseError, TeamDto>> {
     private final RequestValidator requestValidator;
     private final TeamGuard teamGuard;
     private final TeamMapper mapper;
@@ -25,7 +23,11 @@ public class UpdateTeamUseCase
 
     @Override
     public Either<UseCaseError, TeamDto> execute(UpdateTeamCommand command) {
-        return requestValidator.validate(command).map(mapper::toEntity)
-            .flatMap(teamGuard::forUpdate).map(teamRepo::update).map(TeamDto::from);
+        return requestValidator
+                .validate(command)
+                .map(mapper::toEntity)
+                .flatMap(teamGuard::forUpdate)
+                .map(teamRepo::update)
+                .map(TeamDto::from);
     }
 }

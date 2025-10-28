@@ -40,6 +40,21 @@ Note:
 
 - Formatting targets intentionally exclude `jooq-codegen/` as it is a small helper module and considered complete.
 
+### Fluent method chains
+
+Team-friendly defaults enforced by the formatter:
+
+- One call per line when wrapped
+- Dot at the start of the wrapped line
+- 100-column width; short chains may stay on one line
+- 4-space continuation indent for wrapped lines
+- Deterministic reflow; avoid hand-alignment
+
+Tips:
+
+- If a chain gets long, consider naming the builder or extracting sub-expressions.
+- Keep chains free of side effects; compute values before chaining.
+
 ## Quick start (no DB)
 
 Build and run without needing Postgres (skips JDBC):

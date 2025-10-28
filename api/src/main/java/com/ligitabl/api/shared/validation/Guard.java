@@ -5,5 +5,6 @@ import com.ligitabl.model.shared.Either;
 
 public interface Guard<T> {
     Either<UseCaseError, T> forCreate(T candidate);
+
     Either<UseCaseError, T> forUpdate(T candidate);
 }

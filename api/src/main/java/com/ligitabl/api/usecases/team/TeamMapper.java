@@ -17,7 +17,10 @@ public class TeamMapper {
     }
 
     private Team.TeamBuilder<?, ?> baseBuilder(TeamPayload cmd) {
-        return Team.builder().name(cmd.getName()).shortName(cmd.getShortName()).slug(cmd.getSlug())
-            .tla(cmd.getTla());
+        return Team.builder()
+                .name(cmd.getName())
+                .shortName(cmd.getShortName())
+                .slug(cmd.getSlug())
+                .tla(cmd.getTla());
     }
 }

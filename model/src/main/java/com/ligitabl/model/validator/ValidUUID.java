@@ -15,6 +15,8 @@ import jakarta.validation.Payload;
 @Constraint(validatedBy = UUIDValidator.class)
 public @interface ValidUUID {
     String message() default "Invalid UUID format";
+
     Class<?>[] groups() default {};
+
     Class<? extends Payload>[] payload() default {};
 }

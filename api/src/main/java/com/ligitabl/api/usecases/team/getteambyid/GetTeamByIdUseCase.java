@@ -16,16 +16,16 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class GetTeamByIdUseCase
-    implements
-        UseCase<GetTeamByIdQuery, Either<UseCaseError, TeamDto>> {
+public class GetTeamByIdUseCase implements UseCase<GetTeamByIdQuery, Either<UseCaseError, TeamDto>> {
     private final RequestValidator requestValidator;
     private final TeamRepo teamRepo;
 
     @Override
     public Either<UseCaseError, TeamDto> execute(GetTeamByIdQuery query) {
-        return requestValidator.validate(query).map(GetTeamByIdQuery::getUuid)
-            .flatMap(id -> requireFound(teamRepo.findById(id), new NotFoundError("Team", id)))
-            .map(TeamDto::from);
+        return requestValidator
+                .validate(query)
+                .map(GetTeamByIdQuery::getUuid)
+                .flatMap(id -> requireFound(teamRepo.findById(id), new NotFoundError("Team", id)))
+                .map(TeamDto::from);
     }
 }

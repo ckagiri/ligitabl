@@ -13,8 +13,7 @@ public record TeamSlug(String value) {
 
         // Example: enforce only [a-z0-9-]
         if (!normalized.matches("[a-z0-9-]+")) {
-            return Either.left(
-                new SlugError.InvalidFormat("Slug must be lowercase alphanumeric with dashes"));
+            return Either.left(new SlugError.InvalidFormat("Slug must be lowercase alphanumeric with dashes"));
         }
 
         return Either.right(new TeamSlug(normalized));

@@ -36,7 +36,7 @@ public class TeamPersistenceAdapter implements TeamRepo {
         // create_date/update_date)
         if (model.getId() != null) {
             throw new IllegalArgumentException(
-                String.format("Team.id must be null on create (received %s)", model.getId()));
+                    String.format("Team.id must be null on create (received %s)", model.getId()));
         }
         UUID id = UUID.randomUUID();
         TeamRecord rec = dsl.newRecord(T_TEAM);
@@ -52,10 +52,10 @@ public class TeamPersistenceAdapter implements TeamRepo {
     @Override
     public Team update(Team model) {
         // Fetch, mutate, and store() to trigger DB-side update hooks/defaults
-        TeamRecord rec = dsl.selectFrom(T_TEAM).where(T_TEAM.PK_ID.eq(model.getId())).fetchOne();
+        TeamRecord rec =
+                dsl.selectFrom(T_TEAM).where(T_TEAM.PK_ID.eq(model.getId())).fetchOne();
         if (rec == null) {
-            throw new NoSuchElementException(
-                String.format("Team with id %s not found", model.getId()));
+            throw new NoSuchElementException(String.format("Team with id %s not found", model.getId()));
         }
         copyModelToRecord(model, rec);
         // Persist first, then refresh to ensure DB-side changes (e.g., update_date
@@ -84,8 +84,12 @@ public class TeamPersistenceAdapter implements TeamRepo {
 
     @Override
     public boolean existsBySlug(String slug) {
-        return dsl.select(one()).from(T_TEAM).where(T_TEAM.C_SLUG.eq(slug)).limit(1).fetchOptional()
-            .isPresent();
+        return dsl.select(one())
+                .from(T_TEAM)
+                .where(T_TEAM.C_SLUG.eq(slug))
+                .limit(1)
+                .fetchOptional()
+                .isPresent();
     }
 
     private static class TeamRecordMapper implements RecordMapper<TeamRecord, Team> {
@@ -95,17 +99,22 @@ public class TeamPersistenceAdapter implements TeamRepo {
                 return null;
             }
 
-            return Team.builder().id(record.getId()).name(record.getName())
-                .shortName(record.getShortName()).slug(record.getSlug()).tla(record.getTla())
-                .createDate(record.getCreateDate()).updateDate(record.getUpdateDate()).build();
+            return Team.builder()
+                    .id(record.getId())
+                    .name(record.getName())
+                    .shortName(record.getShortName())
+                    .slug(record.getSlug())
+                    .tla(record.getTla())
+                    .createDate(record.getCreateDate())
+                    .updateDate(record.getUpdateDate())
+                    .build();
         }
     }
 
     // Centralise mutable field mapping from domain -> record to avoid repetition as
     // fields grow
     private static void copyModelToRecord(Team model, TeamRecord rec) {
-        if (model == null || rec == null)
-            return;
+        if (model == null || rec == null) return;
         rec.setName(model.getName());
         rec.setShortName(model.getShortName());
         rec.setSlug(model.getSlug());

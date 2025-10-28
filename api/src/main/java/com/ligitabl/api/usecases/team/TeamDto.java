@@ -20,11 +20,15 @@ public class TeamDto {
     OffsetDateTime updateDate;
 
     public static TeamDto from(Team team) {
-        if (team == null)
-            return null;
-        return TeamDto.builder().id(team.getId()).name(team.getName())
-            .shortName(team.getShortName()).slug(team.getSlug()).tla(team.getTla())
-            .updateDate(team.getUpdateDate()).build();
+        if (team == null) return null;
+        return TeamDto.builder()
+                .id(team.getId())
+                .name(team.getName())
+                .shortName(team.getShortName())
+                .slug(team.getSlug())
+                .tla(team.getTla())
+                .updateDate(team.getUpdateDate())
+                .build();
     }
 
     public static List<TeamDto> listOf(List<Team> teams) {

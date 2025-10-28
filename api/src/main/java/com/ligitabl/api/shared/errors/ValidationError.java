@@ -25,7 +25,6 @@ public record ValidationError(List<ValidationMessage> messages) implements UseCa
     @Override
     public String getMessage() {
         // You can decide how to represent multiple messages
-        return messages.stream().map(m -> m.field() + ": " + m.message())
-            .collect(Collectors.joining(", "));
+        return messages.stream().map(m -> m.field() + ": " + m.message()).collect(Collectors.joining(", "));
     }
 }

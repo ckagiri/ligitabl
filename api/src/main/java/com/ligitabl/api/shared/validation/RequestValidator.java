@@ -25,8 +25,8 @@ public class RequestValidator {
 
         if (!violations.isEmpty()) {
             List<ValidationMessage> messages = violations.stream()
-                .map(v -> new ValidationMessage(v.getPropertyPath().toString(), v.getMessage()))
-                .toList();
+                    .map(v -> new ValidationMessage(v.getPropertyPath().toString(), v.getMessage()))
+                    .toList();
 
             return Either.left(new ValidationError(messages));
         }

@@ -5,5 +5,4 @@ import com.ligitabl.api.usecases.team.TeamPayload;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor
-public class CreateTeamCommand extends TeamPayload {
-}
+public class CreateTeamCommand extends TeamPayload {}

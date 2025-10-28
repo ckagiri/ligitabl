@@ -78,13 +78,12 @@
                 <version>2.44.0</version>
                 <configuration>
                     <java>
+                        <palantirJavaFormat>
+                            <version>2.38.0</version>
+                        </palantirJavaFormat>
                         <importOrder>
                             <order>java,javax,org,com</order>
                         </importOrder>
-                        <eclipse>
-                            <file>${maven.multiModuleProjectDirectory}/config/formatter/eclipse-java-formatter.xml</file>
-                            <version>4.26</version>
-                        </eclipse>
                         <encoding>UTF-8</encoding>
                         <removeUnusedImports/>
                     </java>

@@ -22,8 +22,10 @@ public class GetTeamBySlugController {
         var query = new GetTeamBySlugQuery(slug);
         var result = getTeamBySlugUseCase.execute(query);
 
-        return result.fold(error -> {
-            throw new BusinessFailureException(error);
-        }, dto -> ResponseEntity.ok(dto));
+        return result.fold(
+                error -> {
+                    throw new BusinessFailureException(error);
+                },
+                dto -> ResponseEntity.ok(dto));
     }
 }

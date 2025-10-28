@@ -15,6 +15,7 @@ import lombok.experimental.SuperBuilder;
 public class Team extends AbstractModel<UUID> {
     @NotNull
     private String name;
+
     @NotNull
     private String shortName;
 

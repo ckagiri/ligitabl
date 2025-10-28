@@ -14,6 +14,6 @@ public class StatusController {
     @GetMapping
     public ResponseEntity<Map<String, Object>> status() {
         return ResponseEntity.ok(
-            Map.of("status", "ok", "service", "ligitabl", "timestamp", System.currentTimeMillis()));
+                Map.of("status", "ok", "service", "ligitabl", "timestamp", System.currentTimeMillis()));
     }
 }

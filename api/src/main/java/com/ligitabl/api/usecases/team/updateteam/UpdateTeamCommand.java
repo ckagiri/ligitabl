@@ -21,7 +21,12 @@ public class UpdateTeamCommand extends TeamPayload {
     }
 
     public static UpdateTeamCommand of(String id, TeamPayload data) {
-        return UpdateTeamCommand.builder().id(id).name(data.getName())
-            .shortName(data.getShortName()).slug(data.getSlug()).tla(data.getTla()).build();
+        return UpdateTeamCommand.builder()
+                .id(id)
+                .name(data.getName())
+                .shortName(data.getShortName())
+                .slug(data.getSlug())
+                .tla(data.getTla())
+                .build();
     }
 }

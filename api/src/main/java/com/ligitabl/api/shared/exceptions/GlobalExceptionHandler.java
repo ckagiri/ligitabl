@@ -9,8 +9,7 @@ import org.springframework.web.context.request.WebRequest;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(BusinessFailureException.class)
-    public ResponseEntity<UseCaseErrorResponse> handleBusinessFailure(BusinessFailureException ex,
-        WebRequest request) {
+    public ResponseEntity<UseCaseErrorResponse> handleBusinessFailure(BusinessFailureException ex, WebRequest request) {
         return UseCaseErrorResponseFactory.from(ex.getError(), request.getDescription(false));
     }
 }

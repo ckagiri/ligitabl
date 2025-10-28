@@ -12,5 +12,4 @@ public class BusinessFailureException extends RuntimeException {
         super(error.getMessage());
         this.error = error;
     }
-
 }

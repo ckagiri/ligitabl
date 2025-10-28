@@ -23,8 +23,11 @@ public class CreateTeamController {
     public ResponseEntity<TeamDto> createTeam(@RequestBody CreateTeamCommand command) {
         var result = createTeamUseCase.execute(command);
 
-        return result.fold(error -> {
-            throw new BusinessFailureException(error);
-        }, dto -> ResponseEntity.created(URI.create("/api/teams/" + dto.getId())).body(dto));
+        return result.fold(
+                error -> {
+                    throw new BusinessFailureException(error);
+                },
+                dto -> ResponseEntity.created(URI.create("/api/teams/" + dto.getId()))
+                        .body(dto));
     }
 }

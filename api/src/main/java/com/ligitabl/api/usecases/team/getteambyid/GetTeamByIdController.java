@@ -20,8 +20,10 @@ public class GetTeamByIdController {
         var query = new GetTeamByIdQuery(id);
         var result = getTeamByIdUseCase.execute(query);
 
-        return result.fold(error -> {
-            throw new BusinessFailureException(error);
-        }, dto -> ResponseEntity.ok(dto));
+        return result.fold(
+                error -> {
+                    throw new BusinessFailureException(error);
+                },
+                dto -> ResponseEntity.ok(dto));
     }
 }

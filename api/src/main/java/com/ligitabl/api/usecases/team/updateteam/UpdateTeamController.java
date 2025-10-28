@@ -16,14 +16,15 @@ public class UpdateTeamController {
     private final UpdateTeamUseCase updateTeamUseCase;
 
     @PutMapping("/{id}")
-    public ResponseEntity<TeamDto> updateTeam(@PathVariable String id,
-        @RequestBody TeamPayload payload) {
+    public ResponseEntity<TeamDto> updateTeam(@PathVariable String id, @RequestBody TeamPayload payload) {
 
         var command = UpdateTeamCommand.of(id, payload);
         var result = updateTeamUseCase.execute(command);
 
-        return result.fold(error -> {
-            throw new BusinessFailureException(error);
-        }, dto -> ResponseEntity.ok(dto));
+        return result.fold(
+                error -> {
+                    throw new BusinessFailureException(error);
+                },
+                dto -> ResponseEntity.ok(dto));
     }
 }

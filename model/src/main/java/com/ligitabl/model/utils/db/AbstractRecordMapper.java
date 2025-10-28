@@ -10,6 +10,4 @@ import com.ligitabl.model.domain.AbstractModel;
  * type; T is a domain model extending AbstractModel with any ID type.
  */
 public abstract class AbstractRecordMapper<R extends Record, T extends AbstractModel<?>>
-    implements
-        RecordMapper<R, T> {
-}
+        implements RecordMapper<R, T> {}
