@@ -98,6 +98,11 @@ public class TeamPersistenceAdapter implements TeamRepo {
                 .isPresent();
     }
 
+    @Override
+    public boolean existsById(UUID id) {
+        return dsl.fetchExists(dsl.selectOne().from(T_TEAM).where(T_TEAM.PK_ID.eq(id)));
+    }
+
     private static class TeamRecordMapper implements RecordMapper<TeamRecord, Team> {
         @Override
         public Team map(TeamRecord record) {

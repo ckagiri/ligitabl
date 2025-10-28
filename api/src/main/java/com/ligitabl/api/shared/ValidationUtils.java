@@ -1,6 +1,7 @@
 package com.ligitabl.api.shared;
 
 import java.util.Optional;
+import java.util.UUID;
 
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
@@ -11,6 +12,10 @@ public class ValidationUtils {
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
     public static <T> Either<UseCaseError, T> requireFound(Optional<T> optional, UseCaseError error) {
         return optional.<Either<UseCaseError, T>>map(Either::right).orElseGet(() -> Either.left(error));
+    }
+
+    public static Either<UseCaseError, UUID> requireExists(boolean exists, UUID id, String entityName) {
+        return exists ? Either.right(id) : Either.left(UseCaseErrors.notFound(entityName, id));
     }
 
     public static <T> Either<UseCaseError, T> require(boolean condition, UseCaseError error, T value) {
