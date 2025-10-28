@@ -12,7 +12,7 @@ public class UseCaseErrorResponseFactory {
             case ValidationError ve -> build("Validation Failed", ve.getMessage(), HttpStatus.BAD_REQUEST, path);
             case UnexpectedError ue -> build(
                     "Unexpected Error", ue.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, path);
-            case ConflictError ce -> build("", ce.getMessage(), HttpStatus.CONFLICT, path);
+            case ConflictError ce -> build("Business Rule Violation", ce.getMessage(), HttpStatus.CONFLICT, path);
         };
     }
 

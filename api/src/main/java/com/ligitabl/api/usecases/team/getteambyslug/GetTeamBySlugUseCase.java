@@ -5,8 +5,8 @@ import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.UseCase;
-import com.ligitabl.api.shared.errors.NotFoundError;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecases.team.TeamDto;
 import com.ligitabl.model.repo.TeamRepo;
@@ -25,7 +25,7 @@ public class GetTeamBySlugUseCase implements UseCase<GetTeamBySlugQuery, Either<
         return requestValidator
                 .validate(query)
                 .map(GetTeamBySlugQuery::slug)
-                .flatMap(slug -> requireFound(teamRepo.findBySlug(slug), new NotFoundError("Team", "slug", slug)))
+                .flatMap(slug -> requireFound(teamRepo.findBySlug(slug), UseCaseErrors.notFound("Team", "slug", slug)))
                 .map(TeamDto::from);
     }
 }

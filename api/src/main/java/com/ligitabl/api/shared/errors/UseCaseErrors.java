@@ -26,6 +26,6 @@ public final class UseCaseErrors {
     }
 
     public static NotFoundError notFound(String entity, String field, Object identifier) {
-        return new NotFoundError(field, field, identifier);
+        return new NotFoundError(entity, field, identifier);
     }
 }

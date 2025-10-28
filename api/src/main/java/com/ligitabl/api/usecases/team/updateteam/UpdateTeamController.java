@@ -17,7 +17,6 @@ public class UpdateTeamController {
 
     @PutMapping("/{id}")
     public ResponseEntity<TeamDto> updateTeam(@PathVariable String id, @RequestBody TeamPayload payload) {
-
         var command = UpdateTeamCommand.of(id, payload);
         var result = updateTeamUseCase.execute(command);
 

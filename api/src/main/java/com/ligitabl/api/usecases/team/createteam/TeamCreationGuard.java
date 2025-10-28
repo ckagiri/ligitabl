@@ -23,10 +23,10 @@ public class TeamCreationGuard implements Guard<Team> {
         return requireIdIsNull(candidate).flatMap(this::ensureSlugIsUnique);
     }
 
-    private Either<UseCaseError, Team> ensureSlugIsUnique(Team team) {
-        return requireNot(
-                teamRepo.isSlugInUseByAnotherTeam(team.getSlug(), team.getId()),
-                UseCaseErrors.validation("slug", "Slug already exists"),
-                team);
+    private Either<UseCaseError, Team> ensureSlugIsUnique(Team candidate) {
+        return requireUnique(
+                teamRepo.existsBySlug(candidate.getSlug()),
+                candidate,
+                UseCaseErrors.conflict("Team with slug " + candidate.getSlug() + " already exists"));
     }
 }

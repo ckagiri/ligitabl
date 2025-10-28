@@ -1,5 +1,7 @@
 package com.ligitabl.api.usecases.team;
 
+import com.ligitabl.model.validator.ValidSlug;
+
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.EqualsAndHashCode;
@@ -20,6 +22,7 @@ public class TeamPayload {
     private String shortName;
 
     @NotNull(message = "Team slug is required")
+    @ValidSlug(message = "Only lowercase letters, digits, and hyphens. No spaces, no uppercase")
     private String slug;
 
     @NotNull(message = "TLA is required")

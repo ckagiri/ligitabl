@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.model.repo.TeamRepo;
 import com.ligitabl.model.shared.Either;
@@ -24,7 +25,7 @@ public class DeleteTeamUseCase implements UseCase<DeleteTeamCommand, Either<UseC
         return requestValidator
                 .validate(command)
                 .map(DeleteTeamCommand::getUuid)
-                .flatMap(id -> requireExists(teamRepo.existsById(id), id, "Team"))
+                .flatMap(id -> requireExists(teamRepo.existsById(id), id, UseCaseErrors.notFound("Team", id)))
                 .map(id -> {
                     teamRepo.delete(id);
                     return Unit.INSTANCE;

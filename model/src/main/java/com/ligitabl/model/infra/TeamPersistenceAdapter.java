@@ -1,7 +1,6 @@
 package com.ligitabl.model.infra;
 
 import static com.ligitabl.model.db.tables.TTeam.T_TEAM;
-import static org.jooq.impl.DSL.one;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -10,6 +9,7 @@ import java.util.UUID;
 
 import org.jooq.DSLContext;
 import org.jooq.RecordMapper;
+import org.jooq.impl.DSL;
 
 import com.ligitabl.model.db.tables.records.TeamRecord;
 import com.ligitabl.model.domain.Team;
@@ -84,18 +84,16 @@ public class TeamPersistenceAdapter implements TeamRepo {
 
     @Override
     public boolean isSlugInUseByAnotherTeam(String slug, UUID teamId) {
-        return dsl.fetchExists(
-                dsl.selectOne().from(T_TEAM).where(T_TEAM.C_SLUG.eq(slug)).and(T_TEAM.PK_ID.eq(teamId)));
+        return dsl.fetchExists(dsl.selectOne()
+                .from(T_TEAM)
+                .where(DSL.lower(T_TEAM.C_SLUG).eq(slug.toLowerCase()))
+                .and(T_TEAM.PK_ID.ne(teamId)));
     }
 
     @Override
     public boolean existsBySlug(String slug) {
-        return dsl.select(one())
-                .from(T_TEAM)
-                .where(T_TEAM.C_SLUG.eq(slug))
-                .limit(1)
-                .fetchOptional()
-                .isPresent();
+        return dsl.fetchExists(
+                dsl.selectOne().from(T_TEAM).where(DSL.lower(T_TEAM.C_SLUG).eq(slug.toLowerCase())));
     }
 
     @Override

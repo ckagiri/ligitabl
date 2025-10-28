@@ -1,6 +1,6 @@
 package com.ligitabl.api.usecases.team.updateteam;
 
-import static com.ligitabl.api.shared.ValidationUtils.requireIdIsNotNull;
+import static com.ligitabl.api.shared.ValidationUtils.*;
 
 import org.springframework.stereotype.Service;
 
@@ -26,17 +26,16 @@ public class TeamUpdateGuard implements Guard<Team> {
     }
 
     private Either<UseCaseError, Team> ensureSlugIsUniqueForUpdate(Team team) {
-        if (teamRepo.isSlugInUseByAnotherTeam(team.getSlug(), team.getId())) {
-            return Either.left(UseCaseErrors.conflict("Slug '" + team.getSlug() + "' is already used by another team"));
-        }
-        return Either.right(team);
+        return requireUnique(
+                teamRepo.isSlugInUseByAnotherTeam(team.getSlug(), team.getId()),
+                team,
+                UseCaseErrors.conflict(String.format("Team already exists for slug: %s.", team.getSlug())));
     }
 
     private Either<UseCaseError, Team> requireTeamExists(Team candidate) {
         // Only ensure existence, but keep passing through the caller's candidate
         // so that updated field values are not lost.
-        return teamRepo.findById(candidate.getId())
-                .<Either<UseCaseError, Team>>map(_found -> Either.right(candidate))
-                .orElse(Either.left(UseCaseErrors.notFound("Team", candidate.getId())));
+        return requireExists(
+                teamRepo.existsById(candidate.getId()), candidate, UseCaseErrors.notFound("Team", candidate.getId()));
     }
 }

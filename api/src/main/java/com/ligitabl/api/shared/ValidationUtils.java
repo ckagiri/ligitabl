@@ -14,8 +14,19 @@ public class ValidationUtils {
         return optional.<Either<UseCaseError, T>>map(Either::right).orElseGet(() -> Either.left(error));
     }
 
-    public static Either<UseCaseError, UUID> requireExists(boolean exists, UUID id, String entityName) {
-        return exists ? Either.right(id) : Either.left(UseCaseErrors.notFound(entityName, id));
+    public static <T> Either<UseCaseError, T> requireUnique(boolean alreadyExists, T value, UseCaseError error) {
+        if (alreadyExists) {
+            return Either.left(error);
+        }
+        return Either.right(value);
+    }
+
+    public static Either<UseCaseError, UUID> requireExists(boolean exists, UUID value, UseCaseError error) {
+        return exists ? Either.right(value) : Either.left(error);
+    }
+
+    public static <T> Either<UseCaseError, T> requireExists(boolean exists, T value, UseCaseError error) {
+        return exists ? Either.right(value) : Either.left(error);
     }
 
     public static <T> Either<UseCaseError, T> require(boolean condition, UseCaseError error, T value) {

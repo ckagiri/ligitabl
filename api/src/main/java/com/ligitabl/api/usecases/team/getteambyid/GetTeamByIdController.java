@@ -12,7 +12,6 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/teams")
 @RequiredArgsConstructor
 public class GetTeamByIdController {
-
     private final GetTeamByIdUseCase getTeamByIdUseCase;
 
     @GetMapping(params = "id")

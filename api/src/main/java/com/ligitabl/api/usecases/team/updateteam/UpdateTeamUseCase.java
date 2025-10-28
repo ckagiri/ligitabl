@@ -6,7 +6,6 @@ import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecases.team.TeamDto;
-import com.ligitabl.api.usecases.team.TeamGuard;
 import com.ligitabl.api.usecases.team.TeamMapper;
 import com.ligitabl.model.repo.TeamRepo;
 import com.ligitabl.model.shared.Either;
@@ -17,8 +16,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class UpdateTeamUseCase implements UseCase<UpdateTeamCommand, Either<UseCaseError, TeamDto>> {
     private final RequestValidator requestValidator;
-    private final TeamGuard teamGuard;
     private final TeamMapper mapper;
+    private final TeamUpdateGuard teamUpdateGuard;
     private final TeamRepo teamRepo;
 
     @Override
@@ -26,7 +25,7 @@ public class UpdateTeamUseCase implements UseCase<UpdateTeamCommand, Either<UseC
         return requestValidator
                 .validate(command)
                 .map(mapper::toEntity)
-                .flatMap(teamGuard::forUpdate)
+                .flatMap(teamUpdateGuard::validate)
                 .map(teamRepo::update)
                 .map(TeamDto::from);
     }
