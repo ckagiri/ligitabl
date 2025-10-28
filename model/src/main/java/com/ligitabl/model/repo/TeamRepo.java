@@ -12,4 +12,6 @@ public interface TeamRepo extends BaseCrudRepo<Team, UUID> {
     Optional<Team> findBySlug(String slug);
 
     boolean existsBySlug(String slug);
+
+    boolean isSlugInUseByAnotherTeam(String slug, UUID teamId);
 }

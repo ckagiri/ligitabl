@@ -83,6 +83,12 @@ public class TeamPersistenceAdapter implements TeamRepo {
     }
 
     @Override
+    public boolean isSlugInUseByAnotherTeam(String slug, UUID teamId) {
+        return dsl.fetchExists(
+                dsl.selectOne().from(T_TEAM).where(T_TEAM.C_SLUG.eq(slug)).and(T_TEAM.PK_ID.eq(teamId)));
+    }
+
+    @Override
     public boolean existsBySlug(String slug) {
         return dsl.select(one())
                 .from(T_TEAM)

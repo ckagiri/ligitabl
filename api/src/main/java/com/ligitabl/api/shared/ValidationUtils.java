@@ -3,7 +3,9 @@ package com.ligitabl.api.shared;
 import java.util.Optional;
 
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.model.shared.Either;
+import com.ligitabl.model.shared.Identifiable;
 
 public class ValidationUtils {
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
@@ -17,5 +19,17 @@ public class ValidationUtils {
 
     public static <T> Either<UseCaseError, T> requireNot(boolean condition, UseCaseError error, T value) {
         return !condition ? Either.right(value) : Either.left(error);
+    }
+
+    public static <T extends Identifiable<?>> Either<UseCaseError, T> requireIdIsNull(T entity) {
+        return entity.getId() == null
+                ? Either.right(entity)
+                : Either.left(UseCaseErrors.validation("id", "ID must be null when creating"));
+    }
+
+    public static <T extends Identifiable<?>> Either<UseCaseError, T> requireIdIsNotNull(T entity) {
+        return entity.getId() != null
+                ? Either.right(entity)
+                : Either.left(UseCaseErrors.validation("id", "ID must not be null when updating"));
     }
 }
