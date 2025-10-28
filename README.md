@@ -13,9 +13,9 @@ Repository layout for backend and frontends:
 - Docker (optional, for containers)
 - Docker Compose (optional, for app + Postgres)
 
-## Formatting (4 spaces, 100-col width, consistent across IDEs)
+## Formatting (Palantir Java Format, 100-col width)
 
-This repo standardizes Java formatting to 4 spaces using a shared Eclipse profile and Spotless.
+This repo standardizes Java formatting with Spotless + Palantir Java Format (100 columns).
 
 - Format code (api, model):
 
@@ -31,10 +31,11 @@ make format-check
 
 Details:
 
-- Shared formatter profile: `config/formatter/eclipse-java-formatter.xml` (line width 100, 4-space indents, 4-space continuation indents)
-- `.editorconfig` enforces 4 spaces and max line length 100 for Java and aligns IntelliJ continuation indent to 4
-- VS Code: `.vscode/settings.json` points the Java formatter to the shared profile and sets tab size to 4
-- IntelliJ: honors `.editorconfig` by default; you can also import the Eclipse profile manually if desired
+- Palantir Java Format (via Spotless) enforces 100 columns and deterministic wrapping
+- Unused imports are removed automatically; imports are ordered: `java, javax, org, com`
+- `.editorconfig` enforces 4 spaces and max line length 100 for general editor behavior
+- VS Code: on-save Java formatting is disabled to avoid conflicts; use `make format`
+- IntelliJ: install the "Palantir Java Format" plugin (or rely on `make format`) for on-save consistency
 
 Note:
 
@@ -42,13 +43,11 @@ Note:
 
 ### Fluent method chains
 
-Team-friendly defaults enforced by the formatter:
+Palantir favors a consistent, readable break strategy:
 
-- One call per line when wrapped
-- Dot at the start of the wrapped line
-- 100-column width; short chains may stay on one line
-- 4-space continuation indent for wrapped lines
-- Deterministic reflow; avoid hand-alignment
+- One call per line when wrapping is required
+- 100-column width; short chains may remain on one line
+- Deterministic reflow; avoid hand-alignment (let the formatter decide)
 
 Tips:
 
