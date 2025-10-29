@@ -14,7 +14,8 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class CreateTeamUseCase implements UseCase<CreateTeamCommand, Either<UseCaseError, TeamDto>> {
+public class CreateTeamUseCase
+        implements ICreateTeamUseCase, UseCase<CreateTeamCommand, Either<UseCaseError, TeamDto>> {
     private final RequestValidator requestValidator;
     private final TeamCreationGuard teamCreationGuard;
     private final TeamMapper mapper;

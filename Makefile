@@ -18,7 +18,7 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap format format-check format-all
+.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap format format-check format-all test-unit test-api-no-jooq test-all
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -29,8 +29,20 @@ build: ## Build the project (skip tests) - builds api and required modules (mode
 api-build: ## Build the API module (skip tests) - includes dependencies (model, jooq-codegen)
 	mvn -q -DskipTests -pl $(API_DIR) -am package
 
-test: ## Run tests
+test: ## Run API tests (default profile)
 	mvn -f $(API_DIR)/pom.xml test
+
+test-unit: ## Run pure unit tests (no Spring) in API module (no-jooq profile to avoid DB/codegen)
+	mvn -q -P unit-tests,no-jooq -pl $(API_DIR) -am -Dsurefire.failIfNoSpecifiedTests=false -Dtest='**/*GuardTest' test
+
+test-webmvc: ## Run MVC slice tests (@WebMvcTest) in API module (no-jooq profile to avoid DB/codegen)
+	mvn -q -P unit-tests,webmvc-tests,no-jooq -pl $(API_DIR) -am -Dsurefire.failIfNoSpecifiedTests=false -Dtest='**/*WebMvcTest' test
+
+test-api-no-jooq: ## Run API tests with no DB/codegen (skips jOOQ infra)
+	mvn -P no-jooq -pl $(API_DIR) -am test
+
+test-all: ## Run full test suite across modules
+	mvn test
 
 clean: ## Clean build artifacts
 	mvn -f $(API_DIR)/pom.xml clean

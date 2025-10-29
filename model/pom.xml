@@ -155,5 +155,26 @@
                 </plugins>
             </build>
         </profile>
+        <profile>
+            <id>no-jooq</id>
+            <properties>
+                <!-- Skip jOOQ code generation entirely -->
+                <jooq.codegen.skip>true</jooq.codegen.skip>
+            </properties>
+            <build>
+                <plugins>
+                    <!-- Exclude infra classes that depend on generated jOOQ types -->
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-compiler-plugin</artifactId>
+                        <configuration>
+                            <excludes>
+                                <exclude>**/infra/**</exclude>
+                            </excludes>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 </project>

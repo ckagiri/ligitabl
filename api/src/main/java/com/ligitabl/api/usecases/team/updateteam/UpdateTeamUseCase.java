@@ -14,7 +14,8 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class UpdateTeamUseCase implements UseCase<UpdateTeamCommand, Either<UseCaseError, TeamDto>> {
+public class UpdateTeamUseCase
+        implements IUpdateTeamUseCase, UseCase<UpdateTeamCommand, Either<UseCaseError, TeamDto>> {
     private final RequestValidator requestValidator;
     private final TeamMapper mapper;
     private final TeamUpdateGuard teamUpdateGuard;

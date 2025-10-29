@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/teams")
 @RequiredArgsConstructor
 public class CreateTeamController {
-    private final CreateTeamUseCase createTeamUseCase;
+    private final ICreateTeamUseCase createTeamUseCase;
 
     @PostMapping
     public ResponseEntity<TeamDto> createTeam(@RequestBody CreateTeamCommand command) {

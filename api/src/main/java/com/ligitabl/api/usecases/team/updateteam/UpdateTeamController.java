@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/teams")
 @RequiredArgsConstructor
 public class UpdateTeamController {
-    private final UpdateTeamUseCase updateTeamUseCase;
+    private final IUpdateTeamUseCase updateTeamUseCase;
 
     @PutMapping("/{id}")
     public ResponseEntity<TeamDto> updateTeam(@PathVariable String id, @RequestBody TeamPayload payload) {
