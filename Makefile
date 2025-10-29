@@ -18,7 +18,7 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap format format-check format-all test-unit test-api-no-jooq test-all
+.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap seed-app format format-check format-all test-unit test-api-no-jooq test-all
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -152,7 +152,7 @@ model-compile: ## Regenerate jOOQ and compile the model (ensures generated gette
 migrate: ## Run Liquibase migrations in model/ (uses DB_* from .env)
 	mvn -q -Pliquibase -DskipTests -f model/pom.xml liquibase:update
 
-seed: ## Seed teams using Dockerized Postgres (reads .env for DB creds)
+seed: ## Seed teams using Dockerized Postgres via SQL script (legacy)
 	@if ! docker ps --format '{{.Names}}' | grep -q '^ligitabl-db$$'; then \
 		echo "Postgres container 'ligitabl-db' not running. Start it with '$(DOCKER_COMPOSE) up -d db'"; \
 		exit 1; \
@@ -209,7 +209,18 @@ db-bootstrap: ## Compose up DB, reset DB, migrate, codegen, then seed
 	$(MAKE) reset-db
 	$(MAKE) migrate
 	$(MAKE) codegen
-	$(MAKE) seed
+    $(MAKE) seed-app
+
+SEED_TEAMS_FILE ?= classpath:seed/teams.yml
+
+seed-app: $(JAR) ## Seed teams using the Spring Boot app from YAML (uses app.seed.teams-file)
+	@if ! docker ps --format '{{.Names}}' | grep -q '^ligitabl-db$$'; then \
+		echo "Postgres container 'ligitabl-db' not running. Start it with '$(DOCKER_COMPOSE) up -d db'"; \
+		exit 1; \
+	fi
+	# Run the JAR in CLI mode to perform seeding and exit
+	JAVA_OPTS_EXT="--spring.main.web-application-type=none --app.seed.exit-on-completion=true --app.seed.teams-file=$(SEED_TEAMS_FILE)"; \
+	java -jar $(JAR) $$JAVA_OPTS_EXT
 
 format: ## Format all Java sources (api, model) using Spotless (4-space indentation)
 	mvn -q -pl api,model com.diffplug.spotless:spotless-maven-plugin:2.44.0:apply
