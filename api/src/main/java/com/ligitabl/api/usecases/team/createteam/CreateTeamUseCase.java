@@ -1,21 +1,20 @@
 package com.ligitabl.api.usecases.team.createteam;
 
+import com.ligitabl.api.shared.errors.UseCaseErrors;
 import org.springframework.stereotype.Service;
 
-import com.ligitabl.api.shared.UseCase;
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecases.team.TeamDto;
 import com.ligitabl.api.usecases.team.TeamMapper;
 import com.ligitabl.model.repo.TeamRepo;
-import com.ligitabl.model.shared.Either;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class CreateTeamUseCase
-    implements ICreateTeamUseCase, UseCase<CreateTeamCommand, Either<UseCaseError, TeamDto>> {
+public class CreateTeamUseCase implements CreateTeamPort {
     private final RequestValidator requestValidator;
     private final TeamCreationGuard teamCreationGuard;
     private final TeamMapper mapper;
@@ -25,7 +24,7 @@ public class CreateTeamUseCase
     public Either<UseCaseError, TeamDto> execute(CreateTeamCommand command) {
         return requestValidator
                 .validate(command)
-                .map(mapper::toEntity)
+                .flatMap(Either.liftTry(mapper::toEntity, UseCaseErrors::fromException))
                 .flatMap(teamCreationGuard::validate)
                 .map(teamRepo::create)
                 .map(TeamDto::from);

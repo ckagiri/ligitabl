@@ -1,5 +1,6 @@
 package com.ligitabl.api.usecases.team;
 
+import com.ligitabl.model.domain.TeamSlug;
 import com.ligitabl.model.validator.ValidSlug;
 
 import jakarta.validation.constraints.NotNull;
@@ -28,4 +29,8 @@ public class TeamPayload {
     @NotNull(message = "TLA is required")
     @Size(min = 3, max = 3, message = "TLA must be exactly 3 characters")
     private String tla;
+
+    public TeamSlug getTeamSlug() {
+        return TeamSlug.of(slug);
+    }
 }

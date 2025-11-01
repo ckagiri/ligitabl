@@ -17,6 +17,10 @@ public final class UseCaseErrors {
         return new ConflictError(message);
     }
 
+    public static UnprocessableEntityError unprocessableEntity(String message) {
+        return new UnprocessableEntityError(message);
+    }
+
     public static NotFoundError notFound(String message) {
         return new NotFoundError(message);
     }
@@ -27,5 +31,18 @@ public final class UseCaseErrors {
 
     public static NotFoundError notFound(String entity, String field, Object identifier) {
         return new NotFoundError(entity, field, identifier);
+    }
+
+    public static UnexpectedError unexpected(Throwable exception) {
+        return new UnexpectedError(exception);
+    }
+
+    public static UseCaseError fromException(Throwable throwable) {
+        if (throwable instanceof IllegalArgumentException) {
+            return UseCaseErrors.unprocessableEntity(throwable.getMessage());
+        } else if (throwable instanceof IllegalStateException) {
+            return UseCaseErrors.conflict(throwable.getMessage());
+        }
+        return UseCaseErrors.unexpected(throwable);
     }
 }

@@ -8,7 +8,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ligitabl.api.shared.exceptions.BusinessFailureException;
+import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.api.usecases.team.TeamDto;
 
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/teams")
 @RequiredArgsConstructor
 public class CreateTeamController {
-    private final ICreateTeamUseCase createTeamUseCase;
+    private final CreateTeamPort createTeamUseCase;
 
     @PostMapping
     public ResponseEntity<TeamDto> createTeam(@RequestBody CreateTeamCommand command) {
@@ -25,7 +25,7 @@ public class CreateTeamController {
 
         return result.fold(
                 error -> {
-                    throw new BusinessFailureException(error);
+                    throw new UseCaseException(error);
                 },
                 dto -> ResponseEntity.created(URI.create("/api/teams/" + dto.getId()))
                         .body(dto));

@@ -3,6 +3,7 @@ package com.ligitabl.model.domain;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
+import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
@@ -20,8 +21,8 @@ public class Team extends AbstractModel<UUID> {
     private String shortName;
 
     // URL-friendly identifier (e.g., "manchester-united"), unique
-    @NotNull
-    private String slug;
+    @NotBlank
+    private TeamSlug slug;
 
     // Three-letter acronym (required, e.g., "MUN"); exactly 3 characters
     @NotNull

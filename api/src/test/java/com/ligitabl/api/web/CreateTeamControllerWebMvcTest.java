@@ -19,11 +19,11 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecases.team.TeamDto;
 import com.ligitabl.api.usecases.team.createteam.CreateTeamController;
-import com.ligitabl.api.usecases.team.createteam.ICreateTeamUseCase;
-import com.ligitabl.model.shared.Either;
+import com.ligitabl.api.usecases.team.createteam.CreateTeamPort;
 
 @WebMvcTest(controllers = CreateTeamController.class)
 class CreateTeamControllerWebMvcTest {
@@ -37,7 +37,7 @@ class CreateTeamControllerWebMvcTest {
     // TODO: Switch to Spring Framework @MockitoBean when we finalize the migration; keeping @MockBean for stability.
     @SuppressWarnings("removal")
     @MockBean
-    private ICreateTeamUseCase createTeamUseCase;
+    private CreateTeamPort createTeamUseCase;
 
     @Test
     @DisplayName("POST /api/teams -> 201 Created with Location and body")

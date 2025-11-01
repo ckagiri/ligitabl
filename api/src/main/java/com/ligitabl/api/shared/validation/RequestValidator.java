@@ -5,10 +5,10 @@ import java.util.Set;
 
 import org.springframework.stereotype.Component;
 
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.ValidationError;
 import com.ligitabl.api.shared.errors.ValidationMessage;
-import com.ligitabl.model.shared.Either;
 
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validator;

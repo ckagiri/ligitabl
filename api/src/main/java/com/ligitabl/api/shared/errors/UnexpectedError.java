@@ -1,8 +1,13 @@
 package com.ligitabl.api.shared.errors;
 
-public record UnexpectedError(Exception cause) implements UseCaseError {
+import java.util.Optional;
+
+public record UnexpectedError(Throwable cause) implements UseCaseError {
     @Override
     public String getMessage() {
-        return "An unexpected error occurred";
+        return Optional.ofNullable(cause)
+                .map(Throwable::getMessage)
+                .filter(msg -> !msg.isBlank())
+                .orElse("An unexpected error occurred");
     }
 }

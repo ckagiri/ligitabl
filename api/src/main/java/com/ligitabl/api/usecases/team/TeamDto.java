@@ -25,7 +25,7 @@ public class TeamDto {
                 .id(team.getId())
                 .name(team.getName())
                 .shortName(team.getShortName())
-                .slug(team.getSlug())
+                .slug(team.getSlug().value())
                 .tla(team.getTla())
                 .updateDate(team.getUpdateDate())
                 .build();

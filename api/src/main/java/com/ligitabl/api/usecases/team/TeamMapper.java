@@ -20,7 +20,7 @@ public class TeamMapper {
         return Team.builder()
                 .name(cmd.getName())
                 .shortName(cmd.getShortName())
-                .slug(cmd.getSlug())
+                .slug(cmd.getTeamSlug())
                 .tla(cmd.getTla());
     }
 }

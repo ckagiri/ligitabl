@@ -8,8 +8,8 @@ import org.springframework.web.context.request.WebRequest;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(BusinessFailureException.class)
-    public ResponseEntity<UseCaseErrorResponse> handleBusinessFailure(BusinessFailureException ex, WebRequest request) {
+    @ExceptionHandler(UseCaseException.class)
+    public ResponseEntity<UseCaseErrorResponse> handleBusinessFailure(UseCaseException ex, WebRequest request) {
         return UseCaseErrorResponseFactory.from(ex.getError(), request.getDescription(false));
     }
 }

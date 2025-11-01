@@ -5,7 +5,6 @@ import java.util.UUID;
 
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
-import com.ligitabl.model.shared.Either;
 import com.ligitabl.model.shared.Identifiable;
 
 public class ValidationUtils {

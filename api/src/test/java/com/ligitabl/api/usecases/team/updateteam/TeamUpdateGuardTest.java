@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import com.ligitabl.model.domain.Team;
+import com.ligitabl.model.domain.TeamSlug;
 import com.ligitabl.model.repo.TeamRepo;
 
 class TeamUpdateGuardTest {
@@ -32,18 +33,18 @@ class TeamUpdateGuardTest {
                 .id(id)
                 .name("Arsenal FC")
                 .shortName("Arsenal")
-                .slug("arsenal")
+                .slug(TeamSlug.of("arsenal"))
                 .tla("ARS")
                 .build();
 
         when(teamRepo.existsById(id)).thenReturn(true);
-        when(teamRepo.isSlugInUseByAnotherTeam("arsenal", id)).thenReturn(false);
+        when(teamRepo.isSlugInUseByAnotherTeam(TeamSlug.of("arsenal"), id)).thenReturn(false);
 
         var result = guard.validate(candidate);
         assertThat(result.isRight()).isTrue();
         assertThat(result.getRight()).isSameAs(candidate);
         verify(teamRepo).existsById(id);
-        verify(teamRepo).isSlugInUseByAnotherTeam("arsenal", id);
+        verify(teamRepo).isSlugInUseByAnotherTeam(TeamSlug.of("arsenal"), id);
     }
 
     @Test
@@ -52,7 +53,7 @@ class TeamUpdateGuardTest {
                 .id(null)
                 .name("Arsenal FC")
                 .shortName("Arsenal")
-                .slug("arsenal")
+                .slug(TeamSlug.of("arsenal"))
                 .tla("ARS")
                 .build();
 
@@ -68,7 +69,7 @@ class TeamUpdateGuardTest {
                 .id(id)
                 .name("Arsenal FC")
                 .shortName("Arsenal")
-                .slug("arsenal")
+                .slug(TeamSlug.of("arsenal"))
                 .tla("ARS")
                 .build();
 
@@ -77,7 +78,7 @@ class TeamUpdateGuardTest {
         var result = guard.validate(candidate);
         assertThat(result.isLeft()).isTrue();
         verify(teamRepo).existsById(id);
-        verify(teamRepo, never()).isSlugInUseByAnotherTeam(anyString(), any());
+        verify(teamRepo, never()).isSlugInUseByAnotherTeam(any(), any());
     }
 
     @Test
@@ -87,16 +88,16 @@ class TeamUpdateGuardTest {
                 .id(id)
                 .name("Arsenal FC")
                 .shortName("Arsenal")
-                .slug("arsenal")
+                .slug(TeamSlug.of("arsenal"))
                 .tla("ARS")
                 .build();
 
         when(teamRepo.existsById(id)).thenReturn(true);
-        when(teamRepo.isSlugInUseByAnotherTeam("arsenal", id)).thenReturn(true);
+        when(teamRepo.isSlugInUseByAnotherTeam(TeamSlug.of("arsenal"), id)).thenReturn(true);
 
         var result = guard.validate(candidate);
         assertThat(result.isLeft()).isTrue();
         verify(teamRepo).existsById(id);
-        verify(teamRepo).isSlugInUseByAnotherTeam("arsenal", id);
+        verify(teamRepo).isSlugInUseByAnotherTeam(TeamSlug.of("arsenal"), id);
     }
 }

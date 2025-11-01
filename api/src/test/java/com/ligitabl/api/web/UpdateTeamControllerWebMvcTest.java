@@ -18,12 +18,12 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecases.team.TeamDto;
 import com.ligitabl.api.usecases.team.TeamPayload;
-import com.ligitabl.api.usecases.team.updateteam.IUpdateTeamUseCase;
 import com.ligitabl.api.usecases.team.updateteam.UpdateTeamController;
-import com.ligitabl.model.shared.Either;
+import com.ligitabl.api.usecases.team.updateteam.UpdateTeamPort;
 
 @WebMvcTest(controllers = UpdateTeamController.class)
 class UpdateTeamControllerWebMvcTest {
@@ -34,10 +34,10 @@ class UpdateTeamControllerWebMvcTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-        // TODO: Switch to Spring Framework @MockitoBean when we finalize the migration; keeping @MockBean for stability.
-        @SuppressWarnings("removal")
-        @MockBean
-    private IUpdateTeamUseCase updateTeamUseCase;
+    // TODO: Switch to Spring Framework @MockitoBean when we finalize the migration; keeping @MockBean for stability.
+    @SuppressWarnings("removal")
+    @MockBean
+    private UpdateTeamPort updateTeamUseCase;
 
     @Test
     @DisplayName("PUT /api/teams/{id} -> 200 OK with body")

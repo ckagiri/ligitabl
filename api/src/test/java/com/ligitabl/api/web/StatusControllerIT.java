@@ -12,10 +12,10 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.context.annotation.Import;
 import org.springframework.http.ResponseEntity;
 
-import com.ligitabl.api.testsupport.NoJooqTestConfig;
+import com.ligitabl.api.testsupport.PostgresContainerConfig;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
-@Import(NoJooqTestConfig.class)
+@Import(PostgresContainerConfig.class)
 class StatusControllerIT {
 
     @LocalServerPort

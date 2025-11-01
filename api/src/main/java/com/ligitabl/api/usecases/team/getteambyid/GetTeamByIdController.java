@@ -3,7 +3,7 @@ package com.ligitabl.api.usecases.team.getteambyid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.ligitabl.api.shared.exceptions.BusinessFailureException;
+import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.api.usecases.team.TeamDto;
 
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ public class GetTeamByIdController {
 
         return result.fold(
                 error -> {
-                    throw new BusinessFailureException(error);
+                    throw new UseCaseException(error);
                 },
                 dto -> ResponseEntity.ok(dto));
     }

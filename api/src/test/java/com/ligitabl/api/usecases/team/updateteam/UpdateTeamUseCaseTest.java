@@ -10,6 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.ValidationError;
 import com.ligitabl.api.shared.validation.RequestValidator;
@@ -17,7 +18,6 @@ import com.ligitabl.api.usecases.team.TeamDto;
 import com.ligitabl.api.usecases.team.TeamMapper;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.repo.TeamRepo;
-import com.ligitabl.model.shared.Either;
 
 class UpdateTeamUseCaseTest {
 
@@ -55,7 +55,7 @@ class UpdateTeamUseCaseTest {
                 .id(cmd.getUuid())
                 .name(cmd.getName())
                 .shortName(cmd.getShortName())
-                .slug(cmd.getSlug())
+                .slug(cmd.getTeamSlug())
                 .tla(cmd.getTla())
                 .build();
         var persisted = candidate;
@@ -110,7 +110,7 @@ class UpdateTeamUseCaseTest {
                 .id(cmd.getUuid())
                 .name(cmd.getName())
                 .shortName(cmd.getShortName())
-                .slug(cmd.getSlug())
+                .slug(cmd.getTeamSlug())
                 .tla(cmd.getTla())
                 .build();
         UseCaseError error = new ValidationError("guard blocked");

@@ -4,13 +4,13 @@ import static com.ligitabl.api.shared.ValidationUtils.requireExists;
 
 import org.springframework.stereotype.Service;
 
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.Unit;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.model.repo.TeamRepo;
-import com.ligitabl.model.shared.Either;
-import com.ligitabl.model.shared.Unit;
 
 import lombok.RequiredArgsConstructor;
 

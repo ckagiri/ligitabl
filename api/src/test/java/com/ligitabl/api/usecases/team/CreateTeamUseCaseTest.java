@@ -10,15 +10,16 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.ValidationError;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecases.team.createteam.CreateTeamCommand;
+import com.ligitabl.api.usecases.team.createteam.CreateTeamPort;
 import com.ligitabl.api.usecases.team.createteam.CreateTeamUseCase;
 import com.ligitabl.api.usecases.team.createteam.TeamCreationGuard;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.repo.TeamRepo;
-import com.ligitabl.model.shared.Either;
 
 class CreateTeamUseCaseTest {
 
@@ -34,7 +35,7 @@ class CreateTeamUseCaseTest {
     @Mock
     TeamRepo teamRepo;
 
-    CreateTeamUseCase useCase;
+    CreateTeamPort useCase;
 
     @BeforeEach
     void setup() {
@@ -53,14 +54,14 @@ class CreateTeamUseCaseTest {
         var candidate = Team.builder()
                 .name(cmd.getName())
                 .shortName(cmd.getShortName())
-                .slug(cmd.getSlug())
+                .slug(cmd.getTeamSlug())
                 .tla(cmd.getTla())
                 .build();
         var persisted = Team.builder()
                 .id(UUID.randomUUID())
                 .name(cmd.getName())
                 .shortName(cmd.getShortName())
-                .slug(cmd.getSlug())
+                .slug(cmd.getTeamSlug())
                 .tla(cmd.getTla())
                 .build();
 
@@ -72,7 +73,7 @@ class CreateTeamUseCaseTest {
         var result = useCase.execute(cmd);
 
         assertThat(result.isRight()).isTrue();
-        var dto = result.getRight();
+        var dto = result.getValue();
         assertThat(dto.getId()).isEqualTo(persisted.getId());
         assertThat(dto.getSlug()).isEqualTo("arsenal");
 
@@ -97,7 +98,7 @@ class CreateTeamUseCaseTest {
         var result = useCase.execute(cmd);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isSameAs(error);
+        assertThat(result.getError()).isSameAs(error);
         verifyNoInteractions(mapper, creationGuard, teamRepo);
     }
 }

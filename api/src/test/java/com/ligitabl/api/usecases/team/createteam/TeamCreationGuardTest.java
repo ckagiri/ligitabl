@@ -11,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import com.ligitabl.model.domain.Team;
+import com.ligitabl.model.domain.TeamSlug;
 import com.ligitabl.model.repo.TeamRepo;
 
 class TeamCreationGuardTest {
@@ -32,17 +33,17 @@ class TeamCreationGuardTest {
                 .id(null)
                 .name("Arsenal FC")
                 .shortName("Arsenal")
-                .slug("arsenal")
+                .slug(TeamSlug.of("arsenal"))
                 .tla("ARS")
                 .build();
 
-        when(teamRepo.existsBySlug("arsenal")).thenReturn(false);
+        when(teamRepo.existsBySlug(TeamSlug.of("arsenal"))).thenReturn(false);
 
         var result = guard.validate(candidate);
         assertThat(result.isRight()).isTrue();
         assertThat(result.getRight()).isSameAs(candidate);
 
-        verify(teamRepo).existsBySlug("arsenal");
+        verify(teamRepo).existsBySlug(TeamSlug.of("arsenal"));
     }
 
     @Test
@@ -51,7 +52,7 @@ class TeamCreationGuardTest {
                 .id(UUID.randomUUID())
                 .name("Arsenal FC")
                 .shortName("Arsenal")
-                .slug("arsenal")
+                .slug(TeamSlug.of("arsenal"))
                 .tla("ARS")
                 .build();
 
@@ -65,14 +66,14 @@ class TeamCreationGuardTest {
         Team candidate = Team.builder()
                 .name("Arsenal FC")
                 .shortName("Arsenal")
-                .slug("arsenal")
+                .slug(TeamSlug.of("arsenal"))
                 .tla("ARS")
                 .build();
 
-        when(teamRepo.existsBySlug("arsenal")).thenReturn(true);
+        when(teamRepo.existsBySlug(TeamSlug.of("arsenal"))).thenReturn(true);
 
         var result = guard.validate(candidate);
         assertThat(result.isLeft()).isTrue();
-        verify(teamRepo).existsBySlug("arsenal");
+        verify(teamRepo).existsBySlug(TeamSlug.of("arsenal"));
     }
 }

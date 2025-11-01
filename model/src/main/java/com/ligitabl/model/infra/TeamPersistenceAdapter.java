@@ -13,6 +13,7 @@ import org.jooq.impl.DSL;
 
 import com.ligitabl.model.db.tables.records.TeamRecord;
 import com.ligitabl.model.domain.Team;
+import com.ligitabl.model.domain.TeamSlug;
 import com.ligitabl.model.repo.TeamRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -76,24 +77,25 @@ public class TeamPersistenceAdapter implements TeamRepo {
     }
 
     @Override
-    public Optional<Team> findBySlug(String slug) {
-        var record = dsl.selectFrom(T_TEAM).where(T_TEAM.C_SLUG.eq(slug)).fetchOne();
+    public Optional<Team> findBySlug(TeamSlug slug) {
+        var record =
+                dsl.selectFrom(T_TEAM).where(T_TEAM.C_SLUG.eq(slug.value())).fetchOne();
 
         return Optional.ofNullable(MAPPER.map(record));
     }
 
     @Override
-    public boolean isSlugInUseByAnotherTeam(String slug, UUID teamId) {
+    public boolean isSlugInUseByAnotherTeam(TeamSlug slug, UUID teamId) {
         return dsl.fetchExists(dsl.selectOne()
                 .from(T_TEAM)
-                .where(DSL.lower(T_TEAM.C_SLUG).eq(slug.toLowerCase()))
+                .where(DSL.lower(T_TEAM.C_SLUG).eq(slug.value()))
                 .and(T_TEAM.PK_ID.ne(teamId)));
     }
 
     @Override
-    public boolean existsBySlug(String slug) {
+    public boolean existsBySlug(TeamSlug slug) {
         return dsl.fetchExists(
-                dsl.selectOne().from(T_TEAM).where(DSL.lower(T_TEAM.C_SLUG).eq(slug.toLowerCase())));
+                dsl.selectOne().from(T_TEAM).where(DSL.lower(T_TEAM.C_SLUG).eq(slug.value())));
     }
 
     @Override
@@ -112,7 +114,7 @@ public class TeamPersistenceAdapter implements TeamRepo {
                     .id(record.getId())
                     .name(record.getName())
                     .shortName(record.getShortName())
-                    .slug(record.getSlug())
+                    .slug(TeamSlug.of(record.getSlug()))
                     .tla(record.getTla())
                     .createDate(record.getCreateDate())
                     .updateDate(record.getUpdateDate())
@@ -126,7 +128,7 @@ public class TeamPersistenceAdapter implements TeamRepo {
         if (model == null || rec == null) return;
         rec.setName(model.getName());
         rec.setShortName(model.getShortName());
-        rec.setSlug(model.getSlug());
+        rec.setSlug(model.getSlug().value());
         rec.setTla(model.getTla());
     }
 }

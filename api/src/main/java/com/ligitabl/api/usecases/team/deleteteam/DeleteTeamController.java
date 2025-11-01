@@ -6,7 +6,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ligitabl.api.shared.exceptions.BusinessFailureException;
+import com.ligitabl.api.shared.exceptions.UseCaseException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,7 +23,7 @@ public class DeleteTeamController {
 
         return result.fold(
                 error -> {
-                    throw new BusinessFailureException(error);
+                    throw new UseCaseException(error);
                 },
                 _unit -> ResponseEntity.noContent().build());
     }

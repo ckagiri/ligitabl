@@ -3,7 +3,7 @@ package com.ligitabl.api.usecases.team.updateteam;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.ligitabl.api.shared.exceptions.BusinessFailureException;
+import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.api.usecases.team.TeamDto;
 import com.ligitabl.api.usecases.team.TeamPayload;
 
@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 @RequestMapping("/api/teams")
 @RequiredArgsConstructor
 public class UpdateTeamController {
-    private final IUpdateTeamUseCase updateTeamUseCase;
+    private final UpdateTeamPort updateTeamUseCase;
 
     @PutMapping("/{id}")
     public ResponseEntity<TeamDto> updateTeam(@PathVariable String id, @RequestBody TeamPayload payload) {
@@ -22,7 +22,7 @@ public class UpdateTeamController {
 
         return result.fold(
                 error -> {
-                    throw new BusinessFailureException(error);
+                    throw new UseCaseException(error);
                 },
                 dto -> ResponseEntity.ok(dto));
     }
