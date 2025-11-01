@@ -66,6 +66,28 @@
 				"$maven"
 			],
 			"group": "build"
+		},
+		{
+			"label": "Verify API tests current",
+			"type": "shell",
+			"command": "mvn -q -pl api -am -DskipITs test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$maven"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run API tests after peekBoth",
+			"type": "shell",
+			"command": "mvn -q -pl api -am -DskipITs test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$maven"
+			],
+			"group": "build"
 		}
 	]
 }

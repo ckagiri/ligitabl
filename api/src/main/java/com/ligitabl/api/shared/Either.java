@@ -132,6 +132,18 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
 
     Either<L, R> peekLeft(Consumer<? super L> action);
 
+    /** Invoke the appropriate consumer based on whether this is Left or Right. Returns this for chaining. */
+    default Either<L, R> peekBoth(Consumer<? super L> leftAction, Consumer<? super R> rightAction) {
+        Objects.requireNonNull(leftAction, "leftAction");
+        Objects.requireNonNull(rightAction, "rightAction");
+        if (isLeft()) {
+            leftAction.accept(getLeft());
+        } else {
+            rightAction.accept(get());
+        }
+        return this;
+    }
+
     default Either<L, R> peekIf(Predicate<? super R> predicate, Consumer<? super R> action) {
         Objects.requireNonNull(predicate, "predicate");
         Objects.requireNonNull(action, "action");
@@ -265,7 +277,6 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
                 return Either.left(errorMapper.apply(e));
             } catch (Throwable t) {
                 if (t instanceof Error) throw (Error) t;
-                @SuppressWarnings("unchecked")
                 Exception ex = (Exception) t;
                 return Either.left(errorMapper.apply(ex));
             }
@@ -310,7 +321,6 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
             return Either.left(errorMapper.apply(e));
         } catch (Throwable t) {
             if (t instanceof Error) throw (Error) t;
-            @SuppressWarnings("unchecked")
             Exception ex = (Exception) t;
             return Either.left(errorMapper.apply(ex));
         }
