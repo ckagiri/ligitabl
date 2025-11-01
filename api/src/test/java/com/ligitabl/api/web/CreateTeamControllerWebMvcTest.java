@@ -91,6 +91,6 @@ class CreateTeamControllerWebMvcTest {
                 .andExpect(status().isConflict())
                 .andExpect(jsonPath("$.error", equalTo("Business Rule Violation")))
                 .andExpect(jsonPath("$.message", equalTo(error.getMessage())))
-                .andExpect(jsonPath("$.code", equalTo(409)));
+                .andExpect(jsonPath("$.status", equalTo("CONFLICT")));
     }
 }

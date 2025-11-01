@@ -93,6 +93,6 @@ class UpdateTeamControllerWebMvcTest {
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error", equalTo("Not Found")))
                 .andExpect(jsonPath("$.message", equalTo(error.getMessage())))
-                .andExpect(jsonPath("$.code", equalTo(404)));
+                .andExpect(jsonPath("$.status", equalTo("NOT_FOUND")));
     }
 }
