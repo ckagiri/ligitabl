@@ -27,8 +27,8 @@ public class GetTeamBySlugUseCase implements UseCase<GetTeamBySlugQuery, Either<
                 .validate(query)
                 .map(GetTeamBySlugQuery::slug)
                 .flatMap(Either.liftException(TeamSlug::of, UseCaseErrors::fromException))
-                .flatMap(slug -> requireFound(
-                        teamRepo.findBySlug(slug), UseCaseErrors.notFound("Team", "slug", slug.value())))
+                .flatMap(slug ->
+                        requireFound(teamRepo.findBySlug(slug), UseCaseErrors.notFound("Team", "slug", slug.value())))
                 .map(TeamDto::from);
     }
 }

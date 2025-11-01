@@ -1,10 +1,10 @@
 package com.ligitabl.api.usecases.team.createteam;
 
-import com.ligitabl.api.shared.errors.UseCaseErrors;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecases.team.TeamDto;
 import com.ligitabl.api.usecases.team.TeamMapper;

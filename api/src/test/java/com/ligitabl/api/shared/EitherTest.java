@@ -1,10 +1,10 @@
 package com.ligitabl.api.shared;
 
-import org.junit.jupiter.api.Test;
+import static org.junit.jupiter.api.Assertions.*;
 
 import java.util.function.Function;
 
-import static org.junit.jupiter.api.Assertions.*;
+import org.junit.jupiter.api.Test;
 
 class EitherTest {
 
@@ -43,7 +43,9 @@ class EitherTest {
     @Test
     void liftException_catchesException_butNotError() {
         Function<Integer, Either<String, Integer>> catcher = Either.liftException(
-                i -> { throw new IllegalArgumentException("bad"); },
+                i -> {
+                    throw new IllegalArgumentException("bad");
+                },
                 ex -> "E:" + ex.getClass().getSimpleName());
 
         Either<String, Integer> left = catcher.apply(1);
@@ -51,7 +53,9 @@ class EitherTest {
         assertEquals("E:IllegalArgumentException", left.getLeft());
 
         Function<Integer, Either<String, Integer>> errorRethrow = Either.liftException(
-                i -> { throw new AssertionError("error"); },
+                i -> {
+                    throw new AssertionError("error");
+                },
                 ex -> "ignored");
 
         assertThrows(AssertionError.class, () -> errorRethrow.apply(1));
@@ -84,22 +88,25 @@ class EitherTest {
         assertEquals(5, passthrough.get());
         assertFalse(called.get(), "recover mapper must not be called for Right");
 
-        Either<String, Integer> recoveredWith = Either.<String, Integer>left("oops").recoverWith(l -> Either.right(9));
+        Either<String, Integer> recoveredWith =
+                Either.<String, Integer>left("oops").recoverWith(l -> Either.right(9));
         assertTrue(recoveredWith.isRight());
         assertEquals(9, recoveredWith.get());
 
         // recoverWith should NOT invoke the mapper for Right
         called.set(false);
-        Either<String, Integer> passthroughWith = Either.<String, Integer>right(11).recoverWith(l -> {
-            called.set(true);
-            return Either.right(99);
-        });
+        Either<String, Integer> passthroughWith = Either.<String, Integer>right(11)
+                .recoverWith(l -> {
+                    called.set(true);
+                    return Either.right(99);
+                });
         assertTrue(passthroughWith.isRight());
         assertEquals(11, passthroughWith.get());
         assertFalse(called.get(), "recoverWith mapper must not be called for Right");
 
         // recoverWith can also return a Left to keep failure
-        Either<String, Integer> stillLeft = Either.<String, Integer>left("oops").recoverWith(l -> Either.left("still-bad"));
+        Either<String, Integer> stillLeft =
+                Either.<String, Integer>left("oops").recoverWith(l -> Either.left("still-bad"));
         assertTrue(stillLeft.isLeft());
         assertEquals("still-bad", stillLeft.getLeft());
     }
