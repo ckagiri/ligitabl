@@ -132,7 +132,16 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
 
     Either<L, R> peekLeft(Consumer<? super L> action);
 
-    /** Invoke the appropriate consumer based on whether this is Left or Right. Returns this for chaining. */
+    /**
+     * Invoke the appropriate consumer based on whether this is Left or Right.
+     * Useful for executing different side effects based on success/failure.
+     * Returns this for chaining.
+     *
+     * Usage: either.peekBoth(
+     *     error -> log.error("Failed: {}", error),
+     *     value -> log.info("Success: {}", value)
+     * )
+     */
     default Either<L, R> peekBoth(Consumer<? super L> leftAction, Consumer<? super R> rightAction) {
         Objects.requireNonNull(leftAction, "leftAction");
         Objects.requireNonNull(rightAction, "rightAction");
