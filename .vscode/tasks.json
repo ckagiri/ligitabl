@@ -1,0 +1,71 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run API tests",
+			"type": "shell",
+			"command": "mvn -q -pl api -am -DskipITs test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$maven"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run API tests (post-change)",
+			"type": "shell",
+			"command": "mvn -q -pl api -am -DskipITs test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$maven"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run API tests after removing Try",
+			"type": "shell",
+			"command": "mvn -q -pl api -am -DskipITs test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$maven"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run API tests (finalize)",
+			"type": "shell",
+			"command": "mvn -q -pl api -am -DskipITs test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$maven"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run API tests (investigate)",
+			"type": "shell",
+			"command": "mvn -pl api -am -DskipITs test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$maven"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run API tests (finalize)",
+			"type": "shell",
+			"command": "mvn -q -pl api -am -DskipITs test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$maven"
+			],
+			"group": "build"
+		}
+	]
+}

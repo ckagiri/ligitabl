@@ -25,7 +25,7 @@ public class UpdateTeamUseCase implements UpdateTeamPort, UseCase<UpdateTeamComm
     public Either<UseCaseError, TeamDto> execute(UpdateTeamCommand command) {
         return requestValidator
                 .validate(command)
-                .flatMap(Either.liftTry(mapper::toEntity, UseCaseErrors::fromException))
+                .flatMap(Either.liftException(mapper::toEntity, UseCaseErrors::fromException))
                 .flatMap(teamUpdateGuard::validate)
                 .map(teamRepo::update)
                 .map(TeamDto::from);

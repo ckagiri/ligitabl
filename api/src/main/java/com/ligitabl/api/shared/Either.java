@@ -151,6 +151,24 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     Either<L, R> peekLeft(Consumer<? super L> action);
 
     /**
+     * Recover a Left into a Right by mapping the error to a fallback value.
+     * Right values are passed through unchanged.
+     */
+    default Either<L, R> recover(Function<? super L, ? extends R> recoverFn) {
+        Objects.requireNonNull(recoverFn, "recoverFn");
+        return isRight() ? this : Either.right(recoverFn.apply(getLeft()));
+    }
+
+    /**
+     * Recover a Left using a function that may still return Left (e.g., another attempt).
+     * Right values are passed through unchanged.
+     */
+    default Either<L, R> recoverWith(Function<? super L, ? extends Either<L, R>> recoverFn) {
+        Objects.requireNonNull(recoverFn, "recoverFn");
+        return isRight() ? this : Objects.requireNonNull(recoverFn.apply(getLeft()), "recoverFn result");
+    }
+
+    /**
      * Logs the left value if present using the provided logger.
      * Convenient method for logging errors without writing peekLeft boilerplate.
      *
@@ -477,108 +495,182 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     }
 
     /**
-     * Helper to compose Try operations within Either chains.
-     * Catches ALL exceptions (checked and unchecked).
-     *
-     * This is the DEFAULT - use when you want to catch everything.
-     *
-     * Usage: either.flatMap(Either.liftTry(riskyOp, error -> "Failed: " + error))
-     *
-     * @param operation The operation that may throw
-     * @param errorMapper Function to map Throwable to left type
-     * @return Function that returns Either<L, T>
+     * Functional interface for suppliers that may throw any Throwable.
+     * Replaces the small Try.CheckedSupplier used previously.
      */
-    static <L, R, T> Function<R, Either<L, T>> liftTry(
+    @FunctionalInterface
+    interface CheckedSupplier<T> {
+        T get() throws Throwable;
+    }
+
+    // liftTry and its overloads removed — prefer liftException/fromException (they catch Exception but rethrow Error)
+
+    /**
+     * NOTE (best practice): Prefer mapping exceptions to a small, well-typed domain error type
+     * (for example a sealed `UseCaseError` or `DomainError`), rather than leaking raw
+     * `Exception`/`Throwable` values throughout your application. Use the `errorMapper`
+     * overloads to normalize exceptions at boundaries.
+     */
+
+    /**
+     * Helper to compose operations catching Exception (checked + runtime) but NOT Error.
+     * Errors are rethrown; useful as a safer default in server apps.
+     */
+    static <L, R, T> Function<R, Either<L, T>> liftException(
+            CheckedFunction<R, T> operation, Function<Exception, L> errorMapper) {
+        Objects.requireNonNull(operation, "operation");
+        Objects.requireNonNull(errorMapper, "errorMapper");
+        return value -> {
+            try {
+                return Either.right(operation.apply(value));
+            } catch (Error e) {
+                throw e; // do not catch Errors
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return Either.left(errorMapper.apply(e));
+            } catch (Exception e) {
+                return Either.left(errorMapper.apply(e));
+            } catch (Throwable t) {
+                // very defensive: if a plain Throwable is thrown, treat like Exception
+                if (t instanceof Error) {
+                    throw (Error) t;
+                }
+                @SuppressWarnings("unchecked")
+                Exception ex = (Exception) t;
+                return Either.left(errorMapper.apply(ex));
+            }
+        };
+    }
+
+    /**
+     * Catch-all lifting variant that catches ANY Throwable (Exception and Error) and maps it to L.
+     * Use sparingly and only at process boundaries where you truly want to swallow Errors.
+     */
+    static <L, R, T> Function<R, Either<L, T>> liftThrowable(
             CheckedFunction<R, T> operation, Function<Throwable, L> errorMapper) {
-        return value -> Try.of(() -> operation.apply(value))
-                .fold(error -> Either.left(errorMapper.apply(error)), Either::right);
+        Objects.requireNonNull(operation, "operation");
+        Objects.requireNonNull(errorMapper, "errorMapper");
+        return value -> {
+            try {
+                return Either.right(operation.apply(value));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return Either.left(errorMapper.apply(e));
+            } catch (Throwable t) {
+                return Either.left(errorMapper.apply(t));
+            }
+        };
     }
 
-    /**
-     * Helper to compose Try operations with identity error mapping.
-     * Catches ALL exceptions (checked and unchecked).
-     * The exception itself becomes the Left value (Either<Throwable, T>).
-     *
-     * This is the DEFAULT - use when you want to catch everything.
-     *
-     * Usage: either.flatMap(Either.liftTry(riskyOp))
-     *
-     * @param operation The operation that may throw
-     * @return Function that returns Either<Throwable, T>
-     */
+    /** Identity Left = Throwable variant for liftThrowable. */
     @SuppressWarnings("unchecked")
-    static <R, T> Function<R, Either<Throwable, T>> liftTry(CheckedFunction<R, T> operation) {
-        return (Function<R, Either<Throwable, T>>) liftTry(operation, error -> error);
+    static <R, T> Function<R, Either<Throwable, T>> liftThrowable(CheckedFunction<R, T> operation) {
+        return (Function<R, Either<Throwable, T>>) (Function<?, ?>) liftThrowable(operation, Function.identity());
+    }
+
+    /** Identity Left = Exception variant (Errors rethrown). */
+    @SuppressWarnings("unchecked")
+    static <R, T> Function<R, Either<Exception, T>> liftException(CheckedFunction<R, T> operation) {
+        return (Function<R, Either<Exception, T>>) (Function<?, ?>) liftException(operation, Function.identity());
+    }
+
+    /** Fixed-left variant for exception-only lifting (Errors rethrown). */
+    static <L, R, T> Function<R, Either<L, T>> liftException(CheckedFunction<R, T> operation, L errorValue) {
+        Objects.requireNonNull(operation, "operation");
+        return value -> {
+            try {
+                return Either.right(operation.apply(value));
+            } catch (Error e) {
+                throw e;
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                return Either.left(errorValue);
+            } catch (Exception e) {
+                return Either.left(errorValue);
+            } catch (Throwable t) {
+                if (t instanceof Error) {
+                    throw (Error) t;
+                }
+                return Either.left(errorValue);
+            }
+        };
+    }
+
+    // fromTry overloads removed — prefer fromException (catch Exception but rethrow Error)
+
+    /**
+     * Creates an Either by executing a supplier, catching Exception but NOT Error.
+     * Errors are rethrown; InterruptedException preserves the interrupt flag.
+     */
+    static <L, T> Either<L, T> fromException(CheckedSupplier<T> supplier, Function<Exception, L> errorMapper) {
+        Objects.requireNonNull(supplier, "supplier");
+        Objects.requireNonNull(errorMapper, "errorMapper");
+        try {
+            return Either.right(supplier.get());
+        } catch (Error e) {
+            throw e;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Either.left(errorMapper.apply(e));
+        } catch (Exception e) {
+            return Either.left(errorMapper.apply(e));
+        } catch (Throwable t) {
+            if (t instanceof Error) throw (Error) t;
+            @SuppressWarnings("unchecked")
+            Exception ex = (Exception) t;
+            return Either.left(errorMapper.apply(ex));
+        }
+    }
+
+    /** Identity Left = Exception variant for fromException (Errors rethrown). */
+    static <T> Either<Exception, T> fromException(CheckedSupplier<T> supplier) {
+        return fromException(supplier, Function.identity());
+    }
+
+    /** Fixed-left variant for fromException (Errors rethrown). */
+    static <L, T> Either<L, T> fromException(CheckedSupplier<T> supplier, L errorValue) {
+        Objects.requireNonNull(supplier, "supplier");
+        try {
+            return Either.right(supplier.get());
+        } catch (Error e) {
+            throw e;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Either.left(errorValue);
+        } catch (Exception e) {
+            return Either.left(errorValue);
+        } catch (Throwable t) {
+            if (t instanceof Error) throw (Error) t;
+            return Either.left(errorValue);
+        }
     }
 
     /**
-     * Helper to compose Try operations with a fixed left value on error.
-     * Catches ALL exceptions (checked and unchecked).
-     *
-     * This is the DEFAULT - use when you want to catch everything.
-     *
-     * Usage: either.flatMap(Either.liftTry(riskyOp, ErrorCode.FAILED))
-     *
-     * @param operation The operation that may throw
-     * @param errorValue Fixed error value to use on exception
-     * @return Function that returns Either<L, T>
+     * Catch-all supplier variant that catches ANY Throwable and maps it to L.
+     * Use sparingly and only at process boundaries where you truly want to swallow Errors.
      */
-    static <L, R, T> Function<R, Either<L, T>> liftTry(CheckedFunction<R, T> operation, L errorValue) {
-        return value -> Try.of(() -> operation.apply(value)).fold(error -> Either.left(errorValue), Either::right);
+    static <L, T> Either<L, T> fromThrowable(CheckedSupplier<T> supplier, Function<Throwable, L> errorMapper) {
+        Objects.requireNonNull(supplier, "supplier");
+        Objects.requireNonNull(errorMapper, "errorMapper");
+        try {
+            return Either.right(supplier.get());
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Either.left(errorMapper.apply(e));
+        } catch (Throwable t) {
+            return Either.left(errorMapper.apply(t));
+        }
     }
 
-    /**
-     * Creates an Either from a Try operation that doesn't depend on a previous value.
-     * Catches ALL exceptions (checked and unchecked).
-     *
-     * This is the DEFAULT - use when you want to catch everything.
-     *
-     * Usage: Either.fromTry(() -> readFile(), error -> "Read failed")
-     *
-     * @param supplier The operation that may throw
-     * @param errorMapper Function to map Throwable to left type
-     * @return Either<L, T>
-     */
-    static <L, T> Either<L, T> fromTry(Try.CheckedSupplier<T> supplier, Function<Throwable, L> errorMapper) {
-        return Try.of(supplier).fold(error -> Either.left(errorMapper.apply(error)), Either::right);
-    }
-
-    /**
-     * Creates an Either from a Try operation with identity error mapping.
-     * Catches ALL exceptions (checked and unchecked).
-     * The exception itself becomes the Left value (Either<Throwable, T>).
-     *
-     * This is the DEFAULT - use when you want to catch everything.
-     *
-     * Usage: Either.fromTry(() -> readFile())
-     *
-     * @param supplier The operation that may throw
-     * @return Either<Throwable, T>
-     */
-    static <T> Either<Throwable, T> fromTry(Try.CheckedSupplier<T> supplier) {
-        return fromTry(supplier, error -> error);
-    }
-
-    /**
-     * Creates an Either from a Try operation with a fixed error value.
-     * Catches ALL exceptions (checked and unchecked).
-     *
-     * This is the DEFAULT - use when you want to catch everything.
-     *
-     * Usage: Either.fromTry(() -> readFile(), ErrorCode.IO_ERROR)
-     *
-     * @param supplier The operation that may throw
-     * @param errorValue Fixed error value to use on exception
-     * @return Either<L, T>
-     */
-    static <L, T> Either<L, T> fromTry(Try.CheckedSupplier<T> supplier, L errorValue) {
-        return Try.of(supplier).fold(error -> Either.left(errorValue), Either::right);
+    /** Identity Left = Throwable variant for fromThrowable. */
+    static <T> Either<Throwable, T> fromThrowable(CheckedSupplier<T> supplier) {
+        return fromThrowable(supplier, Function.identity());
     }
 
     // ========== Checked-only variants - only catch checked exceptions ==========
 
     /**
-     * Like liftTry but ONLY catches checked exceptions (Exception, not RuntimeException/Error).
+     * Like liftException but ONLY catches checked exceptions (Exception, not RuntimeException/Error).
      * Unchecked exceptions (RuntimeException, Error) propagate normally - they crash.
      *
      * Use this for FAIL-FAST when you want bugs to crash immediately.
@@ -602,7 +694,7 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     }
 
     /**
-     * Like liftTry but ONLY catches checked exceptions, with custom error mapper.
+     * Like liftException but ONLY catches checked exceptions, with custom error mapper.
      *
      * Usage: either.flatMap(Either.liftChecked(operation, e -> "Failed: " + e))
      */
@@ -620,7 +712,7 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     }
 
     /**
-     * Like liftTry but ONLY catches checked exceptions, with fixed error value.
+     * Like liftException but ONLY catches checked exceptions, with fixed error value.
      */
     static <L, R, T> Function<R, Either<L, T>> liftChecked(CheckedOnlyFunction<R, T> operation, L errorValue) {
         return value -> {

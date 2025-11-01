@@ -1,0 +1,1 @@
+1. add back a multi-catch "catch-all" variant liftThrowable 2. Add javadoc notes calling out best-practices (e.g., prefer mapping to domain error types instead of leaking Exception/Throwable)
