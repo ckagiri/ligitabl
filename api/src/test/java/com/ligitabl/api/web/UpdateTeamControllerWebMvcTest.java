@@ -23,7 +23,7 @@ import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecases.team.TeamDto;
 import com.ligitabl.api.usecases.team.TeamPayload;
 import com.ligitabl.api.usecases.team.updateteam.UpdateTeamController;
-import com.ligitabl.api.usecases.team.updateteam.UpdateTeamPort;
+import com.ligitabl.api.usecases.team.updateteam.UpdateTeamUseCase;
 
 @WebMvcTest(controllers = UpdateTeamController.class)
 class UpdateTeamControllerWebMvcTest {
@@ -37,7 +37,7 @@ class UpdateTeamControllerWebMvcTest {
     // TODO: Switch to Spring Framework @MockitoBean when we finalize the migration; keeping @MockBean for stability.
     @SuppressWarnings("removal")
     @MockBean
-    private UpdateTeamPort updateTeamUseCase;
+    private UpdateTeamUseCase updateTeamUseCase;
 
     @Test
     @DisplayName("PUT /api/teams/{id} -> 200 OK with body")

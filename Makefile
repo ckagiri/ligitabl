@@ -42,8 +42,8 @@ test-api-no-jooq: ## Run API tests with no DB/codegen (skips jOOQ infra)
 	mvn -P no-jooq -pl $(API_DIR) -am test
 
 test-api-fast: ## Run all API unit tests quickly (pre-install model w/o tests; skip jOOQ codegen)
-	# 1) Install model to local repo without running/compiling its tests
-	mvn -q -pl model -P skip-tests -DskipTests -DskipITs -DskipITs=true -DskipTests=true install
+	# 1) Install model to local repo without compiling or running its tests
+	mvn -q -pl model -Dmaven.test.skip=true -DskipITs=true install
 	# 2) Run API tests with no-jooq profile (no DB/codegen)
 	mvn -q -pl $(API_DIR) -P no-jooq -DskipITs test
 

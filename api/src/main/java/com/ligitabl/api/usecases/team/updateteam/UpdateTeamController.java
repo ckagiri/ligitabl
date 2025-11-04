@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class UpdateTeamController {
-    private final UpdateTeamPort updateTeamUseCase;
+    private final UpdateTeamUseCase updateTeamUseCase;
 
     @PutMapping("/{id}")
     public ResponseEntity<TeamDto> updateTeam(@PathVariable String id, @RequestBody TeamPayload payload) {

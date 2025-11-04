@@ -26,7 +26,7 @@ class GetTeamsUseCaseTest {
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        useCase = new GetTeamsUseCase(teamRepo);
+        useCase = new GetTeamsHandler(teamRepo);
     }
 
     @Test

@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class DeleteTeamController {
-    private final DeleteTeamPort deleteTeamUseCase;
+    private final DeleteTeamUseCase deleteTeamUseCase;
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTeam(@PathVariable String id) {

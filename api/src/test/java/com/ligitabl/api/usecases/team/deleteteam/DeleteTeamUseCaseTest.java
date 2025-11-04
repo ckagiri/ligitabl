@@ -31,7 +31,7 @@ class DeleteTeamUseCaseTest {
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        useCase = new DeleteTeamUseCase(validator, teamRepo);
+        useCase = new DeleteTeamHandler(validator, teamRepo);
     }
 
     @Test

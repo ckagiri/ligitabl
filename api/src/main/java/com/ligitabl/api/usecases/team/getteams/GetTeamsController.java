@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class GetTeamsController {
-    private final GetTeamsPort getTeamsUseCase;
+    private final GetTeamsUseCase getTeamsUseCase;
 
     @GetMapping
     public List<TeamDto> getTeams() {

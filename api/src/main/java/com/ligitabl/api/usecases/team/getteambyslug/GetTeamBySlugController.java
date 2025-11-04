@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class GetTeamBySlugController {
-    private final GetTeamBySlugPort getTeamBySlugUseCase;
+    private final GetTeamBySlugUseCase getTeamBySlugUseCase;
 
     @GetMapping("/{slug}")
     public ResponseEntity<TeamDto> getBySlug(@PathVariable String slug) {

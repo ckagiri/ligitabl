@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class CreateTeamController {
-    private final CreateTeamPort createTeamUseCase;
+    private final CreateTeamUseCase createTeamUseCase;
 
     @PostMapping
     public ResponseEntity<TeamDto> createTeam(@RequestBody CreateTeamCommand command) {

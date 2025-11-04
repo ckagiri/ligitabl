@@ -14,7 +14,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class GetTeamByIdController {
-    private final GetTeamByIdPort getTeamByIdUseCase;
+    private final GetTeamByIdUseCase getTeamByIdUseCase;
 
     @GetMapping(params = "id")
     public ResponseEntity<TeamDto> getById(@RequestParam("id") String id) {
