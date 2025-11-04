@@ -12,22 +12,28 @@ import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.api.usecases.team.TeamDto;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/teams")
 @RequiredArgsConstructor
+@Slf4j
 public class CreateTeamController {
     private final CreateTeamPort createTeamUseCase;
 
     @PostMapping
     public ResponseEntity<TeamDto> createTeam(@RequestBody CreateTeamCommand command) {
+        log.info("CreateTeam request received slug={} tla={}", command.getSlug(), command.getTla());
         var result = createTeamUseCase.execute(command);
 
         return result.fold(
                 error -> {
                     throw new UseCaseException(error);
                 },
-                dto -> ResponseEntity.created(URI.create("/api/teams/" + dto.getId()))
-                        .body(dto));
+                dto -> {
+                    log.info("Team created id={} slug={}", dto.getId(), dto.getSlug());
+                    return ResponseEntity.created(URI.create("/api/teams/" + dto.getId()))
+                            .body(dto);
+                });
     }
 }

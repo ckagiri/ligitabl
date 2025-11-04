@@ -9,22 +9,28 @@ import org.springframework.web.bind.annotation.RestController;
 import com.ligitabl.api.shared.exceptions.UseCaseException;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/teams")
 @RequiredArgsConstructor
+@Slf4j
 public class DeleteTeamController {
-    private final DeleteTeamUseCase deleteTeamUseCase;
+    private final DeleteTeamPort deleteTeamUseCase;
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteTeam(@PathVariable String id) {
         var command = DeleteTeamCommand.of(id);
+        log.info("DeleteTeam request id={}", id);
         var result = deleteTeamUseCase.execute(command);
 
         return result.fold(
                 error -> {
                     throw new UseCaseException(error);
                 },
-                _unit -> ResponseEntity.noContent().build());
+                _unit -> {
+                    log.info("Team deleted id={}", id);
+                    return ResponseEntity.noContent().build();
+                });
     }
 }

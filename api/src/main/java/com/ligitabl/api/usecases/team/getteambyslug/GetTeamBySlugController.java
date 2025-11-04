@@ -10,15 +10,18 @@ import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.api.usecases.team.TeamDto;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/teams")
 @RequiredArgsConstructor
+@Slf4j
 public class GetTeamBySlugController {
-    private final GetTeamBySlugUseCase getTeamBySlugUseCase;
+    private final GetTeamBySlugPort getTeamBySlugUseCase;
 
     @GetMapping("/{slug}")
     public ResponseEntity<TeamDto> getBySlug(@PathVariable String slug) {
+        log.info("GetTeamBySlug request slug={}", slug);
         var query = new GetTeamBySlugQuery(slug);
         var result = getTeamBySlugUseCase.execute(query);
 
@@ -26,6 +29,9 @@ public class GetTeamBySlugController {
                 error -> {
                     throw new UseCaseException(error);
                 },
-                dto -> ResponseEntity.ok(dto));
+                dto -> {
+                    log.debug("GetTeamBySlug success slug={} id={}", slug, dto.getId());
+                    return ResponseEntity.ok(dto);
+                });
     }
 }

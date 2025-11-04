@@ -18,7 +18,7 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap seed-app format format-check format-all test-unit test-api-no-jooq test-all test-model
+.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap seed-app format format-check format-all test-unit test-api-no-jooq test-api-fast test-all test-model
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -40,6 +40,12 @@ test-webmvc: ## Run MVC slice tests (@WebMvcTest) in API module (no-jooq profile
 
 test-api-no-jooq: ## Run API tests with no DB/codegen (skips jOOQ infra)
 	mvn -P no-jooq -pl $(API_DIR) -am test
+
+test-api-fast: ## Run all API unit tests quickly (pre-install model w/o tests; skip jOOQ codegen)
+	# 1) Install model to local repo without running/compiling its tests
+	mvn -q -pl model -P skip-tests -DskipTests -DskipITs -DskipITs=true -DskipTests=true install
+	# 2) Run API tests with no-jooq profile (no DB/codegen)
+	mvn -q -pl $(API_DIR) -P no-jooq -DskipITs test
 
 test-all: ## Run full test suite across modules
 	mvn test

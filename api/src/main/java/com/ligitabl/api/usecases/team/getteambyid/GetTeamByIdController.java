@@ -7,15 +7,18 @@ import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.api.usecases.team.TeamDto;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/teams")
 @RequiredArgsConstructor
+@Slf4j
 public class GetTeamByIdController {
-    private final GetTeamByIdUseCase getTeamByIdUseCase;
+    private final GetTeamByIdPort getTeamByIdUseCase;
 
     @GetMapping(params = "id")
     public ResponseEntity<TeamDto> getById(@RequestParam("id") String id) {
+        log.info("GetTeamById request id={}", id);
         var query = new GetTeamByIdQuery(id);
         var result = getTeamByIdUseCase.execute(query);
 
@@ -23,6 +26,9 @@ public class GetTeamByIdController {
                 error -> {
                     throw new UseCaseException(error);
                 },
-                dto -> ResponseEntity.ok(dto));
+                dto -> {
+                    log.debug("GetTeamById success id={}", id);
+                    return ResponseEntity.ok(dto);
+                });
     }
 }

@@ -5,7 +5,6 @@ import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
@@ -17,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class GetTeamBySlugUseCase implements UseCase<GetTeamBySlugQuery, Either<UseCaseError, TeamDto>> {
+public class GetTeamBySlugUseCase implements GetTeamBySlugPort {
     private final TeamRepo teamRepo;
     private final RequestValidator requestValidator;
 
