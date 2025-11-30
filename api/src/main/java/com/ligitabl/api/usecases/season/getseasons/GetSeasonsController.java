@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -14,22 +15,26 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/api/seasons")
+@RequestMapping("/api/competitions")
 @RequiredArgsConstructor
 @Slf4j
 public class GetSeasonsController {
 
     private final GetSeasonsUseCase getSeasonsUseCase;
 
-    @GetMapping
-    public ResponseEntity<List<SeasonDto>> getSeasons() {
-        log.info("GetSeasons request");
-        var result = getSeasonsUseCase.execute();
+    @GetMapping("/{competitionSlug}/seasons")
+    public ResponseEntity<List<SeasonDto>> getSeasons(@PathVariable String competitionSlug) {
+        log.info("GetSeasons request competitionSlug={}", competitionSlug);
+        var query = new GetSeasonsQuery(competitionSlug);
+        var result = getSeasonsUseCase.execute(query);
 
         return result.fold(
                 error -> {
                     throw new UseCaseException(error);
                 },
-                list -> ResponseEntity.ok(list));
+                seasons -> {
+                    log.debug("GetSeasons success competitionSlug={} count={}", competitionSlug, seasons.size());
+                    return ResponseEntity.ok(seasons);
+                });
     }
 }

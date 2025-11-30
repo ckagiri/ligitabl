@@ -1,20 +1,22 @@
-package com.ligitabl.api.usecases.season.getseasonbyslug;
+package com.ligitabl.api.usecases.round.getroundbyposition;
 
 import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.Season;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
-import com.ligitabl.api.usecases.season.SeasonDto;
+import com.ligitabl.api.usecases.round.RoundDto;
+import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
+import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
+import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
+import com.ligitabl.model.repo.RoundRepo;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,28 +24,21 @@ import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
-public class GetSeasonBySlugHandler implements GetSeasonBySlugUseCase {
+public class GetRoundByPositionHandler implements GetRoundByPositionUseCase {
 
-    private final SeasonRepo seasonRepo;
     private final CompetitionRepo competitionRepo;
+    private final SeasonRepo seasonRepo;
+    private final RoundRepo roundRepo;
     private final RequestValidator requestValidator;
 
-    public GetSeasonBySlugHandler(
-            SeasonRepo seasonRepo,
-            CompetitionRepo competitionRepo,
-            RequestValidator requestValidator) {
-        this.seasonRepo = seasonRepo;
-        this.competitionRepo = competitionRepo;
-        this.requestValidator = requestValidator;
-    }
-
     @Override
-    public Either<UseCaseError, SeasonDto> execute(GetSeasonBySlugQuery query) {
+    public Either<UseCaseError, RoundDto> execute(GetRoundByPositionQuery query) {
         return requestValidator
                 .validate(query)
                 .flatMap(q -> requireCompetitionExists(q.competitionSlug())
-                        .flatMap(competition -> requireSeasonExists(competition.getId(), q.seasonSlug())))
-                .map(SeasonDto::from);
+                        .flatMap(competition -> requireSeasonExists(competition.getId(), q.seasonSlug())
+                                .flatMap(season -> requireRoundExists(season.getId(), q.position()))))
+                .map(RoundDto::from);
     }
 
     private Either<UseCaseError, Competition> requireCompetitionExists(String competitionSlugStr) {
@@ -70,5 +65,11 @@ public class GetSeasonBySlugHandler implements GetSeasonBySlugUseCase {
         return requireFound(
                 seasonRepo.findByCompetitionIdAndSlug(competitionId, seasonSlug),
                 UseCaseErrors.notFound("Season", "slug", seasonSlug.value()));
+    }
+
+    private Either<UseCaseError, Round> requireRoundExists(UUID seasonId, int position) {
+        return requireFound(
+                roundRepo.findBySeasonIdAndPosition(seasonId, position),
+                UseCaseErrors.notFound("Round", "position", String.valueOf(position)));
     }
 }

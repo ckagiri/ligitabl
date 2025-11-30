@@ -7,5 +7,4 @@ import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.usecases.season.SeasonDto;
 
-public interface GetSeasonsUseCase
-        extends UseCase<Void, Either<UseCaseError, List<SeasonDto>>> {}
+public interface GetSeasonsUseCase extends UseCase<GetSeasonsQuery, Either<UseCaseError, List<SeasonDto>>> {}

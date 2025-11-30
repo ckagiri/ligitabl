@@ -10,9 +10,9 @@ import com.ligitabl.model.domain.SeasonSlug;
 public interface SeasonRepo {
     Optional<Season> findById(UUID id);
 
-    List<Season> findAll();
+    List<Season> findAllByCompetitionId(UUID competitionId);  // Add this method
 
-    Optional<Season> findBySlug(SeasonSlug slug);
+    Optional<Season> findByCompetitionIdAndSlug(UUID competitionId, SeasonSlug slug);
 
     boolean existsById(UUID id);
 }

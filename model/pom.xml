@@ -173,6 +173,15 @@
                     </annotationProcessorPaths>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+                <configuration>
+                    <!-- By default, exclude integration tests tagged with @Tag("integration") -->
+                    <groups>!integration</groups>
+                </configuration>
+            </plugin>
         </plugins>
     </build>
 
