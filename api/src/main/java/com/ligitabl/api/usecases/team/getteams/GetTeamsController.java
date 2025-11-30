@@ -2,6 +2,8 @@ package com.ligitabl.api.usecases.team.getteams;
 
 import java.util.List;
 
+import com.ligitabl.api.shared.exceptions.UseCaseException;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -19,8 +21,14 @@ public class GetTeamsController {
     private final GetTeamsUseCase getTeamsUseCase;
 
     @GetMapping
-    public List<TeamDto> getTeams() {
-        log.debug("List teams request");
-        return getTeamsUseCase.execute();
+    public ResponseEntity<List<TeamDto>> getTeams() {
+        log.info("GetTeams request");
+        var result = getTeamsUseCase.execute();
+
+        return result.fold(
+                error -> {
+                    throw new UseCaseException(error);
+                },
+                list -> ResponseEntity.ok(list));
     }
 }

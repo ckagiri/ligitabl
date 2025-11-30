@@ -1,8 +1,6 @@
 package com.ligitabl.api.usecases.competition.getcompetitionbyslug;
 
-import lombok.Value;
+import com.ligitabl.model.validator.ValidSlug;
+import jakarta.validation.constraints.NotNull;
 
-@Value
-public class GetCompetitionBySlugQuery {
-    String slug;
-}
+public record GetCompetitionBySlugQuery(@NotNull(message = "Slug cannot be null") @ValidSlug String slug) {}

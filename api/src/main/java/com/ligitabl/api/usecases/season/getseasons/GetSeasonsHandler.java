@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.competition.getcompetitions;
+package com.ligitabl.api.usecases.season.getseasons;
 
 import java.util.List;
 
@@ -8,21 +8,21 @@ import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.usecases.competition.CompetitionDto;
-import com.ligitabl.model.repo.CompetitionRepo;
+import com.ligitabl.api.usecases.season.SeasonDto;
+import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class GetCompetitionsHandler implements GetCompetitionsUseCase {
+public class GetSeasonsHandler implements GetSeasonsUseCase {
 
-    private final CompetitionRepo competitionRepo;
+    private final SeasonRepo seasonRepo;
 
     @Override
-    public Either<UseCaseError, List<CompetitionDto>> execute(Void unused) {
+    public Either<UseCaseError, List<SeasonDto>> execute(Void unused) {
         return Either.fromException(
-                () -> CompetitionDto.listOf(competitionRepo.findAll()),
+                () -> SeasonDto.listOf(seasonRepo.findAll()),
                 UseCaseErrors::fromException
         );
     }

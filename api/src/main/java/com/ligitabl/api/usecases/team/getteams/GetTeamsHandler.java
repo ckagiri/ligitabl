@@ -2,6 +2,9 @@ package com.ligitabl.api.usecases.team.getteams;
 
 import java.util.List;
 
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.shared.errors.UseCaseErrors;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.usecases.team.TeamDto;
@@ -15,11 +18,10 @@ public class GetTeamsHandler implements GetTeamsUseCase {
     private final TeamRepo teamRepo;
 
     @Override
-    public List<TeamDto> execute(Void unused) {
-        return TeamDto.listOf(teamRepo.findAll());
-    }
-
-    public List<TeamDto> execute() {
-        return execute(null);
+    public Either<UseCaseError, List<TeamDto>> execute(Void unused) {
+        return Either.fromException(
+                () -> TeamDto.listOf(teamRepo.findAll()),
+                UseCaseErrors::fromException
+        );
     }
 }

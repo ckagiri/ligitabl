@@ -15,6 +15,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.NotFoundError;
 import com.ligitabl.api.usecases.competition.CompetitionDto;
 
 @WebMvcTest(GetCompetitionBySlugController.class)
@@ -35,7 +37,7 @@ class GetCompetitionBySlugControllerWebMvcTest {
                 .code("PL")
                 .build();
 
-        given(getCompetitionBySlugUseCase.execute(any())).willReturn(dto);
+        given(getCompetitionBySlugUseCase.execute(any())).willReturn(Either.right(dto));
 
         mockMvc.perform(get("/api/competitions/premier-league").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -46,11 +48,11 @@ class GetCompetitionBySlugControllerWebMvcTest {
 
     @Test
     void shouldReturnNotFoundWhenCompetitionDoesNotExist() throws Exception {
-        given(getCompetitionBySlugUseCase.execute(any())).willReturn(null);
+        given(getCompetitionBySlugUseCase.execute(any()))
+                .willReturn(Either.left(new NotFoundError("Competition not found")));
 
         mockMvc.perform(get("/api/competitions/unknown").accept(MediaType.APPLICATION_JSON))
-                .andExpect(status().isOk());
-        // For now we just get 200 with null body; we can tighten this later
+                .andExpect(status().isNotFound());
     }
 }
 

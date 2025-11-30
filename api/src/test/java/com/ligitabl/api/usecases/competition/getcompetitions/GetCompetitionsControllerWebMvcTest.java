@@ -15,6 +15,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecases.competition.CompetitionDto;
 
 @WebMvcTest(GetCompetitionsController.class)
@@ -35,7 +36,7 @@ class GetCompetitionsControllerWebMvcTest {
                 .code("PL")
                 .build();
 
-        given(getCompetitionsUseCase.execute()).willReturn(List.of(dto));
+        given(getCompetitionsUseCase.execute()).willReturn(Either.right(List.of(dto)));
 
         mockMvc.perform(get("/api/competitions").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
