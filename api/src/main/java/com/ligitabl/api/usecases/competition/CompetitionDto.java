@@ -21,7 +21,7 @@ public class CompetitionDto {
         return CompetitionDto.builder()
                 .id(competition.getId())
                 .name(competition.getName())
-                .slug(competition.getSlug().getValue())
+                .slug(competition.getSlug().value())
                 .code(competition.getCode())
                 .build();
     }

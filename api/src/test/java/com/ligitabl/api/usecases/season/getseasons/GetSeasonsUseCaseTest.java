@@ -12,14 +12,15 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.usecases.season.SeasonDto;
+    import com.ligitabl.api.shared.Either;
+    import com.ligitabl.api.shared.errors.UseCaseError;
+    import com.ligitabl.api.usecases.season.SeasonDto;
+    import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
 import com.ligitabl.model.repo.SeasonRepo;
 
-class GetSeasonsHandlerTest {
+class GetSeasonsUseCaseTest {
 
     @Mock
     private SeasonRepo seasonRepo;
@@ -29,7 +30,9 @@ class GetSeasonsHandlerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        getSeasonsUseCase = new GetSeasonsHandler(seasonRepo);
+        RequestValidator validator = request -> Either.right(request);
+        // competitionRepo is not used in this test, we can pass null safely here
+        getSeasonsUseCase = new GetSeasonsHandler(seasonRepo, null, validator);
     }
 
     @Test

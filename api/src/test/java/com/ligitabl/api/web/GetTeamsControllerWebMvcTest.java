@@ -16,6 +16,7 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecases.team.TeamDto;
 import com.ligitabl.api.usecases.team.getteams.GetTeamsController;
 import com.ligitabl.api.usecases.team.getteams.GetTeamsUseCase;
@@ -48,7 +49,7 @@ class GetTeamsControllerWebMvcTest {
                 .tla("CHE")
                 .build();
 
-        when(getTeamsUseCase.execute()).thenReturn(List.of(t1, t2));
+        when(getTeamsUseCase.execute()).thenReturn(Either.right(List.of(t1, t2)));
 
         mockMvc.perform(get("/api/teams"))
                 .andExpect(status().isOk())

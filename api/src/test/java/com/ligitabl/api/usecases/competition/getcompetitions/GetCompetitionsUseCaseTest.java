@@ -18,7 +18,7 @@ import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.repo.CompetitionRepo;
 
-class GetCompetitionsHandlerTest {
+class GetCompetitionsUseCaseTest {
 
     @Mock
     private CompetitionRepo competitionRepo;

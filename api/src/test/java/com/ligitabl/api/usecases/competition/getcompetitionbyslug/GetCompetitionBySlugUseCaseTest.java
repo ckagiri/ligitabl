@@ -13,12 +13,15 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecases.competition.CompetitionDto;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.repo.CompetitionRepo;
 
-class GetCompetitionBySlugHandlerTest {
+class GetCompetitionBySlugUseCaseTest {
 
     @Mock
     private CompetitionRepo competitionRepo;
@@ -28,7 +31,8 @@ class GetCompetitionBySlugHandlerTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        getCompetitionBySlugUseCase = new GetCompetitionBySlugHandler(competitionRepo);
+        RequestValidator validator = request -> Either.right(request);
+        getCompetitionBySlugUseCase = new GetCompetitionBySlugHandler(competitionRepo, validator);
     }
 
     @Test
@@ -42,7 +46,9 @@ class GetCompetitionBySlugHandlerTest {
 
         given(competitionRepo.findBySlug(any())).willReturn(Optional.of(competition));
 
-        CompetitionDto dto = getCompetitionBySlugUseCase.execute(new GetCompetitionBySlugQuery("premier-league"));
+        Either<UseCaseError, CompetitionDto> result = getCompetitionBySlugUseCase.execute(new GetCompetitionBySlugQuery("premier-league"));
+        assertThat(result.isRight()).isTrue();
+        CompetitionDto dto = result.get();
         assertThat(dto.getName()).isEqualTo("Premier League");
         assertThat(dto.getSlug()).isEqualTo("premier-league");
         assertThat(dto.getCode()).isEqualTo("PL");
@@ -52,8 +58,8 @@ class GetCompetitionBySlugHandlerTest {
     void shouldReturnErrorWhenCompetitionNotFound() {
         given(competitionRepo.findBySlug(any())).willReturn(Optional.empty());
 
-        CompetitionDto result = getCompetitionBySlugUseCase.execute(new GetCompetitionBySlugQuery("unknown"));
+        Either<UseCaseError, CompetitionDto> result = getCompetitionBySlugUseCase.execute(new GetCompetitionBySlugQuery("unknown"));
 
-        assertThat(result).isNull();
+        assertThat(result.isLeft()).isTrue();
     }
 }

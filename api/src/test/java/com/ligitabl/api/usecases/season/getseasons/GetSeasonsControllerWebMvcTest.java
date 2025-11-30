@@ -40,9 +40,9 @@ class GetSeasonsControllerWebMvcTest {
                 .maxRounds(38)
                 .build();
 
-        given(getSeasonsUseCase.execute(null)).willReturn(Either.right(List.of(dto)));
+        given(getSeasonsUseCase.execute(new GetSeasonsQuery("premier-league"))).willReturn(Either.right(List.of(dto)));
 
-        mockMvc.perform(get("/api/seasons").accept(MediaType.APPLICATION_JSON))
+        mockMvc.perform(get("/api/competitions/{competitionSlug}/seasons", "premier-league").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].name").value("2024/25 Premier League"))
                 .andExpect(jsonPath("$[0].slug").value("2024-25-premier-league"))

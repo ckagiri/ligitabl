@@ -26,7 +26,7 @@ import com.ligitabl.model.domain.SeasonSlug;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
-class GetSeasonBySlugHandlerTest {
+class GetSeasonBySlugUseCaseTest {
 
     @Mock
     private SeasonRepo seasonRepo;
