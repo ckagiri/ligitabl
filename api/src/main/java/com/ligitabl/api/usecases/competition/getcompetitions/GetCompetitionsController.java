@@ -1,29 +1,30 @@
-package com.ligitabl.api.usecases.team.getteams;
+package com.ligitabl.api.usecases.competition.getcompetitions;
 
 import java.util.List;
 
-import com.ligitabl.api.shared.exceptions.UseCaseException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ligitabl.api.usecases.team.TeamDto;
+import com.ligitabl.api.shared.exceptions.UseCaseException;
+import com.ligitabl.api.usecases.competition.CompetitionDto;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @RestController
-@RequestMapping("/api/teams")
+@RequestMapping("/api/competitions")
 @RequiredArgsConstructor
 @Slf4j
-public class GetTeamsController {
-    private final GetTeamsUseCase getTeamsUseCase;
+public class GetCompetitionsController {
+
+    private final GetCompetitionsUseCase getCompetitionsUseCase;
 
     @GetMapping
-    public ResponseEntity<List<TeamDto>> getTeams() {
-        log.info("GetTeams request");
-        var result = getTeamsUseCase.execute();
+    public ResponseEntity<List<CompetitionDto>> getCompetitions() {
+        log.info("GetCompetitions request");
+        var result = getCompetitionsUseCase.execute();
 
         return result.fold(
                 error -> {

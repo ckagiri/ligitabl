@@ -1,0 +1,29 @@
+package com.ligitabl.api.usecases.competition.getcompetitions;
+
+import java.util.List;
+
+import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.api.usecases.team.TeamDto;
+import org.springframework.stereotype.Service;
+
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.usecases.competition.CompetitionDto;
+import com.ligitabl.model.repo.CompetitionRepo;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class GetCompetitionsHandler implements GetCompetitionsUseCase {
+
+    private final CompetitionRepo competitionRepo;
+
+    @Override
+    public Either<UseCaseError, List<CompetitionDto>> execute(Void unused) {
+        return Either.fromException(
+                () -> CompetitionDto.listOf(competitionRepo.findAll()),
+                UseCaseErrors::fromException
+        );
+    }
+}
