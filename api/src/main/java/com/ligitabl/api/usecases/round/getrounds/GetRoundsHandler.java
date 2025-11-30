@@ -25,8 +25,6 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-@Service
-@RequiredArgsConstructor
 public class GetRoundsHandler implements GetRoundsUseCase {
 
     private final CompetitionRepo competitionRepo;

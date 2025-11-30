@@ -34,13 +34,15 @@ class GetSeasonBySlugUseCaseTest {
     @Mock
     private CompetitionRepo competitionRepo;
 
+    @Mock
+    private RequestValidator requestValidator;
+
     private GetSeasonBySlugUseCase getSeasonBySlugUseCase;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        RequestValidator validator = request -> Either.right(request);
-        getSeasonBySlugUseCase = new GetSeasonBySlugHandler(seasonRepo, competitionRepo, validator);
+        getSeasonBySlugUseCase = new GetSeasonBySlugHandler(seasonRepo, competitionRepo, requestValidator);
     }
 
     @Test
@@ -63,8 +65,11 @@ class GetSeasonBySlugUseCaseTest {
             .maxRounds(38)
             .build();
 
+        given(requestValidator.validate(any(GetSeasonBySlugQuery.class)))
+            .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
+
         given(competitionRepo.findBySlug(any())).willReturn(Optional.of(competition));
-        given(seasonRepo.findAll()).willReturn(List.of(season));
+        given(seasonRepo.findByCompetitionIdAndSlug(competitionId, season.getSlug())).willReturn(Optional.of(season));
 
         Either<UseCaseError, SeasonDto> result =
             getSeasonBySlugUseCase.execute(new GetSeasonBySlugQuery("premier-league", "2024-25"));
@@ -78,6 +83,9 @@ class GetSeasonBySlugUseCaseTest {
 
     @Test
     void shouldReturnNullWhenSeasonNotFound() {
+        given(requestValidator.validate(any(GetSeasonBySlugQuery.class)))
+            .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
+
         given(competitionRepo.findBySlug(any())).willReturn(Optional.empty());
 
         Either<UseCaseError, SeasonDto> result =

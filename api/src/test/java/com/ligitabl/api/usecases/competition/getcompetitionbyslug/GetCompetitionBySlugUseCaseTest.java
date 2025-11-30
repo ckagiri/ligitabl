@@ -7,7 +7,6 @@ import static org.mockito.BDDMockito.given;
 import java.util.Optional;
 import java.util.UUID;
 
-
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -26,13 +25,15 @@ class GetCompetitionBySlugUseCaseTest {
     @Mock
     private CompetitionRepo competitionRepo;
 
+    @Mock
+    private RequestValidator requestValidator;
+
     private GetCompetitionBySlugUseCase getCompetitionBySlugUseCase;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        RequestValidator validator = request -> Either.right(request);
-        getCompetitionBySlugUseCase = new GetCompetitionBySlugHandler(competitionRepo, validator);
+        getCompetitionBySlugUseCase = new GetCompetitionBySlugHandler(competitionRepo, requestValidator);
     }
 
     @Test
@@ -43,6 +44,9 @@ class GetCompetitionBySlugUseCaseTest {
                 .slug(CompetitionSlug.of("premier-league"))
                 .code("PL")
                 .build();
+
+        given(requestValidator.validate(any(GetCompetitionBySlugQuery.class)))
+            .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
 
         given(competitionRepo.findBySlug(any())).willReturn(Optional.of(competition));
 
@@ -56,6 +60,9 @@ class GetCompetitionBySlugUseCaseTest {
 
     @Test
     void shouldReturnErrorWhenCompetitionNotFound() {
+        given(requestValidator.validate(any(GetCompetitionBySlugQuery.class)))
+            .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
+
         given(competitionRepo.findBySlug(any())).willReturn(Optional.empty());
 
         Either<UseCaseError, CompetitionDto> result = getCompetitionBySlugUseCase.execute(new GetCompetitionBySlugQuery("unknown"));

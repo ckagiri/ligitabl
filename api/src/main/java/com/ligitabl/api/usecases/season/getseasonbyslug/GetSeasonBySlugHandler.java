@@ -28,15 +28,6 @@ public class GetSeasonBySlugHandler implements GetSeasonBySlugUseCase {
     private final CompetitionRepo competitionRepo;
     private final RequestValidator requestValidator;
 
-    public GetSeasonBySlugHandler(
-            SeasonRepo seasonRepo,
-            CompetitionRepo competitionRepo,
-            RequestValidator requestValidator) {
-        this.seasonRepo = seasonRepo;
-        this.competitionRepo = competitionRepo;
-        this.requestValidator = requestValidator;
-    }
-
     @Override
     public Either<UseCaseError, SeasonDto> execute(GetSeasonBySlugQuery query) {
         return requestValidator

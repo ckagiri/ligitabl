@@ -20,17 +20,17 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
     }
 
     @Override
-    public List<Season> findAll() {
+    public boolean existsById(UUID id) {
+        return false;
+    }
+
+    @Override
+    public List<Season> findAllByCompetitionId(UUID competitionId) {
         return Collections.emptyList();
     }
 
     @Override
-    public Optional<Season> findBySlug(SeasonSlug slug) {
+    public Optional<Season> findByCompetitionIdAndSlug(UUID competitionId, SeasonSlug slug) {
         return Optional.empty();
-    }
-
-    @Override
-    public boolean existsById(UUID id) {
-        return false;
     }
 }
