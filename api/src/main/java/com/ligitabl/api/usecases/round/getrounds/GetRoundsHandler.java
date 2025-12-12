@@ -16,10 +16,9 @@ import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
-import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.repo.CompetitionRepo;
-import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.RoundRepo;
+import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
 
@@ -39,16 +38,12 @@ public class GetRoundsHandler implements GetRoundsUseCase {
                 .flatMap(q -> requireCompetitionExists(q.competitionSlug())
                         .flatMap(competition -> requireSeasonExists(competition.getId(), q.seasonSlug())))
                 .map(Season::getId)
-                .flatMap(Either.liftException(
-                        roundRepo::findBySeasonId,
-                        UseCaseErrors::fromException))
+                .flatMap(Either.liftException(roundRepo::findBySeasonId, UseCaseErrors::fromException))
                 .map(RoundDto::listOf);
     }
 
     private Either<UseCaseError, Competition> requireCompetitionExists(String competitionSlugStr) {
-        return Either.fromException(
-                        () -> CompetitionSlug.of(competitionSlugStr),
-                        UseCaseErrors::fromException)
+        return Either.fromException(() -> CompetitionSlug.of(competitionSlugStr), UseCaseErrors::fromException)
                 .flatMap(this::findCompetitionBySlug);
     }
 
@@ -59,9 +54,7 @@ public class GetRoundsHandler implements GetRoundsUseCase {
     }
 
     private Either<UseCaseError, Season> requireSeasonExists(UUID competitionId, String seasonSlugStr) {
-        return Either.fromException(
-                        () -> SeasonSlug.of(seasonSlugStr),
-                        UseCaseErrors::fromException)
+        return Either.fromException(() -> SeasonSlug.of(seasonSlugStr), UseCaseErrors::fromException)
                 .flatMap(seasonSlug -> findSeasonByCompetitionAndSlug(competitionId, seasonSlug));
     }
 

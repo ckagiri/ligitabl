@@ -13,9 +13,9 @@ import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.Disabled;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
@@ -32,7 +32,8 @@ import liquibase.resource.ClassLoaderResourceAccessor;
 
 @Testcontainers
 @Tag("integration")
-@Disabled("Temporarily disabled while TeamPersistenceAdapter is removed/refactored; re-enable when infra adapter is restored")
+@Disabled(
+        "Temporarily disabled while TeamPersistenceAdapter is removed/refactored; re-enable when infra adapter is restored")
 class TeamRepoTest {
 
     @Container

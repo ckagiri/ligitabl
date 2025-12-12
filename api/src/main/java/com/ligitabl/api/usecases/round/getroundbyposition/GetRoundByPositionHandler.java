@@ -2,6 +2,8 @@ package com.ligitabl.api.usecases.round.getroundbyposition;
 
 import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
@@ -11,16 +13,14 @@ import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecases.round.RoundDto;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
+import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
-import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.repo.CompetitionRepo;
-import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.RoundRepo;
+import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
-
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -42,9 +42,7 @@ public class GetRoundByPositionHandler implements GetRoundByPositionUseCase {
     }
 
     private Either<UseCaseError, Competition> requireCompetitionExists(String competitionSlugStr) {
-        return Either.fromException(
-                        () -> CompetitionSlug.of(competitionSlugStr),
-                        UseCaseErrors::fromException)
+        return Either.fromException(() -> CompetitionSlug.of(competitionSlugStr), UseCaseErrors::fromException)
                 .flatMap(this::findCompetitionBySlug);
     }
 
@@ -55,9 +53,7 @@ public class GetRoundByPositionHandler implements GetRoundByPositionUseCase {
     }
 
     private Either<UseCaseError, Season> requireSeasonExists(UUID competitionId, String seasonSlugStr) {
-        return Either.fromException(
-                        () -> SeasonSlug.of(seasonSlugStr),
-                        UseCaseErrors::fromException)
+        return Either.fromException(() -> SeasonSlug.of(seasonSlugStr), UseCaseErrors::fromException)
                 .flatMap(seasonSlug -> findSeasonByCompetitionAndSlug(competitionId, seasonSlug));
     }
 

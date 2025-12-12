@@ -22,11 +22,12 @@ public class GetRoundByPositionController {
 
     @GetMapping("/{competitionSlug}/seasons/{seasonSlug}/rounds/{position}")
     public ResponseEntity<RoundDto> getRoundByPosition(
-            @PathVariable String competitionSlug,
-            @PathVariable String seasonSlug,
-            @PathVariable int position) {
-        log.info("GetRoundByPosition request competitionSlug={} seasonSlug={} position={}",
-                competitionSlug, seasonSlug, position);
+            @PathVariable String competitionSlug, @PathVariable String seasonSlug, @PathVariable int position) {
+        log.info(
+                "GetRoundByPosition request competitionSlug={} seasonSlug={} position={}",
+                competitionSlug,
+                seasonSlug,
+                position);
 
         var query = new GetRoundByPositionQuery(competitionSlug, seasonSlug, position);
         var result = getRoundByPositionUseCase.execute(query);
@@ -36,8 +37,12 @@ public class GetRoundByPositionController {
                     throw new UseCaseException(error);
                 },
                 round -> {
-                    log.debug("GetRoundByPosition success competitionSlug={} seasonSlug={} position={} roundId={}",
-                            competitionSlug, seasonSlug, position, round.getId());
+                    log.debug(
+                            "GetRoundByPosition success competitionSlug={} seasonSlug={} position={} roundId={}",
+                            competitionSlug,
+                            seasonSlug,
+                            position,
+                            round.getId());
                     return ResponseEntity.ok(round);
                 });
     }

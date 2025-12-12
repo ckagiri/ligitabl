@@ -9,9 +9,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.LocalDate;
 import java.util.UUID;
 
-import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.shared.errors.NotFoundError;
-
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
@@ -19,6 +16,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.NotFoundError;
 import com.ligitabl.api.usecases.season.SeasonDto;
 
 @WebMvcTest(GetSeasonBySlugController.class)
@@ -53,8 +52,7 @@ class GetSeasonBySlugControllerWebMvcTest {
 
     @Test
     void shouldReturnNotFoundWhenSeasonOrCompetitionMissing() throws Exception {
-        given(getSeasonBySlugUseCase.execute(any()))
-                .willReturn(Either.left(new NotFoundError("Season not found")));
+        given(getSeasonBySlugUseCase.execute(any())).willReturn(Either.left(new NotFoundError("Season not found")));
 
         mockMvc.perform(get("/api/competitions/premier-league/seasons/unknown").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound());

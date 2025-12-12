@@ -2,12 +2,12 @@ package com.ligitabl.api.usecases.team.getteams;
 
 import java.util.List;
 
-import com.ligitabl.api.shared.exceptions.UseCaseException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.api.usecases.team.TeamDto;
 
 import lombok.RequiredArgsConstructor;

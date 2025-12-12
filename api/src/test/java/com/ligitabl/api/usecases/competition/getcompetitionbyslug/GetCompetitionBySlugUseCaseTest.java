@@ -46,11 +46,12 @@ class GetCompetitionBySlugUseCaseTest {
                 .build();
 
         given(requestValidator.validate(any(GetCompetitionBySlugQuery.class)))
-            .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
+                .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
 
         given(competitionRepo.findBySlug(any())).willReturn(Optional.of(competition));
 
-        Either<UseCaseError, CompetitionDto> result = getCompetitionBySlugUseCase.execute(new GetCompetitionBySlugQuery("premier-league"));
+        Either<UseCaseError, CompetitionDto> result =
+                getCompetitionBySlugUseCase.execute(new GetCompetitionBySlugQuery("premier-league"));
         assertThat(result.isRight()).isTrue();
         CompetitionDto dto = result.get();
         assertThat(dto.getName()).isEqualTo("Premier League");
@@ -61,11 +62,12 @@ class GetCompetitionBySlugUseCaseTest {
     @Test
     void shouldReturnErrorWhenCompetitionNotFound() {
         given(requestValidator.validate(any(GetCompetitionBySlugQuery.class)))
-            .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
+                .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
 
         given(competitionRepo.findBySlug(any())).willReturn(Optional.empty());
 
-        Either<UseCaseError, CompetitionDto> result = getCompetitionBySlugUseCase.execute(new GetCompetitionBySlugQuery("unknown"));
+        Either<UseCaseError, CompetitionDto> result =
+                getCompetitionBySlugUseCase.execute(new GetCompetitionBySlugQuery("unknown"));
 
         assertThat(result.isLeft()).isTrue();
     }

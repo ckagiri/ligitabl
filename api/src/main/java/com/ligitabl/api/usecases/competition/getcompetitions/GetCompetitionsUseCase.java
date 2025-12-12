@@ -7,5 +7,4 @@ import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.usecases.competition.CompetitionDto;
 
-public interface GetCompetitionsUseCase
-        extends UseCase<Void, Either<UseCaseError, List<CompetitionDto>>> {}
+public interface GetCompetitionsUseCase extends UseCase<Void, Either<UseCaseError, List<CompetitionDto>>> {}

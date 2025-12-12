@@ -34,4 +34,3 @@ public class CompetitionPersistenceAdapter implements CompetitionRepo {
         return false;
     }
 }
-

@@ -55,4 +55,3 @@ class GetCompetitionBySlugControllerWebMvcTest {
                 .andExpect(status().isNotFound());
     }
 }
-

@@ -1,6 +1,7 @@
 package com.ligitabl.api.usecases.round.getrounds;
 
 import com.ligitabl.model.validator.ValidSlug;
+
 import jakarta.validation.constraints.NotNull;
 
 public record GetRoundsQuery(

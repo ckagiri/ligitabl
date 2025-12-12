@@ -46,28 +46,28 @@ class GetSeasonsUseCaseTest {
     @Test
     void shouldReturnSeasons() {
         var season = Season.builder()
-            .id(UUID.randomUUID())
-            .competitionId(UUID.randomUUID())
-            .name("2024/25 Premier League")
-            .slug(SeasonSlug.of("2024-25"))
-            .startDate(LocalDate.of(2024, 8, 1))
-            .endDate(LocalDate.of(2025, 5, 31))
-            .maxRounds(38)
-            .build();
+                .id(UUID.randomUUID())
+                .competitionId(UUID.randomUUID())
+                .name("2024/25 Premier League")
+                .slug(SeasonSlug.of("2024-25"))
+                .startDate(LocalDate.of(2024, 8, 1))
+                .endDate(LocalDate.of(2025, 5, 31))
+                .maxRounds(38)
+                .build();
 
         var competition = Competition.builder()
-            .id(season.getCompetitionId())
-            .slug(CompetitionSlug.of("some-competition"))
-            .name("Premier League")
-            .build();
+                .id(season.getCompetitionId())
+                .slug(CompetitionSlug.of("some-competition"))
+                .name("Premier League")
+                .build();
 
         given(competitionRepo.findBySlug(CompetitionSlug.of("some-competition")))
-            .willReturn(java.util.Optional.of(competition));
+                .willReturn(java.util.Optional.of(competition));
 
         given(seasonRepo.findAllByCompetitionId(season.getCompetitionId())).willReturn(List.of(season));
 
         given(requestValidator.validate(any(GetSeasonsQuery.class)))
-            .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
+                .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
 
         var query = new GetSeasonsQuery("some-competition");
         Either<UseCaseError, java.util.List<SeasonDto>> result = getSeasonsUseCase.execute(query);

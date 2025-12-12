@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -49,30 +48,31 @@ class GetSeasonBySlugUseCaseTest {
     void shouldReturnSeasonWhenFound() {
         var competitionId = UUID.randomUUID();
         var competition = Competition.builder()
-            .id(competitionId)
-            .name("Premier League")
-            .slug(CompetitionSlug.of("premier-league"))
-            .code("PL")
-            .build();
+                .id(competitionId)
+                .name("Premier League")
+                .slug(CompetitionSlug.of("premier-league"))
+                .code("PL")
+                .build();
 
         var season = Season.builder()
-            .id(UUID.randomUUID())
-            .competitionId(competitionId)
-            .name("2024/25 Premier League")
-            .slug(SeasonSlug.of("2024-25"))
-            .startDate(LocalDate.of(2024, 8, 1))
-            .endDate(LocalDate.of(2025, 5, 31))
-            .maxRounds(38)
-            .build();
+                .id(UUID.randomUUID())
+                .competitionId(competitionId)
+                .name("2024/25 Premier League")
+                .slug(SeasonSlug.of("2024-25"))
+                .startDate(LocalDate.of(2024, 8, 1))
+                .endDate(LocalDate.of(2025, 5, 31))
+                .maxRounds(38)
+                .build();
 
         given(requestValidator.validate(any(GetSeasonBySlugQuery.class)))
-            .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
+                .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
 
         given(competitionRepo.findBySlug(any())).willReturn(Optional.of(competition));
-        given(seasonRepo.findByCompetitionIdAndSlug(competitionId, season.getSlug())).willReturn(Optional.of(season));
+        given(seasonRepo.findByCompetitionIdAndSlug(competitionId, season.getSlug()))
+                .willReturn(Optional.of(season));
 
         Either<UseCaseError, SeasonDto> result =
-            getSeasonBySlugUseCase.execute(new GetSeasonBySlugQuery("premier-league", "2024-25"));
+                getSeasonBySlugUseCase.execute(new GetSeasonBySlugQuery("premier-league", "2024-25"));
 
         assertThat(result.isRight()).isTrue();
         SeasonDto dto = result.get();
@@ -84,12 +84,12 @@ class GetSeasonBySlugUseCaseTest {
     @Test
     void shouldReturnNullWhenSeasonNotFound() {
         given(requestValidator.validate(any(GetSeasonBySlugQuery.class)))
-            .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
+                .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
 
         given(competitionRepo.findBySlug(any())).willReturn(Optional.empty());
 
         Either<UseCaseError, SeasonDto> result =
-            getSeasonBySlugUseCase.execute(new GetSeasonBySlugQuery("unknown", "2024-25-premier-league"));
+                getSeasonBySlugUseCase.execute(new GetSeasonBySlugQuery("unknown", "2024-25-premier-league"));
 
         assertThat(result.isLeft()).isTrue();
         assertThat(result.getLeft()).isInstanceOf(NotFoundError.class);
