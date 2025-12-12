@@ -20,7 +20,7 @@ public class GetCompetitionsHandler implements GetCompetitionsUseCase {
 
     @Override
     public Either<UseCaseError, List<CompetitionDto>> execute(Void unused) {
-        return Either.fromException(
+        return Either.catching(
                 () -> CompetitionDto.listOf(competitionRepo.findAll()), UseCaseErrors::fromException);
     }
 }

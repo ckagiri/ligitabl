@@ -25,7 +25,7 @@ public class GetTeamBySlugHandler implements GetTeamBySlugUseCase {
         return requestValidator
                 .validate(query)
                 .map(GetTeamBySlugQuery::slug)
-                .flatMap(Either.liftException(TeamSlug::of, UseCaseErrors::fromException))
+                .flatMap(Either.catching(TeamSlug::of, UseCaseErrors::fromException))
                 .flatMap(slug ->
                         requireFound(teamRepo.findBySlug(slug), UseCaseErrors.notFound("Team", "slug", slug.value())))
                 .map(TeamDto::from);

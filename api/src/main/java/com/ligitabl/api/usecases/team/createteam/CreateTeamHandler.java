@@ -24,7 +24,7 @@ public class CreateTeamHandler implements CreateTeamUseCase {
     public Either<UseCaseError, TeamDto> execute(CreateTeamCommand command) {
         return requestValidator
                 .validate(command)
-                .flatMap(Either.liftException(mapper::toEntity, UseCaseErrors::fromException))
+                .flatMap(Either.catching(mapper::toEntity, UseCaseErrors::fromException))
                 .flatMap(teamCreationGuard::validate)
                 .map(teamRepo::create)
                 .map(TeamDto::from);

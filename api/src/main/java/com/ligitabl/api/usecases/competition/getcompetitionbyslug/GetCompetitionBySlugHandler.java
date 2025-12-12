@@ -26,7 +26,7 @@ public class GetCompetitionBySlugHandler implements GetCompetitionBySlugUseCase 
         return requestValidator
                 .validate(query)
                 .map(GetCompetitionBySlugQuery::slug)
-                .flatMap(Either.liftException(CompetitionSlug::of, UseCaseErrors::fromException))
+                .flatMap(Either.catching(CompetitionSlug::of, UseCaseErrors::fromException))
                 .flatMap(slug -> requireFound(
                         competitionRepo.findBySlug(slug), UseCaseErrors.notFound("Competition", "slug", slug.value())))
                 .map(CompetitionDto::from);

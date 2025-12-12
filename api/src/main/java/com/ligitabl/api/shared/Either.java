@@ -64,11 +64,8 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     // ========== Core Query Methods ==========
 
     boolean isLeft();
-
     boolean isRight();
-
     L getLeft();
-
     R get();
 
     default R getRight() {
@@ -86,15 +83,10 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     // ========== Transformation Methods ==========
 
     <T> Either<L, T> map(Function<? super R, ? extends T> mapper);
-
     <T> Either<L, T> flatMap(Function<? super R, ? extends Either<L, T>> mapper);
-
     <T> Either<T, R> mapLeft(Function<? super L, ? extends T> mapper);
-
     Either<R, L> swap();
-
-    <T, U> Either<T, U> bimap(
-            Function<? super L, ? extends T> leftMapper, Function<? super R, ? extends U> rightMapper);
+    <T, U> Either<T, U> bimap(Function<? super L, ? extends T> leftMapper, Function<? super R, ? extends U> rightMapper);
 
     // ========== Filtering ==========
 
@@ -103,17 +95,16 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     default Either<L, R> filter(Predicate<? super R> predicate, Function<? super R, ? extends L> errorProvider) {
         Objects.requireNonNull(predicate, "predicate");
         Objects.requireNonNull(errorProvider, "errorProvider");
-        return flatMap(value -> predicate.test(value) ? Either.right(value) : Either.left(errorProvider.apply(value)));
+        return flatMap(value -> predicate.test(value)
+                ? Either.right(value)
+                : Either.left(errorProvider.apply(value)));
     }
 
     // ========== Recovery Methods ==========
 
     R getOrElse(R defaultValue);
-
     R getOrElse(Supplier<? extends R> supplier);
-
     Either<L, R> orElse(Either<L, R> other);
-
     Either<L, R> orElse(Supplier<? extends Either<L, R>> supplier);
 
     default Either<L, R> recover(Function<? super L, ? extends R> recoverFn) {
@@ -129,19 +120,8 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     // ========== Side-Effect Methods ==========
 
     Either<L, R> peek(Consumer<? super R> action);
-
     Either<L, R> peekLeft(Consumer<? super L> action);
 
-    /**
-     * Invoke the appropriate consumer based on whether this is Left or Right.
-     * Useful for executing different side effects based on success/failure.
-     * Returns this for chaining.
-     *
-     * Usage: either.peekBoth(
-     *     error -> log.error("Failed: {}", error),
-     *     value -> log.info("Success: {}", value)
-     * )
-     */
     default Either<L, R> peekBoth(Consumer<? super L> leftAction, Consumer<? super R> rightAction) {
         Objects.requireNonNull(leftAction, "leftAction");
         Objects.requireNonNull(rightAction, "rightAction");
@@ -216,16 +196,12 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
     }
 
     enum LogLevel {
-        ERROR,
-        WARN,
-        INFO,
-        DEBUG
+        ERROR, WARN, INFO, DEBUG
     }
 
     // ========== Conversion Methods ==========
 
     Optional<R> toOptional();
-
     Optional<L> toOptionalLeft();
 
     default Optional<R> toOptional(Function<? super L, ? extends R> leftMapper) {
@@ -243,7 +219,9 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
             java.util.function.BiFunction<? super R, ? super C, ? extends T> rightMapper) {
         Objects.requireNonNull(leftMapper, "leftMapper");
         Objects.requireNonNull(rightMapper, "rightMapper");
-        return isRight() ? rightMapper.apply(get(), context) : leftMapper.apply(getLeft(), context);
+        return isRight()
+                ? rightMapper.apply(get(), context)
+                : leftMapper.apply(getLeft(), context);
     }
 
     // ========== Functional Interfaces ==========
@@ -268,10 +246,55 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
         T get() throws Exception;
     }
 
-    // ========== Exception Lifting (Recommended Default) ==========
+    // ========== Unified Catching API (RECOMMENDED DEFAULT) ==========
 
-    static <L, R, T> Function<R, Either<L, T>> liftException(
-            CheckedFunction<R, T> operation, Function<Exception, L> errorMapper) {
+    /**
+     * Catches exceptions from a supplier and maps them to Left values.
+     * Catches Exception (checked + runtime) but NOT Error.
+     * This is the RECOMMENDED DEFAULT for most code.
+     *
+     * Usage: Either.catching(() -> operation(), UseCaseErrors::catching)
+     *
+     * @param supplier Operation that may throw exceptions
+     * @param errorMapper Maps caught exceptions to Left type
+     * @return Either with Right(result) or Left(mapped error)
+     */
+    static <L, T> Either<L, T> catching(
+            CheckedSupplier<T> supplier,
+            Function<Exception, L> errorMapper) {
+        Objects.requireNonNull(supplier, "supplier");
+        Objects.requireNonNull(errorMapper, "errorMapper");
+        try {
+            return Either.right(supplier.get());
+        } catch (Error e) {
+            throw e;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Either.left(errorMapper.apply(e));
+        } catch (Exception e) {
+            return Either.left(errorMapper.apply(e));
+        } catch (Throwable t) {
+            if (t instanceof Error) throw (Error) t;
+            @SuppressWarnings("unchecked")
+            Exception ex = (Exception) t;
+            return Either.left(errorMapper.apply(ex));
+        }
+    }
+
+    /**
+     * Catches exceptions from a function and maps them to Left values.
+     * For use in flatMap chains. Catches Exception but NOT Error.
+     * This is the RECOMMENDED DEFAULT for most code.
+     *
+     * Usage: either.flatMap(Either.catching(value -> operation(value), UseCaseErrors::catching))
+     *
+     * @param operation Function that may throw exceptions
+     * @param errorMapper Maps caught exceptions to Left type
+     * @return Function suitable for flatMap
+     */
+    static <L, R, T> Function<R, Either<L, T>> catching(
+            CheckedFunction<R, T> operation,
+            Function<Exception, L> errorMapper) {
         Objects.requireNonNull(operation, "operation");
         Objects.requireNonNull(errorMapper, "errorMapper");
         return value -> {
@@ -286,18 +309,52 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
                 return Either.left(errorMapper.apply(e));
             } catch (Throwable t) {
                 if (t instanceof Error) throw (Error) t;
+                @SuppressWarnings("unchecked")
                 Exception ex = (Exception) t;
                 return Either.left(errorMapper.apply(ex));
             }
         };
     }
 
-    @SuppressWarnings("unchecked")
-    static <R, T> Function<R, Either<Exception, T>> liftException(CheckedFunction<R, T> operation) {
-        return (Function<R, Either<Exception, T>>) (Function<?, ?>) liftException(operation, Function.identity());
+    /**
+     * Catches exceptions with identity mapping (Left = Exception).
+     */
+    static <T> Either<Exception, T> catching(CheckedSupplier<T> supplier) {
+        return catching(supplier, Function.identity());
     }
 
-    static <L, R, T> Function<R, Either<L, T>> liftException(CheckedFunction<R, T> operation, L errorValue) {
+    /**
+     * Catches exceptions with identity mapping, for use in flatMap.
+     */
+    @SuppressWarnings("unchecked")
+    static <R, T> Function<R, Either<Exception, T>> catching(CheckedFunction<R, T> operation) {
+        return (Function<R, Either<Exception, T>>) (Function<?, ?>) catching(operation, Function.identity());
+    }
+
+    /**
+     * Catches exceptions with fixed error value.
+     */
+    static <L, T> Either<L, T> catching(CheckedSupplier<T> supplier, L errorValue) {
+        Objects.requireNonNull(supplier, "supplier");
+        try {
+            return Either.right(supplier.get());
+        } catch (Error e) {
+            throw e;
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return Either.left(errorValue);
+        } catch (Exception e) {
+            return Either.left(errorValue);
+        } catch (Throwable t) {
+            if (t instanceof Error) throw (Error) t;
+            return Either.left(errorValue);
+        }
+    }
+
+    /**
+     * Catches exceptions with fixed error value, for use in flatMap.
+     */
+    static <L, R, T> Function<R, Either<L, T>> catching(CheckedFunction<R, T> operation, L errorValue) {
         Objects.requireNonNull(operation, "operation");
         return value -> {
             try {
@@ -316,50 +373,36 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
         };
     }
 
-    static <L, T> Either<L, T> fromException(CheckedSupplier<T> supplier, Function<Exception, L> errorMapper) {
+    // ========== Catch-All API (Use Sparingly) ==========
+
+    /**
+     * Catches ALL exceptions including Error.
+     * ⚠️ Use sparingly - only at process boundaries where you truly want to catch everything.
+     *
+     * Usage: Either.catchingAll(() -> untrustedOperation(), err -> "Failed")
+     */
+    static <L, T> Either<L, T> catchingAll(
+            CheckedSupplier<T> supplier,
+            Function<Throwable, L> errorMapper) {
         Objects.requireNonNull(supplier, "supplier");
         Objects.requireNonNull(errorMapper, "errorMapper");
         try {
             return Either.right(supplier.get());
-        } catch (Error e) {
-            throw e;
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             return Either.left(errorMapper.apply(e));
-        } catch (Exception e) {
-            return Either.left(errorMapper.apply(e));
         } catch (Throwable t) {
-            if (t instanceof Error) throw (Error) t;
-            Exception ex = (Exception) t;
-            return Either.left(errorMapper.apply(ex));
+            return Either.left(errorMapper.apply(t));
         }
     }
 
-    static <T> Either<Exception, T> fromException(CheckedSupplier<T> supplier) {
-        return fromException(supplier, Function.identity());
-    }
-
-    static <L, T> Either<L, T> fromException(CheckedSupplier<T> supplier, L errorValue) {
-        Objects.requireNonNull(supplier, "supplier");
-        try {
-            return Either.right(supplier.get());
-        } catch (Error e) {
-            throw e;
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return Either.left(errorValue);
-        } catch (Exception e) {
-            return Either.left(errorValue);
-        } catch (Throwable t) {
-            if (t instanceof Error) throw (Error) t;
-            return Either.left(errorValue);
-        }
-    }
-
-    // ========== Throwable Lifting (Use Sparingly) ==========
-
-    static <L, R, T> Function<R, Either<L, T>> liftThrowable(
-            CheckedFunction<R, T> operation, Function<Throwable, L> errorMapper) {
+    /**
+     * Catches ALL exceptions including Error, for use in flatMap.
+     * ⚠️ Use sparingly.
+     */
+    static <L, R, T> Function<R, Either<L, T>> catchingAll(
+            CheckedFunction<R, T> operation,
+            Function<Throwable, L> errorMapper) {
         Objects.requireNonNull(operation, "operation");
         Objects.requireNonNull(errorMapper, "errorMapper");
         return value -> {
@@ -374,31 +417,44 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
         };
     }
 
-    @SuppressWarnings("unchecked")
-    static <R, T> Function<R, Either<Throwable, T>> liftThrowable(CheckedFunction<R, T> operation) {
-        return (Function<R, Either<Throwable, T>>) (Function<?, ?>) liftThrowable(operation, Function.identity());
+    /**
+     * Catches ALL exceptions with identity mapping (Left = Throwable).
+     */
+    static <T> Either<Throwable, T> catchingAll(CheckedSupplier<T> supplier) {
+        return catchingAll(supplier, Function.identity());
     }
 
-    static <L, T> Either<L, T> fromThrowable(CheckedSupplier<T> supplier, Function<Throwable, L> errorMapper) {
+    /**
+     * Catches ALL exceptions with identity mapping, for use in flatMap.
+     */
+    @SuppressWarnings("unchecked")
+    static <R, T> Function<R, Either<Throwable, T>> catchingAll(CheckedFunction<R, T> operation) {
+        return (Function<R, Either<Throwable, T>>) (Function<?, ?>) catchingAll(operation, Function.identity());
+    }
+
+    // ========== Fail-Fast API (Only Checked Exceptions) ==========
+
+    /**
+     * Catches ONLY checked exceptions (not RuntimeException or Error).
+     * Use for FAIL-FAST when you want bugs to crash immediately.
+     *
+     * Usage: Either.catchingChecked(() -> readFile(), err -> "IO failed")
+     */
+    static <T> Either<Exception, T> catchingChecked(CheckedOnlySupplier<T> supplier) {
         Objects.requireNonNull(supplier, "supplier");
-        Objects.requireNonNull(errorMapper, "errorMapper");
         try {
             return Either.right(supplier.get());
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            return Either.left(errorMapper.apply(e));
-        } catch (Throwable t) {
-            return Either.left(errorMapper.apply(t));
+        } catch (RuntimeException | Error e) {
+            throw e;
+        } catch (Exception e) {
+            return Either.left(e);
         }
     }
 
-    static <T> Either<Throwable, T> fromThrowable(CheckedSupplier<T> supplier) {
-        return fromThrowable(supplier, Function.identity());
-    }
-
-    // ========== Checked-Only Lifting (Fail-Fast) ==========
-
-    static <R, T> Function<R, Either<Exception, T>> liftChecked(CheckedOnlyFunction<R, T> operation) {
+    /**
+     * Catches ONLY checked exceptions, for use in flatMap.
+     */
+    static <R, T> Function<R, Either<Exception, T>> catchingChecked(CheckedOnlyFunction<R, T> operation) {
         Objects.requireNonNull(operation, "operation");
         return value -> {
             try {
@@ -411,8 +467,29 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
         };
     }
 
-    static <L, R, T> Function<R, Either<L, T>> liftChecked(
-            CheckedOnlyFunction<R, T> operation, Function<Exception, L> errorMapper) {
+    /**
+     * Catches ONLY checked exceptions with custom error mapper.
+     */
+    static <L, T> Either<L, T> catchingChecked(
+            CheckedOnlySupplier<T> supplier,
+            Function<Exception, L> errorMapper) {
+        Objects.requireNonNull(supplier, "supplier");
+        Objects.requireNonNull(errorMapper, "errorMapper");
+        try {
+            return Either.right(supplier.get());
+        } catch (RuntimeException | Error e) {
+            throw e;
+        } catch (Exception e) {
+            return Either.left(errorMapper.apply(e));
+        }
+    }
+
+    /**
+     * Catches ONLY checked exceptions with custom error mapper, for use in flatMap.
+     */
+    static <L, R, T> Function<R, Either<L, T>> catchingChecked(
+            CheckedOnlyFunction<R, T> operation,
+            Function<Exception, L> errorMapper) {
         Objects.requireNonNull(operation, "operation");
         Objects.requireNonNull(errorMapper, "errorMapper");
         return value -> {
@@ -426,7 +503,26 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
         };
     }
 
-    static <L, R, T> Function<R, Either<L, T>> liftChecked(CheckedOnlyFunction<R, T> operation, L errorValue) {
+    /**
+     * Catches ONLY checked exceptions with fixed error value.
+     */
+    static <L, T> Either<L, T> catchingChecked(CheckedOnlySupplier<T> supplier, L errorValue) {
+        Objects.requireNonNull(supplier, "supplier");
+        try {
+            return Either.right(supplier.get());
+        } catch (RuntimeException | Error e) {
+            throw e;
+        } catch (Exception e) {
+            return Either.left(errorValue);
+        }
+    }
+
+    /**
+     * Catches ONLY checked exceptions with fixed error value, for use in flatMap.
+     */
+    static <L, R, T> Function<R, Either<L, T>> catchingChecked(
+            CheckedOnlyFunction<R, T> operation,
+            L errorValue) {
         Objects.requireNonNull(operation, "operation");
         return value -> {
             try {
@@ -437,40 +533,6 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
                 return Either.left(errorValue);
             }
         };
-    }
-
-    static <T> Either<Exception, T> fromChecked(CheckedOnlySupplier<T> supplier) {
-        Objects.requireNonNull(supplier, "supplier");
-        try {
-            return Either.right(supplier.get());
-        } catch (RuntimeException | Error e) {
-            throw e;
-        } catch (Exception e) {
-            return Either.left(e);
-        }
-    }
-
-    static <L, T> Either<L, T> fromChecked(CheckedOnlySupplier<T> supplier, Function<Exception, L> errorMapper) {
-        Objects.requireNonNull(supplier, "supplier");
-        Objects.requireNonNull(errorMapper, "errorMapper");
-        try {
-            return Either.right(supplier.get());
-        } catch (RuntimeException | Error e) {
-            throw e;
-        } catch (Exception e) {
-            return Either.left(errorMapper.apply(e));
-        }
-    }
-
-    static <L, T> Either<L, T> fromChecked(CheckedOnlySupplier<T> supplier, L errorValue) {
-        Objects.requireNonNull(supplier, "supplier");
-        try {
-            return Either.right(supplier.get());
-        } catch (RuntimeException | Error e) {
-            throw e;
-        } catch (Exception e) {
-            return Either.left(errorValue);
-        }
     }
 
     // ========== Implementations ==========
@@ -588,7 +650,8 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
 
         @Override
         public <T, U> Either<T, U> bimap(
-                Function<? super L, ? extends T> leftMapper, Function<? super R, ? extends U> rightMapper) {
+                Function<? super L, ? extends T> leftMapper,
+                Function<? super R, ? extends U> rightMapper) {
             Objects.requireNonNull(leftMapper, "leftMapper");
             Objects.requireNonNull(rightMapper, "rightMapper");
             return new Left<>(leftMapper.apply(value));
@@ -703,7 +766,8 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
 
         @Override
         public <T, U> Either<T, U> bimap(
-                Function<? super L, ? extends T> leftMapper, Function<? super R, ? extends U> rightMapper) {
+                Function<? super L, ? extends T> leftMapper,
+                Function<? super R, ? extends U> rightMapper) {
             Objects.requireNonNull(leftMapper, "leftMapper");
             Objects.requireNonNull(rightMapper, "rightMapper");
             return new Right<>(rightMapper.apply(value));

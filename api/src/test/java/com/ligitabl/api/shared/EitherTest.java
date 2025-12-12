@@ -13,7 +13,7 @@ class EitherTest {
         // Ensure clean state
         assertFalse(Thread.currentThread().isInterrupted(), "Precondition: thread not interrupted");
 
-        Function<String, Either<Exception, Integer>> fn = Either.liftException(s -> {
+        Function<String, Either<Exception, Integer>> fn = Either.catching(s -> {
             throw new InterruptedException("boom");
         });
 
@@ -29,7 +29,7 @@ class EitherTest {
     void fromTry_preservesInterruptedFlag_onInterruptedException() {
         assertFalse(Thread.currentThread().isInterrupted(), "Precondition: thread not interrupted");
 
-        Either<Exception, Integer> result = Either.fromException(() -> {
+        Either<Exception, Integer> result = Either.catching(() -> {
             throw new InterruptedException("boom");
         });
 
@@ -41,8 +41,8 @@ class EitherTest {
     }
 
     @Test
-    void liftException_catchesException_butNotError() {
-        Function<Integer, Either<String, Integer>> catcher = Either.liftException(
+    void catching_catchesException_butNotError() {
+        Function<Integer, Either<String, Integer>> catcher = Either.catching(
                 i -> {
                     throw new IllegalArgumentException("bad");
                 },
@@ -52,7 +52,7 @@ class EitherTest {
         assertTrue(left.isLeft());
         assertEquals("E:IllegalArgumentException", left.getLeft());
 
-        Function<Integer, Either<String, Integer>> errorRethrow = Either.liftException(
+        Function<Integer, Either<String, Integer>> errorRethrow = Either.catching(
                 i -> {
                     throw new AssertionError("error");
                 },
@@ -62,8 +62,8 @@ class EitherTest {
     }
 
     @Test
-    void liftException_identity_left_isException() {
-        Function<String, Either<Exception, Integer>> fn = Either.liftException(s -> {
+    void catching_identity_left_isException() {
+        Function<String, Either<Exception, Integer>> fn = Either.catching(s -> {
             throw new IllegalStateException("bad");
         });
 

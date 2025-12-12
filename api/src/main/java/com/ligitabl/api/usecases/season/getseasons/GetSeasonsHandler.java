@@ -32,12 +32,12 @@ public class GetSeasonsHandler implements GetSeasonsUseCase {
                 .validate(query)
                 .flatMap(q -> requireCompetitionExists(q.competitionSlug()))
                 .map(Competition::getId)
-                .flatMap(Either.liftException(seasonRepo::findAllByCompetitionId, UseCaseErrors::fromException))
+                .flatMap(Either.catching(seasonRepo::findAllByCompetitionId, UseCaseErrors::fromException))
                 .map(SeasonDto::listOf);
     }
 
     private Either<UseCaseError, Competition> requireCompetitionExists(String competitionSlugStr) {
-        return Either.fromException(() -> CompetitionSlug.of(competitionSlugStr), UseCaseErrors::fromException)
+        return Either.catching(() -> CompetitionSlug.of(competitionSlugStr), UseCaseErrors::fromException)
                 .flatMap(this::findCompetitionBySlug);
     }
 

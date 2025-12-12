@@ -19,6 +19,6 @@ public class GetTeamsHandler implements GetTeamsUseCase {
 
     @Override
     public Either<UseCaseError, List<TeamDto>> execute(Void unused) {
-        return Either.fromException(() -> TeamDto.listOf(teamRepo.findAll()), UseCaseErrors::fromException);
+        return Either.catching(() -> TeamDto.listOf(teamRepo.findAll()), UseCaseErrors::fromException);
     }
 }
