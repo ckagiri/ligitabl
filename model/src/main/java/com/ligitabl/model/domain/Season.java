@@ -35,8 +35,6 @@ public class Season extends AbstractModel<UUID> {
 
     private List<TeamRank> teams;
 
-    private List<RoundSpan> phases;
-
     private UUID currentRoundId;
 
     private int currentMatchDay;

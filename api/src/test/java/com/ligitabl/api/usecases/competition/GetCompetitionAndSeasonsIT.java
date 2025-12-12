@@ -48,8 +48,8 @@ class GetCompetitionAndSeasonsIT {
             "PL");
 
         jdbcTemplate.update(
-            "INSERT INTO t_season (pk_id, c_client_id, fk_competition_id, c_name, c_slug, c_start_date, c_end_date, c_max_rounds) "
-                + "VALUES (?,?,?,?,?,?,?,?)",
+            "INSERT INTO t_season (pk_id, c_client_id, fk_competition_id, c_name, c_slug, c_start_date, c_end_date, c_max_rounds, c_current_match_day) "
+                + "VALUES (?,?,?,?,?,?,?,?,?)",
             seasonId,
             1,
             competitionId,
@@ -57,7 +57,8 @@ class GetCompetitionAndSeasonsIT {
             "2024-25",
             LocalDate.of(2024, 8, 1),
             LocalDate.of(2025, 5, 31),
-            38);
+            38,
+            1);
         }
 
     @Test

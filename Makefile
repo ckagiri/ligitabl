@@ -41,8 +41,8 @@ test-webmvc: ## Run MVC slice tests (@WebMvcTest) in API module (no-jooq profile
 test-api-no-jooq: ## Run API tests with no DB/codegen (skips jOOQ infra)
 	# Ensure latest model jar is installed without jOOQ/codegen or tests
 	mvn -q -pl model -P no-jooq -Dmaven.test.skip=true -DskipTests=true install
-	# Run API tests against that model using the no-jooq profile
-	mvn -q -P no-jooq -pl $(API_DIR) -am -DskipITs test
+	# Run API tests against that model using the no-jooq profile (do not rebuild/test model)
+	mvn -q -P no-jooq -pl $(API_DIR) -DskipITs test
 
 test-api-fast: ## Run all API unit tests quickly (pre-install model w/o tests; skip jOOQ codegen)
 	# 1) Install model to local repo without compiling or running its tests

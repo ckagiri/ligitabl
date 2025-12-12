@@ -2,16 +2,21 @@ package com.ligitabl.model.infra;
 
 import static com.ligitabl.model.db.tables.TCompetition.T_COMPETITION;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.jooq.DSLContext;
 import org.jooq.RecordMapper;
+import org.jooq.JSONB;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.model.db.tables.records.CompetitionRecord;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
+import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.repo.CompetitionRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +26,7 @@ public class CompetitionPersistenceAdapter implements CompetitionRepo {
     private final DSLContext dsl;
 
     private static final CompetitionRecordMapper MAPPER = new CompetitionRecordMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
     public Optional<Competition> findById(UUID id) {
@@ -66,7 +72,21 @@ public class CompetitionPersistenceAdapter implements CompetitionRepo {
                     .slug(CompetitionSlug.of(record.getSlug()))
                     .code(record.getCode())
                     .activeSeasonId(record.getActiveSeasonId())
+                    .phases(readPhases(record.getPhases()))
                     .build();
+        }
+
+        private static List<RoundSpan> readPhases(JSONB jsonb) {
+            if (jsonb == null) {
+                return List.of();
+            }
+
+            try {
+                return OBJECT_MAPPER.readValue(
+                        jsonb.data(), new TypeReference<List<RoundSpan>>() {});
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to deserialize competition phases JSON", e);
+            }
         }
     }
 }

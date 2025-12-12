@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -16,6 +17,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.ligitabl.model.db.tables.TRound;
+import com.ligitabl.model.db.tables.TSeason;
+import com.ligitabl.model.db.tables.TCompetition;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.infra.RoundPersistenceAdapter;
 
@@ -38,8 +41,10 @@ class RoundRepoTest {
         dsl = DSL.using(jdbc, SQLDialect.POSTGRES);
         repo = new RoundPersistenceAdapter(dsl);
 
-        // Clean slate
+        // Clean slate (respect FK order)
         dsl.deleteFrom(TRound.T_ROUND).execute();
+        dsl.deleteFrom(TSeason.T_SEASON).execute();
+        dsl.deleteFrom(TCompetition.T_COMPETITION).execute();
     }
 
     @AfterAll
@@ -51,9 +56,29 @@ class RoundRepoTest {
 
     @Test
     void findBySeasonId_and_findBySeasonIdAndPosition() {
+        UUID competitionId = UUID.randomUUID();
         UUID seasonId = UUID.randomUUID();
         UUID round1Id = UUID.randomUUID();
         UUID round2Id = UUID.randomUUID();
+
+        dsl.insertInto(TCompetition.T_COMPETITION)
+            .set(TCompetition.T_COMPETITION.PK_ID, competitionId)
+            .set(TCompetition.T_COMPETITION.C_NAME, "Premier League")
+            .set(TCompetition.T_COMPETITION.C_SLUG, "premier-league")
+            .set(TCompetition.T_COMPETITION.C_CODE, "PL")
+            .execute();
+
+        dsl.insertInto(TSeason.T_SEASON)
+            .set(TSeason.T_SEASON.PK_ID, seasonId)
+            .set(TSeason.T_SEASON.C_CLIENT_ID, 1)
+            .set(TSeason.T_SEASON.FK_COMPETITION_ID, competitionId)
+            .set(TSeason.T_SEASON.C_NAME, "2024/25")
+            .set(TSeason.T_SEASON.C_SLUG, "2024-25")
+            .set(TSeason.T_SEASON.C_START_DATE, LocalDate.of(2024, 8, 1))
+            .set(TSeason.T_SEASON.C_END_DATE, LocalDate.of(2025, 5, 31))
+            .set(TSeason.T_SEASON.C_MAX_ROUNDS, 38)
+            .set(TSeason.T_SEASON.C_CURRENT_MATCH_DAY, 0)
+            .execute();
 
         dsl.insertInto(TRound.T_ROUND)
                 .set(TRound.T_ROUND.PK_ID, round1Id)

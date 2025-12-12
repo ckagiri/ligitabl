@@ -11,11 +11,14 @@ import java.util.UUID;
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
+import org.jooq.JSONB;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.ligitabl.model.db.tables.TCompetition;
+import com.ligitabl.model.db.tables.TSeason;
+import com.ligitabl.model.db.tables.TRound;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.infra.CompetitionPersistenceAdapter;
@@ -39,7 +42,9 @@ class CompetitionRepoTest {
         dsl = DSL.using(jdbc, SQLDialect.POSTGRES);
         repo = new CompetitionPersistenceAdapter(dsl);
 
-        // Clean slate
+        // Clean slate (respect FK order)
+        dsl.deleteFrom(TRound.T_ROUND).execute();
+        dsl.deleteFrom(TSeason.T_SEASON).execute();
         dsl.deleteFrom(TCompetition.T_COMPETITION).execute();
     }
 
@@ -59,6 +64,9 @@ class CompetitionRepoTest {
                 .set(TCompetition.T_COMPETITION.C_NAME, "Premier League")
                 .set(TCompetition.T_COMPETITION.C_SLUG, "premier-league")
                 .set(TCompetition.T_COMPETITION.C_CODE, "PL")
+                .set(
+                    TCompetition.T_COMPETITION.C_PHASES,
+                    JSONB.valueOf("[{\"from\":1,\"to\":9},{\"from\":10,\"to\":19}]"))
                 .execute();
 
         List<Competition> all = repo.findAll();
@@ -69,6 +77,15 @@ class CompetitionRepoTest {
         Optional<Competition> bySlug = repo.findBySlug(CompetitionSlug.of("premier-league"));
         assertThat(bySlug).isPresent();
         assertThat(bySlug.get().getId()).isEqualTo(id);
+
+        assertThat(bySlug.get().getPhases())
+            .hasSize(2)
+            .satisfies(phases -> {
+                assertThat(phases.get(0).getFrom()).isEqualTo(1);
+                assertThat(phases.get(0).getTo()).isEqualTo(9);
+                assertThat(phases.get(1).getFrom()).isEqualTo(10);
+                assertThat(phases.get(1).getTo()).isEqualTo(19);
+            });
 
         assertThat(repo.existsById(id)).isTrue();
     }

@@ -1,5 +1,6 @@
 package com.ligitabl.model.domain;
 
+import java.util.List;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotBlank;
@@ -20,6 +21,8 @@ public class Competition extends AbstractModel<UUID> {
 
     @NotNull
     private String code;
+
+    private List<RoundSpan> phases;
 
     private UUID activeSeasonId;
 }

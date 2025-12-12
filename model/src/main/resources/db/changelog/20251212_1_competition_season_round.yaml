@@ -36,6 +36,11 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
+                  name: c_phases
+                  type: jsonb
+                  constraints:
+                    nullable: true
+              - column:
                   name: fk_active_season_id
                   type: uuid
                   constraints:
@@ -97,6 +102,11 @@ databaseChangeLog:
                   constraints:
                     nullable: false
                     defaultValueNumeric: 0
+              - column:
+                  name: c_teams
+                  type: jsonb
+                  constraints:
+                    nullable: true
               - column:
                   name: fk_current_round_id
                   type: uuid

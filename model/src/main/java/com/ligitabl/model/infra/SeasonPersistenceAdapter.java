@@ -2,16 +2,21 @@ package com.ligitabl.model.infra;
 
 import static com.ligitabl.model.db.tables.TSeason.T_SEASON;
 
+import java.io.IOException;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.jooq.DSLContext;
 import org.jooq.RecordMapper;
+import org.jooq.JSONB;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.model.db.tables.records.SeasonRecord;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
+import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -21,6 +26,7 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
     private final DSLContext dsl;
 
     private static final SeasonRecordMapper MAPPER = new SeasonRecordMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
     public Optional<Season> findById(UUID id) {
@@ -72,7 +78,21 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
                     .maxRounds(record.getMaxRounds())
                     .currentRoundId(record.getCurrentRoundId())
                     .currentMatchDay(record.getCurrentMatchDay())
+                    .teams(readTeams(record.getTeams()))
                     .build();
+        }
+
+        private static List<TeamRank> readTeams(JSONB jsonb) {
+            if (jsonb == null) {
+                return List.of();
+            }
+
+            try {
+                return OBJECT_MAPPER.readValue(
+                        jsonb.data(), new TypeReference<List<TeamRank>>() {});
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to deserialize season teams JSON", e);
+            }
         }
     }
 }

@@ -30,6 +30,7 @@
         <assertj.version>3.26.3</assertj.version>
         <jakarta.validation.version>3.1.0</jakarta.validation.version>
         <jooq.codegen.skip>false</jooq.codegen.skip>
+        <jackson.version>2.17.2</jackson.version>
     </properties>
 
     <dependencies>
@@ -103,6 +104,12 @@
             <artifactId>assertj-core</artifactId>
             <version>${assertj.version}</version>
             <scope>test</scope>
+        </dependency>
+        <!-- JSON mapping for jsonb columns (teams, phases) -->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
         </dependency>
     </dependencies>
 
