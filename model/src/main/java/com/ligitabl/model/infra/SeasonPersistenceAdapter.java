@@ -1,36 +1,78 @@
 package com.ligitabl.model.infra;
 
-import java.util.Collections;
+import static com.ligitabl.model.db.tables.TSeason.T_SEASON;
+
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.jooq.DSLContext;
+import org.jooq.RecordMapper;
+
+import com.ligitabl.model.db.tables.records.SeasonRecord;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
 import com.ligitabl.model.repo.SeasonRepo;
 
-/**
- * Temporary stub implementation until a real JOOQ-backed adapter is added.
- */
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
 public class SeasonPersistenceAdapter implements SeasonRepo {
+    private final DSLContext dsl;
+
+    private static final SeasonRecordMapper MAPPER = new SeasonRecordMapper();
 
     @Override
     public Optional<Season> findById(UUID id) {
-        return Optional.empty();
+        var record = dsl.selectFrom(T_SEASON).where(T_SEASON.PK_ID.eq(id)).fetchOne();
+
+        return Optional.ofNullable(MAPPER.map(record));
     }
 
     @Override
     public boolean existsById(UUID id) {
-        return false;
+        return dsl.fetchExists(
+                dsl.selectOne().from(T_SEASON).where(T_SEASON.PK_ID.eq(id)));
     }
 
     @Override
     public List<Season> findAllByCompetitionId(UUID competitionId) {
-        return Collections.emptyList();
+        return dsl.selectFrom(T_SEASON)
+				.where(T_SEASON.FK_COMPETITION_ID.eq(competitionId))
+                .orderBy(T_SEASON.C_START_DATE.asc())
+                .fetch()
+                .map(MAPPER::map);
     }
 
     @Override
     public Optional<Season> findByCompetitionIdAndSlug(UUID competitionId, SeasonSlug slug) {
-        return Optional.empty();
+        var record = dsl.selectFrom(T_SEASON)
+				.where(T_SEASON.FK_COMPETITION_ID.eq(competitionId)
+                        .and(T_SEASON.C_SLUG.eq(slug.value())))
+                .fetchOne();
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
+    private static class SeasonRecordMapper implements RecordMapper<SeasonRecord, Season> {
+        @Override
+        public Season map(SeasonRecord record) {
+            if (record == null) {
+                return null;
+            }
+
+            return Season.builder()
+                    .id(record.getId())
+                    .clientId(record.getClientId())
+                    .competitionId(record.getCompetitionId())
+                    .name(record.getName())
+                    .slug(SeasonSlug.of(record.getSlug()))
+                    .startDate(record.getStartDate())
+                    .endDate(record.getEndDate())
+                    .maxRounds(record.getMaxRounds())
+                    .currentRoundId(record.getCurrentRoundId())
+                    .currentMatchDay(record.getCurrentMatchDay())
+                    .build();
+        }
     }
 }

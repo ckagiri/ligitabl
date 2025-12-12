@@ -18,7 +18,7 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap seed-app format format-check format-all test-unit test-api-no-jooq test-api-fast test-all test-model
+.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap seed-app format format-check format-all test-unit test-api-no-jooq test-api-fast test-all test-model test-api-it test-api-all model-codegen-local
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -39,13 +39,23 @@ test-webmvc: ## Run MVC slice tests (@WebMvcTest) in API module (no-jooq profile
 	mvn -q -P unit-tests,webmvc-tests,no-jooq -pl $(API_DIR) -am -Dsurefire.failIfNoSpecifiedTests=false -Dtest='**/*WebMvcTest' test
 
 test-api-no-jooq: ## Run API tests with no DB/codegen (skips jOOQ infra)
-	mvn -P no-jooq -pl $(API_DIR) -am test
+	# Ensure latest model jar is installed without jOOQ/codegen or tests
+	mvn -q -pl model -P no-jooq -Dmaven.test.skip=true -DskipTests=true install
+	# Run API tests against that model using the no-jooq profile
+	mvn -q -P no-jooq -pl $(API_DIR) -am -DskipITs test
 
 test-api-fast: ## Run all API unit tests quickly (pre-install model w/o tests; skip jOOQ codegen)
 	# 1) Install model to local repo without compiling or running its tests
 	mvn -q -pl model -Dmaven.test.skip=true -DskipITs=true install
 	# 2) Run API tests with no-jooq profile (no DB/codegen)
 	mvn -q -pl $(API_DIR) -P no-jooq -DskipITs test
+
+test-api-it: ## Run DB-backed API integration tests (*IT via Testcontainers + Liquibase)
+	mvn -q -pl $(API_DIR) -am -DskipITs=false -Dtest='**/*IT' -Dsurefire.failIfNoSpecifiedTests=false test
+
+test-api-all: ## Run typical API flow: fast no-jOOQ tests + DB-backed *IT tests
+	$(MAKE) test-api-no-jooq
+	$(MAKE) test-api-it
 
 test-all: ## Run full test suite across modules
 	mvn test
@@ -91,6 +101,9 @@ compose-up: ## Start app + postgres via Docker Compose
 
 compose-up-db: ## Start only postgres via Docker Compose with host port $(HOST_DB_PORT) -> 5432
 	DB_PORT=$(HOST_DB_PORT) $(DOCKER_COMPOSE) up -d db
+
+compose-up-db-attached: ## Start only postgres via Docker Compose (attached, show logs)
+	DB_PORT=$(HOST_DB_PORT) $(DOCKER_COMPOSE) up db
 
 compose-stop-db: ## Stop only postgres via Docker Compose (keeps volumes)
 	$(DOCKER_COMPOSE) stop db
@@ -153,6 +166,11 @@ codegen-fast: ## Run jOOQ code generation (lean) - assumes jooq-codegen is alrea
 
 model-compile: ## Regenerate jOOQ and compile the model (ensures generated getters are available)
 	mvn -q -DskipTests -pl model -am generate-sources compile
+
+model-codegen-local: ## Start DB (compose), run Liquibase migrations, then jOOQ codegen for model
+	$(MAKE) compose-up-db
+	$(MAKE) migrate
+	$(MAKE) codegen
 
 test-model: ## Run model integration tests (starts DB, migrates, codegen, then tests)
 	$(MAKE) compose-up-db

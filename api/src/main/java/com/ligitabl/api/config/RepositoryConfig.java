@@ -4,7 +4,13 @@ import org.jooq.DSLContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.ligitabl.model.infra.CompetitionPersistenceAdapter;
+import com.ligitabl.model.infra.RoundPersistenceAdapter;
+import com.ligitabl.model.infra.SeasonPersistenceAdapter;
 import com.ligitabl.model.infra.TeamPersistenceAdapter;
+import com.ligitabl.model.repo.CompetitionRepo;
+import com.ligitabl.model.repo.RoundRepo;
+import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.TeamRepo;
 
 @Configuration
@@ -12,5 +18,20 @@ public class RepositoryConfig {
     @Bean
     public TeamRepo teamDao(DSLContext dsl) {
         return new TeamPersistenceAdapter(dsl);
+    }
+
+    @Bean
+    public CompetitionRepo competitionRepo(DSLContext dsl) {
+        return new CompetitionPersistenceAdapter(dsl);
+    }
+
+    @Bean
+    public SeasonRepo seasonRepo(DSLContext dsl) {
+        return new SeasonPersistenceAdapter(dsl);
+    }
+
+    @Bean
+    public RoundRepo roundRepo(DSLContext dsl) {
+        return new RoundPersistenceAdapter(dsl);
     }
 }

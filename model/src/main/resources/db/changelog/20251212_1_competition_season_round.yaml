@@ -1,0 +1,169 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20251212_1_competition
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: t_competition
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: t_competition
+            schemaName: public
+            columns:
+              - column:
+                  name: pk_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: c_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_slug
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: c_code
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fk_active_season_id
+                  type: uuid
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 20251212_2_season
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: t_season
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: t_season
+            schemaName: public
+            columns:
+              - column:
+                  name: pk_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: c_client_id
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fk_competition_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_slug
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_start_date
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_end_date
+                  type: date
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_max_rounds
+                  type: int
+                  constraints:
+                    nullable: false
+                    defaultValueNumeric: 0
+              - column:
+                  name: fk_current_round_id
+                  type: uuid
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_current_match_day
+                  type: int
+                  constraints:
+                    nullable: false
+                    defaultValueNumeric: 0
+
+        - addForeignKeyConstraint:
+            baseTableName: t_season
+            baseColumnNames: fk_competition_id
+            baseTableSchemaName: public
+            constraintName: fk_competition_id
+            referencedTableName: t_competition
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+  - changeSet:
+      id: 20251212_3_round
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: t_round
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: t_round
+            schemaName: public
+            columns:
+              - column:
+                  name: pk_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: fk_season_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_slug
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_position
+                  type: int
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: t_round
+            baseColumnNames: fk_season_id
+            baseTableSchemaName: public
+            constraintName: fk_season_id
+            referencedTableName: t_season
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
