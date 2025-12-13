@@ -36,6 +36,7 @@ class RoundEndpointsIT {
 
     @BeforeEach
     void setupData() {
+        jdbcTemplate.update("DELETE FROM t_match");
         jdbcTemplate.update("DELETE FROM t_round");
         jdbcTemplate.update("DELETE FROM t_season");
         jdbcTemplate.update("DELETE FROM t_competition");
