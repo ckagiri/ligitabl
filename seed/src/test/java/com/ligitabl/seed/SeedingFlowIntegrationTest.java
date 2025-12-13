@@ -20,26 +20,30 @@ class SeedingFlowIntegrationTest {
     @Test
     void seedingPopulatesCompetitionSeasonRoundAndDefaults() {
         var competition =
-                dsl.fetchOne(
-                        TCompetition.T_COMPETITION,
-                        TCompetition.T_COMPETITION.C_SLUG.eq("premier-league"));
+                dsl.selectFrom(TCompetition.T_COMPETITION)
+                        .where(TCompetition.T_COMPETITION.C_SLUG.eq("premier-league"))
+                        .orderBy(TCompetition.T_COMPETITION.PK_ID.asc())
+                        .fetchAny();
         assertThat(competition).as("premier-league competition").isNotNull();
 
         var season =
-                dsl.fetchOne(
-                        TSeason.T_SEASON,
-                        TSeason.T_SEASON.FK_COMPETITION_ID.eq(competition.getPkId()));
+                dsl.selectFrom(TSeason.T_SEASON)
+                        .where(
+                                TSeason.T_SEASON.FK_COMPETITION_ID.eq(competition.getId())
+                                        .and(TSeason.T_SEASON.C_SLUG.eq("2025-26")))
+                        .orderBy(TSeason.T_SEASON.PK_ID.asc())
+                        .fetchAny();
         assertThat(season).as("season for premier-league").isNotNull();
 
         var rounds =
                 dsl.fetchCount(
                         TRound.T_ROUND,
-                        TRound.T_ROUND.FK_SEASON_ID.eq(season.getPkId()));
+                        TRound.T_ROUND.FK_SEASON_ID.eq(season.getId()));
         assertThat(rounds).as("rounds for season").isGreaterThan(0);
 
-        assertThat(competition.getFkActiveSeasonId())
+        assertThat(competition.getActiveSeasonId())
                 .as("competition active season FK")
                 .isNotNull();
-        assertThat(season.getFkCurrentRoundId()).as("season current round FK").isNotNull();
+        assertThat(season.getCurrentRoundId()).as("season current round FK").isNotNull();
     }
 }

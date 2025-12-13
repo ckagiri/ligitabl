@@ -74,6 +74,19 @@ public class RoundSeeder {
             String name = namePrefix + position;
             String slug = slugPrefix + position;
 
+            boolean exists =
+                    dsl.fetchExists(
+                            dsl.selectOne()
+                                    .from(T_ROUND)
+                                    .where(
+                                            T_ROUND.FK_SEASON_ID.eq(seasonId)
+                                                    .and(T_ROUND.C_POSITION.eq(position))));
+
+            if (exists) {
+                skipped++;
+                continue;
+            }
+
             int res =
                     dsl.insertInto(
                                     T_ROUND,
@@ -83,14 +96,10 @@ public class RoundSeeder {
                                     T_ROUND.C_SLUG,
                                     T_ROUND.C_POSITION)
                             .values(UUID.randomUUID(), seasonId, name, slug, position)
-                            .onConflict(T_ROUND.FK_SEASON_ID, T_ROUND.C_POSITION)
-                            .doNothing()
                             .execute();
 
             if (res > 0) {
                 inserted++;
-            } else {
-                skipped++;
             }
         }
 

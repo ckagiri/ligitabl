@@ -177,3 +177,33 @@ databaseChangeLog:
             referencedTableName: t_season
             referencedColumnNames: pk_id
             referencedTableSchemaName: public
+
+  - changeSet:
+      id: 20251212_4_season_unique_slug_per_competition
+      author: system
+      changes:
+        - addUniqueConstraint:
+            tableName: t_season
+            schemaName: public
+            columnNames: fk_competition_id, c_slug
+            constraintName: uq_t_season_competition_slug
+
+  - changeSet:
+      id: 20251212_5_round_unique_position_per_season
+      author: system
+      changes:
+        - addUniqueConstraint:
+            tableName: t_round
+            schemaName: public
+            columnNames: fk_season_id, c_position
+            constraintName: uq_t_round_season_position
+
+  - changeSet:
+      id: 20251212_6_round_unique_slug_per_season
+      author: system
+      changes:
+        - addUniqueConstraint:
+            tableName: t_round
+            schemaName: public
+            columnNames: fk_season_id, c_slug
+            constraintName: uq_t_round_season_slug

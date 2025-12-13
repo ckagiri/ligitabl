@@ -18,7 +18,7 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap seed-app format format-check format-all test-unit test-api-no-jooq test-api-fast test-all test-model test-api-it test-api-all model-codegen-local seed-competition-cli db-seed
+.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap seed-app format format-check format-all test-unit test-api-no-jooq test-api-fast test-all test-model test-api-it test-api-all model-codegen-local seed-competition-cli db-seed dev-reset
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -239,6 +239,14 @@ db-bootstrap: ## Compose up DB, reset DB, migrate, codegen, then seed
 	$(MAKE) reset-db
 	$(MAKE) migrate
 	$(MAKE) codegen
+	# Seeding of reference data for competitions/seasons/rounds is handled separately via db-seed
+
+dev-reset: ## For local dev: reset DB, run migrations, codegen, then seed reference data
+	$(MAKE) compose-up-db
+	$(MAKE) reset-db
+	$(MAKE) migrate
+	$(MAKE) codegen
+	$(MAKE) db-seed
 
 SEED_TEAMS_FILE ?= classpath:seed/teams.yml
 
@@ -253,8 +261,8 @@ seed-app: $(JAR) ## Seed teams using the Spring Boot app from YAML (uses app.see
 
 db-seed: ## Seed reference data (competition, season, round) using the dedicated seed module against the dev DB
 	$(MAKE) compose-up-db
-	mvn -q -pl seed -am -DskipTests spring-boot:run \
-	  -Dspring-boot.run.profiles=default
+	mvn -q -pl seed -am -DskipTests package
+	java -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar --spring.profiles.active=default
 
 seed-competition-cli: ## Seed competitions using the Spring Boot CLI against the dev DB
 	$(MAKE) compose-up-db

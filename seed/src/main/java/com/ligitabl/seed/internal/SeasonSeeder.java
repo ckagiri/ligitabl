@@ -68,39 +68,48 @@ public class SeasonSeeder {
                 }
             }
 
-            int res =
-                    dsl.insertInto(
-                                    T_SEASON,
-                                    T_SEASON.PK_ID,
-                                    T_SEASON.C_CLIENT_ID,
-                                    T_SEASON.FK_COMPETITION_ID,
-                                    T_SEASON.C_NAME,
-                                    T_SEASON.C_SLUG,
-                                    T_SEASON.C_START_DATE,
-                                    T_SEASON.C_END_DATE,
-                                    T_SEASON.C_MAX_ROUNDS,
-                                    T_SEASON.C_TEAMS,
-                                    T_SEASON.C_CURRENT_MATCH_DAY)
-                            .values(
-                                    UUID.randomUUID(),
-                                    clientId != null ? clientId : 1,
-                                    competitionId,
-                                    name,
-                                    slug,
-                                    LocalDate.parse(startDate),
-                                    LocalDate.parse(endDate),
-                                    maxRounds != null ? maxRounds : 0,
-                                    teamsJson,
-                                    0)
-                            .onConflict(T_SEASON.C_SLUG)
-                            .doNothing()
-                            .execute();
+                boolean exists =
+                    dsl.fetchExists(
+                        dsl.selectOne()
+                            .from(T_SEASON)
+                            .where(
+                                T_SEASON.FK_COMPETITION_ID.eq(competitionId)
+                                    .and(T_SEASON.C_SLUG.eq(slug))));
 
-            if (res > 0) {
-                inserted++;
-            } else {
+                if (exists) {
                 skipped++;
-            }
+                continue;
+                }
+
+                int res =
+                    dsl.insertInto(
+                            T_SEASON,
+                            T_SEASON.PK_ID,
+                            T_SEASON.C_CLIENT_ID,
+                            T_SEASON.FK_COMPETITION_ID,
+                            T_SEASON.C_NAME,
+                            T_SEASON.C_SLUG,
+                            T_SEASON.C_START_DATE,
+                            T_SEASON.C_END_DATE,
+                            T_SEASON.C_MAX_ROUNDS,
+                            T_SEASON.C_TEAMS,
+                            T_SEASON.C_CURRENT_MATCH_DAY)
+                        .values(
+                            UUID.randomUUID(),
+                            clientId != null ? clientId : 1,
+                            competitionId,
+                            name,
+                            slug,
+                            LocalDate.parse(startDate),
+                            LocalDate.parse(endDate),
+                            maxRounds != null ? maxRounds : 0,
+                            teamsJson,
+                            0)
+                        .execute();
+
+                if (res > 0) {
+                inserted++;
+                }
         }
 
         return new SeedResult("season", inserted, skipped);
