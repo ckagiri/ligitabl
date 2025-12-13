@@ -1,7 +1,9 @@
 databaseChangeLog:
-    - include:
-            file: db/changelog/20251023_1_initial.yaml
-    - include:
-            file: db/changelog/20251025_1_team_timestamps.yaml
-    - include:
-            file: db/changelog/20251212_1_competition_season_round.yaml
+  - include:
+      file: db/changelog/20251023_1_initial.yaml
+  - include:
+      file: db/changelog/20251025_1_team_timestamps.yaml
+  - include:
+      file: db/changelog/20251212_1_competition_season_round.yaml
+  - include:
+      file: db/changelog/20251213_1_match.yaml

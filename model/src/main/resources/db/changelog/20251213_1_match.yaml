@@ -1,0 +1,114 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20251213_1_match
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: t_match
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: t_match
+            schemaName: public
+            columns:
+              - column:
+                  name: pk_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: c_client_id
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fk_round_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fk_home_team_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fk_away_team_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_score
+                  type: jsonb
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_slug
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_status
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_kick_off
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_venue
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_matchday
+                  type: int
+                  constraints:
+                    nullable: false
+                    defaultValueNumeric: 0
+
+        - addForeignKeyConstraint:
+            baseTableName: t_match
+            baseColumnNames: fk_round_id
+            baseTableSchemaName: public
+            constraintName: fk_match_round_id
+            referencedTableName: t_round
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+        - addForeignKeyConstraint:
+            baseTableName: t_match
+            baseColumnNames: fk_home_team_id
+            baseTableSchemaName: public
+            constraintName: fk_match_home_team_id
+            referencedTableName: t_team
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+        - addForeignKeyConstraint:
+            baseTableName: t_match
+            baseColumnNames: fk_away_team_id
+            baseTableSchemaName: public
+            constraintName: fk_match_away_team_id
+            referencedTableName: t_team
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+  - changeSet:
+      id: 20251213_2_match_unique_slug
+      author: system
+      changes:
+        - addUniqueConstraint:
+            tableName: t_match
+            schemaName: public
+            columnNames: c_slug
+            constraintName: uq_t_match_slug

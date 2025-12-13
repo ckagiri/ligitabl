@@ -13,27 +13,29 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.NotFoundError;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecases.competition.CompetitionDto;
+import com.ligitabl.api.usecases.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.repo.CompetitionRepo;
 
 class GetCompetitionBySlugUseCaseTest {
 
-    @Mock
-    private CompetitionRepo competitionRepo;
+        @Mock
+        private RequestValidator requestValidator;
 
-    @Mock
-    private RequestValidator requestValidator;
+        @Mock
+        private HierarchyValidator hierarchyValidator;
 
     private GetCompetitionBySlugUseCase getCompetitionBySlugUseCase;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        getCompetitionBySlugUseCase = new GetCompetitionBySlugHandler(competitionRepo, requestValidator);
+        getCompetitionBySlugUseCase = new GetCompetitionBySlugHandler(hierarchyValidator, requestValidator);
     }
 
     @Test
@@ -48,7 +50,8 @@ class GetCompetitionBySlugUseCaseTest {
         given(requestValidator.validate(any(GetCompetitionBySlugQuery.class)))
                 .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
 
-        given(competitionRepo.findBySlug(any())).willReturn(Optional.of(competition));
+        given(hierarchyValidator.validateCompetition("premier-league"))
+                .willReturn(Either.right(competition));
 
         Either<UseCaseError, CompetitionDto> result =
                 getCompetitionBySlugUseCase.execute(new GetCompetitionBySlugQuery("premier-league"));
@@ -64,7 +67,8 @@ class GetCompetitionBySlugUseCaseTest {
         given(requestValidator.validate(any(GetCompetitionBySlugQuery.class)))
                 .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
 
-        given(competitionRepo.findBySlug(any())).willReturn(Optional.empty());
+        given(hierarchyValidator.validateCompetition("unknown"))
+                .willReturn(Either.left(new NotFoundError("Competition", "slug", "unknown")));
 
         Either<UseCaseError, CompetitionDto> result =
                 getCompetitionBySlugUseCase.execute(new GetCompetitionBySlugQuery("unknown"));

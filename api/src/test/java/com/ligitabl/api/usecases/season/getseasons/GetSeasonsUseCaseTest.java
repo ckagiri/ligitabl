@@ -17,6 +17,7 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecases.season.SeasonDto;
+import com.ligitabl.api.usecases.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Season;
@@ -35,12 +36,15 @@ class GetSeasonsUseCaseTest {
     @Mock
     private RequestValidator requestValidator;
 
-    private GetSeasonsHandler getSeasonsUseCase;
+        @Mock
+        private HierarchyValidator hierarchyValidator;
+
+        private GetSeasonsUseCase getSeasonsUseCase;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        getSeasonsUseCase = new GetSeasonsHandler(seasonRepo, competitionRepo, requestValidator);
+                getSeasonsUseCase = new GetSeasonsHandler(hierarchyValidator, seasonRepo, requestValidator);
     }
 
     @Test
@@ -61,8 +65,8 @@ class GetSeasonsUseCaseTest {
                 .name("Premier League")
                 .build();
 
-        given(competitionRepo.findBySlug(CompetitionSlug.of("some-competition")))
-                .willReturn(java.util.Optional.of(competition));
+        given(hierarchyValidator.validateCompetition("some-competition"))
+                .willReturn(Either.right(competition));
 
         given(seasonRepo.findAllByCompetitionId(season.getCompetitionId())).willReturn(List.of(season));
 

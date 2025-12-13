@@ -17,8 +17,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.ligitabl.model.db.tables.TCompetition;
-import com.ligitabl.model.db.tables.TSeason;
+import com.ligitabl.model.db.tables.TMatch;
 import com.ligitabl.model.db.tables.TRound;
+import com.ligitabl.model.db.tables.TSeason;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.infra.CompetitionPersistenceAdapter;
@@ -43,6 +44,7 @@ class CompetitionRepoTest {
         repo = new CompetitionPersistenceAdapter(dsl);
 
         // Clean slate (respect FK order)
+        dsl.deleteFrom(TMatch.T_MATCH).execute();
         dsl.deleteFrom(TRound.T_ROUND).execute();
         dsl.deleteFrom(TSeason.T_SEASON).execute();
         dsl.deleteFrom(TCompetition.T_COMPETITION).execute();

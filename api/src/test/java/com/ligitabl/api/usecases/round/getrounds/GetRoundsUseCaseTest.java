@@ -18,6 +18,7 @@ import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.ValidationError;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecases.round.RoundDto;
+import com.ligitabl.api.usecases.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Round;
@@ -30,23 +31,26 @@ import com.ligitabl.model.repo.SeasonRepo;
 class GetRoundsUseCaseTest {
 
     @Mock
+    RoundRepo roundRepo;
+
+    @Mock
+    RequestValidator validator;
+
+    @Mock
     CompetitionRepo competitionRepo;
 
     @Mock
     SeasonRepo seasonRepo;
 
     @Mock
-    RoundRepo roundRepo;
-
-    @Mock
-    RequestValidator validator;
+    HierarchyValidator hierarchyValidator;
 
     GetRoundsUseCase useCase;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        useCase = new GetRoundsHandler(competitionRepo, seasonRepo, roundRepo, validator);
+        useCase = new GetRoundsHandler(hierarchyValidator, roundRepo, validator);
     }
 
     @Test
@@ -78,10 +82,8 @@ class GetRoundsUseCaseTest {
                 .build();
 
         when(validator.validate(query)).thenReturn(Either.right(query));
-        when(competitionRepo.findBySlug(CompetitionSlug.of("premier-league")))
-                .thenReturn(Optional.of(competition));
-        when(seasonRepo.findByCompetitionIdAndSlug(competitionId, SeasonSlug.of("2024-25")))
-                .thenReturn(Optional.of(season));
+        when(hierarchyValidator.validateCompetitionAndSeason("premier-league", "2024-25"))
+                .thenReturn(Either.right(season));
         when(roundRepo.findBySeasonId(seasonId)).thenReturn(List.of(round));
 
         Either<UseCaseError, List<RoundDto>> result = useCase.execute(query);
@@ -90,8 +92,7 @@ class GetRoundsUseCaseTest {
         assertThat(result.getRight()).hasSize(1);
         assertThat(result.getRight().getFirst().getPosition()).isEqualTo(1);
         verify(validator).validate(query);
-        verify(competitionRepo).findBySlug(CompetitionSlug.of("premier-league"));
-        verify(seasonRepo).findByCompetitionIdAndSlug(competitionId, SeasonSlug.of("2024-25"));
+        verify(hierarchyValidator).validateCompetitionAndSeason("premier-league", "2024-25");
         verify(roundRepo).findBySeasonId(seasonId);
     }
 
@@ -109,16 +110,14 @@ class GetRoundsUseCaseTest {
                 .build();
 
         when(validator.validate(query)).thenReturn(Either.right(query));
-        when(competitionRepo.findBySlug(CompetitionSlug.of("premier-league")))
-                .thenReturn(Optional.of(competition));
-        when(seasonRepo.findByCompetitionIdAndSlug(eq(competitionId), any(SeasonSlug.class)))
-                .thenReturn(Optional.empty());
+        when(hierarchyValidator.validateCompetitionAndSeason("premier-league", "2024-25"))
+                .thenReturn(Either.left(new NotFoundError("Season", "slug", "2024-25")));
 
         var result = useCase.execute(query);
 
         assertThat(result.isLeft()).isTrue();
         assertThat(result.getLeft()).isInstanceOf(NotFoundError.class);
-        verify(seasonRepo).findByCompetitionIdAndSlug(eq(competitionId), any(SeasonSlug.class));
+        verify(hierarchyValidator).validateCompetitionAndSeason("premier-league", "2024-25");
         verifyNoInteractions(roundRepo);
     }
 

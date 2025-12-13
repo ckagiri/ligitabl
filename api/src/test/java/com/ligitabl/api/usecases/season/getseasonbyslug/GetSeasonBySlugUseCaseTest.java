@@ -18,6 +18,7 @@ import com.ligitabl.api.shared.errors.NotFoundError;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecases.season.SeasonDto;
+import com.ligitabl.api.usecases.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Season;
@@ -28,20 +29,17 @@ import com.ligitabl.model.repo.SeasonRepo;
 class GetSeasonBySlugUseCaseTest {
 
     @Mock
-    private SeasonRepo seasonRepo;
-
-    @Mock
-    private CompetitionRepo competitionRepo;
-
-    @Mock
     private RequestValidator requestValidator;
+
+        @Mock
+        private HierarchyValidator hierarchyValidator;
 
     private GetSeasonBySlugUseCase getSeasonBySlugUseCase;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        getSeasonBySlugUseCase = new GetSeasonBySlugHandler(seasonRepo, competitionRepo, requestValidator);
+        getSeasonBySlugUseCase = new GetSeasonBySlugHandler(hierarchyValidator, requestValidator);
     }
 
     @Test
@@ -67,9 +65,8 @@ class GetSeasonBySlugUseCaseTest {
         given(requestValidator.validate(any(GetSeasonBySlugQuery.class)))
                 .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
 
-        given(competitionRepo.findBySlug(any())).willReturn(Optional.of(competition));
-        given(seasonRepo.findByCompetitionIdAndSlug(competitionId, season.getSlug()))
-                .willReturn(Optional.of(season));
+        given(hierarchyValidator.validateCompetitionAndSeason("premier-league", "2024-25"))
+                .willReturn(Either.right(season));
 
         Either<UseCaseError, SeasonDto> result =
                 getSeasonBySlugUseCase.execute(new GetSeasonBySlugQuery("premier-league", "2024-25"));
@@ -86,7 +83,8 @@ class GetSeasonBySlugUseCaseTest {
         given(requestValidator.validate(any(GetSeasonBySlugQuery.class)))
                 .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
 
-        given(competitionRepo.findBySlug(any())).willReturn(Optional.empty());
+        given(hierarchyValidator.validateCompetitionAndSeason("unknown", "2024-25-premier-league"))
+                .willReturn(Either.left(new NotFoundError("Season", "slug", "2024-25-premier-league")));
 
         Either<UseCaseError, SeasonDto> result =
                 getSeasonBySlugUseCase.execute(new GetSeasonBySlugQuery("unknown", "2024-25-premier-league"));
