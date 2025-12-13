@@ -39,6 +39,14 @@ public class GetRoundMatchesController {
                 error -> {
                     throw new UseCaseException(error);
                 },
-                matches -> ResponseEntity.ok(matches));
+            matches -> {
+                log.debug(
+                    "GetRoundMatches success competitionSlug={} seasonSlug={} position={} count={}",
+                    competitionSlug,
+                    seasonSlug,
+                    position,
+                    matches.size());
+                return ResponseEntity.ok(matches);
+            });
     }
 }

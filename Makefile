@@ -18,7 +18,7 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap seed-app format format-check format-all test-unit test-api-no-jooq test-api-fast test-all test-model test-api-it test-api-all model-codegen-local seed-competition-cli db-seed dev-reset
+.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap seed-app format format-check format-all test-unit test-api-no-jooq test-api-fast test-api-core test-all test-model test-model-fast test-api-it test-api-all test-dev model-codegen-local seed-competition-cli db-seed dev-reset
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -29,7 +29,7 @@ build: ## Build the project (skip tests) - builds api and required modules (mode
 api-build: ## Build the API module (skip tests) - includes dependencies (model, jooq-codegen)
 	mvn -q -DskipTests -pl $(API_DIR) -am package
 
-test: ## Run API tests (build deps too)
+test: ## Run full API test suite (build deps too; may include *IT depending on config)
 	mvn -pl $(API_DIR) -am test
 
 test-unit: ## Run pure unit tests (no Spring) in API module (no-jooq profile to avoid DB/codegen)
@@ -49,6 +49,9 @@ test-api-fast: ## Run all API unit tests quickly (pre-install model w/o tests; s
 	mvn -q -pl model -Dmaven.test.skip=true -DskipITs=true install
 	# 2) Run API tests with no-jooq profile (no DB/codegen)
 	mvn -q -pl $(API_DIR) -P no-jooq -DskipITs test
+
+test-api-core: ## Run core API tests (build deps, skip *IT via -DskipITs)
+	mvn -q -pl $(API_DIR) -am -DskipITs test
 
 test-api-it: ## Run DB-backed API integration tests (*IT via Testcontainers + Liquibase)
 	mvn -q -pl $(API_DIR) -am -DskipITs=false -Dtest='**/*IT' -Dsurefire.failIfNoSpecifiedTests=false test
@@ -159,13 +162,13 @@ compose-down: ## Stop and remove compose services/volumes
 codegen: ## Run jOOQ code generation in model/ (full, robust)
 	# Ensure the jOOQ codegen strategy module is installed, then run codegen in model
 	mvn -q -DskipTests -pl jooq-codegen -am install
-	mvn -q -DskipTests -Djooq.codegen.skip=false -pl model -am generate-sources
+	mvn -q -DskipTests -Pwith-jooq -pl model -am generate-sources
 
 codegen-fast: ## Run jOOQ code generation (lean) - assumes jooq-codegen is already installed
-	mvn -q -DskipTests -Djooq.codegen.skip=false -pl model -am generate-sources
+	mvn -q -DskipTests -Pwith-jooq -pl model -am generate-sources
 
 model-compile: ## Regenerate jOOQ and compile the model (ensures generated getters are available)
-	mvn -q -DskipTests -Djooq.codegen.skip=false -pl model -am generate-sources compile
+	mvn -q -DskipTests -Pwith-jooq -pl model -am generate-sources compile
 
 model-codegen-local: ## Start DB (compose), run Liquibase migrations, then jOOQ codegen for model
 	$(MAKE) compose-up-db
@@ -177,6 +180,13 @@ test-model: ## Run model integration tests (starts DB, migrates, codegen, then t
 	$(MAKE) migrate
 	$(MAKE) codegen
 	mvn -pl model -am test
+
+test-model-fast: ## Run model tests assuming jOOQ codegen has already been run
+	mvn -q -pl model -am test
+
+test-dev: ## Run typical developer tests: model (fast) + core API tests
+	$(MAKE) test-model-fast
+	$(MAKE) test-api-core
 
 .PHONY: migrate
 migrate: ## Run Liquibase migrations in model/ (uses DB_* from .env)

@@ -29,7 +29,8 @@
         <junit.jupiter.version>5.10.2</junit.jupiter.version>
         <assertj.version>3.26.3</assertj.version>
         <jakarta.validation.version>3.1.0</jakarta.validation.version>
-        <jooq.codegen.skip>false</jooq.codegen.skip>
+        <!-- Default: skip jOOQ codegen to allow fast builds; use -Pwith-jooq to enable -->
+        <jooq.codegen.skip>true</jooq.codegen.skip>
         <jackson.version>2.17.2</jackson.version>
     </properties>
 
@@ -181,6 +182,25 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.6.0</version>
+                <executions>
+                    <execution>
+                        <id>add-jooq-sources</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>add-source</goal>
+                        </goals>
+                        <configuration>
+                            <sources>
+                                <source>${project.build.directory}/generated-sources/jooq</source>
+                            </sources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
@@ -193,6 +213,13 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>with-jooq</id>
+            <properties>
+                <!-- Enable jOOQ code generation -->
+                <jooq.codegen.skip>false</jooq.codegen.skip>
+            </properties>
+        </profile>
         <profile>
             <id>webmvc-tests</id>
             <properties>

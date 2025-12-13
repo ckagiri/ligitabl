@@ -30,6 +30,9 @@ public class GetDefaultRoundMatchesController {
                 error -> {
                     throw new UseCaseException(error);
                 },
-                matches -> ResponseEntity.ok(matches));
+                matches -> {
+                    log.debug("GetDefaultRoundMatches success count={}", matches.size());
+                    return ResponseEntity.ok(matches);
+                });
     }
 }

@@ -167,13 +167,24 @@ This runs: compose-up-db → reset-db → migrate → codegen → seed.
 
 ## Typical dev/test flow
 
-The most common backend workflow while iterating on the API is:
+The most common backend workflows while iterating are:
 
 ```bash
-# 1) Fast API tests (no DB/jOOQ) against latest model jar
+# 1) Fast model + core API tests (no *ITs)
+make test-dev
+
+# Equivalent explicit form
+make test-model-fast
+make test-api-core
+```
+
+API-specific flows:
+
+```bash
+# Fast API tests (no DB/jOOQ) against latest model jar
 make test-api-no-jooq
 
-# 2) Full DB-backed integration tests (*IT via Testcontainers + Liquibase)
+# Full DB-backed API integration tests (*IT via Testcontainers + Liquibase)
 make test-api-it
 
 # Or run both steps in one go:
@@ -182,6 +193,8 @@ make test-api-all
 
 Notes:
 
+- `test-dev` runs `test-model-fast` (model tests assuming jOOQ codegen already ran) followed by `test-api-core`
+  (API tests with `-DskipITs`).
 - `test-api-no-jooq` installs the `model` module with the `no-jooq` profile (skipping jOOQ codegen and model tests),
   then runs API tests without needing a live database.
 - `test-api-it` runs only `*IT` tests (e.g., `StatusControllerIT`, round/competition integration tests) with a real
