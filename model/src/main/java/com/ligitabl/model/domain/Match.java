@@ -27,9 +27,6 @@ public class Match extends AbstractModel<UUID> {
     private Score score;
 
     @NotNull
-    private String name;
-
-    @NotNull
     private String slug;
 
     @NotNull

@@ -36,15 +36,15 @@ class GetSeasonsUseCaseTest {
     @Mock
     private RequestValidator requestValidator;
 
-        @Mock
-        private HierarchyValidator hierarchyValidator;
+    @Mock
+    private HierarchyValidator hierarchyValidator;
 
-        private GetSeasonsUseCase getSeasonsUseCase;
+    private GetSeasonsUseCase getSeasonsUseCase;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-                getSeasonsUseCase = new GetSeasonsHandler(hierarchyValidator, seasonRepo, requestValidator);
+        getSeasonsUseCase = new GetSeasonsHandler(hierarchyValidator, seasonRepo, requestValidator);
     }
 
     @Test
@@ -65,8 +65,7 @@ class GetSeasonsUseCaseTest {
                 .name("Premier League")
                 .build();
 
-        given(hierarchyValidator.validateCompetition("some-competition"))
-                .willReturn(Either.right(competition));
+        given(hierarchyValidator.validateCompetition("some-competition")).willReturn(Either.right(competition));
 
         given(seasonRepo.findAllByCompetitionId(season.getCompetitionId())).willReturn(List.of(season));
 

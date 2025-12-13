@@ -1,22 +1,5 @@
 package com.ligitabl.api.usecases.round.getroundbyposition;
 
-import com.ligitabl.api.shared.validation.RequestValidator;
-import com.ligitabl.api.usecases.round.RoundDto;
-import com.ligitabl.api.usecases.shared.HierarchyValidator;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.CompetitionSlug;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.SeasonSlug;
-import com.ligitabl.model.repo.CompetitionRepo;
-import com.ligitabl.model.repo.RoundRepo;
-import com.ligitabl.model.repo.SeasonRepo;
-
-import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.shared.errors.NotFoundError;
-import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.shared.errors.ValidationError;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
@@ -27,6 +10,15 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.NotFoundError;
+import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.shared.errors.ValidationError;
+import com.ligitabl.api.shared.validation.RequestValidator;
+import com.ligitabl.api.usecases.round.RoundDto;
+import com.ligitabl.api.usecases.shared.HierarchyValidator;
+import com.ligitabl.model.domain.Round;
+
 class GetRoundByPositionUseCaseTest {
 
     @Mock
@@ -35,12 +27,12 @@ class GetRoundByPositionUseCaseTest {
     @Mock
     RequestValidator validator;
 
-        GetRoundByPositionHandler useCase;
+    GetRoundByPositionHandler useCase;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-            useCase = new GetRoundByPositionHandler(hierarchyValidator, validator);
+        useCase = new GetRoundByPositionHandler(hierarchyValidator, validator);
     }
 
     @Test
@@ -95,4 +87,3 @@ class GetRoundByPositionUseCaseTest {
         verifyNoInteractions(hierarchyValidator);
     }
 }
-

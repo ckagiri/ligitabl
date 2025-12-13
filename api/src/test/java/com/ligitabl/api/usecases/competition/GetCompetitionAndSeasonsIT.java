@@ -28,11 +28,11 @@ class GetCompetitionAndSeasonsIT {
     @Autowired
     TestRestTemplate restTemplate;
 
-        @Autowired
-        JdbcTemplate jdbcTemplate;
+    @Autowired
+    JdbcTemplate jdbcTemplate;
 
-        @BeforeEach
-        void setupData() {
+    @BeforeEach
+    void setupData() {
         jdbcTemplate.update("DELETE FROM t_round");
         jdbcTemplate.update("DELETE FROM t_season");
         jdbcTemplate.update("DELETE FROM t_competition");
@@ -41,25 +41,25 @@ class GetCompetitionAndSeasonsIT {
         UUID seasonId = UUID.randomUUID();
 
         jdbcTemplate.update(
-            "INSERT INTO t_competition (pk_id, c_name, c_slug, c_code) VALUES (?,?,?,?)",
-            competitionId,
-            "Premier League",
-            "premier-league",
-            "PL");
+                "INSERT INTO t_competition (pk_id, c_name, c_slug, c_code) VALUES (?,?,?,?)",
+                competitionId,
+                "Premier League",
+                "premier-league",
+                "PL");
 
         jdbcTemplate.update(
-            "INSERT INTO t_season (pk_id, c_client_id, fk_competition_id, c_name, c_slug, c_start_date, c_end_date, c_max_rounds, c_current_match_day) "
-                + "VALUES (?,?,?,?,?,?,?,?,?)",
-            seasonId,
-            1,
-            competitionId,
-            "2024/25",
-            "2024-25",
-            LocalDate.of(2024, 8, 1),
-            LocalDate.of(2025, 5, 31),
-            38,
-            1);
-        }
+                "INSERT INTO t_season (pk_id, c_client_id, fk_competition_id, c_name, c_slug, c_start_date, c_end_date, c_max_rounds, c_current_match_day) "
+                        + "VALUES (?,?,?,?,?,?,?,?,?)",
+                seasonId,
+                1,
+                competitionId,
+                "2024/25",
+                "2024-25",
+                LocalDate.of(2024, 8, 1),
+                LocalDate.of(2025, 5, 31),
+                38,
+                1);
+    }
 
     @Test
     void getCompetitions_shouldReturnAtLeastOneCompetition() {
@@ -74,8 +74,7 @@ class GetCompetitionAndSeasonsIT {
 
     @Test
     void getSeasons_shouldReturnSeasonForCompetition() {
-        var url =
-                "http://localhost:" + port + "/api/competitions/premier-league/seasons";
+        var url = "http://localhost:" + port + "/api/competitions/premier-league/seasons";
         @SuppressWarnings("unchecked")
         ResponseEntity<List> response = (ResponseEntity<List>) restTemplate.getForEntity(url, List.class);
 
@@ -86,9 +85,7 @@ class GetCompetitionAndSeasonsIT {
 
     @Test
     void getSeasonBySlug_shouldReturnSingleSeason() {
-        var url =
-                "http://localhost:" + port
-                        + "/api/competitions/premier-league/seasons/2024-25";
+        var url = "http://localhost:" + port + "/api/competitions/premier-league/seasons/2024-25";
         ResponseEntity<Object> response = restTemplate.getForEntity(url, Object.class);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();

@@ -40,11 +40,6 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: c_name
-                  type: varchar(255)
-                  constraints:
-                    nullable: false
-              - column:
                   name: c_score
                   type: jsonb
                   constraints:

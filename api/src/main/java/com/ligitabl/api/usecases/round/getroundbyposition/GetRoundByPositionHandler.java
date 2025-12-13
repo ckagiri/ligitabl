@@ -1,12 +1,12 @@
 package com.ligitabl.api.usecases.round.getroundbyposition;
 
-import com.ligitabl.api.usecases.shared.HierarchyValidator;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecases.round.RoundDto;
+import com.ligitabl.api.usecases.shared.HierarchyValidator;
 
 import lombok.RequiredArgsConstructor;
 

@@ -48,16 +48,11 @@ class GetRoundMatchesUseCaseTest {
 
         UUID roundId = UUID.randomUUID();
 
-        var round = Round.builder()
-                .id(roundId)
-                .name("Matchday 1")
-                .position(1)
-                .build();
+        var round = Round.builder().id(roundId).name("Matchday 1").position(1).build();
 
         var match = Match.builder()
                 .id(UUID.randomUUID())
                 .roundId(roundId)
-                .name("Arsenal vs Chelsea")
                 .status(MatchStatus.SCHEDULED)
                 .build();
 
@@ -72,8 +67,7 @@ class GetRoundMatchesUseCaseTest {
         assertThat(result.getRight()).hasSize(1);
         assertThat(result.getRight().getFirst().getRoundId()).isEqualTo(roundId);
         verify(validator).validate(query);
-        verify(hierarchyValidator)
-                .validateCompetitionSeasonAndRound("premier-league", "2024-25", 1);
+        verify(hierarchyValidator).validateCompetitionSeasonAndRound("premier-league", "2024-25", 1);
         verify(matchRepo).findByRoundId(roundId);
     }
 
@@ -89,8 +83,7 @@ class GetRoundMatchesUseCaseTest {
 
         assertThat(result.isLeft()).isTrue();
         assertThat(result.getLeft()).isInstanceOf(NotFoundError.class);
-        verify(hierarchyValidator)
-                .validateCompetitionSeasonAndRound("premier-league", "2024-25", 99);
+        verify(hierarchyValidator).validateCompetitionSeasonAndRound("premier-league", "2024-25", 99);
         verifyNoInteractions(matchRepo);
     }
 

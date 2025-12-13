@@ -1,0 +1,49 @@
+season:
+  - clientId: 1
+    competitionSlug: what-premier-league
+    name: 2025/26
+    slug: 2025-26
+    startDate: 2025-08-10
+    endDate: 2026-05-20
+    maxRounds: 38
+    teams:
+      - code: NRU
+        position: 1
+      - code: SOP
+        position: 2
+      - code: WDI
+        position: 3
+      - code: ALL
+        position: 4
+      - code: RSO
+        position: 5
+      - code: ADF
+        position: 6
+      - code: BAA
+        position: 7
+      - code: WRE
+        position: 8
+      - code: BLU
+        position: 9
+      - code: FAT
+        position: 10
+      - code: PKI
+        position: 11
+      - code: NFL
+        position: 12
+      - code: OKW
+        position: 13
+      - code: CKI
+        position: 14
+      - code: OFS
+        position: 15
+      - code: BWM
+        position: 16
+      - code: OWN
+        position: 17
+      - code: RCR
+        position: 18
+      - code: SAV
+        position: 19
+      - code: LEG
+        position: 20

@@ -1,0 +1,81 @@
+team:
+  - name: Not Really United
+    shortName: Not Really United
+    slug: not-really-united
+    tla: NRU
+  - name: Sons of Pitches
+    shortName: Sons of Pitches
+    slug: sons-of-pitches
+    tla: SOP
+  - name: Wrong Direction
+    shortName: Wrong Direction
+    slug: wrong-direction
+    tla: WDI
+  - name: All Luck No Skill
+    shortName: All Luck No Skill
+    slug: all-luck-no-skill
+    tla: ALL
+  - name: Real Sosobad
+    shortName: Real Sosobad
+    slug: real-sosobad
+    tla: RSO
+  - name: Agony of De Feet
+    shortName: Agony of De Feet
+    slug: agony-of-de-feet
+    tla: ADF
+  - name: Barely Athletic
+    shortName: Barely Athletic
+    slug: barely-athletic
+    tla: BAA
+  - name: Walking Red
+    shortName: Walking Red
+    slug: walking-red
+    tla: WRE
+  - name: Blunderland
+    shortName: Blunderland
+    slug: blunderland
+    tla: BLU
+  - name: Fatzio
+    shortName: Fatzio
+    slug: fatzio
+    tla: FAT
+  - name: Penalty Kings
+    shortName: Penalty Kings
+    slug: penalty-kings
+    tla: PKI
+  - name: Net Flicks
+    shortName: Net Flicks
+    slug: net-flicks
+    tla: NFL
+  - name: One Kick Wonders
+    shortName: One Kick Wonders
+    slug: one-kick-wonders
+    tla: OKW
+  - name: Corner Kickers
+    shortName: Corner Kickers
+    slug: corner-kickers
+    tla: CKI
+  - name: Offsiders
+    shortName: Offsiders
+    slug: offsiders
+    tla: OFS
+  - name: Bench Warmers
+    shortName: Bench Warmers
+    slug: bench-warmers
+    tla: BWM
+  - name: Own Goalers
+    shortName: Own Goalers
+    slug: own-goalers
+    tla: OWN
+  - name: Red Card Rejects
+    shortName: Red Card Rejects
+    slug: red-card-rejects
+    tla: RCR
+  - name: Savage and Average
+    shortName: Savage and Average
+    slug: savage-and-average
+    tla: SAV
+  - name: Scrambled Legs
+    shortName: Scrambled Legs
+    slug: scrambled-legs
+    tla: LEG

@@ -8,8 +8,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.jooq.DSLContext;
-import org.jooq.RecordMapper;
 import org.jooq.JSONB;
+import org.jooq.RecordMapper;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -37,14 +37,13 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
 
     @Override
     public boolean existsById(UUID id) {
-        return dsl.fetchExists(
-                dsl.selectOne().from(T_SEASON).where(T_SEASON.PK_ID.eq(id)));
+        return dsl.fetchExists(dsl.selectOne().from(T_SEASON).where(T_SEASON.PK_ID.eq(id)));
     }
 
     @Override
     public List<Season> findAllByCompetitionId(UUID competitionId) {
         return dsl.selectFrom(T_SEASON)
-				.where(T_SEASON.FK_COMPETITION_ID.eq(competitionId))
+                .where(T_SEASON.FK_COMPETITION_ID.eq(competitionId))
                 .orderBy(T_SEASON.C_START_DATE.asc())
                 .fetch()
                 .map(MAPPER::map);
@@ -53,8 +52,7 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
     @Override
     public Optional<Season> findByCompetitionIdAndSlug(UUID competitionId, SeasonSlug slug) {
         var record = dsl.selectFrom(T_SEASON)
-				.where(T_SEASON.FK_COMPETITION_ID.eq(competitionId)
-                        .and(T_SEASON.C_SLUG.eq(slug.value())))
+                .where(T_SEASON.FK_COMPETITION_ID.eq(competitionId).and(T_SEASON.C_SLUG.eq(slug.value())))
                 .fetchOne();
 
         return Optional.ofNullable(MAPPER.map(record));
@@ -88,8 +86,7 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
             }
 
             try {
-                return OBJECT_MAPPER.readValue(
-                        jsonb.data(), new TypeReference<List<TeamRank>>() {});
+                return OBJECT_MAPPER.readValue(jsonb.data(), new TypeReference<List<TeamRank>>() {});
             } catch (IOException e) {
                 throw new IllegalStateException("Failed to deserialize season teams JSON", e);
             }

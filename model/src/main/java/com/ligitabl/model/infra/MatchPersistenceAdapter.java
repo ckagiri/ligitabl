@@ -49,7 +49,6 @@ public class MatchPersistenceAdapter implements MatchRepo {
                     .roundId(record.getRoundId())
                     .homeTeamId(record.getHomeTeamId())
                     .awayTeamId(record.getAwayTeamId())
-                    .name(record.getName())
                     .slug(record.getSlug())
                     .status(parseStatus(record.getStatus()))
                     .kickOff(record.getKickOff())

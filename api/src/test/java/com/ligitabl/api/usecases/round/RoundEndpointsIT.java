@@ -44,32 +44,32 @@ class RoundEndpointsIT {
         seasonId = UUID.randomUUID();
 
         jdbcTemplate.update(
-            "INSERT INTO t_competition (pk_id, c_name, c_slug, c_code) VALUES (?,?,?,?)",
-            competitionId,
-            "Premier League",
-            "premier-league",
-            "PL");
+                "INSERT INTO t_competition (pk_id, c_name, c_slug, c_code) VALUES (?,?,?,?)",
+                competitionId,
+                "Premier League",
+                "premier-league",
+                "PL");
 
         jdbcTemplate.update(
-            "INSERT INTO t_season (pk_id, c_client_id, fk_competition_id, c_name, c_slug, c_start_date, c_end_date, c_max_rounds, c_current_match_day) "
-                + "VALUES (?,?,?,?,?,?,?,?,?)",
-            seasonId,
-            1,
-            competitionId,
-            "2024/25",
-            "2024-25",
-            LocalDate.of(2024, 8, 1),
-            LocalDate.of(2025, 5, 31),
-            38,
-            1);
+                "INSERT INTO t_season (pk_id, c_client_id, fk_competition_id, c_name, c_slug, c_start_date, c_end_date, c_max_rounds, c_current_match_day) "
+                        + "VALUES (?,?,?,?,?,?,?,?,?)",
+                seasonId,
+                1,
+                competitionId,
+                "2024/25",
+                "2024-25",
+                LocalDate.of(2024, 8, 1),
+                LocalDate.of(2025, 5, 31),
+                38,
+                1);
 
         jdbcTemplate.update(
-            "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position) VALUES (?,?,?,?,?)",
-            UUID.randomUUID(),
-            seasonId,
-            "Matchday 1",
-            "md-1",
-            1);
+                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position) VALUES (?,?,?,?,?)",
+                UUID.randomUUID(),
+                seasonId,
+                "Matchday 1",
+                "md-1",
+                1);
     }
 
     @Test
@@ -85,8 +85,7 @@ class RoundEndpointsIT {
 
     @Test
     void getRoundByPosition_shouldReturnSingleRound() {
-        String url =
-                "http://localhost:" + port + "/api/competitions/premier-league/seasons/2024-25/rounds/1";
+        String url = "http://localhost:" + port + "/api/competitions/premier-league/seasons/2024-25/rounds/1";
         ResponseEntity<Object> response = restTemplate.getForEntity(url, Object.class);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();

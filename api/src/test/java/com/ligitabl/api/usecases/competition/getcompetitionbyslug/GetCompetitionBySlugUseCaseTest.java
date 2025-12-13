@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
-import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -20,15 +19,14 @@ import com.ligitabl.api.usecases.competition.CompetitionDto;
 import com.ligitabl.api.usecases.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
-import com.ligitabl.model.repo.CompetitionRepo;
 
 class GetCompetitionBySlugUseCaseTest {
 
-        @Mock
-        private RequestValidator requestValidator;
+    @Mock
+    private RequestValidator requestValidator;
 
-        @Mock
-        private HierarchyValidator hierarchyValidator;
+    @Mock
+    private HierarchyValidator hierarchyValidator;
 
     private GetCompetitionBySlugUseCase getCompetitionBySlugUseCase;
 
@@ -50,8 +48,7 @@ class GetCompetitionBySlugUseCaseTest {
         given(requestValidator.validate(any(GetCompetitionBySlugQuery.class)))
                 .willAnswer(invocation -> Either.right(invocation.getArgument(0)));
 
-        given(hierarchyValidator.validateCompetition("premier-league"))
-                .willReturn(Either.right(competition));
+        given(hierarchyValidator.validateCompetition("premier-league")).willReturn(Either.right(competition));
 
         Either<UseCaseError, CompetitionDto> result =
                 getCompetitionBySlugUseCase.execute(new GetCompetitionBySlugQuery("premier-league"));

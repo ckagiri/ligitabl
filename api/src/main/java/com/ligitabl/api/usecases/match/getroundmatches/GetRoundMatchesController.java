@@ -24,9 +24,7 @@ public class GetRoundMatchesController {
 
     @GetMapping("/{competitionSlug}/seasons/{seasonSlug}/rounds/{position}/matches")
     public ResponseEntity<List<MatchDto>> getMatchesForRound(
-            @PathVariable String competitionSlug,
-            @PathVariable String seasonSlug,
-            @PathVariable int position) {
+            @PathVariable String competitionSlug, @PathVariable String seasonSlug, @PathVariable int position) {
         log.info(
                 "GetRoundMatches request competitionSlug={} seasonSlug={} position={}",
                 competitionSlug,
@@ -39,14 +37,14 @@ public class GetRoundMatchesController {
                 error -> {
                     throw new UseCaseException(error);
                 },
-            matches -> {
-                log.debug(
-                    "GetRoundMatches success competitionSlug={} seasonSlug={} position={} count={}",
-                    competitionSlug,
-                    seasonSlug,
-                    position,
-                    matches.size());
-                return ResponseEntity.ok(matches);
-            });
+                matches -> {
+                    log.debug(
+                            "GetRoundMatches success competitionSlug={} seasonSlug={} position={} count={}",
+                            competitionSlug,
+                            seasonSlug,
+                            position,
+                            matches.size());
+                    return ResponseEntity.ok(matches);
+                });
     }
 }

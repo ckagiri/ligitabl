@@ -1,4 +1,5 @@
 seed:
+  - file: team.yaml
   - file: competition.yaml
   - file: season.yaml
   - file: round.yaml

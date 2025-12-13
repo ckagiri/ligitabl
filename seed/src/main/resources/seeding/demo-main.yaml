@@ -1,0 +1,5 @@
+seed:
+  - file: demo-team.yaml
+  - file: demo-competition.yaml
+  - file: demo-season.yaml
+  - file: demo-round.yaml

@@ -1,5 +1,11 @@
 package com.ligitabl.api.usecases.shared;
 
+import static com.ligitabl.api.shared.ValidationUtils.requireFound;
+
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
@@ -7,12 +13,8 @@ import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-
-import java.util.UUID;
-
-import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 
 @Service
 @RequiredArgsConstructor
@@ -23,16 +25,12 @@ public class HierarchyValidator {
     private final RoundRepo roundRepo;
 
     public Either<UseCaseError, Competition> validateCompetition(String competitionSlugStr) {
-        return Either.catching(
-                        () -> CompetitionSlug.of(competitionSlugStr),
-                        UseCaseErrors::fromException)
+        return Either.catching(() -> CompetitionSlug.of(competitionSlugStr), UseCaseErrors::fromException)
                 .flatMap(this::findCompetitionBySlug);
     }
 
     public Either<UseCaseError, Season> validateSeason(UUID competitionId, String seasonSlugStr) {
-        return Either.catching(
-                        () -> SeasonSlug.of(seasonSlugStr),
-                        UseCaseErrors::fromException)
+        return Either.catching(() -> SeasonSlug.of(seasonSlugStr), UseCaseErrors::fromException)
                 .flatMap(seasonSlug -> findSeasonByCompetitionAndSlug(competitionId, seasonSlug));
     }
 
@@ -42,8 +40,7 @@ public class HierarchyValidator {
                 UseCaseErrors.notFound("Round", "position", String.valueOf(position)));
     }
 
-    public Either<UseCaseError, Season> validateCompetitionAndSeason(
-            String competitionSlugStr, String seasonSlugStr) {
+    public Either<UseCaseError, Season> validateCompetitionAndSeason(String competitionSlugStr, String seasonSlugStr) {
         return validateCompetition(competitionSlugStr)
                 .flatMap(competition -> validateSeason(competition.getId(), seasonSlugStr));
     }
@@ -66,4 +63,3 @@ public class HierarchyValidator {
                 UseCaseErrors.notFound("Season", "slug", seasonSlug.value()));
     }
 }
-

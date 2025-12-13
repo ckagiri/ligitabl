@@ -1,0 +1,33 @@
+competition:
+  - code: WPL
+    slug: what-premier-league
+    name: What Premier League
+    phases:
+      - code: FS
+        name: Full Season
+        from: 1
+        to: 38
+      - code: Q1
+        name: Initial Quarter
+        from: 1
+        to: 9
+      - code: Q2
+        name: Second Quarter
+        from: 10
+        to: 19
+      - code: Q3
+        name: Third Quarter
+        from: 20
+        to: 29
+      - code: Q4
+        name: Final Quarter
+        from: 30
+        to: 38
+      - code: H1
+        name: First Half
+        from: 1
+        to: 19
+      - code: H2
+        name: Second Half
+        from: 20
+        to: 38

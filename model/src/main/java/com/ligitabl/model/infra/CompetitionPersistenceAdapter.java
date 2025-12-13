@@ -8,8 +8,8 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.jooq.DSLContext;
-import org.jooq.RecordMapper;
 import org.jooq.JSONB;
+import org.jooq.RecordMapper;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -46,20 +46,19 @@ public class CompetitionPersistenceAdapter implements CompetitionRepo {
 
     @Override
     public Optional<Competition> findBySlug(CompetitionSlug slug) {
-        var record =
-                dsl.selectFrom(T_COMPETITION).where(T_COMPETITION.C_SLUG.eq(slug.value())).fetchOne();
+        var record = dsl.selectFrom(T_COMPETITION)
+                .where(T_COMPETITION.C_SLUG.eq(slug.value()))
+                .fetchOne();
 
         return Optional.ofNullable(MAPPER.map(record));
     }
 
     @Override
     public boolean existsById(UUID id) {
-        return dsl.fetchExists(
-                dsl.selectOne().from(T_COMPETITION).where(T_COMPETITION.PK_ID.eq(id)));
+        return dsl.fetchExists(dsl.selectOne().from(T_COMPETITION).where(T_COMPETITION.PK_ID.eq(id)));
     }
 
-    private static class CompetitionRecordMapper
-            implements RecordMapper<CompetitionRecord, Competition> {
+    private static class CompetitionRecordMapper implements RecordMapper<CompetitionRecord, Competition> {
         @Override
         public Competition map(CompetitionRecord record) {
             if (record == null) {
@@ -82,8 +81,7 @@ public class CompetitionPersistenceAdapter implements CompetitionRepo {
             }
 
             try {
-                return OBJECT_MAPPER.readValue(
-                        jsonb.data(), new TypeReference<List<RoundSpan>>() {});
+                return OBJECT_MAPPER.readValue(jsonb.data(), new TypeReference<List<RoundSpan>>() {});
             } catch (IOException e) {
                 throw new IllegalStateException("Failed to deserialize competition phases JSON", e);
             }

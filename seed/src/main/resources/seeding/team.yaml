@@ -1,0 +1,97 @@
+team:
+  - name: Arsenal
+    shortName: Arsenal
+    slug: arsenal
+    tla: ARS
+  - name: Chelsea
+    shortName: Chelsea
+    slug: chelsea
+    tla: CHE
+  - name: Liverpool
+    shortName: Liverpool
+    slug: liverpool
+    tla: LIV
+  - name: Manchester City
+    shortName: Man City
+    slug: manchester-city
+    tla: MCI
+  - name: Manchester United
+    shortName: Man United
+    slug: manchester-united
+    tla: MUN
+  - name: Newcastle United
+    shortName: Newcastle
+    slug: newcastle-united
+    tla: NEW
+  - name: Nottingham Forest
+    shortName: Nottm Forest
+    slug: nottingham-forest
+    tla: NFO
+  - name: Southampton
+    shortName: Southampton
+    slug: southampton
+    tla: SOU
+  - name: Tottenham Hotspur
+    shortName: Tottenham
+    slug: tottenham
+    tla: TOT
+  - name: West Ham United
+    shortName: West Ham
+    slug: west-ham
+    tla: WHU
+  - name: Wolverhampton Wanderers
+    shortName: Wolves
+    slug: wolves
+    tla: WOL
+  - name: Aston Villa
+    shortName: Aston Villa
+    slug: aston-villa
+    tla: AVL
+  - name: AFC Bournemouth
+    shortName: Bournemouth
+    slug: bournemouth
+    tla: BOU
+  - name: Brentford
+    shortName: Brentford
+    slug: brentford
+    tla: BRE
+  - name: Brighton & Hove Albion
+    shortName: Brighton
+    slug: brighton
+    tla: BHA
+  - name: Crystal Palace
+    shortName: Crystal Palace
+    slug: crystal-palace
+    tla: CRY
+  - name: Everton
+    shortName: Everton
+    slug: everton
+    tla: EVE
+  - name: Fulham
+    shortName: Fulham
+    slug: fulham
+    tla: FUL
+  - name: Ipswich Town
+    shortName: Ipswich Town
+    slug: ipswich-town
+    tla: IPS
+  - name: Leicester City
+    shortName: Leicester City
+    slug: leicester-city
+    tla: LEI
+  - name: Leeds United
+    shortName: Leeds
+    slug: leeds-united
+    tla: LEE
+  - name: Sunderland
+    shortName: Sunderland
+    slug: sunderland
+    tla: SUN
+  - name: Burnley
+    shortName: Burnley
+    slug: burnley
+    tla: BUR
+  - name: Watford
+    shortName: Watford
+    slug: watford
+    tla: WAT

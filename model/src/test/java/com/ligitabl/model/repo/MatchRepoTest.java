@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.UUID;
 
 import org.jooq.DSLContext;
+import org.jooq.JSONB;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
-import org.jooq.JSONB;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -71,25 +71,25 @@ class MatchRepoTest {
         UUID awayTeamId = UUID.randomUUID();
 
         dsl.insertInto(TCompetition.T_COMPETITION)
-            .set(TCompetition.T_COMPETITION.PK_ID, competitionId)
-            .set(TCompetition.T_COMPETITION.C_NAME, "Premier League")
-            .set(TCompetition.T_COMPETITION.C_SLUG, "premier-league")
-            .set(TCompetition.T_COMPETITION.C_CODE, "PL")
-            .execute();
+                .set(TCompetition.T_COMPETITION.PK_ID, competitionId)
+                .set(TCompetition.T_COMPETITION.C_NAME, "Premier League")
+                .set(TCompetition.T_COMPETITION.C_SLUG, "premier-league")
+                .set(TCompetition.T_COMPETITION.C_CODE, "PL")
+                .execute();
 
         dsl.insertInto(TSeason.T_SEASON)
-            .set(TSeason.T_SEASON.PK_ID, seasonId)
-            .set(TSeason.T_SEASON.C_CLIENT_ID, 1)
-            .set(TSeason.T_SEASON.FK_COMPETITION_ID, competitionId)
-            .set(TSeason.T_SEASON.C_NAME, "2024/25")
-            .set(TSeason.T_SEASON.C_SLUG, "2024-25")
-            .set(TSeason.T_SEASON.C_START_DATE, LocalDate.of(2024, 8, 1))
-            .set(TSeason.T_SEASON.C_END_DATE, LocalDate.of(2025, 5, 31))
-            .set(TSeason.T_SEASON.C_MAX_ROUNDS, 38)
-            .set(TSeason.T_SEASON.C_CURRENT_MATCH_DAY, 1)
-            .execute();
+                .set(TSeason.T_SEASON.PK_ID, seasonId)
+                .set(TSeason.T_SEASON.C_CLIENT_ID, 1)
+                .set(TSeason.T_SEASON.FK_COMPETITION_ID, competitionId)
+                .set(TSeason.T_SEASON.C_NAME, "2024/25")
+                .set(TSeason.T_SEASON.C_SLUG, "2024-25")
+                .set(TSeason.T_SEASON.C_START_DATE, LocalDate.of(2024, 8, 1))
+                .set(TSeason.T_SEASON.C_END_DATE, LocalDate.of(2025, 5, 31))
+                .set(TSeason.T_SEASON.C_MAX_ROUNDS, 38)
+                .set(TSeason.T_SEASON.C_CURRENT_MATCH_DAY, 1)
+                .execute();
 
-            dsl.insertInto(TTeam.T_TEAM)
+        dsl.insertInto(TTeam.T_TEAM)
                 .set(TTeam.T_TEAM.PK_ID, homeTeamId)
                 .set(TTeam.T_TEAM.C_NAME, "Home Team")
                 .set(TTeam.T_TEAM.C_SLUG, "home-team")
@@ -97,7 +97,7 @@ class MatchRepoTest {
                 .set(TTeam.T_TEAM.C_TLA, "HOM")
                 .execute();
 
-            dsl.insertInto(TTeam.T_TEAM)
+        dsl.insertInto(TTeam.T_TEAM)
                 .set(TTeam.T_TEAM.PK_ID, awayTeamId)
                 .set(TTeam.T_TEAM.C_NAME, "Away Team")
                 .set(TTeam.T_TEAM.C_SLUG, "away-team")
@@ -117,10 +117,8 @@ class MatchRepoTest {
         UUID match2Id = UUID.randomUUID();
 
         ObjectMapper mapper = new ObjectMapper();
-        JSONB scoreJson = JSONB.jsonb(mapper.writeValueAsString(Score.builder()
-                .homeTeam(2)
-                .awayTeam(1)
-                .build()));
+        JSONB scoreJson = JSONB.jsonb(mapper.writeValueAsString(
+                Score.builder().homeTeam(2).awayTeam(1).build()));
 
         OffsetDateTime kickOff1 = OffsetDateTime.of(2024, 8, 10, 15, 0, 0, 0, ZoneOffset.UTC);
         OffsetDateTime kickOff2 = OffsetDateTime.of(2024, 8, 11, 15, 0, 0, 0, ZoneOffset.UTC);
@@ -129,9 +127,8 @@ class MatchRepoTest {
                 .set(TMatch.T_MATCH.PK_ID, match2Id)
                 .set(TMatch.T_MATCH.C_CLIENT_ID, 1)
                 .set(TMatch.T_MATCH.FK_ROUND_ID, roundId)
-            .set(TMatch.T_MATCH.FK_HOME_TEAM_ID, homeTeamId)
-            .set(TMatch.T_MATCH.FK_AWAY_TEAM_ID, awayTeamId)
-                .set(TMatch.T_MATCH.C_NAME, "Match 2")
+                .set(TMatch.T_MATCH.FK_HOME_TEAM_ID, homeTeamId)
+                .set(TMatch.T_MATCH.FK_AWAY_TEAM_ID, awayTeamId)
                 .set(TMatch.T_MATCH.C_SLUG, "match-2")
                 .set(TMatch.T_MATCH.C_STATUS, "FINISHED")
                 .set(TMatch.T_MATCH.C_KICK_OFF, kickOff2)
@@ -144,9 +141,8 @@ class MatchRepoTest {
                 .set(TMatch.T_MATCH.PK_ID, match1Id)
                 .set(TMatch.T_MATCH.C_CLIENT_ID, 1)
                 .set(TMatch.T_MATCH.FK_ROUND_ID, roundId)
-            .set(TMatch.T_MATCH.FK_HOME_TEAM_ID, homeTeamId)
-            .set(TMatch.T_MATCH.FK_AWAY_TEAM_ID, awayTeamId)
-                .set(TMatch.T_MATCH.C_NAME, "Match 1")
+                .set(TMatch.T_MATCH.FK_HOME_TEAM_ID, homeTeamId)
+                .set(TMatch.T_MATCH.FK_AWAY_TEAM_ID, awayTeamId)
                 .set(TMatch.T_MATCH.C_SLUG, "match-1")
                 .set(TMatch.T_MATCH.C_STATUS, "FINISHED")
                 .set(TMatch.T_MATCH.C_KICK_OFF, kickOff1)

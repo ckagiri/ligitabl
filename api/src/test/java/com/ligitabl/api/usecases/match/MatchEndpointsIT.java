@@ -100,14 +100,13 @@ class MatchEndpointsIT {
                 1);
 
         jdbcTemplate.update(
-                "INSERT INTO t_match (pk_id, c_client_id, fk_round_id, fk_home_team_id, fk_away_team_id, c_name, c_slug, c_status, c_kick_off, c_venue, c_matchday) "
-                        + "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO t_match (pk_id, c_client_id, fk_round_id, fk_home_team_id, fk_away_team_id, c_slug, c_status, c_kick_off, c_venue, c_matchday) "
+                        + "VALUES (?,?,?,?,?,?,?,?,?,?)",
                 UUID.randomUUID(),
                 1,
                 roundId,
                 homeTeamId,
                 awayTeamId,
-                "Home vs Away",
                 "home-vs-away",
                 MatchStatus.SCHEDULED.name(),
                 OffsetDateTime.now(),
@@ -117,9 +116,7 @@ class MatchEndpointsIT {
 
     @Test
     void getMatchesForRound_shouldReturnMatches() {
-        String url =
-                "http://localhost:" + port +
-                        "/api/competitions/premier-league/seasons/2024-25/rounds/1/matches";
+        String url = "http://localhost:" + port + "/api/competitions/premier-league/seasons/2024-25/rounds/1/matches";
         ResponseEntity<List> response = restTemplate.getForEntity(url, List.class);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();

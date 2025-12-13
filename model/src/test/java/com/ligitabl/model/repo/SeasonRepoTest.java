@@ -10,9 +10,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.jooq.DSLContext;
+import org.jooq.JSONB;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
-import org.jooq.JSONB;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -45,10 +45,10 @@ class SeasonRepoTest {
         repo = new SeasonPersistenceAdapter(dsl);
 
         // Clean slate (respect FK order)
-            dsl.deleteFrom(TMatch.T_MATCH).execute();
-            dsl.deleteFrom(TRound.T_ROUND).execute();
-            dsl.deleteFrom(TSeason.T_SEASON).execute();
-            dsl.deleteFrom(TCompetition.T_COMPETITION).execute();
+        dsl.deleteFrom(TMatch.T_MATCH).execute();
+        dsl.deleteFrom(TRound.T_ROUND).execute();
+        dsl.deleteFrom(TSeason.T_SEASON).execute();
+        dsl.deleteFrom(TCompetition.T_COMPETITION).execute();
     }
 
     @AfterAll
@@ -64,16 +64,16 @@ class SeasonRepoTest {
         UUID seasonId = UUID.randomUUID();
 
         dsl.insertInto(TCompetition.T_COMPETITION)
-            .set(TCompetition.T_COMPETITION.PK_ID, competitionId)
-            .set(TCompetition.T_COMPETITION.C_NAME, "Premier League")
-            .set(TCompetition.T_COMPETITION.C_SLUG, "premier-league")
-            .set(TCompetition.T_COMPETITION.C_CODE, "PL")
-            .execute();
+                .set(TCompetition.T_COMPETITION.PK_ID, competitionId)
+                .set(TCompetition.T_COMPETITION.C_NAME, "Premier League")
+                .set(TCompetition.T_COMPETITION.C_SLUG, "premier-league")
+                .set(TCompetition.T_COMPETITION.C_CODE, "PL")
+                .execute();
 
         dsl.insertInto(TSeason.T_SEASON)
                 .set(TSeason.T_SEASON.PK_ID, seasonId)
                 .set(TSeason.T_SEASON.C_CLIENT_ID, 1)
-				.set(TSeason.T_SEASON.FK_COMPETITION_ID, competitionId)
+                .set(TSeason.T_SEASON.FK_COMPETITION_ID, competitionId)
                 .set(TSeason.T_SEASON.C_NAME, "2024/25")
                 .set(TSeason.T_SEASON.C_SLUG, "2024-25")
                 .set(TSeason.T_SEASON.C_START_DATE, LocalDate.of(2024, 8, 1))
@@ -81,27 +81,23 @@ class SeasonRepoTest {
                 .set(TSeason.T_SEASON.C_MAX_ROUNDS, 38)
                 .set(TSeason.T_SEASON.C_CURRENT_MATCH_DAY, 0)
                 .set(
-                    TSeason.T_SEASON.C_TEAMS,
-                    JSONB.valueOf(
-                        "[{\"code\":\"ARS\",\"position\":1},{\"code\":\"MCI\",\"position\":2}]"))
+                        TSeason.T_SEASON.C_TEAMS,
+                        JSONB.valueOf("[{\"code\":\"ARS\",\"position\":1},{\"code\":\"MCI\",\"position\":2}]"))
                 .execute();
 
         List<Season> byCompetition = repo.findAllByCompetitionId(competitionId);
         assertThat(byCompetition).hasSize(1);
 
-        Optional<Season> bySlug =
-                repo.findByCompetitionIdAndSlug(competitionId, SeasonSlug.of("2024-25"));
+        Optional<Season> bySlug = repo.findByCompetitionIdAndSlug(competitionId, SeasonSlug.of("2024-25"));
         assertThat(bySlug).isPresent();
         assertThat(bySlug.get().getId()).isEqualTo(seasonId);
 
-        assertThat(bySlug.get().getTeams())
-            .hasSize(2)
-            .satisfies(teams -> {
-                assertThat(teams.get(0).getCode()).isEqualTo("ARS");
-                assertThat(teams.get(0).getPosition()).isEqualTo(1);
-                assertThat(teams.get(1).getCode()).isEqualTo("MCI");
-                assertThat(teams.get(1).getPosition()).isEqualTo(2);
-            });
+        assertThat(bySlug.get().getTeams()).hasSize(2).satisfies(teams -> {
+            assertThat(teams.get(0).getCode()).isEqualTo("ARS");
+            assertThat(teams.get(0).getPosition()).isEqualTo(1);
+            assertThat(teams.get(1).getCode()).isEqualTo("MCI");
+            assertThat(teams.get(1).getPosition()).isEqualTo(2);
+        });
 
         assertThat(repo.existsById(seasonId)).isTrue();
     }

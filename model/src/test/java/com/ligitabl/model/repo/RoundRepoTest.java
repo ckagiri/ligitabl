@@ -64,27 +64,27 @@ class RoundRepoTest {
         UUID round2Id = UUID.randomUUID();
 
         dsl.insertInto(TCompetition.T_COMPETITION)
-            .set(TCompetition.T_COMPETITION.PK_ID, competitionId)
-            .set(TCompetition.T_COMPETITION.C_NAME, "Premier League")
-            .set(TCompetition.T_COMPETITION.C_SLUG, "premier-league")
-            .set(TCompetition.T_COMPETITION.C_CODE, "PL")
-            .execute();
+                .set(TCompetition.T_COMPETITION.PK_ID, competitionId)
+                .set(TCompetition.T_COMPETITION.C_NAME, "Premier League")
+                .set(TCompetition.T_COMPETITION.C_SLUG, "premier-league")
+                .set(TCompetition.T_COMPETITION.C_CODE, "PL")
+                .execute();
 
         dsl.insertInto(TSeason.T_SEASON)
-            .set(TSeason.T_SEASON.PK_ID, seasonId)
-            .set(TSeason.T_SEASON.C_CLIENT_ID, 1)
-            .set(TSeason.T_SEASON.FK_COMPETITION_ID, competitionId)
-            .set(TSeason.T_SEASON.C_NAME, "2024/25")
-            .set(TSeason.T_SEASON.C_SLUG, "2024-25")
-            .set(TSeason.T_SEASON.C_START_DATE, LocalDate.of(2024, 8, 1))
-            .set(TSeason.T_SEASON.C_END_DATE, LocalDate.of(2025, 5, 31))
-            .set(TSeason.T_SEASON.C_MAX_ROUNDS, 38)
-            .set(TSeason.T_SEASON.C_CURRENT_MATCH_DAY, 0)
-            .execute();
+                .set(TSeason.T_SEASON.PK_ID, seasonId)
+                .set(TSeason.T_SEASON.C_CLIENT_ID, 1)
+                .set(TSeason.T_SEASON.FK_COMPETITION_ID, competitionId)
+                .set(TSeason.T_SEASON.C_NAME, "2024/25")
+                .set(TSeason.T_SEASON.C_SLUG, "2024-25")
+                .set(TSeason.T_SEASON.C_START_DATE, LocalDate.of(2024, 8, 1))
+                .set(TSeason.T_SEASON.C_END_DATE, LocalDate.of(2025, 5, 31))
+                .set(TSeason.T_SEASON.C_MAX_ROUNDS, 38)
+                .set(TSeason.T_SEASON.C_CURRENT_MATCH_DAY, 0)
+                .execute();
 
         dsl.insertInto(TRound.T_ROUND)
                 .set(TRound.T_ROUND.PK_ID, round1Id)
-				.set(TRound.T_ROUND.FK_SEASON_ID, seasonId)
+                .set(TRound.T_ROUND.FK_SEASON_ID, seasonId)
                 .set(TRound.T_ROUND.C_NAME, "Round 1")
                 .set(TRound.T_ROUND.C_SLUG, "round-1")
                 .set(TRound.T_ROUND.C_POSITION, 1)
@@ -92,7 +92,7 @@ class RoundRepoTest {
 
         dsl.insertInto(TRound.T_ROUND)
                 .set(TRound.T_ROUND.PK_ID, round2Id)
-				.set(TRound.T_ROUND.FK_SEASON_ID, seasonId)
+                .set(TRound.T_ROUND.FK_SEASON_ID, seasonId)
                 .set(TRound.T_ROUND.C_NAME, "Round 2")
                 .set(TRound.T_ROUND.C_SLUG, "round-2")
                 .set(TRound.T_ROUND.C_POSITION, 2)

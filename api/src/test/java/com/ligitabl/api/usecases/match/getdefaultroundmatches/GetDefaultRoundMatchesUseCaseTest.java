@@ -14,7 +14,6 @@ import org.mockito.MockitoAnnotations;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecases.match.MatchDto;
 import com.ligitabl.api.usecases.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Competition;
@@ -70,12 +69,10 @@ class GetDefaultRoundMatchesUseCaseTest {
         var match = Match.builder()
                 .id(UUID.randomUUID())
                 .roundId(roundId)
-                .name("Arsenal vs Chelsea")
                 .status(MatchStatus.SCHEDULED)
                 .build();
 
-        when(hierarchyValidator.validateCompetition("premier-league"))
-                .thenReturn(Either.right(competition));
+        when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(match));
 
@@ -100,8 +97,7 @@ class GetDefaultRoundMatchesUseCaseTest {
                 .code("PL")
                 .build();
 
-        when(hierarchyValidator.validateCompetition("premier-league"))
-                .thenReturn(Either.right(competition));
+        when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
 
         Either<UseCaseError, List<MatchDto>> result = useCase.execute(null);
 
@@ -130,8 +126,7 @@ class GetDefaultRoundMatchesUseCaseTest {
                 .slug(SeasonSlug.of("2024-25"))
                 .build();
 
-        when(hierarchyValidator.validateCompetition("premier-league"))
-                .thenReturn(Either.right(competition));
+        when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
 
         Either<UseCaseError, List<MatchDto>> result = useCase.execute(null);

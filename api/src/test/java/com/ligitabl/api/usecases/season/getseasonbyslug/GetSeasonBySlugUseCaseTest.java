@@ -5,7 +5,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
 import java.time.LocalDate;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -23,16 +22,14 @@ import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
-import com.ligitabl.model.repo.CompetitionRepo;
-import com.ligitabl.model.repo.SeasonRepo;
 
 class GetSeasonBySlugUseCaseTest {
 
     @Mock
     private RequestValidator requestValidator;
 
-        @Mock
-        private HierarchyValidator hierarchyValidator;
+    @Mock
+    private HierarchyValidator hierarchyValidator;
 
     private GetSeasonBySlugUseCase getSeasonBySlugUseCase;
 

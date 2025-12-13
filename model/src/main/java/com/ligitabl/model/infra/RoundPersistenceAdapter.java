@@ -24,7 +24,7 @@ public class RoundPersistenceAdapter implements RoundRepo {
     @Override
     public List<Round> findBySeasonId(UUID seasonId) {
         return dsl.selectFrom(T_ROUND)
-				.where(T_ROUND.FK_SEASON_ID.eq(seasonId))
+                .where(T_ROUND.FK_SEASON_ID.eq(seasonId))
                 .orderBy(T_ROUND.C_POSITION.asc())
                 .fetch()
                 .map(MAPPER::map);
@@ -33,7 +33,7 @@ public class RoundPersistenceAdapter implements RoundRepo {
     @Override
     public Optional<Round> findBySeasonIdAndPosition(UUID seasonId, int position) {
         var record = dsl.selectFrom(T_ROUND)
-				.where(T_ROUND.FK_SEASON_ID.eq(seasonId).and(T_ROUND.C_POSITION.eq(position)))
+                .where(T_ROUND.FK_SEASON_ID.eq(seasonId).and(T_ROUND.C_POSITION.eq(position)))
                 .fetchOne();
 
         return Optional.ofNullable(MAPPER.map(record));

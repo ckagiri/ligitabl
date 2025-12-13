@@ -37,7 +37,6 @@ public class MatchDto {
                 .roundId(match.getRoundId())
                 .homeTeamId(match.getHomeTeamId())
                 .awayTeamId(match.getAwayTeamId())
-                .name(match.getName())
                 .slug(match.getSlug())
                 .status(match.getStatus())
                 .kickOff(match.getKickOff())

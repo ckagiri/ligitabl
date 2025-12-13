@@ -1,12 +1,12 @@
 package com.ligitabl.api.usecases.competition.getcompetitionbyslug;
 
-import com.ligitabl.api.usecases.shared.HierarchyValidator;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecases.competition.CompetitionDto;
+import com.ligitabl.api.usecases.shared.HierarchyValidator;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,4 +25,3 @@ public class GetCompetitionBySlugHandler implements GetCompetitionBySlugUseCase 
                 .map(CompetitionDto::from);
     }
 }
-
