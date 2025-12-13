@@ -1,0 +1,18 @@
+spring:
+  main:
+    web-application-type: none
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:${DB_PORT:55432}/${DB_NAME:ligitabl}}
+    username: ${DB_USER:ligitabl}
+    password: ${DB_PASSWORD:ligitabl}
+    driver-class-name: org.postgresql.Driver
+  jooq:
+    sql-dialect: POSTGRES
+  liquibase:
+    change-log: classpath:db/changelog/db.changelog-master.yaml
+    enabled: ${SEED_RUN_LIQUIBASE:false}
+
+logging:
+  level:
+    root: INFO
+    org.jooq: WARN

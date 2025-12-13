@@ -1,0 +1,16 @@
+season:
+  - clientId: 1
+    competitionSlug: premier-league
+    name: 2025/26
+    slug: premier-league-2025-26
+    startDate: 2025-08-10
+    endDate: 2026-05-20
+    maxRounds: 38
+    teams:
+      - code: ARS
+        position: 1
+      - code: CHE
+        position: 2
+      - code: LIV
+        position: 3
+

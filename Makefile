@@ -18,7 +18,7 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap seed-app format format-check format-all test-unit test-api-no-jooq test-api-fast test-all test-model test-api-it test-api-all model-codegen-local
+.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap seed-app format format-check format-all test-unit test-api-no-jooq test-api-fast test-all test-model test-api-it test-api-all model-codegen-local seed-competition-cli db-seed
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -159,13 +159,13 @@ compose-down: ## Stop and remove compose services/volumes
 codegen: ## Run jOOQ code generation in model/ (full, robust)
 	# Ensure the jOOQ codegen strategy module is installed, then run codegen in model
 	mvn -q -DskipTests -pl jooq-codegen -am install
-	mvn -q -DskipTests -pl model -am generate-sources
+	mvn -q -DskipTests -Djooq.codegen.skip=false -pl model -am generate-sources
 
 codegen-fast: ## Run jOOQ code generation (lean) - assumes jooq-codegen is already installed
-	mvn -q -DskipTests -pl model -am generate-sources
+	mvn -q -DskipTests -Djooq.codegen.skip=false -pl model -am generate-sources
 
 model-compile: ## Regenerate jOOQ and compile the model (ensures generated getters are available)
-	mvn -q -DskipTests -pl model -am generate-sources compile
+	mvn -q -DskipTests -Djooq.codegen.skip=false -pl model -am generate-sources compile
 
 model-codegen-local: ## Start DB (compose), run Liquibase migrations, then jOOQ codegen for model
 	$(MAKE) compose-up-db
@@ -250,6 +250,17 @@ seed-app: $(JAR) ## Seed teams using the Spring Boot app from YAML (uses app.see
 	# Run the JAR in CLI mode to perform seeding and exit
 	JAVA_OPTS_EXT="--spring.main.web-application-type=none --app.seed.exit-on-completion=true --app.seed.teams-file=$(SEED_TEAMS_FILE)"; \
 	java -jar $(JAR) $$JAVA_OPTS_EXT
+
+db-seed: ## Seed reference data (competition, season, round) using the dedicated seed module against the dev DB
+	$(MAKE) compose-up-db
+	mvn -q -pl seed -am -DskipTests spring-boot:run \
+	  -Dspring-boot.run.profiles=default
+
+seed-competition-cli: ## Seed competitions using the Spring Boot CLI against the dev DB
+	$(MAKE) compose-up-db
+	mvn -q -pl $(API_DIR) -am -DskipTests org.codehaus.mojo:exec-maven-plugin:3.5.0:java \
+	  -Dexec.mainClass=com.ligitabl.api.seed.CompetitionSeedCli \
+	  -Dexec.args=".art/seeding/competition.yaml"
 
 format: ## Format all Java sources (api, model) using Spotless (4-space indentation)
 	mvn -q -pl api,model com.diffplug.spotless:spotless-maven-plugin:2.44.0:apply

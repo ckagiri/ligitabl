@@ -13,6 +13,14 @@
     <properties>
         <!-- Centralized versions -->
         <lombok.version>1.18.32</lombok.version>
+
+        <!-- Default DB connection properties for tooling (jOOQ, Liquibase, tests).
+             These mirror the values in .env and can be overridden with -DDB_* on the command line. -->
+        <DB_HOST>localhost</DB_HOST>
+        <DB_PORT>55432</DB_PORT>
+        <DB_NAME>ligitabl</DB_NAME>
+        <DB_USER>ligitabl</DB_USER>
+        <DB_PASSWORD>ligitabl</DB_PASSWORD>
     </properties>
 
     <dependencyManagement>
@@ -30,6 +38,7 @@
         <module>jooq-codegen</module>
         <module>model</module>
         <module>api</module>
+        <module>seed</module>
     </modules>
 
         <build>

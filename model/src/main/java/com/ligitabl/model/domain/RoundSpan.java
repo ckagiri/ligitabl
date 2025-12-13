@@ -8,6 +8,8 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 @Jacksonized
 public class RoundSpan {
+    String code;
+    String name;
     int from;
     int to;
 }
