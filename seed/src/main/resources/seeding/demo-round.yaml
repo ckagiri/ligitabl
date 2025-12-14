@@ -2,6 +2,6 @@ round:
   competitionSlug: what-premier-league
   seasonSlug: 2025-26
   count: 38
-  namePrefix: Matchweek
-  slugPrefix: mw-
+  namePrefix: Gameweek
+  slugPrefix: gw-
   startPosition: 1

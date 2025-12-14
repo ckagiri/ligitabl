@@ -36,6 +36,15 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
     }
 
     @Override
+    public Optional<Season> findByClientId(Integer clientId) {
+        var record = dsl.selectFrom(T_SEASON)
+                .where(T_SEASON.C_CLIENT_ID.eq(clientId))
+                .fetchOne();
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
+    @Override
     public boolean existsById(UUID id) {
         return dsl.fetchExists(dsl.selectOne().from(T_SEASON).where(T_SEASON.PK_ID.eq(id)));
     }

@@ -3,30 +3,37 @@ team:
     shortName: Arsenal
     slug: arsenal
     tla: ARS
+    clientId: 57
   - name: Chelsea
     shortName: Chelsea
     slug: chelsea
     tla: CHE
+    clientId: 61
   - name: Liverpool
     shortName: Liverpool
     slug: liverpool
     tla: LIV
+    clientId: 64
   - name: Manchester City
     shortName: Man City
     slug: manchester-city
     tla: MCI
+    clientId: 65
   - name: Manchester United
     shortName: Man United
     slug: manchester-united
     tla: MUN
+    clientId: 66
   - name: Newcastle United
     shortName: Newcastle
     slug: newcastle-united
     tla: NEW
+    clientId: 67
   - name: Nottingham Forest
     shortName: Nottm Forest
     slug: nottingham-forest
     tla: NFO
+    clientId: 351
   - name: Southampton
     shortName: Southampton
     slug: southampton
@@ -35,42 +42,52 @@ team:
     shortName: Tottenham
     slug: tottenham
     tla: TOT
+    clientId: 73
   - name: West Ham United
     shortName: West Ham
     slug: west-ham
     tla: WHU
+    clientId: 563
   - name: Wolverhampton Wanderers
     shortName: Wolves
     slug: wolves
     tla: WOL
+    clientId: 76
   - name: Aston Villa
     shortName: Aston Villa
     slug: aston-villa
     tla: AVL
+    clientId: 58
   - name: AFC Bournemouth
     shortName: Bournemouth
     slug: bournemouth
     tla: BOU
+    clientId: 1044
   - name: Brentford
     shortName: Brentford
     slug: brentford
     tla: BRE
+    clientId: 402
   - name: Brighton & Hove Albion
     shortName: Brighton
     slug: brighton
     tla: BHA
+    clientId: 397
   - name: Crystal Palace
     shortName: Crystal Palace
     slug: crystal-palace
     tla: CRY
+    clientId: 354
   - name: Everton
     shortName: Everton
     slug: everton
     tla: EVE
+    clientId: 62
   - name: Fulham
     shortName: Fulham
     slug: fulham
     tla: FUL
+    clientId: 63
   - name: Ipswich Town
     shortName: Ipswich Town
     slug: ipswich-town
@@ -83,14 +100,17 @@ team:
     shortName: Leeds
     slug: leeds-united
     tla: LEE
+    clientId: 341
   - name: Sunderland
     shortName: Sunderland
     slug: sunderland
     tla: SUN
+    clientId: 71
   - name: Burnley
     shortName: Burnley
     slug: burnley
     tla: BUR
+    clientId: 328
   - name: Watford
     shortName: Watford
     slug: watford

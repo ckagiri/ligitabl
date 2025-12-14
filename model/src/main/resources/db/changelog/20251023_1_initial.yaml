@@ -20,6 +20,11 @@ databaseChangeLog:
                     nullable: false
                     primaryKey: true
               - column:
+                  name: c_client_id
+                  type: int
+                  constraints:
+                    nullable: true
+              - column:
                   name: c_name
                   type: varchar(255)
                   constraints:
@@ -40,3 +45,8 @@ databaseChangeLog:
                   type: char(3)
                   constraints:
                     nullable: false
+        - addUniqueConstraint:
+            tableName: t_team
+            schemaName: public
+            columnNames: c_client_id
+            constraintName: uq_t_team_client_id

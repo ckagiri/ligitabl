@@ -14,6 +14,8 @@ import lombok.experimental.SuperBuilder;
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
 public class Team extends AbstractModel<UUID> {
+    private Integer clientId;
+
     @NotNull
     private String name;
 
