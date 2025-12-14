@@ -18,6 +18,7 @@ import com.ligitabl.api.shared.errors.ValidationError;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecases.match.MatchDto;
 import com.ligitabl.api.usecases.shared.HierarchyValidator;
+import com.ligitabl.api.usecases.shared.MatchEnricher;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -34,12 +35,15 @@ class GetRoundMatchesUseCaseTest {
     @Mock
     HierarchyValidator hierarchyValidator;
 
+    @Mock
+    MatchEnricher matchEnricher;
+
     GetRoundMatchesUseCase useCase;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        useCase = new GetRoundMatchesHandler(hierarchyValidator, matchRepo, validator);
+        useCase = new GetRoundMatchesHandler(hierarchyValidator, matchRepo, matchEnricher, validator);
     }
 
     @Test
@@ -58,8 +62,11 @@ class GetRoundMatchesUseCaseTest {
 
         when(validator.validate(query)).thenReturn(Either.right(query));
         when(hierarchyValidator.validateCompetitionSeasonAndRound("premier-league", "2024-25", 1))
-                .thenReturn(Either.right(round));
+            .thenReturn(Either.right(round));
         when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(match));
+
+        MatchDto dto = MatchDto.builder().roundId(roundId).build();
+        when(matchEnricher.enrichWithTeams(List.of(match))).thenReturn(Either.right(List.of(dto)));
 
         Either<UseCaseError, List<MatchDto>> result = useCase.execute(query);
 
@@ -69,6 +76,7 @@ class GetRoundMatchesUseCaseTest {
         verify(validator).validate(query);
         verify(hierarchyValidator).validateCompetitionSeasonAndRound("premier-league", "2024-25", 1);
         verify(matchRepo).findByRoundId(roundId);
+        verify(matchEnricher).enrichWithTeams(List.of(match));
     }
 
     @Test

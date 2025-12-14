@@ -14,7 +14,7 @@ import org.springframework.stereotype.Component;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "workflow", name = "run", havingValue = "true")
-public class MatchImportWorkflowRunner implements ApplicationRunner {
+public class ImportWorkflowRunner implements ApplicationRunner {
 
     private final ImportWorkflowService workflowService;
     private final WorkflowConfiguration config;

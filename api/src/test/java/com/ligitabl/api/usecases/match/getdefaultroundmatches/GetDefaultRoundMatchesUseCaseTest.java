@@ -16,6 +16,7 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.usecases.match.MatchDto;
 import com.ligitabl.api.usecases.shared.HierarchyValidator;
+import com.ligitabl.api.usecases.shared.MatchEnricher;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Match;
@@ -36,12 +37,15 @@ class GetDefaultRoundMatchesUseCaseTest {
     @Mock
     MatchRepo matchRepo;
 
+        @Mock
+        MatchEnricher matchEnricher;
+
     GetDefaultRoundMatchesUseCase useCase;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        useCase = new GetDefaultRoundMatchesHandler(hierarchyValidator, seasonRepo, matchRepo);
+                useCase = new GetDefaultRoundMatchesHandler(hierarchyValidator, seasonRepo, matchRepo, matchEnricher);
     }
 
     @Test
@@ -76,6 +80,9 @@ class GetDefaultRoundMatchesUseCaseTest {
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(match));
 
+        MatchDto dto = MatchDto.builder().roundId(roundId).build();
+        when(matchEnricher.enrichWithTeams(List.of(match))).thenReturn(Either.right(List.of(dto)));
+
         Either<UseCaseError, List<MatchDto>> result = useCase.execute(null);
 
         assertThat(result.isRight()).isTrue();
@@ -84,6 +91,7 @@ class GetDefaultRoundMatchesUseCaseTest {
         verify(hierarchyValidator).validateCompetition("premier-league");
         verify(seasonRepo).findById(seasonId);
         verify(matchRepo).findByRoundId(roundId);
+        verify(matchEnricher).enrichWithTeams(List.of(match));
     }
 
     @Test

@@ -19,6 +19,7 @@ ifneq (,$(wildcard .env))
 endif
 
 .PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap seed-app format format-check format-all test-unit test-api-no-jooq test-api-fast test-api-core test-all test-model test-model-fast test-api-it test-api-all test-dev model-codegen-local seed-competition-cli db-seed db-seed-demo dev-reset test-api-rebuild
+	run-api
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -75,6 +76,10 @@ run-no-db: $(JAR) ## Run without requiring DB (skips DataSource auto-config)
 run-app: ## Start DB (compose) and run the app JAR
 	$(MAKE) compose-up-db
 	$(MAKE) run
+
+run-api: ## Start DB (compose) and run the API via spring-boot:run
+	$(MAKE) compose-up-db
+	mvn -q -pl $(API_DIR) -am spring-boot:run
 
 bootstrap-run: ## Bootstrap DB (reset+migrate+codegen+seed) then run the app
 	$(MAKE) db-bootstrap

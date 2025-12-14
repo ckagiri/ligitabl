@@ -5,6 +5,7 @@ import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 import java.util.List;
 import java.util.UUID;
 
+import com.ligitabl.api.usecases.shared.MatchEnricher;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
@@ -28,15 +29,15 @@ public class GetDefaultRoundMatchesHandler implements GetDefaultRoundMatchesUseC
     private final HierarchyValidator hierarchyValidator;
     private final SeasonRepo seasonRepo;
     private final MatchRepo matchRepo;
+    private final MatchEnricher matchEnricher;
 
     @Override
     public Either<UseCaseError, List<MatchDto>> execute(Void unused) {
-        return hierarchyValidator
-                .validateCompetition(DEFAULT_COMPETITION)
+        return hierarchyValidator.validateCompetition(DEFAULT_COMPETITION)
                 .flatMap(this::getActiveSeason)
                 .flatMap(this::getCurrentRoundId)
                 .flatMap(Either.catching(matchRepo::findByRoundId, UseCaseErrors::fromException))
-                .map(MatchDto::listOf);
+                .flatMap(matchEnricher::enrichWithTeams);
     }
 
     private Either<UseCaseError, Season> getActiveSeason(Competition competition) {
@@ -45,7 +46,9 @@ public class GetDefaultRoundMatchesHandler implements GetDefaultRoundMatchesUseC
             return Either.left(UseCaseErrors.validation("Competition has no active season"));
         }
 
-        return requireFound(seasonRepo.findById(activeSeasonId), UseCaseErrors.notFound("Season", activeSeasonId));
+        return requireFound(
+                seasonRepo.findById(activeSeasonId),
+                UseCaseErrors.notFound("Season", activeSeasonId));
     }
 
     private Either<UseCaseError, UUID> getCurrentRoundId(Season season) {
@@ -56,3 +59,4 @@ public class GetDefaultRoundMatchesHandler implements GetDefaultRoundMatchesUseC
         return Either.right(currentRoundId);
     }
 }
+

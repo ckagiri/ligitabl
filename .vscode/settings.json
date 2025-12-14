@@ -9,5 +9,6 @@
   "[java]": {
     "editor.formatOnSave": false,
     "editor.tabSize": 4
-  }
+  },
+  "java.compile.nullAnalysis.mode": "automatic"
 }

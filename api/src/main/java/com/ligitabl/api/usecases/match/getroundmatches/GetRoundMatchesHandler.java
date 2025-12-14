@@ -1,7 +1,17 @@
 package com.ligitabl.api.usecases.match.getroundmatches;
 
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
+import com.ligitabl.api.usecases.shared.MatchEnricher;
+import com.ligitabl.model.domain.Match;
+import com.ligitabl.model.domain.Team;
+import com.ligitabl.model.repo.TeamRepo;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
@@ -21,6 +31,7 @@ public class GetRoundMatchesHandler implements GetRoundMatchesUseCase {
 
     private final HierarchyValidator hierarchyValidator;
     private final MatchRepo matchRepo;
+    private final MatchEnricher matchEnricher;
     private final RequestValidator requestValidator;
 
     @Override
@@ -31,6 +42,6 @@ public class GetRoundMatchesHandler implements GetRoundMatchesUseCase {
                         q.competitionSlug(), q.seasonSlug(), q.position()))
                 .map(Round::getId)
                 .flatMap(Either.catching(matchRepo::findByRoundId, UseCaseErrors::fromException))
-                .map(MatchDto::listOf);
+                .flatMap(matchEnricher::enrichWithTeams);
     }
 }

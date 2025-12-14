@@ -5,6 +5,7 @@ import static com.ligitabl.model.db.tables.TTeam.T_TEAM;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.jooq.DSLContext;
@@ -74,6 +75,18 @@ public class TeamPersistenceAdapter implements TeamRepo {
     @Override
     public List<Team> findAll() {
         return dsl.selectFrom(T_TEAM).orderBy(T_TEAM.C_NAME.asc()).fetch().map(MAPPER::map);
+    }
+
+    @Override
+    public List<Team> findAllByIds(Set<UUID> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return List.of();
+        }
+
+        return dsl.selectFrom(T_TEAM)
+                .where(T_TEAM.PK_ID.in(ids))
+                .fetch()
+                .map(MAPPER::map);
     }
 
     @Override
