@@ -1,17 +1,7 @@
 package com.ligitabl.api.usecases.match.getroundmatches;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
-import com.ligitabl.api.usecases.shared.MatchEnricher;
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.repo.TeamRepo;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
@@ -20,6 +10,7 @@ import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecases.match.MatchDto;
 import com.ligitabl.api.usecases.shared.HierarchyValidator;
+import com.ligitabl.api.usecases.shared.MatchEnricher;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.repo.MatchRepo;
 

@@ -1,11 +1,12 @@
 package com.ligitabl.api.importer;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Script-style entrypoint for importing matches for a competition.
@@ -22,15 +23,14 @@ public class ImportWorkflowRunner implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         log.info("╔═══════════════════════════════════════════════════════════╗");
-        log.info("║        Match Import Workflow (Script Mode)               ║");
+        log.info("║        Match Import Workflow (Script Mode)                ║");
         log.info("╚═══════════════════════════════════════════════════════════╝");
 
         String competitionCode = config.getCompetition();
         log.info("Running import workflow for competition: {}", competitionCode);
 
         try {
-            ImportWorkflowService.WorkflowResult result =
-                    workflowService.importMatchesForCompetition(competitionCode);
+            ImportWorkflowService.WorkflowResult result = workflowService.importMatchesForCompetition(competitionCode);
 
             log.info("────────────────────────────────────────────────────────────");
             log.info("Competition: {}", result.getCompetitionCode());

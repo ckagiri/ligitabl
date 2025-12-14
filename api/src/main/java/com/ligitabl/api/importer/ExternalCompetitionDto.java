@@ -1,8 +1,8 @@
 package com.ligitabl.api.importer;
 
-import lombok.Data;
-
 import java.time.LocalDate;
+
+import lombok.Data;
 
 /**
  * Minimal DTO for the football-data.org competitions endpoint

@@ -1,8 +1,9 @@
 package com.ligitabl.api.importer;
 
-import lombok.Data;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
+
+import lombok.Data;
 
 /**
  * Configuration for the external football data API.

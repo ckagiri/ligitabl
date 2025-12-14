@@ -1,7 +1,5 @@
 package com.ligitabl.api.importer;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
@@ -9,6 +7,9 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestTemplate;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Thin HTTP client for football-data.org endpoints we use in the
@@ -32,12 +33,8 @@ public class FootballDataClient {
 
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
-        ResponseEntity<ExternalCompetitionDto> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                entity,
-                ExternalCompetitionDto.class
-        );
+        ResponseEntity<ExternalCompetitionDto> response =
+                restTemplate.exchange(url, HttpMethod.GET, entity, ExternalCompetitionDto.class);
 
         return response.getBody();
     }
@@ -52,11 +49,7 @@ public class FootballDataClient {
         HttpEntity<Void> entity = new HttpEntity<>(headers);
 
         ResponseEntity<ExternalMatchDto.MatchesResponse> response = restTemplate.exchange(
-                url,
-                HttpMethod.GET,
-                entity,
-                new ParameterizedTypeReference<ExternalMatchDto.MatchesResponse>() {}
-        );
+                url, HttpMethod.GET, entity, new ParameterizedTypeReference<ExternalMatchDto.MatchesResponse>() {});
 
         return response.getBody();
     }

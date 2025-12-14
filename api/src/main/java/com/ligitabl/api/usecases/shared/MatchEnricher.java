@@ -1,21 +1,21 @@
 package com.ligitabl.api.usecases.shared;
 
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
+
+import org.springframework.stereotype.Component;
+
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecases.match.MatchDto;
 import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.repo.TeamRepo;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
@@ -24,9 +24,9 @@ public class MatchEnricher {
     private final TeamRepo teamRepo;
 
     public Either<UseCaseError, List<MatchDto>> enrichWithTeams(List<Match> matches) {
-        return Either.catching(() -> {
+        try {
             if (matches.isEmpty()) {
-                return List.of();
+                return Either.right(List.of());
             }
 
             // Get all unique team IDs
@@ -35,11 +35,13 @@ public class MatchEnricher {
                     .collect(Collectors.toSet());
 
             // Fetch all teams at once
-            List<Team> teams = teamRepo.findAllByIds(teamIds);
-            Map<UUID, Team> teamsById = teams.stream()
-                    .collect(Collectors.toMap(Team::getId, Function.identity()));
+            if (!teamIds.isEmpty()) {
+                teamRepo.findAllByIds(teamIds);
+            }
 
-            return MatchDto.listOf(matches, teamsById);
-        }, UseCaseErrors::fromException);
+            return Either.right(MatchDto.listOf(matches));
+        } catch (Exception e) {
+            return Either.left(UseCaseErrors.fromException(e));
+        }
     }
 }

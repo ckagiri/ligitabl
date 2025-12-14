@@ -1,5 +1,10 @@
 package com.ligitabl.api.importer;
 
+import java.util.Collections;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Season;
@@ -8,13 +13,10 @@ import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.TeamRepo;
+
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Collections;
 
 /**
  * Service responsible for importing matches from the external API and
@@ -50,17 +52,19 @@ public class MatchImportService {
                 throw new IllegalStateException("External season id is null for competition " + competitionCode);
             }
 
-            Season season = seasonRepo.findByClientId(externalSeasonId)
+            Season season = seasonRepo
+                    .findByClientId(externalSeasonId)
                     .orElseThrow(() -> new IllegalStateException(
                             "Season with clientId " + externalSeasonId + " not found in Ligitabl DB"));
 
             result.setSeasonName(season.getName());
             log.info("Resolved season: {} (clientId: {})", season.getName(), externalSeasonId);
 
-            ExternalMatchDto.MatchesResponse response =
-                    footballDataClient.fetchMatchesForCompetition(competitionCode);
+            ExternalMatchDto.MatchesResponse response = footballDataClient.fetchMatchesForCompetition(competitionCode);
 
-            if (response == null || response.getMatches() == null || response.getMatches().isEmpty()) {
+            if (response == null
+                    || response.getMatches() == null
+                    || response.getMatches().isEmpty()) {
                 log.warn("No matches returned from API for {}", competitionCode);
                 result.setSuccess(true);
                 result.setMessage("No matches found");
@@ -93,8 +97,8 @@ public class MatchImportService {
             result.setUpdated(updated);
             result.setFailed(0);
             result.setSuccess(true);
-            result.setMessage("Imported " + created + " new matches and updated " + updated
-                    + " for competition " + competitionCode);
+            result.setMessage("Imported " + created + " new matches and updated " + updated + " for competition "
+                    + competitionCode);
 
         } catch (Exception e) {
             log.error("Error importing matches for {}", competitionCode, e);
@@ -110,7 +114,8 @@ public class MatchImportService {
     private Match mapToDomainMatch(ExternalMatchDto externalMatch, Season season) {
         // Resolve round by season + matchday (position)
         int matchday = externalMatch.getMatchday() == null ? 0 : externalMatch.getMatchday();
-        var round = roundRepo.findBySeasonIdAndPosition(season.getId(), matchday)
+        var round = roundRepo
+                .findBySeasonIdAndPosition(season.getId(), matchday)
                 .orElseThrow(() -> new IllegalStateException(
                         "Round not found for season " + season.getSlug() + " and position " + matchday));
 
@@ -126,14 +131,12 @@ public class MatchImportService {
         }
 
         Team homeTeam = teamRepo.findByClientId(homeTeamDto.getId())
-                .orElseThrow(() -> new IllegalStateException(
-                        "Home team with clientId " + homeTeamDto.getId()
-                                + " not found for match " + externalMatch.getId()));
+                .orElseThrow(() -> new IllegalStateException("Home team with clientId " + homeTeamDto.getId()
+                        + " not found for match " + externalMatch.getId()));
 
         Team awayTeam = teamRepo.findByClientId(awayTeamDto.getId())
-                .orElseThrow(() -> new IllegalStateException(
-                        "Away team with clientId " + awayTeamDto.getId()
-                                + " not found for match " + externalMatch.getId()));
+                .orElseThrow(() -> new IllegalStateException("Away team with clientId " + awayTeamDto.getId()
+                        + " not found for match " + externalMatch.getId()));
 
         String slug = buildMatchSlug(season, matchday, homeTeam, awayTeam);
 

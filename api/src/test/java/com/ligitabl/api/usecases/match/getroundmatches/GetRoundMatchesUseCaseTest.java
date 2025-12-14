@@ -62,7 +62,7 @@ class GetRoundMatchesUseCaseTest {
 
         when(validator.validate(query)).thenReturn(Either.right(query));
         when(hierarchyValidator.validateCompetitionSeasonAndRound("premier-league", "2024-25", 1))
-            .thenReturn(Either.right(round));
+                .thenReturn(Either.right(round));
         when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(match));
 
         MatchDto dto = MatchDto.builder().roundId(roundId).build();

@@ -1,10 +1,11 @@
 package com.ligitabl.api.importer;
 
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * High-level workflow service that orchestrates a full import for a competition.
@@ -23,8 +24,7 @@ public class ImportWorkflowService {
 
         log.info("Starting import for competition {} via workflow service", competitionCode);
 
-        MatchImportService.ImportResult importResult =
-                matchImportService.importMatchesForCompetition(competitionCode);
+        MatchImportService.ImportResult importResult = matchImportService.importMatchesForCompetition(competitionCode);
 
         result.setMatchesCreated(importResult.getCreated());
         result.setSuccess(importResult.isSuccess());

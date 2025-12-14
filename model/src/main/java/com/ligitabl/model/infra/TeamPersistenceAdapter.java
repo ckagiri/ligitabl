@@ -83,10 +83,7 @@ public class TeamPersistenceAdapter implements TeamRepo {
             return List.of();
         }
 
-        return dsl.selectFrom(T_TEAM)
-                .where(T_TEAM.PK_ID.in(ids))
-                .fetch()
-                .map(MAPPER::map);
+        return dsl.selectFrom(T_TEAM).where(T_TEAM.PK_ID.in(ids)).fetch().map(MAPPER::map);
     }
 
     @Override

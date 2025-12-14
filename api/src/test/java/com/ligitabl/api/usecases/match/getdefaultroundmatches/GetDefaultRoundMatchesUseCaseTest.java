@@ -37,15 +37,15 @@ class GetDefaultRoundMatchesUseCaseTest {
     @Mock
     MatchRepo matchRepo;
 
-        @Mock
-        MatchEnricher matchEnricher;
+    @Mock
+    MatchEnricher matchEnricher;
 
     GetDefaultRoundMatchesUseCase useCase;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-                useCase = new GetDefaultRoundMatchesHandler(hierarchyValidator, seasonRepo, matchRepo, matchEnricher);
+        useCase = new GetDefaultRoundMatchesHandler(hierarchyValidator, seasonRepo, matchRepo, matchEnricher);
     }
 
     @Test

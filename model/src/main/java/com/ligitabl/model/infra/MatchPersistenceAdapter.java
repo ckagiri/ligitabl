@@ -2,6 +2,16 @@ package com.ligitabl.model.infra;
 
 import static com.ligitabl.model.db.tables.TMatch.T_MATCH;
 
+import java.io.IOException;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.jooq.DSLContext;
+import org.jooq.JSONB;
+import org.jooq.RecordMapper;
+
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.model.db.tables.records.MatchRecord;
@@ -11,15 +21,6 @@ import com.ligitabl.model.domain.Score;
 import com.ligitabl.model.repo.MatchRepo;
 
 import lombok.RequiredArgsConstructor;
-import org.jooq.DSLContext;
-import org.jooq.JSONB;
-import org.jooq.RecordMapper;
-
-import java.io.IOException;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.UUID;
 
 @RequiredArgsConstructor
 public class MatchPersistenceAdapter implements MatchRepo {
@@ -39,9 +40,8 @@ public class MatchPersistenceAdapter implements MatchRepo {
 
     @Override
     public Optional<Match> findByClientId(Integer clientId) {
-        var record = dsl.selectFrom(T_MATCH)
-                .where(T_MATCH.C_CLIENT_ID.eq(clientId))
-                .fetchOne();
+        var record =
+                dsl.selectFrom(T_MATCH).where(T_MATCH.C_CLIENT_ID.eq(clientId)).fetchOne();
 
         return Optional.ofNullable(MAPPER.map(record));
     }
@@ -64,9 +64,8 @@ public class MatchPersistenceAdapter implements MatchRepo {
 
     @Override
     public Match update(Match model) {
-        MatchRecord rec = dsl.selectFrom(T_MATCH)
-                .where(T_MATCH.PK_ID.eq(model.getId()))
-                .fetchOne();
+        MatchRecord rec =
+                dsl.selectFrom(T_MATCH).where(T_MATCH.PK_ID.eq(model.getId())).fetchOne();
         if (rec == null) {
             throw new NoSuchElementException(String.format("Match with id %s not found", model.getId()));
         }

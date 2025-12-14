@@ -1,9 +1,9 @@
 package com.ligitabl.api.importer;
 
-import lombok.Data;
-
 import java.time.OffsetDateTime;
 import java.util.List;
+
+import lombok.Data;
 
 /**
  * Minimal DTO view of the football-data.org matches response
