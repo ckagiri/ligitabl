@@ -2,14 +2,6 @@ package com.ligitabl.model.infra;
 
 import static com.ligitabl.model.db.tables.TMatch.T_MATCH;
 
-import java.io.IOException;
-import java.util.List;
-import java.util.UUID;
-
-import org.jooq.DSLContext;
-import org.jooq.JSONB;
-import org.jooq.RecordMapper;
-
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.model.db.tables.records.MatchRecord;
@@ -19,6 +11,15 @@ import com.ligitabl.model.domain.Score;
 import com.ligitabl.model.repo.MatchRepo;
 
 import lombok.RequiredArgsConstructor;
+import org.jooq.DSLContext;
+import org.jooq.JSONB;
+import org.jooq.RecordMapper;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
+import java.util.UUID;
 
 @RequiredArgsConstructor
 public class MatchPersistenceAdapter implements MatchRepo {
@@ -34,6 +35,45 @@ public class MatchPersistenceAdapter implements MatchRepo {
                 .orderBy(T_MATCH.C_KICK_OFF.asc())
                 .fetch()
                 .map(MAPPER::map);
+    }
+
+    @Override
+    public Optional<Match> findByClientId(Integer clientId) {
+        var record = dsl.selectFrom(T_MATCH)
+                .where(T_MATCH.C_CLIENT_ID.eq(clientId))
+                .fetchOne();
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
+    @Override
+    public Match create(Match model) {
+        if (model.getId() != null) {
+            throw new IllegalArgumentException(
+                    String.format("Match.id must be null on create (received %s)", model.getId()));
+        }
+
+        UUID id = UUID.randomUUID();
+        MatchRecord rec = dsl.newRecord(T_MATCH);
+        rec.setId(id);
+        copyModelToRecord(model, rec);
+        rec.store();
+        rec.refresh();
+        return MAPPER.map(rec);
+    }
+
+    @Override
+    public Match update(Match model) {
+        MatchRecord rec = dsl.selectFrom(T_MATCH)
+                .where(T_MATCH.PK_ID.eq(model.getId()))
+                .fetchOne();
+        if (rec == null) {
+            throw new NoSuchElementException(String.format("Match with id %s not found", model.getId()));
+        }
+        copyModelToRecord(model, rec);
+        rec.store();
+        rec.refresh();
+        return MAPPER.map(rec);
     }
 
     private static class MatchRecordMapper implements RecordMapper<MatchRecord, Match> {
@@ -74,6 +114,32 @@ public class MatchPersistenceAdapter implements MatchRepo {
                 return OBJECT_MAPPER.readValue(jsonb.data(), new TypeReference<Score>() {});
             } catch (IOException e) {
                 throw new IllegalStateException("Failed to deserialize match score JSON", e);
+            }
+        }
+    }
+
+    private static void copyModelToRecord(Match model, MatchRecord rec) {
+        if (model == null || rec == null) return;
+
+        rec.setClientId(model.getClientId());
+        rec.setRoundId(model.getRoundId());
+        rec.setHomeTeamId(model.getHomeTeamId());
+        rec.setAwayTeamId(model.getAwayTeamId());
+        rec.setSlug(model.getSlug());
+        rec.setStatus(model.getStatus() == null ? null : model.getStatus().name());
+        rec.setKickOff(model.getKickOff());
+        rec.setVenue(model.getVenue());
+        rec.setMatchday(model.getMatchday());
+
+        Score score = model.getScore();
+        if (score == null) {
+            rec.setScore(null);
+        } else {
+            try {
+                String json = OBJECT_MAPPER.writeValueAsString(score);
+                rec.setScore(JSONB.valueOf(json));
+            } catch (IOException e) {
+                throw new IllegalStateException("Failed to serialize match score JSON", e);
             }
         }
     }

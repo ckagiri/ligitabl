@@ -12,6 +12,8 @@ public interface TeamRepo extends BaseCrudRepo<Team, UUID> {
 
     Optional<Team> findBySlug(TeamSlug slug);
 
+    Optional<Team> findByClientId(Integer clientId);
+
     boolean existsBySlug(TeamSlug slug);
 
     boolean existsById(UUID id);

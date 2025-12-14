@@ -85,6 +85,14 @@ public class TeamPersistenceAdapter implements TeamRepo {
     }
 
     @Override
+    public Optional<Team> findByClientId(Integer clientId) {
+        var record =
+                dsl.selectFrom(T_TEAM).where(T_TEAM.C_CLIENT_ID.eq(clientId)).fetchOne();
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
+    @Override
     public boolean isSlugInUseByAnotherTeam(TeamSlug slug, UUID teamId) {
         return dsl.fetchExists(dsl.selectOne()
                 .from(T_TEAM)
@@ -111,6 +119,7 @@ public class TeamPersistenceAdapter implements TeamRepo {
             }
 
             return Team.builder()
+                    .clientId(record.getClientId())
                     .id(record.getId())
                     .name(record.getName())
                     .shortName(record.getShortName())
@@ -126,6 +135,7 @@ public class TeamPersistenceAdapter implements TeamRepo {
     // fields grow
     private static void copyModelToRecord(Team model, TeamRecord rec) {
         if (model == null || rec == null) return;
+        rec.setClientId(model.getClientId());
         rec.setName(model.getName());
         rec.setShortName(model.getShortName());
         rec.setSlug(model.getSlug().value());

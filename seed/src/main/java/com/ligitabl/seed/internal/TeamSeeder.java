@@ -35,11 +35,16 @@ public class TeamSeeder extends AbstractSeeder<List<Map<String, Object>>> {
         Object shortNameRaw = team.get("shortName");
         Object slugRaw = team.get("slug");
         Object tlaRaw = team.get("tla");
+        Object clientIdRaw = team.get("clientId");
 
         String name = nameRaw == null ? null : nameRaw.toString();
         String shortName = shortNameRaw == null ? null : shortNameRaw.toString();
         String slug = slugRaw == null ? null : slugRaw.toString();
         String tla = tlaRaw == null ? null : tlaRaw.toString();
+        Integer clientId =
+            clientIdRaw == null || clientIdRaw.toString().isBlank()
+                ? null
+                : Integer.valueOf(clientIdRaw.toString());
 
         if (slug == null || slug.isBlank()) {
             throw new IllegalArgumentException("Team entry missing slug: " + team);
@@ -59,13 +64,14 @@ public class TeamSeeder extends AbstractSeeder<List<Map<String, Object>>> {
         }
 
         int rowsAffected = dsl.insertInto(
-                        T_TEAM,
-                        T_TEAM.PK_ID,
-                        T_TEAM.C_NAME,
-                        T_TEAM.C_SHORT_NAME,
-                        T_TEAM.C_SLUG,
-                        T_TEAM.C_TLA)
-                .values(UUID.randomUUID(), name, shortName, slug, tla)
+                T_TEAM,
+                T_TEAM.PK_ID,
+                T_TEAM.C_NAME,
+                T_TEAM.C_SHORT_NAME,
+                T_TEAM.C_SLUG,
+                T_TEAM.C_TLA,
+                T_TEAM.C_CLIENT_ID)
+            .values(UUID.randomUUID(), name, shortName, slug, tla, clientId)
                 .execute();
 
         if (rowsAffected > 0) {

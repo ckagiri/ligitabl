@@ -294,6 +294,14 @@ seed-competition-cli: ## Seed competitions using the Spring Boot CLI against the
 	mvn -q -pl $(API_DIR) -am -DskipTests org.codehaus.mojo:exec-maven-plugin:3.5.0:java \
 	  -Dexec.mainClass=com.ligitabl.api.seed.CompetitionSeedCli \
 	  -Dexec.args=".art/seeding/competition.yaml"
+import-pl: ## Import Premier League matches into the dev DB using the workflow runner
+	$(MAKE) compose-up-db
+	$(MAKE) api-build
+	FOOTBALL_DATA_API_KEY=$(API_FOOTBALL_DATA_KEY) java -jar $(JAR) \
+	  --spring.profiles.active=workflow \
+	  --workflow.run=true \
+	  --workflow.competition=PL \
+	  --workflow.exit-after=true
 
 format: ## Format all Java sources (api, model) using Spotless (4-space indentation)
 	mvn -q -pl api,model com.diffplug.spotless:spotless-maven-plugin:2.44.0:apply
