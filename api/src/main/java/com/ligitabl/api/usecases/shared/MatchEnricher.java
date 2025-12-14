@@ -1,8 +1,10 @@
 package com.ligitabl.api.usecases.shared;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -13,6 +15,7 @@ import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecases.match.MatchDto;
 import com.ligitabl.model.domain.Match;
+import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.repo.TeamRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -35,11 +38,10 @@ public class MatchEnricher {
                     .collect(Collectors.toSet());
 
             // Fetch all teams at once
-            if (!teamIds.isEmpty()) {
-                teamRepo.findAllByIds(teamIds);
-            }
+            List<Team> teams = teamRepo.findAllByIds(teamIds);
+            Map<UUID, Team> teamsById = teams.stream().collect(Collectors.toMap(Team::getId, Function.identity()));
 
-            return Either.right(MatchDto.listOf(matches));
+            return Either.right(MatchDto.listOf(matches, teamsById));
         } catch (Exception e) {
             return Either.left(UseCaseErrors.fromException(e));
         }
