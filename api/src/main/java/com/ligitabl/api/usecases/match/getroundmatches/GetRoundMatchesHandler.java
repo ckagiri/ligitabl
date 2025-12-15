@@ -10,7 +10,7 @@ import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecases.match.MatchDto;
 import com.ligitabl.api.usecases.shared.HierarchyValidator;
-import com.ligitabl.api.usecases.shared.MatchEnricher;
+import com.ligitabl.api.usecases.match.MatchEnricher;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.repo.MatchRepo;
 

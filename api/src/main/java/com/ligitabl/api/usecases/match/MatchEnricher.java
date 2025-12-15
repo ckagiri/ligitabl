@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.shared;
+package com.ligitabl.api.usecases.match;
 
 import java.util.List;
 import java.util.Map;
@@ -13,7 +13,6 @@ import org.springframework.stereotype.Component;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
-import com.ligitabl.api.usecases.match.MatchDto;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.repo.TeamRepo;

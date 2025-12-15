@@ -12,7 +12,7 @@ import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecases.match.MatchDto;
 import com.ligitabl.api.usecases.shared.HierarchyValidator;
-import com.ligitabl.api.usecases.shared.MatchEnricher;
+import com.ligitabl.api.usecases.match.MatchEnricher;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.MatchRepo;

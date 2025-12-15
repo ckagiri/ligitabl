@@ -18,8 +18,7 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate seed seed-local prep-team prep-team-local drop-db reset-db db-bootstrap seed-app format format-check format-all test-unit test-api-no-jooq test-api-fast test-api-core test-all test-model test-model-fast test-api-it test-api-all test-dev model-codegen-local seed-competition-cli db-seed db-seed-demo dev-reset test-api-rebuild
-	run-api
+.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate drop-db reset-db format format-check format-all test-unit test-api-no-jooq test-api-fast test-api-core test-all test-model test-model-fast test-api-it test-api-all test-dev model-codegen-local seed-competition-cli db-seed db-seed-demo dev-reset test-api-rebuild db-seed-all run-api
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -81,8 +80,12 @@ run-api: ## Start DB (compose) and run the API via spring-boot:run
 	$(MAKE) compose-up-db
 	mvn -q -pl $(API_DIR) -am spring-boot:run
 
-bootstrap-run: ## Bootstrap DB (reset+migrate+codegen+seed) then run the app
-	$(MAKE) db-bootstrap
+bootstrap-run: ## Reset DB, migrate, codegen, seed reference data, then run the app
+	$(MAKE) dev-reset
+	$(MAKE) run
+
+bootstrap-all-run: ## Reset DB, migrate, codegen, seed reference data, then run the app
+	$(MAKE) dev-reset-all
 	$(MAKE) run
 
 $(JAR):
@@ -203,46 +206,6 @@ test-api-rebuild: ## Clean API+deps, regenerate jOOQ, rebuild model, then run co
 migrate: ## Run Liquibase migrations in model/ (uses DB_* from .env)
 	mvn -q -Pliquibase -DskipTests -f model/pom.xml liquibase:update
 
-seed: ## Seed teams using Dockerized Postgres via SQL script (legacy)
-	@if ! docker ps --format '{{.Names}}' | grep -q '^ligitabl-db$$'; then \
-		echo "Postgres container 'ligitabl-db' not running. Start it with '$(DOCKER_COMPOSE) up -d db'"; \
-		exit 1; \
-	fi
-	@if [ ! -f scripts/sql/seed-teams.sql ]; then \
-		echo "Missing scripts/sql/seed-teams.sql"; \
-		exit 1; \
-	fi
-	cat scripts/sql/seed-teams.sql | docker exec -i ligitabl-db psql -U $(DB_USER) -d $(DB_NAME)
-
-prep-team: ## Recreate t_team table with desired schema (Docker)
-	@if ! docker ps --format '{{.Names}}' | grep -q '^ligitabl-db$$'; then \
-		echo "Postgres container 'ligitabl-db' not running. Start it with '$(DOCKER_COMPOSE) up -d db'"; \
-		exit 1; \
-	fi
-	cat scripts/sql/create-team.sql | docker exec -i ligitabl-db psql -U $(DB_USER) -d $(DB_NAME)
-
-seed-local: ## Seed teams using local psql client to localhost:$(DB_PORT)
-	@if ! command -v psql >/dev/null 2>&1; then \
-		echo "psql is not installed. Use 'make seed' (docker) or install psql."; \
-		exit 1; \
-	fi
-	@if [ -z "$(DB_PASSWORD)" ]; then \
-		echo "DB_PASSWORD not set. Add it to .env or export it."; \
-		exit 1; \
-	fi
-	PGPASSWORD=$(DB_PASSWORD) psql -h localhost -p $(DB_PORT) -U $(DB_USER) -d $(DB_NAME) -f scripts/sql/seed-teams.sql
-
-prep-team-local: ## Recreate t_team table with desired schema (local psql)
-	@if ! command -v psql >/dev/null 2>&1; then \
-		echo "psql is not installed."; \
-		exit 1; \
-	fi
-	@if [ -z "$(DB_PASSWORD)" ]; then \
-		echo "DB_PASSWORD not set. Add it to .env or export it."; \
-		exit 1; \
-	fi
-	PGPASSWORD=$(DB_PASSWORD) psql -h localhost -p $(DB_PORT) -U $(DB_USER) -d $(DB_NAME) -f scripts/sql/create-team.sql
-
 drop-db: ## Drop the database (Docker) using maintenance DB 'postgres'
 	@if ! docker ps --format '{{.Names}}' | grep -q '^ligitabl-db$$'; then \
 		echo "Postgres container 'ligitabl-db' not running. Start it with '$(DOCKER_COMPOSE) up -d db'"; \
@@ -254,13 +217,6 @@ drop-db: ## Drop the database (Docker) using maintenance DB 'postgres'
 reset-db: ## Drop and recreate the database (Docker)
 	$(MAKE) drop-db
 	docker exec -i ligitabl-db psql -U $(DB_USER) -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE $(DB_NAME) OWNER $(DB_USER);"
-
-db-bootstrap: ## Compose up DB, reset DB, migrate, codegen, then seed
-	$(MAKE) compose-up-db
-	$(MAKE) reset-db
-	$(MAKE) migrate
-	$(MAKE) codegen
-	# Seeding of reference data for competitions/seasons/rounds is handled separately via db-seed
 
 dev-reset: ## For local dev: reset DB, run migrations, codegen, then seed reference data
 	$(MAKE) compose-up-db
@@ -275,8 +231,6 @@ dev-reset-all: ## Reset DB, run migrations, codegen, then seed reference and dem
 	$(MAKE) migrate
 	$(MAKE) codegen
 	$(MAKE) db-seed-all
-
-SEED_TEAMS_FILE ?=
 
 db-seed: ## Seed reference data (competition, season, round) using the dedicated seed module against the dev DB
 	$(MAKE) compose-up-db
