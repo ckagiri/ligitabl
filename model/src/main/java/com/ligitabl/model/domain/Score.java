@@ -8,6 +8,6 @@ import lombok.extern.jackson.Jacksonized;
 @Builder
 @Jacksonized
 public class Score {
-    int homeTeam;
-    int awayTeam;
+    int homeGoals;
+    int awayGoals;
 }

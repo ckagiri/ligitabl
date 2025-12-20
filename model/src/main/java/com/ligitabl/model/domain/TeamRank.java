@@ -10,4 +10,13 @@ import lombok.extern.jackson.Jacksonized;
 public class TeamRank {
     String code;
     int position;
+
+    public static TeamRank of(String code, int position) {
+        return new TeamRank(code, position);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("#%d %s", position, code);
+    }
 }

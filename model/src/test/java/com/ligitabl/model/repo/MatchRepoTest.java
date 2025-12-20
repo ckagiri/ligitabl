@@ -118,7 +118,7 @@ class MatchRepoTest {
 
         ObjectMapper mapper = new ObjectMapper();
         JSONB scoreJson = JSONB.jsonb(mapper.writeValueAsString(
-                Score.builder().homeTeam(2).awayTeam(1).build()));
+                Score.builder().homeGoals(2).awayGoals(1).build()));
 
         OffsetDateTime kickOff1 = OffsetDateTime.of(2024, 8, 10, 15, 0, 0, 0, ZoneOffset.UTC);
         OffsetDateTime kickOff2 = OffsetDateTime.of(2024, 8, 11, 15, 0, 0, 0, ZoneOffset.UTC);
@@ -156,8 +156,8 @@ class MatchRepoTest {
         assertThat(matches).hasSize(2);
         assertThat(matches.get(0).getId()).isEqualTo(match1Id);
         assertThat(matches.get(1).getId()).isEqualTo(match2Id);
-        assertThat(matches.get(0).getScore()).isNotNull();
-        assertThat(matches.get(0).getScore().getHomeTeam()).isEqualTo(2);
-        assertThat(matches.get(0).getScore().getAwayTeam()).isEqualTo(1);
+        assertThat(matches.getFirst().getScore()).isNotNull();
+        assertThat(matches.getFirst().getScore().getHomeGoals()).isEqualTo(2);
+        assertThat(matches.getFirst().getScore().getAwayGoals()).isEqualTo(1);
     }
 }
