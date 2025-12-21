@@ -1,0 +1,57 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20251221_3_season_rename_teams_to_initial_rankings
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_season
+            schemaName: public
+        - columnExists:
+            tableName: t_season
+            schemaName: public
+            columnName: c_teams
+        - not:
+            - columnExists:
+                tableName: t_season
+                schemaName: public
+                columnName: c_initial_rankings
+      changes:
+        - renameColumn:
+            tableName: t_season
+            schemaName: public
+            oldColumnName: c_teams
+            newColumnName: c_initial_rankings
+            columnDataType: jsonb
+
+  - changeSet:
+      id: 20251221_4_season_add_columns
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_season
+            schemaName: public
+      changes:
+        - addColumn:
+            tableName: t_season
+            schemaName: public
+            columns:
+              - column:
+                  name: c_completed
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_total_teams
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_max_hit_points
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false

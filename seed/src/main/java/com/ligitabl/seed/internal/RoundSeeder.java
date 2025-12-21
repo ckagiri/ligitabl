@@ -37,7 +37,7 @@ public class RoundSeeder extends AbstractSeeder<RoundSeedConfig> {
 
     private void seedRound(UUID seasonId, RoundSeedConfig config, int index) {
         int position = config.getStartPosition() + index;
-        String name = config.getNamePrefix() + position;
+        String name = config.getNamePrefix() + " " + position;
         String slug = config.getSlugPrefix() + position;
 
         if (roundExists(seasonId, position)) {

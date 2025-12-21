@@ -1,71 +1,60 @@
 package com.ligitabl.seed.internal.config;
 
-import java.util.List;
+import com.ligitabl.seed.internal.util.SeedCoercions;
+import java.time.LocalDate;
 import java.util.Map;
 
-/**
- * Type-safe configuration for match seeding.
- */
+import static com.ligitabl.seed.internal.util.SeedCoercions.*;
+
 public class MatchSeedConfig {
 
     private final String competitionSlug;
     private final String seasonSlug;
     private final int clientId;
-    private final String status;
+    private final String scheduledStatus;
+    private final String finishedStatus;
+    private final int finishedRounds;
+    private final Long randomSeed;
+    private final LocalDate seasonStartDate;
 
     private MatchSeedConfig(Builder builder) {
         this.competitionSlug = builder.competitionSlug;
         this.seasonSlug = builder.seasonSlug;
         this.clientId = builder.clientId;
-        this.status = builder.status;
+        this.scheduledStatus = builder.scheduledStatus;
+        this.finishedStatus = builder.finishedStatus;
+        this.finishedRounds = builder.finishedRounds;
+        this.randomSeed = builder.randomSeed;
+        this.seasonStartDate = builder.seasonStartDate;
     }
 
-    public String getCompetitionSlug() {
-        return competitionSlug;
+    public String getCompetitionSlug() { return competitionSlug; }
+    public String getSeasonSlug() { return seasonSlug; }
+    public int getClientId() { return clientId; }
+    public String getScheduledStatus() { return scheduledStatus; }
+    public String getFinishedStatus() { return finishedStatus; }
+    public int getFinishedRounds() { return finishedRounds; }
+    public Long getRandomSeed() { return randomSeed; }
+    public LocalDate getSeasonStartDate() { return seasonStartDate; }
+
+    public String getStatusForRound(int roundPosition) {
+        return roundPosition <= finishedRounds ? finishedStatus : scheduledStatus;
     }
 
-    public String getSeasonSlug() {
-        return seasonSlug;
-    }
-
-    public int getClientId() {
-        return clientId;
-    }
-
-    public String getStatus() {
-        return status;
+    public boolean shouldHaveScore(int roundPosition) {
+        return roundPosition <= finishedRounds;
     }
 
     @SuppressWarnings("unchecked")
     public static MatchSeedConfig fromMap(Map<String, Object> map) {
         return new Builder()
-                .competitionSlug((String) map.get("competitionSlug"))
-                .seasonSlug((String) map.get("seasonSlug"))
-                .clientId((Integer) map.getOrDefault("clientId", 1))
-                .status((String) map.getOrDefault("status", "SCHEDULED"))
-                .build();
-    }
-
-    @SuppressWarnings("unchecked")
-    public static MatchSeedConfig fromFirstSeason(List<Map<String, Object>> seasons) {
-        if (seasons == null || seasons.isEmpty()) {
-            throw new IllegalArgumentException("Cannot auto-generate match config: no seasons provided");
-        }
-
-        Map<String, Object> firstSeason = seasons.get(0);
-        String competitionSlug = (String) firstSeason.get("competitionSlug");
-        String seasonSlug = (String) firstSeason.get("slug");
-
-        if (competitionSlug == null || seasonSlug == null) {
-            throw new IllegalArgumentException(
-                    "Cannot auto-generate match config: first season missing competitionSlug or slug");
-        }
-
-        return new Builder()
-                .competitionSlug(competitionSlug)
-                .seasonSlug(seasonSlug)
-                .clientId(1)
-                .status("SCHEDULED")
+                .competitionSlug(asString(map.get("competitionSlug")))
+                .seasonSlug(asString(map.get("seasonSlug")))
+                .clientId(asInt(map.getOrDefault("clientId", 1)))
+                .scheduledStatus(asString(map.getOrDefault("scheduledStatus", "SCHEDULED")))
+                .finishedStatus(asString(map.getOrDefault("finishedStatus", "FINISHED")))
+                .finishedRounds(asInt(map.getOrDefault("finishedRounds", 0)))
+                .randomSeed(asLong(map.get("randomSeed")))
                 .build();
     }
 
@@ -77,7 +66,11 @@ public class MatchSeedConfig {
         private String competitionSlug;
         private String seasonSlug;
         private int clientId = 1;
-        private String status = "SCHEDULED";
+        private String scheduledStatus = "SCHEDULED";
+        private String finishedStatus = "FINISHED";
+        private int finishedRounds = 0;
+        private Long randomSeed = null;
+        private LocalDate seasonStartDate;
 
         public Builder competitionSlug(String competitionSlug) {
             this.competitionSlug = competitionSlug;
@@ -94,8 +87,28 @@ public class MatchSeedConfig {
             return this;
         }
 
-        public Builder status(String status) {
-            this.status = status;
+        public Builder scheduledStatus(String scheduledStatus) {
+            this.scheduledStatus = scheduledStatus;
+            return this;
+        }
+
+        public Builder finishedStatus(String finishedStatus) {
+            this.finishedStatus = finishedStatus;
+            return this;
+        }
+
+        public Builder finishedRounds(int finishedRounds) {
+            this.finishedRounds = finishedRounds;
+            return this;
+        }
+
+        public Builder randomSeed(Long randomSeed) {
+            this.randomSeed = randomSeed;
+            return this;
+        }
+
+        public Builder seasonStartDate(LocalDate seasonStartDate) {
+            this.seasonStartDate = seasonStartDate;
             return this;
         }
 
@@ -110,3 +123,4 @@ public class MatchSeedConfig {
         }
     }
 }
+

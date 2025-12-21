@@ -15,7 +15,17 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 class SeedingFlowIntegrationTest {
 
+        static {
+                // Force production/reference seeding so the premier-league assertions are deterministic.
+                System.setProperty("seed.main", "seeding/main.yaml");
+        }
+
     @Autowired DSLContext dsl;
+
+        @org.junit.jupiter.api.AfterAll
+        static void cleanupSeedMainProperty() {
+                System.clearProperty("seed.main");
+        }
 
     @Test
     void seedingPopulatesCompetitionSeasonRoundAndDefaults() {

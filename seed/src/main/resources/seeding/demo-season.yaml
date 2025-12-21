@@ -1,49 +1,45 @@
 season:
   - clientId: 1
-    competitionSlug: what-premier-league
-    name: 2025/26
-    slug: 2025-26
-    startDate: 2025-08-10
-    endDate: 2026-05-20
-    maxRounds: 38
-    teams:
-      - code: NRU
+    competitionSlug: super-premier-league
+    name: 2025
+    slug: 2025
+    startDate: 2025-02-01
+    endDate: 2025-06-30
+    finishedRounds: 19
+    initialRankings:
+      - code: ARS
         position: 1
-      - code: SOP
+        rating: 95
+      - code: MCI
         position: 2
-      - code: WDI
+        rating: 90
+      - code: LIV
         position: 3
-      - code: ALL
+        rating: 88
+      - code: CHE
         position: 4
-      - code: RSO
+        rating: 85
+      - code: AVL
         position: 5
-      - code: ADF
+        rating: 83
+      - code: NEW
         position: 6
-      - code: BAA
+        rating: 76
+      - code: MUN
         position: 7
-      - code: WRE
+        rating: 74
+      - code: CRY
         position: 8
-      - code: BLU
+        rating: 72
+      - code: TOT
         position: 9
-      - code: FAT
+        rating: 70
+      - code: BHA
         position: 10
-      - code: PKI
+        rating: 68
+      - code: BRE
         position: 11
-      - code: NFL
+        rating: 55
+      - code: WHU
         position: 12
-      - code: OKW
-        position: 13
-      - code: CKI
-        position: 14
-      - code: OFS
-        position: 15
-      - code: BWM
-        position: 16
-      - code: OWN
-        position: 17
-      - code: RCR
-        position: 18
-      - code: SAV
-        position: 19
-      - code: LEG
-        position: 20
+        rating: 50

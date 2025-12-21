@@ -78,7 +78,10 @@ class StandingsRepoTest {
                 .set(TSeason.T_SEASON.C_START_DATE, LocalDate.of(2024, 8, 1))
                 .set(TSeason.T_SEASON.C_END_DATE, LocalDate.of(2025, 5, 1))
                 .set(TSeason.T_SEASON.C_MAX_ROUNDS, 38)
-                .set(TSeason.T_SEASON.C_TEAMS, (JSONB) null)
+                .set(TSeason.T_SEASON.C_COMPLETED, false)
+                .set(TSeason.T_SEASON.C_TOTAL_TEAMS, 0)
+                .set(TSeason.T_SEASON.C_MAX_HIT_POINTS, 0)
+                .set(TSeason.T_SEASON.C_INITIAL_RANKINGS, (JSONB) null)
                 .set(TSeason.T_SEASON.FK_CURRENT_ROUND_ID, (UUID) null)
                 .set(TSeason.T_SEASON.C_CURRENT_MATCH_DAY, 0)
                 .execute();

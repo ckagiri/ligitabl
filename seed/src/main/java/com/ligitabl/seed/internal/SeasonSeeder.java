@@ -1,9 +1,11 @@
 package com.ligitabl.seed.internal;
 
 import static com.ligitabl.model.db.tables.TSeason.T_SEASON;
+import static com.ligitabl.seed.internal.util.SeedCoercions.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ligitabl.seed.internal.util.SeedCoercions;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -15,11 +17,13 @@ public class SeasonSeeder extends AbstractSeeder<List<Map<String, Object>>> {
 
     private final ObjectMapper objectMapper;
     private final ReferenceResolver referenceResolver;
+    private final Map<String, Map<String, Object>> competitionsBySlug;
 
-    public SeasonSeeder(DSLContext dsl, ObjectMapper objectMapper) {
+    public SeasonSeeder(DSLContext dsl, ObjectMapper objectMapper, List<Map<String, Object>> competitions) {
         super(dsl);
         this.objectMapper = objectMapper;
         this.referenceResolver = new ReferenceResolver(dsl);
+        this.competitionsBySlug = indexCompetitionsBySlug(competitions);
     }
 
     @Override
@@ -40,13 +44,17 @@ public class SeasonSeeder extends AbstractSeeder<List<Map<String, Object>>> {
     }
 
     private void seedSeason(Map<String, Object> season) {
-        Integer clientId = (Integer) season.get("clientId");
-        String competitionSlug = (String) season.get("competitionSlug");
-        String name = (String) season.get("name");
-        String slug = (String) season.get("slug");
-        String startDate = (String) season.get("startDate");
-        String endDate = (String) season.get("endDate");
-        Integer maxRounds = (Integer) season.get("maxRounds");
+        Integer clientId = asInteger(season.get("clientId"));
+        String competitionSlug = asString(season.get("competitionSlug"));
+        String name = asString(season.get("name"));
+        String slug = asString(season.get("slug"));
+        String startDate = asString(season.get("startDate"));
+        String endDate = asString(season.get("endDate"));
+
+        Integer maxRounds = firstInt(season, "max_rounds", "maxRounds");
+        Integer maxHitPoints = firstInt(season, "max_hit_points", "maxHitPoints");
+        Integer totalTeams = firstInt(season, "total_teams", "totalTeams");
+        Boolean completed = firstBoolean(season, "completed");
 
         if (competitionSlug == null || competitionSlug.isBlank()) {
             throw new IllegalArgumentException("Season entry missing competitionSlug: " + season);
@@ -55,8 +63,24 @@ public class SeasonSeeder extends AbstractSeeder<List<Map<String, Object>>> {
             throw new IllegalArgumentException("Season entry missing slug: " + season);
         }
 
+        Map<String, Object> competitionConfig = competitionsBySlug.get(competitionSlug);
+        if (competitionConfig != null) {
+            if (maxRounds == null) {
+                maxRounds = firstInt(competitionConfig, "max_rounds", "maxRounds");
+            }
+            if (maxHitPoints == null) {
+                maxHitPoints = firstInt(competitionConfig, "max_hit_points", "maxHitPoints");
+            }
+        }
+
         UUID competitionId = referenceResolver.resolveCompetitionId(competitionSlug);
-        JSONB teamsJson = serializeTeams(season.get("teams"), slug);
+
+        Object initialRankings = firstValue(season, "initial_rankings", "initialRankings", "teams");
+        JSONB initialRankingsJson = serializeTeams(initialRankings, slug);
+
+        if (totalTeams == null) {
+            totalTeams = extractListSize(initialRankings);
+        }
 
         if (seasonExists(competitionId, slug)) {
             recordSkip();
@@ -73,7 +97,10 @@ public class SeasonSeeder extends AbstractSeeder<List<Map<String, Object>>> {
                         T_SEASON.C_START_DATE,
                         T_SEASON.C_END_DATE,
                         T_SEASON.C_MAX_ROUNDS,
-                        T_SEASON.C_TEAMS,
+                T_SEASON.C_INITIAL_RANKINGS,
+                T_SEASON.C_COMPLETED,
+                T_SEASON.C_TOTAL_TEAMS,
+                T_SEASON.C_MAX_HIT_POINTS,
                         T_SEASON.C_CURRENT_MATCH_DAY)
                 .values(
                         UUID.randomUUID(),
@@ -84,7 +111,10 @@ public class SeasonSeeder extends AbstractSeeder<List<Map<String, Object>>> {
                         LocalDate.parse(startDate),
                         LocalDate.parse(endDate),
                         maxRounds != null ? maxRounds : 0,
-                        teamsJson,
+                initialRankingsJson,
+                completed != null ? completed : false,
+                        totalTeams,
+                maxHitPoints != null ? maxHitPoints : 0,
                         0)
                 .execute();
 
@@ -114,5 +144,48 @@ public class SeasonSeeder extends AbstractSeeder<List<Map<String, Object>>> {
                     "Failed to serialise teams for season '" + slug + "'", e);
         }
     }
+
+    private static Map<String, Map<String, Object>> indexCompetitionsBySlug(List<Map<String, Object>> competitions) {
+        if (competitions == null || competitions.isEmpty()) {
+            return Map.of();
+        }
+
+        return competitions.stream()
+                .filter(c -> c.get("slug") instanceof String)
+                .collect(java.util.stream.Collectors.toUnmodifiableMap(
+                        c -> ((String) c.get("slug")),
+                        c -> c,
+                        (a, b) -> a));
+    }
+
+    private static Object firstValue(Map<String, Object> map, String... keys) {
+        for (String key : keys) {
+            if (map.containsKey(key)) {
+                Object value = map.get(key);
+                if (value != null) {
+                    return value;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static Integer firstInt(Map<String, Object> map, String... keys) {
+        Object value = firstValue(map, keys);
+        return asInteger(value);
+    }
+
+    private static Boolean firstBoolean(Map<String, Object> map, String... keys) {
+        Object value = firstValue(map, keys);
+        return asBoolean(value);
+    }
+
+    private static int extractListSize(Object value) {
+        if (value instanceof List<?> list) {
+            return list.size();
+        }
+        return 0;
+    }
 }
+
 

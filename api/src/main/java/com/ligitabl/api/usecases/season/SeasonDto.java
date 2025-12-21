@@ -20,7 +20,7 @@ public class SeasonDto {
     LocalDate startDate;
     LocalDate endDate;
     int maxRounds;
-    List<TeamRank> teams;
+    List<TeamRank> initialRankings;
 
     public static SeasonDto from(Season season) {
         if (season == null) return null;
@@ -32,7 +32,7 @@ public class SeasonDto {
                 .startDate(season.getStartDate())
                 .endDate(season.getEndDate())
                 .maxRounds(season.getMaxRounds())
-                .teams(season.getTeams())
+                .initialRankings(season.getInitialRankings())
                 .build();
     }
 

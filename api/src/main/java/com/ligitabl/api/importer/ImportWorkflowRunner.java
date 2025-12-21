@@ -22,10 +22,6 @@ public class ImportWorkflowRunner implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        log.info("╔═══════════════════════════════════════════════════════════╗");
-        log.info("║        Match Import Workflow (Script Mode)                ║");
-        log.info("╚═══════════════════════════════════════════════════════════╝");
-
         String competitionCode = config.getCompetition();
         log.info("Running import workflow for competition: {}", competitionCode);
 

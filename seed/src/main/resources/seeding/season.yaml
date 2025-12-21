@@ -5,11 +5,45 @@ season:
     slug: 2025-26
     startDate: 2025-08-10
     endDate: 2026-05-20
-    maxRounds: 38
-    teams:
-      - code: ARS
-        position: 1
-      - code: CHE
-        position: 2
+    totalTeams: 20
+    initialRankings:
       - code: LIV
+        position: 1
+      - code: ARS
+        position: 2
+      - code: MCI
         position: 3
+      - code: CHE
+        position: 4
+      - code: NEW
+        position: 5
+      - code: AVL
+        position: 6
+      - code: NFO
+        position: 7
+      - code: BHA
+        position: 8
+      - code: BOU
+        position: 9
+      - code: BRE
+        position: 10
+      - code: FUL
+        position: 11
+      - code: CRY
+        position: 12
+      - code: EVE
+        position: 13
+      - code: WHU
+        position: 14
+      - code: MUN
+        position: 15
+      - code: WOL
+        position: 16
+      - code: TOT
+        position: 17
+      - code: LEE
+        position: 18
+      - code: BUR
+        position: 19
+      - code: SUN
+        position: 20

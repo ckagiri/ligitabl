@@ -1,33 +1,35 @@
 competition:
-  - code: WPL
-    slug: what-premier-league
-    name: What Premier League
+  - code: SUPL
+    slug: super-premier-league
+    name: Super Premier League
+    maxHitPoints: 72
+    maxRounds: 22
     phases:
       - code: FS
         name: Full Season
         from: 1
-        to: 38
+        to: 22
       - code: Q1
         name: Initial Quarter
         from: 1
-        to: 9
+        to: 5
       - code: Q2
         name: Second Quarter
-        from: 10
-        to: 19
+        from: 6
+        to: 11
       - code: Q3
         name: Third Quarter
-        from: 20
-        to: 29
+        from: 12
+        to: 17
       - code: Q4
         name: Final Quarter
-        from: 30
-        to: 38
+        from: 18
+        to: 22
       - code: H1
         name: First Half
         from: 1
-        to: 19
+        to: 11
       - code: H2
         name: Second Half
-        from: 20
-        to: 38
+        from: 12
+        to: 22

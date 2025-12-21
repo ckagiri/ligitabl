@@ -8,4 +8,6 @@ databaseChangeLog:
   - include:
       file: db/changelog/20251213_1_match.yaml
   - include:
+      file: db/changelog/20251221_2_season_initial_rankings.yaml
+  - include:
       file: db/changelog/20251221_1_standings.yaml

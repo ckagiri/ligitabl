@@ -3,10 +3,14 @@ package com.ligitabl.seed.internal;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.seed.internal.config.MatchSeedConfig;
 import com.ligitabl.seed.internal.config.RoundSeedConfig;
+import com.ligitabl.seed.internal.util.SeedCoercions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.jooq.DSLContext;
+
+import static com.ligitabl.seed.internal.util.SeedCoercions.asInteger;
+import static com.ligitabl.seed.internal.util.SeedCoercions.asString;
 
 /**
  * Orchestrates the seeding process across multiple seeders.
@@ -62,7 +66,10 @@ public class SeedOrchestrator {
         List<Map<String, Object>> seasons =
                 (List<Map<String, Object>>) sections.getOrDefault("season", List.of());
 
-        SeasonSeeder seeder = new SeasonSeeder(dsl, objectMapper);
+        List<Map<String, Object>> competitions =
+            (List<Map<String, Object>>) sections.getOrDefault("competition", List.of());
+
+        SeasonSeeder seeder = new SeasonSeeder(dsl, objectMapper, competitions);
         SeedResult result = seeder.seed(seasons);
         resultCollector.add(result);
     }
@@ -80,9 +87,9 @@ public class SeedOrchestrator {
 
     @SuppressWarnings("unchecked")
     private void seedMatches(Map<String, Object> sections, String mainResource) {
-        Object matchConfig = sections.get("match");
+        Object matchConfig = null;
 
-        if (matchConfig == null && isDemoResource(mainResource)) {
+        if (isDemoResource(mainResource)) {
             matchConfig = createAutoMatchConfig(sections);
         }
 
@@ -113,8 +120,9 @@ public class SeedOrchestrator {
         }
 
         Map<String, Object> firstSeason = seasons.get(0);
-        String competitionSlug = (String) firstSeason.get("competitionSlug");
-        String seasonSlug = (String) firstSeason.get("slug");
+        String competitionSlug = asString(firstSeason.get("competitionSlug"));
+        String seasonSlug = asString(firstSeason.get("slug"));
+        Integer finishedRounds = asInteger(firstSeason.get("finishedRounds"));
 
         if (competitionSlug == null || seasonSlug == null) {
             return null;
@@ -124,7 +132,9 @@ public class SeedOrchestrator {
                 "competitionSlug", competitionSlug,
                 "seasonSlug", seasonSlug,
                 "clientId", 1,
-                "status", "SCHEDULED");
+                "scheduledStatus", "SCHEDULED",
+                "finishedStatus", "FINISHED",
+                "finishedRounds", finishedRounds != null ? finishedRounds : 0);
     }
 
     private static class SeedResultCollector {
@@ -165,3 +175,4 @@ public class SeedOrchestrator {
         }
     }
 }
+

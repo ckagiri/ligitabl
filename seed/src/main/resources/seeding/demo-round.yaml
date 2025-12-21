@@ -1,7 +1,7 @@
 round:
-  competitionSlug: what-premier-league
-  seasonSlug: 2025-26
-  count: 38
+  competitionSlug: super-premier-league
+  seasonSlug: 2025
+  count: 22
   namePrefix: Gameweek
   slugPrefix: gw-
   startPosition: 1

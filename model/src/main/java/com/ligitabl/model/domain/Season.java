@@ -33,7 +33,13 @@ public class Season extends AbstractModel<UUID> {
 
     private int maxRounds;
 
-    private List<TeamRank> teams;
+    private boolean completed;
+
+    private int totalTeams;
+
+    private int maxHitPoints;
+
+    private List<TeamRank> initialRankings;
 
     private UUID currentRoundId;
 

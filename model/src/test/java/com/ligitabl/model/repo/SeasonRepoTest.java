@@ -79,10 +79,13 @@ class SeasonRepoTest {
                 .set(TSeason.T_SEASON.C_START_DATE, LocalDate.of(2024, 8, 1))
                 .set(TSeason.T_SEASON.C_END_DATE, LocalDate.of(2025, 5, 31))
                 .set(TSeason.T_SEASON.C_MAX_ROUNDS, 38)
-                .set(TSeason.T_SEASON.C_CURRENT_MATCH_DAY, 0)
+                .set(TSeason.T_SEASON.C_COMPLETED, false)
+                .set(TSeason.T_SEASON.C_TOTAL_TEAMS, 2)
+                .set(TSeason.T_SEASON.C_MAX_HIT_POINTS, 200)
                 .set(
-                        TSeason.T_SEASON.C_TEAMS,
+                        TSeason.T_SEASON.C_INITIAL_RANKINGS,
                         JSONB.valueOf("[{\"code\":\"ARS\",\"position\":1},{\"code\":\"MCI\",\"position\":2}]"))
+                .set(TSeason.T_SEASON.C_CURRENT_MATCH_DAY, 0)
                 .execute();
 
         List<Season> byCompetition = repo.findAllByCompetitionId(competitionId);
@@ -92,7 +95,7 @@ class SeasonRepoTest {
         assertThat(bySlug).isPresent();
         assertThat(bySlug.get().getId()).isEqualTo(seasonId);
 
-        assertThat(bySlug.get().getTeams()).hasSize(2).satisfies(teams -> {
+        assertThat(bySlug.get().getInitialRankings()).hasSize(2).satisfies(teams -> {
             assertThat(teams.get(0).getCode()).isEqualTo("ARS");
             assertThat(teams.get(0).getPosition()).isEqualTo(1);
             assertThat(teams.get(1).getCode()).isEqualTo("MCI");

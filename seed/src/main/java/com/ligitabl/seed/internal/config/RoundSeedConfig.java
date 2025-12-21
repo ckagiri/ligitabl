@@ -1,6 +1,10 @@
 package com.ligitabl.seed.internal.config;
 
+import com.ligitabl.seed.internal.util.SeedCoercions;
 import java.util.Map;
+
+import static com.ligitabl.seed.internal.util.SeedCoercions.asInt;
+import static com.ligitabl.seed.internal.util.SeedCoercions.asString;
 
 /**
  * Type-safe configuration for round seeding.
@@ -49,12 +53,12 @@ public class RoundSeedConfig {
 
     public static RoundSeedConfig fromMap(Map<String, Object> map) {
         return new Builder()
-                .competitionSlug((String) map.get("competitionSlug"))
-                .seasonSlug((String) map.get("seasonSlug"))
-                .count((Integer) map.getOrDefault("count", 0))
-                .namePrefix((String) map.getOrDefault("namePrefix", "Round "))
-                .slugPrefix((String) map.getOrDefault("slugPrefix", "gw-"))
-                .startPosition((Integer) map.getOrDefault("startPosition", 1))
+                .competitionSlug(asString(map.get("competitionSlug")))
+                .seasonSlug(asString(map.get("seasonSlug")))
+                .count(asInt(map.getOrDefault("count", 0)))
+                .namePrefix(asString(map.getOrDefault("namePrefix", "Round ")))
+                .slugPrefix(asString(map.getOrDefault("slugPrefix", "gw-")))
+                .startPosition(asInt(map.getOrDefault("startPosition", 1)))
                 .build();
     }
 
@@ -114,3 +118,4 @@ public class RoundSeedConfig {
         }
     }
 }
+

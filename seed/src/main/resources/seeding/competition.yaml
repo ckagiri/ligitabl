@@ -2,6 +2,8 @@ competition:
   - code: PL
     slug: premier-league
     name: English Premier League
+    maxHitPoints: 200
+    maxRounds: 38
     phases:
       - code: FS
         name: Full Season
@@ -31,6 +33,3 @@ competition:
         name: Second Half
         from: 20
         to: 38
-  - code: BL
-    slug: bundesliga
-    name: Bundesliga
