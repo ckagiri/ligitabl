@@ -1,4 +1,4 @@
-package com.ligitabl.model.domain.standings.table;
+package com.ligitabl.model.domain;
 
 import java.util.UUID;
 

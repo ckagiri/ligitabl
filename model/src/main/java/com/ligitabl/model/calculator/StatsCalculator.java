@@ -3,8 +3,8 @@ package com.ligitabl.model.calculator;
 import java.util.*;
 
 import com.ligitabl.model.domain.Match;
+import com.ligitabl.model.domain.TeamMatchView;
 import com.ligitabl.model.domain.standings.stats.TeamStats;
-import com.ligitabl.model.domain.standings.table.TeamMatchView;
 
 public final class StatsCalculator {
     private StatsCalculator() {

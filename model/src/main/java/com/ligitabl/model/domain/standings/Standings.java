@@ -24,6 +24,15 @@ public class Standings extends AbstractModel<UUID> {
     @NotNull
     private List<StandingsTeamRank> rankings;
 
+    public static Standings create(UUID seasonId, int roundPosition, List<StandingsTeamRank> rankings) {
+        return Standings.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .roundPosition(roundPosition)
+                .rankings(rankings)
+                .build();
+    }
+
     public int teamCount() {
         return rankings == null ? 0 : rankings.size();
     }

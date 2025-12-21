@@ -1,4 +1,6 @@
-package com.ligitabl.model.domain.standings;
+package com.ligitabl.model.domain;
+
+import com.ligitabl.model.domain.standings.Constants;
 
 /**
  * Represents the result of a football match with goals scored by each team.

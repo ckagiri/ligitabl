@@ -5,9 +5,6 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.standings.MatchResult;
-import com.ligitabl.model.domain.standings.table.TeamMatchView;
-
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -55,15 +52,6 @@ public class Match extends AbstractModel<UUID> {
         return Optional.of(new MatchResult(score.getHomeGoals(), score.getAwayGoals()));
     }
 
-    /**
-     * Creates a team-specific view of this match.
-     * The view presents the match from the perspective of the specified team,
-     * with their goals listed as "goalsFor".
-     *
-     * @param teamId The ID of the team whose perspective to use
-     * @return Optional containing the TeamMatchView if the match has been played
-     *         and the team participated, empty otherwise
-     */
     public Optional<TeamMatchView> viewFor(UUID teamId) {
         Objects.requireNonNull(teamId, "Team ID cannot be null");
         if (!isPlayed()) return Optional.empty();
@@ -74,7 +62,6 @@ public class Match extends AbstractModel<UUID> {
             } else if (teamId.equals(awayTeamId)) {
                 return Optional.of(new TeamMatchView(awayTeamId, homeTeamId, r.awayGoals(), r.homeGoals(), false));
             }
-            // Team not in this match
             return Optional.empty();
         });
     }

@@ -60,7 +60,7 @@ class EnglishPremierLeagueRankingTest {
                 match(mci.getId(), liv.getId(), 1, 1));
 
         LeagueTable table = new LeagueTable(List.of(ars, mci, liv), matches, RankingStrategy.ENGLISH_PREMIER_LEAGUE);
-        List<Standing> standings = table.standings();
+        List<Standing> standings = table.getStandings();
 
         // Debug output to help diagnose ordering/points
         standings.forEach(s -> System.out.println(s));

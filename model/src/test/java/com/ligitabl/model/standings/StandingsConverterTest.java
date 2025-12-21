@@ -45,7 +45,7 @@ class StandingsConverterTest {
                 .build();
 
         LeagueTable table = new LeagueTable(List.of(t1, t2), List.of(m1), RankingStrategy.ENGLISH_PREMIER_LEAGUE);
-        var standings = StandingsConverter.fromLeagueTable(table, seasonId, 1);
+        var standings = StandingsConverter.convert(table, seasonId, 1);
 
         assertNotNull(standings);
         assertEquals(seasonId, standings.getSeasonId());

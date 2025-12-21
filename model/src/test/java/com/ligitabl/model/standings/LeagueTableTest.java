@@ -43,8 +43,8 @@ class LeagueTableTest {
 
         LeagueTable table = new LeagueTable(List.of(t1, t2), List.of(m), RankingStrategy.STANDARD);
 
-        assertEquals(2, table.standings().size());
-        Standing s = table.standings().stream()
+        assertEquals(2, table.getStandings().size());
+        Standing s = table.getStandings().stream()
                 .filter(x -> x.stats().teamId().equals(t1.getId()))
                 .findFirst()
                 .orElseThrow();
@@ -71,7 +71,7 @@ class LeagueTableTest {
         LeagueTable table = new LeagueTable(List.of(t1, t2), List.of(), RankingStrategy.STANDARD);
 
         // Should be sorted alphabetically by shortName: Ant, Zed
-        assertEquals(t2.getId(), table.standings().get(0).stats().teamId());
-        assertEquals(t1.getId(), table.standings().get(1).stats().teamId());
+        assertEquals(t2.getId(), table.getStandings().get(0).stats().teamId());
+        assertEquals(t1.getId(), table.getStandings().get(1).stats().teamId());
     }
 }

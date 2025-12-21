@@ -16,23 +16,18 @@ public final class StandingsConverter {
         throw new AssertionError("No instances");
     }
 
-    public static Standings fromLeagueTable(LeagueTable table, UUID seasonId, int roundPosition) {
+    public static Standings convert(LeagueTable table, UUID seasonId, int roundPosition) {
         Objects.requireNonNull(table);
         Objects.requireNonNull(seasonId);
 
         Map<UUID, String> teamCodeMap =
-                table.teams().stream().collect(Collectors.toMap(t -> t.getId(), t -> t.getShortName()));
+                table.getTeams().stream().collect(Collectors.toMap(t -> t.getId(), t -> t.getShortName()));
 
-        List<StandingsTeamRank> rankings = table.standings().stream()
+        List<StandingsTeamRank> rankings = table.getStandings().stream()
                 .map(s -> toStandingsTeamRank(s, teamCodeMap))
                 .toList();
 
-        return Standings.builder()
-                .id(UUID.randomUUID())
-                .seasonId(seasonId)
-                .roundPosition(roundPosition)
-                .rankings(rankings)
-                .build();
+        return Standings.create(seasonId, roundPosition, rankings);
     }
 
     private static StandingsTeamRank toStandingsTeamRank(Standing standing, Map<UUID, String> teamCodeMap) {
