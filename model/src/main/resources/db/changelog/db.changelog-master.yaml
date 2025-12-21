@@ -7,3 +7,5 @@ databaseChangeLog:
       file: db/changelog/20251212_1_competition_season_round.yaml
   - include:
       file: db/changelog/20251213_1_match.yaml
+  - include:
+      file: db/changelog/20251221_1_standings.yaml

@@ -1,7 +1,23 @@
 package com.ligitabl.model.domain.standings;
 
-public record StandingsMetadata(int played, int won, int drawn, int lost, int points, int gf, int ga, int gd) {
-    public StandingsMetadata {
+import lombok.Builder;
+import lombok.Value;
+import lombok.extern.jackson.Jacksonized;
+
+@Value
+@Builder
+@Jacksonized
+public class StandingsMetadata {
+    int played;
+    int won;
+    int drawn;
+    int lost;
+    int points;
+    int gf;
+    int ga;
+    int gd;
+
+    public StandingsMetadata(int played, int won, int drawn, int lost, int points, int gf, int ga, int gd) {
         if (played < 0) throw new IllegalArgumentException("Played cannot be negative");
         if (won < 0) throw new IllegalArgumentException("Won cannot be negative");
         if (drawn < 0) throw new IllegalArgumentException("Drawn cannot be negative");
@@ -15,6 +31,14 @@ public record StandingsMetadata(int played, int won, int drawn, int lost, int po
         if (gd != gf - ga) {
             throw new IllegalArgumentException("GD must equal GF - GA");
         }
+        this.played = played;
+        this.won = won;
+        this.drawn = drawn;
+        this.lost = lost;
+        this.points = points;
+        this.gf = gf;
+        this.ga = ga;
+        this.gd = gd;
     }
 
     @Override

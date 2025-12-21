@@ -22,14 +22,14 @@ public enum RankingStrategy {
     STANDARD {
         @Override
         public RankingRule build(List<Match> matches, List<Team> teams) {
-            Map<UUID, String> shortNames = extractShortNames(teams);
+            Map<UUID, String> teamNames = extractShortNames(teams);
 
             return new RankingBuilder()
-                    .withTeamShortNames(shortNames)
+                    .withTeamNames(teamNames)
                     .thenDescending(TeamStats::points)
                     .thenDescending(TeamStats::goalDiff)
                     .thenDescending(TeamStats::goalsFor)
-                    .thenAscendingByShortName()
+                    .thenAscendingByName()
                     .build();
         }
     },
@@ -43,7 +43,7 @@ public enum RankingStrategy {
         @Override
         public RankingRule build(List<Match> matches, List<Team> teams) {
             Objects.requireNonNull(matches, "Matches cannot be null for H2H strategy");
-            var shortNames = extractShortNames(teams);
+            var teamNames = extractShortNames(teams);
 
             // H2H tiebreaker: points in H2H games, then goal diff, then goals for
             var h2hTieBreaker = new RankingBuilder()
@@ -56,12 +56,12 @@ public enum RankingStrategy {
             RankingRule h2hRule = new CachedHeadToHeadRule(matches, h2hTieBreaker);
 
             return new RankingBuilder()
-                    .withTeamShortNames(shortNames)
+                    .withTeamNames(teamNames)
                     .thenDescending(TeamStats::points)
                     .then(h2hRule)
                     .thenDescending(TeamStats::goalDiff)
                     .thenDescending(TeamStats::goalsFor)
-                    .thenAscendingByShortName()
+                    .thenAscendingByName()
                     .build();
         }
     },
@@ -74,7 +74,7 @@ public enum RankingStrategy {
         @Override
         public RankingRule build(List<Match> matches, List<Team> teams) {
             Objects.requireNonNull(matches, "Matches cannot be null for H2H-Away strategy");
-            Map<UUID, String> shortNames = extractShortNames(teams);
+            Map<UUID, String> teamNames = extractShortNames(teams);
 
             // H2H tiebreaker with away goals priority
             RankingRule h2hTieBreaker = new RankingBuilder()
@@ -87,12 +87,12 @@ public enum RankingStrategy {
             RankingRule h2hRule = new CachedHeadToHeadRule(matches, h2hTieBreaker);
 
             return new RankingBuilder()
-                    .withTeamShortNames(shortNames)
+                    .withTeamNames(teamNames)
                     .thenDescending(TeamStats::points)
                     .then(h2hRule)
                     .thenDescending(TeamStats::goalDiff)
                     .thenDescending(TeamStats::goalsFor)
-                    .thenAscendingByShortName()
+                    .thenAscendingByName()
                     .build();
         }
     },
@@ -114,7 +114,7 @@ public enum RankingStrategy {
         @Override
         public RankingRule build(List<Match> matches, List<Team> teams) {
             Objects.requireNonNull(matches, "Matches cannot be null for EPL strategy");
-            Map<UUID, String> shortNames = extractShortNames(teams);
+            Map<UUID, String> teamNames = extractShortNames(teams);
 
             // Head-to-Head tie-breaker (EPL Rules C.17.1 and C.17.2)
             // First: H2H points, then: H2H away goals
@@ -127,12 +127,12 @@ public enum RankingStrategy {
             RankingRule h2hRule = new CachedHeadToHeadRule(matches, h2hTieBreaker);
 
             return new RankingBuilder()
-                    .withTeamShortNames(shortNames)
+                    .withTeamNames(teamNames)
                     .thenDescending(TeamStats::points) // C.4: Overall points
                     .thenDescending(TeamStats::goalDiff) // C.5: Goal difference
                     .thenDescending(TeamStats::goalsFor) // C.6: Goals scored
                     .then(h2hRule) // C.17: Head-to-head
-                    .thenAscendingByShortName() // Final: Alphabetical
+                    .thenAscendingByName() // Final: Alphabetical
                     .build();
         }
     };

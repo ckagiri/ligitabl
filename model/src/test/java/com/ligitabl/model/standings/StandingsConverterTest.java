@@ -33,7 +33,6 @@ class StandingsConverterTest {
                 .tla("MCI")
                 .build();
 
-
         var seasonId = UUID.randomUUID();
         var roundId = UUID.randomUUID();
         // Create matches - use minimal Match builder with Score where needed
@@ -49,7 +48,7 @@ class StandingsConverterTest {
         var standings = StandingsConverter.fromLeagueTable(table, seasonId, 1);
 
         assertNotNull(standings);
-        assertEquals(seasonId, standings.seasonId());
+        assertEquals(seasonId, standings.getSeasonId());
         assertEquals(2, standings.teamCount());
     }
 }

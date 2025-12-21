@@ -1,0 +1,53 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20251221_1_standings
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: t_standings
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: t_standings
+            schemaName: public
+            columns:
+              - column:
+                  name: pk_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: fk_season_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_round_position
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_rankings
+                  type: jsonb
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: t_standings
+            baseColumnNames: fk_season_id
+            baseTableSchemaName: public
+            constraintName: fk_standings_season_id
+            referencedTableName: t_season
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+  - changeSet:
+      id: 20251221_2_standings_unique_per_season_round
+      author: system
+      changes:
+        - addUniqueConstraint:
+            tableName: t_standings
+            schemaName: public
+            columnNames: fk_season_id, c_round_position
+            constraintName: uq_t_standings_season_round

@@ -27,7 +27,12 @@ public final class StandingsConverter {
                 .map(s -> toStandingsTeamRank(s, teamCodeMap))
                 .toList();
 
-        return new Standings(UUID.randomUUID(), seasonId, roundPosition, rankings);
+        return Standings.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .roundPosition(roundPosition)
+                .rankings(rankings)
+                .build();
     }
 
     private static StandingsTeamRank toStandingsTeamRank(Standing standing, Map<UUID, String> teamCodeMap) {
@@ -44,6 +49,6 @@ public final class StandingsConverter {
                 stats.goalsFor(),
                 stats.goalsAgainst(),
                 stats.goalDiff());
-        return new StandingsTeamRank(rank, meta);
+        return StandingsTeamRank.builder().ranking(rank).metadata(meta).build();
     }
 }

@@ -11,7 +11,7 @@ public class RankingBuilder {
     private RankingRule rule = (a, b) -> 0;
     private Map<UUID, String> teamShortNames = Map.of();
 
-    public RankingBuilder withTeamShortNames(Map<UUID, String> teamShortNames) {
+    public RankingBuilder withTeamNames(Map<UUID, String> teamShortNames) {
         this.teamShortNames = Objects.requireNonNull(teamShortNames);
         return this;
     }
@@ -32,7 +32,7 @@ public class RankingBuilder {
         return then((a, b) -> extractor.apply(a).compareTo(extractor.apply(b)));
     }
 
-    public RankingBuilder thenAscendingByShortName() {
+    public RankingBuilder thenAscendingByName() {
         return then((a, b) -> {
             String sa = teamShortNames.getOrDefault(a.teamId(), a.teamId().toString());
             String sb = teamShortNames.getOrDefault(b.teamId(), b.teamId().toString());

@@ -1,13 +1,23 @@
 package com.ligitabl.model.domain.standings;
 
-import com.ligitabl.model.domain.TeamRank;
-
 import java.util.Objects;
 
-public record StandingsTeamRank(TeamRank ranking, StandingsMetadata metadata) {
-    public StandingsTeamRank {
-        Objects.requireNonNull(ranking, "Ranking cannot be null");
-        Objects.requireNonNull(metadata, "Metadata cannot be null");
+import com.ligitabl.model.domain.TeamRank;
+
+import lombok.Builder;
+import lombok.Value;
+import lombok.extern.jackson.Jacksonized;
+
+@Value
+@Builder
+@Jacksonized
+public class StandingsTeamRank {
+    TeamRank ranking;
+    StandingsMetadata metadata;
+
+    public StandingsTeamRank(TeamRank ranking, StandingsMetadata metadata) {
+        this.ranking = Objects.requireNonNull(ranking, "Ranking cannot be null");
+        this.metadata = Objects.requireNonNull(metadata, "Metadata cannot be null");
     }
 
     public String teamCode() {
