@@ -1,10 +1,6 @@
 package com.ligitabl.model.domain.standings.ranking;
 
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.stream.Collectors;
-
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.Team;
 
@@ -84,8 +80,6 @@ public enum RankingStrategy {
     ENGLISH_PREMIER_LEAGUE {
         @Override
         public RankingRule build(List<Match> matches, List<Team> teams) {
-            Map<UUID, String> shortNames = extractShortNames(teams);
-
             // H2H tie-breaker
             RankingRule h2hTieBreaker =
                     new RankingBuilder().byMostPoints().byMostAwayGoals().build();
@@ -107,8 +101,4 @@ public enum RankingStrategy {
      * Build the ranking rule for this strategy.
      */
     public abstract RankingRule build(List<Match> matches, List<Team> teams);
-
-    protected static Map<UUID, String> extractShortNames(List<Team> teams) {
-        return teams.stream().collect(Collectors.toMap(Team::getId, Team::getShortName));
-    }
 }
