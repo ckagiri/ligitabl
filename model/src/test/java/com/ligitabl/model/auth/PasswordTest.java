@@ -70,15 +70,17 @@ class PasswordTest {
         Password plaintext = Password.Plaintext.create("password123");
         Password hashed = Password.Hashed.of("$2a$10$hash");
 
-        String plaintextResult = switch (plaintext) {
-            case Password.Plaintext p -> "plaintext: " + p.value().length() + " chars";
-            case Password.Hashed h -> "hashed";
-        };
+        String plaintextResult =
+                switch (plaintext) {
+                    case Password.Plaintext p -> "plaintext: " + p.value().length() + " chars";
+                    case Password.Hashed h -> "hashed";
+                };
 
-        String hashedResult = switch (hashed) {
-            case Password.Plaintext p -> "plaintext";
-            case Password.Hashed h -> "hashed: " + h.value();
-        };
+        String hashedResult =
+                switch (hashed) {
+                    case Password.Plaintext p -> "plaintext";
+                    case Password.Hashed h -> "hashed: " + h.value();
+                };
 
         assertTrue(plaintextResult.startsWith("plaintext:"));
         assertTrue(hashedResult.startsWith("hashed:"));

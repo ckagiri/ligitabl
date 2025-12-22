@@ -107,8 +107,8 @@ class AuthAccessIT extends AbstractPostgresIT {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(
-                Map.of("email", email, "password", password), headers);
+        HttpEntity<Map<String, String>> request =
+                new HttpEntity<>(Map.of("email", email, "password", password), headers);
 
         @SuppressWarnings("unchecked")
         ResponseEntity<Map<String, Object>> response =
@@ -141,8 +141,8 @@ class AuthAccessIT extends AbstractPostgresIT {
                 .publicId(publicIdGenerator.generate(id))
                 .email(Email.create(email))
                 .displayName("Temp")
-                .password(passwordHasher.hash(Password.Plaintext.create(
-                        contains.startsWith("admin-") ? "admin12345" : "player12345")))
+                .password(passwordHasher.hash(
+                        Password.Plaintext.create(contains.startsWith("admin-") ? "admin12345" : "player12345")))
                 .roles(contains.startsWith("admin-") ? Set.of(Role.ADMIN) : Set.of(Role.PLAYER))
                 .emailVerified(true)
                 .build();

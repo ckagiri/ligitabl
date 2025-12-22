@@ -3,10 +3,6 @@ package com.ligitabl.model.infra;
 import static com.ligitabl.model.db.tables.TUser.T_USER;
 import static com.ligitabl.model.db.tables.TUserRole.T_USER_ROLE;
 
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.auth.Password;
-import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.auth.Role;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -14,6 +10,10 @@ import java.util.UUID;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 
+import com.ligitabl.model.auth.Email;
+import com.ligitabl.model.auth.Password;
+import com.ligitabl.model.auth.PublicId;
+import com.ligitabl.model.auth.Role;
 import com.ligitabl.model.db.tables.records.UserRecord;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.UserRepo;
@@ -33,15 +33,16 @@ public class UserPersistenceAdapter implements UserRepo {
 
     @Override
     public Optional<User> findByEmail(Email email) {
-        var record = dsl.selectFrom(T_USER).where(T_USER.C_EMAIL.eq(email.value())).fetchOne();
+        var record =
+                dsl.selectFrom(T_USER).where(T_USER.C_EMAIL.eq(email.value())).fetchOne();
         return Optional.ofNullable(map(record));
     }
 
     @Override
     public Optional<User> findByPublicId(PublicId publicId) {
         var record = dsl.selectFrom(T_USER)
-            .where(T_USER.C_PUBLIC_ID.eq(publicId.value()))
-            .fetchOne();
+                .where(T_USER.C_PUBLIC_ID.eq(publicId.value()))
+                .fetchOne();
         return Optional.ofNullable(map(record));
     }
 

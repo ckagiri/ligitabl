@@ -73,7 +73,8 @@ class LoginUseCaseTest {
         when(requestValidator.validate(cmd)).thenReturn(Either.right(cmd));
         when(userRepo.findByEmail(email)).thenReturn(Optional.of(user));
         when(passwordHasher.verify(password, user.getPassword())).thenReturn(true);
-        when(tokenGenerator.generateAccessToken(user.getPublicId(), user.getRoles())).thenReturn("valid-jwt-token");
+        when(tokenGenerator.generateAccessToken(user.getPublicId(), user.getRoles()))
+                .thenReturn("valid-jwt-token");
 
         Either<UseCaseError, LoginResult> result = loginUseCase.execute(cmd);
 

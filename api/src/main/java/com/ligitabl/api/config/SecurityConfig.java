@@ -14,7 +14,6 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 import com.ligitabl.api.auth.security.JwtAuthenticationFilter;
 import com.ligitabl.api.auth.security.TokenGenerator;
 
-
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity
@@ -26,7 +25,7 @@ public class SecurityConfig {
     }
 
     @Bean
-        public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter)
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter)
             throws Exception {
         http.csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**")
@@ -35,10 +34,10 @@ public class SecurityConfig {
                         .hasRole("ADMIN")
                         .requestMatchers("/api/player/**")
                         .hasRole("PLAYER")
-                .anyRequest()
-                .permitAll())
+                        .anyRequest()
+                        .permitAll())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
         return http.build();
     }

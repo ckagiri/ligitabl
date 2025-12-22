@@ -12,11 +12,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.ResponseEntity;
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -123,7 +123,8 @@ class AuthControllerIntegrationTest extends AbstractPostgresIT {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
 
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(Map.of("email", email, "password", password), headers);
+        HttpEntity<Map<String, String>> request =
+                new HttpEntity<>(Map.of("email", email, "password", password), headers);
 
         return restTemplate.exchange(url, HttpMethod.POST, request, new ParameterizedTypeReference<>() {});
     }
@@ -134,7 +135,8 @@ class AuthControllerIntegrationTest extends AbstractPostgresIT {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(org.springframework.http.MediaType.APPLICATION_JSON);
 
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(Map.of("email", email, "password", password), headers);
+        HttpEntity<Map<String, String>> request =
+                new HttpEntity<>(Map.of("email", email, "password", password), headers);
         return restTemplate.postForEntity(url, request, String.class);
     }
 }

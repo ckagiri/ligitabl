@@ -10,8 +10,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import com.ligitabl.api.shared.errors.AuthorizationError;
-import com.ligitabl.api.shared.errors.UseCaseErrors;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -20,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.auth.security.TokenGenerator;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.AuthorizationError;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.model.auth.Email;
@@ -29,7 +28,6 @@ import com.ligitabl.model.auth.Role;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.domain.service.PasswordHasher;
 import com.ligitabl.model.repo.UserRepo;
-import org.springframework.web.client.HttpClientErrorException;
 
 @ExtendWith(MockitoExtension.class)
 class LoginHandlerTest {
@@ -77,7 +75,8 @@ class LoginHandlerTest {
         when(requestValidator.validate(cmd)).thenReturn(Either.right(cmd));
         when(userRepo.findByEmail(email)).thenReturn(Optional.of(user));
         when(passwordHasher.verify(password, user.getPassword())).thenReturn(true);
-        when(tokenGenerator.generateAccessToken(user.getPublicId(), user.getRoles())).thenReturn("token123");
+        when(tokenGenerator.generateAccessToken(user.getPublicId(), user.getRoles()))
+                .thenReturn("token123");
 
         Either<UseCaseError, LoginResult> result = useCase.execute(cmd);
 
