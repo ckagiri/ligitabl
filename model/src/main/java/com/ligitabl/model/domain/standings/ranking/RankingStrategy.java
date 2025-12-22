@@ -1,6 +1,7 @@
 package com.ligitabl.model.domain.standings.ranking;
 
 import java.util.List;
+
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.Team;
 

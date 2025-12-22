@@ -37,6 +37,14 @@ public final class UseCaseErrors {
         return new UnexpectedError(exception);
     }
 
+    public static AuthorizationError unauthorized(String message) {
+        return new AuthorizationError(message);
+    }
+
+    public static ForbiddenError forbidden(String message) {
+        return new ForbiddenError(message);
+    }
+
     public static UseCaseError fromException(Throwable throwable) {
         if (throwable instanceof IllegalArgumentException) {
             return UseCaseErrors.unprocessableEntity(throwable.getMessage());

@@ -112,9 +112,37 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
 
     R getOrElse(Supplier<? extends R> supplier);
 
+    /**
+     * Returns the right value if present, otherwise applies the mapper function to the left value.
+     * Similar to getOrElse but the mapper receives the left value.
+     *
+     * @param mapper Function to map left value to right type
+     * @return The right value or the mapped left value
+     */
+    default R getOrElseMap(Function<? super L, ? extends R> mapper) {
+        Objects.requireNonNull(mapper, "mapper");
+        return isRight() ? get() : mapper.apply(getLeft());
+    }
+
     Either<L, R> orElse(Either<L, R> other);
 
     Either<L, R> orElse(Supplier<? extends Either<L, R>> supplier);
+
+    /**
+     * Returns the right value if present, otherwise throws an exception created from the left value.
+     *
+     * @param exceptionMapper Function to create exception from left value
+     * @return The right value
+     * @throws X The exception created by the mapper
+     */
+    default <X extends Throwable> R getOrElseThrow(Function<? super L, ? extends X> exceptionMapper) throws X {
+        Objects.requireNonNull(exceptionMapper, "exceptionMapper");
+        if (isRight()) {
+            return get();
+        } else {
+            throw exceptionMapper.apply(getLeft());
+        }
+    }
 
     default Either<L, R> recover(Function<? super L, ? extends R> recoverFn) {
         Objects.requireNonNull(recoverFn, "recoverFn");

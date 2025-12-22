@@ -31,6 +31,7 @@ public class SeedOrchestrator {
     public SeedExecutionReport executeSeed(Map<String, Object> sections, String mainResource) {
         resultCollector.clear();
 
+        seedUsers(sections);
         seedTeams(sections);
         seedCompetitions(sections);
         seedSeasons(sections);
@@ -48,6 +49,16 @@ public class SeedOrchestrator {
 
         TeamSeeder seeder = new TeamSeeder(dsl);
         SeedResult result = seeder.seed(teams);
+        resultCollector.add(result);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void seedUsers(Map<String, Object> sections) {
+        List<Map<String, Object>> users =
+                (List<Map<String, Object>>) sections.getOrDefault("user", List.of());
+
+        UserSeeder seeder = new UserSeeder(dsl);
+        SeedResult result = seeder.seed(users);
         resultCollector.add(result);
     }
 

@@ -1,0 +1,37 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20251222_1_user
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: t_user
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: t_user
+            schemaName: public
+            columns:
+              - column:
+                  name: pk_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: c_email
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+              - column:
+                  name: c_password_hash
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_display_name
+                  type: varchar(255)
+                  constraints:
+                    nullable: true

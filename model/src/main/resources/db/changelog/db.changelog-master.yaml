@@ -11,3 +11,5 @@ databaseChangeLog:
       file: db/changelog/20251221_2_season_initial_rankings.yaml
   - include:
       file: db/changelog/20251221_1_standings.yaml
+  - include:
+      file: db/changelog/20251222_1_user.yaml

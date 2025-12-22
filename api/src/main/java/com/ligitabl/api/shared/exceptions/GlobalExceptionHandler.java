@@ -27,6 +27,10 @@ public class GlobalExceptionHandler {
             log.warn("Unprocessable entity: {}", ue.getMessage());
         } else if (error instanceof ConflictError ce) {
             log.warn("Conflict: {}", ce.getMessage());
+        } else if (error instanceof AuthorizationError ue) {
+            log.warn("Unauthorized: {}", ue.getMessage());
+        } else if (error instanceof ForbiddenError fe) {
+            log.warn("Forbidden: {}", fe.getMessage());
         } else {
             log.error("Unhandled error type: {}", error.getClass().getSimpleName());
         }

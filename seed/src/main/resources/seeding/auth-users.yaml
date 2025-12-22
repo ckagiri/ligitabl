@@ -1,0 +1,10 @@
+user:
+  - email: admin@example.com
+    password: admin123
+    displayName: Admin
+  - email: player1@example.com
+    password: player123
+    displayName: Player One
+  - email: superuser@example.com
+    password: super123
+    displayName: Superuser
