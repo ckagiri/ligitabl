@@ -21,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
  * JWT authentication filter.
  * Extracts and validates JWT tokens using the TokenGenerator port.
  */
-@Component
 @RequiredArgsConstructor
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
@@ -37,7 +36,6 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (authHeader != null && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
 
-            // Railway Oriented Programming: validate token
             tokenGenerator
                     .validateToken(token)
                     .peek(claims -> {

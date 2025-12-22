@@ -5,6 +5,9 @@ import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 
 import javax.crypto.SecretKey;
 
@@ -16,7 +19,6 @@ import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.auth.Role;
-import com.ligitabl.model.db.Keys;
 
 @Component
 public class JwtTokenGenerator implements TokenGenerator {
@@ -61,11 +63,11 @@ public class JwtTokenGenerator implements TokenGenerator {
                         @SuppressWarnings("unchecked")
                         List<String> roleStrings = claims.get("roles", List.class);
 
-                        // Convert role strings to Role enum
-                        Set<Role> roles = roleStrings.stream()
-                                .map(Role::fromString)
-                                .filter(Either::isRight)
-                                .map(Either::get)
+                        Set<Role> roles = (roleStrings == null ? List.<String>of() : roleStrings)
+                                .stream()
+                                .map(roleStr -> Either.catching(() -> Role.fromString(roleStr)))
+                                .filter(either -> either.isRight())
+                                .map(either -> either.get())
                                 .collect(Collectors.toSet());
 
                         return Either.right(new TokenClaims(publicId, roles));

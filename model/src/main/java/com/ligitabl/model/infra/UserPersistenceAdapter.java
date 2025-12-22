@@ -1,13 +1,20 @@
 package com.ligitabl.model.infra;
 
+import static com.ligitabl.model.db.tables.TUser.T_USER;
+import static com.ligitabl.model.db.tables.TUserRole.T_USER_ROLE;
+
+import com.ligitabl.model.auth.Email;
+import com.ligitabl.model.auth.Password;
+import com.ligitabl.model.auth.PublicId;
+import com.ligitabl.model.auth.Role;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.jooq.DSLContext;
-import org.jooq.Record;
-import org.jooq.Table;
 import org.jooq.impl.DSL;
 
+import com.ligitabl.model.db.tables.records.UserRecord;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.UserRepo;
 
@@ -18,23 +25,23 @@ public class UserPersistenceAdapter implements UserRepo {
 
     private final DSLContext dsl;
 
-    private static final Table<Record> T_USER = DSL.table(DSL.name("t_user"));
-
     @Override
     public Optional<User> findById(UUID id) {
-        var record = dsl.selectFrom(T_USER)
-                .where(DSL.field(DSL.name("pk_id"), UUID.class).eq(id))
-                .fetchOne();
-
+        var record = dsl.selectFrom(T_USER).where(T_USER.PK_ID.eq(id)).fetchOne();
         return Optional.ofNullable(map(record));
     }
 
     @Override
-    public Optional<User> findByEmail(String email) {
-        var record = dsl.selectFrom(T_USER)
-                .where(DSL.field(DSL.name("c_email"), String.class).eq(email))
-                .fetchOne();
+    public Optional<User> findByEmail(Email email) {
+        var record = dsl.selectFrom(T_USER).where(T_USER.C_EMAIL.eq(email.value())).fetchOne();
+        return Optional.ofNullable(map(record));
+    }
 
+    @Override
+    public Optional<User> findByPublicId(PublicId publicId) {
+        var record = dsl.selectFrom(T_USER)
+            .where(T_USER.C_PUBLIC_ID.eq(publicId.value()))
+            .fetchOne();
         return Optional.ofNullable(map(record));
     }
 
@@ -44,32 +51,62 @@ public class UserPersistenceAdapter implements UserRepo {
             throw new IllegalArgumentException("User.id must not be null on create");
         }
 
-        int rows = dsl.insertInto(T_USER)
-                .columns(
-                        DSL.field(DSL.name("pk_id"), UUID.class),
-                        DSL.field(DSL.name("c_email"), String.class),
-                        DSL.field(DSL.name("c_password_hash"), String.class),
-                        DSL.field(DSL.name("c_display_name"), String.class))
-                .values(model.getId(), model.getEmail(), model.getPasswordHash(), model.getDisplayName())
-                .execute();
-
-        if (rows != 1) {
-            throw new IllegalStateException("Expected to insert 1 row, inserted=" + rows);
+        if (model.getPublicId() == null) {
+            throw new IllegalArgumentException("User.publicId must not be null on create");
         }
+
+        dsl.transaction(configuration -> {
+            DSLContext tx = DSL.using(configuration);
+
+            UserRecord rec = tx.newRecord(T_USER);
+            rec.setId(model.getId());
+            rec.setPublicId(model.getPublicId().value());
+            rec.setEmail(model.getEmail().value());
+            rec.setPasswordHash(model.getPassword().value());
+            rec.setDisplayName(model.getDisplayName());
+            rec.setEmailVerified(model.isEmailVerified());
+            rec.store();
+            rec.refresh();
+
+            for (Role role : model.getRoles()) {
+                tx.insertInto(T_USER_ROLE)
+                        .set(T_USER_ROLE.FK_USER_ID, model.getId())
+                        .set(T_USER_ROLE.C_ROLE, role.getValue())
+                        .onConflictDoNothing()
+                        .execute();
+            }
+        });
 
         return model;
     }
 
-    private static User map(Record record) {
+    @Override
+    public boolean existsByEmail(Email email) {
+        return dsl.fetchExists(dsl.selectOne().from(T_USER).where(T_USER.C_EMAIL.eq(email.value())));
+    }
+
+    private User map(UserRecord record) {
         if (record == null) {
             return null;
         }
 
+        UUID id = record.getId();
+        Set<Role> roles = Set.of();
+        if (id != null) {
+            roles = dsl.select(T_USER_ROLE.C_ROLE)
+                    .from(T_USER_ROLE)
+                    .where(T_USER_ROLE.FK_USER_ID.eq(id))
+                    .fetchSet(r -> Role.fromString(r.get(T_USER_ROLE.C_ROLE)));
+        }
+
         return User.builder()
-                .id(record.get(DSL.field(DSL.name("pk_id"), UUID.class)))
-                .email(record.get(DSL.field(DSL.name("c_email"), String.class)))
-                .passwordHash(record.get(DSL.field(DSL.name("c_password_hash"), String.class)))
-                .displayName(record.get(DSL.field(DSL.name("c_display_name"), String.class)))
+                .id(id)
+                .publicId(record.getPublicId() == null ? null : PublicId.create(record.getPublicId()))
+                .email(record.getEmail() == null ? null : Email.create(record.getEmail()))
+                .password(record.getPasswordHash() == null ? null : Password.Hashed.of(record.getPasswordHash()))
+                .displayName(record.getDisplayName())
+                .roles(roles)
+                .emailVerified(Boolean.TRUE.equals(record.getEmailVerified()))
                 .build();
     }
 }

@@ -1,0 +1,58 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20251222_2_user_roles
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_user
+            schemaName: public
+      changes:
+        - addColumn:
+            tableName: t_user
+            schemaName: public
+            columns:
+              - column:
+                  name: c_public_id
+                  type: varchar(10)
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_email_verified
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+        - addUniqueConstraint:
+            tableName: t_user
+            schemaName: public
+            columnNames: c_public_id
+            constraintName: uq_t_user_public_id
+        - createTable:
+            tableName: t_user_role
+            schemaName: public
+            columns:
+              - column:
+                  name: fk_user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_role
+                  type: varchar(50)
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: t_user_role
+            schemaName: public
+            columnNames: fk_user_id, c_role
+            constraintName: pk_t_user_role
+        - addForeignKeyConstraint:
+            baseTableName: t_user_role
+            baseTableSchemaName: public
+            baseColumnNames: fk_user_id
+            referencedTableName: t_user
+            referencedTableSchemaName: public
+            referencedColumnNames: pk_id
+            constraintName: fk_t_user_role_user
+            onDelete: CASCADE

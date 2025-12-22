@@ -37,10 +37,8 @@ management:
       probes:
         enabled: true
 
-ligitabl:
-  auth:
-    jwt:
-      # IMPORTANT: override in real environments
-      secret: ${JWT_SECRET:dev-secret-change-me}
-      issuer: ${JWT_ISSUER:ligitabl}
-      ttl-seconds: ${JWT_TTL_SECONDS:86400}
+jwt:
+  # IMPORTANT: override in real environments
+  secret: ${JWT_SECRET:dev-secret-change-me-dev-secret-change-me}
+  # Milliseconds
+  expiration: ${JWT_EXPIRATION_MS:86400000}

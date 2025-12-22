@@ -3,3 +3,7 @@ spring:
     exclude:
       - org.springframework.boot.autoconfigure.security.servlet.SecurityAutoConfiguration
       - org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration
+
+jwt:
+  secret: test-secret-change-me-test-secret-change-me-32bytes-min
+  expiration: 86400000

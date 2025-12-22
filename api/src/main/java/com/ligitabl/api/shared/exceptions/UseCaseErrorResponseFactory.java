@@ -14,7 +14,7 @@ public class UseCaseErrorResponseFactory {
                     "Unprocessable Entity", ue.getMessage(), HttpStatus.UNPROCESSABLE_ENTITY, path);
             case ConflictError ce -> build("Business Rule Violation", ce.getMessage(), HttpStatus.CONFLICT, path);
             case AuthorizationError ue -> build("Unauthorized", ue.getMessage(), HttpStatus.UNAUTHORIZED, path);
-            case ForbiddenError fe -> build("Forbidden", fe.getMessage(), HttpStatus.FORBIDDEN, path);
+            case AuthenticationError ae -> build("Forbidden", ae.getMessage(), HttpStatus.FORBIDDEN, path);
             case UnexpectedError ue -> build(
                     "Unexpected Error", ue.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, path);
         };

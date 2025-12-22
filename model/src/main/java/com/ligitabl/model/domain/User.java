@@ -1,5 +1,6 @@
 package com.ligitabl.model.domain;
 
+import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
 
@@ -59,9 +60,9 @@ public class User {
      * Returns a new User instance with the added role.
      */
     public User addRole(Role role) {
-        Set<Role> newRoles = Set.copyOf(roles);
+        Set<Role> newRoles = new HashSet<>(roles);
         newRoles.add(role);
-        return withRoles(newRoles);
+        return withRoles(Set.copyOf(newRoles));
     }
 
     /**
@@ -69,8 +70,8 @@ public class User {
      * Returns a new User instance without the role.
      */
     public User removeRole(Role role) {
-        Set<Role> newRoles = Set.copyOf(roles);
+        Set<Role> newRoles = new HashSet<>(roles);
         newRoles.remove(role);
-        return withRoles(newRoles);
+        return withRoles(Set.copyOf(newRoles));
     }
 }

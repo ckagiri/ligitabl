@@ -11,9 +11,11 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
-@SpringBootTest(properties = "SEED_RUN_LIQUIBASE=true")
+import com.ligitabl.seed.testsupport.AbstractSeedPostgresIT;
+
+@SpringBootTest
 @ActiveProfiles("test")
-class SeedingFlowIntegrationTest {
+class SeedingFlowIntegrationTest extends AbstractSeedPostgresIT {
 
         static {
                 // Force production/reference seeding so the premier-league assertions are deterministic.

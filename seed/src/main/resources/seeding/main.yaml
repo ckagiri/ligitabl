@@ -1,5 +1,4 @@
 seed:
-  - file: auth-users.yaml
   - file: team.yaml
   - file: competition.yaml
   - file: season.yaml

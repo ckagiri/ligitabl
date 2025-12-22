@@ -13,3 +13,5 @@ databaseChangeLog:
       file: db/changelog/20251221_1_standings.yaml
   - include:
       file: db/changelog/20251222_1_user.yaml
+  - include:
+      file: db/changelog/20251222_2_user_roles.yaml

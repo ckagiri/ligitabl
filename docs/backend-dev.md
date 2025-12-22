@@ -209,6 +209,10 @@ make codegen         # regenerate jOOQ sources against the current schema
 
 Database seeding is handled via the dedicated `seed` module, using YAML configuration and the same Spring Boot stack as the API.
 
+Note:
+
+- The `seed` module integration tests run against an ephemeral Postgres via Testcontainers (with Liquibase enabled), so they do not depend on your local Docker Compose database state.
+
 Common flows:
 
 ```bash

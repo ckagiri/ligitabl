@@ -23,11 +23,12 @@ import com.ligitabl.model.db.tables.TCompetition;
 import com.ligitabl.model.db.tables.TMatch;
 import com.ligitabl.model.db.tables.TRound;
 import com.ligitabl.model.db.tables.TSeason;
+import com.ligitabl.seed.testsupport.AbstractSeedPostgresIT;
 
-@SpringBootTest(properties = "SEED_RUN_LIQUIBASE=true")
+@SpringBootTest
 @ActiveProfiles("test")
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_CLASS)
-class MatchSeedingIntegrationTest {
+class MatchSeedingIntegrationTest extends AbstractSeedPostgresIT {
 
         private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
