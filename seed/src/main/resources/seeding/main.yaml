@@ -1,4 +1,5 @@
 seed:
+  - file: defaults.yaml
   - file: users.yaml
   - file: team.yaml
   - file: competition.yaml

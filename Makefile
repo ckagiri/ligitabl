@@ -18,7 +18,7 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate drop-db reset-db format format-check format-all test-unit test-api-no-jooq test-api-fast test-api-core test-auth-smoke test-all test-model test-model-fast test-api-it test-api-all test-dev model-codegen-local seed-competition-cli db-seed db-seed-demo dev-reset test-api-rebuild db-seed-all db-seed-users run-api
+.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate drop-db reset-db format format-check format-all test-unit test-api-no-jooq test-api-fast test-api-core test-auth-smoke test-all test-model test-model-fast test-api-it test-api-all test-dev model-codegen-local seed-competition-cli db-seed db-seed-demo dev-reset test-api-rebuild db-seed-all db-seed-users run-api run-api-test test-seeding-auth
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -79,6 +79,13 @@ run-app: ## Start DB (compose) and run the app JAR
 run-api: ## Start DB (compose) and run the API via spring-boot:run
 	$(MAKE) compose-up-db
 	mvn -q -pl $(API_DIR) -am spring-boot:run
+
+run-api-test: ## Start DB (compose) and run the API using .env.test (DB=ligitabl_test, DB_PORT=55433, PORT=8081)
+	@set -a; \
+	  if [ -f .env.test ]; then . ./.env.test; fi; \
+	  set +a; \
+	  $(MAKE) compose-up-db; \
+	  mvn -q -pl $(API_DIR) -am spring-boot:run
 
 bootstrap-run: ## Reset DB, migrate, codegen, seed reference data, then run the app
 	$(MAKE) dev-reset
@@ -170,10 +177,16 @@ compose-down: ## Stop and remove compose services/volumes
 codegen: ## Run jOOQ code generation in model/ (full, robust)
 	# Ensure the jOOQ codegen strategy module is installed, then run codegen in model
 	mvn -q -DskipTests -pl jooq-codegen -am install
-	mvn -q -DskipTests -Pwith-jooq -pl model -am generate-sources
+	mvn -q -DskipTests -Pwith-jooq -pl model -am \
+		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
+		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
+		generate-sources
 
 codegen-fast: ## Run jOOQ code generation (lean) - assumes jooq-codegen is already installed
-	mvn -q -DskipTests -Pwith-jooq -pl model -am generate-sources
+	mvn -q -DskipTests -Pwith-jooq -pl model -am \
+		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
+		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
+		generate-sources
 
 model-compile: ## Regenerate jOOQ and compile the model (ensures generated getters are available)
 	mvn -q -DskipTests -Pwith-jooq -pl model -am generate-sources compile
@@ -204,7 +217,10 @@ test-api-rebuild: ## Clean API+deps, regenerate jOOQ, rebuild model, then run co
 
 .PHONY: migrate
 migrate: ## Run Liquibase migrations in model/ (uses DB_* from .env)
-	mvn -q -Pliquibase -DskipTests -f model/pom.xml liquibase:update
+	mvn -q -Pliquibase -DskipTests -f model/pom.xml \
+		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
+		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
+		liquibase:update
 
 drop-db: ## Drop the database (Docker) using maintenance DB 'postgres'
 	@if ! docker ps --format '{{.Names}}' | grep -q '^ligitabl-db$$'; then \
@@ -217,6 +233,9 @@ drop-db: ## Drop the database (Docker) using maintenance DB 'postgres'
 reset-db: ## Drop and recreate the database (Docker)
 	$(MAKE) drop-db
 	docker exec -i ligitabl-db psql -U $(DB_USER) -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE $(DB_NAME) OWNER $(DB_USER);"
+
+test-seeding-auth: ## Run seeding+auth smoke tests (uses .env.test: DB_PORT=55433, PORT=8081; starts API; DB reset is destructive)
+	START_API=1 ./scripts/TestAuthAndSeeding.sh
 
 dev-reset: ## For local dev: reset DB, run migrations, codegen, then seed reference data
 	$(MAKE) compose-up-db

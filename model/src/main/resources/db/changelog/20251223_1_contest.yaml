@@ -1,0 +1,73 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20251223_1_contest
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: t_contest
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: t_contest
+            schemaName: public
+            columns:
+              - column:
+                  name: pk_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: fk_season_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_name
+                  type: varchar
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_is_private
+                  type: boolean
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_join_code
+                  type: varchar
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_from_round_position
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_to_round_position
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_max_entries
+                  type: int
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: t_contest
+            baseColumnNames: fk_season_id
+            baseTableSchemaName: public
+            constraintName: fk_contest_season_id
+            referencedTableName: t_season
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+  - changeSet:
+      id: 20251223_2_contest_unique_per_season_name
+      author: system
+      changes:
+        - addUniqueConstraint:
+            tableName: t_contest
+            schemaName: public
+            columnNames: fk_season_id, c_name
+            constraintName: uq_t_contest_season_name

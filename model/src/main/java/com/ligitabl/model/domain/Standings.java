@@ -1,5 +1,6 @@
 package com.ligitabl.model.domain;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -22,12 +23,17 @@ public class Standings extends AbstractModel<UUID> {
     @NotNull
     private List<StandingsTeamRank> rankings;
 
+    private boolean finalised;
+
+    private OffsetDateTime finalisedAt;
+
     public static Standings create(UUID seasonId, int roundPosition, List<StandingsTeamRank> rankings) {
         return Standings.builder()
                 .id(UUID.randomUUID())
                 .seasonId(seasonId)
                 .roundPosition(roundPosition)
                 .rankings(rankings)
+                .finalised(false)
                 .build();
     }
 

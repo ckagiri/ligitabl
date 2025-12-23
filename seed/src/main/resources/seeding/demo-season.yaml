@@ -5,41 +5,29 @@ season:
     slug: 2025
     startDate: 2025-02-01
     endDate: 2025-06-30
-    finishedRounds: 19
+    totalTeams: 12
     initialRankings:
       - code: ARS
         position: 1
-        rating: 95
       - code: MCI
         position: 2
-        rating: 90
       - code: LIV
         position: 3
-        rating: 88
       - code: CHE
         position: 4
-        rating: 85
       - code: AVL
         position: 5
-        rating: 83
       - code: NEW
         position: 6
-        rating: 76
       - code: MUN
         position: 7
-        rating: 74
       - code: CRY
         position: 8
-        rating: 72
       - code: TOT
         position: 9
-        rating: 70
       - code: BHA
         position: 10
-        rating: 68
       - code: BRE
         position: 11
-        rating: 55
       - code: WHU
         position: 12
-        rating: 50

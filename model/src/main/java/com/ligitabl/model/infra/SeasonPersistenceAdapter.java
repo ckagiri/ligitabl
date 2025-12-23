@@ -84,11 +84,13 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
                     .endDate(record.getEndDate())
                     .maxRounds(record.getMaxRounds())
                     .completed(Boolean.TRUE.equals(record.getCompleted()))
+                    .completedAt(record.getCompletedAt())
                     .totalTeams(record.getTotalTeams())
                     .maxHitPoints(record.getMaxHitPoints())
                     .currentRoundId(record.getCurrentRoundId())
                     .currentMatchDay(record.getCurrentMatchDay())
                     .initialRankings(readTeams(record.getInitialRankings()))
+                    .mainContestId(record.getMainContestId())
                     .build();
         }
 

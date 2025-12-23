@@ -5,15 +5,19 @@ import static com.ligitabl.seed.internal.util.SeedCoercions.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ligitabl.seed.internal.util.SeedCoercions;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 import org.jooq.DSLContext;
 import org.jooq.JSONB;
 
 public class SeasonSeeder extends AbstractSeeder<List<Map<String, Object>>> {
+
+    private static final Set<String> ALLOWED_RANKING_KEYS = Set.of("code", "position");
 
     private final ObjectMapper objectMapper;
     private final ReferenceResolver referenceResolver;
@@ -44,6 +48,17 @@ public class SeasonSeeder extends AbstractSeeder<List<Map<String, Object>>> {
     }
 
     private void seedSeason(Map<String, Object> season) {
+        // Enforce camelCase-only season config keys.
+        for (String key : season.keySet()) {
+            if (key != null && key.contains("_")) {
+                throw new IllegalArgumentException(
+                        "Season config uses snake_case key '" + key
+                                + "'. Use camelCase keys only (e.g. totalTeams, maxRounds, maxHitPoints, initialRankings)."
+                                + " Season entry: "
+                                + season);
+            }
+        }
+
         Integer clientId = asInteger(season.get("clientId"));
         String competitionSlug = asString(season.get("competitionSlug"));
         String name = asString(season.get("name"));
@@ -51,10 +66,10 @@ public class SeasonSeeder extends AbstractSeeder<List<Map<String, Object>>> {
         String startDate = asString(season.get("startDate"));
         String endDate = asString(season.get("endDate"));
 
-        Integer maxRounds = firstInt(season, "max_rounds", "maxRounds");
-        Integer maxHitPoints = firstInt(season, "max_hit_points", "maxHitPoints");
-        Integer totalTeams = firstInt(season, "total_teams", "totalTeams");
-        Boolean completed = firstBoolean(season, "completed");
+        Integer maxRounds = asInteger(season.get("maxRounds"));
+        Integer maxHitPoints = asInteger(season.get("maxHitPoints"));
+        Integer totalTeams = asInteger(season.get("totalTeams"));
+        Boolean completed = asBoolean(season.get("completed"));
 
         if (competitionSlug == null || competitionSlug.isBlank()) {
             throw new IllegalArgumentException("Season entry missing competitionSlug: " + season);
@@ -63,24 +78,137 @@ public class SeasonSeeder extends AbstractSeeder<List<Map<String, Object>>> {
             throw new IllegalArgumentException("Season entry missing slug: " + season);
         }
 
+        if (totalTeams == null) {
+            throw new IllegalArgumentException("Season entry missing totalTeams: " + season);
+        }
+        if (totalTeams <= 0) {
+            throw new IllegalArgumentException(
+                    "Season totalTeams must be > 0 (season slug: " + slug + ")");
+        }
+
         Map<String, Object> competitionConfig = competitionsBySlug.get(competitionSlug);
         if (competitionConfig != null) {
             if (maxRounds == null) {
-                maxRounds = firstInt(competitionConfig, "max_rounds", "maxRounds");
+                maxRounds = asInteger(competitionConfig.get("maxRounds"));
             }
             if (maxHitPoints == null) {
-                maxHitPoints = firstInt(competitionConfig, "max_hit_points", "maxHitPoints");
+                maxHitPoints = asInteger(competitionConfig.get("maxHitPoints"));
             }
         }
 
         UUID competitionId = referenceResolver.resolveCompetitionId(competitionSlug);
+        Object initialRankings = season.get("initialRankings");
 
-        Object initialRankings = firstValue(season, "initial_rankings", "initialRankings", "teams");
-        JSONB initialRankingsJson = serializeTeams(initialRankings, slug);
-
-        if (totalTeams == null) {
-            totalTeams = extractListSize(initialRankings);
+        if (initialRankings == null) {
+            throw new IllegalArgumentException(
+                    "Season entry missing initialRankings: " + season);
         }
+
+        int rankingsCount = extractListSize(initialRankings);
+        if (rankingsCount <= 0) {
+            throw new IllegalArgumentException("Season initialRankings is empty for season slug: " + slug);
+        }
+
+        if (rankingsCount != totalTeams) {
+            throw new IllegalArgumentException(
+                "Season initialRankings length (" + rankingsCount + ") must equal totalTeams (" + totalTeams
+                            + ") for season slug: " + slug);
+        }
+
+        // maxRounds derived: 2 × (totalTeams - 1)
+        if (maxRounds == null) {
+            maxRounds = 2 * (totalTeams - 1);
+        }
+
+        // maxHitPoints derived: 2 × (totalTeams/2)^2
+        if (maxHitPoints == null) {
+            int half = totalTeams / 2;
+            maxHitPoints = 2 * half * half;
+        }
+
+        // Ensure all team codes exist (seeded teams are keyed by TLA).
+        try {
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> rankings = (List<Map<String, Object>>) initialRankings;
+
+            for (Map<String, Object> ranking : rankings) {
+                if (ranking == null) {
+                    throw new IllegalArgumentException(
+                            "Season initialRankings contains a null entry (season slug: " + slug + ")");
+                }
+                Set<String> keys = ranking.keySet();
+                for (String k : keys) {
+                    if (!ALLOWED_RANKING_KEYS.contains(k)) {
+                        throw new IllegalArgumentException(
+                                "Season initialRankings entries may only contain {code, position} (unexpected key '" + k
+                                        + "', season slug: " + slug + ")");
+                    }
+                }
+            }
+
+            if (rankings.size() != totalTeams) {
+            throw new IllegalArgumentException(
+                "Season initialRankings must contain exactly totalTeams entries (season slug: " + slug + ")");
+            }
+
+            List<String> codes = rankings
+                    .stream()
+                    .map(r -> asString(r.get("code")))
+                    .filter(c -> c != null && !c.isBlank())
+                    .map(String::trim)
+                    .collect(Collectors.toList());
+
+            if (codes.size() != totalTeams) {
+                throw new IllegalArgumentException(
+                "Each initialRankings entry must have a non-blank 'code' (season slug: " + slug + ")");
+            }
+
+            Set<String> uniqueCodes = Set.copyOf(codes);
+            if (uniqueCodes.size() != totalTeams) {
+            throw new IllegalArgumentException(
+                "Season initialRankings contains duplicate team codes (season slug: " + slug + ")");
+            }
+
+            List<Integer> positions = rankings.stream()
+                .map(r -> asInteger(r.get("position")))
+                .collect(Collectors.toList());
+
+            if (positions.stream().anyMatch(Objects::isNull)) {
+            throw new IllegalArgumentException(
+                "Each initialRankings entry must have an integer 'position' (season slug: " + slug + ")");
+            }
+
+            Set<Integer> uniquePositions = Set.copyOf(positions);
+            if (uniquePositions.size() != totalTeams) {
+            throw new IllegalArgumentException(
+                "Season initialRankings contains duplicate positions (season slug: " + slug + ")");
+            }
+
+            for (int i = 1; i <= totalTeams; i++) {
+            if (!uniquePositions.contains(i)) {
+                throw new IllegalArgumentException(
+                    "Season initialRankings positions must cover 1..totalTeams with no gaps (missing " + i
+                        + ", season slug: " + slug + ")");
+            }
+            }
+
+            for (Integer position : uniquePositions) {
+            if (position < 1 || position > totalTeams) {
+                throw new IllegalArgumentException(
+                    "Season initialRankings position out of range (" + position
+                        + "). Expected 1..totalTeams (season slug: " + slug + ")");
+            }
+            }
+
+            referenceResolver.resolveTeams(codes);
+        } catch (ClassCastException e) {
+            throw new IllegalArgumentException(
+                "Season initialRankings must be a list of objects like {code, position} (season slug: " + slug
+                            + ")",
+                    e);
+        }
+
+        JSONB initialRankingsJson = serializeTeams(initialRankings, slug);
 
         if (seasonExists(competitionId, slug)) {
             recordSkip();
@@ -110,11 +238,11 @@ public class SeasonSeeder extends AbstractSeeder<List<Map<String, Object>>> {
                         slug,
                         LocalDate.parse(startDate),
                         LocalDate.parse(endDate),
-                        maxRounds != null ? maxRounds : 0,
+                    maxRounds,
                 initialRankingsJson,
                 completed != null ? completed : false,
                         totalTeams,
-                maxHitPoints != null ? maxHitPoints : 0,
+                maxHitPoints,
                         0)
                 .execute();
 
@@ -156,28 +284,6 @@ public class SeasonSeeder extends AbstractSeeder<List<Map<String, Object>>> {
                         c -> ((String) c.get("slug")),
                         c -> c,
                         (a, b) -> a));
-    }
-
-    private static Object firstValue(Map<String, Object> map, String... keys) {
-        for (String key : keys) {
-            if (map.containsKey(key)) {
-                Object value = map.get(key);
-                if (value != null) {
-                    return value;
-                }
-            }
-        }
-        return null;
-    }
-
-    private static Integer firstInt(Map<String, Object> map, String... keys) {
-        Object value = firstValue(map, keys);
-        return asInteger(value);
-    }
-
-    private static Boolean firstBoolean(Map<String, Object> map, String... keys) {
-        Object value = firstValue(map, keys);
-        return asBoolean(value);
     }
 
     private static int extractListSize(Object value) {

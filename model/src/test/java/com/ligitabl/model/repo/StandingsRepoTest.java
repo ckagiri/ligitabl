@@ -18,6 +18,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.ligitabl.model.db.tables.TCompetition;
+import com.ligitabl.model.db.tables.TContest;
 import com.ligitabl.model.db.tables.TMatch;
 import com.ligitabl.model.db.tables.TRound;
 import com.ligitabl.model.db.tables.TSeason;
@@ -54,6 +55,11 @@ class StandingsRepoTest {
         dsl.deleteFrom(TMatch.T_MATCH).execute();
         dsl.deleteFrom(TRound.T_ROUND).execute();
         dsl.deleteFrom(TStandings.T_STANDINGS).execute();
+        dsl.update(TSeason.T_SEASON)
+                .set(TSeason.T_SEASON.FK_CURRENT_ROUND_ID, (UUID) null)
+                .set(TSeason.T_SEASON.FK_MAIN_CONTEST_ID, (UUID) null)
+                .execute();
+        dsl.deleteFrom(TContest.T_CONTEST).execute();
         dsl.deleteFrom(TSeason.T_SEASON).execute();
         dsl.deleteFrom(TCompetition.T_COMPETITION).execute();
 

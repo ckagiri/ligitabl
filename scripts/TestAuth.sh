@@ -2,6 +2,23 @@
 
 set -euo pipefail
 
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
+
+# Load test env (preferred) or dev env (fallback) if present.
+# Use `set -a` so variables are exported to child processes.
+if [[ -f "$REPO_ROOT/.env.test" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$REPO_ROOT/.env.test"
+  set +a
+elif [[ -f "$REPO_ROOT/.env" ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source "$REPO_ROOT/.env"
+  set +a
+fi
+
 # Ligitabl Auth API Test Script
 #
 # This is a curl-based smoke test for the auth + role-protected endpoints.

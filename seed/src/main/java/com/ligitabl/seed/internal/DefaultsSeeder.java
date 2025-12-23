@@ -5,7 +5,6 @@ import static com.ligitabl.model.db.tables.TSeason.T_SEASON;
 import static com.ligitabl.model.db.tables.TRound.T_ROUND;
 
 import org.jooq.DSLContext;
-import org.jooq.impl.DSL;
 
 public class DefaultsSeeder {
 
@@ -15,27 +14,51 @@ public class DefaultsSeeder {
         this.dsl = dsl;
     }
 
-    public void applyDefaults() {
-        // Set fk_active_season_id = latest season per competition (by start date)
+    public void applyDefaults(DefaultsConfig defaults) {
+        defaults.validateRequired();
+
+        var competitionId = dsl.select(T_COMPETITION.PK_ID)
+                .from(T_COMPETITION)
+                .where(T_COMPETITION.C_SLUG.eq(defaults.competitionSlug()))
+                .fetchOne(T_COMPETITION.PK_ID);
+
+        if (competitionId == null) {
+            throw new IllegalStateException(
+                    "Defaults competition not found with slug: '" + defaults.competitionSlug() + "'");
+        }
+
+        var seasonId = dsl.select(T_SEASON.PK_ID)
+                .from(T_SEASON)
+                .where(T_SEASON.FK_COMPETITION_ID.eq(competitionId)
+                        .and(T_SEASON.C_SLUG.eq(defaults.seasonSlug())))
+                .fetchOne(T_SEASON.PK_ID);
+
+        if (seasonId == null) {
+            throw new IllegalStateException(
+                    "Defaults season not found with competitionSlug='" + defaults.competitionSlug()
+                            + "', seasonSlug='" + defaults.seasonSlug() + "'");
+        }
+
+        var roundId = dsl.select(T_ROUND.PK_ID)
+                .from(T_ROUND)
+                .where(T_ROUND.FK_SEASON_ID.eq(seasonId).and(T_ROUND.C_POSITION.eq(1)))
+                .fetchOne(T_ROUND.PK_ID);
+
+        if (roundId == null) {
+            throw new IllegalStateException(
+                    "Defaults current round not found for seasonId=" + seasonId + " (expected position=1)");
+        }
+
+        // Resolve competition + season by slug and set active season deterministically.
         dsl.update(T_COMPETITION)
-                .set(
-                        T_COMPETITION.FK_ACTIVE_SEASON_ID,
-                        DSL.select(T_SEASON.PK_ID)
-                                .from(T_SEASON)
-                                .where(T_SEASON.FK_COMPETITION_ID.eq(T_COMPETITION.PK_ID))
-                                .orderBy(T_SEASON.C_START_DATE.desc())
-                                .limit(1))
+                .set(T_COMPETITION.FK_ACTIVE_SEASON_ID, seasonId)
+                .where(T_COMPETITION.PK_ID.eq(competitionId))
                 .execute();
 
-        // Set fk_current_round_id = first round per season (by position)
+        // Set fk_current_round_id = round position 1 for the configured active season.
         dsl.update(T_SEASON)
-                .set(
-                        T_SEASON.FK_CURRENT_ROUND_ID,
-                        DSL.select(T_ROUND.PK_ID)
-                                .from(T_ROUND)
-                                .where(T_ROUND.FK_SEASON_ID.eq(T_SEASON.PK_ID))
-                                .orderBy(T_ROUND.C_POSITION.asc())
-                                .limit(1))
+                .set(T_SEASON.FK_CURRENT_ROUND_ID, roundId)
+                .where(T_SEASON.PK_ID.eq(seasonId))
                 .execute();
     }
 }

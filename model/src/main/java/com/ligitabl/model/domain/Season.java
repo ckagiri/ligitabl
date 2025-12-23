@@ -1,5 +1,6 @@
 package com.ligitabl.model.domain;
 
+import java.time.OffsetDateTime;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
@@ -35,11 +36,15 @@ public class Season extends AbstractModel<UUID> {
 
     private boolean completed;
 
+    private OffsetDateTime completedAt;
+
     private int totalTeams;
 
     private int maxHitPoints;
 
     private List<TeamRank> initialRankings;
+
+    private UUID mainContestId;
 
     private UUID currentRoundId;
 

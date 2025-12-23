@@ -1,0 +1,27 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20251223_1_season_add_completed_at_and_main_contest
+      author: system
+      changes:
+        - addColumn:
+            tableName: t_season
+            schemaName: public
+            columns:
+              - column:
+                  name: c_completed_at
+                  type: timestamptz
+                  constraints:
+                    nullable: true
+              - column:
+                  name: fk_main_contest_id
+                  type: uuid
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: t_season
+            baseColumnNames: fk_main_contest_id
+            baseTableSchemaName: public
+            constraintName: fk_season_main_contest_id
+            referencedTableName: t_contest
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public

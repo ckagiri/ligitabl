@@ -36,9 +36,6 @@ public class SeedLoader {
                 String childResource = base + filePath;
                 try (InputStream childIn = resource(childResource)) {
                     if (childIn == null) {
-                        if (isOptionalInclude(mapEntry, String.valueOf(filePath))) {
-                            continue;
-                        }
                         throw new IllegalArgumentException(
                                 "Seed include resource not found: " + childResource);
                     }
@@ -48,14 +45,6 @@ public class SeedLoader {
             }
             return merged;
         }
-    }
-
-    private boolean isOptionalInclude(Map<?, ?> mapEntry, String fileName) {
-        Object optional = mapEntry.get("optional");
-        if (optional instanceof Boolean b && b) {
-            return true;
-        }
-        return "demo-team.yaml".equals(fileName);
     }
 
     private InputStream resource(String path) {

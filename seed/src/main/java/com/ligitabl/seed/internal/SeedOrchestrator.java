@@ -1,15 +1,12 @@
 package com.ligitabl.seed.internal;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ligitabl.seed.internal.config.MatchSeedConfig;
 import com.ligitabl.seed.internal.config.RoundSeedConfig;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import org.jooq.DSLContext;
 
-import static com.ligitabl.seed.internal.util.SeedCoercions.asInteger;
-import static com.ligitabl.seed.internal.util.SeedCoercions.asString;
 
 /**
  * Orchestrates the seeding process across multiple seeders.
@@ -30,15 +27,35 @@ public class SeedOrchestrator {
     public SeedExecutionReport executeSeed(Map<String, Object> sections, String mainResource) {
         resultCollector.clear();
 
+        DefaultsConfig defaults = requireDefaultsForProduction(sections, mainResource);
+
         seedUsers(sections);
         seedTeams(sections);
         seedCompetitions(sections);
         seedSeasons(sections);
         seedRounds(sections);
-        seedMatches(sections, mainResource);
-        applyDefaults();
+        applyDefaults(defaults);
+        seedMainContest(defaults);
+        seedInitialStandings(defaults);
 
         return resultCollector.generateReport();
+    }
+
+    @SuppressWarnings("unchecked")
+    private DefaultsConfig requireDefaultsForProduction(Map<String, Object> sections, String mainResource) {
+        if (!"seeding/main.yaml".equals(mainResource)) {
+            return null;
+        }
+
+        Object defaultsObj = sections.get("defaults");
+        if (!(defaultsObj instanceof Map<?, ?> defaultsMap)) {
+            throw new IllegalStateException(
+                    "Missing required defaults section. Ensure seeding/defaults.yaml exists and is included by seeding/main.yaml");
+        }
+
+        DefaultsConfig defaults = DefaultsConfig.fromMap((Map<String, Object>) defaultsMap);
+        defaults.validateRequired();
+        return defaults;
     }
 
     @SuppressWarnings("unchecked")
@@ -95,56 +112,30 @@ public class SeedOrchestrator {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private void seedMatches(Map<String, Object> sections, String mainResource) {
-        Object matchConfig = null;
-
-        if (isDemoResource(mainResource)) {
-            matchConfig = createAutoMatchConfig(sections);
+    private void applyDefaults(DefaultsConfig defaults) {
+        if (defaults == null) {
+            return;
         }
-
-        if (matchConfig instanceof Map<?, ?> map) {
-            MatchSeedConfig config = MatchSeedConfig.fromMap((Map<String, Object>) map);
-            MatchSeeder seeder = new MatchSeeder(dsl, objectMapper);
-            SeedResult result = seeder.seed(config);
-            resultCollector.add(result);
-        }
-    }
-
-    private void applyDefaults() {
         DefaultsSeeder defaultsSeeder = new DefaultsSeeder(dsl);
-        defaultsSeeder.applyDefaults();
+        defaultsSeeder.applyDefaults(defaults);
     }
 
-    private boolean isDemoResource(String mainResource) {
-        return "seeding/demo-main.yaml".equals(mainResource);
+    private void seedMainContest(DefaultsConfig defaults) {
+        if (defaults == null) {
+            return;
+        }
+        ContestSeeder seeder = new ContestSeeder(dsl);
+        SeedResult result = seeder.seed(defaults);
+        resultCollector.add(result);
     }
 
-    @SuppressWarnings("unchecked")
-    private Map<String, Object> createAutoMatchConfig(Map<String, Object> sections) {
-        List<Map<String, Object>> seasons =
-                (List<Map<String, Object>>) sections.getOrDefault("season", List.of());
-
-        if (seasons.isEmpty()) {
-            return null;
+    private void seedInitialStandings(DefaultsConfig defaults) {
+        if (defaults == null) {
+            return;
         }
-
-        Map<String, Object> firstSeason = seasons.get(0);
-        String competitionSlug = asString(firstSeason.get("competitionSlug"));
-        String seasonSlug = asString(firstSeason.get("slug"));
-        Integer finishedRounds = asInteger(firstSeason.get("finishedRounds"));
-
-        if (competitionSlug == null || seasonSlug == null) {
-            return null;
-        }
-
-        return Map.of(
-                "competitionSlug", competitionSlug,
-                "seasonSlug", seasonSlug,
-                "clientId", 1,
-                "scheduledStatus", "SCHEDULED",
-                "finishedStatus", "FINISHED",
-                "finishedRounds", finishedRounds != null ? finishedRounds : 0);
+        StandingsSeeder seeder = new StandingsSeeder(dsl, objectMapper);
+        SeedResult result = seeder.seed(defaults);
+        resultCollector.add(result);
     }
 
     private static class SeedResultCollector {
