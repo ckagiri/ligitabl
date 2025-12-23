@@ -1,93 +1,101 @@
 {
-	"version": "2.0.0",
-	"tasks": [
-		{
-			"label": "Run API tests",
-			"type": "shell",
-			"command": "mvn -q -pl api -am -DskipITs test",
-			"args": [],
-			"isBackground": false,
-			"problemMatcher": [
-				"$maven"
-			],
-			"group": "build"
-		},
-		{
-			"label": "Run API tests (post-change)",
-			"type": "shell",
-			"command": "mvn -q -pl api -am -DskipITs test",
-			"args": [],
-			"isBackground": false,
-			"problemMatcher": [
-				"$maven"
-			],
-			"group": "build"
-		},
-		{
-			"label": "Run API tests after removing Try",
-			"type": "shell",
-			"command": "mvn -q -pl api -am -DskipITs test",
-			"args": [],
-			"isBackground": false,
-			"problemMatcher": [
-				"$maven"
-			],
-			"group": "build"
-		},
-		{
-			"label": "Run API tests (finalize)",
-			"type": "shell",
-			"command": "mvn -q -pl api -am -DskipITs test",
-			"args": [],
-			"isBackground": false,
-			"problemMatcher": [
-				"$maven"
-			],
-			"group": "build"
-		},
-		{
-			"label": "Run API tests (investigate)",
-			"type": "shell",
-			"command": "mvn -pl api -am -DskipITs test",
-			"args": [],
-			"isBackground": false,
-			"problemMatcher": [
-				"$maven"
-			],
-			"group": "build"
-		},
-		{
-			"label": "Run API tests (finalize)",
-			"type": "shell",
-			"command": "mvn -q -pl api -am -DskipITs test",
-			"args": [],
-			"isBackground": false,
-			"problemMatcher": [
-				"$maven"
-			],
-			"group": "build"
-		},
-		{
-			"label": "Verify API tests current",
-			"type": "shell",
-			"command": "mvn -q -pl api -am -DskipITs test",
-			"args": [],
-			"isBackground": false,
-			"problemMatcher": [
-				"$maven"
-			],
-			"group": "build"
-		},
-		{
-			"label": "Run API tests after peekBoth",
-			"type": "shell",
-			"command": "mvn -q -pl api -am -DskipITs test",
-			"args": [],
-			"isBackground": false,
-			"problemMatcher": [
-				"$maven"
-			],
-			"group": "build"
-		}
-	]
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Run API tests",
+      "type": "shell",
+      "command": "mvn -q -pl api -am -DskipITs test",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": ["$maven"],
+      "group": "build"
+    },
+    {
+      "label": "Run API tests (post-change)",
+      "type": "shell",
+      "command": "mvn -q -pl api -am -DskipITs test",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": ["$maven"],
+      "group": "build"
+    },
+    {
+      "label": "Run API tests after removing Try",
+      "type": "shell",
+      "command": "mvn -q -pl api -am -DskipITs test",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": ["$maven"],
+      "group": "build"
+    },
+    {
+      "label": "Run API tests (finalize)",
+      "type": "shell",
+      "command": "mvn -q -pl api -am -DskipITs test",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": ["$maven"],
+      "group": "build"
+    },
+    {
+      "label": "Run API tests (investigate)",
+      "type": "shell",
+      "command": "mvn -pl api -am -DskipITs test",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": ["$maven"],
+      "group": "build"
+    },
+    {
+      "label": "Run API tests (finalize)",
+      "type": "shell",
+      "command": "mvn -q -pl api -am -DskipITs test",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": ["$maven"],
+      "group": "build"
+    },
+    {
+      "label": "Verify API tests current",
+      "type": "shell",
+      "command": "mvn -q -pl api -am -DskipITs test",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": ["$maven"],
+      "group": "build"
+    },
+    {
+      "label": "Run API tests after peekBoth",
+      "type": "shell",
+      "command": "mvn -q -pl api -am -DskipITs test",
+      "args": [],
+      "isBackground": false,
+      "problemMatcher": ["$maven"],
+      "group": "build"
+    },
+    {
+      "label": "TestAuth: start postgres container",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "docker rm -f ligitabl-testapi-db >/dev/null 2>&1 || true\n\ndocker run -d --name ligitabl-testapi-db -e POSTGRES_DB=ligitabl -e POSTGRES_USER=ligitabl -e POSTGRES_PASSWORD=ligitabl -p 15432:5432 postgres:16 >/dev/null\n\nfor i in $(seq 1 30); do\n  if docker exec ligitabl-testapi-db pg_isready -U ligitabl -d ligitabl >/dev/null 2>&1; then\n    echo \"Postgres is ready.\";\n    exit 0;\n  fi\n  sleep 1\ndone\n\necho \"Postgres did not become ready in time\" >&2\nexit 1"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    },
+    {
+      "label": "Smoke: test-auth-smoke",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "-lc",
+        "cd /Users/charleskagiri/work/ligi/ligitabl && make test-auth-smoke"
+      ],
+      "isBackground": false,
+      "problemMatcher": [],
+      "group": "build"
+    }
+  ]
 }

@@ -18,7 +18,7 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate drop-db reset-db format format-check format-all test-unit test-api-no-jooq test-api-fast test-api-core test-all test-model test-model-fast test-api-it test-api-all test-dev model-codegen-local seed-competition-cli db-seed db-seed-demo dev-reset test-api-rebuild db-seed-all run-api
+.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate drop-db reset-db format format-check format-all test-unit test-api-no-jooq test-api-fast test-api-core test-auth-smoke test-all test-model test-model-fast test-api-it test-api-all test-dev model-codegen-local seed-competition-cli db-seed db-seed-demo dev-reset test-api-rebuild db-seed-all db-seed-users run-api
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -241,6 +241,35 @@ db-seed-demo: ## Seed demo league (teams, competition, season, round, matches) u
 	$(MAKE) compose-up-db
 	mvn -q -pl seed -am -DskipTests package
 	java -Dseed.main=seeding/demo-main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar --spring.profiles.active=default
+
+db-seed-users: ## Seed users (admin/player/superuser) needed for scripts/TestAuth.sh using the seed module
+	$(MAKE) compose-up-db
+	mvn -q -pl seed -am -DskipTests package
+	java -Dseed.main=seeding/main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar --spring.profiles.active=default
+
+test-auth-smoke: ## Reset DB, migrate, seed users, start API (compose), run scripts/TestAuth.sh
+	@bash -lc 'set -euo pipefail; \
+		echo "[smoke] Starting DB..."; \
+		$(MAKE) compose-up-db; \
+		echo "[smoke] Resetting DB..."; \
+		$(MAKE) reset-db; \
+		echo "[smoke] Running migrations..."; \
+		$(MAKE) migrate; \
+		echo "[smoke] Seeding users..."; \
+		$(MAKE) db-seed-users; \
+		trap "echo \"[smoke] Stopping app...\"; $(MAKE) compose-stop-app >/dev/null 2>&1 || true" EXIT; \
+		echo "[smoke] Building + starting API (compose)..."; \
+		$(MAKE) compose-up-app; \
+		echo "[smoke] Waiting for API to be reachable..."; \
+		for i in $$(seq 1 60); do \
+			if curl -fsS http://localhost:8080/actuator/health >/dev/null 2>&1; then \
+				echo "[smoke] API is up."; \
+				break; \
+			fi; \
+			sleep 1; \
+			done; \
+		echo "[smoke] Running scripts/TestAuth.sh..."; \
+		BASE_URL=http://localhost:8080 ./scripts/TestAuth.sh'
 
 db-seed-all: ## Seed both reference and demo data using the seed module
 	$(MAKE) compose-up-db

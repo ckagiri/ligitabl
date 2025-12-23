@@ -219,6 +219,15 @@ Common flows:
 make db-seed      # seed reference data (competitions, seasons, rounds, teams)
 make db-seed-demo # seed demo league data (demo competition, season, rounds, teams, matches)
 make db-seed-all  # run both of the above
+
+### Seeding auth users (for API smoke tests)
+
+The repo includes a curl-based smoke script at [scripts/TestAuth.sh](scripts/TestAuth.sh) which logs in and hits role-protected endpoints.
+Those users can be seeded into your dev database using:
+
+- `make compose-up-db`
+- `make migrate` (ensures the `t_user` / `t_user_role` tables exist)
+- `make db-seed-users`
 ```
 
 For a typical local dev reset + reference seeding in one go, use:

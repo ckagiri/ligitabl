@@ -3,7 +3,6 @@ package com.ligitabl.seed.internal;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.seed.internal.config.MatchSeedConfig;
 import com.ligitabl.seed.internal.config.RoundSeedConfig;
-import com.ligitabl.seed.internal.util.SeedCoercions;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +30,7 @@ public class SeedOrchestrator {
     public SeedExecutionReport executeSeed(Map<String, Object> sections, String mainResource) {
         resultCollector.clear();
 
+        seedUsers(sections);
         seedTeams(sections);
         seedCompetitions(sections);
         seedSeasons(sections);
@@ -39,6 +39,16 @@ public class SeedOrchestrator {
         applyDefaults();
 
         return resultCollector.generateReport();
+    }
+
+    @SuppressWarnings("unchecked")
+    private void seedUsers(Map<String, Object> sections) {
+        List<Map<String, Object>> users =
+                (List<Map<String, Object>>) sections.getOrDefault("user", List.of());
+
+        UserSeeder seeder = new UserSeeder(dsl);
+        SeedResult result = seeder.seed(users);
+        resultCollector.add(result);
     }
 
     @SuppressWarnings("unchecked")

@@ -1,7 +1,7 @@
 competition:
   - code: PL
     slug: premier-league
-    name: English Premier League
+    name: Premier League
     maxHitPoints: 200
     maxRounds: 38
     phases:
