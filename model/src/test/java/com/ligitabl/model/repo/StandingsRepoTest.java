@@ -23,9 +23,9 @@ import com.ligitabl.model.db.tables.TRound;
 import com.ligitabl.model.db.tables.TSeason;
 import com.ligitabl.model.db.tables.TStandings;
 import com.ligitabl.model.domain.TeamRank;
-import com.ligitabl.model.domain.standings.Standings;
-import com.ligitabl.model.domain.standings.StandingsMetadata;
-import com.ligitabl.model.domain.standings.StandingsTeamRank;
+import com.ligitabl.model.domain.Standings;
+import com.ligitabl.model.domain.StandingsMetadata;
+import com.ligitabl.model.domain.StandingsTeamRank;
 import com.ligitabl.model.infra.StandingsPersistenceAdapter;
 
 class StandingsRepoTest {

@@ -1,11 +1,9 @@
-package com.ligitabl.model.domain.standings;
+package com.ligitabl.model.domain;
 
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
-
-import com.ligitabl.model.domain.AbstractModel;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -46,24 +44,6 @@ public class Standings extends AbstractModel<UUID> {
     public Optional<StandingsTeamRank> findByPosition(int position) {
         if (rankings == null) return Optional.empty();
         return rankings.stream().filter(r -> r.position() == position).findFirst();
-    }
-
-    public Optional<StandingsTeamRank> getLeader() {
-        return findByPosition(1);
-    }
-
-    public List<StandingsTeamRank> getTopN(int n) {
-        if (n < 1) throw new IllegalArgumentException("N must be at least 1");
-        if (rankings == null) return List.of();
-        return rankings.stream().filter(r -> r.position() <= n).toList();
-    }
-
-    public List<StandingsTeamRank> getBottomN(int n) {
-        if (n < 1) throw new IllegalArgumentException("N must be at least 1");
-        if (rankings == null || rankings.isEmpty()) return List.of();
-        int last = rankings.stream().mapToInt(StandingsTeamRank::position).max().orElse(0);
-        int from = Math.max(1, last - n + 1);
-        return rankings.stream().filter(r -> r.position() >= from).toList();
     }
 
     @Override

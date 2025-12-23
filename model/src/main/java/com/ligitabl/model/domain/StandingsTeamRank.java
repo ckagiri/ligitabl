@@ -1,8 +1,6 @@
-package com.ligitabl.model.domain.standings;
+package com.ligitabl.model.domain;
 
 import java.util.Objects;
-
-import com.ligitabl.model.domain.TeamRank;
 
 import lombok.Builder;
 import lombok.Value;

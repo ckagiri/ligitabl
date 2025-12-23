@@ -15,8 +15,8 @@ import org.jooq.RecordMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.model.db.tables.records.StandingsRecord;
-import com.ligitabl.model.domain.standings.Standings;
-import com.ligitabl.model.domain.standings.StandingsTeamRank;
+import com.ligitabl.model.domain.Standings;
+import com.ligitabl.model.domain.StandingsTeamRank;
 import com.ligitabl.model.repo.StandingsRepo;
 
 import lombok.RequiredArgsConstructor;

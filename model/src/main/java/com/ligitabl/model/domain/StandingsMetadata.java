@@ -1,4 +1,4 @@
-package com.ligitabl.model.domain.standings;
+package com.ligitabl.model.domain;
 
 import lombok.Builder;
 import lombok.Value;

@@ -6,6 +6,9 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import com.ligitabl.model.domain.Standings;
+import com.ligitabl.model.domain.StandingsMetadata;
+import com.ligitabl.model.domain.StandingsTeamRank;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.domain.standings.stats.Standing;
 import com.ligitabl.model.domain.standings.stats.TeamStats;
