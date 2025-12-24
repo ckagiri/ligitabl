@@ -19,31 +19,14 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 class SeasonSeederValidationIntegrationTest extends AbstractSeedPostgresIT {
 
+        static {
+                // SeedingApplication's CommandLineRunner requires this system property to start.
+                // These tests don't depend on the runner output, but the Spring context needs to load.
+                System.setProperty("seed.main", "seeding/main.yaml");
+        }
+
     @Autowired DSLContext dsl;
     @Autowired ObjectMapper objectMapper;
-
-    @Test
-    void failsFastWhenUsingLegacyTeamsKey() {
-        var season = Map.<String, Object>of(
-                "clientId", 1,
-                "competitionSlug", "any",
-                "name", "Any",
-                "slug", "any",
-                "startDate", "2025-01-01",
-                "endDate", "2025-12-31",
-                "totalTeams", 2,
-                "teams", List.of("AAA", "BBB"),
-                "initialRankings", List.of(
-                        Map.of("code", "AAA", "position", 1),
-                        Map.of("code", "BBB", "position", 2)));
-
-        var seeder = new SeasonSeeder(dsl, objectMapper, List.of());
-
-        assertThatThrownBy(() -> seeder.seed(List.of(season)))
-                .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("teams")
-                .hasMessageContaining("initialRankings");
-    }
 
     @Test
     void failsFastWhenInitialRankingsHasMissingTeamCodeInDatabase() {

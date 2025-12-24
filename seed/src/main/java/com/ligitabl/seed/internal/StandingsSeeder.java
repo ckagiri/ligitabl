@@ -62,7 +62,7 @@ public class StandingsSeeder extends AbstractSeeder<DefaultsConfig> {
                         T_STANDINGS.C_RANKINGS,
                         T_STANDINGS.C_FINALISED,
                         T_STANDINGS.C_FINALISED_AT)
-                .values(UUID.randomUUID(), seasonId, 1, rankingsJson, false, null)
+            .values(UUID.randomUUID(), seasonId, 1, rankingsJson, false, null)
                 .onConflict(T_STANDINGS.FK_SEASON_ID, T_STANDINGS.C_ROUND_POSITION)
                 .doNothing()
                 .execute();

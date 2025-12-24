@@ -237,6 +237,19 @@ make dev-reset       # reset DB, migrate, codegen, seed reference data
 make dev-reset-all   # same as above, plus demo data
 ```
 
+### Seeding smoke script
+
+For a quick end-to-end verification of "reset DB → migrate → seed reference → assert contest + standings", run:
+
+```bash
+./scripts/TestSeeding.sh
+```
+
+Notes:
+
+- The script prefers `.env.test` when present (separate DB/ports for destructive runs).
+- Matchday/round positions are 1-based; the script asserts a round-1 standings row.
+
 ## Liquibase at runtime
 
 Liquibase is disabled by default. To enable migrations during app startup, use the Spring profile:

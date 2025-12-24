@@ -27,7 +27,8 @@ public class SeedOrchestrator {
     public SeedExecutionReport executeSeed(Map<String, Object> sections, String mainResource) {
         resultCollector.clear();
 
-        DefaultsConfig defaults = requireDefaultsForProduction(sections, mainResource);
+        DefaultsConfig defaults = parseDefaultsIfPresent(sections);
+        requireDefaultsForProduction(defaults, mainResource);
 
         seedUsers(sections);
         seedTeams(sections);
@@ -42,20 +43,26 @@ public class SeedOrchestrator {
     }
 
     @SuppressWarnings("unchecked")
-    private DefaultsConfig requireDefaultsForProduction(Map<String, Object> sections, String mainResource) {
-        if (!"seeding/main.yaml".equals(mainResource)) {
-            return null;
-        }
-
+    private DefaultsConfig parseDefaultsIfPresent(Map<String, Object> sections) {
         Object defaultsObj = sections.get("defaults");
         if (!(defaultsObj instanceof Map<?, ?> defaultsMap)) {
-            throw new IllegalStateException(
-                    "Missing required defaults section. Ensure seeding/defaults.yaml exists and is included by seeding/main.yaml");
+            return null;
         }
 
         DefaultsConfig defaults = DefaultsConfig.fromMap((Map<String, Object>) defaultsMap);
         defaults.validateRequired();
         return defaults;
+    }
+
+    private void requireDefaultsForProduction(DefaultsConfig defaults, String mainResource) {
+        if (!"seeding/main.yaml".equals(mainResource)) {
+            return;
+        }
+
+        if (defaults == null) {
+            throw new IllegalStateException(
+                    "Missing required defaults section. Ensure seeding/defaults.yaml exists and is included by seeding/main.yaml");
+        }
     }
 
     @SuppressWarnings("unchecked")

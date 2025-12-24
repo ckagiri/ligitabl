@@ -14,9 +14,6 @@ import org.springframework.context.annotation.Bean;
 @SpringBootApplication
 public class SeedingApplication {
 
-    private static final String DEFAULT_MAIN_RESOURCE = "seeding/demo-main.yaml";
-    private static final String PRODUCTION_MAIN_RESOURCE = "seeding/main.yaml";
-
     public static void main(String[] args) {
         SpringApplication.run(SeedingApplication.class, args);
     }
@@ -24,7 +21,7 @@ public class SeedingApplication {
     @Bean
     CommandLineRunner seedingRunner(DSLContext dsl, ObjectMapper objectMapper) {
         return args -> {
-            String mainResource = determineMainResource();
+            String mainResource = requireSeedMainResource();
             logSeedingStart(mainResource);
 
             Map<String, Object> sections = loadSeedConfiguration(mainResource);
@@ -37,40 +34,15 @@ public class SeedingApplication {
         };
     }
 
-    private String determineMainResource() {
+    private String requireSeedMainResource() {
         String systemProperty = System.getProperty("seed.main");
         if (systemProperty != null && !systemProperty.isBlank()) {
             return systemProperty;
         }
 
-        String appEnv = System.getenv("APP_ENV");
-        if (appEnv != null && !appEnv.isBlank()) {
-            return getResourceForEnvironment(appEnv);
-        }
-
-        System.out.println("[seed] No seed.main or APP_ENV specified, defaulting to demo data");
-        return DEFAULT_MAIN_RESOURCE;
-    }
-
-    private String getResourceForEnvironment(String environment) {
-        return switch (environment.toLowerCase()) {
-            case "production", "prod" -> {
-                System.out.println("[seed] Environment: PRODUCTION - using main.yaml");
-                yield PRODUCTION_MAIN_RESOURCE;
-            }
-            case "staging", "stage" -> {
-                System.out.println("[seed] Environment: STAGING - using main.yaml");
-                yield PRODUCTION_MAIN_RESOURCE;
-            }
-            case "demo", "test", "dev", "development" -> {
-                System.out.println("[seed] Environment: " + environment.toUpperCase() + " - using demo-main.yaml");
-                yield DEFAULT_MAIN_RESOURCE;
-            }
-            default -> {
-                System.out.println("[seed] Unknown environment '" + environment + "', defaulting to demo");
-                yield DEFAULT_MAIN_RESOURCE;
-            }
-        };
+        throw new IllegalArgumentException(
+                "Missing required system property 'seed.main'. "
+                        + "Example: java -Dseed.main=seeding/demo-main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar --spring.profiles.active=default");
     }
 
     private Map<String, Object> loadSeedConfiguration(String mainResource) {
@@ -86,7 +58,6 @@ public class SeedingApplication {
         System.out.println("================================================================================");
         System.out.println("[seed] Starting database seeding");
         System.out.println("[seed] Main resource: " + mainResource);
-        System.out.println("[seed] Data type: " + getDataTypeDescription(mainResource));
         System.out.println("================================================================================");
     }
 
@@ -95,15 +66,6 @@ public class SeedingApplication {
         System.out.println("[seed] Database seeding completed successfully");
         System.out.println("[seed] Resource: " + mainResource);
         System.out.println("================================================================================");
-    }
-
-    private String getDataTypeDescription(String mainResource) {
-        if (mainResource.contains("demo")) {
-            return "Demo/Test Data (fictional, safe for testing)";
-        } else if (mainResource.contains("main")) {
-            return "Production/Reference Data (real data)";
-        }
-        return "Custom Data";
     }
 
     @Bean

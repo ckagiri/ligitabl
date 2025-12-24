@@ -243,7 +243,7 @@ public class SeasonSeeder extends AbstractSeeder<List<Map<String, Object>>> {
                 completed != null ? completed : false,
                         totalTeams,
                 maxHitPoints,
-                        0)
+                        1)
                 .execute();
 
         if (rowsAffected > 0) {
