@@ -48,9 +48,9 @@ class RoundRepoTest {
         dsl.deleteFrom(TMatch.T_MATCH).execute();
         dsl.deleteFrom(TStandings.T_STANDINGS).execute();
         dsl.update(TSeason.T_SEASON)
-            .set(TSeason.T_SEASON.FK_CURRENT_ROUND_ID, (UUID) null)
-            .set(TSeason.T_SEASON.FK_MAIN_CONTEST_ID, (UUID) null)
-            .execute();
+                .set(TSeason.T_SEASON.FK_CURRENT_ROUND_ID, (UUID) null)
+                .set(TSeason.T_SEASON.FK_MAIN_CONTEST_ID, (UUID) null)
+                .execute();
         dsl.deleteFrom(TContest.T_CONTEST).execute();
         dsl.deleteFrom(TRound.T_ROUND).execute();
         dsl.deleteFrom(TSeason.T_SEASON).execute();

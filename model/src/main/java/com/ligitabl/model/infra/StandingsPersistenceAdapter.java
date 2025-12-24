@@ -59,8 +59,8 @@ public class StandingsPersistenceAdapter implements StandingsRepo {
                 .set(T_STANDINGS.FK_SEASON_ID, model.getSeasonId())
                 .set(T_STANDINGS.C_ROUND_POSITION, model.getRoundPosition())
                 .set(T_STANDINGS.C_RANKINGS, rankingsJson)
-            .set(T_STANDINGS.C_FINALISED, model.isFinalised())
-            .set(T_STANDINGS.C_FINALISED_AT, model.getFinalisedAt())
+                .set(T_STANDINGS.C_FINALISED, model.isFinalised())
+                .set(T_STANDINGS.C_FINALISED_AT, model.getFinalisedAt())
                 .execute();
 
         return findById(id).orElseThrow(() -> new NoSuchElementException("Failed to create standings"));
@@ -76,8 +76,8 @@ public class StandingsPersistenceAdapter implements StandingsRepo {
                 .set(T_STANDINGS.FK_SEASON_ID, model.getSeasonId())
                 .set(T_STANDINGS.C_ROUND_POSITION, model.getRoundPosition())
                 .set(T_STANDINGS.C_RANKINGS, writeRankings(model.getRankings()))
-            .set(T_STANDINGS.C_FINALISED, model.isFinalised())
-            .set(T_STANDINGS.C_FINALISED_AT, model.getFinalisedAt())
+                .set(T_STANDINGS.C_FINALISED, model.isFinalised())
+                .set(T_STANDINGS.C_FINALISED_AT, model.getFinalisedAt())
                 .where(T_STANDINGS.PK_ID.eq(model.getId()))
                 .execute();
 

@@ -1,5 +1,7 @@
 package com.ligitabl.api.auth.security;
 
+import static org.springframework.security.core.userdetails.User.withUsername;
+
 import java.util.List;
 
 import org.springframework.security.core.GrantedAuthority;
@@ -14,8 +16,6 @@ import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.UserRepo;
 
 import lombok.RequiredArgsConstructor;
-
-import static org.springframework.security.core.userdetails.User.withUsername;
 
 @Component
 @RequiredArgsConstructor
@@ -35,8 +35,8 @@ public class DefaultUserDetailsService implements UserDetailsService {
         User user = userRepo.findByEmail(email).orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
         List<GrantedAuthority> authorities = user.getRoles().stream()
-            .map(role -> (GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + role.getValue()))
-            .toList();
+                .map(role -> (GrantedAuthority) new SimpleGrantedAuthority("ROLE_" + role.getValue()))
+                .toList();
 
         // Important: return publicId as the principal name, so controllers can use Authentication#getName()
         // consistently (JWT and Basic Auth both resolve to publicId).

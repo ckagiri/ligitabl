@@ -39,9 +39,10 @@ public class AccessController {
      */
     @GetMapping("/me")
     public ResponseEntity<?> getCurrentUser(Authentication authentication) {
-        if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
-            return ResponseEntity.status(401)
-                    .body(new AuthDto.MessageResponse("Unauthorized"));
+        if (authentication == null
+                || authentication.getName() == null
+                || authentication.getName().isBlank()) {
+            return ResponseEntity.status(401).body(new AuthDto.MessageResponse("Unauthorized"));
         }
 
         String publicIdStr = authentication.getName();
