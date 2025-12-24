@@ -21,3 +21,7 @@ databaseChangeLog:
       file: db/changelog/20251222_1_user.yaml
   - include:
       file: db/changelog/20251222_2_user_roles.yaml
+  - include:
+      file: db/changelog/20251224_1_round_and_match_status_flags.yaml
+  - include:
+      file: db/changelog/20251224_2_predictions.yaml

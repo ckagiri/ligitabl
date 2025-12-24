@@ -1,0 +1,276 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20251224_3_entry
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: t_entry
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: t_entry
+            schemaName: public
+            columns:
+              - column:
+                  name: fk_user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fk_contest_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: t_entry
+            baseColumnNames: fk_user_id
+            baseTableSchemaName: public
+            constraintName: fk_entry_user_id
+            referencedTableName: t_user
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+        - addForeignKeyConstraint:
+            baseTableName: t_entry
+            baseColumnNames: fk_contest_id
+            baseTableSchemaName: public
+            constraintName: fk_entry_contest_id
+            referencedTableName: t_contest
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+        - addUniqueConstraint:
+            tableName: t_entry
+            schemaName: public
+            columnNames: fk_user_id, fk_contest_id
+            constraintName: uq_t_entry_user_contest
+
+  - changeSet:
+      id: 20251224_4_season_prediction
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: t_season_prediction
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: t_season_prediction
+            schemaName: public
+            columns:
+              - column:
+                  name: pk_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: fk_user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fk_season_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_initial_rankings
+                  type: jsonb
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_current_rankings
+                  type: jsonb
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_swaps
+                  type: jsonb
+                  defaultValueComputed: "'[]'::jsonb"
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_last_swap_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_at_round_number
+                  type: int
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: t_season_prediction
+            baseColumnNames: fk_user_id
+            baseTableSchemaName: public
+            constraintName: fk_season_prediction_user_id
+            referencedTableName: t_user
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+        - addForeignKeyConstraint:
+            baseTableName: t_season_prediction
+            baseColumnNames: fk_season_id
+            baseTableSchemaName: public
+            constraintName: fk_season_prediction_season_id
+            referencedTableName: t_season
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+        - addUniqueConstraint:
+            tableName: t_season_prediction
+            schemaName: public
+            columnNames: fk_user_id, fk_season_id
+            constraintName: uq_t_season_prediction_user_season
+
+  - changeSet:
+      id: 20251224_5_round_submission
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: t_round_submission
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: t_round_submission
+            schemaName: public
+            columns:
+              - column:
+                  name: pk_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: fk_user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fk_season_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_round_position
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_rankings
+                  type: jsonb
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fk_season_prediction_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: t_round_submission
+            baseColumnNames: fk_user_id
+            baseTableSchemaName: public
+            constraintName: fk_round_submission_user_id
+            referencedTableName: t_user
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+        - addForeignKeyConstraint:
+            baseTableName: t_round_submission
+            baseColumnNames: fk_season_id
+            baseTableSchemaName: public
+            constraintName: fk_round_submission_season_id
+            referencedTableName: t_season
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+        - addForeignKeyConstraint:
+            baseTableName: t_round_submission
+            baseColumnNames: fk_season_prediction_id
+            baseTableSchemaName: public
+            constraintName: fk_round_submission_season_prediction_id
+            referencedTableName: t_season_prediction
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+        - addUniqueConstraint:
+            tableName: t_round_submission
+            schemaName: public
+            columnNames: fk_user_id, fk_season_id, c_round_position
+            constraintName: uq_t_round_submission_user_season_round
+
+  - changeSet:
+      id: 20251224_6_round_result
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: t_round_result
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: t_round_result
+            schemaName: public
+            columns:
+              - column:
+                  name: pk_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: fk_round_submission_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_rankings
+                  type: jsonb
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_score
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_zeroes_count
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_swap_count
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_user_viewed
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: t_round_result
+            baseColumnNames: fk_round_submission_id
+            baseTableSchemaName: public
+            constraintName: fk_round_result_round_submission_id
+            referencedTableName: t_round_submission
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+        - addUniqueConstraint:
+            tableName: t_round_result
+            schemaName: public
+            columnNames: fk_round_submission_id
+            constraintName: uq_t_round_result_submission

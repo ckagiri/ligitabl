@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
@@ -42,6 +43,12 @@ public class Match extends AbstractModel<UUID> {
     private String venue;
 
     private int matchday;
+
+    @Builder.Default
+    private boolean wasPostponed = false;
+
+    @Builder.Default
+    private boolean wasSuspended = false;
 
     public boolean isPlayed() {
         return score != null;

@@ -1,9 +1,9 @@
 package com.ligitabl.model.domain;
 
+import java.util.List;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
@@ -11,19 +11,18 @@ import lombok.experimental.SuperBuilder;
 @Data
 @EqualsAndHashCode(callSuper = true)
 @SuperBuilder
-public class Round extends AbstractModel<UUID> {
+public class RoundSubmission extends AbstractModel<UUID> {
+    @NotNull
+    private UUID userId;
+
     @NotNull
     private UUID seasonId;
 
-    @NotNull
-    private String name;
+    private int roundPosition;
 
     @NotNull
-    private String slug;
-
-    private int position;
+    private List<TeamRank> rankings;
 
     @NotNull
-    @Builder.Default
-    private RoundStatus status = RoundStatus.OPEN;
+    private UUID seasonPredictionId;
 }

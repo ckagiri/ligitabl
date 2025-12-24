@@ -1,0 +1,56 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20251224_1_round_add_status
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_round
+            schemaName: public
+        - not:
+            - columnExists:
+                tableName: t_round
+                schemaName: public
+                columnName: c_status
+      changes:
+        - addColumn:
+            tableName: t_round
+            schemaName: public
+            columns:
+              - column:
+                  name: c_status
+                  type: varchar(50)
+                  defaultValue: OPEN
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 20251224_2_match_add_audit_flags
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_match
+            schemaName: public
+        - not:
+            - columnExists:
+                tableName: t_match
+                schemaName: public
+                columnName: c_was_postponed
+      changes:
+        - addColumn:
+            tableName: t_match
+            schemaName: public
+            columns:
+              - column:
+                  name: c_was_postponed
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_was_suspended
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
