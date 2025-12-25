@@ -20,7 +20,7 @@ import com.ligitabl.model.repo.UserRepo;
 @Configuration
 public class RepositoryConfig {
     @Bean
-    public TeamRepo teamDao(DSLContext dsl) {
+    public TeamRepo teamRepo(DSLContext dsl) {
         return new TeamPersistenceAdapter(dsl);
     }
 

@@ -1,5 +1,6 @@
 package com.ligitabl.model.domain;
 
+import java.time.Instant;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
@@ -26,4 +27,10 @@ public class Contest extends AbstractModel<UUID> {
     private int toRoundPosition;
 
     private Integer maxEntries;
+
+    private Instant createdAt;
+
+    public boolean isDefault() {
+        return !isPrivate && fromRoundPosition == 1;
+    }
 }

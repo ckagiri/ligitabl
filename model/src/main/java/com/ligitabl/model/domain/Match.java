@@ -81,4 +81,50 @@ public class Match extends AbstractModel<UUID> {
             return String.format("Match[%s: %s vs %s - Not played]", id, homeTeamId, awayTeamId);
         }
     }
+
+    // Transient fields populated by repository
+    private Team homeTeam;
+
+    private Team awayTeam;
+
+    /**
+     * Gets home team. Throws if not loaded.
+     */
+    public Team getHomeTeam() {
+        if (homeTeam == null) {
+            throw new IllegalStateException(
+                    "Home team not loaded for match " + id +
+                            ". Use repository method that loads teams."
+            );
+        }
+        return homeTeam;
+    }
+
+    /**
+     * Gets away team. Throws if not loaded.
+     */
+    public Team getAwayTeam() {
+        if (awayTeam == null) {
+            throw new IllegalStateException(
+                    "Away team not loaded for match " + id +
+                            ". Use repository method that loads teams."
+            );
+        }
+        return awayTeam;
+    }
+
+    /**
+     * Checks if teams are loaded.
+     */
+    public boolean hasTeamsLoaded() {
+        return homeTeam != null && awayTeam != null;
+    }
+
+    /**
+     * Sets teams (called by repository).
+     */
+    public void setTeams(Team home, Team away) {
+        this.homeTeam = home;
+        this.awayTeam = away;
+    }
 }

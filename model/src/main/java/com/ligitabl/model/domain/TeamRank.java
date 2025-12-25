@@ -15,6 +15,10 @@ public class TeamRank {
         return new TeamRank(code, position);
     }
 
+    public TeamRank withPosition(int newPosition) {
+        return new TeamRank(this.code, newPosition);
+    }
+
     @Override
     public String toString() {
         return String.format("#%d %s", position, code);

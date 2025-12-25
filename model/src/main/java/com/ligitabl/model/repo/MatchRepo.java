@@ -15,4 +15,33 @@ public interface MatchRepo {
     Match create(Match match);
 
     Match update(Match match);
+
+    Match save(Match match);
+
+    Optional<Match> findById(UUID id);
+
+    /**
+     * Finds match with teams loaded.
+     */
+    Optional<Match> findByIdWithTeams(UUID id);
+
+    /**
+     * Finds matches for round with teams loaded.
+     */
+    List<Match> findByRoundIdWithTeams(UUID roundId);
+
+    /**
+     * Finds finished matches up to round with teams loaded.
+     */
+    List<Match> findFinishedMatchesUpToRoundWithTeams(UUID seasonId, int roundPosition);
+
+    // Lightweight methods (no teams loaded)
+    List<Match> findByRoundId(Long roundId);
+
+    boolean existsBySeasonAndRoundAndTeams(
+            UUID seasonId,
+            UUID roundId,
+            UUID homeTeamId,
+            UUID awayTeamId
+    );
 }
