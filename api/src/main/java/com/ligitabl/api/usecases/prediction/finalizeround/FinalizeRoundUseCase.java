@@ -72,16 +72,6 @@ public class FinalizeRoundUseCase {
             ));
         }
 
-        // Check for cancelled matches
-        List<UUID> cancelledIds = matches.stream()
-                .filter(m -> m.getStatus() == MatchStatus.CANCELLED)
-                .map(Match::getId)
-                .toList();
-
-        if (!cancelledIds.isEmpty()) {
-            return Either.left(new FinalizationError.CancelledMatchesPresent(cancelledIds));
-        }
-
         return Either.right(null);
     }
 
@@ -92,7 +82,7 @@ public class FinalizeRoundUseCase {
         try {
             // Step 1: Calculate final standings
             Standings finalStandings = calculateFinalStandings(round, season)
-                    .getOrElseThrow(err -> new RuntimeException(err.reason()));
+                    .getOrElseThrow(err -> new RuntimeException(err.toString()));
 
             // Step 2: Create round submissions
             List<RoundSubmission> submissions = createRoundSubmissions(round, season);
@@ -160,7 +150,7 @@ public class FinalizeRoundUseCase {
 
             // Get or create standings record
             Standings standings = standingsRepo
-                                        .findBySeasonAndRound(season.getId(), round.getPosition())
+                                        .findBySeasonAndRoundPosition(season.getId(), round.getPosition())
                                         .orElseGet(() -> Standings.builder()
                                                         .seasonId(season.getId())
                                                         .roundPosition(round.getPosition())
@@ -266,7 +256,7 @@ public class FinalizeRoundUseCase {
 
         // Check if already exists (idempotency)
         Optional<Standings> existing = standingsRepo
-                .findBySeasonAndRound(season.getId(), nextRoundPosition);
+                .findBySeasonAndRoundPosition(season.getId(), nextRoundPosition);
 
         if (existing.isEmpty()) {
             // Copy from finalized standings (cumulative stats)
@@ -305,9 +295,6 @@ public class FinalizeRoundUseCase {
         }
 
         private Standings saveStandings(Standings standings) {
-                if (standings.getId() == null) {
-                        return standingsRepo.create(standings);
-                }
-                return standingsRepo.update(standings);
+                return standingsRepo.save(standings);
         }
 }

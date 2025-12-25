@@ -1,6 +1,7 @@
 package com.ligitabl.api.usecases.prediction.makeswap;
 
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
@@ -12,7 +13,6 @@ import com.ligitabl.model.repo.SeasonRepo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -32,12 +32,12 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class MakeSwapUseCaseTest {
 
+        private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
     @Mock private SeasonPredictionRepo predictionRepo;
     @Mock private SeasonRepo seasonRepo;
     @Mock private RoundRepo roundRepo;
     @Mock private Clock clock;
 
-    @InjectMocks
     private MakeSwapUseCase useCase;
 
     private Instant now;
@@ -60,15 +60,23 @@ class MakeSwapUseCaseTest {
         season = createSeason();
         round = createRound(RoundStatus.OPEN, 10);
         prediction = createPrediction();
+
+        useCase = new MakeSwapUseCase(
+                competitionDefaults,
+                predictionRepo,
+                seasonRepo,
+                roundRepo,
+                clock
+        );
     }
 
     @Test
     void shouldSwapSuccessfully_whenAllConditionsMet() {
         SwapCommand command = new SwapCommand("ARS", "LIV");
 
-                when(clock.instant()).thenReturn(now);
+        when(clock.instant()).thenReturn(now);
 
-        when(seasonRepo.findActiveSeason()).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId()))
                 .thenReturn(Optional.of(prediction));
         when(roundRepo.findById(season.getCurrentRoundId()))
@@ -95,9 +103,9 @@ class MakeSwapUseCaseTest {
         prediction.setLastSwapAt(now.minus(Duration.ofHours(23)));
         SwapCommand command = new SwapCommand("ARS", "LIV");
 
-                when(clock.instant()).thenReturn(now);
+        when(clock.instant()).thenReturn(now);
 
-        when(seasonRepo.findActiveSeason()).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId()))
                 .thenReturn(Optional.of(prediction));
         when(roundRepo.findById(season.getCurrentRoundId()))
@@ -115,7 +123,7 @@ class MakeSwapUseCaseTest {
         round.setStatus(RoundStatus.LOCKED);
         SwapCommand command = new SwapCommand("ARS", "LIV");
 
-        when(seasonRepo.findActiveSeason()).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId()))
                 .thenReturn(Optional.of(prediction));
         when(roundRepo.findById(season.getCurrentRoundId()))

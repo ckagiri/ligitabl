@@ -42,3 +42,6 @@ jwt:
   secret: ${JWT_SECRET:dev-secret-change-me-dev-secret-change-me}
   # Milliseconds
   expiration: ${JWT_EXPIRATION_MS:86400000}
+
+ligitabl:
+  default-competition-slug: ${DEFAULT_COMPETITION_SLUG:premier-league}

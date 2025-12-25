@@ -1,5 +1,6 @@
 package com.ligitabl.api.usecases.contest.getconteststatus;
 
+import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.model.domain.Entry;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonPrediction;
@@ -18,13 +19,14 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class GetContestStatusUseCase {
 
+    private final CompetitionDefaults competitionDefaults;
     private final SeasonRepo seasonRepo;
     private final SeasonPredictionRepo predictionRepo;
     private final ContestRepo contestRepo;
     private final EntryRepo entryRepo;
 
     public ContestStatus execute(UUID userId) {
-        Season activeSeason = seasonRepo.findActiveSeason()
+        Season activeSeason = seasonRepo.findActiveSeason(competitionDefaults.defaultCompetitionSlug())
                 .orElse(null);
 
         if (activeSeason == null) {

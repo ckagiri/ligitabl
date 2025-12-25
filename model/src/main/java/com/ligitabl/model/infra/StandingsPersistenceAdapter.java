@@ -29,7 +29,7 @@ public class StandingsPersistenceAdapter implements StandingsRepo {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
-    public Optional<Standings> findBySeasonAndRound(UUID seasonId, int roundPosition) {
+    public Optional<Standings> findBySeasonAndRoundPosition(UUID seasonId, int roundPosition) {
         var record = dsl.selectFrom(T_STANDINGS)
                 .where(T_STANDINGS.FK_SEASON_ID.eq(seasonId).and(T_STANDINGS.C_ROUND_POSITION.eq(roundPosition)))
                 .fetchOne();

@@ -7,6 +7,7 @@ import com.ligitabl.model.domain.User;
 
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 
 import lombok.AllArgsConstructor;
@@ -18,7 +19,7 @@ public class SeasonSeedResult {
     private Season season;
     private List<User> users;
     private Contest defaultContest;
-    private Map<Long, SeasonPrediction> predictions;
+    private Map<UUID, SeasonPrediction> predictions;
     private int totalRounds;
     private int matchesSeeded;
     private int swapsSeeded;

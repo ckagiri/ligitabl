@@ -1,6 +1,7 @@
 package com.ligitabl.api.config;
 
 import org.jooq.DSLContext;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -36,6 +37,13 @@ import com.ligitabl.model.repo.UserRepo;
 
 @Configuration
 public class RepositoryConfig {
+    @Bean
+    public CompetitionDefaults competitionDefaults(
+            @Value("${ligitabl.default-competition-slug:premier-league}") String defaultCompetitionSlug
+    ) {
+        return new CompetitionDefaults(defaultCompetitionSlug);
+    }
+
     @Bean
     public Clock clock() {
         return Clock.systemUTC();

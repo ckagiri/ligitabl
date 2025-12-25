@@ -15,5 +15,6 @@ public class SeedingConfig {
     @Data
     public static class DemoUser {
         private String email;
+        private String displayName;
     }
 }

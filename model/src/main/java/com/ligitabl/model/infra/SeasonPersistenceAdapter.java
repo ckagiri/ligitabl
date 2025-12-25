@@ -1,6 +1,7 @@
 package com.ligitabl.model.infra;
 
 import static com.ligitabl.model.db.tables.TSeason.T_SEASON;
+import static com.ligitabl.model.db.tables.TCompetition.T_COMPETITION;
 
 import java.io.IOException;
 import java.util.List;
@@ -73,12 +74,20 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
     }
 
     @Override
-    public Optional<Season> findActiveSeason() {
-        var record = dsl.selectFrom(T_SEASON)
-                .where(T_SEASON.C_COMPLETED.eq(false))
+    public Optional<Season> findActiveSeason(String competitionSlug) {
+        if (competitionSlug == null || competitionSlug.isBlank()) {
+            throw new IllegalArgumentException("competitionSlug must not be blank");
+        }
+
+        SeasonRecord record = dsl.select(T_SEASON.fields())
+                .from(T_SEASON)
+                .join(T_COMPETITION)
+                .on(T_SEASON.FK_COMPETITION_ID.eq(T_COMPETITION.PK_ID))
+                .where(T_COMPETITION.C_SLUG.eq(competitionSlug)
+                        .and(T_SEASON.C_COMPLETED.eq(false)))
                 .orderBy(T_SEASON.C_START_DATE.desc())
                 .limit(1)
-                .fetchOne();
+                .fetchOneInto(SeasonRecord.class);
 
         return Optional.ofNullable(MAPPER.map(record));
     }

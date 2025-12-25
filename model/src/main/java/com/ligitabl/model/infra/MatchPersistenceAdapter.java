@@ -5,13 +5,7 @@ import static com.ligitabl.model.db.tables.TRound.T_ROUND;
 import static com.ligitabl.model.db.tables.TTeam.T_TEAM;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -131,7 +125,7 @@ public class MatchPersistenceAdapter implements MatchRepo {
         }
 
         List<Match> matches = new ArrayList<>(records.size());
-        Set<UUID> teamIds = new java.util.HashSet<>();
+        Set<UUID> teamIds = new HashSet<>();
         for (MatchRecord record : records) {
             Match match = MAPPER.map(record);
             matches.add(match);
@@ -266,14 +260,14 @@ public class MatchPersistenceAdapter implements MatchRepo {
         );
     }
 
-    private record MapTeams(java.util.Map<UUID, Team> byId) {}
+    private record MapTeams(Map<UUID, Team> byId) {}
 
     private MapTeams loadTeams(Set<UUID> teamIds) {
         if (teamIds == null || teamIds.isEmpty()) {
             return new MapTeams(new HashMap<>());
         }
 
-        java.util.Map<UUID, Team> byId = dsl.selectFrom(T_TEAM)
+        Map<UUID, Team> byId = dsl.selectFrom(T_TEAM)
                 .where(T_TEAM.PK_ID.in(teamIds))
                 .fetchMap(T_TEAM.PK_ID, this::mapTeam);
 

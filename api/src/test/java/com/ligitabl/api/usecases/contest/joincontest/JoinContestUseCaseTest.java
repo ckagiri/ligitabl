@@ -1,6 +1,7 @@
 package com.ligitabl.api.usecases.contest.joincontest;
 
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundStatus;
@@ -12,10 +13,10 @@ import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
+import com.ligitabl.model.repo.TeamRepo;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -32,14 +33,16 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class JoinContestUseCaseTest {
 
+    private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
     @Mock private SeasonRepo seasonRepo;
     @Mock private RoundRepo roundRepo;
+    @Mock private TeamRepo teamRepo;
     @Mock private ContestRepo contestRepo;
     @Mock private SeasonPredictionRepo predictionRepo;
     @Mock private EntryRepo entryRepo;
     @Mock private Clock clock;
 
-    @InjectMocks private JoinContestUseCase useCase;
+    private JoinContestUseCase useCase;
 
     private Instant now;
     private UUID userId;
@@ -63,6 +66,17 @@ class JoinContestUseCaseTest {
         season = createSeason();
         round = createRound(RoundStatus.OPEN, 1);
         defaultContest = createDefaultContest();
+
+        useCase = new JoinContestUseCase(
+            competitionDefaults,
+            seasonRepo,
+            roundRepo,
+            teamRepo,
+            contestRepo,
+            predictionRepo,
+            entryRepo,
+            clock
+        );
     }
 
     @Test
@@ -73,8 +87,7 @@ class JoinContestUseCaseTest {
         JoinContestRequest request = createValidRequest();
 
         when(clock.instant()).thenReturn(now);
-
-        when(seasonRepo.findActiveSeason()).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
@@ -108,8 +121,7 @@ class JoinContestUseCaseTest {
         JoinContestRequest request = createValidRequest();
 
         when(clock.instant()).thenReturn(now);
-
-        when(seasonRepo.findActiveSeason()).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
@@ -134,7 +146,7 @@ class JoinContestUseCaseTest {
                 .atRoundNumber(1)
                 .build();
 
-        when(seasonRepo.findActiveSeason()).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(existingPrediction));
 
         Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
@@ -151,7 +163,7 @@ class JoinContestUseCaseTest {
                 new JoinContestRequest.TeamRankRequest("LIV", 2)
         ));
 
-        when(seasonRepo.findActiveSeason()).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
 
         Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
@@ -168,7 +180,7 @@ class JoinContestUseCaseTest {
                 new JoinContestRequest.TeamRankRequest("LIV", 3)
         ));
 
-        when(seasonRepo.findActiveSeason()).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
 
         Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
@@ -185,7 +197,7 @@ class JoinContestUseCaseTest {
 
         JoinContestRequest request = createValidRequest();
 
-        when(seasonRepo.findActiveSeason()).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
 

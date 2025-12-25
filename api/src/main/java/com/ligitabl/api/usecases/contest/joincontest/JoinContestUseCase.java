@@ -1,6 +1,7 @@
 package com.ligitabl.api.usecases.contest.joincontest;
 
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ import java.util.stream.Collectors;
 @Slf4j
 public class JoinContestUseCase {
 
+        private final CompetitionDefaults competitionDefaults;
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
     private final TeamRepo teamRepo;
@@ -47,9 +49,8 @@ public class JoinContestUseCase {
     }
 
     // Step 1: Get active season
-    // Todo: use default-competition slug from application.yaml
     private Either<JoinContestError, Season> getActiveSeason() {
-        return seasonRepo.findActiveSeason()
+                return seasonRepo.findActiveSeason(competitionDefaults.defaultCompetitionSlug())
                 .map(Either::<JoinContestError, Season>right)
                 .orElseGet(() -> Either.left(new JoinContestError.SeasonNotFound()));
     }

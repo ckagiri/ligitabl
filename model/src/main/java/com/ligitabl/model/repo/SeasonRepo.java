@@ -12,7 +12,7 @@ public interface SeasonRepo {
 
     Season save(Season season);
 
-    Optional<Season> findActiveSeason();
+    Optional<Season> findActiveSeason(String competitionSlug);
 
     List<Season> findAllByCompetitionId(UUID competitionId);
 

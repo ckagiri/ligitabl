@@ -32,7 +32,7 @@ public class SeedSeasonCommandLineRunner implements CommandLineRunner {
         log.info("═══════════════════════════════════════════════════════════");
         log.info("");
 
-        Either<String, SeasonSeedResult> result = seedSeasonUseCase.execute();
+        Either<SeedingError, SeasonSeedResult> result = seedSeasonUseCase.execute();
 
         result.fold(
                 this::handleFailure,
@@ -40,13 +40,13 @@ public class SeedSeasonCommandLineRunner implements CommandLineRunner {
         );
     }
 
-    private Void handleFailure(String error) {
+    private Void handleFailure(SeedingError error) {
         log.error("");
         log.error("═══════════════════════════════════════════════════════════");
         log.error("  ❌ SEEDING FAILED");
         log.error("═══════════════════════════════════════════════════════════");
         log.error("");
-        log.error("Error: {}", error);
+        log.error("Error: {}", error.message());
         log.error("");
         log.error("Prerequisites checklist:");
         log.error("  ☐ Competition exists (check seeding-config.yaml)");

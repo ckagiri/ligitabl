@@ -239,9 +239,9 @@ public class StandingsCalculator {
             }
 
             // Validate wins + draws + losses = played
-                int total = rank.getMetadata().getWon() +
-                    rank.getMetadata().getDrawn() +
-                    rank.getMetadata().getLost();
+            int total = rank.getMetadata().getWon() +
+                rank.getMetadata().getDrawn() +
+                rank.getMetadata().getLost();
             if (total != actualPlayed) {
                 return false;
             }

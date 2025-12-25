@@ -6,5 +6,6 @@ import java.util.UUID;
 import com.ligitabl.model.domain.Standings;
 
 public interface StandingsRepo extends BaseCrudRepo<Standings, UUID> {
-    Optional<Standings> findBySeasonAndRound(UUID seasonId, int roundPosition);
+    Standings save(Standings standings);
+    Optional<Standings> findBySeasonAndRoundPosition(UUID seasonId, int roundPosition);
 }

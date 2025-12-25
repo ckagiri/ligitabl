@@ -125,7 +125,7 @@ class StandingsRepoTest {
         assertThat(byId).isPresent();
         assertThat(byId.get().getSeasonId()).isEqualTo(seasonId);
 
-        Optional<Standings> bySeasonRound = repo.findBySeasonAndRound(seasonId, 1);
+        Optional<Standings> bySeasonRound = repo.findBySeasonAndRoundPosition(seasonId, 1);
         assertThat(bySeasonRound).isPresent();
         assertThat(bySeasonRound.get().getId()).isEqualTo(created.getId());
 
@@ -149,6 +149,6 @@ class StandingsRepoTest {
 
         repo.delete(updated.getId());
         assertThat(repo.findById(updated.getId())).isEmpty();
-        assertThat(repo.findBySeasonAndRound(seasonId, 2)).isEmpty();
+        assertThat(repo.findBySeasonAndRoundPosition(seasonId, 2)).isEmpty();
     }
 }

@@ -1,16 +1,13 @@
 package com.ligitabl.api.usecases.prediction.makeswap;
 
-import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.repo.UserRepo;
+import com.ligitabl.api.auth.CurrentUserId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 import java.util.UUID;
@@ -21,28 +18,18 @@ import java.util.UUID;
 public class MakeSwapController {
 
     private final MakeSwapUseCase makeSwapUseCase;
-        private final UserRepo userRepo;
+        private final CurrentUserId currentUserId;
 
     @PostMapping("/swap")
     public ResponseEntity<?> makeSwap(
-            Authentication authentication,
             @RequestBody SwapCommand command
     ) {
-        UUID userId = resolveUserId(authentication);
+        UUID userId = currentUserId.require();
         return makeSwapUseCase.execute(userId, command)
                 .fold(
                         this::handleSwapError,
                         this::handleSwapSuccess
                 );
-    }
-
-    private UUID resolveUserId(Authentication authentication) {
-        String publicIdStr = authentication.getName();
-        PublicId publicId = PublicId.create(publicIdStr);
-
-        return userRepo.findByPublicId(publicId)
-                .map(com.ligitabl.model.domain.User::getId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
     }
 
     private ResponseEntity<?> handleSwapError(SwapError error) {

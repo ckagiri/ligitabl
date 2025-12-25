@@ -1,16 +1,12 @@
 package com.ligitabl.api.usecases.contest.getconteststatus;
 
-import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.repo.UserRepo;
+import com.ligitabl.api.auth.CurrentUserId;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.GetMapping;// Controller endpoint
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 import java.util.UUID;
@@ -21,11 +17,11 @@ import java.util.UUID;
 @Slf4j
 public class GetContestStatusController {
     private final GetContestStatusUseCase getContestStatusUseCase;
-        private final UserRepo userRepo;
+        private final CurrentUserId currentUserId;
 
     @GetMapping("/status")
-        public ResponseEntity<?> getContestStatus(Authentication authentication) {
-                UUID userId = resolveUserId(authentication);
+        public ResponseEntity<?> getContestStatus() {
+                UUID userId = currentUserId.require();
                 var status = getContestStatusUseCase.execute(userId);
 
         return ResponseEntity.ok(Map.of(
@@ -42,13 +38,4 @@ public class GetContestStatusController {
                 "entries_count", status.entries().size()
         ));
     }
-
-        private UUID resolveUserId(Authentication authentication) {
-                String publicIdStr = authentication.getName();
-                PublicId publicId = PublicId.create(publicIdStr);
-
-                return userRepo.findByPublicId(publicId)
-                                .map(com.ligitabl.model.domain.User::getId)
-                                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
-        }
 }

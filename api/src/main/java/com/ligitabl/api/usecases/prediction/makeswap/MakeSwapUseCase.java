@@ -1,6 +1,7 @@
 package com.ligitabl.api.usecases.prediction.makeswap;
 
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.model.SwapChange;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.RoundRepo;
@@ -20,6 +21,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class MakeSwapUseCase {
 
+        private final CompetitionDefaults competitionDefaults;
     private final SeasonPredictionRepo predictionRepo;
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
@@ -37,7 +39,7 @@ public class MakeSwapUseCase {
     }
 
     private Either<SwapError, Season> getCurrentSeason() {
-        return seasonRepo.findActiveSeason()
+                return seasonRepo.findActiveSeason(competitionDefaults.defaultCompetitionSlug())
                 .map(Either::<SwapError, Season>right)
                 .orElseGet(() -> Either.left(new SwapError.NoPredictionFound(null, null)));
     }

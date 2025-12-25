@@ -1,18 +1,15 @@
 package com.ligitabl.api.usecases.contest.joincontest;
 
-import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.repo.UserRepo;
+import com.ligitabl.api.auth.CurrentUserId;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 import java.util.UUID;
@@ -25,14 +22,13 @@ import java.util.UUID;
 public class JoinContestController {
 
     private final JoinContestUseCase joinContestUseCase;
-        private final UserRepo userRepo;
+        private final CurrentUserId currentUserId;
 
     @PostMapping("/join")
     public ResponseEntity<?> joinContest(
-            Authentication authentication,
             @RequestBody @Valid JoinContestRequest request
     ) {
-        UUID userId = resolveUserId(authentication);
+        UUID userId = currentUserId.require();
         log.info("Join contest request from user {}", userId);
 
         return joinContestUseCase.execute(userId, request)
@@ -40,15 +36,6 @@ public class JoinContestController {
                         this::handleJoinError,
                         this::handleJoinSuccess
                 );
-    }
-
-    private UUID resolveUserId(Authentication authentication) {
-        String publicIdStr = authentication.getName();
-        PublicId publicId = PublicId.create(publicIdStr);
-
-        return userRepo.findByPublicId(publicId)
-                .map(com.ligitabl.model.domain.User::getId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
     }
 
     private ResponseEntity<?> handleJoinError(JoinContestError error) {

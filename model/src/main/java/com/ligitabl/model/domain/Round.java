@@ -34,7 +34,7 @@ public class Round extends AbstractModel<UUID> {
      */
     public RoundStatus computeStatus(List<Match> matches) {
         if (matches == null || matches.isEmpty()) {
-            return RoundStatus.FINALISED; // Empty round
+            return RoundStatus.FINALISED; // Empty round can finalize
         }
 
         boolean hasScheduled = false;
@@ -50,21 +50,25 @@ public class Round extends AbstractModel<UUID> {
                 case FINISHED -> hasFinished = true;
                 case SUSPENDED -> hasSuspended = true;
                 case CANCELLED -> hasCancelled = true;
-                case POSTPONED -> {} // Doesn't affect status
+                case POSTPONED -> {
+                    // POSTPONED is neutral: doesn’t block finalisation
+                    // No flag needed
+                }
             }
         }
 
-        // FINALISED: No blocking statuses
+        // FINALISED: No blocking statuses present
+        // Allows: all FINISHED, all POSTPONED, mix of FINISHED+POSTPONED
         if (!hasScheduled && !hasLive && !hasSuspended && !hasCancelled) {
             return RoundStatus.FINALISED;
         }
 
-        // LOCKED: Any blocking status present
-        if (hasLive || hasFinished || hasSuspended || hasCancelled) {
+        // LOCKED: Any blocking status present (LIVE, SUSPENDED, CANCELLED)
+        if (hasLive || hasSuspended || hasCancelled) {
             return RoundStatus.LOCKED;
         }
 
-        // OPEN: Has scheduled matches only
+        // OPEN: Has scheduled matches, no blocking statuses
         return RoundStatus.OPEN;
     }
 }
