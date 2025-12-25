@@ -10,9 +10,17 @@ import com.ligitabl.model.domain.SeasonSlug;
 public interface SeasonRepo {
     Optional<Season> findById(UUID id);
 
+    Season save(Season season);
+
+    Optional<Season> findActiveSeason();
+
     List<Season> findAllByCompetitionId(UUID competitionId);
 
     Optional<Season> findByCompetitionIdAndSlug(UUID competitionId, SeasonSlug slug);
+
+    default Optional<Season> findBySlug(UUID competitionId, String slug) {
+        return findByCompetitionIdAndSlug(competitionId, SeasonSlug.of(slug));
+    }
 
     Optional<Season> findByClientId(Integer clientId);
 

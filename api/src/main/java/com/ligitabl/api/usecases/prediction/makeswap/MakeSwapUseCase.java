@@ -66,7 +66,7 @@ public class MakeSwapUseCase {
         Round currentRound = roundRepo.findById(season.getCurrentRoundId())
                 .orElseThrow(() -> new IllegalStateException("Current round not found"));
 
-        RoundStatus status = currentRound.computeStatus();
+        RoundStatus status = currentRound.getStatus();
 
         return status == RoundStatus.OPEN
                 ? Either.right(null)

@@ -11,6 +11,7 @@ import org.jooq.RecordMapper;
 
 import com.ligitabl.model.db.tables.records.RoundRecord;
 import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.repo.RoundRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -20,6 +21,15 @@ public class RoundPersistenceAdapter implements RoundRepo {
     private final DSLContext dsl;
 
     private static final RoundRecordMapper MAPPER = new RoundRecordMapper();
+
+    @Override
+    public Optional<Round> findById(UUID id) {
+        var record = dsl.selectFrom(T_ROUND)
+                .where(T_ROUND.PK_ID.eq(id))
+                .fetchOne();
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
 
     @Override
     public List<Round> findBySeasonId(UUID seasonId) {
@@ -52,6 +62,7 @@ public class RoundPersistenceAdapter implements RoundRepo {
                     .name(record.getName())
                     .slug(record.getSlug())
                     .position(record.getPosition())
+                    .status(RoundStatus.valueOf(record.getStatus()))
                     .build();
         }
     }

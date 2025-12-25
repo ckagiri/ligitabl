@@ -10,7 +10,7 @@ public interface SeasonPredictionRepo {
     Optional<SeasonPrediction> findByUserAndSeason(UUID userId, UUID seasonId);
     SeasonPrediction save(SeasonPrediction prediction);
     List<SeasonPrediction> findBySeasonAndAtRoundNumberLessThanEqual(
-            Long seasonId,
+            UUID seasonId,
             int roundNumber
     );
 }

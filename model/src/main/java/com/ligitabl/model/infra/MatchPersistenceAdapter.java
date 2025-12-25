@@ -1,23 +1,34 @@
 package com.ligitabl.model.infra;
 
 import static com.ligitabl.model.db.tables.TMatch.T_MATCH;
+import static com.ligitabl.model.db.tables.TRound.T_ROUND;
+import static com.ligitabl.model.db.tables.TTeam.T_TEAM;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import org.jooq.DSLContext;
 import org.jooq.JSONB;
 import org.jooq.RecordMapper;
+import org.jooq.impl.DSL;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.model.db.tables.records.MatchRecord;
+import com.ligitabl.model.db.tables.records.TeamRecord;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Score;
+import com.ligitabl.model.domain.Team;
+import com.ligitabl.model.domain.TeamSlug;
 import com.ligitabl.model.repo.MatchRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -39,11 +50,105 @@ public class MatchPersistenceAdapter implements MatchRepo {
     }
 
     @Override
+    public List<Match> findByRoundId(Long roundId) {
+        throw new UnsupportedOperationException("Use findByRoundId(UUID) instead");
+    }
+
+    @Override
     public Optional<Match> findByClientId(Integer clientId) {
         var record =
                 dsl.selectFrom(T_MATCH).where(T_MATCH.C_CLIENT_ID.eq(clientId)).fetchOne();
 
         return Optional.ofNullable(MAPPER.map(record));
+    }
+
+    @Override
+    public Match save(Match match) {
+        return match.getId() == null ? create(match) : update(match);
+    }
+
+    @Override
+    public Optional<Match> findById(UUID id) {
+        var record = dsl.selectFrom(T_MATCH).where(T_MATCH.PK_ID.eq(id)).fetchOne();
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
+    @Override
+    public Optional<Match> findByIdWithTeams(UUID id) {
+        Optional<Match> matchOpt = findById(id);
+        if (matchOpt.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Match match = matchOpt.get();
+        MapTeams teams = loadTeams(Set.of(match.getHomeTeamId(), match.getAwayTeamId()));
+        Team home = teams.byId().get(match.getHomeTeamId());
+        Team away = teams.byId().get(match.getAwayTeamId());
+
+        if (home != null && away != null) {
+            match.setTeams(home, away);
+        }
+
+        return Optional.of(match);
+    }
+
+    @Override
+    public List<Match> findByRoundIdWithTeams(UUID roundId) {
+        List<Match> matches = findByRoundId(roundId);
+        if (matches.isEmpty()) {
+            return matches;
+        }
+
+        Set<UUID> teamIds = matches.stream()
+                .flatMap(m -> Stream.of(m.getHomeTeamId(), m.getAwayTeamId()))
+                .collect(Collectors.toSet());
+
+        MapTeams teams = loadTeams(teamIds);
+        for (Match match : matches) {
+            Team home = teams.byId().get(match.getHomeTeamId());
+            Team away = teams.byId().get(match.getAwayTeamId());
+            if (home != null && away != null) {
+                match.setTeams(home, away);
+            }
+        }
+
+        return matches;
+    }
+
+    @Override
+    public List<Match> findFinishedMatchesUpToRoundWithTeams(UUID seasonId, int roundPosition) {
+        List<MatchRecord> records = dsl.select(T_MATCH.fields())
+                .from(T_MATCH)
+                .join(T_ROUND).on(T_MATCH.FK_ROUND_ID.eq(T_ROUND.PK_ID))
+                .where(T_ROUND.FK_SEASON_ID.eq(seasonId))
+                .and(T_ROUND.C_POSITION.lessOrEqual(roundPosition))
+                .and(DSL.upper(T_MATCH.C_STATUS).eq(MatchStatus.FINISHED.name()))
+                .orderBy(T_ROUND.C_POSITION.asc(), T_MATCH.C_KICK_OFF.asc())
+                .fetchInto(MatchRecord.class);
+
+        if (records.isEmpty()) {
+            return List.of();
+        }
+
+        List<Match> matches = new ArrayList<>(records.size());
+        Set<UUID> teamIds = new java.util.HashSet<>();
+        for (MatchRecord record : records) {
+            Match match = MAPPER.map(record);
+            matches.add(match);
+            teamIds.add(record.getHomeTeamId());
+            teamIds.add(record.getAwayTeamId());
+        }
+
+        MapTeams teams = loadTeams(teamIds);
+        for (Match match : matches) {
+            Team home = teams.byId().get(match.getHomeTeamId());
+            Team away = teams.byId().get(match.getAwayTeamId());
+            if (home != null && away != null) {
+                match.setTeams(home, away);
+            }
+        }
+
+        return matches;
     }
 
     @Override
@@ -141,5 +246,54 @@ public class MatchPersistenceAdapter implements MatchRepo {
                 throw new IllegalStateException("Failed to serialize match score JSON", e);
             }
         }
+    }
+
+    @Override
+    public boolean existsBySeasonAndRoundAndTeams(
+            UUID seasonId,
+            UUID roundId,
+            UUID homeTeamId,
+            UUID awayTeamId
+    ) {
+        return dsl.fetchExists(
+                dsl.selectOne()
+                        .from(T_MATCH)
+                        .join(T_ROUND).on(T_MATCH.FK_ROUND_ID.eq(T_ROUND.PK_ID))
+                        .where(T_ROUND.FK_SEASON_ID.eq(seasonId))
+                        .and(T_MATCH.FK_ROUND_ID.eq(roundId))
+                        .and(T_MATCH.FK_HOME_TEAM_ID.eq(homeTeamId))
+                        .and(T_MATCH.FK_AWAY_TEAM_ID.eq(awayTeamId))
+        );
+    }
+
+    private record MapTeams(java.util.Map<UUID, Team> byId) {}
+
+    private MapTeams loadTeams(Set<UUID> teamIds) {
+        if (teamIds == null || teamIds.isEmpty()) {
+            return new MapTeams(new HashMap<>());
+        }
+
+        java.util.Map<UUID, Team> byId = dsl.selectFrom(T_TEAM)
+                .where(T_TEAM.PK_ID.in(teamIds))
+                .fetchMap(T_TEAM.PK_ID, this::mapTeam);
+
+        return new MapTeams(byId);
+    }
+
+    private Team mapTeam(TeamRecord record) {
+        if (record == null) {
+            return null;
+        }
+
+        return Team.builder()
+                .id(record.getId())
+                .clientId(record.getClientId())
+                .name(record.getName())
+                .shortName(record.getShortName())
+                .slug(record.getSlug() == null ? null : TeamSlug.of(record.getSlug()))
+                .tla(record.getTla())
+                .createDate(record.getCreateDate())
+                .updateDate(record.getUpdateDate())
+                .build();
     }
 }

@@ -14,5 +14,9 @@ public interface CompetitionRepo {
 
     Optional<Competition> findBySlug(CompetitionSlug slug);
 
+    default Optional<Competition> findBySlug(String slug) {
+        return findBySlug(CompetitionSlug.of(slug));
+    }
+
     boolean existsById(UUID id);
 }

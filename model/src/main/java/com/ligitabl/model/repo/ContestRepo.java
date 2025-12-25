@@ -8,5 +8,5 @@ import java.util.UUID;
 public interface ContestRepo {
     Optional<Contest> findById(UUID id);
     Contest save(Contest contest);
-    Optional<Contest> findDefaultContestBySeason(Long seasonId);
+    Optional<Contest> findDefaultContestBySeason(UUID seasonId);
 }

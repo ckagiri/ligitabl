@@ -28,7 +28,7 @@ public class JoinContestUseCase {
 
     @Transactional
     public Either<JoinContestError, JoinContestResult> execute(
-            Long userId,
+            UUID userId,
             JoinContestRequest request
     ) {
         log.info("User {} attempting to join contest", userId);
@@ -170,7 +170,7 @@ public class JoinContestUseCase {
         Round currentRound = roundRepo.findById(season.getCurrentRoundId())
                 .orElseThrow(() -> new IllegalStateException("Current round not found"));
 
-        RoundStatus roundStatus = currentRound.computeStatus();
+        RoundStatus roundStatus = currentRound.getStatus();
 
         int atRoundNumber;
         if (roundStatus == RoundStatus.OPEN) {
@@ -216,8 +216,6 @@ public class JoinContestUseCase {
                     .swaps(new ArrayList<>()) // Empty initially
                     .lastSwapAt(null) // No swaps yet
                     .atRoundNumber(atRoundNumber)
-                    .createdAt(clock.instant())
-                    .updatedAt(clock.instant())
                     .build();
 
             SeasonPrediction savedPrediction = predictionRepo.save(prediction);

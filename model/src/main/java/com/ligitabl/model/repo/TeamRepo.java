@@ -11,6 +11,8 @@ import com.ligitabl.model.domain.TeamSlug;
 public interface TeamRepo extends BaseCrudRepo<Team, UUID> {
     List<Team> findAll();
 
+    Optional<Team> findByCode(String code);
+
     Optional<Team> findBySlug(TeamSlug slug);
 
     Optional<Team> findByClientId(Integer clientId);

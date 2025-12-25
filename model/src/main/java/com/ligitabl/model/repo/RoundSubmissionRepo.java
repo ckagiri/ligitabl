@@ -4,20 +4,21 @@ import com.ligitabl.model.domain.RoundSubmission;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface RoundSubmissionRepo {
     RoundSubmission save(RoundSubmission submission);
 
-    Optional<RoundSubmission> findById(Long id);
+    Optional<RoundSubmission> findById(UUID id);
 
     Optional<RoundSubmission> findByUserAndSeasonAndRound(
-            Long userId,
-            Long seasonId,
+            UUID userId,
+            UUID seasonId,
             int roundPosition
     );
 
     List<RoundSubmission> findBySeasonAndRound(
-            Long seasonId,
+            UUID seasonId,
             int roundPosition
     );
 }

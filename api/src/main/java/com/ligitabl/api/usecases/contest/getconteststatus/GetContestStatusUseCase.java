@@ -10,6 +10,7 @@ import com.ligitabl.model.repo.SeasonRepo;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
+import java.util.UUID;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,7 +23,7 @@ public class GetContestStatusUseCase {
     private final ContestRepo contestRepo;
     private final EntryRepo entryRepo;
 
-    public ContestStatus execute(Long userId) {
+    public ContestStatus execute(UUID userId) {
         Season activeSeason = seasonRepo.findActiveSeason()
                 .orElse(null);
 
@@ -31,7 +32,7 @@ public class GetContestStatusUseCase {
         }
 
         Optional<SeasonPrediction> prediction = predictionRepo
-                .findByUserAndSeason(userId, activeSeason.getId());
+            .findByUserAndSeason(userId, activeSeason.getId());
 
         List<Entry> userEntries = entryRepo.findByUserId(userId);
 

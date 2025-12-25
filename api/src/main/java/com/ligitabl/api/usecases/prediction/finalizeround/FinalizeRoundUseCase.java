@@ -3,7 +3,7 @@ package com.ligitabl.api.usecases.prediction.finalizeround;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.domain.service.ScoringEngine;
-import com.ligitabl.model.domain.standings.table.StandingsCalculator;
+import com.ligitabl.model.domain.service.StandingsCalculator;
 import com.ligitabl.model.repo.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -12,6 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -138,7 +140,7 @@ public class FinalizeRoundUseCase {
     ) {
         try {
             // Get all FINISHED matches up to this round
-            List<Match> finishedMatches = matchRepo.findFinishedMatchesUpToRound(
+            List<Match> finishedMatches = matchRepo.findFinishedMatchesUpToRoundWithTeams(
                     season.getId(),
                     round.getPosition()
             );
@@ -158,14 +160,20 @@ public class FinalizeRoundUseCase {
 
             // Get or create standings record
             Standings standings = standingsRepo
-                    .findBySeasonAndRoundPosition(season.getId(), round.getPosition())
-                    .orElseGet(() -> new Standings(season.getId(), round.getPosition()));
+                                        .findBySeasonAndRound(season.getId(), round.getPosition())
+                                        .orElseGet(() -> Standings.builder()
+                                                        .seasonId(season.getId())
+                                                        .roundPosition(round.getPosition())
+                                                        .rankings(List.of())
+                                                        .finalised(false)
+                                                        .finalisedAt(null)
+                                                        .build());
 
             standings.setRankings(rankings);
             standings.setFinalised(true);
-            standings.setFinalisedAt(clock.instant());
+                        standings.setFinalisedAt(now());
 
-            return Either.right(standingsRepo.save(standings));
+                        return Either.right(saveStandings(standings));
 
         } catch (Exception e) {
             return Either.left(new FinalizationError.StandingsValidationFailed(e.getMessage()));
@@ -199,7 +207,6 @@ public class FinalizeRoundUseCase {
                         .roundPosition(round.getPosition())
                         .rankings(prediction.getCurrentRankings())
                         .seasonPredictionId(prediction.getId())
-                        .createdAt(clock.instant())
                         .build();
 
                 submissions.add(submissionRepo.save(submission));
@@ -236,8 +243,8 @@ public class FinalizeRoundUseCase {
                         .rankings(scoringResult.detailedRankings())
                         .score(scoringResult.score())
                         .zeroesCount(scoringResult.zeroesCount())
+                        .swapCount(0)
                         .userViewed(false)
-                        .createdAt(clock.instant())
                         .build();
 
                 results.add(resultRepo.save(result));
@@ -259,7 +266,7 @@ public class FinalizeRoundUseCase {
 
         // Check if already exists (idempotency)
         Optional<Standings> existing = standingsRepo
-                .findBySeasonAndRoundPosition(season.getId(), nextRoundPosition);
+                .findBySeasonAndRound(season.getId(), nextRoundPosition);
 
         if (existing.isEmpty()) {
             // Copy from finalized standings (cumulative stats)
@@ -269,11 +276,9 @@ public class FinalizeRoundUseCase {
                     .rankings(new ArrayList<>(finalStandings.getRankings()))
                     .finalised(false)
                     .finalisedAt(null)
-                    .createdAt(clock.instant())
-                    .updatedAt(clock.instant())
                     .build();
 
-            standingsRepo.save(nextStandings);
+                        saveStandings(nextStandings);
         }
     }
 
@@ -281,11 +286,11 @@ public class FinalizeRoundUseCase {
     private void advanceRound(Season season, Round currentRound, boolean isLastRound) {
         if (isLastRound) {
             season.setCompleted(true);
-            season.setCompletedAt(clock.instant());
+                        season.setCompletedAt(now());
             log.info("Season completed: {}", season.getId());
         } else {
             Round nextRound = roundRepo
-                    .findBySeasonAndPosition(season.getId(), currentRound.getPosition() + 1)
+                                        .findBySeasonIdAndPosition(season.getId(), currentRound.getPosition() + 1)
                     .orElseThrow(() -> new IllegalStateException("Next round not found"));
 
             season.setCurrentRoundId(nextRound.getId());
@@ -294,4 +299,15 @@ public class FinalizeRoundUseCase {
 
         seasonRepo.save(season);
     }
+
+        private OffsetDateTime now() {
+                return OffsetDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
+        }
+
+        private Standings saveStandings(Standings standings) {
+                if (standings.getId() == null) {
+                        return standingsRepo.create(standings);
+                }
+                return standingsRepo.update(standings);
+        }
 }

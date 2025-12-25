@@ -4,13 +4,13 @@ import java.time.Instant;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.Builder;
-import lombok.Value;
-import lombok.extern.jackson.Jacksonized;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
+import lombok.experimental.SuperBuilder;
 
-@Value
-@Builder
-@Jacksonized
+@Data
+@EqualsAndHashCode(callSuper = true)
+@SuperBuilder
 public class Entry extends AbstractModel<UUID> {
     @NotNull
     UUID userId;

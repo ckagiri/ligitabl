@@ -78,6 +78,16 @@ public class TeamPersistenceAdapter implements TeamRepo {
     }
 
     @Override
+    public Optional<Team> findByCode(String code) {
+        if (code == null || code.isBlank()) {
+            return Optional.empty();
+        }
+
+        var record = dsl.selectFrom(T_TEAM).where(T_TEAM.C_TLA.eq(code)).fetchOne();
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
+    @Override
     public List<Team> findAllByIds(Set<UUID> ids) {
         if (ids == null || ids.isEmpty()) {
             return List.of();

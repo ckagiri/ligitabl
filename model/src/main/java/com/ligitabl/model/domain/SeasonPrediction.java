@@ -1,6 +1,6 @@
 package com.ligitabl.model.domain;
 
-import java.time.OffsetDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -32,7 +32,7 @@ public class SeasonPrediction extends AbstractModel<UUID> {
 
     private List<RoundSwap> swaps = new ArrayList<>();
 
-    private OffsetDateTime lastSwapAt;
+    private Instant lastSwapAt;
 
     private int atRoundNumber;
 

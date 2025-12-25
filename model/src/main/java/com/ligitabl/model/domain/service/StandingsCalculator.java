@@ -1,3 +1,5 @@
+package com.ligitabl.model.domain.service;
+
 import com.ligitabl.model.domain.*;
 
 import java.util.ArrayList;
@@ -52,7 +54,6 @@ public class StandingsCalculator {
             TeamStats awayStats = statsMap.get(awayCode);
 
             if (homeStats == null || awayStats == null) {
-                log.warn("Match involves unknown team: {} vs {}", homeCode, awayCode);
                 continue;
             }
 
@@ -100,8 +101,8 @@ public class StandingsCalculator {
         for (int i = 0; i < statsList.size(); i++) {
             TeamStats stats = statsList.get(i);
 
-            StandingsTeamRank rank = StandingsTeamRank.builder()
-                    .ranking(new TeamRank(stats.teamCode, i + 1))
+                StandingsTeamRank rank = StandingsTeamRank.builder()
+                    .ranking(TeamRank.of(stats.teamCode, i + 1))
                     .metadata(new StandingsMetadata(
                             stats.played,
                             stats.won,
@@ -212,8 +213,6 @@ public class StandingsCalculator {
             int totalTeams
     ) {
         if (standings.size() != totalTeams) {
-            log.error("Invalid standings count: expected {}, got {}",
-                    totalTeams, standings.size());
             return false;
         }
 
@@ -233,21 +232,17 @@ public class StandingsCalculator {
         for (StandingsTeamRank rank : standings) {
             String teamCode = rank.getRanking().getCode();
             int expectedPlayed = matchCounts.getOrDefault(teamCode, 0);
-            int actualPlayed = rank.getMetadata().played();
+            int actualPlayed = rank.getMetadata().getPlayed();
 
             if (expectedPlayed != actualPlayed) {
-                log.error("Team {} played mismatch: expected {}, got {}",
-                        teamCode, expectedPlayed, actualPlayed);
                 return false;
             }
 
             // Validate wins + draws + losses = played
-            int total = rank.getMetadata().won() +
-                    rank.getMetadata().drawn() +
-                    rank.getMetadata().lost();
+                int total = rank.getMetadata().getWon() +
+                    rank.getMetadata().getDrawn() +
+                    rank.getMetadata().getLost();
             if (total != actualPlayed) {
-                log.error("Team {} stats don't add up: W+D+L={}, Played={}",
-                        teamCode, total, actualPlayed);
                 return false;
             }
         }
