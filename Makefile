@@ -260,12 +260,16 @@ db-seed-demo: ## Seed demo league (teams, competition, season, round, matches) u
 	$(MAKE) compose-up-db
 	mvn -q -pl seed -am -DskipTests package
 	java -Dseed.main=seeding/demo-main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar --spring.profiles.active=default
-	$(MAKE) db-seed-season
+	$(MAKE) db-seed-season SEEDING_CONFIG=seeding-config-demo.yaml
+
+SEEDING_CONFIG ?= seeding-config.yaml
 
 db-seed-season: ## Seed season demo extras (predictions, swaps, round finalization) via SeedSeasonCommandLineRunner
 	$(MAKE) compose-up-db
 	$(MAKE) api-build
-	java -jar $(JAR) --spring.main.web-application-type=none --seed-season
+	java -jar $(JAR) --spring.main.web-application-type=none --seed-season --seeding.config=$(SEEDING_CONFIG)
+
+seed-season-cli: db-seed-season ## Alias: run SeedSeasonCommandLineRunner (override with SEEDING_CONFIG=...)
 
 db-seed-users: ## Seed users (admin/player/superuser) needed for scripts/TestAuth.sh using the seed module
 	$(MAKE) compose-up-db

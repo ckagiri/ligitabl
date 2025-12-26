@@ -47,6 +47,15 @@ public class RoundPersistenceAdapter implements RoundRepo {
         return Optional.ofNullable(MAPPER.map(record));
     }
 
+    @Override
+    public List<Round> findBySeasonIdOrderByPosition(UUID seasonId) {
+        return dsl.selectFrom(T_ROUND)
+                .where(T_ROUND.FK_SEASON_ID.eq(seasonId))
+                .orderBy(T_ROUND.C_POSITION.asc())
+                .fetch()
+                .map(MAPPER::map);
+    }
+
     private static class RoundRecordMapper implements RecordMapper<RoundRecord, Round> {
         @Override
         public Round map(RoundRecord record) {

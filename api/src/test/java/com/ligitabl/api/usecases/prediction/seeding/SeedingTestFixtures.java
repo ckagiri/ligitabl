@@ -2,6 +2,7 @@ package com.ligitabl.api.usecases.prediction.seeding;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.IntStream;
 
@@ -35,10 +36,10 @@ public class SeedingTestFixtures {
 
     public static Competition createCompetition() {
         return Competition.builder()
-                .id(1L)
+                .id(UUID.randomUUID())
                 .name("Premier League")
-                .slug("premier-league")
-                .country("England")
+                .slug(CompetitionSlug.of("premier-league"))
+                .code("EPL")
                 .build();
     }
 
@@ -48,61 +49,86 @@ public class SeedingTestFixtures {
                 .toList();
 
         return Season.builder()
-                .id(1L)
+            .id(UUID.randomUUID())
+            .clientId(1)
                 .name("2024/25")
-                .slug("2024-25")
+            .slug(SeasonSlug.of("2024-25"))
                 .competitionId(competition.getId())
-                .competition(competition)
                 .startDate(LocalDate.of(2024, 8, 1))
                 .endDate(LocalDate.of(2025, 5, 31))
                 .maxRounds(22)
                 .totalTeams(12)
                 .maxHitPoints(220)
                 .initialRankings(initialRankings)
-                .mainContestId(1L)
                 .completed(false)
                 .build();
     }
 
     public static List<Round> createRounds(Season season, int count) {
         return IntStream.range(1, count + 1)
-                .mapToObj(i -> Round.builder()
-                        .id((long) i)
+            .mapToObj(i -> (Round) Round.builder()
+            .id(UUID.randomUUID())
                         .seasonId(season.getId())
                         .position(i)
                         .name("Round " + i)
+                .slug("round-" + i)
                         .build())
                 .toList();
     }
 
     public static List<Team> createTeams(int count) {
         return IntStream.range(0, count)
-                .mapToObj(i -> Team.builder()
-                        .id((long) (i + 1))
+            .mapToObj(i -> (Team) Team.builder()
+            .id(UUID.randomUUID())
+            .clientId(i + 1)
                         .name(getTeamName(i))
-                        .code(getTeamCode(i))
-                        .slug(getTeamSlug(i))
-                        .logoUrl("https://example.com/logo-" + i + ".png")
+                .shortName(getTeamCode(i))
+                .tla(getTeamCode(i))
+                .slug(TeamSlug.of(getTeamSlug(i)))
                         .build())
                 .toList();
     }
 
     public static Contest createContest(Season season) {
         return Contest.builder()
-                .id(1L)
+            .id(UUID.randomUUID())
                 .seasonId(season.getId())
                 .name("Main League")
-                .slug("main-league")
+            .isPrivate(false)
+            .fromRoundPosition(1)
                 .build();
     }
 
-    public static List<Match> createMatches() {
+        public static List<Match> createMatches(UUID seasonId, UUID roundId) {
+        UUID homeTeamId = UUID.randomUUID();
+        UUID awayTeamId = UUID.randomUUID();
+
         return List.of(
-                Match.builder().id(1L).kickOff(Instant.now().plusSeconds(3600)).build(),
-                Match.builder().id(2L).kickOff(Instant.now().plusSeconds(7200)).build());
+            Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(101)
+                .homeTeamId(homeTeamId)
+                .awayTeamId(awayTeamId)
+                .seasonId(seasonId)
+                .roundId(roundId)
+                .slug("home-vs-away")
+                .status(MatchStatus.SCHEDULED)
+                .kickOff(OffsetDateTime.now().plusHours(1))
+                .build(),
+            Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(102)
+                .homeTeamId(homeTeamId)
+                .awayTeamId(awayTeamId)
+                .seasonId(seasonId)
+                .roundId(roundId)
+                .slug("home-vs-away-2")
+                .status(MatchStatus.SCHEDULED)
+                .kickOff(OffsetDateTime.now().plusHours(2))
+                .build());
     }
 
-    public static Standings createStandings() {
+        public static Standings createStandings(UUID seasonId) {
         List<StandingsTeamRank> rankings = IntStream.range(0, 12)
                 .mapToObj(i -> StandingsTeamRank.builder()
                         .ranking(new TeamRank(getTeamCode(i), i + 1))
@@ -111,23 +137,17 @@ public class SeedingTestFixtures {
                 .toList();
 
         return Standings.builder()
-                .id(1L)
-                .seasonId(1L)
+            .id(UUID.randomUUID())
+            .seasonId(seasonId)
                 .roundPosition(1)
                 .rankings(rankings)
                 .finalised(true)
-                .finalisedAt(Instant.now())
+            .finalisedAt(OffsetDateTime.now())
                 .build();
     }
 
-    public static List<SwapChange> createSwapChanges() {
-        return List.of(
-                new SwapChange(Instant.now(), "MCI:1→2", "ARS:2→1"),
-                new SwapChange(Instant.now().plusSeconds(86400), "LIV:3→4", "AVL:4→3"));
-    }
-
     public static FinalizationResult createFinalizationResult() {
-        return new FinalizationResult(1L, 1, 10, 10, false, Instant.now());
+        return new FinalizationResult(UUID.randomUUID(), 1, 10, 10, false, Instant.now());
     }
 
     // Helper methods

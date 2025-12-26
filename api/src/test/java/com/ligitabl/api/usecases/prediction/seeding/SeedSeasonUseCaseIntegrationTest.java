@@ -1,188 +1,344 @@
 package com.ligitabl.api.usecases.prediction.seeding;
 
-import static org.assertj.core.api.Assertions.*;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.when;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
 
-import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.test.context.ActiveProfiles;
-import org.springframework.transaction.annotation.Transactional;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.model.domain.*;
-import com.ligitabl.model.repo.*;
+import com.ligitabl.api.testsupport.AbstractPostgresIT;
+import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
+import com.ligitabl.api.usecases.prediction.finalizeround.FinalizationResult;
+import com.ligitabl.api.usecases.prediction.finalizeround.FinalizeRoundUseCase;
 
 @SpringBootTest
-@ActiveProfiles("test")
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @DisplayName("SeedSeasonUseCase Integration Tests")
-class SeedSeasonUseCaseIntegrationTest {
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class SeedSeasonUseCaseIntegrationTest extends AbstractPostgresIT {
 
     @Autowired
-    private SeedSeasonUseCase seedSeasonUseCase;
+    SeedSeasonUseCase seedSeasonUseCase;
 
     @Autowired
-    private CompetitionRepo competitionRepo;
+    JdbcTemplate jdbcTemplate;
 
-    @Autowired
-    private SeasonRepo seasonRepo;
+    @MockBean
+    SeedingConfigLoader configLoader;
 
-    @Autowired
-    private RoundRepo roundRepo;
+    @MockBean
+    FinalizeRoundUseCase finalizeRoundUseCase;
 
-    @Autowired
-    private TeamRepo teamRepo;
-
-    @Autowired
-    private ContestRepo contestRepo;
-
-    @Autowired
-    private MatchRepo matchRepo;
-
-    @Autowired
-    private UserRepo userRepo;
-
-    @Autowired
-    private SeasonPredictionRepo predictionRepo;
-
-    private Competition competition;
-    private Season season;
+    private SeedSeasonDbFixture fixture;
 
     @BeforeAll
     void setupPrerequisites() {
-        // Create competition
-        competition = Competition.builder()
-                .name("Test League")
-                .slug("test-league")
-                .country("England")
-                .build();
-        competition = competitionRepo.save(competition);
+        // Keep fixed, readable test data (like .art/testing.md) while still ensuring we start from a clean DB.
+        PostgresTestDbCleaner.truncateAllDomainTables(jdbcTemplate);
 
-        // Create teams
-        String[] codes = {"MCI", "ARS", "LIV", "AVL", "CHE", "NEW", "MUN", "TOT", "BHA", "CRY", "BRE", "WHU"};
+        fixture = SeedSeasonDbFixture.create(jdbcTemplate);
+    }
 
-        for (int i = 0; i < codes.length; i++) {
-            Team team = Team.builder()
-                    .name("Team " + codes[i])
-                    .tla(codes[i])
-                    .slug("team-" + codes[i].toLowerCase())
-                    .logoUrl("https://example.com/" + codes[i] + ".png")
-                    .build();
-            teamRepo.save(team);
+        @BeforeEach
+        void setupMocks() {
+        // @MockBean mocks are reset between test methods.
+        when(configLoader.loadConfig()).thenReturn(fixture.seedingConfig());
+        when(finalizeRoundUseCase.execute(any(UUID.class)))
+            .thenReturn(
+                Either.right(
+                    new FinalizationResult(UUID.randomUUID(), 1, 0, 0, false, Instant.now())));
         }
-
-        // Create season
-        List<TeamRank> initialRankings = List.of(
-                new TeamRank("MCI", 1), new TeamRank("ARS", 2),
-                new TeamRank("LIV", 3), new TeamRank("AVL", 4),
-                new TeamRank("CHE", 5), new TeamRank("NEW", 6),
-                new TeamRank("MUN", 7), new TeamRank("TOT", 8),
-                new TeamRank("BHA", 9), new TeamRank("CRY", 10),
-                new TeamRank("BRE", 11), new TeamRank("WHU", 12));
-
-        season = Season.builder()
-                .name("Test Season 2024/25")
-                .slug("test-2024-25")
-                .competitionId(competition.getId())
-                .startDate(LocalDate.of(2024, 8, 1))
-                .endDate(LocalDate.of(2025, 5, 31))
-                .maxRounds(22)
-                .totalTeams(12)
-                .maxHitPoints(220)
-                .initialRankings(initialRankings)
-                .completed(false)
-                .build();
-        season = seasonRepo.save(season);
-
-        // Create default contest
-        Contest contest = Contest.builder()
-                .seasonId(season.getId())
-                .name("Test Contest")
-                .slug("test-contest")
-                .build();
-        contest = contestRepo.save(contest);
-
-        season.setMainContestId(contest.getId());
-        season = seasonRepo.save(season);
-
-        // Create rounds
-        for (int i = 1; i <= 22; i++) {
-            Round round = Round.builder()
-                    .seasonId(season.getId())
-                    .position(i)
-                    .name("Round " + i)
-                    .build();
-            roundRepo.save(round);
-        }
-    }
-
-    @Test
-    @Transactional
-    @DisplayName("should seed complete season with real database")
-    void shouldSeedCompleteSeasonWithRealDatabase() {
-        // Act
-        Either<SeedingError, SeasonSeedResult> result = seedSeasonUseCase.execute();
-
-        // Assert - Success
-        assertThat(result.isRight()).isTrue();
-
-        SeasonSeedResult seedResult = result.get();
-        assertThat(seedResult.getSeason()).isNotNull();
-        assertThat(seedResult.getUsers()).hasSize(3);
-        assertThat(seedResult.getTotalRounds()).isEqualTo(22);
-
-        // Verify database state
-        List<Match> matches = matchRepo.findBySeasonId(season.getId());
-        assertThat(matches).isNotEmpty();
-        assertThat(matches).hasSizeBetween(100, 264); // At least some matches created
-
-        List<User> users = userRepo.findAll();
-        assertThat(users).hasSizeGreaterThanOrEqualTo(3);
-
-        List<SeasonPrediction> predictions = predictionRepo.findBySeasonId(season.getId());
-        assertThat(predictions).hasSize(3);
-
-        // Verify predictions have correct structure
-        predictions.forEach(prediction -> {
-            assertThat(prediction.getInitialRankings()).hasSize(12);
-            assertThat(prediction.getCurrentRankings()).hasSize(12);
-            assertThat(prediction.getAtRoundNumber()).isGreaterThan(0);
-        });
-    }
-
-    @Test
-    @Transactional
-    @DisplayName("should be idempotent - running twice doesn't duplicate data")
-    void shouldBeIdempotent() {
-        // Act - Run twice
-        Either<SeedingError, SeasonSeedResult> result1 = seedSeasonUseCase.execute();
-        Either<SeedingError, SeasonSeedResult> result2 = seedSeasonUseCase.execute();
-
-        // Assert - Both succeed
-        assertThat(result1.isRight()).isTrue();
-        assertThat(result2.isRight()).isTrue();
-
-        // Assert - No duplicate data
-        List<User> users = userRepo.findAll();
-        assertThat(users).hasSize(3); // Not duplicated
-
-        List<SeasonPrediction> predictions = predictionRepo.findBySeasonId(season.getId());
-        assertThat(predictions).hasSize(3); // Not duplicated
-    }
 
     @AfterAll
     void cleanup() {
-        // Clean up in reverse order of dependencies
-        predictionRepo.deleteAll();
-        matchRepo.deleteAll();
-        roundRepo.deleteAll();
-        contestRepo.deleteAll();
-        seasonRepo.deleteAll();
-        teamRepo.deleteAll();
-        competitionRepo.deleteAll();
-        userRepo.deleteAll();
+        PostgresTestDbCleaner.truncateAllDomainTables(jdbcTemplate);
+    }
+
+    @Test
+    @DisplayName("should seed season prerequisites")
+    void shouldSeedSeasonPrerequisites() {
+        Either<SeedingError, SeasonSeedResult> result = seedSeasonUseCase.execute();
+
+        assertThat(result.isRight()).isTrue();
+        assertThat(result.get().getSeason().getId()).isEqualTo(fixture.seasonId());
+        assertThat(result.get().getUsers()).hasSize(3);
+
+        assertThat(fixture.countMatchesForSeason()).isEqualTo(132);
+        assertThat(fixture.countPredictionsForSeason()).isEqualTo(3);
+        assertThat(fixture.countEntriesForContest()).isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("should be idempotent")
+    void shouldBeIdempotent() {
+        Either<SeedingError, SeasonSeedResult> r1 = seedSeasonUseCase.execute();
+        Either<SeedingError, SeasonSeedResult> r2 = seedSeasonUseCase.execute();
+
+        assertThat(r1.isRight()).isTrue();
+        assertThat(r2.isRight()).isTrue();
+
+        assertThat(fixture.countMatchesForSeason()).isEqualTo(132);
+        assertThat(fixture.countPredictionsForSeason()).isEqualTo(3);
+    }
+
+    /**
+     * Keeps the test body focused on Arrange/Act/Assert while still inserting real rows.
+     * This intentionally mirrors the structure in `.art/testing.md`.
+     */
+    private static final class SeedSeasonDbFixture {
+        private static final int TOTAL_TEAMS = 12;
+        private static final int TOTAL_ROUNDS = 22;
+        private static final String SEASON_SLUG = "2024-25";
+        private static final String COMPETITION_SLUG = "test-league";
+
+        private static final List<String> TEAM_CODES = List.of(
+            "MCI",
+            "ARS",
+            "LIV",
+            "AVL",
+            "CHE",
+            "NEW",
+            "MUN",
+            "TOT",
+            "BHA",
+            "CRY",
+            "BRE",
+            "WHU");
+
+        private static final List<String> DEMO_EMAILS = List.of(
+            "alice@demo.com",
+            "bob@demo.com",
+            "charlie@demo.com");
+
+        private final JdbcTemplate jdbc;
+
+        private final UUID competitionId;
+        private final UUID seasonId;
+        private final UUID contestId;
+        private final List<String> teamCodes;
+        private final List<String> demoEmails;
+
+        private SeedSeasonDbFixture(
+                JdbcTemplate jdbc,
+                UUID competitionId,
+                UUID seasonId,
+                UUID contestId,
+                List<String> teamCodes,
+                List<String> demoEmails) {
+            this.jdbc = jdbc;
+            this.competitionId = competitionId;
+            this.seasonId = seasonId;
+            this.contestId = contestId;
+            this.teamCodes = teamCodes;
+            this.demoEmails = demoEmails;
+        }
+
+        static SeedSeasonDbFixture create(JdbcTemplate jdbc) {
+            UUID competitionId = UUID.randomUUID();
+            UUID seasonId = UUID.randomUUID();
+            UUID contestId = UUID.randomUUID();
+
+            List<String> teamCodes = TEAM_CODES;
+            List<String> demoEmails = DEMO_EMAILS;
+
+            SeedSeasonDbFixture fixture = new SeedSeasonDbFixture(
+                    jdbc,
+                    competitionId,
+                    seasonId,
+                    contestId,
+                    teamCodes,
+                    demoEmails);
+
+            fixture.insertCompetition();
+            fixture.insertTeams();
+            fixture.insertSeason();
+            fixture.insertContest();
+            fixture.linkSeasonToContest();
+            fixture.insertRounds();
+            fixture.insertDemoUsers();
+
+            return fixture;
+        }
+
+        UUID seasonId() {
+            return seasonId;
+        }
+
+        SeedingConfig seedingConfig() {
+            SeedingConfig config = new SeedingConfig();
+            config.setCompetitionSlug(COMPETITION_SLUG);
+            config.setSeasonSlug(SEASON_SLUG);
+            config.setFinishedRounds(0);
+            config.setDemoUsers(demoEmails.stream().map(email -> {
+                SeedingConfig.DemoUser u = new SeedingConfig.DemoUser();
+                u.setEmail(email);
+                u.setDisplayName(email.split("@")[0]);
+                return u;
+            }).toList());
+            return config;
+        }
+
+        int countMatchesForSeason() {
+            Integer count = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM t_match m JOIN t_round r ON m.fk_round_id = r.pk_id WHERE r.fk_season_id = ?",
+                    Integer.class,
+                    seasonId);
+            return Objects.requireNonNull(count, "match count should be present");
+        }
+
+        int countPredictionsForSeason() {
+            Integer count = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM t_season_prediction WHERE fk_season_id = ?",
+                    Integer.class,
+                    seasonId);
+            return Objects.requireNonNull(count, "prediction count should be present");
+        }
+
+        int countEntriesForContest() {
+            Integer count = jdbc.queryForObject(
+                    "SELECT COUNT(*) FROM t_entry WHERE fk_contest_id = ?",
+                    Integer.class,
+                    contestId);
+            return Objects.requireNonNull(count, "entry count should be present");
+        }
+
+        private void insertCompetition() {
+            jdbc.update(
+                    "INSERT INTO t_competition (pk_id, c_name, c_slug, c_code, c_phases, fk_active_season_id) VALUES (?,?,?,?, '[]'::jsonb, ?)",
+                    competitionId,
+                    "Test League",
+                    COMPETITION_SLUG,
+                    "TST",
+                    null);
+        }
+
+        private void insertTeams() {
+            int teamClientIdBase = ThreadLocalRandom.current().nextInt(1_000, 1_000_000);
+            for (int i = 0; i < teamCodes.size(); i++) {
+                String code = teamCodes.get(i);
+                jdbc.update(
+                        "INSERT INTO t_team (pk_id, c_client_id, c_name, c_short_name, c_slug, c_tla) VALUES (?,?,?,?,?,?)",
+                        UUID.randomUUID(),
+                        teamClientIdBase + i,
+                        "Team " + code,
+                        code,
+                        "team-" + code.toLowerCase(),
+                        code);
+            }
+        }
+
+        private void insertSeason() {
+            int seasonClientId = ThreadLocalRandom.current().nextInt(1_000, 1_000_000);
+            jdbc.update(
+                    "INSERT INTO t_season (pk_id, c_client_id, fk_competition_id, c_name, c_slug, c_start_date, c_end_date, c_max_rounds, c_initial_rankings, c_completed, c_total_teams, c_max_hit_points, c_current_match_day) VALUES (?,?,?,?,?,?,?,?,?::jsonb,?,?,?,?)",
+                    seasonId,
+                    seasonClientId,
+                    competitionId,
+                    "Test Season",
+                    SEASON_SLUG,
+                    LocalDate.of(2024, 8, 1),
+                    LocalDate.of(2025, 5, 31),
+                    TOTAL_ROUNDS,
+                    initialRankingsJson(),
+                    false,
+                    TOTAL_TEAMS,
+                    220,
+                    0);
+        }
+
+        private void insertContest() {
+            jdbc.update(
+                    "INSERT INTO t_contest (pk_id, fk_season_id, c_name, c_is_private, c_join_code, c_from_round_position, c_to_round_position, c_max_entries) VALUES (?,?,?,?,?,?,?,?)",
+                    contestId,
+                    seasonId,
+                    "Main League",
+                    false,
+                    null,
+                    1,
+                    TOTAL_ROUNDS,
+                    null);
+        }
+
+        private void linkSeasonToContest() {
+            jdbc.update("UPDATE t_season SET fk_main_contest_id = ? WHERE pk_id = ?", contestId, seasonId);
+        }
+
+        private void insertRounds() {
+            for (int i = 1; i <= TOTAL_ROUNDS; i++) {
+                jdbc.update(
+                        "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_status) VALUES (?,?,?,?,?,?)",
+                        UUID.randomUUID(),
+                        seasonId,
+                        "Round " + i,
+                        "round-" + i,
+                        i,
+                        "OPEN");
+            }
+        }
+
+        private void insertDemoUsers() {
+            for (int i = 0; i < demoEmails.size(); i++) {
+                UUID userId = UUID.randomUUID();
+                String email = demoEmails.get(i);
+
+                jdbc.update(
+                        "INSERT INTO t_user (pk_id, c_email, c_password_hash, c_display_name, c_public_id, c_email_verified) VALUES (?,?,?,?,?,?)",
+                        userId,
+                        email,
+                        "test-password-hash",
+                        "Demo User " + (i + 1),
+                        randomPublicId(),
+                        true);
+
+                jdbc.update(
+                        "INSERT INTO t_user_role (fk_user_id, c_role) VALUES (?, ?)",
+                        userId,
+                        "PLAYER");
+            }
+        }
+
+        private String initialRankingsJson() {
+            StringBuilder rankingsJson = new StringBuilder("[");
+            for (int i = 0; i < teamCodes.size(); i++) {
+                if (i > 0) {
+                    rankingsJson.append(",");
+                }
+                rankingsJson.append("{\"code\":\"")
+                        .append(teamCodes.get(i))
+                        .append("\",\"position\":")
+                        .append(i + 1)
+                        .append("}");
+            }
+            rankingsJson.append("]");
+            return rankingsJson.toString();
+        }
+
+        private static String randomPublicId() {
+            // Must match model PublicId regex: ^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz]{10}$
+            String alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";
+            StringBuilder sb = new StringBuilder(10);
+            for (int i = 0; i < 10; i++) {
+                int idx = ThreadLocalRandom.current().nextInt(alphabet.length());
+                sb.append(alphabet.charAt(idx));
+            }
+            return sb.toString();
+        }
+
     }
 }

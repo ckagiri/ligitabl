@@ -1,6 +1,7 @@
 package com.ligitabl.api.usecases.prediction.seeding;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 import org.yaml.snakeyaml.Yaml;
@@ -14,8 +15,15 @@ import java.io.InputStream;
 @Slf4j
 public class SeedingConfigLoader {
 
+    private final String defaultConfigPath;
+
+    public SeedingConfigLoader(
+            @Value("${seeding.config:seeding-config.yaml}") String defaultConfigPath) {
+        this.defaultConfigPath = defaultConfigPath;
+    }
+
     public SeedingConfig loadConfig() {
-        return loadConfig("seeding-config.yaml");
+        return loadConfig(defaultConfigPath);
     }
 
     public SeedingConfig loadConfig(String path) {
