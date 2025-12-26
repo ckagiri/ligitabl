@@ -1,15 +1,14 @@
 package com.ligitabl.api.config;
 
+import java.time.Clock;
+
 import org.jooq.DSLContext;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.time.Clock;
-
 import com.ligitabl.model.domain.service.ScoringEngine;
 import com.ligitabl.model.domain.service.StandingsCalculator;
-
 import com.ligitabl.model.infra.CompetitionPersistenceAdapter;
 import com.ligitabl.model.infra.ContestPersistenceAdapter;
 import com.ligitabl.model.infra.EntryPersistenceAdapter;
@@ -39,8 +38,7 @@ import com.ligitabl.model.repo.UserRepo;
 public class RepositoryConfig {
     @Bean
     public CompetitionDefaults competitionDefaults(
-            @Value("${ligitabl.default-competition-slug:premier-league}") String defaultCompetitionSlug
-    ) {
+            @Value("${ligitabl.default-competition-slug:premier-league}") String defaultCompetitionSlug) {
         return new CompetitionDefaults(defaultCompetitionSlug);
     }
 

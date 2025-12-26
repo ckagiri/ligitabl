@@ -93,9 +93,7 @@ public class Match extends AbstractModel<UUID> {
     public Team getHomeTeam() {
         if (homeTeam == null) {
             throw new IllegalStateException(
-                    "Home team not loaded for match " + id +
-                            ". Use repository method that loads teams."
-            );
+                    "Home team not loaded for match " + id + ". Use repository method that loads teams.");
         }
         return homeTeam;
     }
@@ -106,9 +104,7 @@ public class Match extends AbstractModel<UUID> {
     public Team getAwayTeam() {
         if (awayTeam == null) {
             throw new IllegalStateException(
-                    "Away team not loaded for match " + id +
-                            ". Use repository method that loads teams."
-            );
+                    "Away team not loaded for match " + id + ". Use repository method that loads teams.");
         }
         return awayTeam;
     }

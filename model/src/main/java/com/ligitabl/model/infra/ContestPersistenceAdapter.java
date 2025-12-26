@@ -2,14 +2,16 @@ package com.ligitabl.model.infra;
 
 import static com.ligitabl.model.db.tables.TContest.T_CONTEST;
 
+import java.util.Optional;
+import java.util.UUID;
+
+import org.jooq.DSLContext;
+
 import com.ligitabl.model.db.tables.records.ContestRecord;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.repo.ContestRepo;
-import lombok.RequiredArgsConstructor;
-import org.jooq.DSLContext;
 
-import java.util.Optional;
-import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class ContestPersistenceAdapter implements ContestRepo {
@@ -18,9 +20,7 @@ public class ContestPersistenceAdapter implements ContestRepo {
 
     @Override
     public Optional<Contest> findById(UUID id) {
-        var record = dsl.selectFrom(T_CONTEST)
-                .where(T_CONTEST.PK_ID.eq(id))
-                .fetchOne();
+        var record = dsl.selectFrom(T_CONTEST).where(T_CONTEST.PK_ID.eq(id)).fetchOne();
 
         return Optional.ofNullable(map(record));
     }
@@ -57,7 +57,9 @@ public class ContestPersistenceAdapter implements ContestRepo {
     @Override
     public Optional<Contest> findDefaultContestBySeason(UUID seasonId) {
         var record = dsl.selectFrom(T_CONTEST)
-                .where(T_CONTEST.FK_SEASON_ID.eq(seasonId)
+                .where(T_CONTEST
+                        .FK_SEASON_ID
+                        .eq(seasonId)
                         .and(T_CONTEST.C_IS_PRIVATE.eq(false))
                         .and(T_CONTEST.C_FROM_ROUND_POSITION.eq(1)))
                 .fetchAny();

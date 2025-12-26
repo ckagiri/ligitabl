@@ -1,11 +1,11 @@
 package com.ligitabl.model.domain.service;
 
-import com.ligitabl.model.domain.*;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import com.ligitabl.model.domain.*;
 
 /**
  * Calculates league standings from match results.
@@ -20,17 +20,12 @@ public class StandingsCalculator {
      * @param initialRankings Initial team rankings (for team order)
      * @return Sorted standings
      */
-    public List<StandingsTeamRank> calculate(
-            List<Match> finishedMatches,
-            List<TeamRank> initialRankings
-    ) {
+    public List<StandingsTeamRank> calculate(List<Match> finishedMatches, List<TeamRank> initialRankings) {
         // Validate teams are loaded
         for (Match match : finishedMatches) {
             if (!match.hasTeamsLoaded()) {
-                throw new IllegalArgumentException(
-                        "Match " + match.getId() + " does not have teams loaded. " +
-                                "Use repository method that loads teams (e.g., findFinishedMatchesUpToRoundWithTeams)"
-                );
+                throw new IllegalArgumentException("Match " + match.getId() + " does not have teams loaded. "
+                        + "Use repository method that loads teams (e.g., findFinishedMatchesUpToRoundWithTeams)");
             }
         }
         // Build map of team stats
@@ -101,7 +96,7 @@ public class StandingsCalculator {
         for (int i = 0; i < statsList.size(); i++) {
             TeamStats stats = statsList.get(i);
 
-                StandingsTeamRank rank = StandingsTeamRank.builder()
+            StandingsTeamRank rank = StandingsTeamRank.builder()
                     .ranking(TeamRank.of(stats.teamCode, i + 1))
                     .metadata(new StandingsMetadata(
                             stats.played,
@@ -111,8 +106,7 @@ public class StandingsCalculator {
                             stats.points,
                             stats.goalsFor,
                             stats.goalsAgainst,
-                            stats.goalDifference
-                    ))
+                            stats.goalDifference))
                     .build();
 
             standings.add(rank);
@@ -171,8 +165,8 @@ public class StandingsCalculator {
             String homeCode = match.getHomeTeam().getTla();
             String awayCode = match.getAwayTeam().getTla();
 
-            boolean isH2H = (homeCode.equals(team1Code) && awayCode.equals(team2Code)) ||
-                    (homeCode.equals(team2Code) && awayCode.equals(team1Code));
+            boolean isH2H = (homeCode.equals(team1Code) && awayCode.equals(team2Code))
+                    || (homeCode.equals(team2Code) && awayCode.equals(team1Code));
 
             if (!isH2H) continue;
 
@@ -207,11 +201,7 @@ public class StandingsCalculator {
      * @param totalTeams Expected number of teams
      * @return true if valid
      */
-    public boolean validate(
-            List<StandingsTeamRank> standings,
-            List<Match> finishedMatches,
-            int totalTeams
-    ) {
+    public boolean validate(List<StandingsTeamRank> standings, List<Match> finishedMatches, int totalTeams) {
         if (standings.size() != totalTeams) {
             return false;
         }
@@ -239,9 +229,9 @@ public class StandingsCalculator {
             }
 
             // Validate wins + draws + losses = played
-            int total = rank.getMetadata().getWon() +
-                rank.getMetadata().getDrawn() +
-                rank.getMetadata().getLost();
+            int total = rank.getMetadata().getWon()
+                    + rank.getMetadata().getDrawn()
+                    + rank.getMetadata().getLost();
             if (total != actualPlayed) {
                 return false;
             }

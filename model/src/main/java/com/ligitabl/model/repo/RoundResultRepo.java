@@ -1,10 +1,10 @@
 package com.ligitabl.model.repo;
 
-import com.ligitabl.model.domain.RoundResult;
-
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import com.ligitabl.model.domain.RoundResult;
 
 public interface RoundResultRepo {
     RoundResult save(RoundResult result);

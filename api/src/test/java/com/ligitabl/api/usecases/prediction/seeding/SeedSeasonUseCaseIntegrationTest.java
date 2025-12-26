@@ -1,18 +1,19 @@
 package com.ligitabl.api.usecases.prediction.seeding;
 
-import com.ligitabl.api.shared.Either;
-import com.ligitabl.model.domain.*;
-import com.ligitabl.model.repo.*;
+import static org.assertj.core.api.Assertions.*;
+
+import java.time.LocalDate;
+import java.util.List;
+
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.util.List;
-
-import static org.assertj.core.api.Assertions.*;
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.model.domain.*;
+import com.ligitabl.model.repo.*;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -20,15 +21,32 @@ import static org.assertj.core.api.Assertions.*;
 @DisplayName("SeedSeasonUseCase Integration Tests")
 class SeedSeasonUseCaseIntegrationTest {
 
-    @Autowired private SeedSeasonUseCase seedSeasonUseCase;
-    @Autowired private CompetitionRepo competitionRepo;
-    @Autowired private SeasonRepo seasonRepo;
-    @Autowired private RoundRepo roundRepo;
-    @Autowired private TeamRepo teamRepo;
-    @Autowired private ContestRepo contestRepo;
-    @Autowired private MatchRepo matchRepo;
-    @Autowired private UserRepo userRepo;
-    @Autowired private SeasonPredictionRepo predictionRepo;
+    @Autowired
+    private SeedSeasonUseCase seedSeasonUseCase;
+
+    @Autowired
+    private CompetitionRepo competitionRepo;
+
+    @Autowired
+    private SeasonRepo seasonRepo;
+
+    @Autowired
+    private RoundRepo roundRepo;
+
+    @Autowired
+    private TeamRepo teamRepo;
+
+    @Autowired
+    private ContestRepo contestRepo;
+
+    @Autowired
+    private MatchRepo matchRepo;
+
+    @Autowired
+    private UserRepo userRepo;
+
+    @Autowired
+    private SeasonPredictionRepo predictionRepo;
 
     private Competition competition;
     private Season season;
@@ -44,8 +62,7 @@ class SeedSeasonUseCaseIntegrationTest {
         competition = competitionRepo.save(competition);
 
         // Create teams
-        String[] codes = {"MCI", "ARS", "LIV", "AVL", "CHE", "NEW",
-                "MUN", "TOT", "BHA", "CRY", "BRE", "WHU"};
+        String[] codes = {"MCI", "ARS", "LIV", "AVL", "CHE", "NEW", "MUN", "TOT", "BHA", "CRY", "BRE", "WHU"};
 
         for (int i = 0; i < codes.length; i++) {
             Team team = Team.builder()
@@ -64,8 +81,7 @@ class SeedSeasonUseCaseIntegrationTest {
                 new TeamRank("CHE", 5), new TeamRank("NEW", 6),
                 new TeamRank("MUN", 7), new TeamRank("TOT", 8),
                 new TeamRank("BHA", 9), new TeamRank("CRY", 10),
-                new TeamRank("BRE", 11), new TeamRank("WHU", 12)
-        );
+                new TeamRank("BRE", 11), new TeamRank("WHU", 12));
 
         season = Season.builder()
                 .name("Test Season 2024/25")

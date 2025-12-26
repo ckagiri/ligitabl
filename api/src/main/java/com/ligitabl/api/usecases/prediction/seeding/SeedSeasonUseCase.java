@@ -19,7 +19,6 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.Comparator;
 import java.util.*;
 
-// application/seeding/SeedSeasonUseCase.java
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -77,46 +76,43 @@ public class SeedSeasonUseCase {
     private Either<SeedingError, ValidationContext> validateWithCompetition(
             SeedingConfig config, Competition competition) {
         return findSeason(competition.getId(), config.getSeasonSlug())
-                .flatMap(season -> validateWithSeason(competition, season));
+                .flatMap(season -> validateWithSeason(config, competition, season));
     }
 
     private Either<SeedingError, ValidationContext> validateWithSeason(
-            Competition competition, Season season) {
+            SeedingConfig config, Competition competition, Season season) {
         return findRounds(season)
-                .flatMap(rounds -> findTeams(season)
-                        .flatMap(teams -> validateWithTeams(competition, season, rounds, teams)));
+                .flatMap(rounds -> validateWithRounds(config, competition, season, rounds));
     }
 
-    private Either<SeedingError, List<Round>> findRounds(Season season) {
-        List<Round> rounds = roundRepo.findBySeasonIdOrderByPosition(season.getId());
-
-        if (rounds.isEmpty()) {
-            return Either.left(new SeedingError.NoRoundsFound(season.getName()));
-        }
-
-        if (rounds.size() != season.getMaxRounds()) {
-            return Either.left(new SeedingError.RoundsNotFound(
-                    season.getName(),
-                    season.getMaxRounds(),
-                    rounds.size()
-            ));
-        }
-
-        return Either.right(rounds);
+    private Either<SeedingError, ValidationContext> validateWithRounds(
+            SeedingConfig config, Competition competition, Season season, List<Round> rounds) {
+        return findTeams(season)
+                .flatMap(teams -> validateWithTeams(config, competition, season, rounds, teams));
     }
 
     private Either<SeedingError, ValidationContext> validateWithTeams(
-            Competition competition, Season season, List<Round> rounds, List<Team> teams) {
+            SeedingConfig config, Competition competition, Season season, List<Round> rounds, List<Team> teams) {
         return findDefaultContest(season)
-                .map(defaultContest -> buildContext(competition, season, rounds, teams, defaultContest));
+                .flatMap(defaultContest -> validateWithContest(
+                        config, competition, season, rounds, teams, defaultContest));
     }
 
-    private ValidationContext buildContext(
+    private Either<SeedingError, ValidationContext> validateWithContest(
+            SeedingConfig config, Competition competition, Season season,
+            List<Round> rounds, List<Team> teams, Contest defaultContest) {
+        return findUsers(config)
+                .map(users ->
+        buildValidationContext(
+                        competition, season, rounds, teams, defaultContest, users));
+    }
+
+    private ValidationContext buildValidationContext(
             Competition competition, Season season, List<Round> rounds,
-            List<Team> teams, Contest defaultContest) {
-        log.info("Validation complete: competition={}, season={}, rounds={}, teams={}",
-                competition.getName(), season.getName(), rounds.size(), teams.size());
-        return new ValidationContext(competition, season, rounds, teams, defaultContest);
+            List<Team> teams, Contest defaultContest, List<User> users) {
+        log.info("Validation complete: competition={}, season={}, rounds={}, teams={}, users={}",
+                competition.getName(), season.getName(), rounds.size(), teams.size(), users.size());
+        return new ValidationContext(competition, season, rounds, teams, defaultContest, users);
     }
 
     private Either<SeedingError, Competition> findCompetition(String slug) {
@@ -148,6 +144,24 @@ public class SeedSeasonUseCase {
         return Either.right(teams);
     }
 
+    private Either<SeedingError, List<Round>> findRounds(Season season) {
+        List<Round> rounds = roundRepo.findBySeasonIdOrderByPosition(season.getId());
+
+        if (rounds.isEmpty()) {
+            return Either.left(new SeedingError.NoRoundsFound(season.getName()));
+        }
+
+        if (rounds.size() != season.getMaxRounds()) {
+            return Either.left(new SeedingError.RoundsNotFound(
+                    season.getName(),
+                    season.getMaxRounds(),
+                    rounds.size()
+            ));
+        }
+
+        return Either.right(rounds);
+    }
+
     private Either<SeedingError, Contest> findDefaultContest(Season season) {
         return contestRepo.findById(season.getMainContestId())
                 .map(Either::<SeedingError, Contest>right)
@@ -155,34 +169,33 @@ public class SeedSeasonUseCase {
     }
 
     private Either<SeedingError, SeasonSeedResult> seedAllData(
-            ValidationContext context,
+            ValidationContext ctx,
             SeedingConfig config,
             List<String> warnings
     ) {
         log.info("Found: competition={}, season={}, rounds={}, teams={}",
-                context.competition().getName(),
-                context.season().getName(),
-                context.rounds().size(),
-                context.teams().size()
+                ctx.competition().getName(),
+                ctx.season().getName(),
+                ctx.rounds().size(),
+                ctx.teams().size()
         );
 
-        int matchesSeeded = seedMatches(context.season(), context.rounds(), context.teams(), config);
-        List<User> users = findUsers(config);
+        int matchesSeeded = seedMatches(ctx.season(), ctx.rounds(), ctx.teams(), config);
         Map<UUID, SeasonPrediction> predictions = createPredictions(
-                users,
-                context.season(),
-                context.teams(),
-                context.defaultContest().getId()
+                ctx.users(),
+                ctx.season(),
+                ctx.teams(),
+                ctx.defaultContest().getId()
         );
-        int swapsSeeded = seedSwaps(predictions, context.rounds(), config);
+        int swapsSeeded = seedSwaps(predictions, ctx.rounds(), config);
 
-        return finalizeCompletedRounds(context.season(), context.rounds(), config, warnings)
+        return finalizeCompletedRounds(ctx.season(), ctx.rounds(), config, warnings)
                 .map(roundsFinalized -> new SeasonSeedResult(
-                        context.season(),
-                        users,
-                        context.defaultContest(),
+                        ctx.season(),
+                        ctx.users(),
+                        ctx.defaultContest(),
                         predictions,
-                        context.rounds().size(),
+                        ctx.rounds().size(),
                         matchesSeeded,
                         swapsSeeded,
                         roundsFinalized,
@@ -190,18 +203,26 @@ public class SeedSeasonUseCase {
                 ));
     }
 
-    private List<User> findUsers(SeedingConfig config) {
+    private Either<SeedingError, List<User>> findUsers(SeedingConfig config) {
         List<User> users = new ArrayList<>();
 
         for (SeedingConfig.DemoUser demoUser : config.getDemoUsers()) {
-            User user = userRepo.findByEmail(Email.create(demoUser.getEmail()))
-                    .orElseThrow();
+            Either<SeedingError, User> userResult =
+                    userRepo
+                            .findByEmail(Email.create(demoUser.getEmail()))
+                            .map(Either::<SeedingError, User>right)
+                            .orElse(Either.left(new SeedingError.UserNotFound(demoUser.getEmail())));
 
+            if (userResult.isLeft()) {
+                return Either.left(userResult.getLeft());
+            }
+
+            User user = userResult.get();
             users.add(user);
-            log.info("User ready: {}", user.getEmail());
+            log.info("User ready: {}", user.getEmail().value());
         }
 
-        return users;
+        return Either.right(users);
     }
 
     private int seedMatches(

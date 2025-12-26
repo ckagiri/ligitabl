@@ -1,15 +1,5 @@
 package com.ligitabl.api.usecases.prediction.makeswap;
 
-import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.model.SwapChange;
-import com.ligitabl.model.domain.*;
-import com.ligitabl.model.repo.RoundRepo;
-import com.ligitabl.model.repo.SeasonPredictionRepo;
-import com.ligitabl.model.repo.SeasonRepo;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
@@ -17,11 +7,23 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.stereotype.Component;
+
+import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.model.SwapChange;
+import com.ligitabl.model.domain.*;
+import com.ligitabl.model.repo.RoundRepo;
+import com.ligitabl.model.repo.SeasonPredictionRepo;
+import com.ligitabl.model.repo.SeasonRepo;
+
+import lombok.RequiredArgsConstructor;
+
 @Component
 @RequiredArgsConstructor
 public class MakeSwapUseCase {
 
-        private final CompetitionDefaults competitionDefaults;
+    private final CompetitionDefaults competitionDefaults;
     private final SeasonPredictionRepo predictionRepo;
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
@@ -30,49 +32,43 @@ public class MakeSwapUseCase {
     private static final Duration SWAP_COOLDOWN = Duration.ofHours(24);
 
     public Either<SwapError, SwapResult> execute(UUID userId, SwapCommand command) {
-        return getCurrentSeason()
-                .flatMap(season -> validateSeasonNotCompleted(season)
-                        .flatMap(__ -> getPrediction(userId, season.getId()))
-                        .flatMap(prediction -> validateSwapEligibility(prediction, season)
-                                .flatMap(__ -> validateTeams(command, season, prediction))
-                                .flatMap(teams -> performSwap(prediction, teams, season))));
+        return getCurrentSeason().flatMap(season -> validateSeasonNotCompleted(season)
+                .flatMap(__ -> getPrediction(userId, season.getId()))
+                .flatMap(prediction -> validateSwapEligibility(prediction, season)
+                        .flatMap(__ -> validateTeams(command, season, prediction))
+                        .flatMap(teams -> performSwap(prediction, teams, season))));
     }
 
     private Either<SwapError, Season> getCurrentSeason() {
-                return seasonRepo.findActiveSeason(competitionDefaults.defaultCompetitionSlug())
+        return seasonRepo
+                .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
                 .map(Either::<SwapError, Season>right)
                 .orElseGet(() -> Either.left(new SwapError.NoPredictionFound(null, null)));
     }
 
     private Either<SwapError, Void> validateSeasonNotCompleted(Season season) {
-        return season.isCompleted()
-                ? Either.left(new SwapError.SeasonCompleted())
-                : Either.right(null);
+        return season.isCompleted() ? Either.left(new SwapError.SeasonCompleted()) : Either.right(null);
     }
 
     private Either<SwapError, SeasonPrediction> getPrediction(UUID userId, UUID seasonId) {
-        return predictionRepo.findByUserAndSeason(userId, seasonId)
+        return predictionRepo
+                .findByUserAndSeason(userId, seasonId)
                 .map(Either::<SwapError, SeasonPrediction>right)
                 .orElseGet(() -> Either.left(new SwapError.NoPredictionFound(userId, seasonId)));
     }
 
-    private Either<SwapError, Void> validateSwapEligibility(
-            SeasonPrediction prediction,
-            Season season
-    ) {
-        return validateRoundStatus(season)
-                .flatMap(__ -> validateCooldown(prediction));
+    private Either<SwapError, Void> validateSwapEligibility(SeasonPrediction prediction, Season season) {
+        return validateRoundStatus(season).flatMap(__ -> validateCooldown(prediction));
     }
 
     private Either<SwapError, Void> validateRoundStatus(Season season) {
-        Round currentRound = roundRepo.findById(season.getCurrentRoundId())
+        Round currentRound = roundRepo
+                .findById(season.getCurrentRoundId())
                 .orElseThrow(() -> new IllegalStateException("Current round not found"));
 
         RoundStatus status = currentRound.getStatus();
 
-        return status == RoundStatus.OPEN
-                ? Either.right(null)
-                : Either.left(new SwapError.RoundNotOpen(status.name()));
+        return status == RoundStatus.OPEN ? Either.right(null) : Either.left(new SwapError.RoundNotOpen(status.name()));
     }
 
     private Either<SwapError, Void> validateCooldown(SeasonPrediction prediction) {
@@ -91,11 +87,7 @@ public class MakeSwapUseCase {
         return Either.right(null);
     }
 
-    private Either<SwapError, TeamPair> validateTeams(
-            SwapCommand request,
-            Season season,
-            SeasonPrediction prediction
-    ) {
+    private Either<SwapError, TeamPair> validateTeams(SwapCommand request, Season season, SeasonPrediction prediction) {
         // Find teams in current rankings
         TeamRank teamA = prediction.getCurrentRankings().stream()
                 .filter(t -> t.getCode().equals(request.teamACode()))
@@ -108,23 +100,15 @@ public class MakeSwapUseCase {
                 .orElse(null);
 
         if (teamA == null || teamB == null) {
-            return Either.left(new SwapError.TeamsNotFound(
-                    request.teamACode(),
-                    request.teamBCode()
-            ));
+            return Either.left(new SwapError.TeamsNotFound(request.teamACode(), request.teamBCode()));
         }
 
         return Either.right(new TeamPair(teamA, teamB));
     }
 
-    private Either<SwapError, SwapResult> performSwap(
-            SeasonPrediction prediction,
-            TeamPair teams,
-            Season season
-    ) {
+    private Either<SwapError, SwapResult> performSwap(SeasonPrediction prediction, TeamPair teams, Season season) {
         Instant now = clock.instant();
-        Round currentRound = roundRepo.findById(season.getCurrentRoundId())
-                .orElseThrow();
+        Round currentRound = roundRepo.findById(season.getCurrentRoundId()).orElseThrow();
 
         // Swap positions in current_rankings
         List<TeamRank> updatedRankings = new ArrayList<>(prediction.getCurrentRankings());
@@ -140,11 +124,9 @@ public class MakeSwapUseCase {
         // Build swap history entry
         SwapChange change = new SwapChange(
                 now,
-                String.format("%s:%d→%d", teams.teamA().getCode(),
-                        teams.teamA().getPosition(), newTeamA.getPosition()),
-                String.format("%s:%d→%d", teams.teamB().getCode(),
-                        teams.teamB().getPosition(), newTeamB.getPosition())
-        );
+                String.format("%s:%d→%d", teams.teamA().getCode(), teams.teamA().getPosition(), newTeamA.getPosition()),
+                String.format(
+                        "%s:%d→%d", teams.teamB().getCode(), teams.teamB().getPosition(), newTeamB.getPosition()));
 
         // Update prediction
         prediction.setCurrentRankings(updatedRankings);
@@ -157,12 +139,6 @@ public class MakeSwapUseCase {
         Instant nextSwapAt = now.plus(SWAP_COOLDOWN);
         double hoursUntilNext = 24.0;
 
-        return Either.right(new SwapResult(
-                true,
-                nextSwapAt,
-                hoursUntilNext,
-                saved
-        ));
+        return Either.right(new SwapResult(true, nextSwapAt, hoursUntilNext, saved));
     }
-
 }

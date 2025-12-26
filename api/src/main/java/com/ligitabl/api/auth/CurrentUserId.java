@@ -20,7 +20,9 @@ public class CurrentUserId {
 
     public UUID require() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || authentication.getName() == null || authentication.getName().isBlank()) {
+        if (authentication == null
+                || authentication.getName() == null
+                || authentication.getName().isBlank()) {
             throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthenticated");
         }
 

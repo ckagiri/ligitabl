@@ -9,5 +9,6 @@ public record ValidationContext(
         Season season,
         List<Round> rounds,
         List<Team> teams,
-        Contest defaultContest
+        Contest defaultContest,
+       List<User> users
 ) {}

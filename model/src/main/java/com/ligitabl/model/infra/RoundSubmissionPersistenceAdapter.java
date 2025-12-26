@@ -53,15 +53,12 @@ public class RoundSubmissionPersistenceAdapter implements RoundSubmissionRepo {
 
             if (inserted == 0) {
                 return findByUserAndSeasonAndRound(
-                        submission.getUserId(),
-                        submission.getSeasonId(),
-                        submission.getRoundPosition())
-                        .orElseThrow(() -> new NoSuchElementException(
-                                "RoundSubmission exists but could not be reloaded"));
+                                submission.getUserId(), submission.getSeasonId(), submission.getRoundPosition())
+                        .orElseThrow(
+                                () -> new NoSuchElementException("RoundSubmission exists but could not be reloaded"));
             }
 
-            return findById(id).orElseThrow(() -> new NoSuchElementException(
-                    "Failed to create round submission"));
+            return findById(id).orElseThrow(() -> new NoSuchElementException("Failed to create round submission"));
         }
 
         int updated = dsl.update(T_ROUND_SUBMISSION)
@@ -74,8 +71,7 @@ public class RoundSubmissionPersistenceAdapter implements RoundSubmissionRepo {
                 .execute();
 
         if (updated == 0) {
-            throw new NoSuchElementException(String.format(
-                    "RoundSubmission with id %s not found", submission.getId()));
+            throw new NoSuchElementException(String.format("RoundSubmission with id %s not found", submission.getId()));
         }
 
         return findById(submission.getId())
@@ -94,7 +90,9 @@ public class RoundSubmissionPersistenceAdapter implements RoundSubmissionRepo {
     @Override
     public Optional<RoundSubmission> findByUserAndSeasonAndRound(UUID userId, UUID seasonId, int roundPosition) {
         var record = dsl.selectFrom(T_ROUND_SUBMISSION)
-                .where(T_ROUND_SUBMISSION.FK_USER_ID.eq(userId)
+                .where(T_ROUND_SUBMISSION
+                        .FK_USER_ID
+                        .eq(userId)
                         .and(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId))
                         .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.eq(roundPosition)))
                 .fetchOne();
@@ -105,7 +103,9 @@ public class RoundSubmissionPersistenceAdapter implements RoundSubmissionRepo {
     @Override
     public List<RoundSubmission> findBySeasonAndRound(UUID seasonId, int roundPosition) {
         return dsl.selectFrom(T_ROUND_SUBMISSION)
-                .where(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId)
+                .where(T_ROUND_SUBMISSION
+                        .FK_SEASON_ID
+                        .eq(seasonId)
                         .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.eq(roundPosition)))
                 .fetch()
                 .map(MAPPER::map);

@@ -113,7 +113,8 @@ public class MatchPersistenceAdapter implements MatchRepo {
     public List<Match> findFinishedMatchesUpToRoundWithTeams(UUID seasonId, int roundPosition) {
         List<MatchRecord> records = dsl.select(T_MATCH.fields())
                 .from(T_MATCH)
-                .join(T_ROUND).on(T_MATCH.FK_ROUND_ID.eq(T_ROUND.PK_ID))
+                .join(T_ROUND)
+                .on(T_MATCH.FK_ROUND_ID.eq(T_ROUND.PK_ID))
                 .where(T_ROUND.FK_SEASON_ID.eq(seasonId))
                 .and(T_ROUND.C_POSITION.lessOrEqual(roundPosition))
                 .and(DSL.upper(T_MATCH.C_STATUS).eq(MatchStatus.FINISHED.name()))
@@ -243,21 +244,15 @@ public class MatchPersistenceAdapter implements MatchRepo {
     }
 
     @Override
-    public boolean existsBySeasonAndRoundAndTeams(
-            UUID seasonId,
-            UUID roundId,
-            UUID homeTeamId,
-            UUID awayTeamId
-    ) {
-        return dsl.fetchExists(
-                dsl.selectOne()
-                        .from(T_MATCH)
-                        .join(T_ROUND).on(T_MATCH.FK_ROUND_ID.eq(T_ROUND.PK_ID))
-                        .where(T_ROUND.FK_SEASON_ID.eq(seasonId))
-                        .and(T_MATCH.FK_ROUND_ID.eq(roundId))
-                        .and(T_MATCH.FK_HOME_TEAM_ID.eq(homeTeamId))
-                        .and(T_MATCH.FK_AWAY_TEAM_ID.eq(awayTeamId))
-        );
+    public boolean existsBySeasonAndRoundAndTeams(UUID seasonId, UUID roundId, UUID homeTeamId, UUID awayTeamId) {
+        return dsl.fetchExists(dsl.selectOne()
+                .from(T_MATCH)
+                .join(T_ROUND)
+                .on(T_MATCH.FK_ROUND_ID.eq(T_ROUND.PK_ID))
+                .where(T_ROUND.FK_SEASON_ID.eq(seasonId))
+                .and(T_MATCH.FK_ROUND_ID.eq(roundId))
+                .and(T_MATCH.FK_HOME_TEAM_ID.eq(homeTeamId))
+                .and(T_MATCH.FK_AWAY_TEAM_ID.eq(awayTeamId)));
     }
 
     private record MapTeams(Map<UUID, Team> byId) {}
@@ -267,9 +262,8 @@ public class MatchPersistenceAdapter implements MatchRepo {
             return new MapTeams(new HashMap<>());
         }
 
-        Map<UUID, Team> byId = dsl.selectFrom(T_TEAM)
-                .where(T_TEAM.PK_ID.in(teamIds))
-                .fetchMap(T_TEAM.PK_ID, this::mapTeam);
+        Map<UUID, Team> byId =
+                dsl.selectFrom(T_TEAM).where(T_TEAM.PK_ID.in(teamIds)).fetchMap(T_TEAM.PK_ID, this::mapTeam);
 
         return new MapTeams(byId);
     }

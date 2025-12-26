@@ -1,9 +1,16 @@
 package com.ligitabl.api.usecases.prediction.seeding;
 
-import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.usecases.prediction.finalizeround.FinalizeRoundUseCase;
-import com.ligitabl.model.domain.*;
-import com.ligitabl.model.repo.*;
+import static com.ligitabl.api.usecases.prediction.seeding.SeedingTestFixtures.*;
+import static org.assertj.core.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.*;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.util.*;
+import java.util.stream.Stream;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -17,35 +24,56 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.time.Clock;
-import java.time.Instant;
-import java.time.ZoneId;
-import java.util.*;
-import java.util.stream.Stream;
-
-import static com.ligitabl.api.usecases.prediction.seeding.SeedingTestFixtures.*;
-import static org.assertj.core.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.*;
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecases.prediction.finalizeround.FinalizeRoundUseCase;
+import com.ligitabl.model.domain.*;
+import com.ligitabl.model.repo.*;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("SeedSeasonUseCase")
 class SeedSeasonUseCaseTest {
 
-    @Mock private SeedingConfigLoader configLoader;
-    @Mock private CompetitionRepo competitionRepo;
-    @Mock private SeasonRepo seasonRepo;
-    @Mock private RoundRepo roundRepo;
-    @Mock private TeamRepo teamRepo;
-    @Mock private ContestRepo contestRepo;
-    @Mock private UserRepo userRepo;
-    @Mock private MatchRepo matchRepo;
-    @Mock private SeasonPredictionRepo predictionRepo;
-    @Mock private EntryRepo entryRepo;
-    @Mock private StandingsRepo standingsRepo;
-    @Mock private FinalizeRoundUseCase finalizeRoundUseCase;
-    @Mock private PasswordEncoder passwordEncoder;
-    @Mock private Clock clock;
+    @Mock
+    private SeedingConfigLoader configLoader;
+
+    @Mock
+    private CompetitionRepo competitionRepo;
+
+    @Mock
+    private SeasonRepo seasonRepo;
+
+    @Mock
+    private RoundRepo roundRepo;
+
+    @Mock
+    private TeamRepo teamRepo;
+
+    @Mock
+    private ContestRepo contestRepo;
+
+    @Mock
+    private UserRepo userRepo;
+
+    @Mock
+    private MatchRepo matchRepo;
+
+    @Mock
+    private SeasonPredictionRepo predictionRepo;
+
+    @Mock
+    private EntryRepo entryRepo;
+
+    @Mock
+    private StandingsRepo standingsRepo;
+
+    @Mock
+    private FinalizeRoundUseCase finalizeRoundUseCase;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
+    private Clock clock;
 
     @InjectMocks
     private SeedSeasonUseCase useCase;
@@ -157,8 +185,7 @@ class SeedSeasonUseCaseTest {
         void shouldFinalizeRounds() {
             // Arrange
             setupSuccessfulMocks();
-            when(finalizeRoundUseCase.execute(anyLong()))
-                    .thenReturn(Either.right(createFinalizationResult()));
+            when(finalizeRoundUseCase.execute(anyLong())).thenReturn(Either.right(createFinalizationResult()));
 
             // Act
             Either<SeedingError, SeasonSeedResult> result = useCase.execute();
@@ -208,8 +235,7 @@ class SeedSeasonUseCaseTest {
         @DisplayName("should fail when configuration cannot be loaded")
         void shouldFailOnConfigurationError() {
             // Arrange
-            when(configLoader.loadConfig())
-                    .thenThrow(new RuntimeException("YAML parse error"));
+            when(configLoader.loadConfig()).thenThrow(new RuntimeException("YAML parse error"));
 
             // Act
             Either<SeedingError, SeasonSeedResult> result = useCase.execute();
@@ -225,8 +251,7 @@ class SeedSeasonUseCaseTest {
         void shouldFailWhenCompetitionNotFound() {
             // Arrange
             when(configLoader.loadConfig()).thenReturn(validConfig);
-            when(competitionRepo.findBySlug("premier-league"))
-                    .thenReturn(Optional.empty());
+            when(competitionRepo.findBySlug("premier-league")).thenReturn(Optional.empty());
 
             // Act
             Either<SeedingError, SeasonSeedResult> result = useCase.execute();
@@ -244,10 +269,8 @@ class SeedSeasonUseCaseTest {
         void shouldFailWhenSeasonNotFound() {
             // Arrange
             when(configLoader.loadConfig()).thenReturn(validConfig);
-            when(competitionRepo.findBySlug("premier-league"))
-                    .thenReturn(Optional.of(competition));
-            when(seasonRepo.findBySlug("2024-25"))
-                    .thenReturn(Optional.empty());
+            when(competitionRepo.findBySlug("premier-league")).thenReturn(Optional.of(competition));
+            when(seasonRepo.findBySlug("2024-25")).thenReturn(Optional.empty());
 
             // Act
             Either<SeedingError, SeasonSeedResult> result = useCase.execute();
@@ -309,10 +332,7 @@ class SeedSeasonUseCaseTest {
         @MethodSource("provideErrorScenarios")
         @DisplayName("should handle various error scenarios correctly")
         void shouldHandleErrorScenarios(
-                String scenario,
-                MockSetup mockSetup,
-                Class<? extends SeedingError> expectedErrorType
-        ) {
+                String scenario, MockSetup mockSetup, Class<? extends SeedingError> expectedErrorType) {
             // Arrange
             mockSetup.setup(SeedSeasonUseCaseTest.this);
 
@@ -320,9 +340,7 @@ class SeedSeasonUseCaseTest {
             Either<SeedingError, SeasonSeedResult> result = useCase.execute();
 
             // Assert
-            assertThat(result.isLeft())
-                    .as("Scenario: %s should fail", scenario)
-                    .isTrue();
+            assertThat(result.isLeft()).as("Scenario: %s should fail", scenario).isTrue();
             assertThat(result.getLeft())
                     .as("Scenario: %s should return correct error type", scenario)
                     .isInstanceOf(expectedErrorType);
@@ -332,10 +350,9 @@ class SeedSeasonUseCaseTest {
             return Stream.of(
                     Arguments.of(
                             "Config loading fails",
-                            (MockSetup) test -> when(test.configLoader.loadConfig())
-                                    .thenThrow(new RuntimeException("Parse error")),
-                            SeedingError.ConfigurationError.class
-                    ),
+                            (MockSetup) test ->
+                                    when(test.configLoader.loadConfig()).thenThrow(new RuntimeException("Parse error")),
+                            SeedingError.ConfigurationError.class),
                     Arguments.of(
                             "Competition not found",
                             (MockSetup) test -> {
@@ -343,33 +360,27 @@ class SeedSeasonUseCaseTest {
                                 when(test.competitionRepo.findBySlug(anyString()))
                                         .thenReturn(Optional.empty());
                             },
-                            SeedingError.CompetitionNotFound.class
-                    ),
+                            SeedingError.CompetitionNotFound.class),
                     Arguments.of(
                             "Season not found",
                             (MockSetup) test -> {
                                 when(test.configLoader.loadConfig()).thenReturn(test.validConfig);
                                 when(test.competitionRepo.findBySlug(anyString()))
                                         .thenReturn(Optional.of(test.competition));
-                                when(test.seasonRepo.findBySlug(anyString()))
-                                        .thenReturn(Optional.empty());
+                                when(test.seasonRepo.findBySlug(anyString())).thenReturn(Optional.empty());
                             },
-                            SeedingError.SeasonNotFound.class
-                    ),
+                            SeedingError.SeasonNotFound.class),
                     Arguments.of(
                             "No rounds found",
                             (MockSetup) test -> {
                                 when(test.configLoader.loadConfig()).thenReturn(test.validConfig);
                                 when(test.competitionRepo.findBySlug(anyString()))
                                         .thenReturn(Optional.of(test.competition));
-                                when(test.seasonRepo.findBySlug(anyString()))
-                                        .thenReturn(Optional.of(test.season));
+                                when(test.seasonRepo.findBySlug(anyString())).thenReturn(Optional.of(test.season));
                                 when(test.roundRepo.findBySeasonIdOrderByPosition(anyLong()))
                                         .thenReturn(Collections.emptyList());
                             },
-                            SeedingError.NoRoundsFound.class
-                    )
-            );
+                            SeedingError.NoRoundsFound.class));
         }
 
         @FunctionalInterface
@@ -386,16 +397,14 @@ class SeedSeasonUseCaseTest {
         when(matchRepo.existsBySeasonAndRoundAndTeams(anyLong(), anyLong(), anyLong(), anyLong()))
                 .thenReturn(false);
         when(userRepo.findByEmail(anyString())).thenReturn(Optional.empty());
-        when(predictionRepo.findByUserAndSeason(anyLong(), anyLong()))
-                .thenReturn(Optional.empty());
+        when(predictionRepo.findByUserAndSeason(anyLong(), anyLong())).thenReturn(Optional.empty());
         when(predictionRepo.save(any(SeasonPrediction.class))).thenAnswer(inv -> inv.getArgument(0));
         when(entryRepo.save(any(Entry.class))).thenAnswer(inv -> inv.getArgument(0));
         when(matchRepo.save(any(Match.class))).thenAnswer(inv -> inv.getArgument(0));
         when(matchRepo.findByRoundId(anyLong())).thenReturn(createMatches());
         when(standingsRepo.findBySeasonAndRoundPosition(anyLong(), anyInt()))
                 .thenReturn(Optional.of(createStandings()));
-        when(finalizeRoundUseCase.execute(anyLong()))
-                .thenReturn(Either.right(createFinalizationResult()));
+        when(finalizeRoundUseCase.execute(anyLong())).thenReturn(Either.right(createFinalizationResult()));
         when(passwordEncoder.encode(anyString())).thenReturn("encoded-password");
     }
 

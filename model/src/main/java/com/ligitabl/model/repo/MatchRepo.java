@@ -38,10 +38,5 @@ public interface MatchRepo {
     // Lightweight methods (no teams loaded)
     List<Match> findByRoundId(Long roundId);
 
-    boolean existsBySeasonAndRoundAndTeams(
-            UUID seasonId,
-            UUID roundId,
-            UUID homeTeamId,
-            UUID awayTeamId
-    );
+    boolean existsBySeasonAndRoundAndTeams(UUID seasonId, UUID roundId, UUID homeTeamId, UUID awayTeamId);
 }

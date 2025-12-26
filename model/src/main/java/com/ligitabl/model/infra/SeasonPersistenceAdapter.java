@@ -1,7 +1,7 @@
 package com.ligitabl.model.infra;
 
-import static com.ligitabl.model.db.tables.TSeason.T_SEASON;
 import static com.ligitabl.model.db.tables.TCompetition.T_COMPETITION;
+import static com.ligitabl.model.db.tables.TSeason.T_SEASON;
 
 import java.io.IOException;
 import java.util.List;
@@ -50,7 +50,9 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
                 .set(T_SEASON.C_CLIENT_ID, season.getClientId())
                 .set(T_SEASON.FK_COMPETITION_ID, season.getCompetitionId())
                 .set(T_SEASON.C_NAME, season.getName())
-                .set(T_SEASON.C_SLUG, season.getSlug() == null ? null : season.getSlug().value())
+                .set(
+                        T_SEASON.C_SLUG,
+                        season.getSlug() == null ? null : season.getSlug().value())
                 .set(T_SEASON.C_START_DATE, season.getStartDate())
                 .set(T_SEASON.C_END_DATE, season.getEndDate())
                 .set(T_SEASON.C_MAX_ROUNDS, season.getMaxRounds())
@@ -69,8 +71,7 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
             throw new NoSuchElementException(String.format("Season with id %s not found", season.getId()));
         }
 
-        return findById(season.getId()).orElseThrow(() ->
-                new NoSuchElementException("Season not found after save"));
+        return findById(season.getId()).orElseThrow(() -> new NoSuchElementException("Season not found after save"));
     }
 
     @Override
@@ -83,8 +84,7 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
                 .from(T_SEASON)
                 .join(T_COMPETITION)
                 .on(T_SEASON.FK_COMPETITION_ID.eq(T_COMPETITION.PK_ID))
-                .where(T_COMPETITION.C_SLUG.eq(competitionSlug)
-                        .and(T_SEASON.C_COMPLETED.eq(false)))
+                .where(T_COMPETITION.C_SLUG.eq(competitionSlug).and(T_SEASON.C_COMPLETED.eq(false)))
                 .orderBy(T_SEASON.C_START_DATE.desc())
                 .limit(1)
                 .fetchOneInto(SeasonRecord.class);

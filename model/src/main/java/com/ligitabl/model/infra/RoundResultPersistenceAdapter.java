@@ -73,9 +73,11 @@ public class RoundResultPersistenceAdapter implements RoundResultRepo {
                 .from(T_ROUND_RESULT)
                 .join(T_ROUND_SUBMISSION)
                 .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
-                .where(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId)
+                .where(T_ROUND_SUBMISSION
+                        .FK_SEASON_ID
+                        .eq(seasonId)
                         .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.between(fromRound, toRound)))
-            .fetchInto(RoundResultRecord.class);
+                .fetchInto(RoundResultRecord.class);
 
         return records.stream().map(MAPPER::map).toList();
     }

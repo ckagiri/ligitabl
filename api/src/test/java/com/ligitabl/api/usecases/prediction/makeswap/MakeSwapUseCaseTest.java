@@ -1,20 +1,9 @@
 package com.ligitabl.api.usecases.prediction.makeswap;
 
-import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.RoundStatus;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.SeasonPrediction;
-import com.ligitabl.model.domain.TeamRank;
-import com.ligitabl.model.repo.RoundRepo;
-import com.ligitabl.model.repo.SeasonPredictionRepo;
-import com.ligitabl.model.repo.SeasonRepo;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
+import static org.mockito.Mockito.*;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -24,19 +13,39 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.argThat;
-import static org.mockito.Mockito.*;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.domain.RoundStatus;
+import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.SeasonPrediction;
+import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.repo.RoundRepo;
+import com.ligitabl.model.repo.SeasonPredictionRepo;
+import com.ligitabl.model.repo.SeasonRepo;
 
 @ExtendWith(MockitoExtension.class)
 class MakeSwapUseCaseTest {
 
-        private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
-    @Mock private SeasonPredictionRepo predictionRepo;
-    @Mock private SeasonRepo seasonRepo;
-    @Mock private RoundRepo roundRepo;
-    @Mock private Clock clock;
+    private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
+
+    @Mock
+    private SeasonPredictionRepo predictionRepo;
+
+    @Mock
+    private SeasonRepo seasonRepo;
+
+    @Mock
+    private RoundRepo roundRepo;
+
+    @Mock
+    private Clock clock;
 
     private MakeSwapUseCase useCase;
 
@@ -61,13 +70,7 @@ class MakeSwapUseCaseTest {
         round = createRound(RoundStatus.OPEN, 10);
         prediction = createPrediction();
 
-        useCase = new MakeSwapUseCase(
-                competitionDefaults,
-                predictionRepo,
-                seasonRepo,
-                roundRepo,
-                clock
-        );
+        useCase = new MakeSwapUseCase(competitionDefaults, predictionRepo, seasonRepo, roundRepo, clock);
     }
 
     @Test
@@ -77,10 +80,8 @@ class MakeSwapUseCaseTest {
         when(clock.instant()).thenReturn(now);
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
-        when(predictionRepo.findByUserAndSeason(userId, season.getId()))
-                .thenReturn(Optional.of(prediction));
-        when(roundRepo.findById(season.getCurrentRoundId()))
-                .thenReturn(Optional.of(round));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(predictionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
         Either<SwapError, SwapResult> result = useCase.execute(userId, command);
@@ -90,12 +91,13 @@ class MakeSwapUseCaseTest {
         assertTrue(swapResult.success());
         assertEquals(now.plus(Duration.ofHours(24)), swapResult.nextSwapAt());
 
-        verify(predictionRepo).save(argThat(p ->
-                now.equals(p.getLastSwapAt()) &&
-                        p.getAtRoundNumber() == round.getPosition() &&
-                        p.getCurrentRankings().stream().anyMatch(tr -> tr.getCode().equals("ARS") && tr.getPosition() == 2) &&
-                        p.getCurrentRankings().stream().anyMatch(tr -> tr.getCode().equals("LIV") && tr.getPosition() == 1)
-        ));
+        verify(predictionRepo)
+                .save(argThat(p -> now.equals(p.getLastSwapAt())
+                        && p.getAtRoundNumber() == round.getPosition()
+                        && p.getCurrentRankings().stream()
+                                .anyMatch(tr -> tr.getCode().equals("ARS") && tr.getPosition() == 2)
+                        && p.getCurrentRankings().stream()
+                                .anyMatch(tr -> tr.getCode().equals("LIV") && tr.getPosition() == 1)));
     }
 
     @Test
@@ -106,10 +108,8 @@ class MakeSwapUseCaseTest {
         when(clock.instant()).thenReturn(now);
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
-        when(predictionRepo.findByUserAndSeason(userId, season.getId()))
-                .thenReturn(Optional.of(prediction));
-        when(roundRepo.findById(season.getCurrentRoundId()))
-                .thenReturn(Optional.of(round));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
 
         Either<SwapError, SwapResult> result = useCase.execute(userId, command);
 
@@ -124,10 +124,8 @@ class MakeSwapUseCaseTest {
         SwapCommand command = new SwapCommand("ARS", "LIV");
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
-        when(predictionRepo.findByUserAndSeason(userId, season.getId()))
-                .thenReturn(Optional.of(prediction));
-        when(roundRepo.findById(season.getCurrentRoundId()))
-                .thenReturn(Optional.of(round));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
 
         Either<SwapError, SwapResult> result = useCase.execute(userId, command);
 
@@ -156,11 +154,7 @@ class MakeSwapUseCaseTest {
     }
 
     private SeasonPrediction createPrediction() {
-        List<TeamRank> rankings = List.of(
-                TeamRank.of("ARS", 1),
-                TeamRank.of("LIV", 2),
-                TeamRank.of("MCI", 3)
-        );
+        List<TeamRank> rankings = List.of(TeamRank.of("ARS", 1), TeamRank.of("LIV", 2), TeamRank.of("MCI", 3));
 
         return SeasonPrediction.builder()
                 .id(UUID.randomUUID())

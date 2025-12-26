@@ -1,7 +1,23 @@
 package com.ligitabl.api.usecases.contest.joincontest;
 
-import com.ligitabl.api.shared.Either;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.*;
+
+import java.time.Clock;
+import java.time.Instant;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundStatus;
@@ -14,33 +30,32 @@ import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.TeamRepo;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.Clock;
-import java.time.Instant;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 class JoinContestUseCaseTest {
 
     private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
-    @Mock private SeasonRepo seasonRepo;
-    @Mock private RoundRepo roundRepo;
-    @Mock private TeamRepo teamRepo;
-    @Mock private ContestRepo contestRepo;
-    @Mock private SeasonPredictionRepo predictionRepo;
-    @Mock private EntryRepo entryRepo;
-    @Mock private Clock clock;
+
+    @Mock
+    private SeasonRepo seasonRepo;
+
+    @Mock
+    private RoundRepo roundRepo;
+
+    @Mock
+    private TeamRepo teamRepo;
+
+    @Mock
+    private ContestRepo contestRepo;
+
+    @Mock
+    private SeasonPredictionRepo predictionRepo;
+
+    @Mock
+    private EntryRepo entryRepo;
+
+    @Mock
+    private Clock clock;
 
     private JoinContestUseCase useCase;
 
@@ -68,15 +83,7 @@ class JoinContestUseCaseTest {
         defaultContest = createDefaultContest();
 
         useCase = new JoinContestUseCase(
-            competitionDefaults,
-            seasonRepo,
-            roundRepo,
-            teamRepo,
-            contestRepo,
-            predictionRepo,
-            entryRepo,
-            clock
-        );
+                competitionDefaults, seasonRepo, roundRepo, teamRepo, contestRepo, predictionRepo, entryRepo, clock);
     }
 
     @Test
@@ -153,15 +160,14 @@ class JoinContestUseCaseTest {
 
         assertTrue(result.isLeft());
         assertInstanceOf(JoinContestError.AlreadyJoined.class, result.getLeft());
-        assertEquals(existingPrediction.getId(), ((JoinContestError.AlreadyJoined) result.getLeft()).existingPredictionId());
+        assertEquals(
+                existingPrediction.getId(), ((JoinContestError.AlreadyJoined) result.getLeft()).existingPredictionId());
     }
 
     @Test
     void shouldReject_whenInvalidTeamCount() {
         JoinContestRequest request = new JoinContestRequest(List.of(
-                new JoinContestRequest.TeamRankRequest("ARS", 1),
-                new JoinContestRequest.TeamRankRequest("LIV", 2)
-        ));
+                new JoinContestRequest.TeamRankRequest("ARS", 1), new JoinContestRequest.TeamRankRequest("LIV", 2)));
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
@@ -177,8 +183,7 @@ class JoinContestUseCaseTest {
         JoinContestRequest request = new JoinContestRequest(List.of(
                 new JoinContestRequest.TeamRankRequest("XXX", 1),
                 new JoinContestRequest.TeamRankRequest("ARS", 2),
-                new JoinContestRequest.TeamRankRequest("LIV", 3)
-        ));
+                new JoinContestRequest.TeamRankRequest("LIV", 3)));
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
@@ -208,11 +213,7 @@ class JoinContestUseCaseTest {
     }
 
     private Season createSeason() {
-        List<TeamRank> initialRankings = List.of(
-                TeamRank.of("ARS", 1),
-                TeamRank.of("LIV", 2),
-                TeamRank.of("MCI", 3)
-        );
+        List<TeamRank> initialRankings = List.of(TeamRank.of("ARS", 1), TeamRank.of("LIV", 2), TeamRank.of("MCI", 3));
 
         return Season.builder()
                 .id(seasonId)
@@ -253,7 +254,6 @@ class JoinContestUseCaseTest {
         return new JoinContestRequest(List.of(
                 new JoinContestRequest.TeamRankRequest("ARS", 1),
                 new JoinContestRequest.TeamRankRequest("LIV", 2),
-                new JoinContestRequest.TeamRankRequest("MCI", 3)
-        ));
+                new JoinContestRequest.TeamRankRequest("MCI", 3)));
     }
 }

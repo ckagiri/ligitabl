@@ -1,13 +1,13 @@
 package com.ligitabl.api.usecases.prediction.seeding;
 
-import com.ligitabl.api.usecases.prediction.finalizeround.FinalizationResult;
-import com.ligitabl.model.SwapChange;
-import com.ligitabl.model.domain.*;
-
 import java.time.Instant;
 import java.time.LocalDate;
 import java.util.*;
 import java.util.stream.IntStream;
+
+import com.ligitabl.api.usecases.prediction.finalizeround.FinalizationResult;
+import com.ligitabl.model.SwapChange;
+import com.ligitabl.model.domain.*;
 
 public class SeedingTestFixtures {
 
@@ -20,8 +20,7 @@ public class SeedingTestFixtures {
         List<SeedingConfig.DemoUser> users = List.of(
                 createDemoUser("alice@demo.com", "Alice Wonder"),
                 createDemoUser("bob@demo.com", "Bob Builder"),
-                createDemoUser("charlie@demo.com", "Charlie Brown")
-        );
+                createDemoUser("charlie@demo.com", "Charlie Brown"));
         config.setDemoUsers(users);
 
         return config;
@@ -99,15 +98,8 @@ public class SeedingTestFixtures {
 
     public static List<Match> createMatches() {
         return List.of(
-                Match.builder()
-                        .id(1L)
-                        .kickOff(Instant.now().plusSeconds(3600))
-                        .build(),
-                Match.builder()
-                        .id(2L)
-                        .kickOff(Instant.now().plusSeconds(7200))
-                        .build()
-        );
+                Match.builder().id(1L).kickOff(Instant.now().plusSeconds(3600)).build(),
+                Match.builder().id(2L).kickOff(Instant.now().plusSeconds(7200)).build());
     }
 
     public static Standings createStandings() {
@@ -131,33 +123,35 @@ public class SeedingTestFixtures {
     public static List<SwapChange> createSwapChanges() {
         return List.of(
                 new SwapChange(Instant.now(), "MCI:1→2", "ARS:2→1"),
-                new SwapChange(Instant.now().plusSeconds(86400), "LIV:3→4", "AVL:4→3")
-        );
+                new SwapChange(Instant.now().plusSeconds(86400), "LIV:3→4", "AVL:4→3"));
     }
 
     public static FinalizationResult createFinalizationResult() {
-        return new FinalizationResult(
-                1L,
-                1,
-                10,
-                10,
-                false,
-                Instant.now()
-        );
+        return new FinalizationResult(1L, 1, 10, 10, false, Instant.now());
     }
 
     // Helper methods
 
     private static String getTeamName(int index) {
-        String[] names = {"Manchester City", "Arsenal", "Liverpool", "Aston Villa",
-                "Chelsea", "Newcastle", "Manchester United", "Tottenham",
-                "Brighton", "Crystal Palace", "Brentford", "West Ham"};
+        String[] names = {
+            "Manchester City",
+            "Arsenal",
+            "Liverpool",
+            "Aston Villa",
+            "Chelsea",
+            "Newcastle",
+            "Manchester United",
+            "Tottenham",
+            "Brighton",
+            "Crystal Palace",
+            "Brentford",
+            "West Ham"
+        };
         return names[index % names.length];
     }
 
     private static String getTeamCode(int index) {
-        String[] codes = {"MCI", "ARS", "LIV", "AVL", "CHE", "NEW",
-                "MUN", "TOT", "BHA", "CRY", "BRE", "WHU"};
+        String[] codes = {"MCI", "ARS", "LIV", "AVL", "CHE", "NEW", "MUN", "TOT", "BHA", "CRY", "BRE", "WHU"};
         return codes[index % codes.length];
     }
 

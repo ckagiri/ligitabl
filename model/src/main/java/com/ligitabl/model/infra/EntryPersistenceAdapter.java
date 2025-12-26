@@ -2,16 +2,18 @@ package com.ligitabl.model.infra;
 
 import static com.ligitabl.model.db.tables.TEntry.T_ENTRY;
 
-import com.ligitabl.model.db.tables.records.EntryRecord;
-import com.ligitabl.model.domain.Entry;
-import com.ligitabl.model.repo.EntryRepo;
-import lombok.RequiredArgsConstructor;
-import org.jooq.DSLContext;
-
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import org.jooq.DSLContext;
+
+import com.ligitabl.model.db.tables.records.EntryRecord;
+import com.ligitabl.model.domain.Entry;
+import com.ligitabl.model.repo.EntryRepo;
+
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class EntryPersistenceAdapter implements EntryRepo {
@@ -44,8 +46,7 @@ public class EntryPersistenceAdapter implements EntryRepo {
     @Override
     public Optional<Entry> findByUserAndContest(UUID userId, UUID contestId) {
         var record = dsl.selectFrom(T_ENTRY)
-                .where(T_ENTRY.FK_USER_ID.eq(userId)
-                        .and(T_ENTRY.FK_CONTEST_ID.eq(contestId)))
+                .where(T_ENTRY.FK_USER_ID.eq(userId).and(T_ENTRY.FK_CONTEST_ID.eq(contestId)))
                 .fetchOne();
 
         return Optional.ofNullable(map(record));
@@ -81,8 +82,6 @@ public class EntryPersistenceAdapter implements EntryRepo {
     }
 
     private static UUID syntheticId(UUID userId, UUID contestId) {
-        return UUID.nameUUIDFromBytes(
-                ("entry:" + userId + ":" + contestId).getBytes(StandardCharsets.UTF_8)
-        );
+        return UUID.nameUUIDFromBytes(("entry:" + userId + ":" + contestId).getBytes(StandardCharsets.UTF_8));
     }
 }

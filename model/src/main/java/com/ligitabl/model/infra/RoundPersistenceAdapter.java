@@ -24,9 +24,7 @@ public class RoundPersistenceAdapter implements RoundRepo {
 
     @Override
     public Optional<Round> findById(UUID id) {
-        var record = dsl.selectFrom(T_ROUND)
-                .where(T_ROUND.PK_ID.eq(id))
-                .fetchOne();
+        var record = dsl.selectFrom(T_ROUND).where(T_ROUND.PK_ID.eq(id)).fetchOne();
 
         return Optional.ofNullable(MAPPER.map(record));
     }

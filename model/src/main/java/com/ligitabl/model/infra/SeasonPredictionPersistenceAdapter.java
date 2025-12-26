@@ -2,6 +2,16 @@ package com.ligitabl.model.infra;
 
 import static com.ligitabl.model.db.tables.TSeasonPrediction.T_SEASON_PREDICTION;
 
+import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.jooq.DSLContext;
+import org.jooq.JSONB;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,16 +20,8 @@ import com.ligitabl.model.domain.RoundSwap;
 import com.ligitabl.model.domain.SeasonPrediction;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
-import lombok.RequiredArgsConstructor;
-import org.jooq.DSLContext;
-import org.jooq.JSONB;
 
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public class SeasonPredictionPersistenceAdapter implements SeasonPredictionRepo {
@@ -34,8 +36,7 @@ public class SeasonPredictionPersistenceAdapter implements SeasonPredictionRepo 
     @Override
     public Optional<SeasonPrediction> findByUserAndSeason(UUID userId, UUID seasonId) {
         var record = dsl.selectFrom(T_SEASON_PREDICTION)
-                .where(T_SEASON_PREDICTION.FK_USER_ID.eq(userId)
-                        .and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId)))
+                .where(T_SEASON_PREDICTION.FK_USER_ID.eq(userId).and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId)))
                 .fetchOne();
 
         return Optional.ofNullable(map(record));
@@ -44,7 +45,9 @@ public class SeasonPredictionPersistenceAdapter implements SeasonPredictionRepo 
     @Override
     public List<SeasonPrediction> findBySeasonAndAtRoundNumberLessThanEqual(UUID seasonId, int roundNumber) {
         return dsl.selectFrom(T_SEASON_PREDICTION)
-                .where(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId)
+                .where(T_SEASON_PREDICTION
+                        .FK_SEASON_ID
+                        .eq(seasonId)
                         .and(T_SEASON_PREDICTION.C_AT_ROUND_NUMBER.le(roundNumber)))
                 .fetch()
                 .map(this::map);

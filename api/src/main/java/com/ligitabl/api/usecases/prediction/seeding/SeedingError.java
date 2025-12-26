@@ -6,6 +6,12 @@ import java.util.UUID;
  * Errors that can occur during season seeding.
  */
 public sealed interface SeedingError {
+    record UserNotFound(String email) implements SeedingError {
+        @Override
+        public String message() {
+            return String.format("User not found: '%s'. Please create demo users first.", email);
+        }
+    }
 
     record CompetitionNotFound(String slug) implements SeedingError {
         @Override
