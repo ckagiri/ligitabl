@@ -13,7 +13,6 @@ import java.time.Clock;
 import java.util.*;
 import java.util.stream.Collectors;
 
-// application/usecase/JoinContestUseCase.java
 @Component
 @RequiredArgsConstructor
 @Slf4j
@@ -22,7 +21,6 @@ public class JoinContestUseCase {
         private final CompetitionDefaults competitionDefaults;
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
-    private final TeamRepo teamRepo;
     private final ContestRepo contestRepo;
     private final SeasonPredictionRepo predictionRepo;
     private final EntryRepo entryRepo;

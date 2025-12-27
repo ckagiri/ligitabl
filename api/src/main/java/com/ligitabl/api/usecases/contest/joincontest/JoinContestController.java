@@ -14,7 +14,6 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.Map;
 import java.util.UUID;
 
-// interfaces/rest/ContestController.java
 @RestController
 @RequestMapping("/api/contest")
 @RequiredArgsConstructor

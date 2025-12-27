@@ -2,9 +2,6 @@ package com.ligitabl.api.usecases.prediction.seeding;
 
 import java.util.UUID;
 
-/**
- * Errors that can occur during season seeding.
- */
 public sealed interface SeedingError {
     record UserNotFound(String email) implements SeedingError {
         @Override

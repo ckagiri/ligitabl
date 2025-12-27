@@ -4,7 +4,6 @@ import lombok.Data;
 
 import java.util.List;
 
-// application/seeding/SeedingConfig.java
 @Data
 public class SeedingConfig {
     private String competitionSlug;

@@ -109,9 +109,6 @@ public class Match extends AbstractModel<UUID> {
         return awayTeam;
     }
 
-    /**
-     * Checks if teams are loaded.
-     */
     public boolean hasTeamsLoaded() {
         return homeTeam != null && awayTeam != null;
     }

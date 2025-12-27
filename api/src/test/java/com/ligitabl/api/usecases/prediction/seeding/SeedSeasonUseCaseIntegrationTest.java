@@ -49,7 +49,6 @@ class SeedSeasonUseCaseIntegrationTest extends AbstractPostgresIT {
 
     @BeforeAll
     void setupPrerequisites() {
-        // Keep fixed, readable test data (like .art/testing.md) while still ensuring we start from a clean DB.
         PostgresTestDbCleaner.truncateAllDomainTables(jdbcTemplate);
 
         fixture = SeedSeasonDbFixture.create(jdbcTemplate);
@@ -99,7 +98,6 @@ class SeedSeasonUseCaseIntegrationTest extends AbstractPostgresIT {
 
     /**
      * Keeps the test body focused on Arrange/Act/Assert while still inserting real rows.
-     * This intentionally mirrors the structure in `.art/testing.md`.
      */
     private static final class SeedSeasonDbFixture {
         private static final int TOTAL_TEAMS = 12;

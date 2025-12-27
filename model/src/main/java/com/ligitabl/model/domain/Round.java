@@ -57,7 +57,7 @@ public class Round extends AbstractModel<UUID> {
             }
         }
 
-        // FINALISED: No blocking statuses present
+        // FINALISED: No Scheduled + No blocking statuses present
         // Allows: all FINISHED, all POSTPONED, mix of FINISHED+POSTPONED
         if (!hasScheduled && !hasLive && !hasSuspended && !hasCancelled) {
             return RoundStatus.FINALISED;

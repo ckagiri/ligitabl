@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 import java.io.IOException;
 import java.io.InputStream;
 
-// application/seeding/SeedingConfigLoader.java
 @Component
 @Slf4j
 public class SeedingConfigLoader {
