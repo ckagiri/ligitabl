@@ -55,15 +55,15 @@ class SeedSeasonUseCaseIntegrationTest extends AbstractPostgresIT {
         fixture = SeedSeasonDbFixture.create(jdbcTemplate);
     }
 
-        @BeforeEach
-        void setupMocks() {
+    @BeforeEach
+    void setupMocks() {
         // @MockBean mocks are reset between test methods.
         when(configLoader.loadConfig()).thenReturn(fixture.seedingConfig());
         when(finalizeRoundUseCase.execute(any(UUID.class)))
             .thenReturn(
                 Either.right(
                     new FinalizationResult(UUID.randomUUID(), 1, 0, 0, false, Instant.now())));
-        }
+    }
 
     @AfterAll
     void cleanup() {
@@ -71,8 +71,8 @@ class SeedSeasonUseCaseIntegrationTest extends AbstractPostgresIT {
     }
 
     @Test
-    @DisplayName("should seed season prerequisites")
-    void shouldSeedSeasonPrerequisites() {
+    @DisplayName("should seed season successfully")
+    void shouldSeedSeasonSuccessfully() {
         Either<SeedingError, SeasonSeedResult> result = seedSeasonUseCase.execute();
 
         assertThat(result.isRight()).isTrue();
@@ -85,8 +85,8 @@ class SeedSeasonUseCaseIntegrationTest extends AbstractPostgresIT {
     }
 
     @Test
-    @DisplayName("should be idempotent")
-    void shouldBeIdempotent() {
+    @DisplayName("should be idempotent when called twice")
+    void shouldBeIdempotentWhenCalledTwice() {
         Either<SeedingError, SeasonSeedResult> r1 = seedSeasonUseCase.execute();
         Either<SeedingError, SeasonSeedResult> r2 = seedSeasonUseCase.execute();
 

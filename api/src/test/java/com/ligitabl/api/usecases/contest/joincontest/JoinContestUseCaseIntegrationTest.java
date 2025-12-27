@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -98,6 +99,8 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         now = Instant.parse("2024-12-22T10:00:00Z");
         when(clock.instant()).thenReturn(now);
 
+        resetToRound1Open();
+
         userId = UUID.randomUUID();
         insertUser(userId, "join-user-" + userId + "@example.com");
     }
@@ -112,8 +115,43 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
     class SuccessCases {
 
         @Test
-        @DisplayName("should join contest and create prediction + entry with real database")
-        void shouldJoinContest() {
+        @DisplayName("should join contest successfully with valid rankings")
+        void shouldJoinContestSuccessfullyWithValidRankings() {
+            JoinContestRequest request = validRequestFromInitialRankings();
+
+            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
+
+            assertThat(result.isRight()).isTrue();
+            JoinContestResult joinResult = result.get();
+            assertThat(joinResult.predictionId()).isNotNull();
+            assertThat(joinResult.entryId()).isNotNull();
+            assertThat(joinResult.atRoundNumber()).isEqualTo(1);
+            assertThat(joinResult.message()).contains("Welcome");
+            assertThat(joinResult.message()).contains("Round 1");
+
+            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId);
+            assertThat(prediction).isPresent();
+            assertThat(prediction.get().getId()).isEqualTo(joinResult.predictionId());
+            assertThat(prediction.get().getUserId()).isEqualTo(userId);
+            assertThat(prediction.get().getSeasonId()).isEqualTo(seasonId);
+            assertThat(prediction.get().getInitialRankings()).hasSize(12);
+            assertThat(prediction.get().getCurrentRankings()).hasSize(12);
+            assertThat(prediction.get().getInitialRankings()).isEqualTo(prediction.get().getCurrentRankings());
+            assertThat(prediction.get().getSwaps()).isEmpty();
+            assertThat(prediction.get().getLastSwapAt()).isNull();
+            assertThat(prediction.get().getAtRoundNumber()).isEqualTo(joinResult.atRoundNumber());
+
+            var entry = entryRepo.findByUserAndContest(userId, contestId);
+            assertThat(entry).isPresent();
+            assertThat(entry.get().getId()).isEqualTo(joinResult.entryId());
+            assertThat(entry.get().getUserId()).isEqualTo(userId);
+            assertThat(entry.get().getContestId()).isEqualTo(contestId);
+        }
+
+        @Test
+        @DisplayName("should set at_round_number to current round when round is OPEN")
+        void shouldSetAtRoundNumberToCurrentWhenOpen() {
+            updateCurrentRoundStatus(RoundStatus.OPEN);
             JoinContestRequest request = validRequestFromInitialRankings();
 
             Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
@@ -121,12 +159,66 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().atRoundNumber()).isEqualTo(1);
 
-            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId);
-            assertThat(prediction).isPresent();
+            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            assertThat(prediction.getAtRoundNumber()).isEqualTo(1);
+        }
 
-            var entry = entryRepo.findByUserAndContest(userId, contestId);
-            assertThat(entry).isPresent();
-            assertThat(entry.get().getId()).isEqualTo(result.get().entryId());
+        @Test
+        @DisplayName("should set at_round_number to next round when round is LOCKED")
+        void shouldSetAtRoundNumberToNextWhenLocked() {
+            updateCurrentRoundStatus(RoundStatus.LOCKED);
+            JoinContestRequest request = validRequestFromInitialRankings();
+
+            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
+
+            assertThat(result.isRight()).isTrue();
+            assertThat(result.get().atRoundNumber()).isEqualTo(2);
+            assertThat(result.get().message()).contains("Round 2");
+
+            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            assertThat(prediction.getAtRoundNumber()).isEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("should set at_round_number to next round when round is FINALISED")
+        void shouldSetAtRoundNumberToNextWhenFinalised() {
+            updateCurrentRoundStatus(RoundStatus.FINALISED);
+            JoinContestRequest request = validRequestFromInitialRankings();
+
+            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
+
+            assertThat(result.isRight()).isTrue();
+            assertThat(result.get().atRoundNumber()).isEqualTo(2);
+
+            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            assertThat(prediction.getAtRoundNumber()).isEqualTo(2);
+        }
+
+        @Test
+        @DisplayName("should accept any ranking order (no strategic validation)")
+        void shouldAcceptAnyRankingOrder() {
+            JoinContestRequest request = new JoinContestRequest(List.of(
+                    new JoinContestRequest.TeamRankRequest("WHU", 1),
+                    new JoinContestRequest.TeamRankRequest("BRE", 2),
+                    new JoinContestRequest.TeamRankRequest("CRY", 3),
+                    new JoinContestRequest.TeamRankRequest("BHA", 4),
+                    new JoinContestRequest.TeamRankRequest("TOT", 5),
+                    new JoinContestRequest.TeamRankRequest("MUN", 6),
+                    new JoinContestRequest.TeamRankRequest("NEW", 7),
+                    new JoinContestRequest.TeamRankRequest("CHE", 8),
+                    new JoinContestRequest.TeamRankRequest("AVL", 9),
+                    new JoinContestRequest.TeamRankRequest("LIV", 10),
+                    new JoinContestRequest.TeamRankRequest("ARS", 11),
+                    new JoinContestRequest.TeamRankRequest("MCI", 12)));
+
+            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
+
+            assertThat(result.isRight()).isTrue();
+
+            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            TeamRank first = prediction.getCurrentRankings().getFirst();
+            assertThat(first.getCode()).isEqualTo("WHU");
+            assertThat(first.getPosition()).isEqualTo(1);
         }
     }
 
@@ -162,6 +254,68 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(JoinContestError.InvalidTeamCodes.class);
+        }
+
+        @Test
+        @DisplayName("should reject when duplicate positions")
+        void shouldRejectWhenDuplicatePositions() {
+            List<JoinContestRequest.TeamRankRequest> rankings = INITIAL_RANKINGS.stream()
+                    .map(tr -> new JoinContestRequest.TeamRankRequest(tr.getCode(), tr.getPosition()))
+                    .toList();
+
+            rankings = new ArrayList<>(rankings);
+            rankings.set(0, new JoinContestRequest.TeamRankRequest("MCI", 1));
+            rankings.set(1, new JoinContestRequest.TeamRankRequest("ARS", 1));
+
+            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, new JoinContestRequest(rankings));
+
+            assertThat(result.isLeft()).isTrue();
+            assertThat(result.getLeft()).isInstanceOf(JoinContestError.DuplicatePositions.class);
+            assertThat(((JoinContestError.DuplicatePositions) result.getLeft()).duplicates()).contains(1);
+        }
+
+        @Test
+        @DisplayName("should reject when duplicate team codes")
+        void shouldRejectWhenDuplicateTeamCodes() {
+            List<JoinContestRequest.TeamRankRequest> rankings = INITIAL_RANKINGS.stream()
+                    .map(tr -> new JoinContestRequest.TeamRankRequest(tr.getCode(), tr.getPosition()))
+                    .toList();
+
+            rankings = new ArrayList<>(rankings);
+            rankings.set(0, new JoinContestRequest.TeamRankRequest("MCI", 1));
+            rankings.set(1, new JoinContestRequest.TeamRankRequest("MCI", 2));
+
+            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, new JoinContestRequest(rankings));
+
+            assertThat(result.isLeft()).isTrue();
+            assertThat(result.getLeft()).isInstanceOf(JoinContestError.DuplicateTeamCodes.class);
+            assertThat(((JoinContestError.DuplicateTeamCodes) result.getLeft()).duplicates()).contains("MCI");
+        }
+
+        @Test
+        @DisplayName("should reject when season ended (cannot join last round if not OPEN)")
+        void shouldRejectWhenSeasonEnded() {
+            setCurrentRoundTo(22, RoundStatus.LOCKED);
+            setSeasonCurrentRound(roundId, 22);
+
+            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, validRequestFromInitialRankings());
+
+            assertThat(result.isLeft()).isTrue();
+            assertThat(result.getLeft()).isInstanceOf(JoinContestError.SeasonEnded.class);
+            assertThat(((JoinContestError.SeasonEnded) result.getLeft()).currentRound()).isEqualTo(22);
+            assertThat(((JoinContestError.SeasonEnded) result.getLeft()).maxRounds()).isEqualTo(22);
+        }
+
+        @Test
+        @DisplayName("should allow joining last round if it is OPEN")
+        void shouldAllowJoiningLastRoundIfOpen() {
+            setCurrentRoundTo(22, RoundStatus.OPEN);
+            setSeasonCurrentRound(roundId, 22);
+
+            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, validRequestFromInitialRankings());
+
+            assertThat(result.isRight()).isTrue();
+            assertThat(result.get().atRoundNumber()).isEqualTo(22);
         }
 
         @Test
@@ -241,6 +395,36 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
                 "round-" + position,
                 position,
                 status.name());
+    }
+
+    private void updateCurrentRoundStatus(RoundStatus status) {
+        jdbcTemplate.update(
+                "UPDATE t_round SET c_status = ? WHERE pk_id = ?",
+                status.name(),
+                roundId);
+    }
+
+    private void setCurrentRoundTo(int position, RoundStatus status) {
+        jdbcTemplate.update(
+                "UPDATE t_round SET c_name = ?, c_slug = ?, c_position = ?, c_status = ? WHERE pk_id = ?",
+                "Round " + position,
+                "round-" + position,
+                position,
+                status.name(),
+                roundId);
+    }
+
+    private void resetToRound1Open() {
+        setCurrentRoundTo(1, RoundStatus.OPEN);
+        setSeasonCurrentRound(roundId, 1);
+    }
+
+    private void setSeasonCurrentRound(UUID currentRoundId, int matchDay) {
+        jdbcTemplate.update(
+                "UPDATE t_season SET fk_current_round_id = ?, c_current_match_day = ? WHERE pk_id = ?",
+                currentRoundId,
+                matchDay,
+                seasonId);
     }
 
     private void insertUser(UUID id, String email) {

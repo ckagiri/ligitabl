@@ -1,12 +1,14 @@
 package com.ligitabl.api.usecases.prediction.makeswap;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.offset;
 import static org.mockito.Mockito.when;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,7 +27,9 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.model.domain.RoundStatus;
+import com.ligitabl.model.domain.RoundSwap;
 import com.ligitabl.model.domain.SeasonPrediction;
+import com.ligitabl.model.domain.SwapChange;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 
@@ -106,8 +110,12 @@ class MakeSwapUseCaseIntegrationTest extends AbstractPostgresIT {
     class SuccessCases {
 
         @Test
-        @DisplayName("should swap successfully with real database")
-        void shouldSwapSuccessfully() {
+        @DisplayName("should allow first swap immediately")
+        void shouldAllowFirstSwapImmediately() {
+            SeasonPrediction beforeSwap = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            assertThat(beforeSwap.getLastSwapAt()).isNull();
+            assertThat(beforeSwap.getSwaps()).isEmpty();
+
             SwapCommand command = new SwapCommand("ARS", "LIV");
 
             Either<SwapError, SwapResult> result = useCase.execute(userId, command);
@@ -115,6 +123,8 @@ class MakeSwapUseCaseIntegrationTest extends AbstractPostgresIT {
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().success()).isTrue();
             assertThat(result.get().nextSwapAt()).isEqualTo(now.plus(Duration.ofHours(24)));
+            assertThat(result.get().hoursUntilNext()).isEqualTo(24.0);
+            assertThat(result.get().updatedPrediction()).isNotNull();
 
             SeasonPrediction persisted = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
 
@@ -125,6 +135,34 @@ class MakeSwapUseCaseIntegrationTest extends AbstractPostgresIT {
             assertThat(liv.getPosition()).isEqualTo(2);
             assertThat(persisted.getLastSwapAt()).isEqualTo(now);
             assertThat(persisted.getAtRoundNumber()).isEqualTo(10);
+
+            assertThat(persisted.getSwaps()).hasSize(1);
+            RoundSwap roundSwap = persisted.getSwaps().get(0);
+            assertThat(roundSwap.getRound()).isEqualTo(10);
+            assertThat(roundSwap.getChanges()).hasSize(1);
+            SwapChange change = roundSwap.getChanges().get(0);
+            assertThat(change.timestamp()).isEqualTo(now);
+            assertThat(change.teamA()).isEqualTo("ARS:2→3");
+            assertThat(change.teamB()).isEqualTo("LIV:3→2");
+        }
+
+        @Test
+        @DisplayName("should allow swap after cooldown expires")
+        void shouldAllowSwapAfterCooldownExpires() {
+            Either<SwapError, SwapResult> first = useCase.execute(userId, new SwapCommand("ARS", "LIV"));
+            assertThat(first.isRight()).isTrue();
+
+            SeasonPrediction afterFirst = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            afterFirst.setLastSwapAt(now.minus(Duration.ofHours(24)));
+            predictionRepo.save(afterFirst);
+
+            Either<SwapError, SwapResult> second = useCase.execute(userId, new SwapCommand("MCI", "CHE"));
+            assertThat(second.isRight()).isTrue();
+
+            SeasonPrediction persisted = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            assertThat(persisted.getSwaps()).hasSize(1);
+            assertThat(persisted.getSwaps().get(0).getRound()).isEqualTo(10);
+            assertThat(persisted.getSwaps().get(0).getChanges()).hasSize(2);
         }
     }
 
@@ -143,6 +181,10 @@ class MakeSwapUseCaseIntegrationTest extends AbstractPostgresIT {
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(SwapError.CooldownActive.class);
+
+            SwapError.CooldownActive cooldownActive = (SwapError.CooldownActive) result.getLeft();
+            assertThat(cooldownActive.nextSwapAt()).isEqualTo(now.plus(Duration.ofHours(1)));
+            assertThat(cooldownActive.hoursRemaining()).isCloseTo(1.0, offset(0.01));
         }
 
         @Test
@@ -162,10 +204,57 @@ class MakeSwapUseCaseIntegrationTest extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject swap when teams not found")
         void shouldRejectWhenTeamsNotFound() {
-            Either<SwapError, SwapResult> result = useCase.execute(userId, new SwapCommand("XXX", "LIV"));
+            // Use valid team codes, but remove one from the user's current rankings
+            SeasonPrediction prediction = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            List<TeamRank> withoutArs = new ArrayList<>(prediction.getCurrentRankings().stream()
+                    .filter(t -> !t.getCode().equals("ARS"))
+                    .toList());
+            prediction.setCurrentRankings(withoutArs);
+            predictionRepo.save(prediction);
+
+            Either<SwapError, SwapResult> result = useCase.execute(userId, new SwapCommand("ARS", "LIV"));
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(SwapError.TeamsNotFound.class);
+        }
+
+        @Test
+        @DisplayName("should reject swap when team code invalid")
+        void shouldRejectWhenTeamCodeInvalid() {
+            Either<SwapError, SwapResult> result = useCase.execute(userId, new SwapCommand("INVALID", "LIV"));
+
+            assertThat(result.isLeft()).isTrue();
+            assertThat(result.getLeft()).isInstanceOf(SwapError.InvalidTeamCode.class);
+
+            SwapError.InvalidTeamCode error = (SwapError.InvalidTeamCode) result.getLeft();
+            assertThat(error.code()).isEqualTo("INVALID");
+        }
+
+        @Test
+        @DisplayName("should reject swap when no prediction exists")
+        void shouldRejectWhenNoPredictionExists() {
+            UUID otherUserId = UUID.randomUUID();
+            insertUser(otherUserId, "no-prediction-user@example.com");
+
+            Either<SwapError, SwapResult> result = useCase.execute(otherUserId, new SwapCommand("ARS", "LIV"));
+
+            assertThat(result.isLeft()).isTrue();
+            assertThat(result.getLeft()).isInstanceOf(SwapError.NoPredictionFound.class);
+
+            SwapError.NoPredictionFound error = (SwapError.NoPredictionFound) result.getLeft();
+            assertThat(error.userId()).isEqualTo(otherUserId);
+            assertThat(error.seasonId()).isEqualTo(seasonId);
+        }
+
+        @Test
+        @DisplayName("should reject swap when season completed")
+        void shouldRejectWhenSeasonCompleted() {
+            jdbcTemplate.update("UPDATE t_season SET c_completed = true WHERE pk_id = ?", seasonId);
+
+            Either<SwapError, SwapResult> result = useCase.execute(userId, new SwapCommand("ARS", "LIV"));
+
+            assertThat(result.isLeft()).isTrue();
+            assertThat(result.getLeft()).isInstanceOf(SwapError.SeasonCompleted.class);
         }
     }
 
@@ -175,9 +264,9 @@ class MakeSwapUseCaseIntegrationTest extends AbstractPostgresIT {
                 "INSERT INTO t_competition (pk_id, c_name, c_slug, c_code, c_phases, fk_active_season_id) VALUES (?,?,?,?, '[]'::jsonb, ?)",
                 competitionId,
                 "Premier League",
-            competitionSlug,
+                competitionSlug,
                 "PL",
-                null);
+                seasonId);
 
         jdbcTemplate.update(
                 "INSERT INTO t_season (pk_id, c_client_id, fk_competition_id, c_name, c_slug, c_start_date, c_end_date, c_max_rounds, c_total_teams, c_initial_rankings, c_completed, fk_current_round_id, c_current_match_day) VALUES (?,?,?,?,?,?,?,?,?,?::jsonb,?,?,?)",

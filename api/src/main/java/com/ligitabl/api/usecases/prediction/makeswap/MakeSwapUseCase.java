@@ -5,7 +5,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
@@ -41,7 +43,7 @@ public class MakeSwapUseCase {
 
     private Either<SwapError, Season> getCurrentSeason() {
         return seasonRepo
-                .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
+            .findMostRecentSeason(competitionDefaults.defaultCompetitionSlug())
                 .map(Either::<SwapError, Season>right)
                 .orElseGet(() -> Either.left(new SwapError.NoPredictionFound(null, null)));
     }
@@ -88,19 +90,37 @@ public class MakeSwapUseCase {
     }
 
     private Either<SwapError, TeamPair> validateTeams(SwapCommand request, Season season, SeasonPrediction prediction) {
+        String teamACode = request.teamACode().toUpperCase();
+        String teamBCode = request.teamBCode().toUpperCase();
+
+        List<TeamRank> initialRankings = season.getInitialRankings() != null
+            ? season.getInitialRankings()
+            : prediction.getInitialRankings();
+
+        Set<String> validCodes = initialRankings == null
+            ? Set.of()
+            : initialRankings.stream().map(TeamRank::getCode).collect(Collectors.toSet());
+
+        if (!validCodes.contains(teamACode)) {
+            return Either.left(new SwapError.InvalidTeamCode(teamACode));
+        }
+        if (!validCodes.contains(teamBCode)) {
+            return Either.left(new SwapError.InvalidTeamCode(teamBCode));
+        }
+
         // Find teams in current rankings
         TeamRank teamA = prediction.getCurrentRankings().stream()
-                .filter(t -> t.getCode().equals(request.teamACode()))
+            .filter(t -> t.getCode().equals(teamACode))
                 .findFirst()
                 .orElse(null);
 
         TeamRank teamB = prediction.getCurrentRankings().stream()
-                .filter(t -> t.getCode().equals(request.teamBCode()))
+            .filter(t -> t.getCode().equals(teamBCode))
                 .findFirst()
                 .orElse(null);
 
         if (teamA == null || teamB == null) {
-            return Either.left(new SwapError.TeamsNotFound(request.teamACode(), request.teamBCode()));
+            return Either.left(new SwapError.TeamsNotFound(teamACode, teamBCode));
         }
 
         return Either.right(new TeamPair(teamA, teamB));

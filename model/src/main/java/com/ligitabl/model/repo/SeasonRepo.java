@@ -14,6 +14,12 @@ public interface SeasonRepo {
 
     Optional<Season> findActiveSeason(String competitionSlug);
 
+    /**
+     * Returns the most recent season for a competition, regardless of completion status.
+     * Useful for use cases that need to surface "season completed" rather than "not found".
+     */
+    Optional<Season> findMostRecentSeason(String competitionSlug);
+
     List<Season> findAllByCompetitionId(UUID competitionId);
 
     Optional<Season> findByCompetitionIdAndSlug(UUID competitionId, SeasonSlug slug);
