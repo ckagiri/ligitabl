@@ -31,7 +31,7 @@ public class JoinContestUseCase {
     @Transactional
     public Either<JoinContestError, JoinContestResult> execute(
             UUID userId,
-            JoinContestRequest request
+            JoinContestCommand request
     ) {
         log.info("User {} attempting to join contest", userId);
 
@@ -74,7 +74,7 @@ public class JoinContestUseCase {
 
     // Step 4: Validate rankings structure
     private Either<JoinContestError, List<TeamRank>> validateRankings(
-            JoinContestRequest request,
+            JoinContestCommand request,
             Season season
     ) {
         return validateTeamCount(request, season)
@@ -85,7 +85,7 @@ public class JoinContestUseCase {
     }
 
     private Either<JoinContestError, Void> validateTeamCount(
-            JoinContestRequest request,
+            JoinContestCommand request,
             Season season
     ) {
         int provided = request.rankings().size();
@@ -98,10 +98,10 @@ public class JoinContestUseCase {
     }
 
     private Either<JoinContestError, Void> validateNoDuplicatePositions(
-            JoinContestRequest request
+            JoinContestCommand request
     ) {
         List<Integer> positions = request.rankings().stream()
-                .map(JoinContestRequest.TeamRankRequest::position)
+                .map(JoinContestCommand.TeamRankRequest::position)
                 .toList();
 
         List<Integer> duplicates = positions.stream()
@@ -116,10 +116,10 @@ public class JoinContestUseCase {
     }
 
     private Either<JoinContestError, Void> validateNoDuplicateCodes(
-            JoinContestRequest request
+            JoinContestCommand request
     ) {
         List<String> codes = request.rankings().stream()
-                .map(JoinContestRequest.TeamRankRequest::code)
+                .map(JoinContestCommand.TeamRankRequest::code)
                 .map(String::toUpperCase)
                 .toList();
 
@@ -135,11 +135,11 @@ public class JoinContestUseCase {
     }
 
     private Either<JoinContestError, Void> validateTeamCodesExist(
-            JoinContestRequest request,
+            JoinContestCommand request,
             Season season
     ) {
         List<String> requestedCodes = request.rankings().stream()
-                .map(JoinContestRequest.TeamRankRequest::code)
+                .map(JoinContestCommand.TeamRankRequest::code)
                 .map(String::toUpperCase)
                 .toList();
 
@@ -159,7 +159,7 @@ public class JoinContestUseCase {
         return Either.right(null);
     }
 
-    private List<TeamRank> convertToTeamRanks(JoinContestRequest request) {
+    private List<TeamRank> convertToTeamRanks(JoinContestCommand request) {
         return request.rankings().stream()
                 .map(r -> new TeamRank(r.code().toUpperCase(), r.position()))
                 .sorted(Comparator.comparingInt(TeamRank::getPosition))

@@ -26,7 +26,7 @@ public class JoinContestController {
 
     @PostMapping("/join")
     public ResponseEntity<?> joinContest(
-            @RequestBody @Valid JoinContestRequest request
+            @RequestBody @Valid JoinContestCommand request
     ) {
         UUID userId = currentUserId.require();
         log.info("Join contest request from user {}", userId);

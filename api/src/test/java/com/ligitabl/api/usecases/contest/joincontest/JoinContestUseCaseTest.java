@@ -91,7 +91,7 @@ class JoinContestUseCaseTest {
         UUID predictionId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
 
-        JoinContestRequest request = createValidRequest();
+        JoinContestCommand request = createValidRequest();
 
         when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
@@ -125,7 +125,7 @@ class JoinContestUseCaseTest {
     void shouldSetNextRound_whenRoundIsLocked() {
         round.setStatus(RoundStatus.LOCKED);
 
-        JoinContestRequest request = createValidRequest();
+        JoinContestCommand request = createValidRequest();
 
         when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
@@ -143,7 +143,7 @@ class JoinContestUseCaseTest {
 
     @Test
     void shouldReject_whenAlreadyJoined() {
-        JoinContestRequest request = createValidRequest();
+        JoinContestCommand request = createValidRequest();
         SeasonPrediction existingPrediction = SeasonPrediction.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
@@ -166,8 +166,8 @@ class JoinContestUseCaseTest {
 
     @Test
     void shouldReject_whenInvalidTeamCount() {
-        JoinContestRequest request = new JoinContestRequest(List.of(
-                new JoinContestRequest.TeamRankRequest("ARS", 1), new JoinContestRequest.TeamRankRequest("LIV", 2)));
+        JoinContestCommand request = new JoinContestCommand(List.of(
+                new JoinContestCommand.TeamRankRequest("ARS", 1), new JoinContestCommand.TeamRankRequest("LIV", 2)));
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
@@ -180,10 +180,10 @@ class JoinContestUseCaseTest {
 
     @Test
     void shouldReject_whenInvalidTeamCodes() {
-        JoinContestRequest request = new JoinContestRequest(List.of(
-                new JoinContestRequest.TeamRankRequest("XXX", 1),
-                new JoinContestRequest.TeamRankRequest("ARS", 2),
-                new JoinContestRequest.TeamRankRequest("LIV", 3)));
+        JoinContestCommand request = new JoinContestCommand(List.of(
+                new JoinContestCommand.TeamRankRequest("XXX", 1),
+                new JoinContestCommand.TeamRankRequest("ARS", 2),
+                new JoinContestCommand.TeamRankRequest("LIV", 3)));
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
@@ -200,7 +200,7 @@ class JoinContestUseCaseTest {
         round.setPosition(3);
         season.setMaxRounds(3);
 
-        JoinContestRequest request = createValidRequest();
+        JoinContestCommand request = createValidRequest();
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
@@ -250,10 +250,10 @@ class JoinContestUseCaseTest {
                 .build();
     }
 
-    private JoinContestRequest createValidRequest() {
-        return new JoinContestRequest(List.of(
-                new JoinContestRequest.TeamRankRequest("ARS", 1),
-                new JoinContestRequest.TeamRankRequest("LIV", 2),
-                new JoinContestRequest.TeamRankRequest("MCI", 3)));
+    private JoinContestCommand createValidRequest() {
+        return new JoinContestCommand(List.of(
+                new JoinContestCommand.TeamRankRequest("ARS", 1),
+                new JoinContestCommand.TeamRankRequest("LIV", 2),
+                new JoinContestCommand.TeamRankRequest("MCI", 3)));
     }
 }

@@ -5,7 +5,7 @@ import java.util.List;
 public record JoinContestCommand(
         List<TeamRankRequest> rankings
 ) {
-    public record TeamRankRequest (String teamId,
+    public record TeamRankRequest(
             String code,
             int position
     ) {}

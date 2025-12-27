@@ -117,7 +117,7 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         @Test
         @DisplayName("should join contest successfully with valid rankings")
         void shouldJoinContestSuccessfullyWithValidRankings() {
-            JoinContestRequest request = validRequestFromInitialRankings();
+            JoinContestCommand request = validRequestFromInitialRankings();
 
             Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
 
@@ -152,7 +152,7 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         @DisplayName("should set at_round_number to current round when round is OPEN")
         void shouldSetAtRoundNumberToCurrentWhenOpen() {
             updateCurrentRoundStatus(RoundStatus.OPEN);
-            JoinContestRequest request = validRequestFromInitialRankings();
+            JoinContestCommand request = validRequestFromInitialRankings();
 
             Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
 
@@ -167,7 +167,7 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         @DisplayName("should set at_round_number to next round when round is LOCKED")
         void shouldSetAtRoundNumberToNextWhenLocked() {
             updateCurrentRoundStatus(RoundStatus.LOCKED);
-            JoinContestRequest request = validRequestFromInitialRankings();
+            JoinContestCommand request = validRequestFromInitialRankings();
 
             Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
 
@@ -183,7 +183,7 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         @DisplayName("should set at_round_number to next round when round is FINALISED")
         void shouldSetAtRoundNumberToNextWhenFinalised() {
             updateCurrentRoundStatus(RoundStatus.FINALISED);
-            JoinContestRequest request = validRequestFromInitialRankings();
+            JoinContestCommand request = validRequestFromInitialRankings();
 
             Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
 
@@ -197,19 +197,19 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         @Test
         @DisplayName("should accept any ranking order (no strategic validation)")
         void shouldAcceptAnyRankingOrder() {
-            JoinContestRequest request = new JoinContestRequest(List.of(
-                    new JoinContestRequest.TeamRankRequest("WHU", 1),
-                    new JoinContestRequest.TeamRankRequest("BRE", 2),
-                    new JoinContestRequest.TeamRankRequest("CRY", 3),
-                    new JoinContestRequest.TeamRankRequest("BHA", 4),
-                    new JoinContestRequest.TeamRankRequest("TOT", 5),
-                    new JoinContestRequest.TeamRankRequest("MUN", 6),
-                    new JoinContestRequest.TeamRankRequest("NEW", 7),
-                    new JoinContestRequest.TeamRankRequest("CHE", 8),
-                    new JoinContestRequest.TeamRankRequest("AVL", 9),
-                    new JoinContestRequest.TeamRankRequest("LIV", 10),
-                    new JoinContestRequest.TeamRankRequest("ARS", 11),
-                    new JoinContestRequest.TeamRankRequest("MCI", 12)));
+            JoinContestCommand request = new JoinContestCommand(List.of(
+                    new JoinContestCommand.TeamRankRequest("WHU", 1),
+                    new JoinContestCommand.TeamRankRequest("BRE", 2),
+                    new JoinContestCommand.TeamRankRequest("CRY", 3),
+                    new JoinContestCommand.TeamRankRequest("BHA", 4),
+                    new JoinContestCommand.TeamRankRequest("TOT", 5),
+                    new JoinContestCommand.TeamRankRequest("MUN", 6),
+                    new JoinContestCommand.TeamRankRequest("NEW", 7),
+                    new JoinContestCommand.TeamRankRequest("CHE", 8),
+                    new JoinContestCommand.TeamRankRequest("AVL", 9),
+                    new JoinContestCommand.TeamRankRequest("LIV", 10),
+                    new JoinContestCommand.TeamRankRequest("ARS", 11),
+                    new JoinContestCommand.TeamRankRequest("MCI", 12)));
 
             Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
 
@@ -229,9 +229,9 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject when invalid team count")
         void shouldRejectWhenInvalidTeamCount() {
-            JoinContestRequest request = new JoinContestRequest(List.of(
-                    new JoinContestRequest.TeamRankRequest("ARS", 1),
-                    new JoinContestRequest.TeamRankRequest("LIV", 2)));
+            JoinContestCommand request = new JoinContestCommand(List.of(
+                    new JoinContestCommand.TeamRankRequest("ARS", 1),
+                    new JoinContestCommand.TeamRankRequest("LIV", 2)));
 
             Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
 
@@ -242,15 +242,15 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject when invalid team codes")
         void shouldRejectWhenInvalidTeamCodes() {
-            List<JoinContestRequest.TeamRankRequest> rankings = INITIAL_RANKINGS.stream()
-                    .map(tr -> new JoinContestRequest.TeamRankRequest(tr.getCode(), tr.getPosition()))
+            List<JoinContestCommand.TeamRankRequest> rankings = INITIAL_RANKINGS.stream()
+                    .map(tr -> new JoinContestCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
                     .toList();
 
             // Replace one code with an invalid code but keep team count correct.
             rankings = new java.util.ArrayList<>(rankings);
-            rankings.set(0, new JoinContestRequest.TeamRankRequest("XXX", 1));
+            rankings.set(0, new JoinContestCommand.TeamRankRequest("XXX", 1));
 
-            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, new JoinContestRequest(rankings));
+            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, new JoinContestCommand(rankings));
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(JoinContestError.InvalidTeamCodes.class);
@@ -259,15 +259,15 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject when duplicate positions")
         void shouldRejectWhenDuplicatePositions() {
-            List<JoinContestRequest.TeamRankRequest> rankings = INITIAL_RANKINGS.stream()
-                    .map(tr -> new JoinContestRequest.TeamRankRequest(tr.getCode(), tr.getPosition()))
+            List<JoinContestCommand.TeamRankRequest> rankings = INITIAL_RANKINGS.stream()
+                    .map(tr -> new JoinContestCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
                     .toList();
 
             rankings = new ArrayList<>(rankings);
-            rankings.set(0, new JoinContestRequest.TeamRankRequest("MCI", 1));
-            rankings.set(1, new JoinContestRequest.TeamRankRequest("ARS", 1));
+            rankings.set(0, new JoinContestCommand.TeamRankRequest("MCI", 1));
+            rankings.set(1, new JoinContestCommand.TeamRankRequest("ARS", 1));
 
-            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, new JoinContestRequest(rankings));
+            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, new JoinContestCommand(rankings));
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(JoinContestError.DuplicatePositions.class);
@@ -277,15 +277,15 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject when duplicate team codes")
         void shouldRejectWhenDuplicateTeamCodes() {
-            List<JoinContestRequest.TeamRankRequest> rankings = INITIAL_RANKINGS.stream()
-                    .map(tr -> new JoinContestRequest.TeamRankRequest(tr.getCode(), tr.getPosition()))
+            List<JoinContestCommand.TeamRankRequest> rankings = INITIAL_RANKINGS.stream()
+                    .map(tr -> new JoinContestCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
                     .toList();
 
             rankings = new ArrayList<>(rankings);
-            rankings.set(0, new JoinContestRequest.TeamRankRequest("MCI", 1));
-            rankings.set(1, new JoinContestRequest.TeamRankRequest("MCI", 2));
+            rankings.set(0, new JoinContestCommand.TeamRankRequest("MCI", 1));
+            rankings.set(1, new JoinContestCommand.TeamRankRequest("MCI", 2));
 
-            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, new JoinContestRequest(rankings));
+            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, new JoinContestCommand(rankings));
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(JoinContestError.DuplicateTeamCodes.class);
@@ -321,7 +321,7 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject when already joined")
         void shouldRejectWhenAlreadyJoined() {
-            JoinContestRequest request = validRequestFromInitialRankings();
+            JoinContestCommand request = validRequestFromInitialRankings();
 
             Either<JoinContestError, JoinContestResult> first = useCase.execute(userId, request);
             assertThat(first.isRight()).isTrue();
@@ -335,10 +335,10 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         }
     }
 
-    private static JoinContestRequest validRequestFromInitialRankings() {
-        return new JoinContestRequest(
+    private static JoinContestCommand validRequestFromInitialRankings() {
+        return new JoinContestCommand(
                 INITIAL_RANKINGS.stream()
-                        .map(tr -> new JoinContestRequest.TeamRankRequest(tr.getCode(), tr.getPosition()))
+                        .map(tr -> new JoinContestCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
                         .toList());
     }
 
