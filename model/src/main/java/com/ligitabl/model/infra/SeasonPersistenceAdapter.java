@@ -1,9 +1,11 @@
 package com.ligitabl.model.infra;
 
+import static com.ligitabl.model.db.tables.TCompetition.T_COMPETITION;
 import static com.ligitabl.model.db.tables.TSeason.T_SEASON;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,6 +33,79 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
     @Override
     public Optional<Season> findById(UUID id) {
         var record = dsl.selectFrom(T_SEASON).where(T_SEASON.PK_ID.eq(id)).fetchOne();
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
+    @Override
+    public Season save(Season season) {
+        if (season == null) {
+            throw new IllegalArgumentException("Season must not be null");
+        }
+        if (season.getId() == null) {
+            throw new IllegalArgumentException("Season.id must not be null on save");
+        }
+
+        int updated = dsl.update(T_SEASON)
+                .set(T_SEASON.C_CLIENT_ID, season.getClientId())
+                .set(T_SEASON.FK_COMPETITION_ID, season.getCompetitionId())
+                .set(T_SEASON.C_NAME, season.getName())
+                .set(
+                        T_SEASON.C_SLUG,
+                        season.getSlug() == null ? null : season.getSlug().value())
+                .set(T_SEASON.C_START_DATE, season.getStartDate())
+                .set(T_SEASON.C_END_DATE, season.getEndDate())
+                .set(T_SEASON.C_MAX_ROUNDS, season.getMaxRounds())
+                .set(T_SEASON.C_COMPLETED, season.isCompleted())
+                .set(T_SEASON.C_COMPLETED_AT, season.getCompletedAt())
+                .set(T_SEASON.C_TOTAL_TEAMS, season.getTotalTeams())
+                .set(T_SEASON.C_MAX_HIT_POINTS, season.getMaxHitPoints())
+                .set(T_SEASON.C_INITIAL_RANKINGS, writeTeams(season.getInitialRankings()))
+                .set(T_SEASON.FK_MAIN_CONTEST_ID, season.getMainContestId())
+                .set(T_SEASON.FK_CURRENT_ROUND_ID, season.getCurrentRoundId())
+                .set(T_SEASON.C_CURRENT_MATCH_DAY, season.getCurrentMatchDay())
+                .where(T_SEASON.PK_ID.eq(season.getId()))
+                .execute();
+
+        if (updated == 0) {
+            throw new NoSuchElementException(String.format("Season with id %s not found", season.getId()));
+        }
+
+        return findById(season.getId()).orElseThrow(() -> new NoSuchElementException("Season not found after save"));
+    }
+
+    @Override
+    public Optional<Season> findActiveSeason(String competitionSlug) {
+        if (competitionSlug == null || competitionSlug.isBlank()) {
+            throw new IllegalArgumentException("competitionSlug must not be blank");
+        }
+
+        SeasonRecord record = dsl.select(T_SEASON.fields())
+                .from(T_SEASON)
+                .join(T_COMPETITION)
+                .on(T_SEASON.FK_COMPETITION_ID.eq(T_COMPETITION.PK_ID))
+                .where(T_COMPETITION.C_SLUG.eq(competitionSlug).and(T_SEASON.C_COMPLETED.eq(false)))
+                .orderBy(T_SEASON.C_START_DATE.desc())
+                .limit(1)
+                .fetchOneInto(SeasonRecord.class);
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
+    @Override
+    public Optional<Season> findMostRecentSeason(String competitionSlug) {
+        if (competitionSlug == null || competitionSlug.isBlank()) {
+            throw new IllegalArgumentException("competitionSlug must not be blank");
+        }
+
+        SeasonRecord record = dsl.select(T_SEASON.fields())
+                .from(T_SEASON)
+                .join(T_COMPETITION)
+                .on(T_SEASON.FK_COMPETITION_ID.eq(T_COMPETITION.PK_ID))
+                .where(T_COMPETITION.C_SLUG.eq(competitionSlug))
+                .orderBy(T_SEASON.C_START_DATE.desc())
+                .limit(1)
+                .fetchOneInto(SeasonRecord.class);
 
         return Optional.ofNullable(MAPPER.map(record));
     }
@@ -104,6 +179,17 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
             } catch (IOException e) {
                 throw new IllegalStateException("Failed to deserialize season teams JSON", e);
             }
+        }
+    }
+
+    private static JSONB writeTeams(List<TeamRank> rankings) {
+        if (rankings == null || rankings.isEmpty()) {
+            return null;
+        }
+        try {
+            return JSONB.valueOf(OBJECT_MAPPER.writeValueAsString(rankings));
+        } catch (IOException e) {
+            throw new IllegalStateException("Failed to serialize season teams JSON", e);
         }
     }
 }

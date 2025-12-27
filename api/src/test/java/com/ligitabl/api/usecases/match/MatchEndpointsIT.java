@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -17,6 +16,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
+import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.model.domain.MatchStatus;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -39,11 +39,7 @@ class MatchEndpointsIT extends AbstractPostgresIT {
 
     @BeforeEach
     void setupData() {
-        jdbcTemplate.update("DELETE FROM t_match");
-        jdbcTemplate.update("DELETE FROM t_round");
-        jdbcTemplate.update("DELETE FROM t_season");
-        jdbcTemplate.update("DELETE FROM t_competition");
-        jdbcTemplate.update("DELETE FROM t_team");
+        PostgresTestDbCleaner.truncateAllDomainTables(jdbcTemplate);
 
         competitionId = UUID.randomUUID();
         seasonId = UUID.randomUUID();
@@ -115,7 +111,7 @@ class MatchEndpointsIT extends AbstractPostgresIT {
     @Test
     void getMatchesForRound_shouldReturnMatches() {
         String url = "http://localhost:" + port + "/api/competitions/premier-league/seasons/2024-25/rounds/1/matches";
-        ResponseEntity<List> response = restTemplate.getForEntity(url, List.class);
+        ResponseEntity<Object[]> response = restTemplate.getForEntity(url, Object[].class);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isNotNull();
@@ -125,7 +121,7 @@ class MatchEndpointsIT extends AbstractPostgresIT {
     @Test
     void getDefaultRoundMatches_shouldReturnMatches() {
         String url = "http://localhost:" + port + "/api/rounds/default/matches";
-        ResponseEntity<List> response = restTemplate.getForEntity(url, List.class);
+        ResponseEntity<Object[]> response = restTemplate.getForEntity(url, Object[].class);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isNotNull();

@@ -1,0 +1,13 @@
+competitionSlug: "premier-league"
+seasonSlug: "2024-25"
+finishedRounds: 18
+
+demoUsers:
+  - email: "alice@demo.com"
+    displayName: "Alice Wonder"
+
+  - email: "bob@demo.com"
+    displayName: "Bob Builder"
+
+  - email: "charlie@demo.com"
+    displayName: "Charlie Brown"

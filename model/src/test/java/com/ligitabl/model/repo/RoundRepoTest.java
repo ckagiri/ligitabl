@@ -17,11 +17,8 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.ligitabl.model.db.tables.TCompetition;
-import com.ligitabl.model.db.tables.TContest;
-import com.ligitabl.model.db.tables.TMatch;
 import com.ligitabl.model.db.tables.TRound;
 import com.ligitabl.model.db.tables.TSeason;
-import com.ligitabl.model.db.tables.TStandings;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.infra.RoundPersistenceAdapter;
 
@@ -44,17 +41,7 @@ class RoundRepoTest {
         dsl = DSL.using(jdbc, SQLDialect.POSTGRES);
         repo = new RoundPersistenceAdapter(dsl);
 
-        // Clean slate (respect FK order)
-        dsl.deleteFrom(TMatch.T_MATCH).execute();
-        dsl.deleteFrom(TStandings.T_STANDINGS).execute();
-        dsl.update(TSeason.T_SEASON)
-                .set(TSeason.T_SEASON.FK_CURRENT_ROUND_ID, (UUID) null)
-                .set(TSeason.T_SEASON.FK_MAIN_CONTEST_ID, (UUID) null)
-                .execute();
-        dsl.deleteFrom(TContest.T_CONTEST).execute();
-        dsl.deleteFrom(TRound.T_ROUND).execute();
-        dsl.deleteFrom(TSeason.T_SEASON).execute();
-        dsl.deleteFrom(TCompetition.T_COMPETITION).execute();
+        TestDbCleaner.truncatePublicTables(dsl);
     }
 
     @AfterAll

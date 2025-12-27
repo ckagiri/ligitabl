@@ -18,7 +18,7 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate drop-db reset-db format format-check format-all test-unit test-api-no-jooq test-api-fast test-api-core test-auth-smoke test-all test-model test-model-fast test-api-it test-api-all test-dev model-codegen-local seed-competition-cli db-seed db-seed-demo dev-reset test-api-rebuild db-seed-all db-seed-users run-api run-api-test test-seeding-auth
+.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate drop-db reset-db format format-check format-all test-unit test-api-no-jooq test-api-fast test-api-core test-auth-smoke test-all test-model test-model-fast test-api-it test-api-all test-dev model-codegen-local seed-competition-cli db-seed db-seed-demo db-seed-season dev-reset test-api-rebuild db-seed-all db-seed-users run-api run-api-test test-seeding-auth
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -27,6 +27,9 @@ build: ## Build the project (skip tests) - builds api and required modules (mode
 	mvn -q -DskipTests -pl $(API_DIR) -am clean package
 
 api-build: ## Build the API module (skip tests) - includes dependencies (model, jooq-codegen)
+	# Clean only the API module to avoid packaging stale IDE-compiled classes,
+	# but do not clean dependencies (model) since that would wipe generated jOOQ sources.
+	mvn -q -DskipTests -pl $(API_DIR) clean
 	mvn -q -DskipTests -pl $(API_DIR) -am package
 
 test: ## Run full API test suite (build deps too; may include *IT depending on config)
@@ -260,6 +263,16 @@ db-seed-demo: ## Seed demo league (teams, competition, season, round, matches) u
 	$(MAKE) compose-up-db
 	mvn -q -pl seed -am -DskipTests package
 	java -Dseed.main=seeding/demo-main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar --spring.profiles.active=default
+	$(MAKE) db-seed-season SEEDING_CONFIG=seeding-config-demo.yaml
+
+SEEDING_CONFIG ?= seeding-config.yaml
+
+db-seed-season: ## Seed season demo extras (predictions, swaps, round finalization) via SeedSeasonCommandLineRunner
+	$(MAKE) compose-up-db
+	$(MAKE) api-build
+	java -jar $(JAR) --spring.main.web-application-type=none --seed-season --seeding.config=$(SEEDING_CONFIG)
+
+seed-season-cli: db-seed-season ## Alias: run SeedSeasonCommandLineRunner (override with SEEDING_CONFIG=...)
 
 db-seed-users: ## Seed users (admin/player/superuser) needed for scripts/TestAuth.sh using the seed module
 	$(MAKE) compose-up-db

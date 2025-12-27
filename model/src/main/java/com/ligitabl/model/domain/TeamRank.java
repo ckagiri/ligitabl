@@ -11,8 +11,17 @@ public class TeamRank {
     String code;
     int position;
 
+    public TeamRank(String code, int position) {
+        this.code = code;
+        this.position = position;
+    }
+
     public static TeamRank of(String code, int position) {
         return new TeamRank(code, position);
+    }
+
+    public TeamRank withPosition(int newPosition) {
+        return new TeamRank(this.code, newPosition);
     }
 
     @Override

@@ -34,4 +34,8 @@ public class Team extends AbstractModel<UUID> {
     // Populated by the database (defaults/triggers)
     private OffsetDateTime createDate;
     private OffsetDateTime updateDate;
+
+    public String getCode() {
+        return this.tla;
+    }
 }

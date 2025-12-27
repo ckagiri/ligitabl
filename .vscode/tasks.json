@@ -1,101 +1,345 @@
 {
-  "version": "2.0.0",
-  "tasks": [
-    {
-      "label": "Run API tests",
-      "type": "shell",
-      "command": "mvn -q -pl api -am -DskipITs test",
-      "args": [],
-      "isBackground": false,
-      "problemMatcher": ["$maven"],
-      "group": "build"
-    },
-    {
-      "label": "Run API tests (post-change)",
-      "type": "shell",
-      "command": "mvn -q -pl api -am -DskipITs test",
-      "args": [],
-      "isBackground": false,
-      "problemMatcher": ["$maven"],
-      "group": "build"
-    },
-    {
-      "label": "Run API tests after removing Try",
-      "type": "shell",
-      "command": "mvn -q -pl api -am -DskipITs test",
-      "args": [],
-      "isBackground": false,
-      "problemMatcher": ["$maven"],
-      "group": "build"
-    },
-    {
-      "label": "Run API tests (finalize)",
-      "type": "shell",
-      "command": "mvn -q -pl api -am -DskipITs test",
-      "args": [],
-      "isBackground": false,
-      "problemMatcher": ["$maven"],
-      "group": "build"
-    },
-    {
-      "label": "Run API tests (investigate)",
-      "type": "shell",
-      "command": "mvn -pl api -am -DskipITs test",
-      "args": [],
-      "isBackground": false,
-      "problemMatcher": ["$maven"],
-      "group": "build"
-    },
-    {
-      "label": "Run API tests (finalize)",
-      "type": "shell",
-      "command": "mvn -q -pl api -am -DskipITs test",
-      "args": [],
-      "isBackground": false,
-      "problemMatcher": ["$maven"],
-      "group": "build"
-    },
-    {
-      "label": "Verify API tests current",
-      "type": "shell",
-      "command": "mvn -q -pl api -am -DskipITs test",
-      "args": [],
-      "isBackground": false,
-      "problemMatcher": ["$maven"],
-      "group": "build"
-    },
-    {
-      "label": "Run API tests after peekBoth",
-      "type": "shell",
-      "command": "mvn -q -pl api -am -DskipITs test",
-      "args": [],
-      "isBackground": false,
-      "problemMatcher": ["$maven"],
-      "group": "build"
-    },
-    {
-      "label": "TestAuth: start postgres container",
-      "type": "shell",
-      "command": "bash",
-      "args": [
-        "-lc",
-        "docker rm -f ligitabl-testapi-db >/dev/null 2>&1 || true\n\ndocker run -d --name ligitabl-testapi-db -e POSTGRES_DB=ligitabl -e POSTGRES_USER=ligitabl -e POSTGRES_PASSWORD=ligitabl -p 15432:5432 postgres:16 >/dev/null\n\nfor i in $(seq 1 30); do\n  if docker exec ligitabl-testapi-db pg_isready -U ligitabl -d ligitabl >/dev/null 2>&1; then\n    echo \"Postgres is ready.\";\n    exit 0;\n  fi\n  sleep 1\ndone\n\necho \"Postgres did not become ready in time\" >&2\nexit 1"
-      ],
-      "isBackground": false,
-      "problemMatcher": [],
-      "group": "build"
-    },
-    {
-      "label": "Smoke: test-auth-smoke",
-      "type": "shell",
-      "command": "bash",
-      "args": [
-        "-lc",
-        "cd /Users/charleskagiri/work/ligi/ligitabl && make test-auth-smoke"
-      ],
-      "isBackground": false,
-      "problemMatcher": [],
-      "group": "build"
-    }
-  ]
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Run API tests",
+			"type": "shell",
+			"command": "mvn -q -pl api -am -DskipITs test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$maven"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run API tests (post-change)",
+			"type": "shell",
+			"command": "mvn -q -pl api -am -DskipITs test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$maven"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run API tests after removing Try",
+			"type": "shell",
+			"command": "mvn -q -pl api -am -DskipITs test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$maven"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run API tests (finalize)",
+			"type": "shell",
+			"command": "mvn -q -pl api -am -DskipITs test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$maven"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run API tests (investigate)",
+			"type": "shell",
+			"command": "mvn -pl api -am -DskipITs test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$maven"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run API tests (finalize)",
+			"type": "shell",
+			"command": "mvn -q -pl api -am -DskipITs test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$maven"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Verify API tests current",
+			"type": "shell",
+			"command": "mvn -q -pl api -am -DskipITs test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$maven"
+			],
+			"group": "build"
+		},
+		{
+			"label": "Run API tests after peekBoth",
+			"type": "shell",
+			"command": "mvn -q -pl api -am -DskipITs test",
+			"args": [],
+			"isBackground": false,
+			"problemMatcher": [
+				"$maven"
+			],
+			"group": "build"
+		},
+		{
+			"label": "TestAuth: start postgres container",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"docker rm -f ligitabl-testapi-db >/dev/null 2>&1 || true\n\ndocker run -d --name ligitabl-testapi-db -e POSTGRES_DB=ligitabl -e POSTGRES_USER=ligitabl -e POSTGRES_PASSWORD=ligitabl -p 15432:5432 postgres:16 >/dev/null\n\nfor i in $(seq 1 30); do\n  if docker exec ligitabl-testapi-db pg_isready -U ligitabl -d ligitabl >/dev/null 2>&1; then\n    echo \"Postgres is ready.\";\n    exit 0;\n  fi\n  sleep 1\ndone\n\necho \"Postgres did not become ready in time\" >&2\nexit 1"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Smoke: test-auth-smoke",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && make test-auth-smoke"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run API IT tests (logged)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && rm -f /tmp/ligitabl-test-api-it.log /tmp/ligitabl-test-api-it.exit && make test-api-it > /tmp/ligitabl-test-api-it.log 2>&1; echo $? > /tmp/ligitabl-test-api-it.exit && tail -n 40 /tmp/ligitabl-test-api-it.log"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run API IT tests (logged to repo)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && mkdir -p api/target && rm -f api/target/test-api-it.log api/target/test-api-it.exit && make test-api-it > api/target/test-api-it.log 2>&1; echo $? > api/target/test-api-it.exit && tail -n 30 api/target/test-api-it.log"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run seed module tests (logged to repo)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && mkdir -p seed/target && rm -f seed/target/test-seed.log seed/target/test-seed.exit && mvn -q -pl seed -am test > seed/target/test-seed.log 2>&1; echo $? > seed/target/test-seed.exit && tail -n 40 seed/target/test-seed.log"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run API tests (logged to repo)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && mkdir -p api/target && rm -f api/target/test-api.log api/target/test-api.exit && mvn -q -pl api -am -DskipITs test > api/target/test-api.log 2>&1; echo $? > api/target/test-api.exit && tail -n 40 api/target/test-api.log"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run TestDemoSeedingAndSeedSeason.sh (logged)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && mkdir -p scripts/target && rm -f scripts/target/test-demo-seeding.log scripts/target/test-demo-seeding.exit && bash scripts/TestDemoSeedingAndSeedSeason.sh > scripts/target/test-demo-seeding.log 2>&1; echo $? > scripts/target/test-demo-seeding.exit && tail -n 60 scripts/target/test-demo-seeding.log"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Check demo seeding script status",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && ls -l scripts/target || true; echo '--- tail ---'; tail -n 60 scripts/target/test-demo-seeding.log 2>/dev/null || true; echo '--- exit file ---'; cat scripts/target/test-demo-seeding.exit 2>/dev/null || echo '(no exit file yet)'"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Check demo seeding script status (bash)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && ls -l scripts/target || true; echo '--- tail ---'; tail -n 60 scripts/target/test-demo-seeding.log 2>/dev/null || true; echo '--- exit ---'; if [ -f scripts/target/test-demo-seeding.exit ]; then cat scripts/target/test-demo-seeding.exit; else echo 'no exit file yet'; fi"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run API tests after SeedingConfigLoader change (logged)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && mkdir -p api/target && rm -f api/target/test-api.after-seedingloader.log api/target/test-api.after-seedingloader.exit && mvn -q -pl api -am -DskipITs test > api/target/test-api.after-seedingloader.log 2>&1; echo $? > api/target/test-api.after-seedingloader.exit && tail -n 40 api/target/test-api.after-seedingloader.log"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Start default test DB + migrate",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && make compose-up-db && make db-migrate"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run model migrations (make migrate)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && make migrate"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Re-run API tests after migrate (logged)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && rm -f api/target/test-api.after-seedingloader.log api/target/test-api.after-seedingloader.exit && mvn -q -pl api -am -DskipITs test > api/target/test-api.after-seedingloader.log 2>&1; echo $? > api/target/test-api.after-seedingloader.exit && tail -n 40 api/target/test-api.after-seedingloader.log"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Build API jar (skip tests, logged)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && mkdir -p api/target && rm -f api/target/build-api.log api/target/build-api.exit && mvn -q -pl api -am -DskipTests package > api/target/build-api.log 2>&1; echo $? > api/target/build-api.exit && tail -n 40 api/target/build-api.log"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Re-run TestDemoSeedingAndSeedSeason.sh (logged)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && mkdir -p scripts/target && rm -f scripts/target/test-demo-seeding.log scripts/target/test-demo-seeding.exit && bash scripts/TestDemoSeedingAndSeedSeason.sh > scripts/target/test-demo-seeding.log 2>&1; echo $? > scripts/target/test-demo-seeding.exit && tail -n 60 scripts/target/test-demo-seeding.log"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Run TestDemoSeedingAndSeedSeason.sh (logged, post-fixes)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && mkdir -p scripts/target && rm -f scripts/target/test-demo-seeding.log scripts/target/test-demo-seeding.exit && bash scripts/TestDemoSeedingAndSeedSeason.sh > scripts/target/test-demo-seeding.log 2>&1; echo $? > scripts/target/test-demo-seeding.exit && tail -n 60 scripts/target/test-demo-seeding.log"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Check demo seeding script exit (post-fixes)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && ls -l scripts/target || true; echo '--- tail ---'; tail -n 60 scripts/target/test-demo-seeding.log 2>/dev/null || true; echo '--- exit ---'; if [ -f scripts/target/test-demo-seeding.exit ]; then cat scripts/target/test-demo-seeding.exit; else echo 'no exit file'; fi"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Re-run TestDemoSeedingAndSeedSeason.sh after model compile fix",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && mkdir -p scripts/target && rm -f scripts/target/test-demo-seeding.log scripts/target/test-demo-seeding.exit && bash scripts/TestDemoSeedingAndSeedSeason.sh > scripts/target/test-demo-seeding.log 2>&1; echo $? > scripts/target/test-demo-seeding.exit && tail -n 80 scripts/target/test-demo-seeding.log"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Check demo seeding script exit (after model compile fix)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && ls -l scripts/target || true; echo '--- tail ---'; tail -n 80 scripts/target/test-demo-seeding.log 2>/dev/null || true; echo '--- exit ---'; if [ -f scripts/target/test-demo-seeding.exit ]; then cat scripts/target/test-demo-seeding.exit; else echo 'no exit file'; fi"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Re-run TestDemoSeedingAndSeedSeason.sh (after Standings save)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && mkdir -p scripts/target && rm -f scripts/target/test-demo-seeding.log scripts/target/test-demo-seeding.exit && bash scripts/TestDemoSeedingAndSeedSeason.sh > scripts/target/test-demo-seeding.log 2>&1; echo $? > scripts/target/test-demo-seeding.exit && tail -n 80 scripts/target/test-demo-seeding.log"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Check demo seeding script exit (after Standings save)",
+			"type": "shell",
+			"command": "bash",
+			"args": [
+				"-lc",
+				"cd /Users/charleskagiri/work/ligi/ligitabl && ls -l scripts/target || true; echo '--- exit ---'; cat scripts/target/test-demo-seeding.exit 2>/dev/null || echo 'no exit'; echo '--- tail ---'; tail -n 80 scripts/target/test-demo-seeding.log 2>/dev/null || true"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
 }

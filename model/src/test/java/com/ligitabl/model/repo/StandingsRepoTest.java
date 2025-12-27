@@ -18,11 +18,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
 import com.ligitabl.model.db.tables.TCompetition;
-import com.ligitabl.model.db.tables.TContest;
-import com.ligitabl.model.db.tables.TMatch;
-import com.ligitabl.model.db.tables.TRound;
 import com.ligitabl.model.db.tables.TSeason;
-import com.ligitabl.model.db.tables.TStandings;
 import com.ligitabl.model.domain.Standings;
 import com.ligitabl.model.domain.StandingsMetadata;
 import com.ligitabl.model.domain.StandingsTeamRank;
@@ -51,17 +47,7 @@ class StandingsRepoTest {
         dsl = DSL.using(jdbc, SQLDialect.POSTGRES);
         repo = new StandingsPersistenceAdapter(dsl);
 
-        // Clean slate (respect FK order)
-        dsl.deleteFrom(TMatch.T_MATCH).execute();
-        dsl.deleteFrom(TRound.T_ROUND).execute();
-        dsl.deleteFrom(TStandings.T_STANDINGS).execute();
-        dsl.update(TSeason.T_SEASON)
-                .set(TSeason.T_SEASON.FK_CURRENT_ROUND_ID, (UUID) null)
-                .set(TSeason.T_SEASON.FK_MAIN_CONTEST_ID, (UUID) null)
-                .execute();
-        dsl.deleteFrom(TContest.T_CONTEST).execute();
-        dsl.deleteFrom(TSeason.T_SEASON).execute();
-        dsl.deleteFrom(TCompetition.T_COMPETITION).execute();
+        TestDbCleaner.truncatePublicTables(dsl);
 
         // Minimal competition & season to satisfy FKs
         competitionId = UUID.randomUUID();
@@ -125,7 +111,7 @@ class StandingsRepoTest {
         assertThat(byId).isPresent();
         assertThat(byId.get().getSeasonId()).isEqualTo(seasonId);
 
-        Optional<Standings> bySeasonRound = repo.findBySeasonAndRound(seasonId, 1);
+        Optional<Standings> bySeasonRound = repo.findBySeasonAndRoundPosition(seasonId, 1);
         assertThat(bySeasonRound).isPresent();
         assertThat(bySeasonRound.get().getId()).isEqualTo(created.getId());
 
@@ -149,6 +135,6 @@ class StandingsRepoTest {
 
         repo.delete(updated.getId());
         assertThat(repo.findById(updated.getId())).isEmpty();
-        assertThat(repo.findBySeasonAndRound(seasonId, 2)).isEmpty();
+        assertThat(repo.findBySeasonAndRoundPosition(seasonId, 2)).isEmpty();
     }
 }

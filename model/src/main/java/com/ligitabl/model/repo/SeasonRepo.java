@@ -10,9 +10,23 @@ import com.ligitabl.model.domain.SeasonSlug;
 public interface SeasonRepo {
     Optional<Season> findById(UUID id);
 
+    Season save(Season season);
+
+    Optional<Season> findActiveSeason(String competitionSlug);
+
+    /**
+     * Returns the most recent season for a competition, regardless of completion status.
+     * Useful for use cases that need to surface "season completed" rather than "not found".
+     */
+    Optional<Season> findMostRecentSeason(String competitionSlug);
+
     List<Season> findAllByCompetitionId(UUID competitionId);
 
     Optional<Season> findByCompetitionIdAndSlug(UUID competitionId, SeasonSlug slug);
+
+    default Optional<Season> findBySlug(UUID competitionId, String slug) {
+        return findByCompetitionIdAndSlug(competitionId, SeasonSlug.of(slug));
+    }
 
     Optional<Season> findByClientId(Integer clientId);
 

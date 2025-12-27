@@ -29,11 +29,8 @@ public class LoginController {
         log.debug("Login request received for email: {}", request.email());
 
         return toLoginCommand(request)
-                // flatMap chains the Either - if toLoginCommand failed, skip loginUseCase
                 .flatMap(loginUseCase::execute)
-                // Map success case to HTTP 200 with response DTO
                 .map(result -> ResponseEntity.ok(toLoginResponse(result)))
-                // Map error case to appropriate HTTP status
                 .getOrElseThrow(error -> {
                     log.warn("Login failed: {}", error.getMessage());
                     throw new UseCaseException(error);

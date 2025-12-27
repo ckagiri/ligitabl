@@ -1,6 +1,6 @@
 seed:
   - file: demo-defaults.yaml
-  - file: users.yaml
+  - file: demo-users.yaml
   - file: team.yaml
   - file: demo-competition.yaml
   - file: demo-season.yaml

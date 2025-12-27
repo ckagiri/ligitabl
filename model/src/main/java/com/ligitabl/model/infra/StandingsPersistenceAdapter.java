@@ -29,7 +29,16 @@ public class StandingsPersistenceAdapter implements StandingsRepo {
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     @Override
-    public Optional<Standings> findBySeasonAndRound(UUID seasonId, int roundPosition) {
+    public Standings save(Standings standings) {
+        if (standings == null) {
+            throw new IllegalArgumentException("Standings must not be null");
+        }
+
+        return standings.getId() == null ? create(standings) : update(standings);
+    }
+
+    @Override
+    public Optional<Standings> findBySeasonAndRoundPosition(UUID seasonId, int roundPosition) {
         var record = dsl.selectFrom(T_STANDINGS)
                 .where(T_STANDINGS.FK_SEASON_ID.eq(seasonId).and(T_STANDINGS.C_ROUND_POSITION.eq(roundPosition)))
                 .fetchOne();

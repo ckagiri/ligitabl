@@ -1,0 +1,24 @@
+user:
+  - email: alice@demo.com
+    publicId: DEMAALJCE2
+    displayName: Alice Wonder
+    password: demo12345
+    emailVerified: true
+    roles:
+      - PLAYER
+
+  - email: bob@demo.com
+    publicId: DEMABBQRS2
+    displayName: Bob Builder
+    password: demo12345
+    emailVerified: true
+    roles:
+      - PLAYER
+
+  - email: charlie@demo.com
+    publicId: DEMACHARS2
+    displayName: Charlie Brown
+    password: demo12345
+    emailVerified: true
+    roles:
+      - PLAYER
