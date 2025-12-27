@@ -8,8 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 public final class PostgresTestDbCleaner {
 
-    private PostgresTestDbCleaner() {
-    }
+    private PostgresTestDbCleaner() {}
 
     /**
      * Truncates all "domain" tables (currently all tables in schema {@code public} whose names start
@@ -26,9 +25,8 @@ public final class PostgresTestDbCleaner {
 
         tables.sort(Comparator.naturalOrder());
 
-        String tableList = tables.stream()
-                .map(PostgresTestDbCleaner::qualifiedAndQuoted)
-                .collect(Collectors.joining(", "));
+        String tableList =
+                tables.stream().map(PostgresTestDbCleaner::qualifiedAndQuoted).collect(Collectors.joining(", "));
 
         jdbcTemplate.execute("TRUNCATE TABLE " + tableList + " RESTART IDENTITY CASCADE");
     }

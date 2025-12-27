@@ -142,7 +142,8 @@ class SeedSeasonUseCaseTest {
         void shouldCreateMatchesForAllRounds() {
             // Arrange
             setupSuccessfulMocks();
-            when(matchRepo.existsBySeasonAndRoundAndTeams(any(UUID.class), any(UUID.class), any(UUID.class), any(UUID.class)))
+            when(matchRepo.existsBySeasonAndRoundAndTeams(
+                            any(UUID.class), any(UUID.class), any(UUID.class), any(UUID.class)))
                     .thenReturn(false);
 
             // Act
@@ -160,7 +161,8 @@ class SeedSeasonUseCaseTest {
         void shouldSkipExistingMatches() {
             // Arrange
             setupSuccessfulMocks();
-            when(matchRepo.existsBySeasonAndRoundAndTeams(any(UUID.class), any(UUID.class), any(UUID.class), any(UUID.class)))
+            when(matchRepo.existsBySeasonAndRoundAndTeams(
+                            any(UUID.class), any(UUID.class), any(UUID.class), any(UUID.class)))
                     .thenReturn(true); // All matches exist
 
             // Act
@@ -210,7 +212,7 @@ class SeedSeasonUseCaseTest {
             setupSuccessfulMocks();
 
             // First 10 rounds succeed, then fail
-                when(finalizeRoundUseCase.execute(any(UUID.class)))
+            when(finalizeRoundUseCase.execute(any(UUID.class)))
                     .thenReturn(Either.right(createFinalizationResult()))
                     .thenReturn(Either.right(createFinalizationResult()))
                     .thenReturn(Either.right(createFinalizationResult()))
@@ -221,7 +223,8 @@ class SeedSeasonUseCaseTest {
                     .thenReturn(Either.right(createFinalizationResult()))
                     .thenReturn(Either.right(createFinalizationResult()))
                     .thenReturn(Either.right(createFinalizationResult()))
-                    .thenReturn(Either.left(new FinalizationError.RoundNotReady(UUID.randomUUID(), "Matches not finished")));
+                    .thenReturn(Either.left(
+                            new FinalizationError.RoundNotReady(UUID.randomUUID(), "Matches not finished")));
 
             // Act
             Either<SeedingError, SeasonSeedResult> result = useCase.execute();
@@ -389,8 +392,8 @@ class SeedSeasonUseCaseTest {
                                 when(test.configLoader.loadConfig()).thenReturn(test.validConfig);
                                 when(test.competitionRepo.findBySlug(anyString()))
                                         .thenReturn(Optional.of(test.competition));
-                            when(test.seasonRepo.findBySlug(eq(test.competition.getId()), anyString()))
-                                .thenReturn(Optional.empty());
+                                when(test.seasonRepo.findBySlug(eq(test.competition.getId()), anyString()))
+                                        .thenReturn(Optional.empty());
                             },
                             SeedingError.SeasonNotFound.class),
                     Arguments.of(
@@ -399,9 +402,9 @@ class SeedSeasonUseCaseTest {
                                 when(test.configLoader.loadConfig()).thenReturn(test.validConfig);
                                 when(test.competitionRepo.findBySlug(anyString()))
                                         .thenReturn(Optional.of(test.competition));
-                            when(test.seasonRepo.findBySlug(eq(test.competition.getId()), anyString()))
-                                .thenReturn(Optional.of(test.season));
-                            when(test.roundRepo.findBySeasonIdOrderByPosition(any(UUID.class)))
+                                when(test.seasonRepo.findBySlug(eq(test.competition.getId()), anyString()))
+                                        .thenReturn(Optional.of(test.season));
+                                when(test.roundRepo.findBySeasonIdOrderByPosition(any(UUID.class)))
                                         .thenReturn(Collections.emptyList());
                             },
                             SeedingError.NoRoundsFound.class));
@@ -418,31 +421,40 @@ class SeedSeasonUseCaseTest {
     private void setupSuccessfulMocks() {
         setupBasicMocks();
         lenient().when(contestRepo.findById(any(UUID.class))).thenReturn(Optional.of(defaultContest));
-        lenient().when(matchRepo.existsBySeasonAndRoundAndTeams(any(UUID.class), any(UUID.class), any(UUID.class), any(UUID.class)))
+        lenient()
+                .when(matchRepo.existsBySeasonAndRoundAndTeams(
+                        any(UUID.class), any(UUID.class), any(UUID.class), any(UUID.class)))
                 .thenReturn(false);
 
         // SeedSeasonUseCase requires demo users to already exist
         for (SeedingConfig.DemoUser demoUser : validConfig.getDemoUsers()) {
             Email email = Email.create(demoUser.getEmail());
             User user = User.builder()
-                .id(UUID.randomUUID())
-                .publicId(PublicId.create("AbCd3fGh9J"))
-                .email(email)
-                .displayName(demoUser.getDisplayName())
-                .roles(Set.of(Role.PLAYER))
-                .emailVerified(true)
-                .build();
+                    .id(UUID.randomUUID())
+                    .publicId(PublicId.create("AbCd3fGh9J"))
+                    .email(email)
+                    .displayName(demoUser.getDisplayName())
+                    .roles(Set.of(Role.PLAYER))
+                    .emailVerified(true)
+                    .build();
             lenient().when(userRepo.findByEmail(eq(email))).thenReturn(Optional.of(user));
         }
 
-        lenient().when(predictionRepo.findByUserAndSeason(any(UUID.class), any(UUID.class))).thenReturn(Optional.empty());
+        lenient()
+                .when(predictionRepo.findByUserAndSeason(any(UUID.class), any(UUID.class)))
+                .thenReturn(Optional.empty());
         lenient().when(predictionRepo.save(any(SeasonPrediction.class))).thenAnswer(inv -> inv.getArgument(0));
         lenient().when(entryRepo.save(any(Entry.class))).thenAnswer(inv -> inv.getArgument(0));
         lenient().when(matchRepo.save(any(Match.class))).thenAnswer(inv -> inv.getArgument(0));
-        lenient().when(matchRepo.findByRoundId(any(UUID.class))).thenAnswer(inv -> createMatches(season.getId(), inv.getArgument(0)));
-        lenient().when(standingsRepo.findBySeasonAndRoundPosition(any(UUID.class), anyInt()))
-            .thenReturn(Optional.of(createStandings(season.getId())));
-        lenient().when(finalizeRoundUseCase.execute(any(UUID.class))).thenReturn(Either.right(createFinalizationResult()));
+        lenient()
+                .when(matchRepo.findByRoundId(any(UUID.class)))
+                .thenAnswer(inv -> createMatches(season.getId(), inv.getArgument(0)));
+        lenient()
+                .when(standingsRepo.findBySeasonAndRoundPosition(any(UUID.class), anyInt()))
+                .thenReturn(Optional.of(createStandings(season.getId())));
+        lenient()
+                .when(finalizeRoundUseCase.execute(any(UUID.class)))
+                .thenReturn(Either.right(createFinalizationResult()));
         lenient().when(passwordEncoder.encode(anyString())).thenReturn("encoded-password");
     }
 

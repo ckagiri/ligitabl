@@ -20,11 +20,9 @@ import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.model.db.tables.TCompetition;
-import com.ligitabl.model.db.tables.TContest;
 import com.ligitabl.model.db.tables.TMatch;
 import com.ligitabl.model.db.tables.TRound;
 import com.ligitabl.model.db.tables.TSeason;
-import com.ligitabl.model.db.tables.TStandings;
 import com.ligitabl.model.db.tables.TTeam;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.Score;
@@ -50,7 +48,7 @@ class MatchRepoTest {
         repo = new MatchPersistenceAdapter(dsl);
 
         // Clean slate (respect FK order)
-                TestDbCleaner.truncatePublicTables(dsl);
+        TestDbCleaner.truncatePublicTables(dsl);
     }
 
     @AfterAll

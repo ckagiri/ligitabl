@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.model.domain.SwapChange;
 import com.ligitabl.model.domain.*;
+import com.ligitabl.model.domain.SwapChange;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -43,7 +43,7 @@ public class MakeSwapUseCase {
 
     private Either<SwapError, Season> getCurrentSeason() {
         return seasonRepo
-            .findMostRecentSeason(competitionDefaults.defaultCompetitionSlug())
+                .findMostRecentSeason(competitionDefaults.defaultCompetitionSlug())
                 .map(Either::<SwapError, Season>right)
                 .orElseGet(() -> Either.left(new SwapError.NoPredictionFound(null, null)));
     }
@@ -93,13 +93,12 @@ public class MakeSwapUseCase {
         String teamACode = request.teamACode().toUpperCase();
         String teamBCode = request.teamBCode().toUpperCase();
 
-        List<TeamRank> initialRankings = season.getInitialRankings() != null
-            ? season.getInitialRankings()
-            : prediction.getInitialRankings();
+        List<TeamRank> initialRankings =
+                season.getInitialRankings() != null ? season.getInitialRankings() : prediction.getInitialRankings();
 
         Set<String> validCodes = initialRankings == null
-            ? Set.of()
-            : initialRankings.stream().map(TeamRank::getCode).collect(Collectors.toSet());
+                ? Set.of()
+                : initialRankings.stream().map(TeamRank::getCode).collect(Collectors.toSet());
 
         if (!validCodes.contains(teamACode)) {
             return Either.left(new SwapError.InvalidTeamCode(teamACode));
@@ -110,12 +109,12 @@ public class MakeSwapUseCase {
 
         // Find teams in current rankings
         TeamRank teamA = prediction.getCurrentRankings().stream()
-            .filter(t -> t.getCode().equals(teamACode))
+                .filter(t -> t.getCode().equals(teamACode))
                 .findFirst()
                 .orElse(null);
 
         TeamRank teamB = prediction.getCurrentRankings().stream()
-            .filter(t -> t.getCode().equals(teamBCode))
+                .filter(t -> t.getCode().equals(teamBCode))
                 .findFirst()
                 .orElse(null);
 

@@ -10,7 +10,8 @@ final class TestDbCleaner {
     private TestDbCleaner() {}
 
     static void truncatePublicTables(DSLContext dsl) {
-        List<String> tableNames = dsl.fetch("""
+        List<String> tableNames = dsl.fetch(
+                        """
                 select tablename
                 from pg_tables
                 where schemaname = 'public'

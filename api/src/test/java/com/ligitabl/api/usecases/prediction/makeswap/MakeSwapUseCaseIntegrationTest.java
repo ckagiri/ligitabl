@@ -22,8 +22,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.model.domain.RoundStatus;
@@ -112,7 +112,8 @@ class MakeSwapUseCaseIntegrationTest extends AbstractPostgresIT {
         @Test
         @DisplayName("should allow first swap immediately")
         void shouldAllowFirstSwapImmediately() {
-            SeasonPrediction beforeSwap = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            SeasonPrediction beforeSwap =
+                    predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
             assertThat(beforeSwap.getLastSwapAt()).isNull();
             assertThat(beforeSwap.getSwaps()).isEmpty();
 
@@ -126,10 +127,17 @@ class MakeSwapUseCaseIntegrationTest extends AbstractPostgresIT {
             assertThat(result.get().hoursUntilNext()).isEqualTo(24.0);
             assertThat(result.get().updatedPrediction()).isNotNull();
 
-            SeasonPrediction persisted = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            SeasonPrediction persisted =
+                    predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
 
-            TeamRank ars = persisted.getCurrentRankings().stream().filter(t -> t.getCode().equals("ARS")).findFirst().orElseThrow();
-            TeamRank liv = persisted.getCurrentRankings().stream().filter(t -> t.getCode().equals("LIV")).findFirst().orElseThrow();
+            TeamRank ars = persisted.getCurrentRankings().stream()
+                    .filter(t -> t.getCode().equals("ARS"))
+                    .findFirst()
+                    .orElseThrow();
+            TeamRank liv = persisted.getCurrentRankings().stream()
+                    .filter(t -> t.getCode().equals("LIV"))
+                    .findFirst()
+                    .orElseThrow();
 
             assertThat(ars.getPosition()).isEqualTo(3);
             assertThat(liv.getPosition()).isEqualTo(2);
@@ -152,14 +160,16 @@ class MakeSwapUseCaseIntegrationTest extends AbstractPostgresIT {
             Either<SwapError, SwapResult> first = useCase.execute(userId, new SwapCommand("ARS", "LIV"));
             assertThat(first.isRight()).isTrue();
 
-            SeasonPrediction afterFirst = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            SeasonPrediction afterFirst =
+                    predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
             afterFirst.setLastSwapAt(now.minus(Duration.ofHours(24)));
             predictionRepo.save(afterFirst);
 
             Either<SwapError, SwapResult> second = useCase.execute(userId, new SwapCommand("MCI", "CHE"));
             assertThat(second.isRight()).isTrue();
 
-            SeasonPrediction persisted = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            SeasonPrediction persisted =
+                    predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
             assertThat(persisted.getSwaps()).hasSize(1);
             assertThat(persisted.getSwaps().get(0).getRound()).isEqualTo(10);
             assertThat(persisted.getSwaps().get(0).getChanges()).hasSize(2);
@@ -173,7 +183,8 @@ class MakeSwapUseCaseIntegrationTest extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject swap when cooldown active")
         void shouldRejectWhenCooldownActive() {
-            SeasonPrediction prediction = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            SeasonPrediction prediction =
+                    predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
             prediction.setLastSwapAt(now.minus(Duration.ofHours(23)));
             predictionRepo.save(prediction);
 
@@ -190,10 +201,7 @@ class MakeSwapUseCaseIntegrationTest extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject swap when round not open")
         void shouldRejectWhenRoundNotOpen() {
-            jdbcTemplate.update(
-                "UPDATE t_round SET c_status = ? WHERE pk_id = ?",
-                RoundStatus.LOCKED.name(),
-                roundId);
+            jdbcTemplate.update("UPDATE t_round SET c_status = ? WHERE pk_id = ?", RoundStatus.LOCKED.name(), roundId);
 
             Either<SwapError, SwapResult> result = useCase.execute(userId, new SwapCommand("ARS", "LIV"));
 
@@ -205,7 +213,8 @@ class MakeSwapUseCaseIntegrationTest extends AbstractPostgresIT {
         @DisplayName("should reject swap when teams not found")
         void shouldRejectWhenTeamsNotFound() {
             // Use valid team codes, but remove one from the user's current rankings
-            SeasonPrediction prediction = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            SeasonPrediction prediction =
+                    predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
             List<TeamRank> withoutArs = new ArrayList<>(prediction.getCurrentRankings().stream()
                     .filter(t -> !t.getCode().equals("ARS"))
                     .toList());
@@ -306,10 +315,7 @@ class MakeSwapUseCaseIntegrationTest extends AbstractPostgresIT {
                 randomPublicId(),
                 true);
 
-        jdbcTemplate.update(
-                "INSERT INTO t_user_role (fk_user_id, c_role) VALUES (?, ?)",
-                id,
-                "PLAYER");
+        jdbcTemplate.update("INSERT INTO t_user_role (fk_user_id, c_role) VALUES (?, ?)", id, "PLAYER");
     }
 
     private static String initialRankingsJson() {
@@ -319,7 +325,11 @@ class MakeSwapUseCaseIntegrationTest extends AbstractPostgresIT {
                 sb.append(",");
             }
             TeamRank tr = RANKINGS.get(i);
-            sb.append("{\"code\":\"").append(tr.getCode()).append("\",\"position\":").append(tr.getPosition()).append("}");
+            sb.append("{\"code\":\"")
+                    .append(tr.getCode())
+                    .append("\",\"position\":")
+                    .append(tr.getPosition())
+                    .append("}");
         }
         sb.append("]");
         return sb.toString();

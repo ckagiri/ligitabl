@@ -39,7 +39,7 @@ class MatchEndpointsIT extends AbstractPostgresIT {
 
     @BeforeEach
     void setupData() {
-                PostgresTestDbCleaner.truncateAllDomainTables(jdbcTemplate);
+        PostgresTestDbCleaner.truncateAllDomainTables(jdbcTemplate);
 
         competitionId = UUID.randomUUID();
         seasonId = UUID.randomUUID();
@@ -111,7 +111,7 @@ class MatchEndpointsIT extends AbstractPostgresIT {
     @Test
     void getMatchesForRound_shouldReturnMatches() {
         String url = "http://localhost:" + port + "/api/competitions/premier-league/seasons/2024-25/rounds/1/matches";
-                ResponseEntity<Object[]> response = restTemplate.getForEntity(url, Object[].class);
+        ResponseEntity<Object[]> response = restTemplate.getForEntity(url, Object[].class);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isNotNull();
@@ -121,7 +121,7 @@ class MatchEndpointsIT extends AbstractPostgresIT {
     @Test
     void getDefaultRoundMatches_shouldReturnMatches() {
         String url = "http://localhost:" + port + "/api/rounds/default/matches";
-                ResponseEntity<Object[]> response = restTemplate.getForEntity(url, Object[].class);
+        ResponseEntity<Object[]> response = restTemplate.getForEntity(url, Object[].class);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isNotNull();

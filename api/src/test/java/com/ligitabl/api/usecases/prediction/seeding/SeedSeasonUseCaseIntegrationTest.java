@@ -59,9 +59,7 @@ class SeedSeasonUseCaseIntegrationTest extends AbstractPostgresIT {
         // @MockBean mocks are reset between test methods.
         when(configLoader.loadConfig()).thenReturn(fixture.seedingConfig());
         when(finalizeRoundUseCase.execute(any(UUID.class)))
-            .thenReturn(
-                Either.right(
-                    new FinalizationResult(UUID.randomUUID(), 1, 0, 0, false, Instant.now())));
+                .thenReturn(Either.right(new FinalizationResult(UUID.randomUUID(), 1, 0, 0, false, Instant.now())));
     }
 
     @AfterAll
@@ -105,24 +103,10 @@ class SeedSeasonUseCaseIntegrationTest extends AbstractPostgresIT {
         private static final String SEASON_SLUG = "2024-25";
         private static final String COMPETITION_SLUG = "test-league";
 
-        private static final List<String> TEAM_CODES = List.of(
-            "MCI",
-            "ARS",
-            "LIV",
-            "AVL",
-            "CHE",
-            "NEW",
-            "MUN",
-            "TOT",
-            "BHA",
-            "CRY",
-            "BRE",
-            "WHU");
+        private static final List<String> TEAM_CODES =
+                List.of("MCI", "ARS", "LIV", "AVL", "CHE", "NEW", "MUN", "TOT", "BHA", "CRY", "BRE", "WHU");
 
-        private static final List<String> DEMO_EMAILS = List.of(
-            "alice@demo.com",
-            "bob@demo.com",
-            "charlie@demo.com");
+        private static final List<String> DEMO_EMAILS = List.of("alice@demo.com", "bob@demo.com", "charlie@demo.com");
 
         private final JdbcTemplate jdbc;
 
@@ -155,13 +139,8 @@ class SeedSeasonUseCaseIntegrationTest extends AbstractPostgresIT {
             List<String> teamCodes = TEAM_CODES;
             List<String> demoEmails = DEMO_EMAILS;
 
-            SeedSeasonDbFixture fixture = new SeedSeasonDbFixture(
-                    jdbc,
-                    competitionId,
-                    seasonId,
-                    contestId,
-                    teamCodes,
-                    demoEmails);
+            SeedSeasonDbFixture fixture =
+                    new SeedSeasonDbFixture(jdbc, competitionId, seasonId, contestId, teamCodes, demoEmails);
 
             fixture.insertCompetition();
             fixture.insertTeams();
@@ -183,12 +162,14 @@ class SeedSeasonUseCaseIntegrationTest extends AbstractPostgresIT {
             config.setCompetitionSlug(COMPETITION_SLUG);
             config.setSeasonSlug(SEASON_SLUG);
             config.setFinishedRounds(0);
-            config.setDemoUsers(demoEmails.stream().map(email -> {
-                SeedingConfig.DemoUser u = new SeedingConfig.DemoUser();
-                u.setEmail(email);
-                u.setDisplayName(email.split("@")[0]);
-                return u;
-            }).toList());
+            config.setDemoUsers(demoEmails.stream()
+                    .map(email -> {
+                        SeedingConfig.DemoUser u = new SeedingConfig.DemoUser();
+                        u.setEmail(email);
+                        u.setDisplayName(email.split("@")[0]);
+                        return u;
+                    })
+                    .toList());
             return config;
         }
 
@@ -202,17 +183,13 @@ class SeedSeasonUseCaseIntegrationTest extends AbstractPostgresIT {
 
         int countPredictionsForSeason() {
             Integer count = jdbc.queryForObject(
-                    "SELECT COUNT(*) FROM t_season_prediction WHERE fk_season_id = ?",
-                    Integer.class,
-                    seasonId);
+                    "SELECT COUNT(*) FROM t_season_prediction WHERE fk_season_id = ?", Integer.class, seasonId);
             return Objects.requireNonNull(count, "prediction count should be present");
         }
 
         int countEntriesForContest() {
             Integer count = jdbc.queryForObject(
-                    "SELECT COUNT(*) FROM t_entry WHERE fk_contest_id = ?",
-                    Integer.class,
-                    contestId);
+                    "SELECT COUNT(*) FROM t_entry WHERE fk_contest_id = ?", Integer.class, contestId);
             return Objects.requireNonNull(count, "entry count should be present");
         }
 
@@ -304,10 +281,7 @@ class SeedSeasonUseCaseIntegrationTest extends AbstractPostgresIT {
                         randomPublicId(),
                         true);
 
-                jdbc.update(
-                        "INSERT INTO t_user_role (fk_user_id, c_role) VALUES (?, ?)",
-                        userId,
-                        "PLAYER");
+                jdbc.update("INSERT INTO t_user_role (fk_user_id, c_role) VALUES (?, ?)", userId, "PLAYER");
             }
         }
 
@@ -317,7 +291,8 @@ class SeedSeasonUseCaseIntegrationTest extends AbstractPostgresIT {
                 if (i > 0) {
                     rankingsJson.append(",");
                 }
-                rankingsJson.append("{\"code\":\"")
+                rankingsJson
+                        .append("{\"code\":\"")
                         .append(teamCodes.get(i))
                         .append("\",\"position\":")
                         .append(i + 1)
@@ -337,6 +312,5 @@ class SeedSeasonUseCaseIntegrationTest extends AbstractPostgresIT {
             }
             return sb.toString();
         }
-
     }
 }

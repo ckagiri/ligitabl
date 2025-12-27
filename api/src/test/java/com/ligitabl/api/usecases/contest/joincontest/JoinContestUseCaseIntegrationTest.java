@@ -22,8 +22,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.model.domain.RoundStatus;
@@ -136,7 +136,8 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
             assertThat(prediction.get().getSeasonId()).isEqualTo(seasonId);
             assertThat(prediction.get().getInitialRankings()).hasSize(12);
             assertThat(prediction.get().getCurrentRankings()).hasSize(12);
-            assertThat(prediction.get().getInitialRankings()).isEqualTo(prediction.get().getCurrentRankings());
+            assertThat(prediction.get().getInitialRankings())
+                    .isEqualTo(prediction.get().getCurrentRankings());
             assertThat(prediction.get().getSwaps()).isEmpty();
             assertThat(prediction.get().getLastSwapAt()).isNull();
             assertThat(prediction.get().getAtRoundNumber()).isEqualTo(joinResult.atRoundNumber());
@@ -159,7 +160,8 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().atRoundNumber()).isEqualTo(1);
 
-            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            var prediction =
+                    predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
             assertThat(prediction.getAtRoundNumber()).isEqualTo(1);
         }
 
@@ -175,7 +177,8 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
             assertThat(result.get().atRoundNumber()).isEqualTo(2);
             assertThat(result.get().message()).contains("Round 2");
 
-            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            var prediction =
+                    predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
             assertThat(prediction.getAtRoundNumber()).isEqualTo(2);
         }
 
@@ -190,7 +193,8 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().atRoundNumber()).isEqualTo(2);
 
-            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            var prediction =
+                    predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
             assertThat(prediction.getAtRoundNumber()).isEqualTo(2);
         }
 
@@ -215,7 +219,8 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
 
             assertThat(result.isRight()).isTrue();
 
-            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            var prediction =
+                    predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
             TeamRank first = prediction.getCurrentRankings().getFirst();
             assertThat(first.getCode()).isEqualTo("WHU");
             assertThat(first.getPosition()).isEqualTo(1);
@@ -250,7 +255,8 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
             rankings = new java.util.ArrayList<>(rankings);
             rankings.set(0, new JoinContestCommand.TeamRankRequest("XXX", 1));
 
-            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, new JoinContestCommand(rankings));
+            Either<JoinContestError, JoinContestResult> result =
+                    useCase.execute(userId, new JoinContestCommand(rankings));
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(JoinContestError.InvalidTeamCodes.class);
@@ -267,11 +273,13 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
             rankings.set(0, new JoinContestCommand.TeamRankRequest("MCI", 1));
             rankings.set(1, new JoinContestCommand.TeamRankRequest("ARS", 1));
 
-            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, new JoinContestCommand(rankings));
+            Either<JoinContestError, JoinContestResult> result =
+                    useCase.execute(userId, new JoinContestCommand(rankings));
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(JoinContestError.DuplicatePositions.class);
-            assertThat(((JoinContestError.DuplicatePositions) result.getLeft()).duplicates()).contains(1);
+            assertThat(((JoinContestError.DuplicatePositions) result.getLeft()).duplicates())
+                    .contains(1);
         }
 
         @Test
@@ -285,11 +293,13 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
             rankings.set(0, new JoinContestCommand.TeamRankRequest("MCI", 1));
             rankings.set(1, new JoinContestCommand.TeamRankRequest("MCI", 2));
 
-            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, new JoinContestCommand(rankings));
+            Either<JoinContestError, JoinContestResult> result =
+                    useCase.execute(userId, new JoinContestCommand(rankings));
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(JoinContestError.DuplicateTeamCodes.class);
-            assertThat(((JoinContestError.DuplicateTeamCodes) result.getLeft()).duplicates()).contains("MCI");
+            assertThat(((JoinContestError.DuplicateTeamCodes) result.getLeft()).duplicates())
+                    .contains("MCI");
         }
 
         @Test
@@ -298,12 +308,15 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
             setCurrentRoundTo(22, RoundStatus.LOCKED);
             setSeasonCurrentRound(roundId, 22);
 
-            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, validRequestFromInitialRankings());
+            Either<JoinContestError, JoinContestResult> result =
+                    useCase.execute(userId, validRequestFromInitialRankings());
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(JoinContestError.SeasonEnded.class);
-            assertThat(((JoinContestError.SeasonEnded) result.getLeft()).currentRound()).isEqualTo(22);
-            assertThat(((JoinContestError.SeasonEnded) result.getLeft()).maxRounds()).isEqualTo(22);
+            assertThat(((JoinContestError.SeasonEnded) result.getLeft()).currentRound())
+                    .isEqualTo(22);
+            assertThat(((JoinContestError.SeasonEnded) result.getLeft()).maxRounds())
+                    .isEqualTo(22);
         }
 
         @Test
@@ -312,7 +325,8 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
             setCurrentRoundTo(22, RoundStatus.OPEN);
             setSeasonCurrentRound(roundId, 22);
 
-            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, validRequestFromInitialRankings());
+            Either<JoinContestError, JoinContestResult> result =
+                    useCase.execute(userId, validRequestFromInitialRankings());
 
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().atRoundNumber()).isEqualTo(22);
@@ -336,10 +350,9 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
     }
 
     private static JoinContestCommand validRequestFromInitialRankings() {
-        return new JoinContestCommand(
-                INITIAL_RANKINGS.stream()
-                        .map(tr -> new JoinContestCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
-                        .toList());
+        return new JoinContestCommand(INITIAL_RANKINGS.stream()
+                .map(tr -> new JoinContestCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
+                .toList());
     }
 
     private void insertCompetitionAndSeason() {
@@ -348,7 +361,7 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
                 "INSERT INTO t_competition (pk_id, c_name, c_slug, c_code, c_phases, fk_active_season_id) VALUES (?,?,?,?, '[]'::jsonb, ?)",
                 competitionId,
                 "Premier League",
-            competitionSlug,
+                competitionSlug,
                 "PL",
                 seasonId);
 
@@ -398,10 +411,7 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
     }
 
     private void updateCurrentRoundStatus(RoundStatus status) {
-        jdbcTemplate.update(
-                "UPDATE t_round SET c_status = ? WHERE pk_id = ?",
-                status.name(),
-                roundId);
+        jdbcTemplate.update("UPDATE t_round SET c_status = ? WHERE pk_id = ?", status.name(), roundId);
     }
 
     private void setCurrentRoundTo(int position, RoundStatus status) {
@@ -437,10 +447,7 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
                 randomPublicId(),
                 true);
 
-        jdbcTemplate.update(
-                "INSERT INTO t_user_role (fk_user_id, c_role) VALUES (?, ?)",
-                id,
-                "PLAYER");
+        jdbcTemplate.update("INSERT INTO t_user_role (fk_user_id, c_role) VALUES (?, ?)", id, "PLAYER");
     }
 
     private static String initialRankingsJson() {
@@ -450,7 +457,11 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
                 sb.append(",");
             }
             TeamRank tr = INITIAL_RANKINGS.get(i);
-            sb.append("{\"code\":\"").append(tr.getCode()).append("\",\"position\":").append(tr.getPosition()).append("}");
+            sb.append("{\"code\":\"")
+                    .append(tr.getCode())
+                    .append("\",\"position\":")
+                    .append(tr.getPosition())
+                    .append("}");
         }
         sb.append("]");
         return sb.toString();
