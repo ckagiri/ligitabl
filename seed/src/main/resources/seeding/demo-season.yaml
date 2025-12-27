@@ -1,8 +1,8 @@
 season:
   - clientId: 1
     competitionSlug: super-premier-league
-    name: 2025
-    slug: 2025
+    name: 2024/25
+    slug: 2024-25
     startDate: 2025-02-01
     endDate: 2025-06-30
     totalTeams: 12

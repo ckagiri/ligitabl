@@ -14,10 +14,8 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -84,11 +82,18 @@ public class FinalizeRoundUseCase {
             Standings finalStandings = calculateFinalStandings(round, season)
                     .getOrElseThrow(err -> new RuntimeException(err.toString()));
 
+            List<SeasonPrediction> predictions = predictionRepo
+                    .findBySeasonAndAtRoundNumberLessThanEqual(
+                            season.getId(),
+                            round.getPosition()
+                    );
+
             // Step 2: Create round submissions
-            List<RoundSubmission> submissions = createRoundSubmissions(round, season);
+            List<RoundSubmission> submissions = createRoundSubmissions(predictions, round, season);
 
             // Step 3: Calculate round results
             List<RoundResult> results = calculateRoundResults(
+                    predictions,
                     submissions,
                     finalStandings,
                     season
@@ -171,14 +176,7 @@ public class FinalizeRoundUseCase {
     }
 
     // STEP 2: Create Round Submissions
-    private List<RoundSubmission> createRoundSubmissions(Round round, Season season) {
-        // Get all predictions that should participate
-        List<SeasonPrediction> predictions = predictionRepo
-                .findBySeasonAndAtRoundNumberLessThanEqual(
-                        season.getId(),
-                        round.getPosition()
-                );
-
+    private List<RoundSubmission> createRoundSubmissions(List<SeasonPrediction> predictions, Round round, Season season) {
         List<RoundSubmission> submissions = new ArrayList<>();
 
         for (SeasonPrediction prediction : predictions) {
@@ -195,7 +193,7 @@ public class FinalizeRoundUseCase {
                         .userId(prediction.getUserId())
                         .seasonId(season.getId())
                         .roundPosition(round.getPosition())
-                        .rankings(prediction.getCurrentRankings())
+                        .rankings(new ArrayList<>(prediction.getInitialRankings())) // snapshot
                         .seasonPredictionId(prediction.getId())
                         .build();
 
@@ -205,18 +203,28 @@ public class FinalizeRoundUseCase {
             }
         }
 
+        log.info("Created {} round submissions", submissions.size());
         return submissions;
     }
 
     // STEP 3: Calculate Round Results
     private List<RoundResult> calculateRoundResults(
+            List<SeasonPrediction> predictions,
             List<RoundSubmission> submissions,
             Standings finalStandings,
             Season season
     ) {
+        Map<UUID, SeasonPrediction> predictionMap = predictions.stream()
+                .collect(Collectors.toMap(SeasonPrediction::getId, p -> p));
         List<RoundResult> results = new ArrayList<>();
 
         for (RoundSubmission submission : submissions) {
+            SeasonPrediction prediction = predictionMap.get(submission.getSeasonPredictionId());
+
+            if (prediction == null) {
+                log.error("No prediction found for submission {}", submission.getId());
+                continue;
+            }
             // Check if result already exists (idempotency)
             Optional<RoundResult> existing = resultRepo
                     .findByRoundSubmissionId(submission.getId());
@@ -228,12 +236,14 @@ public class FinalizeRoundUseCase {
                         season.getMaxHitPoints()
                 );
 
+                int swapCount = countSwapsInRound(prediction, submission.getRoundPosition());
+
                 RoundResult result = RoundResult.builder()
                         .roundSubmissionId(submission.getId())
                         .rankings(scoringResult.detailedRankings())
                         .score(scoringResult.score())
                         .zeroesCount(scoringResult.zeroesCount())
-                        .swapCount(0)
+                        .swapCount(swapCount)
                         .userViewed(false)
                         .build();
 
@@ -288,6 +298,13 @@ public class FinalizeRoundUseCase {
         }
 
         seasonRepo.save(season);
+    }
+
+    private int countSwapsInRound(SeasonPrediction prediction, int roundPosition) {
+        return prediction.getSwaps().stream()
+                .filter(roundSwap -> roundSwap.getRound() == roundPosition)
+                .mapToInt(roundSwap -> roundSwap.getChanges().size())
+                .sum();
     }
 
         private OffsetDateTime now() {

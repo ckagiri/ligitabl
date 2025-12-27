@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.model.SwapChange;
+import com.ligitabl.model.domain.SwapChange;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;

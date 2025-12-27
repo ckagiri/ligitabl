@@ -1,5 +1,6 @@
 package com.ligitabl.model.domain;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -27,4 +28,6 @@ public class RoundResult extends AbstractModel<UUID> {
 
     @Builder.Default
     private boolean userViewed = false;
+
+    private Instant createdAt;
 }

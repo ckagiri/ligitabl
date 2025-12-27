@@ -39,7 +39,7 @@ class DemoSeedingFlowIntegrationTest extends AbstractSeedPostgresIT {
 
         var season = dsl.selectFrom(TSeason.T_SEASON)
                 .where(TSeason.T_SEASON.FK_COMPETITION_ID.eq(competition.getId())
-                        .and(TSeason.T_SEASON.C_SLUG.eq("2025")))
+                .and(TSeason.T_SEASON.C_SLUG.eq("2024-25")))
                 .fetchAny();
         assertThat(season).as("demo season").isNotNull();
 

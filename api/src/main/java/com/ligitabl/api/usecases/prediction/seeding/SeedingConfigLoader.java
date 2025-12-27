@@ -1,11 +1,12 @@
 package com.ligitabl.api.usecases.prediction.seeding;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
-import org.yaml.snakeyaml.Yaml;
-import org.yaml.snakeyaml.constructor.Constructor;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -35,8 +36,9 @@ public class SeedingConfigLoader {
             }
 
             try (InputStream inputStream = resource.getInputStream()) {
-                Yaml yaml = new Yaml(new Constructor(SeedingConfig.class));
-                SeedingConfig config = yaml.load(inputStream);
+                ObjectMapper mapper = new ObjectMapper(new YAMLFactory());
+                mapper.findAndRegisterModules();
+                SeedingConfig config = mapper.readValue(inputStream, SeedingConfig.class);
 
                 log.info("Loaded seeding config: competition={}, season={}, finishedRounds={}, users={}",
                         config.getCompetitionSlug(),

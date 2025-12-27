@@ -7,7 +7,6 @@ import java.util.*;
 import java.util.stream.IntStream;
 
 import com.ligitabl.api.usecases.prediction.finalizeround.FinalizationResult;
-import com.ligitabl.model.SwapChange;
 import com.ligitabl.model.domain.*;
 
 public class SeedingTestFixtures {

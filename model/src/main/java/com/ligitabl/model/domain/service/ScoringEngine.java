@@ -5,10 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.ligitabl.model.domain.ResultTeamRank;
-import com.ligitabl.model.domain.ScoringResult;
-import com.ligitabl.model.domain.StandingsTeamRank;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.*;
 
 public class ScoringEngine {
 

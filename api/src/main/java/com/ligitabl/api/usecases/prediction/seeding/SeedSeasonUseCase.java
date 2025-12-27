@@ -4,7 +4,7 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecases.prediction.finalizeround.FinalizationError;
 import com.ligitabl.api.usecases.prediction.finalizeround.FinalizationResult;
 import com.ligitabl.api.usecases.prediction.finalizeround.FinalizeRoundUseCase;
-import com.ligitabl.model.SwapChange;
+import com.ligitabl.model.domain.SwapChange;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
@@ -527,7 +527,8 @@ public class SeedSeasonUseCase {
                     String.format("Standings validation failed: %s", reason);
             case FinalizationError.ScoringFailed(UUID userId, String reason) ->
                     String.format("Scoring failed for user %s: %s", userId, reason);
-            case FinalizationError.TransactionFailed ignored -> "Transaction failed";
+            case FinalizationError.TransactionFailed(String reason) ->
+                    String.format("Transaction failed: %s", reason);
         };
     }
 

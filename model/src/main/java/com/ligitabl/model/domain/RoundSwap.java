@@ -2,8 +2,6 @@ package com.ligitabl.model.domain;
 
 import java.util.List;
 
-import com.ligitabl.model.SwapChange;
-
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

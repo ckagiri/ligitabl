@@ -27,6 +27,9 @@ build: ## Build the project (skip tests) - builds api and required modules (mode
 	mvn -q -DskipTests -pl $(API_DIR) -am clean package
 
 api-build: ## Build the API module (skip tests) - includes dependencies (model, jooq-codegen)
+	# Clean only the API module to avoid packaging stale IDE-compiled classes,
+	# but do not clean dependencies (model) since that would wipe generated jOOQ sources.
+	mvn -q -DskipTests -pl $(API_DIR) clean
 	mvn -q -DskipTests -pl $(API_DIR) -am package
 
 test: ## Run full API test suite (build deps too; may include *IT depending on config)

@@ -54,16 +54,19 @@ require_cmd() {
 
 require_cmd make
 
-echo "[1/4] Start DB (docker compose)"
+echo "[1/5] Start DB (docker compose)"
 make "${MAKE_DB_VARS[@]}" compose-up-db
 
-echo "[2/4] Reset DB (DESTRUCTIVE)"
+echo "[2/5] Reset DB (DESTRUCTIVE)"
 make "${MAKE_DB_VARS[@]}" reset-db
 
-echo "[3/4] Run migrations"
+echo "[3/5] Run migrations"
 make "${MAKE_DB_VARS[@]}" migrate
 
-echo "[4/4] Seed demo-data then seed-season"
+echo "[4/5] Run jOOQ codegen"
+make "${MAKE_DB_VARS[@]}" codegen
+
+echo "[5/5] Seed demo-data then seed-season"
 make "${MAKE_DB_VARS[@]}" db-seed-demo
 
 echo ""
