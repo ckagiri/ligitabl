@@ -33,9 +33,6 @@ public class AsyncStandingsService {
      *
      * This method returns immediately, the calculation happens in background.
      * Errors are logged but don't propagate.
-     *
-     * @param seasonId Season ID
-     * @param roundPosition Round position
      */
     @Async("asyncStandingsExecutor")
     @Transactional
@@ -62,9 +59,6 @@ public class AsyncStandingsService {
 
     /**
      * Recalculate standings synchronously (for testing or admin operations)
-     *
-     * @param seasonId Season ID
-     * @param roundPosition Round position
      */
     @Transactional
     public void recalculateSync(UUID seasonId, int roundPosition) {

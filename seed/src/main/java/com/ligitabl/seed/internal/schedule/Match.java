@@ -5,7 +5,7 @@ package com.ligitabl.seed.internal.schedule;
  *
  * @param home the home team
  * @param away the away team
- * @param <T> the type of team teamId (String, Integer, custom Team object, etc.)
+ * @param <T> the type of team identifier (String, Integer, custom Team object, etc.)
  */
 public record Match<T>(T home, T away) {
 

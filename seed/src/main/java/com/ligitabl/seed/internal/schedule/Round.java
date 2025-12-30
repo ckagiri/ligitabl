@@ -8,7 +8,7 @@ import java.util.List;
  *
  * @param position the week number (1-based)
  * @param matches the list of matches in this round
- * @param <T> the type of team teamId
+ * @param <T> the type of team identifier
  */
 public record Round<T>(int position, List<Match<T>> matches) {
 

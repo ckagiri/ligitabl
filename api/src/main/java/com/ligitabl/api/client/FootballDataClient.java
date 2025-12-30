@@ -18,7 +18,6 @@ import lombok.extern.slf4j.Slf4j;
  * Football Data API Client
  *
  * Wrapper around WebClient for Football Data API v4.
- * Uses Either monad for error handling.
  */
 @Service
 @RequiredArgsConstructor
