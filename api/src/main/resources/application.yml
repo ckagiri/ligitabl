@@ -45,3 +45,10 @@ jwt:
 
 ligitabl:
   default-competition-slug: ${DEFAULT_COMPETITION_SLUG:premier-league}
+
+football-data:
+  api:
+    url: https://api.football-data.org/v4
+    token: ${FOOTBALL_DATA_API_TOKEN:your-api-token-here}
+    timeout-seconds: 10
+    retry-attempts: 3

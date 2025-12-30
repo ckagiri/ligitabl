@@ -9,7 +9,7 @@ import java.util.List;
  * Designed for leagues where each team plays every other team twice - once at
  * home and once away (double round-robin).
  *
- * @param <T> the type of team identifier (String, Integer, custom Team
+ * @param <T> the type of team teamId (String, Integer, custom Team
  *            object, etc.)
  */
 public class ScheduleGenerator<T> {

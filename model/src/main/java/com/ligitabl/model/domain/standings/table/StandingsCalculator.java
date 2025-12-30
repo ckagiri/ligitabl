@@ -1,10 +1,11 @@
 package com.ligitabl.model.domain.standings.table;
 
 import java.util.*;
+import java.util.function.Function;
 
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.Team;
+import com.ligitabl.model.domain.*;
 import com.ligitabl.model.domain.standings.ranking.RankingRule;
+import com.ligitabl.model.domain.standings.ranking.RankingStrategy;
 import com.ligitabl.model.domain.standings.stats.Standing;
 import com.ligitabl.model.domain.standings.stats.TeamStats;
 
@@ -16,6 +17,12 @@ public class StandingsCalculator {
     /**
      * Calculate standings using the provided ranking rule.
      */
+    public static List<Standing> calculate(List<Team> teams, List<Match> matches) {
+        var rankingRule = RankingStrategy.ENGLISH_PREMIER_LEAGUE.build(matches, teams);
+        return calculate(teams, matches, rankingRule);
+    }
+
+
     public static List<Standing> calculate(List<Team> teams, List<Match> matches, RankingRule rankingRule) {
         Objects.requireNonNull(teams, "Teams cannot be null");
         Objects.requireNonNull(matches, "Matches cannot be null");
@@ -34,6 +41,53 @@ public class StandingsCalculator {
 
         // Assign positions
         return assignPositions(sortedStats);
+    }
+
+    /**
+     * Validates that calculated standings match expected values.
+     *
+     * @param standings Calculated standings
+     * @param finishedMatches Matches used for calculation
+     * @param totalTeams Expected number of teams
+     * @return true if valid
+     */
+    public static boolean validate(List<StandingsTeamRank> standings, List<Match> finishedMatches, int totalTeams) {
+        if (standings.size() != totalTeams) {
+            return false;
+        }
+
+        // Count total matches per team
+        Map<String, Integer> matchCounts = new HashMap<>();
+        for (Match match : finishedMatches) {
+            if (match.getStatus() != MatchStatus.FINISHED) continue;
+
+            String homeCode = match.getHomeTeam().getTla();
+            String awayCode = match.getAwayTeam().getTla();
+
+            matchCounts.merge(homeCode, 1, Integer::sum);
+            matchCounts.merge(awayCode, 1, Integer::sum);
+        }
+
+        // Validate each team
+        for (StandingsTeamRank rank : standings) {
+            String teamCode = rank.getRanking().getCode();
+            int expectedPlayed = matchCounts.getOrDefault(teamCode, 0);
+            int actualPlayed = rank.getMetadata().getPlayed();
+
+            if (expectedPlayed != actualPlayed) {
+                return false;
+            }
+
+            // Validate wins + draws + losses = played
+            int total = rank.getMetadata().getWon()
+                    + rank.getMetadata().getDrawn()
+                    + rank.getMetadata().getLost();
+            if (total != actualPlayed) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static Map<UUID, TeamStats> buildStatsMap(List<Team> teams, List<Match> matches) {

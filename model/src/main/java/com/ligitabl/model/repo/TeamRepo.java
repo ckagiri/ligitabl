@@ -19,6 +19,8 @@ public interface TeamRepo extends BaseCrudRepo<Team, UUID> {
 
     List<Team> findAllByIds(Set<UUID> ids);
 
+    List<Team> findAllByCodes(Set<String> codes);
+
     boolean existsBySlug(TeamSlug slug);
 
     boolean existsById(UUID id);

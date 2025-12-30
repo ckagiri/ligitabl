@@ -8,7 +8,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.ligitabl.model.domain.service.ScoringEngine;
-import com.ligitabl.model.domain.service.StandingsCalculator;
 import com.ligitabl.model.infra.CompetitionPersistenceAdapter;
 import com.ligitabl.model.infra.ContestPersistenceAdapter;
 import com.ligitabl.model.infra.EntryPersistenceAdapter;
@@ -45,11 +44,6 @@ public class RepositoryConfig {
     @Bean
     public Clock clock() {
         return Clock.systemUTC();
-    }
-
-    @Bean
-    public StandingsCalculator standingsCalculator() {
-        return new StandingsCalculator();
     }
 
     @Bean
