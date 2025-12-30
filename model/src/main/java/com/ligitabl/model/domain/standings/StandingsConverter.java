@@ -6,10 +6,7 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
-import com.ligitabl.model.domain.Standings;
-import com.ligitabl.model.domain.StandingsMetadata;
-import com.ligitabl.model.domain.StandingsTeamRank;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.*;
 import com.ligitabl.model.domain.standings.stats.Standing;
 import com.ligitabl.model.domain.standings.stats.TeamStats;
 import com.ligitabl.model.domain.standings.table.LeagueTable;
@@ -23,14 +20,14 @@ public final class StandingsConverter {
         Objects.requireNonNull(table);
         Objects.requireNonNull(seasonId);
 
-        Map<UUID, String> teamCodeMap =
-                table.getTeams().stream().collect(Collectors.toMap(t -> t.getId(), t -> t.getShortName()));
-
-        List<StandingsTeamRank> rankings = table.getStandings().stream()
-                .map(s -> toStandingsTeamRank(s, teamCodeMap))
-                .toList();
-
+        var rankings = convert(table.getStandings(), table.getTeams());
         return Standings.create(seasonId, roundPosition, rankings);
+    }
+
+    public static List<StandingsTeamRank> convert(List<Standing> standings, List<Team> teams) {
+        Map<UUID, String> teamCodeMap = teams.stream().collect(Collectors.toMap(t -> t.getId(), t -> t.getShortName()));
+
+        return standings.stream().map(s -> toStandingsTeamRank(s, teamCodeMap)).toList();
     }
 
     private static StandingsTeamRank toStandingsTeamRank(Standing standing, Map<UUID, String> teamCodeMap) {

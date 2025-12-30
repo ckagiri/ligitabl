@@ -24,6 +24,10 @@ public class LeagueTable {
     /**
      * Create a league table using a predefined strategy.
      */
+    public LeagueTable(List<Team> teams, List<Match> matches) {
+        this(teams, matches, RankingStrategy.ENGLISH_PREMIER_LEAGUE);
+    }
+
     public LeagueTable(List<Team> teams, List<Match> matches, RankingStrategy strategy) {
         this(teams, matches, strategy.build(matches, teams));
     }

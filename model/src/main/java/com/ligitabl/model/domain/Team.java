@@ -22,7 +22,7 @@ public class Team extends AbstractModel<UUID> {
     @NotNull
     private String shortName;
 
-    // URL-friendly identifier (e.g., "manchester-united"), unique
+    // URL-friendly teamIdentifier (e.g., "manchester-united"), unique
     @NotBlank
     private TeamSlug slug;
 
