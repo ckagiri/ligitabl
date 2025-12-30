@@ -35,10 +35,10 @@ public class SyncMatchesUseCase {
     private final RoundRepo roundRepo;
     private final MatchRepo matchRepo;
     private final AsyncStandingsService standingsService;
+    private final CompetitionDefaults competitionDefaults;
 
     @Value("${football-data.competition.code}")
     private String competitionCode;
-    private CompetitionDefaults competitionDefaults;
 
     public record SyncMatchesCommand() {
     }
@@ -70,11 +70,15 @@ public class SyncMatchesUseCase {
     }
 
     private Either<SyncMatchesError, Season> getActiveSeason() {
-        return seasonRepo.findActiveSeason(competitionDefaults.defaultCompetitionSlug())
+        var competitionSlug = competitionDefaults.defaultCompetitionSlug();
+
+        if (competitionRepo.findBySlug(competitionSlug).isEmpty()) {
+            return Either.left(new SyncMatchesError.CompetitionNotFound(competitionCode));
+        }
+
+        return seasonRepo.findActiveSeason(competitionSlug)
                 .map(Either::<SyncMatchesError, Season>right)
-                .orElse(Either.left(new SyncMatchesError.SeasonNotFound(competitionCode))
-                )
-                .orElse(Either.left(new SyncMatchesError.CompetitionNotFound(competitionCode)));
+                .orElseGet(() -> Either.left(new SyncMatchesError.SeasonNotFound(competitionCode)));
     }
 
     private Either<SyncMatchesError, RoundContext> getCurrentRound(Season season) {
@@ -146,7 +150,7 @@ public class SyncMatchesUseCase {
      */
     private Either<SyncMatchesError, FetchedMatchData> fetchLiveMatches(RoundContext context) {
         return footballDataClient.getLiveMatches(competitionCode)
-                .mapLeft(SyncMatchesError.DataAccessError::new)
+                .mapLeft(error -> (SyncMatchesError) new SyncMatchesError.DataAccessError(error))
                 .map(response -> new FetchedMatchData(context, response.matches()));
     }
 
@@ -157,7 +161,7 @@ public class SyncMatchesUseCase {
         var today = LocalDate.now();
 
         return footballDataClient.getMatchesForDate(competitionCode, today)
-                .mapLeft(SyncMatchesError.DataAccessError::new)
+                .mapLeft(error -> (SyncMatchesError) new SyncMatchesError.DataAccessError(error))
                 .map(response -> new FetchedMatchData(context, response.matches()));
     }
 
@@ -169,7 +173,7 @@ public class SyncMatchesUseCase {
         var dayAfterTomorrow = today.plusDays(2);
 
         return footballDataClient.getMatchesInDateRange(competitionCode, today, dayAfterTomorrow)
-                .mapLeft(SyncMatchesError.DataAccessError::new)
+                .mapLeft(error -> (SyncMatchesError) new SyncMatchesError.DataAccessError(error))
                 .map(response -> new FetchedMatchData(context, response.matches()));
     }
 

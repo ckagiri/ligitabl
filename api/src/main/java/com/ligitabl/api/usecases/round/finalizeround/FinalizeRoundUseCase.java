@@ -136,10 +136,13 @@ public class FinalizeRoundUseCase {
             Season season
     ) {
         try {
-            Either<FinalizeRoundError, List<StandingsTeamRank>> calculation = standingsCalculator.calculateRankings(
-                    season.getId(),
-                    round.getPosition()
-            ).getOrElseMap(e -> new FinalizeRoundError.StandingsValidationFailed("Calculation Failed"));
+            Either<FinalizeRoundError, List<StandingsTeamRank>> calculation = standingsCalculator
+                .calculateRankings(season.getId(), round.getPosition())
+                .mapLeft(error -> (FinalizeRoundError) new FinalizeRoundError.StandingsValidationFailed(error.toString()));
+
+            if (calculation.isLeft()) {
+            return Either.left(calculation.getLeft());
+            }
 
             List<StandingsTeamRank> rankings = calculation.get();
 

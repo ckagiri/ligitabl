@@ -127,7 +127,7 @@ public class TriggerRoundFinalizationUseCase {
         log.info("Triggering finalization for round {}", context.round().getPosition());
 
         return finalizeRoundUseCase.execute(context.round.getSeasonId())
-                .mapLeft(TriggerFinalizationError.FinalizationFailed::new)
+                .mapLeft(error -> (TriggerFinalizationError) new TriggerFinalizationError.FinalizationFailed(error))
                 .map(result -> new TriggerFinalizationResult(
                         result.roundId(),
                         context.round().getPosition(),

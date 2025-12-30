@@ -1,5 +1,6 @@
 package com.ligitabl.api.scheduling.resilience;
 
+import com.ligitabl.api.scheduling.sync.MatchSyncResult;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;

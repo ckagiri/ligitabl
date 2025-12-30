@@ -11,7 +11,6 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
-import com.ligitabl.api.usecases.seeding.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,8 +25,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
-import com.ligitabl.api.usecases.seeding.finalizeround.FinalizationResult;
-import com.ligitabl.api.usecases.seeding.finalizeround.FinalizeRoundUseCase;
+import com.ligitabl.api.usecases.round.finalizeround.FinalizeRoundResult;
+import com.ligitabl.api.usecases.round.finalizeround.FinalizeRoundUseCase;
 
 @SpringBootTest
 @DisplayName("SeedSeasonUseCase Integration Tests")
@@ -60,7 +59,7 @@ class SeedSeasonUseCaseIntegrationTest extends AbstractPostgresIT {
         // @MockBean mocks are reset between test methods.
         when(configLoader.loadConfig()).thenReturn(fixture.seedingConfig());
         when(finalizeRoundUseCase.execute(any(UUID.class)))
-                .thenReturn(Either.right(new FinalizationResult(UUID.randomUUID(), 1, 0, 0, false, Instant.now())));
+            .thenReturn(Either.right(new FinalizeRoundResult(UUID.randomUUID(), 1, 0, 0, false, Instant.now())));
     }
 
     @AfterAll

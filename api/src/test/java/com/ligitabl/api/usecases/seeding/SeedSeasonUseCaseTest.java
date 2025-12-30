@@ -25,8 +25,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.usecases.seeding.finalizeround.FinalizationError;
-import com.ligitabl.api.usecases.seeding.finalizeround.FinalizeRoundUseCase;
+import com.ligitabl.api.usecases.round.finalizeround.FinalizeRoundError;
+import com.ligitabl.api.usecases.round.finalizeround.FinalizeRoundUseCase;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.auth.Role;
@@ -224,7 +224,7 @@ class SeedSeasonUseCaseTest {
                     .thenReturn(Either.right(createFinalizationResult()))
                     .thenReturn(Either.right(createFinalizationResult()))
                     .thenReturn(Either.left(
-                            new FinalizationError.RoundNotReady(UUID.randomUUID(), "Matches not finished")));
+                            new FinalizeRoundError.RoundNotReady(UUID.randomUUID(), "Matches not finished")));
 
             // Act
             Either<SeedingError, SeasonSeedResult> result = useCase.execute();

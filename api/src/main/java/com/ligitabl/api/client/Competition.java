@@ -1,0 +1,13 @@
+package com.ligitabl.api.client;
+
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+public record Competition(
+		Long id,
+		String name,
+		String code,
+		String type,
+		String emblem,
+		CurrentSeason currentSeason
+) {}

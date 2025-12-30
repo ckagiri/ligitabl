@@ -1,7 +1,6 @@
 package com.ligitabl.api.client;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.usecases.sync.AdvanceRoundUseCase;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -130,7 +129,7 @@ public class FootballDataClient {
                     .block();
 
             if (response == null || response.matches() == null) {
-                return Either.left(new MatchDataError.UnexpectedError("Null response from API"));
+                return Either.left(new ApiError.UnexpectedError("Null response from API"));
             }
             log.debug("Fetched {} upcoming matches", response.matches().size());
 
@@ -210,7 +209,7 @@ public class FootballDataClient {
         }
     }
 
-    private Either<ApiError, ?> handleException(Exception e) {
+    private <T> Either<ApiError, T> handleException(Exception e) {
         if (e instanceof WebClientResponseException.Unauthorized unauthorized) {
             log.error("API authentication failed", e);
             return Either.left(new ApiError.Unauthorized(

@@ -21,20 +21,10 @@ public class AdvanceRoundUseCase {
     private final FootballDataClient apiClient;
     private final CompetitionRepo competitionRepo;
     private final SeasonRepo seasonRepo;
+    private final CompetitionDefaults competitionDefaults;
 
     @Value("${football-data.competition.code}")
     private String competitionCode;
-    private CompetitionDefaults competitionDefaults;
-
-    public AdvanceRoundUseCase(
-            FootballDataClient apiClient,
-            CompetitionRepo competitionRepo,
-            SeasonRepo seasonRepo, CompetitionDefaults competitionDefaults) {
-        this.apiClient = apiClient;
-        this.competitionRepo = competitionRepo;
-        this.seasonRepo = seasonRepo;
-        this.competitionDefaults = competitionDefaults;
-    }
 
     public record AdvanceRoundCommand() {}
 
@@ -57,7 +47,7 @@ public class AdvanceRoundUseCase {
         log.debug("Fetching current matchday from API");
 
         return apiClient.getCompetition(competitionCode)
-                .mapLeft(AdvanceRoundError.ApiError::new)
+                .mapLeft(error -> (AdvanceRoundError) new AdvanceRoundError.ApiError(error))
                 .map(competition -> {
                     var currentMatchday = competition.currentSeason().currentMatchday();
                     log.debug("API reports current matchday: {}", currentMatchday);
@@ -66,13 +56,17 @@ public class AdvanceRoundUseCase {
     }
 
     private Either<AdvanceRoundError, SeasonContext> getActiveSeason(Integer apiMatchday) {
-        return seasonRepo.findActiveSeason(competitionDefaults.defaultCompetitionSlug())
-                        .map(season -> Either.<AdvanceRoundError, SeasonContext>right(
-                                new SeasonContext(season, apiMatchday)
-                        ))
-                        .orElse(Either.left(new AdvanceRoundError.SeasonNotFound(competitionCode))
-                )
-                .orElse(Either.left(new AdvanceRoundError.CompetitionNotFound(competitionCode)));
+        var competitionSlug = competitionDefaults.defaultCompetitionSlug();
+
+        if (competitionRepo.findBySlug(competitionSlug).isEmpty()) {
+            return Either.left(new AdvanceRoundError.CompetitionNotFound(competitionCode));
+        }
+
+        return seasonRepo.findActiveSeason(competitionSlug)
+            .map(season -> Either.<AdvanceRoundError, SeasonContext>right(
+                new SeasonContext(season, apiMatchday)
+            ))
+            .orElseGet(() -> Either.left(new AdvanceRoundError.SeasonNotFound(competitionCode)));
     }
 
     private Either<AdvanceRoundError, RoundAdvancementResult> advanceIfNeeded(
@@ -104,7 +98,9 @@ public class AdvanceRoundUseCase {
         // API matchday is ahead - advance
         log.info("Advancing matchday from {} to {}", currentMatchday, apiMatchday);
 
-        seasonRepo.updateCurrentMatchday(context.season().getId(), apiMatchday);
+        var season = context.season();
+        season.setCurrentMatchDay(apiMatchday);
+        seasonRepo.save(season);
 
         return Either.right(RoundAdvancementResult.advanced(
                 context.season().getId(),

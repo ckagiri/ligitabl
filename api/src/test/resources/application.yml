@@ -7,3 +7,12 @@ spring:
 jwt:
   secret: test-secret-change-me-test-secret-change-me-32bytes-min
   expiration: 86400000
+
+football-data:
+  api:
+    url: https://api.football-data.org/v4
+    token: test-token
+    timeout-seconds: 1
+    retry-attempts: 0
+  competition:
+    code: PL

@@ -6,8 +6,8 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.IntStream;
 
-import com.ligitabl.api.usecases.seeding.finalizeround.FinalizationResult;
 import com.ligitabl.api.usecases.seeding.SeedingConfig;
+import com.ligitabl.api.usecases.round.finalizeround.FinalizeRoundResult;
 import com.ligitabl.model.domain.*;
 
 public class SeedingTestFixtures {
@@ -146,8 +146,8 @@ public class SeedingTestFixtures {
                 .build();
     }
 
-    public static FinalizationResult createFinalizationResult() {
-        return new FinalizationResult(UUID.randomUUID(), 1, 10, 10, false, Instant.now());
+    public static FinalizeRoundResult createFinalizationResult() {
+        return new FinalizeRoundResult(UUID.randomUUID(), 1, 10, 10, false, Instant.now());
     }
 
     // Helper methods

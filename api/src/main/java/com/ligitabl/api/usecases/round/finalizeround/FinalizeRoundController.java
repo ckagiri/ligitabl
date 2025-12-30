@@ -44,7 +44,9 @@ public class FinalizeRoundController {
                             case FinalizeRoundError.RoundNotFound e ->
                                     ResponseEntity.notFound().build();
                             case FinalizeRoundError.RoundNotReady(UUID roundId, String reason) ->
-                                    String.format("Round %s not ready: %s", roundId, reason);
+                                    ResponseEntity.badRequest().body(new ErrorResponse(
+                                            String.format("Round %s not ready: %s", roundId, reason)
+                                    ));
                             case FinalizeRoundError.RoundNotLocked e ->
                                     ResponseEntity.badRequest().body(new ErrorResponse(
                                             "Round is not locked. Current status: " + e.currentStatus()
@@ -62,9 +64,17 @@ public class FinalizeRoundController {
                                             "Round is already finalized"
                                     ));
                             case FinalizeRoundError.ScoringFailed(UUID userId, String reason) ->
-                                    String.format("Scoring failed for user %s: %s", userId, reason);
+                                    ResponseEntity.internalServerError().body(new ErrorResponse(
+                                            String.format("Scoring failed for user %s: %s", userId, reason)
+                                    ));
                             case FinalizeRoundError.TransactionFailed(String reason) ->
-                                    String.format("Transaction failed: %s", reason);
+                                    ResponseEntity.internalServerError().body(new ErrorResponse(
+                                            String.format("Transaction failed: %s", reason)
+                                    ));
+
+                            default -> ResponseEntity.internalServerError().body(new ErrorResponse(
+                                    "Unexpected error: " + error
+                            ));
 
                         },
                         result_ -> ResponseEntity.ok(result_)

@@ -529,6 +529,7 @@ public class SeedSeasonUseCase {
                     String.format("Scoring failed for user %s: %s", userId, reason);
             case FinalizeRoundError.TransactionFailed(String reason) ->
                     String.format("Transaction failed: %s", reason);
+            default -> "Unexpected finalize-round error: " + error;
         };
     }
 

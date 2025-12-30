@@ -83,7 +83,7 @@ class JoinContestUseCaseTest {
         defaultContest = createDefaultContest();
 
         useCase = new JoinContestUseCase(
-                competitionDefaults, seasonRepo, roundRepo, teamRepo, contestRepo, predictionRepo, entryRepo, clock);
+            competitionDefaults, seasonRepo, roundRepo, contestRepo, predictionRepo, entryRepo, clock);
     }
 
     @Test

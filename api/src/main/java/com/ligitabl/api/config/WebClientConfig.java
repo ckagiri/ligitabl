@@ -6,8 +6,18 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
+import org.springframework.web.reactive.function.client.WebClient;
 
-import java.net.http.HttpClient;
+import reactor.core.publisher.Mono;
+import reactor.netty.http.client.HttpClient;
+import reactor.util.retry.Retry;
+
+import io.netty.channel.ChannelOption;
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.timeout.WriteTimeoutHandler;
+
+import java.time.Duration;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -24,10 +34,10 @@ public class WebClientConfig {
 
     private static final Logger log = LoggerFactory.getLogger(WebClientConfig.class);
 
-    @Value("${football-data.api.url}")
+        @Value("${football-data.api.url:https://api.football-data.org/v4}")
     private String baseUrl;
 
-    @Value("${football-data.api.token}")
+        @Value("${football-data.api.token:}")
     private String apiToken;
 
     @Value("${football-data.api.timeout-seconds:10}")
