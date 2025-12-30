@@ -1,12 +1,14 @@
 package com.ligitabl.api.scheduling;
 
-import com.ligitabl.api.usecases.sync.AdvanceRoundUseCase;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+
+import com.ligitabl.api.usecases.sync.AdvanceRoundUseCase;
 
 /**
  * Round Advancement Scheduler
@@ -19,6 +21,7 @@ import org.springframework.stereotype.Component;
  * - Daily at 6:00 AM
  */
 @Component
+@ConditionalOnProperty(name = "ligitabl.scheduling.enabled", havingValue = "true", matchIfMissing = true)
 public class RoundAdvancementScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(RoundAdvancementScheduler.class);
@@ -58,18 +61,19 @@ public class RoundAdvancementScheduler {
                     },
                     success -> {
                         if (success.advanced()) {
-                            log.info("Round advanced: matchday {} → {} (seasonId: {})",
+                            log.info(
+                                    "Round advanced: matchday {} → {} (seasonId: {})",
                                     success.previousMatchday(),
                                     success.newMatchday(),
                                     success.seasonId());
                         } else {
-                            log.debug("No round advancement needed: {} (matchday: {})",
+                            log.debug(
+                                    "No round advancement needed: {} (matchday: {})",
                                     success.reason(),
                                     success.newMatchday());
                         }
                         return null;
-                    }
-            );
+                    });
 
         } catch (Exception e) {
             log.error("Unexpected error during round advancement check", e);

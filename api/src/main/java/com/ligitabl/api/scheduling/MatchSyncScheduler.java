@@ -1,18 +1,20 @@
 package com.ligitabl.api.scheduling;
 
-import com.ligitabl.api.usecases.sync.SyncMatchesUseCase;
-import com.ligitabl.api.usecases.sync.TriggerRoundFinalizationUseCase;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.ScheduledFuture;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.concurrent.ScheduledFuture;
+import com.ligitabl.api.usecases.sync.SyncMatchesUseCase;
+import com.ligitabl.api.usecases.sync.TriggerRoundFinalizationUseCase;
 
 /**
  * Match Sync Scheduler
@@ -29,6 +31,7 @@ import java.util.concurrent.ScheduledFuture;
  * - All matches complete: Trigger finalization immediately
  */
 @Component
+@ConditionalOnProperty(name = "ligitabl.scheduling.enabled", havingValue = "true", matchIfMissing = true)
 public class MatchSyncScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(MatchSyncScheduler.class);
@@ -40,8 +43,15 @@ public class MatchSyncScheduler {
     @Value("${football-data.competition.code}")
     private String competitionCode;
 
+    @Value("${football-data.sync.retry-on-failure-minutes:5}")
+    private long retryOnFailureMinutes;
+
+    @Value("${football-data.sync.max-consecutive-failures:3}")
+    private int maxConsecutiveFailures;
+
     private ScheduledFuture<?> currentTask;
     private volatile boolean running = false;
+    private int consecutiveFailures = 0;
 
     public MatchSyncScheduler(
             TaskScheduler taskScheduler,
@@ -80,36 +90,53 @@ public class MatchSyncScheduler {
             result.fold(
                     error -> {
                         log.error("Match sync failed: {}", error);
-                        // On error, retry after 5 minutes
-                        scheduleNextSync(Duration.ofMinutes(5));
+
+                        consecutiveFailures++;
+                        if (consecutiveFailures >= maxConsecutiveFailures) {
+                            log.error(
+                                    "Match sync has failed {} times consecutively (threshold: {}).",
+                                    consecutiveFailures,
+                                    maxConsecutiveFailures);
+                        }
+
+                        scheduleNextSync(Duration.ofMinutes(retryOnFailureMinutes));
                         return null;
                     },
                     success -> {
-                        log.info("Match sync completed: processed={}, updated={}, newlyFinished={}",
+                        consecutiveFailures = 0;
+
+                        log.info(
+                                "Match sync completed: processed={}, updated={}, newlyFinished={}",
                                 success.matchesProcessed(),
                                 success.matchesUpdated(),
                                 success.newlyFinishedMatches());
 
-                        // Check if finalization should be triggered
                         if (success.allMatchesComplete()) {
                             log.info("All matches complete, triggering finalization check");
                             triggerFinalization();
                         }
 
-                        // Schedule next sync
-                        log.info("Next sync scheduled in: {} ({})",
+                        log.info(
+                                "Next sync scheduled in: {} ({})",
                                 formatDuration(success.nextSchedule().delay()),
                                 success.nextSchedule().reason());
 
                         scheduleNextSync(success.nextSchedule().delay());
                         return null;
-                    }
-            );
+                    });
 
         } catch (Exception e) {
             log.error("Unexpected error during match sync", e);
-            // On unexpected error, retry after 10 minutes
-            scheduleNextSync(Duration.ofMinutes(10));
+
+            consecutiveFailures++;
+            if (consecutiveFailures >= maxConsecutiveFailures) {
+                log.error(
+                        "Match sync has failed {} times consecutively (threshold: {}).",
+                        consecutiveFailures,
+                        maxConsecutiveFailures);
+            }
+
+            scheduleNextSync(Duration.ofMinutes(retryOnFailureMinutes));
         } finally {
             running = false;
         }
@@ -118,8 +145,7 @@ public class MatchSyncScheduler {
     private void triggerFinalization() {
         try {
             var result = triggerFinalizationUseCase.execute(
-                    new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(competitionCode)
-            );
+                    new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(competitionCode));
 
             result.fold(
                     error -> {
@@ -133,8 +159,7 @@ public class MatchSyncScheduler {
                             log.warn("Round finalization blocked: {}", success.message());
                         }
                         return null;
-                    }
-            );
+                    });
         } catch (Exception e) {
             log.error("Error triggering finalization", e);
         }
@@ -158,12 +183,10 @@ public class MatchSyncScheduler {
         long minutes = duration.toMinutes() % 60;
 
         if (hours > 0) {
-            return String.format("%d hour%s %d minute%s",
-                    hours, hours == 1 ? "" : "s",
-                    minutes, minutes == 1 ? "" : "s");
+            return String.format(
+                    "%d hour%s %d minute%s", hours, hours == 1 ? "" : "s", minutes, minutes == 1 ? "" : "s");
         } else {
-            return String.format("%d minute%s",
-                    minutes, minutes == 1 ? "" : "s");
+            return String.format("%d minute%s", minutes, minutes == 1 ? "" : "s");
         }
     }
 

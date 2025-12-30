@@ -16,13 +16,6 @@ spring:
     enabled: false
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
-  # Task Scheduling
-  task:
-    scheduling:
-      pool:
-        size: 5
-      thread-name-prefix: scheduled-task-
-
 server:
   port: ${PORT:8080}
 
