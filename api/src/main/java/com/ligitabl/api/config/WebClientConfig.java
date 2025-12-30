@@ -6,8 +6,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
+import org.springframework.lang.NonNull;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
+
+import java.time.Duration;
+import java.util.concurrent.TimeUnit;
 
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
@@ -16,9 +20,6 @@ import reactor.util.retry.Retry;
 import io.netty.channel.ChannelOption;
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
-
-import java.time.Duration;
-import java.util.concurrent.TimeUnit;
 
 /**
  * WebClient Configuration for Football Data API
@@ -34,11 +35,11 @@ public class WebClientConfig {
 
     private static final Logger log = LoggerFactory.getLogger(WebClientConfig.class);
 
-        @Value("${football-data.api.url:https://api.football-data.org/v4}")
-    private String baseUrl;
+    @Value("${football-data.api.url:https://api.football-data.org/v4}")
+    private @NonNull String baseUrl = "";
 
-        @Value("${football-data.api.token:}")
-    private String apiToken;
+    @Value("${football-data.api.token:}")
+    private @NonNull String apiToken = "";
 
     @Value("${football-data.api.timeout-seconds:10}")
     private int timeoutSeconds;
@@ -50,17 +51,20 @@ public class WebClientConfig {
     public WebClient footballDataWebClient() {
         // Configure HTTP client with timeouts
         HttpClient httpClient = HttpClient.create()
-                .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeoutSeconds * 1000)
-                .doOnConnected(conn -> conn
-                        .addHandlerLast(new ReadTimeoutHandler(timeoutSeconds, TimeUnit.SECONDS))
-                        .addHandlerLast(new WriteTimeoutHandler(timeoutSeconds, TimeUnit.SECONDS))
-                );
+            .option(ChannelOption.CONNECT_TIMEOUT_MILLIS, timeoutSeconds * 1000)
+            .doOnConnected(conn -> conn
+                .addHandlerLast(new ReadTimeoutHandler(timeoutSeconds, TimeUnit.SECONDS))
+                .addHandlerLast(new WriteTimeoutHandler(timeoutSeconds, TimeUnit.SECONDS))
+            );
+
+        @SuppressWarnings("null")
+        ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
 
         return WebClient.builder()
                 .baseUrl(baseUrl)
                 .defaultHeader("X-Auth-Token", apiToken)
                 .defaultHeader("Accept", "application/json")
-                .clientConnector(new ReactorClientHttpConnector(httpClient))
+                .clientConnector(connector)
                 .filter(logRequest())
                 .filter(logResponse())
                 .filter(retryFilter())
@@ -76,7 +80,7 @@ public class WebClientConfig {
      * Does NOT retry on:
      * - Client errors (4xx) except 429 (rate limit)
      */
-    private ExchangeFilterFunction retryFilter() {
+    private @NonNull ExchangeFilterFunction retryFilter() {
         return (request, next) -> next.exchange(request)
                 .flatMap(response -> {
                     // Retry on 5xx or 429 (rate limit)
@@ -102,7 +106,7 @@ public class WebClientConfig {
     /**
      * Log outgoing requests
      */
-    private ExchangeFilterFunction logRequest() {
+    private @NonNull ExchangeFilterFunction logRequest() {
         return ExchangeFilterFunction.ofRequestProcessor(request -> {
             log.debug("Football Data API Request: {} {}",
                     request.method(),
@@ -115,7 +119,7 @@ public class WebClientConfig {
     /**
      * Log incoming responses
      */
-    private ExchangeFilterFunction logResponse() {
+    private @NonNull ExchangeFilterFunction logResponse() {
         return ExchangeFilterFunction.ofResponseProcessor(response -> {
             log.debug("Football Data API Response: {} ({})",
                     response.statusCode(),

@@ -16,6 +16,13 @@ spring:
     enabled: false
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
+  # Task Scheduling
+  task:
+    scheduling:
+      pool:
+        size: 5
+      thread-name-prefix: scheduled-task-
+
 server:
   port: ${PORT:8080}
 
@@ -52,3 +59,23 @@ football-data:
     token: ${FOOTBALL_DATA_API_TOKEN:your-api-token-here}
     timeout-seconds: 10
     retry-attempts: 3
+  competition:
+    code: PL # Premier League
+  sync:
+    # Match sync runs dynamically based on match status
+    # Frequencies are calculated at runtime
+    retry-on-failure-minutes: 5
+    max-consecutive-failures: 3 # Alert admin after this many failures
+
+# Round Advancement Configuration
+round-advancement:
+  # Daily at 6:00 AM
+  cron: "0 0 6 * * *"
+
+# Admin Notification Configuration
+admin:
+  email: ${ADMIN_EMAIL:admin@ligitabl.com}
+
+  # Email Service (choose one when ready to migrate from stub)
+  # email-provider: stub | spring-mail | sendgrid | aws-ses
+  email-provider: stub

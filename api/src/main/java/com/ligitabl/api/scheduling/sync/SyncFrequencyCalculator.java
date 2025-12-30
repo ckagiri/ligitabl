@@ -74,7 +74,13 @@ public class SyncFrequencyCalculator {
 
         // PRIORITY 6: Calculate time until next kickoff
         var now = OffsetDateTime.now();
-        var minutesUntilKickoff = Duration.between(now, nextKickoff).toMinutes();
+
+        // Use ceiling rounding so tests like now().plusMinutes(X) remain stable even if
+        // a few milliseconds elapse between constructing nextKickoff and evaluating now.
+        long secondsUntilKickoff = Duration.between(now, nextKickoff).getSeconds();
+        long minutesUntilKickoff = secondsUntilKickoff < 0
+                ? -1
+                : ceilDiv(secondsUntilKickoff, 60);
 
         // Handle negative values (kickoff in past - shouldn't happen but be defensive)
         if (minutesUntilKickoff < 0) {
@@ -99,7 +105,7 @@ public class SyncFrequencyCalculator {
 
         // Later today (< 6 hours)
         if (minutesUntilKickoff < 360) {
-            long hoursUntilKickoff = minutesUntilKickoff / 60;
+                        long hoursUntilKickoff = ceilDiv(minutesUntilKickoff, 60);
             return NextSyncSchedule.hours(1,
                     String.format("Kickoff in %d hour%s (later today)",
                             hoursUntilKickoff,
@@ -108,11 +114,21 @@ public class SyncFrequencyCalculator {
         }
 
         // Default: Later Today, Tomorrow or beyond (≥ 6 hours away)
-        long hoursUntilKickoff = minutesUntilKickoff / 60;
+                long hoursUntilKickoff = ceilDiv(minutesUntilKickoff, 60);
         return NextSyncSchedule.hours(6,
                 String.format("Kickoff in %d hours (default check)", hoursUntilKickoff)
         );
     }
+
+        private static long ceilDiv(long numerator, long denominator) {
+                if (denominator <= 0) {
+                        throw new IllegalArgumentException("denominator must be positive");
+                }
+                if (numerator <= 0) {
+                        return 0;
+                }
+                return (numerator + denominator - 1) / denominator;
+        }
 
     /**
      * Assumes season is not complete

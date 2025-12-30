@@ -20,8 +20,10 @@ public class SchedulingConfig {
         ThreadPoolTaskScheduler scheduler = new ThreadPoolTaskScheduler();
         scheduler.setPoolSize(5);
         scheduler.setThreadNamePrefix("scheduled-task-");
-        scheduler.setAwaitTerminationSeconds(60);
-        scheduler.setWaitForTasksToCompleteOnShutdown(true);
+        // Important: these jobs are scheduled into the future; waiting for "all tasks" to complete
+        // can block shutdown indefinitely (and causes Maven Surefire to time out in tests).
+        scheduler.setWaitForTasksToCompleteOnShutdown(false);
+        scheduler.setAwaitTerminationSeconds(5);
         scheduler.setErrorHandler(t -> {
             // Log errors but don't stop scheduler
             System.err.println("Error in scheduled task: " + t.getMessage());

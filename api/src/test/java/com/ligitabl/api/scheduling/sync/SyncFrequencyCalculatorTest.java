@@ -1,0 +1,233 @@
+package com.ligitabl.api.scheduling.sync;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.Duration;
+import java.time.OffsetDateTime;
+
+import org.junit.jupiter.api.Test;
+
+/**
+ * Ported from .art/testing/SyncFrequencyCalculatorTest.java.
+ */
+class SyncFrequencyCalculatorTest {
+
+    @Test
+    void shouldTriggerImmediateWhenAllMatchesComplete() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, false, null, true, 10, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ZERO);
+        assertThat(schedule.reason()).contains("All matches complete");
+        assertThat(schedule.reason()).contains("trigger finalization");
+    }
+
+    @Test
+    void shouldPrioritizeAllCompleteOverSeasonComplete() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, false, null, true, 0, true);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ZERO);
+        assertThat(schedule.reason()).contains("All matches complete");
+    }
+
+    @Test
+    void shouldCheckDailyWhenSeasonComplete() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, false, null, false, 0, true);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofHours(24));
+        assertThat(schedule.reason()).contains("Season complete");
+        assertThat(schedule.reason()).contains("daily for new season");
+    }
+
+    @Test
+    void shouldPrioritizeSeasonCompleteOverNoMatches() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, false, null, false, 0, true);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofHours(24));
+        assertThat(schedule.reason()).contains("Season complete");
+    }
+
+    @Test
+    void shouldCheckTwiceDailyWhenNoUpcomingMatches() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, false, null, false, 0, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofHours(12));
+        assertThat(schedule.reason()).contains("No upcoming matches");
+        assertThat(schedule.reason()).contains("twice daily");
+    }
+
+    @Test
+    void shouldPrioritizeNoMatchesOverLiveWithMatchCount() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(true, false, null, false, 0, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofHours(12));
+    }
+
+    @Test
+    void shouldSyncEvery3MinutesWhenLiveMatches() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(
+                true,
+                true,
+                OffsetDateTime.now().plusHours(2),
+                false,
+                10,
+                false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(3));
+        assertThat(schedule.reason()).contains("Live matches in progress");
+    }
+
+    @Test
+    void shouldCheck6HoursWhenNoScheduledMatches() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, false, null, false, 10, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofHours(6));
+        assertThat(schedule.reason()).contains("No scheduled matches");
+    }
+
+    @Test
+    void shouldCheck6HoursWhenNextKickoffIsNull() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, true, null, false, 10, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofHours(6));
+        assertThat(schedule.reason()).contains("No scheduled matches");
+    }
+
+    @Test
+    void shouldCheck3MinutesWhenKickoffInPast() {
+        var pastKickoff = OffsetDateTime.now().minusMinutes(5);
+
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, true, pastKickoff, false, 10, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(3));
+        assertThat(schedule.reason()).contains("passed");
+    }
+
+    @Test
+    void shouldCheck3MinutesWhenKickoffWithin10Minutes() {
+        var imminentKickoff = OffsetDateTime.now().plusMinutes(8);
+
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, true, imminentKickoff, false, 10, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(3));
+        assertThat(schedule.reason()).contains("8 minutes");
+        assertThat(schedule.reason()).contains("imminent");
+    }
+
+    @Test
+    void shouldCheck10MinutesWhenKickoffWithin60Minutes() {
+        var soonKickoff = OffsetDateTime.now().plusMinutes(45);
+
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, true, soonKickoff, false, 10, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(10));
+        assertThat(schedule.reason()).contains("45 minutes");
+        assertThat(schedule.reason()).contains("soon");
+    }
+
+    @Test
+    void shouldCheck1HourWhenKickoffWithin6Hours() {
+        var laterTodayKickoff = OffsetDateTime.now().plusHours(3);
+
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, true, laterTodayKickoff, false, 10, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofHours(1));
+        assertThat(schedule.reason()).contains("3 hour");
+        assertThat(schedule.reason()).contains("later today");
+    }
+
+    @Test
+    void shouldCheck6HoursWhenKickoffBeyond6Hours() {
+        var tomorrowKickoff = OffsetDateTime.now().plusHours(24);
+
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, true, tomorrowKickoff, false, 10, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofHours(6));
+        assertThat(schedule.reason()).contains("24 hours");
+        assertThat(schedule.reason()).contains("default check");
+    }
+
+    @Test
+    void shouldHandleExactly10Minutes() {
+        var kickoff = OffsetDateTime.now().plusMinutes(10);
+
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, true, kickoff, false, 10, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(3));
+    }
+
+    @Test
+    void shouldHandleExactly60Minutes() {
+        var kickoff = OffsetDateTime.now().plusMinutes(60);
+
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, true, kickoff, false, 10, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(10));
+    }
+
+    @Test
+    void shouldHandleExactly6Hours() {
+        var kickoff = OffsetDateTime.now().plusHours(6);
+
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, true, kickoff, false, 10, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofHours(6));
+    }
+
+    @Test
+    void shouldWorkWithoutSeasonCompleteParameter() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, false, null, false, 0);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofHours(12));
+    }
+
+    @Test
+    void shouldWorkWithoutMatchCountOrSeasonComplete() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(
+                true,
+                true,
+                OffsetDateTime.now().plusHours(2),
+                false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(3));
+    }
+
+    @Test
+    void scenarioSaturdayMatchDay() {
+        var saturdayAfternoon = OffsetDateTime.now().plusHours(5);
+
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, true, saturdayAfternoon, false, 10, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofHours(1));
+        assertThat(schedule.reason()).contains("5 hour");
+    }
+
+    @Test
+    void scenarioInternationalBreak() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, false, null, false, 0, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofHours(12));
+        assertThat(schedule.reason()).contains("twice daily");
+    }
+
+    @Test
+    void scenarioSeasonEnded() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, false, null, false, 0, true);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofHours(24));
+        assertThat(schedule.reason()).contains("Season complete");
+    }
+
+    @Test
+    void scenarioLiveMatchInProgress() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(
+                true,
+                true,
+                OffsetDateTime.now().plusHours(1),
+                false,
+                10,
+                false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(3));
+        assertThat(schedule.reason()).contains("Live matches");
+    }
+}

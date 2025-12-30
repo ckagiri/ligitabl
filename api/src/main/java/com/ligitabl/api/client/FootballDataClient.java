@@ -1,5 +1,7 @@
 package com.ligitabl.api.client;
 
+import com.ligitabl.api.client.footballdata.CompetitionResponse;
+import com.ligitabl.api.client.footballdata.MatchesResponse;
 import com.ligitabl.api.shared.Either;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

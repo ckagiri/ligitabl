@@ -1,8 +1,8 @@
 package com.ligitabl.api.usecases.sync;
 
 import com.ligitabl.api.client.FootballDataClient;
-import com.ligitabl.api.client.MatchDto;
-import com.ligitabl.api.client.Score;
+import com.ligitabl.api.client.footballdata.MatchDto;
+import com.ligitabl.api.client.footballdata.Score;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.scheduling.AsyncStandingsService;
 import com.ligitabl.api.scheduling.sync.MatchSyncResult;
@@ -291,7 +291,7 @@ public class SyncMatchesUseCase {
 
     private Match findMatchByExternalId(List<Match> matches, String externalId) {
         return matches.stream()
-                .filter(m -> externalId.equals(m.getClientId()))
+                .filter(m -> m.getClientId() != null && externalId.equals(String.valueOf(m.getClientId())))
                 .findFirst()
                 .orElse(null);
     }
@@ -308,7 +308,13 @@ public class SyncMatchesUseCase {
         }
 
         boolean becameFinished = previousStatus != MatchStatus.FINISHED &&
-                newStatus == MatchStatus.FINISHED;
+            newStatus == MatchStatus.FINISHED;
+
+        existing.setStatus(newStatus);
+        existing.setKickOff(apiMatch.utcDate());
+        if (apiMatch.matchday() != null) {
+            existing.setMatchday(apiMatch.matchday());
+        }
 
         return new UpdateResult(existing, hasChanged, becameFinished);
     }

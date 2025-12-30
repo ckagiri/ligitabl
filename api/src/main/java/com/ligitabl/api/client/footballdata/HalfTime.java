@@ -1,9 +1,9 @@
-package com.ligitabl.api.client;
+package com.ligitabl.api.client.footballdata;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public record FullTime(
+public record HalfTime(
 		Integer home,
 		Integer away
 ) {}
