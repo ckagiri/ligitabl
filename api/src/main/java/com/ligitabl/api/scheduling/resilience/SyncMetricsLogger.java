@@ -1,11 +1,12 @@
 package com.ligitabl.api.scheduling.resilience;
 
-import com.ligitabl.api.scheduling.sync.MatchSyncResult;
+import java.time.Duration;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
+import com.ligitabl.api.scheduling.sync.MatchSyncResult;
 
 /**
  * Sync Metrics Logger
@@ -29,22 +30,20 @@ public class SyncMetricsLogger {
      */
     public void logSyncCompleted(MatchSyncResult result, Duration duration) {
         metricsLog.info(
-                "SYNC_COMPLETED | " +
-                        "processed={} | " +
-                        "updated={} | " +
-                        "finished={} | " +
-                        "duration_ms={} | " +
-                        "next_sync_min={} | " +
-                        "all_complete={} | " +
-                        "has_blocking={}",
+                "SYNC_COMPLETED | " + "processed={} | "
+                        + "updated={} | "
+                        + "finished={} | "
+                        + "duration_ms={} | "
+                        + "next_sync_min={} | "
+                        + "all_complete={} | "
+                        + "has_blocking={}",
                 result.matchesProcessed(),
                 result.matchesUpdated(),
                 result.newlyFinishedMatches(),
                 duration.toMillis(),
                 result.nextSchedule().delay().toMinutes(),
                 result.allMatchesComplete(),
-                result.hasBlockingMatches()
-        );
+                result.hasBlockingMatches());
     }
 
     /**
@@ -52,14 +51,10 @@ public class SyncMetricsLogger {
      */
     public void logSyncFailed(String errorType, String message, Duration duration) {
         metricsLog.error(
-                "SYNC_FAILED | " +
-                        "error_type={} | " +
-                        "message={} | " +
-                        "duration_ms={}",
+                "SYNC_FAILED | " + "error_type={} | " + "message={} | " + "duration_ms={}",
                 errorType,
                 message,
-                duration.toMillis()
-        );
+                duration.toMillis());
     }
 
     /**
@@ -67,14 +62,10 @@ public class SyncMetricsLogger {
      */
     public void logApiError(String endpoint, int statusCode, Duration duration) {
         metricsLog.error(
-                "API_ERROR | " +
-                        "endpoint={} | " +
-                        "status={} | " +
-                        "duration_ms={}",
+                "API_ERROR | " + "endpoint={} | " + "status={} | " + "duration_ms={}",
                 endpoint,
                 statusCode,
-                duration.toMillis()
-        );
+                duration.toMillis());
     }
 
     /**
@@ -82,77 +73,52 @@ public class SyncMetricsLogger {
      */
     public void logFinalizationTriggered(Long roundId, int roundPosition, boolean blocked) {
         metricsLog.info(
-                "FINALIZATION_TRIGGERED | " +
-                        "round_id={} | " +
-                        "position={} | " +
-                        "blocked={}",
+                "FINALIZATION_TRIGGERED | " + "round_id={} | " + "position={} | " + "blocked={}",
                 roundId,
                 roundPosition,
-                blocked
-        );
+                blocked);
     }
 
     /**
      * Log finalization completed
      */
     public void logFinalizationCompleted(
-            Long roundId,
-            int roundPosition,
-            int submissions,
-            int results,
-            Duration duration) {
+            Long roundId, int roundPosition, int submissions, int results, Duration duration) {
         metricsLog.info(
-                "FINALIZATION_COMPLETED | " +
-                        "round_id={} | " +
-                        "position={} | " +
-                        "submissions={} | " +
-                        "results={} | " +
-                        "duration_ms={}",
+                "FINALIZATION_COMPLETED | " + "round_id={} | "
+                        + "position={} | "
+                        + "submissions={} | "
+                        + "results={} | "
+                        + "duration_ms={}",
                 roundId,
                 roundPosition,
                 submissions,
                 results,
-                duration.toMillis()
-        );
+                duration.toMillis());
     }
 
     /**
      * Log round advancement
      */
-    public void logRoundAdvanced(
-            String seasonId,
-            int previousMatchday,
-            int newMatchday) {
+    public void logRoundAdvanced(String seasonId, int previousMatchday, int newMatchday) {
         metricsLog.info(
-                "ROUND_ADVANCED | " +
-                        "season_id={} | " +
-                        "previous={} | " +
-                        "new={}",
+                "ROUND_ADVANCED | " + "season_id={} | " + "previous={} | " + "new={}",
                 seasonId,
                 previousMatchday,
-                newMatchday
-        );
+                newMatchday);
     }
 
     /**
      * Log circuit breaker state change
      */
     public void logCircuitBreakerOpened(int failures) {
-        metricsLog.error(
-                "CIRCUIT_BREAKER_OPENED | " +
-                        "failures={}",
-                failures
-        );
+        metricsLog.error("CIRCUIT_BREAKER_OPENED | " + "failures={}", failures);
     }
 
     /**
      * Log circuit breaker recovery
      */
     public void logCircuitBreakerRecovered(int previousFailures) {
-        metricsLog.info(
-                "CIRCUIT_BREAKER_RECOVERED | " +
-                        "previous_failures={}",
-                previousFailures
-        );
+        metricsLog.info("CIRCUIT_BREAKER_RECOVERED | " + "previous_failures={}", previousFailures);
     }
 }

@@ -14,15 +14,9 @@ public record MatchSyncResult(
         List<UUID> finishedMatchIds,
         boolean allMatchesComplete,
         boolean hasBlockingMatches,
-        NextSyncSchedule nextSchedule
-) {
+        NextSyncSchedule nextSchedule) {
     public static MatchSyncResult empty() {
         return new MatchSyncResult(
-                0, 0, 0,
-                List.of(),
-                false,
-                false,
-                new NextSyncSchedule(Duration.ofHours(6), "No matches to sync")
-        );
+                0, 0, 0, List.of(), false, false, new NextSyncSchedule(Duration.ofHours(6), "No matches to sync"));
     }
 }

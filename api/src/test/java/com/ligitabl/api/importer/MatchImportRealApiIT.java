@@ -11,8 +11,8 @@ import org.junit.jupiter.api.Test;
  */
 @Disabled("Importer removed from api module")
 class MatchImportRealApiIT {
-	@Test
-	void placeholder() {
-		// no-op
-	}
+    @Test
+    void placeholder() {
+        // no-op
+    }
 }

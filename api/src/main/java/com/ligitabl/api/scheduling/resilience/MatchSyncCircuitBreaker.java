@@ -1,13 +1,14 @@
 package com.ligitabl.api.scheduling.resilience;
 
-import com.ligitabl.api.notification.AdminNotificationService;
+import java.time.Duration;
+import java.time.Instant;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.concurrent.atomic.AtomicInteger;
+import com.ligitabl.api.notification.AdminNotificationService;
 
 /**
  * Circuit Breaker for Match Sync
@@ -37,9 +38,9 @@ public class MatchSyncCircuitBreaker {
     }
 
     public enum State {
-        CLOSED,    // Normal operation
-        OPEN,      // Too many failures, stop trying
-        HALF_OPEN  // Testing if service recovered
+        CLOSED, // Normal operation
+        OPEN, // Too many failures, stop trying
+        HALF_OPEN // Testing if service recovered
     }
 
     /**
@@ -66,7 +67,8 @@ public class MatchSyncCircuitBreaker {
         State state = getState();
 
         if (state == State.OPEN) {
-            log.warn("Circuit breaker OPEN - blocking sync request (failures: {}, opened: {})",
+            log.warn(
+                    "Circuit breaker OPEN - blocking sync request (failures: {}, opened: {})",
                     consecutiveFailures.get(),
                     openedAt);
             return false;
@@ -86,8 +88,7 @@ public class MatchSyncCircuitBreaker {
         int previousFailures = consecutiveFailures.get();
 
         if (openedAt != null) {
-            log.info("Circuit breaker recovered after {} failures - returning to CLOSED state",
-                    previousFailures);
+            log.info("Circuit breaker recovered after {} failures - returning to CLOSED state", previousFailures);
 
             notificationService.notifyCircuitBreakerRecovered(previousFailures);
         }
@@ -108,15 +109,12 @@ public class MatchSyncCircuitBreaker {
         if (failures >= FAILURE_THRESHOLD && openedAt == null) {
             openedAt = Instant.now();
 
-            log.error("Circuit breaker OPENED after {} consecutive failures. " +
-                            "Will retry after {} hour(s)",
+            log.error(
+                    "Circuit breaker OPENED after {} consecutive failures. " + "Will retry after {} hour(s)",
                     failures,
                     RECOVERY_WAIT.toHours());
 
-            notificationService.notifyCircuitBreakerOpened(
-                    failures,
-                    RECOVERY_WAIT.toHours()
-            );
+            notificationService.notifyCircuitBreakerOpened(failures, RECOVERY_WAIT.toHours());
         }
     }
 

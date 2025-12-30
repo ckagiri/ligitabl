@@ -6,7 +6,6 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.IntStream;
 
-import com.ligitabl.api.usecases.seeding.SeedingConfig;
 import com.ligitabl.api.usecases.round.finalizeround.FinalizeRoundResult;
 import com.ligitabl.model.domain.*;
 

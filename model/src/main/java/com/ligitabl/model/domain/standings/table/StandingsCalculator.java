@@ -1,7 +1,6 @@
 package com.ligitabl.model.domain.standings.table;
 
 import java.util.*;
-import java.util.function.Function;
 
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.domain.standings.ranking.RankingRule;
@@ -21,7 +20,6 @@ public class StandingsCalculator {
         var rankingRule = RankingStrategy.ENGLISH_PREMIER_LEAGUE.build(matches, teams);
         return calculate(teams, matches, rankingRule);
     }
-
 
     public static List<Standing> calculate(List<Team> teams, List<Match> matches, RankingRule rankingRule) {
         Objects.requireNonNull(teams, "Teams cannot be null");

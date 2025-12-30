@@ -65,12 +65,7 @@ class SyncFrequencyCalculatorTest {
     @Test
     void shouldSyncEvery3MinutesWhenLiveMatches() {
         var schedule = SyncFrequencyCalculator.calculateNextSync(
-                true,
-                true,
-                OffsetDateTime.now().plusHours(2),
-                false,
-                10,
-                false);
+                true, true, OffsetDateTime.now().plusHours(2), false, 10, false);
 
         assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(3));
         assertThat(schedule.reason()).contains("Live matches in progress");
@@ -183,10 +178,7 @@ class SyncFrequencyCalculatorTest {
     @Test
     void shouldWorkWithoutMatchCountOrSeasonComplete() {
         var schedule = SyncFrequencyCalculator.calculateNextSync(
-                true,
-                true,
-                OffsetDateTime.now().plusHours(2),
-                false);
+                true, true, OffsetDateTime.now().plusHours(2), false);
 
         assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(3));
     }
@@ -220,12 +212,7 @@ class SyncFrequencyCalculatorTest {
     @Test
     void scenarioLiveMatchInProgress() {
         var schedule = SyncFrequencyCalculator.calculateNextSync(
-                true,
-                true,
-                OffsetDateTime.now().plusHours(1),
-                false,
-                10,
-                false);
+                true, true, OffsetDateTime.now().plusHours(1), false, 10, false);
 
         assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(3));
         assertThat(schedule.reason()).contains("Live matches");

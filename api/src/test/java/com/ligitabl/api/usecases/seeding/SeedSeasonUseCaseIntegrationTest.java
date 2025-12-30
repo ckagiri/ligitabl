@@ -59,7 +59,7 @@ class SeedSeasonUseCaseIntegrationTest extends AbstractPostgresIT {
         // @MockBean mocks are reset between test methods.
         when(configLoader.loadConfig()).thenReturn(fixture.seedingConfig());
         when(finalizeRoundUseCase.execute(any(UUID.class)))
-            .thenReturn(Either.right(new FinalizeRoundResult(UUID.randomUUID(), 1, 0, 0, false, Instant.now())));
+                .thenReturn(Either.right(new FinalizeRoundResult(UUID.randomUUID(), 1, 0, 0, false, Instant.now())));
     }
 
     @AfterAll

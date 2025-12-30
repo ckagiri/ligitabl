@@ -1,12 +1,12 @@
 package com.ligitabl.api.scheduling.resilience;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.stereotype.Component;
-
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicBoolean;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
 /**
  * Sync Lock Service
@@ -42,8 +42,7 @@ public class SyncLockService {
             Duration elapsed = Duration.between(syncStartedAt, Instant.now());
 
             if (elapsed.compareTo(MAX_SYNC_DURATION) > 0) {
-                log.error("Sync lock appears stuck (elapsed: {} minutes), forcibly releasing",
-                        elapsed.toMinutes());
+                log.error("Sync lock appears stuck (elapsed: {} minutes), forcibly releasing", elapsed.toMinutes());
                 forceRelease();
             }
         }
@@ -54,8 +53,7 @@ public class SyncLockService {
             syncStartedAt = Instant.now();
             log.debug("Sync lock acquired at {}", syncStartedAt);
         } else {
-            log.warn("Sync already in progress (started: {}), skipping",
-                    syncStartedAt);
+            log.warn("Sync already in progress (started: {}), skipping", syncStartedAt);
         }
 
         return acquired;
@@ -66,12 +64,9 @@ public class SyncLockService {
      */
     public void releaseLock() {
         if (syncInProgress.get()) {
-            Duration duration = syncStartedAt != null
-                    ? Duration.between(syncStartedAt, Instant.now())
-                    : Duration.ZERO;
+            Duration duration = syncStartedAt != null ? Duration.between(syncStartedAt, Instant.now()) : Duration.ZERO;
 
-            log.debug("Sync lock released (duration: {} seconds)",
-                    duration.getSeconds());
+            log.debug("Sync lock released (duration: {} seconds)", duration.getSeconds());
         }
 
         syncInProgress.set(false);

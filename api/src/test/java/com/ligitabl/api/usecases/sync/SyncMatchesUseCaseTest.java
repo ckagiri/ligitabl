@@ -116,7 +116,8 @@ class SyncMatchesUseCaseTest {
     void shouldHandleApiError() {
         var season = createSeason();
         var round = createRound();
-        var existingMatches = List.of(createMatch(1, MatchStatus.SCHEDULED, OffsetDateTime.now().plusHours(10)));
+        var existingMatches = List.of(
+                createMatch(1, MatchStatus.SCHEDULED, OffsetDateTime.now().plusHours(10)));
 
         when(competitionRepo.findBySlug(COMPETITION_SLUG)).thenReturn(Optional.of(createCompetition()));
         when(seasonRepo.findActiveSeason(COMPETITION_SLUG)).thenReturn(Optional.of(season));
@@ -177,7 +178,8 @@ class SyncMatchesUseCaseTest {
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches).thenReturn(existingMatches);
 
-        var apiMatches = List.of(new MatchDto(1L, OffsetDateTime.now(), "IN_PLAY", 1, "REGULAR_SEASON", null, null, null));
+        var apiMatches =
+                List.of(new MatchDto(1L, OffsetDateTime.now(), "IN_PLAY", 1, "REGULAR_SEASON", null, null, null));
         when(footballDataClient.getLiveMatches(COMPETITION_CODE))
                 .thenReturn(Either.right(new MatchesResponse(apiMatches, null)));
 
@@ -194,7 +196,8 @@ class SyncMatchesUseCaseTest {
     void shouldReturnTwiceDailyScheduleWhenApiReturnsNoMatches() {
         var season = createSeason();
         var round = createRound();
-        var existingMatches = List.of(createMatch(1, MatchStatus.SCHEDULED, OffsetDateTime.now().plusHours(10)));
+        var existingMatches = List.of(
+                createMatch(1, MatchStatus.SCHEDULED, OffsetDateTime.now().plusHours(10)));
 
         when(competitionRepo.findBySlug(COMPETITION_SLUG)).thenReturn(Optional.of(createCompetition()));
         when(seasonRepo.findActiveSeason(COMPETITION_SLUG)).thenReturn(Optional.of(season));

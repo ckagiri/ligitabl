@@ -18,14 +18,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.notification.AdminNotificationService;
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecases.round.finalizeround.FinalizeRoundError;
 import com.ligitabl.api.usecases.round.finalizeround.FinalizeRoundResult;
 import com.ligitabl.api.usecases.round.finalizeround.FinalizeRoundUseCase;
-import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
+import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.MatchRepo;
@@ -56,45 +56,40 @@ class TriggerRoundFinalizationUseCaseTest {
     private AdminNotificationService adminNotificationService;
 
     @Test
-        void shouldTriggerFinalizationWhenNoBlockingMatches() {
+    void shouldTriggerFinalizationWhenNoBlockingMatches() {
         var useCase = new TriggerRoundFinalizationUseCase(
-            seasonRepo,
-            roundRepo,
-            matchRepo,
-            finalizeRoundUseCase,
-            adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, finalizeRoundUseCase, adminNotificationService);
 
         var seasonId = UUID.randomUUID();
         var roundId = UUID.randomUUID();
 
         var season = Season.builder()
-            .id(seasonId)
-            .competitionId(UUID.randomUUID())
-            .clientId(1)
-            .name("2024/25")
-            .slug(com.ligitabl.model.domain.SeasonSlug.of("2024-25"))
-            .startDate(java.time.LocalDate.of(2024, 8, 1))
-            .endDate(java.time.LocalDate.of(2025, 5, 31))
-            .currentRoundId(roundId)
-            .currentMatchDay(10)
-            .build();
+                .id(seasonId)
+                .competitionId(UUID.randomUUID())
+                .clientId(1)
+                .name("2024/25")
+                .slug(com.ligitabl.model.domain.SeasonSlug.of("2024-25"))
+                .startDate(java.time.LocalDate.of(2024, 8, 1))
+                .endDate(java.time.LocalDate.of(2025, 5, 31))
+                .currentRoundId(roundId)
+                .currentMatchDay(10)
+                .build();
 
         var round = Round.builder()
-            .id(roundId)
-            .seasonId(seasonId)
-            .name("Round 10")
-            .slug("round-10")
-            .position(10)
-            .build();
+                .id(roundId)
+                .seasonId(seasonId)
+                .name("Round 10")
+                .slug("round-10")
+                .position(10)
+                .build();
 
         when(seasonRepo.findActiveSeason(COMPETITION_CODE)).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
-        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(
-            createMatch(MatchStatus.FINISHED),
-            createMatch(MatchStatus.FINISHED)));
+        when(matchRepo.findByRoundId(roundId))
+                .thenReturn(List.of(createMatch(MatchStatus.FINISHED), createMatch(MatchStatus.FINISHED)));
 
-        when(finalizeRoundUseCase.execute(seasonId)).thenReturn(Either.right(
-            new FinalizeRoundResult(roundId, 10, 10, 5, false, java.time.Instant.now())));
+        when(finalizeRoundUseCase.execute(seasonId))
+                .thenReturn(Either.right(new FinalizeRoundResult(roundId, 10, 10, 5, false, java.time.Instant.now())));
 
         var result = useCase.execute(new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(COMPETITION_CODE));
 
@@ -107,90 +102,80 @@ class TriggerRoundFinalizationUseCaseTest {
     }
 
     @Test
-        void shouldBlockFinalizationWhenCancelledMatchesExist() {
+    void shouldBlockFinalizationWhenCancelledMatchesExist() {
         var useCase = new TriggerRoundFinalizationUseCase(
-            seasonRepo,
-            roundRepo,
-            matchRepo,
-            finalizeRoundUseCase,
-            adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, finalizeRoundUseCase, adminNotificationService);
 
         var seasonId = UUID.randomUUID();
         var roundId = UUID.randomUUID();
 
         var season = Season.builder()
-            .id(seasonId)
-            .competitionId(UUID.randomUUID())
-            .clientId(1)
-            .name("2024/25")
-            .slug(com.ligitabl.model.domain.SeasonSlug.of("2024-25"))
-            .startDate(java.time.LocalDate.of(2024, 8, 1))
-            .endDate(java.time.LocalDate.of(2025, 5, 31))
-            .currentRoundId(roundId)
-            .currentMatchDay(10)
-            .build();
+                .id(seasonId)
+                .competitionId(UUID.randomUUID())
+                .clientId(1)
+                .name("2024/25")
+                .slug(com.ligitabl.model.domain.SeasonSlug.of("2024-25"))
+                .startDate(java.time.LocalDate.of(2024, 8, 1))
+                .endDate(java.time.LocalDate.of(2025, 5, 31))
+                .currentRoundId(roundId)
+                .currentMatchDay(10)
+                .build();
 
         var round = Round.builder()
-            .id(roundId)
-            .seasonId(seasonId)
-            .name("Round 10")
-            .slug("round-10")
-            .position(10)
-            .build();
+                .id(roundId)
+                .seasonId(seasonId)
+                .name("Round 10")
+                .slug("round-10")
+                .position(10)
+                .build();
 
         when(seasonRepo.findActiveSeason(COMPETITION_CODE)).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
-        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(
-            createMatch(MatchStatus.FINISHED),
-            createMatch(MatchStatus.CANCELLED)));
+        when(matchRepo.findByRoundId(roundId))
+                .thenReturn(List.of(createMatch(MatchStatus.FINISHED), createMatch(MatchStatus.CANCELLED)));
 
         var result = useCase.execute(new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(COMPETITION_CODE));
 
         assertThat(result.isLeft()).isTrue();
         assertThat(result.getLeft())
-            .isInstanceOf(TriggerRoundFinalizationUseCase.TriggerFinalizationError.BlockedByMatches.class);
+                .isInstanceOf(TriggerRoundFinalizationUseCase.TriggerFinalizationError.BlockedByMatches.class);
 
         verify(adminNotificationService).notifyBlockedFinalization(eq(roundId), eq(10), anyList(), anyList());
         verify(finalizeRoundUseCase, never()).execute(any());
     }
 
     @Test
-        void shouldBlockFinalizationWhenSuspendedMatchesExist() {
+    void shouldBlockFinalizationWhenSuspendedMatchesExist() {
         var useCase = new TriggerRoundFinalizationUseCase(
-            seasonRepo,
-            roundRepo,
-            matchRepo,
-            finalizeRoundUseCase,
-            adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, finalizeRoundUseCase, adminNotificationService);
 
         var seasonId = UUID.randomUUID();
         var roundId = UUID.randomUUID();
 
         var season = Season.builder()
-            .id(seasonId)
-            .competitionId(UUID.randomUUID())
-            .clientId(1)
-            .name("2024/25")
-            .slug(com.ligitabl.model.domain.SeasonSlug.of("2024-25"))
-            .startDate(java.time.LocalDate.of(2024, 8, 1))
-            .endDate(java.time.LocalDate.of(2025, 5, 31))
-            .currentRoundId(roundId)
-            .currentMatchDay(10)
-            .build();
+                .id(seasonId)
+                .competitionId(UUID.randomUUID())
+                .clientId(1)
+                .name("2024/25")
+                .slug(com.ligitabl.model.domain.SeasonSlug.of("2024-25"))
+                .startDate(java.time.LocalDate.of(2024, 8, 1))
+                .endDate(java.time.LocalDate.of(2025, 5, 31))
+                .currentRoundId(roundId)
+                .currentMatchDay(10)
+                .build();
 
         var round = Round.builder()
-            .id(roundId)
-            .seasonId(seasonId)
-            .name("Round 10")
-            .slug("round-10")
-            .position(10)
-            .build();
+                .id(roundId)
+                .seasonId(seasonId)
+                .name("Round 10")
+                .slug("round-10")
+                .position(10)
+                .build();
 
         when(seasonRepo.findActiveSeason(COMPETITION_CODE)).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
-        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(
-            createMatch(MatchStatus.FINISHED),
-            createMatch(MatchStatus.SUSPENDED)));
+        when(matchRepo.findByRoundId(roundId))
+                .thenReturn(List.of(createMatch(MatchStatus.FINISHED), createMatch(MatchStatus.SUSPENDED)));
 
         var result = useCase.execute(new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(COMPETITION_CODE));
 
@@ -200,45 +185,40 @@ class TriggerRoundFinalizationUseCaseTest {
     }
 
     @Test
-        void shouldAllowFinalizationWithPostponedMatches() {
+    void shouldAllowFinalizationWithPostponedMatches() {
         var useCase = new TriggerRoundFinalizationUseCase(
-            seasonRepo,
-            roundRepo,
-            matchRepo,
-            finalizeRoundUseCase,
-            adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, finalizeRoundUseCase, adminNotificationService);
 
         var seasonId = UUID.randomUUID();
         var roundId = UUID.randomUUID();
 
         var season = Season.builder()
-            .id(seasonId)
-            .competitionId(UUID.randomUUID())
-            .clientId(1)
-            .name("2024/25")
-            .slug(com.ligitabl.model.domain.SeasonSlug.of("2024-25"))
-            .startDate(java.time.LocalDate.of(2024, 8, 1))
-            .endDate(java.time.LocalDate.of(2025, 5, 31))
-            .currentRoundId(roundId)
-            .currentMatchDay(10)
-            .build();
+                .id(seasonId)
+                .competitionId(UUID.randomUUID())
+                .clientId(1)
+                .name("2024/25")
+                .slug(com.ligitabl.model.domain.SeasonSlug.of("2024-25"))
+                .startDate(java.time.LocalDate.of(2024, 8, 1))
+                .endDate(java.time.LocalDate.of(2025, 5, 31))
+                .currentRoundId(roundId)
+                .currentMatchDay(10)
+                .build();
 
         var round = Round.builder()
-            .id(roundId)
-            .seasonId(seasonId)
-            .name("Round 10")
-            .slug("round-10")
-            .position(10)
-            .build();
+                .id(roundId)
+                .seasonId(seasonId)
+                .name("Round 10")
+                .slug("round-10")
+                .position(10)
+                .build();
 
         when(seasonRepo.findActiveSeason(COMPETITION_CODE)).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
-        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(
-            createMatch(MatchStatus.FINISHED),
-            createMatch(MatchStatus.POSTPONED)));
+        when(matchRepo.findByRoundId(roundId))
+                .thenReturn(List.of(createMatch(MatchStatus.FINISHED), createMatch(MatchStatus.POSTPONED)));
 
-        when(finalizeRoundUseCase.execute(seasonId)).thenReturn(Either.right(
-            new FinalizeRoundResult(roundId, 10, 10, 5, false, java.time.Instant.now())));
+        when(finalizeRoundUseCase.execute(seasonId))
+                .thenReturn(Either.right(new FinalizeRoundResult(roundId, 10, 10, 5, false, java.time.Instant.now())));
 
         var result = useCase.execute(new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(COMPETITION_CODE));
 
@@ -249,14 +229,10 @@ class TriggerRoundFinalizationUseCaseTest {
         verify(adminNotificationService, never()).notifyBlockedFinalization(any(), anyInt(), anyList(), anyList());
     }
 
-        @Test
-        void shouldHandleSeasonNotFound() {
+    @Test
+    void shouldHandleSeasonNotFound() {
         var useCase = new TriggerRoundFinalizationUseCase(
-            seasonRepo,
-            roundRepo,
-            matchRepo,
-            finalizeRoundUseCase,
-            adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, finalizeRoundUseCase, adminNotificationService);
 
         when(seasonRepo.findActiveSeason(COMPETITION_CODE)).thenReturn(Optional.empty());
 
@@ -264,68 +240,63 @@ class TriggerRoundFinalizationUseCaseTest {
 
         assertThat(result.isLeft()).isTrue();
         assertThat(result.getLeft())
-            .isInstanceOf(TriggerRoundFinalizationUseCase.TriggerFinalizationError.SeasonNotFound.class);
-        }
+                .isInstanceOf(TriggerRoundFinalizationUseCase.TriggerFinalizationError.SeasonNotFound.class);
+    }
 
-        @Test
-        void shouldHandleFinalizationFailure() {
+    @Test
+    void shouldHandleFinalizationFailure() {
         var useCase = new TriggerRoundFinalizationUseCase(
-            seasonRepo,
-            roundRepo,
-            matchRepo,
-            finalizeRoundUseCase,
-            adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, finalizeRoundUseCase, adminNotificationService);
 
         var seasonId = UUID.randomUUID();
         var roundId = UUID.randomUUID();
 
         var season = Season.builder()
-            .id(seasonId)
-            .competitionId(UUID.randomUUID())
-            .clientId(1)
-            .name("2024/25")
-            .slug(com.ligitabl.model.domain.SeasonSlug.of("2024-25"))
-            .startDate(java.time.LocalDate.of(2024, 8, 1))
-            .endDate(java.time.LocalDate.of(2025, 5, 31))
-            .currentRoundId(roundId)
-            .currentMatchDay(10)
-            .build();
+                .id(seasonId)
+                .competitionId(UUID.randomUUID())
+                .clientId(1)
+                .name("2024/25")
+                .slug(com.ligitabl.model.domain.SeasonSlug.of("2024-25"))
+                .startDate(java.time.LocalDate.of(2024, 8, 1))
+                .endDate(java.time.LocalDate.of(2025, 5, 31))
+                .currentRoundId(roundId)
+                .currentMatchDay(10)
+                .build();
 
         var round = Round.builder()
-            .id(roundId)
-            .seasonId(seasonId)
-            .name("Round 10")
-            .slug("round-10")
-            .position(10)
-            .build();
+                .id(roundId)
+                .seasonId(seasonId)
+                .name("Round 10")
+                .slug("round-10")
+                .position(10)
+                .build();
 
         when(seasonRepo.findActiveSeason(COMPETITION_CODE)).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
-        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(
-            createMatch(MatchStatus.FINISHED),
-            createMatch(MatchStatus.FINISHED)));
+        when(matchRepo.findByRoundId(roundId))
+                .thenReturn(List.of(createMatch(MatchStatus.FINISHED), createMatch(MatchStatus.FINISHED)));
 
-        when(finalizeRoundUseCase.execute(seasonId)).thenReturn(Either.left(
-            new FinalizeRoundError.RoundNotLocked(roundId, RoundStatus.OPEN)));
+        when(finalizeRoundUseCase.execute(seasonId))
+                .thenReturn(Either.left(new FinalizeRoundError.RoundNotLocked(roundId, RoundStatus.OPEN)));
 
         var result = useCase.execute(new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(COMPETITION_CODE));
 
         assertThat(result.isLeft()).isTrue();
         assertThat(result.getLeft())
-            .isInstanceOf(TriggerRoundFinalizationUseCase.TriggerFinalizationError.FinalizationFailed.class);
-        }
+                .isInstanceOf(TriggerRoundFinalizationUseCase.TriggerFinalizationError.FinalizationFailed.class);
+    }
 
-        private Match createMatch(MatchStatus status) {
-            return Match.builder()
-                    .id(UUID.randomUUID())
-                    .clientId(1)
-                    .homeTeamId(UUID.randomUUID())
-                    .awayTeamId(UUID.randomUUID())
-                    .seasonId(UUID.randomUUID())
-                    .roundId(UUID.randomUUID())
-                    .slug("h-v-a")
-                    .status(status)
-                    .matchday(10)
-                    .build();
-        }
+    private Match createMatch(MatchStatus status) {
+        return Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .seasonId(UUID.randomUUID())
+                .roundId(UUID.randomUUID())
+                .slug("h-v-a")
+                .status(status)
+                .matchday(10)
+                .build();
+    }
 }

@@ -1,16 +1,16 @@
 package com.ligitabl.api.scheduling;
 
-import com.ligitabl.api.domain.StandingsCalculatorService;
-import com.ligitabl.model.repo.StandingsRepo;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import java.util.UUID;
+
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.UUID;
+import com.ligitabl.api.domain.StandingsCalculatorService;
+import com.ligitabl.model.repo.StandingsRepo;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Async Standings Service
@@ -41,8 +41,7 @@ public class AsyncStandingsService {
     @Transactional
     public void recalculateAsync(UUID seasonId, int roundPosition) {
         try {
-            log.info("Starting async standings recalculation: season={}, round={}",
-                    seasonId, roundPosition);
+            log.info("Starting async standings recalculation: season={}, round={}", seasonId, roundPosition);
 
             long startTime = System.currentTimeMillis();
 
@@ -54,8 +53,7 @@ public class AsyncStandingsService {
             log.info("Async standings recalculation completed in {}ms", duration);
 
         } catch (Exception e) {
-            log.error("Async standings recalculation failed for season={}, round={}",
-                    seasonId, roundPosition, e);
+            log.error("Async standings recalculation failed for season={}, round={}", seasonId, roundPosition, e);
 
             // Don't rethrow - we don't want to block the sync
             // The next sync will try again
@@ -70,8 +68,7 @@ public class AsyncStandingsService {
      */
     @Transactional
     public void recalculateSync(UUID seasonId, int roundPosition) {
-        log.info("Starting sync standings recalculation: season={}, round={}",
-                seasonId, roundPosition);
+        log.info("Starting sync standings recalculation: season={}, round={}", seasonId, roundPosition);
 
         try {
             standingsCalculator.calculateAndPersist(seasonId, roundPosition);

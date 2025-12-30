@@ -4,10 +4,24 @@ import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
 import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
-import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
-import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.UUID;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
@@ -20,26 +34,13 @@ import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.SeasonRepo;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.UUID;
-import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 
 @SpringBootTest
 @DisplayName("Match sync + round advancement integration")
 class MatchSyncIntegrationTest extends AbstractPostgresIT {
 
-    private static final WireMockServer WIREMOCK = new WireMockServer(WireMockConfiguration.options().dynamicPort());
+    private static final WireMockServer WIREMOCK =
+            new WireMockServer(WireMockConfiguration.options().dynamicPort());
 
     private static final String COMPETITION_CODE = "PL";
 
@@ -103,7 +104,8 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
     void shouldSyncMatchesFromApiSuccessfully() {
         stubMatchesApiWithFinishedMatch(fixture.matchClientId(), fixture.apiKickoff());
 
-        Either<SyncMatchesUseCase.SyncMatchesError, ?> result = syncMatchesUseCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
+        Either<SyncMatchesUseCase.SyncMatchesError, ?> result =
+                syncMatchesUseCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
 
         assertThat(result.isRight()).isTrue();
 
@@ -127,10 +129,13 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
         assertThat(result.isLeft()).isTrue();
 
         // 1 initial request + 2 retries = 3 total calls
-        WIREMOCK.verify(3, getRequestedFor(urlPathEqualTo("/matches"))
-                .withQueryParam("competitions", equalTo(COMPETITION_CODE))
-                .withQueryParam("dateFrom", equalTo(LocalDate.now().toString()))
-                .withQueryParam("dateTo", equalTo(LocalDate.now().plusDays(2).toString())));
+        WIREMOCK.verify(
+                3,
+                getRequestedFor(urlPathEqualTo("/matches"))
+                        .withQueryParam("competitions", equalTo(COMPETITION_CODE))
+                        .withQueryParam("dateFrom", equalTo(LocalDate.now().toString()))
+                        .withQueryParam(
+                                "dateTo", equalTo(LocalDate.now().plusDays(2).toString())));
     }
 
     @Test
@@ -180,9 +185,11 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
     }
 
     private static void stubMatchesApiWithFinishedMatch(int matchId, OffsetDateTime kickOff) {
-                String utcKickoff = kickOff.withOffsetSameInstant(ZoneOffset.UTC).toInstant().toString();
+        String utcKickoff =
+                kickOff.withOffsetSameInstant(ZoneOffset.UTC).toInstant().toString();
 
-                String body = """
+        String body =
+                """
                         {
                             "filters": {
                                 "competitions": "%s"
@@ -233,25 +240,28 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
                                 }
                             ]
                         }
-                        """.formatted(COMPETITION_CODE, COMPETITION_CODE, matchId, utcKickoff);
+                        """
+                        .formatted(COMPETITION_CODE, COMPETITION_CODE, matchId, utcKickoff);
 
-                WIREMOCK.stubFor(get(urlPathEqualTo("/matches"))
-                                .withQueryParam("competitions", equalTo(COMPETITION_CODE))
-                                .willReturn(aResponse()
-                                                .withStatus(200)
-                                                .withHeader("Content-Type", "application/json")
-                                                .withBody(body)));
+        WIREMOCK.stubFor(get(urlPathEqualTo("/matches"))
+                .withQueryParam("competitions", equalTo(COMPETITION_CODE))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(body)));
     }
 
     private static void stubMatchesApiWithServerError() {
-        WIREMOCK.stubFor(get(urlPathEqualTo("/matches"))
-            .withQueryParam("competitions", equalTo(COMPETITION_CODE))
-            .willReturn(aResponse()
-                .withStatus(500)
-                .withHeader("Content-Type", "application/json")
-                // Football-Data uses RFC7807-ish error payloads in some cases; keep it minimal.
-                .withBody(
-                    """
+        WIREMOCK.stubFor(
+                get(urlPathEqualTo("/matches"))
+                        .withQueryParam("competitions", equalTo(COMPETITION_CODE))
+                        .willReturn(
+                                aResponse()
+                                        .withStatus(500)
+                                        .withHeader("Content-Type", "application/json")
+                                        // Football-Data uses RFC7807-ish error payloads in some cases; keep it minimal.
+                                        .withBody(
+                                                """
                     {
                       \"message\": \"Internal Server Error\",
                       \"errorCode\": 500
@@ -260,7 +270,8 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
     }
 
     private static void stubCompetitionApiWithCurrentMatchday(int matchday) {
-                String body = """
+        String body =
+                """
                         {
                             "id": 2021,
                             "name": "Premier League",
@@ -274,13 +285,14 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
                                 "currentMatchday": %d
                             }
                         }
-                        """.formatted(COMPETITION_CODE, matchday);
+                        """
+                        .formatted(COMPETITION_CODE, matchday);
 
-                WIREMOCK.stubFor(get(urlPathEqualTo("/competitions/" + COMPETITION_CODE))
-                                .willReturn(aResponse()
-                                                .withStatus(200)
-                                                .withHeader("Content-Type", "application/json")
-                                                .withBody(body)));
+        WIREMOCK.stubFor(get(urlPathEqualTo("/competitions/" + COMPETITION_CODE))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withHeader("Content-Type", "application/json")
+                        .withBody(body)));
     }
 
     private record Fixture(
@@ -370,14 +382,7 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
                     1);
 
             return new Fixture(
-                    competitionId,
-                    seasonId,
-                    roundId,
-                    homeTeamId,
-                    awayTeamId,
-                    matchId,
-                    matchClientId,
-                    kickOff);
+                    competitionId, seasonId, roundId, homeTeamId, awayTeamId, matchId, matchClientId, kickOff);
         }
     }
 }
