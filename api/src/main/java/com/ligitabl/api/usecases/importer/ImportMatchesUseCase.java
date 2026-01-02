@@ -1,12 +1,19 @@
 package com.ligitabl.api.usecases.importer;
 
 import com.ligitabl.api.importer.footballdata.FootballDataGateway;
-import com.ligitabl.api.importer.model.Entities;
-import com.ligitabl.api.importer.model.ImportError;
-import com.ligitabl.api.importer.model.ValueObjects;
+import com.ligitabl.api.importer.model.entities.ExternalMatch;
+import com.ligitabl.api.importer.model.entities.ImportSummary;
+import com.ligitabl.api.importer.model.entities.MatchImportResult;
+import com.ligitabl.api.importer.model.errors.DatabaseError;
+import com.ligitabl.api.importer.model.errors.ImportError;
+import com.ligitabl.api.importer.model.errors.MappingError;
+import com.ligitabl.api.importer.model.valueobjects.CompetitionCode;
+import com.ligitabl.api.importer.model.valueobjects.ExternalId;
+import com.ligitabl.api.importer.model.valueobjects.MatchSlug;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.importer.event.ImportEventPublisher;
 import com.ligitabl.model.domain.Match;
+import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.Team;
@@ -40,33 +47,26 @@ public class ImportMatchesUseCase {
      * @param competitionCode The competition code (e.g., "PL", "SA")
      * @return Either an ImportError or ImportSummary
      */
-    public Either<ImportError, Entities.ImportSummary> execute(ValueObjects.CompetitionCode competitionCode) {
+    public Either<ImportError, ImportSummary> execute(CompetitionCode competitionCode) {
         log.info("Starting match import for competition: {}", competitionCode);
 
-        return fetchAndResolveSeason(competitionCode.getValue())
-                .flatMap(context -> fetchMatches(context)
-                        .flatMap(this::processMatches)
-                        .map(summary -> {
-                            eventPublisher.publishImportCompleted(summary);
-                            return summary;
-                        }));
+        return fetchAndResolveSeason(competitionCode)
+            .flatMap(this::fetchMatches)
+            .map(this::processMatches)
+            .peek(eventPublisher::publishImportCompleted);
     }
 
     /**
      * Fetch competition and resolve the season
      */
-    private Either<ImportError, ImportContext> fetchAndResolveSeason(String code) {
+    private Either<ImportError, ImportContext> fetchAndResolveSeason(CompetitionCode code) {
         return footballDataGateway.fetchCompetition(code)
                 .flatMap(competition -> {
-                    log.debug("Fetched competition: {}", competition.getName());
-
-                    return seasonRepo.findByClientId(competition.getCurrentSeason().getId())
-                            .map(season -> {
-                                log.debug("Resolved season: {} (clientId: {})",
-                                        season.getName(),
-                                        season.getClientId());
-                                return new ImportContext(code, season, new ArrayList<>());
-                            });
+                    Integer seasonClientId = competition.getCurrentSeason().getId().getValue();
+                    return Either.<ImportError, Season>ofOptional(
+                                    seasonRepo.findByClientId(seasonClientId),
+                                    () -> DatabaseError.notFound("Season", seasonClientId))
+                            .map(season -> new ImportContext(code, season, List.of()));
                 });
     }
 
@@ -84,15 +84,15 @@ public class ImportMatchesUseCase {
     /**
      * Process all matches and collect results
      */
-    private Either<ImportError, Entities.ImportSummary> processMatches(ImportContext context) {
+    private ImportSummary processMatches(ImportContext context) {
         log.info("Processing {} matches...", context.matches.size());
 
-        List<Entities.MatchImportResult> successes = new ArrayList<>();
+        List<MatchImportResult> successes = new ArrayList<>();
         List<ImportError> errors = new ArrayList<>();
 
         // Process each match, collecting successes and failures
-        for (Entities.ExternalMatch match : context.matches) {
-            Either<ImportError, Entities.MatchImportResult> result = processMatch(match, context.season);
+        for (ExternalMatch match : context.matches) {
+            Either<ImportError, MatchImportResult> result = processMatch(match, context.season);
 
             if (result.isRight()) {
                 successes.add(result.get());
@@ -101,10 +101,10 @@ public class ImportMatchesUseCase {
             }
         }
 
-        int created = (int) successes.stream().filter(Entities.MatchImportResult::isCreated).count();
-        int updated = (int) successes.stream().filter(Entities.MatchImportResult::isUpdated).count();
+        int created = (int) successes.stream().filter(MatchImportResult::isCreated).count();
+        int updated = (int) successes.stream().filter(MatchImportResult::isUpdated).count();
 
-        Entities.ImportSummary summary = Entities.ImportSummary.builder()
+        ImportSummary summary = ImportSummary.builder()
                 .competition(context.competitionCode)
                 .seasonName(context.season.getName())
                 .totalMatches(context.matches.size())
@@ -115,14 +115,14 @@ public class ImportMatchesUseCase {
                 .build();
 
         log.info("Import completed: {}", summary.getSummaryMessage());
-        return right(summary);
+        return summary;
     }
 
     /**
      * Process a single match
      */
-    private Either<ImportError, Entities.MatchImportResult> processMatch(
-            Entities.ExternalMatch externalMatch,
+        private Either<ImportError, MatchImportResult> processMatch(
+            ExternalMatch externalMatch,
             Season season) {
 
         return mapToMatch(externalMatch, season)
@@ -145,96 +145,112 @@ public class ImportMatchesUseCase {
     /**
      * Map external match to domain match
      */
-    private Either<ImportError, Match> mapToMatch(
-            Entities.ExternalMatch externalMatch,
+        private Either<ImportError, Match> mapToMatch(
+            ExternalMatch externalMatch,
             Season season) {
 
         return resolveRound(season.getId(), externalMatch.getMatchday().getValue())
-                .flatMap(round -> resolveTeams(externalMatch)
-                        .map(teams -> buildMatch(externalMatch, season, round, teams)));
+            .flatMap(round -> resolveTeams(externalMatch)
+                .map(teams -> buildMatch(externalMatch, season, round, teams)));
     }
 
     /**
      * Resolve round for the match
      */
     private Either<ImportError, Round> resolveRound(UUID seasonId, int matchday) {
-        return roundRepo.findBySeasonIdAndPosition(seasonId, matchday)
-                .orElse(error -> {
-                    log.error("Round not found for seasonId={}, matchday={}", seasonId, matchday);
-                    return ImportError.DatabaseError.notFound("Round",
-                            "seasonId=" + seasonId + ", matchday=" + matchday);
-                });
+        return Either.ofOptional(
+            roundRepo.findBySeasonIdAndPosition(seasonId, matchday),
+            () -> DatabaseError.notFound(
+                "Round",
+                "seasonId=" + seasonId + ", matchday=" + matchday));
     }
 
     /**
      * Resolve both teams
      */
-    private Either<ImportError, TeamPair> resolveTeams(Entities.ExternalMatch match) {
-        return teamRepo.findByClientId(match.getHomeTeam().getId().getValue())
-                .flatMap(homeTeam -> teamRepo.findByClientId(match.getAwayTeam().getId().getValue())
-                        .map(awayTeam -> new TeamPair(homeTeam, awayTeam)));
+    private Either<ImportError, TeamPair> resolveTeams(ExternalMatch match) {
+        Integer homeClientId = match.getHomeTeam().getId().getValue();
+        Integer awayClientId = match.getAwayTeam().getId().getValue();
+
+        return Either.<ImportError, Team>ofOptional(
+                teamRepo.findByClientId(homeClientId),
+                () -> MappingError.missingReference("Team", homeClientId))
+            .flatMap(homeTeam -> Either.<ImportError, Team>ofOptional(
+                    teamRepo.findByClientId(awayClientId),
+                    () -> MappingError.missingReference("Team", awayClientId))
+                .map(awayTeam -> new TeamPair(homeTeam, awayTeam)));
     }
 
     /**
      * Build domain match from resolved entities
      */
     private Match buildMatch(
-            Entities.ExternalMatch externalMatch,
+            ExternalMatch externalMatch,
             Season season,
             Round round,
             TeamPair teams) {
 
-        ValueObjects.MatchSlug slug = ValueObjects.MatchSlug.of(
-                teams.home.getTla(),
-                teams.away.getTla()
+        MatchSlug slug = MatchSlug.of(
+            teams.home.getTla(),
+            teams.away.getTla()
         );
 
         return Match.builder()
-                .clientId(externalMatch.getId().getValue())
+            .clientId(externalMatch.getId().getValue())
                 .seasonId(season.getId())
                 .roundId(round.getId())
-                .homeTeamId(teams.home.id())
-                .awayTeamId(teams.away.id())
+            .homeTeamId(teams.home.getId())
+            .awayTeamId(teams.away.getId())
                 .slug(slug.getValue())
-                .status(externalMatch.getStatus())
-                .kickOff(externalMatch.getKickOff())
-                .matchday(externalMatch.getMatchday())
-                .score(externalMatch.getScore())
+                .status(toModelStatus(externalMatch.getStatus()))
+            .kickOff(externalMatch.getKickOff().getValue())
+            .matchday(externalMatch.getMatchday().getValue())
                 .build();
+    }
+
+    private static MatchStatus toModelStatus(com.ligitabl.api.importer.model.valueobjects.MatchStatus status) {
+        return switch (status.getStatus()) {
+            case SCHEDULED, TIMED -> MatchStatus.SCHEDULED;
+            case IN_PLAY, PAUSED -> MatchStatus.LIVE;
+            case FINISHED, AWARDED -> MatchStatus.FINISHED;
+            case POSTPONED -> MatchStatus.POSTPONED;
+            case SUSPENDED -> MatchStatus.SUSPENDED;
+            case CANCELLED -> MatchStatus.CANCELLED;
+        };
     }
 
     /**
      * Persist match (create or update)
      */
-    private Either<ImportError, Entities.MatchImportResult> persistMatch(Match match) {
-        return matchRepo.findByClientId(match.getClientId())
-                .map(
-                        // Found - update existing
-                        existing -> matchRepo.update(match.withDatabaseId(existing.getId()))
-                                .map(updated -> Entities.MatchImportResult.updated(
-                                        match.getClientId(),
-                                        match.getSlug()
-                                ))
-                )
-                .orElse(
+    private Either<ImportError, MatchImportResult> persistMatch(Match match) {
+        try {
+            var existing = matchRepo.findByClientId(match.getClientId());
+            MatchSlug slug = new MatchSlug(match.getSlug());
 
-                        // Not found - create new
-                        error -> {
-                            var created = matchRepo.create(match);
-                            return Entities.MatchImportResult.created(
-                                    match.getClientId(),
-                                    match.getSlug())
-                        }
-                );
+            if (existing.isPresent()) {
+            match.withDatabaseId(existing.get().getId());
+            matchRepo.update(match);
+            return right(MatchImportResult.updated(
+                new ExternalId(match.getClientId()),
+                slug));
+            }
+
+            matchRepo.create(match);
+            return right(MatchImportResult.created(
+                new ExternalId(match.getClientId()),
+                slug));
+        } catch (Exception e) {
+            return Either.left(DatabaseError.persistenceFailed("Match", e.getMessage()));
+        }
     }
 
     // Helper records
     private record ImportContext(
-            ValueObjects.CompetitionCode competitionCode,
+            CompetitionCode competitionCode,
             Season season,
-            List<Entities.ExternalMatch> matches
+            List<ExternalMatch> matches
     ) {
-        ImportContext withMatches(List<Entities.ExternalMatch> matches) {
+        ImportContext withMatches(List<ExternalMatch> matches) {
             return new ImportContext(competitionCode, season, matches);
         }
     }

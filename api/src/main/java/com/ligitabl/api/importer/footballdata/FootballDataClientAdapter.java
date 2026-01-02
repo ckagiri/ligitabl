@@ -1,10 +1,15 @@
 package com.ligitabl.api.importer.footballdata;
 
 import com.ligitabl.api.client.FootballDataClient;
+import com.ligitabl.api.client.FootballDataClient.ApiError;
 import com.ligitabl.api.client.footballdata.*;
-import com.ligitabl.api.importer.model.Entities;
-import com.ligitabl.api.importer.model.ImportError;
-import com.ligitabl.api.importer.model.ValueObjects;
+import com.ligitabl.api.importer.model.entities.ExternalCompetition;
+import com.ligitabl.api.importer.model.entities.ExternalMatch;
+import com.ligitabl.api.importer.model.entities.ExternalSeason;
+import com.ligitabl.api.importer.model.entities.ExternalTeam;
+import com.ligitabl.api.importer.model.errors.ImportError;
+import com.ligitabl.api.importer.model.errors.ValidationError;
+import com.ligitabl.api.importer.model.valueobjects.CompetitionCode;
 import com.ligitabl.api.shared.Either;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +29,7 @@ public class FootballDataClientAdapter implements FootballDataGateway {
     private final FootballDataClient client;
 
     @Override
-    public Either<ImportError, Entities.ExternalCompetition> fetchCompetition(ValueObjects.CompetitionCode code) {
+        public Either<ImportError, ExternalCompetition> fetchCompetition(CompetitionCode code) {
         log.debug("Fetching competition via adapter: {}", code.getValue());
 
         // Call your existing client - it already returns Either!
@@ -36,7 +41,7 @@ public class FootballDataClientAdapter implements FootballDataGateway {
     }
 
     @Override
-    public Either<ImportError, List<Entities.ExternalMatch>> fetchMatches(ValueObjects.CompetitionCode code) {
+        public Either<ImportError, List<ExternalMatch>> fetchMatches(CompetitionCode code) {
         log.debug("Fetching matches via adapter: {}", code.getValue());
 
         // Use getUpcomingMatches - you can change this to use a different method
@@ -48,50 +53,50 @@ public class FootballDataClientAdapter implements FootballDataGateway {
     /**
      * Map your ApiError to domain ImportError
      */
-    private ImportError mapApiError(FootballDataClient.ApiError error) {
+    private ImportError mapApiError(ApiError error) {
         return switch (error) {
-            case FootballDataClient.ApiError.NetworkError e ->
-                    ImportError.ApiError.connectionFailed(e.message());
+            case ApiError.NetworkError e ->
+                                        com.ligitabl.api.importer.model.errors.ApiError.connectionFailed(e.message());
 
             case ApiError.RateLimitExceeded e ->
-                    ImportError.ApiError.rateLimited();
+                    com.ligitabl.api.importer.model.errors.ApiError.rateLimited();
 
             case ApiError.NotFound e ->
-                    ImportError.ApiError.of(e.message(), 404);
+                    com.ligitabl.api.importer.model.errors.ApiError.of(e.message(), 404);
 
-            case FootballDataClient.ApiError.Unauthorized e ->
-                    ImportError.ApiError.of(e.message(), 401);
+            case ApiError.Unauthorized e ->
+                    com.ligitabl.api.importer.model.errors.ApiError.of(e.message(), 401);
 
             case ApiError.ServerError e ->
-                    ImportError.ApiError.of(e.message(), e.statusCode());
+                    com.ligitabl.api.importer.model.errors.ApiError.of(e.message(), e.statusCode());
 
             case ApiError.UnknownError e ->
-                    ImportError.ApiError.of(e.message(), 0);
+                    com.ligitabl.api.importer.model.errors.ApiError.of(e.message(), 0);
 
             case ApiError.UnexpectedError e ->
-                    ImportError.ApiError.of(e.message(), 500);
+                    com.ligitabl.api.importer.model.errors.ApiError.of(e.message(), 500);
         };
     }
 
     /**
      * Map your CompetitionResponse to domain ExternalCompetition
      */
-    private Either<ImportError, Entities.ExternalCompetition> mapCompetitionResponse(
+        private Either<ImportError, ExternalCompetition> mapCompetitionResponse(
             CompetitionResponse response) {
 
         if (response.currentSeason() == null) {
-            return left(ImportError.ApiError.of(
+                        return left(com.ligitabl.api.importer.model.errors.ApiError.of(
                     "Competition has no current season", 200));
         }
 
         CurrentSeason currentSeason = response.currentSeason();
 
-        return Entities.ExternalSeason.create(
+        return ExternalSeason.create(
                         currentSeason.id().intValue(), // Convert Long to Integer
                         currentSeason.startDate().toString(),
                         currentSeason.endDate().toString()
                 )
-                .flatMap(season -> Entities.ExternalCompetition.create(
+                .flatMap(season -> ExternalCompetition.create(
                         response.id().intValue(), // Convert Long to Integer
                         response.name(),
                         response.code(),
@@ -102,7 +107,7 @@ public class FootballDataClientAdapter implements FootballDataGateway {
     /**
      * Map your MatchesResponse to domain ExternalMatch list
      */
-    private Either<ImportError, List<Entities.ExternalMatch>> mapMatchesResponse(
+        private Either<ImportError, List<ExternalMatch>> mapMatchesResponse(
             MatchesResponse response) {
 
         if (response.matches() == null || response.matches().isEmpty()) {
@@ -140,15 +145,15 @@ public class FootballDataClientAdapter implements FootballDataGateway {
     /**
      * Map your MatchDto to domain ExternalMatch
      */
-    private Either<ImportError, Entities.ExternalMatch> mapMatchDto(MatchDto dto) {
+        private Either<ImportError, ExternalMatch> mapMatchDto(MatchDto dto) {
         // Map teams
-        Either<ImportError, Entities.ExternalTeam> homeTeamResult = mapTeam(dto.homeTeam());
-        Either<ImportError, Entities.ExternalTeam> awayTeamResult = mapTeam(dto.awayTeam());
+                Either<ImportError, ExternalTeam> homeTeamResult = mapTeam(dto.homeTeam());
+                Either<ImportError, ExternalTeam> awayTeamResult = mapTeam(dto.awayTeam());
 
         // Combine results using flatMap
         return homeTeamResult.flatMap(homeTeam ->
                 awayTeamResult.flatMap(awayTeam ->
-                        Entities.ExternalMatch.create(
+                        ExternalMatch.create(
                                 dto.id().intValue(), // Convert Long to Integer
                                 dto.utcDate(),
                                 dto.status(),
@@ -163,13 +168,13 @@ public class FootballDataClientAdapter implements FootballDataGateway {
     /**
      * Map HomeTeam to domain ExternalTeam
      */
-    private Either<ImportError, Entities.ExternalTeam> mapTeam(HomeTeam team) {
+        private Either<ImportError, ExternalTeam> mapTeam(HomeTeam team) {
         if (team == null || team.id() == null) {
-            return left(ImportError.ValidationError.of(
+                        return left(ValidationError.of(
                     "Team data is missing", "team"));
         }
 
-        return Entities.ExternalTeam.create(
+                return ExternalTeam.create(
                 team.id().intValue(), // Convert Long to Integer
                 team.name(),
                 team.tla()
@@ -179,13 +184,13 @@ public class FootballDataClientAdapter implements FootballDataGateway {
     /**
      * Map AwayTeam to domain ExternalTeam
      */
-    private Either<ImportError, Entities.ExternalTeam> mapTeam(AwayTeam team) {
+        private Either<ImportError, ExternalTeam> mapTeam(AwayTeam team) {
         if (team == null || team.id() == null) {
-            return left(ImportError.ValidationError.of(
+                        return left(ValidationError.of(
                     "Team data is missing", "team"));
         }
 
-        return Entities.ExternalTeam.create(
+                return ExternalTeam.create(
                 team.id().intValue(), // Convert Long to Integer
                 team.name(),
                 team.tla()

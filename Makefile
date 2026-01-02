@@ -18,7 +18,7 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate drop-db reset-db format format-check format-all test-unit test-api-no-jooq test-api-fast test-api-core test-auth-smoke test-all test-model test-model-fast test-api-it test-api-all test-dev model-codegen-local seed-competition-cli db-seed db-seed-demo db-seed-season dev-reset test-api-rebuild db-seed-all db-seed-users run-api run-api-test test-seeding-auth
+.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate drop-db reset-db format format-check format-all test-unit test-api-no-jooq test-api-fast test-api-core test-auth-smoke test-all test-model test-model-fast test-api-it test-api-all test-dev model-codegen-local seed-competition-cli db-seed db-seed-demo db-seed-season dev-reset test-api-rebuild db-seed-all db-seed-users run-api run-api-test test-seeding-auth import-competition import-pl import-bl import-sa import-pd import-fl1
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -89,6 +89,43 @@ run-api-test: ## Start DB (compose) and run the API using .env.test (DB=ligitabl
 	  set +a; \
 	  $(MAKE) compose-up-db; \
 	  mvn -q -pl $(API_DIR) -am spring-boot:run
+
+# -----------------------------------------------------------------------------
+# Importer workflow
+# -----------------------------------------------------------------------------
+
+import-competition: ## Import matches for a competition (COMP=XX)
+	@if [ -z "$(COMP)" ]; then \
+		echo "Error: COMP is required"; \
+		echo "Usage: make import-competition COMP=PL"; \
+		exit 1; \
+	fi
+	@if [ -z "$(FOOTBALL_DATA_API_TOKEN)" ] || [ "$(FOOTBALL_DATA_API_TOKEN)" = "your-api-token-here" ]; then \
+		echo "Error: FOOTBALL_DATA_API_TOKEN is not set"; \
+		echo "Set it in .env or export FOOTBALL_DATA_API_TOKEN=..."; \
+		exit 1; \
+	fi
+	$(MAKE) compose-up-db
+	$(MAKE) api-build
+	java -jar $(JAR) \
+		--workflow.run=true \
+		--workflow.competition=$(COMP) \
+		--workflow.exit-after=true
+
+import-pl: ## Import Premier League matches
+	@$(MAKE) import-competition COMP=PL
+
+import-bl: ## Import Bundesliga matches
+	@$(MAKE) import-competition COMP=BL
+
+import-sa: ## Import Serie A matches
+	@$(MAKE) import-competition COMP=SA
+
+import-pd: ## Import La Liga matches
+	@$(MAKE) import-competition COMP=PD
+
+import-fl1: ## Import Ligue 1 matches
+	@$(MAKE) import-competition COMP=FL1
 
 bootstrap-run: ## Reset DB, migrate, codegen, seed reference data, then run the app
 	$(MAKE) dev-reset

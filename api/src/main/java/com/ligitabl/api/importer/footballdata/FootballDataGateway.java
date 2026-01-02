@@ -1,21 +1,22 @@
 package com.ligitabl.api.importer.footballdata;
 
-import com.ligitabl.api.importer.model.Entities;
-import com.ligitabl.api.importer.model.ImportError;
-import com.ligitabl.api.importer.model.ValueObjects;
+import com.ligitabl.api.importer.model.entities.ExternalCompetition;
+import com.ligitabl.api.importer.model.entities.ExternalMatch;
+import com.ligitabl.api.importer.model.errors.ImportError;
+import com.ligitabl.api.importer.model.valueobjects.CompetitionCode;
 import com.ligitabl.api.shared.Either;
 
 import java.util.List;
 
-interface FootballDataGateway {
+public interface FootballDataGateway {
 
     /**
      * Fetch competition details including current season
      */
-    Either<ImportError, Entities.ExternalCompetition> fetchCompetition(ValueObjects.CompetitionCode code);
+    Either<ImportError, ExternalCompetition> fetchCompetition(CompetitionCode code);
 
     /**
      * Fetch all matches for a competition
      */
-    Either<ImportError, List<Entities.ExternalMatch>> fetchMatches(ValueObjects.CompetitionCode code);
+    Either<ImportError, List<ExternalMatch>> fetchMatches(CompetitionCode code);
 }

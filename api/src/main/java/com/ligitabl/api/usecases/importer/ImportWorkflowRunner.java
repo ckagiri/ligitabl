@@ -1,10 +1,13 @@
-package com.ligitabl.api.importer;
+package com.ligitabl.api.usecases.importer;
 
 import com.ligitabl.api.config.WorkflowConfiguration;
-import com.ligitabl.api.importer.model.Entities;
-import com.ligitabl.api.importer.model.ImportError;
-import com.ligitabl.api.importer.model.ValueObjects;
-import com.ligitabl.api.usecases.importer.ImportMatchesUseCase;
+import com.ligitabl.api.importer.model.entities.ImportSummary;
+import com.ligitabl.api.importer.model.errors.ApiError;
+import com.ligitabl.api.importer.model.errors.DatabaseError;
+import com.ligitabl.api.importer.model.errors.ImportError;
+import com.ligitabl.api.importer.model.errors.MappingError;
+import com.ligitabl.api.importer.model.errors.ValidationError;
+import com.ligitabl.api.importer.model.valueobjects.CompetitionCode;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.ApplicationArguments;
@@ -29,7 +32,7 @@ public class ImportWorkflowRunner implements ApplicationRunner {
         log.info("╚══════════════════════════════════════════════════════════╝");
 
         // Validate and create competition code (value object with validation)
-        var codeResult = ValueObjects.CompetitionCode.of(competitionCodeStr);
+        var codeResult = CompetitionCode.of(competitionCodeStr);
         if (codeResult.isLeft()) {
             log.error("Invalid competition code: {}", competitionCodeStr);
             log.error("Error: {}", codeResult.getLeft().message());
@@ -39,7 +42,7 @@ public class ImportWorkflowRunner implements ApplicationRunner {
             return;
         }
 
-        ValueObjects.CompetitionCode code = codeResult.get();
+        CompetitionCode code = codeResult.get();
 
         // Execute the use case
         var result = useCase.execute(code);
@@ -64,16 +67,16 @@ public class ImportWorkflowRunner implements ApplicationRunner {
 
         // Log specific error details based on type
         switch (error) {
-            case ImportError.ApiError e ->
+            case ApiError e ->
                     log.error("API Error: status={}, message={}", e.getStatusCode(), e.message());
 
-            case ImportError.ValidationError e ->
+            case ValidationError e ->
                     log.error("Validation Error: field={}, message={}", e.getField(), e.message());
 
-            case ImportError.DatabaseError e ->
+            case DatabaseError e ->
                     log.error("Database Error: entity={}, message={}", e.getEntity(), e.message());
 
-            case ImportError.MappingError e ->
+            case MappingError e ->
                     log.error("Mapping Error: field={}, message={}", e.getSourceField(), e.message());
         }
 
@@ -86,7 +89,7 @@ public class ImportWorkflowRunner implements ApplicationRunner {
     /**
      * Handle import success - called when result.isRight()
      */
-    private Void handleSuccess(Entities.ImportSummary summary) {
+    private Void handleSuccess(ImportSummary summary) {
         log.info("╔══════════════════════════════════════════════════════════╗");
         log.info("║  Import Summary                                          ║");
         log.info("╠══════════════════════════════════════════════════════════╣");

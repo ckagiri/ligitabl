@@ -1,16 +1,17 @@
 package com.ligitabl.api.importer.event;
 
-import com.ligitabl.api.importer.model.Entities;
-import com.ligitabl.api.importer.model.ImportError;
-import com.ligitabl.api.importer.model.ValueObjects;
+import com.ligitabl.api.importer.model.entities.ImportSummary;
+import com.ligitabl.api.importer.model.entities.MatchImportResult;
+import com.ligitabl.api.importer.model.errors.ImportError;
+import com.ligitabl.api.importer.model.valueobjects.ExternalId;
 
 public interface ImportEventPublisher {
 
-    void publishMatchCreated(Entities.MatchImportResult result);
+    void publishMatchCreated(MatchImportResult result);
 
-    void publishMatchUpdated(Entities.MatchImportResult result);
+    void publishMatchUpdated(MatchImportResult result);
 
-    void publishMatchFailed(ValueObjects.ExternalId matchId, ImportError error);
+    void publishMatchFailed(ExternalId matchId, ImportError error);
 
-    void publishImportCompleted(Entities.ImportSummary summary);
+    void publishImportCompleted(ImportSummary summary);
 }

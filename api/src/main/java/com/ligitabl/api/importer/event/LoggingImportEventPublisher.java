@@ -1,10 +1,12 @@
 package com.ligitabl.api.importer.event;
 
+import com.ligitabl.api.importer.model.entities.ImportSummary;
+import com.ligitabl.api.importer.model.entities.MatchImportResult;
+import com.ligitabl.api.importer.model.errors.ImportError;
+import com.ligitabl.api.importer.model.valueobjects.ExternalId;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 @Slf4j
-@Component
 public class LoggingImportEventPublisher implements ImportEventPublisher {
 
     @Override

@@ -10,11 +10,10 @@ import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.TeamRepo;
-import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 
 @Slf4j
 @Configuration
@@ -34,6 +33,7 @@ public class ImportUseCaseConfiguration {
      * Event publisher - using simple logging by default.
      */
     @Bean
+    @Primary
     public ImportEventPublisher importEventPublisher() {
         log.info("Creating LoggingImportEventPublisher");
         return new LoggingImportEventPublisher();
@@ -70,16 +70,4 @@ public class ImportUseCaseConfiguration {
      *
      * See SeasonRepoAdapter.java example for how to do this.
      */
-}
-
-/**
- * Workflow configuration properties
- */
-@Data
-@Configuration
-@ConfigurationProperties(prefix = "workflow")
-class WorkflowConfiguration {
-    private boolean run = false;
-    private String competition = "PL";
-    private boolean exitAfter = true;
 }
