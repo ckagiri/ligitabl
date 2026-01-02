@@ -4,6 +4,7 @@ import com.ligitabl.api.importer.model.errors.ImportError;
 import com.ligitabl.api.importer.model.errors.ValidationError;
 import com.ligitabl.api.importer.model.valueobjects.ExternalId;
 import com.ligitabl.api.importer.model.valueobjects.KickOffTime;
+import com.ligitabl.api.importer.model.valueobjects.MatchScore;
 import com.ligitabl.api.importer.model.valueobjects.MatchStatus;
 import com.ligitabl.api.importer.model.valueobjects.Matchday;
 import com.ligitabl.api.shared.Either;
@@ -11,6 +12,7 @@ import lombok.Builder;
 import lombok.Value;
 
 import java.time.OffsetDateTime;
+import java.util.Optional;
 
 import static com.ligitabl.api.shared.Either.left;
 
@@ -23,6 +25,7 @@ public class ExternalMatch {
     Matchday matchday;
     ExternalTeam homeTeam;
     ExternalTeam awayTeam;
+        Optional<MatchScore> score;
 
     public static Either<ImportError, ExternalMatch> create(
             Integer id,
@@ -30,7 +33,9 @@ public class ExternalMatch {
             String status,
             Integer matchday,
             ExternalTeam homeTeam,
-            ExternalTeam awayTeam) {
+            ExternalTeam awayTeam,
+            Integer homeGoals,
+            Integer awayGoals) {
 
         if (homeTeam == null || awayTeam == null) {
             return left(ValidationError.of(
@@ -43,13 +48,15 @@ public class ExternalMatch {
                 .flatMap(extId -> KickOffTime.of(utcDate)
                         .flatMap(kickOff -> MatchStatus.of(status)
                                 .flatMap(matchStatus -> Matchday.of(matchday)
-                                        .map(md -> ExternalMatch.builder()
-                                                .id(extId)
-                                                .kickOff(kickOff)
-                                                .status(matchStatus)
-                                                .matchday(md)
-                                                .homeTeam(homeTeam)
-                                                .awayTeam(awayTeam)
-                                                .build()))));
+                                        .flatMap(md -> MatchScore.of(homeGoals, awayGoals)
+                                                .map(score -> ExternalMatch.builder()
+                                                        .id(extId)
+                                                        .kickOff(kickOff)
+                                                        .status(matchStatus)
+                                                        .matchday(md)
+                                                        .homeTeam(homeTeam)
+                                                        .awayTeam(awayTeam)
+                                                        .score(score)
+                                                        .build())))));
     }
 }

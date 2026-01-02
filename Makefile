@@ -106,6 +106,7 @@ import-competition: ## Import matches for a competition (COMP=XX)
 		exit 1; \
 	fi
 	$(MAKE) compose-up-db
+	$(MAKE) db-seed
 	$(MAKE) api-build
 	java -jar $(JAR) \
 		--workflow.run=true \

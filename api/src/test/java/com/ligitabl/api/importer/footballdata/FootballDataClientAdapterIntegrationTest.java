@@ -8,7 +8,11 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.Duration;
 import java.time.LocalDate;
+import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -22,13 +26,18 @@ import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.importer.model.entities.ExternalCompetition;
+import com.ligitabl.api.importer.model.entities.ExternalMatch;
 import com.ligitabl.api.importer.model.errors.ApiError;
 import com.ligitabl.api.importer.model.errors.ImportError;
 import com.ligitabl.api.importer.model.valueobjects.CompetitionCode;
 import com.ligitabl.api.shared.Either;
-import java.util.Objects;
 
 import org.springframework.web.reactive.function.client.WebClient;
+
+import io.netty.handler.timeout.ReadTimeoutHandler;
+import io.netty.handler.timeout.WriteTimeoutHandler;
+import reactor.netty.http.client.HttpClient;
+import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 
 @DisplayName("FootballDataClientAdapter Integration Tests")
 class FootballDataClientAdapterIntegrationTest {
@@ -43,15 +52,25 @@ class FootballDataClientAdapterIntegrationTest {
         wireMock.start();
         WireMock.configureFor("localhost", wireMock.port());
 
+        adapter = createAdapter(Duration.ofSeconds(10));
+    }
+
+    private static FootballDataClientAdapter createAdapter(Duration timeout) {
         String baseUrl = Objects.requireNonNull(wireMock.baseUrl(), "wiremock baseUrl");
+
+        HttpClient httpClient = HttpClient.create()
+            .responseTimeout(timeout)
+            .doOnConnected(conn -> conn.addHandlerLast(new ReadTimeoutHandler(timeout.toMillis(), TimeUnit.MILLISECONDS))
+                .addHandlerLast(new WriteTimeoutHandler(timeout.toMillis(), TimeUnit.MILLISECONDS)));
 
         WebClient webClient = WebClient.builder()
             .baseUrl(baseUrl)
-                .defaultHeader("X-Auth-Token", "test-token")
-                .defaultHeader("Accept", "application/json")
-                .build();
+            .clientConnector(new ReactorClientHttpConnector(httpClient))
+            .defaultHeader("X-Auth-Token", "test-token")
+            .defaultHeader("Accept", "application/json")
+            .build();
 
-        adapter = new FootballDataClientAdapter(new FootballDataClient(webClient));
+        return new FootballDataClientAdapter(new FootballDataClient(webClient));
     }
 
     @AfterAll
@@ -139,6 +158,21 @@ class FootballDataClientAdapterIntegrationTest {
         }
 
         @Test
+        @DisplayName("should handle 500")
+        void shouldHandle500() {
+            wireMock.stubFor(get(urlEqualTo("/competitions/PL"))
+                    .willReturn(aResponse().withStatus(500).withBody("Internal server error")));
+
+            var code = CompetitionCode.of("PL").get();
+
+            var result = adapter.fetchCompetition(code);
+
+            assertThat(result.isLeft()).isTrue();
+            assertThat(result.getLeft()).isInstanceOf(ApiError.class);
+            assertThat(((ApiError) result.getLeft()).getStatusCode()).isEqualTo(500);
+        }
+
+        @Test
         @DisplayName("should handle malformed JSON")
         void shouldHandleMalformedJson() {
             wireMock.stubFor(get(urlEqualTo("/competitions/PL"))
@@ -178,6 +212,7 @@ class FootballDataClientAdapterIntegrationTest {
                                           \"matchday\": 18,
                                           \"homeTeam\": { \"id\": 57, \"name\": \"Arsenal FC\", \"tla\": \"ARS\" },
                                           \"awayTeam\": { \"id\": 61, \"name\": \"Chelsea FC\", \"tla\": \"CHE\" }
+                                                                                    ,\"score\": { \"fullTime\": { \"home\": 1, \"away\": 2 } }
                                         }
                                       ]
                                     }
@@ -190,9 +225,13 @@ class FootballDataClientAdapterIntegrationTest {
             assertThat(result.isRight()).isTrue();
             var matches = result.get();
             assertThat(matches).hasSize(1);
-            assertThat(matches.get(0).getId().getValue()).isEqualTo(12345);
-            assertThat(matches.get(0).getHomeTeam().getId().getValue()).isEqualTo(57);
-            assertThat(matches.get(0).getAwayTeam().getId().getValue()).isEqualTo(61);
+            ExternalMatch match = matches.get(0);
+            assertThat(match.getId().getValue()).isEqualTo(12345);
+            assertThat(match.getHomeTeam().getId().getValue()).isEqualTo(57);
+            assertThat(match.getAwayTeam().getId().getValue()).isEqualTo(61);
+            assertThat(match.getScore()).isPresent();
+            assertThat(match.getScore().get().homeGoals()).isEqualTo(1);
+            assertThat(match.getScore().get().awayGoals()).isEqualTo(2);
 
             wireMock.verify(getRequestedFor(urlPathEqualTo("/matches"))
                     .withQueryParam("competitions", equalTo("PL"))
@@ -200,5 +239,103 @@ class FootballDataClientAdapterIntegrationTest {
                     .withQueryParam("dateTo", equalTo(dayAfterTomorrow.toString()))
                     .withHeader("X-Auth-Token", equalTo("test-token")));
         }
+
+                @Test
+                @DisplayName("should handle empty matches list")
+                void shouldHandleEmptyMatches() {
+                        wireMock.stubFor(get(urlPathEqualTo("/matches"))
+                                        .willReturn(aResponse()
+                                                        .withStatus(200)
+                                                        .withHeader("Content-Type", "application/json")
+                                                        .withBody(
+                                                                        """
+                                                                        { "matches": [] }
+                                                                        """)));
+
+                        var code = CompetitionCode.of("PL").get();
+
+                        Either<ImportError, List<ExternalMatch>> result = adapter.fetchMatches(code);
+
+                        assertThat(result.isRight()).isTrue();
+                        assertThat(result.get()).isEmpty();
+                }
+
+                @Test
+                @DisplayName("should handle multiple matches")
+                void shouldHandleMultipleMatches() {
+                        wireMock.stubFor(get(urlPathEqualTo("/matches"))
+                                        .willReturn(aResponse()
+                                                        .withStatus(200)
+                                                        .withHeader("Content-Type", "application/json")
+                                                        .withBody(
+                                                                        """
+                                                                        {
+                                                                            \"matches\": [
+                                                                                {
+                                                                                    \"id\": 1,
+                                                                                    \"utcDate\": \"2024-12-28T15:00:00Z\",
+                                                                                    \"status\": \"SCHEDULED\",
+                                                                                    \"matchday\": 18,
+                                                                                    \"homeTeam\": { \"id\": 57, \"name\": \"Arsenal\", \"tla\": \"ARS\" },
+                                                                                    \"awayTeam\": { \"id\": 61, \"name\": \"Chelsea\", \"tla\": \"CHE\" }
+                                                                                },
+                                                                                {
+                                                                                    \"id\": 2,
+                                                                                    \"utcDate\": \"2024-12-28T17:30:00Z\",
+                                                                                    \"status\": \"SCHEDULED\",
+                                                                                    \"matchday\": 18,
+                                                                                    \"homeTeam\": { \"id\": 65, \"name\": \"Manchester City\", \"tla\": \"MCI\" },
+                                                                                    \"awayTeam\": { \"id\": 66, \"name\": \"Manchester United\", \"tla\": \"MUN\" }
+                                                                                }
+                                                                            ]
+                                                                        }
+                                                                        """)));
+
+                        var code = CompetitionCode.of("PL").get();
+
+                        Either<ImportError, List<ExternalMatch>> result = adapter.fetchMatches(code);
+
+                        assertThat(result.isRight()).isTrue();
+                        assertThat(result.get()).hasSize(2);
+                }
+        }
+
+        @Nested
+        @DisplayName("error handling")
+        class ErrorHandling {
+
+                @Test
+                @DisplayName("should handle connection timeout")
+                void shouldHandleTimeout() {
+                        // Re-create adapter with a short timeout
+                        FootballDataClientAdapter timeoutAdapter = createAdapter(Duration.ofSeconds(1));
+
+                        wireMock.stubFor(get(urlEqualTo("/competitions/PL"))
+                                        .willReturn(aResponse().withFixedDelay(31000)));
+
+                        var code = CompetitionCode.of("PL").get();
+
+                        var result = timeoutAdapter.fetchCompetition(code);
+
+                        assertThat(result.isLeft()).isTrue();
+                        assertThat(result.getLeft()).isInstanceOf(ApiError.class);
+                }
+
+                @Test
+                @DisplayName("should handle connection refused")
+                void shouldHandleConnectionRefused() {
+                        wireMock.stop();
+
+                        var code = CompetitionCode.of("PL").get();
+
+                        var result = adapter.fetchCompetition(code);
+
+                        assertThat(result.isLeft()).isTrue();
+                        assertThat(result.getLeft()).isInstanceOf(ApiError.class);
+                        assertThat(result.getLeft().code()).contains("CONNECTION");
+
+                        wireMock.start();
+                        WireMock.configureFor("localhost", wireMock.port());
+                }
     }
 }

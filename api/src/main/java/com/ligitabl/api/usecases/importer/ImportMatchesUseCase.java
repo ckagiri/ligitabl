@@ -15,6 +15,7 @@ import com.ligitabl.api.importer.event.ImportEventPublisher;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.domain.Score;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.repo.MatchRepo;
@@ -205,6 +206,9 @@ public class ImportMatchesUseCase {
                 .status(toModelStatus(externalMatch.getStatus()))
             .kickOff(externalMatch.getKickOff().getValue())
             .matchday(externalMatch.getMatchday().getValue())
+                .score(externalMatch.getScore()
+                        .map(s -> Score.builder().homeGoals(s.homeGoals()).awayGoals(s.awayGoals()).build())
+                        .orElse(null))
                 .build();
     }
 
