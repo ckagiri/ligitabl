@@ -71,19 +71,18 @@ public class WebClientConfig {
     /**
      * Retry filter with exponential backoff.
      * Retries on:
-     * - Network errors (5xx)
+     * - Server errors (5xx)
      * - Timeout errors
      *
      * Does NOT retry on:
-     * - Client errors (4xx) except 429 (rate limit)
+     * - Client errors (4xx)
      */
     private @NonNull ExchangeFilterFunction retryFilter() {
         return (request, next) -> next.exchange(request)
                 .flatMap(response -> {
-                    // Retry on 5xx or 429 (rate limit)
-                    if (response.statusCode().is5xxServerError()
-                            || response.statusCode().value() == 429) {
-                        return Mono.error(new RuntimeException("Server error or rate limit: " + response.statusCode()));
+                    // Retry on 5xx. Let 4xx propagate normally so callers can map them.
+                    if (response.statusCode().is5xxServerError()) {
+                        return Mono.error(new RuntimeException("Server error: " + response.statusCode()));
                     }
                     return Mono.just(response);
                 })

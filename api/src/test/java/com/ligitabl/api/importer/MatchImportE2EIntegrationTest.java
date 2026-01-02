@@ -53,11 +53,15 @@ class MatchImportE2EIntegrationTest {
     @Autowired
     private ImportMatchesUseCase useCase;
 
-    @BeforeAll
-    static void setupWireMock() {
+    private static synchronized void ensureWireMockStarted() {
+      if (wireMock == null) {
         wireMock = new WireMockServer(WireMockConfiguration.options().dynamicPort());
+      }
+
+      if (!wireMock.isRunning()) {
         wireMock.start();
         WireMock.configureFor("localhost", wireMock.port());
+      }
     }
 
     @AfterAll
@@ -69,11 +73,13 @@ class MatchImportE2EIntegrationTest {
 
     @BeforeEach
     void resetWireMock() {
+      ensureWireMockStarted();
         wireMock.resetAll();
     }
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
+      ensureWireMockStarted();
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);

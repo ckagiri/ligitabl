@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Objects;
+import java.net.ServerSocket;
 import java.util.concurrent.TimeUnit;
 
 import org.junit.jupiter.api.AfterAll;
@@ -52,11 +53,11 @@ class FootballDataClientAdapterIntegrationTest {
         wireMock.start();
         WireMock.configureFor("localhost", wireMock.port());
 
-        adapter = createAdapter(Duration.ofSeconds(10));
+        adapter = createAdapter(wireMock.baseUrl(), Duration.ofSeconds(10));
     }
 
-    private static FootballDataClientAdapter createAdapter(Duration timeout) {
-        String baseUrl = Objects.requireNonNull(wireMock.baseUrl(), "wiremock baseUrl");
+    private static FootballDataClientAdapter createAdapter(String baseUrl, Duration timeout) {
+        String resolvedBaseUrl = Objects.requireNonNull(baseUrl, "baseUrl");
 
         HttpClient httpClient = HttpClient.create()
             .responseTimeout(timeout)
@@ -64,7 +65,7 @@ class FootballDataClientAdapterIntegrationTest {
                 .addHandlerLast(new WriteTimeoutHandler(timeout.toMillis(), TimeUnit.MILLISECONDS)));
 
         WebClient webClient = WebClient.builder()
-            .baseUrl(baseUrl)
+            .baseUrl(resolvedBaseUrl)
             .clientConnector(new ReactorClientHttpConnector(httpClient))
             .defaultHeader("X-Auth-Token", "test-token")
             .defaultHeader("Accept", "application/json")
@@ -308,7 +309,7 @@ class FootballDataClientAdapterIntegrationTest {
                 @DisplayName("should handle connection timeout")
                 void shouldHandleTimeout() {
                         // Re-create adapter with a short timeout
-                        FootballDataClientAdapter timeoutAdapter = createAdapter(Duration.ofSeconds(1));
+                    FootballDataClientAdapter timeoutAdapter = createAdapter(wireMock.baseUrl(), Duration.ofSeconds(1));
 
                         wireMock.stubFor(get(urlEqualTo("/competitions/PL"))
                                         .willReturn(aResponse().withFixedDelay(31000)));
@@ -324,18 +325,24 @@ class FootballDataClientAdapterIntegrationTest {
                 @Test
                 @DisplayName("should handle connection refused")
                 void shouldHandleConnectionRefused() {
-                        wireMock.stop();
+                    int unusedPort;
+                    try (ServerSocket serverSocket = new ServerSocket(0)) {
+                        unusedPort = serverSocket.getLocalPort();
+                    } catch (Exception e) {
+                        throw new RuntimeException("Failed to allocate an unused port", e);
+                    }
 
-                        var code = CompetitionCode.of("PL").get();
+                    FootballDataClientAdapter refusedAdapter = createAdapter(
+                            "http://localhost:" + unusedPort,
+                            Duration.ofSeconds(1));
 
-                        var result = adapter.fetchCompetition(code);
+                    var code = CompetitionCode.of("PL").get();
+
+                    var result = refusedAdapter.fetchCompetition(code);
 
                         assertThat(result.isLeft()).isTrue();
                         assertThat(result.getLeft()).isInstanceOf(ApiError.class);
-                        assertThat(result.getLeft().code()).contains("CONNECTION");
-
-                        wireMock.start();
-                        WireMock.configureFor("localhost", wireMock.port());
+                    assertThat(result.getLeft().code()).isEqualTo("API_CONNECTION_FAILED");
                 }
     }
 }

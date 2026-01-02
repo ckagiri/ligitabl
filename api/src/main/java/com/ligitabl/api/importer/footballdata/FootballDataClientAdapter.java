@@ -150,12 +150,12 @@ public class FootballDataClientAdapter implements FootballDataGateway {
                 Either<ImportError, ExternalTeam> homeTeamResult = mapTeam(dto.homeTeam());
                 Either<ImportError, ExternalTeam> awayTeamResult = mapTeam(dto.awayTeam());
 
-                Integer homeGoals = null;
-                Integer awayGoals = null;
-                if (dto.score() != null && dto.score().fullTime() != null) {
-                        homeGoals = dto.score().fullTime().home();
-                        awayGoals = dto.score().fullTime().away();
-                }
+                                final Integer homeGoals = (dto.score() != null && dto.score().fullTime() != null)
+                                                        ? dto.score().fullTime().home()
+                                                        : null;
+                                final Integer awayGoals = (dto.score() != null && dto.score().fullTime() != null)
+                                                        ? dto.score().fullTime().away()
+                                                        : null;
 
         // Combine results using flatMap
         return homeTeamResult.flatMap(homeTeam ->
