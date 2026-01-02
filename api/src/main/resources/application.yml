@@ -72,3 +72,8 @@ admin:
   # Email Service (choose one when ready to migrate from stub)
   # email-provider: stub | spring-mail | sendgrid | aws-ses
   email-provider: stub
+
+workflow:
+  run: true
+  competition: PL
+  exit-after: true
