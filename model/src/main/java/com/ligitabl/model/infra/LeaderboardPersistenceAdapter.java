@@ -4,6 +4,7 @@ import static com.ligitabl.model.db.tables.TEntry.T_ENTRY;
 import static com.ligitabl.model.db.tables.TRoundResult.T_ROUND_RESULT;
 import static com.ligitabl.model.db.tables.TRoundSubmission.T_ROUND_SUBMISSION;
 import static com.ligitabl.model.db.tables.TUser.T_USER;
+import static com.ligitabl.model.db.tables.TRound.T_ROUND;
 
 import java.util.ArrayList;
 import java.util.HashMap;

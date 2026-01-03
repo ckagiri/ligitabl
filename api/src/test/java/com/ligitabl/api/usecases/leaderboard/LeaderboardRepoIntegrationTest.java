@@ -124,6 +124,20 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
     }
 
     @Test
+    @DisplayName("calculates max score correctly")
+    void calculatesMaxScoreCorrectly() {
+        createResult(aliceId, alicePredictionId, 1, 10, 1, 1);
+        createResult(aliceId, alicePredictionId, 2, 90, 9, 2);
+
+        var results = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 2);
+
+        assertThat(results).hasSize(1);
+        assertThat(results.get(0).displayName()).isEqualTo("Alice");
+        assertThat(results.get(0).totalScore()).isEqualTo(100);
+        assertThat(results.get(0).maxScore()).isEqualTo(90);
+    }
+
+    @Test
     @DisplayName("sorts by score desc, then zeroes desc, swaps asc, max score desc, display name")
     void sortsWithTiebreakers() {
         // Score DESC

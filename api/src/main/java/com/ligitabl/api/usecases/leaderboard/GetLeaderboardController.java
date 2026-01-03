@@ -4,6 +4,7 @@ import com.ligitabl.api.usecases.leaderboard.dtos.LeaderboardEntryDto;
 import com.ligitabl.api.usecases.leaderboard.dtos.PhaseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -33,11 +34,20 @@ public class GetLeaderboardController {
         return getLeaderboardUseCase.execute(query)
                 .fold(
                         error -> {
-                            if (error instanceof GetLeaderboardError.DefaultCompetitionNotFound
-                                    || error instanceof GetLeaderboardError.ActiveSeasonNotFound
-                                    || error instanceof GetLeaderboardError.MainContestNotFound) {
-                                return ResponseEntity.notFound().build();
-                            }
+                                                        if (error instanceof GetLeaderboardError.DefaultCompetitionNotFound e) {
+                                                                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                                                                .body(new ErrorDto(e.message()));
+                                                        }
+
+                                                        if (error instanceof GetLeaderboardError.ActiveSeasonNotFound e) {
+                                                                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                                                                .body(new ErrorDto(e.message()));
+                                                        }
+
+                                                        if (error instanceof GetLeaderboardError.MainContestNotFound e) {
+                                                                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                                                                .body(new ErrorDto(e.message()));
+                                                        }
 
                             if (error instanceof GetLeaderboardError.InvalidPhase invalid) {
                                 return ResponseEntity.badRequest()
