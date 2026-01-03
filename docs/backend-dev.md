@@ -86,6 +86,13 @@ Notes:
 - Default local DB port mapping is `55432` (host) -> `5432` (container). The app falls back to port `55432` when DB_PORT isn't set.
 - **DB-backed tests and destructive smoke scripts require Postgres on `55433`** (as defined in `.env.test`).
 
+Makefile environment behavior:
+
+- The root `Makefile` loads `.env` if present.
+- The root `Makefile` also loads `.env.local` if present (recommended place for secrets; gitignored).
+- Most targets allow already-exported `DB_*` / `HOST_DB_PORT` vars in your shell to override `.env` (useful for `source .env.test && make ...`).
+- Importer targets intentionally disable that override (via `ALLOW_SHELL_DB_ENV=0`) so `make import-pl` reliably uses `.env` / `.env.local` for DB settings.
+
 ### Option B: Local Postgres
 
 ```bash
@@ -199,12 +206,30 @@ We use Liquibase in the `model` module.
 
 Common tasks:
 
-```bash
+````bash
 make compose-up-db   # ensure the DB container is up (dev host port defaults to 55432; tests use 55433 via .env.test)
 make reset-db        # drop and recreate the database
 make migrate         # apply Liquibase changesets
 make codegen         # regenerate jOOQ sources against the current schema
-```
+
+## Importing matches (Football-Data)
+
+The repo includes a headless match importer workflow you can run after seeding.
+
+Make targets:
+
+```bash
+make import-competition COMP=PL
+make import-pl
+````
+
+Notes:
+
+- These Make targets are non-destructive, and use `.env` (and optional `.env.local`).
+- Set your token in `.env.local` (preferred) as `API_FOOTBALL_DATA_KEY=...` (or `FOOTBALL_DATA_API_TOKEN=...`).
+- Importer targets start DB (compose), seed reference data, build the API jar, then run the workflow in headless mode.
+
+````
 
 ## Seeding the database
 
@@ -229,7 +254,7 @@ Those users can be seeded into your dev database using:
 - `make compose-up-db`
 - `make migrate` (ensures the `t_user` / `t_user_role` tables exist)
 - `make db-seed-users`
-```
+````
 
 For a typical local dev reset + reference seeding in one go, use:
 
@@ -248,7 +273,7 @@ For a quick end-to-end verification of "reset DB → migrate → seed reference 
 
 Notes:
 
-- The script prefers `.env.test` when present (separate DB/ports for destructive runs).
+- Destructive scripts require `.env.test` (and optional `.env.test.local`) and do not fall back to `.env`.
 - Matchday/round positions are 1-based; the script asserts a round-1 standings row.
 
 ## Liquibase at runtime

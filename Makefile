@@ -12,6 +12,13 @@ DOCKER_COMPOSE ?= docker compose
 # Default host port mapping for Postgres when using compose
 HOST_DB_PORT ?= 55432
 
+# Controls whether already-exported DB_* / HOST_DB_PORT vars from the invoking shell
+# should override values coming from `.env` / Makefile defaults.
+#
+# Most targets keep this enabled (so `source .env.test && make ...` works), but
+# importer targets force it off in their sub-makes so they reliably use `.env`.
+ALLOW_SHELL_DB_ENV ?= 1
+
 # If the user already exported DB_* vars in the shell (e.g., by sourcing .env.test),
 # do not let the optional local .env override them.
 ENV_DB_HOST := $(shell printenv DB_HOST)
@@ -27,23 +34,31 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-ifneq ($(strip $(ENV_DB_HOST)),)
-	DB_HOST := $(ENV_DB_HOST)
+# Optional local overrides for developer secrets (gitignored)
+ifneq (,$(wildcard .env.local))
+	include .env.local
+	export
 endif
-ifneq ($(strip $(ENV_DB_PORT)),)
-	DB_PORT := $(ENV_DB_PORT)
-endif
-ifneq ($(strip $(ENV_DB_NAME)),)
-	DB_NAME := $(ENV_DB_NAME)
-endif
-ifneq ($(strip $(ENV_DB_USER)),)
-	DB_USER := $(ENV_DB_USER)
-endif
-ifneq ($(strip $(ENV_DB_PASSWORD)),)
-	DB_PASSWORD := $(ENV_DB_PASSWORD)
-endif
-ifneq ($(strip $(ENV_HOST_DB_PORT)),)
-	HOST_DB_PORT := $(ENV_HOST_DB_PORT)
+
+ifneq ($(ALLOW_SHELL_DB_ENV),0)
+	ifneq ($(strip $(ENV_DB_HOST)),)
+		DB_HOST := $(ENV_DB_HOST)
+	endif
+	ifneq ($(strip $(ENV_DB_PORT)),)
+		DB_PORT := $(ENV_DB_PORT)
+	endif
+	ifneq ($(strip $(ENV_DB_NAME)),)
+		DB_NAME := $(ENV_DB_NAME)
+	endif
+	ifneq ($(strip $(ENV_DB_USER)),)
+		DB_USER := $(ENV_DB_USER)
+	endif
+	ifneq ($(strip $(ENV_DB_PASSWORD)),)
+		DB_PASSWORD := $(ENV_DB_PASSWORD)
+	endif
+	ifneq ($(strip $(ENV_HOST_DB_PORT)),)
+		HOST_DB_PORT := $(ENV_HOST_DB_PORT)
+	endif
 endif
 
 .PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate drop-db reset-db format format-check format-all test-unit test-api-no-jooq test-api-fast test-api-core test-auth-smoke test-all test-model test-model-fast test-api-it test-api-all test-dev model-codegen-local seed-competition-cli db-seed db-seed-demo db-seed-season dev-reset test-api-rebuild db-seed-all db-seed-users run-api run-api-test test-seeding-auth import-competition import-pl import-bl import-sa import-pd import-fl1
@@ -123,11 +138,7 @@ run-api-test: ## Start DB (compose) and run the API using .env.test (DB=ligitabl
 # -----------------------------------------------------------------------------
 
 import-competition: ## Import matches for a competition (COMP=XX)
-	@set -a; \
-	  if [ -f .env ]; then . ./.env; fi; \
-	  if [ -f .env.local ]; then . ./.env.local; fi; \
-	  set +a; \
-	  if [ -z "$(COMP)" ]; then \
+	@if [ -z "$(COMP)" ]; then \
 		echo "Error: COMP is required"; \
 		echo "Usage: make import-competition COMP=PL"; \
 		exit 1; \
@@ -139,8 +150,8 @@ import-competition: ## Import matches for a competition (COMP=XX)
 		exit 1; \
 	  fi; \
 	  export FOOTBALL_DATA_API_TOKEN; \
-	  $(MAKE) compose-up-db; \
-	  $(MAKE) db-seed; \
+	  $(MAKE) ALLOW_SHELL_DB_ENV=0 compose-up-db; \
+	  $(MAKE) ALLOW_SHELL_DB_ENV=0 db-seed; \
 	  $(MAKE) api-build; \
 	  java -jar $(JAR) \
 		--spring.main.web-application-type=none \
