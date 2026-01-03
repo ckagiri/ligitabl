@@ -1,5 +1,12 @@
 package com.ligitabl.api.usecases.importer;
 
+import static com.ligitabl.api.shared.Either.right;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import com.ligitabl.api.importer.event.ImportEventPublisher;
 import com.ligitabl.api.importer.footballdata.FootballDataGateway;
 import com.ligitabl.api.importer.model.entities.ExternalMatch;
 import com.ligitabl.api.importer.model.entities.ImportSummary;
@@ -11,7 +18,6 @@ import com.ligitabl.api.importer.model.valueobjects.CompetitionCode;
 import com.ligitabl.api.importer.model.valueobjects.ExternalId;
 import com.ligitabl.api.importer.model.valueobjects.MatchSlug;
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.importer.event.ImportEventPublisher;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -22,14 +28,9 @@ import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.TeamRepo;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
-
-import static com.ligitabl.api.shared.Either.right;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -52,30 +53,30 @@ public class ImportMatchesUseCase {
         log.info("Starting match import for competition: {}", competitionCode);
 
         return fetchAndResolveSeason(competitionCode)
-            .flatMap(this::fetchMatches)
-            .map(this::processMatches)
-            .peek(eventPublisher::publishImportCompleted);
+                .flatMap(this::fetchMatches)
+                .map(this::processMatches)
+                .peek(eventPublisher::publishImportCompleted);
     }
 
     /**
      * Fetch competition and resolve the season
      */
     private Either<ImportError, ImportContext> fetchAndResolveSeason(CompetitionCode code) {
-        return footballDataGateway.fetchCompetition(code)
-                .flatMap(competition -> {
-                    Integer seasonClientId = competition.getCurrentSeason().getId().getValue();
-                    return Either.<ImportError, Season>ofOptional(
-                                    seasonRepo.findByClientId(seasonClientId),
-                                    () -> DatabaseError.notFound("Season", seasonClientId))
-                            .map(season -> new ImportContext(code, season, List.of()));
-                });
+        return footballDataGateway.fetchCompetition(code).flatMap(competition -> {
+            Integer seasonClientId = competition.getCurrentSeason().getId().getValue();
+            return Either.<ImportError, Season>ofOptional(
+                            seasonRepo.findByClientId(seasonClientId),
+                            () -> DatabaseError.notFound("Season", seasonClientId))
+                    .map(season -> new ImportContext(code, season, List.of()));
+        });
     }
 
     /**
      * Fetch external matches for the competition
      */
     private Either<ImportError, ImportContext> fetchMatches(ImportContext context) {
-        return footballDataGateway.fetchMatchesForCompetition(context.competitionCode)
+        return footballDataGateway
+                .fetchMatchesForCompetition(context.competitionCode)
                 .map(matches -> {
                     log.info("Fetched {} matches from external API", matches.size());
                     return context.withMatches(matches);
@@ -102,8 +103,10 @@ public class ImportMatchesUseCase {
             }
         }
 
-        int created = (int) successes.stream().filter(MatchImportResult::isCreated).count();
-        int updated = (int) successes.stream().filter(MatchImportResult::isUpdated).count();
+        int created =
+                (int) successes.stream().filter(MatchImportResult::isCreated).count();
+        int updated =
+                (int) successes.stream().filter(MatchImportResult::isUpdated).count();
 
         ImportSummary summary = ImportSummary.builder()
                 .competition(context.competitionCode)
@@ -122,9 +125,7 @@ public class ImportMatchesUseCase {
     /**
      * Process a single match
      */
-        private Either<ImportError, MatchImportResult> processMatch(
-            ExternalMatch externalMatch,
-            Season season) {
+    private Either<ImportError, MatchImportResult> processMatch(ExternalMatch externalMatch, Season season) {
 
         return mapToMatch(externalMatch, season)
                 .flatMap(this::persistMatch)
@@ -137,7 +138,8 @@ public class ImportMatchesUseCase {
                 })
                 .peekLeft(error -> {
                     eventPublisher.publishMatchFailed(externalMatch.getId(), error);
-                    log.warn("Failed to process match {}: {}",
+                    log.warn(
+                            "Failed to process match {}: {}",
                             externalMatch.getId().getValue(),
                             error.message());
                 });
@@ -146,13 +148,11 @@ public class ImportMatchesUseCase {
     /**
      * Map external match to domain match
      */
-        private Either<ImportError, Match> mapToMatch(
-            ExternalMatch externalMatch,
-            Season season) {
+    private Either<ImportError, Match> mapToMatch(ExternalMatch externalMatch, Season season) {
 
         return resolveRound(season.getId(), externalMatch.getMatchday().getValue())
-            .flatMap(round -> resolveTeams(externalMatch)
-                .map(teams -> buildMatch(externalMatch, season, round, teams)));
+                .flatMap(round ->
+                        resolveTeams(externalMatch).map(teams -> buildMatch(externalMatch, season, round, teams)));
     }
 
     /**
@@ -160,10 +160,8 @@ public class ImportMatchesUseCase {
      */
     private Either<ImportError, Round> resolveRound(UUID seasonId, int matchday) {
         return Either.ofOptional(
-            roundRepo.findBySeasonIdAndPosition(seasonId, matchday),
-            () -> DatabaseError.notFound(
-                "Round",
-                "seasonId=" + seasonId + ", matchday=" + matchday));
+                roundRepo.findBySeasonIdAndPosition(seasonId, matchday),
+                () -> DatabaseError.notFound("Round", "seasonId=" + seasonId + ", matchday=" + matchday));
     }
 
     /**
@@ -174,40 +172,37 @@ public class ImportMatchesUseCase {
         Integer awayClientId = match.getAwayTeam().getId().getValue();
 
         return Either.<ImportError, Team>ofOptional(
-                teamRepo.findByClientId(homeClientId),
-                () -> MappingError.missingReference("Team", homeClientId))
-            .flatMap(homeTeam -> Either.<ImportError, Team>ofOptional(
-                    teamRepo.findByClientId(awayClientId),
-                    () -> MappingError.missingReference("Team", awayClientId))
-                .map(awayTeam -> new TeamPair(homeTeam, awayTeam)));
+                        teamRepo.findByClientId(homeClientId),
+                        () -> MappingError.missingReference("Team", homeClientId))
+                .flatMap(homeTeam -> Either.<ImportError, Team>ofOptional(
+                                teamRepo.findByClientId(awayClientId),
+                                () -> MappingError.missingReference("Team", awayClientId))
+                        .map(awayTeam -> new TeamPair(homeTeam, awayTeam)));
     }
 
     /**
      * Build domain match from resolved entities
      */
-    private Match buildMatch(
-            ExternalMatch externalMatch,
-            Season season,
-            Round round,
-            TeamPair teams) {
+    private Match buildMatch(ExternalMatch externalMatch, Season season, Round round, TeamPair teams) {
 
-        MatchSlug slug = MatchSlug.of(
-            teams.home.getTla(),
-            teams.away.getTla()
-        );
+        MatchSlug slug = MatchSlug.of(teams.home.getTla(), teams.away.getTla());
 
         return Match.builder()
-            .clientId(externalMatch.getId().getValue())
+                .clientId(externalMatch.getId().getValue())
                 .seasonId(season.getId())
                 .roundId(round.getId())
-            .homeTeamId(teams.home.getId())
-            .awayTeamId(teams.away.getId())
+                .homeTeamId(teams.home.getId())
+                .awayTeamId(teams.away.getId())
                 .slug(slug.getValue())
                 .status(toModelStatus(externalMatch.getStatus()))
-            .kickOff(externalMatch.getKickOff().getValue())
-            .matchday(externalMatch.getMatchday().getValue())
-                .score(externalMatch.getScore()
-                        .map(s -> Score.builder().homeGoals(s.homeGoals()).awayGoals(s.awayGoals()).build())
+                .kickOff(externalMatch.getKickOff().getValue())
+                .matchday(externalMatch.getMatchday().getValue())
+                .score(externalMatch
+                        .getScore()
+                        .map(s -> Score.builder()
+                                .homeGoals(s.homeGoals())
+                                .awayGoals(s.awayGoals())
+                                .build())
                         .orElse(null))
                 .build();
     }
@@ -232,33 +227,24 @@ public class ImportMatchesUseCase {
             MatchSlug slug = new MatchSlug(match.getSlug());
 
             if (existing.isPresent()) {
-            match.withDatabaseId(existing.get().getId());
-            matchRepo.update(match);
-            return right(MatchImportResult.updated(
-                new ExternalId(match.getClientId()),
-                slug));
+                match.withDatabaseId(existing.get().getId());
+                matchRepo.update(match);
+                return right(MatchImportResult.updated(new ExternalId(match.getClientId()), slug));
             }
 
             matchRepo.create(match);
-            return right(MatchImportResult.created(
-                new ExternalId(match.getClientId()),
-                slug));
+            return right(MatchImportResult.created(new ExternalId(match.getClientId()), slug));
         } catch (Exception e) {
             return Either.left(DatabaseError.persistenceFailed("Match", e.getMessage()));
         }
     }
 
     // Helper records
-    private record ImportContext(
-            CompetitionCode competitionCode,
-            Season season,
-            List<ExternalMatch> matches
-    ) {
+    private record ImportContext(CompetitionCode competitionCode, Season season, List<ExternalMatch> matches) {
         ImportContext withMatches(List<ExternalMatch> matches) {
             return new ImportContext(competitionCode, season, matches);
         }
     }
 
-    private record TeamPair(Team home, Team away) {
-    }
+    private record TeamPair(Team home, Team away) {}
 }

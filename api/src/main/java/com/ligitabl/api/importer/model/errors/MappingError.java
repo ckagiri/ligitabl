@@ -23,18 +23,11 @@ public class MappingError implements ImportError {
     }
 
     public static MappingError unmappableStatus(String status) {
-        return new MappingError(
-                "Cannot map external status: " + status,
-                "UNMAPPABLE_STATUS",
-                "status"
-        );
+        return new MappingError("Cannot map external status: " + status, "UNMAPPABLE_STATUS", "status");
     }
 
     public static MappingError missingReference(String refType, Object refId) {
         return new MappingError(
-                String.format("Missing reference: %s with id %s", refType, refId),
-                "MISSING_REFERENCE",
-                refType
-        );
+                String.format("Missing reference: %s with id %s", refType, refId), "MISSING_REFERENCE", refType);
     }
 }

@@ -1,5 +1,10 @@
 package com.ligitabl.api.usecases.importer;
 
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
+
 import com.ligitabl.api.config.WorkflowConfiguration;
 import com.ligitabl.api.importer.model.entities.ImportSummary;
 import com.ligitabl.api.importer.model.errors.ApiError;
@@ -8,12 +13,9 @@ import com.ligitabl.api.importer.model.errors.ImportError;
 import com.ligitabl.api.importer.model.errors.MappingError;
 import com.ligitabl.api.importer.model.errors.ValidationError;
 import com.ligitabl.api.importer.model.valueobjects.CompetitionCode;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
 
 @Slf4j
 @Component
@@ -48,10 +50,7 @@ public class ImportWorkflowRunner implements ApplicationRunner {
         var result = useCase.execute(code);
 
         // Handle the result using fold (functional error handling)
-        result.fold(
-                error -> handleError(error),
-                summary -> handleSuccess(summary)
-        );
+        result.fold(error -> handleError(error), summary -> handleSuccess(summary));
     }
 
     /**
@@ -67,17 +66,13 @@ public class ImportWorkflowRunner implements ApplicationRunner {
 
         // Log specific error details based on type
         switch (error) {
-            case ApiError e ->
-                    log.error("API Error: status={}, message={}", e.getStatusCode(), e.message());
+            case ApiError e -> log.error("API Error: status={}, message={}", e.getStatusCode(), e.message());
 
-            case ValidationError e ->
-                    log.error("Validation Error: field={}, message={}", e.getField(), e.message());
+            case ValidationError e -> log.error("Validation Error: field={}, message={}", e.getField(), e.message());
 
-            case DatabaseError e ->
-                    log.error("Database Error: entity={}, message={}", e.getEntity(), e.message());
+            case DatabaseError e -> log.error("Database Error: entity={}, message={}", e.getEntity(), e.message());
 
-            case MappingError e ->
-                    log.error("Mapping Error: field={}, message={}", e.getSourceField(), e.message());
+            case MappingError e -> log.error("Mapping Error: field={}, message={}", e.getSourceField(), e.message());
         }
 
         if (config.isExitAfter()) {
@@ -93,7 +88,9 @@ public class ImportWorkflowRunner implements ApplicationRunner {
         log.info("╔══════════════════════════════════════════════════════════╗");
         log.info("║  Import Summary                                          ║");
         log.info("╠══════════════════════════════════════════════════════════╣");
-        log.info("║  Competition:  {}", String.format("%-44s", summary.getCompetition().getValue()) + "║");
+        log.info(
+                "║  Competition:  {}",
+                String.format("%-44s", summary.getCompetition().getValue()) + "║");
         log.info("║  Season:       {}", String.format("%-44s", summary.getSeasonName()) + "║");
         log.info("║  Total:        {}", String.format("%-44s", summary.getTotalMatches()) + "║");
         log.info("║  Created:      {}", String.format("%-44s", summary.getCreated()) + "║");

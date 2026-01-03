@@ -1,11 +1,13 @@
 package com.ligitabl.api.client;
 
+import java.net.URI;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import com.ligitabl.api.client.footballdata.CompetitionResponse;
 import com.ligitabl.api.client.footballdata.MatchesResponse;
@@ -110,7 +112,8 @@ public class FootballDataClient {
     }
 
     public Either<ApiError, MatchesResponse> getMatchesForCompetition(String competitionCode) {
-        String uri = String.format("/competitions/%s/matches", competitionCode);
+        URI uri = UriComponentsBuilder.fromPath("/competitions/{competitionCode}/matches")
+                .build(competitionCode);
         log.info("Fetching matches for competition: {}", uri);
 
         try {

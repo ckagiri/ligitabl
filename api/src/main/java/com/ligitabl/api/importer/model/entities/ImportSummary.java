@@ -1,11 +1,12 @@
 package com.ligitabl.api.importer.model.entities;
 
+import java.util.List;
+
 import com.ligitabl.api.importer.model.errors.ImportError;
 import com.ligitabl.api.importer.model.valueobjects.CompetitionCode;
+
 import lombok.Builder;
 import lombok.Value;
-
-import java.util.List;
 
 @Value
 @Builder
@@ -33,14 +34,11 @@ public class ImportSummary {
     public String getSummaryMessage() {
         if (isSuccessful()) {
             return String.format(
-                    "Successfully imported %d matches (%d created, %d updated)",
-                    getSuccessCount(), created, updated
-            );
+                    "Successfully imported %d matches (%d created, %d updated)", getSuccessCount(), created, updated);
         } else if (isPartialSuccess()) {
             return String.format(
                     "Partial import: %d succeeded (%d created, %d updated), %d failed",
-                    getSuccessCount(), created, updated, failed
-            );
+                    getSuccessCount(), created, updated, failed);
         } else {
             return String.format("Import failed: %d errors", errors.size());
         }

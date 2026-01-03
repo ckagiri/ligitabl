@@ -23,18 +23,11 @@ public class DatabaseError implements ImportError {
     }
 
     public static DatabaseError notFound(String entity, Object id) {
-        return new DatabaseError(
-                String.format("%s not found with id: %s", entity, id),
-                "ENTITY_NOT_FOUND",
-                entity
-        );
+        return new DatabaseError(String.format("%s not found with id: %s", entity, id), "ENTITY_NOT_FOUND", entity);
     }
 
     public static DatabaseError persistenceFailed(String entity, String reason) {
         return new DatabaseError(
-                String.format("Failed to persist %s: %s", entity, reason),
-                "PERSISTENCE_FAILED",
-                entity
-        );
+                String.format("Failed to persist %s: %s", entity, reason), "PERSISTENCE_FAILED", entity);
     }
 }
