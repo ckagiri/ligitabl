@@ -138,10 +138,10 @@ public class FinalizeRoundUseCase {
         try {
             Either<FinalizeRoundError, List<StandingsTeamRank>> calculation = standingsCalculator
                 .calculateRankings(season.getId(), round.getPosition())
-                .mapLeft(error -> (FinalizeRoundError) new FinalizeRoundError.StandingsValidationFailed(error.toString()));
+                .mapLeft(error -> new FinalizeRoundError.StandingsValidationFailed(error.toString()));
 
             if (calculation.isLeft()) {
-            return Either.left(calculation.getLeft());
+                return Either.left(calculation.getLeft());
             }
 
             List<StandingsTeamRank> rankings = calculation.get();

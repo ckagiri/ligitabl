@@ -31,4 +31,6 @@ public interface SeasonRepo {
     Optional<Season> findByClientId(Integer clientId);
 
     boolean existsById(UUID id);
+
+    Optional<Season> findByCompetitionId(UUID competitionId);
 }

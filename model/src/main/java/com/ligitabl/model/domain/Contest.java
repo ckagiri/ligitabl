@@ -30,7 +30,7 @@ public class Contest extends AbstractModel<UUID> {
 
     private Instant createdAt;
 
-    public boolean isDefault() {
+    public boolean isMain() {
         return !isPrivate && fromRoundPosition == 1;
     }
 }
