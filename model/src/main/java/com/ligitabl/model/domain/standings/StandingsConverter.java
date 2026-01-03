@@ -25,7 +25,7 @@ public final class StandingsConverter {
     }
 
     public static List<StandingsTeamRank> convert(List<Standing> standings, List<Team> teams) {
-        Map<UUID, String> teamCodeMap = teams.stream().collect(Collectors.toMap(t -> t.getId(), t -> t.getShortName()));
+        Map<UUID, String> teamCodeMap = teams.stream().collect(Collectors.toMap(t -> t.getId(), Team::getCode));
 
         return standings.stream().map(s -> toStandingsTeamRank(s, teamCodeMap)).toList();
     }

@@ -26,6 +26,7 @@ public class StandingsCalculatorService {
     private final TeamRepo teamRepo;
     private final MatchRepo matchRepo;
     private final SeasonRepo seasonRepo;
+    private final StandingsRepo standingsRepo;
 
     @Transactional(readOnly = true)
     public Either<StandingsError, List<Standing>> calculateStandings(UUID seasonId, int roundPosition) {
@@ -48,7 +49,26 @@ public class StandingsCalculatorService {
 
     @Transactional
     public Either<StandingsError, Standings> calculateAndPersist(UUID seasonId, int roundPosition) {
-        return Either.left(new StandingsError.CalculationFailed("Not implemented yet..."));
+        return calculateRankings(seasonId, roundPosition)
+                .flatMap(Either.catching(
+                    rankings -> {
+                        Standings standings = standingsRepo
+                                .findBySeasonAndRoundPosition(seasonId, roundPosition)
+                                .orElseGet(() -> Standings.builder()
+                                        .seasonId(seasonId)
+                                        .roundPosition(roundPosition)
+                                        .rankings(List.of())
+                                        .build());
+
+                        standings.setRankings(rankings);
+                        return standingsRepo.save(standings);
+                    },
+                    e -> {
+                        log.error("Failed to persist standings: season={}, round={}",
+                            seasonId, roundPosition, e);
+                        return new StandingsError.CalculationFailed(e.getMessage());
+                    }
+                ));
     }
 
     private Either<StandingsError, StandingsData> fetchTeamsAndMatches(UUID seasonId, int roundPosition) {

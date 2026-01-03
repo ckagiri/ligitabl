@@ -40,6 +40,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
             throw new IllegalArgumentException("toRound must be >= fromRound");
         }
 
+        // Find highest round with finalized standings
         Integer effectiveToRound = resolveEffectiveToRound(contestId, seasonId, fromRound, toRound);
         if (effectiveToRound == null) {
             return List.of();

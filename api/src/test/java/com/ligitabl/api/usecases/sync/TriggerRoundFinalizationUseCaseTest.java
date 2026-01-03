@@ -26,7 +26,6 @@ import com.ligitabl.api.usecases.round.finalizeround.FinalizeRoundUseCase;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
@@ -277,7 +276,7 @@ class TriggerRoundFinalizationUseCaseTest {
                 .thenReturn(List.of(createMatch(MatchStatus.FINISHED), createMatch(MatchStatus.FINISHED)));
 
         when(finalizeRoundUseCase.execute(seasonId))
-                .thenReturn(Either.left(new FinalizeRoundError.RoundNotLocked(roundId, RoundStatus.OPEN)));
+                .thenReturn(Either.left(new FinalizeRoundError.RoundNotReady(roundId, "Round status is OPEN, expected FINALISED")));
 
         var result = useCase.execute(new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(COMPETITION_CODE));
 
