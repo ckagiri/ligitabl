@@ -5,7 +5,6 @@ import com.ligitabl.api.usecases.leaderboard.dtos.PhaseDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -33,15 +32,25 @@ public class GetLeaderboardController {
 
         return getLeaderboardUseCase.execute(query)
                 .fold(
-                        error -> switch (error) {
-                            case GetLeaderboardError.DefaultCompetitionNotFound e ->
-                                    ResponseEntity.notFound().build();
-                            case GetLeaderboardError.MainContestNotFound e ->
-                                    ResponseEntity.notFound().build();
-                            case GetLeaderboardError.InvalidPhase e ->
-                                    ResponseEntity.badRequest().body(new ErrorResponse(
-                                            "Invalid phase: " + e.phaseCode()
-                                    ));
+                        error -> {
+                            if (error instanceof GetLeaderboardError.DefaultCompetitionNotFound
+                                    || error instanceof GetLeaderboardError.ActiveSeasonNotFound
+                                    || error instanceof GetLeaderboardError.MainContestNotFound) {
+                                return ResponseEntity.notFound().build();
+                            }
+
+                            if (error instanceof GetLeaderboardError.InvalidPhase invalid) {
+                                return ResponseEntity.badRequest()
+                                        .body(new ErrorDto("Invalid phase: " + invalid.phaseCode()));
+                            }
+
+                            if (error instanceof GetLeaderboardError.PhasesNotConfigured) {
+                                return ResponseEntity.internalServerError()
+                                        .body(new ErrorDto("Competition phases not configured"));
+                            }
+
+                            return ResponseEntity.internalServerError()
+                                    .body(new ErrorDto("Unexpected error"));
                         },
                         result -> ResponseEntity.ok(new LeaderboardResponse(
                                 result.contestId(),
@@ -65,6 +74,8 @@ public class GetLeaderboardController {
                         ))
                 );
     }
+
+        record ErrorDto(String message) {}
 
     record LeaderboardResponse(
             UUID contestId,

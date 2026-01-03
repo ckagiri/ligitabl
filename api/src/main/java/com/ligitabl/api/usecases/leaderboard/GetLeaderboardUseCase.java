@@ -53,7 +53,7 @@ public class GetLeaderboardUseCase {
     }
 
     private Either<GetLeaderboardError, SeasonContext> findActiveSeason(Competition competition) {
-        return seasonRepo.findByCompetitionId(competition.getId())
+        return seasonRepo.findActiveSeason(competition.getId())
                 .map(season -> Either.<GetLeaderboardError, SeasonContext>right(
                         new SeasonContext(competition, season)))
                 .orElse(Either.left(new GetLeaderboardError.ActiveSeasonNotFound()));

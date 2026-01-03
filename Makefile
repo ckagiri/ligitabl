@@ -1,409 +1,404 @@
+# ==============================================================================
 # Makefile for ligitabl (Spring Boot + Maven + Docker)
+# ==============================================================================
 
+# ------------------------------------------------------------------------------
+# Project Configuration
+# ------------------------------------------------------------------------------
 APP_NAME := ligitabl
 API_DIR := api
 API_POM := $(API_DIR)/pom.xml
 ARTIFACT_ID := $(shell mvn -q -f $(API_POM) -DforceStdout help:evaluate -Dexpression=project.artifactId)
 VERSION := $(shell mvn -q -f $(API_POM) -DforceStdout help:evaluate -Dexpression=project.version)
 JAR := $(API_DIR)/target/$(ARTIFACT_ID)-$(VERSION).jar
+
+# Docker configuration
 IMAGE ?= $(APP_NAME):dev
 PORT ?= 8080
 DOCKER_COMPOSE ?= docker compose
-# Default host port mapping for Postgres when using compose
+
+# ------------------------------------------------------------------------------
+# Environment Configuration (SIMPLIFIED)
+# ------------------------------------------------------------------------------
+# Safety first: Use test environment by default
+ENV ?= test
 HOST_DB_PORT ?= 55432
 
-# Controls whether already-exported DB_* / HOST_DB_PORT vars from the invoking shell
-# should override values coming from `.env` / Makefile defaults.
-#
-# Most targets keep this enabled (so `source .env.test && make ...` works), but
-# importer targets force it off in their sub-makes so they reliably use `.env`.
-ALLOW_SHELL_DB_ENV ?= 1
+# Load environment file based on ENV
+ENV_FILE := .env.$(ENV)
+ENV_LOCAL_FILE := .env.$(ENV).local
 
-# If the user already exported DB_* vars in the shell (e.g., by sourcing .env.test),
-# do not let the optional local .env override them.
-ENV_DB_HOST := $(shell printenv DB_HOST)
-ENV_DB_PORT := $(shell printenv DB_PORT)
-ENV_DB_NAME := $(shell printenv DB_NAME)
-ENV_DB_USER := $(shell printenv DB_USER)
-ENV_DB_PASSWORD := $(shell printenv DB_PASSWORD)
-ENV_HOST_DB_PORT := $(shell printenv HOST_DB_PORT)
+# Load base environment file
+-include $(ENV_FILE)
+export
 
-# Load variables from .env if present
-ifneq (,$(wildcard .env))
-	include .env
-	export
-endif
+# Load local overrides (gitignored)
+-include $(ENV_LOCAL_FILE)
+export
 
-# Optional local overrides for developer secrets (gitignored)
-ifneq (,$(wildcard .env.local))
-	include .env.local
-	export
-endif
+# Seeding configuration
+SEEDING_CONFIG ?= seeding-config.yaml
 
-ifneq ($(ALLOW_SHELL_DB_ENV),0)
-	ifneq ($(strip $(ENV_DB_HOST)),)
-		DB_HOST := $(ENV_DB_HOST)
-	endif
-	ifneq ($(strip $(ENV_DB_PORT)),)
-		DB_PORT := $(ENV_DB_PORT)
-	endif
-	ifneq ($(strip $(ENV_DB_NAME)),)
-		DB_NAME := $(ENV_DB_NAME)
-	endif
-	ifneq ($(strip $(ENV_DB_USER)),)
-		DB_USER := $(ENV_DB_USER)
-	endif
-	ifneq ($(strip $(ENV_DB_PASSWORD)),)
-		DB_PASSWORD := $(ENV_DB_PASSWORD)
-	endif
-	ifneq ($(strip $(ENV_HOST_DB_PORT)),)
-		HOST_DB_PORT := $(ENV_HOST_DB_PORT)
-	endif
-endif
+# ------------------------------------------------------------------------------
+# Help & Info
+# ------------------------------------------------------------------------------
+.PHONY: help
+help: ## Show this help message
+	@echo "ligitabl Makefile - Current environment: $(ENV)"
+	@echo "Environment file: $(ENV_FILE) $(if $(wildcard $(ENV_FILE)),(found),(NOT FOUND))"
+	@echo "Local overrides: $(ENV_LOCAL_FILE) $(if $(wildcard $(ENV_LOCAL_FILE)),(found),(NOT FOUND))"
+	@echo ""
+	@echo "Available targets:"
+	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
+		awk 'BEGIN {FS = ":.*?## "}; {printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2}' | \
+		sort
 
-.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate drop-db reset-db format format-check format-all test-unit test-api-no-jooq test-api-fast test-api-core test-auth-smoke test-all test-model test-model-fast test-api-it test-api-all test-dev model-codegen-local seed-competition-cli db-seed db-seed-demo db-seed-season dev-reset test-api-rebuild db-seed-all db-seed-users run-api run-api-test test-seeding-auth import-competition import-pl import-bl import-sa import-pd import-fl1
+.PHONY: env-info
+env-info: ## Show current environment configuration
+	@echo "Current environment: $(ENV)"
+	@echo "Environment file: $(ENV_FILE)"
+	@echo "Local overrides: $(ENV_LOCAL_FILE)"
+	@echo ""
+	@echo "Database configuration:"
+	@echo "  DB_HOST: $(DB_HOST)"
+	@echo "  DB_PORT: $(DB_PORT)"
+	@echo "  DB_NAME: $(DB_NAME)"
+	@echo "  DB_USER: $(DB_USER)"
+	@echo "  HOST_DB_PORT: $(HOST_DB_PORT)"
+	@echo ""
+	@echo "To use dev environment: make <target> ENV=dev"
 
-help: ## Show this help
-	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
+# ==============================================================================
+# BUILD TARGETS
+# ==============================================================================
 
-build: ## Build the project (skip tests) - builds api and required modules (model, jooq-codegen)
+.PHONY: build
+build: ## Build the project (skip tests)
 	mvn -q -DskipTests -pl $(API_DIR) -am clean package
 
-api-build: ## Build the API module (skip tests) - includes dependencies (model, jooq-codegen)
-	# Clean only the API module to avoid packaging stale IDE-compiled classes,
-	# but do not clean dependencies (model) since that would wipe generated jOOQ sources.
+.PHONY: api-build
+api-build: ## Build the API module (skip tests)
 	mvn -q -DskipTests -pl $(API_DIR) clean
 	mvn -q -DskipTests -pl $(API_DIR) -am package
 
-test: ## Run full API test suite (build deps too; may include *IT depending on config)
-	mvn -pl $(API_DIR) -am test
-
-test-unit: ## Run pure unit tests (no Spring) in API module (no-jooq profile to avoid DB/codegen)
-	mvn -q -P unit-tests,no-jooq -pl $(API_DIR) -am -Dsurefire.failIfNoSpecifiedTests=false -Dtest='**/*GuardTest' test
-
-test-webmvc: ## Run MVC slice tests (@WebMvcTest) in API module (no-jooq profile to avoid DB/codegen)
-	mvn -q -P unit-tests,webmvc-tests,no-jooq -pl $(API_DIR) -am -Dsurefire.failIfNoSpecifiedTests=false -Dtest='**/*WebMvcTest' test
-
-test-api-no-jooq: ## Run API tests with no DB/codegen (skips jOOQ infra)
-	# Ensure latest model jar is installed without jOOQ/codegen or tests
-	mvn -q -pl model -P no-jooq -Dmaven.test.skip=true -DskipTests=true install
-	# Run API tests against that model using the no-jooq profile (do not rebuild/test model)
-	mvn -q -P no-jooq -pl $(API_DIR) -DskipITs test
-
-test-api-fast: ## Run all API unit tests quickly (pre-install model w/o tests; skip jOOQ codegen)
-	# 1) Install model to local repo without compiling or running its tests
-	mvn -q -pl model -Dmaven.test.skip=true -DskipITs=true install
-	# 2) Run API tests with no-jooq profile (no DB/codegen)
-	mvn -q -pl $(API_DIR) -P no-jooq -DskipITs test
-
-test-api-core: ## Run core API tests (build deps, skip *IT via -DskipITs)
-	mvn -q -pl $(API_DIR) -am -DskipITs test
-
-test-api-it: ## Run DB-backed API integration tests (*IT via Testcontainers + Liquibase)
-	mvn -q -pl $(API_DIR) -am -DskipITs=false -Dtest='**/*IT' -Dsurefire.failIfNoSpecifiedTests=false test
-
-test-api-all: ## Run typical API flow: fast no-jOOQ tests + DB-backed *IT tests
-	$(MAKE) test-api-no-jooq
-	$(MAKE) test-api-it
-
-test-all: ## Run full test suite across modules
-	mvn test
-
+.PHONY: clean
 clean: ## Clean build artifacts
 	mvn -f $(API_DIR)/pom.xml clean
-
-run: $(JAR) ## Run the built JAR (DB required unless liquibase disabled)
-	java -jar $(JAR)
-
-run-no-db: $(JAR) ## Run without requiring DB (skips DataSource auto-config)
-	java -jar $(JAR) --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration
-
-run-app: ## Start DB (compose) and run the app JAR
-	$(MAKE) compose-up-db
-	$(MAKE) run
-
-run-api: ## Start DB (compose) and run the API via spring-boot:run
-	$(MAKE) compose-up-db
-	mvn -q -pl $(API_DIR) -am spring-boot:run
-
-run-api-test: ## Start DB (compose) and run the API using .env.test (DB=ligitabl_test, DB_PORT=55433, PORT=8081)
-	@set -a; \
-	  if [ -f .env.test ]; then . ./.env.test; fi; \
-	  set +a; \
-	  $(MAKE) compose-up-db; \
-	  mvn -q -pl $(API_DIR) -am spring-boot:run
-
-# -----------------------------------------------------------------------------
-# Importer workflow
-# -----------------------------------------------------------------------------
-
-import-competition: ## Import matches for a competition (COMP=XX)
-	@if [ -z "$(COMP)" ]; then \
-		echo "Error: COMP is required"; \
-		echo "Usage: make import-competition COMP=PL"; \
-		exit 1; \
-	  fi; \
-	  FOOTBALL_DATA_API_TOKEN=$${FOOTBALL_DATA_API_TOKEN:-$${API_FOOTBALL_DATA_KEY:-}}; \
-	  if [ -z "$$FOOTBALL_DATA_API_TOKEN" ] || [ "$$FOOTBALL_DATA_API_TOKEN" = "your-api-token-here" ]; then \
-		echo "Error: FOOTBALL_DATA_API_TOKEN is not set"; \
-		echo "Set API_FOOTBALL_DATA_KEY in .env.local (preferred) or .env, or export FOOTBALL_DATA_API_TOKEN=..."; \
-		exit 1; \
-	  fi; \
-	  export FOOTBALL_DATA_API_TOKEN; \
-	  $(MAKE) ALLOW_SHELL_DB_ENV=0 compose-up-db; \
-	  $(MAKE) ALLOW_SHELL_DB_ENV=0 db-seed; \
-	  $(MAKE) api-build; \
-	  java -jar $(JAR) \
-		--spring.main.web-application-type=none \
-		--workflow.run=true \
-		--workflow.competition=$(COMP) \
-		--workflow.exit-after=true
-
-import-pl: ## Import Premier League matches
-	@$(MAKE) import-competition COMP=PL
-
-import-bl: ## Import Bundesliga matches
-	@$(MAKE) import-competition COMP=BL
-
-import-sa: ## Import Serie A matches
-	@$(MAKE) import-competition COMP=SA
-
-import-pd: ## Import La Liga matches
-	@$(MAKE) import-competition COMP=PD
-
-import-fl1: ## Import Ligue 1 matches
-	@$(MAKE) import-competition COMP=FL1
-
-bootstrap-run: ## Reset DB, migrate, codegen, seed reference data, then run the app
-	$(MAKE) dev-reset
-	$(MAKE) run
-
-bootstrap-all-run: ## Reset DB, migrate, codegen, seed reference data, then run the app
-	$(MAKE) dev-reset-all
-	$(MAKE) run
 
 $(JAR):
 	mvn -q -DskipTests -f $(API_DIR)/pom.xml package
 
-docker-build: ## Build Docker image
-	docker build -t $(IMAGE) -f $(API_DIR)/Dockerfile $(API_DIR)
+# ==============================================================================
+# CODE GENERATION TARGETS
+# ==============================================================================
 
-docker-run: ## Run container on port $(PORT)
-	@if [ -f .env ]; then ENV_FILE='--env-file .env'; else ENV_FILE=''; fi; \
-	  docker run --rm $$ENV_FILE -p $(PORT):8080 --name $(APP_NAME) -e JAVA_OPTS="$(JAVA_OPTS)" $(IMAGE)
-
-docker-run-no-db: ## Run container without requiring DB (skips DataSource auto-config)
-	@if [ -f .env ]; then ENV_FILE='--env-file .env'; else ENV_FILE=''; fi; \
-	  docker run --rm $$ENV_FILE -p $(PORT):8080 --name $(APP_NAME) -e JAVA_OPTS="$(JAVA_OPTS)" \
-	  -e SPRING_AUTOCONFIGURE_EXCLUDE=org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration \
-	  $(IMAGE)
-
-docker-stop: ## Stop running container
-	- docker rm -f $(APP_NAME)
-
-compose-up: ## Start app + postgres via Docker Compose
-	$(DOCKER_COMPOSE) up -d --build
-
-compose-up-db: ## Start only postgres via Docker Compose with host port $(HOST_DB_PORT) -> 5432
-	# Prefer DB_PORT when provided (from env/CLI or included .env); otherwise fall back to HOST_DB_PORT.
-	DB_PORT=$(if $(DB_PORT),$(DB_PORT),$(HOST_DB_PORT)) $(DOCKER_COMPOSE) up -d db
-
-compose-up-db-attached: ## Start only postgres via Docker Compose (attached, show logs)
-	DB_PORT=$(if $(DB_PORT),$(DB_PORT),$(HOST_DB_PORT)) $(DOCKER_COMPOSE) up db
-
-compose-stop-db: ## Stop only postgres via Docker Compose (keeps volumes)
-	$(DOCKER_COMPOSE) stop db
-
-compose-up-app: ## Start only the app (and its db dependency) via Docker Compose in the background
-	$(MAKE) api-build
-	$(DOCKER_COMPOSE) up -d --build app
-
-compose-up-app-fast: ## Start only the app without rebuild (requires image to exist)
-	$(DOCKER_COMPOSE) up -d app
-
-compose-logs-app: ## Tail logs from the dockerized app (Ctrl+C to stop following)
-	$(DOCKER_COMPOSE) logs -f app
-
-compose-stop-app: ## Stop the dockerized app container (db keeps running)
-	$(DOCKER_COMPOSE) stop app
-
-compose-restart-app: ## Restart the dockerized app container
-	$(DOCKER_COMPOSE) restart app
-
-# Short, primary refresh targets
-compose-refresh: ## Stop app+db, start db, then start app (rebuild image) — no codegen
-	$(MAKE) compose-stop-app
-	$(MAKE) compose-stop-db
-	$(MAKE) compose-up-db
-	$(MAKE) compose-up-app
-
-compose-refresh-gen: ## Stop app+db, start db, run codegen, then start app (rebuild image)
-	$(MAKE) compose-stop-app
-	$(MAKE) compose-stop-db
-	$(MAKE) compose-up-db
-	$(MAKE) codegen
-	$(MAKE) compose-up-app
-
-compose-refresh-db: ## Stop app+db, start db, run migrate+codegen, then start app (rebuild image)
-	$(MAKE) compose-stop-app
-	$(MAKE) compose-stop-db
-	$(MAKE) compose-up-db
-	$(MAKE) migrate
-	$(MAKE) codegen
-	$(MAKE) compose-up-app
-
-
-compose-ps: ## Show status of compose services
-	$(DOCKER_COMPOSE) ps
-
-compose-stop: ## Stop all compose services (keeps volumes)
-	$(DOCKER_COMPOSE) stop
-
-compose-down: ## Stop and remove compose services/volumes
-	$(DOCKER_COMPOSE) down -v
-
-codegen: ## Run jOOQ code generation in model/ (full, robust)
-	# Ensure the jOOQ codegen strategy module is installed, then run codegen in model
+.PHONY: codegen
+codegen: ## Run jOOQ code generation (full)
 	mvn -q -DskipTests -pl jooq-codegen -am install
 	mvn -q -DskipTests -Pwith-jooq -pl model -am \
 		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
 		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
 		generate-sources
 
-codegen-fast: ## Run jOOQ code generation (lean) - assumes jooq-codegen is already installed
+.PHONY: codegen-fast
+codegen-fast: ## Run jOOQ code generation (assumes jooq-codegen installed)
 	mvn -q -DskipTests -Pwith-jooq -pl model -am \
 		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
 		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
 		generate-sources
 
-model-compile: ## Regenerate jOOQ and compile the model (ensures generated getters are available)
+.PHONY: model-compile
+model-compile: ## Regenerate jOOQ and compile the model
 	mvn -q -DskipTests -Pwith-jooq -pl model -am generate-sources compile
 
-model-codegen-local: ## Start DB (compose), run Liquibase migrations, then jOOQ codegen for model
+.PHONY: model-codegen-local
+model-codegen-local: ## Start DB, run migrations, then jOOQ codegen
 	$(MAKE) compose-up-db
 	$(MAKE) migrate
 	$(MAKE) codegen
 
-test-model: ## Run model integration tests (starts DB, migrates, codegen, then tests)
-	$(MAKE) compose-up-db
-	$(MAKE) migrate
-	$(MAKE) codegen
-	mvn -pl model -am test
-
-test-model-fast: ## Run model tests assuming jOOQ codegen has already been run
-	mvn -q -pl model -am test
-
-test-dev: ## Run typical developer tests: model (fast) + core API tests
-	$(MAKE) test-model-fast
-	$(MAKE) test-api-core
-
-test-api-rebuild: ## Clean API+deps, regenerate jOOQ, rebuild model, then run core API tests
-	mvn clean -pl $(API_DIR) -am
-	$(MAKE) codegen
-	mvn -pl model -am test
-	mvn -pl $(API_DIR) -am -DskipITs test
+# ==============================================================================
+# DATABASE TARGETS
+# ==============================================================================
 
 .PHONY: migrate
-migrate: ## Run Liquibase migrations in model/ (uses DB_* from .env)
+migrate: ## Run Liquibase migrations
 	mvn -q -Pliquibase -DskipTests -f model/pom.xml \
 		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
 		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
 		liquibase:update
 
-drop-db: ## Drop the database (Docker) using maintenance DB 'postgres'
+.PHONY: drop-db
+drop-db: ## ⚠️  Drop the database (ENV=$(ENV))
+	@echo "⚠️  WARNING: About to drop database '$(DB_NAME)' (ENV=$(ENV))"
+	@if [ "$(ENV)" = "dev" ]; then \
+		echo "⚠️  You are targeting the DEV environment!"; \
+		read -p "Are you sure? Type 'yes' to confirm: " confirm; \
+		if [ "$$confirm" != "yes" ]; then \
+			echo "Aborted."; \
+			exit 1; \
+		fi; \
+	fi
 	@if ! docker ps --format '{{.Names}}' | grep -q '^ligitabl-db$$'; then \
-		echo "Postgres container 'ligitabl-db' not running. Start it with '$(DOCKER_COMPOSE) up -d db'"; \
+		echo "Postgres container 'ligitabl-db' not running. Start it with 'make compose-up-db'"; \
 		exit 1; \
 	fi
-	docker exec -i ligitabl-db psql -U $(DB_USER) -d postgres -v ON_ERROR_STOP=1 -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$(DB_NAME)';" || true
-	docker exec -i ligitabl-db psql -U $(DB_USER) -d postgres -v ON_ERROR_STOP=1 -c "DROP DATABASE IF EXISTS $(DB_NAME) WITH (FORCE);"
+	docker exec -i ligitabl-db psql -U $(DB_USER) -d postgres -v ON_ERROR_STOP=1 \
+		-c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$(DB_NAME)';" || true
+	docker exec -i ligitabl-db psql -U $(DB_USER) -d postgres -v ON_ERROR_STOP=1 \
+		-c "DROP DATABASE IF EXISTS $(DB_NAME) WITH (FORCE);"
 
-reset-db: ## Drop and recreate the database (Docker)
+.PHONY: reset-db
+reset-db: ## ⚠️  Drop and recreate the database (ENV=$(ENV))
 	$(MAKE) drop-db
-	docker exec -i ligitabl-db psql -U $(DB_USER) -d postgres -v ON_ERROR_STOP=1 -c "CREATE DATABASE $(DB_NAME) OWNER $(DB_USER);"
+	docker exec -i ligitabl-db psql -U $(DB_USER) -d postgres -v ON_ERROR_STOP=1 \
+		-c "CREATE DATABASE $(DB_NAME) OWNER $(DB_USER);"
 
-test-seeding-auth: ## Run seeding+auth smoke tests (uses .env.test: DB_PORT=55433, PORT=8081; starts API; DB reset is destructive)
-	START_API=1 ./scripts/TestAuthAndSeeding.sh
+# ==============================================================================
+# SEEDING TARGETS
+# ==============================================================================
 
-dev-reset: ## For local dev: reset DB, run migrations, codegen, then seed reference data
+.PHONY: db-seed
+db-seed: ## Seed reference data
+	$(MAKE) compose-up-db
+	mvn -q -pl seed -am -DskipTests package
+	java -Dseed.main=seeding/main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar \
+		--spring.profiles.active=default
+
+.PHONY: db-seed-demo
+db-seed-demo: ## Seed demo league data
+	$(MAKE) compose-up-db
+	mvn -q -pl seed -am -DskipTests package
+	java -Dseed.main=seeding/demo-main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar \
+		--spring.profiles.active=default
+	$(MAKE) db-seed-season SEEDING_CONFIG=seeding-config-demo.yaml
+
+.PHONY: db-seed-season
+db-seed-season: ## Seed season extras
+	$(MAKE) compose-up-db
+	$(MAKE) api-build
+	java -jar $(JAR) --spring.main.web-application-type=none --seed-season \
+		--seeding.config=$(SEEDING_CONFIG)
+
+.PHONY: db-seed-users
+db-seed-users: ## Seed users for testing
+	$(MAKE) compose-up-db
+	mvn -q -pl seed -am -DskipTests package
+	java -Dseed.main=seeding/main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar \
+		--spring.profiles.active=default
+
+.PHONY: db-seed-all
+db-seed-all: ## Seed both reference and demo data
+	$(MAKE) compose-up-db
+	mvn -q -pl seed -am -DskipTests package
+	java -Dseed.main=seeding/main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar \
+		--spring.profiles.active=default
+	java -Dseed.main=seeding/demo-main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar \
+		--spring.profiles.active=default
+
+# ==============================================================================
+# DATA IMPORT TARGETS
+# ==============================================================================
+
+.PHONY: import-competition
+import-competition: ## Import matches for a competition (COMP=XX, ENV=test by default)
+	@if [ -z "$(COMP)" ]; then \
+		echo "Error: COMP is required"; \
+		echo "Usage: make import-competition COMP=PL [ENV=test|dev]"; \
+		exit 1; \
+	fi; \
+	FOOTBALL_DATA_API_TOKEN=$${FOOTBALL_DATA_API_TOKEN:-$${API_FOOTBALL_DATA_KEY:-}}; \
+	if [ -z "$$FOOTBALL_DATA_API_TOKEN" ] || [ "$$FOOTBALL_DATA_API_TOKEN" = "your-api-token-here" ]; then \
+		echo "Error: FOOTBALL_DATA_API_TOKEN is not set"; \
+		echo "Set API_FOOTBALL_DATA_KEY in .env.$(ENV).local"; \
+		exit 1; \
+	fi; \
+	export FOOTBALL_DATA_API_TOKEN; \
+	echo "Importing $(COMP) to $(DB_NAME) (ENV=$(ENV))"; \
+	$(MAKE) compose-up-db; \
+	$(MAKE) db-seed; \
+	$(MAKE) api-build; \
+	java -jar $(JAR) \
+		--spring.main.web-application-type=none \
+		--workflow.run=true \
+		--workflow.competition=$(COMP) \
+		--workflow.exit-after=true
+
+.PHONY: import-pl
+import-pl: ## Import Premier League (ENV=test by default)
+	$(MAKE) import-competition COMP=PL
+
+.PHONY: import-bl
+import-bl: ## Import Bundesliga (ENV=test by default)
+	$(MAKE) import-competition COMP=BL
+
+.PHONY: import-sa
+import-sa: ## Import Serie A (ENV=test by default)
+	$(MAKE) import-competition COMP=SA
+
+.PHONY: import-pd
+import-pd: ## Import La Liga (ENV=test by default)
+	$(MAKE) import-competition COMP=PD
+
+.PHONY: import-fl1
+import-fl1: ## Import Ligue 1 (ENV=test by default)
+	$(MAKE) import-competition COMP=FL1
+
+# ==============================================================================
+# DOCKER TARGETS
+# ==============================================================================
+
+.PHONY: docker-build
+docker-build: ## Build Docker image
+	docker build -t $(IMAGE) -f $(API_DIR)/Dockerfile $(API_DIR)
+
+.PHONY: docker-run
+docker-run: ## Run container on port $(PORT)
+	@if [ -f $(ENV_FILE) ]; then ENV_ARG='--env-file $(ENV_FILE)'; else ENV_ARG=''; fi; \
+	docker run --rm $$ENV_ARG -p $(PORT):8080 --name $(APP_NAME) \
+		-e JAVA_OPTS="$(JAVA_OPTS)" $(IMAGE)
+
+.PHONY: docker-stop
+docker-stop: ## Stop running container
+	- docker rm -f $(APP_NAME)
+
+# ==============================================================================
+# DOCKER COMPOSE TARGETS
+# ==============================================================================
+
+.PHONY: compose-up
+compose-up: ## Start app + postgres
+	$(DOCKER_COMPOSE) up -d --build
+
+.PHONY: compose-up-db
+compose-up-db: ## Start postgres (uses ENV=$(ENV))
+	@echo "Starting database for ENV=$(ENV) ($(DB_NAME) on port $(DB_PORT))"
+	DB_PORT=$(if $(DB_PORT),$(DB_PORT),$(HOST_DB_PORT)) $(DOCKER_COMPOSE) up -d db
+
+.PHONY: compose-up-db-attached
+compose-up-db-attached: ## Start postgres with logs
+	DB_PORT=$(if $(DB_PORT),$(DB_PORT),$(HOST_DB_PORT)) $(DOCKER_COMPOSE) up db
+
+.PHONY: compose-stop-db
+compose-stop-db: ## Stop postgres
+	$(DOCKER_COMPOSE) stop db
+
+.PHONY: compose-up-app
+compose-up-app: ## Start app container
+	$(MAKE) api-build
+	$(DOCKER_COMPOSE) up -d --build app
+
+.PHONY: compose-up-app-fast
+compose-up-app-fast: ## Start app without rebuild
+	$(DOCKER_COMPOSE) up -d app
+
+.PHONY: compose-logs-app
+compose-logs-app: ## Tail app container logs
+	$(DOCKER_COMPOSE) logs -f app
+
+.PHONY: compose-stop-app
+compose-stop-app: ## Stop app container
+	$(DOCKER_COMPOSE) stop app
+
+.PHONY: compose-restart-app
+compose-restart-app: ## Restart app container
+	$(DOCKER_COMPOSE) restart app
+
+.PHONY: compose-refresh
+compose-refresh: ## Rebuild and restart app
+	$(MAKE) compose-stop-app
+	$(MAKE) compose-stop-db
+	$(MAKE) compose-up-db
+	$(MAKE) compose-up-app
+
+.PHONY: compose-ps
+compose-ps: ## Show status of services
+	$(DOCKER_COMPOSE) ps
+
+.PHONY: compose-stop
+compose-stop: ## Stop all services
+	$(DOCKER_COMPOSE) stop
+
+.PHONY: compose-down
+compose-down: ## Stop and remove services/volumes
+	$(DOCKER_COMPOSE) down -v
+
+# ==============================================================================
+# RUN TARGETS
+# ==============================================================================
+
+.PHONY: run
+run: $(JAR) ## Run the built JAR
+	java -jar $(JAR)
+
+.PHONY: run-app
+run-app: ## Start DB and run the app JAR
+	$(MAKE) compose-up-db
+	$(MAKE) run
+
+.PHONY: run-api
+run-api: ## Start DB and run API via spring-boot:run (ENV=$(ENV))
+	$(MAKE) compose-up-db
+	mvn -q -pl $(API_DIR) -am spring-boot:run
+
+# ==============================================================================
+# TEST TARGETS
+# ==============================================================================
+
+.PHONY: test
+test: ## Run full API test suite
+	mvn -pl $(API_DIR) -am test
+
+.PHONY: test-unit
+test-unit: ## Run pure unit tests
+	mvn -q -P unit-tests,no-jooq -pl $(API_DIR) -am \
+		-Dsurefire.failIfNoSpecifiedTests=false -Dtest='**/*GuardTest' test
+
+.PHONY: test-api-core
+test-api-core: ## Run core API tests (skip *IT)
+	mvn -q -pl $(API_DIR) -am -DskipITs test
+
+.PHONY: test-api-it
+test-api-it: ## Run DB-backed integration tests
+	mvn -q -pl $(API_DIR) -am -DskipITs=false -Dtest='**/*IT' \
+		-Dsurefire.failIfNoSpecifiedTests=false test
+
+.PHONY: test-api-all
+test-api-all: ## Run all API tests
+	mvn -pl $(API_DIR) -am test
+
+.PHONY: test-all
+test-all: ## Run full test suite
+	mvn test
+
+# ==============================================================================
+# DEVELOPMENT WORKFLOW TARGETS
+# ==============================================================================
+
+.PHONY: dev-reset
+dev-reset: ## Reset DB, migrate, codegen, seed (ENV=$(ENV))
 	$(MAKE) compose-up-db
 	$(MAKE) reset-db
 	$(MAKE) migrate
 	$(MAKE) codegen
 	$(MAKE) db-seed
 
-dev-reset-all: ## Reset DB, run migrations, codegen, then seed reference and demo data
+.PHONY: dev-reset-all
+dev-reset-all: ## Reset DB and seed all data (ENV=$(ENV))
 	$(MAKE) compose-up-db
 	$(MAKE) reset-db
 	$(MAKE) migrate
 	$(MAKE) codegen
 	$(MAKE) db-seed-all
 
-db-seed: ## Seed reference data (competition, season, round) using the dedicated seed module against the dev DB
-	$(MAKE) compose-up-db
-	mvn -q -pl seed -am -DskipTests package
-	java -Dseed.main=seeding/main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar --spring.profiles.active=default
+# ==============================================================================
+# CODE QUALITY TARGETS
+# ==============================================================================
 
-db-seed-demo: ## Seed demo league (teams, competition, season, round, matches) using the seed module
-	$(MAKE) compose-up-db
-	mvn -q -pl seed -am -DskipTests package
-	java -Dseed.main=seeding/demo-main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar --spring.profiles.active=default
-	$(MAKE) db-seed-season SEEDING_CONFIG=seeding-config-demo.yaml
-
-SEEDING_CONFIG ?= seeding-config.yaml
-
-db-seed-season: ## Seed season demo extras (predictions, swaps, round finalization) via SeedSeasonCommandLineRunner
-	$(MAKE) compose-up-db
-	$(MAKE) api-build
-	java -jar $(JAR) --spring.main.web-application-type=none --seed-season --seeding.config=$(SEEDING_CONFIG)
-
-seed-season-cli: db-seed-season ## Alias: run SeedSeasonCommandLineRunner (override with SEEDING_CONFIG=...)
-
-db-seed-users: ## Seed users (admin/player/superuser) needed for scripts/TestAuth.sh using the seed module
-	$(MAKE) compose-up-db
-	mvn -q -pl seed -am -DskipTests package
-	java -Dseed.main=seeding/main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar --spring.profiles.active=default
-
-test-auth-smoke: ## Reset DB, migrate, seed users, start API (compose), run scripts/TestAuth.sh
-	@bash -lc 'set -euo pipefail; \
-		echo "[smoke] Starting DB..."; \
-		$(MAKE) compose-up-db; \
-		echo "[smoke] Resetting DB..."; \
-		$(MAKE) reset-db; \
-		echo "[smoke] Running migrations..."; \
-		$(MAKE) migrate; \
-		echo "[smoke] Seeding users..."; \
-		$(MAKE) db-seed-users; \
-		trap "echo \"[smoke] Stopping app...\"; $(MAKE) compose-stop-app >/dev/null 2>&1 || true" EXIT; \
-		echo "[smoke] Building + starting API (compose)..."; \
-		$(MAKE) compose-up-app; \
-		echo "[smoke] Waiting for API to be reachable..."; \
-		for i in $$(seq 1 60); do \
-			if curl -fsS http://localhost:8080/actuator/health >/dev/null 2>&1; then \
-				echo "[smoke] API is up."; \
-				break; \
-			fi; \
-			sleep 1; \
-			done; \
-		echo "[smoke] Running scripts/TestAuth.sh..."; \
-		BASE_URL=http://localhost:8080 ./scripts/TestAuth.sh'
-
-db-seed-all: ## Seed both reference and demo data using the seed module
-	$(MAKE) compose-up-db
-	mvn -q -pl seed -am -DskipTests package
-	java -Dseed.main=seeding/main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar --spring.profiles.active=default
-	java -Dseed.main=seeding/demo-main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar --spring.profiles.active=default
-
-seed-competition-cli: ## Seed competitions using the Spring Boot CLI against the dev DB
-	$(MAKE) compose-up-db
-	mvn -q -pl $(API_DIR) -am -DskipTests org.codehaus.mojo:exec-maven-plugin:3.5.0:java \
-	  -Dexec.mainClass=com.ligitabl.api.seed.CompetitionSeedCli \
-	  -Dexec.args=".art/seeding/competition.yaml"
-
-format: ## Format all Java sources (api, model) using Spotless (4-space indentation)
+.PHONY: format
+format: ## Format all Java sources
 	mvn -q -pl api,model com.diffplug.spotless:spotless-maven-plugin:2.44.0:apply
 
-format-check: ## Check formatting without changing files (fails if formatting needed)
+.PHONY: format-check
+format-check: ## Check formatting
 	mvn -q -pl api,model com.diffplug.spotless:spotless-maven-plugin:2.44.0:check
-
-format-all: format ## Alias: format api and model modules
