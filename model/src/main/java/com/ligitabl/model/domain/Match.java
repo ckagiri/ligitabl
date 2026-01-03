@@ -54,6 +54,10 @@ public class Match extends AbstractModel<UUID> {
         return score != null;
     }
 
+    public void withDatabaseId(UUID id) {
+        this.setId(id);
+    }
+
     public Optional<MatchResult> result() {
         if (!isPlayed()) return Optional.empty();
         return Optional.of(new MatchResult(score.getHomeGoals(), score.getAwayGoals()));

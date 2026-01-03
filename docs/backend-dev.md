@@ -84,6 +84,7 @@ Notes:
   - Or add `SPRING_PROFILES_ACTIVE: liquibase` under `app.environment` in `docker-compose.yml`.
 - Compose reads variables from a local `.env` file automatically and also passes them into the containers via `env_file`.
 - Default local DB port mapping is `55432` (host) -> `5432` (container). The app falls back to port `55432` when DB_PORT isn't set.
+- **DB-backed tests and destructive smoke scripts require Postgres on `55433`** (as defined in `.env.test`).
 
 ### Option B: Local Postgres
 
@@ -199,7 +200,7 @@ We use Liquibase in the `model` module.
 Common tasks:
 
 ```bash
-make compose-up-db   # ensure the DB container is up (host port defaults to 55432)
+make compose-up-db   # ensure the DB container is up (dev host port defaults to 55432; tests use 55433 via .env.test)
 make reset-db        # drop and recreate the database
 make migrate         # apply Liquibase changesets
 make codegen         # regenerate jOOQ sources against the current schema

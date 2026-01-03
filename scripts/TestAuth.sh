@@ -5,19 +5,22 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 
-# Load test env (preferred) or dev env (fallback) if present.
-# Use `set -a` so variables are exported to child processes.
-if [[ -f "$REPO_ROOT/.env.test" ]]; then
-  set -a
-  # shellcheck disable=SC1091
-  source "$REPO_ROOT/.env.test"
-  set +a
-elif [[ -f "$REPO_ROOT/.env" ]]; then
-  set -a
-  # shellcheck disable=SC1091
-  source "$REPO_ROOT/.env"
-  set +a
+# Load test env only (test script; never use .env).
+# Optionally load secrets from .env.test.local (ignored by git).
+if [[ ! -f "$REPO_ROOT/.env.test" ]]; then
+  echo "Error: .env.test not found at $REPO_ROOT/.env.test" >&2
+  exit 1
 fi
+
+set -a
+# shellcheck disable=SC1091
+source "$REPO_ROOT/.env.test"
+
+if [[ -f "$REPO_ROOT/.env.test.local" ]]; then
+  # shellcheck disable=SC1091
+  source "$REPO_ROOT/.env.test.local"
+fi
+set +a
 
 # Ligitabl Auth API Test Script
 #

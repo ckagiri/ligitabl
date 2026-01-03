@@ -109,6 +109,31 @@ public class FootballDataClient {
         }
     }
 
+    public Either<ApiError, MatchesResponse> getMatchesForCompetition(String competitionCode) {
+        String uri = String.format("/competitions/%s/matches", competitionCode);
+        log.info("Fetching matches for competition: {}", uri);
+
+        try {
+            // Optimized endpoint: /matches?competitions=PL&date=2024-12-28
+            var response = webClient
+                    .get()
+                    .uri(uri)
+                    .retrieve()
+                    .bodyToMono(MatchesResponse.class)
+                    .block();
+
+            if (response == null || response.matches() == null) {
+                return Either.left(new ApiError.UnexpectedError("Null response from API"));
+            }
+
+            log.debug("Fetched {} competition matches", response.matches().size());
+
+            return Either.right(response);
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
     /**
      * Get matches within date range
      * Used when: Looking ahead (today + tomorrow for default check)

@@ -12,13 +12,41 @@ DOCKER_COMPOSE ?= docker compose
 # Default host port mapping for Postgres when using compose
 HOST_DB_PORT ?= 55432
 
+# If the user already exported DB_* vars in the shell (e.g., by sourcing .env.test),
+# do not let the optional local .env override them.
+ENV_DB_HOST := $(shell printenv DB_HOST)
+ENV_DB_PORT := $(shell printenv DB_PORT)
+ENV_DB_NAME := $(shell printenv DB_NAME)
+ENV_DB_USER := $(shell printenv DB_USER)
+ENV_DB_PASSWORD := $(shell printenv DB_PASSWORD)
+ENV_HOST_DB_PORT := $(shell printenv HOST_DB_PORT)
+
 # Load variables from .env if present
 ifneq (,$(wildcard .env))
 	include .env
 	export
 endif
 
-.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate drop-db reset-db format format-check format-all test-unit test-api-no-jooq test-api-fast test-api-core test-auth-smoke test-all test-model test-model-fast test-api-it test-api-all test-dev model-codegen-local seed-competition-cli db-seed db-seed-demo db-seed-season dev-reset test-api-rebuild db-seed-all db-seed-users run-api run-api-test test-seeding-auth
+ifneq ($(strip $(ENV_DB_HOST)),)
+	DB_HOST := $(ENV_DB_HOST)
+endif
+ifneq ($(strip $(ENV_DB_PORT)),)
+	DB_PORT := $(ENV_DB_PORT)
+endif
+ifneq ($(strip $(ENV_DB_NAME)),)
+	DB_NAME := $(ENV_DB_NAME)
+endif
+ifneq ($(strip $(ENV_DB_USER)),)
+	DB_USER := $(ENV_DB_USER)
+endif
+ifneq ($(strip $(ENV_DB_PASSWORD)),)
+	DB_PASSWORD := $(ENV_DB_PASSWORD)
+endif
+ifneq ($(strip $(ENV_HOST_DB_PORT)),)
+	HOST_DB_PORT := $(ENV_HOST_DB_PORT)
+endif
+
+.PHONY: help build api-build model-compile test clean run run-no-db run-app bootstrap-run docker-build docker-run docker-stop compose-up compose-up-db compose-stop-db compose-up-app compose-up-app-fast compose-logs-app compose-stop-app compose-restart-app compose-refresh compose-refresh-gen compose-refresh-db compose-ps compose-stop compose-down codegen codegen-fast migrate drop-db reset-db format format-check format-all test-unit test-api-no-jooq test-api-fast test-api-core test-auth-smoke test-all test-model test-model-fast test-api-it test-api-all test-dev model-codegen-local seed-competition-cli db-seed db-seed-demo db-seed-season dev-reset test-api-rebuild db-seed-all db-seed-users run-api run-api-test test-seeding-auth import-competition import-pl import-bl import-sa import-pd import-fl1
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | sed 's/:.*## /\t- /' | sort
@@ -90,6 +118,51 @@ run-api-test: ## Start DB (compose) and run the API using .env.test (DB=ligitabl
 	  $(MAKE) compose-up-db; \
 	  mvn -q -pl $(API_DIR) -am spring-boot:run
 
+# -----------------------------------------------------------------------------
+# Importer workflow
+# -----------------------------------------------------------------------------
+
+import-competition: ## Import matches for a competition (COMP=XX)
+	@set -a; \
+	  if [ -f .env ]; then . ./.env; fi; \
+	  if [ -f .env.local ]; then . ./.env.local; fi; \
+	  set +a; \
+	  if [ -z "$(COMP)" ]; then \
+		echo "Error: COMP is required"; \
+		echo "Usage: make import-competition COMP=PL"; \
+		exit 1; \
+	  fi; \
+	  FOOTBALL_DATA_API_TOKEN=$${FOOTBALL_DATA_API_TOKEN:-$${API_FOOTBALL_DATA_KEY:-}}; \
+	  if [ -z "$$FOOTBALL_DATA_API_TOKEN" ] || [ "$$FOOTBALL_DATA_API_TOKEN" = "your-api-token-here" ]; then \
+		echo "Error: FOOTBALL_DATA_API_TOKEN is not set"; \
+		echo "Set API_FOOTBALL_DATA_KEY in .env.local (preferred) or .env, or export FOOTBALL_DATA_API_TOKEN=..."; \
+		exit 1; \
+	  fi; \
+	  export FOOTBALL_DATA_API_TOKEN; \
+	  $(MAKE) compose-up-db; \
+	  $(MAKE) db-seed; \
+	  $(MAKE) api-build; \
+	  java -jar $(JAR) \
+		--spring.main.web-application-type=none \
+		--workflow.run=true \
+		--workflow.competition=$(COMP) \
+		--workflow.exit-after=true
+
+import-pl: ## Import Premier League matches
+	@$(MAKE) import-competition COMP=PL
+
+import-bl: ## Import Bundesliga matches
+	@$(MAKE) import-competition COMP=BL
+
+import-sa: ## Import Serie A matches
+	@$(MAKE) import-competition COMP=SA
+
+import-pd: ## Import La Liga matches
+	@$(MAKE) import-competition COMP=PD
+
+import-fl1: ## Import Ligue 1 matches
+	@$(MAKE) import-competition COMP=FL1
+
 bootstrap-run: ## Reset DB, migrate, codegen, seed reference data, then run the app
 	$(MAKE) dev-reset
 	$(MAKE) run
@@ -121,10 +194,11 @@ compose-up: ## Start app + postgres via Docker Compose
 	$(DOCKER_COMPOSE) up -d --build
 
 compose-up-db: ## Start only postgres via Docker Compose with host port $(HOST_DB_PORT) -> 5432
-	DB_PORT=$(HOST_DB_PORT) $(DOCKER_COMPOSE) up -d db
+	# Prefer DB_PORT when provided (from env/CLI or included .env); otherwise fall back to HOST_DB_PORT.
+	DB_PORT=$(if $(DB_PORT),$(DB_PORT),$(HOST_DB_PORT)) $(DOCKER_COMPOSE) up -d db
 
 compose-up-db-attached: ## Start only postgres via Docker Compose (attached, show logs)
-	DB_PORT=$(HOST_DB_PORT) $(DOCKER_COMPOSE) up db
+	DB_PORT=$(if $(DB_PORT),$(DB_PORT),$(HOST_DB_PORT)) $(DOCKER_COMPOSE) up db
 
 compose-stop-db: ## Stop only postgres via Docker Compose (keeps volumes)
 	$(DOCKER_COMPOSE) stop db

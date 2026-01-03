@@ -5,19 +5,23 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 
-# Load test env (preferred) or dev env (fallback) if present.
-# Use `set -a` so variables are exported to child processes (make/docker/psql).
-if [[ -f "$REPO_ROOT/.env.test" ]]; then
-  set -a
-  # shellcheck disable=SC1091
-  source "$REPO_ROOT/.env.test"
-  set +a
-elif [[ -f "$REPO_ROOT/.env" ]]; then
-  set -a
-  # shellcheck disable=SC1091
-  source "$REPO_ROOT/.env"
-  set +a
+# Load test env only (DESTRUCTIVE script; never use .env).
+# Optionally load secrets from .env.test.local (ignored by git).
+if [[ ! -f "$REPO_ROOT/.env.test" ]]; then
+  echo "Error: .env.test not found at $REPO_ROOT/.env.test" >&2
+  echo "Refusing to run a destructive script without .env.test." >&2
+  exit 1
 fi
+
+set -a
+# shellcheck disable=SC1091
+source "$REPO_ROOT/.env.test"
+
+if [[ -f "$REPO_ROOT/.env.test.local" ]]; then
+  # shellcheck disable=SC1091
+  source "$REPO_ROOT/.env.test.local"
+fi
+set +a
 
 # Ligitabl Seeding Smoke Test Script
 #
@@ -33,7 +37,7 @@ DB_USER="${DB_USER:-ligitabl}"
 
 # Makefile includes `.env` (if present), which can override `.env.test` values.
 # Use command-line make variables (highest precedence) to keep DB settings consistent.
-HOST_DB_PORT="${HOST_DB_PORT:-${DB_PORT:-55432}}"
+HOST_DB_PORT="${HOST_DB_PORT:-${DB_PORT:-55433}}"
 DB_HOST="${DB_HOST:-localhost}"
 DB_PASSWORD="${DB_PASSWORD:-$DB_USER}"
 
