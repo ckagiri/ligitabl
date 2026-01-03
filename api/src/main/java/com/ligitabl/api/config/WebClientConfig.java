@@ -10,8 +10,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.lang.NonNull;
-import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.WebClient;
 
 import io.netty.channel.ChannelOption;
@@ -62,15 +62,15 @@ public class WebClientConfig {
         ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
 
         ExchangeStrategies exchangeStrategies = ExchangeStrategies.builder()
-            .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(maxInMemoryBytes))
-            .build();
+                .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(maxInMemoryBytes))
+                .build();
 
         return WebClient.builder()
                 .baseUrl(baseUrl)
                 .defaultHeader("X-Auth-Token", apiToken)
                 .defaultHeader("Accept", "application/json")
                 .clientConnector(connector)
-            .exchangeStrategies(exchangeStrategies)
+                .exchangeStrategies(exchangeStrategies)
                 .filter(logRequest())
                 .filter(logResponse())
                 .filter(retryFilter())

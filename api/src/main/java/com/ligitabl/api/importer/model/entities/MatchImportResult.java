@@ -2,6 +2,7 @@ package com.ligitabl.api.importer.model.entities;
 
 import com.ligitabl.api.importer.model.valueobjects.ExternalId;
 import com.ligitabl.api.importer.model.valueobjects.MatchSlug;
+
 import lombok.Builder;
 import lombok.Value;
 

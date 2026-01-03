@@ -3,6 +3,7 @@ package com.ligitabl.api.importer.model.entities;
 import com.ligitabl.api.importer.model.errors.ImportError;
 import com.ligitabl.api.importer.model.valueobjects.ExternalId;
 import com.ligitabl.api.shared.Either;
+
 import lombok.Builder;
 import lombok.Value;
 
@@ -13,16 +14,12 @@ public class ExternalSeason {
     String startDate;
     String endDate;
 
-    public static Either<ImportError, ExternalSeason> create(
-            Integer id,
-            String startDate,
-            String endDate) {
+    public static Either<ImportError, ExternalSeason> create(Integer id, String startDate, String endDate) {
 
-        return ExternalId.of(id)
-                .map(extId -> ExternalSeason.builder()
-                        .id(extId)
-                        .startDate(startDate)
-                        .endDate(endDate)
-                        .build());
+        return ExternalId.of(id).map(extId -> ExternalSeason.builder()
+                .id(extId)
+                .startDate(startDate)
+                .endDate(endDate)
+                .build());
     }
 }

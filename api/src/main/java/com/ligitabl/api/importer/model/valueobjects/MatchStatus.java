@@ -1,12 +1,13 @@
 package com.ligitabl.api.importer.model.valueobjects;
 
+import static com.ligitabl.api.shared.Either.left;
+import static com.ligitabl.api.shared.Either.right;
+
 import com.ligitabl.api.importer.model.errors.ImportError;
 import com.ligitabl.api.importer.model.errors.MappingError;
 import com.ligitabl.api.shared.Either;
-import lombok.Value;
 
-import static com.ligitabl.api.shared.Either.left;
-import static com.ligitabl.api.shared.Either.right;
+import lombok.Value;
 
 @Value
 public class MatchStatus {

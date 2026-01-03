@@ -7,7 +7,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public record CurrentSeason(
-	Long id,
-	@JsonDeserialize(using = FlexibleOffsetDateTimeDeserializer.class) OffsetDateTime startDate,
-	@JsonDeserialize(using = FlexibleOffsetDateTimeDeserializer.class) OffsetDateTime endDate,
-	Integer currentMatchday) {}
+        Long id,
+        @JsonDeserialize(using = FlexibleOffsetDateTimeDeserializer.class) OffsetDateTime startDate,
+        @JsonDeserialize(using = FlexibleOffsetDateTimeDeserializer.class) OffsetDateTime endDate,
+        Integer currentMatchday) {}

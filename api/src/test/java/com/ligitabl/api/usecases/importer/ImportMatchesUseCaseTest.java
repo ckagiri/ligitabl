@@ -77,12 +77,7 @@ class ImportMatchesUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new ImportMatchesUseCase(
-                footballDataGateway,
-                seasonRepo,
-                teamRepo,
-                roundRepo,
-                matchRepo,
-                eventPublisher);
+                footballDataGateway, seasonRepo, teamRepo, roundRepo, matchRepo, eventPublisher);
     }
 
     private static CompetitionCode comp(String code) {
@@ -139,59 +134,54 @@ class ImportMatchesUseCaseTest {
 
     private static ExternalMatch externalMatch(int matchClientId, int matchday, int homeClientId, int awayClientId) {
         var home = ExternalTeam.builder()
-            .id(ExternalId.of(homeClientId).get())
+                .id(ExternalId.of(homeClientId).get())
                 .name("Arsenal FC")
-            .tla(TeamTla.of("ARS").get())
+                .tla(TeamTla.of("ARS").get())
                 .build();
 
         var away = ExternalTeam.builder()
-            .id(ExternalId.of(awayClientId).get())
+                .id(ExternalId.of(awayClientId).get())
                 .name("Chelsea FC")
-            .tla(TeamTla.of("CHE").get())
+                .tla(TeamTla.of("CHE").get())
                 .build();
 
         return ExternalMatch.create(
-                matchClientId,
-                OffsetDateTime.now().withNano(0),
-                MatchStatus.SCHEDULED.name(),
-                matchday,
-                home,
-                away,
-                null,
-                null)
+                        matchClientId,
+                        OffsetDateTime.now().withNano(0),
+                        MatchStatus.SCHEDULED.name(),
+                        matchday,
+                        home,
+                        away,
+                        null,
+                        null)
                 .get();
     }
 
     private static ExternalMatch externalMatchWithScore(
-            int matchClientId,
-            int matchday,
-            int homeClientId,
-            int awayClientId,
-            int homeGoals,
-            int awayGoals) {
+            int matchClientId, int matchday, int homeClientId, int awayClientId, int homeGoals, int awayGoals) {
 
         var home = ExternalTeam.builder()
-            .id(ExternalId.of(homeClientId).get())
-            .name("Arsenal FC")
-            .tla(TeamTla.of("ARS").get())
-            .build();
+                .id(ExternalId.of(homeClientId).get())
+                .name("Arsenal FC")
+                .tla(TeamTla.of("ARS").get())
+                .build();
 
         var away = ExternalTeam.builder()
-            .id(ExternalId.of(awayClientId).get())
-            .name("Chelsea FC")
-            .tla(TeamTla.of("CHE").get())
-            .build();
+                .id(ExternalId.of(awayClientId).get())
+                .name("Chelsea FC")
+                .tla(TeamTla.of("CHE").get())
+                .build();
 
         return ExternalMatch.create(
-                matchClientId,
-                OffsetDateTime.now().withNano(0),
-                MatchStatus.FINISHED.name(),
-                matchday,
-                home,
-                away,
-                homeGoals,
-                awayGoals)
-            .get();
+                        matchClientId,
+                        OffsetDateTime.now().withNano(0),
+                        MatchStatus.FINISHED.name(),
+                        matchday,
+                        home,
+                        away,
+                        homeGoals,
+                        awayGoals)
+                .get();
     }
 
     @Test
@@ -309,7 +299,8 @@ class ImportMatchesUseCaseTest {
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
         when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch1, extMatch2)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
-        when(teamRepo.findByClientId(any())).thenReturn(Optional.of(dbHome), Optional.of(dbAway), Optional.of(dbAway), Optional.of(dbHome));
+        when(teamRepo.findByClientId(any()))
+                .thenReturn(Optional.of(dbHome), Optional.of(dbAway), Optional.of(dbAway), Optional.of(dbHome));
         when(matchRepo.findByClientId(any())).thenReturn(Optional.empty());
         when(matchRepo.create(any(Match.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -331,8 +322,7 @@ class ImportMatchesUseCaseTest {
     void shouldFailWhenApiFails() {
         var code = comp("PL");
 
-        when(footballDataGateway.fetchCompetition(code))
-            .thenReturn(Either.left(ApiError.of("API unavailable", 503)));
+        when(footballDataGateway.fetchCompetition(code)).thenReturn(Either.left(ApiError.of("API unavailable", 503)));
 
         var result = useCase.execute(code);
 
@@ -383,8 +373,8 @@ class ImportMatchesUseCaseTest {
         when(matchRepo.findByClientId(any())).thenReturn(Optional.empty());
 
         when(matchRepo.create(any(Match.class)))
-            .thenAnswer(inv -> inv.getArgument(0))
-            .thenThrow(new RuntimeException("DB Error"));
+                .thenAnswer(inv -> inv.getArgument(0))
+                .thenThrow(new RuntimeException("DB Error"));
 
         var result = useCase.execute(code);
 

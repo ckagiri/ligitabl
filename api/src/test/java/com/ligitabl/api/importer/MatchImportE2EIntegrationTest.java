@@ -6,19 +6,10 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.github.tomakehurst.wiremock.WireMockServer;
-import com.github.tomakehurst.wiremock.client.WireMock;
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.ligitabl.api.importer.model.entities.ImportSummary;
-import com.ligitabl.api.importer.model.errors.ImportError;
-import com.ligitabl.api.importer.model.valueobjects.CompetitionCode;
-import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.usecases.importer.ImportMatchesUseCase;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +19,15 @@ import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
+
+import com.github.tomakehurst.wiremock.WireMockServer;
+import com.github.tomakehurst.wiremock.client.WireMock;
+import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.ligitabl.api.importer.model.entities.ImportSummary;
+import com.ligitabl.api.importer.model.errors.ImportError;
+import com.ligitabl.api.importer.model.valueobjects.CompetitionCode;
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecases.importer.ImportMatchesUseCase;
 
 /**
  * End-to-end integration tests for match import workflow.
@@ -54,14 +54,14 @@ class MatchImportE2EIntegrationTest {
     private ImportMatchesUseCase useCase;
 
     private static synchronized void ensureWireMockStarted() {
-      if (wireMock == null) {
-        wireMock = new WireMockServer(WireMockConfiguration.options().dynamicPort());
-      }
+        if (wireMock == null) {
+            wireMock = new WireMockServer(WireMockConfiguration.options().dynamicPort());
+        }
 
-      if (!wireMock.isRunning()) {
-        wireMock.start();
-        WireMock.configureFor("localhost", wireMock.port());
-      }
+        if (!wireMock.isRunning()) {
+            wireMock.start();
+            WireMock.configureFor("localhost", wireMock.port());
+        }
     }
 
     @AfterAll
@@ -73,13 +73,13 @@ class MatchImportE2EIntegrationTest {
 
     @BeforeEach
     void resetWireMock() {
-      ensureWireMockStarted();
+        ensureWireMockStarted();
         wireMock.resetAll();
     }
 
     @DynamicPropertySource
     static void configureProperties(DynamicPropertyRegistry registry) {
-      ensureWireMockStarted();
+        ensureWireMockStarted();
         registry.add("spring.datasource.url", postgres::getJdbcUrl);
         registry.add("spring.datasource.username", postgres::getUsername);
         registry.add("spring.datasource.password", postgres::getPassword);
@@ -98,12 +98,14 @@ class MatchImportE2EIntegrationTest {
         @DisplayName("Should import matches end-to-end")
         @Disabled("Requires database setup - enable after adding fixtures")
         void shouldImportMatchesEndToEnd() {
-            stubFor(get(urlEqualTo("/competitions/PL"))
-                    .willReturn(aResponse()
-                            .withStatus(200)
-                            .withHeader("Content-Type", "application/json")
-                            .withBody(
-                                    """
+            stubFor(
+                    get(urlEqualTo("/competitions/PL"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(
+                                                    """
                                     {
                                       \"id\": 2021,
                                       \"name\": \"Premier League\",
@@ -120,12 +122,14 @@ class MatchImportE2EIntegrationTest {
                                     """)));
 
             // Matches endpoint is /matches?competitions=PL&dateFrom=...&dateTo=...
-            stubFor(get(com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo("/matches"))
-                    .willReturn(aResponse()
-                            .withStatus(200)
-                            .withHeader("Content-Type", "application/json")
-                            .withBody(
-                                    """
+            stubFor(
+                    get(com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo("/matches"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(
+                                                    """
                                     {
                                       \"matches\": [
                                         {
@@ -165,12 +169,14 @@ class MatchImportE2EIntegrationTest {
         @DisplayName("Should update existing matches")
         @Disabled("Requires database setup - enable after adding fixtures")
         void shouldUpdateExistingMatches() {
-            stubFor(get(urlEqualTo("/competitions/PL"))
-                    .willReturn(aResponse()
-                            .withStatus(200)
-                            .withHeader("Content-Type", "application/json")
-                            .withBody(
-                                    """
+            stubFor(
+                    get(urlEqualTo("/competitions/PL"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(
+                                                    """
                                     {
                                       \"id\": 2021,
                                       \"name\": \"Premier League\",
@@ -184,12 +190,14 @@ class MatchImportE2EIntegrationTest {
                                     }
                                     """)));
 
-            stubFor(get(com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo("/matches"))
-                    .willReturn(aResponse()
-                            .withStatus(200)
-                            .withHeader("Content-Type", "application/json")
-                            .withBody(
-                                    """
+            stubFor(
+                    get(com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo("/matches"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(
+                                                    """
                                     {
                                       \"matches\": [
                                         {
@@ -220,12 +228,14 @@ class MatchImportE2EIntegrationTest {
         @DisplayName("Should handle partial failures gracefully")
         @Disabled("Requires database setup - enable after adding fixtures")
         void shouldHandlePartialFailures() {
-            stubFor(get(urlEqualTo("/competitions/PL"))
-                    .willReturn(aResponse()
-                            .withStatus(200)
-                            .withHeader("Content-Type", "application/json")
-                            .withBody(
-                                    """
+            stubFor(
+                    get(urlEqualTo("/competitions/PL"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(
+                                                    """
                                     {
                                       \"id\": 2021,
                                       \"name\": \"Premier League\",
@@ -238,12 +248,14 @@ class MatchImportE2EIntegrationTest {
                                     }
                                     """)));
 
-            stubFor(get(com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo("/matches"))
-                    .willReturn(aResponse()
-                            .withStatus(200)
-                            .withHeader("Content-Type", "application/json")
-                            .withBody(
-                                    """
+            stubFor(
+                    get(com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo("/matches"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(
+                                                    """
                                     {
                                       \"matches\": [
                                         {
@@ -289,12 +301,14 @@ class MatchImportE2EIntegrationTest {
         @DisplayName("Should fail gracefully when season not found")
         @Disabled("Requires database setup - enable after adding fixtures")
         void shouldFailWhenSeasonNotFound() {
-            stubFor(get(urlEqualTo("/competitions/PL"))
-                    .willReturn(aResponse()
-                            .withStatus(200)
-                            .withHeader("Content-Type", "application/json")
-                            .withBody(
-                                    """
+            stubFor(
+                    get(urlEqualTo("/competitions/PL"))
+                            .willReturn(
+                                    aResponse()
+                                            .withStatus(200)
+                                            .withHeader("Content-Type", "application/json")
+                                            .withBody(
+                                                    """
                                     {
                                       \"id\": 2021,
                                       \"name\": \"Premier League\",
@@ -321,9 +335,7 @@ class MatchImportE2EIntegrationTest {
         @DisplayName("Should fail when external API is down")
         void shouldFailWhenApiDown() {
             stubFor(get(urlEqualTo("/competitions/PL"))
-                    .willReturn(aResponse()
-                            .withStatus(503)
-                            .withBody("Service temporarily unavailable")));
+                    .willReturn(aResponse().withStatus(503).withBody("Service temporarily unavailable")));
 
             CompetitionCode code = CompetitionCode.of("PL").get();
 

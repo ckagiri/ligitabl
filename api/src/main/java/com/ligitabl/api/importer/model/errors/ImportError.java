@@ -6,11 +6,7 @@ package com.ligitabl.api.importer.model.errors;
  *
  * No external dependencies - pure domain model.
  */
-public sealed interface ImportError permits
-        ApiError,
-        ValidationError,
-        DatabaseError,
-        MappingError {
+public sealed interface ImportError permits ApiError, ValidationError, DatabaseError, MappingError {
 
     String message();
 
@@ -21,14 +17,10 @@ public sealed interface ImportError permits
      */
     default String toDisplayMessage() {
         return switch (this) {
-            case ApiError e ->
-                    "Failed to fetch data from external API: " + e.message();
-            case ValidationError e ->
-                    "Data validation failed: " + e.message();
-            case DatabaseError e ->
-                    "Database operation failed: " + e.message();
-            case MappingError e ->
-                    "Data mapping failed: " + e.message();
+            case ApiError e -> "Failed to fetch data from external API: " + e.message();
+            case ValidationError e -> "Data validation failed: " + e.message();
+            case DatabaseError e -> "Database operation failed: " + e.message();
+            case MappingError e -> "Data mapping failed: " + e.message();
         };
     }
 }

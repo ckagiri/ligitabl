@@ -23,18 +23,11 @@ public class ValidationError implements ImportError {
     }
 
     public static ValidationError missingField(String field) {
-        return new ValidationError(
-                "Required field is missing: " + field,
-                "MISSING_FIELD",
-                field
-        );
+        return new ValidationError("Required field is missing: " + field, "MISSING_FIELD", field);
     }
 
     public static ValidationError invalidData(String field, String reason) {
         return new ValidationError(
-                String.format("Invalid data in field '%s': %s", field, reason),
-                "INVALID_DATA",
-                field
-        );
+                String.format("Invalid data in field '%s': %s", field, reason), "INVALID_DATA", field);
     }
 }
