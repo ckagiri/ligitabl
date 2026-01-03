@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.lang.NonNull;
+import org.springframework.web.reactive.function.client.ExchangeStrategies;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
 import org.springframework.web.reactive.function.client.WebClient;
 
@@ -46,6 +47,9 @@ public class WebClientConfig {
     @Value("${football-data.api.retry-attempts:3}")
     private int retryAttempts;
 
+    @Value("${football-data.api.max-in-memory-bytes:5242880}")
+    private int maxInMemoryBytes;
+
     @Bean
     public WebClient footballDataWebClient() {
         // Configure HTTP client with timeouts
@@ -57,11 +61,16 @@ public class WebClientConfig {
         @SuppressWarnings("null")
         ReactorClientHttpConnector connector = new ReactorClientHttpConnector(httpClient);
 
+        ExchangeStrategies exchangeStrategies = ExchangeStrategies.builder()
+            .codecs(configurer -> configurer.defaultCodecs().maxInMemorySize(maxInMemoryBytes))
+            .build();
+
         return WebClient.builder()
                 .baseUrl(baseUrl)
                 .defaultHeader("X-Auth-Token", apiToken)
                 .defaultHeader("Accept", "application/json")
                 .clientConnector(connector)
+            .exchangeStrategies(exchangeStrategies)
                 .filter(logRequest())
                 .filter(logResponse())
                 .filter(retryFilter())

@@ -213,7 +213,7 @@ class ImportMatchesUseCaseTest {
 
         when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatches(code)).thenReturn(right(List.of(extMatch)));
+        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
         when(teamRepo.findByClientId(57)).thenReturn(Optional.of(dbHome));
         when(teamRepo.findByClientId(61)).thenReturn(Optional.of(dbAway));
@@ -267,7 +267,7 @@ class ImportMatchesUseCaseTest {
 
         when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatches(code)).thenReturn(right(List.of(extMatch)));
+        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
         when(teamRepo.findByClientId(57)).thenReturn(Optional.of(dbHome));
         when(teamRepo.findByClientId(61)).thenReturn(Optional.of(dbAway));
@@ -307,7 +307,7 @@ class ImportMatchesUseCaseTest {
 
         when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatches(code)).thenReturn(right(List.of(extMatch1, extMatch2)));
+        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch1, extMatch2)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
         when(teamRepo.findByClientId(any())).thenReturn(Optional.of(dbHome), Optional.of(dbAway), Optional.of(dbAway), Optional.of(dbHome));
         when(matchRepo.findByClientId(any())).thenReturn(Optional.empty());
@@ -376,7 +376,7 @@ class ImportMatchesUseCaseTest {
 
         when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatches(code)).thenReturn(right(List.of(extMatch1, extMatch2)));
+        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch1, extMatch2)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
         when(teamRepo.findByClientId(57)).thenReturn(Optional.of(dbHome));
         when(teamRepo.findByClientId(61)).thenReturn(Optional.of(dbAway));
@@ -412,7 +412,7 @@ class ImportMatchesUseCaseTest {
 
         when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatches(code)).thenReturn(right(List.of(extMatch)));
+        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
         when(teamRepo.findByClientId(any())).thenReturn(Optional.empty());
 
@@ -439,7 +439,7 @@ class ImportMatchesUseCaseTest {
 
         when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatches(code)).thenReturn(right(List.of(extMatch)));
+        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.empty());
 
         var result = useCase.execute(code);
@@ -470,7 +470,7 @@ class ImportMatchesUseCaseTest {
 
         when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatches(code)).thenReturn(right(List.of(extMatch)));
+        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
         when(teamRepo.findByClientId(57)).thenReturn(Optional.of(dbHome));
         when(teamRepo.findByClientId(61)).thenReturn(Optional.of(dbAway));

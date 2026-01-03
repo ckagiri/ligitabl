@@ -75,7 +75,7 @@ public class ImportMatchesUseCase {
      * Fetch external matches for the competition
      */
     private Either<ImportError, ImportContext> fetchMatches(ImportContext context) {
-        return footballDataGateway.fetchMatches(context.competitionCode)
+        return footballDataGateway.fetchMatchesForCompetition(context.competitionCode)
                 .map(matches -> {
                     log.info("Fetched {} matches from external API", matches.size());
                     return context.withMatches(matches);

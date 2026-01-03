@@ -195,10 +195,7 @@ class FootballDataClientAdapterIntegrationTest {
         @Test
         @DisplayName("should fetch matches successfully")
         void shouldFetchMatches() {
-            LocalDate today = LocalDate.now();
-            LocalDate dayAfterTomorrow = today.plusDays(2);
-
-            wireMock.stubFor(get(urlPathEqualTo("/matches"))
+            wireMock.stubFor(get(urlEqualTo("/competitions/PL/matches"))
                     .willReturn(aResponse()
                             .withStatus(200)
                             .withHeader("Content-Type", "application/json")
@@ -221,7 +218,7 @@ class FootballDataClientAdapterIntegrationTest {
 
             var code = CompetitionCode.of("PL").get();
 
-            var result = adapter.fetchMatches(code);
+            var result = adapter.fetchMatchesForCompetition(code);
 
             assertThat(result.isRight()).isTrue();
             var matches = result.get();
@@ -234,17 +231,14 @@ class FootballDataClientAdapterIntegrationTest {
             assertThat(match.getScore().get().homeGoals()).isEqualTo(1);
             assertThat(match.getScore().get().awayGoals()).isEqualTo(2);
 
-            wireMock.verify(getRequestedFor(urlPathEqualTo("/matches"))
-                    .withQueryParam("competitions", equalTo("PL"))
-                    .withQueryParam("dateFrom", equalTo(today.toString()))
-                    .withQueryParam("dateTo", equalTo(dayAfterTomorrow.toString()))
+                wireMock.verify(getRequestedFor(urlEqualTo("/competitions/PL/matches"))
                     .withHeader("X-Auth-Token", equalTo("test-token")));
         }
 
                 @Test
                 @DisplayName("should handle empty matches list")
                 void shouldHandleEmptyMatches() {
-                        wireMock.stubFor(get(urlPathEqualTo("/matches"))
+                    wireMock.stubFor(get(urlEqualTo("/competitions/PL/matches"))
                                         .willReturn(aResponse()
                                                         .withStatus(200)
                                                         .withHeader("Content-Type", "application/json")
@@ -255,7 +249,7 @@ class FootballDataClientAdapterIntegrationTest {
 
                         var code = CompetitionCode.of("PL").get();
 
-                        Either<ImportError, List<ExternalMatch>> result = adapter.fetchMatches(code);
+                        Either<ImportError, List<ExternalMatch>> result = adapter.fetchMatchesForCompetition(code);
 
                         assertThat(result.isRight()).isTrue();
                         assertThat(result.get()).isEmpty();
@@ -264,7 +258,7 @@ class FootballDataClientAdapterIntegrationTest {
                 @Test
                 @DisplayName("should handle multiple matches")
                 void shouldHandleMultipleMatches() {
-                        wireMock.stubFor(get(urlPathEqualTo("/matches"))
+                    wireMock.stubFor(get(urlEqualTo("/competitions/PL/matches"))
                                         .willReturn(aResponse()
                                                         .withStatus(200)
                                                         .withHeader("Content-Type", "application/json")
@@ -294,7 +288,7 @@ class FootballDataClientAdapterIntegrationTest {
 
                         var code = CompetitionCode.of("PL").get();
 
-                        Either<ImportError, List<ExternalMatch>> result = adapter.fetchMatches(code);
+                        Either<ImportError, List<ExternalMatch>> result = adapter.fetchMatchesForCompetition(code);
 
                         assertThat(result.isRight()).isTrue();
                         assertThat(result.get()).hasSize(2);

@@ -41,11 +41,10 @@ public class FootballDataClientAdapter implements FootballDataGateway {
     }
 
     @Override
-        public Either<ImportError, List<ExternalMatch>> fetchMatches(CompetitionCode code) {
+        public Either<ImportError, List<ExternalMatch>> fetchMatchesForCompetition(CompetitionCode code) {
         log.debug("Fetching matches via adapter: {}", code.getValue());
 
-        // Use getUpcomingMatches - you can change this to use a different method
-        return client.getUpcomingMatches(code.getValue())
+        return client.getMatchesForCompetition(code.getValue())
                 .mapLeft(this::mapApiError)
                 .flatMap(this::mapMatchesResponse);
     }

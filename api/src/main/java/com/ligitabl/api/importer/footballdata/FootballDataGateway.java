@@ -18,5 +18,5 @@ public interface FootballDataGateway {
     /**
      * Fetch all matches for a competition
      */
-    Either<ImportError, List<ExternalMatch>> fetchMatches(CompetitionCode code);
+    Either<ImportError, List<ExternalMatch>> fetchMatchesForCompetition(CompetitionCode code);
 }
