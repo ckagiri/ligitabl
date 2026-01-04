@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.contest.joincontest;
+package com.ligitabl.api.usecases.contest;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;

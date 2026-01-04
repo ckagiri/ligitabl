@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.contest.joincontest;
+package com.ligitabl.api.usecases.contest;
 
 import java.time.Clock;
 import java.util.*;

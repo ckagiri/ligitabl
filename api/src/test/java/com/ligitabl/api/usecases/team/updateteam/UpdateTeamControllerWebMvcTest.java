@@ -1,4 +1,4 @@
-package com.ligitabl.api.web;
+package com.ligitabl.api.usecases.team.updateteam;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,8 +22,6 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecases.team.TeamDto;
 import com.ligitabl.api.usecases.team.TeamPayload;
-import com.ligitabl.api.usecases.team.updateteam.UpdateTeamController;
-import com.ligitabl.api.usecases.team.updateteam.UpdateTeamUseCase;
 
 @WebMvcTest(controllers = UpdateTeamController.class)
 class UpdateTeamControllerWebMvcTest {

@@ -1,4 +1,4 @@
-package com.ligitabl.api.web;
+package com.ligitabl.api.usecases.team.createteam;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.any;
@@ -22,8 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecases.team.TeamDto;
-import com.ligitabl.api.usecases.team.createteam.CreateTeamController;
-import com.ligitabl.api.usecases.team.createteam.CreateTeamUseCase;
 
 @WebMvcTest(controllers = CreateTeamController.class)
 class CreateTeamControllerWebMvcTest {

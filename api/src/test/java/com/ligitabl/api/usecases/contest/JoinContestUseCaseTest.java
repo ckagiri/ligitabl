@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.contest.joincontest;
+package com.ligitabl.api.usecases.contest;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;

@@ -1,4 +1,4 @@
-package com.ligitabl.api.web;
+package com.ligitabl.api.usecases.team.getteambyid;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,48 +19,45 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecases.team.TeamDto;
-import com.ligitabl.api.usecases.team.getteambyslug.GetTeamBySlugController;
-import com.ligitabl.api.usecases.team.getteambyslug.GetTeamBySlugUseCase;
 
-@WebMvcTest(controllers = GetTeamBySlugController.class)
-class GetTeamBySlugControllerWebMvcTest {
+@WebMvcTest(controllers = GetTeamByIdController.class)
+class GetTeamByIdControllerWebMvcTest {
 
     @Autowired
     private MockMvc mockMvc;
 
     @SuppressWarnings("removal")
     @MockBean
-    private GetTeamBySlugUseCase getTeamBySlugUseCase;
+    private GetTeamByIdUseCase getTeamByIdUseCase;
 
     @Test
-    @DisplayName("GET /api/teams/{slug} -> 200 OK with body")
-    void getBySlug_success() throws Exception {
+    @DisplayName("GET /api/teams?id={uuid} -> 200 OK with body")
+    void getById_success() throws Exception {
         var id = UUID.randomUUID();
-        var slug = "arsenal";
         var dto = TeamDto.builder()
                 .id(id)
                 .name("Arsenal FC")
                 .shortName("Arsenal")
-                .slug(slug)
+                .slug("arsenal")
                 .tla("ARS")
                 .build();
 
-        when(getTeamBySlugUseCase.execute(any())).thenReturn(Either.right(dto));
+        when(getTeamByIdUseCase.execute(any())).thenReturn(Either.right(dto));
 
-        mockMvc.perform(get("/api/teams/{slug}", slug))
+        mockMvc.perform(get("/api/teams").param("id", id.toString()))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id", equalTo(id.toString())))
-                .andExpect(jsonPath("$.slug", equalTo(slug)));
+                .andExpect(jsonPath("$.slug", equalTo("arsenal")));
     }
 
     @Test
-    @DisplayName("GET /api/teams/{slug} -> 404 Not Found mapped from business error")
-    void getBySlug_notFound() throws Exception {
-        var slug = "unknown";
-        var error = UseCaseErrors.notFound("Team", "slug", slug);
-        when(getTeamBySlugUseCase.execute(any())).thenReturn(Either.left(error));
+    @DisplayName("GET /api/teams?id={uuid} -> 404 Not Found mapped from business error")
+    void getById_notFound() throws Exception {
+        var id = UUID.randomUUID().toString();
+        var error = UseCaseErrors.notFound("Team", id);
+        when(getTeamByIdUseCase.execute(any())).thenReturn(Either.left(error));
 
-        mockMvc.perform(get("/api/teams/{slug}", slug))
+        mockMvc.perform(get("/api/teams").param("id", id))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.error", equalTo("Not Found")))
                 .andExpect(jsonPath("$.message", equalTo(error.getMessage())))
@@ -68,14 +65,13 @@ class GetTeamBySlugControllerWebMvcTest {
     }
 
     @Test
-    @DisplayName("GET /api/teams/{slug} -> 400 Bad Request mapped from validation error")
-    void getBySlug_validationError() throws Exception {
-        var slug = "Invalid Slug"; // will be normalized/validated in use case; simulate validation failure
-        var error = UseCaseErrors.validation(
-                "slug", "Only lowercase letters, digits, and hyphens. No spaces, no uppercase");
-        when(getTeamBySlugUseCase.execute(any())).thenReturn(Either.left(error));
+    @DisplayName("GET /api/teams?id={uuid} -> 400 Bad Request mapped from validation error")
+    void getById_validationError() throws Exception {
+        var badId = "not-a-uuid";
+        var error = UseCaseErrors.validation("id", "must be a valid UUID");
+        when(getTeamByIdUseCase.execute(any())).thenReturn(Either.left(error));
 
-        mockMvc.perform(get("/api/teams/{slug}", slug))
+        mockMvc.perform(get("/api/teams").param("id", badId))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.error", equalTo("Validation Failed")))
                 .andExpect(jsonPath("$.message", equalTo(error.getMessage())))
