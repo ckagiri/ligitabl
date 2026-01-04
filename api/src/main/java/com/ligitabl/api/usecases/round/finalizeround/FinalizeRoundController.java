@@ -1,17 +1,16 @@
 package com.ligitabl.api.usecases.round.finalizeround;
 
-import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.model.repo.RoundRepo;
-import com.ligitabl.model.repo.SeasonRepo;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.UUID;
+import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.model.repo.SeasonRepo;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/admin/rounds")
@@ -31,40 +30,30 @@ public class FinalizeRoundController {
     public ResponseEntity<?> finalizeDefaultRound() {
         // Get default competition's current round
         var defaultCompetition = competitionDefaults.defaultCompetitionSlug();
-        var season = seasonRepo.findActiveSeason(defaultCompetition)
+        var season = seasonRepo
+                .findActiveSeason(defaultCompetition)
                 .orElseThrow(() -> new IllegalStateException("No active season for " + defaultCompetition));
 
         var result = finalizeRoundUseCase.execute(season.getId());
 
-        return result
-                .fold(
-                        error -> switch (error) {
-                            case FinalizeRoundError.SeasonNotFound e ->
-                                    ResponseEntity.notFound().build();
-                            case FinalizeRoundError.RoundNotFound e ->
-                                    ResponseEntity.notFound().build();
-                            case FinalizeRoundError.RoundNotReady(UUID roundId, String reason) ->
-                                    ResponseEntity.badRequest().body(new ErrorResponse(
-                                            String.format("Round %s not ready: %s", roundId, reason)
-                                    ));
-                            case FinalizeRoundError.StandingsValidationFailed e ->
-                                    ResponseEntity.badRequest().body(new ErrorResponse(
-                                            "Standings validation failed: " + e.reason()
-                                    ));
-                            case FinalizeRoundError.TransactionFailed(String reason) ->
-                                    ResponseEntity.internalServerError().body(new ErrorResponse(
-                                            String.format("Transaction failed: %s", reason)
-                                    ));
+        return result.fold(
+                error -> switch (error) {
+                    case FinalizeRoundError.SeasonNotFound e -> ResponseEntity.notFound()
+                            .build();
+                    case FinalizeRoundError.RoundNotFound e -> ResponseEntity.notFound()
+                            .build();
+                    case FinalizeRoundError.RoundNotReady e -> ResponseEntity.badRequest()
+                            .body(new ErrorResponse(String.format("Round %s not ready: %s", e.roundId(), e.reason())));
+                    case FinalizeRoundError.StandingsValidationFailed e -> ResponseEntity.badRequest()
+                            .body(new ErrorResponse("Standings validation failed: " + e.reason()));
+                    case FinalizeRoundError.TransactionFailed e -> ResponseEntity.internalServerError()
+                            .body(new ErrorResponse(String.format("Transaction failed: %s", e.reason())));
 
-                            default -> ResponseEntity.internalServerError().body(new ErrorResponse(
-                                    "Unexpected error: " + error
-                            ));
-
-                        },
-                        result_ -> ResponseEntity.ok(result_)
-                );
+                    default -> ResponseEntity.internalServerError()
+                            .body(new ErrorResponse("Unexpected error: " + error));
+                },
+                result_ -> ResponseEntity.ok(result_));
     }
 
-    record ErrorResponse(String message) {
-    }
+    record ErrorResponse(String message) {}
 }

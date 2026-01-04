@@ -1,8 +1,8 @@
 package com.ligitabl.api.usecases.seeding;
 
-import com.ligitabl.model.domain.*;
-
 import java.util.List;
+
+import com.ligitabl.model.domain.*;
 
 public record ValidationContext(
         Competition competition,
@@ -10,5 +10,4 @@ public record ValidationContext(
         List<Round> rounds,
         List<Team> teams,
         Contest defaultContest,
-       List<User> users
-) {}
+        List<User> users) {}

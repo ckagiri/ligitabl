@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
@@ -24,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
-public class RegisterHandler implements RegisterUserUseCase {
+public class RegisterUseCase implements UseCase<RegisterCommand, Either<UseCaseError, RegisterResult>> {
 
     private final UserRepo userRepo;
     private final PasswordHasher passwordHasher;
@@ -54,10 +55,12 @@ public class RegisterHandler implements RegisterUserUseCase {
                     .emailVerified(false)
                     .build();
 
-            return Either.catching(() -> userRepo.create(user), UseCaseErrors::fromException).map(saved -> {
-                log.info("User registered successfully: {}", saved.getPublicId());
-                return new RegisterResult(saved.getPublicId(), saved.getEmail(), saved.getDisplayName(), saved.getRoles());
-            });
+            return Either.catching(() -> userRepo.create(user), UseCaseErrors::fromException)
+                    .map(saved -> {
+                        log.info("User registered successfully: {}", saved.getPublicId());
+                        return new RegisterResult(
+                                saved.getPublicId(), saved.getEmail(), saved.getDisplayName(), saved.getRoles());
+                    });
         });
     }
 

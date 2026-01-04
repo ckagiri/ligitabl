@@ -36,7 +36,7 @@ class GetCurrentUserUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        getCurrentUserUseCase = new GetCurrentUserHandler(userRepo);
+        getCurrentUserUseCase = new GetCurrentUserUseCase(userRepo);
         publicId = PublicId.create("AbCd3fGh9J");
 
         user = User.builder()

@@ -159,8 +159,8 @@ class AuthControllerIT extends AbstractPostgresIT {
 
     @Test
     void shouldReturn400ForShortPasswordInRegistration() {
-        ResponseEntity<AuthDto.ErrorResponse> response = postRegisterForError(
-                "newuser-" + UUID.randomUUID() + "@example.com", "Test User", "short");
+        ResponseEntity<AuthDto.ErrorResponse> response =
+                postRegisterForError("newuser-" + UUID.randomUUID() + "@example.com", "Test User", "short");
         assertThat(response.getStatusCode().value()).isEqualTo(400);
         AuthDto.ErrorResponse body = response.getBody();
         assertNotNull(body);
@@ -169,8 +169,8 @@ class AuthControllerIT extends AbstractPostgresIT {
 
     @Test
     void shouldReturn400ForShortDisplayName() {
-        ResponseEntity<AuthDto.ErrorResponse> response = postRegisterForError(
-                "newuser-" + UUID.randomUUID() + "@example.com", "A", "password123");
+        ResponseEntity<AuthDto.ErrorResponse> response =
+                postRegisterForError("newuser-" + UUID.randomUUID() + "@example.com", "A", "password123");
         assertThat(response.getStatusCode().value()).isEqualTo(400);
         AuthDto.ErrorResponse body = response.getBody();
         assertNotNull(body);
@@ -223,20 +223,21 @@ class AuthControllerIT extends AbstractPostgresIT {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(
-                Map.of("email", email, "displayName", displayName, "password", password), headers);
+        HttpEntity<Map<String, String>> request =
+                new HttpEntity<>(Map.of("email", email, "displayName", displayName, "password", password), headers);
 
         return restTemplate.exchange(url, HttpMethod.POST, request, new ParameterizedTypeReference<>() {});
     }
 
-    private ResponseEntity<AuthDto.ErrorResponse> postRegisterForError(String email, String displayName, String password) {
+    private ResponseEntity<AuthDto.ErrorResponse> postRegisterForError(
+            String email, String displayName, String password) {
         String url = "http://localhost:" + port + "/auth/register";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(
-                Map.of("email", email, "displayName", displayName, "password", password), headers);
+        HttpEntity<Map<String, String>> request =
+                new HttpEntity<>(Map.of("email", email, "displayName", displayName, "password", password), headers);
 
         return restTemplate.exchange(url, HttpMethod.POST, request, AuthDto.ErrorResponse.class);
     }

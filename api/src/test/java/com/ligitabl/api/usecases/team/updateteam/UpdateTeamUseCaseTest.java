@@ -38,7 +38,7 @@ class UpdateTeamUseCaseTest {
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        useCase = new UpdateTeamHandler(validator, mapper, updateGuard, teamRepo);
+        useCase = new UpdateTeamUseCase(validator, mapper, updateGuard, teamRepo);
     }
 
     @Test

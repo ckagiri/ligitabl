@@ -34,7 +34,7 @@ class GetTeamBySlugUseCaseTest {
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        useCase = new GetTeamBySlugHandler(teamRepo, validator);
+        useCase = new GetTeamBySlugUseCase(teamRepo, validator);
     }
 
     @Test

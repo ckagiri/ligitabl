@@ -36,7 +36,7 @@ class GetSeasonBySlugUseCaseTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        getSeasonBySlugUseCase = new GetSeasonBySlugHandler(hierarchyValidator, requestValidator);
+        getSeasonBySlugUseCase = new GetSeasonBySlugUseCase(hierarchyValidator, requestValidator);
     }
 
     @Test

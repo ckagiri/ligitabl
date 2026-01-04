@@ -2,6 +2,12 @@
 
 This guide covers formatting, running the backend with and without Postgres, Docker/Compose usage, jOOQ code generation, migrations, seeding, and troubleshooting.
 
+## Repo docs
+
+This repo has developer-facing documentation under `docs/` (this file, endpoints, debugging) plus additional internal runbooks/specs elsewhere in the repository.
+
+When changing behavior (endpoints, validation, persistence), update the relevant internal specs/runbooks and the public docs.
+
 ## Formatting (Palantir Java Format, 100-col width)
 
 This repo standardizes Java formatting with Spotless + Palantir Java Format (100 columns).
@@ -45,14 +51,7 @@ Tips:
 
 ## Running the API without a DB
 
-Build and run without needing Postgres (skips JDBC):
-
-```bash
-make build
-make run-no-db
-# In another terminal
-curl http://localhost:8080/api/status
-```
+The default developer workflow assumes a database (local Docker Compose or Testcontainers in tests).
 
 ## Full local run with Postgres
 
@@ -61,8 +60,11 @@ You can run the app with a local Postgres you manage, or let Docker Compose star
 ### Option A: Docker Compose (recommended)
 
 ```bash
-cp .env.example .env   # optional: then tweak values
-make compose-up
+# Verify environment files
+make env-check
+
+# Start DB + run API using the default safe environment (ENV=test)
+make run-api
 # Check endpoint
 curl http://localhost:8080/api/status
 # Tear down when done
@@ -72,26 +74,62 @@ make compose-down
 Notes:
 
 - Compose builds the API from `./api` and wires it to the `db` container (Postgres 16).
-- To run only the API in the background (and auto-start DB), use: `make compose-up-app`.
-- View app logs with: `make compose-logs-app`. Stop just the app: `make compose-stop-app`. Status: `make compose-ps`.
-  - Faster start without rebuild: `make compose-up-app-fast` (uses existing image; won’t pick up new code).
-  - Stop only the DB: `make compose-stop-db`.
-  - Refresh without codegen: `make compose-refresh` (stops app+db, starts DB, rebuilds and starts the app). Use when you have app code changes but no DB/schema changes.
-  - Refresh with codegen: `make compose-refresh-gen` (runs jOOQ codegen before rebuild).
-  - Refresh with migrations: `make compose-refresh-db` (runs Liquibase migrations then jOOQ codegen before rebuild). Use this after changing changelogs.
-- Liquibase is disabled by default; enable it at runtime with the Spring profile `liquibase`:
-  - Temporary: `SPRING_PROFILES_ACTIVE=liquibase docker compose up -d app`
-  - Or add `SPRING_PROFILES_ACTIVE: liquibase` under `app.environment` in `docker-compose.yml`.
-- Compose reads variables from a local `.env` file automatically and also passes them into the containers via `env_file`.
-- Default local DB port mapping is `55432` (host) -> `5432` (container). The app falls back to port `55432` when DB_PORT isn't set.
-- **DB-backed tests and destructive smoke scripts require Postgres on `55433`** (as defined in `.env.test`).
+- Compose uses the selected env file from the Makefile (default `ENV=test` → `.env.test`).
+- Default dev DB host port is `55432`; the test/smoke environment uses `55433` (see `.env.test`).
 
-Makefile environment behavior:
+## Environment selection and safety checks
 
-- The root `Makefile` loads `.env` if present.
-- The root `Makefile` also loads `.env.local` if present (recommended place for secrets; gitignored).
-- Most targets allow already-exported `DB_*` / `HOST_DB_PORT` vars in your shell to override `.env` (useful for `source .env.test && make ...`).
-- Importer targets intentionally disable that override (via `ALLOW_SHELL_DB_ENV=0`) so `make import-pl` reliably uses `.env` / `.env.local` for DB settings.
+This repo uses a **safety-first Makefile** which enforces explicit environments and avoids silent fallbacks.
+
+### Environments
+
+- `ENV=test` (default): safe for experiments and destructive operations
+- `ENV=dev`: daily development DB (destructive operations require confirmation)
+- `ENV=prod`: production (blocked unless you set `PROD_CONFIRMED=yes`)
+
+### Environment files (no fallbacks)
+
+The Makefile requires an env file for the selected environment:
+
+- `ENV=test` → `.env.test` (committed)
+- `ENV=dev` → `.env.dev` (committed)
+- `ENV=prod` → `.env.prod` (never commit; gitignored)
+
+Optional local overrides:
+
+- `.env.test.local`, `.env.dev.local`, `.env.prod.local` (gitignored)
+
+If an env file is missing, Make fails loudly and tells you what template to copy:
+
+```bash
+cp env.test.template .env.test
+cp env.dev.template .env.dev
+cp env.prod.template .env.prod
+```
+
+### Discover your current config
+
+```bash
+make env-info           # ENV=test
+make env-info ENV=dev
+make env-info ENV=prod
+```
+
+### Production gating
+
+Any `ENV=prod` Make target requires `PROD_CONFIRMED=yes`:
+
+```bash
+make migrate ENV=prod PROD_CONFIRMED=yes
+```
+
+For `drop-db` in production you will also be prompted to type the DB name.
+
+### Database name validation
+
+- In `ENV=test`, DB names should include `test` (warns otherwise)
+- In `ENV=dev`, DB names should include `dev` (warns otherwise)
+- In non-prod envs, obvious production names are blocked (e.g., `ligitabl_prod`)
 
 ### Option B: Local Postgres
 
@@ -115,7 +153,6 @@ Build and run the image:
 
 ```bash
 make docker-build  # builds using ./api/Dockerfile
-cp .env.example .env   # optional
 make docker-run
 # Stop container
 make docker-stop
@@ -129,10 +166,9 @@ JAVA_OPTS="-Xms256m -Xmx512m" make docker-run
 
 ## jOOQ code generation
 
-Code is generated in the `model` module. Connection info is taken from DB\_\* in `.env`.
+Code is generated in the `model` module. Connection info is taken from DB\_\* in the selected env file (`.env.test`, `.env.dev`, or `.env.prod`).
 
 ```bash
-cp .env.example .env   # optional: adjust DB_* if needed
 make codegen           # builds model and generates to model/target/generated-sources/jooq
 ```
 
@@ -195,6 +231,62 @@ Notes:
   Postgres via Testcontainers and Liquibase migrations.
 - `test-api-all` is a convenience wrapper that first runs `test-api-no-jooq` and then `test-api-it`.
 
+## Running tests (quick reference)
+
+Most day-to-day work uses Make targets (they encode the repo’s intended flags and profiles).
+
+### API
+
+- Core/unit API tests (skips `*IT`):
+
+```bash
+make test-api-core
+
+# Equivalent:
+mvn -q -pl api -am -DskipITs test
+```
+
+- DB-backed API integration tests (`*IT` via Testcontainers + Liquibase):
+
+```bash
+make test-api-it
+```
+
+- Full API suite (everything):
+
+```bash
+make test-api-all
+
+# Equivalent:
+mvn -pl api -am test
+```
+
+- Fast API tests without jOOQ/DB (installs model jar using `no-jooq` first):
+
+```bash
+make test-api-no-jooq
+```
+
+### Model + seed modules
+
+- Model tests:
+
+```bash
+make test-model
+```
+
+- Seed module tests (hermetic DB-backed via Testcontainers):
+
+```bash
+mvn -q -pl seed -am test
+```
+
+### Full repo
+
+```bash
+make test-all
+```
+
 ## Migrations and resets
 
 We use Liquibase in the `model` module.
@@ -225,8 +317,8 @@ make import-pl
 
 Notes:
 
-- These Make targets are non-destructive, and use `.env` (and optional `.env.local`).
-- Set your token in `.env.local` (preferred) as `API_FOOTBALL_DATA_KEY=...` (or `FOOTBALL_DATA_API_TOKEN=...`).
+- These Make targets use the selected env file (`.env.test`, `.env.dev`, or `.env.prod`) plus the optional local override for that env.
+- Set your token in `.env.dev.local` (preferred) as `API_FOOTBALL_DATA_KEY=...` (or `FOOTBALL_DATA_API_TOKEN=...`).
 - Importer targets start DB (compose), seed reference data, build the API jar, then run the workflow in headless mode.
 
 ````
@@ -326,4 +418,4 @@ Quick checklist if startup fails or `curl` can’t connect:
 
 - Spring Boot 3.5.3 (Java 21)
 - Liquibase changelogs are present. Runtime Liquibase is disabled by default; enable with the `liquibase` Spring profile or use `make migrate`.
-- A `.env.example` file is provided. Create your own `.env` (not committed) to customize PORT, DB credentials, and Spring datasource.
+- Use the per-environment files instead of a single `.env`: `.env.test` (default), `.env.dev`, `.env.prod`.

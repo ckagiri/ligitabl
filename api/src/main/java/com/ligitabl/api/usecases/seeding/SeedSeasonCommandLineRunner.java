@@ -1,11 +1,13 @@
 package com.ligitabl.api.usecases.seeding;
 
-import com.ligitabl.api.shared.Either;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
+
+import com.ligitabl.api.shared.Either;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Command line runner for seeding demo data.
@@ -34,10 +36,7 @@ public class SeedSeasonCommandLineRunner implements CommandLineRunner {
 
         Either<SeedingError, SeasonSeedResult> result = seedSeasonUseCase.execute();
 
-        result.fold(
-                this::handleFailure,
-                this::handleSuccess
-        );
+        result.fold(this::handleFailure, this::handleSuccess);
     }
 
     private Void handleFailure(SeedingError error) {
@@ -87,9 +86,7 @@ public class SeedSeasonCommandLineRunner implements CommandLineRunner {
         }
 
         log.info("🎮 Demo Users:");
-        result.getUsers().forEach(user ->
-                log.info("  • {} ({})", user.getDisplayName(), user.getEmail())
-        );
+        result.getUsers().forEach(user -> log.info("  • {} ({})", user.getDisplayName(), user.getEmail()));
         log.info("  Password: Demo123!");
         log.info("");
 

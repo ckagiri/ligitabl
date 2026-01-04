@@ -53,6 +53,7 @@ hs_err_pid*
 # Environments
 .env
 .env.local
+.env.prod
 .env.*.local
 .envrc
 .venv

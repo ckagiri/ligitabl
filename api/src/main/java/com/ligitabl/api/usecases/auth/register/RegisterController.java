@@ -10,8 +10,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.api.usecases.auth.AuthDto;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.Password;
@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RegisterController {
 
-    private final RegisterUserUseCase registerUserUseCase;
+    private final RegisterUseCase registerUserUseCase;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody AuthDto.RegisterRequest request) {

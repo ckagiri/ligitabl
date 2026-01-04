@@ -2,7 +2,11 @@
 
 This repo uses Maven Surefire for unit tests and (depending on the Make target) runs DB-backed integration tests via Testcontainers + Liquibase.
 
+See [backend-dev.md](./backend-dev.md) for the repo’s intended workflows (commands, Make targets, and test taxonomy).
+
 This guide is a practical checklist for diagnosing failures quickly using the same toolbox we use while iterating: `mvn`, `make`, `ls`, `tail`, `rg`, small `python` snippets for report parsing, and log capture.
+
+Note: VS Code tasks are provided for common test flows (including “logged to repo” variants). Prefer those when you want repeatable logs under `api/target/` or `scripts/target/`.
 
 ## Quick triage checklist
 

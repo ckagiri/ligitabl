@@ -50,7 +50,7 @@ class LoginUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        loginUseCase = new LoginHandler(userRepo, passwordHasher, tokenGenerator, requestValidator);
+        loginUseCase = new LoginUseCase(userRepo, passwordHasher, tokenGenerator, requestValidator);
 
         email = Email.create("test@example.com");
         password = Password.Plaintext.create("password123");

@@ -34,7 +34,7 @@ class GetTeamByIdUseCaseTest {
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        useCase = new GetTeamByIdHandler(validator, teamRepo);
+        useCase = new GetTeamByIdUseCase(validator, teamRepo);
     }
 
     @Test

@@ -29,8 +29,7 @@ public sealed interface SeedingError {
         public String message() {
             return String.format(
                     "Expected %d rounds but found %d for season '%s'. Please create all rounds first.",
-                    expected, found, seasonName
-            );
+                    expected, found, seasonName);
         }
     }
 
@@ -51,10 +50,7 @@ public sealed interface SeedingError {
     record TeamProfileNotFound(String code) implements SeedingError {
         @Override
         public String message() {
-            return String.format(
-                    "Team '%s' does not have a profile in team-ratings.yaml. Please add it.",
-                    code
-            );
+            return String.format("Team '%s' does not have a profile in team-ratings.yaml. Please add it.", code);
         }
     }
 
@@ -62,9 +58,7 @@ public sealed interface SeedingError {
         @Override
         public String message() {
             return String.format(
-                    "Default contest with ID %d not found for season. Please check season.main_contest_id.",
-                    contestId
-            );
+                    "Default contest with ID %d not found for season. Please check season.main_contest_id.", contestId);
         }
     }
 

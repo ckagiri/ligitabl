@@ -9,5 +9,4 @@ public record FinalizeRoundResult(
         int submissionsCreated,
         int resultsCalculated,
         boolean seasonCompleted,
-        Instant completedAt
-) {}
+        Instant completedAt) {}

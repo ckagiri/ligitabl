@@ -1,5 +1,16 @@
 package com.ligitabl.api.usecases.sync;
 
+import java.time.Duration;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.client.footballdata.MatchDto;
 import com.ligitabl.api.client.footballdata.Score;
@@ -11,18 +22,9 @@ import com.ligitabl.api.scheduling.sync.SyncFrequencyCalculator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.Duration;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -40,21 +42,16 @@ public class SyncMatchesUseCase {
     @Value("${football-data.competition.code}")
     private String competitionCode;
 
-    public record SyncMatchesCommand() {
-    }
+    public record SyncMatchesCommand() {}
 
     public sealed interface SyncMatchesError {
-        record CompetitionNotFound(String code) implements SyncMatchesError {
-        }
+        record CompetitionNotFound(String code) implements SyncMatchesError {}
 
-        record SeasonNotFound(String competitionCode) implements SyncMatchesError {
-        }
+        record SeasonNotFound(String competitionCode) implements SyncMatchesError {}
 
-        record RoundNotFound(UUID roundId) implements SyncMatchesError {
-        }
+        record RoundNotFound(UUID roundId) implements SyncMatchesError {}
 
-        record DataAccessError(FootballDataClient.ApiError error) implements SyncMatchesError {
-        }
+        record DataAccessError(FootballDataClient.ApiError error) implements SyncMatchesError {}
     }
 
     @Transactional
@@ -76,22 +73,21 @@ public class SyncMatchesUseCase {
             return Either.left(new SyncMatchesError.CompetitionNotFound(competitionCode));
         }
 
-        return seasonRepo.findActiveSeason(competitionSlug)
+        return seasonRepo
+                .findActiveSeason(competitionSlug)
                 .map(Either::<SyncMatchesError, Season>right)
                 .orElseGet(() -> Either.left(new SyncMatchesError.SeasonNotFound(competitionCode)));
     }
 
     private Either<SyncMatchesError, RoundContext> getCurrentRound(Season season) {
-        return roundRepo.findById(season.getCurrentRoundId())
+        return roundRepo
+                .findById(season.getCurrentRoundId())
                 .map(round -> {
                     var existingMatches = matchRepo.findByRoundId(round.getId());
                     return Either.<SyncMatchesError, RoundContext>right(
-                            new RoundContext(season, round, existingMatches)
-                    );
+                            new RoundContext(season, round, existingMatches));
                 })
-                .orElse(Either.left(new SyncMatchesError.RoundNotFound(
-                        season.getCurrentRoundId()
-                )));
+                .orElse(Either.left(new SyncMatchesError.RoundNotFound(season.getCurrentRoundId())));
     }
 
     /**
@@ -100,14 +96,12 @@ public class SyncMatchesUseCase {
      * Determines which API endpoint to use based on current match state.
      * This is the optimization strategy we discussed!
      */
-    private Either<SyncMatchesError, FetchedMatchData> determineAndFetchMatches(
-            RoundContext context) {
+    private Either<SyncMatchesError, FetchedMatchData> determineAndFetchMatches(RoundContext context) {
 
         var existingMatches = context.existingMatches();
 
         // Strategy 1: Check for LIVE matches first
-        boolean hasLive = existingMatches.stream()
-                .anyMatch(m -> m.getStatus() == MatchStatus.LIVE);
+        boolean hasLive = existingMatches.stream().anyMatch(m -> m.getStatus() == MatchStatus.LIVE);
 
         if (hasLive) {
             log.debug("Live matches detected - using LIVE endpoint");
@@ -122,10 +116,8 @@ public class SyncMatchesUseCase {
                 .min(OffsetDateTime::compareTo);
 
         if (nextKickoff.isPresent()) {
-            var minutesUntilKickoff = Duration.between(
-                    OffsetDateTime.now(),
-                    nextKickoff.get()
-            ).toMinutes();
+            var minutesUntilKickoff =
+                    Duration.between(OffsetDateTime.now(), nextKickoff.get()).toMinutes();
 
             // Imminent (≤10 min) or Soon (≤60 min) - check TODAY only
             if (minutesUntilKickoff <= 60) {
@@ -149,7 +141,8 @@ public class SyncMatchesUseCase {
      * Fetch via GET /matches?status=LIVE
      */
     private Either<SyncMatchesError, FetchedMatchData> fetchLiveMatches(RoundContext context) {
-        return footballDataClient.getLiveMatches(competitionCode)
+        return footballDataClient
+                .getLiveMatches(competitionCode)
                 .mapLeft(error -> (SyncMatchesError) new SyncMatchesError.DataAccessError(error))
                 .map(response -> new FetchedMatchData(context, response.matches()));
     }
@@ -160,7 +153,8 @@ public class SyncMatchesUseCase {
     private Either<SyncMatchesError, FetchedMatchData> fetchTodayMatches(RoundContext context) {
         var today = LocalDate.now();
 
-        return footballDataClient.getMatchesForDate(competitionCode, today)
+        return footballDataClient
+                .getMatchesForDate(competitionCode, today)
                 .mapLeft(error -> (SyncMatchesError) new SyncMatchesError.DataAccessError(error))
                 .map(response -> new FetchedMatchData(context, response.matches()));
     }
@@ -172,7 +166,8 @@ public class SyncMatchesUseCase {
         var today = LocalDate.now();
         var dayAfterTomorrow = today.plusDays(2);
 
-        return footballDataClient.getMatchesInDateRange(competitionCode, today, dayAfterTomorrow)
+        return footballDataClient
+                .getMatchesInDateRange(competitionCode, today, dayAfterTomorrow)
                 .mapLeft(error -> (SyncMatchesError) new SyncMatchesError.DataAccessError(error))
                 .map(response -> new FetchedMatchData(context, response.matches()));
     }
@@ -202,8 +197,11 @@ public class SyncMatchesUseCase {
             }
         }
 
-        log.info("Matches processed: {}, updated: {}, newly finished: {}",
-                apiMatches.size(), matchesUpdated, finishedMatchIds.size());
+        log.info(
+                "Matches processed: {}, updated: {}, newly finished: {}",
+                apiMatches.size(),
+                matchesUpdated,
+                finishedMatchIds.size());
 
         // Reload to get updated status
         var updatedMatches = matchRepo.findByRoundId(context.round().getId());
@@ -214,8 +212,7 @@ public class SyncMatchesUseCase {
                 apiMatches.size(),
                 matchesUpdated,
                 finishedMatchIds,
-                updatedMatches
-        ));
+                updatedMatches));
     }
 
     private Either<SyncMatchesError, SyncContext> recalculateStandings(SyncContext context) {
@@ -225,9 +222,7 @@ public class SyncMatchesUseCase {
 
         // Async - don't wait
         standingsService.recalculateAsync(
-                context.season().getId(),
-                context.round().getPosition()
-        );
+                context.season().getId(), context.round().getPosition());
 
         return Either.right(context);
     }
@@ -235,34 +230,30 @@ public class SyncMatchesUseCase {
     private MatchSyncResult calculateNextSync(SyncContext context) {
         var matches = context.updatedMatches();
 
-        boolean allComplete = matches.stream().allMatch(m ->
-                m.getStatus() == MatchStatus.FINISHED ||
-                        m.getStatus() == MatchStatus.POSTPONED ||
-                        m.getStatus() == MatchStatus.SUSPENDED ||
-                        m.getStatus() == MatchStatus.CANCELLED
-        );
+        boolean allComplete = matches.stream()
+                .allMatch(m -> m.getStatus() == MatchStatus.FINISHED
+                        || m.getStatus() == MatchStatus.POSTPONED
+                        || m.getStatus() == MatchStatus.SUSPENDED
+                        || m.getStatus() == MatchStatus.CANCELLED);
 
-        boolean hasBlocking = matches.stream().anyMatch(m ->
-                m.getStatus() == MatchStatus.CANCELLED ||
-                        m.getStatus() == MatchStatus.SUSPENDED
-        );
+        boolean hasBlocking = matches.stream()
+                .anyMatch(m -> m.getStatus() == MatchStatus.CANCELLED || m.getStatus() == MatchStatus.SUSPENDED);
 
         // Check if no upcoming matches (empty result)
         if (context.matchesProcessed() == 0) {
             return new MatchSyncResult(
-                    0, 0, 0,
+                    0,
+                    0,
+                    0,
                     List.of(),
                     false,
                     false,
-                    NextSyncSchedule.hours(12, "No upcoming matches - checking twice daily")
-            );
+                    NextSyncSchedule.hours(12, "No upcoming matches - checking twice daily"));
         }
 
-        boolean hasLive = matches.stream()
-                .anyMatch(m -> m.getStatus() == MatchStatus.LIVE);
+        boolean hasLive = matches.stream().anyMatch(m -> m.getStatus() == MatchStatus.LIVE);
 
-        boolean hasScheduled = matches.stream()
-                .anyMatch(m -> m.getStatus() == MatchStatus.SCHEDULED);
+        boolean hasScheduled = matches.stream().anyMatch(m -> m.getStatus() == MatchStatus.SCHEDULED);
 
         var nextKickoff = matches.stream()
                 .filter(m -> m.getStatus() == MatchStatus.SCHEDULED)
@@ -271,12 +262,7 @@ public class SyncMatchesUseCase {
                 .min(OffsetDateTime::compareTo)
                 .orElse(null);
 
-        var nextSchedule = SyncFrequencyCalculator.calculateNextSync(
-                hasLive,
-                hasScheduled,
-                nextKickoff,
-                allComplete
-        );
+        var nextSchedule = SyncFrequencyCalculator.calculateNextSync(hasLive, hasScheduled, nextKickoff, allComplete);
 
         return new MatchSyncResult(
                 context.matchesProcessed(),
@@ -285,8 +271,7 @@ public class SyncMatchesUseCase {
                 context.finishedMatchIds(),
                 allComplete,
                 hasBlocking,
-                nextSchedule
-        );
+                nextSchedule);
     }
 
     private Match findMatchByExternalId(List<Match> matches, String externalId) {
@@ -300,15 +285,13 @@ public class SyncMatchesUseCase {
         var previousStatus = existing.getStatus();
         var newStatus = mapToDomainStatus(apiMatch.status());
 
-        boolean hasChanged = previousStatus != newStatus ||
-                scoreChanged(existing, apiMatch.score());
+        boolean hasChanged = previousStatus != newStatus || scoreChanged(existing, apiMatch.score());
 
         if (!hasChanged) {
             return new UpdateResult(existing, false, false);
         }
 
-        boolean becameFinished = previousStatus != MatchStatus.FINISHED &&
-            newStatus == MatchStatus.FINISHED;
+        boolean becameFinished = previousStatus != MatchStatus.FINISHED && newStatus == MatchStatus.FINISHED;
 
         existing.setStatus(newStatus);
         existing.setKickOff(apiMatch.utcDate());
@@ -324,8 +307,7 @@ public class SyncMatchesUseCase {
         return false; // Placeholder
     }
 
-    private MatchStatus mapToDomainStatus(
-            String matchStatus) {
+    private MatchStatus mapToDomainStatus(String matchStatus) {
         return switch (matchStatus) {
             case "SCHEDULED", "TIMED" -> MatchStatus.SCHEDULED;
             case "IN_PLAY", "PAUSED" -> MatchStatus.LIVE;
@@ -341,18 +323,9 @@ public class SyncMatchesUseCase {
     }
 
     // Helper records
-    private record RoundContext(
-            Season season,
-            Round round,
-            List<Match> existingMatches
-    ) {
-    }
+    private record RoundContext(Season season, Round round, List<Match> existingMatches) {}
 
-    private record FetchedMatchData(
-            RoundContext roundContext,
-            List<MatchDto> matches
-    ) {
-    }
+    private record FetchedMatchData(RoundContext roundContext, List<MatchDto> matches) {}
 
     private record SyncContext(
             Season season,
@@ -360,15 +333,7 @@ public class SyncMatchesUseCase {
             int matchesProcessed,
             int matchesUpdated,
             List<UUID> finishedMatchIds,
-            List<Match> updatedMatches
-    ) {
-    }
+            List<Match> updatedMatches) {}
 
-    private record UpdateResult(
-            Match match,
-            boolean hasChanged,
-            boolean becameFinished
-    ) {
-    }
+    private record UpdateResult(Match match, boolean hasChanged, boolean becameFinished) {}
 }
-

@@ -1,15 +1,16 @@
 package com.ligitabl.api.usecases.seeding;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import java.io.IOException;
+import java.io.InputStream;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.io.InputStream;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
@@ -17,8 +18,7 @@ public class SeedingConfigLoader {
 
     private final String defaultConfigPath;
 
-    public SeedingConfigLoader(
-            @Value("${seeding.config:seeding-config.yaml}") String defaultConfigPath) {
+    public SeedingConfigLoader(@Value("${seeding.config:seeding-config.yaml}") String defaultConfigPath) {
         this.defaultConfigPath = defaultConfigPath;
     }
 
@@ -39,12 +39,12 @@ public class SeedingConfigLoader {
                 mapper.findAndRegisterModules();
                 SeedingConfig config = mapper.readValue(inputStream, SeedingConfig.class);
 
-                log.info("Loaded seeding config: competition={}, season={}, finishedRounds={}, users={}",
+                log.info(
+                        "Loaded seeding config: competition={}, season={}, finishedRounds={}, users={}",
                         config.getCompetitionSlug(),
                         config.getSeasonSlug(),
                         config.getFinishedRounds(),
-                        config.getDemoUsers().size()
-                );
+                        config.getDemoUsers().size());
 
                 return config;
             }

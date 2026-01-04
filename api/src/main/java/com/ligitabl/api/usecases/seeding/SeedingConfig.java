@@ -1,8 +1,8 @@
 package com.ligitabl.api.usecases.seeding;
 
-import lombok.Data;
-
 import java.util.List;
+
+import lombok.Data;
 
 @Data
 public class SeedingConfig {

@@ -27,12 +27,12 @@ class GetRoundByPositionUseCaseTest {
     @Mock
     RequestValidator validator;
 
-    GetRoundByPositionHandler useCase;
+    GetRoundByPositionUseCase useCase;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        useCase = new GetRoundByPositionHandler(hierarchyValidator, validator);
+        useCase = new GetRoundByPositionUseCase(hierarchyValidator, validator);
     }
 
     @Test
