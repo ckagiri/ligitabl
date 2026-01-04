@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RegisterController {
 
-    private final RegisterUserUseCase registerUserUseCase;
+    private final RegisterUseCase registerUserUseCase;
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Valid @RequestBody AuthDto.RegisterRequest request) {

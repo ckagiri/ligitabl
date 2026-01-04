@@ -3,6 +3,7 @@ package com.ligitabl.api.usecases.auth.register;
 import java.util.Set;
 import java.util.UUID;
 
+import com.ligitabl.api.shared.UseCase;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 @Transactional
-public class RegisterHandler implements RegisterUserUseCase {
+public class RegisterUseCase implements UseCase<RegisterCommand, Either<UseCaseError, RegisterResult>> {
 
     private final UserRepo userRepo;
     private final PasswordHasher passwordHasher;

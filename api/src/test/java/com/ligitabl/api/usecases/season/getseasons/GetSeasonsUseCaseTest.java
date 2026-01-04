@@ -44,7 +44,7 @@ class GetSeasonsUseCaseTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        getSeasonsUseCase = new GetSeasonsHandler(hierarchyValidator, seasonRepo, requestValidator);
+        getSeasonsUseCase = new GetSeasonsUseCase(hierarchyValidator, seasonRepo, requestValidator);
     }
 
     @Test

@@ -33,7 +33,7 @@ class GetCompetitionBySlugUseCaseTest {
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        getCompetitionBySlugUseCase = new GetCompetitionBySlugHandler(hierarchyValidator, requestValidator);
+        getCompetitionBySlugUseCase = new GetCompetitionBySlugUseCase(hierarchyValidator, requestValidator);
     }
 
     @Test

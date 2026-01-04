@@ -49,7 +49,7 @@ class GetRoundsUseCaseTest {
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        useCase = new GetRoundsHandler(hierarchyValidator, roundRepo, validator);
+        useCase = new GetRoundsUseCase(hierarchyValidator, roundRepo, validator);
     }
 
     @Test

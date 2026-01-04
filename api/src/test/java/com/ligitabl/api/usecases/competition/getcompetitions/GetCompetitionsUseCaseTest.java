@@ -23,12 +23,12 @@ class GetCompetitionsUseCaseTest {
     @Mock
     private CompetitionRepo competitionRepo;
 
-    private GetCompetitionsHandler getCompetitionsUseCase;
+    private GetCompetitionsUseCase getCompetitionsUseCase;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        getCompetitionsUseCase = new GetCompetitionsHandler(competitionRepo);
+        getCompetitionsUseCase = new GetCompetitionsUseCase(competitionRepo);
     }
 
     @Test

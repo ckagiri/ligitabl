@@ -3,6 +3,7 @@ package com.ligitabl.api.usecases.auth;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.ligitabl.api.usecases.auth.getcurrentuser.GetCurrentUserUseCase;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
@@ -14,7 +15,6 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.api.usecases.auth.getcurrentuser.GetCurrentUserQuery;
-import com.ligitabl.api.usecases.auth.getcurrentuser.GetCurrentUserUseCase;
 import com.ligitabl.api.usecases.auth.getcurrentuser.UserInfo;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.auth.Role;

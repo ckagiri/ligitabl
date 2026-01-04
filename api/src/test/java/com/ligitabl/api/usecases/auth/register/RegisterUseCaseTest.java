@@ -33,7 +33,7 @@ import com.ligitabl.model.repo.UserRepo;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Register User Use Case")
-class RegisterUserUseCaseTest {
+class RegisterUseCaseTest {
 
     @Mock
     UserRepo userRepo;
@@ -46,7 +46,7 @@ class RegisterUserUseCaseTest {
 
     RequestValidator requestValidator;
 
-    RegisterUserUseCase useCase;
+    RegisterUseCase useCase;
 
     Email email;
     Password.Plaintext password;
@@ -56,7 +56,7 @@ class RegisterUserUseCaseTest {
     @BeforeEach
     void setUp() {
         requestValidator = new RequestValidator(Validation.buildDefaultValidatorFactory().getValidator());
-        useCase = new RegisterHandler(userRepo, passwordHasher, publicIdGenerator, requestValidator);
+        useCase = new RegisterUseCase(userRepo, passwordHasher, publicIdGenerator, requestValidator);
 
         email = Email.create("newuser@example.com");
         password = Password.Plaintext.create("password123");
