@@ -15,6 +15,7 @@ import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.ligitabl.model.db.tables.TCompetition;
@@ -25,6 +26,7 @@ import com.ligitabl.model.domain.StandingsTeamRank;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.infra.StandingsPersistenceAdapter;
 
+@Tag("integration")
 class StandingsRepoTest {
 
     private static Connection jdbc;

@@ -1,4 +1,4 @@
-package com.ligitabl.api.web;
+package com.ligitabl.api.usecases.team.deleteteam;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.mockito.ArgumentMatchers.any;
@@ -19,8 +19,6 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.Unit;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
-import com.ligitabl.api.usecases.team.deleteteam.DeleteTeamController;
-import com.ligitabl.api.usecases.team.deleteteam.DeleteTeamUseCase;
 
 @WebMvcTest(controllers = DeleteTeamController.class)
 class DeleteTeamControllerWebMvcTest {

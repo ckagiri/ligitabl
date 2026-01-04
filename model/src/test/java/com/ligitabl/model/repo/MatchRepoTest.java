@@ -16,6 +16,7 @@ import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -28,6 +29,7 @@ import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.Score;
 import com.ligitabl.model.infra.MatchPersistenceAdapter;
 
+@Tag("integration")
 class MatchRepoTest {
 
     private static Connection jdbc;

@@ -269,6 +269,10 @@
                             <excludes>
                                 <exclude>**/infra/**</exclude>
                             </excludes>
+                            <testExcludes>
+                                <!-- These tests exercise jOOQ-backed persistence adapters and require infra; skip in no-jooq builds -->
+                                <exclude>**/repo/*RepoTest.java</exclude>
+                            </testExcludes>
                         </configuration>
                     </plugin>
                 </plugins>

@@ -1,4 +1,4 @@
-package com.ligitabl.api.web;
+package com.ligitabl.api.usecases.team.getteams;
 
 import static org.hamcrest.Matchers.*;
 import static org.mockito.Mockito.when;
@@ -18,8 +18,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecases.team.TeamDto;
-import com.ligitabl.api.usecases.team.getteams.GetTeamsController;
-import com.ligitabl.api.usecases.team.getteams.GetTeamsUseCase;
 
 @WebMvcTest(controllers = GetTeamsController.class)
 class GetTeamsControllerWebMvcTest {
