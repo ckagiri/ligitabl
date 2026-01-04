@@ -11,6 +11,7 @@ import com.ligitabl.model.domain.service.ScoringEngine;
 import com.ligitabl.model.infra.CompetitionPersistenceAdapter;
 import com.ligitabl.model.infra.ContestPersistenceAdapter;
 import com.ligitabl.model.infra.EntryPersistenceAdapter;
+import com.ligitabl.model.infra.LeaderboardPersistenceAdapter;
 import com.ligitabl.model.infra.MatchPersistenceAdapter;
 import com.ligitabl.model.infra.RoundPersistenceAdapter;
 import com.ligitabl.model.infra.RoundResultPersistenceAdapter;
@@ -23,6 +24,7 @@ import com.ligitabl.model.infra.UserPersistenceAdapter;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
+import com.ligitabl.model.repo.LeaderboardRepo;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.RoundResultRepo;
@@ -104,6 +106,11 @@ public class RepositoryConfig {
     @Bean
     public EntryRepo entryRepo(DSLContext dsl) {
         return new EntryPersistenceAdapter(dsl);
+    }
+
+    @Bean
+    public LeaderboardRepo leaderboardRepo(DSLContext dsl) {
+        return new LeaderboardPersistenceAdapter(dsl);
     }
 
     @Bean

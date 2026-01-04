@@ -11,7 +11,6 @@ import org.jooq.RecordMapper;
 
 import com.ligitabl.model.db.tables.records.RoundRecord;
 import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.repo.RoundRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -56,6 +55,55 @@ public class RoundPersistenceAdapter implements RoundRepo {
                 .map(MAPPER::map);
     }
 
+    @Override
+    public Round save(Round round) {
+        if (round == null) {
+            throw new IllegalArgumentException("Round must not be null");
+        }
+
+        return round.getId() == null ? create(round) : update(round);
+    }
+
+    private Round create(Round round) {
+        if (round.getId() != null) {
+            throw new IllegalArgumentException(
+                    String.format("Round.id must be null on create (received %s)", round.getId()));
+        }
+
+        UUID id = UUID.randomUUID();
+        dsl.insertInto(T_ROUND)
+                .set(T_ROUND.PK_ID, id)
+                .set(T_ROUND.FK_SEASON_ID, round.getSeasonId())
+                .set(T_ROUND.C_NAME, round.getName())
+                .set(T_ROUND.C_SLUG, round.getSlug())
+                .set(T_ROUND.C_POSITION, round.getPosition())
+                .set(T_ROUND.C_IS_FINALIZED, round.isFinalized())
+                .execute();
+
+        return findById(id).orElseThrow(() -> new IllegalStateException("Round not found after create"));
+    }
+
+    private Round update(Round round) {
+        if (round.getId() == null) {
+            throw new IllegalArgumentException("Round.id must not be null on update");
+        }
+
+        int updated = dsl.update(T_ROUND)
+                .set(T_ROUND.FK_SEASON_ID, round.getSeasonId())
+                .set(T_ROUND.C_NAME, round.getName())
+                .set(T_ROUND.C_SLUG, round.getSlug())
+                .set(T_ROUND.C_POSITION, round.getPosition())
+                .set(T_ROUND.C_IS_FINALIZED, round.isFinalized())
+                .where(T_ROUND.PK_ID.eq(round.getId()))
+                .execute();
+
+        if (updated == 0) {
+            throw new IllegalStateException(String.format("Round with id %s not found", round.getId()));
+        }
+
+        return findById(round.getId()).orElseThrow(() -> new IllegalStateException("Round not found after update"));
+    }
+
     private static class RoundRecordMapper implements RecordMapper<RoundRecord, Round> {
         @Override
         public Round map(RoundRecord record) {
@@ -69,7 +117,7 @@ public class RoundPersistenceAdapter implements RoundRepo {
                     .name(record.getName())
                     .slug(record.getSlug())
                     .position(record.getPosition())
-                    .status(RoundStatus.valueOf(record.getStatus()))
+                    .finalized(Boolean.TRUE.equals(record.getIsFinalized()))
                     .build();
         }
     }

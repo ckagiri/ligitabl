@@ -55,7 +55,7 @@ public class ContestPersistenceAdapter implements ContestRepo {
     }
 
     @Override
-    public Optional<Contest> findDefaultContestBySeason(UUID seasonId) {
+    public Optional<Contest> findMainBySeasonId(UUID seasonId) {
         var record = dsl.selectFrom(T_CONTEST)
                 .where(T_CONTEST
                         .FK_SEASON_ID

@@ -26,7 +26,7 @@ public class Round extends AbstractModel<UUID> {
 
     @NotNull
     @Builder.Default
-    private RoundStatus status = RoundStatus.OPEN;
+    private boolean finalized = false;
 
     /**
      * Computes round status based on associated matches.

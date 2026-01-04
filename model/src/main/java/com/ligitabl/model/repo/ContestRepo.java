@@ -10,5 +10,5 @@ public interface ContestRepo {
 
     Contest save(Contest contest);
 
-    Optional<Contest> findDefaultContestBySeason(UUID seasonId);
+    Optional<Contest> findMainBySeasonId(UUID seasonId);
 }

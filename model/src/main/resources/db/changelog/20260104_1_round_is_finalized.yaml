@@ -1,0 +1,69 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260104_1_round_add_is_finalized
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_round
+            schemaName: public
+        - not:
+            - columnExists:
+                tableName: t_round
+                schemaName: public
+                columnName: c_is_finalized
+      changes:
+        - addColumn:
+            tableName: t_round
+            schemaName: public
+            columns:
+              - column:
+                  name: c_is_finalized
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 20260104_2_round_backfill_is_finalized_from_status
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_round
+            schemaName: public
+        - columnExists:
+            tableName: t_round
+            schemaName: public
+            columnName: c_status
+        - columnExists:
+            tableName: t_round
+            schemaName: public
+            columnName: c_is_finalized
+      changes:
+        - update:
+            tableName: t_round
+            schemaName: public
+            columns:
+              - column:
+                  name: c_is_finalized
+                  valueBoolean: true
+            where: "c_status = 'FINALISED'"
+
+  - changeSet:
+      id: 20260104_3_round_drop_status
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_round
+            schemaName: public
+        - columnExists:
+            tableName: t_round
+            schemaName: public
+            columnName: c_status
+      changes:
+        - dropColumn:
+            tableName: t_round
+            schemaName: public
+            columnName: c_status

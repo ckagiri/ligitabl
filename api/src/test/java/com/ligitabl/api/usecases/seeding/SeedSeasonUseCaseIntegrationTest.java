@@ -257,13 +257,13 @@ class SeedSeasonUseCaseIntegrationTest extends AbstractPostgresIT {
         private void insertRounds() {
             for (int i = 1; i <= TOTAL_ROUNDS; i++) {
                 jdbc.update(
-                        "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_status) VALUES (?,?,?,?,?,?)",
+                        "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized) VALUES (?,?,?,?,?,?)",
                         UUID.randomUUID(),
                         seasonId,
                         "Round " + i,
                         "round-" + i,
                         i,
-                        "OPEN");
+                        false);
             }
         }
 

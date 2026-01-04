@@ -15,4 +15,6 @@ public interface RoundRepo {
     Optional<Round> findBySeasonIdAndPosition(UUID seasonId, int position);
 
     List<Round> findBySeasonIdOrderByPosition(UUID id);
+
+    Round save(Round round);
 }

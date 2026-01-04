@@ -1,13 +1,11 @@
 package com.ligitabl.api.client;
 
-import java.net.URI;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
-import org.springframework.web.util.UriComponentsBuilder;
 
 import com.ligitabl.api.client.footballdata.CompetitionResponse;
 import com.ligitabl.api.client.footballdata.MatchesResponse;
@@ -83,7 +81,6 @@ public class FootballDataClient {
      * Endpoint: GET /matches?competitions={code}&date={date}
      */
     public Either<ApiError, MatchesResponse> getMatchesForDate(String competitionCode, LocalDate date) {
-
         log.debug("Fetching matches for date: competition={}, date={}", competitionCode, date);
 
         try {
@@ -112,15 +109,15 @@ public class FootballDataClient {
     }
 
     public Either<ApiError, MatchesResponse> getMatchesForCompetition(String competitionCode) {
-        URI uri = UriComponentsBuilder.fromPath("/competitions/{competitionCode}/matches")
-                .build(competitionCode);
-        log.info("Fetching matches for competition: {}", uri);
+        log.info("Fetching matches for competition: {}", competitionCode);
 
         try {
             // Optimized endpoint: /matches?competitions=PL&date=2024-12-28
             var response = webClient
                     .get()
-                    .uri(uri)
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/competitions/{competitionCode}/matches")
+                            .build(competitionCode))
                     .retrieve()
                     .bodyToMono(MatchesResponse.class)
                     .block();

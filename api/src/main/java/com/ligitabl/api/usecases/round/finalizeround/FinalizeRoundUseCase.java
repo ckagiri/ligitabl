@@ -4,7 +4,6 @@ import com.ligitabl.api.domain.StandingsCalculatorService;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.domain.service.ScoringEngine;
-import com.ligitabl.model.domain.standings.stats.Standing;
 import com.ligitabl.model.repo.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +24,6 @@ public class FinalizeRoundUseCase {
 
     private final RoundRepo roundRepo;
     private final SeasonRepo seasonRepo;
-    private final TeamRepo teamRepo;
     private final MatchRepo matchRepo;
     private final StandingsRepo standingsRepo;
     private final SeasonPredictionRepo predictionRepo;
@@ -62,6 +60,9 @@ public class FinalizeRoundUseCase {
     }
 
     private Either<FinalizeRoundError, Void> validateRoundReady(Round round, Season season) {
+        if (round.isFinalized()) {
+            return Either.left(new FinalizeRoundError.AlreadyFinalized(round.getId()));
+        }
         List<Match> matches = matchRepo.findByRoundId(round.getId());
         RoundStatus status = round.computeStatus(matches);
         if (status != RoundStatus.FINALISED) {
@@ -107,7 +108,7 @@ public class FinalizeRoundUseCase {
             }
 
             // Step 5: Advance current round or complete season
-            advanceRound(season, round, isLastRound);
+            advanceCurrentRound(season, round, isLastRound);
 
             // STEP 6: Send Notifications (TODO: implement async)
 
@@ -138,10 +139,10 @@ public class FinalizeRoundUseCase {
         try {
             Either<FinalizeRoundError, List<StandingsTeamRank>> calculation = standingsCalculator
                 .calculateRankings(season.getId(), round.getPosition())
-                .mapLeft(error -> (FinalizeRoundError) new FinalizeRoundError.StandingsValidationFailed(error.toString()));
+                .mapLeft(error -> new FinalizeRoundError.StandingsValidationFailed(error.toString()));
 
             if (calculation.isLeft()) {
-            return Either.left(calculation.getLeft());
+                return Either.left(calculation.getLeft());
             }
 
             List<StandingsTeamRank> rankings = calculation.get();
@@ -275,8 +276,14 @@ public class FinalizeRoundUseCase {
         }
     }
 
-    // STEP 5: Advance Round or Complete Season
-    private void advanceRound(Season season, Round currentRound, boolean isLastRound) {
+    // STEP 5: Finalize & Advance CurrentRound or Complete Season
+    private void advanceCurrentRound(Season season, Round currentRound, boolean isLastRound) {
+        // first finalize current round
+        currentRound.setFinalized(true);
+        roundRepo.save(currentRound);
+
+        log.info("Round {} marked as finalized", currentRound.getPosition());
+
         if (isLastRound) {
             season.setCompleted(true);
             season.setCompletedAt(now());

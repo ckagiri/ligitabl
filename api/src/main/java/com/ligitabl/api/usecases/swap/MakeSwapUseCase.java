@@ -15,6 +15,7 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.domain.SwapChange;
+import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -29,6 +30,7 @@ public class MakeSwapUseCase {
     private final SeasonPredictionRepo predictionRepo;
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
+    private final MatchRepo matchRepo;
     private final Clock clock;
 
     private static final Duration SWAP_COOLDOWN = Duration.ofHours(24);
@@ -68,7 +70,13 @@ public class MakeSwapUseCase {
                 .findById(season.getCurrentRoundId())
                 .orElseThrow(() -> new IllegalStateException("Current round not found"));
 
-        RoundStatus status = currentRound.getStatus();
+        RoundStatus status;
+        if (currentRound.isFinalized()) {
+            status = RoundStatus.FINALISED;
+        } else {
+            var matches = matchRepo.findByRoundId(currentRound.getId());
+            status = (matches == null || matches.isEmpty()) ? RoundStatus.OPEN : currentRound.computeStatus(matches);
+        }
 
         return status == RoundStatus.OPEN ? Either.right(null) : Either.left(new SwapError.RoundNotOpen(status.name()));
     }

@@ -142,6 +142,21 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
         return Optional.ofNullable(MAPPER.map(record));
     }
 
+    @Override
+    public Optional<Season> findActiveSeason(UUID competitionId) {
+        if (competitionId == null) {
+            throw new IllegalArgumentException("competitionId must not be null");
+        }
+
+        var record = dsl.selectFrom(T_SEASON)
+                .where(T_SEASON.FK_COMPETITION_ID.eq(competitionId).and(T_SEASON.C_COMPLETED.eq(false)))
+                .orderBy(T_SEASON.C_START_DATE.desc())
+                .limit(1)
+                .fetchOne();
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
     private static class SeasonRecordMapper implements RecordMapper<SeasonRecord, Season> {
         @Override
         public Season map(SeasonRecord record) {

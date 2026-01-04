@@ -201,7 +201,7 @@ class MakeSwapUseCaseIntegrationTest extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject swap when round not open")
         void shouldRejectWhenRoundNotOpen() {
-            jdbcTemplate.update("UPDATE t_round SET c_status = ? WHERE pk_id = ?", RoundStatus.LOCKED.name(), roundId);
+            jdbcTemplate.update("UPDATE t_round SET c_is_finalized = true WHERE pk_id = ?", roundId);
 
             Either<SwapError, SwapResult> result = useCase.execute(userId, new SwapCommand("ARS", "LIV"));
 
@@ -295,14 +295,15 @@ class MakeSwapUseCaseIntegrationTest extends AbstractPostgresIT {
     }
 
     private void insertRound(UUID id, UUID seasonId, int position, RoundStatus status) {
+        boolean isFinalized = status == RoundStatus.FINALISED;
         jdbcTemplate.update(
-                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_status) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized) VALUES (?,?,?,?,?,?)",
                 id,
                 seasonId,
                 "Round " + position,
                 "round-" + position,
                 position,
-                status.name());
+                isFinalized);
     }
 
     private void insertUser(UUID id, String email) {

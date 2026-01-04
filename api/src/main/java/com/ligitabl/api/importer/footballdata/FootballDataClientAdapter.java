@@ -34,9 +34,7 @@ public class FootballDataClientAdapter implements FootballDataGateway {
     public Either<ImportError, ExternalCompetition> fetchCompetition(CompetitionCode code) {
         log.debug("Fetching competition via adapter: {}", code.getValue());
 
-        return client.getCompetition(code.getValue())
-                .mapLeft(this::mapApiError)
-                .flatMap(this::mapCompetitionResponse);
+        return client.getCompetition(code.getValue()).mapLeft(this::mapApiError).flatMap(this::mapCompetitionResponse);
     }
 
     @Override

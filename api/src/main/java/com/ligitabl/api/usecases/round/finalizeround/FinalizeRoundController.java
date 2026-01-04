@@ -47,25 +47,9 @@ public class FinalizeRoundController {
                                     ResponseEntity.badRequest().body(new ErrorResponse(
                                             String.format("Round %s not ready: %s", roundId, reason)
                                     ));
-                            case FinalizeRoundError.RoundNotLocked e ->
-                                    ResponseEntity.badRequest().body(new ErrorResponse(
-                                            "Round is not locked. Current status: " + e.currentStatus()
-                                    ));
-                            case FinalizeRoundError.CancelledMatchesExist e ->
-                                    ResponseEntity.badRequest().body(new ErrorResponse(
-                                            "Cannot finalize: " + e.matchIds().size() + " CANCELLED matches require admin resolution"
-                                    ));
                             case FinalizeRoundError.StandingsValidationFailed e ->
                                     ResponseEntity.badRequest().body(new ErrorResponse(
                                             "Standings validation failed: " + e.reason()
-                                    ));
-                            case FinalizeRoundError.AlreadyFinalized e ->
-                                    ResponseEntity.badRequest().body(new ErrorResponse(
-                                            "Round is already finalized"
-                                    ));
-                            case FinalizeRoundError.ScoringFailed(UUID userId, String reason) ->
-                                    ResponseEntity.internalServerError().body(new ErrorResponse(
-                                            String.format("Scoring failed for user %s: %s", userId, reason)
                                     ));
                             case FinalizeRoundError.TransactionFailed(String reason) ->
                                     ResponseEntity.internalServerError().body(new ErrorResponse(
