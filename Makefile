@@ -1,5 +1,6 @@
 # ==============================================================================
 # Makefile for ligitabl (Spring Boot + Maven + Docker)
+# SAFETY-FIRST: No fallbacks, explicit environments, loud failures
 # ==============================================================================
 
 # ------------------------------------------------------------------------------
@@ -18,21 +19,33 @@ PORT ?= 8080
 DOCKER_COMPOSE ?= docker compose
 
 # ------------------------------------------------------------------------------
-# Environment Configuration (SIMPLIFIED)
+# Environment Configuration (SAFETY-FIRST)
 # ------------------------------------------------------------------------------
-# Safety first: Use test environment by default
+# Defaults to test for maximum safety
 ENV ?= test
-HOST_DB_PORT ?= 55432
 
-# Load environment file based on ENV
+# Only allow specific environment values
+VALID_ENVS := test dev prod
+ifeq (,$(filter $(ENV),$(VALID_ENVS)))
+    $(error ❌ Invalid ENV='$(ENV)'. Valid options: test, dev, prod)
+endif
+
+# Environment files (no fallbacks!)
 ENV_FILE := .env.$(ENV)
 ENV_LOCAL_FILE := .env.$(ENV).local
 
-# Load base environment file
--include $(ENV_FILE)
+# Verify environment file exists - FAIL LOUDLY if not
+ifeq (,$(wildcard $(ENV_FILE)))
+    $(error ❌ $(ENV_FILE) not found!\
+    \nCreate it with: cp env.$(ENV).template $(ENV_FILE)\
+    \nThen edit with your settings.)
+endif
+
+# Load environment files
+include $(ENV_FILE)
 export
 
-# Load local overrides (gitignored)
+# Load local overrides if present (optional)
 -include $(ENV_LOCAL_FILE)
 export
 
@@ -40,13 +53,78 @@ export
 SEEDING_CONFIG ?= seeding-config.yaml
 
 # ------------------------------------------------------------------------------
+# Production Safety Checks
+# ------------------------------------------------------------------------------
+ifeq ($(ENV),prod)
+    # Verify PROD_CONFIRMED is set to prevent accidental prod operations
+    ifndef PROD_CONFIRMED
+        $(error ❌ PRODUCTION ENVIRONMENT BLOCKED!\
+        \n\
+        \n⚠️⚠️⚠️  YOU ARE TARGETING PRODUCTION  ⚠️⚠️⚠️\
+        \n\
+        \nTo confirm, run:\
+        \n  make <target> ENV=prod PROD_CONFIRMED=yes\
+        \n\
+        \nBe ABSOLUTELY CERTAIN this is what you want!)
+    endif
+
+    ifneq ($(PROD_CONFIRMED),yes)
+        $(error ❌ PROD_CONFIRMED must be 'yes' (you provided: '$(PROD_CONFIRMED)')\
+        \nRun: make <target> ENV=prod PROD_CONFIRMED=yes)
+    endif
+
+    # Extra warning for destructive operations
+    PROD_WARNING := 🔥🔥🔥 PRODUCTION DATABASE 🔥🔥🔥
+endif
+
+# ------------------------------------------------------------------------------
+# Database Name Safety Validation
+# ------------------------------------------------------------------------------
+# Prevent common production-like database names in test/dev environments
+ifeq ($(ENV),test)
+    # Test environment should have 'test' in the name
+    ifeq (,$(findstring test,$(DB_NAME)))
+        $(warning ⚠️  WARNING: DB_NAME='$(DB_NAME)' doesn't contain 'test')
+        $(warning ⚠️  Expected something like: ligitabl_test)
+        $(warning ⚠️  Double-check your .env.test file!)
+    endif
+endif
+
+ifeq ($(ENV),dev)
+    # Dev environment should have 'dev' in the name
+    ifeq (,$(findstring dev,$(DB_NAME)))
+        $(warning ⚠️  WARNING: DB_NAME='$(DB_NAME)' doesn't contain 'dev')
+        $(warning ⚠️  Expected something like: ligitabl_dev)
+        $(warning ⚠️  Double-check your .env.dev file!)
+    endif
+endif
+
+# Block obvious production database names in test/dev
+FORBIDDEN_NAMES := ligitabl_prod production prod_db db_prod
+ifneq ($(ENV),prod)
+    ifneq (,$(filter $(DB_NAME),$(FORBIDDEN_NAMES)))
+        $(error ❌ BLOCKED: DB_NAME='$(DB_NAME)' looks like production!\
+        \nYou're using ENV=$(ENV) but targeting a prod-like database.\
+        \nCheck your $(ENV_FILE) file.)
+    endif
+endif
+
+# ------------------------------------------------------------------------------
 # Help & Info
 # ------------------------------------------------------------------------------
 .PHONY: help
 help: ## Show this help message
-	@echo "ligitabl Makefile - Current environment: $(ENV)"
-	@echo "Environment file: $(ENV_FILE) $(if $(wildcard $(ENV_FILE)),(found),(NOT FOUND))"
-	@echo "Local overrides: $(ENV_LOCAL_FILE) $(if $(wildcard $(ENV_LOCAL_FILE)),(found),(NOT FOUND))"
+	@echo "ligitabl Makefile - SAFETY-FIRST Edition"
+	@echo ""
+	@echo "Current environment: $(ENV)"
+	@echo "Environment file: $(ENV_FILE) ✓"
+	@echo "Local overrides: $(ENV_LOCAL_FILE) $(if $(wildcard $(ENV_LOCAL_FILE)),(found),(not present))"
+	@echo "Database: $(DB_NAME)"
+	@echo ""
+	@echo "Environments:"
+	@echo "  test (default) - Safe for experiments, destructive ops allowed"
+	@echo "  dev            - Development database, requires confirmation for drops"
+	@echo "  prod           - Production, requires PROD_CONFIRMED=yes flag"
 	@echo ""
 	@echo "Available targets:"
 	@grep -E '^[a-zA-Z_-]+:.*?## ' $(MAKEFILE_LIST) | \
@@ -54,19 +132,49 @@ help: ## Show this help message
 		sort
 
 .PHONY: env-info
-env-info: ## Show current environment configuration
-	@echo "Current environment: $(ENV)"
-	@echo "Environment file: $(ENV_FILE)"
-	@echo "Local overrides: $(ENV_LOCAL_FILE)"
+env-info: ## Show detailed environment configuration
+	@echo "╔════════════════════════════════════════════════════════════╗"
+	@echo "║                  Environment Configuration                  ║"
+	@echo "╚════════════════════════════════════════════════════════════╝"
 	@echo ""
-	@echo "Database configuration:"
-	@echo "  DB_HOST: $(DB_HOST)"
-	@echo "  DB_PORT: $(DB_PORT)"
-	@echo "  DB_NAME: $(DB_NAME)"
-	@echo "  DB_USER: $(DB_USER)"
-	@echo "  HOST_DB_PORT: $(HOST_DB_PORT)"
+	@echo "Environment: $(ENV)"
+	@echo "Config file: $(ENV_FILE)"
+	@echo "Local file:  $(ENV_LOCAL_FILE) $(if $(wildcard $(ENV_LOCAL_FILE)),(✓ present),(not present))"
 	@echo ""
-	@echo "To use dev environment: make <target> ENV=dev"
+	@echo "Database Settings:"
+	@echo "  Host:     $(DB_HOST)"
+	@echo "  Port:     $(DB_PORT)"
+	@echo "  Database: $(DB_NAME)"
+	@echo "  User:     $(DB_USER)"
+	@echo "  App Port: $(PORT)"
+	@echo ""
+	@echo "Usage Examples:"
+	@echo "  Test DB:  make dev-reset"
+	@echo "  Dev DB:   make dev-reset ENV=dev"
+	@echo "  Prod DB:  make migrate ENV=prod PROD_CONFIRMED=yes"
+	@echo ""
+ifeq ($(ENV),prod)
+	@echo "⚠️⚠️⚠️  YOU ARE IN PRODUCTION MODE  ⚠️⚠️⚠️"
+	@echo ""
+endif
+
+.PHONY: env-check
+env-check: ## Validate environment files exist
+	@echo "Checking environment files..."
+	@for env in test dev; do \
+		if [ ! -f .env.$$env ]; then \
+			echo "❌ .env.$$env not found"; \
+			echo "   Create it: cp env.$$env.template .env.$$env"; \
+		else \
+			echo "✓ .env.$$env exists"; \
+		fi; \
+	done
+	@echo ""
+	@if [ -f .env.prod ]; then \
+		echo "⚠️  .env.prod exists (should be gitignored)"; \
+	else \
+		echo "ℹ️  .env.prod not present (create only when needed)"; \
+	fi
 
 # ==============================================================================
 # BUILD TARGETS
@@ -122,51 +230,75 @@ model-codegen-local: ## Start DB, run migrations, then jOOQ codegen
 # ==============================================================================
 
 .PHONY: migrate
-migrate: ## Run Liquibase migrations
+migrate: ## Run Liquibase migrations (ENV=$(ENV))
+ifeq ($(ENV),prod)
+	@echo "$(PROD_WARNING)"
+	@echo "Running migrations on PRODUCTION: $(DB_NAME)"
+	@echo ""
+endif
 	mvn -q -Pliquibase -DskipTests -f model/pom.xml \
 		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
 		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
 		liquibase:update
 
 .PHONY: drop-db
-drop-db: ## ⚠️  Drop the database (ENV=$(ENV))
-	@echo "⚠️  WARNING: About to drop database '$(DB_NAME)' (ENV=$(ENV))"
-	@if [ "$(ENV)" = "dev" ]; then \
-		echo "⚠️  You are targeting the DEV environment!"; \
-		read -p "Are you sure? Type 'yes' to confirm: " confirm; \
-		if [ "$$confirm" != "yes" ]; then \
-			echo "Aborted."; \
-			exit 1; \
-		fi; \
+drop-db: ## ⚠️  Drop the database (ENV=$(ENV), DB=$(DB_NAME))
+ifeq ($(ENV),prod)
+	@echo "╔══════════════════════════════════════════════════════════════╗"
+	@echo "║                    🔥🔥🔥 DANGER 🔥🔥🔥                         ║"
+	@echo "║         YOU ARE ABOUT TO DROP PRODUCTION DATABASE            ║"
+	@echo "╚══════════════════════════════════════════════════════════════╝"
+	@echo ""
+	@echo "Database: $(DB_NAME)"
+	@echo "Host:     $(DB_HOST)"
+	@echo ""
+	@read -p "Type the database name '$(DB_NAME)' to confirm: " confirm; \
+	if [ "$$confirm" != "$(DB_NAME)" ]; then \
+		echo "❌ Aborted. Input did not match."; \
+		exit 1; \
 	fi
+else ifeq ($(ENV),dev)
+	@echo "⚠️  WARNING: About to drop DEV database: $(DB_NAME)"
+	@read -p "Type 'yes' to confirm: " confirm; \
+	if [ "$$confirm" != "yes" ]; then \
+		echo "❌ Aborted."; \
+		exit 1; \
+	fi
+else
+	@echo "ℹ️  Dropping TEST database: $(DB_NAME)"
+endif
 	@if ! docker ps --format '{{.Names}}' | grep -q '^ligitabl-db$$'; then \
-		echo "Postgres container 'ligitabl-db' not running. Start it with 'make compose-up-db'"; \
+		echo "❌ Postgres container 'ligitabl-db' not running."; \
+		echo "   Start it: make compose-up-db"; \
 		exit 1; \
 	fi
 	docker exec -i ligitabl-db psql -U $(DB_USER) -d postgres -v ON_ERROR_STOP=1 \
 		-c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$(DB_NAME)';" || true
 	docker exec -i ligitabl-db psql -U $(DB_USER) -d postgres -v ON_ERROR_STOP=1 \
 		-c "DROP DATABASE IF EXISTS $(DB_NAME) WITH (FORCE);"
+	@echo "✓ Database $(DB_NAME) dropped"
 
 .PHONY: reset-db
 reset-db: ## ⚠️  Drop and recreate the database (ENV=$(ENV))
 	$(MAKE) drop-db
+	@echo "Creating database: $(DB_NAME)"
 	docker exec -i ligitabl-db psql -U $(DB_USER) -d postgres -v ON_ERROR_STOP=1 \
 		-c "CREATE DATABASE $(DB_NAME) OWNER $(DB_USER);"
+	@echo "✓ Database $(DB_NAME) created"
 
 # ==============================================================================
 # SEEDING TARGETS
 # ==============================================================================
 
 .PHONY: db-seed
-db-seed: ## Seed reference data
+db-seed: ## Seed reference data (ENV=$(ENV))
 	$(MAKE) compose-up-db
 	mvn -q -pl seed -am -DskipTests package
 	java -Dseed.main=seeding/main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar \
 		--spring.profiles.active=default
 
 .PHONY: db-seed-demo
-db-seed-demo: ## Seed demo league data
+db-seed-demo: ## Seed demo league data (ENV=$(ENV))
 	$(MAKE) compose-up-db
 	mvn -q -pl seed -am -DskipTests package
 	java -Dseed.main=seeding/demo-main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar \
@@ -174,21 +306,21 @@ db-seed-demo: ## Seed demo league data
 	$(MAKE) db-seed-season SEEDING_CONFIG=seeding-config-demo.yaml
 
 .PHONY: db-seed-season
-db-seed-season: ## Seed season extras
+db-seed-season: ## Seed season extras (ENV=$(ENV))
 	$(MAKE) compose-up-db
 	$(MAKE) api-build
 	java -jar $(JAR) --spring.main.web-application-type=none --seed-season \
 		--seeding.config=$(SEEDING_CONFIG)
 
 .PHONY: db-seed-users
-db-seed-users: ## Seed users for testing
+db-seed-users: ## Seed users for testing (ENV=$(ENV))
 	$(MAKE) compose-up-db
 	mvn -q -pl seed -am -DskipTests package
 	java -Dseed.main=seeding/main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar \
 		--spring.profiles.active=default
 
 .PHONY: db-seed-all
-db-seed-all: ## Seed both reference and demo data
+db-seed-all: ## Seed both reference and demo data (ENV=$(ENV))
 	$(MAKE) compose-up-db
 	mvn -q -pl seed -am -DskipTests package
 	java -Dseed.main=seeding/main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar \
@@ -201,16 +333,16 @@ db-seed-all: ## Seed both reference and demo data
 # ==============================================================================
 
 .PHONY: import-competition
-import-competition: ## Import matches for a competition (COMP=XX, ENV=test by default)
+import-competition: ## Import matches for a competition (COMP=XX, ENV=$(ENV))
 	@if [ -z "$(COMP)" ]; then \
-		echo "Error: COMP is required"; \
-		echo "Usage: make import-competition COMP=PL [ENV=test|dev]"; \
+		echo "❌ Error: COMP is required"; \
+		echo "Usage: make import-competition COMP=PL [ENV=test|dev|prod]"; \
 		exit 1; \
-	fi; \
-	FOOTBALL_DATA_API_TOKEN=$${FOOTBALL_DATA_API_TOKEN:-$${API_FOOTBALL_DATA_KEY:-}}; \
+	fi
+	@FOOTBALL_DATA_API_TOKEN=$${FOOTBALL_DATA_API_TOKEN:-$${API_FOOTBALL_DATA_KEY:-}}; \
 	if [ -z "$$FOOTBALL_DATA_API_TOKEN" ] || [ "$$FOOTBALL_DATA_API_TOKEN" = "your-api-token-here" ]; then \
-		echo "Error: FOOTBALL_DATA_API_TOKEN is not set"; \
-		echo "Set API_FOOTBALL_DATA_KEY in .env.$(ENV).local"; \
+		echo "❌ Error: FOOTBALL_DATA_API_TOKEN is not set"; \
+		echo "Set API_FOOTBALL_DATA_KEY in $(ENV_LOCAL_FILE)"; \
 		exit 1; \
 	fi; \
 	export FOOTBALL_DATA_API_TOKEN; \
@@ -225,23 +357,23 @@ import-competition: ## Import matches for a competition (COMP=XX, ENV=test by de
 		--workflow.exit-after=true
 
 .PHONY: import-pl
-import-pl: ## Import Premier League (ENV=test by default)
+import-pl: ## Import Premier League (ENV=$(ENV))
 	$(MAKE) import-competition COMP=PL
 
 .PHONY: import-bl
-import-bl: ## Import Bundesliga (ENV=test by default)
+import-bl: ## Import Bundesliga (ENV=$(ENV))
 	$(MAKE) import-competition COMP=BL
 
 .PHONY: import-sa
-import-sa: ## Import Serie A (ENV=test by default)
+import-sa: ## Import Serie A (ENV=$(ENV))
 	$(MAKE) import-competition COMP=SA
 
 .PHONY: import-pd
-import-pd: ## Import La Liga (ENV=test by default)
+import-pd: ## Import La Liga (ENV=$(ENV))
 	$(MAKE) import-competition COMP=PD
 
 .PHONY: import-fl1
-import-fl1: ## Import Ligue 1 (ENV=test by default)
+import-fl1: ## Import Ligue 1 (ENV=$(ENV))
 	$(MAKE) import-competition COMP=FL1
 
 # ==============================================================================
@@ -271,13 +403,15 @@ compose-up: ## Start app + postgres
 	$(DOCKER_COMPOSE) up -d --build
 
 .PHONY: compose-up-db
-compose-up-db: ## Start postgres (uses ENV=$(ENV))
-	@echo "Starting database for ENV=$(ENV) ($(DB_NAME) on port $(DB_PORT))"
-	DB_PORT=$(if $(DB_PORT),$(DB_PORT),$(HOST_DB_PORT)) $(DOCKER_COMPOSE) up -d db
+compose-up-db: ## Start postgres (ENV=$(ENV), DB=$(DB_NAME))
+	@echo "Starting database for ENV=$(ENV)"
+	@echo "  Database: $(DB_NAME)"
+	@echo "  Port:     $(DB_PORT)"
+	DB_PORT=$(DB_PORT) $(DOCKER_COMPOSE) up -d db
 
 .PHONY: compose-up-db-attached
 compose-up-db-attached: ## Start postgres with logs
-	DB_PORT=$(if $(DB_PORT),$(DB_PORT),$(HOST_DB_PORT)) $(DOCKER_COMPOSE) up db
+	DB_PORT=$(DB_PORT) $(DOCKER_COMPOSE) up db
 
 .PHONY: compose-stop-db
 compose-stop-db: ## Stop postgres
@@ -305,7 +439,7 @@ compose-restart-app: ## Restart app container
 	$(DOCKER_COMPOSE) restart app
 
 .PHONY: compose-refresh
-compose-refresh: ## Rebuild and restart app
+compose-refresh: ## Rebuild and restart app (ENV=$(ENV))
 	$(MAKE) compose-stop-app
 	$(MAKE) compose-stop-db
 	$(MAKE) compose-up-db
@@ -328,11 +462,16 @@ compose-down: ## Stop and remove services/volumes
 # ==============================================================================
 
 .PHONY: run
-run: $(JAR) ## Run the built JAR
+run: $(JAR) ## Run the built JAR (ENV=$(ENV))
+ifeq ($(ENV),prod)
+	@echo "$(PROD_WARNING)"
+	@echo "Starting application with PRODUCTION database"
+	@echo ""
+endif
 	java -jar $(JAR)
 
 .PHONY: run-app
-run-app: ## Start DB and run the app JAR
+run-app: ## Start DB and run the app JAR (ENV=$(ENV))
 	$(MAKE) compose-up-db
 	$(MAKE) run
 

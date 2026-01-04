@@ -3,7 +3,7 @@ services:
     image: postgres:16
     container_name: ligitabl-db
     env_file:
-      - .env
+      - ${ENV_FILE:-.env.test}
     environment:
       POSTGRES_DB: ${DB_NAME:-ligitabl}
       POSTGRES_USER: ${DB_USER:-ligitabl}
@@ -28,7 +28,7 @@ services:
       db:
         condition: service_healthy
     env_file:
-      - .env
+      - ${ENV_FILE:-.env.test}
     environment:
       # Inside the container, connect to the 'db' service directly
       DB_HOST: db

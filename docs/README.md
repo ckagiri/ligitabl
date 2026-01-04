@@ -13,9 +13,15 @@
 
 ## Environment files (`.env`)
 
-The root `Makefile` supports environment layering for local dev:
+The root `Makefile` is safety-first and uses explicit environments.
 
-- Loads `.env` if present.
-- Also loads `.env.local` if present (recommended for secrets and machine-specific overrides).
+- Default is `ENV=test` (uses `.env.test`).
+- Use `ENV=dev` (uses `.env.dev`) for daily development.
+- Use `ENV=prod` (uses `.env.prod`) only with explicit confirmation.
 
-Tip: for a “test” environment, you can export variables from a separate file in your shell before running Make targets.
+Optional per-environment local overrides (gitignored): `.env.test.local`, `.env.dev.local`, `.env.prod.local`.
+
+Handy commands:
+
+- `make env-check`
+- `make env-info` (or `make env-info ENV=dev`)
