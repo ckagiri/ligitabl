@@ -49,6 +49,27 @@ Tips:
 - If a chain gets long, consider naming the builder or extracting sub-expressions.
 - Keep chains free of side effects; compute values before chaining.
 
+## Dependency inspection (dependency:tree)
+
+When investigating a vulnerability report or a weird classpath mismatch, use Maven's dependency tree to confirm
+the **resolved** version.
+
+Examples:
+
+```bash
+# Show the resolved PostgreSQL JDBC driver version pulled into the API module
+mvn -pl api -am -DskipTests dependency:tree -Dincludes=org.postgresql:postgresql -Dverbose
+
+# If you need to see it in context (no filter), drop -Dincludes and/or -Dverbose
+mvn -pl api -am -DskipTests dependency:tree
+```
+
+Tip: if the output is huge, pipe it through `rg`:
+
+```bash
+mvn -pl api -am -DskipTests dependency:tree -Dincludes=org.postgresql:postgresql -Dverbose | rg "org\\.postgresql:postgresql"
+```
+
 ## Running the API without a DB
 
 The default developer workflow assumes a database (local Docker Compose or Testcontainers in tests).
