@@ -2,6 +2,12 @@
 
 This guide covers formatting, running the backend with and without Postgres, Docker/Compose usage, jOOQ code generation, migrations, seeding, and troubleshooting.
 
+## Repo docs
+
+This repo has developer-facing documentation under `docs/` (this file, endpoints, debugging) plus additional internal runbooks/specs elsewhere in the repository.
+
+When changing behavior (endpoints, validation, persistence), update the relevant internal specs/runbooks and the public docs.
+
 ## Formatting (Palantir Java Format, 100-col width)
 
 This repo standardizes Java formatting with Spotless + Palantir Java Format (100 columns).
@@ -92,6 +98,37 @@ Makefile environment behavior:
 - The root `Makefile` also loads `.env.local` if present (recommended place for secrets; gitignored).
 - Most targets allow already-exported `DB_*` / `HOST_DB_PORT` vars in your shell to override `.env` (useful for `source .env.test && make ...`).
 - Importer targets intentionally disable that override (via `ALLOW_SHELL_DB_ENV=0`) so `make import-pl` reliably uses `.env` / `.env.local` for DB settings.
+
+## Environment files and Makefile behavior (.env)
+
+The root `Makefile` supports a simple environment layering model so local development and CI can share the same targets.
+
+### What gets loaded
+
+- `.env` is loaded if present.
+- `.env.local` is also loaded if present (recommended for secrets; typically gitignored).
+
+### Precedence (rule of thumb)
+
+- Values from your shell environment can override values from `.env` for most targets.
+- `.env.local` is intended to override `.env` for local developer-specific configuration.
+
+### Test and script environments
+
+- Some destructive smoke scripts and test helpers use a separate test env file (commonly `.env.test` and optional `.env.test.local`) to avoid clobbering your regular dev DB.
+- You can run Make targets against the test environment by exporting those variables in your shell first (example):
+
+```bash
+set -a
+source .env.test
+set +a
+
+make test-api-it
+```
+
+### Important exception: importer targets
+
+Importer targets intentionally prevent already-exported `DB_*` / `HOST_DB_PORT` values from overriding `.env` so that non-destructive imports run against your normal dev DB configuration.
 
 ### Option B: Local Postgres
 
@@ -194,6 +231,62 @@ Notes:
 - `test-api-it` runs only `*IT` tests (e.g., `StatusControllerIT`, round/competition integration tests) with a real
   Postgres via Testcontainers and Liquibase migrations.
 - `test-api-all` is a convenience wrapper that first runs `test-api-no-jooq` and then `test-api-it`.
+
+## Running tests (quick reference)
+
+Most day-to-day work uses Make targets (they encode the repo’s intended flags and profiles).
+
+### API
+
+- Core/unit API tests (skips `*IT`):
+
+```bash
+make test-api-core
+
+# Equivalent:
+mvn -q -pl api -am -DskipITs test
+```
+
+- DB-backed API integration tests (`*IT` via Testcontainers + Liquibase):
+
+```bash
+make test-api-it
+```
+
+- Full API suite (everything):
+
+```bash
+make test-api-all
+
+# Equivalent:
+mvn -pl api -am test
+```
+
+- Fast API tests without jOOQ/DB (installs model jar using `no-jooq` first):
+
+```bash
+make test-api-no-jooq
+```
+
+### Model + seed modules
+
+- Model tests:
+
+```bash
+make test-model
+```
+
+- Seed module tests (hermetic DB-backed via Testcontainers):
+
+```bash
+mvn -q -pl seed -am test
+```
+
+### Full repo
+
+```bash
+make test-all
+```
 
 ## Migrations and resets
 

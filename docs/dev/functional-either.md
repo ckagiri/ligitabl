@@ -1,99 +1,122 @@
-# Functional Either in LigiTabl
+# Functional `Either` in LigiTabl
 
-This project uses a right-biased `Either<L, R>` for clear, typed error handling and fluent composition.
+This project uses a right-biased `Either<L, R>` (`api/src/main/java/com/ligitabl/api/shared/Either.java`) for explicit, typed error handling and fluent composition.
 
-## Why Either?
+Convention:
+
+- `Left` = error/failure value
+- `Right` = success value
+
+## Why `Either`?
 
 - Makes error flows explicit in types (no hidden exceptions)
-- Encourages composition (map/flatMap) and predictable control flow
+- Encourages composition (`map`/`flatMap`) and predictable control flow
 - Keeps domain errors (Left) separate from success values (Right)
 
-## Quick reference
+## Quick reference (core API)
 
-- Factories:
-  - `Either.left(L)` / `Either.right(R)`
-  - `Either.ofNullable(R, L)` / `Either.ofOptional(Optional<R>, L)`
-  - `Either.combine(List<Either<L, ?>>)` and varargs: fail-fast, returns `Right(Unit)` when all succeed
-- Core ops (right-biased):
-  - `map`, `flatMap`, `mapLeft`, `bimap`, `swap`
-- Recovery:
-  - `getOrElse`, `orElse`, `recover(L -> R)`, `recoverWith(L -> Either<L,R>)`
-- Side-effects:
-  - `peek(R -> void)`, `peekLeft(L -> void)`, `peekBoth(L -> void, R -> void)`, `peekIf(Predicate<R>, Consumer<R>)`
-  - Logging helpers: `logLeft`, `logLeftWithException`, `logRight`
-- Conversion:
-  - `toOptional()`, `toOptionalLeft()`, and `toOptional(leftMapper)`
+### Construction
 
-## Lifting throwing code
+- `Either.left(L)` / `Either.right(R)`
+- `Either.ofNullable(R, L)` / `Either.ofOptional(Optional<R>, L)` (and supplier overloads)
+- `Either.combine(...)` fail-fast combine (returns `Right(Unit)` when all succeed)
 
-Pick ONE of these families depending on your needs:
+### Transform / compose (right-biased)
 
-- Recommended default (catch Exception, rethrow Error):
+- `map`, `flatMap`
+- `mapLeft`, `bimap`, `swap`
+- `filterOrElse(predicate, leftSupplier)` and `filter(predicate, errorProvider)`
 
-  - `liftException(CheckedFunction<R,T>, Function<Exception, L>)`
-  - `liftException(CheckedFunction<R,T>) // Left = Exception`
-  - `liftException(CheckedFunction<R,T>, L) // fixed Left`
-  - `fromException(CheckedSupplier<T>, Function<Exception, L>)` and overloads
-  - Behavior: preserves `InterruptedException` by re-setting the thread interrupt flag.
+### Recover
 
-- Catch-all boundary (catch Throwable, including Error) — use sparingly at process edges:
+- `getOrElse(value)` / `getOrElse(supplier)`
+- `getOrElseMap(left -> right)`
+- `getOrElseThrow(left -> exception)`
+- `orElse(other)` / `orElse(supplier)`
+- `recover(left -> right)` / `recoverWith(left -> Either)`
 
-  - `liftThrowable(CheckedFunction<R,T>, Function<Throwable, L>)` (identity overload available)
-  - `fromThrowable(CheckedSupplier<T>, Function<Throwable, L>)` (identity overload available)
+### Observe / log
 
-- Fail-fast checked-only (only catch checked Exception; runtime exceptions and Error propagate):
-  - `liftChecked(CheckedOnlyFunction<R,T>, ...)`
-  - `fromChecked(CheckedOnlySupplier<T>, ...)`
+- `peek(right -> void)`, `peekLeft(left -> void)`, `peekBoth(left -> void, right -> void)`
+- `peekIf(predicate, action)`
+- Logging helpers: `logLeft`, `logLeftWithException`, `logRight`
 
-Notes:
+### Convert / pattern-match
 
-- `CheckedFunction` and `CheckedSupplier` may throw any `Throwable`.
-- `InterruptedException` is handled specially: the interrupt flag is preserved.
+- `toOptional()`, `toOptionalLeft()`, `toOptional(leftMapper)`
+- `fold(leftMapper, rightMapper)`
+- `foldWithContext(context, leftBiMapper, rightBiMapper)`
 
-## Examples
+## Catching exceptions into `Either` (recommended)
 
-- Mapping and validation:
+The implementation provides a single, consistent “catching” API. Pick the variant based on how broad you want the catch to be.
+
+### `Either.catching` (recommended default)
+
+- Catches `Exception` (checked + runtime), but rethrows `Error`.
+- Preserves interrupts: if the thrown error is an `InterruptedException`, it re-sets the thread interrupt flag.
+
+Examples:
 
 ```java
-Either<DomainError, User> user = validator.validate(cmd)
-    .flatMap(Either.liftException(mapper::toEntity, DomainError::fromException))
-    .flatMap(guards::validate);
+// Supplier form (Right on success, Left on mapped Exception)
+Either<UseCaseError, Email> email = Either.catching(() -> Email.create(request.email()), UseCaseErrors::fromException);
+
+// Function form (use in flatMap chains)
+return either.flatMap(Either.catching(value -> mapper.map(value), UseCaseErrors::fromException));
 ```
 
-- Recover with a fallback value:
+### `Either.catchingAll` (use sparingly)
+
+- Catches _everything_, including `Error`.
+- Only use at process boundaries where you truly want to isolate failures.
 
 ```java
-Either<DomainError, Price> price = pricing.calculate(item)
-    .recover(err -> Price.zero());
-```
-
-- Log and continue:
-
-```java
-either.logLeft("CreateTeam", log)
-     .recoverWith(err -> Either.left(err));
-```
-
-- Catch-all boundary (e.g., last-chance adapter):
-
-```java
-Either<Throwable, Void> result = Either.fromThrowable(() -> {
+Either<Throwable, Void> result = Either.catchingAll(() -> {
     runBackgroundJob();
     return null;
 });
 ```
 
-## Best practices
+### `Either.catchingChecked` (fail-fast on bugs)
 
-- Prefer mapping exceptions to a small, well-typed domain error (e.g., `UseCaseError`) instead of leaking raw `Exception`/`Throwable`.
-  - Use the `errorMapper` overloads or the fixed-left overloads to normalize errors at boundaries.
-- Use `liftException/fromException` in application code. Reserve `liftThrowable/fromThrowable` for process boundaries.
-- Preserve interrupts: don’t swallow `InterruptedException` — the helpers already re-set the flag.
-- Keep `Left` values non-null (enforced by `Left` constructor).
-- Testing tips:
-  - Assert Right/Left with `isRight()/isLeft()` and then on `get()`/`getLeft()` accordingly.
-  - For side-effects, use `AtomicBoolean`/`AtomicReference` to assert consumers were called or not.
+- Catches _only checked_ exceptions.
+- Runtime exceptions and `Error` propagate (fail fast).
 
-## Changelog
+```java
+Either<Exception, String> text = Either.catchingChecked(() -> Files.readString(path));
+```
 
-- 2025-11-02: Introduced `peekBoth`, `liftThrowable/fromThrowable`. Consolidated lifting helpers and removed deprecated `Try` helpers.
+## Examples
+
+### Validation + mapping
+
+```java
+return requestValidator.validate(cmd)
+    .flatMap(valid -> Either.catching(() -> mapper.toEntity(valid), UseCaseErrors::fromException))
+    .flatMap(service::save);
+```
+
+### Branching without `if` chains
+
+```java
+return result.fold(
+    error -> ResponseEntity.badRequest().body(Map.of("message", error.getMessage())),
+    ok -> ResponseEntity.ok(ok)
+);
+```
+
+### Log errors but keep type-safety
+
+```java
+return useCase.execute(cmd)
+    .logLeft("Register", log)
+    .getOrElseThrow(UseCaseException::new);
+```
+
+## Best practices (repo conventions)
+
+- Map exceptions to a small, stable domain error type (e.g., `UseCaseError`) at the boundary; don’t leak raw `Exception`/`Throwable` widely.
+- Prefer `Either.catching(...)` in application code; reserve `catchingAll(...)` for true “last chance” boundaries.
+- Don’t swallow interrupts: the catching helpers already preserve them.
+- Avoid `null` inside `Either` values. Prefer domain objects or a `Unit` right value when you need “success with no payload”.
