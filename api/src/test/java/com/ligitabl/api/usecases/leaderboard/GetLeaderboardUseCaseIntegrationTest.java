@@ -2,6 +2,17 @@ package com.ligitabl.api.usecases.leaderboard;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalDate;
+import java.util.List;
+import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
@@ -18,15 +29,6 @@ import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.RoundResultRepo;
 import com.ligitabl.model.repo.RoundSubmissionRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
-import java.time.LocalDate;
-import java.util.List;
-import java.util.UUID;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 @SpringBootTest
 @DisplayName("GetLeaderboardUseCase Integration Tests")
@@ -336,11 +338,36 @@ class GetLeaderboardUseCaseIntegrationTest extends AbstractPostgresIT {
     private String defaultPhasesJson() {
         try {
             var phases = List.of(
-                    RoundSpan.builder().code("FS").name("Full Season").from(1).to(38).build(),
-                    RoundSpan.builder().code("Q1").name("Quarter 1").from(1).to(10).build(),
-                    RoundSpan.builder().code("Q2").name("Quarter 2").from(11).to(20).build(),
-                    RoundSpan.builder().code("Q3").name("Quarter 3").from(21).to(30).build(),
-                    RoundSpan.builder().code("Q4").name("Quarter 4").from(31).to(38).build());
+                    RoundSpan.builder()
+                            .code("FS")
+                            .name("Full Season")
+                            .from(1)
+                            .to(38)
+                            .build(),
+                    RoundSpan.builder()
+                            .code("Q1")
+                            .name("Quarter 1")
+                            .from(1)
+                            .to(10)
+                            .build(),
+                    RoundSpan.builder()
+                            .code("Q2")
+                            .name("Quarter 2")
+                            .from(11)
+                            .to(20)
+                            .build(),
+                    RoundSpan.builder()
+                            .code("Q3")
+                            .name("Quarter 3")
+                            .from(21)
+                            .to(30)
+                            .build(),
+                    RoundSpan.builder()
+                            .code("Q4")
+                            .name("Quarter 4")
+                            .from(31)
+                            .to(38)
+                            .build());
             return objectMapper.writeValueAsString(phases);
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to serialize phases", e);

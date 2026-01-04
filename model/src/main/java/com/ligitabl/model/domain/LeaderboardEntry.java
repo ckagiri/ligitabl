@@ -18,5 +18,4 @@ public record LeaderboardEntry(
         int maxScore,
         int totalZeroes,
         int totalSwaps,
-        int movement
-) {}
+        int movement) {}

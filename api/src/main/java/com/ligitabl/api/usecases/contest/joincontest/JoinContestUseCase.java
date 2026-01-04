@@ -2,6 +2,7 @@ package com.ligitabl.api.usecases.contest.joincontest;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.usecases.swap.SwapError;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 import lombok.RequiredArgsConstructor;
@@ -170,14 +171,12 @@ public class JoinContestUseCase {
         Round currentRound = roundRepo.findById(season.getCurrentRoundId())
                 .orElseThrow(() -> new IllegalStateException("Current round not found"));
 
-        var matches = matchRepo.findByRoundId(currentRound.getId());
         RoundStatus roundStatus;
         if (currentRound.isFinalized()) {
-                roundStatus = RoundStatus.FINALISED;
-        } else if (matches == null || matches.isEmpty()) {
-                roundStatus = RoundStatus.OPEN;
+            roundStatus = RoundStatus.FINALISED;
         } else {
-                roundStatus = currentRound.computeStatus(matches);
+            var matches = matchRepo.findByRoundId(currentRound.getId());
+            roundStatus = (matches == null || matches.isEmpty()) ? RoundStatus.OPEN : currentRound.computeStatus(matches);
         }
 
         int atRoundNumber;

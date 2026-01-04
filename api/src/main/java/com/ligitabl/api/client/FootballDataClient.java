@@ -116,8 +116,8 @@ public class FootballDataClient {
             var response = webClient
                     .get()
                     .uri(uriBuilder -> uriBuilder
-                        .path("/competitions/{competitionCode}/matches")
-                        .build(competitionCode))
+                            .path("/competitions/{competitionCode}/matches")
+                            .build(competitionCode))
                     .retrieve()
                     .bodyToMono(MatchesResponse.class)
                     .block();

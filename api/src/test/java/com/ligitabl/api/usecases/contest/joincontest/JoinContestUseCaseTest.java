@@ -88,7 +88,7 @@ class JoinContestUseCaseTest {
         defaultContest = createDefaultContest();
 
         useCase = new JoinContestUseCase(
-            competitionDefaults, seasonRepo, roundRepo, matchRepo, contestRepo, predictionRepo, entryRepo, clock);
+                competitionDefaults, seasonRepo, roundRepo, matchRepo, contestRepo, predictionRepo, entryRepo, clock);
     }
 
     @Test
@@ -135,7 +135,8 @@ class JoinContestUseCaseTest {
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
-        when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of(Match.builder().status(MatchStatus.LIVE).build()));
+        when(matchRepo.findByRoundId(round.getId()))
+                .thenReturn(List.of(Match.builder().status(MatchStatus.LIVE).build()));
         when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
         when(predictionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
         when(entryRepo.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -209,7 +210,8 @@ class JoinContestUseCaseTest {
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
-        when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of(Match.builder().status(MatchStatus.LIVE).build()));
+        when(matchRepo.findByRoundId(round.getId()))
+                .thenReturn(List.of(Match.builder().status(MatchStatus.LIVE).build()));
 
         Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
 

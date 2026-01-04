@@ -51,24 +51,22 @@ public class StandingsCalculatorService {
     public Either<StandingsError, Standings> calculateAndPersist(UUID seasonId, int roundPosition) {
         return calculateRankings(seasonId, roundPosition)
                 .flatMap(Either.catching(
-                    rankings -> {
-                        Standings standings = standingsRepo
-                                .findBySeasonAndRoundPosition(seasonId, roundPosition)
-                                .orElseGet(() -> Standings.builder()
-                                        .seasonId(seasonId)
-                                        .roundPosition(roundPosition)
-                                        .rankings(List.of())
-                                        .build());
+                        rankings -> {
+                            Standings standings = standingsRepo
+                                    .findBySeasonAndRoundPosition(seasonId, roundPosition)
+                                    .orElseGet(() -> Standings.builder()
+                                            .seasonId(seasonId)
+                                            .roundPosition(roundPosition)
+                                            .rankings(List.of())
+                                            .build());
 
-                        standings.setRankings(rankings);
-                        return standingsRepo.save(standings);
-                    },
-                    e -> {
-                        log.error("Failed to persist standings: season={}, round={}",
-                            seasonId, roundPosition, e);
-                        return new StandingsError.CalculationFailed(e.getMessage());
-                    }
-                ));
+                            standings.setRankings(rankings);
+                            return standingsRepo.save(standings);
+                        },
+                        e -> {
+                            log.error("Failed to persist standings: season={}, round={}", seasonId, roundPosition, e);
+                            return new StandingsError.CalculationFailed(e.getMessage());
+                        }));
     }
 
     private Either<StandingsError, StandingsData> fetchTeamsAndMatches(UUID seasonId, int roundPosition) {

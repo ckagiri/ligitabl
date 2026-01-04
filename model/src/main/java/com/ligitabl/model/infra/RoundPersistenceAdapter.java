@@ -77,7 +77,7 @@ public class RoundPersistenceAdapter implements RoundRepo {
                 .set(T_ROUND.C_NAME, round.getName())
                 .set(T_ROUND.C_SLUG, round.getSlug())
                 .set(T_ROUND.C_POSITION, round.getPosition())
-            .set(T_ROUND.C_IS_FINALIZED, round.isFinalized())
+                .set(T_ROUND.C_IS_FINALIZED, round.isFinalized())
                 .execute();
 
         return findById(id).orElseThrow(() -> new IllegalStateException("Round not found after create"));
@@ -93,7 +93,7 @@ public class RoundPersistenceAdapter implements RoundRepo {
                 .set(T_ROUND.C_NAME, round.getName())
                 .set(T_ROUND.C_SLUG, round.getSlug())
                 .set(T_ROUND.C_POSITION, round.getPosition())
-            .set(T_ROUND.C_IS_FINALIZED, round.isFinalized())
+                .set(T_ROUND.C_IS_FINALIZED, round.isFinalized())
                 .where(T_ROUND.PK_ID.eq(round.getId()))
                 .execute();
 

@@ -1,9 +1,9 @@
 package com.ligitabl.model.repo;
 
-import com.ligitabl.model.domain.LeaderboardEntry;
-
 import java.util.List;
 import java.util.UUID;
+
+import com.ligitabl.model.domain.LeaderboardEntry;
 
 /**
  * Repository for computing user contest leaderboards
@@ -27,10 +27,5 @@ public interface LeaderboardRepo {
      * @param toRound End of round range (inclusive)
      * @return List of leaderboard entries sorted by tiebreaker rules
      */
-    List<LeaderboardEntry> computeLeaderboard(
-            UUID contestId,
-            UUID seasonId,
-            int fromRound,
-            int toRound
-    );
+    List<LeaderboardEntry> computeLeaderboard(UUID contestId, UUID seasonId, int fromRound, int toRound);
 }

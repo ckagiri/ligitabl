@@ -460,43 +460,43 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
                 seasonId);
     }
 
-        private void insertTeamsForMatches() {
+    private void insertTeamsForMatches() {
         jdbcTemplate.update(
-            "INSERT INTO t_team (pk_id, c_name, c_short_name, c_slug, c_tla) VALUES (?,?,?,?,?)",
-            homeTeamId,
-            "Home Team",
-            "Home",
-            "home-team",
-            "HOM");
+                "INSERT INTO t_team (pk_id, c_name, c_short_name, c_slug, c_tla) VALUES (?,?,?,?,?)",
+                homeTeamId,
+                "Home Team",
+                "Home",
+                "home-team",
+                "HOM");
 
         jdbcTemplate.update(
-            "INSERT INTO t_team (pk_id, c_name, c_short_name, c_slug, c_tla) VALUES (?,?,?,?,?)",
-            awayTeamId,
-            "Away Team",
-            "Away",
-            "away-team",
-            "AWY");
-        }
+                "INSERT INTO t_team (pk_id, c_name, c_short_name, c_slug, c_tla) VALUES (?,?,?,?,?)",
+                awayTeamId,
+                "Away Team",
+                "Away",
+                "away-team",
+                "AWY");
+    }
 
-        private void clearMatchesForRound(UUID roundId) {
+    private void clearMatchesForRound(UUID roundId) {
         jdbcTemplate.update("DELETE FROM t_match WHERE fk_round_id = ?", roundId);
-        }
+    }
 
-        private void insertLockedMatch(UUID roundId, int matchDay) {
+    private void insertLockedMatch(UUID roundId, int matchDay) {
         jdbcTemplate.update(
-            "INSERT INTO t_match (pk_id, c_client_id, fk_round_id, fk_home_team_id, fk_away_team_id, c_slug, c_status, c_kick_off, c_venue, c_matchday) "
-                + "VALUES (?,?,?,?,?,?,?,?,?,?)",
-            UUID.randomUUID(),
-            1,
-            roundId,
-            homeTeamId,
-            awayTeamId,
-            "home-vs-away-" + matchDay,
-            MatchStatus.LIVE.name(),
-            OffsetDateTime.now().withNano(0),
-            "Test Stadium",
-            matchDay);
-        }
+                "INSERT INTO t_match (pk_id, c_client_id, fk_round_id, fk_home_team_id, fk_away_team_id, c_slug, c_status, c_kick_off, c_venue, c_matchday) "
+                        + "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                UUID.randomUUID(),
+                1,
+                roundId,
+                homeTeamId,
+                awayTeamId,
+                "home-vs-away-" + matchDay,
+                MatchStatus.LIVE.name(),
+                OffsetDateTime.now().withNano(0),
+                "Test Stadium",
+                matchDay);
+    }
 
     private void insertUser(UUID id, String email) {
         jdbcTemplate.update(

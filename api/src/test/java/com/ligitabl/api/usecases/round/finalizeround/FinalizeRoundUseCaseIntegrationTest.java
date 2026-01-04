@@ -2,13 +2,26 @@ package com.ligitabl.api.usecases.round.finalizeround;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ThreadLocalRandom;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.jdbc.core.JdbcTemplate;
+
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Score;
 import com.ligitabl.model.domain.SeasonPrediction;
 import com.ligitabl.model.domain.Standings;
@@ -23,18 +36,6 @@ import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.StandingsRepo;
 import com.ligitabl.model.repo.TeamRepo;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
-import java.time.ZoneOffset;
-import java.util.List;
-import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.jdbc.core.JdbcTemplate;
 
 @SpringBootTest
 @DisplayName("FinalizeRoundUseCase Integration Tests")
@@ -138,7 +139,8 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         var submissions = roundSubmissionRepo.findBySeasonAndRound(seasonId, 1);
         assertThat(submissions).hasSize(2);
         for (var submission : submissions) {
-            assertThat(roundResultRepo.findByRoundSubmissionId(submission.getId())).isPresent();
+            assertThat(roundResultRepo.findByRoundSubmissionId(submission.getId()))
+                    .isPresent();
         }
 
         // ensure current round advanced
@@ -232,7 +234,8 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
 
         assertThat(result.isRight()).isTrue();
 
-        Standings standings = standingsRepo.findBySeasonAndRoundPosition(seasonId, 1).orElseThrow();
+        Standings standings =
+                standingsRepo.findBySeasonAndRoundPosition(seasonId, 1).orElseThrow();
         assertThat(standings.isFinalised()).isTrue();
         assertThat(standings.getRankings()).hasSize(4);
 
@@ -247,7 +250,11 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
 
         // Top and bottom sanity
         assertThat(standings.getRankings().get(0).teamCode()).isEqualTo("ARS");
-        assertThat(standings.getRankings().get(standings.getRankings().size() - 1).teamCode()).isEqualTo("CHE");
+        assertThat(standings
+                        .getRankings()
+                        .get(standings.getRankings().size() - 1)
+                        .teamCode())
+                .isEqualTo("CHE");
     }
 
     @Test
@@ -383,7 +390,8 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         var result2 = finalizeRoundUseCase.execute(seasonId);
         assertThat(result2.isRight()).isTrue();
 
-        Standings standings = standingsRepo.findBySeasonAndRoundPosition(seasonId, 2).orElseThrow();
+        Standings standings =
+                standingsRepo.findBySeasonAndRoundPosition(seasonId, 2).orElseThrow();
 
         // Man City: draw in round 1 (1pt), win in round 2 (3pt) => 4pt total
         var manCityRank = standings.findByTeamCode("MCI").orElseThrow();
@@ -414,7 +422,8 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
 
         var submissions = roundSubmissionRepo.findBySeasonAndRound(seasonId, 1);
         assertThat(submissions).hasSize(1);
-        assertThat(roundResultRepo.findByRoundSubmissionId(submissions.get(0).getId())).isPresent();
+        assertThat(roundResultRepo.findByRoundSubmissionId(submissions.get(0).getId()))
+                .isPresent();
     }
 
     private void insertCompetition() {
@@ -430,11 +439,8 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
     private void insertSeason(int maxRounds, int totalTeams) throws Exception {
         int seasonClientId = ThreadLocalRandom.current().nextInt(1_000, 1_000_000);
 
-        List<TeamRank> initialRankings = List.of(
-                TeamRank.of("ARS", 1),
-                TeamRank.of("CHE", 2),
-                TeamRank.of("LIV", 3),
-                TeamRank.of("MCI", 4));
+        List<TeamRank> initialRankings =
+                List.of(TeamRank.of("ARS", 1), TeamRank.of("CHE", 2), TeamRank.of("LIV", 3), TeamRank.of("MCI", 4));
 
         String initialRankingsJson = objectMapper.writeValueAsString(initialRankings);
 
@@ -507,7 +513,8 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
                 .awayTeamId(away.getId())
                 .kickOff(OffsetDateTime.now(ZoneOffset.UTC))
                 .matchday(round.getPosition())
-                .slug(home.getCode().toLowerCase() + "-vs-" + away.getCode().toLowerCase() + "-" + round.getPosition() + "-cancelled")
+                .slug(home.getCode().toLowerCase() + "-vs-" + away.getCode().toLowerCase() + "-" + round.getPosition()
+                        + "-cancelled")
                 .status(MatchStatus.CANCELLED)
                 .score(null)
                 .build());
@@ -522,18 +529,16 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
                 .awayTeamId(away.getId())
                 .kickOff(OffsetDateTime.now(ZoneOffset.UTC).plusHours(2))
                 .matchday(round.getPosition())
-                .slug(home.getCode().toLowerCase() + "-vs-" + away.getCode().toLowerCase() + "-" + round.getPosition() + "-scheduled")
+                .slug(home.getCode().toLowerCase() + "-vs-" + away.getCode().toLowerCase() + "-" + round.getPosition()
+                        + "-scheduled")
                 .status(MatchStatus.SCHEDULED)
                 .score(null)
                 .build());
     }
 
     private void createPrediction(UUID userId, int atRoundNumber) {
-        List<TeamRank> rankings = List.of(
-                TeamRank.of("ARS", 1),
-                TeamRank.of("CHE", 2),
-                TeamRank.of("LIV", 3),
-                TeamRank.of("MCI", 4));
+        List<TeamRank> rankings =
+                List.of(TeamRank.of("ARS", 1), TeamRank.of("CHE", 2), TeamRank.of("LIV", 3), TeamRank.of("MCI", 4));
 
         seasonPredictionRepo.save(SeasonPrediction.builder()
                 .userId(userId)

@@ -1,10 +1,10 @@
 package com.ligitabl.model.infra;
 
 import static com.ligitabl.model.db.tables.TEntry.T_ENTRY;
+import static com.ligitabl.model.db.tables.TRound.T_ROUND;
 import static com.ligitabl.model.db.tables.TRoundResult.T_ROUND_RESULT;
 import static com.ligitabl.model.db.tables.TRoundSubmission.T_ROUND_SUBMISSION;
 import static com.ligitabl.model.db.tables.TUser.T_USER;
-import static com.ligitabl.model.db.tables.TRound.T_ROUND;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -89,38 +89,30 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
     }
 
     private record RankingData(
-            UUID userId,
-            String displayName,
-            int totalScore,
-            int maxScore,
-            int totalZeroes,
-            int totalSwaps) {}
+            UUID userId, String displayName, int totalScore, int maxScore, int totalZeroes, int totalSwaps) {}
 
     private List<RankingData> computeRankings(UUID contestId, UUID seasonId, int fromRound, int toRound) {
         Field<Integer> totalScore = DSL.coalesce(DSL.sum(T_ROUND_RESULT.C_SCORE), DSL.inline(0))
-            .cast(Integer.class)
-            .as("total_score");
+                .cast(Integer.class)
+                .as("total_score");
         Field<Integer> totalZeroes = DSL.coalesce(DSL.sum(T_ROUND_RESULT.C_ZEROES_COUNT), DSL.inline(0))
-            .cast(Integer.class)
-            .as("total_zeroes");
+                .cast(Integer.class)
+                .as("total_zeroes");
         Field<Integer> totalSwaps = DSL.coalesce(DSL.sum(T_ROUND_RESULT.C_SWAP_COUNT), DSL.inline(0))
-            .cast(Integer.class)
-            .as("total_swaps");
+                .cast(Integer.class)
+                .as("total_swaps");
         Field<Integer> maxScore = DSL.coalesce(DSL.max(T_ROUND_RESULT.C_SCORE), DSL.inline(0))
-            .cast(Integer.class)
-            .as("max_score");
+                .cast(Integer.class)
+                .as("max_score");
 
-        return dsl.select(
-                        T_USER.PK_ID,
-                        T_USER.C_DISPLAY_NAME,
-                        totalScore,
-                        maxScore,
-                        totalZeroes,
-                        totalSwaps)
+        return dsl.select(T_USER.PK_ID, T_USER.C_DISPLAY_NAME, totalScore, maxScore, totalZeroes, totalSwaps)
                 .from(T_ENTRY)
-                .join(T_USER).on(T_USER.PK_ID.eq(T_ENTRY.FK_USER_ID))
+                .join(T_USER)
+                .on(T_USER.PK_ID.eq(T_ENTRY.FK_USER_ID))
                 .join(T_ROUND_SUBMISSION)
-                .on(T_ROUND_SUBMISSION.FK_USER_ID.eq(T_ENTRY.FK_USER_ID)
+                .on(T_ROUND_SUBMISSION
+                        .FK_USER_ID
+                        .eq(T_ENTRY.FK_USER_ID)
                         .and(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId))
                         .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.between(fromRound, toRound)))
                 .join(T_ROUND_RESULT)

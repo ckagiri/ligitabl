@@ -376,7 +376,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
                 .userId(userId)
                 .seasonId(seasonId)
                 .roundPosition(roundPosition)
-            .rankings(List.<TeamRank>of())
+                .rankings(List.<TeamRank>of())
                 .seasonPredictionId(predictionId)
                 .build();
 
@@ -385,7 +385,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         RoundResult result = RoundResult.builder()
                 .id(UUID.randomUUID())
                 .roundSubmissionId(savedSubmission.getId())
-            .rankings(List.<ResultTeamRank>of())
+                .rankings(List.<ResultTeamRank>of())
                 .score(score)
                 .zeroesCount(zeroes)
                 .swapCount(swaps)

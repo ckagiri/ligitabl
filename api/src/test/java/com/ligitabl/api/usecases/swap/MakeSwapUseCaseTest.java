@@ -130,7 +130,8 @@ class MakeSwapUseCaseTest {
         when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
-        when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of(Match.builder().status(MatchStatus.LIVE).build()));
+        when(matchRepo.findByRoundId(round.getId()))
+                .thenReturn(List.of(Match.builder().status(MatchStatus.LIVE).build()));
 
         Either<SwapError, SwapResult> result = useCase.execute(userId, command);
 

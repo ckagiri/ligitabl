@@ -276,7 +276,8 @@ class TriggerRoundFinalizationUseCaseTest {
                 .thenReturn(List.of(createMatch(MatchStatus.FINISHED), createMatch(MatchStatus.FINISHED)));
 
         when(finalizeRoundUseCase.execute(seasonId))
-                .thenReturn(Either.left(new FinalizeRoundError.RoundNotReady(roundId, "Round status is OPEN, expected FINALISED")));
+                .thenReturn(Either.left(
+                        new FinalizeRoundError.RoundNotReady(roundId, "Round status is OPEN, expected FINALISED")));
 
         var result = useCase.execute(new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(COMPETITION_CODE));
 
