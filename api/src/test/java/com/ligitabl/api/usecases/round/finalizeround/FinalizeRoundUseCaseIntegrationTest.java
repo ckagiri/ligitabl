@@ -106,8 +106,8 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
     void shouldSuccessfullyFinalizeRound() throws Exception {
         insertSeason(2, 4);
 
-        Round round1 = createRound(1, RoundStatus.LOCKED);
-        Round round2 = createRound(2, RoundStatus.OPEN);
+        Round round1 = createRound(1, false);
+        Round round2 = createRound(2, false);
         setCurrentRound(round1.getId());
 
         createFinishedMatch(round1, arsenal, chelsea, 2, 1);
@@ -128,7 +128,7 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         assertThat(response.seasonCompleted()).isFalse();
 
         var updatedRound1 = roundRepo.findById(round1.getId()).orElseThrow();
-        assertThat(updatedRound1.getStatus()).isEqualTo(RoundStatus.FINALISED);
+        assertThat(updatedRound1.isFinalized()).isTrue();
 
         var standings = standingsRepo.findBySeasonAndRoundPosition(seasonId, 1);
         assertThat(standings).isPresent();
@@ -151,8 +151,8 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
     void shouldReturnErrorWhenRoundNotLocked() throws Exception {
         insertSeason(2, 4);
 
-        Round round1 = createRound(1, RoundStatus.OPEN);
-        createRound(2, RoundStatus.OPEN);
+        Round round1 = createRound(1, false);
+        createRound(2, false);
         setCurrentRound(round1.getId());
 
         createScheduledMatch(round1, arsenal, chelsea);
@@ -169,8 +169,8 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
     void shouldReturnErrorWhenAlreadyFinalized() throws Exception {
         insertSeason(2, 4);
 
-        Round round1 = createRound(1, RoundStatus.FINALISED);
-        createRound(2, RoundStatus.OPEN);
+        Round round1 = createRound(1, true);
+        createRound(2, false);
         setCurrentRound(round1.getId());
 
         var result = finalizeRoundUseCase.execute(seasonId);
@@ -184,8 +184,8 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
     void shouldReturnErrorWhenCancelledMatchesExist() throws Exception {
         insertSeason(2, 4);
 
-        Round round1 = createRound(1, RoundStatus.LOCKED);
-        createRound(2, RoundStatus.OPEN);
+        Round round1 = createRound(1, false);
+        createRound(2, false);
         setCurrentRound(round1.getId());
 
         createFinishedMatch(round1, arsenal, chelsea, 2, 1);
@@ -219,8 +219,8 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
     void shouldCalculateAndPersistCorrectStandings() throws Exception {
         insertSeason(2, 4);
 
-        Round round1 = createRound(1, RoundStatus.LOCKED);
-        createRound(2, RoundStatus.OPEN);
+        Round round1 = createRound(1, false);
+        createRound(2, false);
         setCurrentRound(round1.getId());
 
         // Arsenal 3-1 Chelsea (Arsenal wins)
@@ -255,8 +255,8 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
     void shouldCalculateUserPredictionResults() throws Exception {
         insertSeason(2, 4);
 
-        Round round1 = createRound(1, RoundStatus.LOCKED);
-        createRound(2, RoundStatus.OPEN);
+        Round round1 = createRound(1, false);
+        createRound(2, false);
         setCurrentRound(round1.getId());
 
         createFinishedMatch(round1, arsenal, chelsea, 2, 1);
@@ -285,9 +285,9 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
     void shouldFinalizeMultipleRoundsSequentially() throws Exception {
         insertSeason(3, 4);
 
-        Round round1 = createRound(1, RoundStatus.LOCKED);
-        Round round2 = createRound(2, RoundStatus.LOCKED);
-        Round round3 = createRound(3, RoundStatus.LOCKED);
+        Round round1 = createRound(1, false);
+        Round round2 = createRound(2, false);
+        Round round3 = createRound(3, false);
         setCurrentRound(round1.getId());
 
         // Round 1 matches
@@ -325,7 +325,7 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
     void shouldDetectSeasonCompletion() throws Exception {
         insertSeason(1, 4);
 
-        Round round1 = createRound(1, RoundStatus.LOCKED);
+        Round round1 = createRound(1, false);
         setCurrentRound(round1.getId());
 
         createFinishedMatch(round1, arsenal, chelsea, 2, 1);
@@ -346,8 +346,8 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
     void shouldHandleFinalizationWhenNoSubmissions() throws Exception {
         insertSeason(2, 4);
 
-        Round round1 = createRound(1, RoundStatus.LOCKED);
-        createRound(2, RoundStatus.OPEN);
+        Round round1 = createRound(1, false);
+        createRound(2, false);
         setCurrentRound(round1.getId());
 
         createFinishedMatch(round1, arsenal, chelsea, 2, 1);
@@ -367,8 +367,8 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
     void shouldCalculateCumulativeStandings() throws Exception {
         insertSeason(2, 4);
 
-        Round round1 = createRound(1, RoundStatus.LOCKED);
-        Round round2 = createRound(2, RoundStatus.LOCKED);
+        Round round1 = createRound(1, false);
+        Round round2 = createRound(2, false);
         setCurrentRound(round1.getId());
 
         createFinishedMatch(round1, arsenal, chelsea, 2, 0);
@@ -396,7 +396,7 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
     void shouldBeIdempotent() throws Exception {
         insertSeason(1, 4);
 
-        Round round1 = createRound(1, RoundStatus.LOCKED);
+        Round round1 = createRound(1, false);
         setCurrentRound(round1.getId());
 
         createFinishedMatch(round1, arsenal, chelsea, 2, 1);
@@ -473,13 +473,13 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         return teamRepo.create(team);
     }
 
-    private Round createRound(int position, RoundStatus status) {
+    private Round createRound(int position, boolean finalized) {
         return roundRepo.save(Round.builder()
                 .seasonId(seasonId)
                 .name("Matchday " + position)
                 .slug("md-" + position)
                 .position(position)
-                .status(status)
+                .finalized(finalized)
                 .build());
     }
 

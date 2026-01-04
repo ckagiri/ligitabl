@@ -21,11 +21,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.model.domain.Match;
+import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonPrediction;
 import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -43,6 +45,9 @@ class MakeSwapUseCaseTest {
 
     @Mock
     private RoundRepo roundRepo;
+
+    @Mock
+    private MatchRepo matchRepo;
 
     @Mock
     private Clock clock;
@@ -67,10 +72,10 @@ class MakeSwapUseCaseTest {
         roundId = UUID.randomUUID();
 
         season = createSeason();
-        round = createRound(RoundStatus.OPEN, 10);
+        round = createRound(false, 10);
         prediction = createPrediction();
 
-        useCase = new MakeSwapUseCase(competitionDefaults, predictionRepo, seasonRepo, roundRepo, clock);
+        useCase = new MakeSwapUseCase(competitionDefaults, predictionRepo, seasonRepo, roundRepo, matchRepo, clock);
     }
 
     @Test
@@ -120,12 +125,12 @@ class MakeSwapUseCaseTest {
 
     @Test
     void shouldRejectSwap_whenRoundNotOpen() {
-        round.setStatus(RoundStatus.LOCKED);
         SwapCommand command = new SwapCommand("ARS", "LIV");
 
         when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
+        when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of(Match.builder().status(MatchStatus.LIVE).build()));
 
         Either<SwapError, SwapResult> result = useCase.execute(userId, command);
 
@@ -142,12 +147,12 @@ class MakeSwapUseCaseTest {
                 .build();
     }
 
-    private Round createRound(RoundStatus status, int position) {
+    private Round createRound(boolean finalized, int position) {
         return Round.builder()
                 .id(roundId)
                 .seasonId(seasonId)
                 .position(position)
-                .status(status)
+                .finalized(finalized)
                 .name("Round " + position)
                 .slug("round-" + position)
                 .build();

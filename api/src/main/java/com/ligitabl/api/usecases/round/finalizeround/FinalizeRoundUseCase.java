@@ -60,7 +60,7 @@ public class FinalizeRoundUseCase {
     }
 
     private Either<FinalizeRoundError, Void> validateRoundReady(Round round, Season season) {
-        if (round.getStatus() == RoundStatus.FINALISED) {
+        if (round.isFinalized()) {
             return Either.left(new FinalizeRoundError.AlreadyFinalized(round.getId()));
         }
         List<Match> matches = matchRepo.findByRoundId(round.getId());
@@ -279,10 +279,10 @@ public class FinalizeRoundUseCase {
     // STEP 5: Finalize & Advance CurrentRound or Complete Season
     private void advanceCurrentRound(Season season, Round currentRound, boolean isLastRound) {
         // first finalize current round
-        currentRound.setStatus(RoundStatus.FINALISED);
+        currentRound.setFinalized(true);
         roundRepo.save(currentRound);
 
-        log.info("Round {} marked as FINALISED", currentRound.getPosition());
+        log.info("Round {} marked as finalized", currentRound.getPosition());
 
         if (isLastRound) {
             season.setCompleted(true);

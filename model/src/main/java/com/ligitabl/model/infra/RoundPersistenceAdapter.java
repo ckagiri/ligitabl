@@ -11,7 +11,6 @@ import org.jooq.RecordMapper;
 
 import com.ligitabl.model.db.tables.records.RoundRecord;
 import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.repo.RoundRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -78,7 +77,7 @@ public class RoundPersistenceAdapter implements RoundRepo {
                 .set(T_ROUND.C_NAME, round.getName())
                 .set(T_ROUND.C_SLUG, round.getSlug())
                 .set(T_ROUND.C_POSITION, round.getPosition())
-                .set(T_ROUND.C_STATUS, round.getStatus() == null ? null : round.getStatus().name())
+            .set(T_ROUND.C_IS_FINALIZED, round.isFinalized())
                 .execute();
 
         return findById(id).orElseThrow(() -> new IllegalStateException("Round not found after create"));
@@ -94,7 +93,7 @@ public class RoundPersistenceAdapter implements RoundRepo {
                 .set(T_ROUND.C_NAME, round.getName())
                 .set(T_ROUND.C_SLUG, round.getSlug())
                 .set(T_ROUND.C_POSITION, round.getPosition())
-                .set(T_ROUND.C_STATUS, round.getStatus() == null ? null : round.getStatus().name())
+            .set(T_ROUND.C_IS_FINALIZED, round.isFinalized())
                 .where(T_ROUND.PK_ID.eq(round.getId()))
                 .execute();
 
@@ -118,7 +117,7 @@ public class RoundPersistenceAdapter implements RoundRepo {
                     .name(record.getName())
                     .slug(record.getSlug())
                     .position(record.getPosition())
-                    .status(RoundStatus.valueOf(record.getStatus()))
+                    .finalized(Boolean.TRUE.equals(record.getIsFinalized()))
                     .build();
         }
     }

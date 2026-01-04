@@ -41,7 +41,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         }
 
         // Find highest round with finalized standings
-        Integer effectiveToRound = resolveEffectiveToRound(contestId, seasonId, fromRound, toRound);
+        Integer effectiveToRound = resolveEffectiveToRound(seasonId, fromRound, toRound);
         if (effectiveToRound == null) {
             return List.of();
         }
@@ -79,16 +79,12 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         return out;
     }
 
-    private Integer resolveEffectiveToRound(UUID contestId, UUID seasonId, int fromRound, int toRound) {
-        return dsl.select(DSL.max(T_ROUND_SUBMISSION.C_ROUND_POSITION))
-                .from(T_ENTRY)
-                .join(T_ROUND_SUBMISSION)
-                .on(T_ROUND_SUBMISSION.FK_USER_ID.eq(T_ENTRY.FK_USER_ID)
-                        .and(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId))
-                        .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.between(fromRound, toRound)))
-                .join(T_ROUND_RESULT)
-                .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
-                .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
+    private Integer resolveEffectiveToRound(UUID seasonId, int fromRound, int toRound) {
+        return dsl.select(DSL.max(T_ROUND.C_POSITION))
+                .from(T_ROUND)
+                .where(T_ROUND.FK_SEASON_ID.eq(seasonId))
+                .and(T_ROUND.C_POSITION.between(fromRound, toRound))
+                .and(T_ROUND.C_IS_FINALIZED.isTrue())
                 .fetchOne(0, Integer.class);
     }
 

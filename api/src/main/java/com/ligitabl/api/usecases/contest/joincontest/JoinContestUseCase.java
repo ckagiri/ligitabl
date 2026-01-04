@@ -18,9 +18,10 @@ import java.util.stream.Collectors;
 @Slf4j
 public class JoinContestUseCase {
 
-        private final CompetitionDefaults competitionDefaults;
+    private final CompetitionDefaults competitionDefaults;
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
+    private final MatchRepo matchRepo;
     private final ContestRepo contestRepo;
     private final SeasonPredictionRepo predictionRepo;
     private final EntryRepo entryRepo;
@@ -169,7 +170,15 @@ public class JoinContestUseCase {
         Round currentRound = roundRepo.findById(season.getCurrentRoundId())
                 .orElseThrow(() -> new IllegalStateException("Current round not found"));
 
-        RoundStatus roundStatus = currentRound.getStatus();
+        var matches = matchRepo.findByRoundId(currentRound.getId());
+        RoundStatus roundStatus;
+        if (currentRound.isFinalized()) {
+                roundStatus = RoundStatus.FINALISED;
+        } else if (matches == null || matches.isEmpty()) {
+                roundStatus = RoundStatus.OPEN;
+        } else {
+                roundStatus = currentRound.computeStatus(matches);
+        }
 
         int atRoundNumber;
         if (roundStatus == RoundStatus.OPEN) {

@@ -32,7 +32,7 @@ class RoundRepoTest {
     static void setup() throws Exception {
         String host = System.getenv().getOrDefault("DB_HOST", "localhost");
         String port = System.getenv().getOrDefault("DB_PORT", "55433");
-        String db = System.getenv().getOrDefault("DB_NAME", "ligitabl");
+        String db = System.getenv().getOrDefault("DB_NAME", "ligitabl_test");
         String user = System.getenv().getOrDefault("DB_USER", "ligitabl");
         String password = System.getenv().getOrDefault("DB_PASSWORD", "ligitabl");
 

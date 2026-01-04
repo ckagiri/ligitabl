@@ -25,3 +25,5 @@ databaseChangeLog:
       file: db/changelog/20251224_1_round_and_match_status_flags.yaml
   - include:
       file: db/changelog/20251224_2_predictions.yaml
+  - include:
+      file: db/changelog/20260104_1_round_is_finalized.yaml

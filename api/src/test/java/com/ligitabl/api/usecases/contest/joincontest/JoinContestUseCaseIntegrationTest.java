@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -26,6 +27,7 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
+import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.repo.EntryRepo;
@@ -75,6 +77,8 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
     private UUID contestId;
     private UUID roundId;
     private UUID userId;
+    private UUID homeTeamId;
+    private UUID awayTeamId;
 
     private Instant now;
 
@@ -86,10 +90,13 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         seasonId = UUID.randomUUID();
         contestId = UUID.randomUUID();
         roundId = UUID.randomUUID();
+        homeTeamId = UUID.randomUUID();
+        awayTeamId = UUID.randomUUID();
 
         insertCompetitionAndSeason();
         insertContest();
         linkSeasonToContest();
+        insertTeamsForMatches();
         insertRound(roundId, seasonId, 1, RoundStatus.OPEN);
     }
 
@@ -400,28 +407,44 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
     }
 
     private void insertRound(UUID id, UUID seasonId, int position, RoundStatus status) {
+        boolean isFinalized = status == RoundStatus.FINALISED;
         jdbcTemplate.update(
-                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_status) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized) VALUES (?,?,?,?,?,?)",
                 id,
                 seasonId,
                 "Round " + position,
                 "round-" + position,
                 position,
-                status.name());
+                isFinalized);
     }
 
     private void updateCurrentRoundStatus(RoundStatus status) {
-        jdbcTemplate.update("UPDATE t_round SET c_status = ? WHERE pk_id = ?", status.name(), roundId);
+        clearMatchesForRound(roundId);
+        if (status == RoundStatus.FINALISED) {
+            jdbcTemplate.update("UPDATE t_round SET c_is_finalized = true WHERE pk_id = ?", roundId);
+            return;
+        }
+
+        jdbcTemplate.update("UPDATE t_round SET c_is_finalized = false WHERE pk_id = ?", roundId);
+        if (status == RoundStatus.LOCKED) {
+            insertLockedMatch(roundId, 1);
+        }
     }
 
     private void setCurrentRoundTo(int position, RoundStatus status) {
+        boolean isFinalized = status == RoundStatus.FINALISED;
         jdbcTemplate.update(
-                "UPDATE t_round SET c_name = ?, c_slug = ?, c_position = ?, c_status = ? WHERE pk_id = ?",
+                "UPDATE t_round SET c_name = ?, c_slug = ?, c_position = ?, c_is_finalized = ? WHERE pk_id = ?",
                 "Round " + position,
                 "round-" + position,
                 position,
-                status.name(),
+                isFinalized,
                 roundId);
+
+        clearMatchesForRound(roundId);
+        if (status == RoundStatus.LOCKED) {
+            insertLockedMatch(roundId, position);
+        }
     }
 
     private void resetToRound1Open() {
@@ -436,6 +459,44 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
                 matchDay,
                 seasonId);
     }
+
+        private void insertTeamsForMatches() {
+        jdbcTemplate.update(
+            "INSERT INTO t_team (pk_id, c_name, c_short_name, c_slug, c_tla) VALUES (?,?,?,?,?)",
+            homeTeamId,
+            "Home Team",
+            "Home",
+            "home-team",
+            "HOM");
+
+        jdbcTemplate.update(
+            "INSERT INTO t_team (pk_id, c_name, c_short_name, c_slug, c_tla) VALUES (?,?,?,?,?)",
+            awayTeamId,
+            "Away Team",
+            "Away",
+            "away-team",
+            "AWY");
+        }
+
+        private void clearMatchesForRound(UUID roundId) {
+        jdbcTemplate.update("DELETE FROM t_match WHERE fk_round_id = ?", roundId);
+        }
+
+        private void insertLockedMatch(UUID roundId, int matchDay) {
+        jdbcTemplate.update(
+            "INSERT INTO t_match (pk_id, c_client_id, fk_round_id, fk_home_team_id, fk_away_team_id, c_slug, c_status, c_kick_off, c_venue, c_matchday) "
+                + "VALUES (?,?,?,?,?,?,?,?,?,?)",
+            UUID.randomUUID(),
+            1,
+            roundId,
+            homeTeamId,
+            awayTeamId,
+            "home-vs-away-" + matchDay,
+            MatchStatus.LIVE.name(),
+            OffsetDateTime.now().withNano(0),
+            "Test Stadium",
+            matchDay);
+        }
 
     private void insertUser(UUID id, String email) {
         jdbcTemplate.update(
