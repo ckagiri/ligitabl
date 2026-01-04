@@ -1,5 +1,9 @@
 package com.ligitabl.api.usecases.sync;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.scheduling.sync.RoundAdvancementResult;
@@ -7,11 +11,9 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -30,7 +32,9 @@ public class AdvanceRoundUseCase {
 
     public sealed interface AdvanceRoundError {
         record CompetitionNotFound(String code) implements AdvanceRoundError {}
+
         record SeasonNotFound(String competitionCode) implements AdvanceRoundError {}
+
         record ApiError(FootballDataClient.ApiError error) implements AdvanceRoundError {}
     }
 
@@ -38,15 +42,14 @@ public class AdvanceRoundUseCase {
     public Either<AdvanceRoundError, RoundAdvancementResult> execute(AdvanceRoundCommand command) {
         log.info("Checking round advancement for competition: {}", competitionCode);
 
-        return fetchCurrentMatchdayFromApi()
-                .flatMap(this::getActiveSeason)
-                .flatMap(this::advanceIfNeeded);
+        return fetchCurrentMatchdayFromApi().flatMap(this::getActiveSeason).flatMap(this::advanceIfNeeded);
     }
 
     private Either<AdvanceRoundError, Integer> fetchCurrentMatchdayFromApi() {
         log.debug("Fetching current matchday from API");
 
-        return apiClient.getCompetition(competitionCode)
+        return apiClient
+                .getCompetition(competitionCode)
                 .mapLeft(error -> (AdvanceRoundError) new AdvanceRoundError.ApiError(error))
                 .map(competition -> {
                     var currentMatchday = competition.currentSeason().currentMatchday();
@@ -62,15 +65,13 @@ public class AdvanceRoundUseCase {
             return Either.left(new AdvanceRoundError.CompetitionNotFound(competitionCode));
         }
 
-        return seasonRepo.findActiveSeason(competitionSlug)
-            .map(season -> Either.<AdvanceRoundError, SeasonContext>right(
-                new SeasonContext(season, apiMatchday)
-            ))
-            .orElseGet(() -> Either.left(new AdvanceRoundError.SeasonNotFound(competitionCode)));
+        return seasonRepo
+                .findActiveSeason(competitionSlug)
+                .map(season -> Either.<AdvanceRoundError, SeasonContext>right(new SeasonContext(season, apiMatchday)))
+                .orElseGet(() -> Either.left(new AdvanceRoundError.SeasonNotFound(competitionCode)));
     }
 
-    private Either<AdvanceRoundError, RoundAdvancementResult> advanceIfNeeded(
-            SeasonContext context) {
+    private Either<AdvanceRoundError, RoundAdvancementResult> advanceIfNeeded(SeasonContext context) {
 
         var currentMatchday = context.season().getCurrentMatchDay();
         var apiMatchday = context.apiMatchday();
@@ -78,21 +79,19 @@ public class AdvanceRoundUseCase {
         if (apiMatchday.equals(currentMatchday)) {
             log.info("Matchday unchanged: {}", currentMatchday);
             return Either.right(RoundAdvancementResult.noChange(
-                    context.season().getId(),
-                    currentMatchday,
-                    "API matchday matches current matchday"
-            ));
+                    context.season().getId(), currentMatchday, "API matchday matches current matchday"));
         }
 
         if (apiMatchday < currentMatchday) {
-            log.warn("API matchday ({}) is behind current matchday ({}). " +
-                            "This shouldn't happen in most cases - possible API issue or season rollover",
-                    apiMatchday, currentMatchday);
+            log.warn(
+                    "API matchday ({}) is behind current matchday ({}). "
+                            + "This shouldn't happen in most cases - possible API issue or season rollover",
+                    apiMatchday,
+                    currentMatchday);
             return Either.right(RoundAdvancementResult.noChange(
                     context.season().getId(),
                     currentMatchday,
-                    "API matchday is behind current matchday - no action taken"
-            ));
+                    "API matchday is behind current matchday - no action taken"));
         }
 
         // API matchday is ahead - advance
@@ -102,15 +101,8 @@ public class AdvanceRoundUseCase {
         season.setCurrentMatchDay(apiMatchday);
         seasonRepo.save(season);
 
-        return Either.right(RoundAdvancementResult.advanced(
-                context.season().getId(),
-                currentMatchday,
-                apiMatchday
-        ));
+        return Either.right(RoundAdvancementResult.advanced(context.season().getId(), currentMatchday, apiMatchday));
     }
 
-    private record SeasonContext(
-            Season season,
-            Integer apiMatchday
-    ) {}
+    private record SeasonContext(Season season, Integer apiMatchday) {}
 }

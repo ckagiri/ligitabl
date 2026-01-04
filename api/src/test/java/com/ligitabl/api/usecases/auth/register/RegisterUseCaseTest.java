@@ -14,8 +14,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import jakarta.validation.Validation;
-
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.ConflictError;
 import com.ligitabl.api.shared.errors.UnexpectedError;
@@ -30,6 +28,8 @@ import com.ligitabl.model.domain.User;
 import com.ligitabl.model.domain.service.PasswordHasher;
 import com.ligitabl.model.domain.service.PublicIdGenerator;
 import com.ligitabl.model.repo.UserRepo;
+
+import jakarta.validation.Validation;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("Register User Use Case")
@@ -55,7 +55,8 @@ class RegisterUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        requestValidator = new RequestValidator(Validation.buildDefaultValidatorFactory().getValidator());
+        requestValidator =
+                new RequestValidator(Validation.buildDefaultValidatorFactory().getValidator());
         useCase = new RegisterUseCase(userRepo, passwordHasher, publicIdGenerator, requestValidator);
 
         email = Email.create("newuser@example.com");

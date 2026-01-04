@@ -1,23 +1,25 @@
 package com.ligitabl.api.usecases.seeding;
 
-import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.usecases.round.finalizeround.FinalizeRoundError;
-import com.ligitabl.api.usecases.round.finalizeround.FinalizeRoundResult;
-import com.ligitabl.api.usecases.round.finalizeround.FinalizeRoundUseCase;
-import com.ligitabl.model.domain.SwapChange;
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.domain.*;
-import com.ligitabl.model.repo.*;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.time.*;
+import java.time.temporal.TemporalAdjusters;
+import java.util.*;
+import java.util.Comparator;
+
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.*;
-import java.time.temporal.TemporalAdjusters;
-import java.util.Comparator;
-import java.util.*;
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecases.round.finalizeround.FinalizeRoundError;
+import com.ligitabl.api.usecases.round.finalizeround.FinalizeRoundResult;
+import com.ligitabl.api.usecases.round.finalizeround.FinalizeRoundUseCase;
+import com.ligitabl.model.auth.Email;
+import com.ligitabl.model.domain.*;
+import com.ligitabl.model.domain.SwapChange;
+import com.ligitabl.model.repo.*;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @RequiredArgsConstructor
@@ -47,9 +49,8 @@ public class SeedSeasonUseCase {
 
         List<String> warnings = new ArrayList<>();
 
-        return loadConfiguration()
-                .flatMap(config -> validatePrerequisites(config)
-                        .flatMap(context -> seedAllData(context, config, warnings)));
+        return loadConfiguration().flatMap(config -> validatePrerequisites(config)
+                .flatMap(context -> seedAllData(context, config, warnings)));
     }
 
     /**
@@ -59,9 +60,7 @@ public class SeedSeasonUseCase {
         try {
             return Either.right(configLoader.loadConfig());
         } catch (Exception e) {
-            return Either.left(new SeedingError.ConfigurationError(
-                    "Failed to load seeding config: " + e.getMessage()
-            ));
+            return Either.left(new SeedingError.ConfigurationError("Failed to load seeding config: " + e.getMessage()));
         }
     }
 
@@ -81,56 +80,66 @@ public class SeedSeasonUseCase {
 
     private Either<SeedingError, ValidationContext> validateWithSeason(
             SeedingConfig config, Competition competition, Season season) {
-        return findRounds(season)
-                .flatMap(rounds -> validateWithRounds(config, competition, season, rounds));
+        return findRounds(season).flatMap(rounds -> validateWithRounds(config, competition, season, rounds));
     }
 
     private Either<SeedingError, ValidationContext> validateWithRounds(
             SeedingConfig config, Competition competition, Season season, List<Round> rounds) {
-        return findTeams(season)
-                .flatMap(teams -> validateWithTeams(config, competition, season, rounds, teams));
+        return findTeams(season).flatMap(teams -> validateWithTeams(config, competition, season, rounds, teams));
     }
 
     private Either<SeedingError, ValidationContext> validateWithTeams(
             SeedingConfig config, Competition competition, Season season, List<Round> rounds, List<Team> teams) {
         return findDefaultContest(season)
-                .flatMap(defaultContest -> validateWithContest(
-                        config, competition, season, rounds, teams, defaultContest));
+                .flatMap(defaultContest ->
+                        validateWithContest(config, competition, season, rounds, teams, defaultContest));
     }
 
     private Either<SeedingError, ValidationContext> validateWithContest(
-            SeedingConfig config, Competition competition, Season season,
-            List<Round> rounds, List<Team> teams, Contest defaultContest) {
+            SeedingConfig config,
+            Competition competition,
+            Season season,
+            List<Round> rounds,
+            List<Team> teams,
+            Contest defaultContest) {
         return findUsers(config)
-                .map(users ->
-        buildValidationContext(
-                        competition, season, rounds, teams, defaultContest, users));
+                .map(users -> buildValidationContext(competition, season, rounds, teams, defaultContest, users));
     }
 
     private ValidationContext buildValidationContext(
-            Competition competition, Season season, List<Round> rounds,
-            List<Team> teams, Contest defaultContest, List<User> users) {
-        log.info("Validation complete: competition={}, season={}, rounds={}, teams={}, users={}",
-                competition.getName(), season.getName(), rounds.size(), teams.size(), users.size());
+            Competition competition,
+            Season season,
+            List<Round> rounds,
+            List<Team> teams,
+            Contest defaultContest,
+            List<User> users) {
+        log.info(
+                "Validation complete: competition={}, season={}, rounds={}, teams={}, users={}",
+                competition.getName(),
+                season.getName(),
+                rounds.size(),
+                teams.size(),
+                users.size());
         return new ValidationContext(competition, season, rounds, teams, defaultContest, users);
     }
 
     private Either<SeedingError, Competition> findCompetition(String slug) {
-        return competitionRepo.findBySlug(slug)
+        return competitionRepo
+                .findBySlug(slug)
                 .map(Either::<SeedingError, Competition>right)
                 .orElse(Either.left(new SeedingError.CompetitionNotFound(slug)));
     }
 
     private Either<SeedingError, Season> findSeason(UUID competitionId, String slug) {
-        return seasonRepo.findBySlug(competitionId, slug)
+        return seasonRepo
+                .findBySlug(competitionId, slug)
                 .map(Either::<SeedingError, Season>right)
                 .orElse(Either.left(new SeedingError.SeasonNotFound(slug)));
     }
 
     private Either<SeedingError, List<Team>> findTeams(Season season) {
-        List<String> teamCodes = season.getInitialRankings().stream()
-                .map(TeamRank::getCode)
-                .toList();
+        List<String> teamCodes =
+                season.getInitialRankings().stream().map(TeamRank::getCode).toList();
 
         List<Team> teams = new ArrayList<>();
         for (String code : teamCodes) {
@@ -152,41 +161,31 @@ public class SeedSeasonUseCase {
         }
 
         if (rounds.size() != season.getMaxRounds()) {
-            return Either.left(new SeedingError.RoundsNotFound(
-                    season.getName(),
-                    season.getMaxRounds(),
-                    rounds.size()
-            ));
+            return Either.left(new SeedingError.RoundsNotFound(season.getName(), season.getMaxRounds(), rounds.size()));
         }
 
         return Either.right(rounds);
     }
 
     private Either<SeedingError, Contest> findDefaultContest(Season season) {
-        return contestRepo.findById(season.getMainContestId())
+        return contestRepo
+                .findById(season.getMainContestId())
                 .map(Either::<SeedingError, Contest>right)
                 .orElse(Either.left(new SeedingError.DefaultContestNotFound(season.getMainContestId())));
     }
 
     private Either<SeedingError, SeasonSeedResult> seedAllData(
-            ValidationContext ctx,
-            SeedingConfig config,
-            List<String> warnings
-    ) {
-        log.info("Found: competition={}, season={}, rounds={}, teams={}",
+            ValidationContext ctx, SeedingConfig config, List<String> warnings) {
+        log.info(
+                "Found: competition={}, season={}, rounds={}, teams={}",
                 ctx.competition().getName(),
                 ctx.season().getName(),
                 ctx.rounds().size(),
-                ctx.teams().size()
-        );
+                ctx.teams().size());
 
         int matchesSeeded = seedMatches(ctx.season(), ctx.rounds(), ctx.teams(), config);
         Map<UUID, SeasonPrediction> predictions = createPredictions(
-                ctx.users(),
-                ctx.season(),
-                ctx.teams(),
-                ctx.defaultContest().getId()
-        );
+                ctx.users(), ctx.season(), ctx.teams(), ctx.defaultContest().getId());
         int swapsSeeded = seedSwaps(predictions, ctx.rounds(), config);
 
         return finalizeCompletedRounds(ctx.season(), ctx.rounds(), config, warnings)
@@ -199,19 +198,16 @@ public class SeedSeasonUseCase {
                         matchesSeeded,
                         swapsSeeded,
                         roundsFinalized,
-                        warnings
-                ));
+                        warnings));
     }
 
     private Either<SeedingError, List<User>> findUsers(SeedingConfig config) {
         List<User> users = new ArrayList<>();
 
         for (SeedingConfig.DemoUser demoUser : config.getDemoUsers()) {
-            Either<SeedingError, User> userResult =
-                    userRepo
-                            .findByEmail(Email.create(demoUser.getEmail()))
-                            .map(Either::<SeedingError, User>right)
-                            .orElse(Either.left(new SeedingError.UserNotFound(demoUser.getEmail())));
+            Either<SeedingError, User> userResult = userRepo.findByEmail(Email.create(demoUser.getEmail()))
+                    .map(Either::<SeedingError, User>right)
+                    .orElse(Either.left(new SeedingError.UserNotFound(demoUser.getEmail())));
 
             if (userResult.isLeft()) {
                 return Either.left(userResult.getLeft());
@@ -225,12 +221,7 @@ public class SeedSeasonUseCase {
         return Either.right(users);
     }
 
-    private int seedMatches(
-            Season season,
-            List<Round> rounds,
-            List<Team> teams,
-            SeedingConfig config
-    ) {
+    private int seedMatches(Season season, List<Round> rounds, List<Team> teams, SeedingConfig config) {
         int matchesCreated = 0;
         LocalDate currentDate = season.getStartDate();
 
@@ -259,20 +250,14 @@ public class SeedSeasonUseCase {
                         season.getId(),
                         round.getId(),
                         pairing.homeTeam().getId(),
-                        pairing.awayTeam().getId()
-                );
+                        pairing.awayTeam().getId());
 
                 if (!exists) {
                     LocalTime kickoffTime = randomizeKickoffTime(
                             isSaturday ? LocalTime.of(12, 30) : LocalTime.of(14, 0),
-                            isSaturday ? LocalTime.of(17, 30) : LocalTime.of(16, 30)
-                    );
+                            isSaturday ? LocalTime.of(17, 30) : LocalTime.of(16, 30));
 
-                    ZonedDateTime kickoff = ZonedDateTime.of(
-                            matchDate,
-                            kickoffTime,
-                            ZoneId.of("Europe/London")
-                    );
+                    ZonedDateTime kickoff = ZonedDateTime.of(matchDate, kickoffTime, ZoneId.of("Europe/London"));
 
                     int clientId = round.getPosition() * 100 + (matchesInRound + 1);
 
@@ -285,7 +270,8 @@ public class SeedSeasonUseCase {
                             .roundId(round.getId())
                             .kickOff(kickoff.toOffsetDateTime())
                             .venue(pairing.homeTeam().getName() + " Stadium")
-                            .slug(pairing.homeTeam().getSlug() + "-vs-" + pairing.awayTeam().getSlug())
+                            .slug(pairing.homeTeam().getSlug() + "-vs-"
+                                    + pairing.awayTeam().getSlug())
                             .wasPostponed(false)
                             .wasSuspended(false)
                             .build();
@@ -319,17 +305,12 @@ public class SeedSeasonUseCase {
     }
 
     private Map<UUID, SeasonPrediction> createPredictions(
-            List<User> users,
-            Season season,
-            List<Team> teams,
-            UUID defaultContestId
-    ) {
+            List<User> users, Season season, List<Team> teams, UUID defaultContestId) {
         Map<UUID, SeasonPrediction> predictions = new HashMap<>();
 
         for (User user : users) {
             // Check if prediction exists
-            Optional<SeasonPrediction> existing = predictionRepo
-                    .findByUserAndSeason(user.getId(), season.getId());
+            Optional<SeasonPrediction> existing = predictionRepo.findByUserAndSeason(user.getId(), season.getId());
 
             if (existing.isPresent()) {
                 predictions.put(user.getId(), existing.get());
@@ -367,11 +348,7 @@ public class SeedSeasonUseCase {
         return predictions;
     }
 
-    private int seedSwaps(
-            Map<UUID, SeasonPrediction> predictions,
-            List<Round> rounds,
-            SeedingConfig config
-    ) {
+    private int seedSwaps(Map<UUID, SeasonPrediction> predictions, List<Round> rounds, SeedingConfig config) {
         int totalSwaps = 0;
 
         for (SeasonPrediction prediction : predictions.values()) {
@@ -398,12 +375,7 @@ public class SeedSeasonUseCase {
 
                 for (int swapIndex = 0; swapIndex < numSwaps; swapIndex++) {
                     // Schedule swap on weekday, respecting 24h cooldown
-                    Instant swapTime = generateWeekdaySwapTime(
-                            firstKickoffInstant,
-                            lastSwapAt,
-                            swapIndex,
-                            numSwaps
-                    );
+                    Instant swapTime = generateWeekdaySwapTime(firstKickoffInstant, lastSwapAt, swapIndex, numSwaps);
 
                     if (swapTime.isAfter(firstKickoffInstant)) {
                         continue; // Skip if after kickoff
@@ -429,11 +401,8 @@ public class SeedSeasonUseCase {
                     // Record swap
                     SwapChange change = new SwapChange(
                             swapTime,
-                            String.format("%s:%d→%d", team1.getCode(),
-                                    team1.getPosition(), newTeam1.getPosition()),
-                            String.format("%s:%d→%d", team2.getCode(),
-                                    team2.getPosition(), newTeam2.getPosition())
-                    );
+                            String.format("%s:%d→%d", team1.getCode(), team1.getPosition(), newTeam1.getPosition()),
+                            String.format("%s:%d→%d", team2.getCode(), team2.getPosition(), newTeam2.getPosition()));
 
                     prediction.addSwap(round.getPosition(), change);
                     lastSwapAt = swapTime;
@@ -453,12 +422,7 @@ public class SeedSeasonUseCase {
         return totalSwaps;
     }
 
-    private Instant generateWeekdaySwapTime(
-            Instant roundKickoff,
-            Instant lastSwapAt,
-            int swapIndex,
-            int totalSwaps
-    ) {
+    private Instant generateWeekdaySwapTime(Instant roundKickoff, Instant lastSwapAt, int swapIndex, int totalSwaps) {
         // Calculate the week before kickoff
         Instant weekBefore = roundKickoff.minus(Duration.ofDays(7));
 
@@ -468,8 +432,7 @@ public class SeedSeasonUseCase {
 
         // Ensure weekday
         ZonedDateTime zdt = baseTime.atZone(ZoneId.of("Europe/London"));
-        while (zdt.getDayOfWeek() == DayOfWeek.SATURDAY ||
-                zdt.getDayOfWeek() == DayOfWeek.SUNDAY) {
+        while (zdt.getDayOfWeek() == DayOfWeek.SATURDAY || zdt.getDayOfWeek() == DayOfWeek.SUNDAY) {
             zdt = zdt.plusDays(1);
         }
 
@@ -485,16 +448,11 @@ public class SeedSeasonUseCase {
     }
 
     private Either<SeedingError, Integer> finalizeCompletedRounds(
-            Season season,
-            List<Round> rounds,
-            SeedingConfig config,
-            List<String> warnings
-    ) {
+            Season season, List<Round> rounds, SeedingConfig config, List<String> warnings) {
         int finalized = 0;
 
         for (int i = 0; i < config.getFinishedRounds(); i++) {
-            Either<FinalizeRoundError, FinalizeRoundResult> result =
-                    finalizeRoundUseCase.execute(season.getId());
+            Either<FinalizeRoundError, FinalizeRoundResult> result = finalizeRoundUseCase.execute(season.getId());
 
             if (result.isLeft()) {
                 FinalizeRoundError error = result.getLeft();
@@ -521,12 +479,10 @@ public class SeedSeasonUseCase {
     // Helper methods
     private String formatFinalizeRoundError(FinalizeRoundError error) {
         return switch (error) {
-            case FinalizeRoundError.RoundNotReady(UUID roundId, String reason) ->
-                    String.format("Round %s not ready: %s", roundId, reason);
-            case FinalizeRoundError.StandingsValidationFailed(String reason) ->
-                    String.format("Standings validation failed: %s", reason);
-            case FinalizeRoundError.TransactionFailed(String reason) ->
-                    String.format("Transaction failed: %s", reason);
+            case FinalizeRoundError.RoundNotReady e -> String.format("Round %s not ready: %s", e.roundId(), e.reason());
+            case FinalizeRoundError.StandingsValidationFailed e -> String.format(
+                    "Standings validation failed: %s", e.reason());
+            case FinalizeRoundError.TransactionFailed e -> String.format("Transaction failed: %s", e.reason());
             default -> "Unexpected finalize-round error: " + error;
         };
     }
@@ -598,7 +554,5 @@ public class SeedSeasonUseCase {
         return LocalTime.ofSecondOfDay(randomSeconds);
     }
 
-    private record MatchPairing(Team homeTeam, Team awayTeam) {
-    }
+    private record MatchPairing(Team homeTeam, Team awayTeam) {}
 }
-

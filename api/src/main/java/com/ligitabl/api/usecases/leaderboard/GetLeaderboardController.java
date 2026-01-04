@@ -1,9 +1,8 @@
 package com.ligitabl.api.usecases.leaderboard;
 
-import com.ligitabl.api.usecases.leaderboard.dtos.LeaderboardEntryDto;
-import com.ligitabl.api.usecases.leaderboard.dtos.PhaseDto;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,8 +10,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
-import java.util.UUID;
+import com.ligitabl.api.usecases.leaderboard.dtos.LeaderboardEntryDto;
+import com.ligitabl.api.usecases.leaderboard.dtos.PhaseDto;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/contests")
@@ -31,23 +33,24 @@ public class GetLeaderboardController {
     public ResponseEntity<?> getLeaderboard(@RequestParam(required = false) String phase) {
         var query = new GetLeaderboardQuery(phase);
 
-        return getLeaderboardUseCase.execute(query)
+        return getLeaderboardUseCase
+                .execute(query)
                 .fold(
                         error -> {
-                                                        if (error instanceof GetLeaderboardError.DefaultCompetitionNotFound e) {
-                                                                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                                                                                .body(new ErrorDto(e.message()));
-                                                        }
+                            if (error instanceof GetLeaderboardError.DefaultCompetitionNotFound e) {
+                                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                        .body(new ErrorDto(e.message()));
+                            }
 
-                                                        if (error instanceof GetLeaderboardError.ActiveSeasonNotFound e) {
-                                                                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                                                                                .body(new ErrorDto(e.message()));
-                                                        }
+                            if (error instanceof GetLeaderboardError.ActiveSeasonNotFound e) {
+                                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                        .body(new ErrorDto(e.message()));
+                            }
 
-                                                        if (error instanceof GetLeaderboardError.MainContestNotFound e) {
-                                                                return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                                                                                .body(new ErrorDto(e.message()));
-                                                        }
+                            if (error instanceof GetLeaderboardError.MainContestNotFound e) {
+                                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                                        .body(new ErrorDto(e.message()));
+                            }
 
                             if (error instanceof GetLeaderboardError.InvalidPhase invalid) {
                                 return ResponseEntity.badRequest()
@@ -59,8 +62,7 @@ public class GetLeaderboardController {
                                         .body(new ErrorDto("Competition phases not configured"));
                             }
 
-                            return ResponseEntity.internalServerError()
-                                    .body(new ErrorDto("Unexpected error"));
+                            return ResponseEntity.internalServerError().body(new ErrorDto("Unexpected error"));
                         },
                         result -> ResponseEntity.ok(new LeaderboardResponse(
                                 result.contestId(),
@@ -68,8 +70,7 @@ public class GetLeaderboardController {
                                         result.phase().getCode(),
                                         result.phase().getName(),
                                         result.phase().getFrom(),
-                                        result.phase().getTo()
-                                ),
+                                        result.phase().getTo()),
                                 result.rankings().stream()
                                         .map(entry -> new LeaderboardEntryDto(
                                                 entry.position(),
@@ -78,18 +79,11 @@ public class GetLeaderboardController {
                                                 entry.maxScore(),
                                                 entry.totalZeroes(),
                                                 entry.totalSwaps(),
-                                                entry.movement()
-                                        ))
-                                        .toList()
-                        ))
-                );
+                                                entry.movement()))
+                                        .toList())));
     }
 
-        record ErrorDto(String message) {}
+    record ErrorDto(String message) {}
 
-    record LeaderboardResponse(
-            UUID contestId,
-            PhaseDto phase,
-            List<LeaderboardEntryDto> rankings
-    ) {}
+    record LeaderboardResponse(UUID contestId, PhaseDto phase, List<LeaderboardEntryDto> rankings) {}
 }

@@ -3,11 +3,11 @@ package com.ligitabl.api.usecases.auth.register;
 import java.util.Set;
 import java.util.UUID;
 
-import com.ligitabl.api.shared.UseCase;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
@@ -55,10 +55,12 @@ public class RegisterUseCase implements UseCase<RegisterCommand, Either<UseCaseE
                     .emailVerified(false)
                     .build();
 
-            return Either.catching(() -> userRepo.create(user), UseCaseErrors::fromException).map(saved -> {
-                log.info("User registered successfully: {}", saved.getPublicId());
-                return new RegisterResult(saved.getPublicId(), saved.getEmail(), saved.getDisplayName(), saved.getRoles());
-            });
+            return Either.catching(() -> userRepo.create(user), UseCaseErrors::fromException)
+                    .map(saved -> {
+                        log.info("User registered successfully: {}", saved.getPublicId());
+                        return new RegisterResult(
+                                saved.getPublicId(), saved.getEmail(), saved.getDisplayName(), saved.getRoles());
+                    });
         });
     }
 

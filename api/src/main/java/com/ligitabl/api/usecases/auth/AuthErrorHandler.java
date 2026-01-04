@@ -34,8 +34,8 @@ public class AuthErrorHandler {
 
         if (error instanceof ValidationError ve) {
             var first = ve.messages().getFirst();
-            return ResponseEntity.badRequest().body(new AuthDto.ErrorResponse(
-                    "VALIDATION_ERROR", first.message(), first.field()));
+            return ResponseEntity.badRequest()
+                    .body(new AuthDto.ErrorResponse("VALIDATION_ERROR", first.message(), first.field()));
         }
 
         if (error instanceof AuthorizationError ae) {

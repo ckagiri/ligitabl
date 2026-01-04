@@ -1,14 +1,13 @@
 package com.ligitabl.api.usecases.seeding;
 
-import com.ligitabl.model.domain.Contest;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.SeasonPrediction;
-import com.ligitabl.model.domain.User;
-
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.ligitabl.model.domain.Contest;
+import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.SeasonPrediction;
+import com.ligitabl.model.domain.User;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

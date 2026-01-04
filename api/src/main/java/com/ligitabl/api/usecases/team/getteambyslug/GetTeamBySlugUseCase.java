@@ -2,10 +2,10 @@ package com.ligitabl.api.usecases.team.getteambyslug;
 
 import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 
-import com.ligitabl.api.shared.UseCase;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;

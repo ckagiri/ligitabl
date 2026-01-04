@@ -5,10 +5,10 @@ import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 import java.util.List;
 import java.util.UUID;
 
-import com.ligitabl.api.shared.UseCase;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecases.match.MatchDto;
