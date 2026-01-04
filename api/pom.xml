@@ -23,7 +23,7 @@
         <!-- Align jOOQ codegen with Boot-managed runtime jOOQ where possible -->
         <jooq.version>3.19.10</jooq.version>
         <!-- Version for JDBC driver used during jOOQ code generation (plugin dependency is not BOM-managed) -->
-        <postgresql.version>42.7.4</postgresql.version>
+        <postgresql.version>42.7.8</postgresql.version>
         <jjwt.version>0.12.6</jjwt.version>
     </properties>
 
