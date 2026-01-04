@@ -61,6 +61,31 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
     private UUID bobPredictionId;
     private UUID charliePredictionId;
 
+    private void ensureFinalizedRound(int roundPosition) {
+        Integer count = jdbc.queryForObject(
+                "SELECT COUNT(*) FROM t_round WHERE fk_season_id = ? AND c_position = ?",
+                Integer.class,
+                seasonId,
+                roundPosition);
+
+        if (count != null && count > 0) {
+            jdbc.update(
+                    "UPDATE t_round SET c_is_finalized = true WHERE fk_season_id = ? AND c_position = ?",
+                    seasonId,
+                    roundPosition);
+            return;
+        }
+
+        jdbc.update(
+                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized) VALUES (?,?,?,?,?,?)",
+                UUID.randomUUID(),
+                seasonId,
+                "Round " + roundPosition,
+                "round-" + roundPosition,
+                roundPosition,
+                true);
+    }
+
     @BeforeEach
     void setup() {
         PostgresTestDbCleaner.truncateAllDomainTables(jdbc);
@@ -372,6 +397,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
     }
 
     private void createResult(UUID userId, UUID predictionId, int roundPosition, int score, int zeroes, int swaps) {
+        ensureFinalizedRound(roundPosition);
         RoundSubmission submission = RoundSubmission.builder()
                 .userId(userId)
                 .seasonId(seasonId)
