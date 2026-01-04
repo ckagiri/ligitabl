@@ -35,55 +35,35 @@ public class RegisterHandler implements RegisterUserUseCase {
     public Either<UseCaseError, RegisterResult> execute(RegisterCommand command) {
         RegisterCommand normalized = normalize(command);
 
-        return validateDisplayName(normalized.displayName())
-                .flatMap(ignored -> requestValidator.validate(normalized))
-                .flatMap(cmd -> {
-                    if (userRepo.existsByEmail(cmd.email())) {
-                        return Either.left(UseCaseErrors.conflict(
-                                "User with email '" + cmd.email().value() + "' already exists"));
-                    }
+        return requestValidator.validate(normalized).flatMap(cmd -> {
+            if (userRepo.existsByEmail(cmd.email())) {
+                return Either.left(
+                        UseCaseErrors.conflict("User with email '" + cmd.email().value() + "' already exists"));
+            }
 
-                    UUID userId = UUID.randomUUID();
-                    Password.Hashed hashedPassword = passwordHasher.hash(cmd.password());
+            UUID userId = UUID.randomUUID();
+            Password.Hashed hashedPassword = passwordHasher.hash(cmd.password());
 
-                    User user = User.builder()
-                            .id(userId)
-                            .publicId(publicIdGenerator.generate(userId))
-                            .email(cmd.email())
-                            .displayName(cmd.displayName())
-                            .password(hashedPassword)
-                            .roles(Set.of(Role.PLAYER))
-                            .emailVerified(false)
-                            .build();
+            User user = User.builder()
+                    .id(userId)
+                    .publicId(publicIdGenerator.generate(userId))
+                    .email(cmd.email())
+                    .displayName(cmd.displayName())
+                    .password(hashedPassword)
+                    .roles(Set.of(Role.PLAYER))
+                    .emailVerified(false)
+                    .build();
 
-                    return Either.catching(() -> userRepo.create(user), UseCaseErrors::fromException)
-                            .map(saved -> {
-                                log.info("User registered successfully: {}", saved.getPublicId());
-                                return new RegisterResult(
-                                        saved.getPublicId(), saved.getEmail(), saved.getDisplayName(), saved.getRoles());
-                            });
-                });
+            return Either.catching(() -> userRepo.create(user), UseCaseErrors::fromException).map(saved -> {
+                log.info("User registered successfully: {}", saved.getPublicId());
+                return new RegisterResult(saved.getPublicId(), saved.getEmail(), saved.getDisplayName(), saved.getRoles());
+            });
+        });
     }
 
     private static RegisterCommand normalize(RegisterCommand command) {
         String name = command.displayName();
         String trimmed = name == null ? null : name.trim();
         return new RegisterCommand(command.email(), trimmed, command.password());
-    }
-
-    private static Either<UseCaseError, Void> validateDisplayName(String displayName) {
-        if (displayName == null || displayName.isBlank()) {
-            return Either.left(UseCaseErrors.validation("displayName", "cannot be empty"));
-        }
-
-        if (displayName.length() < 2) {
-            return Either.left(UseCaseErrors.validation("displayName", "must be at least 2 characters"));
-        }
-
-        if (displayName.length() > 100) {
-            return Either.left(UseCaseErrors.validation("displayName", "must be at most 100 characters"));
-        }
-
-        return Either.right(null);
     }
 }

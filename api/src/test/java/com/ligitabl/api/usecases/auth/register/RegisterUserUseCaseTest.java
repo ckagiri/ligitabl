@@ -14,6 +14,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import jakarta.validation.Validation;
+
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.ConflictError;
 import com.ligitabl.api.shared.errors.UnexpectedError;
@@ -42,7 +44,6 @@ class RegisterUserUseCaseTest {
     @Mock
     PublicIdGenerator publicIdGenerator;
 
-    @Mock
     RequestValidator requestValidator;
 
     RegisterUserUseCase useCase;
@@ -54,14 +55,13 @@ class RegisterUserUseCaseTest {
 
     @BeforeEach
     void setUp() {
+        requestValidator = new RequestValidator(Validation.buildDefaultValidatorFactory().getValidator());
         useCase = new RegisterHandler(userRepo, passwordHasher, publicIdGenerator, requestValidator);
 
         email = Email.create("newuser@example.com");
         password = Password.Plaintext.create("password123");
         hashed = Password.Hashed.of("$2a$10$hashedPassword");
         publicId = PublicId.create("AbCd3fGh9J");
-
-        when(requestValidator.validate(any())).thenAnswer(inv -> Either.right(inv.getArgument(0)));
     }
 
     @Test
