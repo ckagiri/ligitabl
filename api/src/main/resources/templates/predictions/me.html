@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<body>
+<div layout:fragment="content">
+    <div id="prediction-page" th:fragment="predictionPage" class="max-w-4xl mx-auto">
+        <!-- Page Header with Round Navigation -->
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+            <div class="px-6 py-4 border-b border-gray-200">
+              <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-4 sm:mb-6">
+                  <div class="flex flex-col sm:flex-row sm:items-baseline sm:gap-2">
+                      <h1 class="text-xl sm:text-2xl font-bold text-gray-900">
+                          My Prediction
+                      </h1>
+                      <div class="flex items-center gap-2 mt-1 sm:mt-0">
+                          <span class="text-sm sm:text-base text-gray-600">
+                              Gameweek <span th:text="${viewingRound}">19</span>
+                          </span>
+                          <span th:if="${isCurrentRound}" class="text-xs sm:text-sm font-medium text-green-600">
+                              (Current)
+                          </span>
+                      </div>
+                  </div>
+
+                  <!-- Reset Demo (desktop) -->
+                  <a th:href="@{/predictions/demo-reset}"
+                    data-reset-demo="true"
+                    class="hidden sm:block text-xs text-gray-400 hover:text-gray-600 underline">
+                      Reset Demo
+                  </a>
+              </div>
+
+              <!-- Status Indicator -->
+              <div class="mb-4 sm:mb-6">
+                  <div class="inline-flex items-center gap-2 text-sm">
+                      <span th:if="${isCurrentRound && canSwap}"
+                            class="flex items-center gap-1.5 text-green-600 font-medium">
+                          <span class="w-2 h-2 bg-green-600 rounded-full"></span>
+                          Ready to modify
+                      </span>
+                      <span th:if="${isCurrentRound && !canSwap && swapStatus != null}"
+                            class="flex items-center gap-1.5 text-yellow-600 font-medium">
+                          <span class="w-2 h-2 bg-yellow-600 rounded-full"></span>
+                          <!-- Extract "Next change in X" and remove the period -->
+                          <span th:text="${#strings.replace(#strings.substringAfter(swapStatus.message, 'Next change in '), '.', '')}">23h</span>
+                          <span> remaining (countdown is actually from 24h)</span>
+                      </span>
+                  </div>
+
+                  <!-- Reset Demo (mobile only) -->
+                  <a th:href="@{/predictions/demo-reset}"
+                    data-reset-demo="true"
+                    class="sm:hidden inline-block mt-2 text-xs text-gray-400 hover:text-gray-600 underline">
+                      Reset Demo
+                  </a>
+              </div>
+
+              <!-- Round Navigation -->
+              <div class="flex flex-col space-y-3">
+                  <!-- Navigation Controls -->
+                  <div class="flex items-center justify-between gap-2">
+                      <!-- Previous Button -->
+                      <button th:attr="hx-get=@{/predictions/me(round=${viewingRound - 1})}"
+                              hx-target="#prediction-page"
+                              hx-swap="outerHTML swap:300ms"
+                              hx-push-url="true"
+                              data-dismiss-results-banner="true"
+                              th:disabled="${viewingRound <= 1}"
+                              th:classappend="${viewingRound <= 1 ? 'opacity-50 cursor-not-allowed' : ''}"
+                              class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition disabled:hover:bg-white">
+                          <svg class="h-4 w-4 sm:mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+                          </svg>
+                          <span class="hidden sm:inline">Previous</span>
+                      </button>
+
+                      <!-- Round Dropdown -->
+                      <select th:attr="hx-get=@{/predictions/me}"
+                              hx-trigger="change"
+                              hx-target="#prediction-page"
+                              hx-swap="outerHTML swap:300ms"
+                              hx-push-url="true"
+                              hx-include="this"
+                              name="round"
+                              class="flex-1 sm:flex-initial sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+                              style="appearance: none; background-image: url('data:image/svg+xml;charset=UTF-8,%3csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 24 24%27 fill=%27none%27 stroke=%27%23374151%27 stroke-width=%272%27 stroke-linecap=%27round%27 stroke-linejoin=%27round%27%3e%3cpolyline points=%276 9 12 15 18 9%27%3e%3c/polyline%3e%3c/svg%3e'); background-repeat: no-repeat; background-position: right 0.5rem center; background-size: 1em;">
+                          <option th:each="r : ${#numbers.sequence(1, currentRound)}"
+                                  th:value="${r}"
+                                  th:selected="${r == viewingRound}"
+                                  th:text="${r == currentRound ? 'GW ' + r + ' (Current)' : 'GW ' + r}">
+                              Gameweek 19 (Current)
+                          </option>
+                      </select>
+
+                      <!-- Next Button -->
+                      <button th:attr="hx-get=@{/predictions/me(round=${viewingRound + 1})}"
+                              hx-target="#prediction-page"
+                              hx-swap="outerHTML swap:300ms"
+                              hx-push-url="true"
+                              th:disabled="${viewingRound >= currentRound}"
+                              th:classappend="${viewingRound >= currentRound ? 'opacity-50 cursor-not-allowed' : ''}"
+                              class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition disabled:hover:bg-white">
+                          <span class="hidden sm:inline">Next</span>
+                          <svg class="h-4 w-4 sm:ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                          </svg>
+                      </button>
+                  </div>
+
+                  <!-- Jump to Current (below on mobile, right-aligned on desktop) -->
+                  <div th:if="${!isCurrentRound}" class="flex justify-center sm:justify-end">
+                      <button th:attr="hx-get=@{/predictions/me(round=${currentRound})}"
+                              hx-target="#prediction-page"
+                              hx-swap="outerHTML swap:300ms"
+                              hx-push-url="true"
+                              class="inline-flex items-center px-3 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition">
+                          Jump to Current →
+                      </button>
+                  </div>
+              </div>
+            </div>
+        </div>
+
+        <!-- Results Banner (only on current round; loads via HTMX if latest result available) -->
+        <div th:if="${isCurrentRound}"
+             id="results-banner"
+             hx-get="/predictions/me/latest-result-banner"
+             hx-trigger="load"
+             hx-swap="innerHTML">
+            <!-- Banner content loaded via HTMX -->
+        </div>
+
+        <!-- Prediction Table with Alpine.js for interaction -->
+        <div id="prediction-content" th:fragment="predictionContent">
+            <div class="bg-white rounded-lg shadow-sm mb-6"
+                 x-data="Ligitabl.predictionPage($el)"
+                 th:attr="data-predictions=${predictionsJson},
+                    data-can-swap=${canSwap},
+                    data-is-initial-prediction=${isInitialPrediction},
+                    data-current-standings=${currentStandingsJson},
+                    data-fixtures=${fixturesJson},
+                    data-current-points=${currentPointsJson}">
+                <!-- Historical Round Info Banner -->
+                <div th:if="${!isCurrentRound}" class="px-6 pt-4">
+                    <div class="contextual-banner bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                        <p class="text-sm text-blue-800">
+                            <strong>📊 Historical Prediction</strong> - This is your prediction from Round <span th:text="${viewingRound}">18</span>.
+                            <span th:if="${roundScore != null}">
+                                You scored <strong th:text="${roundScore}">42</strong> points this round.
+                            </span>
+                            This view is read-only.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Contextual Instructions Banners -->
+                <div th:if="${isCurrentRound}" class="px-6 pt-4">
+                    <!-- PERSISTENT BANNER 1: Mode indicator (always visible when canSwap) -->
+                    <div x-cloak x-show="canSwap" class="contextual-banner rounded-lg p-3 mb-4"
+                        :class="isInitialPrediction ? 'bg-blue-50 border border-blue-200' : 'bg-blue-50 border border-blue-200'">
+                        <!-- Initial Prediction Mode -->
+                        <p x-show="isInitialPrediction" class="text-sm text-blue-800">
+                            <strong>Make your initial prediction!</strong> Click teams to swap their positions. Unlimited changes until you submit.
+                        </p>
+
+                        <!-- Post-Initial Mode: Regular swap limit -->
+                        <p x-show="!isInitialPrediction"
+                          th:unless="${swapStatus != null && swapStatus.canSwap && swapStatus.message.contains('first swap')}"
+                          class="text-sm text-blue-700">
+                            <strong>ℹ️ Swap Limit:</strong> You can swap one pair of teams per 24h period. Choose strategically!
+                        </p>
+
+                        <!-- Post-Initial Mode: First swap bonus -->
+                        <p th:if="${swapStatus != null && swapStatus.canSwap && swapStatus.message.contains('first swap')}"
+                          x-show="!isInitialPrediction"
+                          class="text-sm text-green-800">
+                            <strong>✨ First swap bonus!</strong> Make your first swap without waiting 24 hours. After this, the 24h cooldown applies.
+                        </p>
+                    </div>
+
+                    <!-- PERSISTENT BANNER 2: State indicator (always visible when canSwap) -->
+                    <div x-cloak x-show="canSwap" class="contextual-banner rounded-lg p-3 mb-4"
+                        :class="{
+                            'bg-blue-50 border border-blue-300': selectedTeam !== null,
+                            'bg-red-50 border border-red-300': exceedsLimit() && selectedTeam === null,
+                            'bg-amber-50 border border-amber-300': !exceedsLimit() && getDirtyCount() > 0 && selectedTeam === null,
+                            'bg-gray-50 border border-gray-200': !exceedsLimit() && selectedTeam === null && getDirtyCount() === 0
+                        }">
+
+                        <!-- Priority 1: Team Selected (replaces everything else) -->
+                        <p x-show="selectedTeam !== null" class="text-sm text-blue-800">
+                            <strong><span x-text="getSelectedTeamName()"></span> selected.</strong>
+                            Click another team to swap, or click again to deselect.
+                        </p>
+
+                          <!-- Priority 2: Too Many Swaps (only when no selection) -->
+                          <p x-show="exceedsLimit() && selectedTeam === null" class="text-sm text-red-800">
+                              <strong>Swap limit exceeded!</strong>
+                              You've made <span x-text="getSwapCount()"></span> swaps but only 1 is allowed per 24h.
+                              <a @click="reset()" class="underline cursor-pointer font-semibold">Reset</a>
+                          </p>
+
+                        <!-- Priority 3: Changes Made (within limit, no selection) -->
+                        <p x-show="!exceedsLimit() && getDirtyCount() > 0 && selectedTeam === null" class="text-sm text-amber-800">
+                            You've made <strong><span x-text="getSwapCount()"></span> <span x-text="getSwapCount() === 1 ? 'swap' : 'swaps'"></span></strong>.
+                            Review your changes below, then update to save or
+                            <a @click="reset()" class="underline cursor-pointer font-semibold">reset</a> to undo.
+                        </p>
+
+                        <!-- Priority 4: No changes yet (no selection) -->
+                        <p x-show="!exceedsLimit() && selectedTeam === null && getDirtyCount() === 0" class="text-sm text-gray-700">
+                            Click a team to select it, then click another team to swap their positions.
+                        </p>
+                    </div>
+
+                    <!-- Cooldown Active (replaces both banners) -->
+                    <div x-cloak x-show="!canSwap"
+                        class="contextual-banner bg-yellow-50 border border-yellow-300 rounded-lg p-3 mb-4">
+                        <p class="text-sm text-yellow-800">
+                            <span th:if="${swapStatus != null}"
+                                  th:utext="${#strings.replace(swapStatus.message, 'Cooldown active.', '<strong>Cooldown active.</strong>')}"
+                                  >
+                                <strong>Cooldown active.</strong> Next modification available in 23h.
+                            </span>
+                        </p>
+                    </div>
+                </div>
+
+                <div th:if="${isCurrentRound && (roundState == 'open' || roundState == 'locked')}" class="px-6 pt-4 pb-2 space-y-2">
+                    <!-- Compare with standings -->
+                    <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition">
+                        <input type="checkbox"
+                              x-model="showStandings"
+                              class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <span class="hidden sm:inline">Compare with current standings</span>
+                        <span class="sm:hidden">Show actual positions</span>
+                    </label>
+
+                    <!-- Show fixtures -->
+                    <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition">
+                        <input type="checkbox"
+                              x-model="showFixtures"
+                              class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <span class="hidden sm:inline">Show fixtures</span>
+                        <span class="sm:hidden">Show fixtures</span>
+                    </label>
+
+                    <!-- Show points -->
+                    <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition">
+                        <input type="checkbox"
+                              x-model="showPoints"
+                              class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <span class="hidden sm:inline">Show current points</span>
+                        <span class="sm:hidden">Show points</span>
+                    </label>
+                </div>
+                <!-- Teams Table -->
+                <div class="px-6 py-4">
+                    <div class="overflow-hidden">
+                        <table class="min-w-full table-fixed">
+
+<thead class="bg-gray-50">
+    <tr>
+        <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+            Pos
+        </th>
+        <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            Team
+        </th>
+        <!-- Comparison columns for current round (hidden on mobile) -->
+        <th x-show="showStandings" scope="col" class="hidden sm:table-cell px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+            Actual
+        </th>
+        <th x-show="showStandings" scope="col" class="hidden sm:table-cell px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+            <div class="flex items-center justify-end gap-1">
+                <span>Delta</span>
+                <span class="text-gray-400 cursor-help inline-block"
+                      title="↑ Green: Team performing better, move them up
+↓ Red: Team performing worse, move them down">
+                    <svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                    </svg>
+                </span>
+            </div>
+        </th>
+        <!-- Points column -->
+        <th x-show="showPoints" scope="col" class="hidden sm:table-cell px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+            Pts
+        </th>
+        <!-- Historical columns -->
+        <th th:if="${!isCurrentRound}" scope="col" class="px-2 sm:px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-14 sm:w-20">
+            Hit
+        </th>
+        <th th:if="${!isCurrentRound}" scope="col" class="px-2 sm:px-3 py-3 text-right text-xs font-medium text-gray-400 uppercase tracking-wider w-14 sm:w-20">
+            Pos
+        </th>
+    </tr>
+</thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <template th:if="${isCurrentRound}" x-for="team in teams" :key="team.code">
+                                    <tr @click="teamClick(team.code)"
+                                        :data-team-code="team.code"
+                                        :class="{
+                                            'cursor-pointer hover:bg-gray-50': canSwap,
+                                            'no-hover': !canSwap,
+                                            'bg-blue-50': isSelected(team.code),
+                                            'bg-amber-50': isDirty(team.code) && !isSelected(team.code),
+                                            'transition-all duration-200': true
+                                        }"
+                                        class="prediction-row">
+ <td class="px-3 py-4 whitespace-nowrap">
+            <div class="flex items-center">
+                <span class="text-sm font-bold text-gray-900 mr-2" x-text="team.position"></span>
+                <!-- Position Change Indicator -->
+                <span x-show="getPositionChange(team.code)"
+                      :class="{
+                          'text-green-600': getPositionChange(team.code)?.startsWith('↑'),
+                          'text-red-600': getPositionChange(team.code)?.startsWith('↓')
+                      }"
+                      class="text-xs font-semibold position-change"
+                      x-text="getPositionChange(team.code)">
+                </span>
+            </div>
+        </td>
+<td class="px-3 py-4 whitespace-nowrap">
+    <div class="flex items-center justify-between">
+        <div class="flex items-center">
+            <div class="h-8 w-8 mr-3 bg-gray-200 rounded flex items-center justify-center text-xs font-bold"
+                 x-text="team.code">
+            </div>
+            <div>
+                <!-- Team name -->
+                <div class="text-sm font-medium text-gray-900" x-text="team.name"></div>
+
+                <!-- Mobile: Fixtures AND/OR Standings AND/OR Points on same line -->
+                <div x-show="showFixtures || showStandings || showPoints" class="sm:hidden flex items-center gap-1.5 mt-1 flex-wrap">
+                    <!-- Fixtures -->
+                    <template x-if="showFixtures && hasFixtures(team.code)">
+                        <template x-for="fixture in getFixtures(team.code)" :key="fixture.opponent">
+                            <span class="inline-flex items-center px-1.5 py-0.5 bg-gray-100 rounded text-[11px] font-medium text-gray-600">
+                                <span x-show="!fixture.home">@</span><span x-text="fixture.opponent"></span>
+                            </span>
+                        </template>
+                    </template>
+
+                    <!-- Bullet separator 1 (fixtures/standings) -->
+                    <template x-if="showFixtures && hasFixtures(team.code) && showStandings && getFixtures(team.code).length <= 2">
+                        <span class="text-gray-400">•</span>
+                    </template>
+
+                    <!-- Actual position with delta -->
+                    <div x-show="showStandings" class="flex items-center gap-1 text-xs">
+                        <span class="text-gray-500">Actual:</span>
+                        <span class="text-gray-700 font-medium" x-text="getActualPosition(team.code)">2</span>
+
+                        <!-- Delta with arrow -->
+                        <span x-show="getDelta(team.code) !== 0 && getDelta(team.code) !== '-'"
+                              class="flex items-center gap-0.5 font-semibold"
+                              :class="getDeltaDirection(team.code) === 'down' ? 'text-red-600' : 'text-green-600'">
+                            <svg class="h-3 w-3"
+                                 fill="currentColor" viewBox="0 0 20 20">
+                                <path x-show="getDeltaDirection(team.code) === 'up'"
+                                      fill-rule="evenodd"
+                                      d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                                      clip-rule="evenodd"/>
+                                <path x-show="getDeltaDirection(team.code) === 'down'"
+                                      fill-rule="evenodd"
+                                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                      clip-rule="evenodd"/>
+                            </svg>
+                            <span x-text="getDelta(team.code)"></span>
+                        </span>
+
+                        <!-- Perfect prediction -->
+                        <span x-show="getDelta(team.code) === 0" class="text-green-600 font-semibold">
+                            ✓
+                        </span>
+                    </div>
+
+
+                    <!-- Points -->
+                    <div x-show="showPoints" class="flex basis-full items-center gap-1 text-[11px]">
+                        <span class="text-gray-700 font-medium" x-text="getCurrentPoints(team.code)">45</span><span class="text-gray-500">pts</span>
+                    </div>
+
+                </div>
+
+                <!-- Desktop: Just fixtures (standings/points in separate columns) -->
+                <div x-show="showFixtures && hasFixtures(team.code)" class="hidden sm:flex items-center gap-1.5 mt-1">
+                    <template x-for="fixture in getFixtures(team.code)" :key="fixture.opponent">
+                        <span class="inline-flex items-center px-1.5 py-0.5 bg-gray-100 rounded text-[11px] font-medium text-gray-600">
+                            <span x-show="!fixture.home">@</span><span x-text="fixture.opponent"></span>
+                        </span>
+                    </template>
+                </div>
+            </div>
+        </div>
+        <!-- Selection indicator -->
+        <div class="text-xs text-gray-400">
+            <span x-show="isSelected(team.code)" class="text-blue-600 font-medium">●</span>
+        </div>
+    </div>
+</td>
+
+                                        <!-- Actual Position - hide on mobile -->
+                                        <td x-show="showStandings" class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right text-sm text-gray-400"
+                                            x-text="getActualPosition(team.code)">2</td>
+
+                                        <!-- Delta with Arrow -->
+                                        <td x-show="showStandings" class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right">
+                                            <div class="flex items-center justify-end gap-1 text-sm font-semibold">
+                                                <!-- Arrow icon -->
+                                                <svg x-show="getDelta(team.code) !== 0 && getDelta(team.code) !== '-'"
+                                                    class="h-4 w-4"
+                                                    :class="getDeltaDirection(team.code) === 'down' ? 'text-red-600' : 'text-green-600'"
+                                                    fill="currentColor" viewBox="0 0 20 20">
+                                                    <path x-show="getDeltaDirection(team.code) === 'up'"
+                                                          fill-rule="evenodd"
+                                                          d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                                                          clip-rule="evenodd"/>
+                                                    <path x-show="getDeltaDirection(team.code) === 'down'"
+                                                          fill-rule="evenodd"
+                                                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                          clip-rule="evenodd"/>
+                                                </svg>
+                                                <!-- Delta number -->
+                                                <span :class="getDelta(team.code) === 0 ? 'text-green-600' : (getDeltaDirection(team.code) === 'down' ? 'text-red-600' : 'text-green-600')"
+                                                      x-text="getDelta(team.code)">1</span>
+                                            </div>
+                                        </td>
+
+                                        <!-- Points Column (Desktop) -->
+                                        <td x-show="showPoints" class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-700"
+                                            x-text="getCurrentPoints(team.code)">45</td>
+                                    </tr>
+                                </template>
+                              <!-- Historical Round: Static table with Hit and Pos columns -->
+                              <tr th:if="${!isCurrentRound}" th:each="pred : ${predictions}"
+                                  class="hover:bg-gray-50">
+                                  <!-- Position -->
+                                  <td class="px-2 sm:px-3 py-3 sm:py-4 whitespace-nowrap">
+                                      <span class="text-xs sm:text-sm font-bold text-gray-900" th:text="${pred.position}">1</span>
+                                  </td>
+
+                                  <!-- Team (compact on mobile) -->
+                                  <td class="px-2 sm:px-3 py-3 sm:py-4 whitespace-nowrap">
+                                      <div class="flex items-center">
+                                          <div class="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 bg-gray-200 rounded flex items-center justify-center text-xs font-bold flex-shrink-0"
+                                              th:text="${pred.teamCode}">MCI</div>
+                                          <div class="text-xs sm:text-sm font-medium text-gray-900 truncate"
+                                              th:text="${pred.teamName}">Manchester City</div>
+                                      </div>
+                                  </td>
+
+                                  <!-- Hit (compact) -->
+                                  <td class="px-2 sm:px-3 py-3 sm:py-4 whitespace-nowrap text-right">
+                                      <span th:if="${pred.hit != null}"
+                                            th:classappend="${pred.hit == 0 ? 'text-green-600 font-bold' : 'text-red-600'}"
+                                            class="text-xs sm:text-sm font-semibold"
+                                            th:text="${pred.hit}">0</span>
+                                  </td>
+
+                                  <!-- Actual Position (compact) -->
+                                  <td class="px-2 sm:px-3 py-3 sm:py-4 whitespace-nowrap text-right">
+                                      <span class="text-xs sm:text-sm text-gray-400" th:text="${pred.actualPosition}">1</span>
+                                  </td>
+                              </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                  <div th:if="${!isCurrentRound && roundScore != null}" class="mt-4 text-center pb-4">
+                      <div class="inline-flex flex-col items-center px-6 py-3 bg-gray-50 rounded-lg border border-gray-200">
+                          <div class="flex items-center text-sm text-gray-600 mb-1">
+                            <span class="font-mono">200</span>
+                            <span class="mx-2">−</span>
+                            <span class="font-mono" th:text="${totalHits}">156</span>
+                            <span class="mx-2">=</span>
+                            <span class="font-mono font-bold text-gray-900" th:text="${roundScore}">44</span>
+                            <span class="ml-1">points</span>
+                          </div>
+
+                          <!-- Move it here, as a sibling -->
+                          <div class="text-xs text-green-600 font-semibold">
+                              🎯 <span th:text="${predictions.?[hit != null and hit == 0].size()}">5</span> perfect predictions!
+                          </div>
+
+                          <div class="text-xs text-gray-500">
+                              (Max: 200, Lost: <span th:text="${totalHits}">156</span>)
+                          </div>
+                      </div>
+                  </div>
+                </div>
+
+              <!-- Actions Footer (only for current round) -->
+              <div th:if="${isCurrentRound}" x-show="canSwap" class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                  <div class="flex flex-col items-center space-y-3">
+                      <!-- Primary Action: Update Button with Counter and Loading State -->
+                      <button @click="submitChanges()"
+                              :disabled="!canUpdate() || isSaving"
+                              :class="canUpdate() && !isSaving ? 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer' : 'bg-gray-300 cursor-not-allowed'"
+                              class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors">
+
+                          <!-- Loading Spinner -->
+                          <svg x-show="isSaving"
+                              class="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
+                              fill="none"
+                              viewBox="0 0 24 24">
+                              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+
+                          <!-- Success Checkmark (not saving) -->
+                          <svg x-show="!isSaving" class="h-5 w-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                          </svg>
+
+                          <!-- Button Text -->
+                          <span x-show="!isSaving">
+                              <span x-show="getSwapCount() === 0">Update Prediction</span>
+                              <span x-show="getSwapCount() > 0">
+                                  Update Prediction (<span class="button-counter" x-text="getSwapCount()"></span>)
+                              </span>
+                          </span>
+                          <span x-show="isSaving">
+                              <span x-show="isInitialPrediction">Submitting prediction...</span>
+                              <span x-show="!isInitialPrediction">Saving changes...</span>
+                          </span>
+                      </button>
+
+                      <!-- Visual display of changes made -->
+                      <div x-cloak x-show="getDirtyCount() > 0" class="w-full max-w-md">
+                          <!-- Summary Card -->
+                          <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
+                              <!-- Header -->
+                              <div class="flex items-center justify-between mb-3">
+                                  <button @click="reset()"
+                                          class="text-sm font-medium text-red-600 hover:text-red-700 underline flex items-center gap-1">
+                                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                                      </svg>
+                                      Reset all
+                                  </button>
+                                  <div class="flex items-center space-x-2">
+                                      <svg class="h-5 w-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"></path>
+                                      </svg>
+                                      <h4 class="text-sm font-semibold text-gray-900">Changes Made</h4>
+                                  </div>
+                              </div>
+                              <!-- Stats -->
+                              <div class="flex items-center justify-between text-sm mb-3 pb-3 border-b border-gray-100">
+                                  <div class="flex items-center space-x-4">
+                                      <div>
+                                          <span class="text-gray-500">Teams:</span>
+                                          <span class="font-semibold text-gray-900 ml-1" x-text="getDirtyCount()">2</span>
+                                      </div>
+                                      <div>
+                                          <span class="text-gray-500">Swaps:</span>
+                                          <span class="font-semibold ml-1"
+                                                :class="exceedsLimit() ? 'text-red-600' : 'text-indigo-600'"
+                                                x-text="getSwapCount()">1</span>
+                                      </div>
+                                  </div>
+                                  <div x-show="!isInitialPrediction" class="text-xs text-gray-500">
+                                      Limit: 1
+                                  </div>
+                              </div>
+
+                              <!-- List of Changes -->
+                              <div class="space-y-2">
+                                  <template x-for="(change, index) in getChangedTeams()" :key="change.code">
+                                      <div class="flex items-center justify-between text-sm py-1.5 px-2 bg-gray-50 rounded">
+                                          <!-- Team Name -->
+                                          <span class="font-medium text-gray-700" x-text="change.name">Man City</span>
+
+                                          <!-- Position Change -->
+                                          <div class="flex items-center space-x-2">
+                                              <span class="text-gray-400 text-xs" x-text="change.from">1</span>
+                                              <svg class="h-4 w-4"
+                                                  :class="change.direction === 'up' ? 'text-green-600' : 'text-red-600'"
+                                                  fill="currentColor" viewBox="0 0 20 20">
+                                                  <path x-show="change.direction === 'up'"
+                                                        fill-rule="evenodd"
+                                                        d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                                                        clip-rule="evenodd"/>
+                                                  <path x-show="change.direction === 'down'"
+                                                        fill-rule="evenodd"
+                                                        d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                                        clip-rule="evenodd"/>
+                                              </svg>
+                                              <span class="text-gray-900 font-semibold text-xs" x-text="change.to">3</span>
+                                          </div>
+                                      </div>
+                                  </template>
+                              </div>
+
+                              <!-- Warning for exceeding limit -->
+                              <div x-cloak x-show="exceedsLimit()"
+                                  class="mt-3 pt-3 border-t border-red-100 bg-red-50 -mx-4 -mb-4 px-4 py-3 rounded-b-lg">
+                                  <div class="flex items-start">
+                                      <svg class="h-5 w-5 text-red-600 mt-0.5 mr-2 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                                          <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                      </svg>
+                                      <div class="flex-1">
+                                          <p class="text-xs font-semibold text-red-800">Too many changes</p>
+                                          <p class="text-xs text-red-700 mt-0.5">
+                                              Only 1 swap allowed per 24h period. Reset to continue.
+                                          </p>
+                                      </div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+            </div>
+
+            <!-- Last Updated Info -->
+            <div th:if="${isCurrentRound && swapStatus != null}" class="text-center text-sm text-gray-500">
+                <p th:if="${swapStatus.lastSwapAt != 'Never'}">
+                    Last updated: <span th:text="${swapStatus.lastSwapAt}">Jan 01, 2024 12:00</span>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

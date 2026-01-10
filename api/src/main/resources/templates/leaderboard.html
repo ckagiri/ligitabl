@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<body>
+<div layout:fragment="content">
+    <div class="bg-white rounded-lg shadow-sm">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-gray-900">Leaderboard</h1>
+                <div>
+                    <select th:attr="hx-get=@{/leaderboard}"
+                            hx-trigger="change"
+                            hx-target="#leaderboard-content"
+                            hx-swap="outerHTML swap:300ms"
+                            hx-include="this"
+                            name="phase"
+                            class="form-select block w-48 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                            <option th:each="p : ${phases}"
+                                    th:value="${p}"
+                                    th:selected="${p == currentPhase}"
+                                    th:text="${p == 'FS' ? 'Full Season' :
+                                              p == 'Q1' ? 'Q1 (GW 1-9)' :
+                                              p == 'Q2' ? 'Q2 (GW 10-19)' :
+                                              p == 'Q3' ? 'Q3 (GW 20-29)' :
+                                              p == 'Q4' ? 'Q4 (GW 30-38)' :
+                                              p == 'H1' ? 'H1 (GW 1-19)' :
+                                              p == 'H2' ? 'H2 (GW 20-38)' : p}">
+                                Full Season
+                            </option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Leaderboard Table -->
+        <div id="leaderboard-content" th:fragment="leaderboardContent" class="px-6 py-4">
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-gray-50">
+                      <tr>
+                          <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
+                              Pos
+                          </th>
+                          <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                              Player
+                          </th>
+                          <th scope="col" class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                              Score
+                          </th>
+                          <th scope="col" class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                              GW
+                          </th>
+                          <th scope="col" class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                              Zeroes
+                          </th>
+                          <th scope="col" class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                              Swaps
+                          </th>
+                          <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">
+                              Movement
+                          </th>
+                      </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-gray-200">
+                      <tr th:each="entry : ${leaderboard}"
+                          th:classappend="${userPosition != null && entry.position == userPosition.position ? 'bg-indigo-50 border-l-4 border-indigo-500' : ''}"
+                          class="hover:bg-gray-50 transition">
+                          <!-- Position -->
+                          <td class="px-3 py-4 whitespace-nowrap text-sm font-bold"
+                              th:classappend="${userPosition != null && entry.position == userPosition.position ? 'text-indigo-900' : 'text-gray-900'}">
+                              <span th:if="${userPosition != null && entry.position == userPosition.position}"
+                                    class="text-indigo-600 mr-1.5 text-base">🔹</span>
+                              <span th:text="${entry.position}">1</span>
+                          </td>
+
+                          <!-- Player (clickable) -->
+                          <td class="px-3 py-4 whitespace-nowrap">
+                              <button th:attr="hx-get=@{/leaderboard/user/{id}/details(id=${entry.userId})}"
+                                      hx-target="#user-detail-modal"
+                                      hx-swap="innerHTML"
+                                      class="text-sm font-medium hover:text-indigo-600 hover:underline transition cursor-pointer text-left"
+                                      th:classappend="${userPosition != null && entry.position == userPosition.position ? 'text-indigo-900' : 'text-gray-900'}"
+                                      th:text="${entry.displayName}">Alice Wonder</button>
+                          </td>
+
+                          <!-- Score -->
+                          <td class="px-3 py-4 whitespace-nowrap text-right text-sm font-bold text-indigo-600"
+                              th:text="${entry.totalScore}">1850</td>
+
+                          <!-- Round Score -->
+                          <td class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-600"
+                              th:text="${entry.roundScore}">45</td>
+
+                          <!-- Zeroes -->
+                          <td class="px-3 py-4 whitespace-nowrap text-right text-sm font-semibold text-green-600"
+                              th:text="${entry.totalZeroes}">198</td>
+
+                          <!-- Swaps -->
+                          <td class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-500"
+                              th:text="${entry.totalSwaps}">23</td>
+
+                          <!-- Movement -->
+                          <td class="px-3 py-4 whitespace-nowrap text-center text-sm">
+                              <span th:if="${entry.movement > 0}" class="text-green-600 font-semibold">
+                                  ↑ <span th:text="${entry.movement}">1</span>
+                              </span>
+                              <span th:if="${entry.movement < 0}" class="text-red-600 font-semibold">
+                                    ↓ <span th:text="${T(java.lang.Math).abs(entry.movement)}">2</span>
+                              </span>
+                              <span th:if="${entry.movement == 0}" class="text-gray-400">--</span>
+                          </td>
+                      </tr>
+                  </tbody>
+
+                  <!-- Sticky User Position Row -->
+                  <tfoot th:if="${userPosition != null && !userInCurrentPage}"
+                        class="border-t-2 border-indigo-300">
+                      <tr class="bg-gradient-to-r from-indigo-50 to-blue-50">
+                          <td colspan="7" class="px-3 py-4">
+                              <div class="flex items-center space-x-6">
+                                  <!-- Position -->
+                                  <div class="flex items-center">
+                                      <span class="text-indigo-600 mr-1.5 text-base">🔹</span>
+                                      <span class="text-sm font-semibold text-indigo-900">
+                                          #<span th:text="${userPosition.position}">45</span>
+                                      </span>
+                                  </div>
+
+                                  <!-- Name -->
+                                  <div class="text-sm font-bold text-indigo-900">
+                                      You (<span th:text="${currentUserName}">Adam</span>)
+                                  </div>
+
+                                  <!-- Score -->
+                                  <div class="flex items-center">
+                                      <span class="text-xs text-gray-600 mr-1">Score:</span>
+                                      <span class="text-sm font-bold text-indigo-700" th:text="${userPosition.totalScore}">1702</span>
+                                  </div>
+
+                                  <!-- Round Score -->
+                                  <div class="flex items-center">
+                                      <span class="text-xs text-gray-600 mr-1">Round:</span>
+                                      <span class="text-sm text-gray-700" th:text="${userPosition.roundScore}">156</span>
+                                  </div>
+
+                                  <!-- Zeroes -->
+                                  <div class="flex items-center">
+                                      <span class="text-xs text-gray-600 mr-1">Zeroes:</span>
+                                      <span class="text-sm font-semibold text-green-600" th:text="${userPosition.totalZeroes}">175</span>
+                                  </div>
+
+                                  <!-- Swaps -->
+                                  <div class="flex items-center">
+                                      <span class="text-xs text-gray-600 mr-1">Swaps:</span>
+                                      <span class="text-sm font-semibold text-indigo-600" th:text="${userPosition.totalSwaps}">15</span>
+                                  </div>
+
+                                  <!-- Movement -->
+                                  <div class="flex items-center">
+                                      <span th:if="${userPosition.movement > 0}" class="text-green-600 font-bold text-sm">
+                                          ↑ <span th:text="${userPosition.movement}">3</span>
+                                      </span>
+                                      <span th:if="${userPosition.movement < 0}" class="text-red-600 font-bold text-sm">
+                                            ↓ <span th:text="${T(java.lang.Math).abs(userPosition.movement)}">2</span>
+                                      </span>
+                                      <span th:if="${userPosition.movement == 0}" class="text-indigo-500 text-sm">--</span>
+                                  </div>
+                              </div>
+                          </td>
+                      </tr>
+                  </tfoot>
+              </table>
+            </div>
+
+            <!-- Pagination (below table) -->
+            <div class="mt-4 flex items-center justify-between">
+                <div class="text-sm text-gray-500">
+                    Showing 1-10 of 100 players
+                </div>
+                <div class="flex space-x-2">
+                    <button class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
+                            disabled>
+                        Previous
+                    </button>
+                    <button class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50">
+                        Next
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for user details (loaded via HTMX) -->
+    <div id="user-detail-modal"></div>
+</div>
+</body>
+</html>
