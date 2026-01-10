@@ -46,9 +46,6 @@ public class FootballDataClientAdapter implements FootballDataGateway {
                 .flatMap(this::mapMatchesResponse);
     }
 
-    /**
-     * Map your ApiError to domain ImportError
-     */
     private ImportError mapApiError(ApiError error) {
         return switch (error) {
             case ApiError.NetworkError e -> com.ligitabl.api.importer.model.errors.ApiError.connectionFailed(
@@ -121,9 +118,6 @@ public class FootballDataClientAdapter implements FootballDataGateway {
         return right(matches);
     }
 
-    /**
-     * Map your MatchDto to domain ExternalMatch
-     */
     private Either<ImportError, ExternalMatch> mapMatchDto(MatchDto dto) {
         // Map teams
         Either<ImportError, ExternalTeam> homeTeamResult = mapTeam(dto.homeTeam());

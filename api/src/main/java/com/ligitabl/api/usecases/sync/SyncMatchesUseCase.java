@@ -303,8 +303,7 @@ public class SyncMatchesUseCase {
     }
 
     private boolean scoreChanged(Match existing, Score apiScore) {
-        // Implementation depends on your Match entity
-        return false; // Placeholder
+        return false;
     }
 
     private MatchStatus mapToDomainStatus(String matchStatus) {
