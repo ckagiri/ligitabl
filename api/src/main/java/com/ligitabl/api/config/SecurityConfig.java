@@ -71,10 +71,13 @@ public class SecurityConfig {
                                 "/standings",
                                 "/matches",
                                 "/css/**",
+                                "/dist/**",
                                 "/js/**",
                                 "/images/**",
                                 "/webjars/**",
-                                "/favicon.ico")
+                                "/favicon.ico",
+                                "/favicon.svg",
+                                "/apple-touch-icon.png")
                         .permitAll()
                         .requestMatchers("/predictions/**")
                         .hasRole("PLAYER")

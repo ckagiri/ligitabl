@@ -1,5 +1,6 @@
 package com.ligitabl.api.controllers.web;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Controller;
@@ -14,6 +15,7 @@ import com.ligitabl.api.usecases.contest.JoinContestCommand;
 import com.ligitabl.api.usecases.contest.JoinContestUseCase;
 import com.ligitabl.api.usecases.swap.MakeSwapUseCase;
 import com.ligitabl.api.usecases.swap.SwapCommand;
+import com.ligitabl.api.usecases.swap.SwapError;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,6 +36,9 @@ public class WebPlayerController {
     private final MakeSwapUseCase makeSwapUseCase;
     private final CurrentUserId currentUserId;
 
+    @Autowired(required = false)
+    private FakeWebDataService fakeDataService;
+
     @GetMapping("/predictions/me")
     public String myPredictions(
             @AuthenticationPrincipal UserDetails userDetails,
@@ -41,6 +46,16 @@ public class WebPlayerController {
             Model model) {
 
         log.debug("Fetching predictions for user: {}", userDetails.getUsername());
+
+        // Use fake data if available (for UI development without database)
+        if (fakeDataService != null) {
+            var fakePrediction = fakeDataService.getFakePrediction();
+            model.addAttribute("prediction", fakePrediction);
+            model.addAttribute("userEmail", userDetails.getUsername());
+            model.addAttribute("usingFakeData", true);
+
+            return "predictions/me";
+        }
 
         // TODO: Implement get prediction use case
         // For now, show placeholder message
@@ -61,36 +76,48 @@ public class WebPlayerController {
         UUID userId = currentUserId.require();
         log.debug("Making swap for user: {} - {} <-> {}", userId, teamA, teamB);
 
-        // Create swap command
         var swapCommand = new SwapCommand(teamA, teamB);
-
-        // Execute use case
         var result = makeSwapUseCase.execute(userId, swapCommand);
 
-        return result.fold(
-                error -> {
+        // Use peek/peekLeft for cleaner error handling
+        result.peekLeft(error -> {
                     log.error("Swap failed for {}: {}", userId, error);
                     model.addAttribute("error", "Swap failed: " + getSwapErrorMessage(error));
                     model.addAttribute("userEmail", userDetails.getUsername());
-                    return "predictions/me";
-                },
-                swapResult -> {
+                })
+                .peek(swapResult -> {
                     log.info("Swap successful for {}: {} <-> {}", userId, teamA, teamB);
                     model.addAttribute("swapResult", swapResult);
                     model.addAttribute("userEmail", userDetails.getUsername());
-
-                    // Return updated prediction fragment for HTMX
-                    if (hxRequest != null && !hxRequest.isBlank()) {
-                        return "fragments/prediction-table :: predictionTable";
-                    }
-                    return "redirect:/predictions/me";
                 });
+
+        // Handle view selection based on result
+        if (result.isLeft()) {
+            return "predictions/me";
+        }
+
+        return isHtmxRequest(hxRequest) ? "fragments/prediction-table :: predictionTable"
+                : "redirect:/predictions/me";
     }
 
     private String getSwapErrorMessage(Object error) {
-        // Simple error message extraction
-        // In production, use proper pattern matching on SwapError types
-        return "Unable to make swap. Please check the round status and cooldown.";
+        if (error instanceof SwapError swapError) {
+            return switch (swapError) {
+                case SwapError.NoPredictionFound e -> "No prediction found for current season";
+                case SwapError.RoundNotOpen e -> "Cannot swap when round is " + e.roundStatus();
+                case SwapError.CooldownActive e ->
+                    String.format("Next swap available in %.1f hours", e.hoursRemaining());
+                case SwapError.TeamsNotFound e ->
+                    "Teams " + e.teamACode() + " and " + e.teamBCode() + " not found in your prediction";
+                case SwapError.SeasonCompleted __ -> "Cannot swap in completed season";
+                default -> "Unable to make swap. Please try again.";
+            };
+        }
+        return "Unable to make swap. Please try again.";
+    }
+
+    private boolean isHtmxRequest(String hxRequest) {
+        return hxRequest != null && !hxRequest.isBlank();
     }
 
     @PostMapping("/contest/join")
@@ -103,30 +130,24 @@ public class WebPlayerController {
         log.debug("User {} joining contest with rankings", userId);
 
         try {
-            // Parse rankings from JSON (simplified - in production use proper JSON parser)
-            // Expected format: [{code: "ARS", position: 1}, ...]
-            // For now, create a simple parser
-
             // TODO: Parse rankingsJson properly
-            // This is a simplified version - you'll need to parse the actual JSON
+            // Expected format: [{code: "ARS", position: 1}, ...]
+            // For now, create a simple parser - use Jackson ObjectMapper in production
             List<JoinContestCommand.TeamRankRequest> rankings = List.of();
 
-            // Create join command
             var joinCommand = new JoinContestCommand(rankings);
-
-            // Execute use case
             var result = joinContestUseCase.execute(userId, joinCommand);
 
-            return result.fold(
-                    error -> {
+            // Use peek/peekLeft for side effects
+            result.peekLeft(error -> {
                         log.error("Join contest failed for {}: {}", userId, error);
                         model.addAttribute("error", "Failed to join contest. Please try again.");
-                        return "predictions/me";
-                    },
-                    joinResult -> {
-                        log.info("User {} successfully joined contest", userId);
-                        return "redirect:/predictions/me";
-                    });
+                    })
+                    .peek(joinResult -> log.info("User {} successfully joined contest", userId));
+
+            // Return appropriate view based on result
+            return result.isLeft() ? "predictions/me" : "redirect:/predictions/me";
+
         } catch (Exception e) {
             log.error("Error joining contest for {}", userId, e);
             model.addAttribute("error", "An error occurred. Please try again.");

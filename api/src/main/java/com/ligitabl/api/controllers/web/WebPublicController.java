@@ -1,5 +1,6 @@
 package com.ligitabl.api.controllers.web;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,6 +26,9 @@ public class WebPublicController {
     private final GetLeaderboardUseCase getLeaderboardUseCase;
     private final GetDefaultRoundMatchesUseCase getDefaultRoundMatchesUseCase;
 
+    @Autowired(required = false)
+    private FakeWebDataService fakeDataService;
+
     @GetMapping("/")
     public String home(
             @RequestHeader(value = "HX-Request", required = false) String hxRequest, Model model) {
@@ -41,27 +45,31 @@ public class WebPublicController {
 
         log.debug("Fetching leaderboard for phase: {}", phase);
 
-        // Call the use case
+        // Use fake data if available (for UI development without database)
+        if (fakeDataService != null) {
+            var fakeLeaderboard = fakeDataService.getFakeLeaderboard(phase);
+            model.addAttribute("leaderboard", fakeLeaderboard);
+            model.addAttribute("currentPhase", phase);
+            model.addAttribute("phases", new String[] {"FS", "Q1", "Q2", "Q3", "Q4", "H1", "H2"});
+            model.addAttribute("usingFakeData", true);
+
+            return isHtmxRequest(hxRequest) ? "leaderboard :: leaderboardContent" : "leaderboard";
+        }
+
+        // Real implementation using peek instead of fold
         var query = new GetLeaderboardQuery(phase);
-        var result = getLeaderboardUseCase.execute(query);
+        getLeaderboardUseCase.execute(query)
+            .peekLeft(error -> {
+                log.error("Error fetching leaderboard: {}", error);
+                model.addAttribute("error", "Unable to load leaderboard");
+            })
+            .peek(leaderboardResult -> {
+                model.addAttribute("leaderboard", leaderboardResult);
+                model.addAttribute("currentPhase", phase);
+                model.addAttribute("phases", new String[] {"FS", "Q1", "Q2", "Q3", "Q4", "H1", "H2"});
+            });
 
-        return result.fold(
-                error -> {
-                    log.error("Error fetching leaderboard: {}", error);
-                    model.addAttribute("error", "Unable to load leaderboard");
-                    return "leaderboard";
-                },
-                leaderboardResult -> {
-                    model.addAttribute("leaderboard", leaderboardResult);
-                    model.addAttribute("currentPhase", phase);
-                    model.addAttribute("phases", new String[] {"FS", "Q1", "Q2", "Q3", "Q4", "H1", "H2"});
-
-                    // HTMX partial update vs full page
-                    if (hxRequest != null && !hxRequest.isBlank()) {
-                        return "leaderboard :: leaderboardContent";
-                    }
-                    return "leaderboard";
-                });
+        return isHtmxRequest(hxRequest) ? "leaderboard :: leaderboardContent" : "leaderboard";
     }
 
     @GetMapping("/standings")
@@ -83,23 +91,27 @@ public class WebPublicController {
 
         log.debug("Fetching default round matches");
 
-        // Call the use case
-        var result = getDefaultRoundMatchesUseCase.execute();
+        // Use fake data if available (for UI development without database)
+        if (fakeDataService != null) {
+            var fakeMatches = fakeDataService.getFakeMatches();
+            model.addAttribute("matches", fakeMatches);
+            model.addAttribute("usingFakeData", true);
 
-        return result.fold(
-                error -> {
-                    log.error("Error fetching matches: {}", error);
-                    model.addAttribute("error", "Unable to load matches");
-                    return "matches";
-                },
-                matchesResult -> {
-                    model.addAttribute("matches", matchesResult);
+            return isHtmxRequest(hxRequest) ? "matches :: matchesList" : "matches";
+        }
 
-                    // HTMX partial update vs full page
-                    if (hxRequest != null && !hxRequest.isBlank()) {
-                        return "matches :: matchesList";
-                    }
-                    return "matches";
-                });
+        // Real implementation using peek instead of fold
+        getDefaultRoundMatchesUseCase.execute()
+            .peekLeft(error -> {
+                log.error("Error fetching matches: {}", error);
+                model.addAttribute("error", "Unable to load matches");
+            })
+            .peek(matchesResult -> model.addAttribute("matches", matchesResult));
+
+        return isHtmxRequest(hxRequest) ? "matches :: matchesList" : "matches";
+    }
+
+    private boolean isHtmxRequest(String hxRequest) {
+        return hxRequest != null && !hxRequest.isBlank();
     }
 }
