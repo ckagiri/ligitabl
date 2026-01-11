@@ -14,6 +14,7 @@ import org.mockito.MockitoAnnotations;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.usecases.match.MatchDto;
 import com.ligitabl.api.usecases.match.MatchEnricher;
 import com.ligitabl.api.usecases.shared.HierarchyValidator;
@@ -23,7 +24,9 @@ import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
+import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.MatchRepo;
+import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 class GetDefaultRoundMatchesUseCaseTest {
@@ -31,8 +34,16 @@ class GetDefaultRoundMatchesUseCaseTest {
     @Mock
     HierarchyValidator hierarchyValidator;
 
+        private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
+
+        @Mock
+        CompetitionRepo competitionRepo;
+
     @Mock
     SeasonRepo seasonRepo;
+
+        @Mock
+        RoundRepo roundRepo;
 
     @Mock
     MatchRepo matchRepo;
@@ -45,7 +56,15 @@ class GetDefaultRoundMatchesUseCaseTest {
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        useCase = new GetDefaultRoundMatchesUseCase(hierarchyValidator, seasonRepo, matchRepo, matchEnricher);
+                useCase = new GetDefaultRoundMatchesUseCase(
+                                competitionRepo,
+                                seasonRepo,
+                                roundRepo,
+                                matchRepo,
+                                matchEnricher,
+                                hierarchyValidator,
+                                competitionDefaults
+                );
     }
 
     @Test
@@ -83,7 +102,7 @@ class GetDefaultRoundMatchesUseCaseTest {
         MatchDto dto = MatchDto.builder().roundId(roundId).build();
         when(matchEnricher.enrichWithTeams(List.of(match))).thenReturn(Either.right(List.of(dto)));
 
-        Either<UseCaseError, List<MatchDto>> result = useCase.execute(null);
+        Either<UseCaseError, List<MatchDto>> result = useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.getRight()).hasSize(1);
@@ -107,11 +126,11 @@ class GetDefaultRoundMatchesUseCaseTest {
 
         when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
 
-        Either<UseCaseError, List<MatchDto>> result = useCase.execute(null);
+        Either<UseCaseError, List<MatchDto>> result = useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
 
         assertThat(result.isLeft()).isTrue();
         verify(hierarchyValidator).validateCompetition("premier-league");
-        verifyNoInteractions(seasonRepo, matchRepo);
+                verifyNoInteractions(seasonRepo, matchRepo, roundRepo);
     }
 
     @Test
@@ -137,11 +156,11 @@ class GetDefaultRoundMatchesUseCaseTest {
         when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
 
-        Either<UseCaseError, List<MatchDto>> result = useCase.execute(null);
+        Either<UseCaseError, List<MatchDto>> result = useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
 
         assertThat(result.isLeft()).isTrue();
         verify(hierarchyValidator).validateCompetition("premier-league");
         verify(seasonRepo).findById(seasonId);
-        verifyNoInteractions(matchRepo);
+                verifyNoInteractions(matchRepo, roundRepo);
     }
 }

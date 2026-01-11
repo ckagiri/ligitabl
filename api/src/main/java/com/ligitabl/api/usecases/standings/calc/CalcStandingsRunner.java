@@ -96,11 +96,11 @@ public class CalcStandingsRunner implements ApplicationRunner {
             result.fold(
                 error -> {
                     // Check if error is because standings are already finalized
-                    if (error.message().contains("already finalised")) {
+                    if (error.getMessage().contains("already finalised") || error.getMessage().contains("No finished matches in round")) {
                         log.debug("Round {} - Skipped (already finalized)", round.getPosition());
                         skippedCount.incrementAndGet();
                     } else {
-                        log.warn("Round {} - Failed: {}", round.getPosition(), error.message());
+                        log.warn("Round {} - Failed: {}", round.getPosition(), error.getMessage());
                         failureCount.incrementAndGet();
                     }
                     return null;
@@ -147,7 +147,7 @@ public class CalcStandingsRunner implements ApplicationRunner {
         log.error("╚══════════════════════════════════════════════════════════╝");
         log.error("Context:       {}", context);
         log.error("Error Code:    {}", error.code());
-        log.error("Error Message: {}", error.message());
+        log.error("Error Message: {}", error.getMessage());
 
         if (config.isExitAfter()) {
             System.exit(1);

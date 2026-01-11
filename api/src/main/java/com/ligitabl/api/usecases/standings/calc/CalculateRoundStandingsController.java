@@ -1,6 +1,7 @@
 package com.ligitabl.api.usecases.standings.calc;
 
 import com.ligitabl.api.shared.exceptions.UseCaseException;
+import com.ligitabl.api.usecases.standings.GetDefaultRoundStandingsQuery;
 import com.ligitabl.api.usecases.standings.StandingsEntryDto;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -15,29 +16,32 @@ import java.util.List;
 @Slf4j
 public class CalculateRoundStandingsController {
 
-    private final CalculateRoundStandingsUseCase getDefaultRoundStandingsUseCase;
+    private final CalculateRoundStandingsUseCase calculateRoundStandingsUseCase;
 
-    /**
-     * GET /api/rounds/2/standings
-     * GET /api/rounds/2/standings?competition=bundesliga
-     */
-    @GetMapping("/{roundPosition}/standings")
+    @PostMapping("/{roundPosition}/standings/calculate")
     public ResponseEntity<List<StandingsEntryDto>> getRoundStandingsByPosition(
             @PathVariable Integer roundPosition,
             @RequestParam(required = false) String competition) {
-        log.info("GetRoundStandings request, position={}, competition={}", roundPosition, competition);
+        log.info("CalculateRoundStandings request, position={}, competition={}", roundPosition, competition);
         return executeUseCase(CalculateRoundStandingsCommand.byPosition(roundPosition, competition));
     }
 
-    private ResponseEntity<List<StandingsEntryDto>> executeUseCase(CalculateRoundStandingsCommand request) {
-        var result = getDefaultRoundStandingsUseCase.execute(request);
+    @PostMapping("/current/standings/calculate")
+    public ResponseEntity<List<StandingsEntryDto>> getCurrentRoundStandings(
+            @RequestParam(required = false) String competition) {
+        log.info("GetCurrentRoundStandings request, competition={}", competition);
+        return executeUseCase(CalculateRoundStandingsCommand.currentRound(competition));
+    }
+
+    private ResponseEntity<List<StandingsEntryDto>> executeUseCase(CalculateRoundStandingsCommand command) {
+        var result = calculateRoundStandingsUseCase.execute(command);
 
         return result.fold(
                 error -> {
                     throw new UseCaseException(error);
                 },
                 standings -> {
-                    log.debug("GetRoundStandings success, count={}", standings.size());
+                    log.debug("CalculateRoundStandings success, count={}", standings.size());
                     return ResponseEntity.ok(standings);
                 }
         );

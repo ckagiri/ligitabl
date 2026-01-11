@@ -19,7 +19,7 @@ public class GetDefaultRoundMatchesController {
 
     private final GetDefaultRoundMatchesUseCase getDefaultRoundMatchesUseCase;
 
-    @GetMapping("/current/matches")
+    @GetMapping({"/current/matches", "/default/matches"})
     public ResponseEntity<List<MatchDto>> getCurrentRoundMatches(
             @RequestParam(required = false) String competition) {
         log.info("GetCurrentRoundMatches command, competition={}", competition);

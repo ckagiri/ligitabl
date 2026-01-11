@@ -54,6 +54,24 @@ public class CompetitionPersistenceAdapter implements CompetitionRepo {
     }
 
     @Override
+    public Optional<Competition> findByCode(String code) {
+        var record = dsl.selectFrom(T_COMPETITION)
+                .where(T_COMPETITION.C_CODE.eq(code))
+                .fetchOne();
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
+    @Override
+    public Optional<Competition> findBySlugOrCode(String identifier) {
+        var record = dsl.selectFrom(T_COMPETITION)
+                .where(T_COMPETITION.C_SLUG.eq(identifier).or(T_COMPETITION.C_CODE.eq(identifier)))
+                .fetchOne();
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
+    @Override
     public boolean existsById(UUID id) {
         return dsl.fetchExists(dsl.selectOne().from(T_COMPETITION).where(T_COMPETITION.PK_ID.eq(id)));
     }

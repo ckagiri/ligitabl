@@ -18,10 +18,10 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Use Case: Get Leaderboard
- *
+ * <p>
  * Retrieves user contest leaderboard for the default competition's main contest.
  * Supports filtering by phase (Q1, Q2, Q3, Q4, FS).
- *
+ * <p>
  * Flow:
  * 1. Find default competition (premier-league)
  * 2. Find active season
@@ -41,64 +41,53 @@ public class GetLeaderboardUseCase {
     private final CompetitionDefaults competitionDefaults;
 
     public Either<GetLeaderboardError, GetLeaderboardResult> execute(GetLeaderboardQuery query) {
-        return findDefaultCompetition().flatMap(this::findActiveSeason).flatMap(seasonContext -> findMainContest(
-                        seasonContext)
-                .flatMap(contestContext -> resolvePhase(contestContext, query.phase())
-                        .flatMap(phaseContext -> computeLeaderboard(phaseContext))));
-    }
+        var competition = competitionRepo.findBySlug(competitionDefaults.defaultCompetitionSlug())
+                .orElse(null);
+        if (competition == null) {
+            return Either.left(new GetLeaderboardError.DefaultCompetitionNotFound());
+        }
 
-    private Either<GetLeaderboardError, Competition> findDefaultCompetition() {
-        return competitionRepo
-                .findBySlug(competitionDefaults.defaultCompetitionSlug())
-                .map(Either::<GetLeaderboardError, Competition>right)
-                .orElse(Either.left(new GetLeaderboardError.DefaultCompetitionNotFound()));
-    }
-
-    private Either<GetLeaderboardError, SeasonContext> findActiveSeason(Competition competition) {
-        return seasonRepo
-                .findActiveSeason(competition.getId())
-                .map(season -> Either.<GetLeaderboardError, SeasonContext>right(new SeasonContext(competition, season)))
-                .orElse(Either.left(new GetLeaderboardError.ActiveSeasonNotFound()));
-    }
-
-    private Either<GetLeaderboardError, ContestContext> findMainContest(SeasonContext ctx) {
-        return contestRepo
-                .findMainBySeasonId(ctx.season().getId())
-                .map(contest -> Either.<GetLeaderboardError, ContestContext>right(
-                        new ContestContext(ctx.competition(), ctx.season(), contest)))
-                .orElse(Either.left(new GetLeaderboardError.MainContestNotFound()));
-    }
-
-    private Either<GetLeaderboardError, PhaseContext> resolvePhase(ContestContext ctx, String phaseCode) {
-        var code = phaseCode != null ? phaseCode : "FS";
-
-        if (ctx.competition().getPhases() == null
-                || ctx.competition().getPhases().isEmpty()) {
+        if (competition.getPhases() == null || competition.getPhases().isEmpty()) {
             return Either.left(new GetLeaderboardError.PhasesNotConfigured());
         }
 
-        return ctx.competition().getPhases().stream()
+        var season = seasonRepo.findActiveSeason(competition.getId())
+                .orElse(null);
+        if (season == null) {
+            return Either.left(new GetLeaderboardError.ActiveSeasonNotFound());
+        }
+
+        var contest = contestRepo.findMainBySeasonId(season.getId())
+                .orElse(null);
+        if (contest == null) {
+            return Either.left(new GetLeaderboardError.MainContestNotFound());
+        }
+
+        var phase = findPhaseInCompetition(competition, query.phase());
+        if (phase == null) {
+            return Either.left(new GetLeaderboardError.InvalidPhase(query.phase()));
+        }
+
+        var rankings = leaderboardRepo.computeLeaderboard(
+                contest.getId(),
+                season.getId(),
+                phase.getFrom(),
+                phase.getTo()
+        );
+
+        return Either.right(new GetLeaderboardResult(contest.getId(), phase, rankings));
+    }
+
+    private RoundSpan findPhaseInCompetition(Competition competition, String phaseCode) {
+        var code = phaseCode != null ? phaseCode : "FS";
+
+        if (competition.getPhases() == null) {
+            return null;
+        }
+
+        return competition.getPhases().stream()
                 .filter(phase -> phase.getCode().equalsIgnoreCase(code))
                 .findFirst()
-                .map(phase -> Either.<GetLeaderboardError, PhaseContext>right(
-                        new PhaseContext(ctx.competition(), ctx.season(), ctx.contest(), phase)))
-                .orElse(Either.left(new GetLeaderboardError.InvalidPhase(code)));
+                .orElse(null);
     }
-
-    private Either<GetLeaderboardError, GetLeaderboardResult> computeLeaderboard(PhaseContext ctx) {
-        var rankings = leaderboardRepo.computeLeaderboard(
-                ctx.contest().getId(),
-                ctx.season().getId(),
-                ctx.phase().getFrom(),
-                ctx.phase().getTo());
-
-        return Either.right(new GetLeaderboardResult(ctx.contest().getId(), ctx.phase(), rankings));
-    }
-
-    // Context records to avoid parameter explosion
-    private record SeasonContext(Competition competition, Season season) {}
-
-    private record ContestContext(Competition competition, Season season, Contest contest) {}
-
-    private record PhaseContext(Competition competition, Season season, Contest contest, RoundSpan phase) {}
 }
