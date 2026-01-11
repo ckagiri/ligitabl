@@ -11,6 +11,7 @@ import com.ligitabl.api.usecases.shared.HierarchyValidator;
 import com.ligitabl.api.usecases.standings.StandingsEnricher;
 import com.ligitabl.api.usecases.standings.StandingsEntryDto;
 import com.ligitabl.model.domain.*;
+import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.StandingsRepo;
@@ -34,6 +35,7 @@ public class CalculateRoundStandingsUseCase
     private final CompetitionDefaults competitionDefaults;
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
+    private final MatchRepo matchRepo;
     private final StandingsRepo standingsRepo;
     private final StandingsEnricher standingsEnricher;
 
@@ -108,6 +110,21 @@ public class CalculateRoundStandingsUseCase
     }
 
     private Either<UseCaseError, Standings> calcAndSaveStandings(Season season, Round round) {
+        // Check if round is already finalized
+        if (round.isFinalized()) {
+            return Either.left(UseCaseErrors.validation("Round already finalized"));
+        }
+
+        // Get matches for this round to check if there are any finished matches
+        List<Match> matches = matchRepo.findByRoundId(round.getId());
+
+        boolean hasFinishedMatches = matches.stream()
+                .anyMatch(match -> match.getStatus() == MatchStatus.FINISHED);
+
+        if (!hasFinishedMatches) {
+            return Either.left(UseCaseErrors.validation("No finished matches in round " + round.getPosition()));
+        }
+
         var calculation = standingsCalculator
                 .calculateRankings(season.getId(), round.getPosition())
                 .mapLeft(error -> new FinalizeRoundError.StandingsValidationFailed(error.toString()));
@@ -118,17 +135,20 @@ public class CalculateRoundStandingsUseCase
 
         List<StandingsTeamRank> rankings = calculation.get();
 
-        // Get standings record
+        // Get or create standings record
         Standings standings = standingsRepo
                 .findBySeasonAndRoundPosition(season.getId(), round.getPosition())
-                .orElseGet(() -> null);
+                .orElseGet(() -> Standings.builder()
+                        .seasonId(season.getId())
+                        .roundPosition(round.getPosition())
+                        .rankings(List.of())
+                        .finalised(false)
+                        .build());
 
-        if (standings == null) {
-            return Either.left(UseCaseErrors.notFound("Standings {}", season.getSlug(), round.getPosition()));
-        }
         if (standings.isFinalised()) {
             return Either.left(UseCaseErrors.validation("Standings already finalised"));
         }
+
         standings.setRankings(rankings);
         standings.setFinalised(true);
         standings.setFinalisedAt(now());
