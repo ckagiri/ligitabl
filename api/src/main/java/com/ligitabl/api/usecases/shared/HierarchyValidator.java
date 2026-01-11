@@ -24,9 +24,11 @@ public class HierarchyValidator {
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
 
-    public Either<UseCaseError, Competition> validateCompetition(String competitionSlugStr) {
-        return Either.catching(() -> CompetitionSlug.of(competitionSlugStr), UseCaseErrors::fromException)
-                .flatMap(this::findCompetitionBySlug);
+    public Either<UseCaseError, Competition> validateCompetition(String slugOrCode) {
+        return requireFound(
+                competitionRepo.findBySlugOrCode(slugOrCode),
+                UseCaseErrors.notFound("Competition", slugOrCode)
+        );
     }
 
     public Either<UseCaseError, Season> validateSeason(UUID competitionId, String seasonSlugStr) {
