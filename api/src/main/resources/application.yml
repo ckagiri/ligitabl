@@ -46,6 +46,12 @@ jwt:
 ligitabl:
   default-competition-slug: ${DEFAULT_COMPETITION_SLUG:premier-league}
 
+  # UI Development Mode
+  # Enable fake in-memory data service to test UI without database dependencies
+  ui:
+    fake-data:
+      enabled: ${FAKE_DATA_ENABLED:false}
+
 football-data:
   api:
     url: https://api.football-data.org/v4

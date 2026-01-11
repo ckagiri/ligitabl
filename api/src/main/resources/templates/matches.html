@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{layout/base}">
+<body>
+<div layout:fragment="content">
+    <div class="bg-white rounded-lg shadow-sm">
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-gray-900">Fixtures & Results</h1>
+                <div>
+                    <select th:attr="hx-get=@{/seasons/{id}/matches(id=${seasonId})}"
+                            hx-trigger="change"
+                            hx-target="#matches-content"
+                            hx-swap="innerHTML swap:300ms"
+                            name="round"
+                            class="form-select block w-48 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                        <option th:value="19" th:selected="${currentRound == 19}">Current (GW 19)</option>
+                        <option th:value="18" th:selected="${currentRound == 18}">GW 18</option>
+                        <option th:value="17" th:selected="${currentRound == 17}">GW 17</option>
+                        <option th:value="16" th:selected="${currentRound == 16}">GW 16</option>
+                        <option th:value="15" th:selected="${currentRound == 15}">GW 15</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Matches List -->
+        <div id="matches-content" class="px-6 py-4">
+            <div class="space-y-4">
+                <div th:each="match : ${matches}"
+                     class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+                    <div class="flex justify-between items-center">
+                        <div class="flex-1">
+                            <!-- Home Team -->
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="font-medium text-gray-900" th:text="${match.homeTeam}">Manchester City</span>
+                                <span th:if="${match.status == 'FINISHED' or match.status == 'LIVE'}"
+                                      class="text-2xl font-bold text-gray-900"
+                                      th:text="${match.homeScore}">2</span>
+                            </div>
+
+                            <!-- Away Team -->
+                            <div class="flex items-center justify-between">
+                                <span class="font-medium text-gray-900" th:text="${match.awayTeam}">Arsenal</span>
+                                <span th:if="${match.status == 'FINISHED' or match.status == 'LIVE'}"
+                                      class="text-2xl font-bold text-gray-900"
+                                      th:text="${match.awayScore}">1</span>
+                            </div>
+                        </div>
+
+                        <div class="ml-6 text-right">
+                            <!-- Status Badge -->
+                            <span th:if="${match.status == 'FINISHED'}"
+                                  class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                                FT
+                            </span>
+                            <span th:if="${match.status == 'LIVE'}"
+                                  class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-red-50 text-red-700 border border-red-200">
+                                <span class="live-indicator inline-block w-2 h-2 bg-red-500 rounded-full mr-1.5"></span>
+                                LIVE
+                                <span th:if="${match.matchTime}"
+                                      class="ml-1.5 font-semibold"
+                                      th:text="${match.matchTime}">67'</span>
+                            </span>
+                            <span th:if="${match.status == 'SCHEDULED'}"
+                                  class="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                                Upcoming
+                            </span>
+
+                            <!-- Kick-off Time -->
+                            <div class="text-sm text-gray-500 mt-1" th:text="${match.kickOff}">
+                                Sat, Dec 28, 12:30
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

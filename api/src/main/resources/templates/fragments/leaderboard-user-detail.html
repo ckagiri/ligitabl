@@ -1,0 +1,49 @@
+<div th:fragment="modal">
+  <!-- Simple modal overlay; injected into #user-detail-modal via HTMX -->
+  <div class="fixed inset-0 z-50 flex items-center justify-center">
+    <div class="absolute inset-0 bg-black/40" onclick="document.getElementById('user-detail-modal').innerHTML=''" aria-hidden="true"></div>
+
+    <div class="relative bg-white w-full max-w-lg mx-4 rounded-lg shadow-sm border border-gray-200">
+      <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between">
+        <h2 class="text-lg font-semibold text-gray-900">
+          <span th:if="${user != null}" th:text="${user.displayName}">User</span>
+          <span th:unless="${user != null}" th:text="${userId}">user-id</span>
+        </h2>
+        <button type="button"
+                class="text-gray-500 hover:text-gray-900"
+                onclick="document.getElementById('user-detail-modal').innerHTML=''">
+          Close
+        </button>
+      </div>
+
+      <div class="px-6 py-4">
+        <div th:if="${user != null}" class="space-y-2">
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-500">Position</span>
+            <span class="text-gray-900 font-medium" th:text="${user.position}">1</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-500">Score</span>
+            <span class="text-gray-900 font-medium" th:text="${user.totalScore}">0</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-500">Round</span>
+            <span class="text-gray-900 font-medium" th:text="${user.roundScore}">0</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-500">Zeroes</span>
+            <span class="text-gray-900 font-medium" th:text="${user.totalZeroes}">0</span>
+          </div>
+          <div class="flex justify-between text-sm">
+            <span class="text-gray-500">Swaps</span>
+            <span class="text-gray-900 font-medium" th:text="${user.totalSwaps}">0</span>
+          </div>
+        </div>
+
+        <div th:if="${user == null}" class="text-sm text-gray-600">
+          No details found for <span class="font-medium" th:text="${userId}">user-id</span>.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
