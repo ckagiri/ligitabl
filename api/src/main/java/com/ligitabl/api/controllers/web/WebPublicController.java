@@ -58,7 +58,6 @@ public class WebPublicController {
             return isHtmxRequest(hxRequest) ? "leaderboard :: leaderboardContent" : "leaderboard";
         }
 
-        // Real implementation using peek instead of fold
         var query = new GetLeaderboardQuery(phase);
         getLeaderboardUseCase.execute(query)
             .peekLeft(error -> {
@@ -105,7 +104,6 @@ public class WebPublicController {
             return isHtmxRequest(hxRequest) ? "matches :: matchesList" : "matches";
         }
 
-        // Real implementation using peek instead of fold
         getDefaultRoundMatchesUseCase.execute()
             .peekLeft(error -> {
                 log.error("Error fetching matches: {}", error);

@@ -29,10 +29,8 @@ public class WebUserDetailsService implements UserDetailsService {
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
         try {
-            // Convert email string to domain Email type
             Email emailObj = Email.create(email);
 
-            // Fetch user from repository
             User user = userRepo
                     .findByEmail(emailObj)
                     .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
@@ -42,7 +40,6 @@ public class WebUserDetailsService implements UserDetailsService {
                     .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
                     .collect(Collectors.toList());
 
-            // Return custom WebUserDetails with displayName
             return new WebUserDetails(
                     user.getEmail().value(),
                     user.getDisplayName(),

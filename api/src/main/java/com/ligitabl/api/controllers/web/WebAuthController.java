@@ -54,11 +54,9 @@ public class WebAuthController {
             Model model) {
 
         try {
-            // Convert form data to domain types
             Email email = Email.create(request.email());
             Password.Plaintext password = Password.Plaintext.create(request.password());
 
-            // Call the existing RegisterUseCase
             var registerCommand = new RegisterCommand(email, request.displayName(), password);
 
             Either<UseCaseError, RegisterResult> result = registerUseCase.execute(registerCommand);

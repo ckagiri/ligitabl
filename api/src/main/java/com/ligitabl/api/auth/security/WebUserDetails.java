@@ -5,10 +5,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
 
-/**
- * Custom UserDetails implementation for web authentication.
- * Extends Spring Security's UserDetails to include displayName.
- */
 public class WebUserDetails implements UserDetails {
 
     private final String email;
