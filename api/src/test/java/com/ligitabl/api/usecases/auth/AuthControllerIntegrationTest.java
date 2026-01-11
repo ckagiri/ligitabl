@@ -201,7 +201,7 @@ class AuthControllerIntegrationTest extends AbstractPostgresIT {
     }
 
     private ResponseEntity<Map<String, Object>> postLoginForMap(String email, String password) {
-        String url = "http://localhost:" + port + "/auth/login";
+        String url = "http://localhost:" + port + "/api/auth/login";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -213,7 +213,7 @@ class AuthControllerIntegrationTest extends AbstractPostgresIT {
     }
 
     private ResponseEntity<AuthDto.ErrorResponse> postLoginForError(String email, String password) {
-        String url = "http://localhost:" + port + "/auth/login";
+        String url = "http://localhost:" + port + "/api/auth/login";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -225,7 +225,7 @@ class AuthControllerIntegrationTest extends AbstractPostgresIT {
     }
 
     private ResponseEntity<Map<String, Object>> postRegisterForMap(String email, String displayName, String password) {
-        String url = "http://localhost:" + port + "/auth/register";
+        String url = "http://localhost:" + port + "/api/auth/register";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
@@ -238,7 +238,7 @@ class AuthControllerIntegrationTest extends AbstractPostgresIT {
 
     private ResponseEntity<AuthDto.ErrorResponse> postRegisterForError(
             String email, String displayName, String password) {
-        String url = "http://localhost:" + port + "/auth/register";
+        String url = "http://localhost:" + port + "/api/auth/register";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

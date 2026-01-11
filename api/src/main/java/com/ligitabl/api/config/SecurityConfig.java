@@ -15,9 +15,11 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
+import org.springframework.http.HttpStatus;
 
 import com.ligitabl.api.auth.security.JwtAuthenticationFilter;
 import com.ligitabl.api.auth.security.TokenGenerator;
@@ -40,19 +42,26 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter)
             throws Exception {
-        http.securityMatcher("/api/**", "/auth/**")
+        RequestMatcher apiOrAuthMatcher = request -> {
+            String path = request.getServletPath();
+            return "/api".equals(path) || path.startsWith("/api/");
+        };
+
+        http.securityMatcher(apiOrAuthMatcher)
                 .csrf(csrf -> csrf.disable())
                 .httpBasic(Customizer.withDefaults())
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**")
+                .authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/**")
                         .permitAll()
                         .requestMatchers("/api/me")
                         .authenticated()
-                        .requestMatchers("/api/admin/**")
+                .requestMatchers("/api/admin", "/api/admin/**")
                         .hasRole("ADMIN")
-                        .requestMatchers("/api/player/**")
+                .requestMatchers("/api/player", "/api/player/**")
                         .hasRole("PLAYER")
                         .anyRequest()
                         .permitAll())
+            .exceptionHandling(ex -> ex
+                .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -70,8 +79,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/predictions/swap")) // Allow HTMX POST without CSRF
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 "/",
-                                "/login",
-                                "/register",
+                                                                "/auth/login",
+                                                                "/auth/register",
                                 "/leaderboard",
                                 "/standings",
                                 "/matches",
@@ -88,11 +97,11 @@ public class SecurityConfig {
                         .hasRole("PLAYER")
                         .anyRequest()
                         .authenticated())
-                .formLogin(form -> form.loginPage("/login")
-                        .loginProcessingUrl("/login")
+                .formLogin(form -> form.loginPage("/auth/login")
+                        .loginProcessingUrl("/auth/login")
                         .defaultSuccessUrl("/predictions/me", true)
                         .permitAll())
-                .logout(logout -> logout.logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+                .logout(logout -> logout.logoutUrl("/auth/logout")
                         .logoutSuccessUrl("/")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")

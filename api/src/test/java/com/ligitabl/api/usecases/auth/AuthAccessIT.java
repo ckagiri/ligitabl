@@ -102,7 +102,7 @@ class AuthAccessIT extends AbstractPostgresIT {
     }
 
     private String loginAndGetToken(String email, String password) {
-        String url = "http://localhost:" + port + "/auth/login";
+        String url = "http://localhost:" + port + "/api/auth/login";
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);

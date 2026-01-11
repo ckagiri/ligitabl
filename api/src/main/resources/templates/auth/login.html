@@ -12,16 +12,16 @@
                 </h2>
                 <p class="mt-2 text-center text-sm text-gray-600">
                     Or
-                    <a th:href="@{/register}" class="font-medium text-indigo-600 hover:text-indigo-500">
+                                        <a th:href="@{/auth/register}" class="font-medium text-indigo-600 hover:text-indigo-500">
                         create a new account
                     </a>
                 </p>
             </div>
 
             <form class="mt-8 space-y-6"
-                  th:action="@{/login}"
+                                    th:action="@{/auth/login}"
                   method="post">
-                
+
                 <div class="rounded-md shadow-sm space-y-4">
                     <!-- Email -->
                     <div>
@@ -78,9 +78,9 @@
 
                 <div class="flex items-center justify-between">
                     <div class="flex items-center">
-                        <input id="remember-me" 
-                               name="remember-me" 
-                               type="checkbox" 
+                        <input id="remember-me"
+                               name="remember-me"
+                               type="checkbox"
                                class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
                         <label for="remember-me" class="ml-2 block text-sm text-gray-900">
                             Remember me

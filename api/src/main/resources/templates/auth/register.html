@@ -12,16 +12,16 @@
                 </h2>
                 <p class="mt-2 text-center text-sm text-gray-600">
                     Or
-                    <a th:href="@{/login}" class="font-medium text-indigo-600 hover:text-indigo-500">
+                    <a th:href="@{/auth/login}" class="font-medium text-indigo-600 hover:text-indigo-500">
                         sign in to your account
                     </a>
                 </p>
             </div>
 
             <form class="mt-8 space-y-6"
-                  th:action="@{/register}"
+                  th:action="@{/auth/register}"
                   method="post">
-                
+
                 <!-- Error Message -->
                 <div th:if="${error}" class="rounded-md bg-red-50 p-4">
                     <div class="flex">

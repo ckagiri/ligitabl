@@ -161,7 +161,7 @@
                             My Predictions
                         </a>
                         <span class="text-sm text-gray-700" sec:authentication="principal.displayName"></span>
-                        <form th:action="@{/logout}" method="post" class="inline">
+                        <form th:action="@{/auth/logout}" method="post" class="inline">
                             <button type="submit"
                                     class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
                                 Logout
@@ -171,11 +171,11 @@
 
                     <!-- Anonymous User -->
                     <div sec:authorize="isAnonymous()" class="flex items-center space-x-4">
-                        <a th:href="@{/login}"
+                                                <a th:href="@{/auth/login}"
                           class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
                             Login
                         </a>
-                        <a th:href="@{/register}"
+                                                <a th:href="@{/auth/register}"
                           class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition">
                             Sign Up
                         </a>
@@ -222,7 +222,7 @@
                             My Predictions
                         </a>
                         <div class="px-3 py-2 text-sm text-gray-600" sec:authentication="principal.displayName"></div>
-                        <form th:action="@{/logout}" method="post">
+                        <form th:action="@{/auth/logout}" method="post">
                             <button type="submit"
                                     class="w-full text-left text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
                                 Logout
@@ -232,11 +232,11 @@
 
                     <!-- Anonymous User Menu -->
                     <div sec:authorize="isAnonymous()" class="border-t border-gray-200 pt-2 mt-2">
-                        <a th:href="@{/login}"
+                                                <a th:href="@{/auth/login}"
                           class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium block">
                             Login
                         </a>
-                        <a th:href="@{/register}"
+                                                <a th:href="@{/auth/register}"
                           class="text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-md text-base font-medium block">
                             Sign Up
                         </a>

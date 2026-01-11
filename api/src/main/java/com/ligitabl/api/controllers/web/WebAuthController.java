@@ -29,6 +29,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 @Controller
+@org.springframework.web.bind.annotation.RequestMapping("/auth")
 @RequiredArgsConstructor
 public class WebAuthController {
 
