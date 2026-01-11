@@ -42,9 +42,12 @@ public class WebUserDetailsService implements UserDetailsService {
                     .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
                     .collect(Collectors.toList());
 
-            // Return Spring Security UserDetails
-            return new org.springframework.security.core.userdetails.User(
-                    user.getEmail().value(), user.getPassword().value(), authorities);
+            // Return custom WebUserDetails with displayName
+            return new WebUserDetails(
+                    user.getEmail().value(),
+                    user.getDisplayName(),
+                    user.getPassword().value(),
+                    authorities);
         } catch (IllegalArgumentException e) {
             // Email.create throws IllegalArgumentException for invalid emails
             throw new UsernameNotFoundException("Invalid email format: " + email);

@@ -478,7 +478,13 @@ run-app: ## Start DB and run the app JAR (ENV=$(ENV))
 .PHONY: run-api
 run-api: ## Start DB and run API via spring-boot:run (ENV=$(ENV))
 	$(MAKE) compose-up-db
-	mvn -q -pl $(API_DIR) -am spring-boot:run
+	mvn -q -f $(API_DIR)/pom.xml org.springframework.boot:spring-boot-maven-plugin:run
+
+.PHONY: run-api-fake
+run-api-fake: ## Start DB and run API with FAKE_DATA_ENABLED=true (ENV=$(ENV))
+	$(MAKE) compose-up-db
+	FAKE_DATA_ENABLED=true \
+		mvn -q -f $(API_DIR)/pom.xml org.springframework.boot:spring-boot-maven-plugin:run
 
 # ==============================================================================
 # TEST TARGETS
@@ -521,6 +527,12 @@ dev-reset: ## Reset DB, migrate, codegen, seed (ENV=$(ENV))
 	$(MAKE) migrate
 	$(MAKE) codegen
 	$(MAKE) db-seed
+
+.PHONY: test-reset-run-api-fake
+test-reset-run-api-fake: ## Reset test DB, migrate, codegen, seed reference data, then run API with fake data (DB_PORT=55433)
+	$(MAKE) dev-reset ENV=test
+	FAKE_DATA_ENABLED=true DB_HOST=$(DB_HOST) DB_PORT=$(DB_PORT) DB_NAME=$(DB_NAME) DB_USER=$(DB_USER) DB_PASSWORD=$(DB_PASSWORD) \
+		mvn -f $(API_DIR)/pom.xml org.springframework.boot:spring-boot-maven-plugin:run
 
 .PHONY: dev-reset-all
 dev-reset-all: ## Reset DB and seed all data (ENV=$(ENV))

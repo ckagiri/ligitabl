@@ -54,6 +54,30 @@ public class WebPlayerController {
             model.addAttribute("userEmail", userDetails.getUsername());
             model.addAttribute("usingFakeData", true);
 
+            // Add required template variables for current round view
+            model.addAttribute("viewingRound", fakePrediction.currentRound());
+            model.addAttribute("currentRound", fakePrediction.currentRound());
+            model.addAttribute("isCurrentRound", true);
+            model.addAttribute("canSwap", fakePrediction.canSwap());
+            model.addAttribute("totalPoints", fakePrediction.totalPoints());
+            model.addAttribute("teams", fakePrediction.teams());
+
+            // Add Alpine.js data attributes as empty JSON strings (Alpine will use data-* attributes)
+            model.addAttribute("predictionsJson", "[]");
+            model.addAttribute("isInitialPrediction", false);
+            model.addAttribute("currentStandingsJson", "[]");
+            model.addAttribute("fixturesJson", "[]");
+            model.addAttribute("currentPointsJson", "[]");
+
+            // Add swap status (nullable)
+            model.addAttribute("swapStatus", null);
+
+            // Round state
+            model.addAttribute("roundState", "open");
+
+            // Page title
+            model.addAttribute("pageTitle", "My Prediction");
+
             return "predictions/me";
         }
 

@@ -36,11 +36,13 @@ public class WebAuthController {
 
     @GetMapping("/login")
     public String loginPage(Model model) {
+        model.addAttribute("pageTitle", "Login");
         return "auth/login";
     }
 
     @GetMapping("/register")
     public String registerPage(Model model) {
+        model.addAttribute("pageTitle", "Register");
         return "auth/register";
     }
 

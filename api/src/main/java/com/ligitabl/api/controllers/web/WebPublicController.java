@@ -34,6 +34,7 @@ public class WebPublicController {
             @RequestHeader(value = "HX-Request", required = false) String hxRequest, Model model) {
         // Landing page - just render the template
         log.debug("Rendering home page");
+        model.addAttribute("pageTitle", "Home");
         return "index";
     }
 
@@ -52,6 +53,7 @@ public class WebPublicController {
             model.addAttribute("currentPhase", phase);
             model.addAttribute("phases", new String[] {"FS", "Q1", "Q2", "Q3", "Q4", "H1", "H2"});
             model.addAttribute("usingFakeData", true);
+            model.addAttribute("pageTitle", "Leaderboard");
 
             return isHtmxRequest(hxRequest) ? "leaderboard :: leaderboardContent" : "leaderboard";
         }
@@ -69,6 +71,7 @@ public class WebPublicController {
                 model.addAttribute("phases", new String[] {"FS", "Q1", "Q2", "Q3", "Q4", "H1", "H2"});
             });
 
+        model.addAttribute("pageTitle", "Leaderboard");
         return isHtmxRequest(hxRequest) ? "leaderboard :: leaderboardContent" : "leaderboard";
     }
 
@@ -81,6 +84,7 @@ public class WebPublicController {
         // TODO: Implement standings use case
         // For now, return empty page with message
         model.addAttribute("message", "Standings will be available soon");
+        model.addAttribute("pageTitle", "Standings");
 
         return "standings";
     }
@@ -96,6 +100,7 @@ public class WebPublicController {
             var fakeMatches = fakeDataService.getFakeMatches();
             model.addAttribute("matches", fakeMatches);
             model.addAttribute("usingFakeData", true);
+            model.addAttribute("pageTitle", "Matches");
 
             return isHtmxRequest(hxRequest) ? "matches :: matchesList" : "matches";
         }
@@ -108,6 +113,7 @@ public class WebPublicController {
             })
             .peek(matchesResult -> model.addAttribute("matches", matchesResult));
 
+        model.addAttribute("pageTitle", "Matches");
         return isHtmxRequest(hxRequest) ? "matches :: matchesList" : "matches";
     }
 
