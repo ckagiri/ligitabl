@@ -14,6 +14,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.usecases.auth.register.RegisterCommand;
 import com.ligitabl.api.usecases.auth.register.RegisterResult;
 import com.ligitabl.api.usecases.auth.register.RegisterUseCase;
@@ -72,7 +73,11 @@ public class WebAuthController {
                     },
                     registerResult -> {
                         // Registration successful - log the user in automatically
-                        authenticateUser(registerResult.email().value(), registerResult.roles(), httpRequest);
+                        authenticateUser(
+                                registerResult.email().value(),
+                                registerResult.displayName(),
+                                registerResult.roles(),
+                                httpRequest);
 
                         // Redirect to predictions page
                         return "redirect:/predictions/me";
@@ -89,13 +94,14 @@ public class WebAuthController {
     /**
      * Helper method to authenticate a user and create a session
      */
-    private void authenticateUser(String email, java.util.Set<Role> roles, HttpServletRequest request) {
+    private void authenticateUser(String email, String displayName, java.util.Set<Role> roles, HttpServletRequest request) {
         // Create authentication token with user details and roles
         List<SimpleGrantedAuthority> authorities = roles.stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
                 .collect(Collectors.toList());
 
-        Authentication authentication = new UsernamePasswordAuthenticationToken(email, null, authorities);
+        Authentication authentication = new UsernamePasswordAuthenticationToken(
+                new WebUserDetails(email, displayName, "", authorities), null, authorities);
 
         // Set authentication in security context
         SecurityContextHolder.getContext().setAuthentication(authentication);

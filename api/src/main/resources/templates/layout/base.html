@@ -155,12 +155,12 @@
                 <!-- Desktop Auth Buttons -->
                 <div class="hidden md:flex items-center space-x-4">
                     <!-- Authenticated User -->
-                    <div sec:authorize="isAuthenticated()" class="flex items-center space-x-4">
+                    <div sec:authorize="isAuthenticated() and !isAnonymous()" class="flex items-center space-x-4">
                         <a th:href="@{/predictions/me}"
                           class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
                             My Predictions
                         </a>
-                        <span class="text-sm text-gray-700" sec:authentication="principal.displayName"></span>
+                        <span class="text-sm text-gray-700" sec:authentication="name"></span>
                         <form th:action="@{/auth/logout}" method="post" class="inline">
                             <button type="submit"
                                     class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">

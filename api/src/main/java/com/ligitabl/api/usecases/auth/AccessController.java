@@ -16,8 +16,10 @@ import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.api.usecases.auth.getcurrentuser.GetCurrentUserQuery;
 import com.ligitabl.api.usecases.auth.getcurrentuser.GetCurrentUserUseCase;
 import com.ligitabl.api.usecases.auth.getcurrentuser.UserInfo;
+import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.auth.Role;
+import com.ligitabl.model.repo.UserRepo;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,6 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 public class AccessController {
 
     private final GetCurrentUserUseCase getCurrentUserUseCase;
+    private final UserRepo userRepo;
 
     /**
      * Get current user endpoint.
@@ -45,11 +48,30 @@ public class AccessController {
             return ResponseEntity.status(401).body(new AuthDto.MessageResponse("Unauthorized"));
         }
 
-        String publicIdStr = authentication.getName();
-        log.debug("Get current user request for: {}", publicIdStr);
+        String principalName = authentication.getName();
+        log.debug("Get current user request for: {}", principalName);
 
-        return Either.catching(() -> PublicId.create(publicIdStr), UseCaseErrors::fromException)
-                .map(publicId -> new GetCurrentUserQuery(publicId))
+        // JWT auth uses publicId as principal; Basic Auth uses email.
+        if (principalName.contains("@")) {
+            return Either.catching(() -> Email.create(principalName), UseCaseErrors::fromException)
+                    .flatMap(email -> Either.ofOptional(
+                            userRepo.findByEmail(email),
+                            () -> UseCaseErrors.notFound("User", email)))
+                    .map(user -> new UserInfo(
+                            user.getPublicId(),
+                            user.getEmail(),
+                            user.getDisplayName(),
+                            user.getRoles(),
+                            user.isEmailVerified()))
+                    .map(userInfo -> ResponseEntity.ok(toUserInfoResponse(userInfo)))
+                    .getOrElseThrow(error -> {
+                        log.error("Failed to get current user: {}", error.getMessage());
+                        throw new UseCaseException(error);
+                    });
+        }
+
+        return Either.catching(() -> PublicId.create(principalName), UseCaseErrors::fromException)
+                .map(GetCurrentUserQuery::new)
                 .flatMap(getCurrentUserUseCase::execute)
                 .map(userInfo -> ResponseEntity.ok(toUserInfoResponse(userInfo)))
                 .getOrElseThrow(error -> {

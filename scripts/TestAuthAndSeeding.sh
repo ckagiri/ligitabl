@@ -4,7 +4,7 @@ set -euo pipefail
 
 # Combined smoke test runner:
 # 1) Seeds a fresh local dev DB (DESTRUCTIVE)
-# 2) Runs the auth endpoint smoke tests against a running API
+# 2) Runs the auth endpoint smoke tests (JWT + Basic auth) against a running API
 #
 # If START_API=1, this script will start the API via Maven using the current env
 # (typically .env.test), wait for /actuator/health, run auth tests, then stop the API.
