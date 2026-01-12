@@ -363,6 +363,19 @@ import-competition: ## Import matches for a competition (COMP=XX, ENV=$(ENV))
 		--workflow.competition=$(COMP) \
 		--workflow.exit-after=true
 
+# ==============================================================================
+# STANDINGS WORKFLOW TARGETS
+# ==============================================================================
+
+.PHONY: calc-standings
+calc-standings: ## Calculate standings for all rounds (ENV=$(ENV))
+	$(MAKE) compose-up-db
+	$(MAKE) api-build
+	java -jar $(JAR) \
+		--spring.main.web-application-type=none \
+		--workflow.run-calc-standings=true \
+		--workflow.exit-after=true
+
 .PHONY: import-pl
 import-pl: ## Import Premier League (ENV=$(ENV))
 	$(MAKE) import-competition COMP=PL
