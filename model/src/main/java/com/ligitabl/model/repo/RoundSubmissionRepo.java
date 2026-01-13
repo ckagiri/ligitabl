@@ -14,4 +14,6 @@ public interface RoundSubmissionRepo {
     Optional<RoundSubmission> findByUserAndSeasonAndRound(UUID userId, UUID seasonId, int roundPosition);
 
     List<RoundSubmission> findBySeasonAndRound(UUID seasonId, int roundPosition);
+
+    boolean existsBySeasonId(UUID seasonId);
 }

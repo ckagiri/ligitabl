@@ -50,6 +50,62 @@ public class Match extends AbstractModel<UUID> {
     @Builder.Default
     private boolean wasSuspended = false;
 
+    public void setScore(int homeGoals, int awayGoals) {
+        this.score = Score.builder().homeGoals(homeGoals).awayGoals(awayGoals).build();
+    }
+
+    public void transitionTo(MatchStatus newStatus, String reason) {
+        if (newStatus == null) {
+            throw new IllegalArgumentException("newStatus must not be null");
+        }
+        if (reason == null || reason.isBlank()) {
+            throw new IllegalArgumentException("reason must not be blank");
+        }
+
+        MatchStatus from = this.status;
+        if (from == null) {
+            throw new IllegalStateException("Match has no current status");
+        }
+        if (from == newStatus) {
+            return;
+        }
+
+        if (!isAllowedTransition(from, newStatus)) {
+            throw new IllegalStateException(String.format("Cannot transition from %s to %s", from, newStatus));
+        }
+
+        this.status = newStatus;
+        if (newStatus == MatchStatus.POSTPONED) {
+            this.wasPostponed = true;
+        }
+        if (newStatus == MatchStatus.SUSPENDED) {
+            this.wasSuspended = true;
+        }
+    }
+
+    public void rescheduleToRound(UUID newRoundId, boolean isSetupMode) {
+        if (newRoundId == null) {
+            throw new IllegalArgumentException("newRoundId must not be null");
+        }
+
+        this.roundId = newRoundId;
+
+        if (!isSetupMode) {
+            // Outside setup mode, rescheduling returns the match to SCHEDULED.
+            this.status = MatchStatus.SCHEDULED;
+        }
+    }
+
+    private static boolean isAllowedTransition(MatchStatus from, MatchStatus to) {
+        return switch (from) {
+            case SCHEDULED -> to == MatchStatus.LIVE || to == MatchStatus.POSTPONED || to == MatchStatus.CANCELLED;
+            case LIVE -> to == MatchStatus.SUSPENDED || to == MatchStatus.FINISHED || to == MatchStatus.CANCELLED;
+            case SUSPENDED -> to == MatchStatus.POSTPONED || to == MatchStatus.LIVE || to == MatchStatus.CANCELLED;
+            case POSTPONED -> to == MatchStatus.SCHEDULED || to == MatchStatus.CANCELLED;
+            case CANCELLED, FINISHED -> false;
+        };
+    }
+
     public boolean isPlayed() {
         return score != null;
     }

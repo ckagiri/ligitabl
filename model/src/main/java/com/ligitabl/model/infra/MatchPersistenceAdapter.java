@@ -44,14 +44,25 @@ public class MatchPersistenceAdapter implements MatchRepo {
     }
 
     @Override
-    public List<Match> findByRoundId(Long roundId) {
-        throw new UnsupportedOperationException("Use findByRoundId(UUID) instead");
-    }
-
-    @Override
     public Optional<Match> findByClientId(Integer clientId) {
         var record =
                 dsl.selectFrom(T_MATCH).where(T_MATCH.C_CLIENT_ID.eq(clientId)).fetchOne();
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
+    @Override
+    public Optional<Match> findByRoundIdAndSlug(UUID roundId, String slug) {
+        if (roundId == null) {
+            throw new IllegalArgumentException("roundId must not be null");
+        }
+        if (slug == null || slug.isBlank()) {
+            throw new IllegalArgumentException("slug must not be blank");
+        }
+
+        var record = dsl.selectFrom(T_MATCH)
+                .where(T_MATCH.FK_ROUND_ID.eq(roundId).and(T_MATCH.C_SLUG.eq(slug)))
+                .fetchOne();
 
         return Optional.ofNullable(MAPPER.map(record));
     }

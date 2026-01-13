@@ -1,0 +1,14 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260113_1_season_add_previous_main_contest
+      author: system
+      changes:
+        - addColumn:
+            tableName: t_season
+            schemaName: public
+            columns:
+              - column:
+                  name: fk_previous_main_contest_id
+                  type: uuid
+                  constraints:
+                    nullable: true
