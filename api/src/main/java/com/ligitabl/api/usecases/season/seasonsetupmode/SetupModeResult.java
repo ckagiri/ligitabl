@@ -13,7 +13,7 @@ public class SetupModeResult {
     String seasonSlug;
     boolean isInSetupMode;
     UUID mainContestId;
-    UUID previousMainContestId;
+    UUID detachedContestId;
     String message;
     Instant timestamp;
 }

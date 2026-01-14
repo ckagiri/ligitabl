@@ -12,7 +12,6 @@ import java.util.stream.Stream;
 import org.jooq.DSLContext;
 import org.jooq.JSONB;
 import org.jooq.RecordMapper;
-import org.jooq.impl.DSL;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -128,7 +127,7 @@ public class MatchPersistenceAdapter implements MatchRepo {
                 .on(T_MATCH.FK_ROUND_ID.eq(T_ROUND.PK_ID))
                 .where(T_ROUND.FK_SEASON_ID.eq(seasonId))
                 .and(T_ROUND.C_POSITION.lessOrEqual(roundPosition))
-                .and(DSL.upper(T_MATCH.C_STATUS).eq(MatchStatus.FINISHED.name()))
+            .and(T_MATCH.C_STATUS.eq(MatchStatus.FINISHED.name()))
                 .orderBy(T_ROUND.C_POSITION.asc(), T_MATCH.C_KICK_OFF.asc())
                 .fetchInto(MatchRecord.class);
 
@@ -205,8 +204,8 @@ public class MatchPersistenceAdapter implements MatchRepo {
                     .venue(record.getVenue())
                     .matchday(record.getMatchday())
                     .score(readScore(record.getScore()))
-                    .wasPostponed(Boolean.TRUE.equals(record.get(DSL.field("c_was_postponed", Boolean.class))))
-                    .wasSuspended(Boolean.TRUE.equals(record.get(DSL.field("c_was_suspended", Boolean.class))))
+                    .wasPostponed(Boolean.TRUE.equals(record.getWasPostponed()))
+                    .wasSuspended(Boolean.TRUE.equals(record.getWasSuspended()))
                     .build();
         }
 
@@ -243,9 +242,8 @@ public class MatchPersistenceAdapter implements MatchRepo {
         rec.setVenue(model.getVenue());
         rec.setMatchday(model.getMatchday());
 
-        // These columns exist in DB (added via Liquibase) but may not be present in older generated jOOQ code.
-        rec.set(DSL.field("c_was_postponed", Boolean.class), model.isWasPostponed());
-        rec.set(DSL.field("c_was_suspended", Boolean.class), model.isWasSuspended());
+        rec.setWasPostponed(model.isWasPostponed());
+        rec.setWasSuspended(model.isWasSuspended());
 
         Score score = model.getScore();
         if (score == null) {

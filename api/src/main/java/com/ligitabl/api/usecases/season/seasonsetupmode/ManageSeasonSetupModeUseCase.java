@@ -65,7 +65,7 @@ public class ManageSeasonSetupModeUseCase
                 .seasonSlug(saved.getSlug().value())
                 .isInSetupMode(saved.isInSetupMode())
                 .mainContestId(saved.getMainContestId())
-                .previousMainContestId(saved.getPreviousMainContestId())
+                .detachedContestId(saved.getDetachedContestId())
                 .message("Season entered setup mode")
                 .timestamp(now)
                 .build());
@@ -89,7 +89,7 @@ public class ManageSeasonSetupModeUseCase
                 .seasonSlug(saved.getSlug().value())
                 .isInSetupMode(saved.isInSetupMode())
                 .mainContestId(saved.getMainContestId())
-                .previousMainContestId(saved.getPreviousMainContestId())
+                .detachedContestId(saved.getDetachedContestId())
                 .message("Season left setup mode")
                 .timestamp(now)
                 .build());

@@ -1,5 +1,6 @@
 package com.ligitabl.api.controllers.web;
 
+import com.ligitabl.api.usecases.match.getdefaultroundmatches.GetDefaultRoundMatchesQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -104,7 +105,7 @@ public class WebPublicController {
             return isHtmxRequest(hxRequest) ? "matches :: matchesList" : "matches";
         }
 
-        getDefaultRoundMatchesUseCase.execute()
+        getDefaultRoundMatchesUseCase.execute(GetDefaultRoundMatchesQuery.currentRound(null))
             .peekLeft(error -> {
                 log.error("Error fetching matches: {}", error);
                 model.addAttribute("error", "Unable to load matches");

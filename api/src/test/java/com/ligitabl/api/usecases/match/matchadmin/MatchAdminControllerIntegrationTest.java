@@ -56,6 +56,7 @@ class MatchAdminControllerIntegrationTest extends AbstractPostgresIT {
     private UUID competitionId;
     private UUID seasonId;
     private UUID roundId;
+        private UUID contestId;
     private UUID homeTeamId;
     private UUID awayTeamId;
 
@@ -70,6 +71,7 @@ class MatchAdminControllerIntegrationTest extends AbstractPostgresIT {
         competitionId = UUID.randomUUID();
         seasonId = UUID.randomUUID();
         roundId = UUID.randomUUID();
+        contestId = UUID.randomUUID();
         homeTeamId = UUID.randomUUID();
         awayTeamId = UUID.randomUUID();
 
@@ -85,7 +87,7 @@ class MatchAdminControllerIntegrationTest extends AbstractPostgresIT {
         jdbcTemplate.update(
                 "INSERT INTO t_team (pk_id, c_client_id, c_name, c_short_name, c_slug, c_tla) VALUES (?,?,?,?,?,?)",
                 awayTeamId,
-                1,
+                2,
                 "Chelsea",
                 "Chelsea",
                 "chelsea",
@@ -112,16 +114,29 @@ class MatchAdminControllerIntegrationTest extends AbstractPostgresIT {
                 38,
                 roundId,
                 1,
-                UUID.randomUUID());
+                null);
 
         jdbcTemplate.update(
-                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_status) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO t_contest (pk_id, fk_season_id, c_name, c_is_private, c_join_code, c_from_round_position, c_to_round_position, c_max_entries) VALUES (?,?,?,?,?,?,?,?)",
+                contestId,
+                seasonId,
+                "Main Contest",
+                false,
+                null,
+                1,
+                38,
+                1_000);
+
+        jdbcTemplate.update("UPDATE t_season SET fk_main_contest_id = ? WHERE pk_id = ?", contestId, seasonId);
+
+        jdbcTemplate.update(
+                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized) VALUES (?,?,?,?,?,?)",
                 roundId,
                 seasonId,
                 "Matchday 1",
                 "md-1",
                 1,
-                "OPEN");
+                false);
 
         // Admin user + token
         UUID adminId = UUID.randomUUID();

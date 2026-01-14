@@ -101,6 +101,9 @@ class TransitionMatchStatusUseCaseTest {
                 .finalized(false)
                 .build();
 
+        when(hierarchyValidator.resolveHierarchy(anyString(), any()))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+
                 useCase = new TransitionMatchStatusUseCase(matchRepo, hierarchyValidator, competitionDefaults, clock);
     }
 
@@ -126,9 +129,6 @@ class TransitionMatchStatusUseCaseTest {
 
         Instant now = Instant.parse("2026-01-13T10:00:00Z");
 
-        when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
         when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
         when(clock.instant()).thenReturn(now);
@@ -165,9 +165,6 @@ class TransitionMatchStatusUseCaseTest {
                 .reason("Full time")
                 .build();
 
-        when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
 
         Either<UseCaseError, TransitionResult> result = useCase.execute(cmd);
@@ -196,9 +193,6 @@ class TransitionMatchStatusUseCaseTest {
                 .reason("Invalid")
                 .build();
 
-        when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
 
         Either<UseCaseError, TransitionResult> result = useCase.execute(cmd);
@@ -217,9 +211,6 @@ class TransitionMatchStatusUseCaseTest {
                 .reason("Start")
                 .build();
 
-        when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundIdAndSlug(roundId, "missing")).thenReturn(Optional.empty());
 
         Either<UseCaseError, TransitionResult> result = useCase.execute(cmd);

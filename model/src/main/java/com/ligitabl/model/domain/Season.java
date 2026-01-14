@@ -47,9 +47,11 @@ public class Season extends AbstractModel<UUID> {
     private UUID mainContestId;
 
     /**
-     * Stored when entering setup mode so we can restore it on leave.
+        * When entering setup mode, we detach the current main contest so we can reattach it when leaving.
+        *
+        * Invariant: exactly one of (mainContestId, detachedContestId) should be non-null.
      */
-    private UUID previousMainContestId;
+        private UUID detachedContestId;
 
     private UUID currentRoundId;
 
@@ -67,7 +69,7 @@ public class Season extends AbstractModel<UUID> {
             throw new IllegalStateException("Season is already in setup mode");
         }
 
-        this.previousMainContestId = this.mainContestId;
+        this.detachedContestId = this.mainContestId;
         this.mainContestId = null;
     }
 
@@ -76,11 +78,11 @@ public class Season extends AbstractModel<UUID> {
             throw new IllegalStateException("Season is not in setup mode");
         }
 
-        if (previousMainContestId == null) {
-            throw new IllegalStateException("Season cannot leave setup mode without a previous main contest");
+        if (detachedContestId == null) {
+            throw new IllegalStateException("Season cannot leave setup mode without a detached contest");
         }
 
-        this.mainContestId = previousMainContestId;
-        this.previousMainContestId = null;
+        this.mainContestId = detachedContestId;
+        this.detachedContestId = null;
     }
 }

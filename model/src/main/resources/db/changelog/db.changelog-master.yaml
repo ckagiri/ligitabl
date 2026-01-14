@@ -18,6 +18,8 @@ databaseChangeLog:
   - include:
       file: db/changelog/20260113_1_season_previous_main_contest.yaml
   - include:
+      file: db/changelog/20260114_1_season_detached_contest.yaml
+  - include:
       file: db/changelog/20251223_3_standings_finalised.yaml
   - include:
       file: db/changelog/20251222_1_user.yaml

@@ -2,6 +2,7 @@ package com.ligitabl.api.usecases.match.reschedulematch;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 import java.time.Clock;
@@ -31,8 +32,6 @@ import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
 import com.ligitabl.model.repo.MatchRepo;
-import com.ligitabl.model.repo.RoundRepo;
-import com.ligitabl.model.repo.SeasonRepo;
 
 @ExtendWith(MockitoExtension.class)
 class RescheduleMatchUseCaseTest {
@@ -41,12 +40,6 @@ class RescheduleMatchUseCaseTest {
 
     @Mock
     private MatchRepo matchRepo;
-
-    @Mock
-    private SeasonRepo seasonRepo;
-
-    @Mock
-    private RoundRepo roundRepo;
 
     @Mock
     private HierarchyValidator hierarchyValidator;
@@ -108,7 +101,7 @@ class RescheduleMatchUseCaseTest {
                 .currentRoundId(currentRoundId)
                 .currentMatchDay(10)
                 .mainContestId(null)
-                .previousMainContestId(UUID.randomUUID())
+                .detachedContestId(UUID.randomUUID())
                 .build();
 
         currentRound = Round.builder()
@@ -129,7 +122,7 @@ class RescheduleMatchUseCaseTest {
                 .finalized(false)
                 .build();
 
-                useCase = new RescheduleMatchUseCase(matchRepo, hierarchyValidator, competitionDefaults, clock);
+        useCase = new RescheduleMatchUseCase(matchRepo, hierarchyValidator, competitionDefaults, clock);
     }
 
     @Test
@@ -155,9 +148,8 @@ class RescheduleMatchUseCaseTest {
 
         Instant now = Instant.parse("2026-01-13T10:00:00Z");
 
-        when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(seasonLive));
-        when(roundRepo.findById(currentRoundId)).thenReturn(Optional.of(currentRound));
+        when(hierarchyValidator.resolveHierarchy(anyString(), any()))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonLive, currentRound)));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 20)).thenReturn(Either.right(targetRound));
         when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
@@ -196,9 +188,8 @@ class RescheduleMatchUseCaseTest {
                 .reason("Setup fixtures")
                 .build();
 
-        when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(seasonSetup));
-        when(roundRepo.findById(currentRoundId)).thenReturn(Optional.of(currentRound));
+        when(hierarchyValidator.resolveHierarchy(anyString(), any()))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonSetup, currentRound)));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 20)).thenReturn(Either.right(targetRound));
         when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
@@ -230,9 +221,8 @@ class RescheduleMatchUseCaseTest {
                 .reason("Invalid")
                 .build();
 
-        when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(seasonLive));
-        when(roundRepo.findById(currentRoundId)).thenReturn(Optional.of(currentRound));
+        when(hierarchyValidator.resolveHierarchy(anyString(), any()))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonLive, currentRound)));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 20)).thenReturn(Either.right(targetRound));
 
@@ -263,9 +253,8 @@ class RescheduleMatchUseCaseTest {
                 .reason("Non-existent")
                 .build();
 
-        when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(seasonLive));
-        when(roundRepo.findById(currentRoundId)).thenReturn(Optional.of(currentRound));
+        when(hierarchyValidator.resolveHierarchy(anyString(), any()))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonLive, currentRound)));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 99)).thenReturn(Either.left(com.ligitabl.api.shared.errors.UseCaseErrors.notFound("Round", "position", 99)));
 
