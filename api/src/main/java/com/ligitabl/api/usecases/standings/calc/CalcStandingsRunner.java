@@ -146,7 +146,7 @@ public class CalcStandingsRunner implements ApplicationRunner {
         log.error("║  Calculation FAILED                                      ║");
         log.error("╚══════════════════════════════════════════════════════════╝");
         log.error("Context:       {}", context);
-        log.error("Error Code:    {}", error.code());
+        // log.error("Error Code:    {}", error.code());
         log.error("Error Message: {}", error.getMessage());
 
         if (config.isExitAfter()) {
