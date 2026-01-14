@@ -205,6 +205,8 @@ public class MatchPersistenceAdapter implements MatchRepo {
                     .venue(record.getVenue())
                     .matchday(record.getMatchday())
                     .score(readScore(record.getScore()))
+                    .wasPostponed(Boolean.TRUE.equals(record.get(DSL.field("c_was_postponed", Boolean.class))))
+                    .wasSuspended(Boolean.TRUE.equals(record.get(DSL.field("c_was_suspended", Boolean.class))))
                     .build();
         }
 
@@ -240,6 +242,10 @@ public class MatchPersistenceAdapter implements MatchRepo {
         rec.setKickOff(model.getKickOff());
         rec.setVenue(model.getVenue());
         rec.setMatchday(model.getMatchday());
+
+        // These columns exist in DB (added via Liquibase) but may not be present in older generated jOOQ code.
+        rec.set(DSL.field("c_was_postponed", Boolean.class), model.isWasPostponed());
+        rec.set(DSL.field("c_was_suspended", Boolean.class), model.isWasSuspended());
 
         Score score = model.getScore();
         if (score == null) {

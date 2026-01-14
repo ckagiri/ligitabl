@@ -46,9 +46,10 @@ public class TransitionMatchStatusUseCase
         log.info("Executing TransitionMatchStatus: slug={}, status={}", cmd.getMatchSlug(), cmd.getNewStatus());
 
         return resolveHierarchy(cmd)
-                .flatMap(context -> findMatch(context.round().getId(), cmd.getMatchSlug())
-                        .map(match -> new TransitionContext(context.round(), match, null)))
-                .flatMap(ctx -> validateAndTransition(ctx, cmd))
+            .flatMap(context -> findMatch(context.round().getId(), cmd.getMatchSlug())
+                .map(match -> new TransitionContext(context.round(), match, match.getStatus())))
+            .flatMap(ctx -> validateAndTransition(ctx.match(), cmd)
+                .map(match -> new TransitionContext(ctx.round(), match, ctx.oldStatus())))
                 .flatMap(this::save);
     }
 
@@ -90,11 +91,8 @@ public class TransitionMatchStatusUseCase
                 UseCaseErrors.notFound("Match", "slug", matchSlug));
     }
 
-    private Either<UseCaseError, TransitionContext> validateAndTransition(TransitionContext ctx, TransitionMatchCommand cmd) {
+    private Either<UseCaseError, Match> validateAndTransition(Match match, TransitionMatchCommand cmd) {
         try {
-            Match match = ctx.match();
-            MatchStatus oldStatus = match.getStatus();
-
             if (cmd.getNewStatus() == MatchStatus.FINISHED) {
                 if (cmd.getScore() == null) {
                     return Either.left(UseCaseErrors.validation("Score is required when transitioning to FINISHED"));
@@ -103,7 +101,7 @@ public class TransitionMatchStatusUseCase
             }
 
             match.transitionTo(cmd.getNewStatus(), cmd.getReason());
-            return Either.right(new TransitionContext(ctx.round(), match, oldStatus));
+            return Either.right(match);
 
         } catch (IllegalStateException | IllegalArgumentException e) {
             return Either.left(UseCaseErrors.validation(e.getMessage()));

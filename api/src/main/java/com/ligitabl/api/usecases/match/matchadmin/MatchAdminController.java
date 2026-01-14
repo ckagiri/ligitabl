@@ -38,8 +38,8 @@ public class MatchAdminController {
     private final GetMatchAdminDetailsUseCase detailsUseCase;
 
     /**
-     * POST /api/rounds/current/matches/{matchSlug}/transition
-     * POST /api/rounds/{position}/matches/{matchSlug}/transition
+        * POST /api/admin/rounds/current/matches/{matchSlug}/transition
+        * POST /api/admin/rounds/{position}/matches/{matchSlug}/transition
      */
     @PostMapping("/{position}/matches/{matchSlug}/transition")
     @PreAuthorize("hasRole('ADMIN')")
@@ -69,8 +69,8 @@ public class MatchAdminController {
     }
 
     /**
-     * POST /api/rounds/current/matches/{matchSlug}/reschedule
-     * POST /api/rounds/{position}/matches/{matchSlug}/reschedule
+        * POST /api/admin/rounds/current/matches/{matchSlug}/reschedule
+        * POST /api/admin/rounds/{position}/matches/{matchSlug}/reschedule
      */
     @PostMapping("/{position}/matches/{matchSlug}/reschedule")
     @PreAuthorize("hasRole('ADMIN')")
@@ -97,8 +97,8 @@ public class MatchAdminController {
     }
 
     /**
-     * GET /api/rounds/current/matches/{matchSlug}
-     * GET /api/rounds/{position}/matches/{matchSlug}
+        * GET /api/admin/rounds/current/matches/{matchSlug}
+        * GET /api/admin/rounds/{position}/matches/{matchSlug}
      */
     @GetMapping("/{position}/matches/{matchSlug}")
     @PreAuthorize("hasRole('ADMIN')")
