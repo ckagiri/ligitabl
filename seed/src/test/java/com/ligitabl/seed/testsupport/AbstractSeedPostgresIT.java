@@ -11,7 +11,8 @@ public abstract class AbstractSeedPostgresIT {
     private static final PostgreSQLContainer<?> POSTGRES = new PostgreSQLContainer<>("postgres:16-alpine")
             .withDatabaseName("ligitabl")
             .withUsername("ligitabl")
-            .withPassword("ligitabl");
+            .withPassword("ligitabl")
+            .withUrlParam("sslmode", "disable");
 
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -23,6 +24,10 @@ public abstract class AbstractSeedPostgresIT {
 
     @BeforeAll
     static void startContainer() {
+        ensureStarted();
+    }
+
+    private static void ensureStarted() {
         if (!POSTGRES.isRunning()) {
             POSTGRES.start();
         }
@@ -30,6 +35,7 @@ public abstract class AbstractSeedPostgresIT {
 
     @DynamicPropertySource
     static void registerDatasource(DynamicPropertyRegistry registry) {
+        ensureStarted();
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);

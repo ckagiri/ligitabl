@@ -2,6 +2,7 @@ package com.ligitabl.api.usecases.standings.calc;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -91,6 +92,10 @@ class CalcStandingsRunnerIT extends AbstractPostgresIT {
     @Test
     void runnerBeanIsEnabled_andExecutesUseCasePerRound() throws Exception {
         assertThat(runner).isNotNull();
+
+                // CalcStandingsRunner is an ApplicationRunner and is invoked once during Spring context startup.
+                // Clear any invocations from that startup run so we can assert only the explicit run() below.
+                reset(calculateRoundStandingsUseCase);
 
         when(calculateRoundStandingsUseCase.execute(any(CalculateRoundStandingsCommand.class)))
                 .thenReturn(Either.right(List.of()));
