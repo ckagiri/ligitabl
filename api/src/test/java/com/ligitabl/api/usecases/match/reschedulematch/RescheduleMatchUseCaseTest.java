@@ -10,6 +10,9 @@ import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.ligitabl.api.usecases.matchadmin.reschedulematch.RescheduleMatchCommand;
+import com.ligitabl.api.usecases.matchadmin.reschedulematch.RescheduleMatchUseCase;
+import com.ligitabl.api.usecases.matchadmin.reschedulematch.RescheduleResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -126,7 +129,7 @@ class RescheduleMatchUseCaseTest {
                 .finalized(false)
                 .build();
 
-        useCase = new RescheduleMatchUseCase(matchRepo, seasonRepo, roundRepo, hierarchyValidator, competitionDefaults, clock);
+                useCase = new RescheduleMatchUseCase(matchRepo, hierarchyValidator, competitionDefaults, clock);
     }
 
     @Test
@@ -144,7 +147,7 @@ class RescheduleMatchUseCaseTest {
 
         RescheduleMatchCommand cmd = RescheduleMatchCommand.builder()
                 .competitionIdentifier("premier-league")
-                .roundPosition("current")
+                .roundPosition(null)
                 .matchSlug(match.getSlug())
                 .newRoundPosition(20)
                 .reason("FA confirmed new date")
@@ -187,7 +190,7 @@ class RescheduleMatchUseCaseTest {
 
         RescheduleMatchCommand cmd = RescheduleMatchCommand.builder()
                 .competitionIdentifier("premier-league")
-                .roundPosition("current")
+                .roundPosition(null)
                 .matchSlug(match.getSlug())
                 .newRoundPosition(20)
                 .reason("Setup fixtures")
@@ -221,7 +224,7 @@ class RescheduleMatchUseCaseTest {
 
         RescheduleMatchCommand cmd = RescheduleMatchCommand.builder()
                 .competitionIdentifier("premier-league")
-                .roundPosition("current")
+                .roundPosition(null)
                 .matchSlug(match.getSlug())
                 .newRoundPosition(20)
                 .reason("Invalid")
@@ -254,7 +257,7 @@ class RescheduleMatchUseCaseTest {
 
         RescheduleMatchCommand cmd = RescheduleMatchCommand.builder()
                 .competitionIdentifier("premier-league")
-                .roundPosition("current")
+                .roundPosition(null)
                 .matchSlug(match.getSlug())
                 .newRoundPosition(99)
                 .reason("Non-existent")

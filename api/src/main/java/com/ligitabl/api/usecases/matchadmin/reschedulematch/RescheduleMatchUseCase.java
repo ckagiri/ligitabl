@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.match.reschedulematch;
+package com.ligitabl.api.usecases.matchadmin.reschedulematch;
 
 import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 
@@ -15,14 +15,12 @@ import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecases.shared.HierarchyValidator;
-import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.MatchRepo;
-import com.ligitabl.model.repo.RoundRepo;
-import com.ligitabl.model.repo.SeasonRepo;
+import com.ligitabl.api.usecases.shared.HierarchyValidator.HierarchyContext;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -33,8 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, Either<UseCaseError, RescheduleResult>> {
 
     private final MatchRepo matchRepo;
-    private final SeasonRepo seasonRepo;
-    private final RoundRepo roundRepo;
     private final HierarchyValidator hierarchyValidator;
     private final CompetitionDefaults competitionDefaults;
     private final Clock clock;
@@ -44,43 +40,15 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
     public Either<UseCaseError, RescheduleResult> execute(RescheduleMatchCommand cmd) {
         log.info("Executing RescheduleMatch: slug={}, toRound={}", cmd.getMatchSlug(), cmd.getNewRoundPosition());
 
-        return resolveHierarchy(cmd)
-            .flatMap(context -> findMatch(context.currentRound().getId(), cmd.getMatchSlug())
-                .map(match -> new MatchContext(context, match)))
-            .flatMap(matchCtx -> validateReschedule(matchCtx, cmd.getNewRoundPosition()))
-            .flatMap(rescheduleCtx -> performReschedule(rescheduleCtx, cmd));
-    }
+        String competitionIdentifier = cmd.getCompetitionIdentifier()
+                .orElseGet(competitionDefaults::defaultCompetitionSlug);
 
-    private Either<UseCaseError, HierarchyContext> resolveHierarchy(RescheduleMatchCommand cmd) {
-        String competitionIdentifier = cmd.getCompetitionIdentifier().orElseGet(competitionDefaults::defaultCompetitionSlug);
-
-        return hierarchyValidator.validateCompetition(competitionIdentifier)
-                .flatMap(this::getActiveSeason)
-                .flatMap(season -> resolveRound(season, cmd)
-                    .map(round -> new HierarchyContext(season, round)));
-    }
-
-    private Either<UseCaseError, Season> getActiveSeason(Competition competition) {
-        UUID activeSeasonId = competition.getActiveSeasonId();
-        if (activeSeasonId == null) {
-            return Either.left(UseCaseErrors.validation("Competition has no active season"));
-        }
-
-        return requireFound(seasonRepo.findById(activeSeasonId), UseCaseErrors.notFound("Season", activeSeasonId));
-    }
-
-    private Either<UseCaseError, Round> resolveRound(Season season, RescheduleMatchCommand cmd) {
-        if (cmd.isCurrentRound()) {
-            UUID currentRoundId = season.getCurrentRoundId();
-            if (currentRoundId == null) {
-                return Either.left(UseCaseErrors.validation("Season has no current round"));
-            }
-            return requireFound(roundRepo.findById(currentRoundId), UseCaseErrors.notFound("Round", currentRoundId));
-        }
-
-        return cmd.getRoundPositionAsNumber()
-                .map(pos -> hierarchyValidator.validateRound(season.getId(), pos))
-                .orElseGet(() -> Either.left(UseCaseErrors.validation("Invalid round position format")));
+        return hierarchyValidator
+                .resolveHierarchy(competitionIdentifier, cmd.getRoundPosition())
+                .flatMap(context -> findMatch(context.round().getId(), cmd.getMatchSlug())
+                        .map(match -> new MatchContext(context, match)))
+                .flatMap(matchCtx -> validateReschedule(matchCtx, cmd.getNewRoundPosition()))
+                .flatMap(rescheduleCtx -> performReschedule(rescheduleCtx, cmd));
     }
 
     private Either<UseCaseError, Match> findMatch(UUID roundId, String matchSlug) {
@@ -101,7 +69,7 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
                 .flatMap(targetRound -> {
                     RescheduleContext ctx = new RescheduleContext(
                             matchCtx.context().season(),
-                            matchCtx.context().currentRound(),
+                            matchCtx.context().round(),
                             targetRound,
                             matchCtx.match());
 
@@ -140,7 +108,8 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
         return Either.right(null);
     }
 
-    private Either<UseCaseError, RescheduleResult> performReschedule(RescheduleContext ctx, RescheduleMatchCommand cmd) {
+    private Either<UseCaseError, RescheduleResult> performReschedule(RescheduleContext ctx,
+            RescheduleMatchCommand cmd) {
         try {
             Match match = ctx.match();
             Instant now = clock.instant();
@@ -169,9 +138,9 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
         }
     }
 
-    private record HierarchyContext(Season season, Round currentRound) {}
+    private record MatchContext(HierarchyContext context, Match match) {
+    }
 
-    private record MatchContext(HierarchyContext context, Match match) {}
-
-    private record RescheduleContext(Season season, Round currentRound, Round targetRound, Match match) {}
+    private record RescheduleContext(Season season, Round currentRound, Round targetRound, Match match) {
+    }
 }

@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.match.transitionmatchstatus;
+package com.ligitabl.api.usecases.matchadmin.transitionmatchstatus;
 
 import java.time.Instant;
 import java.util.UUID;

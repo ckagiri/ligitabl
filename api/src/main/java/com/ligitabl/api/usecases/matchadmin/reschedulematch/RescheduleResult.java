@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.match.reschedulematch;
+package com.ligitabl.api.usecases.matchadmin.reschedulematch;
 
 import java.time.Instant;
 import java.util.UUID;

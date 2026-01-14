@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.match.transitionmatchstatus;
+package com.ligitabl.api.usecases.matchadmin.transitionmatchstatus;
 
 import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 
@@ -15,14 +15,10 @@ import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecases.shared.HierarchyValidator;
-import com.ligitabl.model.domain.Competition;
+import com.ligitabl.api.usecases.shared.HierarchyValidator.HierarchyContext;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.MatchRepo;
-import com.ligitabl.model.repo.RoundRepo;
-import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,8 +30,6 @@ public class TransitionMatchStatusUseCase
         implements UseCase<TransitionMatchCommand, Either<UseCaseError, TransitionResult>> {
 
     private final MatchRepo matchRepo;
-    private final SeasonRepo seasonRepo;
-    private final RoundRepo roundRepo;
     private final HierarchyValidator hierarchyValidator;
     private final CompetitionDefaults competitionDefaults;
     private final Clock clock;
@@ -45,44 +39,14 @@ public class TransitionMatchStatusUseCase
     public Either<UseCaseError, TransitionResult> execute(TransitionMatchCommand cmd) {
         log.info("Executing TransitionMatchStatus: slug={}, status={}", cmd.getMatchSlug(), cmd.getNewStatus());
 
-        return resolveHierarchy(cmd)
-            .flatMap(context -> findMatch(context.round().getId(), cmd.getMatchSlug())
-                .map(match -> new TransitionContext(context.round(), match, match.getStatus())))
-            .flatMap(ctx -> validateAndTransition(ctx.match(), cmd)
-                .map(match -> new TransitionContext(ctx.round(), match, ctx.oldStatus())))
-                .flatMap(this::save);
-    }
-
-    private Either<UseCaseError, HierarchyContext> resolveHierarchy(TransitionMatchCommand cmd) {
         String competitionIdentifier = cmd.getCompetitionIdentifier().orElseGet(competitionDefaults::defaultCompetitionSlug);
 
-        return hierarchyValidator.validateCompetition(competitionIdentifier)
-                .flatMap(this::getActiveSeason)
-                .flatMap(season -> resolveRound(season, cmd))
-                .map(round -> new HierarchyContext(round));
-    }
-
-    private Either<UseCaseError, Season> getActiveSeason(Competition competition) {
-        UUID activeSeasonId = competition.getActiveSeasonId();
-        if (activeSeasonId == null) {
-            return Either.left(UseCaseErrors.validation("Competition has no active season"));
-        }
-
-        return requireFound(seasonRepo.findById(activeSeasonId), UseCaseErrors.notFound("Season", activeSeasonId));
-    }
-
-    private Either<UseCaseError, Round> resolveRound(Season season, TransitionMatchCommand cmd) {
-        if (cmd.isCurrentRound()) {
-            UUID currentRoundId = season.getCurrentRoundId();
-            if (currentRoundId == null) {
-                return Either.left(UseCaseErrors.validation("Season has no current round"));
-            }
-            return requireFound(roundRepo.findById(currentRoundId), UseCaseErrors.notFound("Round", currentRoundId));
-        }
-
-        return cmd.getRoundPositionAsNumber()
-                .map(pos -> hierarchyValidator.validateRound(season.getId(), pos))
-                .orElseGet(() -> Either.left(UseCaseErrors.validation("Invalid round position format")));
+        return hierarchyValidator
+            .resolveHierarchy(competitionIdentifier, cmd.getRoundPosition())
+            .flatMap(context -> findMatch(context.round().getId(), cmd.getMatchSlug())
+                        .map(match -> new MatchContext(context, match)))
+            .flatMap(matchCtx -> validateAndTransition(matchCtx, cmd))
+            .flatMap(this::save);
     }
 
     private Either<UseCaseError, Match> findMatch(UUID roundId, String matchSlug) {
@@ -91,8 +55,12 @@ public class TransitionMatchStatusUseCase
                 UseCaseErrors.notFound("Match", "slug", matchSlug));
     }
 
-    private Either<UseCaseError, Match> validateAndTransition(Match match, TransitionMatchCommand cmd) {
+    private Either<UseCaseError, TransitionContext> validateAndTransition(MatchContext matchCtx, TransitionMatchCommand cmd) {
+        Match match = matchCtx.match();
+
         try {
+            MatchStatus oldStatus = match.getStatus();
+
             if (cmd.getNewStatus() == MatchStatus.FINISHED) {
                 if (cmd.getScore() == null) {
                     return Either.left(UseCaseErrors.validation("Score is required when transitioning to FINISHED"));
@@ -101,7 +69,7 @@ public class TransitionMatchStatusUseCase
             }
 
             match.transitionTo(cmd.getNewStatus(), cmd.getReason());
-            return Either.right(match);
+            return Either.right(new TransitionContext(matchCtx.context(), match, oldStatus));
 
         } catch (IllegalStateException | IllegalArgumentException e) {
             return Either.left(UseCaseErrors.validation(e.getMessage()));
@@ -120,7 +88,7 @@ public class TransitionMatchStatusUseCase
                     .matchSlug(saved.getSlug())
                     .oldStatus(ctx.oldStatus())
                     .newStatus(saved.getStatus())
-                    .roundPosition(ctx.round().getPosition())
+                    .roundPosition(ctx.context().round().getPosition())
                     .timestamp(now)
                     .build());
 
@@ -129,7 +97,7 @@ public class TransitionMatchStatusUseCase
         }
     }
 
-    private record HierarchyContext(Round round) {}
+    private record MatchContext(HierarchyContext context, Match match) {}
 
-    private record TransitionContext(Round round, Match match, MatchStatus oldStatus) {}
+    private record TransitionContext(HierarchyContext context, Match match, MatchStatus oldStatus) {}
 }

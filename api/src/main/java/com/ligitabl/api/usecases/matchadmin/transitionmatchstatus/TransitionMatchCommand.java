@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.match.transitionmatchstatus;
+package com.ligitabl.api.usecases.matchadmin.transitionmatchstatus;
 
 import java.util.Optional;
 
@@ -15,7 +15,8 @@ public class TransitionMatchCommand {
     @Nullable
     String competitionIdentifier;
 
-    String roundPosition; // "current" or number
+    @Nullable
+    Integer roundPosition; // null => current round
     String matchSlug;
 
     MatchStatus newStatus;
@@ -23,21 +24,6 @@ public class TransitionMatchCommand {
 
     @Nullable
     ScoreDto score;
-
-    public boolean isCurrentRound() {
-        return "current".equalsIgnoreCase(roundPosition);
-    }
-
-    public Optional<Integer> getRoundPositionAsNumber() {
-        if (isCurrentRound()) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(Integer.parseInt(roundPosition));
-        } catch (NumberFormatException e) {
-            return Optional.empty();
-        }
-    }
 
     public Optional<String> getCompetitionIdentifier() {
         return Optional.ofNullable(competitionIdentifier);

@@ -1,10 +1,9 @@
-package com.ligitabl.api.usecases.match.matchadmin;
+package com.ligitabl.api.usecases.matchadmin;
 
 import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
@@ -14,14 +13,12 @@ import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecases.shared.HierarchyValidator;
-import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.MatchRepo;
-import com.ligitabl.model.repo.RoundRepo;
-import com.ligitabl.model.repo.SeasonRepo;
+import com.ligitabl.api.usecases.shared.HierarchyValidator.HierarchyContext;
 
 import lombok.RequiredArgsConstructor;
 
@@ -31,15 +28,13 @@ public class GetMatchAdminDetailsUseCase
         implements UseCase<GetMatchAdminDetailsUseCase.Query, Either<UseCaseError, MatchAdminDetailsDto>> {
 
     private final MatchRepo matchRepo;
-    private final SeasonRepo seasonRepo;
-    private final RoundRepo roundRepo;
     private final HierarchyValidator hierarchyValidator;
     private final CompetitionDefaults competitionDefaults;
 
     @Override
     public Either<UseCaseError, MatchAdminDetailsDto> execute(Query query) {
         return resolveHierarchy(query)
-                .flatMap(ctx -> findMatchInRound(ctx.round(), query.matchSlug())
+                .flatMap(ctx -> findMatch(ctx.round(), query.matchSlug())
                         .map(match -> new Context(ctx.season(), ctx.round(), match)))
                 .map(ctx -> MatchAdminDetailsDto.builder()
                         .matchId(ctx.match().getId())
@@ -55,36 +50,10 @@ public class GetMatchAdminDetailsUseCase
                 ? competitionDefaults.defaultCompetitionSlug()
                 : query.competitionIdentifier();
 
-        return hierarchyValidator.validateCompetition(competitionIdentifier)
-                .flatMap(this::getActiveSeason)
-                .flatMap(season -> resolveRound(season, query)
-                        .map(round -> new HierarchyContext(season, round)));
+        return hierarchyValidator.resolveHierarchy(competitionIdentifier, query.roundPosition());
     }
 
-    private Either<UseCaseError, Season> getActiveSeason(Competition competition) {
-        UUID activeSeasonId = competition.getActiveSeasonId();
-        if (activeSeasonId == null) {
-            return Either.left(UseCaseErrors.validation("Competition has no active season"));
-        }
-
-        return requireFound(seasonRepo.findById(activeSeasonId), UseCaseErrors.notFound("Season", activeSeasonId));
-    }
-
-    private Either<UseCaseError, Round> resolveRound(Season season, Query query) {
-        if (query.isCurrentRound()) {
-            UUID currentRoundId = season.getCurrentRoundId();
-            if (currentRoundId == null) {
-                return Either.left(UseCaseErrors.validation("Season has no current round"));
-            }
-            return requireFound(roundRepo.findById(currentRoundId), UseCaseErrors.notFound("Round", currentRoundId));
-        }
-
-        return query.getRoundPositionAsNumber()
-                .map(pos -> hierarchyValidator.validateRound(season.getId(), pos))
-                .orElseGet(() -> Either.left(UseCaseErrors.validation("Invalid round position format")));
-    }
-
-    private Either<UseCaseError, Match> findMatchInRound(Round round, String matchSlug) {
+    private Either<UseCaseError, Match> findMatch(Round round, String matchSlug) {
         return requireFound(
                 matchRepo.findByRoundIdAndSlug(round.getId(), matchSlug),
                 UseCaseErrors.notFound("Match", "slug", matchSlug));
@@ -113,6 +82,7 @@ public class GetMatchAdminDetailsUseCase
             }
             case POSTPONED -> {
                 actions.add("TRANSITION_TO_CANCELLED");
+                actions.add("TRANSITION_TO_SCHEDULED");
             }
             case CANCELLED, FINISHED -> {
                 // No actions
@@ -127,24 +97,7 @@ public class GetMatchAdminDetailsUseCase
         return actions;
     }
 
-    public record Query(String competitionIdentifier, String roundPosition, String matchSlug) {
-        public boolean isCurrentRound() {
-            return "current".equalsIgnoreCase(roundPosition);
-        }
-
-        public java.util.Optional<Integer> getRoundPositionAsNumber() {
-            if (isCurrentRound()) {
-                return java.util.Optional.empty();
-            }
-            try {
-                return java.util.Optional.of(Integer.parseInt(roundPosition));
-            } catch (NumberFormatException e) {
-                return java.util.Optional.empty();
-            }
-        }
-    }
-
-    private record HierarchyContext(Season season, Round round) {}
+    public record Query(String competitionIdentifier, Integer roundPosition, String matchSlug) {}
 
     private record Context(Season season, Round round, Match match) {}
 }

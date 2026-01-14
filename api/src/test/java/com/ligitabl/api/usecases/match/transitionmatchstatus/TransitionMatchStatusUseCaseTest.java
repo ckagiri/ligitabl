@@ -7,10 +7,12 @@ import static org.mockito.Mockito.*;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
-import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.ligitabl.api.usecases.matchadmin.transitionmatchstatus.TransitionMatchCommand;
+import com.ligitabl.api.usecases.matchadmin.transitionmatchstatus.TransitionMatchStatusUseCase;
+import com.ligitabl.api.usecases.matchadmin.transitionmatchstatus.TransitionResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -99,7 +101,7 @@ class TransitionMatchStatusUseCaseTest {
                 .finalized(false)
                 .build();
 
-        useCase = new TransitionMatchStatusUseCase(matchRepo, seasonRepo, roundRepo, hierarchyValidator, competitionDefaults, clock);
+                useCase = new TransitionMatchStatusUseCase(matchRepo, hierarchyValidator, competitionDefaults, clock);
     }
 
     @Test
@@ -116,7 +118,7 @@ class TransitionMatchStatusUseCaseTest {
 
         TransitionMatchCommand cmd = TransitionMatchCommand.builder()
                 .competitionIdentifier("premier-league")
-                .roundPosition("current")
+                .roundPosition(null)
                 .matchSlug(match.getSlug())
                 .newStatus(MatchStatus.POSTPONED)
                 .reason("Heavy rain")
@@ -157,7 +159,7 @@ class TransitionMatchStatusUseCaseTest {
 
         TransitionMatchCommand cmd = TransitionMatchCommand.builder()
                 .competitionIdentifier("premier-league")
-                .roundPosition("current")
+                .roundPosition(null)
                 .matchSlug(match.getSlug())
                 .newStatus(MatchStatus.FINISHED)
                 .reason("Full time")
@@ -188,7 +190,7 @@ class TransitionMatchStatusUseCaseTest {
 
         TransitionMatchCommand cmd = TransitionMatchCommand.builder()
                 .competitionIdentifier("premier-league")
-                .roundPosition("current")
+                .roundPosition(null)
                 .matchSlug(match.getSlug())
                 .newStatus(MatchStatus.POSTPONED)
                 .reason("Invalid")
@@ -209,7 +211,7 @@ class TransitionMatchStatusUseCaseTest {
     void transition_matchNotFound_returnsLeft() {
         TransitionMatchCommand cmd = TransitionMatchCommand.builder()
                 .competitionIdentifier("premier-league")
-                .roundPosition("current")
+                .roundPosition(null)
                 .matchSlug("missing")
                 .newStatus(MatchStatus.LIVE)
                 .reason("Start")

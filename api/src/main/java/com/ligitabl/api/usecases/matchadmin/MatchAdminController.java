@@ -1,5 +1,6 @@
-package com.ligitabl.api.usecases.match.matchadmin;
+package com.ligitabl.api.usecases.matchadmin;
 
+import com.ligitabl.api.usecases.shared.RoundPosition;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,12 +17,12 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 import com.ligitabl.api.shared.exceptions.UseCaseException;
-import com.ligitabl.api.usecases.match.reschedulematch.RescheduleMatchCommand;
-import com.ligitabl.api.usecases.match.reschedulematch.RescheduleMatchUseCase;
-import com.ligitabl.api.usecases.match.reschedulematch.RescheduleResult;
-import com.ligitabl.api.usecases.match.transitionmatchstatus.TransitionMatchCommand;
-import com.ligitabl.api.usecases.match.transitionmatchstatus.TransitionMatchStatusUseCase;
-import com.ligitabl.api.usecases.match.transitionmatchstatus.TransitionResult;
+import com.ligitabl.api.usecases.matchadmin.reschedulematch.RescheduleMatchCommand;
+import com.ligitabl.api.usecases.matchadmin.reschedulematch.RescheduleMatchUseCase;
+import com.ligitabl.api.usecases.matchadmin.reschedulematch.RescheduleResult;
+import com.ligitabl.api.usecases.matchadmin.transitionmatchstatus.TransitionMatchCommand;
+import com.ligitabl.api.usecases.matchadmin.transitionmatchstatus.TransitionMatchStatusUseCase;
+import com.ligitabl.api.usecases.matchadmin.transitionmatchstatus.TransitionResult;
 import com.ligitabl.model.domain.MatchStatus;
 
 import lombok.RequiredArgsConstructor;
@@ -38,8 +39,8 @@ public class MatchAdminController {
     private final GetMatchAdminDetailsUseCase detailsUseCase;
 
     /**
-        * POST /api/admin/rounds/current/matches/{matchSlug}/transition
-        * POST /api/admin/rounds/{position}/matches/{matchSlug}/transition
+     * POST /api/admin/rounds/current/matches/{matchSlug}/transition
+     * POST /api/admin/rounds/{position}/matches/{matchSlug}/transition
      */
     @PostMapping("/{position}/matches/{matchSlug}/transition")
     @PreAuthorize("hasRole('ADMIN')")
@@ -53,7 +54,7 @@ public class MatchAdminController {
 
         var cmd = TransitionMatchCommand.builder()
                 .competitionIdentifier(competition)
-                .roundPosition(position)
+                .roundPosition(RoundPosition.parse(position))
                 .matchSlug(matchSlug)
                 .newStatus(request.newStatus())
                 .reason(request.reason())
@@ -69,8 +70,8 @@ public class MatchAdminController {
     }
 
     /**
-        * POST /api/admin/rounds/current/matches/{matchSlug}/reschedule
-        * POST /api/admin/rounds/{position}/matches/{matchSlug}/reschedule
+     * POST /api/admin/rounds/current/matches/{matchSlug}/reschedule
+     * POST /api/admin/rounds/{position}/matches/{matchSlug}/reschedule
      */
     @PostMapping("/{position}/matches/{matchSlug}/reschedule")
     @PreAuthorize("hasRole('ADMIN')")
@@ -84,7 +85,7 @@ public class MatchAdminController {
 
         var cmd = RescheduleMatchCommand.builder()
                 .competitionIdentifier(competition)
-                .roundPosition(position)
+                .roundPosition(RoundPosition.parse(position))
                 .matchSlug(matchSlug)
                 .newRoundPosition(request.newRoundPosition())
                 .reason(request.reason())
@@ -97,8 +98,8 @@ public class MatchAdminController {
     }
 
     /**
-        * GET /api/admin/rounds/current/matches/{matchSlug}
-        * GET /api/admin/rounds/{position}/matches/{matchSlug}
+     * GET /api/admin/rounds/current/matches/{matchSlug}
+     * GET /api/admin/rounds/{position}/matches/{matchSlug}
      */
     @GetMapping("/{position}/matches/{matchSlug}")
     @PreAuthorize("hasRole('ADMIN')")
@@ -107,7 +108,7 @@ public class MatchAdminController {
             @PathVariable String matchSlug,
             @RequestParam(required = false) String competition) {
 
-        var query = new GetMatchAdminDetailsUseCase.Query(competition, position, matchSlug);
+        var query = new GetMatchAdminDetailsUseCase.Query(competition, RoundPosition.parse(position), matchSlug);
 
         return detailsUseCase.execute(query)
                 .fold(err -> {
@@ -121,10 +122,12 @@ public class MatchAdminController {
             ScoreDto score) {
         public record ScoreDto(
                 @Min(0) int homeGoals,
-                @Min(0) int awayGoals) {}
+                @Min(0) int awayGoals) {
+        }
     }
 
     public record RescheduleRequest(
             @Min(1) int newRoundPosition,
-            @NotBlank String reason) {}
+            @NotBlank String reason) {
+    }
 }

@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.match.matchadmin;
+package com.ligitabl.api.usecases.matchadmin;
 
 import java.util.List;
 import java.util.UUID;
