@@ -111,7 +111,7 @@ class StandingsEndpointsIT extends AbstractPostgresIT {
                         .build(),
                 StandingsTeamRank.builder()
                         .ranking(new TeamRank("AWY", 2))
-                        .metadata(new StandingsMetadata(1, 0, 0, 1, 0, 0, 3, 0))
+                        .metadata(new StandingsMetadata(1, 0, 0, 1, 0, 0, 3, -3))
                         .build());
 
         standingsRepo.save(Standings.builder()

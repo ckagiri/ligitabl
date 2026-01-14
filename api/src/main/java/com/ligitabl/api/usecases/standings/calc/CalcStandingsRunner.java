@@ -93,6 +93,14 @@ public class CalcStandingsRunner implements ApplicationRunner {
             var command = CalculateRoundStandingsCommand.byPosition(round.getPosition(), competitionSlug);
             var result = calculateRoundStandingsUseCase.execute(command);
 
+            if (result == null) {
+                log.warn(
+                        "Round {} - Failed: CalculateRoundStandingsUseCase returned null",
+                        round.getPosition());
+                failureCount.incrementAndGet();
+                continue;
+            }
+
             result.fold(
                 error -> {
                     // Check if error is because standings are already finalized
