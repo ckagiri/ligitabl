@@ -14,6 +14,10 @@ public class GetDefaultRoundMatchesQuery {
     @Nullable
     String competitionIdentifier;
 
+    public static GetDefaultRoundMatchesQuery currentRound() {
+        return currentRound(null);
+    }
+
     public static GetDefaultRoundMatchesQuery currentRound(@Nullable String competition) {
         return new GetDefaultRoundMatchesQuery(null, competition);
     }

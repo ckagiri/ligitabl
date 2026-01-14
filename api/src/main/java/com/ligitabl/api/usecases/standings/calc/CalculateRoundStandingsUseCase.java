@@ -6,7 +6,7 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
-import com.ligitabl.api.usecases.round.finalizeround.FinalizeRoundError;
+import com.ligitabl.api.domain.StandingsCalculatorService.StandingsError;
 import com.ligitabl.api.usecases.shared.HierarchyValidator;
 import com.ligitabl.api.usecases.standings.StandingsEnricher;
 import com.ligitabl.api.usecases.standings.StandingsEntryDto;
@@ -126,8 +126,8 @@ public class CalculateRoundStandingsUseCase
         }
 
         var calculation = standingsCalculator
-                .calculateRankings(season.getId(), round.getPosition())
-                .mapLeft(error -> new FinalizeRoundError.StandingsValidationFailed(error.toString()));
+            .calculateRankings(season.getId(), round.getPosition())
+            .mapLeft(this::standingsErrorToUseCaseError);
 
         if (calculation.isLeft()) {
             return Either.left(calculation.getLeft());
@@ -154,6 +154,17 @@ public class CalculateRoundStandingsUseCase
         standings.setFinalisedAt(now());
 
         return Either.right(standingsRepo.save(standings));
+    }
+
+    private UseCaseError standingsErrorToUseCaseError(StandingsError error) {
+        return switch (error) {
+            case StandingsError.SeasonNotFound e -> UseCaseErrors.notFound("Season", e.seasonId());
+            case StandingsError.NoInitialRankings e -> UseCaseErrors.validation(
+                    "Season has no initial rankings: " + e.seasonId());
+            case StandingsError.TeamsNotFound e -> UseCaseErrors.notFound("Team", e.codes());
+            case StandingsError.CalculationFailed e -> UseCaseErrors.validation(
+                    "Standings calculation failed: " + e.message());
+        };
     }
 
     private record RoundContext(Season season, Round round) {}

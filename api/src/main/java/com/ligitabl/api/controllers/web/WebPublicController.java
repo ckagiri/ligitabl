@@ -105,7 +105,7 @@ public class WebPublicController {
             return isHtmxRequest(hxRequest) ? "matches :: matchesList" : "matches";
         }
 
-        getDefaultRoundMatchesUseCase.execute(GetDefaultRoundMatchesQuery.currentRound(null))
+        getDefaultRoundMatchesUseCase.execute(GetDefaultRoundMatchesQuery.currentRound())
             .peekLeft(error -> {
                 log.error("Error fetching matches: {}", error);
                 model.addAttribute("error", "Unable to load matches");

@@ -26,9 +26,6 @@ public class GetDefaultRoundMatchesUseCase implements UseCase<GetDefaultRoundMat
 
     @Override
     public Either<UseCaseError, List<MatchDto>> execute(GetDefaultRoundMatchesQuery query) {
-        if (query == null) {
-            query = GetDefaultRoundMatchesQuery.currentRound(null);
-        }
         String competitionIdentifier = getEffectiveCompetitionIdentifier(query);
 
         return hierarchyValidator
