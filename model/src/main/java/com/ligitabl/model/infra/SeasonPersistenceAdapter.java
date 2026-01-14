@@ -12,6 +12,7 @@ import java.util.UUID;
 import org.jooq.DSLContext;
 import org.jooq.JSONB;
 import org.jooq.RecordMapper;
+import org.jooq.Record;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -64,6 +65,7 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
                 .set(T_SEASON.FK_MAIN_CONTEST_ID, season.getMainContestId())
                 .set(T_SEASON.FK_CURRENT_ROUND_ID, season.getCurrentRoundId())
                 .set(T_SEASON.C_CURRENT_MATCH_DAY, season.getCurrentMatchDay())
+                .set(T_SEASON.FK_DETACHED_CONTEST_ID, season.getDetachedContestId())
                 .where(T_SEASON.PK_ID.eq(season.getId()))
                 .execute();
 
@@ -181,6 +183,7 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
                     .currentMatchDay(record.getCurrentMatchDay())
                     .initialRankings(readTeams(record.getInitialRankings()))
                     .mainContestId(record.getMainContestId())
+                    .detachedContestId(record.getDetachedContestId())
                     .build();
         }
 

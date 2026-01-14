@@ -3,7 +3,6 @@ package com.ligitabl.seed.internal;
 import static com.ligitabl.model.db.tables.TCompetition.T_COMPETITION;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;

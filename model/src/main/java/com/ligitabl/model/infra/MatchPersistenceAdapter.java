@@ -12,7 +12,6 @@ import java.util.stream.Stream;
 import org.jooq.DSLContext;
 import org.jooq.JSONB;
 import org.jooq.RecordMapper;
-import org.jooq.impl.DSL;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -44,14 +43,25 @@ public class MatchPersistenceAdapter implements MatchRepo {
     }
 
     @Override
-    public List<Match> findByRoundId(Long roundId) {
-        throw new UnsupportedOperationException("Use findByRoundId(UUID) instead");
-    }
-
-    @Override
     public Optional<Match> findByClientId(Integer clientId) {
         var record =
                 dsl.selectFrom(T_MATCH).where(T_MATCH.C_CLIENT_ID.eq(clientId)).fetchOne();
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
+    @Override
+    public Optional<Match> findByRoundIdAndSlug(UUID roundId, String slug) {
+        if (roundId == null) {
+            throw new IllegalArgumentException("roundId must not be null");
+        }
+        if (slug == null || slug.isBlank()) {
+            throw new IllegalArgumentException("slug must not be blank");
+        }
+
+        var record = dsl.selectFrom(T_MATCH)
+                .where(T_MATCH.FK_ROUND_ID.eq(roundId).and(T_MATCH.C_SLUG.eq(slug)))
+                .fetchOne();
 
         return Optional.ofNullable(MAPPER.map(record));
     }
@@ -117,7 +127,7 @@ public class MatchPersistenceAdapter implements MatchRepo {
                 .on(T_MATCH.FK_ROUND_ID.eq(T_ROUND.PK_ID))
                 .where(T_ROUND.FK_SEASON_ID.eq(seasonId))
                 .and(T_ROUND.C_POSITION.lessOrEqual(roundPosition))
-                .and(DSL.upper(T_MATCH.C_STATUS).eq(MatchStatus.FINISHED.name()))
+            .and(T_MATCH.C_STATUS.eq(MatchStatus.FINISHED.name()))
                 .orderBy(T_ROUND.C_POSITION.asc(), T_MATCH.C_KICK_OFF.asc())
                 .fetchInto(MatchRecord.class);
 
@@ -194,6 +204,8 @@ public class MatchPersistenceAdapter implements MatchRepo {
                     .venue(record.getVenue())
                     .matchday(record.getMatchday())
                     .score(readScore(record.getScore()))
+                    .wasPostponed(Boolean.TRUE.equals(record.getWasPostponed()))
+                    .wasSuspended(Boolean.TRUE.equals(record.getWasSuspended()))
                     .build();
         }
 
@@ -229,6 +241,9 @@ public class MatchPersistenceAdapter implements MatchRepo {
         rec.setKickOff(model.getKickOff());
         rec.setVenue(model.getVenue());
         rec.setMatchday(model.getMatchday());
+
+        rec.setWasPostponed(model.isWasPostponed());
+        rec.setWasSuspended(model.isWasSuspended());
 
         Score score = model.getScore();
         if (score == null) {

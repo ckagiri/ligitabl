@@ -1,0 +1,11 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260114_1_season_rename_previous_main_contest_to_detached_contest
+      author: system
+      changes:
+        - renameColumn:
+            tableName: t_season
+            schemaName: public
+            oldColumnName: fk_previous_main_contest_id
+            newColumnName: fk_detached_contest_id
+            columnDataType: uuid

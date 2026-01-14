@@ -15,9 +15,14 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.http.HttpStatus;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
+import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
+import java.nio.charset.StandardCharsets;
 
 import com.ligitabl.api.auth.security.JwtAuthenticationFilter;
 import com.ligitabl.api.auth.security.TokenGenerator;
@@ -27,32 +32,67 @@ import com.ligitabl.api.auth.security.TokenGenerator;
 @EnableMethodSecurity
 public class SecurityConfig {
 
+    private static void writeApiError(HttpStatus status, jakarta.servlet.http.HttpServletResponse response, String message)
+            throws java.io.IOException {
+        if (response.isCommitted()) {
+            return;
+        }
+
+        response.resetBuffer();
+        response.setStatus(status.value());
+        response.setCharacterEncoding(StandardCharsets.UTF_8.name());
+        response.setContentType("application/json");
+        response.getWriter().write("{\"message\":\"" + message + "\"}");
+        response.flushBuffer();
+    }
+
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter(TokenGenerator tokenGenerator) {
         return new JwtAuthenticationFilter(tokenGenerator);
     }
 
     /**
-     * Security filter chain for REST API endpoints (/api/**, /auth/**)
+     * Prevent Spring Boot from auto-registering this filter as a global servlet filter.
+     * We only want it to run inside the API {@link SecurityFilterChain}.
+     */
+    @Bean
+    public FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilterRegistration(
+            JwtAuthenticationFilter jwtAuthenticationFilter) {
+        FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>(
+                jwtAuthenticationFilter);
+        registration.setEnabled(false);
+        return registration;
+    }
+
+    /**
+         * Security filter chain for REST API endpoints (/api/**)
      * Uses stateless JWT authentication
      */
     @Bean
     @Order(1)
     public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter)
             throws Exception {
-        http.securityMatcher("/api/**", "/auth/**")
+        http.securityMatcher(new AntPathRequestMatcher("/api/**"))
                 .csrf(csrf -> csrf.disable())
                 .httpBasic(Customizer.withDefaults())
-                .authorizeHttpRequests(auth -> auth.requestMatchers("/auth/**")
-                        .permitAll()
-                        .requestMatchers("/api/me")
-                        .authenticated()
-                        .requestMatchers("/api/admin/**")
-                        .hasRole("ADMIN")
-                        .requestMatchers("/api/player/**")
-                        .hasRole("PLAYER")
-                        .anyRequest()
-                        .permitAll())
+            .authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/**")
+                    .permitAll()
+                    .requestMatchers("/api/me")
+                    .authenticated()
+                    .requestMatchers("/api/admin", "/api/admin/**")
+                    .hasRole("ADMIN")
+                    .requestMatchers("/api/player", "/api/player/**")
+                    .hasRole("PLAYER")
+                    .anyRequest()
+                    .permitAll())
+            .exceptionHandling(ex -> ex
+                    .authenticationEntryPoint((request, response, authException) -> {
+                        // Keep clients happy with a Basic challenge, but don't redirect to web login.
+                        response.setHeader("WWW-Authenticate", "Basic realm=\"LigiTabl\"");
+                        writeApiError(HttpStatus.UNAUTHORIZED, response, "Unauthorized");
+                    })
+                    .accessDeniedHandler((request, response, accessDeniedException) ->
+                            writeApiError(HttpStatus.FORBIDDEN, response, "Forbidden")))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -66,12 +106,12 @@ public class SecurityConfig {
     @Bean
     @Order(2)
     public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.securityMatcher("/**")
+        http.securityMatcher(new NegatedRequestMatcher(new AntPathRequestMatcher("/api/**")))
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/predictions/swap")) // Allow HTMX POST without CSRF
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 "/",
-                                "/login",
-                                "/register",
+                                                                "/auth/login",
+                                                                "/auth/register",
                                 "/leaderboard",
                                 "/standings",
                                 "/matches",
@@ -88,11 +128,11 @@ public class SecurityConfig {
                         .hasRole("PLAYER")
                         .anyRequest()
                         .authenticated())
-                .formLogin(form -> form.loginPage("/login")
-                        .loginProcessingUrl("/login")
+                .formLogin(form -> form.loginPage("/auth/login")
+                        .loginProcessingUrl("/auth/login")
                         .defaultSuccessUrl("/predictions/me", true)
                         .permitAll())
-                .logout(logout -> logout.logoutRequestMatcher(new AntPathRequestMatcher("/logout"))
+                .logout(logout -> logout.logoutUrl("/auth/logout")
                         .logoutSuccessUrl("/")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID")

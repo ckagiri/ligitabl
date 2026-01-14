@@ -3,9 +3,7 @@ package com.ligitabl.api.usecases.match.getdefaultroundmatches;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.api.usecases.match.MatchDto;
@@ -21,17 +19,30 @@ public class GetDefaultRoundMatchesController {
 
     private final GetDefaultRoundMatchesUseCase getDefaultRoundMatchesUseCase;
 
-    @GetMapping("/default/matches")
-    public ResponseEntity<List<MatchDto>> getDefaultRoundMatches() {
-        log.info("GetDefaultRoundMatches request");
-        var result = getDefaultRoundMatchesUseCase.execute();
+    @GetMapping({"/current/matches", "/default/matches"})
+    public ResponseEntity<List<MatchDto>> getCurrentRoundMatches(
+            @RequestParam(required = false) String competition) {
+        log.info("GetCurrentRoundMatches command, competition={}", competition);
+        return executeUseCase(GetDefaultRoundMatchesQuery.currentRound(competition));
+    }
+
+    @GetMapping("/{roundPosition}/matches")
+    public ResponseEntity<List<MatchDto>> getRoundMatchesByPosition(
+            @PathVariable Integer roundPosition,
+            @RequestParam(required = false) String competition) {
+        log.info("GetRoundMatches command, position={}, competition={}", roundPosition, competition);
+        return executeUseCase(GetDefaultRoundMatchesQuery.byPosition(roundPosition, competition));
+    }
+
+    private ResponseEntity<List<MatchDto>> executeUseCase(GetDefaultRoundMatchesQuery command) {
+        var result = getDefaultRoundMatchesUseCase.execute(command);
 
         return result.fold(
                 error -> {
                     throw new UseCaseException(error);
                 },
                 matches -> {
-                    log.debug("GetDefaultRoundMatches success count={}", matches.size());
+                    log.debug("GetRoundMatches success count={}", matches.size());
                     return ResponseEntity.ok(matches);
                 });
     }

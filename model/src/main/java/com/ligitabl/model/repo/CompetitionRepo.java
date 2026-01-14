@@ -14,6 +14,10 @@ public interface CompetitionRepo {
 
     Optional<Competition> findBySlug(CompetitionSlug slug);
 
+    Optional<Competition> findByCode(String code);
+
+    Optional<Competition> findBySlugOrCode(String identifier);
+
     default Optional<Competition> findBySlug(String slug) {
         return findBySlug(CompetitionSlug.of(slug));
     }

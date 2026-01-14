@@ -12,6 +12,11 @@ public interface MatchRepo {
 
     Optional<Match> findByClientId(Integer clientId);
 
+    /**
+        * Match slugs are not globally unique; within a round they are.
+     */
+        Optional<Match> findByRoundIdAndSlug(UUID roundId, String slug);
+
     Match create(Match match);
 
     Match update(Match match);
@@ -34,9 +39,6 @@ public interface MatchRepo {
      * Finds finished matches up to round with teams loaded.
      */
     List<Match> findFinishedMatchesUpToRoundWithTeams(UUID seasonId, int roundPosition);
-
-    // Lightweight methods (no teams loaded)
-    List<Match> findByRoundId(Long roundId);
 
     boolean existsBySeasonAndRoundAndTeams(UUID seasonId, UUID roundId, UUID homeTeamId, UUID awayTeamId);
 }

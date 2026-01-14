@@ -4,6 +4,7 @@ import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 
 import java.util.UUID;
 
+import com.ligitabl.api.shared.exceptions.UseCaseException;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
@@ -24,9 +25,57 @@ public class HierarchyValidator {
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
 
-    public Either<UseCaseError, Competition> validateCompetition(String competitionSlugStr) {
-        return Either.catching(() -> CompetitionSlug.of(competitionSlugStr), UseCaseErrors::fromException)
-                .flatMap(this::findCompetitionBySlug);
+    public record HierarchyContext(Season season, Round round) {}
+
+    public Either<UseCaseError, HierarchyContext> resolveHierarchy(String competitionIdentifier, Integer roundPosition) {
+        return validateCompetition(competitionIdentifier)
+                .flatMap(this::validateActiveSeason)
+                .flatMap(season -> {
+                    if (roundPosition == null) {
+                        return validateCurrentRound(season)
+                                .map(round -> new HierarchyContext(season, round));
+                    }
+
+                    if (roundPosition < 1) {
+                        return Either.left(UseCaseErrors.validation("Round position must be at least 1"));
+                    }
+
+                    return validateRound(season.getId(), roundPosition)
+                            .map(round -> new HierarchyContext(season, round));
+                });
+    }
+
+    public Either<UseCaseError, Competition> validateCompetition(String slugOrCode) {
+        return requireFound(
+                competitionRepo.findBySlugOrCode(slugOrCode),
+                UseCaseErrors.notFound("Competition", slugOrCode)
+        );
+    }
+
+    public Either<UseCaseError, Season> validateActiveSeason(Competition competition) {
+        if (competition == null) {
+            return Either.left(UseCaseErrors.validation("Competition must not be null"));
+        }
+
+        UUID activeSeasonId = competition.getActiveSeasonId();
+        if (activeSeasonId == null) {
+            return Either.left(UseCaseErrors.validation("Competition has no active season"));
+        }
+
+        return requireFound(seasonRepo.findById(activeSeasonId), UseCaseErrors.notFound("Season", activeSeasonId));
+    }
+
+    public Either<UseCaseError, Round> validateCurrentRound(Season season) {
+        if (season == null) {
+            return Either.left(UseCaseErrors.validation("Season must not be null"));
+        }
+
+        UUID currentRoundId = season.getCurrentRoundId();
+        if (currentRoundId == null) {
+            return Either.left(UseCaseErrors.validation("Season has no current round"));
+        }
+
+        return requireFound(roundRepo.findById(currentRoundId), UseCaseErrors.notFound("Round", currentRoundId));
     }
 
     public Either<UseCaseError, Season> validateSeason(UUID competitionId, String seasonSlugStr) {
@@ -49,12 +98,6 @@ public class HierarchyValidator {
             String competitionSlugStr, String seasonSlugStr, int position) {
         return validateCompetitionAndSeason(competitionSlugStr, seasonSlugStr)
                 .flatMap(season -> validateRound(season.getId(), position));
-    }
-
-    private Either<UseCaseError, Competition> findCompetitionBySlug(CompetitionSlug competitionSlug) {
-        return requireFound(
-                competitionRepo.findBySlug(competitionSlug),
-                UseCaseErrors.notFound("Competition", "slug", competitionSlug.value()));
     }
 
     private Either<UseCaseError, Season> findSeasonByCompetitionAndSlug(UUID competitionId, SeasonSlug seasonSlug) {

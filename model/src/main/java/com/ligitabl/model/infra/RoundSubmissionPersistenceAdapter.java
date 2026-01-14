@@ -111,6 +111,16 @@ public class RoundSubmissionPersistenceAdapter implements RoundSubmissionRepo {
                 .map(MAPPER::map);
     }
 
+    @Override
+    public boolean existsBySeasonId(UUID seasonId) {
+        if (seasonId == null) {
+            throw new IllegalArgumentException("seasonId must not be null");
+        }
+
+        return dsl.fetchExists(
+                dsl.selectOne().from(T_ROUND_SUBMISSION).where(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId)));
+    }
+
     private static List<TeamRank> readRankings(JSONB jsonb) {
         if (jsonb == null) {
             return List.of();

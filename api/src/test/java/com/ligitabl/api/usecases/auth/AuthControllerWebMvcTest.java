@@ -39,7 +39,7 @@ class AuthControllerWebMvcTest {
 
         given(loginUseCase.execute(any())).willReturn(Either.right(resp));
 
-        mockMvc.perform(post("/auth/login")
+        mockMvc.perform(post("/api/auth/login")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
                                 java.util.Map.of("email", "admin@example.com", "password", "admin12345"))))

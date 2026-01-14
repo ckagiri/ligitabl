@@ -28,7 +28,8 @@ set +a
 # It assumes the API is already running and that the referenced users exist in the DB.
 
 BASE_URL="${BASE_URL:-http://localhost:8080}"
-LOGIN_PATH="${LOGIN_PATH:-/auth/login}"
+# JSON auth API is under /api/auth/* (web pages are under /auth/*)
+LOGIN_PATH="${LOGIN_PATH:-/api/auth/login}"
 ME_PATH="${ME_PATH:-/api/me}"
 
 ADMIN_ONLY_PATH="${ADMIN_ONLY_PATH:-/api/admin}"

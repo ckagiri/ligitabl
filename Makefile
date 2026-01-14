@@ -53,6 +53,13 @@ export
 SEEDING_CONFIG ?= seeding-config.yaml
 
 # ------------------------------------------------------------------------------
+# Optional integrations
+# ------------------------------------------------------------------------------
+# The API expects FOOTBALL_DATA_API_TOKEN (see api application.yml). For local dev,
+# we also allow providing API_FOOTBALL_DATA_KEY in the env files.
+EXPORT_FOOTBALL_DATA_API_TOKEN = FOOTBALL_DATA_API_TOKEN="$${FOOTBALL_DATA_API_TOKEN:-$${API_FOOTBALL_DATA_KEY:-}}"; if [ -z "$$FOOTBALL_DATA_API_TOKEN" ] || [ "$$FOOTBALL_DATA_API_TOKEN" = "your-api-token-here" ]; then echo "⚠️  FOOTBALL_DATA_API_TOKEN is not set; football-data.org requests may fail."; echo "   Set API_FOOTBALL_DATA_KEY in $(ENV_LOCAL_FILE) (or $(ENV_FILE))."; else export FOOTBALL_DATA_API_TOKEN; fi
+
+# ------------------------------------------------------------------------------
 # Production Safety Checks
 # ------------------------------------------------------------------------------
 ifeq ($(ENV),prod)
@@ -356,6 +363,19 @@ import-competition: ## Import matches for a competition (COMP=XX, ENV=$(ENV))
 		--workflow.competition=$(COMP) \
 		--workflow.exit-after=true
 
+# ==============================================================================
+# STANDINGS WORKFLOW TARGETS
+# ==============================================================================
+
+.PHONY: calc-standings
+calc-standings: ## Calculate standings for all rounds (ENV=$(ENV))
+	$(MAKE) compose-up-db
+	$(MAKE) api-build
+	java -jar $(JAR) \
+		--spring.main.web-application-type=none \
+		--workflow.run-calc-standings=true \
+		--workflow.exit-after=true
+
 .PHONY: import-pl
 import-pl: ## Import Premier League (ENV=$(ENV))
 	$(MAKE) import-competition COMP=PL
@@ -478,13 +498,12 @@ run-app: ## Start DB and run the app JAR (ENV=$(ENV))
 .PHONY: run-api
 run-api: ## Start DB and run API via spring-boot:run (ENV=$(ENV))
 	$(MAKE) compose-up-db
-	mvn -q -f $(API_DIR)/pom.xml org.springframework.boot:spring-boot-maven-plugin:run
+	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -f $(API_DIR)/pom.xml org.springframework.boot:spring-boot-maven-plugin:run
 
 .PHONY: run-api-fake
 run-api-fake: ## Start DB and run API with FAKE_DATA_ENABLED=true (ENV=$(ENV))
 	$(MAKE) compose-up-db
-	FAKE_DATA_ENABLED=true \
-		mvn -q -f $(API_DIR)/pom.xml org.springframework.boot:spring-boot-maven-plugin:run
+	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); FAKE_DATA_ENABLED=true mvn -q -f $(API_DIR)/pom.xml org.springframework.boot:spring-boot-maven-plugin:run
 
 # ==============================================================================
 # TEST TARGETS
@@ -531,7 +550,7 @@ dev-reset: ## Reset DB, migrate, codegen, seed (ENV=$(ENV))
 .PHONY: test-reset-run-api-fake
 test-reset-run-api-fake: ## Reset test DB, migrate, codegen, seed reference data, then run API with fake data (DB_PORT=55433)
 	$(MAKE) dev-reset ENV=test
-	FAKE_DATA_ENABLED=true DB_HOST=$(DB_HOST) DB_PORT=$(DB_PORT) DB_NAME=$(DB_NAME) DB_USER=$(DB_USER) DB_PASSWORD=$(DB_PASSWORD) \
+	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); FAKE_DATA_ENABLED=true DB_HOST=$(DB_HOST) DB_PORT=$(DB_PORT) DB_NAME=$(DB_NAME) DB_USER=$(DB_USER) DB_PASSWORD=$(DB_PASSWORD) \
 		mvn -f $(API_DIR)/pom.xml org.springframework.boot:spring-boot-maven-plugin:run
 
 .PHONY: dev-reset-all
