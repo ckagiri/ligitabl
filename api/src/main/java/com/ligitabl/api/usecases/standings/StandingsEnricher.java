@@ -1,20 +1,22 @@
 package com.ligitabl.api.usecases.standings;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Component;
+
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.model.domain.Standings;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.repo.TeamRepo;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Component
 @RequiredArgsConstructor
@@ -41,8 +43,8 @@ public class StandingsEnricher {
 
             // Bulk fetch teams
             List<Team> teams = teamRepo.findAllByCodes(teamCodes);
-            Map<String, Team> teamsByCode = teams.stream()
-                    .collect(Collectors.toMap(Team::getCode, Function.identity()));
+            Map<String, Team> teamsByCode =
+                    teams.stream().collect(Collectors.toMap(Team::getCode, Function.identity()));
 
             // Log warning if any teams are missing
             if (teams.size() < teamCodes.size()) {

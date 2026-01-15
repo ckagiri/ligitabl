@@ -53,12 +53,7 @@ class CalcStandingsRunnerTest {
         config.setExitAfter(false);
 
         runner = new CalcStandingsRunner(
-                calculateRoundStandingsUseCase,
-                hierarchyValidator,
-                competitionDefaults,
-                seasonRepo,
-                roundRepo,
-                config);
+                calculateRoundStandingsUseCase, hierarchyValidator, competitionDefaults, seasonRepo, roundRepo, config);
     }
 
     @Test
@@ -110,9 +105,27 @@ class CalcStandingsRunnerTest {
                 .build();
 
         var rounds = List.of(
-                Round.builder().id(UUID.randomUUID()).seasonId(seasonId).position(1).name("R1").slug("r1").build(),
-                Round.builder().id(UUID.randomUUID()).seasonId(seasonId).position(2).name("R2").slug("r2").build(),
-                Round.builder().id(UUID.randomUUID()).seasonId(seasonId).position(3).name("R3").slug("r3").build());
+                Round.builder()
+                        .id(UUID.randomUUID())
+                        .seasonId(seasonId)
+                        .position(1)
+                        .name("R1")
+                        .slug("r1")
+                        .build(),
+                Round.builder()
+                        .id(UUID.randomUUID())
+                        .seasonId(seasonId)
+                        .position(2)
+                        .name("R2")
+                        .slug("r2")
+                        .build(),
+                Round.builder()
+                        .id(UUID.randomUUID())
+                        .seasonId(seasonId)
+                        .position(3)
+                        .name("R3")
+                        .slug("r3")
+                        .build());
 
         when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));

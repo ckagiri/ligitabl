@@ -1,6 +1,5 @@
 package com.ligitabl.api.controllers.web;
 
-import com.ligitabl.api.usecases.match.getdefaultroundmatches.GetDefaultRoundMatchesQuery;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -10,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.usecases.leaderboard.GetLeaderboardQuery;
 import com.ligitabl.api.usecases.leaderboard.GetLeaderboardUseCase;
+import com.ligitabl.api.usecases.match.getdefaultroundmatches.GetDefaultRoundMatchesQuery;
 import com.ligitabl.api.usecases.match.getdefaultroundmatches.GetDefaultRoundMatchesUseCase;
 
 import lombok.RequiredArgsConstructor;
@@ -31,8 +31,7 @@ public class WebPublicController {
     private FakeWebDataService fakeDataService;
 
     @GetMapping("/")
-    public String home(
-            @RequestHeader(value = "HX-Request", required = false) String hxRequest, Model model) {
+    public String home(@RequestHeader(value = "HX-Request", required = false) String hxRequest, Model model) {
         // Landing page - just render the template
         log.debug("Rendering home page");
         model.addAttribute("pageTitle", "Home");
@@ -60,24 +59,24 @@ public class WebPublicController {
         }
 
         var query = new GetLeaderboardQuery(phase);
-        getLeaderboardUseCase.execute(query)
-            .peekLeft(error -> {
-                log.error("Error fetching leaderboard: {}", error);
-                model.addAttribute("error", "Unable to load leaderboard");
-            })
-            .peek(leaderboardResult -> {
-                model.addAttribute("leaderboard", leaderboardResult);
-                model.addAttribute("currentPhase", phase);
-                model.addAttribute("phases", new String[] {"FS", "Q1", "Q2", "Q3", "Q4", "H1", "H2"});
-            });
+        getLeaderboardUseCase
+                .execute(query)
+                .peekLeft(error -> {
+                    log.error("Error fetching leaderboard: {}", error);
+                    model.addAttribute("error", "Unable to load leaderboard");
+                })
+                .peek(leaderboardResult -> {
+                    model.addAttribute("leaderboard", leaderboardResult);
+                    model.addAttribute("currentPhase", phase);
+                    model.addAttribute("phases", new String[] {"FS", "Q1", "Q2", "Q3", "Q4", "H1", "H2"});
+                });
 
         model.addAttribute("pageTitle", "Leaderboard");
         return isHtmxRequest(hxRequest) ? "leaderboard :: leaderboardContent" : "leaderboard";
     }
 
     @GetMapping("/standings")
-    public String standings(
-            @RequestHeader(value = "HX-Request", required = false) String hxRequest, Model model) {
+    public String standings(@RequestHeader(value = "HX-Request", required = false) String hxRequest, Model model) {
 
         log.debug("Fetching default standings");
 
@@ -90,8 +89,7 @@ public class WebPublicController {
     }
 
     @GetMapping("/matches")
-    public String matches(
-            @RequestHeader(value = "HX-Request", required = false) String hxRequest, Model model) {
+    public String matches(@RequestHeader(value = "HX-Request", required = false) String hxRequest, Model model) {
 
         log.debug("Fetching default round matches");
 
@@ -105,12 +103,13 @@ public class WebPublicController {
             return isHtmxRequest(hxRequest) ? "matches :: matchesList" : "matches";
         }
 
-        getDefaultRoundMatchesUseCase.execute(GetDefaultRoundMatchesQuery.currentRound())
-            .peekLeft(error -> {
-                log.error("Error fetching matches: {}", error);
-                model.addAttribute("error", "Unable to load matches");
-            })
-            .peek(matchesResult -> model.addAttribute("matches", matchesResult));
+        getDefaultRoundMatchesUseCase
+                .execute(GetDefaultRoundMatchesQuery.currentRound())
+                .peekLeft(error -> {
+                    log.error("Error fetching matches: {}", error);
+                    model.addAttribute("error", "Unable to load matches");
+                })
+                .peek(matchesResult -> model.addAttribute("matches", matchesResult));
 
         model.addAttribute("pageTitle", "Matches");
         return isHtmxRequest(hxRequest) ? "matches :: matchesList" : "matches";

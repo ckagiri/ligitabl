@@ -18,7 +18,8 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class GetDefaultRoundMatchesUseCase implements UseCase<GetDefaultRoundMatchesQuery, Either<UseCaseError, List<MatchDto>>> {
+public class GetDefaultRoundMatchesUseCase
+        implements UseCase<GetDefaultRoundMatchesQuery, Either<UseCaseError, List<MatchDto>>> {
     private final MatchRepo matchRepo;
     private final MatchEnricher matchEnricher;
     private final HierarchyValidator hierarchyValidator;
@@ -30,12 +31,12 @@ public class GetDefaultRoundMatchesUseCase implements UseCase<GetDefaultRoundMat
 
         return hierarchyValidator
                 .resolveHierarchy(competitionIdentifier, query.getRoundPosition())
-                .flatMap(ctx -> Either.catching(() -> matchRepo.findByRoundId(ctx.round().getId()), UseCaseErrors::fromException))
+                .flatMap(ctx -> Either.catching(
+                        () -> matchRepo.findByRoundId(ctx.round().getId()), UseCaseErrors::fromException))
                 .flatMap(matchEnricher::enrichWithTeams);
     }
 
     private String getEffectiveCompetitionIdentifier(GetDefaultRoundMatchesQuery query) {
-        return query.getCompetitionIdentifier()
-                .orElseGet(competitionDefaults::defaultCompetitionSlug);
+        return query.getCompetitionIdentifier().orElseGet(competitionDefaults::defaultCompetitionSlug);
     }
 }

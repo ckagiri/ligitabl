@@ -1,6 +1,5 @@
 package com.ligitabl.api.usecases.matchadmin;
 
-import com.ligitabl.api.usecases.shared.RoundPosition;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,11 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
-
 import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.api.usecases.matchadmin.reschedulematch.RescheduleMatchCommand;
 import com.ligitabl.api.usecases.matchadmin.reschedulematch.RescheduleMatchUseCase;
@@ -23,8 +17,13 @@ import com.ligitabl.api.usecases.matchadmin.reschedulematch.RescheduleResult;
 import com.ligitabl.api.usecases.matchadmin.transitionmatchstatus.TransitionMatchCommand;
 import com.ligitabl.api.usecases.matchadmin.transitionmatchstatus.TransitionMatchStatusUseCase;
 import com.ligitabl.api.usecases.matchadmin.transitionmatchstatus.TransitionResult;
+import com.ligitabl.api.usecases.shared.RoundPosition;
 import com.ligitabl.model.domain.MatchStatus;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -58,15 +57,21 @@ public class MatchAdminController {
                 .matchSlug(matchSlug)
                 .newStatus(request.newStatus())
                 .reason(request.reason())
-                .score(request.score() == null
-                        ? null
-                        : new TransitionMatchCommand.ScoreDto(request.score().homeGoals(), request.score().awayGoals()))
+                .score(
+                        request.score() == null
+                                ? null
+                                : new TransitionMatchCommand.ScoreDto(
+                                        request.score().homeGoals(),
+                                        request.score().awayGoals()))
                 .build();
 
-        return transitionUseCase.execute(cmd)
-                .fold(err -> {
-                    throw new UseCaseException(err);
-                }, ResponseEntity::ok);
+        return transitionUseCase
+                .execute(cmd)
+                .fold(
+                        err -> {
+                            throw new UseCaseException(err);
+                        },
+                        ResponseEntity::ok);
     }
 
     /**
@@ -91,10 +96,13 @@ public class MatchAdminController {
                 .reason(request.reason())
                 .build();
 
-        return rescheduleUseCase.execute(cmd)
-                .fold(err -> {
-                    throw new UseCaseException(err);
-                }, ResponseEntity::ok);
+        return rescheduleUseCase
+                .execute(cmd)
+                .fold(
+                        err -> {
+                            throw new UseCaseException(err);
+                        },
+                        ResponseEntity::ok);
     }
 
     /**
@@ -110,24 +118,18 @@ public class MatchAdminController {
 
         var query = new GetMatchAdminDetailsUseCase.Query(competition, RoundPosition.parse(position), matchSlug);
 
-        return detailsUseCase.execute(query)
-                .fold(err -> {
-                    throw new UseCaseException(err);
-                }, ResponseEntity::ok);
+        return detailsUseCase
+                .execute(query)
+                .fold(
+                        err -> {
+                            throw new UseCaseException(err);
+                        },
+                        ResponseEntity::ok);
     }
 
-    public record TransitionRequest(
-            @NotNull MatchStatus newStatus,
-            @NotBlank String reason,
-            ScoreDto score) {
-        public record ScoreDto(
-                @Min(0) int homeGoals,
-                @Min(0) int awayGoals) {
-        }
+    public record TransitionRequest(@NotNull MatchStatus newStatus, @NotBlank String reason, ScoreDto score) {
+        public record ScoreDto(@Min(0) int homeGoals, @Min(0) int awayGoals) {}
     }
 
-    public record RescheduleRequest(
-            @Min(1) int newRoundPosition,
-            @NotBlank String reason) {
-    }
+    public record RescheduleRequest(@Min(1) int newRoundPosition, @NotBlank String reason) {}
 }

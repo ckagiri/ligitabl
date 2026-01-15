@@ -15,12 +15,12 @@ import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecases.shared.HierarchyValidator;
+import com.ligitabl.api.usecases.shared.HierarchyValidator.HierarchyContext;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.MatchRepo;
-import com.ligitabl.api.usecases.shared.HierarchyValidator.HierarchyContext;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -40,8 +40,8 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
     public Either<UseCaseError, RescheduleResult> execute(RescheduleMatchCommand cmd) {
         log.info("Executing RescheduleMatch: slug={}, toRound={}", cmd.getMatchSlug(), cmd.getNewRoundPosition());
 
-        String competitionIdentifier = cmd.getCompetitionIdentifier()
-                .orElseGet(competitionDefaults::defaultCompetitionSlug);
+        String competitionIdentifier =
+                cmd.getCompetitionIdentifier().orElseGet(competitionDefaults::defaultCompetitionSlug);
 
         return hierarchyValidator
                 .resolveHierarchy(competitionIdentifier, cmd.getRoundPosition())
@@ -53,8 +53,7 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
 
     private Either<UseCaseError, Match> findMatch(UUID roundId, String matchSlug) {
         return requireFound(
-                matchRepo.findByRoundIdAndSlug(roundId, matchSlug),
-                UseCaseErrors.notFound("Match", "slug", matchSlug));
+                matchRepo.findByRoundIdAndSlug(roundId, matchSlug), UseCaseErrors.notFound("Match", "slug", matchSlug));
     }
 
     private Either<UseCaseError, Round> resolveTargetRound(Season season, int position) {
@@ -65,21 +64,17 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
     }
 
     private Either<UseCaseError, RescheduleContext> validateReschedule(MatchContext matchCtx, int newRoundPosition) {
-        return resolveTargetRound(matchCtx.context().season(), newRoundPosition)
-                .flatMap(targetRound -> {
-                    RescheduleContext ctx = new RescheduleContext(
-                            matchCtx.context().season(),
-                            matchCtx.context().round(),
-                            targetRound,
-                            matchCtx.match());
+        return resolveTargetRound(matchCtx.context().season(), newRoundPosition).flatMap(targetRound -> {
+            RescheduleContext ctx = new RescheduleContext(
+                    matchCtx.context().season(), matchCtx.context().round(), targetRound, matchCtx.match());
 
-                    if (ctx.season().isInSetupMode()) {
-                        return Either.right(ctx);
-                    }
+            if (ctx.season().isInSetupMode()) {
+                return Either.right(ctx);
+            }
 
-                    return validateLiveMode(ctx.match(), ctx.currentRound(), ctx.targetRound())
-                            .map(ignored -> ctx);
-                });
+            return validateLiveMode(ctx.match(), ctx.currentRound(), ctx.targetRound())
+                    .map(ignored -> ctx);
+        });
     }
 
     private Either<UseCaseError, Void> validateLiveMode(Match match, Round currentRound, Round targetRound) {
@@ -108,8 +103,8 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
         return Either.right(null);
     }
 
-    private Either<UseCaseError, RescheduleResult> performReschedule(RescheduleContext ctx,
-            RescheduleMatchCommand cmd) {
+    private Either<UseCaseError, RescheduleResult> performReschedule(
+            RescheduleContext ctx, RescheduleMatchCommand cmd) {
         try {
             Match match = ctx.match();
             Instant now = clock.instant();
@@ -138,9 +133,7 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
         }
     }
 
-    private record MatchContext(HierarchyContext context, Match match) {
-    }
+    private record MatchContext(HierarchyContext context, Match match) {}
 
-    private record RescheduleContext(Season season, Round currentRound, Round targetRound, Match match) {
-    }
+    private record RescheduleContext(Season season, Round currentRound, Round targetRound, Match match) {}
 }

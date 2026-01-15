@@ -1,5 +1,8 @@
 package com.ligitabl.api.controllers.web;
 
+import java.util.List;
+import java.util.UUID;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -19,9 +22,6 @@ import com.ligitabl.api.usecases.swap.SwapError;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-
-import java.util.List;
-import java.util.UUID;
 
 /**
  * Web controller for player-specific pages (requires ROLE_PLAYER).
@@ -120,8 +120,7 @@ public class WebPlayerController {
             return "predictions/me";
         }
 
-        return isHtmxRequest(hxRequest) ? "fragments/prediction-table :: predictionTable"
-                : "redirect:/predictions/me";
+        return isHtmxRequest(hxRequest) ? "fragments/prediction-table :: predictionTable" : "redirect:/predictions/me";
     }
 
     private String getSwapErrorMessage(Object error) {
@@ -129,10 +128,10 @@ public class WebPlayerController {
             return switch (swapError) {
                 case SwapError.NoPredictionFound e -> "No prediction found for current season";
                 case SwapError.RoundNotOpen e -> "Cannot swap when round is " + e.roundStatus();
-                case SwapError.CooldownActive e ->
-                    String.format("Next swap available in %.1f hours", e.hoursRemaining());
-                case SwapError.TeamsNotFound e ->
-                    "Teams " + e.teamACode() + " and " + e.teamBCode() + " not found in your prediction";
+                case SwapError.CooldownActive e -> String.format(
+                        "Next swap available in %.1f hours", e.hoursRemaining());
+                case SwapError.TeamsNotFound e -> "Teams " + e.teamACode() + " and " + e.teamBCode()
+                        + " not found in your prediction";
                 case SwapError.SeasonCompleted __ -> "Cannot swap in completed season";
                 default -> "Unable to make swap. Please try again.";
             };

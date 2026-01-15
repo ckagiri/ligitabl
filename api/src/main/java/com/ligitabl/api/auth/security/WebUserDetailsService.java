@@ -1,5 +1,8 @@
 package com.ligitabl.api.auth.security;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -12,9 +15,6 @@ import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.UserRepo;
 
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * UserDetailsService implementation for form-based web authentication.
@@ -31,8 +31,7 @@ public class WebUserDetailsService implements UserDetailsService {
         try {
             Email emailObj = Email.create(email);
 
-            User user = userRepo
-                    .findByEmail(emailObj)
+            User user = userRepo.findByEmail(emailObj)
                     .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
             // Convert domain roles to Spring Security authorities

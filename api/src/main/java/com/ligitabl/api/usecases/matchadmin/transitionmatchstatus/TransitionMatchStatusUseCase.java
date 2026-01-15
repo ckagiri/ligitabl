@@ -39,23 +39,24 @@ public class TransitionMatchStatusUseCase
     public Either<UseCaseError, TransitionResult> execute(TransitionMatchCommand cmd) {
         log.info("Executing TransitionMatchStatus: slug={}, status={}", cmd.getMatchSlug(), cmd.getNewStatus());
 
-        String competitionIdentifier = cmd.getCompetitionIdentifier().orElseGet(competitionDefaults::defaultCompetitionSlug);
+        String competitionIdentifier =
+                cmd.getCompetitionIdentifier().orElseGet(competitionDefaults::defaultCompetitionSlug);
 
         return hierarchyValidator
-            .resolveHierarchy(competitionIdentifier, cmd.getRoundPosition())
-            .flatMap(context -> findMatch(context.round().getId(), cmd.getMatchSlug())
+                .resolveHierarchy(competitionIdentifier, cmd.getRoundPosition())
+                .flatMap(context -> findMatch(context.round().getId(), cmd.getMatchSlug())
                         .map(match -> new MatchContext(context, match)))
-            .flatMap(matchCtx -> validateAndTransition(matchCtx, cmd))
-            .flatMap(this::save);
+                .flatMap(matchCtx -> validateAndTransition(matchCtx, cmd))
+                .flatMap(this::save);
     }
 
     private Either<UseCaseError, Match> findMatch(UUID roundId, String matchSlug) {
         return requireFound(
-                matchRepo.findByRoundIdAndSlug(roundId, matchSlug),
-                UseCaseErrors.notFound("Match", "slug", matchSlug));
+                matchRepo.findByRoundIdAndSlug(roundId, matchSlug), UseCaseErrors.notFound("Match", "slug", matchSlug));
     }
 
-    private Either<UseCaseError, TransitionContext> validateAndTransition(MatchContext matchCtx, TransitionMatchCommand cmd) {
+    private Either<UseCaseError, TransitionContext> validateAndTransition(
+            MatchContext matchCtx, TransitionMatchCommand cmd) {
         Match match = matchCtx.match();
 
         try {

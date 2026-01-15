@@ -54,9 +54,8 @@ public class AccessController {
         // JWT auth uses publicId as principal; Basic Auth uses email.
         if (principalName.contains("@")) {
             return Either.catching(() -> Email.create(principalName), UseCaseErrors::fromException)
-                    .flatMap(email -> Either.ofOptional(
-                            userRepo.findByEmail(email),
-                            () -> UseCaseErrors.notFound("User", email)))
+                    .flatMap(email ->
+                            Either.ofOptional(userRepo.findByEmail(email), () -> UseCaseErrors.notFound("User", email)))
                     .map(user -> new UserInfo(
                             user.getPublicId(),
                             user.getEmail(),

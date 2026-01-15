@@ -56,7 +56,7 @@ class MatchAdminControllerIntegrationTest extends AbstractPostgresIT {
     private UUID competitionId;
     private UUID seasonId;
     private UUID roundId;
-        private UUID contestId;
+    private UUID contestId;
     private UUID homeTeamId;
     private UUID awayTeamId;
 
@@ -174,9 +174,7 @@ class MatchAdminControllerIntegrationTest extends AbstractPostgresIT {
                 1);
 
         ResponseEntity<Map> response = getWithBearer(
-                "/api/admin/rounds/current/matches/" + slug + "?competition=premier-league",
-                adminToken,
-                Map.class);
+                "/api/admin/rounds/current/matches/" + slug + "?competition=premier-league", adminToken, Map.class);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isNotNull();
@@ -194,10 +192,12 @@ class MatchAdminControllerIntegrationTest extends AbstractPostgresIT {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<Map<String, String>> request = new HttpEntity<>(Map.of("email", email, "password", password), headers);
+        HttpEntity<Map<String, String>> request =
+                new HttpEntity<>(Map.of("email", email, "password", password), headers);
 
         @SuppressWarnings("unchecked")
-        ResponseEntity<Map<String, Object>> response = (ResponseEntity) restTemplate.postForEntity(url, request, Map.class);
+        ResponseEntity<Map<String, Object>> response =
+                (ResponseEntity) restTemplate.postForEntity(url, request, Map.class);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isNotNull();

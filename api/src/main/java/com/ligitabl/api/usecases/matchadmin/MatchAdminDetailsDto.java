@@ -3,10 +3,10 @@ package com.ligitabl.api.usecases.matchadmin;
 import java.util.List;
 import java.util.UUID;
 
+import com.ligitabl.model.domain.MatchStatus;
+
 import lombok.Builder;
 import lombok.Value;
-
-import com.ligitabl.model.domain.MatchStatus;
 
 @Value
 @Builder

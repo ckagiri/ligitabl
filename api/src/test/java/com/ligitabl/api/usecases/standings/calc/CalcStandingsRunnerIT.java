@@ -25,10 +25,7 @@ import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 
 @SpringBootTest(
         webEnvironment = SpringBootTest.WebEnvironment.NONE,
-        properties = {
-                "workflow.run-calc-standings=true",
-                "workflow.exit-after=false"
-        })
+        properties = {"workflow.run-calc-standings=true", "workflow.exit-after=false"})
 class CalcStandingsRunnerIT extends AbstractPostgresIT {
 
     @Autowired
@@ -93,9 +90,9 @@ class CalcStandingsRunnerIT extends AbstractPostgresIT {
     void runnerBeanIsEnabled_andExecutesUseCasePerRound() throws Exception {
         assertThat(runner).isNotNull();
 
-                // CalcStandingsRunner is an ApplicationRunner and is invoked once during Spring context startup.
-                // Clear any invocations from that startup run so we can assert only the explicit run() below.
-                reset(calculateRoundStandingsUseCase);
+        // CalcStandingsRunner is an ApplicationRunner and is invoked once during Spring context startup.
+        // Clear any invocations from that startup run so we can assert only the explicit run() below.
+        reset(calculateRoundStandingsUseCase);
 
         when(calculateRoundStandingsUseCase.execute(any(CalculateRoundStandingsCommand.class)))
                 .thenReturn(Either.right(List.of()));

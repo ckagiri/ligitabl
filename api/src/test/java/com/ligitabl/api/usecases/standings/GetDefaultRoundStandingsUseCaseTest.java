@@ -51,12 +51,7 @@ class GetDefaultRoundStandingsUseCaseTest {
     void setup() {
         MockitoAnnotations.openMocks(this);
         useCase = new GetDefaultRoundStandingsUseCase(
-                hierarchyValidator,
-                competitionDefaults,
-                seasonRepo,
-                roundRepo,
-                standingsRepo,
-                standingsEnricher);
+                hierarchyValidator, competitionDefaults, seasonRepo, roundRepo, standingsRepo, standingsEnricher);
     }
 
     @Test
@@ -102,10 +97,12 @@ class GetDefaultRoundStandingsUseCaseTest {
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(standingsRepo.findBySeasonAndRoundPosition(seasonId, 1)).thenReturn(Optional.of(standings));
 
-        StandingsEntryDto dto = StandingsEntryDto.builder().position(1).teamName("Team").build();
+        StandingsEntryDto dto =
+                StandingsEntryDto.builder().position(1).teamName("Team").build();
         when(standingsEnricher.enrichWithTeams(standings)).thenReturn(Either.right(List.of(dto)));
 
-        Either<UseCaseError, List<StandingsEntryDto>> result = useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
+        Either<UseCaseError, List<StandingsEntryDto>> result =
+                useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.getRight()).hasSize(1);
@@ -131,7 +128,8 @@ class GetDefaultRoundStandingsUseCaseTest {
 
         when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
 
-        Either<UseCaseError, List<StandingsEntryDto>> result = useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
+        Either<UseCaseError, List<StandingsEntryDto>> result =
+                useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
 
         assertThat(result.isLeft()).isTrue();
         verify(hierarchyValidator).validateCompetition("premier-league");
@@ -162,7 +160,8 @@ class GetDefaultRoundStandingsUseCaseTest {
         when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
 
-        Either<UseCaseError, List<StandingsEntryDto>> result = useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
+        Either<UseCaseError, List<StandingsEntryDto>> result =
+                useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
 
         assertThat(result.isLeft()).isTrue();
         verify(hierarchyValidator).validateCompetition("premier-league");
@@ -208,7 +207,8 @@ class GetDefaultRoundStandingsUseCaseTest {
 
         when(standingsEnricher.enrichWithTeams(any(Standings.class))).thenReturn(Either.right(List.of()));
 
-        Either<UseCaseError, List<StandingsEntryDto>> result = useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
+        Either<UseCaseError, List<StandingsEntryDto>> result =
+                useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.getRight()).isEmpty();

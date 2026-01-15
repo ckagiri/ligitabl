@@ -1,15 +1,16 @@
 package com.ligitabl.api.usecases.standings;
 
-import com.ligitabl.model.domain.Standings;
-import com.ligitabl.model.domain.StandingsTeamRank;
-import com.ligitabl.model.domain.Team;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Value;
-
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+
+import com.ligitabl.model.domain.Standings;
+import com.ligitabl.model.domain.StandingsTeamRank;
+import com.ligitabl.model.domain.Team;
+
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Value;
 
 @Value
 @Builder

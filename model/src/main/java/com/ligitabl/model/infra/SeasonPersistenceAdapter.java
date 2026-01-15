@@ -12,7 +12,6 @@ import java.util.UUID;
 import org.jooq.DSLContext;
 import org.jooq.JSONB;
 import org.jooq.RecordMapper;
-import org.jooq.Record;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;

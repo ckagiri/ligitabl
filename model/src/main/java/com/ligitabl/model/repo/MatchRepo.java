@@ -13,9 +13,9 @@ public interface MatchRepo {
     Optional<Match> findByClientId(Integer clientId);
 
     /**
-        * Match slugs are not globally unique; within a round they are.
+     * Match slugs are not globally unique; within a round they are.
      */
-        Optional<Match> findByRoundIdAndSlug(UUID roundId, String slug);
+    Optional<Match> findByRoundIdAndSlug(UUID roundId, String slug);
 
     Match create(Match match);
 

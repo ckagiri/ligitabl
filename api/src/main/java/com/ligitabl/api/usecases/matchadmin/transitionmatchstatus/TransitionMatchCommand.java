@@ -2,11 +2,11 @@ package com.ligitabl.api.usecases.matchadmin.transitionmatchstatus;
 
 import java.util.Optional;
 
+import com.ligitabl.model.domain.MatchStatus;
+
 import jakarta.annotation.Nullable;
 import lombok.Builder;
 import lombok.Value;
-
-import com.ligitabl.model.domain.MatchStatus;
 
 @Value
 @Builder
@@ -17,6 +17,7 @@ public class TransitionMatchCommand {
 
     @Nullable
     Integer roundPosition; // null => current round
+
     String matchSlug;
 
     MatchStatus newStatus;

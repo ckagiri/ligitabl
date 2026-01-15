@@ -4,7 +4,6 @@ import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 
 import java.util.UUID;
 
-import com.ligitabl.api.shared.exceptions.UseCaseException;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
@@ -27,13 +26,13 @@ public class HierarchyValidator {
 
     public record HierarchyContext(Season season, Round round) {}
 
-    public Either<UseCaseError, HierarchyContext> resolveHierarchy(String competitionIdentifier, Integer roundPosition) {
+    public Either<UseCaseError, HierarchyContext> resolveHierarchy(
+            String competitionIdentifier, Integer roundPosition) {
         return validateCompetition(competitionIdentifier)
                 .flatMap(this::validateActiveSeason)
                 .flatMap(season -> {
                     if (roundPosition == null) {
-                        return validateCurrentRound(season)
-                                .map(round -> new HierarchyContext(season, round));
+                        return validateCurrentRound(season).map(round -> new HierarchyContext(season, round));
                     }
 
                     if (roundPosition < 1) {
@@ -47,9 +46,7 @@ public class HierarchyValidator {
 
     public Either<UseCaseError, Competition> validateCompetition(String slugOrCode) {
         return requireFound(
-                competitionRepo.findBySlugOrCode(slugOrCode),
-                UseCaseErrors.notFound("Competition", slugOrCode)
-        );
+                competitionRepo.findBySlugOrCode(slugOrCode), UseCaseErrors.notFound("Competition", slugOrCode));
     }
 
     public Either<UseCaseError, Season> validateActiveSeason(Competition competition) {

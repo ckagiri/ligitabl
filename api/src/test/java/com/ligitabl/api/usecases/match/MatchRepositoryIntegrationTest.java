@@ -31,7 +31,7 @@ class MatchRepositoryIntegrationTest extends AbstractPostgresIT {
     private UUID competitionId;
     private UUID seasonId;
     private UUID roundId;
-        private UUID contestId;
+    private UUID contestId;
     private UUID homeTeamId;
     private UUID awayTeamId;
 
@@ -139,6 +139,7 @@ class MatchRepositoryIntegrationTest extends AbstractPostgresIT {
         Match reloaded = matchRepo.findByRoundIdAndSlug(roundId, slug).orElseThrow();
         assertThat(reloaded.getStatus()).isEqualTo(MatchStatus.CANCELLED);
         assertThat(reloaded.isWasPostponed()).isTrue();
-        assertThat(reloaded.getScore()).isEqualTo(Score.builder().homeGoals(2).awayGoals(1).build());
+        assertThat(reloaded.getScore())
+                .isEqualTo(Score.builder().homeGoals(2).awayGoals(1).build());
     }
 }

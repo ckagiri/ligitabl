@@ -1,13 +1,11 @@
 package com.ligitabl.api.usecases.season.seasonsetupmode;
 
-import java.util.UUID;
-
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ligitabl.api.shared.exceptions.UseCaseException;
@@ -30,8 +28,7 @@ public class SeasonSetupModeController {
     @PostMapping("/{seasonSlug}/setup-mode/enter")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SetupModeResult> enter(
-            @PathVariable String seasonSlug,
-            @RequestParam(required = false) String competition) {
+            @PathVariable String seasonSlug, @RequestParam(required = false) String competition) {
 
         log.info("Enter setup mode: season={}", seasonSlug);
 
@@ -42,9 +39,11 @@ public class SeasonSetupModeController {
                 .build();
 
         return useCase.execute(cmd)
-                .fold(err -> {
-                    throw new UseCaseException(err);
-                }, ResponseEntity::ok);
+                .fold(
+                        err -> {
+                            throw new UseCaseException(err);
+                        },
+                        ResponseEntity::ok);
     }
 
     /**
@@ -54,8 +53,7 @@ public class SeasonSetupModeController {
     @PostMapping("/{seasonSlug}/setup-mode/leave")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<SetupModeResult> leave(
-            @PathVariable String seasonSlug,
-            @RequestParam(required = false) String competition) {
+            @PathVariable String seasonSlug, @RequestParam(required = false) String competition) {
 
         log.info("Leave setup mode: season={}", seasonSlug);
 
@@ -66,8 +64,10 @@ public class SeasonSetupModeController {
                 .build();
 
         return useCase.execute(cmd)
-                .fold(err -> {
-                    throw new UseCaseException(err);
-                }, ResponseEntity::ok);
+                .fold(
+                        err -> {
+                            throw new UseCaseException(err);
+                        },
+                        ResponseEntity::ok);
     }
 }

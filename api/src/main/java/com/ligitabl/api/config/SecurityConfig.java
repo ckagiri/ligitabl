@@ -1,9 +1,13 @@
 package com.ligitabl.api.config;
 
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
@@ -15,14 +19,10 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.authentication.HttpStatusEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.http.HttpStatus;
-import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
 import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
-import java.nio.charset.StandardCharsets;
 
 import com.ligitabl.api.auth.security.JwtAuthenticationFilter;
 import com.ligitabl.api.auth.security.TokenGenerator;
@@ -32,7 +32,8 @@ import com.ligitabl.api.auth.security.TokenGenerator;
 @EnableMethodSecurity
 public class SecurityConfig {
 
-    private static void writeApiError(HttpStatus status, jakarta.servlet.http.HttpServletResponse response, String message)
+    private static void writeApiError(
+            HttpStatus status, jakarta.servlet.http.HttpServletResponse response, String message)
             throws java.io.IOException {
         if (response.isCommitted()) {
             return;
@@ -58,41 +59,40 @@ public class SecurityConfig {
     @Bean
     public FilterRegistrationBean<JwtAuthenticationFilter> jwtAuthenticationFilterRegistration(
             JwtAuthenticationFilter jwtAuthenticationFilter) {
-        FilterRegistrationBean<JwtAuthenticationFilter> registration = new FilterRegistrationBean<>(
-                jwtAuthenticationFilter);
+        FilterRegistrationBean<JwtAuthenticationFilter> registration =
+                new FilterRegistrationBean<>(jwtAuthenticationFilter);
         registration.setEnabled(false);
         return registration;
     }
 
     /**
-         * Security filter chain for REST API endpoints (/api/**)
+     * Security filter chain for REST API endpoints (/api/**)
      * Uses stateless JWT authentication
      */
     @Bean
     @Order(1)
-    public SecurityFilterChain apiSecurityFilterChain(HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter)
-            throws Exception {
+    public SecurityFilterChain apiSecurityFilterChain(
+            HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
         http.securityMatcher(new AntPathRequestMatcher("/api/**"))
                 .csrf(csrf -> csrf.disable())
                 .httpBasic(Customizer.withDefaults())
-            .authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/**")
-                    .permitAll()
-                    .requestMatchers("/api/me")
-                    .authenticated()
-                    .requestMatchers("/api/admin", "/api/admin/**")
-                    .hasRole("ADMIN")
-                    .requestMatchers("/api/player", "/api/player/**")
-                    .hasRole("PLAYER")
-                    .anyRequest()
-                    .permitAll())
-            .exceptionHandling(ex -> ex
-                    .authenticationEntryPoint((request, response, authException) -> {
-                        // Keep clients happy with a Basic challenge, but don't redirect to web login.
-                        response.setHeader("WWW-Authenticate", "Basic realm=\"LigiTabl\"");
-                        writeApiError(HttpStatus.UNAUTHORIZED, response, "Unauthorized");
-                    })
-                    .accessDeniedHandler((request, response, accessDeniedException) ->
-                            writeApiError(HttpStatus.FORBIDDEN, response, "Forbidden")))
+                .authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/**")
+                        .permitAll()
+                        .requestMatchers("/api/me")
+                        .authenticated()
+                        .requestMatchers("/api/admin", "/api/admin/**")
+                        .hasRole("ADMIN")
+                        .requestMatchers("/api/player", "/api/player/**")
+                        .hasRole("PLAYER")
+                        .anyRequest()
+                        .permitAll())
+                .exceptionHandling(ex -> ex.authenticationEntryPoint((request, response, authException) -> {
+                            // Keep clients happy with a Basic challenge, but don't redirect to web login.
+                            response.setHeader("WWW-Authenticate", "Basic realm=\"LigiTabl\"");
+                            writeApiError(HttpStatus.UNAUTHORIZED, response, "Unauthorized");
+                        })
+                        .accessDeniedHandler((request, response, accessDeniedException) ->
+                                writeApiError(HttpStatus.FORBIDDEN, response, "Forbidden")))
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
 
@@ -110,8 +110,8 @@ public class SecurityConfig {
                 .csrf(csrf -> csrf.ignoringRequestMatchers("/predictions/swap")) // Allow HTMX POST without CSRF
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 "/",
-                                                                "/auth/login",
-                                                                "/auth/register",
+                                "/auth/login",
+                                "/auth/register",
                                 "/leaderboard",
                                 "/standings",
                                 "/matches",

@@ -1,5 +1,12 @@
 package com.ligitabl.api.usecases.standings;
 
+import static com.ligitabl.api.shared.ValidationUtils.requireFound;
+
+import java.util.List;
+import java.util.UUID;
+
+import org.springframework.stereotype.Service;
+
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.UseCase;
@@ -13,14 +20,9 @@ import com.ligitabl.model.domain.Standings;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.StandingsRepo;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-
-import java.util.List;
-import java.util.UUID;
-
-import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 
 @Service
 @RequiredArgsConstructor
@@ -59,18 +61,14 @@ public class GetDefaultRoundStandingsUseCase
             return Either.left(UseCaseErrors.validation("Competition has no active season"));
         }
 
-        return requireFound(
-                seasonRepo.findById(activeSeasonId),
-                UseCaseErrors.notFound("Season", activeSeasonId)
-        );
+        return requireFound(seasonRepo.findById(activeSeasonId), UseCaseErrors.notFound("Season", activeSeasonId));
     }
 
     private Either<UseCaseError, RoundContext> resolveRound(Season season, GetDefaultRoundStandingsQuery query) {
         if (query.isCurrentRound()) {
             return getCurrentRound(season).map(round -> new RoundContext(season, round));
         } else {
-            return getRoundByPosition(season, query.getRoundPosition())
-                    .map(round -> new RoundContext(season, round));
+            return getRoundByPosition(season, query.getRoundPosition()).map(round -> new RoundContext(season, round));
         }
     }
 
@@ -80,10 +78,7 @@ public class GetDefaultRoundStandingsUseCase
             return Either.left(UseCaseErrors.validation("Season has no current round"));
         }
 
-        return requireFound(
-                roundRepo.findById(currentRoundId),
-                UseCaseErrors.notFound("Round", currentRoundId)
-        );
+        return requireFound(roundRepo.findById(currentRoundId), UseCaseErrors.notFound("Round", currentRoundId));
     }
 
     private Either<UseCaseError, Round> getRoundByPosition(Season season, Integer position) {
@@ -93,14 +88,12 @@ public class GetDefaultRoundStandingsUseCase
 
         if (position > season.getMaxRounds()) {
             return Either.left(UseCaseErrors.validation(
-                    String.format("Round position %d exceeds max rounds %d", position, season.getMaxRounds())
-            ));
+                    String.format("Round position %d exceeds max rounds %d", position, season.getMaxRounds())));
         }
 
         return requireFound(
                 roundRepo.findBySeasonIdAndPosition(season.getId(), position),
-                UseCaseErrors.notFound("Round", "position", String.valueOf(position))
-        );
+                UseCaseErrors.notFound("Round", "position", String.valueOf(position)));
     }
 
     private Either<UseCaseError, Standings> fetchStandings(Season season, Round round) {
@@ -108,8 +101,10 @@ public class GetDefaultRoundStandingsUseCase
                 .findBySeasonAndRoundPosition(season.getId(), round.getPosition())
                 .map(Either::<UseCaseError, Standings>right)
                 .orElseGet(() -> {
-                    log.debug("No standings found for season={} round={}, returning empty",
-                            season.getId(), round.getPosition());
+                    log.debug(
+                            "No standings found for season={} round={}, returning empty",
+                            season.getId(),
+                            round.getPosition());
                     // Return empty standings instead of error
                     return Either.right(Standings.builder()
                             .seasonId(season.getId())

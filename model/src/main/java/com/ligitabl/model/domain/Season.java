@@ -47,11 +47,11 @@ public class Season extends AbstractModel<UUID> {
     private UUID mainContestId;
 
     /**
-        * When entering setup mode, we detach the current main contest so we can reattach it when leaving.
-        *
-        * Invariant: exactly one of (mainContestId, detachedContestId) should be non-null.
+     * When entering setup mode, we detach the current main contest so we can reattach it when leaving.
+     *
+     * Invariant: exactly one of (mainContestId, detachedContestId) should be non-null.
      */
-        private UUID detachedContestId;
+    private UUID detachedContestId;
 
     private UUID currentRoundId;
 

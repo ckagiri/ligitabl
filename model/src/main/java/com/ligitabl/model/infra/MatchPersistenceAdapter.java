@@ -127,7 +127,7 @@ public class MatchPersistenceAdapter implements MatchRepo {
                 .on(T_MATCH.FK_ROUND_ID.eq(T_ROUND.PK_ID))
                 .where(T_ROUND.FK_SEASON_ID.eq(seasonId))
                 .and(T_ROUND.C_POSITION.lessOrEqual(roundPosition))
-            .and(T_MATCH.C_STATUS.eq(MatchStatus.FINISHED.name()))
+                .and(T_MATCH.C_STATUS.eq(MatchStatus.FINISHED.name()))
                 .orderBy(T_ROUND.C_POSITION.asc(), T_MATCH.C_KICK_OFF.asc())
                 .fetchInto(MatchRecord.class);
 

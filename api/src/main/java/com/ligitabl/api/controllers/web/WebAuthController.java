@@ -1,5 +1,8 @@
 package com.ligitabl.api.controllers.web;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -13,9 +16,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.usecases.auth.register.RegisterCommand;
 import com.ligitabl.api.usecases.auth.register.RegisterResult;
 import com.ligitabl.api.usecases.auth.register.RegisterUseCase;
@@ -26,9 +29,6 @@ import com.ligitabl.model.auth.Role;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
-
-import java.util.List;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/auth")
@@ -95,7 +95,8 @@ public class WebAuthController {
     /**
      * Helper method to authenticate a user and create a session
      */
-    private void authenticateUser(String email, String displayName, java.util.Set<Role> roles, HttpServletRequest request) {
+    private void authenticateUser(
+            String email, String displayName, java.util.Set<Role> roles, HttpServletRequest request) {
         // Create authentication token with user details and roles
         List<SimpleGrantedAuthority> authorities = roles.stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
@@ -110,8 +111,7 @@ public class WebAuthController {
         // Create session and store security context
         HttpSession session = request.getSession(true);
         session.setAttribute(
-                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
-                SecurityContextHolder.getContext());
+                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
     }
 
     /**

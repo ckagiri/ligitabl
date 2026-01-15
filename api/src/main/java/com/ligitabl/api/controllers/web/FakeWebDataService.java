@@ -1,10 +1,10 @@
 package com.ligitabl.api.controllers.web;
 
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Service;
-
 import java.time.Instant;
 import java.util.List;
+
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Service;
 
 /**
  * In-memory fake data service for UI development and testing.
@@ -40,13 +40,13 @@ public class FakeWebDataService {
                 new FakeMatch("NEW", "Newcastle", "AVL", "Aston Villa", "2024-12-16T14:00:00Z", 0, 2, "FINISHED"),
                 new FakeMatch("WHU", "West Ham", "BHA", "Brighton", "2024-12-16T14:00:00Z", 1, 3, "FINISHED"),
                 new FakeMatch("WOL", "Wolves", "FUL", "Fulham", "2024-12-16T16:30:00Z", 2, 2, "FINISHED"),
-                new FakeMatch("BOU", "Bournemouth", "CRY", "Crystal Palace", "2024-12-17T20:00:00Z", null, null,
-                        "SCHEDULED"),
+                new FakeMatch(
+                        "BOU", "Bournemouth", "CRY", "Crystal Palace", "2024-12-17T20:00:00Z", null, null, "SCHEDULED"),
                 new FakeMatch("BRE", "Brentford", "EVE", "Everton", "2024-12-18T19:45:00Z", null, null, "SCHEDULED"),
-                new FakeMatch("NFO", "Nottingham Forest", "BUR", "Burnley", "2024-12-19T20:00:00Z", null, null,
-                        "SCHEDULED"),
-                new FakeMatch("LEE", "Leeds United", "SUN", "Sunderland", "2024-12-20T15:00:00Z", null, null,
-                        "SCHEDULED"));
+                new FakeMatch(
+                        "NFO", "Nottingham Forest", "BUR", "Burnley", "2024-12-19T20:00:00Z", null, null, "SCHEDULED"),
+                new FakeMatch(
+                        "LEE", "Leeds United", "SUN", "Sunderland", "2024-12-20T15:00:00Z", null, null, "SCHEDULED"));
 
         return new FakeMatches("premier-league", "2024-25", 19, matches);
     }
@@ -79,22 +79,31 @@ public class FakeWebDataService {
 
     // Fake data records
     public record FakeLeaderboardEntry(
-            int position, String displayName, int totalScore, int maxScore, int pointsBehind, int zeroes, int movement) {
-    }
+            int position,
+            String displayName,
+            int totalScore,
+            int maxScore,
+            int pointsBehind,
+            int zeroes,
+            int movement) {}
 
-    public record FakeLeaderboard(String phase, List<FakeLeaderboardEntry> entries, int totalUsers, int pageNumber,
-            int currentRound) {
-    }
+    public record FakeLeaderboard(
+            String phase, List<FakeLeaderboardEntry> entries, int totalUsers, int pageNumber, int currentRound) {}
 
-    public record FakeMatch(String homeCode, String homeName, String awayCode, String awayName, String kickOffTime,
-            Integer homeScore, Integer awayScore, String status) {
-    }
+    public record FakeMatch(
+            String homeCode,
+            String homeName,
+            String awayCode,
+            String awayName,
+            String kickOffTime,
+            Integer homeScore,
+            Integer awayScore,
+            String status) {}
 
     public record FakeMatches(String competition, String season, int round, List<FakeMatch> matches) {}
 
     public record FakeTeamRank(int position, String code, String name, String crestUrl, int pointsOff) {}
 
-    public record FakePrediction(List<FakeTeamRank> teams, int totalPoints, int currentRound, boolean canSwap,
-            Instant nextSwapAt) {
-    }
+    public record FakePrediction(
+            List<FakeTeamRank> teams, int totalPoints, int currentRound, boolean canSwap, Instant nextSwapAt) {}
 }

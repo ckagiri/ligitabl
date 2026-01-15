@@ -1,9 +1,9 @@
 package com.ligitabl.api.auth.security;
 
+import java.util.Collection;
+
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-
-import java.util.Collection;
 
 public class WebUserDetails implements UserDetails {
 
@@ -13,10 +13,7 @@ public class WebUserDetails implements UserDetails {
     private final Collection<? extends GrantedAuthority> authorities;
 
     public WebUserDetails(
-            String email,
-            String displayName,
-            String password,
-            Collection<? extends GrantedAuthority> authorities) {
+            String email, String displayName, String password, Collection<? extends GrantedAuthority> authorities) {
         this.email = email;
         this.displayName = displayName;
         this.password = password;

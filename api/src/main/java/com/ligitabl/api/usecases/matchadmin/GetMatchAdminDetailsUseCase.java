@@ -13,12 +13,12 @@ import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecases.shared.HierarchyValidator;
+import com.ligitabl.api.usecases.shared.HierarchyValidator.HierarchyContext;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.MatchRepo;
-import com.ligitabl.api.usecases.shared.HierarchyValidator.HierarchyContext;
 
 import lombok.RequiredArgsConstructor;
 
@@ -46,7 +46,8 @@ public class GetMatchAdminDetailsUseCase
     }
 
     private Either<UseCaseError, HierarchyContext> resolveHierarchy(Query query) {
-        String competitionIdentifier = query.competitionIdentifier() == null || query.competitionIdentifier().isBlank()
+        String competitionIdentifier = query.competitionIdentifier() == null
+                        || query.competitionIdentifier().isBlank()
                 ? competitionDefaults.defaultCompetitionSlug()
                 : query.competitionIdentifier();
 
@@ -89,7 +90,8 @@ public class GetMatchAdminDetailsUseCase
             }
         }
 
-        boolean reschedulable = setup || (status != MatchStatus.SUSPENDED && status != MatchStatus.LIVE && status != MatchStatus.FINISHED);
+        boolean reschedulable = setup
+                || (status != MatchStatus.SUSPENDED && status != MatchStatus.LIVE && status != MatchStatus.FINISHED);
         if (reschedulable) {
             actions.add("RESCHEDULE");
         }

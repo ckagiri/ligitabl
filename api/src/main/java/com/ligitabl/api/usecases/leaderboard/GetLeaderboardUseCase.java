@@ -5,9 +5,7 @@ import org.springframework.stereotype.Service;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.RoundSpan;
-import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.LeaderboardRepo;
@@ -41,7 +39,8 @@ public class GetLeaderboardUseCase {
     private final CompetitionDefaults competitionDefaults;
 
     public Either<GetLeaderboardError, GetLeaderboardResult> execute(GetLeaderboardQuery query) {
-        var competition = competitionRepo.findBySlug(competitionDefaults.defaultCompetitionSlug())
+        var competition = competitionRepo
+                .findBySlug(competitionDefaults.defaultCompetitionSlug())
                 .orElse(null);
         if (competition == null) {
             return Either.left(new GetLeaderboardError.DefaultCompetitionNotFound());
@@ -51,14 +50,12 @@ public class GetLeaderboardUseCase {
             return Either.left(new GetLeaderboardError.PhasesNotConfigured());
         }
 
-        var season = seasonRepo.findActiveSeason(competition.getId())
-                .orElse(null);
+        var season = seasonRepo.findActiveSeason(competition.getId()).orElse(null);
         if (season == null) {
             return Either.left(new GetLeaderboardError.ActiveSeasonNotFound());
         }
 
-        var contest = contestRepo.findMainBySeasonId(season.getId())
-                .orElse(null);
+        var contest = contestRepo.findMainBySeasonId(season.getId()).orElse(null);
         if (contest == null) {
             return Either.left(new GetLeaderboardError.MainContestNotFound());
         }
@@ -68,12 +65,8 @@ public class GetLeaderboardUseCase {
             return Either.left(new GetLeaderboardError.InvalidPhase(query.phase()));
         }
 
-        var rankings = leaderboardRepo.computeLeaderboard(
-                contest.getId(),
-                season.getId(),
-                phase.getFrom(),
-                phase.getTo()
-        );
+        var rankings =
+                leaderboardRepo.computeLeaderboard(contest.getId(), season.getId(), phase.getFrom(), phase.getTo());
 
         return Either.right(new GetLeaderboardResult(contest.getId(), phase, rankings));
     }

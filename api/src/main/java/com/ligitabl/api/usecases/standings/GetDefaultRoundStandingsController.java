@@ -1,12 +1,14 @@
 package com.ligitabl.api.usecases.standings;
 
-import com.ligitabl.api.shared.exceptions.UseCaseException;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import com.ligitabl.api.shared.exceptions.UseCaseException;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/rounds")
@@ -33,8 +35,7 @@ public class GetDefaultRoundStandingsController {
      */
     @GetMapping("/{roundPosition}/standings")
     public ResponseEntity<List<StandingsEntryDto>> getRoundStandingsByPosition(
-            @PathVariable Integer roundPosition,
-            @RequestParam(required = false) String competition) {
+            @PathVariable Integer roundPosition, @RequestParam(required = false) String competition) {
         log.info("GetRoundStandings request, position={}, competition={}", roundPosition, competition);
         return executeUseCase(GetDefaultRoundStandingsQuery.byPosition(roundPosition, competition));
     }
@@ -49,7 +50,6 @@ public class GetDefaultRoundStandingsController {
                 standings -> {
                     log.debug("GetRoundStandings success, count={}", standings.size());
                     return ResponseEntity.ok(standings);
-                }
-        );
+                });
     }
 }

@@ -20,16 +20,14 @@ public class GetDefaultRoundMatchesController {
     private final GetDefaultRoundMatchesUseCase getDefaultRoundMatchesUseCase;
 
     @GetMapping({"/current/matches", "/default/matches"})
-    public ResponseEntity<List<MatchDto>> getCurrentRoundMatches(
-            @RequestParam(required = false) String competition) {
+    public ResponseEntity<List<MatchDto>> getCurrentRoundMatches(@RequestParam(required = false) String competition) {
         log.info("GetCurrentRoundMatches command, competition={}", competition);
         return executeUseCase(GetDefaultRoundMatchesQuery.currentRound(competition));
     }
 
     @GetMapping("/{roundPosition}/matches")
     public ResponseEntity<List<MatchDto>> getRoundMatchesByPosition(
-            @PathVariable Integer roundPosition,
-            @RequestParam(required = false) String competition) {
+            @PathVariable Integer roundPosition, @RequestParam(required = false) String competition) {
         log.info("GetRoundMatches command, position={}, competition={}", roundPosition, competition);
         return executeUseCase(GetDefaultRoundMatchesQuery.byPosition(roundPosition, competition));
     }

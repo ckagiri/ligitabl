@@ -10,9 +10,6 @@ import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.ligitabl.api.usecases.matchadmin.transitionmatchstatus.TransitionMatchCommand;
-import com.ligitabl.api.usecases.matchadmin.transitionmatchstatus.TransitionMatchStatusUseCase;
-import com.ligitabl.api.usecases.matchadmin.transitionmatchstatus.TransitionResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -22,6 +19,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.usecases.matchadmin.transitionmatchstatus.TransitionMatchCommand;
+import com.ligitabl.api.usecases.matchadmin.transitionmatchstatus.TransitionMatchStatusUseCase;
+import com.ligitabl.api.usecases.matchadmin.transitionmatchstatus.TransitionResult;
 import com.ligitabl.api.usecases.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
@@ -104,7 +104,7 @@ class TransitionMatchStatusUseCaseTest {
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
 
-                useCase = new TransitionMatchStatusUseCase(matchRepo, hierarchyValidator, competitionDefaults, clock);
+        useCase = new TransitionMatchStatusUseCase(matchRepo, hierarchyValidator, competitionDefaults, clock);
     }
 
     @Test

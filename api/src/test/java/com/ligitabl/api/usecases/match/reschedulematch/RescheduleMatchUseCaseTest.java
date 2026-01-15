@@ -11,9 +11,6 @@ import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.ligitabl.api.usecases.matchadmin.reschedulematch.RescheduleMatchCommand;
-import com.ligitabl.api.usecases.matchadmin.reschedulematch.RescheduleMatchUseCase;
-import com.ligitabl.api.usecases.matchadmin.reschedulematch.RescheduleResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,6 +20,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.usecases.matchadmin.reschedulematch.RescheduleMatchCommand;
+import com.ligitabl.api.usecases.matchadmin.reschedulematch.RescheduleMatchUseCase;
+import com.ligitabl.api.usecases.matchadmin.reschedulematch.RescheduleResult;
 import com.ligitabl.api.usecases.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
@@ -165,7 +165,8 @@ class RescheduleMatchUseCaseTest {
         assertEquals(20, ok.getToRound());
         assertEquals(now, ok.getTimestamp());
 
-        verify(matchRepo).save(argThat(m -> m.getRoundId().equals(targetRoundId) && m.getStatus() == MatchStatus.SCHEDULED));
+        verify(matchRepo)
+                .save(argThat(m -> m.getRoundId().equals(targetRoundId) && m.getStatus() == MatchStatus.SCHEDULED));
     }
 
     @Test
@@ -256,7 +257,9 @@ class RescheduleMatchUseCaseTest {
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonLive, currentRound)));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
-        when(hierarchyValidator.validateRound(seasonId, 99)).thenReturn(Either.left(com.ligitabl.api.shared.errors.UseCaseErrors.notFound("Round", "position", 99)));
+        when(hierarchyValidator.validateRound(seasonId, 99))
+                .thenReturn(
+                        Either.left(com.ligitabl.api.shared.errors.UseCaseErrors.notFound("Round", "position", 99)));
 
         Either<UseCaseError, RescheduleResult> result = useCase.execute(cmd);
 

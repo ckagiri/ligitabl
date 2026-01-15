@@ -36,10 +36,10 @@ public class ManageSeasonSetupModeUseCase
     public Either<UseCaseError, SetupModeResult> execute(SeasonSetupModeCommand cmd) {
         String competition = cmd.getCompetitionIdentifier().orElseGet(competitionDefaults::defaultCompetitionSlug);
 
-        return hierarchyValidator.validateCompetitionAndSeason(competition, cmd.getSeasonSlug())
-                .flatMap(season -> cmd.getAction() == SetupModeAction.ENTER
-                        ? enterSetupMode(season)
-                : leaveSetupMode(season));
+        return hierarchyValidator
+                .validateCompetitionAndSeason(competition, cmd.getSeasonSlug())
+                .flatMap(season ->
+                        cmd.getAction() == SetupModeAction.ENTER ? enterSetupMode(season) : leaveSetupMode(season));
     }
 
     private Either<UseCaseError, SetupModeResult> enterSetupMode(Season season) {
@@ -48,8 +48,9 @@ public class ManageSeasonSetupModeUseCase
         }
 
         if (roundSubmissionRepo.existsBySeasonId(season.getId())) {
-            return Either.left(UseCaseErrors.validation(
-                    "Cannot enter setup mode: season has submissions. Setup mode is only for initial fixture arrangement."));
+            return Either.left(
+                    UseCaseErrors.validation(
+                            "Cannot enter setup mode: season has submissions. Setup mode is only for initial fixture arrangement."));
         }
 
         try {

@@ -1,9 +1,9 @@
 package com.ligitabl.api.usecases.match.getdefaultroundmatches;
 
+import java.util.Optional;
+
 import jakarta.annotation.Nullable;
 import lombok.Value;
-
-import java.util.Optional;
 
 @Value
 public class GetDefaultRoundMatchesQuery {

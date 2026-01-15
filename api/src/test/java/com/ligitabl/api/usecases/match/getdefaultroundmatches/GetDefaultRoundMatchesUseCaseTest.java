@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.usecases.match.MatchDto;
 import com.ligitabl.api.usecases.match.MatchEnricher;
 import com.ligitabl.api.usecases.shared.HierarchyValidator;
@@ -28,7 +28,7 @@ class GetDefaultRoundMatchesUseCaseTest {
     @Mock
     HierarchyValidator hierarchyValidator;
 
-        private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
+    private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
 
     @Mock
     MatchRepo matchRepo;
@@ -41,12 +41,7 @@ class GetDefaultRoundMatchesUseCaseTest {
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        useCase = new GetDefaultRoundMatchesUseCase(
-                matchRepo,
-                matchEnricher,
-                hierarchyValidator,
-                competitionDefaults
-        );
+        useCase = new GetDefaultRoundMatchesUseCase(matchRepo, matchEnricher, hierarchyValidator, competitionDefaults);
     }
 
     @Test
@@ -74,7 +69,7 @@ class GetDefaultRoundMatchesUseCaseTest {
         assertThat(result.isRight()).isTrue();
         assertThat(result.getRight()).hasSize(1);
         assertThat(result.getRight().getFirst().getRoundId()).isEqualTo(roundId);
-                verify(hierarchyValidator).resolveHierarchy("premier-league", null);
+        verify(hierarchyValidator).resolveHierarchy("premier-league", null);
         verify(matchRepo).findByRoundId(roundId);
         verify(matchEnricher).enrichWithTeams(List.of(match));
     }
@@ -82,7 +77,8 @@ class GetDefaultRoundMatchesUseCaseTest {
     @Test
     void missing_active_season_returns_validation_error() {
         when(hierarchyValidator.resolveHierarchy("premier-league", null))
-                .thenReturn(Either.left(com.ligitabl.api.shared.errors.UseCaseErrors.validation("Competition has no active season")));
+                .thenReturn(Either.left(
+                        com.ligitabl.api.shared.errors.UseCaseErrors.validation("Competition has no active season")));
 
         Either<UseCaseError, List<MatchDto>> result = useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
 
@@ -94,7 +90,8 @@ class GetDefaultRoundMatchesUseCaseTest {
     @Test
     void missing_current_round_returns_validation_error() {
         when(hierarchyValidator.resolveHierarchy("premier-league", null))
-                .thenReturn(Either.left(com.ligitabl.api.shared.errors.UseCaseErrors.validation("Season has no current round")));
+                .thenReturn(Either.left(
+                        com.ligitabl.api.shared.errors.UseCaseErrors.validation("Season has no current round")));
 
         Either<UseCaseError, List<MatchDto>> result = useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
 

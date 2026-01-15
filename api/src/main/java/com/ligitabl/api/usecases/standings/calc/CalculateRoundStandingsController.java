@@ -1,14 +1,15 @@
 package com.ligitabl.api.usecases.standings.calc;
 
-import com.ligitabl.api.shared.exceptions.UseCaseException;
-import com.ligitabl.api.usecases.standings.GetDefaultRoundStandingsQuery;
-import com.ligitabl.api.usecases.standings.StandingsEntryDto;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+import com.ligitabl.api.shared.exceptions.UseCaseException;
+import com.ligitabl.api.usecases.standings.StandingsEntryDto;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/rounds")
@@ -20,8 +21,7 @@ public class CalculateRoundStandingsController {
 
     @PostMapping("/{roundPosition}/standings/calculate")
     public ResponseEntity<List<StandingsEntryDto>> getRoundStandingsByPosition(
-            @PathVariable Integer roundPosition,
-            @RequestParam(required = false) String competition) {
+            @PathVariable Integer roundPosition, @RequestParam(required = false) String competition) {
         log.info("CalculateRoundStandings request, position={}, competition={}", roundPosition, competition);
         return executeUseCase(CalculateRoundStandingsCommand.byPosition(roundPosition, competition));
     }
@@ -43,7 +43,6 @@ public class CalculateRoundStandingsController {
                 standings -> {
                     log.debug("CalculateRoundStandings success, count={}", standings.size());
                     return ResponseEntity.ok(standings);
-                }
-        );
+                });
     }
 }

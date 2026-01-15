@@ -1,5 +1,13 @@
 package com.ligitabl.api.usecases.standings.calc;
 
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import org.springframework.boot.ApplicationArguments;
+import org.springframework.boot.ApplicationRunner;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.stereotype.Component;
+
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.config.WorkflowConfiguration;
 import com.ligitabl.api.shared.errors.UseCaseError;
@@ -9,15 +17,9 @@ import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.boot.ApplicationArguments;
-import org.springframework.boot.ApplicationRunner;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.stereotype.Component;
-
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
 
 @Slf4j
 @Component
@@ -94,31 +96,29 @@ public class CalcStandingsRunner implements ApplicationRunner {
             var result = calculateRoundStandingsUseCase.execute(command);
 
             if (result == null) {
-                log.warn(
-                        "Round {} - Failed: CalculateRoundStandingsUseCase returned null",
-                        round.getPosition());
+                log.warn("Round {} - Failed: CalculateRoundStandingsUseCase returned null", round.getPosition());
                 failureCount.incrementAndGet();
                 continue;
             }
 
             result.fold(
-                error -> {
-                    // Check if error is because standings are already finalized
-                    if (error.getMessage().contains("already finalised") || error.getMessage().contains("No finished matches in round")) {
-                        log.debug("Round {} - Skipped (already finalized)", round.getPosition());
-                        skippedCount.incrementAndGet();
-                    } else {
-                        log.warn("Round {} - Failed: {}", round.getPosition(), error.getMessage());
-                        failureCount.incrementAndGet();
-                    }
-                    return null;
-                },
-                standings -> {
-                    log.info("Round {} - Success ({} teams)", round.getPosition(), standings.size());
-                    successCount.incrementAndGet();
-                    return null;
-                }
-            );
+                    error -> {
+                        // Check if error is because standings are already finalized
+                        if (error.getMessage().contains("already finalised")
+                                || error.getMessage().contains("No finished matches in round")) {
+                            log.debug("Round {} - Skipped (already finalized)", round.getPosition());
+                            skippedCount.incrementAndGet();
+                        } else {
+                            log.warn("Round {} - Failed: {}", round.getPosition(), error.getMessage());
+                            failureCount.incrementAndGet();
+                        }
+                        return null;
+                    },
+                    standings -> {
+                        log.info("Round {} - Success ({} teams)", round.getPosition(), standings.size());
+                        successCount.incrementAndGet();
+                        return null;
+                    });
         }
 
         // Print summary

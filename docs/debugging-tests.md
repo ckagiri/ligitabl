@@ -25,6 +25,12 @@ Note: VS Code tasks are provided for common test flows (including “logged to r
      make test-api-it
      ```
 
+   - API integration tests (DB-backed `*IT`, direct Maven invocation):
+
+     ```bash
+     mvn -pl api -am -DskipITs=false -Dtest='**/*IT' -Dsurefire.failIfNoSpecifiedTests=false test
+     ```
+
 2. **Identify which tests failed** (don’t scroll the whole Maven output)
 
    - Surefire writes machine-readable XML and human-friendly text reports under:
@@ -204,6 +210,58 @@ Common failure patterns:
 - **Port collisions**: a local Compose DB may already be using a port the test wants.
 - **Slow container startup**: rerun once; if it’s consistently slow, check Docker resources.
 
+Additional patterns we’ve hit in this repo:
+
+- **Postgres “SSL connection setup” / handshake failures**: ensure the test JDBC URL forces SSL off (e.g., `sslmode=disable`).
+- **Container start timing vs Spring/Liquibase init**: make sure the container is started before any dynamic property registration or Liquibase tries to open a connection.
+
+## jOOQ codegen + missing generated sources after `clean`
+
+If you see compile errors like `package com.ligitabl.model.db... does not exist` (or `cannot find symbol` for jOOQ tables/records), you likely need to re-run jOOQ code generation.
+
+Why it happens:
+
+- Generated jOOQ sources are derived from the migrated DB schema.
+- `mvn clean` (or a module clean) can remove build outputs and generated sources.
+
+Fix (recommended):
+
+```bash
+make model-codegen-local
+```
+
+If the DB is already running and migrated:
+
+```bash
+make codegen-fast
+```
+
+Manual (if you’re debugging the workflow itself):
+
+```bash
+make compose-up-db
+make migrate
+make codegen
+```
+
+## “Unresolved compilation problem” / stale class artifacts
+
+If you see exceptions that look like a runtime error but are actually compiler stubs (e.g., `java.lang.Error: Unresolved compilation problem`), treat it as a build artifact issue first.
+
+Typical fixes:
+
+- Do a clean rebuild of the affected module:
+
+  ```bash
+  mvn -pl api -am clean test
+  ```
+
+- If it’s a `model`/jOOQ related failure, regenerate first (see the codegen section above).
+
+Where to look:
+
+- `*/target/surefire-reports/*.dumpstream` can contain the most direct signal if the test JVM died mid-run.
+
 ## Scripted test runs (logging to repo)
 
 Some scripts/Make targets write logs and exit codes into `scripts/target/` or `api/target/`.
@@ -216,6 +274,14 @@ ls -l scripts/target || true
 tail -n 80 scripts/target/*.log 2>/dev/null || true
 cat scripts/target/*.exit 2>/dev/null || true
 ```
+
+## Suggestions to make integration tests run better
+
+- Reduce Spring context churn: keep ITs on a small number of `@SpringBootTest` configurations to maximize context cache hits.
+- Keep DB startup deterministic: start containers early and make readiness explicit; avoid “implicit” connection attempts during property registration.
+- Avoid real outbound network calls: stub external HTTP dependencies in ITs to eliminate flakiness and speed runs.
+- Prefer single-container-per-module patterns: static/singleton Postgres containers can significantly reduce overhead.
+- Separate fast vs slow suites: run `-DskipITs` by default locally, then run `*IT` explicitly via `make test-api-it` when needed.
 
 ## What to collect when asking for help
 

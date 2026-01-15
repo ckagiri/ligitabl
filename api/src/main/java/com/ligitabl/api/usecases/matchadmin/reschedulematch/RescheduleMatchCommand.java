@@ -15,6 +15,7 @@ public class RescheduleMatchCommand {
 
     @Nullable
     Integer roundPosition; // null => current round
+
     String matchSlug;
 
     int newRoundPosition;
