@@ -12,7 +12,7 @@ public interface SeasonRepo {
 
     Season save(Season season);
 
-    Optional<Season> findActiveSeason(String competitionSlug);
+    Optional<Season> findActiveSeason(String competitionSlugOrCode);
 
     /**
      * Returns the most recent season for a competition, regardless of completion status.
