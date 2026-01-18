@@ -49,8 +49,8 @@ class TriggerRoundFinalizationUseCaseTest {
     @Mock
     private MatchRepo matchRepo;
 
-        @Mock
-        private RoundSubmissionRepo roundSubmissionRepo;
+    @Mock
+    private RoundSubmissionRepo roundSubmissionRepo;
 
     @Mock
     private FinalizeRoundUseCase finalizeRoundUseCase;
@@ -61,7 +61,7 @@ class TriggerRoundFinalizationUseCaseTest {
     @Test
     void shouldTriggerFinalizationWhenNoBlockingMatches() {
         var useCase = new TriggerRoundFinalizationUseCase(
-                                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
 
         var seasonId = UUID.randomUUID();
         var roundId = UUID.randomUUID();
@@ -108,7 +108,7 @@ class TriggerRoundFinalizationUseCaseTest {
     @Test
     void shouldBlockFinalizationWhenCancelledMatchesExist() {
         var useCase = new TriggerRoundFinalizationUseCase(
-                                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
 
         var seasonId = UUID.randomUUID();
         var roundId = UUID.randomUUID();
@@ -152,7 +152,7 @@ class TriggerRoundFinalizationUseCaseTest {
     @Test
     void shouldBlockFinalizationWhenSuspendedMatchesExist() {
         var useCase = new TriggerRoundFinalizationUseCase(
-                                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
 
         var seasonId = UUID.randomUUID();
         var roundId = UUID.randomUUID();
@@ -193,7 +193,7 @@ class TriggerRoundFinalizationUseCaseTest {
     @Test
     void shouldAllowFinalizationWithPostponedMatches() {
         var useCase = new TriggerRoundFinalizationUseCase(
-                                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
 
         var seasonId = UUID.randomUUID();
         var roundId = UUID.randomUUID();
@@ -239,7 +239,7 @@ class TriggerRoundFinalizationUseCaseTest {
     @Test
     void shouldHandleSeasonNotFound() {
         var useCase = new TriggerRoundFinalizationUseCase(
-                                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
 
         when(seasonRepo.findActiveSeason(COMPETITION_CODE)).thenReturn(Optional.empty());
 
@@ -253,7 +253,7 @@ class TriggerRoundFinalizationUseCaseTest {
     @Test
     void shouldHandleFinalizationFailure() {
         var useCase = new TriggerRoundFinalizationUseCase(
-                                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
 
         var seasonId = UUID.randomUUID();
         var roundId = UUID.randomUUID();
@@ -330,8 +330,8 @@ class TriggerRoundFinalizationUseCaseTest {
         var result = useCase.execute(new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(COMPETITION_CODE));
 
         assertThat(result.isRight()).isTrue();
-                assertThat(result.get().finalized()).isFalse();
-                assertThat(result.get().blocked()).isFalse();
+        assertThat(result.get().finalized()).isFalse();
+        assertThat(result.get().blocked()).isFalse();
         verify(finalizeRoundUseCase, never()).execute(any());
         verify(adminNotificationService, never()).notifyBlockedFinalization(any(), anyInt(), anyList(), anyList());
     }

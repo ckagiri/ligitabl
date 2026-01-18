@@ -80,8 +80,8 @@ public class FootballDataClientAdapter implements FootballDataGateway {
         return ExternalSeason.create(
                         currentSeason.id().intValue(), // Convert Long to Integer
                         currentSeason.startDate().toString(),
-                currentSeason.endDate().toString(),
-                currentSeason.currentMatchday())
+                        currentSeason.endDate().toString(),
+                        currentSeason.currentMatchday())
                 .flatMap(season -> ExternalCompetition.create(
                         response.id().intValue(), // Convert Long to Integer
                         response.name(),

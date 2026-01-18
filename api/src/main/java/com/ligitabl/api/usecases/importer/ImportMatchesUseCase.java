@@ -109,6 +109,8 @@ public class ImportMatchesUseCase {
         int updated =
                 (int) successes.stream().filter(MatchImportResult::isUpdated).count();
 
+        RoundUpdateResult roundUpdate = updateCurrentRoundIfNeeded(context.season, context.currentMatchday);
+
         ImportSummary summary = ImportSummary.builder()
                 .competition(context.competitionCode)
                 .seasonName(context.season.getName())
@@ -116,37 +118,38 @@ public class ImportMatchesUseCase {
                 .created(created)
                 .updated(updated)
                 .failed(errors.size())
+                .currentRoundPosition(roundUpdate.currentRoundPosition())
+                .currentRoundUpdated(roundUpdate.updated())
                 .errors(errors)
                 .build();
 
-        updateCurrentRoundIfNeeded(context.season, context.currentMatchday);
         log.info("Import completed: {}", summary.getSummaryMessage());
         return summary;
     }
 
-    private void updateCurrentRoundIfNeeded(Season season, Integer currentMatchday) {
+    private RoundUpdateResult updateCurrentRoundIfNeeded(Season season, Integer currentMatchday) {
         if (currentMatchday == null || currentMatchday < 1) {
-            return;
+            return new RoundUpdateResult(false, resolveCurrentRoundPosition(season));
         }
 
         UUID currentRoundId = season.getCurrentRoundId();
         if (currentRoundId == null) {
-            return;
+            return new RoundUpdateResult(false, null);
         }
 
         var currentRound = roundRepo.findById(currentRoundId).orElse(null);
         if (currentRound == null) {
-            return;
+            return new RoundUpdateResult(false, null);
         }
 
         int currentPosition = currentRound.getPosition();
         if (currentMatchday <= currentPosition) {
-            return;
+            return new RoundUpdateResult(false, currentPosition);
         }
 
         var nextRoundOpt = roundRepo.findBySeasonIdAndPosition(season.getId(), currentMatchday);
         if (nextRoundOpt.isEmpty()) {
-            return;
+            return new RoundUpdateResult(false, currentPosition);
         }
 
         var nextRound = nextRoundOpt.get();
@@ -159,6 +162,17 @@ public class ImportMatchesUseCase {
                 currentPosition,
                 currentMatchday,
                 nextRound.getId());
+
+        return new RoundUpdateResult(true, currentMatchday);
+    }
+
+    private Integer resolveCurrentRoundPosition(Season season) {
+        UUID currentRoundId = season.getCurrentRoundId();
+        if (currentRoundId == null) {
+            return null;
+        }
+
+        return roundRepo.findById(currentRoundId).map(Round::getPosition).orElse(null);
     }
 
     /**
@@ -280,14 +294,13 @@ public class ImportMatchesUseCase {
 
     // Helper records
     private record ImportContext(
-            CompetitionCode competitionCode,
-            Season season,
-            Integer currentMatchday,
-            List<ExternalMatch> matches) {
+            CompetitionCode competitionCode, Season season, Integer currentMatchday, List<ExternalMatch> matches) {
         ImportContext withMatches(List<ExternalMatch> matches) {
             return new ImportContext(competitionCode, season, currentMatchday, matches);
         }
     }
 
     private record TeamPair(Team home, Team away) {}
+
+    private record RoundUpdateResult(boolean updated, Integer currentRoundPosition) {}
 }

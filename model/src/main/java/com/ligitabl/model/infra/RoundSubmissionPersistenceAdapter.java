@@ -119,7 +119,9 @@ public class RoundSubmissionPersistenceAdapter implements RoundSubmissionRepo {
 
         return dsl.fetchExists(dsl.selectOne()
                 .from(T_ROUND_SUBMISSION)
-                .where(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId)
+                .where(T_ROUND_SUBMISSION
+                        .FK_SEASON_ID
+                        .eq(seasonId)
                         .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.eq(roundPosition))));
     }
 

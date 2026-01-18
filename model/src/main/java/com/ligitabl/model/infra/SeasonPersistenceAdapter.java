@@ -85,7 +85,9 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
                 .from(T_SEASON)
                 .join(T_COMPETITION)
                 .on(T_SEASON.FK_COMPETITION_ID.eq(T_COMPETITION.PK_ID))
-                .where(T_COMPETITION.C_SLUG.eq(competitionSlugOrCode)
+                .where(T_COMPETITION
+                        .C_SLUG
+                        .eq(competitionSlugOrCode)
                         .or(T_COMPETITION.C_CODE.eq(competitionSlugOrCode)))
                 .and(T_SEASON.C_COMPLETED.eq(false))
                 .orderBy(T_SEASON.C_START_DATE.desc())
