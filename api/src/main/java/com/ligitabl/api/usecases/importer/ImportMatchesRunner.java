@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 @ConditionalOnProperty(prefix = "workflow", name = "run", havingValue = "true")
-public class ImportWorkflowRunner implements ApplicationRunner {
+public class ImportMatchesRunner implements ApplicationRunner {
 
     private final ImportMatchesUseCase useCase;
     private final WorkflowConfiguration config;

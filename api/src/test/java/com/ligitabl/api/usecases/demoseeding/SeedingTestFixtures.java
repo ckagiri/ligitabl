@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.seeding;
+package com.ligitabl.api.usecases.demoseeding;
 
 import java.time.Instant;
 import java.time.LocalDate;

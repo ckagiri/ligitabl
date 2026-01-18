@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.seeding;
+package com.ligitabl.api.usecases.demoseeding;
 
 import java.time.*;
 import java.time.temporal.TemporalAdjusters;
@@ -45,7 +45,7 @@ public class SeedSeasonUseCase {
 
     @Transactional
     public Either<SeedingError, SeasonSeedResult> execute() {
-        log.info("Starting season seeding");
+        log.info("Starting season demoseeding");
 
         List<String> warnings = new ArrayList<>();
 
@@ -60,7 +60,8 @@ public class SeedSeasonUseCase {
         try {
             return Either.right(configLoader.loadConfig());
         } catch (Exception e) {
-            return Either.left(new SeedingError.ConfigurationError("Failed to load seeding config: " + e.getMessage()));
+            return Either.left(
+                    new SeedingError.ConfigurationError("Failed to load demoseeding config: " + e.getMessage()));
         }
     }
 
@@ -466,7 +467,7 @@ public class SeedSeasonUseCase {
                     return Either.left(new SeedingError.FinalizationFailed(i + 1, errorMessage));
                 }
 
-                break; // Stop on first failure but don't fail entire seeding
+                break; // Stop on first failure but don't fail entire demoseeding
             } else {
                 finalized++;
             }

@@ -1,6 +1,6 @@
-package com.ligitabl.api.usecases.seeding;
+package com.ligitabl.api.usecases.demoseeding;
 
-import static com.ligitabl.api.usecases.seeding.SeedingTestFixtures.*;
+import static com.ligitabl.api.usecases.demoseeding.SeedingTestFixtures.*;
 import static org.assertj.core.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;

@@ -14,6 +14,7 @@ import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
+import com.ligitabl.model.repo.RoundSubmissionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -27,6 +28,7 @@ public class TriggerRoundFinalizationUseCase {
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
     private final MatchRepo matchRepo;
+    private final RoundSubmissionRepo roundSubmissionRepo;
     private final FinalizeRoundUseCase finalizeRoundUseCase;
     private final AdminNotificationService adminNotificationService;
 
@@ -51,9 +53,25 @@ public class TriggerRoundFinalizationUseCase {
 
         log.info("Checking if round can be finalized for competition: {}", command.competitionCode());
 
-        return getActiveSeasonAndRound(command.competitionCode())
-                .flatMap(this::checkBlockingMatches)
-                .flatMap(this::executeFinalization);
+        return getActiveSeasonAndRound(command.competitionCode()).flatMap(context -> {
+            UUID seasonId = context.round().getSeasonId();
+            int roundPosition = context.round().getPosition();
+
+            if (!roundSubmissionRepo.existsByRound(seasonId, roundPosition)) {
+                log.info(
+                        "Skipping finalization: no round submissions for seasonId={} roundPosition={}",
+                        seasonId,
+                        roundPosition);
+                return Either.right(new TriggerFinalizationResult(
+                        context.round().getId(),
+                        roundPosition,
+                        false,
+                        false,
+                        "No submissions for round; skipping finalization"));
+            }
+
+            return checkBlockingMatches(context).flatMap(this::executeFinalization);
+        });
     }
 
     private Either<TriggerFinalizationError, RoundContext> getActiveSeasonAndRound(String competitionCode) {

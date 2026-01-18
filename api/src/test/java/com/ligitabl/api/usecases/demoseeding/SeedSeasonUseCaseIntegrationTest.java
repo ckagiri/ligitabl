@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.seeding;
+package com.ligitabl.api.usecases.demoseeding;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
