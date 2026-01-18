@@ -25,12 +25,14 @@ public class CreateSeasonPredictionController {
     private final CreateSeasonPredictionUseCase createSeasonPredictionUseCase;
     private final CurrentUserId currentUserId;
 
-        @PostMapping
-        public ResponseEntity<?> createSeasonPrediction(@RequestBody @Valid CreateSeasonPredictionCommand request) {
+    @PostMapping
+    public ResponseEntity<?> createSeasonPrediction(@RequestBody @Valid CreateSeasonPredictionCommand request) {
         UUID userId = currentUserId.require();
         log.info("Create season-prediction request from user {}", userId);
 
-        return createSeasonPredictionUseCase.execute(userId, request).fold(this::handleCreateError, this::handleCreateSuccess);
+        return createSeasonPredictionUseCase
+                .execute(userId, request)
+                .fold(this::handleCreateError, this::handleCreateSuccess);
     }
 
     private ResponseEntity<?> handleCreateSuccess(CreateSeasonPredictionResult result) {
@@ -103,7 +105,8 @@ public class CreateSeasonPredictionController {
                             "max_rounds",
                             e.maxRounds()));
 
-            case CreateSeasonPredictionError.TransactionFailed e -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+            case CreateSeasonPredictionError.TransactionFailed e -> ResponseEntity.status(
+                            HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
                             "error", "TRANSACTION_FAILED",
                             "message", "Failed to create prediction",
@@ -112,5 +115,4 @@ public class CreateSeasonPredictionController {
             default -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "UNKNOWN_ERROR"));
         };
     }
-
 }

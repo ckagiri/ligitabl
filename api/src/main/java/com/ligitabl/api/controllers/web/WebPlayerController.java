@@ -3,7 +3,6 @@ package com.ligitabl.api.controllers.web;
 import java.util.List;
 import java.util.UUID;
 
-import com.ligitabl.api.usecases.seasonprediction.createseasonpred.CreateSeasonPredictionUseCase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.auth.CurrentUserId;
 import com.ligitabl.api.usecases.seasonprediction.createseasonpred.CreateSeasonPredictionCommand;
+import com.ligitabl.api.usecases.seasonprediction.createseasonpred.CreateSeasonPredictionUseCase;
 import com.ligitabl.api.usecases.seasonprediction.makeswap.MakeSwapUseCase;
 import com.ligitabl.api.usecases.seasonprediction.makeswap.SwapCommand;
 import com.ligitabl.api.usecases.seasonprediction.makeswap.SwapError;
@@ -120,7 +120,9 @@ public class WebPlayerController {
             return "predictions/me";
         }
 
-        return isHtmxRequest(hxRequest) ? "fragments/prediction-table :: predictionTable" : "redirect:/seasonprediction";
+        return isHtmxRequest(hxRequest)
+                ? "fragments/prediction-table :: predictionTable"
+                : "redirect:/seasonprediction";
     }
 
     private String getSwapErrorMessage(Object error) {

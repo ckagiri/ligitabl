@@ -31,11 +31,8 @@ class GetSeasonPredictionUseCaseIT extends AbstractPostgresIT {
 
     private static final String SEASON_SLUG = "2024-25";
 
-    private static final List<TeamRank> INITIAL_RANKINGS = List.of(
-            new TeamRank("MCI", 1),
-            new TeamRank("ARS", 2),
-            new TeamRank("LIV", 3),
-            new TeamRank("AVL", 4));
+    private static final List<TeamRank> INITIAL_RANKINGS =
+            List.of(new TeamRank("MCI", 1), new TeamRank("ARS", 2), new TeamRank("LIV", 3), new TeamRank("AVL", 4));
 
     @Autowired
     GetSeasonPredictionUseCase useCase;
@@ -164,16 +161,16 @@ class GetSeasonPredictionUseCaseIT extends AbstractPostgresIT {
 
     private void insertSeasonPrediction() {
         jdbcTemplate.update(
-            "INSERT INTO t_season_prediction (pk_id, fk_user_id, fk_season_id, c_initial_rankings, c_current_rankings, c_swaps, c_last_swap_at, c_at_round_number) "
-                + "VALUES (?,?,?,?::jsonb,?::jsonb,?::jsonb,?,?)",
-            UUID.randomUUID(),
-            userId,
-            seasonId,
-            initialRankingsJson(),
-            initialRankingsJson(),
-            "[]",
-            null,
-            1);
+                "INSERT INTO t_season_prediction (pk_id, fk_user_id, fk_season_id, c_initial_rankings, c_current_rankings, c_swaps, c_last_swap_at, c_at_round_number) "
+                        + "VALUES (?,?,?,?::jsonb,?::jsonb,?::jsonb,?,?)",
+                UUID.randomUUID(),
+                userId,
+                seasonId,
+                initialRankingsJson(),
+                initialRankingsJson(),
+                "[]",
+                null,
+                1);
     }
 
     private String initialRankingsJson() {

@@ -167,13 +167,15 @@ class CreateSeasonPredictionUseCaseTest {
         assertTrue(result.isLeft());
         assertInstanceOf(CreateSeasonPredictionError.AlreadyJoined.class, result.getLeft());
         assertEquals(
-                existingPrediction.getId(), ((CreateSeasonPredictionError.AlreadyJoined) result.getLeft()).existingPredictionId());
+                existingPrediction.getId(),
+                ((CreateSeasonPredictionError.AlreadyJoined) result.getLeft()).existingPredictionId());
     }
 
     @Test
     void shouldReject_whenInvalidTeamCount() {
         CreateSeasonPredictionCommand request = new CreateSeasonPredictionCommand(List.of(
-                new CreateSeasonPredictionCommand.TeamRankRequest("ARS", 1), new CreateSeasonPredictionCommand.TeamRankRequest("LIV", 2)));
+                new CreateSeasonPredictionCommand.TeamRankRequest("ARS", 1),
+                new CreateSeasonPredictionCommand.TeamRankRequest("LIV", 2)));
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());

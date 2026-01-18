@@ -41,18 +41,16 @@ public class GetSeasonPredictionUseCase {
     private final Clock clock;
 
     public Either<GetSeasonPredictionError, GetSeasonPredictionResult> execute(UUID userId) {
-        return getCurrentSeason()
-            .flatMap(season -> {
+        return getCurrentSeason().flatMap(season -> {
             if (userId != null) {
                 return getCurrentRound(season)
-                    .flatMap(round -> resolvePredictionSnapshot(season, userId, round.getPosition())
-                        .map(snapshot -> buildResult(season, round, snapshot)));
+                        .flatMap(round -> resolvePredictionSnapshot(season, userId, round.getPosition())
+                                .map(snapshot -> buildResult(season, round, snapshot)));
             }
 
-            return getCurrentRound(season)
-                .flatMap(round -> resolveFallbackSnapshot(season, round.getPosition())
+            return getCurrentRound(season).flatMap(round -> resolveFallbackSnapshot(season, round.getPosition())
                     .map(snapshot -> buildResult(season, round, snapshot)));
-            });
+        });
     }
 
     private Either<GetSeasonPredictionError, Season> getCurrentSeason() {
@@ -68,35 +66,36 @@ public class GetSeasonPredictionUseCase {
         List<SeasonPredictionRankDto> enrichedRankings = rankEnricher.enrich(snapshot.rankings());
 
         return new GetSeasonPredictionResult(
-            snapshot.predictionId(),
-            season.getId(),
-            snapshot.atRoundNumber(),
-            currentRound.getPosition(),
-            roundStatus.name(),
-            season.isCompleted(),
+                snapshot.predictionId(),
+                season.getId(),
+                snapshot.atRoundNumber(),
+                currentRound.getPosition(),
+                roundStatus.name(),
+                season.isCompleted(),
                 snapshot.source(),
                 enrichedRankings,
-            snapshot.swaps(),
-            snapshot.lastSwapAt(),
-            swapStatus);
+                snapshot.swaps(),
+                snapshot.lastSwapAt(),
+                swapStatus);
     }
 
     private GetSeasonPredictionResult buildResultWithoutRound(Season season, PredictionSnapshot snapshot) {
-        GetSeasonPredictionResult.SwapStatus swapStatus = resolveSwapStatus(season, snapshot.prediction(), RoundStatus.OPEN);
+        GetSeasonPredictionResult.SwapStatus swapStatus =
+                resolveSwapStatus(season, snapshot.prediction(), RoundStatus.OPEN);
         List<SeasonPredictionRankDto> enrichedRankings = rankEnricher.enrich(snapshot.rankings());
 
         return new GetSeasonPredictionResult(
-            snapshot.predictionId(),
-            season.getId(),
-            snapshot.atRoundNumber(),
-            0,
-            "UNKNOWN",
-            season.isCompleted(),
-            snapshot.source(),
-            enrichedRankings,
-            snapshot.swaps(),
-            snapshot.lastSwapAt(),
-            swapStatus);
+                snapshot.predictionId(),
+                season.getId(),
+                snapshot.atRoundNumber(),
+                0,
+                "UNKNOWN",
+                season.isCompleted(),
+                snapshot.source(),
+                enrichedRankings,
+                snapshot.swaps(),
+                snapshot.lastSwapAt(),
+                swapStatus);
     }
 
     private Either<GetSeasonPredictionError, Round> getCurrentRound(Season season) {
@@ -153,30 +152,26 @@ public class GetSeasonPredictionUseCase {
     private Either<GetSeasonPredictionError, PredictionSnapshot> resolvePredictionSnapshot(
             Season season, UUID userId, int currentRoundNumber) {
         return predictionRepo
-            .findByUserAndSeason(userId, season.getId())
-            .map(prediction -> Either.<GetSeasonPredictionError, PredictionSnapshot>right(new PredictionSnapshot(
-                prediction.getId(),
-                prediction.getAtRoundNumber(),
-                RankingSource.USER_PREDICTION,
-                prediction.getCurrentRankings(),
-                prediction.getSwaps(),
-                prediction.getLastSwapAt(),
-                prediction)))
+                .findByUserAndSeason(userId, season.getId())
+                .map(prediction -> Either.<GetSeasonPredictionError, PredictionSnapshot>right(new PredictionSnapshot(
+                        prediction.getId(),
+                        prediction.getAtRoundNumber(),
+                        RankingSource.USER_PREDICTION,
+                        prediction.getCurrentRankings(),
+                        prediction.getSwaps(),
+                        prediction.getLastSwapAt(),
+                        prediction)))
                 .orElseGet(() -> resolveFallbackSnapshot(season, currentRoundNumber));
     }
 
     private Either<GetSeasonPredictionError, PredictionSnapshot> resolveFallbackSnapshot(
             Season season, int currentRoundNumber) {
         var standings = standingsRepo.findBySeasonAndRoundPosition(season.getId(), currentRoundNumber);
-        if (standings.isPresent() && standings.get().getRankings() != null && !standings.get().getRankings().isEmpty()) {
+        if (standings.isPresent()
+                && standings.get().getRankings() != null
+                && !standings.get().getRankings().isEmpty()) {
             return Either.right(new PredictionSnapshot(
-                null,
-                null,
-                RankingSource.ROUND_STANDINGS,
-                toTeamRanks(standings.get()),
-                List.of(),
-                null,
-                null));
+                    null, null, RankingSource.ROUND_STANDINGS, toTeamRanks(standings.get()), List.of(), null, null));
         }
 
         List<TeamRank> baseline = season.getInitialRankings();
@@ -184,14 +179,8 @@ public class GetSeasonPredictionUseCase {
             return Either.left(new GetSeasonPredictionError.BaselineRankingsMissing(season.getId()));
         }
 
-        return Either.right(new PredictionSnapshot(
-            null,
-            null,
-            RankingSource.SEASON_BASELINE,
-            baseline,
-            List.of(),
-            null,
-            null));
+        return Either.right(
+                new PredictionSnapshot(null, null, RankingSource.SEASON_BASELINE, baseline, List.of(), null, null));
     }
 
     private List<TeamRank> toTeamRanks(Standings standings) {

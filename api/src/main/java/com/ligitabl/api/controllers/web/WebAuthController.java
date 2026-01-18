@@ -96,8 +96,7 @@ public class WebAuthController {
     /**
      * Helper method to authenticate a user and create a session
      */
-    private void authenticateUser(
-            String email, String displayName, Set<Role> roles, HttpServletRequest request) {
+    private void authenticateUser(String email, String displayName, Set<Role> roles, HttpServletRequest request) {
         // Create authentication token with user details and roles
         List<SimpleGrantedAuthority> authorities = roles.stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))

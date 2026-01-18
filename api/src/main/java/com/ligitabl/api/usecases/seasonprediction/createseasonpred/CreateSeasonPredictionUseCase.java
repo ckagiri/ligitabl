@@ -30,7 +30,8 @@ public class CreateSeasonPredictionUseCase {
     private final Clock clock;
 
     @Transactional
-    public Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> execute(UUID userId, CreateSeasonPredictionCommand request) {
+    public Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> execute(
+            UUID userId, CreateSeasonPredictionCommand request) {
         log.info("User {} attempting to join contest", userId);
 
         return getActiveSeason().flatMap(season -> validateSeasonActive(season)
@@ -60,13 +61,14 @@ public class CreateSeasonPredictionUseCase {
     private Either<CreateSeasonPredictionError, Void> checkNotAlreadyJoined(UUID userId, Season season) {
         return predictionRepo
                 .findByUserAndSeason(userId, season.getId())
-                .map(existing ->
-                        Either.<CreateSeasonPredictionError, Void>left(new CreateSeasonPredictionError.AlreadyJoined(existing.getId())))
+                .map(existing -> Either.<CreateSeasonPredictionError, Void>left(
+                        new CreateSeasonPredictionError.AlreadyJoined(existing.getId())))
                 .orElseGet(() -> Either.right(null));
     }
 
     // Step 4: Validate rankings structure
-    private Either<CreateSeasonPredictionError, List<TeamRank>> validateRankings(CreateSeasonPredictionCommand request, Season season) {
+    private Either<CreateSeasonPredictionError, List<TeamRank>> validateRankings(
+            CreateSeasonPredictionCommand request, Season season) {
         return validateTeamCount(request, season)
                 .flatMap(__ -> validateNoDuplicatePositions(request))
                 .flatMap(__ -> validateNoDuplicateCodes(request))
@@ -74,7 +76,8 @@ public class CreateSeasonPredictionUseCase {
                 .map(__ -> convertToTeamRanks(request));
     }
 
-    private Either<CreateSeasonPredictionError, Void> validateTeamCount(CreateSeasonPredictionCommand request, Season season) {
+    private Either<CreateSeasonPredictionError, Void> validateTeamCount(
+            CreateSeasonPredictionCommand request, Season season) {
         int provided = request.rankings().size();
         int required = season.getTotalTeams();
 
@@ -84,7 +87,8 @@ public class CreateSeasonPredictionUseCase {
         return Either.right(null);
     }
 
-    private Either<CreateSeasonPredictionError, Void> validateNoDuplicatePositions(CreateSeasonPredictionCommand request) {
+    private Either<CreateSeasonPredictionError, Void> validateNoDuplicatePositions(
+            CreateSeasonPredictionCommand request) {
         List<Integer> positions = request.rankings().stream()
                 .map(CreateSeasonPredictionCommand.TeamRankRequest::position)
                 .toList();
@@ -117,7 +121,8 @@ public class CreateSeasonPredictionUseCase {
         return Either.right(null);
     }
 
-    private Either<CreateSeasonPredictionError, Void> validateTeamCodesExist(CreateSeasonPredictionCommand request, Season season) {
+    private Either<CreateSeasonPredictionError, Void> validateTeamCodesExist(
+            CreateSeasonPredictionCommand request, Season season) {
         List<String> requestedCodes = request.rankings().stream()
                 .map(CreateSeasonPredictionCommand.TeamRankRequest::code)
                 .map(String::toUpperCase)
@@ -169,12 +174,14 @@ public class CreateSeasonPredictionUseCase {
 
         // Check if season has ended
         if (atRoundNumber > season.getMaxRounds()) {
-            return Either.left(new CreateSeasonPredictionError.SeasonEnded(currentRound.getPosition(), season.getMaxRounds()));
+            return Either.left(
+                    new CreateSeasonPredictionError.SeasonEnded(currentRound.getPosition(), season.getMaxRounds()));
         }
 
         // Special case: Last round must be OPEN to join
         if (currentRound.getPosition() == season.getMaxRounds() && roundStatus != RoundStatus.OPEN) {
-            return Either.left(new CreateSeasonPredictionError.SeasonEnded(currentRound.getPosition(), season.getMaxRounds()));
+            return Either.left(
+                    new CreateSeasonPredictionError.SeasonEnded(currentRound.getPosition(), season.getMaxRounds()));
         }
 
         return Either.right(atRoundNumber);
@@ -221,8 +228,8 @@ public class CreateSeasonPredictionUseCase {
                     ? "Welcome! Your prediction is active from Round 1"
                     : String.format("Welcome! Your prediction will be active from Round %d", atRoundNumber);
 
-            return Either.right(
-                    new CreateSeasonPredictionResult(savedPrediction.getId(), savedEntry.getId(), atRoundNumber, message));
+            return Either.right(new CreateSeasonPredictionResult(
+                    savedPrediction.getId(), savedEntry.getId(), atRoundNumber, message));
 
         } catch (Exception e) {
             log.error("Failed to create prediction and entry", e);

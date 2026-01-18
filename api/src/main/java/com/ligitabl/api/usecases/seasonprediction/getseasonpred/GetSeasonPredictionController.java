@@ -2,7 +2,6 @@ package com.ligitabl.api.usecases.seasonprediction.getseasonpred;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -30,8 +29,7 @@ public class GetSeasonPredictionController {
         UUID userId = currentUserId.require();
         log.info("GetSeasonPrediction request for user {}", userId);
 
-        return getSeasonPredictionUseCase.execute(userId)
-                .fold(this::handleError, this::handleSuccess);
+        return getSeasonPredictionUseCase.execute(userId).fold(this::handleError, this::handleSuccess);
     }
 
     private ResponseEntity<?> handleError(GetSeasonPredictionError error) {
@@ -41,26 +39,25 @@ public class GetSeasonPredictionController {
                             "error", "SEASON_NOT_FOUND",
                             "message", "No season available"));
 
-                case GetSeasonPredictionError.BaselineRankingsMissing e -> ResponseEntity.status(HttpStatus.CONFLICT)
+            case GetSeasonPredictionError.BaselineRankingsMissing e -> ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of(
-                        "error", "BASELINE_RANKINGS_MISSING",
-                        "message", "Season baseline rankings missing",
-                        "season_id", e.seasonId()));
+                            "error", "BASELINE_RANKINGS_MISSING",
+                            "message", "Season baseline rankings missing",
+                            "season_id", e.seasonId()));
 
-                    case GetSeasonPredictionError.SeasonHasNoCurrentRound e -> ResponseEntity.status(HttpStatus.CONFLICT)
-                        .body(Map.of(
+            case GetSeasonPredictionError.SeasonHasNoCurrentRound e -> ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of(
                             "error", "SEASON_HAS_NO_CURRENT_ROUND",
                             "message", "Season has no current round",
                             "season_id", e.seasonId()));
 
-                    case GetSeasonPredictionError.CurrentRoundNotFound e -> ResponseEntity.status(HttpStatus.NOT_FOUND)
-                        .body(Map.of(
+            case GetSeasonPredictionError.CurrentRoundNotFound e -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
                             "error", "CURRENT_ROUND_NOT_FOUND",
                             "message", "Current round not found",
                             "round_id", e.roundId()));
 
-            default -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(Map.of("error", "UNKNOWN_ERROR"));
+            default -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "UNKNOWN_ERROR"));
         };
     }
 
@@ -74,7 +71,9 @@ public class GetSeasonPredictionController {
         payload.put("season_completed", result.seasonCompleted());
         payload.put("ranking_source", result.rankingSource().name());
         payload.put("rankings", result.rankings());
-        payload.put("last_swap_at", result.lastSwapAt() == null ? null : result.lastSwapAt().toString());
+        payload.put(
+                "last_swap_at",
+                result.lastSwapAt() == null ? null : result.lastSwapAt().toString());
         payload.put("can_swap", result.swapStatus().canSwap());
 
         if (result.swapStatus().blockedReason() != null) {

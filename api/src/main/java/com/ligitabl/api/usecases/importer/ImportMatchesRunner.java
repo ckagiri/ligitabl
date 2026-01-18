@@ -92,6 +92,16 @@ public class ImportMatchesRunner implements ApplicationRunner {
                 "║  Competition:  {}",
                 String.format("%-44s", summary.getCompetition().getValue()) + "║");
         log.info("║  Season:       {}", String.format("%-44s", summary.getSeasonName()) + "║");
+        if (summary.getCurrentRoundPosition() != null) {
+            log.info(
+                    "║  Current Round:{}",
+                    String.format(
+                                    "%-44s",
+                                    " "
+                                            + summary.getCurrentRoundPosition()
+                                            + (summary.isCurrentRoundUpdated() ? " (updated)" : ""))
+                            + "║");
+        }
         log.info("║  Total:        {}", String.format("%-44s", summary.getTotalMatches()) + "║");
         log.info("║  Created:      {}", String.format("%-44s", summary.getCreated()) + "║");
         log.info("║  Updated:      {}", String.format("%-44s", summary.getUpdated()) + "║");
