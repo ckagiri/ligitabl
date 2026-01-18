@@ -89,6 +89,7 @@ class ImportMatchesUseCaseTest {
                 .id(ExternalId.of(seasonClientId).get())
                 .startDate("2024-08-01")
                 .endDate("2025-05-31")
+                .currentMatchday(1)
                 .build();
 
         return ExternalCompetition.builder()
@@ -223,6 +224,104 @@ class ImportMatchesUseCaseTest {
         verify(matchRepo).create(any(Match.class));
         verify(matchRepo, never()).update(any(Match.class));
         verify(eventPublisher).publishImportCompleted(any());
+    }
+
+    @Test
+    @DisplayName("should advance current round when external matchday is higher")
+    void shouldAdvanceCurrentRoundWhenExternalMatchdayHigher() {
+        var seasonId = UUID.randomUUID();
+        var currentRoundId = UUID.randomUUID();
+        var nextRoundId = UUID.randomUUID();
+        var code = comp("PL");
+
+        var extSeason = ExternalSeason.builder()
+                .id(ExternalId.of(2024).get())
+                .startDate("2024-08-01")
+                .endDate("2025-05-31")
+                .currentMatchday(5)
+                .build();
+
+        var extCompetition = ExternalCompetition.builder()
+                .id(ExternalId.of(2021).get())
+                .name("Premier League")
+                .code(code)
+                .currentSeason(extSeason)
+                .build();
+
+        var dbSeason = season(seasonId, 2024);
+        dbSeason.setCurrentRoundId(currentRoundId);
+        dbSeason.setCurrentMatchDay(2);
+
+        var currentRound = round(currentRoundId, seasonId, 2);
+        var nextRound = round(nextRoundId, seasonId, 5);
+
+        var extMatch = externalMatch(100, 1, 57, 61);
+        var dbRound = round(UUID.randomUUID(), seasonId, 1);
+        var dbHome = team(UUID.randomUUID(), 57, "Arsenal", "ARS");
+        var dbAway = team(UUID.randomUUID(), 61, "Chelsea", "CHE");
+
+        when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
+        when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
+        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch)));
+        when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
+        when(roundRepo.findById(currentRoundId)).thenReturn(Optional.of(currentRound));
+        when(roundRepo.findBySeasonIdAndPosition(seasonId, 5)).thenReturn(Optional.of(nextRound));
+        when(teamRepo.findByClientId(57)).thenReturn(Optional.of(dbHome));
+        when(teamRepo.findByClientId(61)).thenReturn(Optional.of(dbAway));
+        when(matchRepo.findByClientId(100)).thenReturn(Optional.empty());
+        when(matchRepo.create(any(Match.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        useCase.execute(code);
+
+        verify(seasonRepo).save(argThat(s -> nextRoundId.equals(s.getCurrentRoundId()) && s.getCurrentMatchDay() == 5));
+    }
+
+    @Test
+    @DisplayName("should no-op when external matchday round is missing")
+    void shouldNoOpWhenExternalMatchdayRoundMissing() {
+        var seasonId = UUID.randomUUID();
+        var currentRoundId = UUID.randomUUID();
+        var code = comp("PL");
+
+        var extSeason = ExternalSeason.builder()
+                .id(ExternalId.of(2024).get())
+                .startDate("2024-08-01")
+                .endDate("2025-05-31")
+                .currentMatchday(5)
+                .build();
+
+        var extCompetition = ExternalCompetition.builder()
+                .id(ExternalId.of(2021).get())
+                .name("Premier League")
+                .code(code)
+                .currentSeason(extSeason)
+                .build();
+
+        var dbSeason = season(seasonId, 2024);
+        dbSeason.setCurrentRoundId(currentRoundId);
+        dbSeason.setCurrentMatchDay(2);
+
+        var currentRound = round(currentRoundId, seasonId, 2);
+
+        var extMatch = externalMatch(100, 1, 57, 61);
+        var dbRound = round(UUID.randomUUID(), seasonId, 1);
+        var dbHome = team(UUID.randomUUID(), 57, "Arsenal", "ARS");
+        var dbAway = team(UUID.randomUUID(), 61, "Chelsea", "CHE");
+
+        when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
+        when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
+        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch)));
+        when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
+        when(roundRepo.findById(currentRoundId)).thenReturn(Optional.of(currentRound));
+        when(roundRepo.findBySeasonIdAndPosition(seasonId, 5)).thenReturn(Optional.empty());
+        when(teamRepo.findByClientId(57)).thenReturn(Optional.of(dbHome));
+        when(teamRepo.findByClientId(61)).thenReturn(Optional.of(dbAway));
+        when(matchRepo.findByClientId(100)).thenReturn(Optional.empty());
+        when(matchRepo.create(any(Match.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        useCase.execute(code);
+
+        verify(seasonRepo, never()).save(any());
     }
 
     @Test

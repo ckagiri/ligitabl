@@ -67,8 +67,8 @@
 
         <!-- Action Button -->
         <div class="flex justify-center">
-            <a th:href="@{/predictions/me(round=${result.round})}"
-               th:attr="hx-get=@{/predictions/me(round=${result.round})}"
+                <a th:href="@{/seasonprediction(round=${result.round})}"
+                    th:attr="hx-get=@{/seasonprediction(round=${result.round})}"
                hx-target="#prediction-page"
                hx-swap="outerHTML swap:300ms"
                hx-push-url="true"

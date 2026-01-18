@@ -64,10 +64,11 @@ public class ImportMatchesUseCase {
     private Either<ImportError, ImportContext> fetchAndResolveSeason(CompetitionCode code) {
         return footballDataGateway.fetchCompetition(code).flatMap(competition -> {
             Integer seasonClientId = competition.getCurrentSeason().getId().getValue();
+            Integer currentMatchday = competition.getCurrentSeason().getCurrentMatchday();
             return Either.<ImportError, Season>ofOptional(
                             seasonRepo.findByClientId(seasonClientId),
                             () -> DatabaseError.notFound("Season", seasonClientId))
-                    .map(season -> new ImportContext(code, season, List.of()));
+                    .map(season -> new ImportContext(code, season, currentMatchday, List.of()));
         });
     }
 
@@ -108,6 +109,8 @@ public class ImportMatchesUseCase {
         int updated =
                 (int) successes.stream().filter(MatchImportResult::isUpdated).count();
 
+        RoundUpdateResult roundUpdate = updateCurrentRoundIfNeeded(context.season, context.currentMatchday);
+
         ImportSummary summary = ImportSummary.builder()
                 .competition(context.competitionCode)
                 .seasonName(context.season.getName())
@@ -115,11 +118,61 @@ public class ImportMatchesUseCase {
                 .created(created)
                 .updated(updated)
                 .failed(errors.size())
+                .currentRoundPosition(roundUpdate.currentRoundPosition())
+                .currentRoundUpdated(roundUpdate.updated())
                 .errors(errors)
                 .build();
 
         log.info("Import completed: {}", summary.getSummaryMessage());
         return summary;
+    }
+
+    private RoundUpdateResult updateCurrentRoundIfNeeded(Season season, Integer currentMatchday) {
+        if (currentMatchday == null || currentMatchday < 1) {
+            return new RoundUpdateResult(false, resolveCurrentRoundPosition(season));
+        }
+
+        UUID currentRoundId = season.getCurrentRoundId();
+        if (currentRoundId == null) {
+            return new RoundUpdateResult(false, null);
+        }
+
+        var currentRound = roundRepo.findById(currentRoundId).orElse(null);
+        if (currentRound == null) {
+            return new RoundUpdateResult(false, null);
+        }
+
+        int currentPosition = currentRound.getPosition();
+        if (currentMatchday <= currentPosition) {
+            return new RoundUpdateResult(false, currentPosition);
+        }
+
+        var nextRoundOpt = roundRepo.findBySeasonIdAndPosition(season.getId(), currentMatchday);
+        if (nextRoundOpt.isEmpty()) {
+            return new RoundUpdateResult(false, currentPosition);
+        }
+
+        var nextRound = nextRoundOpt.get();
+        season.setCurrentRoundId(nextRound.getId());
+        season.setCurrentMatchDay(currentMatchday);
+        seasonRepo.save(season);
+
+        log.info(
+                "Updated season current round from position {} to {} (roundId={})",
+                currentPosition,
+                currentMatchday,
+                nextRound.getId());
+
+        return new RoundUpdateResult(true, currentMatchday);
+    }
+
+    private Integer resolveCurrentRoundPosition(Season season) {
+        UUID currentRoundId = season.getCurrentRoundId();
+        if (currentRoundId == null) {
+            return null;
+        }
+
+        return roundRepo.findById(currentRoundId).map(Round::getPosition).orElse(null);
     }
 
     /**
@@ -240,11 +293,14 @@ public class ImportMatchesUseCase {
     }
 
     // Helper records
-    private record ImportContext(CompetitionCode competitionCode, Season season, List<ExternalMatch> matches) {
+    private record ImportContext(
+            CompetitionCode competitionCode, Season season, Integer currentMatchday, List<ExternalMatch> matches) {
         ImportContext withMatches(List<ExternalMatch> matches) {
-            return new ImportContext(competitionCode, season, matches);
+            return new ImportContext(competitionCode, season, currentMatchday, matches);
         }
     }
 
     private record TeamPair(Team home, Team away) {}
+
+    private record RoundUpdateResult(boolean updated, Integer currentRoundPosition) {}
 }

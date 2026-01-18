@@ -27,7 +27,7 @@ ENV ?= test
 # Only allow specific environment values
 VALID_ENVS := test dev prod
 ifeq (,$(filter $(ENV),$(VALID_ENVS)))
-    $(error ❌ Invalid ENV='$(ENV)'. Valid options: test, dev, prod)
+	$(error ❌ Invalid ENV='$(ENV)'. Valid options: test, dev, prod)
 endif
 
 # Environment files (no fallbacks!)
@@ -36,9 +36,9 @@ ENV_LOCAL_FILE := .env.$(ENV).local
 
 # Verify environment file exists - FAIL LOUDLY if not
 ifeq (,$(wildcard $(ENV_FILE)))
-    $(error ❌ $(ENV_FILE) not found!\
-    \nCreate it with: cp env.$(ENV).template $(ENV_FILE)\
-    \nThen edit with your settings.)
+	$(error ❌ $(ENV_FILE) not found!\
+	\nCreate it with: cp env.$(ENV).template $(ENV_FILE)\
+	\nThen edit with your settings.)
 endif
 
 # Load environment files
@@ -63,25 +63,25 @@ EXPORT_FOOTBALL_DATA_API_TOKEN = FOOTBALL_DATA_API_TOKEN="$${FOOTBALL_DATA_API_T
 # Production Safety Checks
 # ------------------------------------------------------------------------------
 ifeq ($(ENV),prod)
-    # Verify PROD_CONFIRMED is set to prevent accidental prod operations
-    ifndef PROD_CONFIRMED
-        $(error ❌ PRODUCTION ENVIRONMENT BLOCKED!\
-        \n\
-        \n⚠️⚠️⚠️  YOU ARE TARGETING PRODUCTION  ⚠️⚠️⚠️\
-        \n\
-        \nTo confirm, run:\
-        \n  make <target> ENV=prod PROD_CONFIRMED=yes\
-        \n\
-        \nBe ABSOLUTELY CERTAIN this is what you want!)
-    endif
+	# Verify PROD_CONFIRMED is set to prevent accidental prod operations
+	ifndef PROD_CONFIRMED
+		$(error ❌ PRODUCTION ENVIRONMENT BLOCKED!\
+		\n\
+		\n⚠️⚠️⚠️  YOU ARE TARGETING PRODUCTION  ⚠️⚠️⚠️\
+		\n\
+		\nTo confirm, run:\
+		\n  make <target> ENV=prod PROD_CONFIRMED=yes\
+		\n\
+		\nBe ABSOLUTELY CERTAIN this is what you want!)
+	endif
 
-    ifneq ($(PROD_CONFIRMED),yes)
-        $(error ❌ PROD_CONFIRMED must be 'yes' (you provided: '$(PROD_CONFIRMED)')\
-        \nRun: make <target> ENV=prod PROD_CONFIRMED=yes)
-    endif
+	ifneq ($(PROD_CONFIRMED),yes)
+		$(error ❌ PROD_CONFIRMED must be 'yes' (you provided: '$(PROD_CONFIRMED)')\
+		\nRun: make <target> ENV=prod PROD_CONFIRMED=yes)
+	endif
 
-    # Extra warning for destructive operations
-    PROD_WARNING := 🔥🔥🔥 PRODUCTION DATABASE 🔥🔥🔥
+	# Extra warning for destructive operations
+	PROD_WARNING := 🔥🔥🔥 PRODUCTION DATABASE 🔥🔥🔥
 endif
 
 # ------------------------------------------------------------------------------
@@ -89,31 +89,31 @@ endif
 # ------------------------------------------------------------------------------
 # Prevent common production-like database names in test/dev environments
 ifeq ($(ENV),test)
-    # Test environment should have 'test' in the name
-    ifeq (,$(findstring test,$(DB_NAME)))
-        $(warning ⚠️  WARNING: DB_NAME='$(DB_NAME)' doesn't contain 'test')
-        $(warning ⚠️  Expected something like: ligitabl_test)
-        $(warning ⚠️  Double-check your .env.test file!)
-    endif
+	# Test environment should have 'test' in the name
+	ifeq (,$(findstring test,$(DB_NAME)))
+		$(warning ⚠️  WARNING: DB_NAME='$(DB_NAME)' doesn't contain 'test')
+		$(warning ⚠️  Expected something like: ligitabl_test)
+		$(warning ⚠️  Double-check your .env.test file!)
+	endif
 endif
 
 ifeq ($(ENV),dev)
-    # Dev environment should have 'dev' in the name
-    ifeq (,$(findstring dev,$(DB_NAME)))
-        $(warning ⚠️  WARNING: DB_NAME='$(DB_NAME)' doesn't contain 'dev')
-        $(warning ⚠️  Expected something like: ligitabl_dev)
-        $(warning ⚠️  Double-check your .env.dev file!)
-    endif
+	# Dev environment should have 'dev' in the name
+	ifeq (,$(findstring dev,$(DB_NAME)))
+		$(warning ⚠️  WARNING: DB_NAME='$(DB_NAME)' doesn't contain 'dev')
+		$(warning ⚠️  Expected something like: ligitabl_dev)
+		$(warning ⚠️  Double-check your .env.dev file!)
+	endif
 endif
 
 # Block obvious production database names in test/dev
 FORBIDDEN_NAMES := ligitabl_prod production prod_db db_prod
 ifneq ($(ENV),prod)
-    ifneq (,$(filter $(DB_NAME),$(FORBIDDEN_NAMES)))
-        $(error ❌ BLOCKED: DB_NAME='$(DB_NAME)' looks like production!\
-        \nYou're using ENV=$(ENV) but targeting a prod-like database.\
-        \nCheck your $(ENV_FILE) file.)
-    endif
+	ifneq (,$(filter $(DB_NAME),$(FORBIDDEN_NAMES)))
+		$(error ❌ BLOCKED: DB_NAME='$(DB_NAME)' looks like production!\
+		\nYou're using ENV=$(ENV) but targeting a prod-like database.\
+		\nCheck your $(ENV_FILE) file.)
+	endif
 endif
 
 # ------------------------------------------------------------------------------
@@ -224,7 +224,12 @@ codegen-fast: ## Run jOOQ code generation (assumes jooq-codegen installed)
 
 .PHONY: model-compile
 model-compile: ## Regenerate jOOQ and compile the model
-	mvn -q -DskipTests -Pwith-jooq -pl model -am generate-sources compile
+	mvn -q -DskipTests -pl jooq-codegen -am install
+	mvn -q -DskipTests -Pwith-jooq -pl model -am \
+		-Djooq.codegen.skip=false \
+		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
+		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
+		generate-sources compile
 
 .PHONY: model-codegen-local
 model-codegen-local: ## Start DB, run migrations, then jOOQ codegen
@@ -498,12 +503,22 @@ run-app: ## Start DB and run the app JAR (ENV=$(ENV))
 .PHONY: run-api
 run-api: ## Start DB and run API via spring-boot:run (ENV=$(ENV))
 	$(MAKE) compose-up-db
-	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -f $(API_DIR)/pom.xml org.springframework.boot:spring-boot-maven-plugin:run
+	$(MAKE) migrate
+	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -DskipTests -Pwith-jooq -Djooq.codegen.skip=false -pl $(API_DIR) -am \
+		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
+		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
+		clean install
+	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -f $(API_DIR)/pom.xml -Dspring-boot.run.mainClass=com.ligitabl.api.LigitablApplication org.springframework.boot:spring-boot-maven-plugin:run
 
 .PHONY: run-api-fake
 run-api-fake: ## Start DB and run API with FAKE_DATA_ENABLED=true (ENV=$(ENV))
 	$(MAKE) compose-up-db
-	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); FAKE_DATA_ENABLED=true mvn -q -f $(API_DIR)/pom.xml org.springframework.boot:spring-boot-maven-plugin:run
+	$(MAKE) migrate
+	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -DskipTests -Pwith-jooq -Djooq.codegen.skip=false -pl $(API_DIR) -am \
+		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
+		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
+		clean install
+	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); FAKE_DATA_ENABLED=true mvn -q -f $(API_DIR)/pom.xml -Dspring-boot.run.mainClass=com.ligitabl.api.LigitablApplication org.springframework.boot:spring-boot-maven-plugin:run
 
 # ==============================================================================
 # TEST TARGETS

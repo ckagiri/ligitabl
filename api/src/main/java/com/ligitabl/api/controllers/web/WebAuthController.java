@@ -1,6 +1,7 @@
 package com.ligitabl.api.controllers.web;
 
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -81,7 +82,7 @@ public class WebAuthController {
                                 httpRequest);
 
                         // Redirect to predictions page
-                        return "redirect:/predictions/me";
+                        return "redirect:/seasonprediction";
                     });
         } catch (IllegalArgumentException e) {
             // Validation error from domain types (Email or Password)
@@ -95,8 +96,7 @@ public class WebAuthController {
     /**
      * Helper method to authenticate a user and create a session
      */
-    private void authenticateUser(
-            String email, String displayName, java.util.Set<Role> roles, HttpServletRequest request) {
+    private void authenticateUser(String email, String displayName, Set<Role> roles, HttpServletRequest request) {
         // Create authentication token with user details and roles
         List<SimpleGrantedAuthority> authorities = roles.stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))

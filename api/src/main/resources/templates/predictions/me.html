@@ -24,7 +24,7 @@
                   </div>
 
                   <!-- Reset Demo (desktop) -->
-                  <a th:href="@{/predictions/demo-reset}"
+                  <a th:href="@{/seasonprediction/demo-reset}"
                     data-reset-demo="true"
                     class="hidden sm:block text-xs text-gray-400 hover:text-gray-600 underline">
                       Reset Demo
@@ -49,7 +49,7 @@
                   </div>
 
                   <!-- Reset Demo (mobile only) -->
-                  <a th:href="@{/predictions/demo-reset}"
+                  <a th:href="@{/seasonprediction/demo-reset}"
                     data-reset-demo="true"
                     class="sm:hidden inline-block mt-2 text-xs text-gray-400 hover:text-gray-600 underline">
                       Reset Demo
@@ -61,7 +61,7 @@
                   <!-- Navigation Controls -->
                   <div class="flex items-center justify-between gap-2">
                       <!-- Previous Button -->
-                      <button th:attr="hx-get=@{/predictions/me(round=${viewingRound - 1})}"
+                      <button th:attr="hx-get=@{/seasonprediction(round=${viewingRound - 1})}"
                               hx-target="#prediction-page"
                               hx-swap="outerHTML swap:300ms"
                               hx-push-url="true"
@@ -76,7 +76,7 @@
                       </button>
 
                       <!-- Round Dropdown -->
-                      <select th:attr="hx-get=@{/predictions/me}"
+                      <select th:attr="hx-get=@{/seasonprediction}"
                               hx-trigger="change"
                               hx-target="#prediction-page"
                               hx-swap="outerHTML swap:300ms"
@@ -94,7 +94,7 @@
                       </select>
 
                       <!-- Next Button -->
-                      <button th:attr="hx-get=@{/predictions/me(round=${viewingRound + 1})}"
+                      <button th:attr="hx-get=@{/seasonprediction(round=${viewingRound + 1})}"
                               hx-target="#prediction-page"
                               hx-swap="outerHTML swap:300ms"
                               hx-push-url="true"
@@ -110,7 +110,7 @@
 
                   <!-- Jump to Current (below on mobile, right-aligned on desktop) -->
                   <div th:if="${!isCurrentRound}" class="flex justify-center sm:justify-end">
-                      <button th:attr="hx-get=@{/predictions/me(round=${currentRound})}"
+                      <button th:attr="hx-get=@{/seasonprediction(round=${currentRound})}"
                               hx-target="#prediction-page"
                               hx-swap="outerHTML swap:300ms"
                               hx-push-url="true"
@@ -125,7 +125,7 @@
         <!-- Results Banner (only on current round; loads via HTMX if latest result available) -->
         <div th:if="${isCurrentRound}"
              id="results-banner"
-             hx-get="/predictions/me/latest-result-banner"
+             hx-get="/seasonprediction/latest-result-banner"
              hx-trigger="load"
              hx-swap="innerHTML">
             <!-- Banner content loaded via HTMX -->

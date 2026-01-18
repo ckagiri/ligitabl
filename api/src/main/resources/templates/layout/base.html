@@ -156,7 +156,7 @@
                 <div class="hidden md:flex items-center space-x-4">
                     <!-- Authenticated User -->
                     <div sec:authorize="isAuthenticated() and !isAnonymous()" class="flex items-center space-x-4">
-                        <a th:href="@{/predictions/me}"
+                        <a th:href="@{/seasonprediction}"
                           class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
                             My Predictions
                         </a>
@@ -217,7 +217,7 @@
 
                     <!-- Authenticated User Menu -->
                     <div sec:authorize="isAuthenticated()" class="border-t border-gray-200 pt-2 mt-2">
-                        <a th:href="@{/predictions/me}"
+                        <a th:href="@{/seasonprediction}"
                           class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium block">
                             My Predictions
                         </a>
@@ -611,7 +611,7 @@
                         toast.classList.remove('hidden');
                     }
 
-                    fetch('/predictions/swap-multiple', {
+                    fetch('/seasonprediction/swap-multiple', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',

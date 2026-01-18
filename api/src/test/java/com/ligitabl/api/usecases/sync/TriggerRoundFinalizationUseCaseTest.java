@@ -29,6 +29,7 @@ import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
+import com.ligitabl.model.repo.RoundSubmissionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 /**
@@ -49,6 +50,9 @@ class TriggerRoundFinalizationUseCaseTest {
     private MatchRepo matchRepo;
 
     @Mock
+    private RoundSubmissionRepo roundSubmissionRepo;
+
+    @Mock
     private FinalizeRoundUseCase finalizeRoundUseCase;
 
     @Mock
@@ -57,7 +61,7 @@ class TriggerRoundFinalizationUseCaseTest {
     @Test
     void shouldTriggerFinalizationWhenNoBlockingMatches() {
         var useCase = new TriggerRoundFinalizationUseCase(
-                seasonRepo, roundRepo, matchRepo, finalizeRoundUseCase, adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
 
         var seasonId = UUID.randomUUID();
         var roundId = UUID.randomUUID();
@@ -86,6 +90,7 @@ class TriggerRoundFinalizationUseCaseTest {
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(roundId))
                 .thenReturn(List.of(createMatch(MatchStatus.FINISHED), createMatch(MatchStatus.FINISHED)));
+        when(roundSubmissionRepo.existsByRound(seasonId, 10)).thenReturn(true);
 
         when(finalizeRoundUseCase.execute(seasonId))
                 .thenReturn(Either.right(new FinalizeRoundResult(roundId, 10, 10, 5, false, java.time.Instant.now())));
@@ -103,7 +108,7 @@ class TriggerRoundFinalizationUseCaseTest {
     @Test
     void shouldBlockFinalizationWhenCancelledMatchesExist() {
         var useCase = new TriggerRoundFinalizationUseCase(
-                seasonRepo, roundRepo, matchRepo, finalizeRoundUseCase, adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
 
         var seasonId = UUID.randomUUID();
         var roundId = UUID.randomUUID();
@@ -132,6 +137,7 @@ class TriggerRoundFinalizationUseCaseTest {
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(roundId))
                 .thenReturn(List.of(createMatch(MatchStatus.FINISHED), createMatch(MatchStatus.CANCELLED)));
+        when(roundSubmissionRepo.existsByRound(seasonId, 10)).thenReturn(true);
 
         var result = useCase.execute(new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(COMPETITION_CODE));
 
@@ -146,7 +152,7 @@ class TriggerRoundFinalizationUseCaseTest {
     @Test
     void shouldBlockFinalizationWhenSuspendedMatchesExist() {
         var useCase = new TriggerRoundFinalizationUseCase(
-                seasonRepo, roundRepo, matchRepo, finalizeRoundUseCase, adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
 
         var seasonId = UUID.randomUUID();
         var roundId = UUID.randomUUID();
@@ -175,6 +181,7 @@ class TriggerRoundFinalizationUseCaseTest {
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(roundId))
                 .thenReturn(List.of(createMatch(MatchStatus.FINISHED), createMatch(MatchStatus.SUSPENDED)));
+        when(roundSubmissionRepo.existsByRound(seasonId, 10)).thenReturn(true);
 
         var result = useCase.execute(new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(COMPETITION_CODE));
 
@@ -186,7 +193,7 @@ class TriggerRoundFinalizationUseCaseTest {
     @Test
     void shouldAllowFinalizationWithPostponedMatches() {
         var useCase = new TriggerRoundFinalizationUseCase(
-                seasonRepo, roundRepo, matchRepo, finalizeRoundUseCase, adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
 
         var seasonId = UUID.randomUUID();
         var roundId = UUID.randomUUID();
@@ -215,6 +222,7 @@ class TriggerRoundFinalizationUseCaseTest {
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(roundId))
                 .thenReturn(List.of(createMatch(MatchStatus.FINISHED), createMatch(MatchStatus.POSTPONED)));
+        when(roundSubmissionRepo.existsByRound(seasonId, 10)).thenReturn(true);
 
         when(finalizeRoundUseCase.execute(seasonId))
                 .thenReturn(Either.right(new FinalizeRoundResult(roundId, 10, 10, 5, false, java.time.Instant.now())));
@@ -231,7 +239,7 @@ class TriggerRoundFinalizationUseCaseTest {
     @Test
     void shouldHandleSeasonNotFound() {
         var useCase = new TriggerRoundFinalizationUseCase(
-                seasonRepo, roundRepo, matchRepo, finalizeRoundUseCase, adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
 
         when(seasonRepo.findActiveSeason(COMPETITION_CODE)).thenReturn(Optional.empty());
 
@@ -245,7 +253,7 @@ class TriggerRoundFinalizationUseCaseTest {
     @Test
     void shouldHandleFinalizationFailure() {
         var useCase = new TriggerRoundFinalizationUseCase(
-                seasonRepo, roundRepo, matchRepo, finalizeRoundUseCase, adminNotificationService);
+                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
 
         var seasonId = UUID.randomUUID();
         var roundId = UUID.randomUUID();
@@ -274,6 +282,7 @@ class TriggerRoundFinalizationUseCaseTest {
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(roundId))
                 .thenReturn(List.of(createMatch(MatchStatus.FINISHED), createMatch(MatchStatus.FINISHED)));
+        when(roundSubmissionRepo.existsByRound(seasonId, 10)).thenReturn(true);
 
         when(finalizeRoundUseCase.execute(seasonId))
                 .thenReturn(Either.left(
@@ -284,6 +293,47 @@ class TriggerRoundFinalizationUseCaseTest {
         assertThat(result.isLeft()).isTrue();
         assertThat(result.getLeft())
                 .isInstanceOf(TriggerRoundFinalizationUseCase.TriggerFinalizationError.FinalizationFailed.class);
+    }
+
+    @Test
+    void shouldSkipFinalizationWhenNoRoundSubmissions() {
+        var useCase = new TriggerRoundFinalizationUseCase(
+                seasonRepo, roundRepo, matchRepo, roundSubmissionRepo, finalizeRoundUseCase, adminNotificationService);
+
+        var seasonId = UUID.randomUUID();
+        var roundId = UUID.randomUUID();
+
+        var season = Season.builder()
+                .id(seasonId)
+                .competitionId(UUID.randomUUID())
+                .clientId(1)
+                .name("2024/25")
+                .slug(com.ligitabl.model.domain.SeasonSlug.of("2024-25"))
+                .startDate(java.time.LocalDate.of(2024, 8, 1))
+                .endDate(java.time.LocalDate.of(2025, 5, 31))
+                .currentRoundId(roundId)
+                .currentMatchDay(10)
+                .build();
+
+        var round = Round.builder()
+                .id(roundId)
+                .seasonId(seasonId)
+                .name("Round 10")
+                .slug("round-10")
+                .position(10)
+                .build();
+
+        when(seasonRepo.findActiveSeason(COMPETITION_CODE)).thenReturn(Optional.of(season));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(roundSubmissionRepo.existsByRound(seasonId, 10)).thenReturn(false);
+
+        var result = useCase.execute(new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(COMPETITION_CODE));
+
+        assertThat(result.isRight()).isTrue();
+        assertThat(result.get().finalized()).isFalse();
+        assertThat(result.get().blocked()).isFalse();
+        verify(finalizeRoundUseCase, never()).execute(any());
+        verify(adminNotificationService, never()).notifyBlockedFinalization(any(), anyInt(), anyList(), anyList());
     }
 
     private Match createMatch(MatchStatus status) {

@@ -112,6 +112,20 @@ public class RoundSubmissionPersistenceAdapter implements RoundSubmissionRepo {
     }
 
     @Override
+    public boolean existsByRound(UUID seasonId, int roundPosition) {
+        if (seasonId == null) {
+            throw new IllegalArgumentException("seasonId must not be null");
+        }
+
+        return dsl.fetchExists(dsl.selectOne()
+                .from(T_ROUND_SUBMISSION)
+                .where(T_ROUND_SUBMISSION
+                        .FK_SEASON_ID
+                        .eq(seasonId)
+                        .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.eq(roundPosition))));
+    }
+
+    @Override
     public boolean existsBySeasonId(UUID seasonId) {
         if (seasonId == null) {
             throw new IllegalArgumentException("seasonId must not be null");

@@ -13,13 +13,16 @@ public class ExternalSeason {
     ExternalId id;
     String startDate;
     String endDate;
+    Integer currentMatchday;
 
-    public static Either<ImportError, ExternalSeason> create(Integer id, String startDate, String endDate) {
+    public static Either<ImportError, ExternalSeason> create(
+            Integer id, String startDate, String endDate, Integer currentMatchday) {
 
         return ExternalId.of(id).map(extId -> ExternalSeason.builder()
                 .id(extId)
                 .startDate(startDate)
                 .endDate(endDate)
+                .currentMatchday(currentMatchday)
                 .build());
     }
 }

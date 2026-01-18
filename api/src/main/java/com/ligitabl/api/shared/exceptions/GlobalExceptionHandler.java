@@ -35,4 +35,11 @@ public class GlobalExceptionHandler {
 
         return UseCaseErrorResponseFactory.from(error, request.getDescription(false));
     }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<UseCaseErrorResponse> handleUnexpected(Exception ex, WebRequest request) {
+        log.error("Unhandled exception", ex);
+        var error = UseCaseErrors.unexpected(ex);
+        return UseCaseErrorResponseFactory.from(error, request.getDescription(false));
+    }
 }

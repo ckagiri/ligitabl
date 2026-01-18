@@ -206,6 +206,30 @@ classes for local development, use:
 make model-codegen-local
 ```
 
+## Troubleshooting: run-api / jOOQ missing classes
+
+Symptoms:
+
+- `package com.ligitabl.model.db.tables does not exist`
+- `cannot find symbol ... Record`
+- `NoSuchMethodError` after code changes (stale model classes)
+
+Root cause:
+
+- jOOQ sources weren’t generated for the active DB/port, or a stale build is on the classpath.
+
+Fix checklist (safe, ordered):
+
+1. Ensure DB is up for the current env (`ENV=test` default) and that migrations are applied.
+2. Regenerate jOOQ from the same DB and port configured in the env file.
+3. Rebuild API with the jOOQ-enabled profile so the model module compiles against fresh sources.
+
+If you still see missing `com.ligitabl.model.db` classes, confirm:
+
+- The DB has tables (not just `databasechangelog*`).
+- jOOQ generated files exist under `model/target/generated-sources/jooq`.
+- `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` match your running DB.
+
 ### One-shot DB reset + seed
 
 To spin up Postgres, reset the DB, apply migrations, generate jOOQ, and seed reference data in one step:

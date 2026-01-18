@@ -17,6 +17,8 @@ public class ImportSummary {
     int created;
     int updated;
     int failed;
+    Integer currentRoundPosition;
+    boolean currentRoundUpdated;
     List<ImportError> errors;
 
     public boolean isSuccessful() {
