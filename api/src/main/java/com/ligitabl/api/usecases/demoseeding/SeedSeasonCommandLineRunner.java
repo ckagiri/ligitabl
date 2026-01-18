@@ -10,14 +10,14 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Command line runner for demoseeding demo data.
+ * Command line runner for seeding demo data.
  *
  * Usage: ./mvnw spring-boot:run -Dspring-boot.run.arguments=--seed-season
  * Or:    java -jar app.jar --seed-season
  *
  * Note: the app should typically be started with:
  *   --spring.main.web-application-type=none
- * so the process exits after demoseeding.
+ * so the process exits after seeding.
  */
 @Component
 @ConditionalOnProperty(name = "seed-season")
@@ -48,7 +48,7 @@ public class SeedSeasonCommandLineRunner implements CommandLineRunner {
         log.error("Error: {}", error.message());
         log.error("");
         log.error("Prerequisites checklist:");
-        log.error("  ☐ Competition exists (check demoseeding-config.yaml)");
+        log.error("  ☐ Competition exists (check seeding-config.yaml)");
         log.error("  ☐ Season exists with initial_rankings");
         log.error("  ☐ Rounds created (max_rounds rounds)");
         log.error("  ☐ All teams exist in database");

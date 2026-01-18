@@ -18,7 +18,7 @@ public class SeedingConfigLoader {
 
     private final String defaultConfigPath;
 
-    public SeedingConfigLoader(@Value("${demoseeding.config:demoseeding-config.yaml}") String defaultConfigPath) {
+    public SeedingConfigLoader(@Value("${seeding.config:seeding-config.yaml}") String defaultConfigPath) {
         this.defaultConfigPath = defaultConfigPath;
     }
 
@@ -40,7 +40,7 @@ public class SeedingConfigLoader {
                 SeedingConfig config = mapper.readValue(inputStream, SeedingConfig.class);
 
                 log.info(
-                        "Loaded demoseeding config: competition={}, season={}, finishedRounds={}, users={}",
+                        "Loaded seeding config: competition={}, season={}, finishedRounds={}, users={}",
                         config.getCompetitionSlug(),
                         config.getSeasonSlug(),
                         config.getFinishedRounds(),
@@ -50,7 +50,7 @@ public class SeedingConfigLoader {
             }
 
         } catch (IOException e) {
-            throw new RuntimeException("Failed to load demoseeding config", e);
+            throw new RuntimeException("Failed to load seeding config", e);
         }
     }
 }

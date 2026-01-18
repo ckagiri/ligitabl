@@ -45,7 +45,7 @@ public class SeedSeasonUseCase {
 
     @Transactional
     public Either<SeedingError, SeasonSeedResult> execute() {
-        log.info("Starting season demoseeding");
+        log.info("Starting season seedingding");
 
         List<String> warnings = new ArrayList<>();
 
@@ -61,7 +61,7 @@ public class SeedSeasonUseCase {
             return Either.right(configLoader.loadConfig());
         } catch (Exception e) {
             return Either.left(
-                    new SeedingError.ConfigurationError("Failed to load demoseeding config: " + e.getMessage()));
+                    new SeedingError.ConfigurationError("Failed to load seedingding config: " + e.getMessage()));
         }
     }
 
@@ -467,7 +467,7 @@ public class SeedSeasonUseCase {
                     return Either.left(new SeedingError.FinalizationFailed(i + 1, errorMessage));
                 }
 
-                break; // Stop on first failure but don't fail entire demoseeding
+                break; // Stop on first failure but don't fail entire seedingding
             } else {
                 finalized++;
             }
