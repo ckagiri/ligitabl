@@ -61,7 +61,7 @@ public class SeedSeasonUseCase {
             return Either.right(configLoader.loadConfig());
         } catch (Exception e) {
             return Either.left(
-                    new SeedingError.ConfigurationError("Failed to load seedingding config: " + e.getMessage()));
+                    new SeedingError.ConfigurationError("Failed to load seeding config: " + e.getMessage()));
         }
     }
 
