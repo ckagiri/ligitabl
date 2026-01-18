@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.contest;
+package com.ligitabl.api.usecases.seasonprediction.createseasonpred;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -34,9 +34,9 @@ import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 
 @SpringBootTest
-@DisplayName("JoinContestUseCase Integration Tests")
+@DisplayName("CreateSeasonPredictionUseCase Integration Tests")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
+class CreateSeasonPredictionUseCaseIT extends AbstractPostgresIT {
 
     private static final String SEASON_SLUG = "2024-25";
 
@@ -55,7 +55,7 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
             new TeamRank("WHU", 12));
 
     @Autowired
-    JoinContestUseCase useCase;
+    CreateSeasonPredictionUseCase useCase;
 
     @Autowired
     CompetitionDefaults competitionDefaults;
@@ -124,12 +124,12 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         @Test
         @DisplayName("should join contest successfully with valid rankings")
         void shouldJoinContestSuccessfullyWithValidRankings() {
-            JoinContestCommand request = validRequestFromInitialRankings();
+            CreateSeasonPredictionCommand request = validRequestFromInitialRankings();
 
-            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
+            Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> result = useCase.execute(userId, request);
 
             assertThat(result.isRight()).isTrue();
-            JoinContestResult joinResult = result.get();
+            CreateSeasonPredictionResult joinResult = result.get();
             assertThat(joinResult.predictionId()).isNotNull();
             assertThat(joinResult.entryId()).isNotNull();
             assertThat(joinResult.atRoundNumber()).isEqualTo(1);
@@ -160,9 +160,9 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         @DisplayName("should set at_round_number to current round when round is OPEN")
         void shouldSetAtRoundNumberToCurrentWhenOpen() {
             updateCurrentRoundStatus(RoundStatus.OPEN);
-            JoinContestCommand request = validRequestFromInitialRankings();
+            CreateSeasonPredictionCommand request = validRequestFromInitialRankings();
 
-            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
+            Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> result = useCase.execute(userId, request);
 
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().atRoundNumber()).isEqualTo(1);
@@ -176,9 +176,9 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         @DisplayName("should set at_round_number to next round when round is LOCKED")
         void shouldSetAtRoundNumberToNextWhenLocked() {
             updateCurrentRoundStatus(RoundStatus.LOCKED);
-            JoinContestCommand request = validRequestFromInitialRankings();
+            CreateSeasonPredictionCommand request = validRequestFromInitialRankings();
 
-            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
+            Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> result = useCase.execute(userId, request);
 
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().atRoundNumber()).isEqualTo(2);
@@ -193,9 +193,9 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         @DisplayName("should set at_round_number to next round when round is FINALISED")
         void shouldSetAtRoundNumberToNextWhenFinalised() {
             updateCurrentRoundStatus(RoundStatus.FINALISED);
-            JoinContestCommand request = validRequestFromInitialRankings();
+            CreateSeasonPredictionCommand request = validRequestFromInitialRankings();
 
-            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
+            Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> result = useCase.execute(userId, request);
 
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().atRoundNumber()).isEqualTo(2);
@@ -208,21 +208,21 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         @Test
         @DisplayName("should accept any ranking order (no strategic validation)")
         void shouldAcceptAnyRankingOrder() {
-            JoinContestCommand request = new JoinContestCommand(List.of(
-                    new JoinContestCommand.TeamRankRequest("WHU", 1),
-                    new JoinContestCommand.TeamRankRequest("BRE", 2),
-                    new JoinContestCommand.TeamRankRequest("CRY", 3),
-                    new JoinContestCommand.TeamRankRequest("BHA", 4),
-                    new JoinContestCommand.TeamRankRequest("TOT", 5),
-                    new JoinContestCommand.TeamRankRequest("MUN", 6),
-                    new JoinContestCommand.TeamRankRequest("NEW", 7),
-                    new JoinContestCommand.TeamRankRequest("CHE", 8),
-                    new JoinContestCommand.TeamRankRequest("AVL", 9),
-                    new JoinContestCommand.TeamRankRequest("LIV", 10),
-                    new JoinContestCommand.TeamRankRequest("ARS", 11),
-                    new JoinContestCommand.TeamRankRequest("MCI", 12)));
+            CreateSeasonPredictionCommand request = new CreateSeasonPredictionCommand(List.of(
+                    new CreateSeasonPredictionCommand.TeamRankRequest("WHU", 1),
+                    new CreateSeasonPredictionCommand.TeamRankRequest("BRE", 2),
+                    new CreateSeasonPredictionCommand.TeamRankRequest("CRY", 3),
+                    new CreateSeasonPredictionCommand.TeamRankRequest("BHA", 4),
+                    new CreateSeasonPredictionCommand.TeamRankRequest("TOT", 5),
+                    new CreateSeasonPredictionCommand.TeamRankRequest("MUN", 6),
+                    new CreateSeasonPredictionCommand.TeamRankRequest("NEW", 7),
+                    new CreateSeasonPredictionCommand.TeamRankRequest("CHE", 8),
+                    new CreateSeasonPredictionCommand.TeamRankRequest("AVL", 9),
+                    new CreateSeasonPredictionCommand.TeamRankRequest("LIV", 10),
+                    new CreateSeasonPredictionCommand.TeamRankRequest("ARS", 11),
+                    new CreateSeasonPredictionCommand.TeamRankRequest("MCI", 12)));
 
-            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
+            Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> result = useCase.execute(userId, request);
 
             assertThat(result.isRight()).isTrue();
 
@@ -241,71 +241,71 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject when invalid team count")
         void shouldRejectWhenInvalidTeamCount() {
-            JoinContestCommand request = new JoinContestCommand(List.of(
-                    new JoinContestCommand.TeamRankRequest("ARS", 1),
-                    new JoinContestCommand.TeamRankRequest("LIV", 2)));
+            CreateSeasonPredictionCommand request = new CreateSeasonPredictionCommand(List.of(
+                    new CreateSeasonPredictionCommand.TeamRankRequest("ARS", 1),
+                    new CreateSeasonPredictionCommand.TeamRankRequest("LIV", 2)));
 
-            Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
+            Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> result = useCase.execute(userId, request);
 
             assertThat(result.isLeft()).isTrue();
-            assertThat(result.getLeft()).isInstanceOf(JoinContestError.InvalidTeamCount.class);
+            assertThat(result.getLeft()).isInstanceOf(CreateSeasonPredictionError.InvalidTeamCount.class);
         }
 
         @Test
         @DisplayName("should reject when invalid team codes")
         void shouldRejectWhenInvalidTeamCodes() {
-            List<JoinContestCommand.TeamRankRequest> rankings = INITIAL_RANKINGS.stream()
-                    .map(tr -> new JoinContestCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
+            List<CreateSeasonPredictionCommand.TeamRankRequest> rankings = INITIAL_RANKINGS.stream()
+                    .map(tr -> new CreateSeasonPredictionCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
                     .toList();
 
             // Replace one code with an invalid code but keep team count correct.
             rankings = new java.util.ArrayList<>(rankings);
-            rankings.set(0, new JoinContestCommand.TeamRankRequest("XXX", 1));
+            rankings.set(0, new CreateSeasonPredictionCommand.TeamRankRequest("XXX", 1));
 
-            Either<JoinContestError, JoinContestResult> result =
-                    useCase.execute(userId, new JoinContestCommand(rankings));
+            Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> result =
+                    useCase.execute(userId, new CreateSeasonPredictionCommand(rankings));
 
             assertThat(result.isLeft()).isTrue();
-            assertThat(result.getLeft()).isInstanceOf(JoinContestError.InvalidTeamCodes.class);
+            assertThat(result.getLeft()).isInstanceOf(CreateSeasonPredictionError.InvalidTeamCodes.class);
         }
 
         @Test
         @DisplayName("should reject when duplicate positions")
         void shouldRejectWhenDuplicatePositions() {
-            List<JoinContestCommand.TeamRankRequest> rankings = INITIAL_RANKINGS.stream()
-                    .map(tr -> new JoinContestCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
+            List<CreateSeasonPredictionCommand.TeamRankRequest> rankings = INITIAL_RANKINGS.stream()
+                    .map(tr -> new CreateSeasonPredictionCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
                     .toList();
 
             rankings = new ArrayList<>(rankings);
-            rankings.set(0, new JoinContestCommand.TeamRankRequest("MCI", 1));
-            rankings.set(1, new JoinContestCommand.TeamRankRequest("ARS", 1));
+            rankings.set(0, new CreateSeasonPredictionCommand.TeamRankRequest("MCI", 1));
+            rankings.set(1, new CreateSeasonPredictionCommand.TeamRankRequest("ARS", 1));
 
-            Either<JoinContestError, JoinContestResult> result =
-                    useCase.execute(userId, new JoinContestCommand(rankings));
+            Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> result =
+                    useCase.execute(userId, new CreateSeasonPredictionCommand(rankings));
 
             assertThat(result.isLeft()).isTrue();
-            assertThat(result.getLeft()).isInstanceOf(JoinContestError.DuplicatePositions.class);
-            assertThat(((JoinContestError.DuplicatePositions) result.getLeft()).duplicates())
+            assertThat(result.getLeft()).isInstanceOf(CreateSeasonPredictionError.DuplicatePositions.class);
+            assertThat(((CreateSeasonPredictionError.DuplicatePositions) result.getLeft()).duplicates())
                     .contains(1);
         }
 
         @Test
         @DisplayName("should reject when duplicate team codes")
         void shouldRejectWhenDuplicateTeamCodes() {
-            List<JoinContestCommand.TeamRankRequest> rankings = INITIAL_RANKINGS.stream()
-                    .map(tr -> new JoinContestCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
+            List<CreateSeasonPredictionCommand.TeamRankRequest> rankings = INITIAL_RANKINGS.stream()
+                    .map(tr -> new CreateSeasonPredictionCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
                     .toList();
 
             rankings = new ArrayList<>(rankings);
-            rankings.set(0, new JoinContestCommand.TeamRankRequest("MCI", 1));
-            rankings.set(1, new JoinContestCommand.TeamRankRequest("MCI", 2));
+            rankings.set(0, new CreateSeasonPredictionCommand.TeamRankRequest("MCI", 1));
+            rankings.set(1, new CreateSeasonPredictionCommand.TeamRankRequest("MCI", 2));
 
-            Either<JoinContestError, JoinContestResult> result =
-                    useCase.execute(userId, new JoinContestCommand(rankings));
+            Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> result =
+                    useCase.execute(userId, new CreateSeasonPredictionCommand(rankings));
 
             assertThat(result.isLeft()).isTrue();
-            assertThat(result.getLeft()).isInstanceOf(JoinContestError.DuplicateTeamCodes.class);
-            assertThat(((JoinContestError.DuplicateTeamCodes) result.getLeft()).duplicates())
+            assertThat(result.getLeft()).isInstanceOf(CreateSeasonPredictionError.DuplicateTeamCodes.class);
+            assertThat(((CreateSeasonPredictionError.DuplicateTeamCodes) result.getLeft()).duplicates())
                     .contains("MCI");
         }
 
@@ -315,14 +315,14 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
             setCurrentRoundTo(22, RoundStatus.LOCKED);
             setSeasonCurrentRound(roundId, 22);
 
-            Either<JoinContestError, JoinContestResult> result =
+            Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> result =
                     useCase.execute(userId, validRequestFromInitialRankings());
 
             assertThat(result.isLeft()).isTrue();
-            assertThat(result.getLeft()).isInstanceOf(JoinContestError.SeasonEnded.class);
-            assertThat(((JoinContestError.SeasonEnded) result.getLeft()).currentRound())
+            assertThat(result.getLeft()).isInstanceOf(CreateSeasonPredictionError.SeasonEnded.class);
+            assertThat(((CreateSeasonPredictionError.SeasonEnded) result.getLeft()).currentRound())
                     .isEqualTo(22);
-            assertThat(((JoinContestError.SeasonEnded) result.getLeft()).maxRounds())
+            assertThat(((CreateSeasonPredictionError.SeasonEnded) result.getLeft()).maxRounds())
                     .isEqualTo(22);
         }
 
@@ -332,7 +332,7 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
             setCurrentRoundTo(22, RoundStatus.OPEN);
             setSeasonCurrentRound(roundId, 22);
 
-            Either<JoinContestError, JoinContestResult> result =
+            Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> result =
                     useCase.execute(userId, validRequestFromInitialRankings());
 
             assertThat(result.isRight()).isTrue();
@@ -342,23 +342,23 @@ class JoinContestUseCaseIntegrationTest extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject when already joined")
         void shouldRejectWhenAlreadyJoined() {
-            JoinContestCommand request = validRequestFromInitialRankings();
+            CreateSeasonPredictionCommand request = validRequestFromInitialRankings();
 
-            Either<JoinContestError, JoinContestResult> first = useCase.execute(userId, request);
+            Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> first = useCase.execute(userId, request);
             assertThat(first.isRight()).isTrue();
 
-            Either<JoinContestError, JoinContestResult> second = useCase.execute(userId, request);
+            Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> second = useCase.execute(userId, request);
 
             assertThat(second.isLeft()).isTrue();
-            assertThat(second.getLeft()).isInstanceOf(JoinContestError.AlreadyJoined.class);
-            assertThat(((JoinContestError.AlreadyJoined) second.getLeft()).existingPredictionId())
+            assertThat(second.getLeft()).isInstanceOf(CreateSeasonPredictionError.AlreadyJoined.class);
+            assertThat(((CreateSeasonPredictionError.AlreadyJoined) second.getLeft()).existingPredictionId())
                     .isEqualTo(first.get().predictionId());
         }
     }
 
-    private static JoinContestCommand validRequestFromInitialRankings() {
-        return new JoinContestCommand(INITIAL_RANKINGS.stream()
-                .map(tr -> new JoinContestCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
+    private static CreateSeasonPredictionCommand validRequestFromInitialRankings() {
+        return new CreateSeasonPredictionCommand(INITIAL_RANKINGS.stream()
+                .map(tr -> new CreateSeasonPredictionCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
                 .toList());
     }
 

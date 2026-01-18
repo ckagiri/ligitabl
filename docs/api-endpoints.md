@@ -52,14 +52,11 @@ Note: Getting by ID uses a query parameter (`id`) to avoid ambiguity with slug i
 - `GET /api/competitions/{competitionSlug}/seasons/{seasonSlug}/rounds/{position}/matches` — matches for a given round
 - `GET /api/rounds/default/matches` — matches for the default competition’s current round
 
-### Contest
+### Season prediction
 
-- `GET /api/contest/status` — contest status for current user
-- `POST /api/contest/join` — join the current season contest
-
-### Predictions
-
-- `POST /api/predictions/swap` — make a swap in current prediction
+- `GET /api/seasonprediction` — current season prediction for the authenticated user
+- `POST /api/seasonprediction` — create a season prediction (join the current season contest)
+- `POST /api/seasonprediction/swap` — make a swap in current prediction
 
 ### Leaderboard
 

@@ -107,7 +107,7 @@ public class SecurityConfig {
     @Order(2)
     public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
         http.securityMatcher(new NegatedRequestMatcher(new AntPathRequestMatcher("/api/**")))
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/predictions/swap")) // Allow HTMX POST without CSRF
+            .csrf(csrf -> csrf.ignoringRequestMatchers("/seasonprediction/swap")) // Allow HTMX POST without CSRF
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 "/",
                                 "/auth/login",
@@ -124,13 +124,13 @@ public class SecurityConfig {
                                 "/favicon.svg",
                                 "/apple-touch-icon.png")
                         .permitAll()
-                        .requestMatchers("/predictions/**")
+                        .requestMatchers("/seasonprediction/**")
                         .hasRole("PLAYER")
                         .anyRequest()
                         .authenticated())
                 .formLogin(form -> form.loginPage("/auth/login")
                         .loginProcessingUrl("/auth/login")
-                        .defaultSuccessUrl("/predictions/me", true)
+                        .defaultSuccessUrl("/seasonprediction", true)
                         .permitAll())
                 .logout(logout -> logout.logoutUrl("/auth/logout")
                         .logoutSuccessUrl("/")

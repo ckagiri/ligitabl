@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.swap;
+package com.ligitabl.api.usecases.seasonprediction.makeswap;
 
 import java.util.Map;
 import java.util.UUID;
@@ -15,7 +15,7 @@ import com.ligitabl.api.auth.CurrentUserId;
 import lombok.RequiredArgsConstructor;
 
 @RestController
-@RequestMapping("/api/predictions")
+@RequestMapping("/api/seasonprediction")
 @RequiredArgsConstructor
 public class MakeSwapController {
 

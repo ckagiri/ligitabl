@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.swap;
+package com.ligitabl.api.usecases.seasonprediction.makeswap;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.offset;
@@ -36,7 +36,7 @@ import com.ligitabl.model.repo.SeasonPredictionRepo;
 @SpringBootTest
 @DisplayName("MakeSwapUseCase Integration Tests")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
-class MakeSwapUseCaseIntegrationTest extends AbstractPostgresIT {
+class MakeSwapUseCaseIT extends AbstractPostgresIT {
 
     private static final String SEASON_SLUG = "2024-25";
 

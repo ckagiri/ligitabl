@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.contest;
+package com.ligitabl.api.usecases.seasonprediction.createseasonpred;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -34,7 +34,7 @@ import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.TeamRepo;
 
 @ExtendWith(MockitoExtension.class)
-class JoinContestUseCaseTest {
+class CreateSeasonPredictionUseCaseTest {
 
     private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
 
@@ -62,7 +62,7 @@ class JoinContestUseCaseTest {
     @Mock
     private Clock clock;
 
-    private JoinContestUseCase useCase;
+    private CreateSeasonPredictionUseCase useCase;
 
     private Instant now;
     private UUID userId;
@@ -87,7 +87,7 @@ class JoinContestUseCaseTest {
         round = createRound(1, false);
         defaultContest = createDefaultContest();
 
-        useCase = new JoinContestUseCase(
+        useCase = new CreateSeasonPredictionUseCase(
                 competitionDefaults, seasonRepo, roundRepo, matchRepo, contestRepo, predictionRepo, entryRepo, clock);
     }
 
@@ -96,7 +96,7 @@ class JoinContestUseCaseTest {
         UUID predictionId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
 
-        JoinContestCommand request = createValidRequest();
+        CreateSeasonPredictionCommand request = createValidRequest();
 
         when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
@@ -117,10 +117,10 @@ class JoinContestUseCaseTest {
             return e;
         });
 
-        Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
+        Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> result = useCase.execute(userId, request);
 
         assertTrue(result.isRight());
-        JoinContestResult joinResult = result.get();
+        CreateSeasonPredictionResult joinResult = result.get();
         assertEquals(predictionId, joinResult.predictionId());
         assertEquals(entryId, joinResult.entryId());
         assertEquals(round.getPosition(), joinResult.atRoundNumber());
@@ -129,7 +129,7 @@ class JoinContestUseCaseTest {
 
     @Test
     void shouldSetNextRound_whenRoundIsLocked() {
-        JoinContestCommand request = createValidRequest();
+        CreateSeasonPredictionCommand request = createValidRequest();
 
         when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
@@ -141,7 +141,7 @@ class JoinContestUseCaseTest {
         when(predictionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
         when(entryRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
+        Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> result = useCase.execute(userId, request);
 
         assertTrue(result.isRight());
         assertEquals(round.getPosition() + 1, result.get().atRoundNumber());
@@ -149,7 +149,7 @@ class JoinContestUseCaseTest {
 
     @Test
     void shouldReject_whenAlreadyJoined() {
-        JoinContestCommand request = createValidRequest();
+        CreateSeasonPredictionCommand request = createValidRequest();
         SeasonPrediction existingPrediction = SeasonPrediction.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
@@ -162,42 +162,42 @@ class JoinContestUseCaseTest {
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(existingPrediction));
 
-        Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
+        Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> result = useCase.execute(userId, request);
 
         assertTrue(result.isLeft());
-        assertInstanceOf(JoinContestError.AlreadyJoined.class, result.getLeft());
+        assertInstanceOf(CreateSeasonPredictionError.AlreadyJoined.class, result.getLeft());
         assertEquals(
-                existingPrediction.getId(), ((JoinContestError.AlreadyJoined) result.getLeft()).existingPredictionId());
+                existingPrediction.getId(), ((CreateSeasonPredictionError.AlreadyJoined) result.getLeft()).existingPredictionId());
     }
 
     @Test
     void shouldReject_whenInvalidTeamCount() {
-        JoinContestCommand request = new JoinContestCommand(List.of(
-                new JoinContestCommand.TeamRankRequest("ARS", 1), new JoinContestCommand.TeamRankRequest("LIV", 2)));
+        CreateSeasonPredictionCommand request = new CreateSeasonPredictionCommand(List.of(
+                new CreateSeasonPredictionCommand.TeamRankRequest("ARS", 1), new CreateSeasonPredictionCommand.TeamRankRequest("LIV", 2)));
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
 
-        Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
+        Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> result = useCase.execute(userId, request);
 
         assertTrue(result.isLeft());
-        assertInstanceOf(JoinContestError.InvalidTeamCount.class, result.getLeft());
+        assertInstanceOf(CreateSeasonPredictionError.InvalidTeamCount.class, result.getLeft());
     }
 
     @Test
     void shouldReject_whenInvalidTeamCodes() {
-        JoinContestCommand request = new JoinContestCommand(List.of(
-                new JoinContestCommand.TeamRankRequest("XXX", 1),
-                new JoinContestCommand.TeamRankRequest("ARS", 2),
-                new JoinContestCommand.TeamRankRequest("LIV", 3)));
+        CreateSeasonPredictionCommand request = new CreateSeasonPredictionCommand(List.of(
+                new CreateSeasonPredictionCommand.TeamRankRequest("XXX", 1),
+                new CreateSeasonPredictionCommand.TeamRankRequest("ARS", 2),
+                new CreateSeasonPredictionCommand.TeamRankRequest("LIV", 3)));
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
 
-        Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
+        Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> result = useCase.execute(userId, request);
 
         assertTrue(result.isLeft());
-        assertInstanceOf(JoinContestError.InvalidTeamCodes.class, result.getLeft());
+        assertInstanceOf(CreateSeasonPredictionError.InvalidTeamCodes.class, result.getLeft());
     }
 
     @Test
@@ -205,7 +205,7 @@ class JoinContestUseCaseTest {
         round.setPosition(3);
         season.setMaxRounds(3);
 
-        JoinContestCommand request = createValidRequest();
+        CreateSeasonPredictionCommand request = createValidRequest();
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
@@ -213,10 +213,10 @@ class JoinContestUseCaseTest {
         when(matchRepo.findByRoundId(round.getId()))
                 .thenReturn(List.of(Match.builder().status(MatchStatus.LIVE).build()));
 
-        Either<JoinContestError, JoinContestResult> result = useCase.execute(userId, request);
+        Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> result = useCase.execute(userId, request);
 
         assertTrue(result.isLeft());
-        assertInstanceOf(JoinContestError.SeasonEnded.class, result.getLeft());
+        assertInstanceOf(CreateSeasonPredictionError.SeasonEnded.class, result.getLeft());
     }
 
     private Season createSeason() {
@@ -257,10 +257,10 @@ class JoinContestUseCaseTest {
                 .build();
     }
 
-    private JoinContestCommand createValidRequest() {
-        return new JoinContestCommand(List.of(
-                new JoinContestCommand.TeamRankRequest("ARS", 1),
-                new JoinContestCommand.TeamRankRequest("LIV", 2),
-                new JoinContestCommand.TeamRankRequest("MCI", 3)));
+    private CreateSeasonPredictionCommand createValidRequest() {
+        return new CreateSeasonPredictionCommand(List.of(
+                new CreateSeasonPredictionCommand.TeamRankRequest("ARS", 1),
+                new CreateSeasonPredictionCommand.TeamRankRequest("LIV", 2),
+                new CreateSeasonPredictionCommand.TeamRankRequest("MCI", 3)));
     }
 }

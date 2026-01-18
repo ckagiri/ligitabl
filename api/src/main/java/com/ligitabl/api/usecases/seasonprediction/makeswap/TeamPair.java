@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.swap;
+package com.ligitabl.api.usecases.seasonprediction.makeswap;
 
 import com.ligitabl.model.domain.TeamRank;
 

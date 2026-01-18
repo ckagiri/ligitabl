@@ -3,6 +3,7 @@ package com.ligitabl.api.controllers.web;
 import java.util.List;
 import java.util.UUID;
 
+import com.ligitabl.api.usecases.seasonprediction.createseasonpred.CreateSeasonPredictionUseCase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,11 +15,10 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.auth.CurrentUserId;
-import com.ligitabl.api.usecases.contest.JoinContestCommand;
-import com.ligitabl.api.usecases.contest.JoinContestUseCase;
-import com.ligitabl.api.usecases.swap.MakeSwapUseCase;
-import com.ligitabl.api.usecases.swap.SwapCommand;
-import com.ligitabl.api.usecases.swap.SwapError;
+import com.ligitabl.api.usecases.seasonprediction.createseasonpred.CreateSeasonPredictionCommand;
+import com.ligitabl.api.usecases.seasonprediction.makeswap.MakeSwapUseCase;
+import com.ligitabl.api.usecases.seasonprediction.makeswap.SwapCommand;
+import com.ligitabl.api.usecases.seasonprediction.makeswap.SwapError;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,15 +32,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class WebPlayerController {
 
-    private final JoinContestUseCase joinContestUseCase;
+    private final CreateSeasonPredictionUseCase createSeasonPredUseCase;
     private final MakeSwapUseCase makeSwapUseCase;
     private final CurrentUserId currentUserId;
 
     @Autowired(required = false)
     private FakeWebDataService fakeDataService;
 
-    @GetMapping("/predictions/me")
-    public String myPredictions(
+    @GetMapping("/seasonprediction")
+    public String getSeasonPrediction(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestHeader(value = "HX-Request", required = false) String hxRequest,
             Model model) {
@@ -89,7 +89,7 @@ public class WebPlayerController {
         return "predictions/me";
     }
 
-    @PostMapping("/predictions/swap")
+    @PostMapping("/seasonprediction/swap")
     public String makeSwap(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam String teamA,
@@ -120,7 +120,7 @@ public class WebPlayerController {
             return "predictions/me";
         }
 
-        return isHtmxRequest(hxRequest) ? "fragments/prediction-table :: predictionTable" : "redirect:/predictions/me";
+        return isHtmxRequest(hxRequest) ? "fragments/prediction-table :: predictionTable" : "redirect:/seasonprediction";
     }
 
     private String getSwapErrorMessage(Object error) {
@@ -143,8 +143,8 @@ public class WebPlayerController {
         return hxRequest != null && !hxRequest.isBlank();
     }
 
-    @PostMapping("/contest/join")
-    public String joinContest(
+    @PostMapping("/seasonprediction")
+    public String createSeasonPrediction(
             @AuthenticationPrincipal UserDetails userDetails,
             @RequestParam("rankings") String rankingsJson,
             Model model) {
@@ -156,10 +156,10 @@ public class WebPlayerController {
             // TODO: Parse rankingsJson properly
             // Expected format: [{code: "ARS", position: 1}, ...]
             // For now, create a simple parser - use Jackson ObjectMapper in production
-            List<JoinContestCommand.TeamRankRequest> rankings = List.of();
+            List<CreateSeasonPredictionCommand.TeamRankRequest> rankings = List.of();
 
-            var joinCommand = new JoinContestCommand(rankings);
-            var result = joinContestUseCase.execute(userId, joinCommand);
+            var joinCommand = new CreateSeasonPredictionCommand(rankings);
+            var result = createSeasonPredUseCase.execute(userId, joinCommand);
 
             // Use peek/peekLeft for side effects
             result.peekLeft(error -> {
@@ -169,7 +169,7 @@ public class WebPlayerController {
                     .peek(joinResult -> log.info("User {} successfully joined contest", userId));
 
             // Return appropriate view based on result
-            return result.isLeft() ? "predictions/me" : "redirect:/predictions/me";
+            return result.isLeft() ? "predictions/me" : "redirect:/seasonprediction";
 
         } catch (Exception e) {
             log.error("Error joining contest for {}", userId, e);

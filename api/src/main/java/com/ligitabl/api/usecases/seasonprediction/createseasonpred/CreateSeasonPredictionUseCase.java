@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecases.contest;
+package com.ligitabl.api.usecases.seasonprediction.createseasonpred;
 
 import java.time.Clock;
 import java.util.*;
@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class JoinContestUseCase {
+public class CreateSeasonPredictionUseCase {
 
     private final CompetitionDefaults competitionDefaults;
     private final SeasonRepo seasonRepo;
@@ -30,7 +30,7 @@ public class JoinContestUseCase {
     private final Clock clock;
 
     @Transactional
-    public Either<JoinContestError, JoinContestResult> execute(UUID userId, JoinContestCommand request) {
+    public Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> execute(UUID userId, CreateSeasonPredictionCommand request) {
         log.info("User {} attempting to join contest", userId);
 
         return getActiveSeason().flatMap(season -> validateSeasonActive(season)
@@ -41,32 +41,32 @@ public class JoinContestUseCase {
     }
 
     // Step 1: Get active season
-    private Either<JoinContestError, Season> getActiveSeason() {
+    private Either<CreateSeasonPredictionError, Season> getActiveSeason() {
         return seasonRepo
                 .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
-                .map(Either::<JoinContestError, Season>right)
-                .orElseGet(() -> Either.left(new JoinContestError.SeasonNotFound()));
+                .map(Either::<CreateSeasonPredictionError, Season>right)
+                .orElseGet(() -> Either.left(new CreateSeasonPredictionError.SeasonNotFound()));
     }
 
     // Step 2: Validate season is active
-    private Either<JoinContestError, Void> validateSeasonActive(Season season) {
+    private Either<CreateSeasonPredictionError, Void> validateSeasonActive(Season season) {
         if (season.isCompleted()) {
-            return Either.left(new JoinContestError.SeasonCompleted());
+            return Either.left(new CreateSeasonPredictionError.SeasonCompleted());
         }
         return Either.right(null);
     }
 
     // Step 3: Check user hasn't already joined
-    private Either<JoinContestError, Void> checkNotAlreadyJoined(UUID userId, Season season) {
+    private Either<CreateSeasonPredictionError, Void> checkNotAlreadyJoined(UUID userId, Season season) {
         return predictionRepo
                 .findByUserAndSeason(userId, season.getId())
                 .map(existing ->
-                        Either.<JoinContestError, Void>left(new JoinContestError.AlreadyJoined(existing.getId())))
+                        Either.<CreateSeasonPredictionError, Void>left(new CreateSeasonPredictionError.AlreadyJoined(existing.getId())))
                 .orElseGet(() -> Either.right(null));
     }
 
     // Step 4: Validate rankings structure
-    private Either<JoinContestError, List<TeamRank>> validateRankings(JoinContestCommand request, Season season) {
+    private Either<CreateSeasonPredictionError, List<TeamRank>> validateRankings(CreateSeasonPredictionCommand request, Season season) {
         return validateTeamCount(request, season)
                 .flatMap(__ -> validateNoDuplicatePositions(request))
                 .flatMap(__ -> validateNoDuplicateCodes(request))
@@ -74,19 +74,19 @@ public class JoinContestUseCase {
                 .map(__ -> convertToTeamRanks(request));
     }
 
-    private Either<JoinContestError, Void> validateTeamCount(JoinContestCommand request, Season season) {
+    private Either<CreateSeasonPredictionError, Void> validateTeamCount(CreateSeasonPredictionCommand request, Season season) {
         int provided = request.rankings().size();
         int required = season.getTotalTeams();
 
         if (provided != required) {
-            return Either.left(new JoinContestError.InvalidTeamCount(provided, required));
+            return Either.left(new CreateSeasonPredictionError.InvalidTeamCount(provided, required));
         }
         return Either.right(null);
     }
 
-    private Either<JoinContestError, Void> validateNoDuplicatePositions(JoinContestCommand request) {
+    private Either<CreateSeasonPredictionError, Void> validateNoDuplicatePositions(CreateSeasonPredictionCommand request) {
         List<Integer> positions = request.rankings().stream()
-                .map(JoinContestCommand.TeamRankRequest::position)
+                .map(CreateSeasonPredictionCommand.TeamRankRequest::position)
                 .toList();
 
         List<Integer> duplicates = positions.stream()
@@ -95,14 +95,14 @@ public class JoinContestUseCase {
                 .toList();
 
         if (!duplicates.isEmpty()) {
-            return Either.left(new JoinContestError.DuplicatePositions(duplicates));
+            return Either.left(new CreateSeasonPredictionError.DuplicatePositions(duplicates));
         }
         return Either.right(null);
     }
 
-    private Either<JoinContestError, Void> validateNoDuplicateCodes(JoinContestCommand request) {
+    private Either<CreateSeasonPredictionError, Void> validateNoDuplicateCodes(CreateSeasonPredictionCommand request) {
         List<String> codes = request.rankings().stream()
-                .map(JoinContestCommand.TeamRankRequest::code)
+                .map(CreateSeasonPredictionCommand.TeamRankRequest::code)
                 .map(String::toUpperCase)
                 .toList();
 
@@ -112,14 +112,14 @@ public class JoinContestUseCase {
                 .toList();
 
         if (!duplicates.isEmpty()) {
-            return Either.left(new JoinContestError.DuplicateTeamCodes(duplicates));
+            return Either.left(new CreateSeasonPredictionError.DuplicateTeamCodes(duplicates));
         }
         return Either.right(null);
     }
 
-    private Either<JoinContestError, Void> validateTeamCodesExist(JoinContestCommand request, Season season) {
+    private Either<CreateSeasonPredictionError, Void> validateTeamCodesExist(CreateSeasonPredictionCommand request, Season season) {
         List<String> requestedCodes = request.rankings().stream()
-                .map(JoinContestCommand.TeamRankRequest::code)
+                .map(CreateSeasonPredictionCommand.TeamRankRequest::code)
                 .map(String::toUpperCase)
                 .toList();
 
@@ -132,13 +132,13 @@ public class JoinContestUseCase {
                 .toList();
 
         if (!invalidCodes.isEmpty()) {
-            return Either.left(new JoinContestError.InvalidTeamCodes(invalidCodes));
+            return Either.left(new CreateSeasonPredictionError.InvalidTeamCodes(invalidCodes));
         }
 
         return Either.right(null);
     }
 
-    private List<TeamRank> convertToTeamRanks(JoinContestCommand request) {
+    private List<TeamRank> convertToTeamRanks(CreateSeasonPredictionCommand request) {
         return request.rankings().stream()
                 .map(r -> new TeamRank(r.code().toUpperCase(), r.position()))
                 .sorted(Comparator.comparingInt(TeamRank::getPosition))
@@ -146,7 +146,7 @@ public class JoinContestUseCase {
     }
 
     // Step 5: Determine at_round_number
-    private Either<JoinContestError, Integer> determineAtRoundNumber(Season season) {
+    private Either<CreateSeasonPredictionError, Integer> determineAtRoundNumber(Season season) {
         Round currentRound = roundRepo
                 .findById(season.getCurrentRoundId())
                 .orElseThrow(() -> new IllegalStateException("Current round not found"));
@@ -169,19 +169,19 @@ public class JoinContestUseCase {
 
         // Check if season has ended
         if (atRoundNumber > season.getMaxRounds()) {
-            return Either.left(new JoinContestError.SeasonEnded(currentRound.getPosition(), season.getMaxRounds()));
+            return Either.left(new CreateSeasonPredictionError.SeasonEnded(currentRound.getPosition(), season.getMaxRounds()));
         }
 
         // Special case: Last round must be OPEN to join
         if (currentRound.getPosition() == season.getMaxRounds() && roundStatus != RoundStatus.OPEN) {
-            return Either.left(new JoinContestError.SeasonEnded(currentRound.getPosition(), season.getMaxRounds()));
+            return Either.left(new CreateSeasonPredictionError.SeasonEnded(currentRound.getPosition(), season.getMaxRounds()));
         }
 
         return Either.right(atRoundNumber);
     }
 
     // Step 6: Create prediction and entry (transactional)
-    private Either<JoinContestError, JoinContestResult> createPredictionAndEntry(
+    private Either<CreateSeasonPredictionError, CreateSeasonPredictionResult> createPredictionAndEntry(
             UUID userId, Season season, List<TeamRank> rankings, int atRoundNumber) {
         try {
             // Create SeasonPrediction
@@ -222,11 +222,11 @@ public class JoinContestUseCase {
                     : String.format("Welcome! Your prediction will be active from Round %d", atRoundNumber);
 
             return Either.right(
-                    new JoinContestResult(savedPrediction.getId(), savedEntry.getId(), atRoundNumber, message));
+                    new CreateSeasonPredictionResult(savedPrediction.getId(), savedEntry.getId(), atRoundNumber, message));
 
         } catch (Exception e) {
             log.error("Failed to create prediction and entry", e);
-            return Either.left(new JoinContestError.TransactionFailed(e.getMessage()));
+            return Either.left(new CreateSeasonPredictionError.TransactionFailed(e.getMessage()));
         }
     }
 }
