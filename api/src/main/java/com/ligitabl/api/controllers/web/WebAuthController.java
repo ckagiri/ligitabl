@@ -82,7 +82,7 @@ public class WebAuthController {
                                 httpRequest);
 
                         // Redirect to predictions page
-                        return "redirect:/seasonprediction";
+                        return "redirect:/prediction";
                     });
         } catch (IllegalArgumentException e) {
             // Validation error from domain types (Email or Password)

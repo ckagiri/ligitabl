@@ -3,6 +3,7 @@ package com.ligitabl.api.controllers.web;
 import java.util.List;
 import java.util.UUID;
 
+import com.ligitabl.api.usecases.prediction.createprediction.CreatePredictionUseCase;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -14,11 +15,10 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.auth.CurrentUserId;
-import com.ligitabl.api.usecases.seasonprediction.createseasonpred.CreateSeasonPredictionCommand;
-import com.ligitabl.api.usecases.seasonprediction.createseasonpred.CreateSeasonPredictionUseCase;
-import com.ligitabl.api.usecases.seasonprediction.makeswap.MakeSwapUseCase;
-import com.ligitabl.api.usecases.seasonprediction.makeswap.SwapCommand;
-import com.ligitabl.api.usecases.seasonprediction.makeswap.SwapError;
+import com.ligitabl.api.usecases.prediction.createprediction.CreatePredictionCommand;
+import com.ligitabl.api.usecases.prediction.makeswap.MakeSwapUseCase;
+import com.ligitabl.api.usecases.prediction.makeswap.SwapCommand;
+import com.ligitabl.api.usecases.prediction.makeswap.SwapError;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -32,7 +32,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class WebPlayerController {
 
-    private final CreateSeasonPredictionUseCase createSeasonPredUseCase;
+    private final CreatePredictionUseCase createSeasonPredUseCase;
     private final MakeSwapUseCase makeSwapUseCase;
     private final CurrentUserId currentUserId;
 
@@ -158,9 +158,9 @@ public class WebPlayerController {
             // TODO: Parse rankingsJson properly
             // Expected format: [{code: "ARS", position: 1}, ...]
             // For now, create a simple parser - use Jackson ObjectMapper in production
-            List<CreateSeasonPredictionCommand.TeamRankRequest> rankings = List.of();
+            List<CreatePredictionCommand.TeamRankRequest> rankings = List.of();
 
-            var joinCommand = new CreateSeasonPredictionCommand(rankings);
+            var joinCommand = new CreatePredictionCommand(rankings);
             var result = createSeasonPredUseCase.execute(userId, joinCommand);
 
             // Use peek/peekLeft for side effects

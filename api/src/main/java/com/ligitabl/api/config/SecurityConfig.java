@@ -107,7 +107,7 @@ public class SecurityConfig {
     @Order(2)
     public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
         http.securityMatcher(new NegatedRequestMatcher(new AntPathRequestMatcher("/api/**")))
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/seasonprediction/swap")) // Allow HTMX POST without CSRF
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/prediction/swap")) // Allow HTMX POST without CSRF
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 "/",
                                 "/auth/login",

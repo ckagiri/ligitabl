@@ -94,7 +94,6 @@ public class SyncMatchesUseCase {
      * SMART ENDPOINT SELECTION
      * <p>
      * Determines which API endpoint to use based on current match state.
-     * This is the optimization strategy we discussed!
      */
     private Either<SyncMatchesError, FetchedMatchData> determineAndFetchMatches(RoundContext context) {
 
