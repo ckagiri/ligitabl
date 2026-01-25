@@ -48,11 +48,11 @@ public record GetUserPredictionCommand(
     public static GetUserPredictionCommand forAuthenticatedUser(
             UUID userId,
             UUID seasonId,
-            boolean hasMainContestEntry,
+            boolean hasContestEntry,
             Integer round
     ) {
         return new GetUserPredictionCommand(
-                UserContext.authenticated(userId, hasMainContestEntry),
+                UserContext.authenticated(userId, hasContestEntry),
                 seasonId,
                 round,
                 null
@@ -77,12 +77,12 @@ public record GetUserPredictionCommand(
     public static GetUserPredictionCommand forViewingOtherUser(
             UUID targetUserId,
             UUID seasonId,
-            boolean hasMainContestEntry,
+            boolean hasContestEntry,
             String displayName,
             Integer round
     ) {
         return new GetUserPredictionCommand(
-                UserContext.viewingOther(targetUserId, hasMainContestEntry),
+                UserContext.viewingOther(targetUserId, hasContestEntry),
                 seasonId,
                 round,
                 displayName

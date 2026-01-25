@@ -78,7 +78,7 @@ public class WebPlayerController {
             // Page title
             model.addAttribute("pageTitle", "My Prediction");
 
-            return "predictions/me";
+            return "predictions/user";
         }
 
         // TODO: Implement get prediction use case
@@ -86,7 +86,7 @@ public class WebPlayerController {
         model.addAttribute("message", "Predictions page - integration in progress");
         model.addAttribute("userEmail", userDetails.getUsername());
 
-        return "predictions/me";
+        return "predictions/user";
     }
 
     @PostMapping("/seasonprediction/swap")
@@ -117,7 +117,7 @@ public class WebPlayerController {
 
         // Handle view selection based on result
         if (result.isLeft()) {
-            return "predictions/me";
+            return "predictions/user";
         }
 
         return isHtmxRequest(hxRequest)
@@ -171,12 +171,12 @@ public class WebPlayerController {
                     .peek(joinResult -> log.info("User {} successfully joined contest", userId));
 
             // Return appropriate view based on result
-            return result.isLeft() ? "predictions/me" : "redirect:/seasonprediction";
+            return result.isLeft() ? "user" : "redirect:/seasonprediction";
 
         } catch (Exception e) {
             log.error("Error joining contest for {}", userId, e);
             model.addAttribute("error", "An error occurred. Please try again.");
-            return "predictions/me";
+            return "user";
         }
     }
 }

@@ -1,7 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<html xmlns:th="http://www.thymeleaf.org" xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -141,11 +139,11 @@
                           class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
                             Leaderboard
                         </a>
-                        <a th:href="@{/standings}"
+                        <a th:href="@{/seasons/current/standings}"
                           class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
                             Standings
                         </a>
-                        <a th:href="@{/matches}"
+                        <a th:href="@{/seasons/current/matches}"
                           class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
                             Matches
                         </a>
@@ -154,30 +152,26 @@
 
                 <!-- Desktop Auth Buttons -->
                 <div class="hidden md:flex items-center space-x-4">
-                    <!-- Authenticated User -->
-                    <div sec:authorize="isAuthenticated() and !isAnonymous()" class="flex items-center space-x-4">
-                        <a th:href="@{/seasonprediction}"
-                          class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
-                            My Predictions
-                        </a>
-                        <span class="text-sm text-gray-700" sec:authentication="name"></span>
-                        <form th:action="@{/auth/logout}" method="post" class="inline">
-                            <button type="submit"
-                                    class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
-                                Logout
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Anonymous User -->
-                    <div sec:authorize="isAnonymous()" class="flex items-center space-x-4">
-                                                <a th:href="@{/auth/login}"
-                          class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
-                            Login
-                        </a>
-                                                <a th:href="@{/auth/register}"
-                          class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition">
-                            Sign Up
+                    <a th:href="${predictionsNavLink} ?: '/predictions/user/guest'"
+                      class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+                      th:text="${predictionsNavLabel} ?: 'Predictions'">
+                        Predictions
+                    </a>
+                    <a th:unless="${isLoggedIn}" th:href="@{/auth/login}"
+                      class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
+                        Login
+                    </a>
+                    <a th:unless="${isLoggedIn}" th:href="@{/auth/register}"
+                      class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition">
+                        Sign Up
+                    </a>
+                    <!-- Logged in user section -->
+                    <div th:if="${isLoggedIn}" class="flex items-center space-x-3">
+                        <span th:if="${userDisplayName}" class="text-sm font-medium text-gray-700"
+                              th:text="${userDisplayName}">User</span>
+                        <a th:href="@{/auth/logout}"
+                           class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
+                            Logout
                         </a>
                     </div>
                 </div>
@@ -201,45 +195,41 @@
                 @click.away="mobileMenuOpen = false"
                 class="md:hidden pb-3 border-t border-gray-200">
                 <div class="flex flex-col space-y-1 pt-2">
-                    <!-- Navigation links -->
+                    <a th:href="${predictionsNavLink} ?: '/predictions/user/guest'"
+                      class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                      th:text="${predictionsNavLabel} ?: 'Predictions'">
+                        Predictions
+                    </a>
                     <a th:href="@{/leaderboard}"
                       class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
                         Leaderboard
                     </a>
-                    <a th:href="@{/standings}"
+                    <a th:href="@{/seasons/current/standings}"
                       class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
                         Standings
                     </a>
-                    <a th:href="@{/matches}"
+                    <a th:href="@{/seasons/current/matches}"
                       class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
                         Matches
                     </a>
-
-                    <!-- Authenticated User Menu -->
-                    <div sec:authorize="isAuthenticated()" class="border-t border-gray-200 pt-2 mt-2">
-                        <a th:href="@{/seasonprediction}"
-                          class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium block">
-                            My Predictions
-                        </a>
-                        <div class="px-3 py-2 text-sm text-gray-600" sec:authentication="principal.displayName"></div>
-                        <form th:action="@{/auth/logout}" method="post">
-                            <button type="submit"
-                                    class="w-full text-left text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
-                                Logout
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Anonymous User Menu -->
-                    <div sec:authorize="isAnonymous()" class="border-t border-gray-200 pt-2 mt-2">
-                                                <a th:href="@{/auth/login}"
+                    <div class="border-t border-gray-200 pt-2 mt-2">
+                        <a th:unless="${isLoggedIn}" th:href="@{/auth/login}"
                           class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium block">
                             Login
                         </a>
-                                                <a th:href="@{/auth/register}"
+                        <a th:unless="${isLoggedIn}" th:href="@{/auth/register}"
                           class="text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-md text-base font-medium block">
                             Sign Up
                         </a>
+                        <!-- Logged in user in mobile -->
+                        <div th:if="${isLoggedIn}" class="px-3 py-2">
+                            <span th:if="${userDisplayName}" class="text-sm font-medium text-gray-900 block mb-2"
+                                  th:text="'Signed in as ' + ${userDisplayName}">Signed in as User</span>
+                            <a th:href="@{/auth/logout}"
+                               class="text-gray-700 hover:bg-gray-50 py-2 rounded-md text-base font-medium block">
+                                Logout
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -355,6 +345,49 @@
             const canSwap = canSwapRaw === 'true' || canSwapRaw === 'True';
             const isInitialPrediction = isInitialRaw === 'true' || isInitialRaw === 'True';
 
+            // Guest localStorage key - same as guestPredictionPage uses
+            const GUEST_STORAGE_KEY = 'ligitabl.guestPrediction';
+
+            // Try to load guest prediction from localStorage
+            function loadGuestPrediction() {
+                try {
+                    const saved = localStorage.getItem(GUEST_STORAGE_KEY);
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        // Validate saved data has same teams as server data
+                        const serverCodes = new Set(predictions.map(p => p.teamCode));
+                        const savedCodes = new Set(parsed.map(p => p.code));
+                        if (serverCodes.size === savedCodes.size &&
+                            [...serverCodes].every(c => savedCodes.has(c))) {
+                            return parsed;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Failed to load guest prediction:', e);
+                }
+                return null;
+            }
+
+            // Clear guest localStorage after import
+            function clearGuestStorage() {
+                try {
+                    localStorage.removeItem(GUEST_STORAGE_KEY);
+                } catch (e) {
+                    console.warn('Failed to clear guest prediction:', e);
+                }
+            }
+
+            // Build server data lookup for comparing against imported predictions
+            const serverDataByCode = {};
+            (Array.isArray(predictions) ? predictions : []).forEach(p => {
+                serverDataByCode[p.teamCode] = {
+                    position: p.position,
+                    code: p.teamCode,
+                    name: p.teamName,
+                    crestUrl: p.crestUrl
+                };
+            });
+
             return {
                 teams: [],
                 originalTeams: [],
@@ -368,16 +401,54 @@
                 fixtures,
                 currentPoints,
                 isSaving: false,
+                importedFromGuest: false,
 
                 init() {
-                    this.teams = (Array.isArray(predictions) ? predictions : []).map((p) => ({
-                        position: p.position,
-                        code: p.teamCode,
-                        name: p.teamName,
-                        crestUrl: p.crestUrl,
-                        originalPosition: p.position,
-                    }));
-                    this.originalTeams = JSON.parse(JSON.stringify(this.teams));
+                    // For initial prediction (new user), try to import from guest localStorage
+                    if (isInitialPrediction) {
+                        const guestPrediction = loadGuestPrediction();
+                        if (guestPrediction) {
+                            // Use guest prediction order, but compare against server default positions
+                            this.teams = guestPrediction.map((t, idx) => {
+                                const serverData = serverDataByCode[t.code];
+                                return {
+                                    position: idx + 1,
+                                    code: t.code,
+                                    name: t.name,
+                                    crestUrl: t.crestUrl,
+                                    // Use server's original position so we can highlight changes
+                                    originalPosition: serverData ? serverData.position : idx + 1,
+                                };
+                            });
+                            this.importedFromGuest = true;
+                            // Don't clear yet - let them submit first
+                        }
+                    }
+
+                    // If no guest prediction was imported, use server data
+                    if (this.teams.length === 0) {
+                        this.teams = (Array.isArray(predictions) ? predictions : []).map((p) => ({
+                            position: p.position,
+                            code: p.teamCode,
+                            name: p.teamName,
+                            crestUrl: p.crestUrl,
+                            originalPosition: p.position,
+                        }));
+                    }
+
+                    // Store original teams for reset functionality
+                    // For imported predictions, originalTeams should be the server default order
+                    if (this.importedFromGuest) {
+                        this.originalTeams = (Array.isArray(predictions) ? predictions : []).map((p) => ({
+                            position: p.position,
+                            code: p.teamCode,
+                            name: p.teamName,
+                            crestUrl: p.crestUrl,
+                            originalPosition: p.position,
+                        }));
+                    } else {
+                        this.originalTeams = JSON.parse(JSON.stringify(this.teams));
+                    }
                 },
 
                 getCurrentPoints(teamCode) {
@@ -611,7 +682,7 @@
                         toast.classList.remove('hidden');
                     }
 
-                    fetch('/seasonprediction/swap-multiple', {
+                    fetch('/predictions/swap-multiple', {
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/json',
@@ -621,6 +692,11 @@
                         .then((response) => response.json())
                         .then((data) => {
                             if (data.success) {
+                              // Clear guest localStorage after successful submit
+                              if (this.importedFromGuest || this.isInitialPrediction) {
+                                  clearGuestStorage();
+                              }
+
                               // Delay scroll slightly so user sees button state change
                               setTimeout(() => {
                                   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -644,12 +720,502 @@
             };
         };
 
+        // Season Prediction Page Component (New Clean Architecture)
+        window.Ligitabl.seasonPredictionPage = function (el) {
+            const rankingsRaw = el?.dataset?.rankings ?? '[]';
+            const source = el?.dataset?.source ?? 'SEASON_BASELINE';
+            const hasPredictionRaw = el?.dataset?.hasPrediction ?? 'false';
+
+            let rankings;
+            try {
+                rankings = JSON.parse(rankingsRaw);
+            } catch {
+                rankings = [];
+            }
+
+            const hasSeasonPrediction = hasPredictionRaw === 'true' || hasPredictionRaw === 'True';
+
+            return {
+                rankings: [],
+                originalRankings: [],
+                selectedTeam: null,
+                hasSeasonPrediction,
+                source,
+                isSaving: false,
+
+                init() {
+                    this.rankings = rankings.map(r => ({
+                        position: r.position,
+                        team: {
+                            id: r.team.id,
+                            code: r.team.code,
+                            name: r.team.name,
+                            crestUrl: r.team.crestUrl
+                        },
+                        originalPosition: r.position
+                    }));
+                    this.originalRankings = JSON.parse(JSON.stringify(this.rankings));
+                },
+
+                get canModify() {
+                    // Can always modify if no prediction yet
+                    if (!this.hasSeasonPrediction) return true;
+                    // If have prediction, can only do single swap
+                    return true;
+                },
+
+                isSelected(teamCode) {
+                    return this.selectedTeam === teamCode;
+                },
+
+                isDirty(teamCode) {
+                    const ranking = this.rankings.find(r => r.team.code === teamCode);
+                    if (!ranking) return false;
+                    return ranking.position !== ranking.originalPosition;
+                },
+
+                getDirtyCount() {
+                    return this.rankings.filter(r => r.position !== r.originalPosition).length;
+                },
+
+                getSwapCount() {
+                    const changedTeams = this.getDirtyCount();
+                    return Math.ceil(changedTeams / 2);
+                },
+
+                getChangedTeams() {
+                    return this.rankings
+                        .filter(r => r.position !== r.originalPosition)
+                        .map(r => {
+                            const change = r.originalPosition - r.position;
+                            return {
+                                name: r.team.name,
+                                code: r.team.code,
+                                from: r.originalPosition,
+                                to: r.position,
+                                direction: change > 0 ? 'up' : 'down'
+                            };
+                        })
+                        .sort((a, b) => a.from - b.from);
+                },
+
+                getPositionChange(teamCode) {
+                    const ranking = this.rankings.find(r => r.team.code === teamCode);
+                    if (!ranking) return null;
+                    const change = ranking.originalPosition - ranking.position;
+                    if (change === 0) return null;
+                    return change > 0 ? `↑${change}` : `↓${Math.abs(change)}`;
+                },
+
+                teamClick(teamCode) {
+                    if (!this.canModify) return;
+
+                    if (this.selectedTeam === null) {
+                        this.selectedTeam = teamCode;
+                        this.$nextTick(() => {
+                            const row = document.querySelector(`[data-team-code='${teamCode}']`);
+                            if (row) {
+                                row.classList.add('selected-pulse');
+                                setTimeout(() => row.classList.remove('selected-pulse'), 300);
+                            }
+                        });
+                        return;
+                    }
+
+                    if (this.selectedTeam === teamCode) {
+                        this.selectedTeam = null;
+                        return;
+                    }
+
+                    // Perform swap
+                    const index1 = this.rankings.findIndex(r => r.team.code === this.selectedTeam);
+                    const index2 = this.rankings.findIndex(r => r.team.code === teamCode);
+
+                    if (index1 < 0 || index2 < 0) {
+                        this.selectedTeam = null;
+                        return;
+                    }
+
+                    const team1Code = this.selectedTeam;
+                    const team2Code = teamCode;
+
+                    // Visual feedback
+                    const row1 = document.querySelector(`[data-team-code='${team1Code}']`);
+                    const row2 = document.querySelector(`[data-team-code='${team2Code}']`);
+
+                    if (row1) row1.classList.add('swapping');
+                    if (row2) row2.classList.add('swapping');
+
+                    setTimeout(() => {
+                        if (row1) row1.classList.remove('swapping');
+                        if (row2) row2.classList.remove('swapping');
+                    }, 600);
+
+                    // Swap positions
+                    const temp = this.rankings[index1];
+                    this.rankings[index1] = this.rankings[index2];
+                    this.rankings[index2] = temp;
+
+                    // Recalculate positions
+                    this.rankings.forEach((r, idx) => {
+                        r.position = idx + 1;
+                    });
+
+                    this.selectedTeam = null;
+                },
+
+                reset() {
+                    this.rankings = JSON.parse(JSON.stringify(this.originalRankings));
+                    this.selectedTeam = null;
+                },
+
+                canUpdate() {
+                    const swapCount = this.getSwapCount();
+                    if (swapCount === 0) return false;
+
+                    // If have prediction, only allow 1 swap
+                    if (this.hasSeasonPrediction && swapCount > 1) return false;
+
+                    return true;
+                },
+
+                exceedsLimit() {
+                    return this.hasSeasonPrediction && this.getSwapCount() > 1;
+                },
+
+                submitChanges() {
+                    this.isSaving = true;
+
+                    if (!this.hasSeasonPrediction) {
+                        // Initial prediction - submit all rankings
+                        this.submitInitialPrediction();
+                    } else {
+                        // Already have prediction - submit single swap
+                        this.submitSwap();
+                    }
+                },
+
+                submitInitialPrediction() {
+                    const teamRankings = this.rankings.map(r => ({
+                        teamId: r.team.id,
+                        position: r.position
+                    }));
+
+                    fetch('/seasonprediction', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ teamRankings }),
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(err => Promise.reject(err));
+                            }
+                            return response.json();
+                        })
+                        .then(() => {
+                            window.location.reload();
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            this.isSaving = false;
+                            alert('Failed to submit prediction: ' + (error.message || 'Unknown error'));
+                        });
+                },
+
+                submitSwap() {
+                    // Find the two teams that were swapped
+                    const changed = this.getChangedTeams();
+
+                    if (changed.length !== 2) {
+                        alert('Please make exactly one swap');
+                        this.isSaving = false;
+                        return;
+                    }
+
+                    const team1 = this.rankings.find(r => r.team.code === changed[0].code);
+                    const team2 = this.rankings.find(r => r.team.code === changed[1].code);
+
+                    const swapRequest = {
+                        teamA: {
+                            teamId: team1.team.id,
+                            currentPosition: team1.originalPosition
+                        },
+                        teamB: {
+                            teamId: team2.team.id,
+                            currentPosition: team2.originalPosition
+                        }
+                    };
+
+                    fetch('/seasonprediction/swap', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify(swapRequest),
+                    })
+                        .then(response => {
+                            if (!response.ok) {
+                                return response.json().then(err => Promise.reject(err));
+                            }
+                            return response.json();
+                        })
+                        .then(() => {
+                            window.location.reload();
+                        })
+                        .catch(error => {
+                            console.error('Error:', error);
+                            this.isSaving = false;
+                            alert('Failed to submit swap: ' + (error.message || 'Unknown error'));
+                        });
+                }
+            };
+        };
+
         document.body.addEventListener('htmx:afterSwap', (event) => {
             if (!window.Alpine || !event.detail?.target) return;
             const target = event.detail.target;
             if (!target.querySelector || !target.querySelector('[x-data]')) return;
             window.Alpine.initTree(target);
         });
+
+        // Guest Prediction Page Component (with localStorage support)
+        window.Ligitabl.guestPredictionPage = function (el) {
+            const STORAGE_KEY = 'ligitabl.guestPrediction';
+            const predictionsRaw = el?.dataset?.predictions ?? '[]';
+            const currentStandingsRaw = el?.dataset?.currentStandings ?? '{}';
+            const fixturesRaw = el?.dataset?.fixtures ?? '{}';
+            const currentPointsRaw = el?.dataset?.currentPoints ?? '{}';
+
+            let serverPredictions;
+            try {
+                serverPredictions = JSON.parse(predictionsRaw);
+            } catch {
+                serverPredictions = [];
+            }
+
+            let currentStandings;
+            try {
+                currentStandings = JSON.parse(currentStandingsRaw);
+            } catch {
+                currentStandings = {};
+            }
+
+            let fixtures;
+            try {
+                fixtures = JSON.parse(fixturesRaw);
+            } catch {
+                fixtures = {};
+            }
+
+            let currentPoints;
+            try {
+                currentPoints = JSON.parse(currentPointsRaw);
+            } catch {
+                currentPoints = {};
+            }
+
+            // Load saved prediction from localStorage or use server data
+            function loadSavedPrediction() {
+                try {
+                    const saved = localStorage.getItem(STORAGE_KEY);
+                    if (saved) {
+                        const parsed = JSON.parse(saved);
+                        // Validate that saved data has same teams
+                        const serverCodes = new Set(serverPredictions.map(p => p.teamCode));
+                        const savedCodes = new Set(parsed.map(p => p.code));
+                        if (serverCodes.size === savedCodes.size &&
+                            [...serverCodes].every(c => savedCodes.has(c))) {
+                            return parsed;
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Failed to load saved prediction:', e);
+                }
+                return null;
+            }
+
+            return {
+                teams: [],
+                originalTeams: [],
+                selectedTeam: null,
+                showStandings: false,
+                showFixtures: false,
+                showPoints: false,
+                currentStandings,
+                fixtures,
+                currentPoints,
+                hasLocalChanges: false,
+
+                init() {
+                    const saved = loadSavedPrediction();
+
+                    if (saved) {
+                        this.teams = saved.map((t, idx) => ({
+                            ...t,
+                            position: idx + 1
+                        }));
+                        this.hasLocalChanges = true;
+                    } else {
+                        this.teams = serverPredictions.map((p) => ({
+                            position: p.position,
+                            code: p.teamCode,
+                            name: p.teamName,
+                            crestUrl: p.crestUrl,
+                            originalPosition: p.position,
+                        }));
+                    }
+                    this.originalTeams = serverPredictions.map((p) => ({
+                        position: p.position,
+                        code: p.teamCode,
+                        name: p.teamName,
+                        crestUrl: p.crestUrl,
+                        originalPosition: p.position,
+                    }));
+                },
+
+                saveToLocalStorage() {
+                    try {
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(this.teams));
+                        this.hasLocalChanges = true;
+                    } catch (e) {
+                        console.warn('Failed to save prediction:', e);
+                    }
+                },
+
+                clearLocalStorage() {
+                    try {
+                        localStorage.removeItem(STORAGE_KEY);
+                        this.hasLocalChanges = false;
+                    } catch (e) {
+                        console.warn('Failed to clear prediction:', e);
+                    }
+                },
+
+                getCurrentPoints(teamCode) {
+                    return this.currentPoints[teamCode] || '-';
+                },
+
+                getFixtures(teamCode) {
+                    return this.fixtures[teamCode] || [];
+                },
+
+                hasFixtures(teamCode) {
+                    const teamFixtures = this.getFixtures(teamCode);
+                    return teamFixtures.length > 0;
+                },
+
+                isSelected(teamCode) {
+                    return this.selectedTeam === teamCode;
+                },
+
+                isDirty(teamCode) {
+                    const team = this.teams.find((t) => t.code === teamCode);
+                    const original = this.originalTeams.find((t) => t.code === teamCode);
+                    if (!team || !original) return false;
+                    return team.position !== original.position;
+                },
+
+                getDirtyCount() {
+                    return this.teams.filter((t) => this.isDirty(t.code)).length;
+                },
+
+                getSwapCount() {
+                    const changedTeams = this.getDirtyCount();
+                    return Math.ceil(changedTeams / 2);
+                },
+
+                getPositionChange(teamCode) {
+                    const team = this.teams.find((t) => t.code === teamCode);
+                    const original = this.originalTeams.find((t) => t.code === teamCode);
+                    if (!team || !original) return null;
+                    const change = original.position - team.position;
+                    if (change === 0) return null;
+                    return change > 0 ? `↑${change}` : `↓${Math.abs(change)}`;
+                },
+
+                teamClick(teamCode) {
+                    if (this.selectedTeam === null) {
+                        this.selectedTeam = teamCode;
+                        this.$nextTick(() => {
+                            const row = document.querySelector(`[data-team-code='${teamCode}']`);
+                            if (row) {
+                                row.classList.add('selected-pulse');
+                                setTimeout(() => row.classList.remove('selected-pulse'), 300);
+                            }
+                        });
+                        return;
+                    }
+
+                    if (this.selectedTeam === teamCode) {
+                        this.selectedTeam = null;
+                        return;
+                    }
+
+                    const index1 = this.teams.findIndex((t) => t.code === this.selectedTeam);
+                    const index2 = this.teams.findIndex((t) => t.code === teamCode);
+                    if (index1 < 0 || index2 < 0) {
+                        this.selectedTeam = null;
+                        return;
+                    }
+
+                    const team1Code = this.selectedTeam;
+                    const team2Code = teamCode;
+
+                    const row1 = document.querySelector(`[data-team-code='${team1Code}']`);
+                    const row2 = document.querySelector(`[data-team-code='${team2Code}']`);
+
+                    if (row1) row1.classList.add('swapping');
+                    if (row2) row2.classList.add('swapping');
+
+                    setTimeout(() => {
+                        if (row1) row1.classList.remove('swapping');
+                        if (row2) row2.classList.remove('swapping');
+                    }, 600);
+
+                    const temp = this.teams[index1];
+                    this.teams[index1] = this.teams[index2];
+                    this.teams[index2] = temp;
+                    this.teams.forEach((team, idx) => (team.position = idx + 1));
+
+                    this.selectedTeam = null;
+
+                    // Auto-save to localStorage after each swap
+                    this.saveToLocalStorage();
+                },
+
+                reset() {
+                    this.teams = JSON.parse(JSON.stringify(this.originalTeams));
+                    this.selectedTeam = null;
+                    this.clearLocalStorage();
+                },
+
+                getActualPosition(teamCode) {
+                    return this.currentStandings[teamCode] || '?';
+                },
+
+                getDelta(teamCode) {
+                    const team = this.teams.find(t => t.code === teamCode);
+                    const actual = this.getActualPosition(teamCode);
+                    if (!team || actual === '?') return '-';
+                    return Math.abs(team.position - actual);
+                },
+
+                getDeltaDirection(teamCode) {
+                    const team = this.teams.find(t => t.code === teamCode);
+                    const actual = this.getActualPosition(teamCode);
+                    if (!team || actual === '?') return null;
+                    return team.position > actual ? 'up' : 'down';
+                },
+
+                getSelectedTeamName() {
+                    if (!this.selectedTeam) return null;
+                    const team = this.teams.find((t) => t.code === this.selectedTeam);
+                    return team ? team.name : null;
+                }
+            };
+        };
 
         (function () {
             window.Ligitabl = window.Ligitabl || {};

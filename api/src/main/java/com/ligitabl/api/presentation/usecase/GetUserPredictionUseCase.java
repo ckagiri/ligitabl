@@ -43,7 +43,6 @@ public class GetUserPredictionUseCase {
     private final RoundRepo roundRepo;
     private final RoundResultRepo roundResultRepo;
     private final StandingsRepo standingsRepo;
-    private final TeamRepo teamRepo;
     private final MatchRepo matchRepo;
 
     /**

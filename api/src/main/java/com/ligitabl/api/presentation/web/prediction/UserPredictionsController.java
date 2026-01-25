@@ -10,23 +10,18 @@ import com.ligitabl.api.presentation.mapper.ErrorViewMapper;
 import com.ligitabl.api.presentation.usecase.GetUserPredictionUseCase;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.auth.Email;
+import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.domain.User;
-import com.ligitabl.model.repo.ContestRepo;
-import com.ligitabl.model.repo.SeasonRepo;
-import com.ligitabl.model.repo.TeamRepo;
-import com.ligitabl.model.repo.UserRepo;
+import com.ligitabl.model.repo.*;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ui.Model;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.time.Instant;
@@ -49,6 +44,7 @@ public class UserPredictionsController {
     private final UserRepo userRepo;
     private final CompetitionDefaults competitionDefaults;
     private final ErrorViewMapper errorMapper;
+    private final SeasonPredictionRepo seasonPredictionRepo;
 
     /**
     * GET /predictions/user/me - View current user's prediction.
@@ -93,6 +89,110 @@ public class UserPredictionsController {
         return result.fold(
                 error -> handleError(error, model, response, hxRequest),
                 data -> handleSuccess(data, model, hxRequest)
+        );
+    }
+
+    /**
+     * GET /predictions/user/guest - Explicit guest view.
+     *
+     * <p>Always returns fallback rankings as READONLY_GUEST, regardless of authentication.</p>
+     */
+    @GetMapping("/guest")
+    public String guestPredictions(
+            @RequestParam(required = false) Integer round,
+            Model model,
+            HttpServletResponse response,
+            @RequestHeader(value = "HX-Request", required = false) String hxRequest
+    ) {
+        log.info("GET /predictions/user/guest - round: {}", round);
+
+        UUID activeSeasonId = getActiveSeason().getId();
+        GetUserPredictionCommand command = GetUserPredictionCommand.forGuest(activeSeasonId, round);
+
+        Either<UseCaseError, GetUserPredictionUseCase.UserPredictionViewData> result =
+                getUserPredictionUseCase.execute(command);
+
+        return result.fold(
+                error -> handleError(error, model, response, hxRequest),
+                data -> handleSuccess(data, model, hxRequest)
+        );
+    }
+
+
+    /**
+     * GET /predictions/user/{userId} - View specific user's predictions.
+     *
+     * <p>Resolution logic:
+     * <ul>
+     *   <li>If userId matches logged-in user → Treat as /me</li>
+     *   <li>If userId is valid existing user → Show their prediction (READONLY_VIEWING_OTHER)</li>
+     *   <li>If userId doesn't exist → Show fallback (READONLY_USER_NOT_FOUND)</li>
+     * </ul>
+     */
+    @GetMapping("/{userId}")
+    public String userPredictions(
+            @PathVariable String publicUserId,
+            @RequestParam(required = false) Integer round,
+            Principal principal,
+            Model model,
+            HttpServletResponse response,
+            @RequestHeader(value = "HX-Request", required = false) String hxRequest
+    ) {
+        log.info("GET /predictions/user/{} - round: {}, viewer: {}",
+                publicUserId, round, principal != null ? principal.getName() : "guest");
+
+        // Check if viewing own predictions
+        if (principal != null && principal.getName().equals(publicUserId)) {
+            return myPredictions(round, principal, model, response, hxRequest);
+        }
+
+        GetUserPredictionCommand command = buildCommandForUser(publicUserId, round);
+
+        Either<UseCaseError, GetUserPredictionUseCase.UserPredictionViewData> result =
+                getUserPredictionUseCase.execute(command);
+
+        return result.fold(
+                error -> handleError(error, model, response, hxRequest),
+                data -> handleSuccess(data, model, hxRequest)
+        );
+    }
+
+    /**
+     * Build command for /{userId} endpoint.
+     */
+    private GetUserPredictionCommand buildCommandForUser(String userIdStr, Integer round) {
+        PublicId publicUserId;
+        Season activeSeason = getActiveSeason();
+        UUID activeSeasonId = activeSeason.getId();
+        UUID mainContestId = activeSeason.getMainContestId();
+
+        try {
+            publicUserId = PublicId.create(userIdStr);
+        } catch (IllegalArgumentException e) {
+            // Invalid public id format - treat as user not found
+            return GetUserPredictionCommand.forNonExistentUser(activeSeasonId, round);
+        }
+
+        var user = userRepo.findByPublicId(publicUserId).orElse(null);
+        if (user == null) {
+            return GetUserPredictionCommand.forNonExistentUser(activeSeasonId, round);
+        }
+
+        UUID targetUserId = user.getId();
+        boolean hasMainContestEntry = mainContestId != null
+                && contestRepo.existsByUserAndContest(targetUserId, mainContestId);
+        String displayName = user.getDisplayName();
+
+        if (hasMainContestEntry) {
+            // User exists and has prediction
+            return GetUserPredictionCommand.forViewingOtherUser(
+                    targetUserId, activeSeasonId, true, displayName, round
+            );
+        }
+
+        // User exists but has no prediction yet
+        return GetUserPredictionCommand.forViewingOtherUser(
+                targetUserId, activeSeasonId, false, displayName, round
         );
     }
 
@@ -232,9 +332,9 @@ public class UserPredictionsController {
 
         // Return appropriate view
         if (hxRequest != null && !hxRequest.isBlank()) {
-            return "predictions/me :: predictionPage";
+            return "predictions/user :: predictionPage";
         }
-        return "predictions/me";
+        return "predictions/user";
     }
 
     private Season getActiveSeason() {
