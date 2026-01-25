@@ -67,6 +67,18 @@ public class ContestPersistenceAdapter implements ContestRepo {
         return Optional.ofNullable(map(record));
     }
 
+    @Override
+    public boolean existsByUserAndContest(UUID userId, UUID contestId) {
+        if (userId == null || contestId == null) {
+            throw new IllegalArgumentException("userId and contestId must not be null");
+        }
+
+        return dsl.fetchExists(dsl.selectOne()
+                .from(com.ligitabl.model.db.tables.TEntry.T_ENTRY)
+                .where(com.ligitabl.model.db.tables.TEntry.T_ENTRY.FK_USER_ID.eq(userId))
+                .and(com.ligitabl.model.db.tables.TEntry.T_ENTRY.FK_CONTEST_ID.eq(contestId)));
+    }
+
     private static Contest map(ContestRecord record) {
         if (record == null) {
             return null;

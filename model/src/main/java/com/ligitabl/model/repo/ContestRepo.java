@@ -12,5 +12,5 @@ public interface ContestRepo {
 
     Optional<Contest> findMainBySeasonId(UUID seasonId);
 
-    boolean existsByUserAndSeason(UUID userId, UUID seasonId);
+    boolean existsByUserAndContest(UUID userId, UUID contestId);
 }

@@ -18,8 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * Use case for retrieving user predictions with access mode resolution.
@@ -142,7 +140,7 @@ public class GetUserPredictionUseCase {
                         "User context indicates prediction exists but not found"));
 
                 // Get swap cooldown for this user
-                SwapCooldown swapCooldown = buildSwapCooldown(seasonPrediction);
+                SwapCooldown swapCooldown = seasonPrediction.getSwapCooldown();
 
             // For historical rounds, load RoundResult with scored data
             if (!isCurrentRound) {
@@ -372,23 +370,6 @@ public class GetUserPredictionUseCase {
         return PredictionAccessMode.READONLY_COOLDOWN;
     }
 
-    private SwapCooldown buildSwapCooldown(SeasonPrediction prediction) {
-        if (prediction == null) {
-            return null;
-        }
-
-        int swapCount = prediction.getSwaps() == null
-                ? 0
-                : prediction.getSwaps().stream()
-                        .mapToInt(swap -> swap.getChanges() == null ? 0 : swap.getChanges().size())
-                        .sum();
-
-        return new SwapCooldown(
-                prediction.getLastSwapAt(),
-                true,
-                swapCount,
-                false);
-    }
 
     /**
      * Get fallback rankings using the three-tier hierarchy:

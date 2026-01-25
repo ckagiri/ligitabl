@@ -13,7 +13,8 @@ import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
-import com.ligitabl.model.repo.SeasonPredictionRepo;
+import com.ligitabl.model.domain.User;
+import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.TeamRepo;
 import com.ligitabl.model.repo.UserRepo;
@@ -43,7 +44,7 @@ public class UserPredictionsController {
     private final ObjectMapper objectMapper;
     private final GetUserPredictionUseCase getUserPredictionUseCase;
     private final SeasonRepo seasonRepo;
-    private final SeasonPredictionRepo seasonPredictionRepo;
+    private final ContestRepo contestRepo;
     private final TeamRepo teamRepo;
     private final UserRepo userRepo;
     private final CompetitionDefaults competitionDefaults;
@@ -106,7 +107,9 @@ public class UserPredictionsController {
             return GetUserPredictionCommand.forGuest(activeSeasonId, round);
         }
 
-        boolean hasMainContestEntry = seasonPredictionRepo.existsByUserAndSeason(userId, activeSeasonId);
+        UUID mainContestId = season.getMainContestId();
+        boolean hasMainContestEntry = mainContestId != null
+            && contestRepo.existsByUserAndContest(userId, mainContestId);
         return GetUserPredictionCommand.forAuthenticatedUser(
                 userId, activeSeasonId, hasMainContestEntry, round
         );
@@ -122,7 +125,7 @@ public class UserPredictionsController {
         try {
             Email email = Email.create(principal.getName());
             return userRepo.findByEmail(email)
-                    .map(com.ligitabl.model.domain.User::getId)
+                    .map(User::getId)
                     .orElseGet(() -> {
                         response.setStatus(401);
                         model.addAttribute("error", "User not found");

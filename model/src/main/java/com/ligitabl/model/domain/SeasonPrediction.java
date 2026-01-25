@@ -51,6 +51,11 @@ public class SeasonPrediction extends AbstractModel<UUID> {
     }
 
     public SwapCooldown getSwapCooldown() {
-        return new SwapCooldown(lastSwapAt, true, swaps.size(), true);
+        int swapCount = swaps == null
+                ? 0
+                : swaps.stream()
+                        .mapToInt(roundSwap -> roundSwap.getChanges() == null ? 0 : roundSwap.getChanges().size())
+                        .sum();
+        return new SwapCooldown(lastSwapAt, true, swapCount, false);
     }
 }
