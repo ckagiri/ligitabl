@@ -2,22 +2,21 @@ package com.ligitabl.api.presentation.web.prediction;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ligitabl.api.auth.CurrentUserId;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.presentation.command.GetUserPredictionCommand;
 import com.ligitabl.api.presentation.dto.response.TeamRankDto;
 import com.ligitabl.api.presentation.error.UseCaseError;
 import com.ligitabl.api.presentation.mapper.ErrorViewMapper;
-import com.ligitabl.api.presentation.mapper.SeasonPredictionViewMapper;
 import com.ligitabl.api.presentation.usecase.GetUserPredictionUseCase;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
-import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.TeamRepo;
+import com.ligitabl.model.repo.UserRepo;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -36,8 +35,6 @@ import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import static com.ligitabl.api.usecases.prediction.getprediction.RankingSource.*;
-
 @Controller
 @RequestMapping("/predictions/user")
 @RequiredArgsConstructor
@@ -48,14 +45,12 @@ public class UserPredictionsController {
     private final SeasonRepo seasonRepo;
     private final SeasonPredictionRepo seasonPredictionRepo;
     private final TeamRepo teamRepo;
-    private final ContestRepo contestRepo;
-    private final CurrentUserId currentUserId;
+    private final UserRepo userRepo;
     private final CompetitionDefaults competitionDefaults;
-    private final SeasonPredictionViewMapper viewMapper;
     private final ErrorViewMapper errorMapper;
 
     /**
-     * GET /prediction/user/me - View current user's prediction.
+    * GET /predictions/user/me - View current user's prediction.
      *
      * <p>Resolves user from Principal:
      * <ul>
@@ -71,6 +66,10 @@ public class UserPredictionsController {
             Model model,
             HttpServletResponse response,
             @RequestHeader(value = "HX-Request", required = false) String hxRequest) {
+
+        log.info("GET /predictions/user/me - round: {}, user: {}",
+                round, principal != null ? principal.getName() : "guest");
+
         // Redirect guests to /guest endpoint - /me implies "my account"
         if (principal == null) {
             String redirect = "redirect:/predictions/user/guest";
@@ -79,10 +78,13 @@ public class UserPredictionsController {
             }
             return redirect;
         }
-        log.info("GET /prediction/user/me - round: {}, user: {}",
-                round, principal != null ? principal.getName() : "guest");
 
-        GetUserPredictionCommand command = buildCommandForMe(currentUserId.require(), round);
+        UUID resolvedUserId = resolveAuthenticatedUserId(principal, model, response);
+        if (resolvedUserId == null) {
+            return "error";
+        }
+
+        GetUserPredictionCommand command = buildCommandForMe(resolvedUserId, round);
 
         Either<UseCaseError, GetUserPredictionUseCase.UserPredictionViewData> result =
                 getUserPredictionUseCase.execute(command);
@@ -99,18 +101,38 @@ public class UserPredictionsController {
     private GetUserPredictionCommand buildCommandForMe(UUID userId, Integer round) {
         Season season = getActiveSeason();
         UUID activeSeasonId = season.getId();
-        UUID mainContestId = season.getMainContestId();
 
         if (userId == null) {
             return GetUserPredictionCommand.forGuest(activeSeasonId, round);
         }
 
-        boolean hasEntry = contestRepo.existsByUserAndSeason(userId, mainContestId);
-        boolean hasPrediction = seasonPredictionRepo.existsByUserAndSeason(userId, activeSeasonId);
-
+        boolean hasMainContestEntry = seasonPredictionRepo.existsByUserAndSeason(userId, activeSeasonId);
         return GetUserPredictionCommand.forAuthenticatedUser(
-                userId, activeSeasonId, hasEntry, hasPrediction, round
+                userId, activeSeasonId, hasMainContestEntry, round
         );
+    }
+
+    private UUID resolveAuthenticatedUserId(Principal principal, Model model, HttpServletResponse response) {
+        if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
+            response.setStatus(401);
+            model.addAttribute("error", "Unauthenticated");
+            return null;
+        }
+
+        try {
+            Email email = Email.create(principal.getName());
+            return userRepo.findByEmail(email)
+                    .map(com.ligitabl.model.domain.User::getId)
+                    .orElseGet(() -> {
+                        response.setStatus(401);
+                        model.addAttribute("error", "User not found");
+                        return null;
+                    });
+        } catch (IllegalArgumentException e) {
+            response.setStatus(400);
+            model.addAttribute("error", e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -207,9 +229,9 @@ public class UserPredictionsController {
 
         // Return appropriate view
         if (hxRequest != null && !hxRequest.isBlank()) {
-            return "predictions/user/me :: predictionPage";
+            return "predictions/me :: predictionPage";
         }
-        return "predictions/user/me";
+        return "predictions/me";
     }
 
     private Season getActiveSeason() {

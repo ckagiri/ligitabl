@@ -1,7 +1,6 @@
 package com.ligitabl.api.presentation.command;
 
 import com.ligitabl.api.presentation.domain.user.UserContext;
-import com.ligitabl.model.auth.PublicId;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -49,12 +48,11 @@ public record GetUserPredictionCommand(
     public static GetUserPredictionCommand forAuthenticatedUser(
             UUID userId,
             UUID seasonId,
-            boolean hasEntry,
-            boolean hasPrediction,
+            boolean hasMainContestEntry,
             Integer round
     ) {
         return new GetUserPredictionCommand(
-                UserContext.authenticated(userId, hasEntry, hasPrediction),
+                UserContext.authenticated(userId, hasMainContestEntry),
                 seasonId,
                 round,
                 null
@@ -79,12 +77,12 @@ public record GetUserPredictionCommand(
     public static GetUserPredictionCommand forViewingOtherUser(
             UUID targetUserId,
             UUID seasonId,
-            boolean hasPrediction,
+            boolean hasMainContestEntry,
             String displayName,
             Integer round
     ) {
         return new GetUserPredictionCommand(
-                UserContext.viewingOther(targetUserId, hasPrediction),
+                UserContext.viewingOther(targetUserId, hasMainContestEntry),
                 seasonId,
                 round,
                 displayName

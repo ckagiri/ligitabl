@@ -135,13 +135,14 @@ public class GetUserPredictionUseCase {
     ) {
         UserContext ctx = cmd.userContext();
 
-        // First try to load from SeasonPredictionRepo (the proper domain model)
-        if (ctx.hasSeasonPrediction()) {
-            var seasonPrediction = seasonPredictionRepo
-                    .findByUserAndSeason(ctx.userId(), cmd.seasonId()).get();
+        if (ctx.hasContestEntry()) {
+                var seasonPrediction = seasonPredictionRepo
+                    .findByUserAndSeason(ctx.userId(), cmd.seasonId())
+                    .orElseThrow(() -> new IllegalStateException(
+                        "User context indicates prediction exists but not found"));
 
-            // Get swap cooldown for this user
-            SwapCooldown swapCooldown = seasonPrediction.getSwapCooldown();
+                // Get swap cooldown for this user
+                SwapCooldown swapCooldown = buildSwapCooldown(seasonPrediction);
 
             // For historical rounds, load RoundResult with scored data
             if (!isCurrentRound) {
@@ -171,7 +172,7 @@ public class GetUserPredictionUseCase {
             PredictionAccessMode accessMode = determineAccessMode(swapCooldown, isCurrentRound);
 
             // Get standings and points for current round
-            Map<String, Integer> standingsMap = standingsRepo.findPointsMap(cmd.seasonId(), currentRound);
+            Map<String, Integer> standingsMap = standingsRepo.findPositionMap(cmd.seasonId(), currentRound);
             Map<String, Integer> pointsMap = standingsRepo.findPointsMap(cmd.seasonId(), currentRound);
 
             String message = null;
@@ -204,7 +205,7 @@ public class GetUserPredictionUseCase {
                 ? standingsRepo.findPositionMap(cmd.seasonId(), currentRound)
                 : standingsRepo.findPositionMap(cmd.seasonId(), viewingRound);
         Map<String, Integer> pointsMap = isCurrentRound
-                ? standingsRepo.findPositionMap(cmd.seasonId(), currentRound)
+            ? standingsRepo.findPointsMap(cmd.seasonId(), currentRound)
                 : standingsRepo.findPointsMap(cmd.seasonId(), viewingRound);
 
         // Can only create entry in current round
@@ -260,7 +261,7 @@ public class GetUserPredictionUseCase {
         UserContext ctx = cmd.userContext();
 
         // For historical rounds, load RoundResult with scored data
-        if (!isCurrentRound && ctx.hasSeasonPrediction()) {
+        if (!isCurrentRound && ctx.hasContestEntry()) {
             var roundResult = roundResultRepo.findByUserAndRound(ctx.userId(), viewingRound);
             if (roundResult.isPresent()) {
                 List<TeamRank> rankings = convertResultRankingsToTeamRankings(roundResult.get());
@@ -284,7 +285,7 @@ public class GetUserPredictionUseCase {
         }
 
         // If target user has a prediction, show it (current round)
-        if (ctx.hasSeasonPrediction()) {
+        if (ctx.hasContestEntry()) {
             var prediction = seasonPredictionRepo
                     .findByUserAndSeason(ctx.userId(), cmd.seasonId())
                     .orElseThrow(() -> new IllegalStateException(
@@ -369,6 +370,24 @@ public class GetUserPredictionUseCase {
         }
 
         return PredictionAccessMode.READONLY_COOLDOWN;
+    }
+
+    private SwapCooldown buildSwapCooldown(SeasonPrediction prediction) {
+        if (prediction == null) {
+            return null;
+        }
+
+        int swapCount = prediction.getSwaps() == null
+                ? 0
+                : prediction.getSwaps().stream()
+                        .mapToInt(swap -> swap.getChanges() == null ? 0 : swap.getChanges().size())
+                        .sum();
+
+        return new SwapCooldown(
+                prediction.getLastSwapAt(),
+                true,
+                swapCount,
+                false);
     }
 
     /**

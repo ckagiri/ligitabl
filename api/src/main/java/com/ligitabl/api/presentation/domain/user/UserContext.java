@@ -12,8 +12,7 @@ import com.ligitabl.model.auth.PublicId;
 public record UserContext(
         UUID userId,
         UserType userType,
-        boolean hasContestEntry,
-        boolean hasSeasonPrediction
+        boolean hasContestEntry
 ) {
     /**
      * Types of users in the prediction context.
@@ -62,29 +61,29 @@ public record UserContext(
      * Create context for a guest user (not logged in).
      */
     public static UserContext guest() {
-        return new UserContext(null, UserType.GUEST, false, false);
+        return new UserContext(null, UserType.GUEST, false);
     }
 
     /**
      * Create context for an authenticated user viewing their own predictions.
      */
-    public static UserContext authenticated(UUID userId, boolean hasEntry, boolean hasPrediction) {
+    public static UserContext authenticated(UUID userId, boolean hasContestEntry) {
         Objects.requireNonNull(userId, "userId is required for authenticated user");
-        return new UserContext(userId, UserType.AUTHENTICATED, hasEntry, hasPrediction);
+        return new UserContext(userId, UserType.AUTHENTICATED, hasContestEntry);
     }
 
     /**
      * Create context for viewing another user's predictions.
      */
-    public static UserContext viewingOther(UUID targetUserId, boolean hasPrediction) {
+    public static UserContext viewingOther(UUID targetUserId, boolean hasContestEntry) {
         Objects.requireNonNull(targetUserId, "targetUserId is required when viewing other user");
-        return new UserContext(targetUserId, UserType.VIEWING_OTHER, false, hasPrediction);
+        return new UserContext(targetUserId, UserType.VIEWING_OTHER, hasContestEntry);
     }
 
     /**
      * Create context when the target user was not found.
      */
     public static UserContext userNotFound() {
-        return new UserContext(null, UserType.USER_NOT_FOUND, false, false);
+        return new UserContext(null, UserType.USER_NOT_FOUND, false);
     }
 }
