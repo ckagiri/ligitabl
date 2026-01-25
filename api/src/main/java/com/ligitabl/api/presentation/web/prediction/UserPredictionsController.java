@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.presentation.command.GetUserPredictionCommand;
+import com.ligitabl.api.presentation.dto.response.FixtureDto;
 import com.ligitabl.api.presentation.dto.response.TeamRankDto;
 import com.ligitabl.api.presentation.error.UseCaseError;
 import com.ligitabl.api.presentation.mapper.ErrorViewMapper;
@@ -11,6 +12,7 @@ import com.ligitabl.api.presentation.usecase.GetUserPredictionUseCase;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
+import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
@@ -27,6 +29,7 @@ import java.security.Principal;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -44,7 +47,6 @@ public class UserPredictionsController {
     private final UserRepo userRepo;
     private final CompetitionDefaults competitionDefaults;
     private final ErrorViewMapper errorMapper;
-    private final SeasonPredictionRepo seasonPredictionRepo;
 
     /**
     * GET /predictions/user/me - View current user's prediction.
@@ -318,7 +320,7 @@ public class UserPredictionsController {
 
         // Serialize data for JavaScript
         try {
-            model.addAttribute("fixturesJson", objectMapper.writeValueAsString(data.matches()));
+            model.addAttribute("fixturesJson", objectMapper.writeValueAsString(buildFixtures(data.matches())));
             model.addAttribute("predictionsJson", objectMapper.writeValueAsString(predictions));
             model.addAttribute("currentStandingsJson", objectMapper.writeValueAsString(data.standingsMap()));
             model.addAttribute("currentPointsJson", objectMapper.writeValueAsString(data.pointsMap()));
@@ -352,6 +354,37 @@ public class UserPredictionsController {
                 .stream()
                 .collect(Collectors.toMap(Team::getCode, Function.identity()));
         return TeamRankDto.listOf(ranks, teamsByCode);
+    }
+
+    private Map<String, List<FixtureDto>> buildFixtures(Map<String, List<Match>> matchesByTeam) {
+        if (matchesByTeam == null || matchesByTeam.isEmpty()) {
+            return Map.of();
+        }
+
+        return matchesByTeam.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> entry.getValue().stream()
+                                .map(match -> toFixture(entry.getKey(), match))
+                                .filter(Objects::nonNull)
+                                .toList()
+                ));
+    }
+
+    private FixtureDto toFixture(String teamCode, Match match) {
+        if (match == null || !match.hasTeamsLoaded()) {
+            return null;
+        }
+
+        Team home = match.getHomeTeam();
+        Team away = match.getAwayTeam();
+        if (home == null || away == null) {
+            return null;
+        }
+
+        boolean isHome = teamCode.equals(home.getCode());
+        String opponent = isHome ? away.getCode() : home.getCode();
+        return new FixtureDto(opponent, isHome);
     }
 
     /**
@@ -409,4 +442,5 @@ public class UserPredictionsController {
             return initialPredictionMade && swapCount == 0 && canSwap;
         }
     }
+
 }
