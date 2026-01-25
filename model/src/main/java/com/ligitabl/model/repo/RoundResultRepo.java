@@ -12,4 +12,6 @@ public interface RoundResultRepo {
     Optional<RoundResult> findByRoundSubmissionId(UUID submissionId);
 
     List<RoundResult> findBySeasonAndRoundPositionRange(UUID seasonId, int fromRound, int toRound);
+
+    Optional<RoundResult> findByUserAndRound(UUID uuid, int roundPosition);
 }

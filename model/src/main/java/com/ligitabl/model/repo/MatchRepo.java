@@ -1,6 +1,7 @@
 package com.ligitabl.model.repo;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -41,4 +42,6 @@ public interface MatchRepo {
     List<Match> findFinishedMatchesUpToRoundWithTeams(UUID seasonId, int roundPosition);
 
     boolean existsBySeasonAndRoundAndTeams(UUID seasonId, UUID roundId, UUID homeTeamId, UUID awayTeamId);
+
+    Map<String, List<Match>> findBySeasonAndRound(UUID seasonId, int round);
 }

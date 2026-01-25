@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Web controller for player-specific pages (requires ROLE_PLAYER).
- * Handles predictions and swaps with server-rendered HTML.
+ * Handles prediction and swaps with server-rendered HTML.
  */
 @Controller
 @RequiredArgsConstructor
@@ -45,7 +45,7 @@ public class WebPlayerController {
             @RequestHeader(value = "HX-Request", required = false) String hxRequest,
             Model model) {
 
-        log.debug("Fetching predictions for user: {}", userDetails.getUsername());
+        log.debug("Fetching prediction for user: {}", userDetails.getUsername());
 
         // Use fake data if available (for UI development without database)
         if (fakeDataService != null) {

@@ -207,7 +207,7 @@ public class FinalizeRoundUseCase {
                 RoundResult result = RoundResult.builder()
                         .roundSubmissionId(submission.getId())
                         .rankings(scoringResult.detailedRankings())
-                        .score(scoringResult.score())
+                        .totalScore(scoringResult.score())
                         .zeroesCount(scoringResult.zeroesCount())
                         .swapCount(swapCount)
                         .userViewed(false)

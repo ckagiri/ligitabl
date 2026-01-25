@@ -81,7 +81,7 @@ public class WebAuthController {
                                 registerResult.roles(),
                                 httpRequest);
 
-                        // Redirect to predictions page
+                        // Redirect to prediction page
                         return "redirect:/prediction";
                     });
         } catch (IllegalArgumentException e) {

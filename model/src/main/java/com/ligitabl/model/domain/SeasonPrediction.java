@@ -49,4 +49,8 @@ public class SeasonPrediction extends AbstractModel<UUID> {
         // Add the change
         roundSwap.getChanges().add(change);
     }
+
+    public SwapCooldown getSwapCooldown() {
+        return new SwapCooldown(lastSwapAt, true, swaps.size(), true);
+    }
 }
