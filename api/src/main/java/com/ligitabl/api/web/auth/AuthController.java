@@ -65,17 +65,17 @@ public class AuthController {
     @PostMapping("/register")
     public String register(
             @Valid @ModelAttribute RegisterForm form,
-            BindingResult result,
+            BindingResult bindingResult,
             RedirectAttributes redirectAttributes,
             Model model,
             HttpServletRequest request) {
-        if (result.hasErrors()) {
+        if (bindingResult.hasErrors()) {
             model.addAttribute("pageTitle", "Register");
             return "auth/register";
         }
 
         if (!form.getPassword().equals(form.getConfirmPassword())) {
-            result.rejectValue("confirmPassword", "password.mismatch", "Passwords do not match");
+            bindingResult.rejectValue("confirmPassword", "password.mismatch", "Passwords do not match");
             model.addAttribute("pageTitle", "Register");
             return "auth/register";
         }
@@ -95,15 +95,15 @@ public class AuthController {
                         model.addAttribute("displayName", form.getDisplayName());
                         return "auth/register";
                     },
-                    registerResultValue -> {
+                    result -> {
                         authenticateUser(
-                                registerResultValue.email().value(),
-                                registerResultValue.displayName(),
-                                registerResultValue.roles(),
+                                result.email().value(),
+                                result.displayName(),
+                                result.roles(),
                                 request);
 
                         redirectAttributes.addFlashAttribute("message",
-                                "Welcome, " + registerResultValue.displayName() + "! You're now logged in.");
+                                "Welcome, " + result.displayName() + "! You're now logged in.");
                         redirectAttributes.addFlashAttribute("messageType", "success");
 
                         return "redirect:/predictions/user/me";
@@ -127,12 +127,12 @@ public class AuthController {
     @PostMapping("/login")
     public String login(
             @Valid @ModelAttribute LoginForm form,
-            BindingResult result,
+            BindingResult bindingResult,
             RedirectAttributes redirectAttributes,
             Model model,
             HttpServletRequest request) {
 
-        if (result.hasErrors()) {
+        if (bindingResult.hasErrors()) {
             model.addAttribute("pageTitle", "Login");
             return "auth/login";
         }
