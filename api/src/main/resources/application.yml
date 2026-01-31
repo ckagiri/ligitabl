@@ -46,6 +46,9 @@ jwt:
 ligitabl:
   default-competition-slug: ${DEFAULT_COMPETITION_SLUG:premier-league}
 
+  scheduling:
+    enabled: false
+
   # UI Development Mode
   # Enable fake in-memory data service to test UI without database dependencies
   ui:
