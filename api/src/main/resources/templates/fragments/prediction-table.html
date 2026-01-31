@@ -1,35 +1,301 @@
-<div id="prediction-table" xmlns:th="http://www.thymeleaf.org">
-    <div class="overflow-x-auto">
-        <table class="min-w-full">
-            <thead class="bg-gray-50">
-                <tr>
-                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
-                        Pos
-                    </th>
-                    <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Team
-                    </th>
-                </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-gray-200">
-                <tr th:each="pred : ${predictions}" 
-                    class="prediction-row hover:bg-gray-50 transition" 
-                    th:attr="data-team-code=${pred.teamCode}">
-                    <td class="px-3 py-4 whitespace-nowrap text-sm font-bold text-gray-900"
-                        th:text="${pred.position}">
-                        1
-                    </td>
-                    <td class="px-3 py-4 whitespace-nowrap">
-                        <div class="flex items-center">
-                            <div class="h-8 w-8 mr-3 bg-gray-200 rounded flex items-center justify-center text-xs font-bold"
-                                 th:text="${pred.teamCode}">
-                                ARS
-                            </div>
-                            <div class="text-sm font-medium text-gray-900" th:text="${pred.teamName}">Arsenal</div>
+<!-- Shared Prediction Table Fragments -->
+<div xmlns:th="http://www.thymeleaf.org">
+  <!-- Comparison Options (Show standings, fixtures, points checkboxes) -->
+  <div th:fragment="comparison-options" class="px-6 pt-4 pb-2 space-y-2">
+    <label
+      class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition"
+    >
+      <input
+        type="checkbox"
+        x-model="showStandings"
+        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+      />
+      <span class="hidden sm:inline">Compare with current standings</span>
+      <span class="sm:hidden">Show actual positions</span>
+    </label>
+
+    <label
+      class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition"
+    >
+      <input
+        type="checkbox"
+        x-model="showFixtures"
+        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+      />
+      <span>Show fixtures</span>
+    </label>
+
+    <label
+      class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition"
+    >
+      <input
+        type="checkbox"
+        x-model="showPoints"
+        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+      />
+      <span class="hidden sm:inline">Show current points</span>
+      <span class="sm:hidden">Show points</span>
+    </label>
+  </div>
+
+  <!-- Interactive Current-Round Table
+     Parameters:
+       alwaysHoverable: true for guest (always hoverable), false for auth (conditional on canSwap)
+  -->
+  <div th:fragment="interactive-table(alwaysHoverable)" class="px-6 py-4">
+    <div class="overflow-hidden">
+      <table class="min-w-full table-fixed">
+        <thead class="bg-gray-50">
+          <tr>
+            <th
+              scope="col"
+              class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
+            >
+              Pos
+            </th>
+            <th
+              scope="col"
+              class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Team
+            </th>
+            <th
+              x-show="showStandings"
+              scope="col"
+              class="hidden sm:table-cell px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
+            >
+              Actual
+            </th>
+            <th
+              x-show="showStandings"
+              scope="col"
+              class="hidden sm:table-cell px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
+            >
+              Delta
+            </th>
+            <th
+              x-show="showPoints"
+              scope="col"
+              class="hidden sm:table-cell px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
+            >
+              Pts
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <template x-for="team in teams" :key="team.code">
+            <tr
+              @click="teamClick(team.code)"
+              :data-team-code="team.code"
+              :class="{
+                            'cursor-pointer hover:bg-gray-50': alwaysHoverable || canSwap,
+                            'no-hover': !alwaysHoverable && !canSwap,
+                            'bg-blue-50': isSelected(team.code),
+                            'bg-amber-50': isDirty(team.code) && !isSelected(team.code),
+                            'transition-all duration-200': true
+                        }"
+              class="prediction-row"
+            >
+              <td class="px-3 py-4 whitespace-nowrap">
+                <div class="flex items-center">
+                  <span
+                    class="text-sm font-bold text-gray-900 mr-2"
+                    x-text="team.position"
+                  ></span>
+                  <span
+                    x-show="getPositionChange(team.code)"
+                    :class="{
+                                          'text-green-600': getPositionChange(team.code)?.startsWith('↑'),
+                                          'text-red-600': getPositionChange(team.code)?.startsWith('↓')
+                                      }"
+                    class="text-xs font-semibold position-change"
+                    x-text="getPositionChange(team.code)"
+                  >
+                  </span>
+                </div>
+              </td>
+              <td class="px-3 py-4 whitespace-nowrap">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center">
+                    <div
+                      class="h-8 w-8 mr-3 bg-gray-200 rounded flex items-center justify-center text-xs font-bold"
+                      x-text="team.code"
+                    ></div>
+                    <div>
+                      <!-- Team name -->
+                      <div
+                        class="text-sm font-medium text-gray-900"
+                        x-text="team.name"
+                      ></div>
+
+                      <!-- Mobile: Fixtures AND/OR Standings AND/OR Points on same line -->
+                      <div
+                        x-show="showFixtures || showStandings || showPoints"
+                        class="sm:hidden flex items-center gap-1.5 mt-1 flex-wrap"
+                      >
+                        <!-- Fixtures -->
+                        <template x-if="showFixtures && hasFixtures(team.code)">
+                          <template
+                            x-for="fixture in getFixtures(team.code)"
+                            :key="fixture.opponent"
+                          >
+                            <span
+                              class="inline-flex items-center px-1.5 py-0.5 bg-gray-100 rounded text-[11px] font-medium text-gray-600"
+                            >
+                              <span x-show="!fixture.isHome">@</span
+                              ><span x-text="fixture.opponent"></span>
+                            </span>
+                          </template>
+                        </template>
+
+                        <!-- Bullet separator (fixtures/standings) -->
+                        <template
+                          x-if="showFixtures && hasFixtures(team.code) && showStandings && getFixtures(team.code).length <= 2"
+                        >
+                          <span class="text-gray-400">•</span>
+                        </template>
+
+                        <!-- Actual position with delta -->
+                        <div
+                          x-show="showStandings"
+                          class="flex items-center gap-1 text-xs"
+                        >
+                          <span class="text-gray-500">Actual:</span>
+                          <span
+                            class="text-gray-700 font-medium"
+                            x-text="getActualPosition(team.code)"
+                            >2</span
+                          >
+
+                          <!-- Delta with arrow -->
+                          <span
+                            x-show="getDelta(team.code) !== 0 && getDelta(team.code) !== '-'"
+                            class="flex items-center gap-0.5 font-semibold"
+                            :class="getDeltaDirection(team.code) === 'down' ? 'text-red-600' : 'text-green-600'"
+                          >
+                            <svg
+                              class="h-3 w-3"
+                              fill="currentColor"
+                              viewBox="0 0 20 20"
+                            >
+                              <path
+                                x-show="getDeltaDirection(team.code) === 'up'"
+                                fill-rule="evenodd"
+                                d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                                clip-rule="evenodd"
+                              />
+                              <path
+                                x-show="getDeltaDirection(team.code) === 'down'"
+                                fill-rule="evenodd"
+                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                                clip-rule="evenodd"
+                              />
+                            </svg>
+                            <span x-text="getDelta(team.code)"></span>
+                          </span>
+
+                          <!-- Perfect prediction -->
+                          <span
+                            x-show="getDelta(team.code) === 0"
+                            class="text-green-600 font-semibold"
+                          >
+                            ✓
+                          </span>
                         </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
+
+                        <!-- Points -->
+                        <div
+                          x-show="showPoints"
+                          class="flex basis-full items-center gap-1 text-[11px]"
+                        >
+                          <span
+                            class="text-gray-700 font-medium"
+                            x-text="getCurrentPoints(team.code)"
+                            >45</span
+                          ><span class="text-gray-500">pts</span>
+                        </div>
+                      </div>
+
+                      <!-- Desktop: Just fixtures (standings/points in separate columns) -->
+                      <div
+                        x-show="showFixtures && hasFixtures(team.code)"
+                        class="hidden sm:flex items-center gap-1.5 mt-1"
+                      >
+                        <template
+                          x-for="fixture in getFixtures(team.code)"
+                          :key="fixture.opponent"
+                        >
+                          <span
+                            class="inline-flex items-center px-1.5 py-0.5 bg-gray-100 rounded text-[11px] font-medium text-gray-600"
+                          >
+                            <span x-show="!fixture.isHome">@</span
+                            ><span x-text="fixture.opponent"></span>
+                          </span>
+                        </template>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Selection indicator -->
+                  <div class="text-xs text-gray-400">
+                    <span
+                      x-show="isSelected(team.code)"
+                      class="text-blue-600 font-medium"
+                      >●</span
+                    >
+                  </div>
+                </div>
+              </td>
+              <!-- Actual Position - hide on mobile -->
+              <td
+                x-show="showStandings"
+                class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right text-sm text-gray-400"
+                x-text="getActualPosition(team.code)"
+              ></td>
+              <!-- Delta with Arrow -->
+              <td
+                x-show="showStandings"
+                class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right"
+              >
+                <div
+                  class="flex items-center justify-end gap-1 text-sm font-semibold"
+                >
+                  <!-- Arrow icon -->
+                  <svg
+                    x-show="getDelta(team.code) !== 0 && getDelta(team.code) !== '-'"
+                    class="h-4 w-4"
+                    :class="getDeltaDirection(team.code) === 'down' ? 'text-red-600' : 'text-green-600'"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      x-show="getDeltaDirection(team.code) === 'up'"
+                      fill-rule="evenodd"
+                      d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                      clip-rule="evenodd"
+                    />
+                    <path
+                      x-show="getDeltaDirection(team.code) === 'down'"
+                      fill-rule="evenodd"
+                      d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  <!-- Delta number -->
+                  <span
+                    :class="getDelta(team.code) === 0 ? 'text-green-600' : (getDeltaDirection(team.code) === 'down' ? 'text-red-600' : 'text-green-600')"
+                    x-text="getDelta(team.code)"
+                  ></span>
+                </div>
+              </td>
+              <td
+                x-show="showPoints"
+                class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-700"
+                x-text="getCurrentPoints(team.code)"
+              ></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
     </div>
+  </div>
 </div>

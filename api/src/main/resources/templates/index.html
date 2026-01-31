@@ -1,162 +1,248 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout/base}">
-<body>
-<div layout:fragment="content">
-    <!-- Hero Section -->
-    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 sm:p-12 mb-12 text-white">
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <div layout:fragment="content">
+      <!-- Hero Section -->
+      <div
+        class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 sm:p-12 mb-12 text-white"
+      >
         <div class="max-w-4xl mx-auto text-center">
-            <h1 class="text-4xl sm:text-5xl font-extrabold mb-6 animate-pulse">
-                ⚽ LigiPredictor | Rank 'Em Right
-            </h1>
-            <p class="text-lg sm:text-xl mb-8 text-indigo-100">
-              Predict the Premier League table. Swap smart. Rank 'Em Right.
-            </p>
+          <h1 class="text-4xl sm:text-5xl font-extrabold mb-6 animate-pulse">
+            ⚽ LigiPredictor | Rank 'Em Right
+          </h1>
+          <p class="text-lg sm:text-xl mb-8 text-indigo-100">
+            Predict the Premier League table. Swap smart. Rank 'Em Right.
+          </p>
 
-            <!-- Main CTA Buttons - Stack on mobile, side-by-side on desktop -->
-            <div class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-6">
-                <a th:href="@{/auth/register}"
-                  class="w-full sm:w-auto bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition transform hover:scale-105 shadow-lg text-center">
-                    Sign Up (Demo)
-                </a>
-                <a th:href="@{/leaderboard}"
-                  class="w-full sm:w-auto bg-indigo-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-indigo-400 transition transform hover:scale-105 shadow-lg text-center">
-                    View Leaderboard
-                </a>
-            </div>
+          <!-- Main CTA Buttons - Stack on mobile, side-by-side on desktop -->
+          <div
+            class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-6"
+          >
+            <a
+              th:href="@{/auth/register}"
+              class="w-full sm:w-auto bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition transform hover:scale-105 shadow-lg text-center"
+            >
+              Sign Up
+            </a>
+            <a
+              th:href="@{/leaderboard}"
+              class="w-full sm:w-auto bg-indigo-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-indigo-400 transition transform hover:scale-105 shadow-lg text-center"
+            >
+              View Leaderboard
+            </a>
+          </div>
 
-            <!-- Already Signed In Link -->
-            <div class="mt-4">
-                <p class="text-indigo-100 text-sm mb-2">Already have an account?</p>
-                <a th:href="@{/seasonprediction}"
-                  class="inline-flex items-center gap-2 text-white hover:text-indigo-100 font-medium text-base underline decoration-2 underline-offset-4 transition group">
-                    Go to My Predictions
-                    <svg class="h-5 w-5 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"/>
-                    </svg>
-                </a>
-            </div>
+          <!-- Already Signed In Link -->
+          <div class="mt-4">
+            <p class="text-indigo-100 text-sm mb-2">Already have an account?</p>
+            <a
+              th:href="@{/predictions/user/me}"
+              class="inline-flex items-center gap-2 text-white hover:text-indigo-100 font-medium text-base underline decoration-2 underline-offset-4 transition group"
+            >
+              Go to My Predictions
+              <svg
+                class="h-5 w-5 transform group-hover:translate-x-1 transition-transform"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M17 8l4 4m0 0l-4 4m4-4H3"
+                />
+              </svg>
+            </a>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <!-- Features Grid -->
-    <div class="grid md:grid-cols-3 gap-8 mb-12">
+      <!-- Features Grid -->
+      <div class="grid md:grid-cols-3 gap-8 mb-12">
         <!-- Feature 1: Predict -->
-        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition transform hover:-translate-y-1">
-            <div class="text-4xl mb-4">🎯</div>
-            <h3 class="text-xl font-bold mb-3 text-gray-900">Make Your Prediction</h3>
-            <p class="text-gray-600">
-              Earn points each gameweek by ranking the 20 teams accurately. Use strategic swaps to climb the leaderboard!
+        <div
+          class="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition transform hover:-translate-y-1"
+        >
+          <div class="text-4xl mb-4">🎯</div>
+          <h3 class="text-xl font-bold mb-3 text-gray-900">
+            Make Your Prediction
+          </h3>
+          <p class="text-gray-600">
+            Earn points each gameweek by ranking the 20 teams accurately. Use
+            strategic swaps to climb the leaderboard!
+          </p>
         </div>
 
         <!-- Feature 2: Swap -->
-        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition transform hover:-translate-y-1">
-            <div class="text-4xl mb-4">🔄</div>
-            <h3 class="text-xl font-bold mb-3 text-gray-900">Strategic Swaps</h3>
-            <p class="text-gray-600">
-                Adjust your prediction with daily swaps. Swap two teams' positions once every 24 hours while rounds are open.
-            </p>
+        <div
+          class="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition transform hover:-translate-y-1"
+        >
+          <div class="text-4xl mb-4">🔄</div>
+          <h3 class="text-xl font-bold mb-3 text-gray-900">Strategic Swaps</h3>
+          <p class="text-gray-600">
+            Adjust your prediction with daily swaps. Swap two teams' positions
+            once every 24 hours while rounds are open.
+          </p>
         </div>
 
         <!-- Feature 3: Compete -->
-        <div class="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition transform hover:-translate-y-1">
-            <div class="text-4xl mb-4">🏆</div>
-            <h3 class="text-xl font-bold mb-3 text-gray-900">Compete & Win</h3>
-            <p class="text-gray-600">
-                Earn points based on accuracy. Climb the leaderboard across multiple phases: Full Season, Quarters, and Halves!
-            </p>
+        <div
+          class="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition transform hover:-translate-y-1"
+        >
+          <div class="text-4xl mb-4">🏆</div>
+          <h3 class="text-xl font-bold mb-3 text-gray-900">Compete & Win</h3>
+          <p class="text-gray-600">
+            Earn points based on accuracy. Climb the leaderboard across multiple
+            phases: Full Season, Quarters, and Halves!
+          </p>
         </div>
-    </div>
+      </div>
 
-    <!-- How It Works -->
-    <div class="bg-white rounded-lg shadow-md p-8 mb-12">
-        <h2 class="text-3xl font-bold mb-6 text-center text-gray-900">How It Works</h2>
+      <!-- How It Works -->
+      <div class="bg-white rounded-lg shadow-md p-8 mb-12">
+        <h2 class="text-3xl font-bold mb-6 text-center text-gray-900">
+          How It Works
+        </h2>
         <div class="space-y-6">
-            <div class="flex items-start space-x-4">
-                <div class="flex-shrink-0 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">
-                    1
-                </div>
-                <div>
-                    <h4 class="font-semibold text-gray-900 mb-1">Sign Up & Make Initial Prediction</h4>
-                    <p class="text-gray-600">Create your account and arrange all 20 teams. Swap as much as you need—only your final prediction matters.</p>
-                </div>
+          <div class="flex items-start space-x-4">
+            <div
+              class="flex-shrink-0 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold"
+            >
+              1
             </div>
-            <div class="flex items-start space-x-4">
-                <div class="flex-shrink-0 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">
-                    2
-                </div>
-                <div>
-                    <h4 class="font-semibold text-gray-900 mb-1">Make Daily Swaps</h4>
-                    <p class="text-gray-600">Adjust your prediction strategically by swapping two teams once per day.</p>
-                </div>
+            <div>
+              <h4 class="font-semibold text-gray-900 mb-1">
+                Sign Up & Make Initial Prediction
+              </h4>
+              <p class="text-gray-600">
+                Create your account and arrange all 20 teams. Initially swap as
+                much as you need and then submit your prediction.
+              </p>
             </div>
+          </div>
+          <div class="flex items-start space-x-4">
+            <div
+              class="flex-shrink-0 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold"
+            >
+              2
+            </div>
+            <div>
+              <h4 class="font-semibold text-gray-900 mb-1">Make Daily Swaps</h4>
+              <p class="text-gray-600">
+                Adjust your prediction strategically by swapping two teams once
+                per day.
+              </p>
+            </div>
+          </div>
 
-            <div class="flex items-start space-x-4">
-                <div class="flex-shrink-0 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">
-                    3
-                </div>
-                <div>
-                    <h4 class="font-semibold text-gray-900 mb-1">Earn Points Each Gameweek</h4>
-                    <p class="text-gray-600">Get scored after each gameweek based on how close your prediction is to the actual standings.</p>
-                </div>
+          <div class="flex items-start space-x-4">
+            <div
+              class="flex-shrink-0 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold"
+            >
+              3
             </div>
+            <div>
+              <h4 class="font-semibold text-gray-900 mb-1">
+                Earn Points Each Gameweek
+              </h4>
+              <p class="text-gray-600">
+                Get scored after each gameweek based on how close your
+                prediction is to the actual standings.
+              </p>
+            </div>
+          </div>
 
-            <div class="flex items-start space-x-4">
-                <div class="flex-shrink-0 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold">
-                    4
-                </div>
-                <div>
-                    <h4 class="font-semibold text-gray-900 mb-1">Climb the Leaderboard</h4>
-                    <p class="text-gray-600">Track your progress and compete across different phases throughout the season.</p>
-                </div>
+          <div class="flex items-start space-x-4">
+            <div
+              class="flex-shrink-0 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold"
+            >
+              4
             </div>
+            <div>
+              <h4 class="font-semibold text-gray-900 mb-1">
+                Climb the Leaderboard
+              </h4>
+              <p class="text-gray-600">
+                Track your progress and compete across different phases
+                throughout the season.
+              </p>
+            </div>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <!-- Scoring System -->
-    <div class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-8 mb-12">
-        <h2 class="text-3xl font-bold mb-6 text-center text-gray-900">Scoring System</h2>
+      <!-- Scoring System -->
+      <div
+        class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-8 mb-12"
+      >
+        <h2 class="text-3xl font-bold mb-6 text-center text-gray-900">
+          Scoring System
+        </h2>
         <div class="max-w-2xl mx-auto">
-            <div class="bg-white rounded-lg p-6 shadow-sm mb-4">
-                <h4 class="font-semibold text-lg mb-2 text-gray-900">How Points Are Calculated</h4>
-                <p class="text-gray-600 mb-3">
-                    You start with 200 points each gameweek. For each team, you lose points equal to the position difference
-                </p>
-                <div class="space-y-2 text-sm">
-                    <div class="flex justify-between items-center p-2 bg-green-50 rounded">
-                        <span class="text-gray-700">Perfect prediction (0 positions off)</span>
-                        <span class="font-semibold text-green-600">No points lost! 🎯</span>
-                    </div>
-                    <div class="flex justify-between items-center p-2 bg-yellow-50 rounded">
-                        <span class="text-gray-700">Close call (1 position off)</span>
-                        <span class="font-semibold text-yellow-600">-1 point</span>
-                    </div>
-                    <div class="flex justify-between items-center p-2 bg-orange-50 rounded">
-                        <span class="text-gray-700">Near miss (3 positions off)</span>
-                        <span class="font-semibold text-orange-600">-3 points</span>
-                    </div>
-                    <div class="flex justify-between items-center p-2 bg-red-50 rounded">
-                        <span class="text-gray-700">Big miss (8 positions off)</span>
-                        <span class="font-semibold text-red-600">-8 points</span>
-                    </div>
-                </div>
-            </div>
-            <p class="text-center text-sm text-gray-500">
-                <strong>Formula:</strong> Your Score = Max Points - Total Position Errors
+          <div class="bg-white rounded-lg p-6 shadow-sm mb-4">
+            <h4 class="font-semibold text-lg mb-2 text-gray-900">
+              How Points Are Calculated
+            </h4>
+            <p class="text-gray-600 mb-3">
+              You start with 200 points each gameweek. For each team, you lose
+              points equal to the position difference
             </p>
+            <div class="space-y-2 text-sm">
+              <div
+                class="flex justify-between items-center p-2 bg-green-50 rounded"
+              >
+                <span class="text-gray-700"
+                  >Perfect prediction (0 positions off)</span
+                >
+                <span class="font-semibold text-green-600"
+                  >No points lost! 🎯</span
+                >
+              </div>
+              <div
+                class="flex justify-between items-center p-2 bg-yellow-50 rounded"
+              >
+                <span class="text-gray-700">Close call (1 position off)</span>
+                <span class="font-semibold text-yellow-600">-1 point</span>
+              </div>
+              <div
+                class="flex justify-between items-center p-2 bg-orange-50 rounded"
+              >
+                <span class="text-gray-700">Near miss (3 positions off)</span>
+                <span class="font-semibold text-orange-600">-3 points</span>
+              </div>
+              <div
+                class="flex justify-between items-center p-2 bg-red-50 rounded"
+              >
+                <span class="text-gray-700">Big miss (8 positions off)</span>
+                <span class="font-semibold text-red-600">-8 points</span>
+              </div>
+            </div>
+          </div>
+          <p class="text-center text-sm text-gray-500">
+            <strong>Formula:</strong> Your Score = Max Points - Total Position
+            Errors
+          </p>
         </div>
-    </div>
+      </div>
 
-    <!-- CTA Section -->
-    <div class="text-center py-12">
+      <!-- CTA Section -->
+      <div class="text-center py-12">
         <h2 class="text-3xl font-bold mb-4 text-gray-900">Ready to Play?</h2>
-        <p class="text-xl text-gray-600 mb-8">Join thousands of players competing in prediction leagues!</p>
-        <a th:href="@{/auth/register}"
-           class="inline-block bg-indigo-600 text-white px-10 py-4 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition transform hover:scale-105 shadow-xl">
-            Create Free Account →
+        <p class="text-xl text-gray-600 mb-8">
+          Join many other players competing in LigiPredictor!
+        </p>
+        <a
+          th:href="@{/auth/register}"
+          class="inline-block bg-indigo-600 text-white px-10 py-4 rounded-lg text-lg font-semibold hover:bg-indigo-700 transition transform hover:scale-105 shadow-xl"
+        >
+          Create Free Account →
         </a>
+      </div>
     </div>
-</div>
-</body>
+  </body>
 </html>

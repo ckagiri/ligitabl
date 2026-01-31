@@ -1,110 +1,178 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      layout:decorate="~{layout/base}">
-<body>
-<div layout:fragment="content">
-    <div class="bg-white rounded-lg shadow-sm">
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <div layout:fragment="content">
+      <div class="bg-white rounded-lg shadow-sm">
         <!-- Header -->
-        <div class="px-6 py-4 border-b border-gray-200">
-            <div class="flex justify-between items-center">
-                <h1 class="text-2xl font-bold text-gray-900">League Standings</h1>
-                <div>
-                    <select th:attr="hx-get=@{/seasons/{id}/standings(id=${seasonId})}"
-                            hx-trigger="change"
-                            hx-target="#standings-content"
-                            hx-swap="innerHTML swap:300ms"
-                            name="round"
-                            class="form-select block w-48 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
-                        <option th:value="19" th:selected="${currentRound == 19}">Current (GW 19)</option>
-                        <option th:value="18" th:selected="${currentRound == 18}">GW 18</option>
-                        <option th:value="17" th:selected="${currentRound == 17}">GW 17</option>
-                        <option th:value="16" th:selected="${currentRound == 16}">GW 16</option>
-                        <option th:value="15" th:selected="${currentRound == 15}">GW 15</option>
-                    </select>
-                </div>
-            </div>
+        <div class="px-4 sm:px-6 py-4 border-b border-gray-200">
+          <div class="flex flex-col gap-3">
+            <h1 class="text-xl sm:text-2xl font-bold text-gray-900">
+              League Standings
+            </h1>
+            <div
+              th:replace="~{fragments/round-navigation :: round-nav(
+                    '/seasons/current/standings', ${currentRound}, ${latestRound},
+                    'body', 'outerHTML', false, false)}"
+            ></div>
+          </div>
         </div>
 
         <!-- Standings Table -->
         <div id="standings-content" class="px-6 py-4">
-            <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-gray-200">
-                    <thead class="bg-gray-50">
-                        <tr>
-                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12">
-                                Pos
-                            </th>
-                            <th scope="col" class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Team
-                            </th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
-                                P
-                            </th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
-                                W
-                            </th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
-                                D
-                            </th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16">
-                                L
-                            </th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
-                                GF
-                            </th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
-                                GA
-                            </th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
-                                GD
-                            </th>
-                            <th scope="col" class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
-                                Pts
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="bg-white divide-y divide-gray-200">
-                        <tr th:each="standing : ${standings}"
-                            class="hover:bg-gray-50 transition">
-                            <td class="px-3 py-4 whitespace-nowrap text-sm font-bold text-gray-900"
-                                th:text="${standing.position}">
-                                1
-                            </td>
-                            <td class="px-3 py-4 whitespace-nowrap">
-                                <div class="flex items-center">
-                                    <div class="h-6 w-6 mr-2 bg-gray-200 rounded flex items-center justify-center text-xs font-bold"
-                                         th:text="${standing.teamCode}">
-                                        MCI
-                                    </div>
-                                    <div class="text-sm font-medium text-gray-900" th:text="${standing.teamName}">Manchester City</div>
-                                </div>
-                            </td>
-                            <td class="px-3 py-4 whitespace-nowrap text-center text-sm text-gray-500"
-                                th:text="${standing.played}">19</td>
-                            <td class="px-3 py-4 whitespace-nowrap text-center text-sm text-gray-500"
-                                th:text="${standing.won}">14</td>
-                            <td class="px-3 py-4 whitespace-nowrap text-center text-sm text-gray-500"
-                                th:text="${standing.drawn}">3</td>
-                            <td class="px-3 py-4 whitespace-nowrap text-center text-sm text-gray-500"
-                                th:text="${standing.lost}">2</td>
-                            <td class="px-3 py-4 whitespace-nowrap text-center text-sm text-gray-500"
-                                th:text="${standing.goalsFor}">42</td>
-                            <td class="px-3 py-4 whitespace-nowrap text-center text-sm text-gray-500"
-                                th:text="${standing.goalsAgainst}">15</td>
-                            <td class="px-3 py-4 whitespace-nowrap text-center text-sm font-medium"
-                                th:classappend="${standing.goalDifference > 0 ? 'text-green-600' : (standing.goalDifference < 0 ? 'text-red-600' : 'text-gray-900')}"
-                                th:text="${standing.goalDifference > 0 ? '+' + standing.goalDifference : standing.goalDifference}">
-                                +27
-                            </td>
-                            <td class="px-3 py-4 whitespace-nowrap text-center text-sm font-bold text-indigo-600"
-                                th:text="${standing.points}">45</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th
+                    scope="col"
+                    class="sticky left-0 z-20 bg-gray-50 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12"
+                  >
+                    Pos
+                  </th>
+                  <th
+                    scope="col"
+                    class="sticky left-[48px] z-20 bg-gray-50 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Team
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
+                  >
+                    P
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
+                  >
+                    W
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
+                  >
+                    D
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
+                  >
+                    L
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
+                  >
+                    GF
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
+                  >
+                    GA
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
+                  >
+                    GD
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
+                  >
+                    Pts
+                  </th>
+                </tr>
+              </thead>
+              <tbody class="bg-white divide-y divide-gray-200">
+                <tr
+                  th:each="standing : ${standings}"
+                  class="group hover:bg-gray-50 transition"
+                >
+                  <td
+                    class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-3 py-4 whitespace-nowrap text-sm font-bold text-gray-900"
+                    th:text="${standing.position}"
+                  >
+                    1
+                  </td>
+                  <td
+                    class="sticky left-[48px] z-10 bg-white group-hover:bg-gray-50 px-3 py-4 whitespace-nowrap"
+                  >
+                    <div class="flex items-center">
+                      <div
+                        class="h-6 w-6 mr-2 bg-gray-200 rounded flex items-center justify-center text-xs font-bold"
+                        th:text="${standing.teamCode}"
+                      >
+                        CHE
+                      </div>
+                      <div
+                        class="text-sm font-medium text-gray-900"
+                        th:text="${standing.teamName}"
+                      >
+                        Chelsea
+                      </div>
+                    </div>
+                  </td>
+                  <td
+                    class="px-3 py-4 whitespace-nowrap text-center text-sm text-gray-500"
+                    th:text="${standing.played}"
+                  >
+                    19
+                  </td>
+                  <td
+                    class="px-3 py-4 whitespace-nowrap text-center text-sm text-gray-500"
+                    th:text="${standing.won}"
+                  >
+                    14
+                  </td>
+                  <td
+                    class="px-3 py-4 whitespace-nowrap text-center text-sm text-gray-500"
+                    th:text="${standing.drawn}"
+                  >
+                    3
+                  </td>
+                  <td
+                    class="px-3 py-4 whitespace-nowrap text-center text-sm text-gray-500"
+                    th:text="${standing.lost}"
+                  >
+                    2
+                  </td>
+                  <td
+                    class="px-3 py-4 whitespace-nowrap text-center text-sm text-gray-500"
+                    th:text="${standing.goalsFor}"
+                  >
+                    42
+                  </td>
+                  <td
+                    class="px-3 py-4 whitespace-nowrap text-center text-sm text-gray-500"
+                    th:text="${standing.goalsAgainst}"
+                  >
+                    15
+                  </td>
+                  <td
+                    class="px-3 py-4 whitespace-nowrap text-center text-sm font-medium"
+                    th:classappend="${standing.goalDifference > 0 ? 'text-green-600' : (standing.goalDifference < 0 ? 'text-red-600' : 'text-gray-900')}"
+                    th:text="${standing.goalDifference > 0 ? '+' + standing.goalDifference : standing.goalDifference}"
+                  >
+                    +27
+                  </td>
+                  <td
+                    class="px-3 py-4 whitespace-nowrap text-center text-sm font-bold text-indigo-600"
+                    th:text="${standing.points}"
+                  >
+                    45
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
         </div>
+      </div>
     </div>
-</div>
-</body>
+  </body>
 </html>
