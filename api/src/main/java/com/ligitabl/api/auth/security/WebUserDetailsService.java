@@ -40,6 +40,8 @@ public class WebUserDetailsService implements UserDetailsService {
                     .collect(Collectors.toList());
 
             return new WebUserDetails(
+                    user.getId(),
+                    user.getPublicId().value(),
                     user.getEmail().value(),
                     user.getDisplayName(),
                     user.getPassword().value(),

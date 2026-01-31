@@ -96,10 +96,15 @@ public class AuthController {
                         return "auth/register";
                     },
                     result -> {
+                        User user = userRepo.findByEmail(result.email())
+                                .orElseThrow(() -> new IllegalStateException("Registered user not found"));
+
                         authenticateUser(
-                                result.email().value(),
-                                result.displayName(),
-                                result.roles(),
+                                user.getId(),
+                                user.getPublicId().value(),
+                                user.getEmail().value(),
+                                user.getDisplayName(),
+                                user.getRoles(),
                                 request);
 
                         redirectAttributes.addFlashAttribute("message",
@@ -151,7 +156,13 @@ public class AuthController {
                 return "auth/login";
             }
 
-            authenticateUser(user.getEmail().value(), user.getDisplayName(), user.getRoles(), request);
+            authenticateUser(
+                    user.getId(),
+                    user.getPublicId().value(),
+                    user.getEmail().value(),
+                    user.getDisplayName(),
+                    user.getRoles(),
+                    request);
 
             UUID mainContestId = getActiveSeason().getMainContestId();
             if (mainContestId != null && contestRepo.existsByUserAndContest(user.getId(), mainContestId)) {
@@ -215,14 +226,20 @@ public class AuthController {
     /**
      * Helper method to authenticate a user and create a session
      */
-    private void authenticateUser(String email, String displayName, Set<Role> roles, HttpServletRequest request) {
+    private void authenticateUser(
+            UUID userId,
+            String publicId,
+            String email,
+            String displayName,
+            Set<Role> roles,
+            HttpServletRequest request) {
         // Create authentication token with user details and roles
         List<SimpleGrantedAuthority> authorities = roles.stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
                 .collect(Collectors.toList());
 
         Authentication authentication = new UsernamePasswordAuthenticationToken(
-                new WebUserDetails(email, displayName, "", authorities), null, authorities);
+                new WebUserDetails(userId, publicId, email, displayName, "", authorities), null, authorities);
 
         // Set authentication in security context
         SecurityContextHolder.getContext().setAuthentication(authentication);

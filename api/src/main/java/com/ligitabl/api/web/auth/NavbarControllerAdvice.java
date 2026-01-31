@@ -53,8 +53,8 @@ public class NavbarControllerAdvice {
             return false;
         }
 
-        Optional<User> user = resolveUser(principal);
-        if (user.isEmpty()) {
+        UUID userId = resolveUserId(principal);
+        if (userId == null) {
             return false;
         }
 
@@ -63,7 +63,7 @@ public class NavbarControllerAdvice {
             return false;
         }
 
-        return contestRepo.existsByUserAndContest(user.get().getId(), mainContestId);
+        return contestRepo.existsByUserAndContest(userId, mainContestId);
     }
 
     @ModelAttribute("predictionsNavLabel")
@@ -91,6 +91,15 @@ public class NavbarControllerAdvice {
         }
 
         return resolveUser(principal).map(User::getDisplayName).orElse(null);
+    }
+
+    private UUID resolveUserId(Principal principal) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof WebUserDetails details) {
+            return details.getUserId();
+        }
+
+        return resolveUser(principal).map(User::getId).orElse(null);
     }
 
     private Optional<User> resolveUser(Principal principal) {
