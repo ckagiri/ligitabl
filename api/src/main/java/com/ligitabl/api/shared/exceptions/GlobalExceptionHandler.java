@@ -2,6 +2,7 @@ package com.ligitabl.api.shared.exceptions;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.context.request.WebRequest;
 
@@ -9,7 +10,7 @@ import com.ligitabl.api.shared.errors.*;
 
 import lombok.extern.slf4j.Slf4j;
 
-@RestControllerAdvice
+@RestControllerAdvice(annotations = RestController.class)
 @Slf4j
 public class GlobalExceptionHandler {
 

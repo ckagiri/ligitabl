@@ -107,7 +107,10 @@ public class SecurityConfig {
     @Order(2)
     public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
         http.securityMatcher(new NegatedRequestMatcher(new AntPathRequestMatcher("/api/**")))
-                .csrf(csrf -> csrf.ignoringRequestMatchers("/prediction/swap")) // Allow HTMX POST without CSRF
+            .csrf(csrf -> csrf.ignoringRequestMatchers(
+                "/prediction/swap",
+                "/auth/login",
+                "/auth/register")) // Allow HTMX + auth forms without CSRF
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 "/",
                                 "/auth/login",
@@ -133,7 +136,7 @@ public class SecurityConfig {
                         .anyRequest()
                         .authenticated())
                 .formLogin(form -> form.loginPage("/auth/login")
-                        .loginProcessingUrl("/auth/login")
+                    .loginProcessingUrl("/auth/login/process")
                         .defaultSuccessUrl("/predictions/user/me", true)
                         .permitAll())
                 .logout(logout -> logout.logoutUrl("/auth/logout")
