@@ -8,6 +8,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
@@ -21,8 +22,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.util.matcher.AntPathRequestMatcher;
-import org.springframework.security.web.util.matcher.NegatedRequestMatcher;
 
 import com.ligitabl.api.auth.security.JwtAuthenticationFilter;
 import com.ligitabl.api.auth.security.TokenGenerator;
@@ -31,6 +30,12 @@ import com.ligitabl.api.auth.security.TokenGenerator;
 @EnableWebSecurity
 @EnableMethodSecurity
 public class SecurityConfig {
+
+    @Value("${ligitabl.security.remember-me.key:dev-remember-me-key}")
+    private String rememberMeKey;
+
+    @Value("${ligitabl.security.remember-me.token-validity-seconds:1209600}")
+    private int rememberMeTokenValiditySeconds;
 
     private static void writeApiError(
             HttpStatus status, jakarta.servlet.http.HttpServletResponse response, String message)
@@ -73,7 +78,7 @@ public class SecurityConfig {
     @Order(1)
     public SecurityFilterChain apiSecurityFilterChain(
             HttpSecurity http, JwtAuthenticationFilter jwtAuthenticationFilter) throws Exception {
-        http.securityMatcher(new AntPathRequestMatcher("/api/**"))
+        http.securityMatcher("/api/**")
                 .csrf(csrf -> csrf.disable())
                 .httpBasic(Customizer.withDefaults())
                 .authorizeHttpRequests(auth -> auth.requestMatchers("/api/auth/**")
@@ -105,9 +110,10 @@ public class SecurityConfig {
      */
     @Bean
     @Order(2)
-    public SecurityFilterChain webSecurityFilterChain(HttpSecurity http) throws Exception {
-        http.securityMatcher(new NegatedRequestMatcher(new AntPathRequestMatcher("/api/**")))
-            .csrf(csrf -> csrf.ignoringRequestMatchers(
+        public SecurityFilterChain webSecurityFilterChain(
+            HttpSecurity http,
+            @Qualifier("webUserDetailsService") UserDetailsService userDetailsService) throws Exception {
+        http.csrf(csrf -> csrf.ignoringRequestMatchers(
                 "/prediction/swap",
                 "/auth/login",
                 "/auth/register")) // Allow HTMX + auth forms without CSRF
@@ -137,13 +143,18 @@ public class SecurityConfig {
                         .authenticated())
                 .formLogin(form -> form.loginPage("/auth/login")
                     .loginProcessingUrl("/auth/login/process")
-                        .defaultSuccessUrl("/predictions/user/me", true)
-                        .permitAll())
+                    .defaultSuccessUrl("/predictions/user/me", true)
+                    .permitAll())
+                .rememberMe(remember -> remember
+                    .key(rememberMeKey)
+                    .rememberMeParameter("remember-me")
+                    .tokenValiditySeconds(rememberMeTokenValiditySeconds)
+                    .userDetailsService(userDetailsService))
                 .logout(logout -> logout.logoutUrl("/auth/logout")
-                        .logoutSuccessUrl("/")
-                        .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID")
-                        .permitAll())
+                    .logoutSuccessUrl("/")
+                    .invalidateHttpSession(true)
+                    .deleteCookies("JSESSIONID", "remember-me")
+                    .permitAll())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
 
         return http.build();
@@ -165,8 +176,7 @@ public class SecurityConfig {
     public DaoAuthenticationProvider authenticationProvider(
             @Qualifier("webUserDetailsService") UserDetailsService userDetailsService,
             PasswordEncoder passwordEncoder) {
-        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-        authProvider.setUserDetailsService(userDetailsService);
+        DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider(userDetailsService);
         authProvider.setPasswordEncoder(passwordEncoder);
         return authProvider;
     }

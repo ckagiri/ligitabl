@@ -183,7 +183,19 @@ public class AuthController {
     }
 
     @GetMapping("/logout")
-    public String logout(HttpSession session, RedirectAttributes redirectAttributes) {
+    public String logout(HttpSession session, RedirectAttributes redirectAttributes, HttpServletRequest request) {
+        SecurityContextHolder.clearContext();
+
+        if (session != null) {
+            session.invalidate();
+        }
+
+        try {
+            request.logout();
+        } catch (Exception e) {
+            log.warn("Failed to perform servlet logout", e);
+        }
+
         // Signal frontend to clear guest localStorage on logout
         redirectAttributes.addFlashAttribute("clearGuestPrediction", true);
 

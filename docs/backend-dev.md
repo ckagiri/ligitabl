@@ -74,6 +74,53 @@ mvn -pl api -am -DskipTests dependency:tree -Dincludes=org.postgresql:postgresql
 
 The default developer workflow assumes a database (local Docker Compose or Testcontainers in tests).
 
+## Security & Auth (Web + API)
+
+This app has **two security flows**:
+
+- **API** (`/api/**`): stateless JWT authentication
+- **Web UI** (non-`/api/**`): session-based form login
+
+### Web UI auth flow
+
+- Login/register pages are served by the web controller.
+- On successful login/registration, we **manually authenticate** and store a `WebUserDetails` principal in the session.
+- The custom principal includes: `userId`, `publicId`, `email`, and `displayName`.
+
+### Remember-me
+
+The login form has a “Remember me” checkbox and is now wired to Spring Security’s remember-me support.
+
+Configuration (see `application.yml`):
+
+- `ligitabl.security.remember-me.key` — signing key for the remember-me cookie
+- `ligitabl.security.remember-me.token-validity-seconds` — cookie lifespan (default 14 days)
+
+Defaults are **dev-safe** and must be overridden in production using env vars:
+
+- `REMEMBER_ME_KEY`
+- `REMEMBER_ME_TOKEN_VALIDITY_SECONDS`
+
+**Cookie-based remember-me (current):**
+
+- No database storage; simple and fast.
+- If the key leaks, cookies can be forged until rotated.
+- Cannot revoke a single device.
+
+**Persistent token store (optional alternative):**
+
+- Stores remember-me tokens in DB.
+- Allows per-device revocation and detects token theft (series mismatch).
+- Slightly more complexity and DB reads.
+
+### Navbar context
+
+Navbar labels/links are computed in `NavbarControllerAdvice`, using the custom principal when present to avoid extra DB lookups.
+
+### Logout
+
+Logout clears the security context, invalidates the session, and removes the remember-me cookie.
+
 ## Full local run with Postgres
 
 You can run the app with a local Postgres you manage, or let Docker Compose start one for you.
@@ -436,24 +483,20 @@ Alternatively, `api/src/main/resources/application-liquibase.yml` is already pre
 Quick checklist if startup fails or `curl` can’t connect:
 
 1. Ensure the app is actually running
-
    - Use:
      - `make run-app` to start Postgres (Compose) and run the JAR, or
      - `make run` if your local Postgres is already up.
    - Healthcheck: `curl http://localhost:${PORT:-8080}/actuator/health` should return `{"status":"UP"}` when the app is ready.
 
 2. Verify datasource settings
-
    - The app reads `SPRING_DATASOURCE_URL` directly, or builds it from `DB_*` (host defaults to `localhost`, port defaults to `55432`).
    - Confirm env variables (or `.env` loaded by Makefile/Compose): `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`.
    - Example URL: `jdbc:postgresql://localhost:55432/ligitabl`.
 
 3. Confirm the Postgres driver is on the classpath
-
    - The API includes `org.postgresql:postgresql`; building with `mvn -pl api -am package` produces a runnable JAR with the driver.
 
 4. Check logs for autoconfiguration hints
-
    - On failure you’ll typically see messages like "Failed to configure a DataSource" or "No qualifying bean of type 'org.jooq.DSLContext'". These indicate the datasource couldn’t be created (bad URL/creds/DB down) or the driver is missing.
 
 5. Port already in use
