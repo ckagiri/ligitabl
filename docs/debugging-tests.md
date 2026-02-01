@@ -11,7 +11,6 @@ Note: VS Code tasks are provided for common test flows (including “logged to r
 ## Quick triage checklist
 
 1. **Run the smallest test suite that reproduces the failure**
-
    - API unit/core tests (skips `*IT`):
 
      ```bash
@@ -32,7 +31,6 @@ Note: VS Code tasks are provided for common test flows (including “logged to r
      ```
 
 2. **Identify which tests failed** (don’t scroll the whole Maven output)
-
    - Surefire writes machine-readable XML and human-friendly text reports under:
      - `api/target/surefire-reports/`
      - `model/target/surefire-reports/`
@@ -181,6 +179,26 @@ Once you have the failing test name or error string:
   ```bash
   rg -n "(AssertionError|Caused by|ERROR|FAILURE)" api/target/surefire-reports
   ```
+
+## Recent learnings (from debugging this repo)
+
+- **Spring bean name collisions are easy to miss.**
+  - When a web controller and an API controller share the same simple class name, Spring’s default bean name will collide.
+  - Fix by explicitly naming one (e.g., `@Controller("webCreatePredictionController")`) or renaming the class/package.
+
+- **`@ControllerAdvice` in WebMvc tests can break context load.**
+  - If a controller advice depends on repository beans, `@WebMvcTest` won’t provide them by default.
+  - Use `@ConditionalOnBean(...)` to only register advice when those repos exist, or exclude the advice in MVC slice tests.
+
+- **Testcontainers + Spring context caching can lead to “connection refused.”**
+  - If a test class uses its own `@Container` DB and the context is cached/reused, the cached context may point at a stopped container.
+  - Fix options:
+    - Mark the test class with `@DirtiesContext` (e.g., `AFTER_CLASS`) so the context isn’t reused.
+    - Use a shared container (static + manual start) for the whole test suite.
+
+- **Look for DB connection errors in the _end_ of the log.**
+  - Hikari errors like “Pool is empty” or “Connection refused” often appear at the tail, not near the top.
+  - `tail -n 80 api/target/test-api.log` is usually enough to see the root cause.
 
 ## Integration tests (Testcontainers) diagnostics
 

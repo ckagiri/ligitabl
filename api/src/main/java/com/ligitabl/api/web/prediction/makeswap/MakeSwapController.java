@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import java.security.Principal;
 import java.util.Map;
 
-@Controller
+@Controller("webMakeSwapController")
 @Slf4j
 @RequiredArgsConstructor
 @RequestMapping("/seasonprediction")

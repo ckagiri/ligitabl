@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
+import lombok.Builder;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.experimental.SuperBuilder;
@@ -26,6 +27,7 @@ public class SeasonPrediction extends AbstractModel<UUID> {
     @NotNull
     private List<TeamRank> currentRankings;
 
+    @Builder.Default
     private List<RoundSwap> swaps = new ArrayList<>();
 
     private Instant lastSwapAt;

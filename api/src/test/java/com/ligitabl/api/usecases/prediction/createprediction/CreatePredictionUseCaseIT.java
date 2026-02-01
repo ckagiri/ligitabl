@@ -208,19 +208,19 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("should accept any ranking order (no strategic validation)")
         void shouldAcceptAnyRankingOrder() {
-            CreatePredictionCommand request = new CreatePredictionCommand(List.of(
-                    new CreatePredictionCommand.TeamRankRequest("WHU", 1),
-                    new CreatePredictionCommand.TeamRankRequest("BRE", 2),
-                    new CreatePredictionCommand.TeamRankRequest("CRY", 3),
-                    new CreatePredictionCommand.TeamRankRequest("BHA", 4),
-                    new CreatePredictionCommand.TeamRankRequest("TOT", 5),
-                    new CreatePredictionCommand.TeamRankRequest("MUN", 6),
-                    new CreatePredictionCommand.TeamRankRequest("NEW", 7),
-                    new CreatePredictionCommand.TeamRankRequest("CHE", 8),
-                    new CreatePredictionCommand.TeamRankRequest("AVL", 9),
-                    new CreatePredictionCommand.TeamRankRequest("LIV", 10),
-                    new CreatePredictionCommand.TeamRankRequest("ARS", 11),
-                    new CreatePredictionCommand.TeamRankRequest("MCI", 12)));
+                CreatePredictionCommand request = new CreatePredictionCommand(List.of(
+                    new TeamRankDto("WHU", 1),
+                    new TeamRankDto("BRE", 2),
+                    new TeamRankDto("CRY", 3),
+                    new TeamRankDto("BHA", 4),
+                    new TeamRankDto("TOT", 5),
+                    new TeamRankDto("MUN", 6),
+                    new TeamRankDto("NEW", 7),
+                    new TeamRankDto("CHE", 8),
+                    new TeamRankDto("AVL", 9),
+                    new TeamRankDto("LIV", 10),
+                    new TeamRankDto("ARS", 11),
+                    new TeamRankDto("MCI", 12)));
 
             Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
 
@@ -241,9 +241,9 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject when invalid team count")
         void shouldRejectWhenInvalidTeamCount() {
-            CreatePredictionCommand request = new CreatePredictionCommand(List.of(
-                    new CreatePredictionCommand.TeamRankRequest("ARS", 1),
-                    new CreatePredictionCommand.TeamRankRequest("LIV", 2)));
+                CreatePredictionCommand request = new CreatePredictionCommand(List.of(
+                    new TeamRankDto("ARS", 1),
+                    new TeamRankDto("LIV", 2)));
 
             Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
 
@@ -254,13 +254,13 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject when invalid team codes")
         void shouldRejectWhenInvalidTeamCodes() {
-            List<CreatePredictionCommand.TeamRankRequest> rankings = INITIAL_RANKINGS.stream()
-                    .map(tr -> new CreatePredictionCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
+                List<TeamRankDto> rankings = INITIAL_RANKINGS.stream()
+                    .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
                     .toList();
 
             // Replace one code with an invalid code but keep team count correct.
             rankings = new java.util.ArrayList<>(rankings);
-            rankings.set(0, new CreatePredictionCommand.TeamRankRequest("XXX", 1));
+            rankings.set(0, new TeamRankDto("XXX", 1));
 
             Either<CreatePredictionError, CreatePredictionResult> result =
                     useCase.execute(userId, new CreatePredictionCommand(rankings));
@@ -272,13 +272,13 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject when duplicate positions")
         void shouldRejectWhenDuplicatePositions() {
-            List<CreatePredictionCommand.TeamRankRequest> rankings = INITIAL_RANKINGS.stream()
-                    .map(tr -> new CreatePredictionCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
+                List<TeamRankDto> rankings = INITIAL_RANKINGS.stream()
+                    .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
                     .toList();
 
             rankings = new ArrayList<>(rankings);
-            rankings.set(0, new CreatePredictionCommand.TeamRankRequest("MCI", 1));
-            rankings.set(1, new CreatePredictionCommand.TeamRankRequest("ARS", 1));
+            rankings.set(0, new TeamRankDto("MCI", 1));
+            rankings.set(1, new TeamRankDto("ARS", 1));
 
             Either<CreatePredictionError, CreatePredictionResult> result =
                     useCase.execute(userId, new CreatePredictionCommand(rankings));
@@ -292,13 +292,13 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject when duplicate team codes")
         void shouldRejectWhenDuplicateTeamCodes() {
-            List<CreatePredictionCommand.TeamRankRequest> rankings = INITIAL_RANKINGS.stream()
-                    .map(tr -> new CreatePredictionCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
+                List<TeamRankDto> rankings = INITIAL_RANKINGS.stream()
+                    .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
                     .toList();
 
             rankings = new ArrayList<>(rankings);
-            rankings.set(0, new CreatePredictionCommand.TeamRankRequest("MCI", 1));
-            rankings.set(1, new CreatePredictionCommand.TeamRankRequest("MCI", 2));
+            rankings.set(0, new TeamRankDto("MCI", 1));
+            rankings.set(1, new TeamRankDto("MCI", 2));
 
             Either<CreatePredictionError, CreatePredictionResult> result =
                     useCase.execute(userId, new CreatePredictionCommand(rankings));
@@ -358,8 +358,8 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
 
     private static CreatePredictionCommand validRequestFromInitialRankings() {
         return new CreatePredictionCommand(INITIAL_RANKINGS.stream()
-                .map(tr -> new CreatePredictionCommand.TeamRankRequest(tr.getCode(), tr.getPosition()))
-                .toList());
+            .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
+            .toList());
     }
 
     private void insertCompetitionAndSeason() {

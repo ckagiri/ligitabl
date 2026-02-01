@@ -9,6 +9,7 @@ import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.UserRepo;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -34,6 +35,7 @@ import java.util.UUID;
  * </ul>
  */
 @ControllerAdvice
+@ConditionalOnBean({ContestRepo.class, SeasonRepo.class, UserRepo.class})
 @RequiredArgsConstructor
 public class NavbarControllerAdvice {
 
