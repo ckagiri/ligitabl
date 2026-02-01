@@ -1,8 +1,5 @@
 package com.ligitabl.api.web.prediction.createprediction;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 import java.util.List;
 import java.util.Objects;
 
@@ -15,13 +12,8 @@ import java.util.Objects;
  *
  * <p>Example JSON: {@code { "teamCodes": ["MCI", "ARS", "LIV", ...] }}</p>
  */
-public record CreatePredictionRequest(
-        @JsonProperty("teamCodes") List<String> teamCodes
-) {
-    @JsonCreator
-    public CreatePredictionRequest(
-            @JsonProperty("teamCodes") List<String> teamCodes
-    ) {
+public record CreatePredictionRequest(List<String> teamCodes) {
+    public CreatePredictionRequest(List<String> teamCodes) {
         this.teamCodes = List.copyOf(Objects.requireNonNull(teamCodes, "teamCodes is required"));
     }
 }

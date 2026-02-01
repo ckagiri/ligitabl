@@ -6,12 +6,11 @@ import com.ligitabl.api.usecases.prediction.makeswap.MakeSwapUseCase;
 import com.ligitabl.api.usecases.prediction.makeswap.SwapCommand;
 import com.ligitabl.api.usecases.prediction.makeswap.SwapError;
 import com.ligitabl.api.usecases.prediction.makeswap.SwapResult;
+import com.ligitabl.api.web.shared.security.WebSecurity;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,11 +29,11 @@ public class MakeSwapController {
     @PostMapping("/swap")
     @ResponseBody
     public Map<String, Object> swapTeams(
-            @RequestBody SwapTeamsRequest request,
+            @RequestBody MakeSwapRequest request,
             Principal principal,
             HttpServletResponse response
     ) {
-        WebUserDetails userDetails = resolveUser(principal);
+        WebUserDetails userDetails = WebSecurity.resolveUser(principal);
         if (userDetails == null) {
             response.setStatus(401);
             return Map.of("success", false, "message", "Authentication required");
@@ -90,16 +89,4 @@ public class MakeSwapController {
         };
     }
 
-    private WebUserDetails resolveUser(Principal principal) {
-        if (principal == null) {
-            return null;
-        }
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof WebUserDetails details) {
-            return details;
-        }
-
-        return null;
-    }
 }

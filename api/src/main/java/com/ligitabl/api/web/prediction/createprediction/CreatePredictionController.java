@@ -7,12 +7,11 @@ import com.ligitabl.api.usecases.prediction.createprediction.CreatePredictionErr
 import com.ligitabl.api.usecases.prediction.createprediction.CreatePredictionResult;
 import com.ligitabl.api.usecases.prediction.createprediction.CreatePredictionUseCase;
 import com.ligitabl.api.usecases.prediction.createprediction.TeamRankDto;
+import com.ligitabl.api.web.shared.security.WebSecurity;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Controller;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,7 +36,7 @@ public class CreatePredictionController {
             Principal principal,
             HttpServletResponse response
     ) {
-        WebUserDetails userDetails = resolveUser(principal);
+        WebUserDetails userDetails = WebSecurity.resolveUser(principal);
         if (userDetails == null) {
             response.setStatus(401);
             return Map.of("success", false, "message", "Authentication required");
@@ -102,16 +101,4 @@ public class CreatePredictionController {
         };
     }
 
-    private WebUserDetails resolveUser(Principal principal) {
-        if (principal == null) {
-            return null;
-        }
-
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.getPrincipal() instanceof WebUserDetails details) {
-            return details;
-        }
-
-        return null;
-    }
 }
