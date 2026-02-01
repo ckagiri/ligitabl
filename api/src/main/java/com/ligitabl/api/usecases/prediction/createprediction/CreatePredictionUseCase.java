@@ -90,7 +90,7 @@ public class CreatePredictionUseCase {
     private Either<CreatePredictionError, Void> validateNoDuplicatePositions(
             CreatePredictionCommand request) {
         List<Integer> positions = request.rankings().stream()
-                .map(CreatePredictionCommand.TeamRankRequest::position)
+                .map(TeamRankDto::position)
                 .toList();
 
         List<Integer> duplicates = positions.stream()
@@ -106,7 +106,7 @@ public class CreatePredictionUseCase {
 
     private Either<CreatePredictionError, Void> validateNoDuplicateCodes(CreatePredictionCommand request) {
         List<String> codes = request.rankings().stream()
-                .map(CreatePredictionCommand.TeamRankRequest::code)
+                .map(TeamRankDto::code)
                 .map(String::toUpperCase)
                 .toList();
 
@@ -124,7 +124,7 @@ public class CreatePredictionUseCase {
     private Either<CreatePredictionError, Void> validateTeamCodesExist(
             CreatePredictionCommand request, Season season) {
         List<String> requestedCodes = request.rankings().stream()
-                .map(CreatePredictionCommand.TeamRankRequest::code)
+                .map(TeamRankDto::code)
                 .map(String::toUpperCase)
                 .toList();
 

@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.prediction;
+package com.ligitabl.api.web.prediction.userpredictions;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.web.shared.command.GetUserPredictionCommand;
