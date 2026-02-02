@@ -124,9 +124,13 @@ public class AuthController {
     @GetMapping("/login")
     public String showLoginForm(Model model) {
         model.addAttribute("pageTitle", "Login");
-        model.addAttribute("loginForm", new LoginForm());
         model.addAttribute("isDemo", true);
         return "auth/login";
+    }
+
+    @ModelAttribute("loginForm")
+    public LoginForm loginForm() {
+        return new LoginForm();
     }
 
     @PostMapping("/login")
@@ -139,6 +143,7 @@ public class AuthController {
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("pageTitle", "Login");
+            model.addAttribute("loginForm", form);
             return "auth/login";
         }
 
@@ -153,6 +158,7 @@ public class AuthController {
             if (user == null) {
                 model.addAttribute("error", "Invalid email or password");
                 model.addAttribute("pageTitle", "Login");
+                model.addAttribute("loginForm", form);
                 return "auth/login";
             }
 
@@ -178,6 +184,7 @@ public class AuthController {
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("pageTitle", "Login");
+            model.addAttribute("loginForm", form);
             return "auth/login";
         }
     }

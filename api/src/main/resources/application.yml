@@ -22,6 +22,14 @@ server:
 logging:
   level:
     root: INFO
+    org:
+      springframework:
+        security:
+          config:
+            annotation:
+              authentication:
+                configuration:
+                  InitializeUserDetailsBeanManagerConfigurer: ERROR
     com:
       ligitabl: INFO
   pattern:
