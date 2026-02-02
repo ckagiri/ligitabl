@@ -4,9 +4,11 @@ import static com.ligitabl.model.db.tables.TStandings.T_STANDINGS;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.jooq.DSLContext;
 import org.jooq.JSONB;
@@ -41,6 +43,43 @@ public class StandingsPersistenceAdapter implements StandingsRepo {
     public Optional<Standings> findBySeasonAndRoundPosition(UUID seasonId, int roundPosition) {
         var record = dsl.selectFrom(T_STANDINGS)
                 .where(T_STANDINGS.FK_SEASON_ID.eq(seasonId).and(T_STANDINGS.C_ROUND_POSITION.eq(roundPosition)))
+                .fetchOne();
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
+    @Override
+    public Map<String, Integer> findPositionMap(UUID seasonId, int roundPosition) {
+        Optional<Standings> standings = findBySeasonAndRoundPosition(seasonId, roundPosition);
+        if (standings.isEmpty() || standings.get().getRankings() == null) {
+            return Map.of();
+        }
+
+        return standings.get().getRankings().stream()
+                .collect(Collectors.toMap(
+                        rank -> rank.getRanking().getCode(),
+                        rank -> rank.getRanking().getPosition()));
+    }
+
+    @Override
+    public Map<String, Integer> findPointsMap(UUID seasonId, int roundPosition) {
+        Optional<Standings> standings = findBySeasonAndRoundPosition(seasonId, roundPosition);
+        if (standings.isEmpty() || standings.get().getRankings() == null) {
+            return Map.of();
+        }
+
+        return standings.get().getRankings().stream()
+                .collect(Collectors.toMap(
+                        rank -> rank.getRanking().getCode(),
+                        rank -> rank.getMetadata().getPoints()));
+    }
+
+    @Override
+    public Optional<Standings> findLatestBySeason(UUID seasonId) {
+        var record = dsl.selectFrom(T_STANDINGS)
+                .where(T_STANDINGS.FK_SEASON_ID.eq(seasonId))
+                .orderBy(T_STANDINGS.C_ROUND_POSITION.desc())
+                .limit(1)
                 .fetchOne();
 
         return Optional.ofNullable(MAPPER.map(record));

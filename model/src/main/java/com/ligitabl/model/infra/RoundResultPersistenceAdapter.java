@@ -41,14 +41,14 @@ public class RoundResultPersistenceAdapter implements RoundResultRepo {
                 .set(T_ROUND_RESULT.PK_ID, id)
                 .set(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID, result.getRoundSubmissionId())
                 .set(T_ROUND_RESULT.C_RANKINGS, writeRankings(result.getRankings()))
-                .set(T_ROUND_RESULT.C_SCORE, result.getScore())
+                .set(T_ROUND_RESULT.C_SCORE, result.getTotalScore())
                 .set(T_ROUND_RESULT.C_ZEROES_COUNT, result.getZeroesCount())
                 .set(T_ROUND_RESULT.C_SWAP_COUNT, result.getSwapCount())
                 .set(T_ROUND_RESULT.C_USER_VIEWED, result.isUserViewed())
                 .onConflict(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID)
                 .doUpdate()
                 .set(T_ROUND_RESULT.C_RANKINGS, writeRankings(result.getRankings()))
-                .set(T_ROUND_RESULT.C_SCORE, result.getScore())
+                .set(T_ROUND_RESULT.C_SCORE, result.getTotalScore())
                 .set(T_ROUND_RESULT.C_ZEROES_COUNT, result.getZeroesCount())
                 .set(T_ROUND_RESULT.C_SWAP_COUNT, result.getSwapCount())
                 .set(T_ROUND_RESULT.C_USER_VIEWED, result.isUserViewed())
@@ -82,6 +82,19 @@ public class RoundResultPersistenceAdapter implements RoundResultRepo {
         return records.stream().map(MAPPER::map).toList();
     }
 
+    @Override
+    public Optional<RoundResult> findByUserAndRound(UUID userId, int roundPosition) {
+        var record = dsl.select(T_ROUND_RESULT.fields())
+                .from(T_ROUND_RESULT)
+                .join(T_ROUND_SUBMISSION)
+                .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
+                .where(T_ROUND_SUBMISSION.FK_USER_ID.eq(userId)
+                        .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.eq(roundPosition)))
+                .fetchOneInto(RoundResultRecord.class);
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
     private static List<ResultTeamRank> readRankings(JSONB jsonb) {
         if (jsonb == null) {
             return List.of();
@@ -113,7 +126,7 @@ public class RoundResultPersistenceAdapter implements RoundResultRepo {
                     .id(record.getId())
                     .roundSubmissionId(record.getRoundSubmissionId())
                     .rankings(readRankings(record.getRankings()))
-                    .score(record.getScore())
+                    .totalScore(record.getScore())
                     .zeroesCount(record.getZeroesCount())
                     .swapCount(record.getSwapCount())
                     .userViewed(Boolean.TRUE.equals(record.getUserViewed()))

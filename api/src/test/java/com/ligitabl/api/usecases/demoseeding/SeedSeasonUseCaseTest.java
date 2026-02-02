@@ -175,7 +175,7 @@ class SeedSeasonUseCaseTest {
         }
 
         @Test
-        @DisplayName("should create predictions for all users")
+        @DisplayName("should create prediction for all users")
         void shouldCreatePredictionsForAllUsers() {
             // Arrange
             setupSuccessfulMocks();

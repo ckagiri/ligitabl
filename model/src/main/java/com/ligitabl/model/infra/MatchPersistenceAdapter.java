@@ -157,6 +157,51 @@ public class MatchPersistenceAdapter implements MatchRepo {
     }
 
     @Override
+    public Map<String, List<Match>> findBySeasonAndRound(UUID seasonId, int round) {
+        List<MatchRecord> records = dsl.select(T_MATCH.fields())
+                .from(T_MATCH)
+                .join(T_ROUND)
+                .on(T_MATCH.FK_ROUND_ID.eq(T_ROUND.PK_ID))
+                .where(T_ROUND.FK_SEASON_ID.eq(seasonId))
+                .and(T_ROUND.C_POSITION.eq(round))
+                .orderBy(T_MATCH.C_KICK_OFF.asc())
+                .fetchInto(MatchRecord.class);
+
+        if (records.isEmpty()) {
+            return Map.of();
+        }
+
+        List<Match> matches = new ArrayList<>(records.size());
+        Set<UUID> teamIds = new HashSet<>();
+        for (MatchRecord record : records) {
+            Match match = MAPPER.map(record);
+            matches.add(match);
+            teamIds.add(record.getHomeTeamId());
+            teamIds.add(record.getAwayTeamId());
+        }
+
+        MapTeams teams = loadTeams(teamIds);
+        for (Match match : matches) {
+            Team home = teams.byId().get(match.getHomeTeamId());
+            Team away = teams.byId().get(match.getAwayTeamId());
+            if (home != null && away != null) {
+                match.setTeams(home, away);
+            }
+        }
+
+        Map<String, List<Match>> byTeam = new HashMap<>();
+        for (Match match : matches) {
+            if (!match.hasTeamsLoaded()) {
+                continue;
+            }
+            byTeam.computeIfAbsent(match.getHomeTeam().getCode(), __ -> new ArrayList<>()).add(match);
+            byTeam.computeIfAbsent(match.getAwayTeam().getCode(), __ -> new ArrayList<>()).add(match);
+        }
+
+        return byTeam;
+    }
+
+    @Override
     public Match create(Match model) {
         if (model.getId() != null) {
             throw new IllegalArgumentException(

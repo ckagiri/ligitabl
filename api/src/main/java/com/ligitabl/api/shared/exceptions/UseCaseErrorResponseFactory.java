@@ -1,7 +1,12 @@
 package com.ligitabl.api.shared.exceptions;
 
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpStatusCode;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+
+import java.util.Objects;
 
 import com.ligitabl.api.shared.errors.*;
 
@@ -29,6 +34,9 @@ public class UseCaseErrorResponseFactory {
                 .path(path)
                 .build();
 
-        return new ResponseEntity<>(response, status);
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        HttpStatusCode statusCode = Objects.requireNonNull(status, "status");
+        return new ResponseEntity<>(response, headers, statusCode);
     }
 }

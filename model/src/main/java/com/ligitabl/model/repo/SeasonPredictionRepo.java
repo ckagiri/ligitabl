@@ -9,6 +9,8 @@ import com.ligitabl.model.domain.SeasonPrediction;
 public interface SeasonPredictionRepo {
     Optional<SeasonPrediction> findByUserAndSeason(UUID userId, UUID seasonId);
 
+    boolean existsByUserAndSeason(UUID userId, UUID seasonId);
+
     SeasonPrediction save(SeasonPrediction prediction);
 
     List<SeasonPrediction> findBySeasonAndAtRoundNumberLessThanEqual(UUID seasonId, int roundNumber);

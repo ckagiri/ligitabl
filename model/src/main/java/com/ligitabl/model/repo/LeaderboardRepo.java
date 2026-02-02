@@ -12,7 +12,7 @@ import com.ligitabl.model.domain.LeaderboardEntry;
  *
  * Tiebreaker order:
  * 1. total_score DESC (highest score wins)
- * 2. total_zeroes DESC (more perfect predictions wins)
+ * 2. total_zeroes DESC (more perfect prediction wins)
  * 3. total_swaps ASC (fewer lineup changes wins)
  * 4. max_score DESC (higher best round wins)
  * 5. display_name ASC (alphabetical as final tiebreaker)

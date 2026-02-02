@@ -22,6 +22,14 @@ server:
 logging:
   level:
     root: INFO
+    org:
+      springframework:
+        security:
+          config:
+            annotation:
+              authentication:
+                configuration:
+                  InitializeUserDetailsBeanManagerConfigurer: ERROR
     com:
       ligitabl: INFO
   pattern:
@@ -45,6 +53,14 @@ jwt:
 
 ligitabl:
   default-competition-slug: ${DEFAULT_COMPETITION_SLUG:premier-league}
+
+  scheduling:
+    enabled: false
+
+  security:
+    remember-me:
+      key: ${REMEMBER_ME_KEY:dev-remember-me-key}
+      token-validity-seconds: ${REMEMBER_ME_TOKEN_VALIDITY_SECONDS:1209600}
 
   # UI Development Mode
   # Enable fake in-memory data service to test UI without database dependencies

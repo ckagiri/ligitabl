@@ -283,7 +283,7 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         for (var submission : submissions) {
             var roundResult = roundResultRepo.findByRoundSubmissionId(submission.getId());
             assertThat(roundResult).isPresent();
-            assertThat(roundResult.get().getScore()).isGreaterThanOrEqualTo(0);
+            assertThat(roundResult.get().getTotalScore()).isGreaterThanOrEqualTo(0);
         }
     }
 
@@ -349,7 +349,7 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
     }
 
     @Test
-    @DisplayName("Should handle finalization when no users submitted predictions")
+    @DisplayName("Should handle finalization when no users submitted prediction")
     void shouldHandleFinalizationWhenNoSubmissions() throws Exception {
         insertSeason(2, 4);
 

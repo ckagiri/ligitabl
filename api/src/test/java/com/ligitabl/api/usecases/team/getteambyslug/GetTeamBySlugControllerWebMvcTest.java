@@ -21,6 +21,7 @@ import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecases.team.TeamDto;
 
 @WebMvcTest(controllers = GetTeamBySlugController.class)
+@SuppressWarnings("null")
 class GetTeamBySlugControllerWebMvcTest {
 
     @Autowired

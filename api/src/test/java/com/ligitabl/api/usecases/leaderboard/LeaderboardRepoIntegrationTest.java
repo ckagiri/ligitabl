@@ -412,7 +412,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
                 .id(UUID.randomUUID())
                 .roundSubmissionId(savedSubmission.getId())
                 .rankings(List.<ResultTeamRank>of())
-                .score(score)
+                .totalScore(score)
                 .zeroesCount(zeroes)
                 .swapCount(swaps)
                 .userViewed(false)

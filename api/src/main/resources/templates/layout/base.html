@@ -1,695 +1,440 @@
-<!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org"
-      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
-      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title th:text="${pageTitle} + ' | LigiPredictor'">LigiPredictor</title>
 
     <!-- Favicon -->
-    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}">
-    <link rel="alternate icon" th:href="@{/favicon.ico}">
-    <link rel="apple-touch-icon" th:href="@{/apple-touch-icon.png}">
+    <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}" />
+    <link rel="alternate icon" th:href="@{/favicon.ico}" />
+    <link rel="apple-touch-icon" th:href="@{/apple-touch-icon.png}" />
 
     <!-- App CSS (served from src/main/resources/static/css/main.css) -->
     <!-- <link rel="stylesheet" th:href="@{/css/main.css}"> -->
 
     <!-- Tailwind CSS -->
     <!-- <script src="https://cdn.tailwindcss.com"></script> -->
-    <link rel="stylesheet" th:href="@{/dist/css/main.css}">
+    <link rel="stylesheet" th:href="@{/dist/css/main.css}" />
 
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 
-    <!-- Alpine.js for small interactions -->
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <!-- App JavaScript (must load before Alpine.js initializes) -->
+    <script defer th:src="@{/js/ligitabl.js}"></script>
 
-  <style>
+    <!-- Alpine.js for small interactions -->
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+
+    <style>
       /* Hide Alpine elements until Alpine is ready */
       [x-cloak] {
-          display: none !important;
+        display: none !important;
       }
 
       /* Ultra-minimal - Only essential transitions */
       /* Page transitions - instant */
       .htmx-swapping {
-          opacity: 0;
-          transition: opacity 100ms;
+        opacity: 0;
+        transition: opacity 100ms;
       }
 
       .htmx-settling {
-          opacity: 1;
-          transition: opacity 100ms;
+        opacity: 1;
+        transition: opacity 100ms;
       }
 
       /* Prediction rows - Color changes only */
       .prediction-row {
-          transition: background-color 100ms;
+        transition: background-color 100ms;
       }
 
       .prediction-row:hover:not(.no-hover) {
-          background-color: #f9fafb;
+        background-color: #f9fafb;
       }
 
       .prediction-row.swapping {
-          background-color: #fef3c7;
+        background-color: #fef3c7;
       }
 
       .prediction-row.selected-pulse {
-          background-color: #eff6ff;
+        background-color: #eff6ff;
       }
 
       /* No animations for anything else */
       .position-change,
       .button-counter,
       .contextual-banner {
-          /* No animation */
+        /* No animation */
       }
 
       /* Buttons - Instant feedback */
       button:hover:not(:disabled) {
-          opacity: 0.9;
+        opacity: 0.9;
       }
 
       /* Loading spinner - Keep for visual feedback */
       @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
+        from {
+          transform: rotate(0deg);
+        }
+        to {
+          transform: rotate(360deg);
+        }
       }
 
       .animate-spin {
-          animation: spin 1s linear infinite;
+        animation: spin 1s linear infinite;
       }
 
       /* Loading indicator */
       .htmx-request .htmx-indicator {
-          display: inline;
+        display: inline;
       }
 
       .htmx-indicator {
-          display: none;
+        display: none;
       }
 
       /* Form select */
       .form-select {
-          appearance: none;
-          background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
-          background-position: right 1rem center;
-          background-repeat: no-repeat;
-          background-size: 1.5em 1.5em;
-          padding-right: 3.5rem;
+        appearance: none;
+        background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+        background-position: right 1rem center;
+        background-repeat: no-repeat;
+        background-size: 1.5em 1.5em;
+        padding-right: 3.5rem;
       }
 
       /* LIVE indicator - Slow, subtle */
       @keyframes subtle-pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.8; }
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.8;
+        }
       }
 
       .live-indicator {
-          animation: subtle-pulse 3s ease-in-out infinite;
+        animation: subtle-pulse 3s ease-in-out infinite;
       }
-  </style>
-</head>
-<body class="bg-gray-50 min-h-screen" x-data="{ mobileMenuOpen: false }">
+    </style>
+  </head>
+  <body class="bg-gray-50 min-h-screen" x-data="{ mobileMenuOpen: false }">
     <!-- Loading Toast (Fixed Position - Responsive) -->
-    <div id="saving-toast"
-        class="hidden fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-indigo-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg shadow-lg max-w-[90vw] sm:max-w-none">
-        <div class="flex items-center gap-2 sm:gap-3">
-            <svg class="animate-spin h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span class="font-medium text-sm sm:text-base">Saving changes...</span>
-        </div>
+    <div
+      id="saving-toast"
+      class="hidden fixed top-20 left-1/2 transform -translate-x-1/2 z-50 bg-indigo-600 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg shadow-lg max-w-[90vw] sm:max-w-none"
+    >
+      <div class="flex items-center gap-2 sm:gap-3">
+        <svg
+          class="animate-spin h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0"
+          fill="none"
+          viewBox="0 0 24 24"
+        >
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          ></circle>
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+          ></path>
+        </svg>
+        <span class="font-medium text-sm sm:text-base">Saving changes...</span>
+      </div>
     </div>
     <!-- Navigation -->
     <nav class="bg-white shadow-sm sticky top-0 z-50">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="flex justify-between items-center h-16">
-                <!-- Logo -->
-                <div class="flex items-center">
-                    <a th:href="@{/}" class="flex items-center text-indigo-600">
-                        <span class="text-2xl mr-1">⚽</span>
-                        <span class="text-xl sm:text-2xl font-bold whitespace-nowrap">LigiPredictor</span>
-                    </a>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+          <!-- Logo -->
+          <div class="flex items-center">
+            <a th:href="@{/}" class="flex items-center text-indigo-600">
+              <span class="text-2xl mr-1">⚽</span>
+              <span class="text-xl sm:text-2xl font-bold whitespace-nowrap"
+                >LigiPredictor</span
+              >
+            </a>
 
-                    <!-- Desktop Navigation -->
-                    <div class="hidden md:flex ml-10 space-x-4">
-                        <a th:href="@{/leaderboard}"
-                          class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
-                            Leaderboard
-                        </a>
-                        <a th:href="@{/standings}"
-                          class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
-                            Standings
-                        </a>
-                        <a th:href="@{/matches}"
-                          class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
-                            Matches
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Desktop Auth Buttons -->
-                <div class="hidden md:flex items-center space-x-4">
-                    <!-- Authenticated User -->
-                    <div sec:authorize="isAuthenticated() and !isAnonymous()" class="flex items-center space-x-4">
-                        <a th:href="@{/seasonprediction}"
-                          class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
-                            My Predictions
-                        </a>
-                        <span class="text-sm text-gray-700" sec:authentication="name"></span>
-                        <form th:action="@{/auth/logout}" method="post" class="inline">
-                            <button type="submit"
-                                    class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
-                                Logout
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Anonymous User -->
-                    <div sec:authorize="isAnonymous()" class="flex items-center space-x-4">
-                                                <a th:href="@{/auth/login}"
-                          class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition">
-                            Login
-                        </a>
-                                                <a th:href="@{/auth/register}"
-                          class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition">
-                            Sign Up
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Mobile menu button -->
-                <div class="md:hidden">
-                    <button type="button"
-                            @click="mobileMenuOpen = !mobileMenuOpen"
-                            class="text-gray-700 hover:text-indigo-600 p-2">
-                        <svg class="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path x-show="!mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/>
-                            <path x-show="mobileMenuOpen" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
-                </div>
+            <!-- Desktop Navigation -->
+            <div class="hidden md:flex ml-10 space-x-4">
+              <a
+                th:href="@{/leaderboard}"
+                class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+              >
+                Leaderboard
+              </a>
+              <a
+                th:href="@{/seasons/current/standings}"
+                class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+              >
+                Standings
+              </a>
+              <a
+                th:href="@{/seasons/current/matches}"
+                class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+              >
+                Matches
+              </a>
             </div>
+          </div>
 
-            <!-- Mobile menu -->
-            <div x-show="mobileMenuOpen"
-                x-transition
-                @click.away="mobileMenuOpen = false"
-                class="md:hidden pb-3 border-t border-gray-200">
-                <div class="flex flex-col space-y-1 pt-2">
-                    <!-- Navigation links -->
-                    <a th:href="@{/leaderboard}"
-                      class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
-                        Leaderboard
-                    </a>
-                    <a th:href="@{/standings}"
-                      class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
-                        Standings
-                    </a>
-                    <a th:href="@{/matches}"
-                      class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
-                        Matches
-                    </a>
-
-                    <!-- Authenticated User Menu -->
-                    <div sec:authorize="isAuthenticated()" class="border-t border-gray-200 pt-2 mt-2">
-                        <a th:href="@{/seasonprediction}"
-                          class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium block">
-                            My Predictions
-                        </a>
-                        <div class="px-3 py-2 text-sm text-gray-600" sec:authentication="principal.displayName"></div>
-                        <form th:action="@{/auth/logout}" method="post">
-                            <button type="submit"
-                                    class="w-full text-left text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium">
-                                Logout
-                            </button>
-                        </form>
-                    </div>
-
-                    <!-- Anonymous User Menu -->
-                    <div sec:authorize="isAnonymous()" class="border-t border-gray-200 pt-2 mt-2">
-                                                <a th:href="@{/auth/login}"
-                          class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium block">
-                            Login
-                        </a>
-                                                <a th:href="@{/auth/register}"
-                          class="text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-md text-base font-medium block">
-                            Sign Up
-                        </a>
-                    </div>
-                </div>
+          <!-- Desktop Auth Buttons -->
+          <div class="hidden md:flex items-center space-x-4">
+            <a
+              th:href="${predictionsNavLink} ?: '/predictions/user/guest'"
+              class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+              th:text="${predictionsNavLabel} ?: 'Predictions'"
+            >
+              Predictions
+            </a>
+            <a
+              th:unless="${isLoggedIn}"
+              th:href="@{/auth/login}"
+              class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+            >
+              Login
+            </a>
+            <a
+              th:unless="${isLoggedIn}"
+              th:href="@{/auth/register}"
+              class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md text-sm font-medium transition"
+            >
+              Sign Up
+            </a>
+            <!-- Logged in user section -->
+            <div th:if="${isLoggedIn}" class="flex items-center space-x-3">
+              <span
+                th:if="${userDisplayName}"
+                class="text-sm font-medium text-gray-700"
+                th:text="${userDisplayName}"
+                >User</span
+              >
+              <a
+                th:href="@{/auth/logout}"
+                class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+              >
+                Logout
+              </a>
             </div>
+          </div>
+
+          <!-- Mobile menu button -->
+          <div class="md:hidden">
+            <button
+              type="button"
+              @click="mobileMenuOpen = !mobileMenuOpen"
+              class="text-gray-700 hover:text-indigo-600 p-2"
+            >
+              <svg
+                class="h-6 w-6"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  x-show="!mobileMenuOpen"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+                <path
+                  x-show="mobileMenuOpen"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
+
+        <!-- Mobile menu -->
+        <div
+          x-show="mobileMenuOpen"
+          x-transition
+          @click.away="mobileMenuOpen = false"
+          class="md:hidden pb-3 border-t border-gray-200"
+        >
+          <div class="flex flex-col space-y-1 pt-2">
+            <a
+              th:href="${predictionsNavLink} ?: '/predictions/user/guest'"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+              th:text="${predictionsNavLabel} ?: 'Predictions'"
+            >
+              Predictions
+            </a>
+            <a
+              th:href="@{/leaderboard}"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+            >
+              Leaderboard
+            </a>
+            <a
+              th:href="@{/seasons/current/standings}"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+            >
+              Standings
+            </a>
+            <a
+              th:href="@{/seasons/current/matches}"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+            >
+              Matches
+            </a>
+            <div class="border-t border-gray-200 pt-2 mt-2">
+              <a
+                th:unless="${isLoggedIn}"
+                th:href="@{/auth/login}"
+                class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium block"
+              >
+                Login
+              </a>
+              <a
+                th:unless="${isLoggedIn}"
+                th:href="@{/auth/register}"
+                class="text-indigo-600 hover:bg-indigo-50 px-3 py-2 rounded-md text-base font-medium block"
+              >
+                Sign Up
+              </a>
+              <!-- Logged in user in mobile -->
+              <div th:if="${isLoggedIn}" class="px-3 py-2">
+                <span
+                  th:if="${userDisplayName}"
+                  class="text-sm font-medium text-gray-900 block mb-2"
+                  th:text="'Signed in as ' + ${userDisplayName}"
+                  >Signed in as User</span
+                >
+                <a
+                  th:href="@{/auth/logout}"
+                  class="text-gray-700 hover:bg-gray-50 py-2 rounded-md text-base font-medium block"
+                >
+                  Logout
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
     </nav>
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <!-- Flash Messages -->
-        <div th:if="${message}"
-            x-data="{ show: true }"
-            x-init="setTimeout(() => show = false, 6000)"
-            x-show="show"
-            x-transition
-            th:classappend="${messageType == 'success' ? 'bg-green-50 border-green-400 text-green-800' : (messageType == 'error' ? 'bg-red-50 border-red-400 text-red-800' : 'bg-blue-50 border-blue-400 text-blue-800')}"
-            class="border-l-4 p-4 mb-6 rounded">
-            <div class="flex items-start justify-between">
-                <div class="flex">
-                    <div class="flex-shrink-0">
-                        <svg th:if="${messageType == 'success'}" class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                        <svg th:if="${messageType == 'error'}" class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                        </svg>
-                        <svg th:unless="${messageType == 'success' or messageType == 'error'}" class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                        </svg>
-                    </div>
-                    <div class="ml-3">
-                        <p class="text-sm" th:text="${message}">Message here</p>
-                    </div>
-                </div>
-                <!-- Dismiss Button -->
-                <button @click="show = false"
-                        type="button"
-                        class="ml-4 flex-shrink-0 text-gray-400 hover:text-gray-600 transition"
-                        title="Dismiss">
-                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
-                    </svg>
-                </button>
+      <!-- Flash Messages -->
+      <div
+        th:if="${message}"
+        x-data="{ show: true }"
+        x-init="setTimeout(() => show = false, 6000)"
+        x-show="show"
+        x-transition
+        th:classappend="${messageType == 'success' ? 'bg-green-50 border-green-400 text-green-800' : (messageType == 'error' ? 'bg-red-50 border-red-400 text-red-800' : 'bg-blue-50 border-blue-400 text-blue-800')}"
+        class="border-l-4 p-4 mb-6 rounded"
+      >
+        <div class="flex items-start justify-between">
+          <div class="flex">
+            <div class="flex-shrink-0">
+              <svg
+                th:if="${messageType == 'success'}"
+                class="h-5 w-5 text-green-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clip-rule="evenodd"
+                ></path>
+              </svg>
+              <svg
+                th:if="${messageType == 'error'}"
+                class="h-5 w-5 text-red-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                  clip-rule="evenodd"
+                ></path>
+              </svg>
+              <svg
+                th:unless="${messageType == 'success' or messageType == 'error'}"
+                class="h-5 w-5 text-blue-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fill-rule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                  clip-rule="evenodd"
+                ></path>
+              </svg>
             </div>
+            <div class="ml-3">
+              <p class="text-sm" th:text="${message}">Message here</p>
+            </div>
+          </div>
+          <!-- Dismiss Button -->
+          <button
+            @click="show = false"
+            type="button"
+            class="ml-4 flex-shrink-0 text-gray-400 hover:text-gray-600 transition"
+            title="Dismiss"
+          >
+            <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
         </div>
+      </div>
 
-        <div layout:fragment="content">
-            <!-- Page content goes here -->
-        </div>
+      <!-- Clear guest localStorage on login (if user has entry) or logout -->
+      <script th:if="${clearGuestPrediction}">
+        (function () {
+          const GUEST_STORAGE_KEY = "ligitabl.guestPrediction";
+          if (localStorage.getItem(GUEST_STORAGE_KEY)) {
+            localStorage.removeItem(GUEST_STORAGE_KEY);
+            console.log(
+              "[Ligitabl] Cleared guest prediction from localStorage",
+            );
+          }
+        })();
+      </script>
+
+      <div layout:fragment="content">
+        <!-- Page content goes here -->
+      </div>
     </main>
 
     <!-- Footer -->
     <footer class="bg-white border-t mt-16">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <div class="text-center text-gray-500 text-sm">
-                <p>&copy; 2026 LigiPredictor (League Predictor). All rights reserved.</p>
-            </div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="text-center text-gray-500 text-sm">
+          <p>
+            &copy; 2026 LigiPredictor (The League Predictor). All rights
+            reserved.
+          </p>
         </div>
+      </div>
     </footer>
-
-    <!-- Additional Scripts -->
-    <script>
-        // HTMX Configuration
-        document.body.addEventListener('htmx:configRequest', (event) => {
-            event.detail.headers['X-CSRF-TOKEN'] = document.querySelector('meta[name="_csrf"]')?.content;
-        });
-
-        // Smooth scroll on HTMX navigation
-        document.body.addEventListener('htmx:afterSwap', (event) => {
-            if (event.detail.target.id === 'main-content') {
-                window.scrollTo({ top: 0, behavior: 'smooth' });
-            }
-        });
-    </script>
-
-    <script>
-        window.Ligitabl = window.Ligitabl || {};
-
-        window.Ligitabl.predictionPage = function (el) {
-            const predictionsRaw = el?.dataset?.predictions ?? '[]';
-            const canSwapRaw = el?.dataset?.canSwap ?? 'false';
-            const isInitialRaw = el?.dataset?.isInitialPrediction ?? 'false';
-            const currentStandingsRaw = el?.dataset?.currentStandings ?? '{}';
-            const fixturesRaw = el?.dataset?.fixtures ?? '{}';
-            const currentPointsRaw = el?.dataset?.currentPoints ?? '{}';
-
-            let predictions;
-            try {
-                predictions = JSON.parse(predictionsRaw);
-            } catch {
-                predictions = [];
-            }
-
-            let currentStandings;
-            try {
-                currentStandings = JSON.parse(currentStandingsRaw);
-            } catch {
-                currentStandings = {};
-            }
-
-            let fixtures;
-            try {
-                fixtures = JSON.parse(fixturesRaw);
-            } catch {
-                fixtures = {};
-            }
-
-            let currentPoints;
-            try {
-                currentPoints = JSON.parse(currentPointsRaw);
-            } catch {
-                currentPoints = {};
-            }
-
-            const canSwap = canSwapRaw === 'true' || canSwapRaw === 'True';
-            const isInitialPrediction = isInitialRaw === 'true' || isInitialRaw === 'True';
-
-            return {
-                teams: [],
-                originalTeams: [],
-                selectedTeam: null,
-                canSwap,
-                isInitialPrediction,
-                showStandings: false,
-                showFixtures: false,
-                showPoints: false,
-                currentStandings,
-                fixtures,
-                currentPoints,
-                isSaving: false,
-
-                init() {
-                    this.teams = (Array.isArray(predictions) ? predictions : []).map((p) => ({
-                        position: p.position,
-                        code: p.teamCode,
-                        name: p.teamName,
-                        crestUrl: p.crestUrl,
-                        originalPosition: p.position,
-                    }));
-                    this.originalTeams = JSON.parse(JSON.stringify(this.teams));
-                },
-
-                getCurrentPoints(teamCode) {
-                    return this.currentPoints[teamCode] || '-';
-                },
-
-                getFixtures(teamCode) {
-                    return this.fixtures[teamCode] || [];
-                },
-
-                hasFixtures(teamCode) {
-                    const teamFixtures = this.getFixtures(teamCode);
-                    return teamFixtures.length > 0;
-                },
-
-                isSelected(teamCode) {
-                    return this.selectedTeam === teamCode;
-                },
-
-                isDirty(teamCode) {
-                    const team = this.teams.find((t) => t.code === teamCode);
-                    return team?.position !== team?.originalPosition;
-                },
-
-                getDirtyCount() {
-                    return this.teams.filter((t) => this.isDirty(t.code)).length;
-                },
-
-                getSwapCount() {
-                    const changedTeams = this.teams.filter((t) => t.position !== t.originalPosition).length;
-                    const rawSwaps = changedTeams / 2;
-
-                    // Always use strict rounding for consistency
-                    return Math.ceil(rawSwaps);
-                },
-
-                getChangedTeams() {
-                    return this.teams
-                        .filter((t) => t.position !== t.originalPosition)
-                        .map((t) => {
-                            const change = t.originalPosition - t.position;
-                            return {
-                                name: t.name,
-                                code: t.code,
-                                from: t.originalPosition,
-                                to: t.position,
-                                direction: change > 0 ? 'up' : 'down',
-                                amount: Math.abs(change)
-                            };
-                        })
-                        .sort((a, b) => a.from - b.from); // Sort by original position
-                },
-
-                getChangeSummary() {
-                    const changed = this.getChangedTeams();
-                    if (changed.length === 0) return null;
-
-                    // Group consecutive changes into swap pairs
-                    const swapPairs = this.inferSwapPairs(changed);
-
-                    return {
-                        teamCount: changed.length,
-                        swapCount: this.getSwapCount(),
-                        pairs: swapPairs
-                    };
-                },
-
-                inferSwapPairs(changedTeams) {
-                    // Simple heuristic: pair teams that swapped positions
-                    const pairs = [];
-                    const processed = new Set();
-
-                    for (const team of changedTeams) {
-                        if (processed.has(team.code)) continue;
-
-                        // Find if another team took this team's original position
-                        const partner = changedTeams.find(t =>
-                            !processed.has(t.code) &&
-                            t.to === team.from &&
-                            t.from === team.to
-                        );
-
-                        if (partner) {
-                            pairs.push({
-                                team1: team.name,
-                                team2: partner.name,
-                                pos1: team.from,
-                                pos2: partner.from
-                            });
-                            processed.add(team.code);
-                            processed.add(partner.code);
-                        } else {
-                            // Team moved but no direct swap partner found
-                            pairs.push({
-                                team1: team.name,
-                                team2: null,
-                                pos1: team.from,
-                                pos2: team.to,
-                                isComplex: true
-                            });
-                            processed.add(team.code);
-                        }
-                    }
-
-                    return pairs;
-                },
-
-                getPositionChange(teamCode) {
-                    const team = this.teams.find((t) => t.code === teamCode);
-                    if (!team) return null;
-                    const change = team.originalPosition - team.position;
-                    if (change === 0) return null;
-                    return change > 0 ? `↑${change}` : `↓${Math.abs(change)}`;
-                },
-
-                getSelectedTeamName() {
-                    if (!this.selectedTeam) return null;
-                    const team = this.teams.find((t) => t.code === this.selectedTeam);
-                    return team ? team.name : null;
-                },
-
-                teamClick(teamCode) {
-                    if (!this.canSwap) return;
-
-                    if (this.selectedTeam === null) {
-                        this.selectedTeam = teamCode;
-                        this.$nextTick(() => {
-                            const row = document.querySelector(`[data-team-code='${teamCode}']`);
-                            if (row) {
-                                row.classList.add('selected-pulse');
-                                setTimeout(() => row.classList.remove('selected-pulse'), 300);
-                            }
-                        });
-                        return;
-                    }
-
-                    if (this.selectedTeam === teamCode) {
-                        this.selectedTeam = null;
-                        return;
-                    }
-
-                    const index1 = this.teams.findIndex((t) => t.code === this.selectedTeam);
-                    const index2 = this.teams.findIndex((t) => t.code === teamCode);
-                    if (index1 < 0 || index2 < 0) {
-                        this.selectedTeam = null;
-                        return;
-                    }
-
-                    // Store the team codes before clearing selection
-                    const team1Code = this.selectedTeam;
-                    const team2Code = teamCode;
-
-                    // Add pre-swap animation to both rows FIRST
-                    const row1 = document.querySelector(`[data-team-code='${team1Code}']`);
-                    const row2 = document.querySelector(`[data-team-code='${team2Code}']`);
-
-                    if (row1) row1.classList.add('pre-swapping');
-                    if (row2) row2.classList.add('pre-swapping');
-
-                    // Clear selection after starting the animation
-                    setTimeout(() => {
-                        this.selectedTeam = null;
-                    }, 10);
-
-                    // Add main swap highlight after pre-animation starts
-                    setTimeout(() => {
-                        if (row1) {
-                            row1.classList.remove('pre-swapping');
-                            row1.classList.add('swapping');
-                            setTimeout(() => row1.classList.remove('swapping'), 600);
-                        }
-                        if (row2) {
-                            row2.classList.remove('pre-swapping');
-                            row2.classList.add('swapping');
-                            setTimeout(() => row2.classList.remove('swapping'), 600);
-                        }
-                    }, 80);
-
-                    const temp = this.teams[index1];
-                    this.teams[index1] = this.teams[index2];
-                    this.teams[index2] = temp;
-                    this.teams.forEach((team, idx) => (team.position = idx + 1));
-                },
-
-                reset() {
-                    this.teams = JSON.parse(JSON.stringify(this.originalTeams));
-                    this.selectedTeam = null;
-                },
-
-                canUpdate() {
-                    const swapCount = this.getSwapCount();
-                    if (swapCount === 0) return false;
-
-                    // After initial prediction, only allow up to 1 swap
-                    if (!this.isInitialPrediction && swapCount > 1) return false;
-
-                    return this.canSwap;
-                },
-
-                exceedsLimit() {
-                    return !this.isInitialPrediction && this.getSwapCount() > 1;
-                },
-
-                getActualPosition(teamCode) {
-                    return this.currentStandings[teamCode] || '?';
-                },
-
-                getDelta(teamCode) {
-                    const team = this.teams.find(t => t.code === teamCode);
-                    const actual = this.getActualPosition(teamCode);
-                    if (!team || actual === '?') return '-';
-                    return Math.abs(team.position - actual);
-                },
-
-                getDeltaDirection(teamCode) {
-                    const team = this.teams.find(t => t.code === teamCode);
-                    const actual = this.getActualPosition(teamCode);
-                    if (!team || actual === '?') return null;
-
-                    // If your position > actual position, team needs to move up
-                    return team.position > actual ? 'up' : 'down';
-                },
-
-                submitChanges() {
-                    this.isSaving = true;
-                    const teamCodes = this.teams.map((t) => t.code);
-
-                    // Show loading toast
-                    const toast = document.getElementById('saving-toast');
-                    if (toast) {
-                        toast.classList.remove('hidden');
-                    }
-
-                    fetch('/seasonprediction/swap-multiple', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({ teamCodes }),
-                    })
-                        .then((response) => response.json())
-                        .then((data) => {
-                            if (data.success) {
-                              // Delay scroll slightly so user sees button state change
-                              setTimeout(() => {
-                                  window.scrollTo({ top: 0, behavior: 'smooth' });
-                              }, 300);
-
-                              // Then reload
-                              setTimeout(() => {
-                                  window.location.reload();
-                              }, 800);
-                            }
-                        })
-                        .catch((error) => {
-                          console.error('Error:', error);
-                          this.isSaving = false;
-                          if (toast) {
-                              toast.classList.add('hidden');
-                          }
-                          alert('Failed to update prediction');
-                        });
-                },
-            };
-        };
-
-        document.body.addEventListener('htmx:afterSwap', (event) => {
-            if (!window.Alpine || !event.detail?.target) return;
-            const target = event.detail.target;
-            if (!target.querySelector || !target.querySelector('[x-data]')) return;
-            window.Alpine.initTree(target);
-        });
-
-        (function () {
-            window.Ligitabl = window.Ligitabl || {};
-            const dismissedKey = 'ligitabl.resultsBannerDismissed';
-            window.Ligitabl.resultsBannerDismissed = sessionStorage.getItem(dismissedKey) === '1';
-
-            if (window.Ligitabl.resultsBannerDismissed) {
-                document.getElementById('results-banner')?.remove();
-            }
-
-            document.body.addEventListener('htmx:beforeRequest', (event) => {
-                const elt = event.detail?.elt;
-                if (elt && elt.id === 'results-banner' && window.Ligitabl.resultsBannerDismissed) {
-                    event.preventDefault();
-                }
-            });
-
-            function dismissResultsBanner() {
-                const host = document.getElementById('results-banner');
-                if (!host) return;
-
-                window.Ligitabl.resultsBannerDismissed = true;
-                sessionStorage.setItem(dismissedKey, '1');
-
-                host.remove();
-            }
-
-            document.addEventListener('click', (event) => {
-                const resetDemo = event.target?.closest?.('[data-reset-demo="true"]');
-                if (resetDemo) {
-                    window.Ligitabl.resultsBannerDismissed = false;
-                    sessionStorage.removeItem(dismissedKey);
-                    return;
-                }
-
-                const trigger = event.target?.closest?.('[data-dismiss-results-banner="true"]');
-                if (!trigger) return;
-                dismissResultsBanner();
-            });
-        })();
-    </script>
-</body>
+  </body>
 </html>

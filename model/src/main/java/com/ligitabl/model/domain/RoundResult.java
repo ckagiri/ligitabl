@@ -20,7 +20,7 @@ public class RoundResult extends AbstractModel<UUID> {
     @NotNull
     private List<ResultTeamRank> rankings;
 
-    private int score;
+    private int totalScore;
 
     private int zeroesCount;
 
@@ -30,4 +30,8 @@ public class RoundResult extends AbstractModel<UUID> {
     private boolean userViewed = false;
 
     private Instant createdAt;
+
+    public int getTotalHits() {
+        return rankings.stream().mapToInt(ResultTeamRank::getHit).sum();
+    }
 }
