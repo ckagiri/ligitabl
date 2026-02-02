@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.ligitabl.api.scheduling.syncmatches.SyncMatchesUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -24,7 +25,7 @@ import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.client.footballdata.MatchDto;
 import com.ligitabl.api.client.footballdata.MatchesResponse;
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.scheduling.AsyncStandingsService;
+import com.ligitabl.api.scheduling.syncmatches.AsyncStandingsService;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;

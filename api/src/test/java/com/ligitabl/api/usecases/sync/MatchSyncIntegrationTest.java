@@ -12,6 +12,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
 
+import com.ligitabl.api.scheduling.advancematchday.AdvanceMatchdayUseCase;
+import com.ligitabl.api.scheduling.syncmatches.SyncMatchesUseCase;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -25,9 +27,9 @@ import org.springframework.test.context.DynamicPropertySource;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.ligitabl.api.scheduling.AsyncStandingsService;
-import com.ligitabl.api.scheduling.MatchSyncScheduler;
-import com.ligitabl.api.scheduling.RoundAdvancementScheduler;
+import com.ligitabl.api.scheduling.syncmatches.AsyncStandingsService;
+import com.ligitabl.api.scheduling.syncmatches.MatchSyncScheduler;
+import com.ligitabl.api.scheduling.advancematchday.MatchdayAdvancementScheduler;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
@@ -61,7 +63,7 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
     SyncMatchesUseCase syncMatchesUseCase;
 
     @Autowired
-    AdvanceRoundUseCase advanceRoundUseCase;
+    AdvanceMatchdayUseCase advanceRoundUseCase;
 
     @Autowired
     JdbcTemplate jdbcTemplate;
@@ -77,7 +79,7 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
     MatchSyncScheduler matchSyncScheduler;
 
     @MockBean
-    RoundAdvancementScheduler roundAdvancementScheduler;
+    MatchdayAdvancementScheduler roundAdvancementScheduler;
 
     // Keep tests deterministic; we only care that sync triggers recalculation when matches become finished.
     @MockBean
@@ -157,7 +159,7 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
     void shouldAdvanceRoundWhenApiIndicatesNewMatchday() {
         stubCompetitionApiWithCurrentMatchday(2);
 
-        var result = advanceRoundUseCase.execute(new AdvanceRoundUseCase.AdvanceRoundCommand());
+        var result = advanceRoundUseCase.execute(new AdvanceMatchdayUseCase.AdvanceMatchdayCommand());
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().advanced()).isTrue();
@@ -175,7 +177,7 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
     void shouldNotAdvanceWhenMatchdayUnchanged() {
         stubCompetitionApiWithCurrentMatchday(1);
 
-        var result = advanceRoundUseCase.execute(new AdvanceRoundUseCase.AdvanceRoundCommand());
+        var result = advanceRoundUseCase.execute(new AdvanceMatchdayUseCase.AdvanceMatchdayCommand());
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().advanced()).isFalse();
