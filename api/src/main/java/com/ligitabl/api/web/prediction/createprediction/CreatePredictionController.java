@@ -2,11 +2,11 @@ package com.ligitabl.api.web.prediction.createprediction;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.usecases.prediction.createprediction.CreatePredictionCommand;
-import com.ligitabl.api.usecases.prediction.createprediction.CreatePredictionError;
-import com.ligitabl.api.usecases.prediction.createprediction.CreatePredictionResult;
-import com.ligitabl.api.usecases.prediction.createprediction.CreatePredictionUseCase;
-import com.ligitabl.api.usecases.prediction.createprediction.TeamRankDto;
+import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionCommand;
+import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionError;
+import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionResult;
+import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionUseCase;
+import com.ligitabl.api.rest.prediction.createprediction.TeamRankDto;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

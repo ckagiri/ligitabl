@@ -1,6 +1,0 @@
-package com.ligitabl.api.usecases.prediction.createprediction;
-
-import java.util.List;
-
-public record CreatePredictionCommand(List<TeamRankDto> rankings) {
-}

@@ -180,6 +180,74 @@ Once you have the failing test name or error string:
   rg -n "(AssertionError|Caused by|ERROR|FAILURE)" api/target/surefire-reports
   ```
 
+## Field notes: fast, low-noise workflows
+
+- **Quiet Maven runs + explicit module targeting**
+  - When you want a short, actionable output stream, use `-q` and `-pl` together.
+
+  ```bash
+  mvn -q -pl api -am -DskipITs test
+  ```
+
+- **If the exit code says fail but logs look clean**
+  - Scan all `TEST-*.xml` files across modules to find hidden failures:
+
+  ```bash
+  python3 - <<'PY'
+  import glob
+  import xml.etree.ElementTree as ET
+
+  fails=[]
+  for path in glob.glob('**/target/surefire-reports/TEST-*.xml', recursive=True):
+      root=ET.parse(path).getroot()
+      f=int(root.attrib.get('failures','0'))
+      e=int(root.attrib.get('errors','0'))
+      if f or e:
+          fails.append((path,f,e))
+
+  print('nonzero:', len(fails))
+  for p,f,e in sorted(fails):
+      print(p, 'failures', f, 'errors', e)
+  PY
+  ```
+
+- **Use `rg -n` on logs when the output is huge**
+  - The fastest way to spot test failures in a long log:
+
+  ```bash
+  rg -n "\[ERROR\]|FAILURE!|There are test failures" api/target/test-api.log
+  ```
+
+  - **Package move + refactor via a small Python snippet**
+    - When renaming packages across many files, a simple `python3` pass can rewrite imports + package declarations quickly.
+    - Example used to rename `com.ligitabl.api.usecases` to `com.ligitabl.api.rest` after moving folders:
+
+    ```bash
+    python3 - <<'PY'
+    from pathlib import Path
+
+    root = Path('.')
+    old = 'com.ligitabl.api.usecases'
+    new = 'com.ligitabl.api.rest'
+
+    changed = []
+    for path in root.rglob('*'):
+      if not path.is_file():
+        continue
+      if path.suffix not in {'.java', '.kt', '.md', '.yml', '.yaml', '.xml', '.properties'}:
+        continue
+      try:
+        text = path.read_text(encoding='utf-8')
+      except Exception:
+        continue
+      if old in text:
+        path.write_text(text.replace(old, new), encoding='utf-8')
+        changed.append(path)
+
+    print(f'Updated {len(changed)} files')
+    PY
+    ```
+
 ## Recent learnings (from debugging this repo)
 
 - **Spring bean name collisions are easy to miss.**

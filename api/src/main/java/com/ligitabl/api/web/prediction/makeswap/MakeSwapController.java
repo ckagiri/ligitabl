@@ -2,10 +2,10 @@ package com.ligitabl.api.web.prediction.makeswap;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.usecases.prediction.makeswap.MakeSwapUseCase;
-import com.ligitabl.api.usecases.prediction.makeswap.SwapCommand;
-import com.ligitabl.api.usecases.prediction.makeswap.SwapError;
-import com.ligitabl.api.usecases.prediction.makeswap.SwapResult;
+import com.ligitabl.api.rest.prediction.makeswap.MakeSwapUseCase;
+import com.ligitabl.api.rest.prediction.makeswap.SwapCommand;
+import com.ligitabl.api.rest.prediction.makeswap.SwapError;
+import com.ligitabl.api.rest.prediction.makeswap.SwapResult;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

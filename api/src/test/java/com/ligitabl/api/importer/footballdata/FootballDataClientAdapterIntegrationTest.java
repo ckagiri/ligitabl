@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
+import com.ligitabl.api.runners.importer.footballdata.FootballDataClientAdapter;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,11 +27,11 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.ligitabl.api.client.FootballDataClient;
-import com.ligitabl.api.importer.model.entities.ExternalCompetition;
-import com.ligitabl.api.importer.model.entities.ExternalMatch;
-import com.ligitabl.api.importer.model.errors.ApiError;
-import com.ligitabl.api.importer.model.errors.ImportError;
-import com.ligitabl.api.importer.model.valueobjects.CompetitionCode;
+import com.ligitabl.api.runners.importer.model.entities.ExternalCompetition;
+import com.ligitabl.api.runners.importer.model.entities.ExternalMatch;
+import com.ligitabl.api.runners.importer.model.errors.ApiError;
+import com.ligitabl.api.runners.importer.model.errors.ImportError;
+import com.ligitabl.api.runners.importer.model.valueobjects.CompetitionCode;
 import com.ligitabl.api.shared.Either;
 
 import io.netty.handler.timeout.ReadTimeoutHandler;

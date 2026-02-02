@@ -1,0 +1,120 @@
+package com.ligitabl.api.rest.auth;
+
+import java.util.Map;
+import java.util.stream.Collectors;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.api.shared.exceptions.UseCaseException;
+import com.ligitabl.api.rest.auth.getcurrentuser.GetCurrentUserQuery;
+import com.ligitabl.api.rest.auth.getcurrentuser.GetCurrentUserUseCase;
+import com.ligitabl.api.rest.auth.getcurrentuser.UserInfo;
+import com.ligitabl.model.auth.Email;
+import com.ligitabl.model.auth.PublicId;
+import com.ligitabl.model.auth.Role;
+import com.ligitabl.model.repo.UserRepo;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * API controller for protected endpoints.
+ */
+@RestController
+@RequestMapping("/api")
+@RequiredArgsConstructor
+@Slf4j
+public class AccessController {
+
+    private final GetCurrentUserUseCase getCurrentUserUseCase;
+    private final UserRepo userRepo;
+
+    /**
+     * Get current user endpoint.
+     * Accessible by any authenticated user.
+     */
+    @GetMapping("/me")
+    public ResponseEntity<?> getCurrentUser(Authentication authentication) {
+        if (authentication == null
+                || authentication.getName() == null
+                || authentication.getName().isBlank()) {
+            return ResponseEntity.status(401).body(new AuthDto.MessageResponse("Unauthorized"));
+        }
+
+        String principalName = authentication.getName();
+        log.debug("Get current user request for: {}", principalName);
+
+        // JWT auth uses publicId as principal; Basic Auth uses email.
+        if (principalName.contains("@")) {
+            return Either.catching(() -> Email.create(principalName), UseCaseErrors::fromException)
+                    .flatMap(email ->
+                            Either.ofOptional(userRepo.findByEmail(email), () -> UseCaseErrors.notFound("User", email)))
+                    .map(user -> new UserInfo(
+                            user.getPublicId(),
+                            user.getEmail(),
+                            user.getDisplayName(),
+                            user.getRoles(),
+                            user.isEmailVerified()))
+                    .map(userInfo -> ResponseEntity.ok(toUserInfoResponse(userInfo)))
+                    .getOrElseThrow(error -> {
+                        log.error("Failed to get current user: {}", error.getMessage());
+                        throw new UseCaseException(error);
+                    });
+        }
+
+        return Either.catching(() -> PublicId.create(principalName), UseCaseErrors::fromException)
+                .map(GetCurrentUserQuery::new)
+                .flatMap(getCurrentUserUseCase::execute)
+                .map(userInfo -> ResponseEntity.ok(toUserInfoResponse(userInfo)))
+                .getOrElseThrow(error -> {
+                    log.error("Failed to get current user: {}", error.getMessage());
+                    throw new UseCaseException(error);
+                });
+    }
+
+    /**
+     * Admin-only endpoint.
+     */
+    @GetMapping("/admin")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<AuthDto.MessageResponse> adminEndpoint(Authentication authentication) {
+        log.info("Admin endpoint accessed by: {}", authentication.getName());
+
+        return ResponseEntity.ok(new AuthDto.MessageResponse(
+                "Welcome to the admin area!",
+                Map.of(
+                        "user", authentication.getName(),
+                        "authorities", authentication.getAuthorities())));
+    }
+
+    /**
+     * Player-only endpoint.
+     */
+    @GetMapping("/player")
+    @PreAuthorize("hasRole('PLAYER')")
+    public ResponseEntity<AuthDto.MessageResponse> playerEndpoint(Authentication authentication) {
+        log.info("Player endpoint accessed by: {}", authentication.getName());
+
+        return ResponseEntity.ok(new AuthDto.MessageResponse(
+                "Welcome to the player area!",
+                Map.of(
+                        "user", authentication.getName(),
+                        "authorities", authentication.getAuthorities())));
+    }
+
+    public AuthDto.UserInfoResponse toUserInfoResponse(UserInfo userInfo) {
+        return new AuthDto.UserInfoResponse(
+                userInfo.publicId().value(),
+                userInfo.email().value(),
+                userInfo.displayName(),
+                userInfo.roles().stream().map(Role::getValue).collect(Collectors.toSet()),
+                userInfo.emailVerified());
+    }
+}

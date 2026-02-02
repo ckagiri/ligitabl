@@ -1,0 +1,86 @@
+package com.ligitabl.api.rest.leaderboard;
+
+import org.springframework.stereotype.Service;
+
+import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.model.domain.Competition;
+import com.ligitabl.model.domain.RoundSpan;
+import com.ligitabl.model.repo.CompetitionRepo;
+import com.ligitabl.model.repo.ContestRepo;
+import com.ligitabl.model.repo.LeaderboardRepo;
+import com.ligitabl.model.repo.SeasonRepo;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * Use Case: Get Leaderboard
+ * <p>
+ * Retrieves user contest leaderboard for the default competition's main contest.
+ * Supports filtering by phase (Q1, Q2, Q3, Q4, FS).
+ * <p>
+ * Flow:
+ * 1. Find default competition (premier-league)
+ * 2. Find active season
+ * 3. Find contest (default is main)
+ * 4. Resolve phase to round range
+ * 5. Compute leaderboard from repository
+ * 6. Return rankings with phase info
+ */
+@Service
+@RequiredArgsConstructor
+@Slf4j
+public class GetLeaderboardUseCase {
+    private final LeaderboardRepo leaderboardRepo;
+    private final CompetitionRepo competitionRepo;
+    private final SeasonRepo seasonRepo;
+    private final ContestRepo contestRepo;
+    private final CompetitionDefaults competitionDefaults;
+
+    public Either<GetLeaderboardError, GetLeaderboardResult> execute(GetLeaderboardQuery query) {
+        var competition = competitionRepo
+                .findBySlug(competitionDefaults.defaultCompetitionSlug())
+                .orElse(null);
+        if (competition == null) {
+            return Either.left(new GetLeaderboardError.DefaultCompetitionNotFound());
+        }
+
+        if (competition.getPhases() == null || competition.getPhases().isEmpty()) {
+            return Either.left(new GetLeaderboardError.PhasesNotConfigured());
+        }
+
+        var season = seasonRepo.findActiveSeason(competition.getId()).orElse(null);
+        if (season == null) {
+            return Either.left(new GetLeaderboardError.ActiveSeasonNotFound());
+        }
+
+        var contest = contestRepo.findMainBySeasonId(season.getId()).orElse(null);
+        if (contest == null) {
+            return Either.left(new GetLeaderboardError.MainContestNotFound());
+        }
+
+        var phase = findPhaseInCompetition(competition, query.phase());
+        if (phase == null) {
+            return Either.left(new GetLeaderboardError.InvalidPhase(query.phase()));
+        }
+
+        var rankings =
+                leaderboardRepo.computeLeaderboard(contest.getId(), season.getId(), phase.getFrom(), phase.getTo());
+
+        return Either.right(new GetLeaderboardResult(contest.getId(), phase, rankings));
+    }
+
+    private RoundSpan findPhaseInCompetition(Competition competition, String phaseCode) {
+        var code = phaseCode != null ? phaseCode : "FS";
+
+        if (competition.getPhases() == null) {
+            return null;
+        }
+
+        return competition.getPhases().stream()
+                .filter(phase -> phase.getCode().equalsIgnoreCase(code))
+                .findFirst()
+                .orElse(null);
+    }
+}
