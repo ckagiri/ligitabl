@@ -114,9 +114,10 @@ public class SecurityConfig {
             HttpSecurity http,
             @Qualifier("webUserDetailsService") UserDetailsService userDetailsService) throws Exception {
         http.csrf(csrf -> csrf.ignoringRequestMatchers(
-                "/prediction/swap",
-                "/auth/login",
-                "/auth/register")) // Allow HTMX + auth forms without CSRF
+            "/seasonprediction",
+            "/seasonprediction/**",
+            "/auth/login",
+            "/auth/register")) // Allow HTMX + auth forms without CSRF
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 "/",
                                 "/auth/login",
@@ -124,6 +125,7 @@ public class SecurityConfig {
                                 "/leaderboard",
                                 "/standings",
                                 "/matches",
+                                "/error",
                                 "/css/**",
                                 "/dist/**",
                                 "/js/**",
@@ -135,7 +137,9 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers("/predictions/user/me")
                         .hasRole("PLAYER")
-                        .requestMatchers("/predictions/user/guest", "/predictions/user/*")
+                        .requestMatchers("/predictions/user/guest", "/predictions/user/guest/*")
+                        .permitAll()
+                        .requestMatchers("/predictions/user/*")
                         .permitAll()
                         .requestMatchers("/seasonprediction/**")
                         .hasRole("PLAYER")

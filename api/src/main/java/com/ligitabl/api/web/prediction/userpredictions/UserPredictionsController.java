@@ -333,9 +333,9 @@ public class UserPredictionsController {
 
         // Return appropriate view
         if (hxRequest != null && !hxRequest.isBlank()) {
-            return "predictions/user :: predictionPage";
+            return "predictions :: predictionPage";
         }
-        return "predictions/user";
+        return "predictions";
     }
 
     private Season getActiveSeason() {
