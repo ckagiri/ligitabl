@@ -11,7 +11,7 @@ import org.springframework.stereotype.Component;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.config.WorkflowConfiguration;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.usecases.shared.HierarchyValidator;
+import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;

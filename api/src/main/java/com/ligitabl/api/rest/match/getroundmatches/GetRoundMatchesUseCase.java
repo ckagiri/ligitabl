@@ -1,0 +1,39 @@
+package com.ligitabl.api.rest.match.getroundmatches;
+
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.UseCase;
+import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.api.shared.validation.RequestValidator;
+import com.ligitabl.api.rest.match.MatchDto;
+import com.ligitabl.api.rest.match.MatchEnricher;
+import com.ligitabl.api.rest.shared.HierarchyValidator;
+import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.repo.MatchRepo;
+
+import lombok.RequiredArgsConstructor;
+
+@Service
+@RequiredArgsConstructor
+public class GetRoundMatchesUseCase implements UseCase<GetRoundMatchesQuery, Either<UseCaseError, List<MatchDto>>> {
+
+    private final HierarchyValidator hierarchyValidator;
+    private final MatchRepo matchRepo;
+    private final MatchEnricher matchEnricher;
+    private final RequestValidator requestValidator;
+
+    @Override
+    public Either<UseCaseError, List<MatchDto>> execute(GetRoundMatchesQuery query) {
+        return requestValidator
+                .validate(query)
+                .flatMap(q -> hierarchyValidator.validateCompetitionSeasonAndRound(
+                        q.competitionSlug(), q.seasonSlug(), q.position()))
+                .map(Round::getId)
+                .flatMap(Either.catching(matchRepo::findByRoundId, UseCaseErrors::fromException))
+                .flatMap(matchEnricher::enrichWithTeams);
+    }
+}
