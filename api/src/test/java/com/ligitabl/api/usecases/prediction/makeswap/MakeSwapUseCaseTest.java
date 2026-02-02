@@ -140,6 +140,31 @@ class MakeSwapUseCaseTest {
         verify(predictionRepo, never()).save(any());
     }
 
+    @Test
+    void shouldValidateNextRound_whenPredictionAlreadyOnNextRound() {
+        SwapCommand command = new SwapCommand("ARS", "LIV");
+        Round nextRound = createRound(false, 11);
+        prediction.setAtRoundNumber(11);
+        round = createRound(true, 10);
+        season.setCurrentRoundId(round.getId());
+
+        when(clock.instant()).thenReturn(now);
+        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
+        when(roundRepo.findBySeasonIdAndPosition(season.getId(), 11)).thenReturn(Optional.of(nextRound));
+        when(matchRepo.findByRoundId(nextRound.getId())).thenReturn(List.of());
+        when(predictionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        Either<SwapError, SwapResult> result = useCase.execute(userId, command);
+
+        assertTrue(result.isRight());
+        verify(matchRepo, never()).findByRoundId(round.getId());
+        verify(matchRepo).findByRoundId(nextRound.getId());
+        verify(predictionRepo)
+                .save(argThat(p -> p.getAtRoundNumber() == nextRound.getPosition()));
+    }
+
     private Season createSeason() {
         return Season.builder()
                 .id(seasonId)

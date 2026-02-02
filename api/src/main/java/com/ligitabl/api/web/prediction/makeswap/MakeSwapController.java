@@ -68,6 +68,7 @@ public class MakeSwapController {
     public int toHttpStatus(SwapError error) {
         return switch (error) {
             case SwapError.NoPredictionFound __ -> 404;
+            case SwapError.RoundNotFound __ -> 404;
             case SwapError.RoundNotOpen __ -> 409;
             case SwapError.CooldownActive __ -> 429;
             case SwapError.InvalidTeamCode __ -> 400;
@@ -79,6 +80,7 @@ public class MakeSwapController {
     private String errorMessage(SwapError error) {
         return switch (error) {
             case SwapError.NoPredictionFound __ -> "No prediction found for current season";
+            case SwapError.RoundNotFound e -> "Round " + e.roundPosition() + " not found";
             case SwapError.RoundNotOpen e -> "Cannot swap when round is " + e.roundStatus();
             case SwapError.CooldownActive e ->
                     String.format("Next swap available in %.1fh", e.hoursRemaining());

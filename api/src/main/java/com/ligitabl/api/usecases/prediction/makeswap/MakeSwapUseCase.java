@@ -21,11 +21,9 @@ import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class MakeSwapUseCase {
 
     private final CompetitionDefaults competitionDefaults;
@@ -39,10 +37,10 @@ public class MakeSwapUseCase {
 
     public Either<SwapError, SwapResult> execute(UUID userId, SwapCommand command) {
         return getCurrentSeason().flatMap(season -> validateSeasonNotCompleted(season)
-                .flatMap(__ -> getPrediction(userId, season.getId()))
-                .flatMap(prediction -> validateSwapEligibility(prediction, season)
-                        .flatMap(__ -> validateTeams(command, season, prediction))
-                        .flatMap(teams -> performSwap(prediction, teams, season))));
+            .flatMap(__ -> getPrediction(userId, season.getId()))
+            .flatMap(prediction -> validateSwapEligibility(prediction, season)
+                .flatMap(targetRound -> validateTeams(command, season, prediction)
+                    .flatMap(teams -> performSwap(prediction, teams, season, targetRound)))));
     }
 
     private Either<SwapError, Season> getCurrentSeason() {
@@ -63,25 +61,46 @@ public class MakeSwapUseCase {
                 .orElseGet(() -> Either.left(new SwapError.NoPredictionFound(userId, seasonId)));
     }
 
-    private Either<SwapError, Void> validateSwapEligibility(SeasonPrediction prediction, Season season) {
-        return validateRoundStatus(season).flatMap(__ -> validateCooldown(prediction));
+    private Either<SwapError, Round> validateSwapEligibility(SeasonPrediction prediction, Season season) {
+        return validateRoundStatus(prediction, season).flatMap(round -> validateCooldown(prediction).map(__ -> round));
     }
 
-    private Either<SwapError, Void> validateRoundStatus(Season season) {
+    private Either<SwapError, Round> validateRoundStatus(SeasonPrediction prediction, Season season) {
         Round currentRound = roundRepo
                 .findById(season.getCurrentRoundId())
                 .orElseThrow(() -> new IllegalStateException("Current round not found"));
 
-        RoundStatus status;
-        if (currentRound.isFinalized()) {
-            status = RoundStatus.COMPLETED;
-        } else {
-            var matches = matchRepo.findByRoundId(currentRound.getId());
-            log.info("Current round id {} has {} matches", currentRound.getId(), matches.size());
-            status = (matches == null || matches.isEmpty()) ? RoundStatus.OPEN : currentRound.computeStatus(matches);
+        return resolveTargetRound(prediction, season, currentRound).flatMap(targetRound -> {
+            RoundStatus status;
+            if (targetRound.isFinalized()) {
+                status = RoundStatus.COMPLETED;
+            } else {
+                var matches = matchRepo.findByRoundId(targetRound.getId());
+                status = (matches == null || matches.isEmpty())
+                        ? RoundStatus.OPEN
+                        : targetRound.computeStatus(matches);
+            }
+
+            return status == RoundStatus.OPEN
+                    ? Either.right(targetRound)
+                    : Either.left(new SwapError.RoundNotOpen(status.name()));
+        });
+    }
+
+    private Either<SwapError, Round> resolveTargetRound(
+            SeasonPrediction prediction, Season season, Round currentRound) {
+        int currentPosition = currentRound.getPosition();
+        int nextPosition = currentPosition + 1;
+        int predictionRound = prediction.getAtRoundNumber();
+
+        if (predictionRound == nextPosition) {
+            return roundRepo
+                    .findBySeasonIdAndPosition(season.getId(), predictionRound)
+                    .map(Either::<SwapError, Round>right)
+                    .orElseGet(() -> Either.left(new SwapError.RoundNotFound(predictionRound, season.getId())));
         }
 
-        return status == RoundStatus.OPEN ? Either.right(null) : Either.left(new SwapError.RoundNotOpen(status.name()));
+        return Either.right(currentRound);
     }
 
     private Either<SwapError, Void> validateCooldown(SeasonPrediction prediction) {
@@ -136,9 +155,9 @@ public class MakeSwapUseCase {
         return Either.right(new TeamPair(teamA, teamB));
     }
 
-    private Either<SwapError, SwapResult> performSwap(SeasonPrediction prediction, TeamPair teams, Season season) {
+    private Either<SwapError, SwapResult> performSwap(
+            SeasonPrediction prediction, TeamPair teams, Season season, Round targetRound) {
         Instant now = clock.instant();
-        Round currentRound = roundRepo.findById(season.getCurrentRoundId()).orElseThrow();
 
         // Swap positions in current_rankings
         List<TeamRank> updatedRankings = new ArrayList<>(prediction.getCurrentRankings());
@@ -160,8 +179,8 @@ public class MakeSwapUseCase {
 
         // Update prediction
         prediction.setCurrentRankings(updatedRankings);
-        prediction.addSwap(currentRound.getPosition(), change);
-        prediction.setAtRoundNumber(currentRound.getPosition());
+        prediction.addSwap(targetRound.getPosition(), change);
+        prediction.setAtRoundNumber(targetRound.getPosition());
         prediction.setLastSwapAt(now);
 
         SeasonPrediction saved = predictionRepo.save(prediction);
