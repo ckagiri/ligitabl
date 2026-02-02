@@ -64,9 +64,9 @@ public class FinalizeRoundUseCase {
         }
         List<Match> matches = matchRepo.findByRoundId(round.getId());
         RoundStatus status = round.computeStatus(matches);
-        if (status != RoundStatus.FINALISED) {
+        if (status != RoundStatus.COMPLETED) {
             return Either.left(new FinalizeRoundError.RoundNotReady(
-                    round.getId(), "Round status is " + status + ", expected FINALISED"));
+                    round.getId(), "Round status is " + status + ", expected COMPLETED"));
         }
 
         return Either.right(null);

@@ -286,7 +286,7 @@ class TriggerRoundFinalizationUseCaseTest {
 
         when(finalizeRoundUseCase.execute(seasonId))
                 .thenReturn(Either.left(
-                        new FinalizeRoundError.RoundNotReady(roundId, "Round status is OPEN, expected FINALISED")));
+                        new FinalizeRoundError.RoundNotReady(roundId, "Round status is OPEN, expected COMPLETED")));
 
         var result = useCase.execute(new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(COMPETITION_CODE));
 

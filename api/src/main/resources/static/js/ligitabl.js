@@ -364,14 +364,14 @@ window.Ligitabl.predictionPage = function (el) {
 
         submitChanges() {
             this.isSaving = true;
-            const toast = document.getElementById('saving-toast');
-            if (toast) toast.classList.remove('hidden');
+            const toast = document.getElementById("saving-toast");
+            if (toast) toast.classList.remove("hidden");
 
             let url, body;
 
             if (this.isInitialPrediction) {
                 // Initial prediction: send full order as team codes
-                url = '/seasonprediction';
+                url = "/seasonprediction";
                 body = {teamCodes: this.teams.map((t) => t.code)};
             } else {
                 // Swap: send the single pair of team codes
@@ -379,32 +379,38 @@ window.Ligitabl.predictionPage = function (el) {
                 const pair = pairs[0];
                 const teamA = this.teams.find((t) => t.name === pair.team1);
                 const teamB = this.teams.find((t) => t.name === pair.team2);
-                url = '/seasonprediction/swap';
+                url = "/seasonprediction/swap";
                 body = {teamACode: teamA.code, teamBCode: teamB.code};
             }
 
             fetch(url, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
+                method: "POST",
+                headers: {"Content-Type": "application/json"},
                 body: JSON.stringify(body),
             })
                 .then((response) => response.json())
                 .then((data) => {
                     if (data.success) {
-                        if (this.importedFromGuest || this.isInitialPrediction) clearGuestStorage();
+                        if (this.importedFromGuest || this.isInitialPrediction) {
+                            clearGuestStorage();
+                        }
                         setTimeout(() => {
-                            window.scrollTo({top: 0, behavior: 'smooth'});
+                            window.scrollTo({top: 0, behavior: "smooth"});
                         }, 300);
                         setTimeout(() => {
                             window.location.reload();
                         }, 800);
+                    } else {
+                        this.isSaving = false;
+                        if (toast) toast.classList.add("hidden");
+                        alert(data.message || "Something went wrong");
                     }
                 })
                 .catch((error) => {
-                    console.error('Error:', error);
+                    console.error("Error:", error);
                     this.isSaving = false;
-                    if (toast) toast.classList.add('hidden');
-                    alert('Failed to update prediction');
+                    if (toast) toast.classList.add("hidden");
+                    alert("Failed to update prediction");
                 });
         },
     });

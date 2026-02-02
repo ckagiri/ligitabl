@@ -112,7 +112,7 @@ public class GetPredictionUseCase {
 
     private RoundStatus resolveRoundStatus(Round currentRound) {
         if (currentRound.isFinalized()) {
-            return RoundStatus.FINALISED;
+            return RoundStatus.COMPLETED;
         }
 
         var matches = matchRepo.findByRoundId(currentRound.getId());

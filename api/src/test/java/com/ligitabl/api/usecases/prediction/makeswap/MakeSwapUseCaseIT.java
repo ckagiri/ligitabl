@@ -295,7 +295,7 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
     }
 
     private void insertRound(UUID id, UUID seasonId, int position, RoundStatus status) {
-        boolean isFinalized = status == RoundStatus.FINALISED;
+        boolean isFinalized = status == RoundStatus.COMPLETED;
         jdbcTemplate.update(
                 "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized) VALUES (?,?,?,?,?,?)",
                 id,

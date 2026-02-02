@@ -21,9 +21,11 @@ import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class MakeSwapUseCase {
 
     private final CompetitionDefaults competitionDefaults;
@@ -72,9 +74,10 @@ public class MakeSwapUseCase {
 
         RoundStatus status;
         if (currentRound.isFinalized()) {
-            status = RoundStatus.FINALISED;
+            status = RoundStatus.COMPLETED;
         } else {
             var matches = matchRepo.findByRoundId(currentRound.getId());
+            log.info("Current round id {} has {} matches", currentRound.getId(), matches.size());
             status = (matches == null || matches.isEmpty()) ? RoundStatus.OPEN : currentRound.computeStatus(matches);
         }
 

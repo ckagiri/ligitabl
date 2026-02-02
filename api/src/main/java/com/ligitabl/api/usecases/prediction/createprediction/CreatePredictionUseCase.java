@@ -158,7 +158,7 @@ public class CreatePredictionUseCase {
 
         RoundStatus roundStatus;
         if (currentRound.isFinalized()) {
-            roundStatus = RoundStatus.FINALISED;
+            roundStatus = RoundStatus.COMPLETED;
         } else {
             var matches = matchRepo.findByRoundId(currentRound.getId());
             roundStatus =

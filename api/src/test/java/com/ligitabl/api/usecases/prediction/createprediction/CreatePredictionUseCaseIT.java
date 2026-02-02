@@ -190,9 +190,9 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         }
 
         @Test
-        @DisplayName("should set at_round_number to next round when round is FINALISED")
-        void shouldSetAtRoundNumberToNextWhenFinalised() {
-            updateCurrentRoundStatus(RoundStatus.FINALISED);
+        @DisplayName("should set at_round_number to next round when round is COMPLETED")
+        void shouldSetAtRoundNumberToNextWhenCompleted() {
+            updateCurrentRoundStatus(RoundStatus.COMPLETED);
             CreatePredictionCommand request = validRequestFromInitialRankings();
 
             Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
@@ -407,7 +407,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
     }
 
     private void insertRound(UUID id, UUID seasonId, int position, RoundStatus status) {
-        boolean isFinalized = status == RoundStatus.FINALISED;
+        boolean isFinalized = status == RoundStatus.COMPLETED;
         jdbcTemplate.update(
                 "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized) VALUES (?,?,?,?,?,?)",
                 id,
@@ -420,7 +420,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
 
     private void updateCurrentRoundStatus(RoundStatus status) {
         clearMatchesForRound(roundId);
-        if (status == RoundStatus.FINALISED) {
+        if (status == RoundStatus.COMPLETED) {
             jdbcTemplate.update("UPDATE t_round SET c_is_finalized = true WHERE pk_id = ?", roundId);
             return;
         }
@@ -432,7 +432,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
     }
 
     private void setCurrentRoundTo(int position, RoundStatus status) {
-        boolean isFinalized = status == RoundStatus.FINALISED;
+        boolean isFinalized = status == RoundStatus.COMPLETED;
         jdbcTemplate.update(
                 "UPDATE t_round SET c_name = ?, c_slug = ?, c_position = ?, c_is_finalized = ? WHERE pk_id = ?",
                 "Round " + position,
