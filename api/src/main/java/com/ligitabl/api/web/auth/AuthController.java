@@ -56,7 +56,8 @@ public class AuthController {
     private final CompetitionDefaults competitionDefaults;
 
     @GetMapping("/register")
-    public String showRegisterForm(Model model) {
+    public String showRegisterForm(Model model, HttpServletRequest request) {
+        request.getSession(true);
         model.addAttribute("pageTitle", "Register");
         model.addAttribute("registerForm", new RegisterForm());
         return "auth/register";
@@ -122,7 +123,8 @@ public class AuthController {
     }
 
     @GetMapping("/login")
-    public String showLoginForm(Model model) {
+    public String showLoginForm(Model model, HttpServletRequest request) {
+        request.getSession(true);
         model.addAttribute("pageTitle", "Login");
         model.addAttribute("isDemo", true);
         return "auth/login";
