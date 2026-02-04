@@ -17,6 +17,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
+import com.ligitabl.api.rest.match.getdefaultroundmatches.RoundMatchesResult;
 import com.ligitabl.model.domain.MatchStatus;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -121,10 +122,10 @@ class MatchEndpointsIT extends AbstractPostgresIT {
     @Test
     void getDefaultRoundMatches_shouldReturnMatches() {
         String url = "http://localhost:" + port + "/api/rounds/default/matches";
-        ResponseEntity<Object[]> response = restTemplate.getForEntity(url, Object[].class);
+                ResponseEntity<RoundMatchesResult> response = restTemplate.getForEntity(url, RoundMatchesResult.class);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         assertThat(response.getBody()).isNotNull();
-        assertThat(response.getBody()).hasSize(1);
+                assertThat(response.getBody().matches()).hasSize(1);
     }
 }

@@ -26,6 +26,25 @@ public class GetDefaultRoundMatchesQuery {
         return new GetDefaultRoundMatchesQuery(position, competition);
     }
 
+    public static boolean isCurrentKeyword(String roundPosition) {
+        return roundPosition != null && roundPosition.equalsIgnoreCase("current");
+    }
+
+    public static Integer parseRoundPosition(String roundPosition) {
+        if (isCurrentKeyword(roundPosition)) {
+            return null;
+        }
+        try {
+            int parsed = Integer.parseInt(roundPosition);
+            if (parsed < 1) {
+                throw new IllegalArgumentException("Round position must be at least 1");
+            }
+            return parsed;
+        } catch (NumberFormatException ex) {
+            throw new IllegalArgumentException("Round position must be 'current' or a number >= 1", ex);
+        }
+    }
+
     public boolean isCurrentRound() {
         return roundPosition == null;
     }

@@ -48,7 +48,7 @@ class GetDefaultRoundMatchesUseCaseTest {
     void happy_path_returns_match_dtos() {
         UUID roundId = UUID.randomUUID();
 
-        var season = Season.builder().id(UUID.randomUUID()).build();
+        var season = Season.builder().id(UUID.randomUUID()).maxRounds(38).build();
         var round = Round.builder().id(roundId).position(1).build();
 
         var match = Match.builder()
@@ -64,11 +64,13 @@ class GetDefaultRoundMatchesUseCaseTest {
         MatchDto dto = MatchDto.builder().roundId(roundId).build();
         when(matchEnricher.enrichWithTeams(List.of(match))).thenReturn(Either.right(List.of(dto)));
 
-        Either<UseCaseError, List<MatchDto>> result = useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
+        Either<UseCaseError, RoundMatchesResult> result = useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
 
         assertThat(result.isRight()).isTrue();
-        assertThat(result.getRight()).hasSize(1);
-        assertThat(result.getRight().getFirst().getRoundId()).isEqualTo(roundId);
+        assertThat(result.getRight().matches()).hasSize(1);
+        assertThat(result.getRight().matches().getFirst().getRoundId()).isEqualTo(roundId);
+        assertThat(result.getRight().currentRound()).isEqualTo(1);
+        assertThat(result.getRight().latestRound()).isEqualTo(38);
         verify(hierarchyValidator).resolveHierarchy("premier-league", null);
         verify(matchRepo).findByRoundId(roundId);
         verify(matchEnricher).enrichWithTeams(List.of(match));
@@ -80,7 +82,7 @@ class GetDefaultRoundMatchesUseCaseTest {
                 .thenReturn(Either.left(
                         com.ligitabl.api.shared.errors.UseCaseErrors.validation("Competition has no active season")));
 
-        Either<UseCaseError, List<MatchDto>> result = useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
+        Either<UseCaseError, RoundMatchesResult> result = useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
 
         assertThat(result.isLeft()).isTrue();
         verify(hierarchyValidator).resolveHierarchy("premier-league", null);
@@ -93,7 +95,7 @@ class GetDefaultRoundMatchesUseCaseTest {
                 .thenReturn(Either.left(
                         com.ligitabl.api.shared.errors.UseCaseErrors.validation("Season has no current round")));
 
-        Either<UseCaseError, List<MatchDto>> result = useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
+        Either<UseCaseError, RoundMatchesResult> result = useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
 
         assertThat(result.isLeft()).isTrue();
         verify(hierarchyValidator).resolveHierarchy("premier-league", null);

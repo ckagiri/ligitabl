@@ -185,7 +185,7 @@
                 Standings
               </a>
               <a
-                th:href="@{/seasons/current/matches}"
+                th:href="@{/rounds/current/matches}"
                 class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
               >
                 Matches
@@ -193,7 +193,7 @@
             </div>
           </div>
 
-          <!-- Desktop Auth Buttons -->
+          th:href="@{/rounds/current/matches}"
           <div class="hidden md:flex items-center space-x-4">
             <a
               th:href="${predictionsNavLink} ?: '/predictions/user/guest'"
