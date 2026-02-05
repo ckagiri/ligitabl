@@ -94,7 +94,7 @@
                   <!-- Kick-off Time -->
                   <div
                     class="text-sm text-gray-500 mt-1"
-                    th:text="${match.kickOff}"
+                    th:text="${match.kickOff != null ? #temporals.format(match.kickOff, 'EEE, MMM dd, HH:mm') : ''}"
                   >
                     Sat, Dec 28, 12:30
                   </div>

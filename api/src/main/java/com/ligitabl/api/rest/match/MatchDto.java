@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Score;
 import com.ligitabl.model.domain.Team;
 
@@ -27,7 +26,7 @@ public class MatchDto {
     String awayTeam;
     String name; // Generated: "arsenal-v-chelsea"
     String slug;
-    MatchStatus status;
+    String status;
     OffsetDateTime kickOff;
     String venue;
     int matchday;
@@ -48,17 +47,17 @@ public class MatchDto {
                 .roundId(match.getRoundId())
                 .homeTeamId(match.getHomeTeamId())
                 .awayTeamId(match.getAwayTeamId())
-            .homeTeam(homeTeam.getShortName() != null ? homeTeam.getShortName() : homeTeam.getName())
-            .awayTeam(awayTeam.getShortName() != null ? awayTeam.getShortName() : awayTeam.getName())
+                .homeTeam(homeTeam.getShortName() != null ? homeTeam.getShortName() : homeTeam.getName())
+                .awayTeam(awayTeam.getShortName() != null ? awayTeam.getShortName() : awayTeam.getName())
                 .name(name)
                 .slug(match.getSlug())
-                .status(match.getStatus())
+                .status(match.getStatus() == null ? null : match.getStatus().name())
                 .kickOff(match.getKickOff())
                 .venue(match.getVenue())
                 .matchday(match.getMatchday())
                 .score(match.getScore())
-            .homeScore(homeScore)
-            .awayScore(awayScore)
+                .homeScore(homeScore)
+                .awayScore(awayScore)
                 .build();
     }
 
