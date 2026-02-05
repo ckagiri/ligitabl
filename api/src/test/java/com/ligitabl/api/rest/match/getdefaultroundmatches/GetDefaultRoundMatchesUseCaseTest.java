@@ -22,6 +22,7 @@ import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.MatchRepo;
+import com.ligitabl.model.repo.RoundRepo;
 
 class GetDefaultRoundMatchesUseCaseTest {
 
@@ -36,19 +37,31 @@ class GetDefaultRoundMatchesUseCaseTest {
     @Mock
     MatchEnricher matchEnricher;
 
+    @Mock
+    RoundRepo roundRepo;
+
     GetDefaultRoundMatchesUseCase useCase;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        useCase = new GetDefaultRoundMatchesUseCase(matchRepo, matchEnricher, hierarchyValidator, competitionDefaults);
+        useCase = new GetDefaultRoundMatchesUseCase(
+                matchRepo,
+                matchEnricher,
+                hierarchyValidator,
+                competitionDefaults,
+                roundRepo);
     }
 
     @Test
     void happy_path_returns_match_dtos() {
         UUID roundId = UUID.randomUUID();
 
-        var season = Season.builder().id(UUID.randomUUID()).maxRounds(38).build();
+        var season = Season.builder()
+            .id(UUID.randomUUID())
+            .maxRounds(38)
+            .currentRoundId(roundId)
+            .build();
         var round = Round.builder().id(roundId).position(1).build();
 
         var match = Match.builder()
@@ -59,6 +72,7 @@ class GetDefaultRoundMatchesUseCaseTest {
 
         when(hierarchyValidator.resolveHierarchy("premier-league", null))
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+        when(roundRepo.findById(roundId)).thenReturn(java.util.Optional.of(round));
         when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(match));
 
         MatchDto dto = MatchDto.builder().roundId(roundId).build();
@@ -69,9 +83,11 @@ class GetDefaultRoundMatchesUseCaseTest {
         assertThat(result.isRight()).isTrue();
         assertThat(result.getRight().matches()).hasSize(1);
         assertThat(result.getRight().matches().getFirst().getRoundId()).isEqualTo(roundId);
+        assertThat(result.getRight().viewingRound()).isEqualTo(1);
         assertThat(result.getRight().currentRound()).isEqualTo(1);
-        assertThat(result.getRight().latestRound()).isEqualTo(38);
+        assertThat(result.getRight().lastRound()).isEqualTo(38);
         verify(hierarchyValidator).resolveHierarchy("premier-league", null);
+        verify(roundRepo).findById(roundId);
         verify(matchRepo).findByRoundId(roundId);
         verify(matchEnricher).enrichWithTeams(List.of(match));
     }
@@ -86,7 +102,7 @@ class GetDefaultRoundMatchesUseCaseTest {
 
         assertThat(result.isLeft()).isTrue();
         verify(hierarchyValidator).resolveHierarchy("premier-league", null);
-        verifyNoInteractions(matchRepo, matchEnricher);
+        verifyNoInteractions(matchRepo, matchEnricher, roundRepo);
     }
 
     @Test
@@ -99,6 +115,6 @@ class GetDefaultRoundMatchesUseCaseTest {
 
         assertThat(result.isLeft()).isTrue();
         verify(hierarchyValidator).resolveHierarchy("premier-league", null);
-        verifyNoInteractions(matchRepo, matchEnricher);
+        verifyNoInteractions(matchRepo, matchEnricher, roundRepo);
     }
 }

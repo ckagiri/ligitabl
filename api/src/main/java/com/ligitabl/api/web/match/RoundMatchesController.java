@@ -4,6 +4,7 @@ import com.ligitabl.api.rest.match.getdefaultroundmatches.GetDefaultRoundMatches
 import com.ligitabl.api.rest.match.getdefaultroundmatches.GetDefaultRoundMatchesUseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.web.shared.error.UseCaseErrorStatusMapper;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,19 +26,21 @@ public class RoundMatchesController {
     public String getCurrentRoundMatches(
             @RequestParam(required = false) Integer round,
             Model model,
+            HttpServletRequest request,
             HttpServletResponse response) {
         log.info("GetCurrentRoundMatches command, round={}", round);
         GetDefaultRoundMatchesQuery query = round == null
                 ? GetDefaultRoundMatchesQuery.currentRound()
                 : GetDefaultRoundMatchesQuery.byPosition(round, null);
 
-        return executeUseCase(query, model, response);
+        return executeUseCase(query, model, request, response);
     }
 
     @GetMapping("/{roundPosition}/matches")
     public String getRoundMatchesByPosition(
             @PathVariable String roundPosition,
             Model model,
+            HttpServletRequest request,
             HttpServletResponse response) {
         log.info("GetRoundMatches command, position={}", roundPosition);
         Integer parsedRound;
@@ -54,21 +57,27 @@ public class RoundMatchesController {
                 ? GetDefaultRoundMatchesQuery.currentRound()
                 : GetDefaultRoundMatchesQuery.byPosition(parsedRound, null);
 
-        return executeUseCase(query, model, response);
+        return executeUseCase(query, model, request, response);
     }
 
-    private String executeUseCase(GetDefaultRoundMatchesQuery query, Model model, HttpServletResponse response) {
+    private String executeUseCase(GetDefaultRoundMatchesQuery query, Model model, HttpServletRequest request, HttpServletResponse response) {
         var result = getDefaultRoundMatchesUseCase.execute(query);
+
+        // Check if this is an HTMX request
+        boolean isHtmxRequest = "true".equals(request.getHeader("HX-Request"));
 
         return result.fold(
                 error -> handleMatchesError(error, model, response),
                 payload -> {
                     model.addAttribute("pageTitle", "Matches");
                     model.addAttribute("seasonId", payload.seasonId());
+                    model.addAttribute("viewingRound", payload.viewingRound());
                     model.addAttribute("currentRound", payload.currentRound());
-                    model.addAttribute("latestRound", payload.latestRound());
+                    model.addAttribute("lastRound", payload.lastRound());
                     model.addAttribute("matches", payload.matches());
-                    return "matches";
+
+                    // Return fragment for HTMX requests, full page otherwise
+                    return isHtmxRequest ? "matches :: matches-content" : "matches";
                 });
     }
 

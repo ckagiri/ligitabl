@@ -15,14 +15,15 @@
             </h1>
             <div
               th:replace="~{fragments/round-navigation :: round-nav(
-                    '/seasons/current/standings', ${currentRound}, ${latestRound},
-                    'body', 'outerHTML', false, false)}"
+                  '/seasons/current/standings', ${currentRound}, ${latestRound}, ${currentRound},
+                  '#standings-page', 'innerHTML', false, false)}"
             ></div>
           </div>
         </div>
 
-        <!-- Standings Table -->
-        <div id="standings-content" class="px-6 py-4">
+        <!-- Standings Table - This is what gets swapped -->
+        <div id="standings-page">
+          <div class="px-6 py-4">
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
@@ -171,6 +172,7 @@
               </tbody>
             </table>
           </div>
+        </div>
         </div>
       </div>
     </div>

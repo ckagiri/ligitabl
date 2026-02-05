@@ -352,9 +352,9 @@
             <div th:if="${!isGuest && !isUserNotFound}">
               <div
                 th:replace="~{fragments/round-navigation :: round-nav(
-                        '/predictions/user/me', ${viewingRound}, ${currentRound},
+                  '/predictions/user/me', ${viewingRound}, ${currentRound}, ${currentRound},
                         '#prediction-page', 'outerHTML swap:300ms show:window:top',
-                        ${!isCurrentRound}, true)}"
+                        ${!isCurrentRound}, true, 'query')}"
               ></div>
             </div>
           </div>
@@ -798,13 +798,13 @@
                         <div class="flex items-center">
                           <div
                             class="h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 bg-gray-200 rounded flex items-center justify-center text-xs font-bold flex-shrink-0"
-                            th:text="${pred.team.code}"
+                            th:text="${pred.teamCode}"
                           >
                             MCI
                           </div>
                           <div
                             class="text-xs sm:text-sm font-medium text-gray-900 truncate"
-                            th:text="${pred.team.name}"
+                            th:text="${pred.teamName}"
                           >
                             Manchester City
                           </div>

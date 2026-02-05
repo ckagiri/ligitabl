@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.security.Principal;
 import java.time.Instant;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -48,7 +49,7 @@ public class UserPredictionsController {
     private final ErrorViewMapper errorMapper;
 
     /**
-    * GET /predictions/user/me - View current user's prediction.
+     * GET /predictions/user/me - View current user's prediction.
      *
      * <p>Resolves user from Principal:
      * <ul>
@@ -210,7 +211,7 @@ public class UserPredictionsController {
 
         UUID mainContestId = season.getMainContestId();
         boolean hasMainContestEntry = mainContestId != null
-            && contestRepo.existsByUserAndContest(userId, mainContestId);
+                && contestRepo.existsByUserAndContest(userId, mainContestId);
         return GetUserPredictionCommand.forAuthenticatedUser(
                 userId, activeSeasonId, hasMainContestEntry, round
         );
@@ -348,11 +349,15 @@ public class UserPredictionsController {
             return List.of();
         }
 
+        List<TeamRank> sortedRanks = ranks.stream()
+                .sorted(Comparator.comparingInt(TeamRank::getPosition))
+                .toList();
+
         Map<String, Team> teamsByCode = teamRepo.findAllByCodes(
-                        ranks.stream().map(TeamRank::getCode).collect(Collectors.toSet()))
+                        sortedRanks.stream().map(TeamRank::getCode).collect(Collectors.toSet()))
                 .stream()
                 .collect(Collectors.toMap(Team::getCode, Function.identity()));
-        return TeamRankDto.listOf(ranks, teamsByCode);
+        return TeamRankDto.listOf(sortedRanks, teamsByCode);
     }
 
     private Map<String, List<FixtureDto>> buildFixtures(Map<String, List<Match>> matchesByTeam) {

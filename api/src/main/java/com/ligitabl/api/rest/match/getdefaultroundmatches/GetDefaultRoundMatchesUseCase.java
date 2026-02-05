@@ -9,7 +9,12 @@ import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.rest.match.MatchEnricher;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
+import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.MatchRepo;
+import com.ligitabl.model.repo.RoundRepo;
+
+import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,6 +26,7 @@ public class GetDefaultRoundMatchesUseCase
     private final MatchEnricher matchEnricher;
     private final HierarchyValidator hierarchyValidator;
     private final CompetitionDefaults competitionDefaults;
+    private final RoundRepo roundRepo;
 
     @Override
         public Either<UseCaseError, RoundMatchesResult> execute(GetDefaultRoundMatchesQuery query) {
@@ -28,14 +34,26 @@ public class GetDefaultRoundMatchesUseCase
 
         return hierarchyValidator
             .resolveHierarchy(competitionIdentifier, query.getRoundPosition())
-            .flatMap(ctx -> Either.catching(
-                    () -> matchRepo.findByRoundId(ctx.round().getId()), UseCaseErrors::fromException)
-                .flatMap(matchEnricher::enrichWithTeams)
-                .map(matches -> new RoundMatchesResult(
-                    ctx.season().getId(),
-                    ctx.round().getPosition(),
-                    ctx.season().getMaxRounds(),
-                    matches)));
+            .flatMap(ctx -> resolveCurrentRound(ctx.season())
+                .flatMap(currentRound -> Either.catching(
+                        () -> matchRepo.findByRoundId(ctx.round().getId()), UseCaseErrors::fromException)
+                    .flatMap(matchEnricher::enrichWithTeams)
+                    .map(matches -> new RoundMatchesResult(
+                        ctx.season().getId(),
+                        ctx.round().getPosition(),
+                        currentRound.getPosition(),
+                        ctx.season().getMaxRounds(),
+                        matches))));
+    }
+
+    private Either<UseCaseError, Round> resolveCurrentRound(Season season) {
+        if (season.getCurrentRoundId() == null) {
+            return Either.left(UseCaseErrors.validation("Season has no current round"));
+        }
+
+        return requireFound(
+                roundRepo.findById(season.getCurrentRoundId()),
+                UseCaseErrors.notFound("Round", season.getCurrentRoundId()));
     }
 
     private String getEffectiveCompetitionIdentifier(GetDefaultRoundMatchesQuery query) {

@@ -1,20 +1,51 @@
 <!-- Round Navigation Fragment -->
 <!-- Parameters:
-     baseUrl: URL path (e.g., '/seasons/current/standings')
+     baseUrl: URL path (e.g., '/rounds' for path-based or '/predictions/user/me' for query-based)
      viewingRound: Currently displayed round number
      maxRound: Maximum/latest round number
+  currentRound: Actual current round number
      htmxTarget: HTMX target selector (e.g., 'body' or '#prediction-page')
      htmxSwap: HTMX swap config (e.g., 'outerHTML' or 'outerHTML swap:300ms show:window:top')
      showJumpToCurrent: Boolean - show "Jump to Current" button
      dismissBanner: Boolean - add data-dismiss-results-banner attribute
+     urlStyle: 'path' for /rounds/{n}/matches or 'query' for /base?round={n} (defaults to 'query')
 -->
 <div
-  th:fragment="round-nav(baseUrl, viewingRound, maxRound, htmxTarget, htmxSwap, showJumpToCurrent, dismissBanner)"
+  th:fragment="round-nav(baseUrl, viewingRound, maxRound, currentRound, htmxTarget, htmxSwap, showJumpToCurrent, dismissBanner, urlStyle)"
   class="flex flex-col space-y-3"
 >
   <div class="flex items-center justify-between gap-2">
-    <!-- Previous Button -->
+    <!-- Previous Button (path-based) -->
     <button
+      th:if="${urlStyle == 'path'}"
+      th:attr="hx-get=@{${baseUrl} + '/' + ${viewingRound - 1} + '/matches'},
+                         hx-target=${htmxTarget},
+                         hx-swap=${htmxSwap}"
+      hx-push-url="true"
+      th:attrappend="data-dismiss-results-banner=${dismissBanner ? 'true' : null}"
+      th:disabled="${viewingRound <= 1}"
+      th:classappend="${viewingRound <= 1 ? 'opacity-50 cursor-not-allowed' : ''}"
+      class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition disabled:hover:bg-white"
+    >
+      <svg
+        class="h-4 w-4 sm:mr-1"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M15 19l-7-7 7-7"
+        />
+      </svg>
+      <span class="hidden sm:inline">Previous</span>
+    </button>
+
+    <!-- Previous Button (query-based) -->
+    <button
+      th:unless="${urlStyle == 'path'}"
       th:attr="hx-get=@{${baseUrl}(round=${viewingRound - 1})},
                          hx-target=${htmxTarget},
                          hx-swap=${htmxSwap}"
@@ -42,6 +73,26 @@
 
     <!-- Round Dropdown -->
     <select
+      th:if="${urlStyle == 'path'}"
+      hx-trigger="change"
+      hx-push-url="true"
+      th:attr="hx-target=${htmxTarget},
+                         hx-swap=${htmxSwap}"
+      class="flex-1 sm:flex-initial sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+      @change="htmx.ajax('GET', $el.options[$el.selectedIndex].dataset.url, {target: '${htmxTarget}', swap: '${htmxSwap}'})"
+    >
+      <option
+        th:each="r : ${#numbers.sequence(1, maxRound)}"
+        th:value="${r}"
+        th:attr="data-url=@{${baseUrl} + '/' + ${r} + '/matches'}"
+        th:selected="${r == viewingRound}"
+        th:text="${r == currentRound ? 'GW ' + r + ' (Current)' : 'GW ' + r}"
+      ></option>
+    </select>
+
+    <!-- Round Dropdown (query-based) -->
+    <select
+      th:unless="${urlStyle == 'path'}"
       th:attr="hx-get=@{${baseUrl}},
                          hx-target=${htmxTarget},
                          hx-swap=${htmxSwap}"
@@ -55,12 +106,41 @@
         th:each="r : ${#numbers.sequence(1, maxRound)}"
         th:value="${r}"
         th:selected="${r == viewingRound}"
-        th:text="${r == maxRound ? 'GW ' + r + ' (Current)' : 'GW ' + r}"
+        th:text="${r == currentRound ? 'GW ' + r + ' (Current)' : 'GW ' + r}"
       ></option>
     </select>
 
-    <!-- Next Button -->
+    <!-- Next Button (path-based) -->
     <button
+      th:if="${urlStyle == 'path'}"
+      th:attr="hx-get=@{${baseUrl} + '/' + ${viewingRound + 1} + '/matches'},
+                         hx-target=${htmxTarget},
+                         hx-swap=${htmxSwap}"
+      hx-push-url="true"
+      th:attrappend="data-dismiss-results-banner=${dismissBanner ? 'true' : null}"
+      th:disabled="${viewingRound >= maxRound}"
+      th:classappend="${viewingRound >= maxRound ? 'opacity-50 cursor-not-allowed' : ''}"
+      class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition disabled:hover:bg-white"
+    >
+      <span class="hidden sm:inline">Next</span>
+      <svg
+        class="h-4 w-4 sm:ml-1"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 5l7 7-7 7"
+        />
+      </svg>
+    </button>
+
+    <!-- Next Button (query-based) -->
+    <button
+      th:unless="${urlStyle == 'path'}"
       th:attr="hx-get=@{${baseUrl}(round=${viewingRound + 1})},
                          hx-target=${htmxTarget},
                          hx-swap=${htmxSwap}"
@@ -87,13 +167,29 @@
     </button>
   </div>
 
-  <!-- Jump to Current -->
+  <!-- Jump to Current (path-based) -->
   <div
-    th:if="${showJumpToCurrent and viewingRound != maxRound}"
+    th:if="${urlStyle == 'path' and showJumpToCurrent and viewingRound != currentRound}"
     class="flex justify-center sm:justify-end"
   >
     <button
-      th:attr="hx-get=@{${baseUrl}(round=${maxRound})},
+      th:attr="hx-get=@{${baseUrl} + '/current/matches'},
+                         hx-target=${htmxTarget},
+                         hx-swap=${htmxSwap}"
+      hx-push-url="true"
+      class="inline-flex items-center px-3 py-2 text-sm font-medium text-indigo-600 hover:text-indigo-700 transition"
+    >
+      Jump to Current
+    </button>
+  </div>
+
+  <!-- Jump to Current (query-based) -->
+  <div
+    th:if="${urlStyle != 'path' and showJumpToCurrent and viewingRound != currentRound}"
+    class="flex justify-center sm:justify-end"
+  >
+    <button
+      th:attr="hx-get=@{${baseUrl}},
                          hx-target=${htmxTarget},
                          hx-swap=${htmxSwap}"
       hx-push-url="true"
