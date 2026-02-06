@@ -8,6 +8,7 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
@@ -180,7 +181,7 @@ class SyncMatchesUseCaseTest {
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().allMatchesComplete()).isFalse();
-        assertThat(result.get().nextSchedule().delay().toMinutes()).isEqualTo(3);
+        assertThat(result.get().nextSchedule().delay()).isEqualTo(Duration.ofSeconds(90));
 
         verify(standingsService, never()).recalculateAsync(any(UUID.class), anyInt());
     }
@@ -204,16 +205,6 @@ class SyncMatchesUseCaseTest {
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().matchesProcessed()).isZero();
         assertThat(result.get().nextSchedule().delay().toHours()).isEqualTo(12);
-    }
-
-    private Competition createCompetition() {
-        return Competition.builder()
-                .id(competitionId)
-                .slug(CompetitionSlug.of(COMPETITION_SLUG))
-                .code(COMPETITION_CODE)
-                .name("Premier League")
-                .activeSeasonId(seasonId)
-                .build();
     }
 
     private Season createSeason() {

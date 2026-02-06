@@ -68,7 +68,7 @@ class SyncFrequencyCalculatorTest {
         var schedule = SyncFrequencyCalculator.calculateNextSync(
                 true, true, OffsetDateTime.now().plusHours(2), false, 10, false);
 
-        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(3));
+        assertThat(schedule.delay()).isEqualTo(Duration.ofSeconds(90));
         assertThat(schedule.reason()).contains("Live matches in progress");
     }
 
@@ -94,7 +94,7 @@ class SyncFrequencyCalculatorTest {
 
         var schedule = SyncFrequencyCalculator.calculateNextSync(false, true, pastKickoff, false, 10, false);
 
-        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(3));
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(1));
         assertThat(schedule.reason()).contains("passed");
     }
 
@@ -104,7 +104,7 @@ class SyncFrequencyCalculatorTest {
 
         var schedule = SyncFrequencyCalculator.calculateNextSync(false, true, imminentKickoff, false, 10, false);
 
-        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(3));
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(1));
         assertThat(schedule.reason()).contains("8 minutes");
         assertThat(schedule.reason()).contains("imminent");
     }
@@ -148,7 +148,7 @@ class SyncFrequencyCalculatorTest {
 
         var schedule = SyncFrequencyCalculator.calculateNextSync(false, true, kickoff, false, 10, false);
 
-        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(3));
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(1));
     }
 
     @Test
@@ -181,7 +181,7 @@ class SyncFrequencyCalculatorTest {
         var schedule = SyncFrequencyCalculator.calculateNextSync(
                 true, true, OffsetDateTime.now().plusHours(2), false);
 
-        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(3));
+        assertThat(schedule.delay()).isEqualTo(Duration.ofSeconds(90));
     }
 
     @Test
@@ -215,7 +215,7 @@ class SyncFrequencyCalculatorTest {
         var schedule = SyncFrequencyCalculator.calculateNextSync(
                 true, true, OffsetDateTime.now().plusHours(1), false, 10, false);
 
-        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(3));
+        assertThat(schedule.delay()).isEqualTo(Duration.ofSeconds(90));
         assertThat(schedule.reason()).contains("Live matches");
     }
 }
