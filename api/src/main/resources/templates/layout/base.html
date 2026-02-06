@@ -39,15 +39,24 @@
       }
 
       /* Ultra-minimal - Only essential transitions */
-      /* Page transitions - instant */
+      /* Page transitions - lightweight fade + slide */
       .htmx-swapping {
         opacity: 0;
-        transition: opacity 100ms;
+        transform: translateY(10px);
+        transition: opacity 250ms ease-out, transform 250ms ease-out;
       }
 
       .htmx-settling {
         opacity: 1;
-        transition: opacity 100ms;
+        transform: translateY(0);
+        transition: opacity 250ms ease-out, transform 250ms ease-out;
+      }
+
+      /* GPU acceleration hint for smoother animations */
+      #matches-page,
+      #standings-page,
+      #prediction-page {
+        will-change: opacity, transform;
       }
 
       /* Prediction rows - Color changes only */
