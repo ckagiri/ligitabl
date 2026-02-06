@@ -15,7 +15,9 @@ import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.client.footballdata.MatchDto;
 import com.ligitabl.api.client.footballdata.Score;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 
@@ -28,9 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 public class SyncMatchesUseCase {
 
     private final FootballDataClient footballDataClient; // Port interface (not implementation!)
-    private final SeasonRepo seasonRepo;
-    private final CompetitionRepo competitionRepo;
-    private final RoundRepo roundRepo;
+    private final HierarchyValidator hierarchyValidator;
     private final MatchRepo matchRepo;
     private final AsyncStandingsService standingsService;
     private final CompetitionDefaults competitionDefaults;
@@ -41,11 +41,7 @@ public class SyncMatchesUseCase {
     public record SyncMatchesCommand() {}
 
     public sealed interface SyncMatchesError {
-        record CompetitionNotFound(String code) implements SyncMatchesError {}
-
-        record SeasonNotFound(String competitionCode) implements SyncMatchesError {}
-
-        record RoundNotFound(UUID roundId) implements SyncMatchesError {}
+        record HierarchyError(UseCaseError error) implements SyncMatchesError {}
 
         record DataAccessError(FootballDataClient.ApiError error) implements SyncMatchesError {}
     }
@@ -54,41 +50,26 @@ public class SyncMatchesUseCase {
     public Either<SyncMatchesError, MatchSyncResult> execute(SyncMatchesCommand command) {
         log.info("Starting match synchronization for competition: {}", competitionCode);
 
-        return getActiveSeason()
-                .flatMap(this::getCurrentRound)
+        return resolveHierarchy()
                 .flatMap(this::determineAndFetchMatches) // Smart endpoint selection
                 .flatMap(this::updateMatches)
                 .flatMap(this::recalculateStandings)
                 .map(this::calculateNextSync);
     }
 
-    private Either<SyncMatchesError, Season> getActiveSeason() {
+    private Either<SyncMatchesError, RoundContext> resolveHierarchy() {
         var competitionSlug = competitionDefaults.defaultCompetitionSlug();
 
-        if (competitionRepo.findBySlug(competitionSlug).isEmpty()) {
-            return Either.left(new SyncMatchesError.CompetitionNotFound(competitionCode));
-        }
-
-        return seasonRepo
-                .findActiveSeason(competitionSlug)
-                .map(Either::<SyncMatchesError, Season>right)
-                .orElseGet(() -> Either.left(new SyncMatchesError.SeasonNotFound(competitionCode)));
-    }
-
-    private Either<SyncMatchesError, RoundContext> getCurrentRound(Season season) {
-        return roundRepo
-                .findById(season.getCurrentRoundId())
-                .map(round -> {
-                    var existingMatches = matchRepo.findByRoundId(round.getId());
-                    return Either.<SyncMatchesError, RoundContext>right(
-                            new RoundContext(season, round, existingMatches));
-                })
-                .orElse(Either.left(new SyncMatchesError.RoundNotFound(season.getCurrentRoundId())));
+        return hierarchyValidator
+                .resolveHierarchy(competitionSlug)
+                .mapLeft(error -> (SyncMatchesError) new SyncMatchesError.HierarchyError(error))
+                .map(ctx -> {
+                    var existingMatches = matchRepo.findByRoundId(ctx.round().getId());
+                    return new RoundContext(ctx.season(), ctx.round(), existingMatches);
+                });
     }
 
     /**
-     * SMART ENDPOINT SELECTION
-     * <p>
      * Determines which API endpoint to use based on current match state.
      */
     private Either<SyncMatchesError, FetchedMatchData> determineAndFetchMatches(RoundContext context) {
@@ -298,7 +279,30 @@ public class SyncMatchesUseCase {
     }
 
     private boolean scoreChanged(Match existing, Score apiScore) {
-        return false;
+        if (apiScore == null || apiScore.fullTime() == null) {
+            return false;
+        }
+
+        Integer apiHomeGoals = apiScore.fullTime().home();
+        Integer apiAwayGoals = apiScore.fullTime().away();
+
+        if (apiHomeGoals == null || apiAwayGoals == null) {
+            return false;
+        }
+
+        var existingScore = existing.getScore();
+        if (existingScore == null) {
+            existing.setScore(apiHomeGoals, apiAwayGoals);
+            return true;
+        }
+
+        boolean changed = existingScore.getHomeGoals() != apiHomeGoals
+                || existingScore.getAwayGoals() != apiAwayGoals;
+        if (changed) {
+            existing.setScore(apiHomeGoals, apiAwayGoals);
+        }
+
+        return changed;
     }
 
     private MatchStatus mapToDomainStatus(String matchStatus) {
@@ -316,7 +320,6 @@ public class SyncMatchesUseCase {
         };
     }
 
-    // Helper records
     private record RoundContext(Season season, Round round, List<Match> existingMatches) {}
 
     private record FetchedMatchData(RoundContext roundContext, List<MatchDto> matches) {}

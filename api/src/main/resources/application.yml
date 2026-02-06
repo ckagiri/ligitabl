@@ -62,12 +62,6 @@ ligitabl:
       key: ${REMEMBER_ME_KEY:dev-remember-me-key}
       token-validity-seconds: ${REMEMBER_ME_TOKEN_VALIDITY_SECONDS:1209600}
 
-  # UI Development Mode
-  # Enable fake in-memory data service to test UI without database dependencies
-  ui:
-    fake-data:
-      enabled: ${FAKE_DATA_ENABLED:false}
-
 football-data:
   api:
     url: https://api.football-data.org/v4
