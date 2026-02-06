@@ -1,5 +1,7 @@
 package com.ligitabl.api.rest.match.getdefaultroundmatches;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.config.CompetitionDefaults;
@@ -9,6 +11,7 @@ import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.rest.match.MatchEnricher;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
+import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.MatchRepo;
@@ -21,7 +24,7 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class GetDefaultRoundMatchesUseCase
-    implements UseCase<GetDefaultRoundMatchesQuery, Either<UseCaseError, RoundMatchesResult>> {
+        implements UseCase<GetDefaultRoundMatchesQuery, Either<UseCaseError, RoundMatchesResult>> {
     private final MatchRepo matchRepo;
     private final MatchEnricher matchEnricher;
     private final HierarchyValidator hierarchyValidator;
@@ -29,21 +32,26 @@ public class GetDefaultRoundMatchesUseCase
     private final RoundRepo roundRepo;
 
     @Override
-        public Either<UseCaseError, RoundMatchesResult> execute(GetDefaultRoundMatchesQuery query) {
+    public Either<UseCaseError, RoundMatchesResult> execute(GetDefaultRoundMatchesQuery query) {
         String competitionIdentifier = getEffectiveCompetitionIdentifier(query);
 
         return hierarchyValidator
-            .resolveHierarchy(competitionIdentifier, query.getRoundPosition())
-            .flatMap(ctx -> resolveCurrentRound(ctx.season())
-                .flatMap(currentRound -> Either.catching(
-                        () -> matchRepo.findByRoundId(ctx.round().getId()), UseCaseErrors::fromException)
-                    .flatMap(matchEnricher::enrichWithTeams)
-                    .map(matches -> new RoundMatchesResult(
-                        ctx.season().getId(),
-                        ctx.round().getPosition(),
-                        currentRound.getPosition(),
-                        ctx.season().getMaxRounds(),
-                        matches))));
+                .resolveHierarchy(competitionIdentifier, query.getRoundPosition())
+                .flatMap(ctx -> resolveCurrentRound(ctx.season())
+                        .flatMap(currentRound -> fetchMatches(ctx.round())
+                                .flatMap(matchEnricher::enrichWithTeams)
+                                .map(matches -> new RoundMatchesResult(
+                                        ctx.season().getId(),
+                                        ctx.round().getPosition(),
+                                        currentRound.getPosition(),
+                                        ctx.season().getMaxRounds(),
+                                        matches))));
+    }
+
+    private Either<UseCaseError, List<Match>> fetchMatches(Round round) {
+        return Either.catching(
+                () -> matchRepo.findByRoundId(round.getId()),
+                UseCaseErrors::fromException);
     }
 
     private Either<UseCaseError, Round> resolveCurrentRound(Season season) {

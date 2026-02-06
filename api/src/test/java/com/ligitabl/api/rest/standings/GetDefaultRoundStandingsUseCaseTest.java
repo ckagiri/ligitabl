@@ -15,15 +15,12 @@ import org.mockito.MockitoAnnotations;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.SeasonSlug;
 import com.ligitabl.model.domain.Standings;
 import com.ligitabl.model.repo.RoundRepo;
-import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.StandingsRepo;
 
 class GetDefaultRoundStandingsUseCaseTest {
@@ -32,9 +29,6 @@ class GetDefaultRoundStandingsUseCaseTest {
     HierarchyValidator hierarchyValidator;
 
     private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
-
-    @Mock
-    SeasonRepo seasonRepo;
 
     @Mock
     RoundRepo roundRepo;
@@ -51,7 +45,7 @@ class GetDefaultRoundStandingsUseCaseTest {
     void setup() {
         MockitoAnnotations.openMocks(this);
         useCase = new GetDefaultRoundStandingsUseCase(
-                hierarchyValidator, competitionDefaults, seasonRepo, roundRepo, standingsRepo, standingsEnricher);
+                                hierarchyValidator, competitionDefaults, roundRepo, standingsRepo, standingsEnricher);
     }
 
     @Test
@@ -60,19 +54,10 @@ class GetDefaultRoundStandingsUseCaseTest {
         UUID seasonId = UUID.randomUUID();
         UUID roundId = UUID.randomUUID();
 
-        var competition = Competition.builder()
-                .id(competitionId)
-                .name("Premier League")
-                .slug(CompetitionSlug.of("premier-league"))
-                .code("PL")
-                .activeSeasonId(seasonId)
-                .build();
-
         var season = Season.builder()
                 .id(seasonId)
                 .competitionId(competitionId)
                 .name("2024/25")
-                .slug(SeasonSlug.of("2024-25"))
                 .maxRounds(38)
                 .currentRoundId(roundId)
                 .build();
@@ -92,8 +77,8 @@ class GetDefaultRoundStandingsUseCaseTest {
                 .finalised(true)
                 .build();
 
-        when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(hierarchyValidator.resolveHierarchy("premier-league", null))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(standingsRepo.findBySeasonAndRoundPosition(seasonId, 1)).thenReturn(Optional.of(standings));
 
@@ -101,15 +86,17 @@ class GetDefaultRoundStandingsUseCaseTest {
                 StandingsEntryDto.builder().position(1).teamName("Team").build();
         when(standingsEnricher.enrichWithTeams(standings)).thenReturn(Either.right(List.of(dto)));
 
-        Either<UseCaseError, List<StandingsEntryDto>> result =
+        Either<UseCaseError, RoundStandingsResult> result =
                 useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
 
         assertThat(result.isRight()).isTrue();
-        assertThat(result.getRight()).hasSize(1);
-        assertThat(result.getRight().getFirst().getPosition()).isEqualTo(1);
+        assertThat(result.getRight().viewingRound()).isEqualTo(1);
+        assertThat(result.getRight().currentRound()).isEqualTo(1);
+        assertThat(result.getRight().lastRound()).isEqualTo(38);
+        assertThat(result.getRight().standings()).hasSize(1);
+        assertThat(result.getRight().standings().getFirst().getPosition()).isEqualTo(1);
 
-        verify(hierarchyValidator).validateCompetition("premier-league");
-        verify(seasonRepo).findById(seasonId);
+        verify(hierarchyValidator).resolveHierarchy("premier-league", null);
         verify(roundRepo).findById(roundId);
         verify(standingsRepo).findBySeasonAndRoundPosition(seasonId, 1);
         verify(standingsEnricher).enrichWithTeams(standings);
@@ -117,23 +104,15 @@ class GetDefaultRoundStandingsUseCaseTest {
 
     @Test
     void missing_active_season_returns_validation_error() {
-        UUID competitionId = UUID.randomUUID();
+        when(hierarchyValidator.resolveHierarchy("premier-league", null))
+                .thenReturn(Either.left(UseCaseErrors.validation("Competition has no active season")));
 
-        var competition = Competition.builder()
-                .id(competitionId)
-                .name("Premier League")
-                .slug(CompetitionSlug.of("premier-league"))
-                .code("PL")
-                .build();
-
-        when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
-
-        Either<UseCaseError, List<StandingsEntryDto>> result =
+        Either<UseCaseError, RoundStandingsResult> result =
                 useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
 
         assertThat(result.isLeft()).isTrue();
-        verify(hierarchyValidator).validateCompetition("premier-league");
-        verifyNoInteractions(seasonRepo, roundRepo, standingsRepo, standingsEnricher);
+        verify(hierarchyValidator).resolveHierarchy("premier-league", null);
+        verifyNoInteractions(roundRepo, standingsRepo, standingsEnricher);
     }
 
     @Test
@@ -141,31 +120,21 @@ class GetDefaultRoundStandingsUseCaseTest {
         UUID competitionId = UUID.randomUUID();
         UUID seasonId = UUID.randomUUID();
 
-        var competition = Competition.builder()
-                .id(competitionId)
-                .name("Premier League")
-                .slug(CompetitionSlug.of("premier-league"))
-                .code("PL")
-                .activeSeasonId(seasonId)
-                .build();
-
         var season = Season.builder()
                 .id(seasonId)
                 .competitionId(competitionId)
                 .name("2024/25")
-                .slug(SeasonSlug.of("2024-25"))
                 .maxRounds(38)
                 .build();
 
-        when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(hierarchyValidator.resolveHierarchy("premier-league", null))
+                .thenReturn(Either.left(UseCaseErrors.validation("Season has no current round")));
 
-        Either<UseCaseError, List<StandingsEntryDto>> result =
+        Either<UseCaseError, RoundStandingsResult> result =
                 useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
 
         assertThat(result.isLeft()).isTrue();
-        verify(hierarchyValidator).validateCompetition("premier-league");
-        verify(seasonRepo).findById(seasonId);
+        verify(hierarchyValidator).resolveHierarchy("premier-league", null);
         verifyNoInteractions(roundRepo, standingsRepo, standingsEnricher);
     }
 
@@ -175,19 +144,10 @@ class GetDefaultRoundStandingsUseCaseTest {
         UUID seasonId = UUID.randomUUID();
         UUID roundId = UUID.randomUUID();
 
-        var competition = Competition.builder()
-                .id(competitionId)
-                .name("Premier League")
-                .slug(CompetitionSlug.of("premier-league"))
-                .code("PL")
-                .activeSeasonId(seasonId)
-                .build();
-
         var season = Season.builder()
                 .id(seasonId)
                 .competitionId(competitionId)
                 .name("2024/25")
-                .slug(SeasonSlug.of("2024-25"))
                 .maxRounds(38)
                 .currentRoundId(roundId)
                 .build();
@@ -200,18 +160,19 @@ class GetDefaultRoundStandingsUseCaseTest {
                 .slug("md-1")
                 .build();
 
-        when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(hierarchyValidator.resolveHierarchy("premier-league", null))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(standingsRepo.findBySeasonAndRoundPosition(seasonId, 1)).thenReturn(Optional.empty());
 
-        when(standingsEnricher.enrichWithTeams(any(Standings.class))).thenReturn(Either.right(List.of()));
+        when(standingsEnricher.enrichWithTeams(any(Standings.class)))
+                .thenReturn(Either.right(List.of()));
 
-        Either<UseCaseError, List<StandingsEntryDto>> result =
+        Either<UseCaseError, RoundStandingsResult> result =
                 useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
 
         assertThat(result.isRight()).isTrue();
-        assertThat(result.getRight()).isEmpty();
+        assertThat(result.getRight().standings()).isEmpty();
 
         verify(standingsEnricher).enrichWithTeams(any(Standings.class));
     }

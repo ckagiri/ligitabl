@@ -1,7 +1,7 @@
-package com.ligitabl.api.web.match;
+package com.ligitabl.api.web.standings;
 
-import com.ligitabl.api.rest.match.getdefaultroundmatches.GetDefaultRoundMatchesQuery;
-import com.ligitabl.api.rest.match.getdefaultroundmatches.GetDefaultRoundMatchesUseCase;
+import com.ligitabl.api.rest.standings.GetDefaultRoundStandingsQuery;
+import com.ligitabl.api.rest.standings.GetDefaultRoundStandingsUseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.web.shared.error.UseCaseErrorStatusMapper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -15,62 +15,63 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 @Controller
+@RequestMapping("/rounds")
 @RequiredArgsConstructor
 @Slf4j
-@RequestMapping("/rounds")
-public class RoundMatchesController {
-    private final GetDefaultRoundMatchesUseCase getDefaultRoundMatchesUseCase;
+public class RoundStandingsController {
+
+    private final GetDefaultRoundStandingsUseCase getDefaultRoundStandingsUseCase;
 
     /**
-     * GET /rounds/current/matches - View current round matches
+     * GET /rounds/current/standings - View current round standings
      */
-    @GetMapping("/current/matches")
-    public String getCurrentRoundMatches(
+    @GetMapping("/current/standings")
+    public String getCurrentRoundStandings(
             Model model,
             HttpServletRequest request,
             HttpServletResponse response) {
-        log.info("GET /rounds/current/matches");
-        return executeUseCase(GetDefaultRoundMatchesQuery.currentRound(), model, request, response);
+        log.info("GET /rounds/current/standings");
+        return executeUseCase(GetDefaultRoundStandingsQuery.currentRound(null), model, request, response);
     }
 
     /**
-     * GET /rounds/{roundPosition}/matches - View specific round matches
+     * GET /rounds/{roundPosition}/standings - View specific round standings
      */
-    @GetMapping("/{roundPosition}/matches")
-    public String getRoundMatchesByPosition(
+    @GetMapping("/{roundPosition}/standings")
+    public String getRoundStandingsByPosition(
             @PathVariable Integer roundPosition,
             Model model,
             HttpServletRequest request,
             HttpServletResponse response) {
-        log.info("GET /rounds/{}/matches", roundPosition);
-        return executeUseCase(GetDefaultRoundMatchesQuery.byPosition(roundPosition, null), model, request, response);
+        log.info("GET /rounds/{}/standings", roundPosition);
+        return executeUseCase(GetDefaultRoundStandingsQuery.byPosition(roundPosition, null), model, request, response);
     }
 
-    private String executeUseCase(GetDefaultRoundMatchesQuery query, Model model, HttpServletRequest request, HttpServletResponse response) {
-        var result = getDefaultRoundMatchesUseCase.execute(query);
+    private String executeUseCase(GetDefaultRoundStandingsQuery query, Model model, HttpServletRequest request, HttpServletResponse response) {
+        var result = getDefaultRoundStandingsUseCase.execute(query);
 
         // Check if this is an HTMX request
         boolean isHtmxRequest = "true".equals(request.getHeader("HX-Request"));
 
         return result.fold(
-                error -> handleMatchesError(error, model, response),
+                error -> handleStandingsError(error, model, response),
                 payload -> {
-                    model.addAttribute("pageTitle", "Matches");
+                    model.addAttribute("pageTitle", "Standings");
                     model.addAttribute("seasonId", payload.seasonId());
                     model.addAttribute("viewingRound", payload.viewingRound());
                     model.addAttribute("currentRound", payload.currentRound());
                     model.addAttribute("lastRound", payload.lastRound());
-                    model.addAttribute("matches", payload.matches());
+                    model.addAttribute("standings", payload.standings());
 
                     // Return fragment for HTMX requests, full page otherwise
-                    return isHtmxRequest ? "matches :: matches-content" : "matches";
+                    return isHtmxRequest ? "standings :: standings-content" : "standings";
                 });
     }
 
-    private String handleMatchesError(UseCaseError error, Model model, HttpServletResponse response) {
+    private String handleStandingsError(UseCaseError error, Model model, HttpServletResponse response) {
         response.setStatus(UseCaseErrorStatusMapper.toHttpStatus(error));
         model.addAttribute("error", error.getMessage());
-        model.addAttribute("pageTitle", "Matches");
+        model.addAttribute("pageTitle", "Standings");
         return "error";
     }
 }

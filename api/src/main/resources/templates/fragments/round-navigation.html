@@ -9,16 +9,18 @@
      showJumpToCurrent: Boolean - show "Jump to Current" button
      dismissBanner: Boolean - add data-dismiss-results-banner attribute
      urlStyle: 'path' for /rounds/{n}/matches or 'query' for /base?round={n} (defaults to 'query')
+     pathSuffix: For path-based URLs, the suffix (e.g., 'matches' or 'standings'). Defaults to 'matches'
 -->
 <div
-  th:fragment="round-nav(baseUrl, viewingRound, maxRound, currentRound, htmxTarget, htmxSwap, showJumpToCurrent, dismissBanner, urlStyle)"
+  th:fragment="round-nav(baseUrl, viewingRound, maxRound, currentRound, htmxTarget, htmxSwap, showJumpToCurrent, dismissBanner, urlStyle, pathSuffix)"
   class="flex flex-col space-y-3"
 >
   <div class="flex items-center justify-between gap-2">
     <!-- Previous Button (path-based) -->
     <button
       th:if="${urlStyle == 'path'}"
-      th:attr="hx-get=@{${baseUrl} + '/' + ${viewingRound - 1} + '/matches'},
+      th:with="suffix=${pathSuffix != null ? pathSuffix : 'matches'}"
+      th:attr="hx-get=@{${baseUrl} + '/' + ${viewingRound - 1} + '/' + ${suffix}},
                          hx-target=${htmxTarget},
                          hx-swap=${htmxSwap}"
       hx-push-url="true"
@@ -74,6 +76,7 @@
     <!-- Round Dropdown -->
     <select
       th:if="${urlStyle == 'path'}"
+      th:with="suffix=${pathSuffix != null ? pathSuffix : 'matches'}"
       hx-trigger="change"
       hx-push-url="true"
       th:attr="hx-target=${htmxTarget},
@@ -84,7 +87,7 @@
       <option
         th:each="r : ${#numbers.sequence(1, maxRound)}"
         th:value="${r}"
-        th:attr="data-url=@{${baseUrl} + '/' + ${r} + '/matches'}"
+        th:attr="data-url=@{${baseUrl} + '/' + ${r} + '/' + ${suffix}}"
         th:selected="${r == viewingRound}"
         th:text="${r == currentRound ? 'GW ' + r + ' (Current)' : 'GW ' + r}"
       ></option>
@@ -113,7 +116,8 @@
     <!-- Next Button (path-based) -->
     <button
       th:if="${urlStyle == 'path'}"
-      th:attr="hx-get=@{${baseUrl} + '/' + ${viewingRound + 1} + '/matches'},
+      th:with="suffix=${pathSuffix != null ? pathSuffix : 'matches'}"
+      th:attr="hx-get=@{${baseUrl} + '/' + ${viewingRound + 1} + '/' + ${suffix}},
                          hx-target=${htmxTarget},
                          hx-swap=${htmxSwap}"
       hx-push-url="true"
@@ -170,10 +174,11 @@
   <!-- Jump to Current (path-based) -->
   <div
     th:if="${urlStyle == 'path' and showJumpToCurrent and viewingRound != currentRound}"
+    th:with="suffix=${pathSuffix != null ? pathSuffix : 'matches'}"
     class="flex justify-center sm:justify-end"
   >
     <button
-      th:attr="hx-get=@{${baseUrl} + '/current/matches'},
+      th:attr="hx-get=@{${baseUrl} + '/current/' + ${suffix}},
                          hx-target=${htmxTarget},
                          hx-swap=${htmxSwap}"
       hx-push-url="true"
