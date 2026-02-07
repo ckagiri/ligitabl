@@ -1,9 +1,8 @@
 package com.ligitabl.api.web.shared.error;
 
+import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-
-import java.util.List;
 
 import com.ligitabl.api.shared.errors.*;
 import com.ligitabl.api.shared.errors.UseCaseError;
@@ -59,35 +58,34 @@ public class ErrorMapper {
         return switch (exception) {
                 // Validation errors from domain
             case InvalidSeasonPredictionException e -> new ValidationError(
-                List.of(ValidationMessage.of("Invalid season prediction")));
+                    List.of(ValidationMessage.of("Invalid season prediction")));
 
                 // Business rule: Multiple swaps attempted
-                case MultipleSwapException e -> new UnprocessableEntityError(
+            case MultipleSwapException e -> new UnprocessableEntityError(
                     "Multiple swap attempt rejected: " + e.getMessage());
 
                 // Not found errors
-                case SeasonPredictionNotFoundException e -> new NotFoundError(
+            case SeasonPredictionNotFoundException e -> new NotFoundError(
                     "SeasonPrediction", "id", extractIdFromMessage(e.getMessage()));
 
                 // Conflict errors (already exists)
-                case SeasonPredictionAlreadyExistsException e -> UseCaseErrors.conflict(
+            case SeasonPredictionAlreadyExistsException e -> UseCaseErrors.conflict(
                     "Season prediction already exists: " + e.getMessage());
 
                 // Standard Java exceptions
             case IllegalArgumentException e -> UseCaseErrors.validation("Invalid input", e.getMessage());
 
-                case IllegalStateException e -> UseCaseErrors.unprocessableEntity(
+            case IllegalStateException e -> UseCaseErrors.unprocessableEntity(
                     "Invalid state for operation: " + e.getMessage());
 
-                case NullPointerException e -> UseCaseErrors.validation(
-                    "Required field is missing",
-                    e.getMessage() != null ? e.getMessage() : "A required value is null");
+            case NullPointerException e -> UseCaseErrors.validation(
+                    "Required field is missing", e.getMessage() != null ? e.getMessage() : "A required value is null");
 
                 // Fallback for unknown exceptions
-                default -> UseCaseErrors.unprocessableEntity(
+            default -> UseCaseErrors.unprocessableEntity(
                     exception.getMessage() != null
-                        ? exception.getMessage()
-                        : exception.getClass().getSimpleName());
+                            ? exception.getMessage()
+                            : exception.getClass().getSimpleName());
         };
     }
 
@@ -106,8 +104,8 @@ public class ErrorMapper {
 
         // Try to extract UUID pattern
         // Pattern: 8-4-4-4-12 hexadecimal digits
-        Pattern uuidPattern = Pattern.compile(
-                "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
+        Pattern uuidPattern =
+                Pattern.compile("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
         Matcher matcher = uuidPattern.matcher(message);
 
         if (matcher.find()) {

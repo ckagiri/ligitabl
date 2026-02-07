@@ -1,8 +1,8 @@
 package com.ligitabl.api.web.shared.mapper;
 
-import org.springframework.stereotype.Component;
-
 import java.util.List;
+
+import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.shared.errors.AuthenticationError;
 import com.ligitabl.api.shared.errors.AuthorizationError;
@@ -99,9 +99,7 @@ public class ErrorViewMapper {
         }
 
         if (error instanceof NotFoundError notFoundError) {
-            return notFoundError.entity() == null
-                    ? List.of()
-                    : List.of(notFoundError.message());
+            return notFoundError.entity() == null ? List.of() : List.of(notFoundError.message());
         }
 
         if (error instanceof ConflictError conflictError) {
@@ -109,21 +107,15 @@ public class ErrorViewMapper {
         }
 
         if (error instanceof UnprocessableEntityError unprocessableEntityError) {
-            return unprocessableEntityError.message() == null
-                    ? List.of()
-                    : List.of(unprocessableEntityError.message());
+            return unprocessableEntityError.message() == null ? List.of() : List.of(unprocessableEntityError.message());
         }
 
         if (error instanceof AuthenticationError authenticationError) {
-            return authenticationError.message() == null
-                    ? List.of()
-                    : List.of(authenticationError.message());
+            return authenticationError.message() == null ? List.of() : List.of(authenticationError.message());
         }
 
         if (error instanceof AuthorizationError authorizationError) {
-            return authorizationError.message() == null
-                    ? List.of()
-                    : List.of(authorizationError.message());
+            return authorizationError.message() == null ? List.of() : List.of(authorizationError.message());
         }
 
         return List.of();
