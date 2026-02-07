@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.prediction.userpredictions;
+package com.ligitabl.api.web.predictions.userpredictions;
 
 import java.time.Instant;
 import java.util.List;
@@ -12,10 +12,9 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.shared.PredictionAccessMode;
 import com.ligitabl.api.rest.prediction.shared.RankingSource;
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.web.shared.command.GetUserPredictionCommand;
+import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.web.shared.domain.user.UserContext;
 import com.ligitabl.api.web.shared.error.ErrorMapper;
-import com.ligitabl.api.web.shared.error.UseCaseError;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 
@@ -24,17 +23,12 @@ import lombok.AllArgsConstructor;
 /**
  * Use case for retrieving user predictions with access mode resolution.
  *
- * <p>Handles different user contexts:
- * <ul>
- *   <li><b>Guest</b>: Returns fallback rankings as READONLY_GUEST</li>
- *   <li><b>Authenticated with prediction</b>: Returns user's prediction as EDITABLE or READONLY_COOLDOWN</li>
- *   <li><b>Authenticated without prediction</b>: Returns fallback as CAN_CREATE_ENTRY</li>
- *   <li><b>Viewing other user</b>: Returns their prediction as READONLY_VIEWING_OTHER</li>
- *   <li><b>User not found</b>: Returns fallback as READONLY_USER_NOT_FOUND</li>
- * </ul>
- *
- * <p>This is the Railway-Oriented Programming boundary - domain operations
- * are wrapped in Either monad to provide type-safe error handling.</p>
+ * Handles different user contexts:
+ *   Guest: Returns fallback rankings as READONLY_GUEST
+ *   Authenticated with prediction: Returns user's prediction as EDITABLE or READONLY_COOLDOWN
+ *   Authenticated without prediction: Returns fallback as CAN_CREATE_ENTRY
+ *   Viewing other user: Returns their prediction as READONLY_VIEWING_OTHER
+ *   User not found: Returns fallback as READONLY_USER_NOT_FOUND
  */
 @Service
 @AllArgsConstructor
@@ -65,7 +59,8 @@ public class GetUserPredictionUseCase {
         Season season = getActiveSeason();
         Round currentRoundEntity = getCurrentRoundEntity(season);
         int currentRound = currentRoundEntity.getPosition();
-        int viewingRound = command.resolveRound(currentRound, season.getMaxRounds());
+        int lastRound = season.getMaxRounds();
+        int viewingRound = command.resolveRound(currentRound, lastRound);
         boolean isCurrentRound = viewingRound == currentRound;
         Round viewingRoundEntity =
                 isCurrentRound ? currentRoundEntity : getRoundByPosition(season.getId(), viewingRound);
@@ -75,13 +70,13 @@ public class GetUserPredictionUseCase {
         // Determine access mode and rankings based on user type
         return switch (ctx.userType()) {
             case GUEST -> buildGuestView(
-                    command, currentRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
+                    command, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
             case AUTHENTICATED -> buildAuthenticatedView(
-                    command, currentRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
+                    command, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
             case VIEWING_OTHER -> buildViewingOtherView(
-                    command, currentRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
+                    command, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
             case USER_NOT_FOUND -> buildUserNotFoundView(
-                    command, currentRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
+                    command, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
         };
     }
 
@@ -92,6 +87,7 @@ public class GetUserPredictionUseCase {
     private UserPredictionViewData buildGuestView(
             GetUserPredictionCommand cmd,
             int currentRound,
+            int lastRound,
             int viewingRound,
             boolean isCurrentRound,
             String roundState,
@@ -107,7 +103,7 @@ public class GetUserPredictionUseCase {
                 : standingsRepo.findPointsMap(cmd.seasonId(), viewingRound);
 
         String message =
-                isCurrentRound ? "Log in to create your prediction" : "Viewing Gameweek " + viewingRound + " results";
+                isCurrentRound ? "Sign up to create your prediction" : "Viewing Gameweek " + viewingRound + " results";
 
         return new UserPredictionViewData(
                 rankingsWithSource.rankings(),
@@ -118,6 +114,7 @@ public class GetUserPredictionUseCase {
                 standingsMap,
                 pointsMap,
                 currentRound,
+                lastRound,
                 viewingRound,
                 null,
                 seasonCompleted,
@@ -134,6 +131,7 @@ public class GetUserPredictionUseCase {
     private UserPredictionViewData buildAuthenticatedView(
             GetUserPredictionCommand cmd,
             int currentRound,
+            int lastRound,
             int viewingRound,
             boolean isCurrentRound,
             String roundState,
@@ -165,6 +163,7 @@ public class GetUserPredictionUseCase {
                             Map.of(), // Standings come from RoundResult
                             Map.of(), // Points not needed for historical
                             currentRound,
+                            lastRound,
                             viewingRound,
                             seasonPrediction.getAtRoundNumber(),
                             seasonCompleted,
@@ -195,6 +194,7 @@ public class GetUserPredictionUseCase {
                     standingsMap,
                     pointsMap,
                     currentRound,
+                    lastRound,
                     viewingRound,
                     seasonPrediction.getAtRoundNumber(),
                     seasonCompleted,
@@ -233,6 +233,7 @@ public class GetUserPredictionUseCase {
                 standingsMap,
                 pointsMap,
                 currentRound,
+                lastRound,
                 viewingRound,
                 null,
                 seasonCompleted,
@@ -262,6 +263,7 @@ public class GetUserPredictionUseCase {
     private UserPredictionViewData buildViewingOtherView(
             GetUserPredictionCommand cmd,
             int currentRound,
+            int lastRound,
             int viewingRound,
             boolean isCurrentRound,
             String roundState,
@@ -283,6 +285,7 @@ public class GetUserPredictionUseCase {
                         Map.of(),
                         Map.of(),
                         currentRound,
+                        lastRound,
                         viewingRound,
                         null,
                         seasonCompleted,
@@ -310,6 +313,7 @@ public class GetUserPredictionUseCase {
                     standingsRepo.findPositionMap(cmd.seasonId(), currentRound),
                     standingsRepo.findPointsMap(cmd.seasonId(), currentRound),
                     currentRound,
+                    lastRound,
                     viewingRound,
                     prediction.getAtRoundNumber(),
                     seasonCompleted,
@@ -331,6 +335,7 @@ public class GetUserPredictionUseCase {
                 isCurrentRound ? standingsRepo.findPositionMap(cmd.seasonId(), currentRound) : Map.of(),
                 isCurrentRound ? standingsRepo.findPointsMap(cmd.seasonId(), currentRound) : Map.of(),
                 currentRound,
+                lastRound,
                 viewingRound,
                 null,
                 seasonCompleted,
@@ -347,6 +352,7 @@ public class GetUserPredictionUseCase {
     private UserPredictionViewData buildUserNotFoundView(
             GetUserPredictionCommand cmd,
             int currentRound,
+            int lastRound,
             int viewingRound,
             boolean isCurrentRound,
             String roundState,
@@ -362,6 +368,7 @@ public class GetUserPredictionUseCase {
                 isCurrentRound ? standingsRepo.findPositionMap(cmd.seasonId(), currentRound) : Map.of(),
                 isCurrentRound ? standingsRepo.findPointsMap(cmd.seasonId(), currentRound) : Map.of(),
                 currentRound,
+                lastRound,
                 viewingRound,
                 null,
                 seasonCompleted,
@@ -436,6 +443,7 @@ public class GetUserPredictionUseCase {
             Map<String, Integer> standingsMap,
             Map<String, Integer> pointsMap,
             int currentRound,
+            int lastRound,
             int viewingRound,
             Integer atRoundNumber,
             boolean seasonCompleted,

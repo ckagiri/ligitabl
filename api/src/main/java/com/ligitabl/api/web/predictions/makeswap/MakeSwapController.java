@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.prediction.makeswap;
+package com.ligitabl.api.web.predictions.makeswap;
 
 import java.security.Principal;
 import java.util.Map;

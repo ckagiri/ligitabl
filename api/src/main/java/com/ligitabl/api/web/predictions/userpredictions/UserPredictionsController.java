@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.prediction.userpredictions;
+package com.ligitabl.api.web.predictions.userpredictions;
 
 import java.security.Principal;
 import java.time.Instant;
@@ -18,11 +18,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.web.shared.command.GetUserPredictionCommand;
-import com.ligitabl.api.web.shared.dto.response.FixtureDto;
-import com.ligitabl.api.web.shared.dto.response.TeamRankDto;
-import com.ligitabl.api.web.shared.error.UseCaseError;
-import com.ligitabl.api.web.shared.mapper.ErrorViewMapper;
+import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.web.shared.dto.FixtureDto;
+import com.ligitabl.api.web.shared.dto.TeamRankDto;
+import com.ligitabl.api.web.shared.error.ErrorMapper;
+import com.ligitabl.api.web.shared.error.ErrorViewMapper;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Match;
@@ -255,6 +255,7 @@ public class UserPredictionsController {
         // Set model attributes for template
         model.addAttribute("pageTitle", getPageTitle(data));
         model.addAttribute("currentRound", data.currentRound());
+        model.addAttribute("lastRound", data.lastRound());
         model.addAttribute("viewingRound", data.viewingRound());
         model.addAttribute("atRoundNumber", data.atRoundNumber());
         model.addAttribute("isCurrentRound", data.isCurrentRound());
@@ -407,12 +408,7 @@ public class UserPredictionsController {
      * Map use case error to HTTP status code.
      */
     private int mapErrorToStatus(UseCaseError error) {
-        return switch (error.type()) {
-            case VALIDATION -> 400;
-            case NOT_FOUND -> 404;
-            case CONFLICT -> 409;
-            case BUSINESS_RULE -> 422;
-        };
+        return ErrorMapper.toHttpStatus(error);
     }
 
     /**

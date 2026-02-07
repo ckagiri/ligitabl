@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import com.ligitabl.api.rest.standings.GetDefaultRoundStandingsQuery;
 import com.ligitabl.api.rest.standings.GetDefaultRoundStandingsUseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.web.shared.error.UseCaseErrorStatusMapper;
+import com.ligitabl.api.web.shared.error.ErrorMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -70,7 +70,7 @@ public class RoundStandingsController {
     }
 
     private String handleStandingsError(UseCaseError error, Model model, HttpServletResponse response) {
-        response.setStatus(UseCaseErrorStatusMapper.toHttpStatus(error));
+        response.setStatus(ErrorMapper.toHttpStatus(error));
         model.addAttribute("error", error.getMessage());
         model.addAttribute("pageTitle", "Standings");
         return "error";

@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.prediction.createprediction;
+package com.ligitabl.api.web.predictions.createprediction;
 
 import java.security.Principal;
 import java.util.List;
