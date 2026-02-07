@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.match;
+package com.ligitabl.api.web.matches;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;

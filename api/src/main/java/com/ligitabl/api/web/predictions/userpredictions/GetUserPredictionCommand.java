@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.prediction.userpredictions;
+package com.ligitabl.api.web.predictions.userpredictions;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -29,13 +29,6 @@ public record GetUserPredictionCommand(
         if (requestedRound > currentRound) return currentRound;
         if (requestedRound > maxRounds) return currentRound;
         return requestedRound;
-    }
-
-    /**
-     * Check if the resolved round is historical (before current round).
-     */
-    public boolean isHistoricalRound(int currentRound, int maxRounds) {
-        return resolveRound(currentRound, maxRounds) < currentRound;
     }
 
     /**

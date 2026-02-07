@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.prediction.userpredictions;
+package com.ligitabl.api.web.predictions.userpredictions;
 
 import java.security.Principal;
 import java.time.Instant;
@@ -19,7 +19,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.web.shared.dto.response.FixtureDto;
+import com.ligitabl.api.web.shared.dto.FixtureDto;
 import com.ligitabl.api.web.shared.dto.TeamRankDto;
 import com.ligitabl.api.web.shared.error.ErrorMapper;
 import com.ligitabl.api.web.shared.error.ErrorViewMapper;

@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.prediction.userpredictions;
+package com.ligitabl.api.web.predictions.userpredictions;
 
 import java.time.Instant;
 import java.util.List;
