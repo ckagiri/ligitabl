@@ -3,16 +3,18 @@
      baseUrl: URL path (e.g., '/rounds' for path-based or '/predictions/user/me' for query-based)
      viewingRound: Currently displayed round number
      maxRound: Maximum/latest round number
-  currentRound: Actual current round number
+     currentRound: Actual current round number
      htmxTarget: HTMX target selector (e.g., 'body' or '#prediction-page')
      htmxSwap: HTMX swap config (e.g., 'outerHTML' or 'outerHTML swap:300ms show:window:top')
      showJumpToCurrent: Boolean - show "Jump to Current" button
      dismissBanner: Boolean - add data-dismiss-results-banner attribute
      urlStyle: 'path' for /rounds/{n}/matches or 'query' for /base?round={n} (defaults to 'query')
      pathSuffix: For path-based URLs, the suffix (e.g., 'matches' or 'standings'). Defaults to 'matches'
+     minRound: Minimum round number to allow navigation to (defaults to 1 if null)
 -->
 <div
-  th:fragment="round-nav(baseUrl, viewingRound, maxRound, currentRound, htmxTarget, htmxSwap, showJumpToCurrent, dismissBanner, urlStyle, pathSuffix)"
+  th:fragment="round-nav(baseUrl, viewingRound, maxRound, currentRound, htmxTarget, htmxSwap, showJumpToCurrent, dismissBanner, urlStyle, pathSuffix, minRound)"
+  th:with="minRoundNumber=${minRound != null ? minRound : 1}"
   class="flex flex-col space-y-3"
 >
   <div class="flex items-center justify-between gap-2">
@@ -25,8 +27,8 @@
                          hx-swap=${htmxSwap}"
       hx-push-url="true"
       th:attrappend="data-dismiss-results-banner=${dismissBanner ? 'true' : null}"
-      th:disabled="${viewingRound <= 1}"
-      th:classappend="${viewingRound <= 1 ? 'opacity-50 cursor-not-allowed' : ''}"
+      th:disabled="${viewingRound <= minRoundNumber}"
+      th:classappend="${viewingRound <= minRoundNumber ? 'opacity-50 cursor-not-allowed' : ''}"
       class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition disabled:hover:bg-white"
     >
       <svg
@@ -53,8 +55,8 @@
                          hx-swap=${htmxSwap}"
       hx-push-url="true"
       th:attrappend="data-dismiss-results-banner=${dismissBanner ? 'true' : null}"
-      th:disabled="${viewingRound <= 1}"
-      th:classappend="${viewingRound <= 1 ? 'opacity-50 cursor-not-allowed' : ''}"
+      th:disabled="${viewingRound <= minRoundNumber}"
+      th:classappend="${viewingRound <= minRoundNumber ? 'opacity-50 cursor-not-allowed' : ''}"
       class="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition disabled:hover:bg-white"
     >
       <svg
@@ -73,7 +75,7 @@
       <span class="hidden sm:inline">Previous</span>
     </button>
 
-    <!-- Round Dropdown -->
+    <!-- Round Dropdown (path-based) -->
     <select
       th:if="${urlStyle == 'path'}"
       th:with="suffix=${pathSuffix != null ? pathSuffix : 'matches'}"
@@ -81,7 +83,7 @@
       class="flex-1 sm:flex-initial sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
     >
       <option
-        th:each="r : ${#numbers.sequence(1, maxRound)}"
+        th:each="r : ${#numbers.sequence(minRoundNumber, maxRound)}"
         th:value="${r}"
         th:attr="data-url=@{${baseUrl} + '/' + ${r} + '/' + ${suffix}}"
         th:selected="${r == viewingRound}"
@@ -102,7 +104,7 @@
       class="flex-1 sm:flex-initial sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
     >
       <option
-        th:each="r : ${#numbers.sequence(1, maxRound)}"
+        th:each="r : ${#numbers.sequence(minRoundNumber, maxRound)}"
         th:value="${r}"
         th:selected="${r == viewingRound}"
         th:text="${r == currentRound ? 'GW ' + r + ' (Current)' : 'GW ' + r}"

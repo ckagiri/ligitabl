@@ -37,12 +37,12 @@
                       >🟢 Open</span
                     >
                     <span
-                      th:if="${roundState == 'locked'}"
+                      th:if="${roundState == 'locked' || roundState == 'completed'}"
                       class="text-yellow-600"
                       >🔒 Locked</span
                     >
                     <span
-                      th:if="${roundState == 'completed'}"
+                      th:if="${roundState == 'finalized'}"
                       class="text-blue-600"
                       >📊 Finalized</span
                     >
@@ -70,12 +70,13 @@
             <!-- Round Navigation (only for authenticated users, non-error states) -->
             <div
               th:if="${(isGuest == false || isGuest == null) && (isUserNotFound == false || isUserNotFound == null)}"
+              th:with="minRoundForNav=${canCreateEntry == true ? currentRound : (atRoundNumber != null && atRoundNumber <= currentRound ? atRoundNumber : currentRound)}"
             >
               <div
                 th:replace="~{fragments/round-navigation :: round-nav(
                   '/predictions/user/me', ${viewingRound}, ${currentRound}, ${currentRound},
                         '#prediction-page', 'outerHTML swap:300ms show:window:top',
-                        ${isCurrentRound == false || isCurrentRound == null}, true, 'query', null)}"
+                        ${isCurrentRound == false || isCurrentRound == null}, true, 'query', null, ${minRoundForNav})}"
               ></div>
             </div>
           </div>
@@ -160,8 +161,8 @@
             class="bg-white rounded-lg shadow-sm mb-6"
             x-data="Ligitabl.predictionPage($el)"
             th:attr="data-predictions=${predictionsJson},
-                    data-can-swap=${canSwap},
-                    data-is-initial-prediction=${canCreateEntry},
+                    data-can-swap=${canSwap && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
+                    data-is-initial-prediction=${canCreateEntry && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
                     data-current-standings=${currentStandingsJson},
                     data-fixtures=${fixturesJson},
                     data-current-points=${currentPointsJson},
@@ -179,15 +180,15 @@
             ></div>
 
             <!-- Current Round: Interactive Table -->
-            <th:block th:if="${isCurrentRound == true}">
+            <th:block th:if="${isCurrentRound == true && roundState != 'finalized'}">
               <div
                 th:replace="~{fragments/prediction-table :: interactive-table(alwaysHoverable=false)}"
               ></div>
             </th:block>
 
-            <!-- Historical Rounds: Static Table -->
+            <!-- Historical Rounds: Static Table (past rounds or finalized current round) -->
             <th:block
-              th:if="${isCurrentRound == false || isCurrentRound == null}"
+              th:if="${(isCurrentRound == false || isCurrentRound == null) || roundState == 'finalized'}"
             >
               <div
                 th:replace="~{fragments/prediction-historical-view :: historical-view(
@@ -198,7 +199,7 @@
 
             <!-- Actions Footer -->
             <div
-              th:if="${canSwap || canCreateEntry}"
+              th:if="${(canSwap || canCreateEntry) && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))}"
               x-show="canSwap || isInitialPrediction"
               th:replace="~{fragments/prediction-actions :: actions}"
             ></div>

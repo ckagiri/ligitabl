@@ -255,6 +255,7 @@ public class UserPredictionsController {
         // Set model attributes for template
         model.addAttribute("pageTitle", getPageTitle(data));
         model.addAttribute("currentRound", data.currentRound());
+        model.addAttribute("lastRound", data.lastRound());
         model.addAttribute("viewingRound", data.viewingRound());
         model.addAttribute("atRoundNumber", data.atRoundNumber());
         model.addAttribute("isCurrentRound", data.isCurrentRound());
