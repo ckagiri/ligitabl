@@ -79,25 +79,6 @@ public class GetPredictionUseCase {
                 swapStatus);
     }
 
-    private GetPredictionResult buildResultWithoutRound(Season season, PredictionSnapshot snapshot) {
-        GetPredictionResult.SwapStatus swapStatus =
-                resolveSwapStatus(season, snapshot.prediction(), RoundStatus.OPEN);
-        List<PredictionRankDto> enrichedRankings = rankEnricher.enrich(snapshot.rankings());
-
-        return new GetPredictionResult(
-                snapshot.predictionId(),
-                season.getId(),
-                snapshot.atRoundNumber(),
-                0,
-                "UNKNOWN",
-                season.isCompleted(),
-                snapshot.source(),
-                enrichedRankings,
-                snapshot.swaps(),
-                snapshot.lastSwapAt(),
-                swapStatus);
-    }
-
     private Either<GetPredictionError, Round> getCurrentRound(Season season) {
         UUID currentRoundId = season.getCurrentRoundId();
         if (currentRoundId == null) {
