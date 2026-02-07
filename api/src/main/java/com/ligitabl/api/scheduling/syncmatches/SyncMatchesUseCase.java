@@ -157,6 +157,12 @@ public class SyncMatchesUseCase {
         var apiMatches = fetchedData.matches();
         var existingMatches = context.existingMatches();
 
+        log.debug(
+                "Updating matches: apiMatches={}, existingMatches={}, roundId={}",
+                apiMatches.size(),
+                existingMatches.size(),
+                context.round().getId());
+
         var finishedMatchIds = new ArrayList<UUID>();
         int matchesUpdated = 0;
 
@@ -173,7 +179,15 @@ public class SyncMatchesUseCase {
                     if (updated.becameFinished()) {
                         finishedMatchIds.add(updated.match().getId());
                     }
+                } else {
+                    log.debug(
+                            "No changes for match clientId={}, status={}, kickOff={}",
+                            existing.getClientId(),
+                            existing.getStatus(),
+                            existing.getKickOff());
                 }
+            } else {
+                log.debug("No existing match found for apiMatchId={}", apiMatch.id());
             }
         }
 
@@ -262,9 +276,10 @@ public class SyncMatchesUseCase {
         var previousStatus = existing.getStatus();
         var newStatus = mapToDomainStatus(apiMatch.status());
 
-        boolean hasChanged = previousStatus != newStatus || scoreChanged(existing, apiMatch.score());
+        boolean statusChanged = previousStatus != newStatus;
+        boolean scoreChanged = hasScoreChanged(existing, apiMatch.score());
 
-        if (!hasChanged) {
+        if (!statusChanged && !scoreChanged) {
             return new UpdateResult(existing, false, false);
         }
 
@@ -275,34 +290,42 @@ public class SyncMatchesUseCase {
         if (apiMatch.matchday() != null) {
             existing.setMatchday(apiMatch.matchday());
         }
+        applyScore(existing, apiMatch.score());
 
-        return new UpdateResult(existing, hasChanged, becameFinished);
+        return new UpdateResult(existing, true, becameFinished);
     }
 
-    private boolean scoreChanged(Match existing, Score apiScore) {
-        if (apiScore == null || apiScore.fullTime() == null) {
-            return false;
-        }
-
-        Integer apiHomeGoals = apiScore.fullTime().home();
-        Integer apiAwayGoals = apiScore.fullTime().away();
-
-        if (apiHomeGoals == null || apiAwayGoals == null) {
+    private boolean hasScoreChanged(Match existing, Score apiScore) {
+        var apiGoals = extractGoals(apiScore);
+        if (apiGoals == null) {
             return false;
         }
 
         var existingScore = existing.getScore();
         if (existingScore == null) {
-            existing.setScore(apiHomeGoals, apiAwayGoals);
             return true;
         }
 
-        boolean changed = existingScore.getHomeGoals() != apiHomeGoals || existingScore.getAwayGoals() != apiAwayGoals;
-        if (changed) {
-            existing.setScore(apiHomeGoals, apiAwayGoals);
-        }
+        return existingScore.getHomeGoals() != apiGoals[0] || existingScore.getAwayGoals() != apiGoals[1];
+    }
 
-        return changed;
+    private void applyScore(Match existing, Score apiScore) {
+        var apiGoals = extractGoals(apiScore);
+        if (apiGoals != null) {
+            existing.setScore(apiGoals[0], apiGoals[1]);
+        }
+    }
+
+    private Integer[] extractGoals(Score apiScore) {
+        if (apiScore == null || apiScore.fullTime() == null) {
+            return null;
+        }
+        Integer home = apiScore.fullTime().home();
+        Integer away = apiScore.fullTime().away();
+        if (home == null || away == null) {
+            return null;
+        }
+        return new Integer[] { home, away };
     }
 
     private MatchStatus mapToDomainStatus(String matchStatus) {
