@@ -10,8 +10,8 @@ import java.time.OffsetDateTime;
  * - All matches complete → Immediate (trigger finalization)
  * - Season complete → Every 24 hours (daily check for new season)
  * - No upcoming matches → Every 12 hours (twice daily - international break)
- * - Live matches → Every 3 minutes
- * - Kickoff ≤ 10 min → Every 3 minutes
+ * - Live matches → Every 90 seconds
+ * - Kickoff ≤ 10 min → Every 1 minute
  * - Kickoff ≤ 60 min → Every 10 minutes
  * - Kickoff < 6 hours → Every 1 hour
  * - Default → Every 6 hours
@@ -54,7 +54,7 @@ public class SyncFrequencyCalculator {
 
         // PRIORITY 4: Live matches - sync frequently
         if (hasLiveMatches) {
-            return NextSyncSchedule.minutes(3, "Live matches in progress");
+            return NextSyncSchedule.seconds(90, "Live matches in progress");
         }
 
         // PRIORITY 5: No scheduled matches remaining (all postponed/cancelled)
@@ -72,12 +72,12 @@ public class SyncFrequencyCalculator {
 
         // Handle negative values (kickoff in past - shouldn't happen but be defensive)
         if (minutesUntilKickoff < 0) {
-            return NextSyncSchedule.minutes(3, "Kickoff time passed - checking immediately");
+            return NextSyncSchedule.minutes(1, "Kickoff time passed - checking immediately");
         }
 
         // Imminent kickoff (≤ 10 minutes)
         if (minutesUntilKickoff <= 10) {
-            return NextSyncSchedule.minutes(3, String.format("Kickoff in %d minutes (imminent)", minutesUntilKickoff));
+            return NextSyncSchedule.minutes(1, String.format("Kickoff in %d minutes (imminent)", minutesUntilKickoff));
         }
 
         // Soon kickoff (≤ 60 minutes)

@@ -56,9 +56,8 @@ public class StandingsPersistenceAdapter implements StandingsRepo {
         }
 
         return standings.get().getRankings().stream()
-                .collect(Collectors.toMap(
-                        rank -> rank.getRanking().getCode(),
-                        rank -> rank.getRanking().getPosition()));
+                .collect(Collectors.toMap(rank -> rank.getRanking().getCode(), rank -> rank.getRanking()
+                        .getPosition()));
     }
 
     @Override
@@ -69,9 +68,8 @@ public class StandingsPersistenceAdapter implements StandingsRepo {
         }
 
         return standings.get().getRankings().stream()
-                .collect(Collectors.toMap(
-                        rank -> rank.getRanking().getCode(),
-                        rank -> rank.getMetadata().getPoints()));
+                .collect(Collectors.toMap(rank -> rank.getRanking().getCode(), rank -> rank.getMetadata()
+                        .getPoints()));
     }
 
     @Override

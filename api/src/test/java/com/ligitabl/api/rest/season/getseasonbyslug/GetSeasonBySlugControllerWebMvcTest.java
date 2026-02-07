@@ -16,9 +16,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.ligitabl.api.rest.season.SeasonDto;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.NotFoundError;
-import com.ligitabl.api.rest.season.SeasonDto;
 
 @WebMvcTest(GetSeasonBySlugController.class)
 class GetSeasonBySlugControllerWebMvcTest {

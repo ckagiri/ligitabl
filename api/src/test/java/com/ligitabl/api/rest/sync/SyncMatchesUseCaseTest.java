@@ -8,36 +8,34 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
-import com.ligitabl.api.scheduling.syncmatches.SyncMatchesUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.client.FootballDataApiError;
 import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.client.footballdata.MatchDto;
 import com.ligitabl.api.client.footballdata.MatchesResponse;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.scheduling.syncmatches.AsyncStandingsService;
+import com.ligitabl.api.scheduling.syncmatches.SyncMatchesUseCase;
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.CompetitionSlug;
+import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
-import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.MatchRepo;
-import com.ligitabl.model.repo.RoundRepo;
-import com.ligitabl.model.repo.SeasonRepo;
 
 /**
  * Ported from .art/testing/SyncMatchesUseCaseTest.java.
@@ -52,13 +50,7 @@ class SyncMatchesUseCaseTest {
     private FootballDataClient footballDataClient;
 
     @Mock
-    private SeasonRepo seasonRepo;
-
-    @Mock
-    private CompetitionRepo competitionRepo;
-
-    @Mock
-    private RoundRepo roundRepo;
+    private HierarchyValidator hierarchyValidator;
 
     @Mock
     private MatchRepo matchRepo;
@@ -80,9 +72,7 @@ class SyncMatchesUseCaseTest {
 
         useCase = new SyncMatchesUseCase(
                 footballDataClient,
-                seasonRepo,
-                competitionRepo,
-                roundRepo,
+                hierarchyValidator,
                 matchRepo,
                 standingsService,
                 new CompetitionDefaults(COMPETITION_SLUG));
@@ -94,23 +84,28 @@ class SyncMatchesUseCaseTest {
 
     @Test
     void shouldHandleCompetitionNotFound() {
-        when(competitionRepo.findBySlug(COMPETITION_SLUG)).thenReturn(Optional.empty());
+        when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
+                .thenReturn(Either.left(UseCaseErrors.notFound("Competition", COMPETITION_SLUG)));
 
         var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(SyncMatchesUseCase.SyncMatchesError.CompetitionNotFound.class);
+        assertThat(result.getLeft()).isInstanceOf(SyncMatchesUseCase.SyncMatchesError.HierarchyError.class);
+        var error = (SyncMatchesUseCase.SyncMatchesError.HierarchyError) result.getLeft();
+        assertThat(error.error().getMessage()).contains("Competition");
     }
 
     @Test
     void shouldHandleSeasonNotFound() {
-        when(competitionRepo.findBySlug(COMPETITION_SLUG)).thenReturn(Optional.of(createCompetition()));
-        when(seasonRepo.findActiveSeason(COMPETITION_SLUG)).thenReturn(Optional.empty());
+        when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
+                .thenReturn(Either.left(UseCaseErrors.validation("Competition has no active season")));
 
         var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(SyncMatchesUseCase.SyncMatchesError.SeasonNotFound.class);
+        assertThat(result.getLeft()).isInstanceOf(SyncMatchesUseCase.SyncMatchesError.HierarchyError.class);
+        var error = (SyncMatchesUseCase.SyncMatchesError.HierarchyError) result.getLeft();
+        assertThat(error.error().getMessage()).contains("active season");
     }
 
     @Test
@@ -120,13 +115,12 @@ class SyncMatchesUseCaseTest {
         var existingMatches = List.of(
                 createMatch(1, MatchStatus.SCHEDULED, OffsetDateTime.now().plusHours(10)));
 
-        when(competitionRepo.findBySlug(COMPETITION_SLUG)).thenReturn(Optional.of(createCompetition()));
-        when(seasonRepo.findActiveSeason(COMPETITION_SLUG)).thenReturn(Optional.of(season));
-        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches);
 
         when(footballDataClient.getMatchesInDateRange(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(Either.left(new FootballDataClient.ApiError.NetworkError("Network error", null)));
+                .thenReturn(Either.left(new FootballDataApiError.NetworkError("Network error", null)));
 
         var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
 
@@ -143,9 +137,8 @@ class SyncMatchesUseCaseTest {
         var m2 = createMatch(2, MatchStatus.SCHEDULED, OffsetDateTime.now().plusHours(11));
         var existingMatches = List.of(m1, m2);
 
-        when(competitionRepo.findBySlug(COMPETITION_SLUG)).thenReturn(Optional.of(createCompetition()));
-        when(seasonRepo.findActiveSeason(COMPETITION_SLUG)).thenReturn(Optional.of(season));
-        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
 
         var apiMatches = List.of(
                 new MatchDto(1L, OffsetDateTime.now(), "FINISHED", 1, "REGULAR_SEASON", null, null, null),
@@ -174,9 +167,8 @@ class SyncMatchesUseCaseTest {
         var live = createMatch(1, MatchStatus.LIVE, OffsetDateTime.now().minusMinutes(10));
         var existingMatches = List.of(live);
 
-        when(competitionRepo.findBySlug(COMPETITION_SLUG)).thenReturn(Optional.of(createCompetition()));
-        when(seasonRepo.findActiveSeason(COMPETITION_SLUG)).thenReturn(Optional.of(season));
-        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches).thenReturn(existingMatches);
 
         var apiMatches =
@@ -188,7 +180,7 @@ class SyncMatchesUseCaseTest {
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().allMatchesComplete()).isFalse();
-        assertThat(result.get().nextSchedule().delay().toMinutes()).isEqualTo(3);
+        assertThat(result.get().nextSchedule().delay()).isEqualTo(Duration.ofSeconds(90));
 
         verify(standingsService, never()).recalculateAsync(any(UUID.class), anyInt());
     }
@@ -200,9 +192,8 @@ class SyncMatchesUseCaseTest {
         var existingMatches = List.of(
                 createMatch(1, MatchStatus.SCHEDULED, OffsetDateTime.now().plusHours(10)));
 
-        when(competitionRepo.findBySlug(COMPETITION_SLUG)).thenReturn(Optional.of(createCompetition()));
-        when(seasonRepo.findActiveSeason(COMPETITION_SLUG)).thenReturn(Optional.of(season));
-        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches).thenReturn(existingMatches);
 
         when(footballDataClient.getMatchesInDateRange(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
@@ -213,16 +204,6 @@ class SyncMatchesUseCaseTest {
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().matchesProcessed()).isZero();
         assertThat(result.get().nextSchedule().delay().toHours()).isEqualTo(12);
-    }
-
-    private Competition createCompetition() {
-        return Competition.builder()
-                .id(competitionId)
-                .slug(CompetitionSlug.of(COMPETITION_SLUG))
-                .code(COMPETITION_CODE)
-                .name("Premier League")
-                .activeSeasonId(seasonId)
-                .build();
     }
 
     private Season createSeason() {

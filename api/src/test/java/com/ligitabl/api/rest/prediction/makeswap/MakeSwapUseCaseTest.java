@@ -144,13 +144,13 @@ class MakeSwapUseCaseTest {
     void shouldValidateNextRound_whenPredictionAlreadyOnNextRound() {
         SwapCommand command = new SwapCommand("ARS", "LIV");
         Round nextRound = Round.builder()
-            .id(UUID.randomUUID())
-            .seasonId(seasonId)
-            .position(11)
-            .finalized(false)
-            .name("Round 11")
-            .slug("round-11")
-            .build();
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .position(11)
+                .finalized(false)
+                .name("Round 11")
+                .slug("round-11")
+                .build();
         prediction.setAtRoundNumber(11);
         round = createRound(true, 10);
         season.setCurrentRoundId(round.getId());
@@ -168,8 +168,7 @@ class MakeSwapUseCaseTest {
         assertTrue(result.isRight());
         verify(matchRepo, never()).findByRoundId(round.getId());
         verify(matchRepo).findByRoundId(nextRound.getId());
-        verify(predictionRepo)
-                .save(argThat(p -> p.getAtRoundNumber() == nextRound.getPosition()));
+        verify(predictionRepo).save(argThat(p -> p.getAtRoundNumber() == nextRound.getPosition()));
     }
 
     private Season createSeason() {

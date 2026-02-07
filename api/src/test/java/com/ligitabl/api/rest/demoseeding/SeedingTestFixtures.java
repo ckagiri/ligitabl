@@ -6,8 +6,8 @@ import java.time.OffsetDateTime;
 import java.util.*;
 import java.util.stream.IntStream;
 
-import com.ligitabl.api.runners.demoseeding.SeedingConfig;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundResult;
+import com.ligitabl.api.runners.demoseeding.SeedingConfig;
 import com.ligitabl.model.domain.*;
 
 public class SeedingTestFixtures {

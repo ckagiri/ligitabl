@@ -4,6 +4,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ligitabl.api.client.FootballDataApiError;
 import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
@@ -34,7 +35,7 @@ public class AdvanceMatchdayUseCase {
 
         record SeasonNotFound(String competitionCode) implements AdvanceRoundError {}
 
-        record ApiError(FootballDataClient.ApiError error) implements AdvanceRoundError {}
+        record ApiError(FootballDataApiError error) implements AdvanceRoundError {}
     }
 
     @Transactional

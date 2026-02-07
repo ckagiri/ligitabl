@@ -14,6 +14,10 @@ public record NextSyncSchedule(Duration delay, String reason) {
         return new NextSyncSchedule(Duration.ofMinutes(minutes), reason);
     }
 
+    public static NextSyncSchedule seconds(long seconds, String reason) {
+        return new NextSyncSchedule(Duration.ofSeconds(seconds), reason);
+    }
+
     public static NextSyncSchedule hours(long hours, String reason) {
         return new NextSyncSchedule(Duration.ofHours(hours), reason);
     }

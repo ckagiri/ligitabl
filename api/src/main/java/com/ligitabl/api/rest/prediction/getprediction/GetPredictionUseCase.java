@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.prediction.shared.RankingSource;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundStatus;
@@ -71,25 +72,6 @@ public class GetPredictionUseCase {
                 snapshot.atRoundNumber(),
                 currentRound.getPosition(),
                 roundStatus.name(),
-                season.isCompleted(),
-                snapshot.source(),
-                enrichedRankings,
-                snapshot.swaps(),
-                snapshot.lastSwapAt(),
-                swapStatus);
-    }
-
-    private GetPredictionResult buildResultWithoutRound(Season season, PredictionSnapshot snapshot) {
-        GetPredictionResult.SwapStatus swapStatus =
-                resolveSwapStatus(season, snapshot.prediction(), RoundStatus.OPEN);
-        List<PredictionRankDto> enrichedRankings = rankEnricher.enrich(snapshot.rankings());
-
-        return new GetPredictionResult(
-                snapshot.predictionId(),
-                season.getId(),
-                snapshot.atRoundNumber(),
-                0,
-                "UNKNOWN",
                 season.isCompleted(),
                 snapshot.source(),
                 enrichedRankings,

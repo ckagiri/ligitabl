@@ -4,7 +4,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.RoundSwap;
+import com.ligitabl.api.rest.prediction.shared.RankingSource;
 
 public record GetPredictionResult(
         UUID predictionId,

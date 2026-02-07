@@ -16,9 +16,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import com.ligitabl.api.rest.team.TeamDto;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
-import com.ligitabl.api.rest.team.TeamDto;
 
 @WebMvcTest(controllers = GetTeamByIdController.class)
 class GetTeamByIdControllerWebMvcTest {

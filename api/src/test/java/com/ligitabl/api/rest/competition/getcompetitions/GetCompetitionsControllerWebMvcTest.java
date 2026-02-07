@@ -15,8 +15,8 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.rest.competition.CompetitionDto;
+import com.ligitabl.api.shared.Either;
 
 @WebMvcTest(GetCompetitionsController.class)
 class GetCompetitionsControllerWebMvcTest {

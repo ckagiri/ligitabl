@@ -5,8 +5,8 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.api.rest.standings.StandingsEntryDto;
+import com.ligitabl.api.shared.exceptions.UseCaseException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

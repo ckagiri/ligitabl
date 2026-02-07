@@ -26,6 +26,10 @@ public class HierarchyValidator {
 
     public record HierarchyContext(Season season, Round round) {}
 
+    public Either<UseCaseError, HierarchyContext> resolveHierarchy(String competitionIdentifier) {
+        return resolveHierarchy(competitionIdentifier, null);
+    }
+
     public Either<UseCaseError, HierarchyContext> resolveHierarchy(
             String competitionIdentifier, Integer roundPosition) {
         return validateCompetition(competitionIdentifier)

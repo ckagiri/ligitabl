@@ -20,6 +20,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.prediction.shared.RankingSource;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.model.domain.TeamRank;

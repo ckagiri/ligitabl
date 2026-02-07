@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import com.ligitabl.api.rest.competition.CompetitionDto;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.rest.competition.CompetitionDto;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.repo.CompetitionRepo;

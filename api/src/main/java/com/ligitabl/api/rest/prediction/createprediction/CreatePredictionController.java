@@ -105,8 +105,7 @@ public class CreatePredictionController {
                             "max_rounds",
                             e.maxRounds()));
 
-            case CreatePredictionError.TransactionFailed e -> ResponseEntity.status(
-                            HttpStatus.INTERNAL_SERVER_ERROR)
+            case CreatePredictionError.TransactionFailed e -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(
                             "error", "TRANSACTION_FAILED",
                             "message", "Failed to create prediction",

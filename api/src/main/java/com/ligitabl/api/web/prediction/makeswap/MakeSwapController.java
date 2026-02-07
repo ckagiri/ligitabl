@@ -1,23 +1,25 @@
 package com.ligitabl.api.web.prediction.makeswap;
 
-import com.ligitabl.api.auth.security.WebUserDetails;
-import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.rest.prediction.makeswap.MakeSwapUseCase;
-import com.ligitabl.api.rest.prediction.makeswap.SwapCommand;
-import com.ligitabl.api.rest.prediction.makeswap.SwapError;
-import com.ligitabl.api.rest.prediction.makeswap.SwapResult;
-import com.ligitabl.api.web.shared.security.WebSecurity;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.security.Principal;
+import java.util.Map;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import java.security.Principal;
-import java.util.Map;
+import com.ligitabl.api.auth.security.WebUserDetails;
+import com.ligitabl.api.rest.prediction.makeswap.MakeSwapUseCase;
+import com.ligitabl.api.rest.prediction.makeswap.SwapCommand;
+import com.ligitabl.api.rest.prediction.makeswap.SwapError;
+import com.ligitabl.api.rest.prediction.makeswap.SwapResult;
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.web.shared.security.WebSecurity;
+
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Controller("webMakeSwapController")
 @Slf4j
@@ -29,18 +31,18 @@ public class MakeSwapController {
     @PostMapping("/swap")
     @ResponseBody
     public Map<String, Object> swapTeams(
-            @RequestBody MakeSwapRequest request,
-            Principal principal,
-            HttpServletResponse response
-    ) {
+            @RequestBody MakeSwapRequest request, Principal principal, HttpServletResponse response) {
         WebUserDetails userDetails = WebSecurity.resolveUser(principal);
         if (userDetails == null) {
             response.setStatus(401);
             return Map.of("success", false, "message", "Authentication required");
         }
 
-        log.info("POST /seasonprediction/swap - user: {}, teamA: {}, teamB: {}",
-            userDetails.getEmail(), request.teamACode(), request.teamBCode());
+        log.info(
+                "POST /seasonprediction/swap - user: {}, teamA: {}, teamB: {}",
+                userDetails.getEmail(),
+                request.teamACode(),
+                request.teamBCode());
 
         SwapCommand command = new SwapCommand(request.teamACode(), request.teamBCode());
 
@@ -55,8 +57,7 @@ public class MakeSwapController {
                 updated -> {
                     log.info("Swapped teams successfully");
                     return Map.of("success", true, "message", "Prediction updated successfully");
-                }
-        );
+                });
     }
 
     /**
@@ -82,13 +83,11 @@ public class MakeSwapController {
             case SwapError.NoPredictionFound __ -> "No prediction found for current season";
             case SwapError.RoundNotFound e -> "Round " + e.roundPosition() + " not found";
             case SwapError.RoundNotOpen e -> "Cannot swap when round is " + e.roundStatus();
-            case SwapError.CooldownActive e ->
-                    String.format("Next swap available in %.1fh", e.hoursRemaining());
+            case SwapError.CooldownActive e -> String.format("Next swap available in %.1fh", e.hoursRemaining());
             case SwapError.InvalidTeamCode e -> "Invalid team code: " + e.code();
-            case SwapError.TeamsNotFound e ->
-                    "Teams not found in your prediction: " + e.teamACode() + ", " + e.teamBCode();
+            case SwapError.TeamsNotFound e -> "Teams not found in your prediction: " + e.teamACode() + ", "
+                    + e.teamBCode();
             case SwapError.SeasonCompleted __ -> "Cannot swap in completed season";
         };
     }
-
 }

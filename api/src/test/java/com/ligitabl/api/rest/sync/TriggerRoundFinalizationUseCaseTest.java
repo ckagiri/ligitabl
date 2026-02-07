@@ -13,17 +13,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.ligitabl.api.scheduling.syncmatches.TriggerRoundFinalizationUseCase;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.notification.AdminNotificationService;
-import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundError;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundResult;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundUseCase;
+import com.ligitabl.api.scheduling.syncmatches.TriggerRoundFinalizationUseCase;
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;

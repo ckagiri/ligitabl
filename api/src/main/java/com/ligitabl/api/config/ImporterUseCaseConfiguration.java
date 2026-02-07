@@ -5,11 +5,11 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
 
 import com.ligitabl.api.client.FootballDataClient;
+import com.ligitabl.api.runners.importer.ImportMatchesUseCase;
 import com.ligitabl.api.runners.importer.event.ImportEventPublisher;
 import com.ligitabl.api.runners.importer.event.LoggingImportEventPublisher;
 import com.ligitabl.api.runners.importer.footballdata.FootballDataClientAdapter;
 import com.ligitabl.api.runners.importer.footballdata.FootballDataGateway;
-import com.ligitabl.api.runners.importer.ImportMatchesUseCase;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;

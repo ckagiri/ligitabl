@@ -28,26 +28,10 @@ public class FootballDataClient {
 
     private final WebClient webClient;
 
-    public sealed interface ApiError {
-        record NetworkError(String message, Throwable cause) implements ApiError {}
-
-        record RateLimitExceeded(String message) implements ApiError {}
-
-        record NotFound(String message) implements ApiError {}
-
-        record Unauthorized(String message) implements ApiError {}
-
-        record ServerError(String message, int statusCode) implements ApiError {}
-
-        record UnknownError(String message, Throwable cause) implements ApiError {}
-
-        record UnexpectedError(String message) implements ApiError {}
-    }
-
     /**
      * Get live matches for a competition
      */
-    public Either<ApiError, MatchesResponse> getLiveMatches(String competitionCode) {
+    public Either<FootballDataApiError, MatchesResponse> getLiveMatches(String competitionCode) {
         log.debug("Fetching live matches: competition={}", competitionCode);
 
         try {
@@ -63,7 +47,7 @@ public class FootballDataClient {
                     .block();
 
             if (response == null || response.matches() == null) {
-                return Either.left(new ApiError.UnexpectedError("Null response from API"));
+                return Either.left(new FootballDataApiError.UnexpectedError("Null response from API"));
             }
 
             log.debug("Fetched {} live matches", response.matches().size());
@@ -80,7 +64,7 @@ public class FootballDataClient {
      * Used when: Checking imminent/soon kickoffs (today only)
      * Endpoint: GET /matches?competitions={code}&date={date}
      */
-    public Either<ApiError, MatchesResponse> getMatchesForDate(String competitionCode, LocalDate date) {
+    public Either<FootballDataApiError, MatchesResponse> getMatchesForDate(String competitionCode, LocalDate date) {
         log.debug("Fetching matches for date: competition={}, date={}", competitionCode, date);
 
         try {
@@ -97,7 +81,7 @@ public class FootballDataClient {
                     .block();
 
             if (response == null || response.matches() == null) {
-                return Either.left(new ApiError.UnexpectedError("Null response from API"));
+                return Either.left(new FootballDataApiError.UnexpectedError("Null response from API"));
             }
 
             log.debug("Fetched {} upcoming matches", response.matches().size());
@@ -108,7 +92,7 @@ public class FootballDataClient {
         }
     }
 
-    public Either<ApiError, MatchesResponse> getMatchesForCompetition(String competitionCode) {
+    public Either<FootballDataApiError, MatchesResponse> getMatchesForCompetition(String competitionCode) {
         log.info("Fetching matches for competition: {}", competitionCode);
 
         try {
@@ -123,7 +107,7 @@ public class FootballDataClient {
                     .block();
 
             if (response == null || response.matches() == null) {
-                return Either.left(new ApiError.UnexpectedError("Null response from API"));
+                return Either.left(new FootballDataApiError.UnexpectedError("Null response from API"));
             }
 
             log.debug("Fetched {} competition matches", response.matches().size());
@@ -139,7 +123,7 @@ public class FootballDataClient {
      * Used when: Looking ahead (today + tomorrow for default check)
      * Endpoint: GET /matches?competitions={code}&dateFrom={from}&dateTo={to}
      */
-    public Either<ApiError, MatchesResponse> getMatchesInDateRange(
+    public Either<FootballDataApiError, MatchesResponse> getMatchesInDateRange(
             String competitionCode, LocalDate dateFrom, LocalDate dateTo) {
         log.debug("Fetching matches in range: competition={}, from={}, to={}", competitionCode, dateFrom, dateTo);
 
@@ -158,7 +142,7 @@ public class FootballDataClient {
                     .block();
 
             if (response == null || response.matches() == null) {
-                return Either.left(new ApiError.UnexpectedError("Null response from API"));
+                return Either.left(new FootballDataApiError.UnexpectedError("Null response from API"));
             }
             log.debug("Fetched {} upcoming matches", response.matches().size());
 
@@ -171,7 +155,7 @@ public class FootballDataClient {
     /**
      * Get matches for today and tomorrow
      */
-    public Either<ApiError, MatchesResponse> getUpcomingMatches(String competitionCode) {
+    public Either<FootballDataApiError, MatchesResponse> getUpcomingMatches(String competitionCode) {
         LocalDate today = LocalDate.now();
         LocalDate dayAfterTomorrow = today.plusDays(2);
 
@@ -195,7 +179,7 @@ public class FootballDataClient {
                     .block();
 
             if (response == null) {
-                return Either.left(new ApiError.UnknownError("Null response from API", null));
+                return Either.left(new FootballDataApiError.UnknownError("Null response from API", null));
             }
 
             log.debug("Fetched {} upcoming matches", response.matches().size());
@@ -210,7 +194,7 @@ public class FootballDataClient {
     /**
      * Get competition information including current matchday
      */
-    public Either<ApiError, CompetitionResponse> getCompetition(String competitionCode) {
+    public Either<FootballDataApiError, CompetitionResponse> getCompetition(String competitionCode) {
         log.debug("Fetching competition: code={}", competitionCode);
 
         try {
@@ -222,7 +206,7 @@ public class FootballDataClient {
                     .block();
 
             if (response == null) {
-                return Either.left(new ApiError.UnknownError("Null response from API", null));
+                return Either.left(new FootballDataApiError.UnknownError("Null response from API", null));
             }
 
             log.debug(
@@ -237,26 +221,27 @@ public class FootballDataClient {
         }
     }
 
-    private <T> Either<ApiError, T> handleException(Exception e) {
+    private <T> Either<FootballDataApiError, T> handleException(Exception e) {
         if (e instanceof WebClientResponseException.Unauthorized unauthorized) {
             log.error("API authentication failed", e);
-            return Either.left(new ApiError.Unauthorized("Invalid API token: " + unauthorized.getMessage()));
+            return Either.left(
+                    new FootballDataApiError.Unauthorized("Invalid API token: " + unauthorized.getMessage()));
         } else if (e instanceof WebClientResponseException.TooManyRequests tooMany) {
             log.warn("API rate limit exceeded", e);
-            return Either.left(new ApiError.RateLimitExceeded(
+            return Either.left(new FootballDataApiError.RateLimitExceeded(
                     "Rate limit exceeded: " + tooMany.getHeaders().getFirst("X-Requests-Available")));
         } else if (e instanceof WebClientResponseException.NotFound notFound) {
             log.error("Competition not found", e);
-            return Either.left(new ApiError.NotFound(notFound.getMessage()));
+            return Either.left(new FootballDataApiError.NotFound(notFound.getMessage()));
         } else if (e instanceof WebClientResponseException webClient) {
             if (webClient.getStatusCode().is5xxServerError()) {
                 log.error("API service unavailable", e);
-                return Either.left(new ApiError.ServerError(
+                return Either.left(new FootballDataApiError.ServerError(
                         webClient.getMessage(), webClient.getStatusCode().value()));
             }
-            return Either.left(new ApiError.UnknownError(webClient.getMessage(), webClient));
+            return Either.left(new FootballDataApiError.UnknownError(webClient.getMessage(), webClient));
         } else {
-            return Either.left(new ApiError.NetworkError("Network error: " + e.getMessage(), e));
+            return Either.left(new FootballDataApiError.NetworkError("Network error: " + e.getMessage(), e));
         }
     }
 }

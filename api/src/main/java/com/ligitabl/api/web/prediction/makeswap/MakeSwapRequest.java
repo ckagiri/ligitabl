@@ -16,4 +16,3 @@ public record MakeSwapRequest(String teamACode, String teamBCode) {
         this.teamBCode = Objects.requireNonNull(teamBCode, "teamBCode is required");
     }
 }
-

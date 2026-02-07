@@ -13,11 +13,11 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import com.ligitabl.api.rest.season.SeasonDto;
+import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.validation.RequestValidator;
-import com.ligitabl.api.rest.season.SeasonDto;
-import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Season;

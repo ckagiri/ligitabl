@@ -1,12 +1,12 @@
 package com.ligitabl.api.shared.exceptions;
 
+import java.util.Objects;
+
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-
-import java.util.Objects;
 
 import com.ligitabl.api.shared.errors.*;
 

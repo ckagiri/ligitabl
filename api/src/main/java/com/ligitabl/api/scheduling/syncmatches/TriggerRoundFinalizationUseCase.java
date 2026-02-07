@@ -6,9 +6,9 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.notification.AdminNotificationService;
-import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundError;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundUseCase;
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;

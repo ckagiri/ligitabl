@@ -7,19 +7,15 @@ import java.util.UUID;
  * Represents the context of a user viewing predictions.
  * Encapsulates user resolution logic and state.
  */
-public record UserContext(
-        UUID userId,
-        UserType userType,
-        boolean hasContestEntry
-) {
+public record UserContext(UUID userId, UserType userType, boolean hasContestEntry) {
     /**
      * Types of users in the prediction context.
      */
     public enum UserType {
-        AUTHENTICATED,    // Logged in user viewing own predictions
-        GUEST,            // Not logged in
-        VIEWING_OTHER,    // Viewing another user's predictions
-        USER_NOT_FOUND    // Target user doesn't exist
+        AUTHENTICATED, // Logged in user viewing own predictions
+        GUEST, // Not logged in
+        VIEWING_OTHER, // Viewing another user's predictions
+        USER_NOT_FOUND // Target user doesn't exist
     }
 
     public UserContext {

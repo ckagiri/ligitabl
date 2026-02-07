@@ -1,14 +1,28 @@
 package com.ligitabl.api.web.prediction.userpredictions;
 
+import java.security.Principal;
+import java.time.Instant;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.*;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.shared.command.GetUserPredictionCommand;
 import com.ligitabl.api.web.shared.dto.response.FixtureDto;
 import com.ligitabl.api.web.shared.dto.response.TeamRankDto;
 import com.ligitabl.api.web.shared.error.UseCaseError;
 import com.ligitabl.api.web.shared.mapper.ErrorViewMapper;
-import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Match;
@@ -17,21 +31,10 @@ import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.*;
+
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.ui.Model;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.*;
-
-import java.security.Principal;
-import java.time.Instant;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 @Controller
 @RequestMapping("/predictions/user")
@@ -48,7 +51,7 @@ public class UserPredictionsController {
     private final ErrorViewMapper errorMapper;
 
     /**
-    * GET /predictions/user/me - View current user's prediction.
+     * GET /predictions/user/me - View current user's prediction.
      *
      * <p>Resolves user from Principal:
      * <ul>
@@ -65,8 +68,10 @@ public class UserPredictionsController {
             HttpServletResponse response,
             @RequestHeader(value = "HX-Request", required = false) String hxRequest) {
 
-        log.info("GET /predictions/user/me - round: {}, user: {}",
-                round, principal != null ? principal.getName() : "guest");
+        log.info(
+                "GET /predictions/user/me - round: {}, user: {}",
+                round,
+                principal != null ? principal.getName() : "guest");
 
         // Redirect guests to /guest endpoint - /me implies "my account"
         if (principal == null) {
@@ -88,9 +93,7 @@ public class UserPredictionsController {
                 getUserPredictionUseCase.execute(command);
 
         return result.fold(
-                error -> handleError(error, model, response, hxRequest),
-                data -> handleSuccess(data, model, hxRequest)
-        );
+                error -> handleError(error, model, response, hxRequest), data -> handleSuccess(data, model, hxRequest));
     }
 
     /**
@@ -103,8 +106,7 @@ public class UserPredictionsController {
             @RequestParam(required = false) Integer round,
             Model model,
             HttpServletResponse response,
-            @RequestHeader(value = "HX-Request", required = false) String hxRequest
-    ) {
+            @RequestHeader(value = "HX-Request", required = false) String hxRequest) {
         log.info("GET /predictions/user/guest - round: {}", round);
 
         UUID activeSeasonId = getActiveSeason().getId();
@@ -114,11 +116,8 @@ public class UserPredictionsController {
                 getUserPredictionUseCase.execute(command);
 
         return result.fold(
-                error -> handleError(error, model, response, hxRequest),
-                data -> handleSuccess(data, model, hxRequest)
-        );
+                error -> handleError(error, model, response, hxRequest), data -> handleSuccess(data, model, hxRequest));
     }
-
 
     /**
      * GET /predictions/user/{userId} - View specific user's predictions.
@@ -137,10 +136,12 @@ public class UserPredictionsController {
             Principal principal,
             Model model,
             HttpServletResponse response,
-            @RequestHeader(value = "HX-Request", required = false) String hxRequest
-    ) {
-        log.info("GET /predictions/user/{} - round: {}, viewer: {}",
-                publicUserId, round, principal != null ? principal.getName() : "guest");
+            @RequestHeader(value = "HX-Request", required = false) String hxRequest) {
+        log.info(
+                "GET /predictions/user/{} - round: {}, viewer: {}",
+                publicUserId,
+                round,
+                principal != null ? principal.getName() : "guest");
 
         // Check if viewing own predictions
         if (principal != null && principal.getName().equals(publicUserId)) {
@@ -153,9 +154,7 @@ public class UserPredictionsController {
                 getUserPredictionUseCase.execute(command);
 
         return result.fold(
-                error -> handleError(error, model, response, hxRequest),
-                data -> handleSuccess(data, model, hxRequest)
-        );
+                error -> handleError(error, model, response, hxRequest), data -> handleSuccess(data, model, hxRequest));
     }
 
     /**
@@ -180,21 +179,17 @@ public class UserPredictionsController {
         }
 
         UUID targetUserId = user.getId();
-        boolean hasMainContestEntry = mainContestId != null
-                && contestRepo.existsByUserAndContest(targetUserId, mainContestId);
+        boolean hasMainContestEntry =
+                mainContestId != null && contestRepo.existsByUserAndContest(targetUserId, mainContestId);
         String displayName = user.getDisplayName();
 
         if (hasMainContestEntry) {
             // User exists and has prediction
-            return GetUserPredictionCommand.forViewingOtherUser(
-                    targetUserId, activeSeasonId, true, displayName, round
-            );
+            return GetUserPredictionCommand.forViewingOtherUser(targetUserId, activeSeasonId, true, displayName, round);
         }
 
         // User exists but has no prediction yet
-        return GetUserPredictionCommand.forViewingOtherUser(
-                targetUserId, activeSeasonId, false, displayName, round
-        );
+        return GetUserPredictionCommand.forViewingOtherUser(targetUserId, activeSeasonId, false, displayName, round);
     }
 
     /**
@@ -209,15 +204,15 @@ public class UserPredictionsController {
         }
 
         UUID mainContestId = season.getMainContestId();
-        boolean hasMainContestEntry = mainContestId != null
-            && contestRepo.existsByUserAndContest(userId, mainContestId);
-        return GetUserPredictionCommand.forAuthenticatedUser(
-                userId, activeSeasonId, hasMainContestEntry, round
-        );
+        boolean hasMainContestEntry =
+                mainContestId != null && contestRepo.existsByUserAndContest(userId, mainContestId);
+        return GetUserPredictionCommand.forAuthenticatedUser(userId, activeSeasonId, hasMainContestEntry, round);
     }
 
     private UUID resolveAuthenticatedUserId(Principal principal, Model model, HttpServletResponse response) {
-        if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
+        if (principal == null
+                || principal.getName() == null
+                || principal.getName().isBlank()) {
             response.setStatus(401);
             model.addAttribute("error", "Unauthenticated");
             return null;
@@ -225,13 +220,11 @@ public class UserPredictionsController {
 
         try {
             Email email = Email.create(principal.getName());
-            return userRepo.findByEmail(email)
-                    .map(User::getId)
-                    .orElseGet(() -> {
-                        response.setStatus(401);
-                        model.addAttribute("error", "User not found");
-                        return null;
-                    });
+            return userRepo.findByEmail(email).map(User::getId).orElseGet(() -> {
+                response.setStatus(401);
+                model.addAttribute("error", "User not found");
+                return null;
+            });
         } catch (IllegalArgumentException e) {
             response.setStatus(400);
             model.addAttribute("error", e.getMessage());
@@ -242,12 +235,7 @@ public class UserPredictionsController {
     /**
      * Handle use case error.
      */
-    private String handleError(
-            UseCaseError error,
-            Model model,
-            HttpServletResponse response,
-            String hxRequest
-    ) {
+    private String handleError(UseCaseError error, Model model, HttpServletResponse response, String hxRequest) {
         response.setStatus(mapErrorToStatus(error));
         model.addAttribute("error", errorMapper.toResponse(error));
 
@@ -260,11 +248,7 @@ public class UserPredictionsController {
     /**
      * Handle successful use case result.
      */
-    private String handleSuccess(
-            GetUserPredictionUseCase.UserPredictionViewData data,
-            Model model,
-            String hxRequest
-    ) {
+    private String handleSuccess(GetUserPredictionUseCase.UserPredictionViewData data, Model model, String hxRequest) {
         // Convert rankings to DTOs
         List<TeamRankDto> predictions = enrichRankings(data.rankings());
 
@@ -272,8 +256,10 @@ public class UserPredictionsController {
         model.addAttribute("pageTitle", getPageTitle(data));
         model.addAttribute("currentRound", data.currentRound());
         model.addAttribute("viewingRound", data.viewingRound());
+        model.addAttribute("atRoundNumber", data.atRoundNumber());
         model.addAttribute("isCurrentRound", data.isCurrentRound());
         model.addAttribute("roundState", data.roundState().toLowerCase());
+        model.addAttribute("seasonCompleted", data.seasonCompleted());
         model.addAttribute("predictions", predictions);
 
         // Access mode attributes
@@ -293,13 +279,14 @@ public class UserPredictionsController {
         if (data.swapCooldown() != null) {
             var cooldown = data.swapCooldown();
             var now = Instant.now();
-            model.addAttribute("swapStatus", new SwapStatusDTO(
-                    cooldown.canSwap(now),
-                    cooldown.getStatusMessage(now),
-                    cooldown.getLastSwapAtFormatted(),
-                    cooldown.initialPredictionMade(),
-                    cooldown.swapCount()
-            ));
+            model.addAttribute(
+                    "swapStatus",
+                    new SwapStatusDTO(
+                            cooldown.canSwap(now),
+                            cooldown.getStatusMessage(now),
+                            cooldown.getLastSwapAtFormatted(),
+                            cooldown.initialPredictionMade(),
+                            cooldown.swapCount()));
         }
 
         // Round result for historical views
@@ -339,7 +326,8 @@ public class UserPredictionsController {
     }
 
     private Season getActiveSeason() {
-        return seasonRepo.findMostRecentSeason(competitionDefaults.defaultCompetitionSlug())
+        return seasonRepo
+                .findMostRecentSeason(competitionDefaults.defaultCompetitionSlug())
                 .orElseThrow(() -> new IllegalStateException("No active season available"));
     }
 
@@ -348,11 +336,17 @@ public class UserPredictionsController {
             return List.of();
         }
 
-        Map<String, Team> teamsByCode = teamRepo.findAllByCodes(
-                        ranks.stream().map(TeamRank::getCode).collect(Collectors.toSet()))
-                .stream()
-                .collect(Collectors.toMap(Team::getCode, Function.identity()));
-        return TeamRankDto.listOf(ranks, teamsByCode);
+        List<TeamRank> sortedRanks = ranks.stream()
+                .sorted(Comparator.comparingInt(TeamRank::getPosition))
+                .toList();
+
+        Map<String, Team> teamsByCode =
+                teamRepo
+                        .findAllByCodes(
+                                sortedRanks.stream().map(TeamRank::getCode).collect(Collectors.toSet()))
+                        .stream()
+                        .collect(Collectors.toMap(Team::getCode, Function.identity()));
+        return TeamRankDto.listOf(sortedRanks, teamsByCode);
     }
 
     private Map<String, List<FixtureDto>> buildFixtures(Map<String, List<Match>> matchesByTeam) {
@@ -361,13 +355,10 @@ public class UserPredictionsController {
         }
 
         return matchesByTeam.entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        entry -> entry.getValue().stream()
-                                .map(match -> toFixture(entry.getKey(), match))
-                                .filter(Objects::nonNull)
-                                .toList()
-                ));
+                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream()
+                        .map(match -> toFixture(entry.getKey(), match))
+                        .filter(Objects::nonNull)
+                        .toList()));
     }
 
     private FixtureDto toFixture(String teamCode, Match match) {
@@ -428,12 +419,7 @@ public class UserPredictionsController {
      * DTO for swap status information displayed in templates.
      */
     public record SwapStatusDTO(
-            boolean canSwap,
-            String message,
-            String lastSwapAt,
-            boolean initialPredictionMade,
-            int swapCount
-    ) {
+            boolean canSwap, String message, String lastSwapAt, boolean initialPredictionMade, int swapCount) {
         /**
          * Check if this is the first swap bonus (can swap without cooldown).
          */
@@ -441,5 +427,4 @@ public class UserPredictionsController {
             return initialPredictionMade && swapCount == 0 && canSwap;
         }
     }
-
 }

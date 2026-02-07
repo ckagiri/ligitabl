@@ -6,8 +6,9 @@
 >
   <body>
     <div layout:fragment="content">
-      <div class="bg-white rounded-lg shadow-sm">
+      <div class="max-w-4xl mx-auto bg-white rounded-lg shadow-sm">
         <!-- Header -->
+        <div id="matches-page" th:fragment="matches-content">
         <div class="px-4 sm:px-6 py-4 border-b border-gray-200">
           <div class="flex flex-col gap-3">
             <h1 class="text-xl sm:text-2xl font-bold text-gray-900">
@@ -15,14 +16,14 @@
             </h1>
             <div
               th:replace="~{fragments/round-navigation :: round-nav(
-                    '/seasons/current/matches', ${currentRound}, ${latestRound},
-                    'body', 'outerHTML', false, false)}"
+                  '/rounds', ${viewingRound}, ${lastRound}, ${currentRound},
+                    '#matches-page', 'outerHTML swap:250ms', true, false, 'path', 'matches')}"
             ></div>
           </div>
         </div>
 
         <!-- Matches List -->
-        <div id="matches-content" class="px-6 py-4">
+          <div class="px-6 py-4">
           <div class="space-y-4">
             <div
               th:each="match : ${matches}"
@@ -77,12 +78,6 @@
                       class="live-indicator inline-block w-2 h-2 bg-red-500 rounded-full mr-1.5"
                     ></span>
                     LIVE
-                    <span
-                      th:if="${match.matchTime}"
-                      class="ml-1.5 font-semibold"
-                      th:text="${match.matchTime}"
-                      >67'</span
-                    >
                   </span>
                   <span
                     th:if="${match.status == 'SCHEDULED'}"
@@ -94,7 +89,7 @@
                   <!-- Kick-off Time -->
                   <div
                     class="text-sm text-gray-500 mt-1"
-                    th:text="${match.kickOff}"
+                    th:text="${match.kickOff != null ? #temporals.format(match.kickOff, 'EEE, MMM dd, HH:mm') : ''}"
                   >
                     Sat, Dec 28, 12:30
                   </div>
@@ -102,6 +97,8 @@
               </div>
             </div>
           </div>
+        </div>
+        </div>
         </div>
       </div>
     </div>

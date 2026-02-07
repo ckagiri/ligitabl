@@ -1,12 +1,12 @@
 package com.ligitabl.api.web.shared.error;
 
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import com.ligitabl.api.web.shared.domain.exception.InvalidSeasonPredictionException;
 import com.ligitabl.api.web.shared.domain.exception.MultipleSwapException;
 import com.ligitabl.api.web.shared.domain.exception.SeasonPredictionAlreadyExistsException;
 import com.ligitabl.api.web.shared.domain.exception.SeasonPredictionNotFoundException;
-
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 /**
  * Maps domain exceptions to use case errors.
@@ -41,61 +41,37 @@ public class ErrorMapper {
      */
     public static UseCaseError toUseCaseError(Exception exception) {
         return switch (exception) {
-            // Validation errors from domain
-            case InvalidSeasonPredictionException e ->
-                    UseCaseError.ValidationError.of(
-                            "Invalid season prediction",
-                            e.getMessage()
-                    );
+                // Validation errors from domain
+            case InvalidSeasonPredictionException e -> UseCaseError.ValidationError.of(
+                    "Invalid season prediction", e.getMessage());
 
-            // Business rule: Multiple swaps attempted
-            case MultipleSwapException e ->
-                    UseCaseError.BusinessRuleError.of(
-                            "Multiple swap attempt rejected",
-                            e.getMessage()
-                    );
+                // Business rule: Multiple swaps attempted
+            case MultipleSwapException e -> UseCaseError.BusinessRuleError.of(
+                    "Multiple swap attempt rejected", e.getMessage());
 
-            // Not found errors
-            case SeasonPredictionNotFoundException e ->
-                    UseCaseError.NotFoundError.of(
-                            "SeasonPrediction",
-                            extractIdFromMessage(e.getMessage())
-                    );
+                // Not found errors
+            case SeasonPredictionNotFoundException e -> UseCaseError.NotFoundError.of(
+                    "SeasonPrediction", extractIdFromMessage(e.getMessage()));
 
-            // Conflict errors (already exists)
-            case SeasonPredictionAlreadyExistsException e ->
-                    UseCaseError.ConflictError.of(
-                            "Season prediction already exists",
-                            e.getMessage()
-                    );
+                // Conflict errors (already exists)
+            case SeasonPredictionAlreadyExistsException e -> UseCaseError.ConflictError.of(
+                    "Season prediction already exists", e.getMessage());
 
-            // Standard Java exceptions
-            case IllegalArgumentException e ->
-                    UseCaseError.ValidationError.of(
-                            "Invalid input",
-                            e.getMessage()
-                    );
+                // Standard Java exceptions
+            case IllegalArgumentException e -> UseCaseError.ValidationError.of("Invalid input", e.getMessage());
 
-            case IllegalStateException e ->
-                    UseCaseError.BusinessRuleError.of(
-                            "Invalid state for operation",
-                            e.getMessage()
-                    );
+            case IllegalStateException e -> UseCaseError.BusinessRuleError.of(
+                    "Invalid state for operation", e.getMessage());
 
-            case NullPointerException e ->
-                    UseCaseError.ValidationError.of(
-                            "Required field is missing",
-                            e.getMessage() != null ? e.getMessage() : "A required value is null"
-                    );
+            case NullPointerException e -> UseCaseError.ValidationError.of(
+                    "Required field is missing", e.getMessage() != null ? e.getMessage() : "A required value is null");
 
-            // Fallback for unknown exceptions
-            default ->
-                    UseCaseError.BusinessRuleError.of(
-                            "Operation failed",
-                            exception.getMessage() != null
-                                    ? exception.getMessage()
-                                    : exception.getClass().getSimpleName()
-                    );
+                // Fallback for unknown exceptions
+            default -> UseCaseError.BusinessRuleError.of(
+                    "Operation failed",
+                    exception.getMessage() != null
+                            ? exception.getMessage()
+                            : exception.getClass().getSimpleName());
         };
     }
 
@@ -115,8 +91,7 @@ public class ErrorMapper {
         // Try to extract UUID pattern
         // Pattern: 8-4-4-4-12 hexadecimal digits
         Pattern uuidPattern = java.util.regex.Pattern.compile(
-                "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}"
-        );
+                "[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
         Matcher matcher = uuidPattern.matcher(message);
 
         if (matcher.find()) {

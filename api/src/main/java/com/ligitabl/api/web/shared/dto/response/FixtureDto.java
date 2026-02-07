@@ -2,10 +2,7 @@ package com.ligitabl.api.web.shared.dto.response;
 
 import java.util.Objects;
 
-public record FixtureDto(
-        String opponent,
-        boolean isHome
-) {
+public record FixtureDto(String opponent, boolean isHome) {
     public FixtureDto {
         Objects.requireNonNull(opponent, "opponent is required");
     }

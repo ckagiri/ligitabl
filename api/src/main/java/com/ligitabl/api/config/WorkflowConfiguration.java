@@ -8,7 +8,7 @@ import lombok.Data;
 /**
  * Workflow runner configuration.
  *
- * Used by the importer workflow runner to decide whether to run on startup
+ * Used by the importer & calc-standings workflow runner to decide whether to run on startup
  * and which competition to import.
  */
 @Data

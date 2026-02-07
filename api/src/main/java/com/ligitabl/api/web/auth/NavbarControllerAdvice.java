@@ -1,5 +1,15 @@
 package com.ligitabl.api.web.auth;
 
+import java.security.Principal;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ModelAttribute;
+
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.model.auth.Email;
@@ -8,16 +18,8 @@ import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.UserRepo;
-import lombok.RequiredArgsConstructor;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.ControllerAdvice;
-import org.springframework.web.bind.annotation.ModelAttribute;
 
-import java.security.Principal;
-import java.util.Optional;
-import java.util.UUID;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Controller advice to provide navbar context across all views.
@@ -105,7 +107,9 @@ public class NavbarControllerAdvice {
     }
 
     private Optional<User> resolveUser(Principal principal) {
-        if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
+        if (principal == null
+                || principal.getName() == null
+                || principal.getName().isBlank()) {
             return Optional.empty();
         }
 
@@ -118,7 +122,8 @@ public class NavbarControllerAdvice {
     }
 
     private Season getActiveSeason() {
-        return seasonRepo.findMostRecentSeason(competitionDefaults.defaultCompetitionSlug())
+        return seasonRepo
+                .findMostRecentSeason(competitionDefaults.defaultCompetitionSlug())
                 .orElseThrow(() -> new IllegalStateException("No active season available"));
     }
 }
