@@ -226,7 +226,7 @@
 
   <!-- Historical Round Info Banner -->
   <div
-    th:if="${!isCurrentRound && !isGuest && !isViewingOther && !isUserNotFound}"
+    th:if="${(isCurrentRound == false || isCurrentRound == null) && (isGuest == false || isGuest == null) && (isViewingOther == false || isViewingOther == null) && (isUserNotFound == false || isUserNotFound == null)}"
     class="bg-blue-50 border border-blue-200 rounded-lg p-4"
   >
     <div class="flex items-start">
@@ -258,7 +258,7 @@
 
   <!-- Status Indicator (for own predictions, excluding first swap bonus state) -->
   <div
-    th:if="${!isGuest && !isViewingOther && !isUserNotFound && !canCreateEntry && !(swapStatus != null && swapStatus.firstSwapBonus)}"
+    th:if="${(isGuest == false || isGuest == null) && (isViewingOther == false || isViewingOther == null) && (isUserNotFound == false || isUserNotFound == null) && (canCreateEntry == false || canCreateEntry == null) && !(swapStatus != null && swapStatus.firstSwapBonus == true)}"
     class="inline-flex items-center gap-2 text-sm"
   >
     <span

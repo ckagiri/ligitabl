@@ -502,6 +502,127 @@ Quick checklist if startup fails or `curl` can’t connect:
 5. Port already in use
    - If the server can’t start on `8080`, set a different port: `PORT=8081 make run-app` and curl `http://localhost:8081/...`.
 
+## Thymeleaf templates: boolean conditionals best practices
+
+**TL;DR**: When using `th:if` with `th:replace`, wrap the fragment inclusion in a `<th:block>` element. Additionally, use explicit boolean comparisons (`== true`, `== false || == null`) for clarity and to avoid SpEL evaluation quirks.
+
+### The Problem
+
+We discovered that mutually exclusive template sections were rendering simultaneously, causing duplicate content on the page. The root causes were:
+
+1. **Attribute evaluation order**: When `th:if` and `th:replace` are on the same element, Thymeleaf's attribute processing order can cause unexpected behavior where both mutually exclusive sections render
+2. **Autoboxing**: When Java primitive `boolean` values are added to Spring's `Model`, they get autoboxed to nullable `Boolean` objects
+3. **SpEL evaluation quirks**: The `!` negation operator and implicit truthiness checks can behave unpredictably with autoboxed Booleans
+
+### What We Observed
+
+Before the fix, templates using implicit boolean checks had both mutually exclusive sections rendering:
+
+```html
+<!-- PROBLEMATIC: Both sections rendered at the same time -->
+<div th:if="${isGuest}">...</div>          <!-- Rendered when shouldn't -->
+<div th:unless="${isGuest}">...</div>      <!-- Also rendered -->
+
+<!-- Same issue with negation -->
+<div th:if="${isCurrentRound}">...</div>   <!-- Rendered -->
+<div th:if="${!isCurrentRound}">...</div>  <!-- Also rendered! -->
+```
+
+This caused:
+- Duplicate prediction tables appearing on the page
+- Both current round and historical round views rendering simultaneously
+- Confusing UI where guest and authenticated user views both appeared
+
+### The Solution
+
+**Primary Fix: Use `<th:block>` for conditionals with `th:replace`**
+
+When you need to conditionally include a fragment, wrap the `th:replace` element in a `<th:block>` tag:
+
+```html
+<!-- CORRECT: th:block wrapper ensures conditional is evaluated before fragment replacement -->
+<th:block th:if="${isCurrentRound == true}">
+  <div th:replace="~{fragments/prediction-table :: interactive-table(alwaysHoverable=false)}"></div>
+</th:block>
+
+<th:block th:if="${isCurrentRound == false || isCurrentRound == null}">
+  <div th:replace="~{fragments/prediction-historical-view :: historical-view(...)}"></div>
+</th:block>
+```
+
+**Why this works:** `<th:block>` is a Thymeleaf-only element that doesn't render to HTML. It ensures the `th:if` conditional is evaluated before the `th:replace` fragment replacement happens, preventing both sections from rendering.
+
+**Secondary Fix: Use explicit boolean comparisons**
+
+For clarity and defensive programming, use explicit boolean comparisons:
+
+```html
+<!-- GOOD: Explicit comparisons -->
+<div th:if="${isGuest == true}">
+  <!-- Guest-only content -->
+</div>
+
+<div th:if="${isGuest == false || isGuest == null}">
+  <!-- Non-guest content -->
+</div>
+```
+
+### Why This Works
+
+Explicit comparisons force a clear three-way distinction:
+- `true` - explicitly true
+- `false` - explicitly false
+- `null` - explicitly handle null cases
+
+This avoids SpEL's implicit truthiness evaluation and ensures only one section of mutually exclusive conditionals renders.
+
+### Additional Examples
+
+**Pattern for mutually exclusive fragment inclusions:**
+
+```html
+<!-- CORRECT: Use th:block wrapper for conditionals with th:replace -->
+<th:block th:if="${condition == true}">
+  <div th:replace="~{fragments/section-a :: content}"></div>
+</th:block>
+
+<th:block th:if="${condition == false || condition == null}">
+  <div th:replace="~{fragments/section-b :: content}"></div>
+</th:block>
+
+<!-- INCORRECT: th:if and th:replace on same element can cause issues -->
+<div th:if="${condition}" th:replace="~{fragments/section-a :: content}"></div>
+<div th:if="${!condition}" th:replace="~{fragments/section-b :: content}"></div>
+```
+
+**Negation with compound conditions:**
+
+```html
+<!-- AVOID: Implicit negation -->
+<div th:if="${isCurrentRound && !isUserNotFound}">
+
+<!-- PREFER: Explicit boolean checks -->
+<div th:if="${isCurrentRound == true && (isUserNotFound == false || isUserNotFound == null)}">
+```
+
+### When to Apply This
+
+**Always use `<th:block>` when:**
+- You have `th:if` or `th:unless` on an element that also has `th:replace` or `th:include`
+- You need mutually exclusive fragment inclusions
+- You want to ensure conditionals are evaluated before fragment replacement
+
+**Use explicit boolean comparisons when:**
+- You have mutually exclusive template sections (guest vs. authenticated, current vs. historical, etc.)
+- Boolean model attributes control rendering logic
+- You have complex conditional logic with multiple boolean checks
+- You're using the `!` negation operator or `th:unless`
+
+### Related Files
+
+- Template example: `api/src/main/resources/templates/predictions.html`
+- Controller setting booleans: `UserPredictionsController.java` (line 270)
+
 ## Notes
 
 - Spring Boot 3.5.3 (Java 21)
