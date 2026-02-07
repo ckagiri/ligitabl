@@ -36,13 +36,6 @@ public enum PredictionAccessMode {
     CAN_CREATE_ENTRY;
 
     /**
-     * Check if this mode allows modifications.
-     */
-    public boolean isEditable() {
-        return this == EDITABLE;
-    }
-
-    /**
      * Check if this mode is readonly.
      */
     public boolean isReadonly() {

@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.shared.command;
+package com.ligitabl.api.web.prediction.userpredictions;
 
 import java.util.Objects;
 import java.util.UUID;

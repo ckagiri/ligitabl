@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.shared.dto.response;
+package com.ligitabl.api.web.shared.dto;
 
 import java.util.List;
 import java.util.Objects;

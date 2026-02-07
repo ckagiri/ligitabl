@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.shared.mapper;
+package com.ligitabl.api.web.shared.error;
 
 import java.util.List;
 
@@ -13,13 +13,10 @@ import com.ligitabl.api.shared.errors.UnprocessableEntityError;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.ValidationError;
 import com.ligitabl.api.shared.errors.ValidationMessage;
-import com.ligitabl.api.web.shared.dto.response.ErrorResponse;
+import com.ligitabl.api.web.shared.dto.ErrorResponse;
 
 /**
  * Maps UseCaseError to ErrorResponse DTO.
- *
- * <p>This mapper is part of the web layer and converts
- * application-layer errors into HTTP response format.</p>
  */
 @Component
 public class ErrorViewMapper {
@@ -32,34 +29,6 @@ public class ErrorViewMapper {
      */
     public ErrorResponse toResponse(UseCaseError error) {
         return new ErrorResponse(resolveType(error), resolveMessage(error), resolveDetails(error));
-    }
-
-    /**
-     * Map error type to HTTP status code.
-     *
-     * @param error the use case error
-     * @return HTTP status code (400, 404, 409, 500)
-     */
-    public int toHttpStatus(UseCaseError error) {
-        if (error instanceof ValidationError) {
-            return 400;
-        }
-        if (error instanceof NotFoundError) {
-            return 404;
-        }
-        if (error instanceof ConflictError) {
-            return 409;
-        }
-        if (error instanceof UnprocessableEntityError) {
-            return 422;
-        }
-        if (error instanceof AuthenticationError) {
-            return 401;
-        }
-        if (error instanceof AuthorizationError) {
-            return 403;
-        }
-        return 500;
     }
 
     private String resolveType(UseCaseError error) {

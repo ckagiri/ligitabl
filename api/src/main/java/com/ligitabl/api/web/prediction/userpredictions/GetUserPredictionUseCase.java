@@ -13,7 +13,6 @@ import com.ligitabl.api.rest.prediction.shared.PredictionAccessMode;
 import com.ligitabl.api.rest.prediction.shared.RankingSource;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.web.shared.command.GetUserPredictionCommand;
 import com.ligitabl.api.web.shared.domain.user.UserContext;
 import com.ligitabl.api.web.shared.error.ErrorMapper;
 import com.ligitabl.model.domain.*;
