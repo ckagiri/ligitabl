@@ -15,7 +15,7 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.shared.command.GetUserPredictionCommand;
 import com.ligitabl.api.web.shared.domain.user.UserContext;
 import com.ligitabl.api.web.shared.error.ErrorMapper;
-import com.ligitabl.api.web.shared.error.UseCaseError;
+import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 
@@ -24,17 +24,12 @@ import lombok.AllArgsConstructor;
 /**
  * Use case for retrieving user predictions with access mode resolution.
  *
- * <p>Handles different user contexts:
- * <ul>
- *   <li><b>Guest</b>: Returns fallback rankings as READONLY_GUEST</li>
- *   <li><b>Authenticated with prediction</b>: Returns user's prediction as EDITABLE or READONLY_COOLDOWN</li>
- *   <li><b>Authenticated without prediction</b>: Returns fallback as CAN_CREATE_ENTRY</li>
- *   <li><b>Viewing other user</b>: Returns their prediction as READONLY_VIEWING_OTHER</li>
- *   <li><b>User not found</b>: Returns fallback as READONLY_USER_NOT_FOUND</li>
- * </ul>
- *
- * <p>This is the Railway-Oriented Programming boundary - domain operations
- * are wrapped in Either monad to provide type-safe error handling.</p>
+ * Handles different user contexts:
+ *   Guest: Returns fallback rankings as READONLY_GUEST
+ *   Authenticated with prediction: Returns user's prediction as EDITABLE or READONLY_COOLDOWN
+ *   Authenticated without prediction: Returns fallback as CAN_CREATE_ENTRY
+ *   Viewing other user: Returns their prediction as READONLY_VIEWING_OTHER
+ *   User not found: Returns fallback as READONLY_USER_NOT_FOUND
  */
 @Service
 @AllArgsConstructor
