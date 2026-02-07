@@ -17,7 +17,8 @@ public class GetDefaultRoundMatchesController {
     private final GetDefaultRoundMatchesUseCase getDefaultRoundMatchesUseCase;
 
     @GetMapping({"/current/matches", "/default/matches"})
-    public ResponseEntity<RoundMatchesResult> getCurrentRoundMatches(@RequestParam(required = false) String competition) {
+    public ResponseEntity<RoundMatchesResult> getCurrentRoundMatches(
+            @RequestParam(required = false) String competition) {
         log.info("GetCurrentRoundMatches command, competition={}", competition);
         return executeUseCase(GetDefaultRoundMatchesQuery.currentRound(competition));
     }
@@ -37,7 +38,9 @@ public class GetDefaultRoundMatchesController {
                     throw new UseCaseException(error);
                 },
                 payload -> {
-                    log.debug("GetRoundMatches success count={}", payload.matches().size());
+                    log.debug(
+                            "GetRoundMatches success count={}",
+                            payload.matches().size());
                     return ResponseEntity.ok(payload);
                 });
     }

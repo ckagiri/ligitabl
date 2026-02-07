@@ -23,6 +23,7 @@ import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.MatchRepo;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -209,8 +210,7 @@ public class SyncMatchesUseCase {
         var matches = context.updatedMatches();
 
         boolean allComplete = matches.stream()
-                .allMatch(m -> m.getStatus() == MatchStatus.FINISHED
-                || m.getStatus() == MatchStatus.POSTPONED);
+                .allMatch(m -> m.getStatus() == MatchStatus.FINISHED || m.getStatus() == MatchStatus.POSTPONED);
 
         boolean hasBlocking = matches.stream()
                 .anyMatch(m -> m.getStatus() == MatchStatus.CANCELLED || m.getStatus() == MatchStatus.SUSPENDED);
@@ -296,8 +296,7 @@ public class SyncMatchesUseCase {
             return true;
         }
 
-        boolean changed = existingScore.getHomeGoals() != apiHomeGoals
-                || existingScore.getAwayGoals() != apiAwayGoals;
+        boolean changed = existingScore.getHomeGoals() != apiHomeGoals || existingScore.getAwayGoals() != apiAwayGoals;
         if (changed) {
             existing.setScore(apiHomeGoals, apiAwayGoals);
         }
@@ -320,11 +319,9 @@ public class SyncMatchesUseCase {
         };
     }
 
-        private record RoundContext(Season season, Round round, List<Match> existingMatches) {}
+    private record RoundContext(Season season, Round round, List<Match> existingMatches) {}
 
-        private record FetchedMatchData(
-            RoundContext roundContext,
-            List<MatchDto> matches) {}
+    private record FetchedMatchData(RoundContext roundContext, List<MatchDto> matches) {}
 
     private record SyncContext(
             Season season,
@@ -332,7 +329,7 @@ public class SyncMatchesUseCase {
             int matchesProcessed,
             int matchesUpdated,
             List<UUID> finishedMatchIds,
-                List<Match> updatedMatches) {}
+            List<Match> updatedMatches) {}
 
-            private record UpdateResult(Match match, boolean hasChanged, boolean becameFinished) {}
+    private record UpdateResult(Match match, boolean hasChanged, boolean becameFinished) {}
 }

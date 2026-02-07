@@ -13,10 +13,10 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
-import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.Standings;
@@ -45,7 +45,7 @@ class GetDefaultRoundStandingsUseCaseTest {
     void setup() {
         MockitoAnnotations.openMocks(this);
         useCase = new GetDefaultRoundStandingsUseCase(
-                                hierarchyValidator, competitionDefaults, roundRepo, standingsRepo, standingsEnricher);
+                hierarchyValidator, competitionDefaults, roundRepo, standingsRepo, standingsEnricher);
     }
 
     @Test
@@ -165,8 +165,7 @@ class GetDefaultRoundStandingsUseCaseTest {
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(standingsRepo.findBySeasonAndRoundPosition(seasonId, 1)).thenReturn(Optional.empty());
 
-        when(standingsEnricher.enrichWithTeams(any(Standings.class)))
-                .thenReturn(Either.right(List.of()));
+        when(standingsEnricher.enrichWithTeams(any(Standings.class))).thenReturn(Either.right(List.of()));
 
         Either<UseCaseError, RoundStandingsResult> result =
                 useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));

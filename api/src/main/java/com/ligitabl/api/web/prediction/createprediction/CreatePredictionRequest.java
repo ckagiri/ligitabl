@@ -17,4 +17,3 @@ public record CreatePredictionRequest(List<String> teamCodes) {
         this.teamCodes = List.copyOf(Objects.requireNonNull(teamCodes, "teamCodes is required"));
     }
 }
-

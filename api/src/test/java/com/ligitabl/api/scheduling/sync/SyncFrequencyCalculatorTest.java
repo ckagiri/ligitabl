@@ -5,8 +5,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.time.Duration;
 import java.time.OffsetDateTime;
 
-import com.ligitabl.api.scheduling.syncmatches.SyncFrequencyCalculator;
 import org.junit.jupiter.api.Test;
+
+import com.ligitabl.api.scheduling.syncmatches.SyncFrequencyCalculator;
 
 /**
  * Ported from .art/testing/SyncFrequencyCalculatorTest.java.

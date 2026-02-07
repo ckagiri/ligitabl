@@ -27,9 +27,9 @@ import java.util.List;
  */
 public sealed interface UseCaseError
         permits UseCaseError.ValidationError,
-        UseCaseError.BusinessRuleError,
-        UseCaseError.NotFoundError,
-        UseCaseError.ConflictError {
+                UseCaseError.BusinessRuleError,
+                UseCaseError.NotFoundError,
+                UseCaseError.ConflictError {
 
     /**
      * Get the error message.
@@ -201,11 +201,7 @@ public sealed interface UseCaseError
          * @return a new NotFoundError
          */
         public static NotFoundError of(String resourceType, String resourceId) {
-            return new NotFoundError(
-                    resourceType + " not found",
-                    resourceType,
-                    resourceId
-            );
+            return new NotFoundError(resourceType + " not found", resourceType, resourceId);
         }
 
         /**

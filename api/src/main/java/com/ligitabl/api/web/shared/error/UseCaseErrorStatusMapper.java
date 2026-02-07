@@ -4,8 +4,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 public final class UseCaseErrorStatusMapper {
 
-    private UseCaseErrorStatusMapper() {
-    }
+    private UseCaseErrorStatusMapper() {}
 
     public static int toHttpStatus(com.ligitabl.api.shared.errors.UseCaseError error) {
         if (error == null) {

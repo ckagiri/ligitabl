@@ -71,10 +71,9 @@ public class ErrorResponse {
 
     @Override
     public String toString() {
-        return "ErrorResponse{" +
-                "type='" + type + '\'' +
-                ", message='" + message + '\'' +
-                ", details=" + details +
-                '}';
+        return "ErrorResponse{" + "type='"
+                + type + '\'' + ", message='"
+                + message + '\'' + ", details="
+                + details + '}';
     }
 }

@@ -6,8 +6,4 @@ import java.util.UUID;
 import com.ligitabl.api.rest.match.MatchDto;
 
 public record RoundMatchesResult(
-        UUID seasonId,
-        int viewingRound,
-        int currentRound,
-        int lastRound,
-        List<MatchDto> matches) {}
+        UUID seasonId, int viewingRound, int currentRound, int lastRound, List<MatchDto> matches) {}

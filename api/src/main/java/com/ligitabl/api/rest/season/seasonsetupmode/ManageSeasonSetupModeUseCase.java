@@ -7,11 +7,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
-import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.RoundSubmissionRepo;
 import com.ligitabl.model.repo.SeasonRepo;

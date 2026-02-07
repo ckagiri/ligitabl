@@ -48,26 +48,21 @@ public class FootballDataClientAdapter implements FootballDataGateway {
 
     private ImportError mapApiError(com.ligitabl.api.client.FootballDataClient.ApiError error) {
         return switch (error) {
-            case com.ligitabl.api.client.FootballDataClient.ApiError.NetworkError e ->
-                    ApiError.connectionFailed(e.message());
+            case com.ligitabl.api.client.FootballDataClient.ApiError.NetworkError e -> ApiError.connectionFailed(
+                    e.message());
 
-            case com.ligitabl.api.client.FootballDataClient.ApiError.RateLimitExceeded e ->
-                    ApiError.rateLimited();
+            case com.ligitabl.api.client.FootballDataClient.ApiError.RateLimitExceeded e -> ApiError.rateLimited();
 
-            case com.ligitabl.api.client.FootballDataClient.ApiError.NotFound e ->
-                    ApiError.of(e.message(), 404);
+            case com.ligitabl.api.client.FootballDataClient.ApiError.NotFound e -> ApiError.of(e.message(), 404);
 
-            case com.ligitabl.api.client.FootballDataClient.ApiError.Unauthorized e ->
-                    ApiError.of(e.message(), 401);
+            case com.ligitabl.api.client.FootballDataClient.ApiError.Unauthorized e -> ApiError.of(e.message(), 401);
 
-            case com.ligitabl.api.client.FootballDataClient.ApiError.ServerError e ->
-                    ApiError.of(e.message(), e.statusCode());
+            case com.ligitabl.api.client.FootballDataClient.ApiError.ServerError e -> ApiError.of(
+                    e.message(), e.statusCode());
 
-            case com.ligitabl.api.client.FootballDataClient.ApiError.UnknownError e ->
-                    ApiError.of(e.message(), 0);
+            case com.ligitabl.api.client.FootballDataClient.ApiError.UnknownError e -> ApiError.of(e.message(), 0);
 
-            case com.ligitabl.api.client.FootballDataClient.ApiError.UnexpectedError e ->
-                    ApiError.of(e.message(), 500);
+            case com.ligitabl.api.client.FootballDataClient.ApiError.UnexpectedError e -> ApiError.of(e.message(), 500);
         };
     }
 
@@ -77,7 +72,7 @@ public class FootballDataClientAdapter implements FootballDataGateway {
     private Either<ImportError, ExternalCompetition> mapCompetitionResponse(CompetitionResponse response) {
 
         if (response.currentSeason() == null) {
-                        return left(ApiError.of("Competition has no current season", 200));
+            return left(ApiError.of("Competition has no current season", 200));
         }
 
         CurrentSeason currentSeason = response.currentSeason();
@@ -87,11 +82,8 @@ public class FootballDataClientAdapter implements FootballDataGateway {
                         currentSeason.startDate().toString(),
                         currentSeason.endDate().toString(),
                         currentSeason.currentMatchday())
-                .flatMap(season -> ExternalCompetition.create(
-                        response.id().intValue(),
-                        response.name(),
-                        response.code(),
-                        season));
+                .flatMap(season ->
+                        ExternalCompetition.create(response.id().intValue(), response.name(), response.code(), season));
     }
 
     /**
@@ -151,10 +143,7 @@ public class FootballDataClientAdapter implements FootballDataGateway {
             return left(ValidationError.of("Team data is missing", "team"));
         }
 
-        return ExternalTeam.create(
-                team.id().intValue(),
-                team.name(),
-                team.tla());
+        return ExternalTeam.create(team.id().intValue(), team.name(), team.tla());
     }
 
     private Either<ImportError, ExternalTeam> mapTeam(AwayTeam team) {
@@ -162,9 +151,6 @@ public class FootballDataClientAdapter implements FootballDataGateway {
             return left(ValidationError.of("Team data is missing", "team"));
         }
 
-        return ExternalTeam.create(
-                team.id().intValue(),
-                team.name(),
-                team.tla());
+        return ExternalTeam.create(team.id().intValue(), team.name(), team.tla());
     }
 }

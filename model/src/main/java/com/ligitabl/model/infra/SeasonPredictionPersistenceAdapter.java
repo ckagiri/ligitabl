@@ -46,8 +46,7 @@ public class SeasonPredictionPersistenceAdapter implements SeasonPredictionRepo 
     public boolean existsByUserAndSeason(UUID userId, UUID seasonId) {
         return dsl.fetchExists(dsl.selectOne()
                 .from(T_SEASON_PREDICTION)
-                .where(T_SEASON_PREDICTION.FK_USER_ID.eq(userId)
-                        .and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId))));
+                .where(T_SEASON_PREDICTION.FK_USER_ID.eq(userId).and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId))));
     }
 
     @Override

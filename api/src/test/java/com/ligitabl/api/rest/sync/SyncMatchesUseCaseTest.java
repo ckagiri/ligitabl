@@ -14,7 +14,6 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import com.ligitabl.api.scheduling.syncmatches.SyncMatchesUseCase;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,12 +24,11 @@ import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.client.footballdata.MatchDto;
 import com.ligitabl.api.client.footballdata.MatchesResponse;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.scheduling.syncmatches.AsyncStandingsService;
+import com.ligitabl.api.scheduling.syncmatches.SyncMatchesUseCase;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
-import com.ligitabl.api.rest.shared.HierarchyValidator;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -50,8 +48,8 @@ class SyncMatchesUseCaseTest {
     @Mock
     private FootballDataClient footballDataClient;
 
-        @Mock
-        private HierarchyValidator hierarchyValidator;
+    @Mock
+    private HierarchyValidator hierarchyValidator;
 
     @Mock
     private MatchRepo matchRepo;
@@ -91,9 +89,9 @@ class SyncMatchesUseCaseTest {
         var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
 
         assertThat(result.isLeft()).isTrue();
-                assertThat(result.getLeft()).isInstanceOf(SyncMatchesUseCase.SyncMatchesError.HierarchyError.class);
-                var error = (SyncMatchesUseCase.SyncMatchesError.HierarchyError) result.getLeft();
-                assertThat(error.error().getMessage()).contains("Competition");
+        assertThat(result.getLeft()).isInstanceOf(SyncMatchesUseCase.SyncMatchesError.HierarchyError.class);
+        var error = (SyncMatchesUseCase.SyncMatchesError.HierarchyError) result.getLeft();
+        assertThat(error.error().getMessage()).contains("Competition");
     }
 
     @Test
@@ -104,9 +102,9 @@ class SyncMatchesUseCaseTest {
         var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
 
         assertThat(result.isLeft()).isTrue();
-                assertThat(result.getLeft()).isInstanceOf(SyncMatchesUseCase.SyncMatchesError.HierarchyError.class);
-                var error = (SyncMatchesUseCase.SyncMatchesError.HierarchyError) result.getLeft();
-                assertThat(error.error().getMessage()).contains("active season");
+        assertThat(result.getLeft()).isInstanceOf(SyncMatchesUseCase.SyncMatchesError.HierarchyError.class);
+        var error = (SyncMatchesUseCase.SyncMatchesError.HierarchyError) result.getLeft();
+        assertThat(error.error().getMessage()).contains("active season");
     }
 
     @Test

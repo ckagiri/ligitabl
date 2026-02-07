@@ -37,10 +37,14 @@ public class MakeSwapController {
 
             case SwapError.RoundNotFound e -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of(
-                            "error", "ROUND_NOT_FOUND",
-                            "message", "Round " + e.roundPosition() + " not found",
-                            "round_position", e.roundPosition(),
-                            "season_id", e.seasonId().toString()));
+                            "error",
+                            "ROUND_NOT_FOUND",
+                            "message",
+                            "Round " + e.roundPosition() + " not found",
+                            "round_position",
+                            e.roundPosition(),
+                            "season_id",
+                            e.seasonId().toString()));
 
             case SwapError.RoundNotOpen e -> ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of(

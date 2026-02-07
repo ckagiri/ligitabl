@@ -19,9 +19,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ligitabl.api.rest.team.TeamDto;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
-import com.ligitabl.api.rest.team.TeamDto;
 
 @WebMvcTest(controllers = CreateTeamController.class)
 class CreateTeamControllerWebMvcTest {

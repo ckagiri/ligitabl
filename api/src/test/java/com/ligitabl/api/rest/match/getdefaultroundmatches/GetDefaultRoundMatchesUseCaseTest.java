@@ -12,11 +12,11 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.rest.match.MatchDto;
 import com.ligitabl.api.rest.match.MatchEnricher;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -46,11 +46,7 @@ class GetDefaultRoundMatchesUseCaseTest {
     void setup() {
         MockitoAnnotations.openMocks(this);
         useCase = new GetDefaultRoundMatchesUseCase(
-                matchRepo,
-                matchEnricher,
-                hierarchyValidator,
-                competitionDefaults,
-                roundRepo);
+                matchRepo, matchEnricher, hierarchyValidator, competitionDefaults, roundRepo);
     }
 
     @Test
@@ -58,10 +54,10 @@ class GetDefaultRoundMatchesUseCaseTest {
         UUID roundId = UUID.randomUUID();
 
         var season = Season.builder()
-            .id(UUID.randomUUID())
-            .maxRounds(38)
-            .currentRoundId(roundId)
-            .build();
+                .id(UUID.randomUUID())
+                .maxRounds(38)
+                .currentRoundId(roundId)
+                .build();
         var round = Round.builder().id(roundId).position(1).build();
 
         var match = Match.builder()
@@ -78,7 +74,8 @@ class GetDefaultRoundMatchesUseCaseTest {
         MatchDto dto = MatchDto.builder().roundId(roundId).build();
         when(matchEnricher.enrichWithTeams(List.of(match))).thenReturn(Either.right(List.of(dto)));
 
-        Either<UseCaseError, RoundMatchesResult> result = useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
+        Either<UseCaseError, RoundMatchesResult> result =
+                useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.getRight().matches()).hasSize(1);
@@ -98,7 +95,8 @@ class GetDefaultRoundMatchesUseCaseTest {
                 .thenReturn(Either.left(
                         com.ligitabl.api.shared.errors.UseCaseErrors.validation("Competition has no active season")));
 
-        Either<UseCaseError, RoundMatchesResult> result = useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
+        Either<UseCaseError, RoundMatchesResult> result =
+                useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
 
         assertThat(result.isLeft()).isTrue();
         verify(hierarchyValidator).resolveHierarchy("premier-league", null);
@@ -111,7 +109,8 @@ class GetDefaultRoundMatchesUseCaseTest {
                 .thenReturn(Either.left(
                         com.ligitabl.api.shared.errors.UseCaseErrors.validation("Season has no current round")));
 
-        Either<UseCaseError, RoundMatchesResult> result = useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
+        Either<UseCaseError, RoundMatchesResult> result =
+                useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
 
         assertThat(result.isLeft()).isTrue();
         verify(hierarchyValidator).resolveHierarchy("premier-league", null);

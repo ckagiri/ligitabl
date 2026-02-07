@@ -9,10 +9,10 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundError;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundResult;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundUseCase;
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.domain.SwapChange;
@@ -60,8 +60,7 @@ public class SeedSeasonUseCase {
         try {
             return Either.right(configLoader.loadConfig());
         } catch (Exception e) {
-            return Either.left(
-                    new SeedingError.ConfigurationError("Failed to load seeding config: " + e.getMessage()));
+            return Either.left(new SeedingError.ConfigurationError("Failed to load seeding config: " + e.getMessage()));
         }
     }
 

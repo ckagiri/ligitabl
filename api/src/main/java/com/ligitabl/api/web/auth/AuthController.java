@@ -1,29 +1,10 @@
 package com.ligitabl.api.web.auth;
 
-import com.ligitabl.api.auth.security.WebUserDetails;
-import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.rest.auth.register.RegisterCommand;
-import com.ligitabl.api.rest.auth.register.RegisterResult;
-import com.ligitabl.api.rest.auth.register.RegisterUseCase;
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.auth.Password;
-import com.ligitabl.model.auth.Role;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.User;
-import com.ligitabl.model.domain.service.PasswordHasher;
-import com.ligitabl.model.repo.ContestRepo;
-import com.ligitabl.model.repo.SeasonRepo;
-import com.ligitabl.model.repo.UserRepo;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -38,10 +19,31 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import com.ligitabl.api.auth.security.WebUserDetails;
+import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.auth.register.RegisterCommand;
+import com.ligitabl.api.rest.auth.register.RegisterResult;
+import com.ligitabl.api.rest.auth.register.RegisterUseCase;
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.model.auth.Email;
+import com.ligitabl.model.auth.Password;
+import com.ligitabl.model.auth.Role;
+import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.service.PasswordHasher;
+import com.ligitabl.model.repo.ContestRepo;
+import com.ligitabl.model.repo.SeasonRepo;
+import com.ligitabl.model.repo.UserRepo;
+
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Controller
 @RequestMapping("/auth")
@@ -108,8 +110,8 @@ public class AuthController {
                                 user.getRoles(),
                                 request);
 
-                        redirectAttributes.addFlashAttribute("message",
-                                "Welcome, " + result.displayName() + "! You're now logged in.");
+                        redirectAttributes.addFlashAttribute(
+                                "message", "Welcome, " + result.displayName() + "! You're now logged in.");
                         redirectAttributes.addFlashAttribute("messageType", "success");
 
                         return "redirect:/predictions/user/me";
@@ -178,8 +180,7 @@ public class AuthController {
                 log.info("User {} has existing contest entry, will clear guest localStorage", user.getId());
             }
 
-            redirectAttributes.addFlashAttribute("message",
-                    "Welcome back, " + user.getDisplayName() + "!");
+            redirectAttributes.addFlashAttribute("message", "Welcome back, " + user.getDisplayName() + "!");
             redirectAttributes.addFlashAttribute("messageType", "success");
 
             return "redirect:/predictions/user/me";
@@ -208,8 +209,7 @@ public class AuthController {
         // Signal frontend to clear guest localStorage on logout
         redirectAttributes.addFlashAttribute("clearGuestPrediction", true);
 
-        redirectAttributes.addFlashAttribute("message",
-                "You've been logged out. See you next time!");
+        redirectAttributes.addFlashAttribute("message", "You've been logged out. See you next time!");
         redirectAttributes.addFlashAttribute("messageType", "info");
 
         return "redirect:/";
@@ -243,7 +243,6 @@ public class AuthController {
         private String password;
     }
 
-
     /**
      * Helper method to authenticate a user and create a session
      */
@@ -272,8 +271,8 @@ public class AuthController {
     }
 
     private Season getActiveSeason() {
-        return seasonRepo.findMostRecentSeason(competitionDefaults.defaultCompetitionSlug())
+        return seasonRepo
+                .findMostRecentSeason(competitionDefaults.defaultCompetitionSlug())
                 .orElseThrow(() -> new IllegalStateException("No active season available"));
     }
-
 }

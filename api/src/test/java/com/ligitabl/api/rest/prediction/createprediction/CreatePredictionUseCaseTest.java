@@ -173,9 +173,8 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void shouldReject_whenInvalidTeamCount() {
-        CreatePredictionCommand request = new CreatePredictionCommand(List.of(
-            new TeamRankDto("ARS", 1),
-            new TeamRankDto("LIV", 2)));
+        CreatePredictionCommand request =
+                new CreatePredictionCommand(List.of(new TeamRankDto("ARS", 1), new TeamRankDto("LIV", 2)));
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
@@ -188,10 +187,8 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void shouldReject_whenInvalidTeamCodes() {
-        CreatePredictionCommand request = new CreatePredictionCommand(List.of(
-            new TeamRankDto("XXX", 1),
-            new TeamRankDto("ARS", 2),
-            new TeamRankDto("LIV", 3)));
+        CreatePredictionCommand request = new CreatePredictionCommand(
+                List.of(new TeamRankDto("XXX", 1), new TeamRankDto("ARS", 2), new TeamRankDto("LIV", 3)));
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
@@ -260,9 +257,7 @@ class CreatePredictionUseCaseTest {
     }
 
     private CreatePredictionCommand createValidRequest() {
-        return new CreatePredictionCommand(List.of(
-            new TeamRankDto("ARS", 1),
-            new TeamRankDto("LIV", 2),
-            new TeamRankDto("MCI", 3)));
+        return new CreatePredictionCommand(
+                List.of(new TeamRankDto("ARS", 1), new TeamRankDto("LIV", 2), new TeamRankDto("MCI", 3)));
     }
 }

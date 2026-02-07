@@ -11,7 +11,6 @@ import java.time.ZoneId;
 import java.util.*;
 import java.util.stream.Stream;
 
-import com.ligitabl.api.runners.demoseeding.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -25,9 +24,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundError;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundUseCase;
+import com.ligitabl.api.runners.demoseeding.*;
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.auth.Role;

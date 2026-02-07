@@ -6,10 +6,10 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.ligitabl.api.rest.auth.AuthDto;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.*;
 import com.ligitabl.api.shared.exceptions.UseCaseException;
-import com.ligitabl.api.rest.auth.AuthDto;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.Password;
 

@@ -194,8 +194,10 @@ public class MatchPersistenceAdapter implements MatchRepo {
             if (!match.hasTeamsLoaded()) {
                 continue;
             }
-            byTeam.computeIfAbsent(match.getHomeTeam().getCode(), __ -> new ArrayList<>()).add(match);
-            byTeam.computeIfAbsent(match.getAwayTeam().getCode(), __ -> new ArrayList<>()).add(match);
+            byTeam.computeIfAbsent(match.getHomeTeam().getCode(), __ -> new ArrayList<>())
+                    .add(match);
+            byTeam.computeIfAbsent(match.getAwayTeam().getCode(), __ -> new ArrayList<>())
+                    .add(match);
         }
 
         return byTeam;

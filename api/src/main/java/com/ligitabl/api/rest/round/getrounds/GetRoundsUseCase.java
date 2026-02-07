@@ -4,13 +4,13 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
+import com.ligitabl.api.rest.round.RoundDto;
+import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
-import com.ligitabl.api.rest.round.RoundDto;
-import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.RoundRepo;
 

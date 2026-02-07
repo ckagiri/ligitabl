@@ -12,8 +12,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
 
-import com.ligitabl.api.scheduling.advancematchday.AdvanceMatchdayUseCase;
-import com.ligitabl.api.scheduling.syncmatches.SyncMatchesUseCase;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,9 +25,11 @@ import org.springframework.test.context.DynamicPropertySource;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.ligitabl.api.scheduling.advancematchday.AdvanceMatchdayUseCase;
+import com.ligitabl.api.scheduling.advancematchday.MatchdayAdvancementScheduler;
 import com.ligitabl.api.scheduling.syncmatches.AsyncStandingsService;
 import com.ligitabl.api.scheduling.syncmatches.MatchSyncScheduler;
-import com.ligitabl.api.scheduling.advancematchday.MatchdayAdvancementScheduler;
+import com.ligitabl.api.scheduling.syncmatches.SyncMatchesUseCase;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
@@ -369,10 +369,7 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
                     1,
                     false);
 
-                jdbc.update(
-                    "update t_competition set fk_active_season_id = ? where pk_id = ?",
-                    seasonId,
-                    competitionId);
+            jdbc.update("update t_competition set fk_active_season_id = ? where pk_id = ?", seasonId, competitionId);
 
             jdbc.update(
                     "insert into t_match (pk_id, c_client_id, fk_round_id, fk_home_team_id, fk_away_team_id, c_score, c_slug, c_status, c_kick_off, c_venue, c_matchday) values (?, ?, ?, ?, ?, ?::jsonb, ?, ?, ?, ?, ?)",

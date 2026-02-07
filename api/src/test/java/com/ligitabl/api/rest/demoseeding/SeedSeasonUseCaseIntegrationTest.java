@@ -11,7 +11,6 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
-import com.ligitabl.api.runners.demoseeding.*;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,11 +22,12 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundResult;
+import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundUseCase;
+import com.ligitabl.api.runners.demoseeding.*;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
-import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundResult;
-import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundUseCase;
 
 @SpringBootTest
 @DisplayName("SeedSeasonUseCase Integration Tests")

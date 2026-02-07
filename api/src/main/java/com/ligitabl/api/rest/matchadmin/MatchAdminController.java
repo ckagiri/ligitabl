@@ -10,7 +10,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.api.rest.matchadmin.reschedulematch.RescheduleMatchCommand;
 import com.ligitabl.api.rest.matchadmin.reschedulematch.RescheduleMatchUseCase;
 import com.ligitabl.api.rest.matchadmin.reschedulematch.RescheduleResult;
@@ -18,6 +17,7 @@ import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionMatchCom
 import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionMatchStatusUseCase;
 import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionResult;
 import com.ligitabl.api.rest.shared.RoundPosition;
+import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.model.domain.MatchStatus;
 
 import jakarta.validation.Valid;

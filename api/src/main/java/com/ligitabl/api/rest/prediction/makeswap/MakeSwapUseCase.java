@@ -37,10 +37,10 @@ public class MakeSwapUseCase {
 
     public Either<SwapError, SwapResult> execute(UUID userId, SwapCommand command) {
         return getCurrentSeason().flatMap(season -> validateSeasonNotCompleted(season)
-            .flatMap(__ -> getPrediction(userId, season.getId()))
-            .flatMap(prediction -> validateSwapEligibility(prediction, season)
-                .flatMap(targetRound -> validateTeams(command, season, prediction)
-                    .flatMap(teams -> performSwap(prediction, teams, season, targetRound)))));
+                .flatMap(__ -> getPrediction(userId, season.getId()))
+                .flatMap(prediction -> validateSwapEligibility(prediction, season)
+                        .flatMap(targetRound -> validateTeams(command, season, prediction)
+                                .flatMap(teams -> performSwap(prediction, teams, season, targetRound)))));
     }
 
     private Either<SwapError, Season> getCurrentSeason() {
@@ -62,7 +62,8 @@ public class MakeSwapUseCase {
     }
 
     private Either<SwapError, Round> validateSwapEligibility(SeasonPrediction prediction, Season season) {
-        return validateRoundStatus(prediction, season).flatMap(round -> validateCooldown(prediction).map(__ -> round));
+        return validateRoundStatus(prediction, season)
+                .flatMap(round -> validateCooldown(prediction).map(__ -> round));
     }
 
     private Either<SwapError, Round> validateRoundStatus(SeasonPrediction prediction, Season season) {
@@ -76,9 +77,7 @@ public class MakeSwapUseCase {
                 status = RoundStatus.COMPLETED;
             } else {
                 var matches = matchRepo.findByRoundId(targetRound.getId());
-                status = (matches == null || matches.isEmpty())
-                        ? RoundStatus.OPEN
-                        : targetRound.computeStatus(matches);
+                status = (matches == null || matches.isEmpty()) ? RoundStatus.OPEN : targetRound.computeStatus(matches);
             }
 
             return status == RoundStatus.OPEN

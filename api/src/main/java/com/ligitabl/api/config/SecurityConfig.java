@@ -3,12 +3,12 @@ package com.ligitabl.api.config;
 import java.nio.charset.StandardCharsets;
 
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.Customizer;
@@ -110,22 +110,22 @@ public class SecurityConfig {
      */
     @Bean
     @Order(2)
-        public SecurityFilterChain webSecurityFilterChain(
-            HttpSecurity http,
-            @Qualifier("webUserDetailsService") UserDetailsService userDetailsService) throws Exception {
+    public SecurityFilterChain webSecurityFilterChain(
+            HttpSecurity http, @Qualifier("webUserDetailsService") UserDetailsService userDetailsService)
+            throws Exception {
         http.csrf(csrf -> csrf.ignoringRequestMatchers(
-            "/seasonprediction",
-            "/seasonprediction/**",
-            "/auth/login",
-            "/auth/register")) // Allow HTMX + auth forms without CSRF
+                        "/seasonprediction",
+                        "/seasonprediction/**",
+                        "/auth/login",
+                        "/auth/register")) // Allow HTMX + auth forms without CSRF
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 "/",
                                 "/auth/login",
                                 "/auth/register",
                                 "/leaderboard",
                                 "/standings",
-                    "/matches",
-                    "/rounds/**",
+                                "/matches",
+                                "/rounds/**",
                                 "/error",
                                 "/css/**",
                                 "/dist/**",
@@ -147,19 +147,18 @@ public class SecurityConfig {
                         .anyRequest()
                         .authenticated())
                 .formLogin(form -> form.loginPage("/auth/login")
-                    .loginProcessingUrl("/auth/login/process")
-                    .defaultSuccessUrl("/predictions/user/me", true)
-                    .permitAll())
-                .rememberMe(remember -> remember
-                    .key(rememberMeKey)
-                    .rememberMeParameter("remember-me")
-                    .tokenValiditySeconds(rememberMeTokenValiditySeconds)
-                    .userDetailsService(userDetailsService))
+                        .loginProcessingUrl("/auth/login/process")
+                        .defaultSuccessUrl("/predictions/user/me", true)
+                        .permitAll())
+                .rememberMe(remember -> remember.key(rememberMeKey)
+                        .rememberMeParameter("remember-me")
+                        .tokenValiditySeconds(rememberMeTokenValiditySeconds)
+                        .userDetailsService(userDetailsService))
                 .logout(logout -> logout.logoutUrl("/auth/logout")
-                    .logoutSuccessUrl("/")
-                    .invalidateHttpSession(true)
-                    .deleteCookies("JSESSIONID", "remember-me")
-                    .permitAll())
+                        .logoutSuccessUrl("/")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID", "remember-me")
+                        .permitAll())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
 
         return http.build();

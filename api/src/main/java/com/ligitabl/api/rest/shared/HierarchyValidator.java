@@ -24,8 +24,7 @@ public class HierarchyValidator {
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
 
-    public record HierarchyContext(Season season, Round round) {
-    }
+    public record HierarchyContext(Season season, Round round) {}
 
     public Either<UseCaseError, HierarchyContext> resolveHierarchy(String competitionIdentifier) {
         return resolveHierarchy(competitionIdentifier, null);

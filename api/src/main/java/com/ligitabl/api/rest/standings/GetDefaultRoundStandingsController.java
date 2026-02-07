@@ -48,7 +48,9 @@ public class GetDefaultRoundStandingsController {
                     throw new UseCaseException(error);
                 },
                 payload -> {
-                    log.debug("GetRoundStandings success, count={}", payload.standings().size());
+                    log.debug(
+                            "GetRoundStandings success, count={}",
+                            payload.standings().size());
                     return ResponseEntity.ok(payload.standings());
                 });
     }

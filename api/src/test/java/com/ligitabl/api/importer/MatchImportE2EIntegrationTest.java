@@ -6,8 +6,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import com.ligitabl.api.runners.importer.model.errors.ApiError;
-import com.ligitabl.api.runners.importer.model.errors.DatabaseError;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -25,11 +23,13 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
+import com.ligitabl.api.runners.importer.ImportMatchesUseCase;
 import com.ligitabl.api.runners.importer.model.entities.ImportSummary;
+import com.ligitabl.api.runners.importer.model.errors.ApiError;
+import com.ligitabl.api.runners.importer.model.errors.DatabaseError;
 import com.ligitabl.api.runners.importer.model.errors.ImportError;
 import com.ligitabl.api.runners.importer.model.valueobjects.CompetitionCode;
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.runners.importer.ImportMatchesUseCase;
 
 /**
  * End-to-end integration tests for match import workflow.

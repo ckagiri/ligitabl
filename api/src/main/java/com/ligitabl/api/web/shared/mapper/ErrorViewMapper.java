@@ -1,8 +1,9 @@
 package com.ligitabl.api.web.shared.mapper;
 
+import org.springframework.stereotype.Component;
+
 import com.ligitabl.api.web.shared.dto.response.ErrorResponse;
 import com.ligitabl.api.web.shared.error.UseCaseError;
-import org.springframework.stereotype.Component;
 
 /**
  * Maps UseCaseError to ErrorResponse DTO.
@@ -20,11 +21,7 @@ public class ErrorViewMapper {
      * @return error response DTO
      */
     public ErrorResponse toResponse(UseCaseError error) {
-        return new ErrorResponse(
-                error.type().name(),
-                error.message(),
-                error.details()
-        );
+        return new ErrorResponse(error.type().name(), error.message(), error.details());
     }
 
     /**
@@ -35,10 +32,10 @@ public class ErrorViewMapper {
      */
     public int toHttpStatus(UseCaseError error) {
         return switch (error.type()) {
-            case VALIDATION -> 400;      // Bad Request
-            case NOT_FOUND -> 404;       // Not Found
-            case CONFLICT -> 409;        // Conflict
-            case BUSINESS_RULE -> 422;   // Unprocessable Entity
+            case VALIDATION -> 400; // Bad Request
+            case NOT_FOUND -> 404; // Not Found
+            case CONFLICT -> 409; // Conflict
+            case BUSINESS_RULE -> 422; // Unprocessable Entity
         };
     }
 }

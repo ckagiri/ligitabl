@@ -88,7 +88,9 @@ public class RoundResultPersistenceAdapter implements RoundResultRepo {
                 .from(T_ROUND_RESULT)
                 .join(T_ROUND_SUBMISSION)
                 .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
-                .where(T_ROUND_SUBMISSION.FK_USER_ID.eq(userId)
+                .where(T_ROUND_SUBMISSION
+                        .FK_USER_ID
+                        .eq(userId)
                         .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.eq(roundPosition)))
                 .fetchOneInto(RoundResultRecord.class);
 

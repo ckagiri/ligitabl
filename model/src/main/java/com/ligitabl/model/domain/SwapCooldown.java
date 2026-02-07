@@ -14,17 +14,11 @@ import java.util.Objects;
  * - First swap after submission: free (no wait)
  * - Subsequent swaps: 24-hour cooldown (or 2 minutes in demo mode)</p>
  */
-public record SwapCooldown(
-        Instant lastSwapAt,
-        boolean initialPredictionMade,
-        int swapCount,
-        boolean demoMode
-) {
+public record SwapCooldown(Instant lastSwapAt, boolean initialPredictionMade, int swapCount, boolean demoMode) {
     private static final Duration PRODUCTION_COOLDOWN = Duration.ofHours(24);
     private static final Duration DEV_COOLDOWN = Duration.ofMinutes(2);
-    private static final DateTimeFormatter FORMATTER = DateTimeFormatter
-            .ofPattern("MMM dd, yyyy HH:mm")
-            .withZone(ZoneId.systemDefault());
+    private static final DateTimeFormatter FORMATTER =
+            DateTimeFormatter.ofPattern("MMM dd, yyyy HH:mm").withZone(ZoneId.systemDefault());
 
     public SwapCooldown {
         // lastSwapAt can be null (never swapped)

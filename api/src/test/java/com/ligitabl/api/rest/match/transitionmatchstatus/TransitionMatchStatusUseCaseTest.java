@@ -17,12 +17,12 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionMatchCommand;
 import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionMatchStatusUseCase;
 import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionResult;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Match;

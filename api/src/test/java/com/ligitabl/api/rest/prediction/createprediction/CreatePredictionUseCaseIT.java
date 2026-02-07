@@ -208,7 +208,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("should accept any ranking order (no strategic validation)")
         void shouldAcceptAnyRankingOrder() {
-                CreatePredictionCommand request = new CreatePredictionCommand(List.of(
+            CreatePredictionCommand request = new CreatePredictionCommand(List.of(
                     new TeamRankDto("WHU", 1),
                     new TeamRankDto("BRE", 2),
                     new TeamRankDto("CRY", 3),
@@ -241,9 +241,8 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject when invalid team count")
         void shouldRejectWhenInvalidTeamCount() {
-                CreatePredictionCommand request = new CreatePredictionCommand(List.of(
-                    new TeamRankDto("ARS", 1),
-                    new TeamRankDto("LIV", 2)));
+            CreatePredictionCommand request =
+                    new CreatePredictionCommand(List.of(new TeamRankDto("ARS", 1), new TeamRankDto("LIV", 2)));
 
             Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
 
@@ -254,7 +253,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject when invalid team codes")
         void shouldRejectWhenInvalidTeamCodes() {
-                List<TeamRankDto> rankings = INITIAL_RANKINGS.stream()
+            List<TeamRankDto> rankings = INITIAL_RANKINGS.stream()
                     .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
                     .toList();
 
@@ -272,7 +271,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject when duplicate positions")
         void shouldRejectWhenDuplicatePositions() {
-                List<TeamRankDto> rankings = INITIAL_RANKINGS.stream()
+            List<TeamRankDto> rankings = INITIAL_RANKINGS.stream()
                     .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
                     .toList();
 
@@ -292,7 +291,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject when duplicate team codes")
         void shouldRejectWhenDuplicateTeamCodes() {
-                List<TeamRankDto> rankings = INITIAL_RANKINGS.stream()
+            List<TeamRankDto> rankings = INITIAL_RANKINGS.stream()
                     .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
                     .toList();
 
@@ -358,8 +357,8 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
 
     private static CreatePredictionCommand validRequestFromInitialRankings() {
         return new CreatePredictionCommand(INITIAL_RANKINGS.stream()
-            .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
-            .toList());
+                .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
+                .toList());
     }
 
     private void insertCompetitionAndSeason() {
