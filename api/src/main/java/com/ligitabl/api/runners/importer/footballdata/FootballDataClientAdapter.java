@@ -8,6 +8,7 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
+import com.ligitabl.api.client.FootballDataApiError;
 import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.client.footballdata.*;
 import com.ligitabl.api.runners.importer.model.entities.ExternalCompetition;
@@ -46,23 +47,21 @@ public class FootballDataClientAdapter implements FootballDataGateway {
                 .flatMap(this::mapMatchesResponse);
     }
 
-    private ImportError mapApiError(com.ligitabl.api.client.FootballDataClient.ApiError error) {
+    private ImportError mapApiError(FootballDataApiError error) {
         return switch (error) {
-            case com.ligitabl.api.client.FootballDataClient.ApiError.NetworkError e -> ApiError.connectionFailed(
-                    e.message());
+            case FootballDataApiError.NetworkError e -> ApiError.connectionFailed(e.message());
 
-            case com.ligitabl.api.client.FootballDataClient.ApiError.RateLimitExceeded e -> ApiError.rateLimited();
+            case FootballDataApiError.RateLimitExceeded e -> ApiError.rateLimited();
 
-            case com.ligitabl.api.client.FootballDataClient.ApiError.NotFound e -> ApiError.of(e.message(), 404);
+            case FootballDataApiError.NotFound e -> ApiError.of(e.message(), 404);
 
-            case com.ligitabl.api.client.FootballDataClient.ApiError.Unauthorized e -> ApiError.of(e.message(), 401);
+            case FootballDataApiError.Unauthorized e -> ApiError.of(e.message(), 401);
 
-            case com.ligitabl.api.client.FootballDataClient.ApiError.ServerError e -> ApiError.of(
-                    e.message(), e.statusCode());
+            case FootballDataApiError.ServerError e -> ApiError.of(e.message(), e.statusCode());
 
-            case com.ligitabl.api.client.FootballDataClient.ApiError.UnknownError e -> ApiError.of(e.message(), 0);
+            case FootballDataApiError.UnknownError e -> ApiError.of(e.message(), 0);
 
-            case com.ligitabl.api.client.FootballDataClient.ApiError.UnexpectedError e -> ApiError.of(e.message(), 500);
+            case FootballDataApiError.UnexpectedError e -> ApiError.of(e.message(), 500);
         };
     }
 

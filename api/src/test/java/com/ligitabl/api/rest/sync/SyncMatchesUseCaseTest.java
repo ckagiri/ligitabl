@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.client.FootballDataApiError;
 import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.client.footballdata.MatchDto;
 import com.ligitabl.api.client.footballdata.MatchesResponse;
@@ -119,7 +120,7 @@ class SyncMatchesUseCaseTest {
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches);
 
         when(footballDataClient.getMatchesInDateRange(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(Either.left(new FootballDataClient.ApiError.NetworkError("Network error", null)));
+                .thenReturn(Either.left(new FootballDataApiError.NetworkError("Network error", null)));
 
         var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
 

@@ -11,6 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ligitabl.api.client.FootballDataApiError;
 import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.client.footballdata.MatchDto;
 import com.ligitabl.api.client.footballdata.Score;
@@ -46,7 +47,7 @@ public class SyncMatchesUseCase {
     public sealed interface SyncMatchesError {
         record HierarchyError(UseCaseError error) implements SyncMatchesError {}
 
-        record DataAccessError(FootballDataClient.ApiError error) implements SyncMatchesError {}
+        record DataAccessError(FootballDataApiError error) implements SyncMatchesError {}
     }
 
     @Transactional
