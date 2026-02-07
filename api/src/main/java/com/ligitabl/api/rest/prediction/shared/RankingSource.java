@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.prediction.getprediction;
+package com.ligitabl.api.rest.prediction.shared;
 
 public enum RankingSource {
     USER_PREDICTION("Your Prediction"),

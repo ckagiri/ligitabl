@@ -3,5 +3,7 @@ package com.ligitabl.model.domain;
 public enum RoundStatus {
     OPEN,
     LOCKED,
-    COMPLETED
+    COMPLETED,
+    FINALIZED,
+    UNKNOWN
 }

@@ -273,8 +273,10 @@ public class UserPredictionsController {
         model.addAttribute("pageTitle", getPageTitle(data));
         model.addAttribute("currentRound", data.currentRound());
         model.addAttribute("viewingRound", data.viewingRound());
+        model.addAttribute("atRoundNumber", data.atRoundNumber());
         model.addAttribute("isCurrentRound", data.isCurrentRound());
         model.addAttribute("roundState", data.roundState().toLowerCase());
+        model.addAttribute("seasonCompleted", data.seasonCompleted());
         model.addAttribute("predictions", predictions);
 
         // Access mode attributes
