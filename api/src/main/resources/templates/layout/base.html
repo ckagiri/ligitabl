@@ -121,6 +121,22 @@
         padding-right: 3.5rem;
       }
 
+      /* Results Banner slide-in */
+      #results-banner > div {
+        animation: slideInDown 500ms cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      @keyframes slideInDown {
+        from {
+          opacity: 0;
+          transform: translateY(-20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
       /* LIVE indicator - Slow, subtle */
       @keyframes subtle-pulse {
         0%,
