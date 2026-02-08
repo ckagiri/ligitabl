@@ -75,6 +75,7 @@ public class MakeSwapController {
             case SwapError.InvalidTeamCode __ -> 400;
             case SwapError.TeamsNotFound __ -> 400;
             case SwapError.SeasonCompleted __ -> 409;
+            case SwapError.CurrentRoundNotFound __ -> 404;
         };
     }
 
@@ -88,6 +89,7 @@ public class MakeSwapController {
             case SwapError.TeamsNotFound e -> "Teams not found in your prediction: " + e.teamACode() + ", "
                     + e.teamBCode();
             case SwapError.SeasonCompleted __ -> "Cannot swap in completed season";
+            case SwapError.CurrentRoundNotFound __ -> "Current round not found";
         };
     }
 }

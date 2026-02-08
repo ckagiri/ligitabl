@@ -14,4 +14,6 @@ public sealed interface FinalizeRoundError {
     record SeasonNotFound(UUID seasonId) implements FinalizeRoundError {}
 
     record AlreadyFinalized(UUID roundId) implements FinalizeRoundError {}
+
+    record NextRoundNotFound(UUID seasonId, int position) implements FinalizeRoundError {}
 }

@@ -17,4 +17,6 @@ public sealed interface SwapError {
     record TeamsNotFound(String teamACode, String teamBCode) implements SwapError {}
 
     record SeasonCompleted() implements SwapError {}
+
+    record CurrentRoundNotFound(UUID seasonId) implements SwapError {}
 }

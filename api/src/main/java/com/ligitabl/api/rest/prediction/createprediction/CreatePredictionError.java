@@ -20,7 +20,9 @@ public sealed interface CreatePredictionError {
 
     record Ended(int currentRound, int maxRounds) implements CreatePredictionError {}
 
-    record DefaultContestNotFound() implements CreatePredictionError {}
+    record CurrentRoundNotFound(UUID seasonId) implements CreatePredictionError {}
+
+    record MainContestNotFound() implements CreatePredictionError {}
 
     record TransactionFailed(String reason) implements CreatePredictionError {}
 }

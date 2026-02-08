@@ -131,6 +131,18 @@ Tips:
 - `tail -n 80 ...` gives you “the end of the story” fast.
 - The `.exit` file is a simple breadcrumb for later automation.
 
+## Makefile test targets (quick reference)
+
+Short summaries of the test-focused targets in [Makefile](Makefile):
+
+- `test`: full API test suite (includes unit + integration).
+- `test-unit`: only guard-style unit tests (fastest slice).
+- `test-api-core`: core API tests (skips `*IT`).
+- `test-api-core-with-codegen`: start DB, migrate, run jOOQ codegen, then `test-api-core`.
+- `test-api-it`: DB-backed `*IT` integration tests only.
+- `test-api-all`: full API test suite (same scope as `test`).
+- `test-all`: full repo test suite (all modules).
+
 ## Parsing Surefire XML with a quick Python snippet
 
 If Maven output is too noisy, query the XML directly to list failing suites.
@@ -249,6 +261,31 @@ Once you have the failing test name or error string:
     ```
 
 ## Recent learnings (from debugging this repo)
+
+- **JUnit discovery failures can come from missing jOOQ-generated classes.**
+  - Symptoms include:
+    - `TestEngine with ID 'junit-jupiter' failed to discover tests`
+    - `NoClassDefFoundError: Team` (or other model types)
+    - `package com.ligitabl.model.db.tables does not exist`
+  - Root cause: model module compiled without generated jOOQ types (or stale classes on the classpath).
+  - Fix (safe, ordered):
+    1. Generate jOOQ types against the current test DB:
+       ```bash
+       make model-codegen-local
+       ```
+    2. Re-run core API tests:
+       ```bash
+       make test-api-core
+       ```
+    3. If errors persist, clean API classes and re-run:
+       ```bash
+       mvn -q -pl api clean
+       make test-api-core
+       ```
+  - Shortcut target (does steps 1 + 2):
+    ```bash
+    make test-api-core-with-codegen
+    ```
 
 - **Spring bean name collisions are easy to miss.**
   - When a web controller and an API controller share the same simple class name, Spring’s default bean name will collide.
