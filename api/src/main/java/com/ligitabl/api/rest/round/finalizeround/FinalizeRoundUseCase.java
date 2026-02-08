@@ -250,7 +250,8 @@ public class FinalizeRoundUseCase {
     }
 
     // STEP 5: Finalize & Advance CurrentRound or Complete Season
-    private Either<FinalizeRoundError, Void> advanceCurrentRound(Season season, Round currentRound, boolean isLastRound) {
+    private Either<FinalizeRoundError, Void> advanceCurrentRound(
+            Season season, Round currentRound, boolean isLastRound) {
         // first finalize current round
         currentRound.setFinalized(true);
         roundRepo.save(currentRound);

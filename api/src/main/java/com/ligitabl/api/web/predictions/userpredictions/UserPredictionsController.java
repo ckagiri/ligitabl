@@ -95,8 +95,7 @@ public class UserPredictionsController {
 
         GetUserPredictionQuery query = buildQueryForMe(resolvedUserId, round, seasonOpt.get());
 
-        Either<UseCaseError, UserPredictionViewData> result =
-                getUserPredictionUseCase.execute(query);
+        Either<UseCaseError, UserPredictionViewData> result = getUserPredictionUseCase.execute(query);
 
         return result.fold(
                 error -> handleError(error, model, response, hxRequest), data -> handleSuccess(data, model, hxRequest));
@@ -123,8 +122,7 @@ public class UserPredictionsController {
         UUID activeSeasonId = seasonOpt.get().getId();
         GetUserPredictionQuery query = GetUserPredictionQuery.forGuest(activeSeasonId, round);
 
-        Either<UseCaseError, UserPredictionViewData> result =
-                getUserPredictionUseCase.execute(query);
+        Either<UseCaseError, UserPredictionViewData> result = getUserPredictionUseCase.execute(query);
 
         return result.fold(
                 error -> handleError(error, model, response, hxRequest), data -> handleSuccess(data, model, hxRequest));
@@ -163,8 +161,7 @@ public class UserPredictionsController {
 
         GetUserPredictionQuery query = buildQueryForUser(publicUserId, round, seasonOpt.get());
 
-        Either<UseCaseError, UserPredictionViewData> result =
-                getUserPredictionUseCase.execute(query);
+        Either<UseCaseError, UserPredictionViewData> result = getUserPredictionUseCase.execute(query);
 
         return result.fold(
                 error -> handleError(error, model, response, hxRequest), data -> handleSuccess(data, model, hxRequest));
@@ -434,6 +431,5 @@ public class UserPredictionsController {
      * DTO for swap status information displayed in templates.
      */
     public record SwapStatusDTO(
-            boolean canSwap, String message, String lastSwapAt, boolean initialPredictionMade, int swapCount) {
-    }
+            boolean canSwap, String message, String lastSwapAt, boolean initialPredictionMade, int swapCount) {}
 }

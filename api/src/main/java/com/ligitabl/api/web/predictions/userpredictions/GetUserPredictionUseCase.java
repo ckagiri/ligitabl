@@ -424,7 +424,6 @@ public class GetUserPredictionUseCase {
      */
     private record RankingsWithSource(RankingSource source, List<TeamRank> rankings) {}
 
-
     private Season getActiveSeason() {
         return seasonRepo
                 .findMostRecentSeason(competitionDefaults.defaultCompetitionSlug())

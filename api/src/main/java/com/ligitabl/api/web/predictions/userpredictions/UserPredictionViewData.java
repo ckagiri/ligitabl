@@ -1,15 +1,15 @@
 package com.ligitabl.api.web.predictions.userpredictions;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+
 import com.ligitabl.api.rest.prediction.shared.PredictionAccessMode;
 import com.ligitabl.api.rest.prediction.shared.RankingSource;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.RoundResult;
 import com.ligitabl.model.domain.SwapCooldown;
 import com.ligitabl.model.domain.TeamRank;
-
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 
 /**
  * Complete view data returned by this use case.
@@ -34,7 +34,7 @@ public record UserPredictionViewData(
         String message,
         String targetDisplayName,
         RoundResult roundResult // Present for historical views with scored results
-) {
+        ) {
     public UserPredictionViewData {
         Objects.requireNonNull(rankings, "rankings are required");
         Objects.requireNonNull(source, "source is required");
