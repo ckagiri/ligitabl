@@ -75,8 +75,11 @@ public class FinalizeRoundUseCase {
     private Either<FinalizeRoundError, FinalizeRoundResult> executeFinalizationWorkflow(Round round, Season season) {
         try {
             // Step 1: Calculate final standings
-            Standings finalStandings =
-                    calculateFinalStandings(round, season).getOrElseThrow(err -> new RuntimeException(err.toString()));
+            var standingsResult = calculateFinalStandings(round, season);
+            if (standingsResult.isLeft()) {
+                return Either.left(standingsResult.getLeft());
+            }
+            Standings finalStandings = standingsResult.get();
 
             List<SeasonPrediction> predictions =
                     predictionRepo.findBySeasonAndAtRoundNumberLessThanEqual(season.getId(), round.getPosition());
@@ -94,7 +97,10 @@ public class FinalizeRoundUseCase {
             }
 
             // Step 5: Advance current round or complete season
-            advanceCurrentRound(season, round, isLastRound);
+            var advanceResult = advanceCurrentRound(season, round, isLastRound);
+            if (advanceResult.isLeft()) {
+                return Either.left(advanceResult.getLeft());
+            }
 
             // STEP 6: Send Notifications (TODO: implement async)
 
@@ -244,7 +250,8 @@ public class FinalizeRoundUseCase {
     }
 
     // STEP 5: Finalize & Advance CurrentRound or Complete Season
-    private void advanceCurrentRound(Season season, Round currentRound, boolean isLastRound) {
+    private Either<FinalizeRoundError, Void> advanceCurrentRound(
+            Season season, Round currentRound, boolean isLastRound) {
         // first finalize current round
         currentRound.setFinalized(true);
         roundRepo.save(currentRound);
@@ -256,15 +263,18 @@ public class FinalizeRoundUseCase {
             season.setCompletedAt(now());
             log.info("Season completed: {}", season.getId());
         } else {
-            Round nextRound = roundRepo
-                    .findBySeasonIdAndPosition(season.getId(), currentRound.getPosition() + 1)
-                    .orElseThrow(() -> new IllegalStateException("Next round not found"));
+            int nextPosition = currentRound.getPosition() + 1;
+            var nextRoundOpt = roundRepo.findBySeasonIdAndPosition(season.getId(), nextPosition);
+            if (nextRoundOpt.isEmpty()) {
+                return Either.left(new FinalizeRoundError.NextRoundNotFound(season.getId(), nextPosition));
+            }
 
-            season.setCurrentRoundId(nextRound.getId());
-            log.info("Advanced to round: {}", nextRound.getPosition());
+            season.setCurrentRoundId(nextRoundOpt.get().getId());
+            log.info("Advanced to round: {}", nextPosition);
         }
 
         seasonRepo.save(season);
+        return Either.right(null);
     }
 
     private int countSwapsInRound(SeasonPrediction prediction, int roundPosition) {

@@ -537,6 +537,11 @@ test-unit: ## Run pure unit tests
 test-api-core: ## Run core API tests (skip *IT)
 	mvn -q -pl $(API_DIR) -am -DskipITs test
 
+.PHONY: test-api-core-with-codegen
+test-api-core-with-codegen: ## Start DB, migrate, run jOOQ codegen, then run core API tests
+	$(MAKE) model-codegen-local
+	$(MAKE) test-api-core
+
 .PHONY: test-api-it
 test-api-it: ## Run DB-backed integration tests
 	mvn -q -pl $(API_DIR) -am -DskipITs=false -Dtest='**/*IT' \

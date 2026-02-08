@@ -3,7 +3,6 @@ package com.ligitabl.api.web.predictions.userpredictions;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -43,24 +42,21 @@ public class GetUserPredictionUseCase {
 
     /**
      * Execute the use case with user context resolution.
-     *
-     * @param command the get user prediction command with user context
-     * @return Either containing UseCaseError (left) or UserPredictionViewData (right)
      */
-    public Either<UseCaseError, UserPredictionViewData> execute(GetUserPredictionCommand command) {
-        return Either.catching(() -> buildViewData(command), ErrorMapper::toUseCaseError);
+    public Either<UseCaseError, UserPredictionViewData> execute(GetUserPredictionQuery query) {
+        return Either.catching(() -> buildViewData(query), ErrorMapper::toUseCaseError);
     }
 
     /**
      * Build complete prediction view data based on user context.
      */
-    private UserPredictionViewData buildViewData(GetUserPredictionCommand command) {
-        UserContext ctx = command.userContext();
+    private UserPredictionViewData buildViewData(GetUserPredictionQuery query) {
+        UserContext ctx = query.userContext();
         Season season = getActiveSeason();
         Round currentRoundEntity = getCurrentRoundEntity(season);
         int currentRound = currentRoundEntity.getPosition();
         int lastRound = season.getMaxRounds();
-        int viewingRound = command.resolveRound(currentRound, lastRound);
+        int viewingRound = query.resolveRound(currentRound, lastRound);
         boolean isCurrentRound = viewingRound == currentRound;
         Round viewingRoundEntity =
                 isCurrentRound ? currentRoundEntity : getRoundByPosition(season.getId(), viewingRound);
@@ -70,13 +66,13 @@ public class GetUserPredictionUseCase {
         // Determine access mode and rankings based on user type
         return switch (ctx.userType()) {
             case GUEST -> buildGuestView(
-                    command, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
+                    query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
             case AUTHENTICATED -> buildAuthenticatedView(
-                    command, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
+                    query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
             case VIEWING_OTHER -> buildViewingOtherView(
-                    command, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
+                    query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
             case USER_NOT_FOUND -> buildUserNotFoundView(
-                    command, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
+                    query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
         };
     }
 
@@ -85,22 +81,22 @@ public class GetUserPredictionUseCase {
      * Always returns fallback rankings with READONLY_GUEST access mode.
      */
     private UserPredictionViewData buildGuestView(
-            GetUserPredictionCommand cmd,
+            GetUserPredictionQuery qry,
             int currentRound,
             int lastRound,
             int viewingRound,
             boolean isCurrentRound,
             String roundState,
             boolean seasonCompleted) {
-        RankingsWithSource rankingsWithSource = getFallbackRankings(cmd);
+        RankingsWithSource rankingsWithSource = getFallbackRankings(qry);
 
         // Get standings and points - use historical data for past rounds
         Map<String, Integer> standingsMap = isCurrentRound
-                ? standingsRepo.findPositionMap(cmd.seasonId(), currentRound)
-                : standingsRepo.findPositionMap(cmd.seasonId(), viewingRound);
+                ? standingsRepo.findPositionMap(qry.seasonId(), currentRound)
+                : standingsRepo.findPositionMap(qry.seasonId(), viewingRound);
         Map<String, Integer> pointsMap = isCurrentRound
-                ? standingsRepo.findPointsMap(cmd.seasonId(), currentRound)
-                : standingsRepo.findPointsMap(cmd.seasonId(), viewingRound);
+                ? standingsRepo.findPointsMap(qry.seasonId(), currentRound)
+                : standingsRepo.findPointsMap(qry.seasonId(), viewingRound);
 
         String message =
                 isCurrentRound ? "Sign up to create your prediction" : "Viewing Gameweek " + viewingRound + " results";
@@ -110,7 +106,7 @@ public class GetUserPredictionUseCase {
                 rankingsWithSource.source(),
                 PredictionAccessMode.READONLY_GUEST,
                 null, // swapCooldown not applicable
-                isCurrentRound ? getMatches(cmd.seasonId(), currentRound) : Map.of(),
+                isCurrentRound ? getMatches(qry.seasonId(), currentRound) : Map.of(),
                 standingsMap,
                 pointsMap,
                 currentRound,
@@ -129,18 +125,18 @@ public class GetUserPredictionUseCase {
      * Build view for authenticated users viewing their own predictions.
      */
     private UserPredictionViewData buildAuthenticatedView(
-            GetUserPredictionCommand cmd,
+            GetUserPredictionQuery qry,
             int currentRound,
             int lastRound,
             int viewingRound,
             boolean isCurrentRound,
             String roundState,
             boolean seasonCompleted) {
-        UserContext ctx = cmd.userContext();
+        UserContext ctx = qry.userContext();
 
         if (ctx.hasContestEntry()) {
             var seasonPrediction = seasonPredictionRepo
-                    .findByUserAndSeason(ctx.userId(), cmd.seasonId())
+                    .findByUserAndSeason(ctx.userId(), qry.seasonId())
                     .orElseThrow(
                             () -> new IllegalStateException("User context indicates prediction exists but not found"));
 
@@ -177,8 +173,8 @@ public class GetUserPredictionUseCase {
             PredictionAccessMode accessMode = determineAccessMode(swapCooldown, isCurrentRound);
 
             // Get standings and points for current round
-            Map<String, Integer> standingsMap = standingsRepo.findPositionMap(cmd.seasonId(), currentRound);
-            Map<String, Integer> pointsMap = standingsRepo.findPointsMap(cmd.seasonId(), currentRound);
+            Map<String, Integer> standingsMap = standingsRepo.findPositionMap(qry.seasonId(), currentRound);
+            Map<String, Integer> pointsMap = standingsRepo.findPointsMap(qry.seasonId(), currentRound);
 
             String message = null;
             if (accessMode == PredictionAccessMode.READONLY_COOLDOWN) {
@@ -190,7 +186,7 @@ public class GetUserPredictionUseCase {
                     RankingSource.USER_PREDICTION,
                     accessMode,
                     swapCooldown,
-                    getMatches(cmd.seasonId(), currentRound),
+                    getMatches(qry.seasonId(), currentRound),
                     standingsMap,
                     pointsMap,
                     currentRound,
@@ -206,15 +202,15 @@ public class GetUserPredictionUseCase {
         }
 
         // User is authenticated but has no prediction - show fallback with CAN_CREATE_ENTRY
-        RankingsWithSource rankingsWithSource = getFallbackRankings(cmd);
+        RankingsWithSource rankingsWithSource = getFallbackRankings(qry);
 
         // For past rounds without prediction, still show historical standings
         Map<String, Integer> standingsMap = isCurrentRound
-                ? standingsRepo.findPositionMap(cmd.seasonId(), currentRound)
-                : standingsRepo.findPositionMap(cmd.seasonId(), viewingRound);
+                ? standingsRepo.findPositionMap(qry.seasonId(), currentRound)
+                : standingsRepo.findPositionMap(qry.seasonId(), viewingRound);
         Map<String, Integer> pointsMap = isCurrentRound
-                ? standingsRepo.findPointsMap(cmd.seasonId(), currentRound)
-                : standingsRepo.findPointsMap(cmd.seasonId(), viewingRound);
+                ? standingsRepo.findPointsMap(qry.seasonId(), currentRound)
+                : standingsRepo.findPointsMap(qry.seasonId(), viewingRound);
 
         // Can only create entry in current round
         PredictionAccessMode accessMode =
@@ -229,7 +225,7 @@ public class GetUserPredictionUseCase {
                 rankingsWithSource.source(),
                 accessMode,
                 null, // no swap cooldown yet
-                isCurrentRound ? getMatches(cmd.seasonId(), currentRound) : Map.of(),
+                isCurrentRound ? getMatches(qry.seasonId(), currentRound) : Map.of(),
                 standingsMap,
                 pointsMap,
                 currentRound,
@@ -261,14 +257,14 @@ public class GetUserPredictionUseCase {
      * Build view for viewing another user's predictions.
      */
     private UserPredictionViewData buildViewingOtherView(
-            GetUserPredictionCommand cmd,
+            GetUserPredictionQuery qry,
             int currentRound,
             int lastRound,
             int viewingRound,
             boolean isCurrentRound,
             String roundState,
             boolean seasonCompleted) {
-        UserContext ctx = cmd.userContext();
+        UserContext ctx = qry.userContext();
 
         // For historical rounds, load RoundResult with scored data
         if (!isCurrentRound && ctx.hasContestEntry()) {
@@ -290,9 +286,9 @@ public class GetUserPredictionUseCase {
                         null,
                         seasonCompleted,
                         roundState,
-                        "Viewing " + (cmd.targetDisplayName() != null ? cmd.targetDisplayName() : "user")
+                        "Viewing " + (qry.targetDisplayName() != null ? qry.targetDisplayName() : "user")
                                 + "'s Gameweek " + viewingRound + " result",
-                        cmd.targetDisplayName(),
+                        qry.targetDisplayName(),
                         roundResult.get());
             }
         }
@@ -300,7 +296,7 @@ public class GetUserPredictionUseCase {
         // If target user has a prediction, show it (current round)
         if (ctx.hasContestEntry()) {
             var prediction = seasonPredictionRepo
-                    .findByUserAndSeason(ctx.userId(), cmd.seasonId())
+                    .findByUserAndSeason(ctx.userId(), qry.seasonId())
                     .orElseThrow(
                             () -> new IllegalStateException("User context indicates prediction exists but not found"));
 
@@ -309,40 +305,40 @@ public class GetUserPredictionUseCase {
                     RankingSource.USER_PREDICTION,
                     PredictionAccessMode.READONLY_VIEWING_OTHER,
                     null, // no swap cooldown - readonly
-                    getMatches(cmd.seasonId(), currentRound),
-                    standingsRepo.findPositionMap(cmd.seasonId(), currentRound),
-                    standingsRepo.findPointsMap(cmd.seasonId(), currentRound),
+                    getMatches(qry.seasonId(), currentRound),
+                    standingsRepo.findPositionMap(qry.seasonId(), currentRound),
+                    standingsRepo.findPointsMap(qry.seasonId(), currentRound),
                     currentRound,
                     lastRound,
                     viewingRound,
                     prediction.getAtRoundNumber(),
                     seasonCompleted,
                     roundState,
-                    "Viewing " + (cmd.targetDisplayName() != null ? cmd.targetDisplayName() : "user") + "'s prediction",
-                    cmd.targetDisplayName(),
+                    "Viewing " + (qry.targetDisplayName() != null ? qry.targetDisplayName() : "user") + "'s prediction",
+                    qry.targetDisplayName(),
                     null);
         }
 
         // Target user exists but has no prediction - show fallback
-        RankingsWithSource rankingsWithSource = getFallbackRankings(cmd);
+        RankingsWithSource rankingsWithSource = getFallbackRankings(qry);
 
         return new UserPredictionViewData(
                 rankingsWithSource.rankings(),
                 rankingsWithSource.source(),
                 PredictionAccessMode.READONLY_VIEWING_OTHER,
                 null,
-                isCurrentRound ? getMatches(cmd.seasonId(), currentRound) : Map.of(),
-                isCurrentRound ? standingsRepo.findPositionMap(cmd.seasonId(), currentRound) : Map.of(),
-                isCurrentRound ? standingsRepo.findPointsMap(cmd.seasonId(), currentRound) : Map.of(),
+                isCurrentRound ? getMatches(qry.seasonId(), currentRound) : Map.of(),
+                isCurrentRound ? standingsRepo.findPositionMap(qry.seasonId(), currentRound) : Map.of(),
+                isCurrentRound ? standingsRepo.findPointsMap(qry.seasonId(), currentRound) : Map.of(),
                 currentRound,
                 lastRound,
                 viewingRound,
                 null,
                 seasonCompleted,
                 roundState,
-                (cmd.targetDisplayName() != null ? cmd.targetDisplayName() : "This user")
+                (qry.targetDisplayName() != null ? qry.targetDisplayName() : "This user")
                         + " hasn't made a prediction yet",
-                cmd.targetDisplayName(),
+                qry.targetDisplayName(),
                 null);
     }
 
@@ -350,23 +346,23 @@ public class GetUserPredictionUseCase {
      * Build view when the target user was not found.
      */
     private UserPredictionViewData buildUserNotFoundView(
-            GetUserPredictionCommand cmd,
+            GetUserPredictionQuery qry,
             int currentRound,
             int lastRound,
             int viewingRound,
             boolean isCurrentRound,
             String roundState,
             boolean seasonCompleted) {
-        RankingsWithSource rankingsWithSource = getFallbackRankings(cmd);
+        RankingsWithSource rankingsWithSource = getFallbackRankings(qry);
 
         return new UserPredictionViewData(
                 rankingsWithSource.rankings(),
                 rankingsWithSource.source(),
                 PredictionAccessMode.READONLY_USER_NOT_FOUND,
                 null,
-                isCurrentRound ? getMatches(cmd.seasonId(), currentRound) : Map.of(),
-                isCurrentRound ? standingsRepo.findPositionMap(cmd.seasonId(), currentRound) : Map.of(),
-                isCurrentRound ? standingsRepo.findPointsMap(cmd.seasonId(), currentRound) : Map.of(),
+                isCurrentRound ? getMatches(qry.seasonId(), currentRound) : Map.of(),
+                isCurrentRound ? standingsRepo.findPositionMap(qry.seasonId(), currentRound) : Map.of(),
+                isCurrentRound ? standingsRepo.findPointsMap(qry.seasonId(), currentRound) : Map.of(),
                 currentRound,
                 lastRound,
                 viewingRound,
@@ -398,9 +394,9 @@ public class GetUserPredictionUseCase {
      * 1. Current round standings
      * 2. Season baseline rankings
      */
-    private RankingsWithSource getFallbackRankings(GetUserPredictionCommand command) {
+    private RankingsWithSource getFallbackRankings(GetUserPredictionQuery query) {
         // Try current round standings first
-        var roundStandings = standingsRepo.findLatestBySeason(command.seasonId());
+        var roundStandings = standingsRepo.findLatestBySeason(query.seasonId());
         if (roundStandings.isPresent()) {
             return new RankingsWithSource(
                     RankingSource.ROUND_STANDINGS, convertStandingsRankingsToTeamRankings(roundStandings.get()));
@@ -408,10 +404,10 @@ public class GetUserPredictionUseCase {
 
         // Fallback to season baseline (guaranteed to exist)
         var baseline = seasonRepo
-                .findById(command.seasonId())
+                .findById(query.seasonId())
                 .map(Season::getInitialRankings)
                 .orElseThrow(() -> new IllegalStateException(
-                        "Season baseline rankings not found for season: " + command.seasonId()));
+                        "Season baseline rankings not found for season: " + query.seasonId()));
 
         return new RankingsWithSource(RankingSource.SEASON_BASELINE, baseline);
     }
@@ -427,98 +423,6 @@ public class GetUserPredictionUseCase {
      * Internal record for rankings with source.
      */
     private record RankingsWithSource(RankingSource source, List<TeamRank> rankings) {}
-
-    /**
-     * Complete view data returned by this use case.
-     *
-     * <p>Contains all information needed by the template to render the prediction view,
-     * including access mode for UI control rendering.</p>
-     */
-    public record UserPredictionViewData(
-            List<TeamRank> rankings,
-            RankingSource source,
-            PredictionAccessMode accessMode,
-            SwapCooldown swapCooldown,
-            Map<String, List<Match>> matches,
-            Map<String, Integer> standingsMap,
-            Map<String, Integer> pointsMap,
-            int currentRound,
-            int lastRound,
-            int viewingRound,
-            Integer atRoundNumber,
-            boolean seasonCompleted,
-            String roundState,
-            String message,
-            String targetDisplayName,
-            RoundResult roundResult // Present for historical views with scored results
-            ) {
-        public UserPredictionViewData {
-            Objects.requireNonNull(rankings, "rankings are required");
-            Objects.requireNonNull(source, "source is required");
-            Objects.requireNonNull(accessMode, "accessMode is required");
-            rankings = List.copyOf(rankings);
-            matches = matches != null ? Map.copyOf(matches) : Map.of();
-            standingsMap = standingsMap != null ? Map.copyOf(standingsMap) : Map.of();
-            pointsMap = pointsMap != null ? Map.copyOf(pointsMap) : Map.of();
-        }
-
-        /**
-         * Check if this view has historical round result data.
-         */
-        public boolean hasRoundResult() {
-            return roundResult != null;
-        }
-
-        /**
-         * Check if viewing the current round.
-         */
-        public boolean isCurrentRound() {
-            return viewingRound == currentRound;
-        }
-
-        /**
-         * Check if user can swap teams.
-         * Returns true for EDITABLE or CAN_CREATE_ENTRY modes.
-         */
-        public boolean canSwap() {
-            return accessMode == PredictionAccessMode.EDITABLE || accessMode == PredictionAccessMode.CAN_CREATE_ENTRY;
-        }
-
-        /**
-         * Check if user can create a new entry (initial prediction).
-         */
-        public boolean canCreateEntry() {
-            return accessMode == PredictionAccessMode.CAN_CREATE_ENTRY;
-        }
-
-        /**
-         * Check if the view is readonly.
-         */
-        public boolean isReadonly() {
-            return accessMode.isReadonly();
-        }
-
-        /**
-         * Check if this is a guest user.
-         */
-        public boolean isGuest() {
-            return accessMode == PredictionAccessMode.READONLY_GUEST;
-        }
-
-        /**
-         * Check if viewing another user's prediction.
-         */
-        public boolean isViewingOther() {
-            return accessMode == PredictionAccessMode.READONLY_VIEWING_OTHER;
-        }
-
-        /**
-         * Check if target user was not found.
-         */
-        public boolean isUserNotFound() {
-            return accessMode == PredictionAccessMode.READONLY_USER_NOT_FOUND;
-        }
-    }
 
     private Season getActiveSeason() {
         return seasonRepo

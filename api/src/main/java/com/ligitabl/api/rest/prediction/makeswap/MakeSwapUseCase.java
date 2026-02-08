@@ -67,9 +67,11 @@ public class MakeSwapUseCase {
     }
 
     private Either<SwapError, Round> validateRoundStatus(SeasonPrediction prediction, Season season) {
-        Round currentRound = roundRepo
-                .findById(season.getCurrentRoundId())
-                .orElseThrow(() -> new IllegalStateException("Current round not found"));
+        var currentRoundOpt = roundRepo.findById(season.getCurrentRoundId());
+        if (currentRoundOpt.isEmpty()) {
+            return Either.left(new SwapError.CurrentRoundNotFound(season.getId()));
+        }
+        Round currentRound = currentRoundOpt.get();
 
         return resolveTargetRound(prediction, season, currentRound).flatMap(targetRound -> {
             RoundStatus status;

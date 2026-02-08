@@ -6,6 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -87,10 +88,14 @@ public class UserPredictionsController {
             return "error";
         }
 
-        GetUserPredictionCommand command = buildCommandForMe(resolvedUserId, round);
+        var seasonOpt = getActiveSeason();
+        if (seasonOpt.isEmpty()) {
+            return handleNoActiveSeason(model, response, hxRequest);
+        }
 
-        Either<UseCaseError, GetUserPredictionUseCase.UserPredictionViewData> result =
-                getUserPredictionUseCase.execute(command);
+        GetUserPredictionQuery query = buildQueryForMe(resolvedUserId, round, seasonOpt.get());
+
+        Either<UseCaseError, UserPredictionViewData> result = getUserPredictionUseCase.execute(query);
 
         return result.fold(
                 error -> handleError(error, model, response, hxRequest), data -> handleSuccess(data, model, hxRequest));
@@ -109,11 +114,15 @@ public class UserPredictionsController {
             @RequestHeader(value = "HX-Request", required = false) String hxRequest) {
         log.info("GET /predictions/user/guest - round: {}", round);
 
-        UUID activeSeasonId = getActiveSeason().getId();
-        GetUserPredictionCommand command = GetUserPredictionCommand.forGuest(activeSeasonId, round);
+        var seasonOpt = getActiveSeason();
+        if (seasonOpt.isEmpty()) {
+            return handleNoActiveSeason(model, response, hxRequest);
+        }
 
-        Either<UseCaseError, GetUserPredictionUseCase.UserPredictionViewData> result =
-                getUserPredictionUseCase.execute(command);
+        UUID activeSeasonId = seasonOpt.get().getId();
+        GetUserPredictionQuery query = GetUserPredictionQuery.forGuest(activeSeasonId, round);
+
+        Either<UseCaseError, UserPredictionViewData> result = getUserPredictionUseCase.execute(query);
 
         return result.fold(
                 error -> handleError(error, model, response, hxRequest), data -> handleSuccess(data, model, hxRequest));
@@ -121,13 +130,10 @@ public class UserPredictionsController {
 
     /**
      * GET /predictions/user/{userId} - View specific user's predictions.
-     *
-     * <p>Resolution logic:
-     * <ul>
-     *   <li>If userId matches logged-in user → Treat as /me</li>
-     *   <li>If userId is valid existing user → Show their prediction (READONLY_VIEWING_OTHER)</li>
-     *   <li>If userId doesn't exist → Show fallback (READONLY_USER_NOT_FOUND)</li>
-     * </ul>
+     * Resolution logic:
+     *   If userId matches logged-in user → Treat as /me
+     *   If userId is valid existing user → Show their prediction (READONLY_VIEWING_OTHER)
+     *   If userId doesn't exist → Show fallback (READONLY_USER_NOT_FOUND)
      */
     @GetMapping("/{userId}")
     public String userPredictions(
@@ -148,21 +154,24 @@ public class UserPredictionsController {
             return myPredictions(round, principal, model, response, hxRequest);
         }
 
-        GetUserPredictionCommand command = buildCommandForUser(publicUserId, round);
+        var seasonOpt = getActiveSeason();
+        if (seasonOpt.isEmpty()) {
+            return handleNoActiveSeason(model, response, hxRequest);
+        }
 
-        Either<UseCaseError, GetUserPredictionUseCase.UserPredictionViewData> result =
-                getUserPredictionUseCase.execute(command);
+        GetUserPredictionQuery query = buildQueryForUser(publicUserId, round, seasonOpt.get());
+
+        Either<UseCaseError, UserPredictionViewData> result = getUserPredictionUseCase.execute(query);
 
         return result.fold(
                 error -> handleError(error, model, response, hxRequest), data -> handleSuccess(data, model, hxRequest));
     }
 
     /**
-     * Build command for /{userId} endpoint.
+     * Build query for /{userId} endpoint.
      */
-    private GetUserPredictionCommand buildCommandForUser(String userIdStr, Integer round) {
+    private GetUserPredictionQuery buildQueryForUser(String userIdStr, Integer round, Season activeSeason) {
         PublicId publicUserId;
-        Season activeSeason = getActiveSeason();
         UUID activeSeasonId = activeSeason.getId();
         UUID mainContestId = activeSeason.getMainContestId();
 
@@ -170,12 +179,12 @@ public class UserPredictionsController {
             publicUserId = PublicId.create(userIdStr);
         } catch (IllegalArgumentException e) {
             // Invalid public id format - treat as user not found
-            return GetUserPredictionCommand.forNonExistentUser(activeSeasonId, round);
+            return GetUserPredictionQuery.forNonExistentUser(activeSeasonId, round);
         }
 
         var user = userRepo.findByPublicId(publicUserId).orElse(null);
         if (user == null) {
-            return GetUserPredictionCommand.forNonExistentUser(activeSeasonId, round);
+            return GetUserPredictionQuery.forNonExistentUser(activeSeasonId, round);
         }
 
         UUID targetUserId = user.getId();
@@ -185,28 +194,27 @@ public class UserPredictionsController {
 
         if (hasMainContestEntry) {
             // User exists and has prediction
-            return GetUserPredictionCommand.forViewingOtherUser(targetUserId, activeSeasonId, true, displayName, round);
+            return GetUserPredictionQuery.forViewingOtherUser(targetUserId, activeSeasonId, true, displayName, round);
         }
 
         // User exists but has no prediction yet
-        return GetUserPredictionCommand.forViewingOtherUser(targetUserId, activeSeasonId, false, displayName, round);
+        return GetUserPredictionQuery.forViewingOtherUser(targetUserId, activeSeasonId, false, displayName, round);
     }
 
     /**
-     * Build command for /me endpoint based on Principal.
+     * Build query for /me endpoint based on Principal.
      */
-    private GetUserPredictionCommand buildCommandForMe(UUID userId, Integer round) {
-        Season season = getActiveSeason();
+    private GetUserPredictionQuery buildQueryForMe(UUID userId, Integer round, Season season) {
         UUID activeSeasonId = season.getId();
 
         if (userId == null) {
-            return GetUserPredictionCommand.forGuest(activeSeasonId, round);
+            return GetUserPredictionQuery.forGuest(activeSeasonId, round);
         }
 
         UUID mainContestId = season.getMainContestId();
         boolean hasMainContestEntry =
                 mainContestId != null && contestRepo.existsByUserAndContest(userId, mainContestId);
-        return GetUserPredictionCommand.forAuthenticatedUser(userId, activeSeasonId, hasMainContestEntry, round);
+        return GetUserPredictionQuery.forAuthenticatedUser(userId, activeSeasonId, hasMainContestEntry, round);
     }
 
     private UUID resolveAuthenticatedUserId(Principal principal, Model model, HttpServletResponse response) {
@@ -232,6 +240,16 @@ public class UserPredictionsController {
         }
     }
 
+    private String handleNoActiveSeason(Model model, HttpServletResponse response, String hxRequest) {
+        response.setStatus(404);
+        model.addAttribute("error", "No active season available");
+
+        if (hxRequest != null && !hxRequest.isBlank()) {
+            return "fragments/error-banner :: banner";
+        }
+        return "error";
+    }
+
     /**
      * Handle use case error.
      */
@@ -248,7 +266,7 @@ public class UserPredictionsController {
     /**
      * Handle successful use case result.
      */
-    private String handleSuccess(GetUserPredictionUseCase.UserPredictionViewData data, Model model, String hxRequest) {
+    private String handleSuccess(UserPredictionViewData data, Model model, String hxRequest) {
         // Convert rankings to DTOs
         List<TeamRankDto> predictions = enrichRankings(data.rankings());
 
@@ -326,10 +344,8 @@ public class UserPredictionsController {
         return "predictions";
     }
 
-    private Season getActiveSeason() {
-        return seasonRepo
-                .findMostRecentSeason(competitionDefaults.defaultCompetitionSlug())
-                .orElseThrow(() -> new IllegalStateException("No active season available"));
+    private Optional<Season> getActiveSeason() {
+        return seasonRepo.findMostRecentSeason(competitionDefaults.defaultCompetitionSlug());
     }
 
     private List<TeamRankDto> enrichRankings(List<TeamRank> ranks) {
@@ -381,7 +397,7 @@ public class UserPredictionsController {
     /**
      * Get page title based on access mode.
      */
-    private String getPageTitle(GetUserPredictionUseCase.UserPredictionViewData data) {
+    private String getPageTitle(UserPredictionViewData data) {
         return switch (data.accessMode()) {
             case EDITABLE, READONLY_COOLDOWN -> "My Predictions";
             case CAN_CREATE_ENTRY -> "Create Prediction";
@@ -396,7 +412,7 @@ public class UserPredictionsController {
     /**
      * Get source label for UI display.
      */
-    private String getSourceLabel(GetUserPredictionUseCase.UserPredictionViewData data) {
+    private String getSourceLabel(UserPredictionViewData data) {
         return switch (data.source()) {
             case USER_PREDICTION -> "Your Prediction";
             case ROUND_STANDINGS -> "Current Standings";
@@ -415,12 +431,5 @@ public class UserPredictionsController {
      * DTO for swap status information displayed in templates.
      */
     public record SwapStatusDTO(
-            boolean canSwap, String message, String lastSwapAt, boolean initialPredictionMade, int swapCount) {
-        /**
-         * Check if this is the first swap bonus (can swap without cooldown).
-         */
-        public boolean isFirstSwapBonus() {
-            return initialPredictionMade && swapCount == 0 && canSwap;
-        }
-    }
+            boolean canSwap, String message, String lastSwapAt, boolean initialPredictionMade, int swapCount) {}
 }

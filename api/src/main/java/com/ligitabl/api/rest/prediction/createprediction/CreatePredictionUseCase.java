@@ -147,9 +147,11 @@ public class CreatePredictionUseCase {
 
     // Step 5: Determine at_round_number
     private Either<CreatePredictionError, Integer> determineAtRoundNumber(Season season) {
-        Round currentRound = roundRepo
-                .findById(season.getCurrentRoundId())
-                .orElseThrow(() -> new IllegalStateException("Current round not found"));
+        var currentRoundOpt = roundRepo.findById(season.getCurrentRoundId());
+        if (currentRoundOpt.isEmpty()) {
+            return Either.left(new CreatePredictionError.CurrentRoundNotFound(season.getId()));
+        }
+        Round currentRound = currentRoundOpt.get();
 
         RoundStatus roundStatus;
         if (currentRound.isFinalized()) {
@@ -183,6 +185,12 @@ public class CreatePredictionUseCase {
     // Step 6: Create prediction and entry (transactional)
     private Either<CreatePredictionError, CreatePredictionResult> createPredictionAndEntry(
             UUID userId, Season season, List<TeamRank> rankings, int atRoundNumber) {
+        var mainContestOpt = contestRepo.findById(season.getMainContestId());
+        if (mainContestOpt.isEmpty()) {
+            return Either.left(new CreatePredictionError.MainContestNotFound());
+        }
+        Contest mainContest = mainContestOpt.get();
+
         try {
             // Create SeasonPrediction
             SeasonPrediction prediction = SeasonPrediction.builder()
@@ -198,15 +206,10 @@ public class CreatePredictionUseCase {
             SeasonPrediction savedPrediction = predictionRepo.save(prediction);
             log.info("Created prediction {} for user {} at round {}", savedPrediction.getId(), userId, atRoundNumber);
 
-            // Get default contest
-            Contest defaultContest = contestRepo
-                    .findById(season.getMainContestId())
-                    .orElseThrow(() -> new IllegalStateException("Default contest not found"));
-
             // Create Entry
             Entry entry = Entry.builder()
                     .userId(userId)
-                    .contestId(defaultContest.getId())
+                    .contestId(mainContest.getId())
                     .joinedAt(clock.instant())
                     .build();
 
@@ -215,7 +218,7 @@ public class CreatePredictionUseCase {
                     "Created entry {} for user {} in default contest {}",
                     savedEntry.getId(),
                     userId,
-                    defaultContest.getId());
+                    mainContest.getId());
 
             String message = atRoundNumber == 1
                     ? "Welcome! Your prediction is active from Round 1"
