@@ -8,9 +8,9 @@ import com.ligitabl.api.web.shared.domain.user.UserContext;
 /**
  * Command for retrieving user predictions with user context and optional round.
  */
-public record GetUserPredictionCommand(
+public record GetUserPredictionQuery(
         UserContext userContext, UUID seasonId, Integer requestedRound, String targetDisplayName) {
-    public GetUserPredictionCommand {
+    public GetUserPredictionQuery {
         Objects.requireNonNull(userContext, "userContext is required");
         Objects.requireNonNull(seasonId, "seasonId is required");
         // requestedRound can be null (defaults to current round)
@@ -34,31 +34,31 @@ public record GetUserPredictionCommand(
     /**
      * Create command for an authenticated user viewing their own predictions.
      */
-    public static GetUserPredictionCommand forAuthenticatedUser(
+    public static GetUserPredictionQuery forAuthenticatedUser(
             UUID userId, UUID seasonId, boolean hasContestEntry, Integer round) {
-        return new GetUserPredictionCommand(UserContext.authenticated(userId, hasContestEntry), seasonId, round, null);
+        return new GetUserPredictionQuery(UserContext.authenticated(userId, hasContestEntry), seasonId, round, null);
     }
 
     /**
      * Create command for a guest user.
      */
-    public static GetUserPredictionCommand forGuest(UUID seasonId, Integer round) {
-        return new GetUserPredictionCommand(UserContext.guest(), seasonId, round, null);
+    public static GetUserPredictionQuery forGuest(UUID seasonId, Integer round) {
+        return new GetUserPredictionQuery(UserContext.guest(), seasonId, round, null);
     }
 
     /**
      * Create command for viewing another user's predictions.
      */
-    public static GetUserPredictionCommand forViewingOtherUser(
+    public static GetUserPredictionQuery forViewingOtherUser(
             UUID targetUserId, UUID seasonId, boolean hasContestEntry, String displayName, Integer round) {
-        return new GetUserPredictionCommand(
+        return new GetUserPredictionQuery(
                 UserContext.viewingOther(targetUserId, hasContestEntry), seasonId, round, displayName);
     }
 
     /**
      * Create command for a non-existent user.
      */
-    public static GetUserPredictionCommand forNonExistentUser(UUID seasonId, Integer round) {
-        return new GetUserPredictionCommand(UserContext.userNotFound(), seasonId, round, null);
+    public static GetUserPredictionQuery forNonExistentUser(UUID seasonId, Integer round) {
+        return new GetUserPredictionQuery(UserContext.userNotFound(), seasonId, round, null);
     }
 }
