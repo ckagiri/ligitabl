@@ -223,9 +223,9 @@
     </div>
   </div>
 
-  <!-- Locked State Banner (locked or completed) - NOT for guests, NOT for first swap bonus -->
+  <!-- Locked State Banner (locked only) - NOT for guests, NOT for first swap bonus -->
   <div
-    th:if="${(isGuest == false || isGuest == null) && isCurrentRound == true && (roundState == 'locked' || roundState == 'completed') && !(swapStatus != null && swapStatus.firstSwapBonus == true)}"
+    th:if="${(isGuest == false || isGuest == null) && isCurrentRound == true && roundState == 'locked' && !(swapStatus != null && swapStatus.firstSwapBonus == true)}"
     th:classappend="${canCreateEntry == true || (atRoundNumber != null && atRoundNumber > currentRound) ? 'bg-blue-50 border-blue-200' : 'bg-yellow-50 border-yellow-200'}"
     class="border rounded-lg p-4"
   >
@@ -278,9 +278,35 @@
     </div>
   </div>
 
-  <!-- Finalized State Banner -->
+  <!-- Scoring Banner (completed or finalized, but season not ended) -->
   <div
-    th:if="${isCurrentRound == true && roundState == 'finalized'}"
+    th:if="${isCurrentRound == true && (roundState == 'completed' || roundState == 'finalized') && seasonCompleted != true}"
+    class="bg-yellow-50 border border-yellow-200 rounded-lg p-4"
+  >
+    <div class="flex items-start">
+      <svg
+        class="h-5 w-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
+          clip-rule="evenodd"
+        />
+      </svg>
+      <div>
+        <p class="text-sm font-medium text-yellow-800">⏳ Scoring</p>
+        <p class="text-sm text-yellow-700 mt-1">
+          Scoring predictions, points will be available shortly.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Season Ended Banner -->
+  <div
+    th:if="${isCurrentRound == true && seasonCompleted == true}"
     class="bg-blue-50 border border-blue-200 rounded-lg p-4"
   >
     <div class="flex items-start">
@@ -296,29 +322,14 @@
         />
       </svg>
       <div>
-        <!-- Last Round + Finalized: Season Completed -->
-        <th:block th:if="${currentRound == lastRound}">
-          <p class="text-sm font-medium text-blue-800">📊 Season Completed</p>
-          <p class="text-sm text-blue-700 mt-1">
-            The season has ended. Your final prediction has been graded.
-            <span th:if="${totalScore != null}"
-              >You scored <strong th:text="${totalScore}">156</strong> points this
-              round.</span
-            >
-          </p>
-        </th:block>
-
-        <!-- Regular Finalized -->
-        <th:block th:if="${currentRound != lastRound}">
-          <p class="text-sm font-medium text-blue-800">📊 Round Finalized</p>
-          <p class="text-sm text-blue-700 mt-1">
-            Your prediction has been graded.
-            <span th:if="${totalScore != null}"
-              >You scored <strong th:text="${totalScore}">156</strong> points this
-              round.</span
-            >
-          </p>
-        </th:block>
+        <p class="text-sm font-medium text-blue-800">📊 Season Completed</p>
+        <p class="text-sm text-blue-700 mt-1">
+          The season has ended. Your final prediction has been graded.
+          <span th:if="${totalScore != null}"
+            >You scored <strong th:text="${totalScore}">156</strong> points this
+            round.</span
+          >
+        </p>
       </div>
     </div>
   </div>

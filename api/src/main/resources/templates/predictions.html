@@ -179,16 +179,16 @@
               th:replace="~{fragments/prediction-table :: comparison-options}"
             ></div>
 
-            <!-- Current Round: Interactive Table -->
-            <th:block th:if="${isCurrentRound == true && roundState != 'finalized'}">
+            <!-- Current Round: Interactive Table (not when season completed) -->
+            <th:block th:if="${isCurrentRound == true && seasonCompleted != true}">
               <div
                 th:replace="~{fragments/prediction-table :: interactive-table(alwaysHoverable=false)}"
               ></div>
             </th:block>
 
-            <!-- Historical Rounds: Static Table (past rounds or finalized current round) -->
+            <!-- Historical Rounds: Static Table (past rounds or season completed) -->
             <th:block
-              th:if="${(isCurrentRound == false || isCurrentRound == null) || roundState == 'finalized'}"
+              th:if="${(isCurrentRound == false || isCurrentRound == null) || (isCurrentRound == true && seasonCompleted == true)}"
             >
               <div
                 th:replace="~{fragments/prediction-historical-view :: historical-view(
