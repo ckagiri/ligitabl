@@ -136,13 +136,14 @@ Make your first swap without waiting 24 hours. After this, the 24h cooldown appl
 ```
 (isGuest == false || isGuest == null)
 && isCurrentRound == true
-&& (roundState == 'locked' || roundState == 'completed')
+&& roundState == 'locked'
 && !(swapStatus != null && swapStatus.firstSwapBonus == true)
 ```
 
 **Excludes:**
 - Guests (they see Guest Banner instead)
 - Users with first swap bonus (they see First Swap Bonus Banner instead)
+- `completed` state (now handled by Scoring Banner)
 
 **Three sub-states:**
 
@@ -166,23 +167,28 @@ Matches are in progress. Predictions are locked until results are finalized.
 ```
 - Shows when user already predicted and is in cooldown
 
-### 5. Finalized State Banner (Blue with Document Icon)
+### 5. Scoring Banner (Yellow with Clock Icon)
 
-**Condition:** `isCurrentRound == true && roundState == 'finalized'`
+**Condition:** `isCurrentRound == true && (roundState == 'completed' || roundState == 'finalized') && seasonCompleted != true`
 
-**Two variations:**
+Replaces the old "Finalized State Banner" for non-season-end cases. Shows while matches are completed and scoring is in progress, or when a mid-season round is finalized (brief window before round advances).
 
-**a) Last Round + Finalized:**
+**Message:**
+```
+⏳ Scoring
+Scoring predictions, points will be available shortly.
+```
+
+### 5b. Season Ended Banner (Blue with Document Icon)
+
+**Condition:** `isCurrentRound == true && seasonCompleted == true`
+
+Shows when the season has fully completed (last round finalized, no next round).
+
+**Message:**
 ```
 📊 Season Completed
 The season has ended. Your final prediction has been graded.
-You scored 156 points this round. (if totalScore available)
-```
-
-**b) Regular Finalized:**
-```
-📊 Round Finalized
-Your prediction has been graded.
 You scored 156 points this round. (if totalScore available)
 ```
 
@@ -261,15 +267,16 @@ Is user a guest?
     ├─ Has first swap bonus?
     │  └─ YES → Show "First Swap Bonus" Banner (green)
     │
-    ├─ Is current round + (locked or completed)?
+    ├─ Is current round + locked?
     │  └─ YES → Show "Locked State" Banner
     │      ├─ Last round? → "🔒 Season Completing"
     │      └─ Not last round → "🔒 Round Locked" (if already predicted)
     │
-    ├─ Is current round + finalized?
-    │  └─ YES → Show "Finalized State" Banner
-    │      ├─ Last round? → "📊 Season Completed"
-    │      └─ Not last round → "📊 Round Finalized"
+    ├─ Is current round + (completed or finalized) + NOT season completed?
+    │  └─ YES → Show "Scoring" Banner: "⏳ Scoring predictions..."
+    │
+    ├─ Is current round + season completed?
+    │  └─ YES → Show "Season Ended" Banner: "📊 Season Completed"
     │
     └─ Is historical round?
        └─ YES → Show "Historical Round Info" Banner
@@ -451,34 +458,33 @@ Is user a guest?
 
 ---
 
-### Scenario 9: Round Finalized
+### Scenario 9: Matches Completed, Scoring In Progress
 
 **State:**
 - `isGuest = false`
 - `isCurrentRound = true`
-- `roundState = 'finalized'`
-- `totalScore = 156`
-- `currentRound != lastRound`
+- `roundState = 'completed'`
+- `seasonCompleted = false`
 
 **Displays:**
-- ✅ Finalized State Banner (blue): "📊 Round Finalized - You scored 156 points..."
-- ✅ Historical view with scores
+- ✅ Scoring Banner (yellow): "⏳ Scoring - Scoring predictions, points will be available shortly."
+- ✅ Interactive table (season not completed)
 - ✅ Round navigation
 
 ---
 
-### Scenario 10: Last Round Finalized (Season Complete)
+### Scenario 10: Season Completed (Last Round Finalized)
 
 **State:**
 - `isGuest = false`
 - `isCurrentRound = true`
 - `roundState = 'finalized'`
-- `currentRound == lastRound`
+- `seasonCompleted = true`
 - `totalScore = 200`
 
 **Displays:**
-- ✅ Finalized State Banner (blue): "📊 Season Completed - Your final prediction has been graded. You scored 200 points..."
-- ✅ Historical view with final scores
+- ✅ Season Ended Banner (blue): "📊 Season Completed - Your final prediction has been graded. You scored 200 points..."
+- ✅ Historical view with final scores (season completed triggers historical view)
 
 ---
 
@@ -525,7 +531,7 @@ Is user a guest?
 ```html
 th:if="${(isGuest == false || isGuest == null)
      && isCurrentRound == true
-     && (roundState == 'locked' || roundState == 'completed')
+     && roundState == 'locked'
      && !(swapStatus != null && swapStatus.firstSwapBonus == true)}"
 ```
 
@@ -694,7 +700,7 @@ User predicted for GW 22, round is now locked (`atRoundNumber=22`, `currentRound
 
 ### Banner Messages by `atRoundNumber`
 
-When round is locked/completed and user has already predicted:
+When round is locked and user has already predicted:
 
 - **`atRoundNumber > currentRound`** (future round, blue banner):
   > 👋 Matches In Progress — Your prediction will be scored next round. You can still make swaps.
@@ -702,12 +708,29 @@ When round is locked/completed and user has already predicted:
 - **`atRoundNumber <= currentRound`** (current round, yellow banner):
   > 🔒 Round Locked — Matches are in progress. Predictions are locked until results are finalized.
 
+## Interactive vs Historical View
+
+The prediction table switches between interactive and historical views based on `seasonCompleted`:
+
+- **Interactive table**: `isCurrentRound == true && seasonCompleted != true`
+  - Shows for current round during open, locked, completed, and finalized states (as long as season is ongoing)
+  - Table interactivity (swapping) is separately controlled by `canSwap` and round state
+
+- **Historical table**: `(isCurrentRound == false || isCurrentRound == null) || (isCurrentRound == true && seasonCompleted == true)`
+  - Shows for past rounds
+  - Shows for current round when season is completed (last round finalized)
+  - Displays scored results with hit indicators
+
+**Key insight**: `seasonCompleted` replaces the old `roundState == 'finalized'` check for the view toggle. Mid-season finalized rounds advance `currentRoundId` to the next round, so the finalized round becomes historical naturally. Only the last round stays as `isCurrentRound` after finalization — that's the `seasonCompleted` case.
+
 ## Notes
 
 - All boolean comparisons use explicit checks (`== true`, `== false || == null`) to avoid SpEL evaluation quirks
 - Banners are mutually exclusive by design - only one primary banner shows at a time
 - Guest users never see round navigation or swap controls
 - First swap bonus takes precedence over locked state messaging
-- Last round has special messaging to indicate season completion
+- `seasonCompleted` means: last round was current, was finalized, and no next round exists
+- Scoring banner shows during `completed`/`finalized` states when season is not ended
+- Season Ended banner replaces old "Season Completed" section of the Finalized banner
 - Round navigation prevents viewing future rounds by capping `minRound` to `currentRound`
 - Users without predictions can only view the current round

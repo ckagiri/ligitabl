@@ -507,51 +507,39 @@ window.Ligitabl.guestPredictionPage = function (el) {
     });
 };
 
-// --- Results Banner Management ---
+// --- Results Banner Dismissal ---
 
 (function () {
-    window.Ligitabl = window.Ligitabl || {};
-    const dismissedKey = "ligitabl.resultsBannerDismissed";
-    window.Ligitabl.resultsBannerDismissed =
-        sessionStorage.getItem(dismissedKey) === "1";
-
-    if (window.Ligitabl.resultsBannerDismissed) {
-        document.getElementById("results-banner")?.remove();
-    }
-
-    document.body.addEventListener("htmx:beforeRequest", (event) => {
-        const elt = event.detail?.elt;
-        if (
-            elt &&
-            elt.id === "results-banner" &&
-            window.Ligitabl.resultsBannerDismissed
-        ) {
-            event.preventDefault();
-        }
-    });
-
-    function dismissResultsBanner() {
-        const host = document.getElementById("results-banner");
-        if (!host) return;
-
-        window.Ligitabl.resultsBannerDismissed = true;
-        sessionStorage.setItem(dismissedKey, "1");
-
-        host.remove();
-    }
-
-    document.addEventListener("click", (event) => {
-        const resetDemo = event.target?.closest?.('[data-reset-demo="true"]');
-        if (resetDemo) {
-            window.Ligitabl.resultsBannerDismissed = false;
-            sessionStorage.removeItem(dismissedKey);
-            return;
+    function dismissResultsBanner(roundNumber) {
+        var csrfToken =
+            document.querySelector('meta[name="_csrf"]')?.content;
+        var headers = {"Content-Type": "application/json"};
+        if (csrfToken) {
+            headers["X-CSRF-TOKEN"] = csrfToken;
         }
 
-        const trigger = event.target?.closest?.(
-            '[data-dismiss-results-banner="true"]',
+        fetch(
+            "/predictions/user/me/latest-result-banner/dismiss?round=" +
+                roundNumber,
+            {method: "POST", headers: headers},
         );
+
+        var host = document.getElementById("results-banner");
+        if (host) host.remove();
+    }
+
+    document.addEventListener("click", function (event) {
+        var trigger = event.target.closest
+            ? event.target.closest('[data-dismiss-results-banner="true"]')
+            : null;
         if (!trigger) return;
-        dismissResultsBanner();
+
+        var banner = document.querySelector("[data-result-round]");
+        var roundNumber = banner
+            ? banner.getAttribute("data-result-round")
+            : null;
+        if (roundNumber) {
+            dismissResultsBanner(roundNumber);
+        }
     });
 })();
