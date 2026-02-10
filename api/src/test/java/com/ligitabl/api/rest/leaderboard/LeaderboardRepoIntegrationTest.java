@@ -3,6 +3,7 @@ package com.ligitabl.api.rest.leaderboard;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,6 +17,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.model.domain.Entry;
+import com.ligitabl.model.domain.LeaderboardEntry;
 import com.ligitabl.model.domain.ResultTeamRank;
 import com.ligitabl.model.domain.RoundResult;
 import com.ligitabl.model.domain.RoundSubmission;
@@ -60,6 +62,12 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
     private UUID alicePredictionId;
     private UUID bobPredictionId;
     private UUID charliePredictionId;
+
+    private List<LeaderboardEntry> computeEntries(int fromRound, int toRound) {
+        return leaderboardRepo
+                .computeLeaderboard(contestId, seasonId, fromRound, toRound, null, 0, 100)
+                .entries();
+    }
 
     private void ensureFinalizedRound(int roundPosition) {
         Integer count = jdbc.queryForObject(
@@ -116,7 +124,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         createResult(bobId, bobPredictionId, 1, 90, 9, 4);
         createResult(charlieId, charliePredictionId, 1, 80, 8, 3);
 
-        var results = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 1);
+        var results = computeEntries(1, 1);
 
         assertThat(results).hasSize(3);
         assertThat(results.get(0).displayName()).isEqualTo("Alice");
@@ -137,7 +145,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         createResult(bobId, bobPredictionId, 2, 50, 5, 2);
         createResult(bobId, bobPredictionId, 3, 60, 6, 3);
 
-        var results = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 3);
+        var results = computeEntries(1, 3);
 
         assertThat(results.get(0).displayName()).isEqualTo("Alice");
         assertThat(results.get(0).totalScore()).isEqualTo(180);
@@ -149,12 +157,64 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
     }
 
     @Test
+    @DisplayName("fetches only the requested page")
+    void fetchesOnlyRequestedPage() {
+        resetData();
+
+        var users = createParticipantsWithScores(40, 1, 1000);
+
+        var response = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 1, users.get(0), 20, 20);
+
+        assertThat(response.entries()).hasSize(20);
+        assertThat(response.entries().get(0).position()).isEqualTo(21);
+        assertThat(response.entries().get(19).position()).isEqualTo(40);
+        assertThat(response.totalParticipants()).isEqualTo(40);
+        assertThat(response.hasPrevious()).isTrue();
+        assertThat(response.hasNext()).isFalse();
+    }
+
+    @Test
+    @DisplayName("returns user position even when not in current page")
+    void returnsUserPositionOutsideCurrentPage() {
+        resetData();
+
+        var users = createParticipantsWithScores(40, 1, 1000);
+        UUID midRankedUser = users.get(29);
+
+        var response = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 1, midRankedUser, 0, 20);
+
+        assertThat(response.userEntry()).isNotNull();
+        assertThat(response.userEntry().position()).isEqualTo(30);
+        assertThat(response.userInCurrentPage()).isFalse();
+        assertThat(response.userPageOffset()).isEqualTo(20);
+        assertThat(response.entries()).hasSize(20);
+        assertThat(response.entries().get(0).position()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("marks user when in current page")
+    void marksUserInCurrentPage() {
+        resetData();
+
+        var users = createParticipantsWithScores(40, 1, 1000);
+        UUID topRankedUser = users.get(14);
+
+        var response = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 1, topRankedUser, 0, 20);
+
+        assertThat(response.userEntry()).isNotNull();
+        assertThat(response.userEntry().position()).isEqualTo(15);
+        assertThat(response.userInCurrentPage()).isTrue();
+        assertThat(response.entries())
+                .anyMatch(entry -> entry.position() == 15);
+    }
+
+    @Test
     @DisplayName("calculates max score correctly")
     void calculatesMaxScoreCorrectly() {
         createResult(aliceId, alicePredictionId, 1, 10, 1, 1);
         createResult(aliceId, alicePredictionId, 2, 90, 9, 2);
 
-        var results = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 2);
+        var results = computeEntries(1, 2);
 
         assertThat(results).hasSize(1);
         assertThat(results.get(0).displayName()).isEqualTo("Alice");
@@ -170,7 +230,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         createResult(bobId, bobPredictionId, 1, 120, 12, 6);
         createResult(charlieId, charliePredictionId, 1, 90, 9, 4);
 
-        var byScore = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 1);
+        var byScore = computeEntries(1, 1);
         assertThat(byScore.get(0).displayName()).isEqualTo("Bob");
         assertThat(byScore.get(1).displayName()).isEqualTo("Alice");
         assertThat(byScore.get(2).displayName()).isEqualTo("Charlie");
@@ -191,7 +251,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         createResult(aliceId, alicePredictionId, 1, 100, 10, 5);
         createResult(bobId, bobPredictionId, 1, 100, 12, 5);
         createResult(charlieId, charliePredictionId, 1, 100, 8, 5);
-        var byZeroes = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 1);
+        var byZeroes = computeEntries(1, 1);
         assertThat(byZeroes.get(0).displayName()).isEqualTo("Bob");
         assertThat(byZeroes.get(1).displayName()).isEqualTo("Alice");
         assertThat(byZeroes.get(2).displayName()).isEqualTo("Charlie");
@@ -212,7 +272,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         createResult(aliceId, alicePredictionId, 1, 100, 10, 5);
         createResult(bobId, bobPredictionId, 1, 100, 10, 3);
         createResult(charlieId, charliePredictionId, 1, 100, 10, 7);
-        var bySwaps = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 1);
+        var bySwaps = computeEntries(1, 1);
         assertThat(bySwaps.get(0).displayName()).isEqualTo("Bob");
         assertThat(bySwaps.get(1).displayName()).isEqualTo("Alice");
         assertThat(bySwaps.get(2).displayName()).isEqualTo("Charlie");
@@ -239,7 +299,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         createResult(charlieId, charliePredictionId, 1, 50, 5, 2);
         createResult(charlieId, charliePredictionId, 2, 50, 5, 3); // max 50
 
-        var byMax = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 2);
+        var byMax = computeEntries(1, 2);
         assertThat(byMax.get(0).displayName()).isEqualTo("Bob");
 
         PostgresTestDbCleaner.truncateAllDomainTables(jdbc);
@@ -254,11 +314,14 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         entryRepo.save(Entry.builder().userId(bobId).contestId(contestId).build());
         entryRepo.save(Entry.builder().userId(charlieId).contestId(contestId).build());
 
-        // Display name (everything tied)
+        // Public id (everything tied)
+        updateUserPublicId(aliceId, "alice");
+        updateUserPublicId(bobId, "bob");
+        updateUserPublicId(charlieId, "charlie");
         createResult(aliceId, alicePredictionId, 1, 100, 10, 5);
         createResult(bobId, bobPredictionId, 1, 100, 10, 5);
         createResult(charlieId, charliePredictionId, 1, 100, 10, 5);
-        var byName = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 1);
+        var byName = computeEntries(1, 1);
         assertThat(byName.get(0).displayName()).isEqualTo("Alice");
         assertThat(byName.get(1).displayName()).isEqualTo("Bob");
         assertThat(byName.get(2).displayName()).isEqualTo("Charlie");
@@ -277,7 +340,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         createResult(bobId, bobPredictionId, 2, 120, 12, 6);
         createResult(charlieId, charliePredictionId, 2, 60, 6, 3);
 
-        var results = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 2);
+        var results = computeEntries(1, 2);
 
         assertThat(results.get(0).displayName()).isEqualTo("Bob");
         assertThat(results.get(0).movement()).isEqualTo(1);
@@ -297,7 +360,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         createResult(aliceId, alicePredictionId, 10, 70, 7, 4);
         createResult(aliceId, alicePredictionId, 15, 80, 8, 5);
 
-        var results = leaderboardRepo.computeLeaderboard(contestId, seasonId, 5, 10);
+        var results = computeEntries(5, 10);
 
         assertThat(results).hasSize(1);
         assertThat(results.get(0).totalScore()).isEqualTo(130);
@@ -308,7 +371,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
     @Test
     @DisplayName("returns empty when no results")
     void returnsEmptyWhenNoResults() {
-        var results = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 1);
+        var results = computeEntries(1, 1);
         assertThat(results).isEmpty();
     }
 
@@ -322,7 +385,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         UUID davePredictionId = createPrediction(daveId);
         createResult(daveId, davePredictionId, 1, 120, 12, 6);
 
-        var results = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 1);
+        var results = computeEntries(1, 1);
 
         assertThat(results).hasSize(2);
         assertThat(results).extracting(r -> r.displayName()).containsExactly("Alice", "Bob");
@@ -379,6 +442,27 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
                 true);
         jdbc.update("INSERT INTO t_user_role (fk_user_id, c_role) VALUES (?, ?)", id, "PLAYER");
         return id;
+    }
+
+    private void updateUserPublicId(UUID userId, String publicId) {
+        jdbc.update("UPDATE t_user SET c_public_id = ? WHERE pk_id = ?", publicId, userId);
+    }
+
+    private void resetData() {
+        PostgresTestDbCleaner.truncateAllDomainTables(jdbc);
+        insertCompetitionSeasonAndContest();
+    }
+
+    private List<UUID> createParticipantsWithScores(int count, int roundPosition, int baseScore) {
+        List<UUID> users = new ArrayList<>();
+        for (int i = 1; i <= count; i++) {
+            UUID userId = insertUser("user" + i + "@example.com", "User " + i);
+            UUID predictionId = createPrediction(userId);
+            entryRepo.save(Entry.builder().userId(userId).contestId(contestId).build());
+            createResult(userId, predictionId, roundPosition, baseScore - i, 0, 0);
+            users.add(userId);
+        }
+        return users;
     }
 
     private UUID createPrediction(UUID userId) {

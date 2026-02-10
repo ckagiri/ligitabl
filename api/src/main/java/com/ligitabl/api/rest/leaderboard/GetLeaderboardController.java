@@ -30,8 +30,11 @@ public class GetLeaderboardController {
      * Phase is optional, defaults to FS (Full Season).
      */
     @GetMapping("/main/leaderboard")
-    public ResponseEntity<?> getLeaderboard(@RequestParam(required = false) String phase) {
-        var query = new GetLeaderboardQuery(phase);
+        public ResponseEntity<?> getLeaderboard(
+                        @RequestParam(required = false) String phase,
+                        @RequestParam(required = false) Integer offset,
+                        @RequestParam(required = false) Integer limit) {
+                var query = new GetLeaderboardQuery(phase, offset, limit);
 
         return getLeaderboardUseCase
                 .execute(query)
@@ -74,8 +77,10 @@ public class GetLeaderboardController {
                                 result.rankings().stream()
                                         .map(entry -> new LeaderboardEntryDto(
                                                 entry.position(),
+                                                entry.publicId(),
                                                 entry.displayName(),
                                                 entry.totalScore(),
+                                                entry.roundScore(),
                                                 entry.maxScore(),
                                                 entry.totalZeroes(),
                                                 entry.totalSwaps(),
