@@ -204,8 +204,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         assertThat(response.userEntry()).isNotNull();
         assertThat(response.userEntry().position()).isEqualTo(15);
         assertThat(response.userInCurrentPage()).isTrue();
-        assertThat(response.entries())
-                .anyMatch(entry -> entry.position() == 15);
+        assertThat(response.entries()).anyMatch(entry -> entry.position() == 15);
     }
 
     @Test

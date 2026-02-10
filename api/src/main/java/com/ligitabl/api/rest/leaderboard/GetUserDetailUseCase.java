@@ -51,20 +51,17 @@ public class GetUserDetailUseCase {
         }
 
         if (competition.getPhases() == null || competition.getPhases().isEmpty()) {
-            return Either.left(
-                    new GetUserDetailError.LeaderboardError(new GetLeaderboardError.PhasesNotConfigured()));
+            return Either.left(new GetUserDetailError.LeaderboardError(new GetLeaderboardError.PhasesNotConfigured()));
         }
 
         var season = seasonRepo.findActiveSeason(competition.getId()).orElse(null);
         if (season == null) {
-            return Either.left(
-                    new GetUserDetailError.LeaderboardError(new GetLeaderboardError.ActiveSeasonNotFound()));
+            return Either.left(new GetUserDetailError.LeaderboardError(new GetLeaderboardError.ActiveSeasonNotFound()));
         }
 
         var contest = contestRepo.findMainBySeasonId(season.getId()).orElse(null);
         if (contest == null) {
-            return Either.left(
-                    new GetUserDetailError.LeaderboardError(new GetLeaderboardError.MainContestNotFound()));
+            return Either.left(new GetUserDetailError.LeaderboardError(new GetLeaderboardError.MainContestNotFound()));
         }
 
         var phase = findPhase(competition, query.phase());
@@ -80,8 +77,8 @@ public class GetUserDetailUseCase {
         }
 
         // Resolve effective round (latest finalized)
-        Integer effectiveRound = leaderboardRepo.resolveEffectiveToRound(
-                season.getId(), phase.getFrom(), phase.getTo());
+        Integer effectiveRound =
+                leaderboardRepo.resolveEffectiveToRound(season.getId(), phase.getFrom(), phase.getTo());
         if (effectiveRound == null) {
             return Either.left(new GetUserDetailError.NoFinalizedRounds());
         }
@@ -108,9 +105,7 @@ public class GetUserDetailUseCase {
                 .sorted(Comparator.comparingInt(TeamRank::getPosition))
                 .toList();
 
-        Set<String> teamCodes = sortedRanks.stream()
-                .map(TeamRank::getCode)
-                .collect(Collectors.toSet());
+        Set<String> teamCodes = sortedRanks.stream().map(TeamRank::getCode).collect(Collectors.toSet());
 
         Map<String, Team> teamsByCode = teamRepo.findAllByCodes(teamCodes).stream()
                 .collect(Collectors.toMap(Team::getCode, Function.identity()));

@@ -72,7 +72,7 @@ public class CreatePredictionUseCase {
                 .flatMap(__ -> validateNoDuplicatePositions(request))
                 .flatMap(__ -> validateNoDuplicateCodes(request))
                 .flatMap(__ -> validateTeamCodesExist(request, season))
-            .flatMap(__ -> validateNotSameAsInitialRankings(request, season))
+                .flatMap(__ -> validateNotSameAsInitialRankings(request, season))
                 .map(__ -> convertToTeamRanks(request));
     }
 

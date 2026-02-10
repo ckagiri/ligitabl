@@ -29,55 +29,48 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
     private final DSLContext dsl;
 
     @Override
-        public LeaderboardResponse computeLeaderboard(
-                        UUID contestId,
-                        UUID seasonId,
-                        int fromRound,
-                        int toRound,
-                        UUID userId,
-                        int offset,
-                        int limit) {
-                validateInputs(contestId, seasonId, fromRound, toRound, offset, limit);
+    public LeaderboardResponse computeLeaderboard(
+            UUID contestId, UUID seasonId, int fromRound, int toRound, UUID userId, int offset, int limit) {
+        validateInputs(contestId, seasonId, fromRound, toRound, offset, limit);
 
-                Integer effectiveToRound = resolveEffectiveToRound(seasonId, fromRound, toRound);
-                if (effectiveToRound == null) {
-                        return emptyResponse();
-                }
-
-                int totalParticipants = countParticipants(contestId, seasonId, fromRound, effectiveToRound);
-                if (totalParticipants == 0) {
-                        return emptyResponse();
-                }
-
-                List<RankingWithPosition> pageRankings = fetchPaginatedRankings(
-                                contestId, seasonId, fromRound, effectiveToRound, offset, limit);
-
-                UserRankingInfo userInfo = userId != null
-                                ? fetchUserRanking(contestId, seasonId, fromRound, effectiveToRound, userId, offset, limit)
-                                : new UserRankingInfo(null, false, 0);
-
-                int previousToRound = effectiveToRound - 1;
-                HashMap<UUID, Integer> previousPositions = previousToRound >= fromRound
-                                ? fetchPreviousPositions(contestId, seasonId, fromRound, previousToRound)
-                                : new HashMap<>();
-
-                List<LeaderboardEntry> entries = pageRankings.stream()
-                                .map(ranking -> buildEntry(ranking, previousPositions))
-                                .toList();
-
-                LeaderboardEntry userEntry = userInfo.ranking() != null
-                                ? buildEntry(userInfo.ranking(), previousPositions)
-                                : null;
-
-                return new LeaderboardResponse(
-                                entries,
-                                userEntry,
-                                userInfo.userInCurrentPage(),
-                                userInfo.userPageOffset(),
-                                totalParticipants,
-                                offset + limit < totalParticipants,
-                                offset > 0);
+        Integer effectiveToRound = resolveEffectiveToRound(seasonId, fromRound, toRound);
+        if (effectiveToRound == null) {
+            return emptyResponse();
         }
+
+        int totalParticipants = countParticipants(contestId, seasonId, fromRound, effectiveToRound);
+        if (totalParticipants == 0) {
+            return emptyResponse();
+        }
+
+        List<RankingWithPosition> pageRankings =
+                fetchPaginatedRankings(contestId, seasonId, fromRound, effectiveToRound, offset, limit);
+
+        UserRankingInfo userInfo = userId != null
+                ? fetchUserRanking(contestId, seasonId, fromRound, effectiveToRound, userId, offset, limit)
+                : new UserRankingInfo(null, false, 0);
+
+        int previousToRound = effectiveToRound - 1;
+        HashMap<UUID, Integer> previousPositions = previousToRound >= fromRound
+                ? fetchPreviousPositions(contestId, seasonId, fromRound, previousToRound)
+                : new HashMap<>();
+
+        List<LeaderboardEntry> entries = pageRankings.stream()
+                .map(ranking -> buildEntry(ranking, previousPositions))
+                .toList();
+
+        LeaderboardEntry userEntry =
+                userInfo.ranking() != null ? buildEntry(userInfo.ranking(), previousPositions) : null;
+
+        return new LeaderboardResponse(
+                entries,
+                userEntry,
+                userInfo.userInCurrentPage(),
+                userInfo.userPageOffset(),
+                totalParticipants,
+                offset + limit < totalParticipants,
+                offset > 0);
+    }
 
     @Override
     public Integer resolveEffectiveToRound(UUID seasonId, int fromRound, int toRound) {
@@ -100,18 +93,9 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
             int totalZeroes,
             int totalSwaps) {}
 
-    private record UserRankingInfo(
-            RankingWithPosition ranking,
-            boolean userInCurrentPage,
-            int userPageOffset) {}
+    private record UserRankingInfo(RankingWithPosition ranking, boolean userInCurrentPage, int userPageOffset) {}
 
-    private void validateInputs(
-            UUID contestId,
-            UUID seasonId,
-            int fromRound,
-            int toRound,
-            int offset,
-            int limit) {
+    private void validateInputs(UUID contestId, UUID seasonId, int fromRound, int toRound, int offset, int limit) {
         if (contestId == null) {
             throw new IllegalArgumentException("contestId must not be null");
         }
@@ -130,8 +114,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         if (limit <= 0) {
             throw new IllegalArgumentException("limit must be positive");
         }
-                if (limit > 100) {
-                        throw new IllegalArgumentException("limit must not exceed 100");
+        if (limit > 100) {
+            throw new IllegalArgumentException("limit must not exceed 100");
         }
     }
 
@@ -143,7 +127,9 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         Integer count = dsl.select(DSL.countDistinct(T_ENTRY.FK_USER_ID))
                 .from(T_ENTRY)
                 .join(T_ROUND_SUBMISSION)
-                .on(T_ROUND_SUBMISSION.FK_USER_ID.eq(T_ENTRY.FK_USER_ID)
+                .on(T_ROUND_SUBMISSION
+                        .FK_USER_ID
+                        .eq(T_ENTRY.FK_USER_ID)
                         .and(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId))
                         .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.between(fromRound, toRound)))
                 .join(T_ROUND_RESULT)
@@ -155,12 +141,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
     }
 
     private List<RankingWithPosition> fetchPaginatedRankings(
-            UUID contestId,
-            UUID seasonId,
-            int fromRound,
-            int toRound,
-            int offset,
-            int limit) {
+            UUID contestId, UUID seasonId, int fromRound, int toRound, int offset, int limit) {
 
         Field<Integer> totalScore = DSL.coalesce(DSL.sum(T_ROUND_RESULT.C_SCORE), 0)
                 .cast(Integer.class)
@@ -181,27 +162,30 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .cast(Integer.class)
                 .as("round_score");
 
-        CommonTableExpression<Record8<UUID, String, String, Integer, Integer, Integer, Integer, Integer>> userStats = DSL.name("user_stats").as(
-                dsl.select(
-                                T_USER.PK_ID,
-                                T_USER.C_PUBLIC_ID,
-                                T_USER.C_DISPLAY_NAME,
-                                totalScore,
-                                roundScore,
-                                maxScore,
-                                totalZeroes,
-                                totalSwaps)
-                        .from(T_ENTRY)
-                        .join(T_USER).on(T_USER.PK_ID.eq(T_ENTRY.FK_USER_ID))
-                        .join(T_ROUND_SUBMISSION)
-                        .on(T_ROUND_SUBMISSION.FK_USER_ID.eq(T_ENTRY.FK_USER_ID)
-                                .and(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId))
-                                .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.between(fromRound, toRound)))
-                        .join(T_ROUND_RESULT)
-                        .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
-                        .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
-                        .groupBy(T_USER.PK_ID, T_USER.C_PUBLIC_ID, T_USER.C_DISPLAY_NAME)
-        );
+        CommonTableExpression<Record8<UUID, String, String, Integer, Integer, Integer, Integer, Integer>> userStats =
+                DSL.name("user_stats")
+                        .as(dsl.select(
+                                        T_USER.PK_ID,
+                                        T_USER.C_PUBLIC_ID,
+                                        T_USER.C_DISPLAY_NAME,
+                                        totalScore,
+                                        roundScore,
+                                        maxScore,
+                                        totalZeroes,
+                                        totalSwaps)
+                                .from(T_ENTRY)
+                                .join(T_USER)
+                                .on(T_USER.PK_ID.eq(T_ENTRY.FK_USER_ID))
+                                .join(T_ROUND_SUBMISSION)
+                                .on(T_ROUND_SUBMISSION
+                                        .FK_USER_ID
+                                        .eq(T_ENTRY.FK_USER_ID)
+                                        .and(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId))
+                                        .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.between(fromRound, toRound)))
+                                .join(T_ROUND_RESULT)
+                                .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
+                                .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
+                                .groupBy(T_USER.PK_ID, T_USER.C_PUBLIC_ID, T_USER.C_DISPLAY_NAME));
 
         Field<UUID> userId = userStats.field(T_USER.PK_ID);
         Field<String> publicId = userStats.field(T_USER.C_PUBLIC_ID);
@@ -250,13 +234,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
     }
 
     private UserRankingInfo fetchUserRanking(
-            UUID contestId,
-            UUID seasonId,
-            int fromRound,
-            int toRound,
-            UUID userId,
-            int offset,
-            int limit) {
+            UUID contestId, UUID seasonId, int fromRound, int toRound, UUID userId, int offset, int limit) {
         Field<Integer> totalScore = DSL.coalesce(DSL.sum(T_ROUND_RESULT.C_SCORE), 0)
                 .cast(Integer.class)
                 .as("total_score");
@@ -276,27 +254,30 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .cast(Integer.class)
                 .as("round_score");
 
-        CommonTableExpression<Record8<UUID, String, String, Integer, Integer, Integer, Integer, Integer>> userStats = DSL.name("user_stats").as(
-                dsl.select(
-                                T_USER.PK_ID,
-                                T_USER.C_PUBLIC_ID,
-                                T_USER.C_DISPLAY_NAME,
-                                totalScore,
-                                roundScore,
-                                maxScore,
-                                totalZeroes,
-                                totalSwaps)
-                        .from(T_ENTRY)
-                        .join(T_USER).on(T_USER.PK_ID.eq(T_ENTRY.FK_USER_ID))
-                        .join(T_ROUND_SUBMISSION)
-                        .on(T_ROUND_SUBMISSION.FK_USER_ID.eq(T_ENTRY.FK_USER_ID)
-                                .and(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId))
-                                .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.between(fromRound, toRound)))
-                        .join(T_ROUND_RESULT)
-                        .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
-                        .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
-                        .groupBy(T_USER.PK_ID, T_USER.C_PUBLIC_ID, T_USER.C_DISPLAY_NAME)
-        );
+        CommonTableExpression<Record8<UUID, String, String, Integer, Integer, Integer, Integer, Integer>> userStats =
+                DSL.name("user_stats")
+                        .as(dsl.select(
+                                        T_USER.PK_ID,
+                                        T_USER.C_PUBLIC_ID,
+                                        T_USER.C_DISPLAY_NAME,
+                                        totalScore,
+                                        roundScore,
+                                        maxScore,
+                                        totalZeroes,
+                                        totalSwaps)
+                                .from(T_ENTRY)
+                                .join(T_USER)
+                                .on(T_USER.PK_ID.eq(T_ENTRY.FK_USER_ID))
+                                .join(T_ROUND_SUBMISSION)
+                                .on(T_ROUND_SUBMISSION
+                                        .FK_USER_ID
+                                        .eq(T_ENTRY.FK_USER_ID)
+                                        .and(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId))
+                                        .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.between(fromRound, toRound)))
+                                .join(T_ROUND_RESULT)
+                                .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
+                                .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
+                                .groupBy(T_USER.PK_ID, T_USER.C_PUBLIC_ID, T_USER.C_DISPLAY_NAME));
 
         Field<UUID> userIdField = userStats.field(T_USER.PK_ID);
         Field<String> publicId = userStats.field(T_USER.C_PUBLIC_ID);
@@ -364,11 +345,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         return new UserRankingInfo(ranking, userInCurrentPage, userPageOffset);
     }
 
-    private HashMap<UUID, Integer> fetchPreviousPositions(
-            UUID contestId,
-            UUID seasonId,
-            int fromRound,
-            int toRound) {
+    private HashMap<UUID, Integer> fetchPreviousPositions(UUID contestId, UUID seasonId, int fromRound, int toRound) {
         Field<Integer> totalScore = DSL.coalesce(DSL.sum(T_ROUND_RESULT.C_SCORE), 0)
                 .cast(Integer.class)
                 .as("total_score");
@@ -382,8 +359,9 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .cast(Integer.class)
                 .as("max_score");
 
-        CommonTableExpression<Record7<UUID, String, String, Integer, Integer, Integer, Integer>> userStats = DSL.name("user_stats").as(
-                dsl.select(
+        CommonTableExpression<Record7<UUID, String, String, Integer, Integer, Integer, Integer>> userStats = DSL.name(
+                        "user_stats")
+                .as(dsl.select(
                                 T_USER.PK_ID,
                                 T_USER.C_PUBLIC_ID,
                                 T_USER.C_DISPLAY_NAME,
@@ -392,16 +370,18 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                                 totalZeroes,
                                 totalSwaps)
                         .from(T_ENTRY)
-                        .join(T_USER).on(T_USER.PK_ID.eq(T_ENTRY.FK_USER_ID))
+                        .join(T_USER)
+                        .on(T_USER.PK_ID.eq(T_ENTRY.FK_USER_ID))
                         .join(T_ROUND_SUBMISSION)
-                        .on(T_ROUND_SUBMISSION.FK_USER_ID.eq(T_ENTRY.FK_USER_ID)
+                        .on(T_ROUND_SUBMISSION
+                                .FK_USER_ID
+                                .eq(T_ENTRY.FK_USER_ID)
                                 .and(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId))
                                 .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.between(fromRound, toRound)))
                         .join(T_ROUND_RESULT)
                         .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
                         .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
-                        .groupBy(T_USER.PK_ID, T_USER.C_PUBLIC_ID, T_USER.C_DISPLAY_NAME)
-        );
+                        .groupBy(T_USER.PK_ID, T_USER.C_PUBLIC_ID, T_USER.C_DISPLAY_NAME));
 
         Field<UUID> userIdField = userStats.field(T_USER.PK_ID);
         Field<String> publicId = userStats.field(T_USER.C_PUBLIC_ID);

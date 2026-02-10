@@ -325,7 +325,7 @@ public class SyncMatchesUseCase {
         if (home == null || away == null) {
             return null;
         }
-        return new Integer[] { home, away };
+        return new Integer[] {home, away};
     }
 
     private MatchStatus mapToDomainStatus(String matchStatus) {

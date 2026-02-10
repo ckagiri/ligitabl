@@ -1,6 +1,5 @@
 package com.ligitabl.model.repo;
 
-import java.util.List;
 import java.util.UUID;
 
 import com.ligitabl.model.domain.LeaderboardResponse;
@@ -18,26 +17,20 @@ import com.ligitabl.model.domain.LeaderboardResponse;
  * 5. public_id ASC (unique identifier as final tiebreaker)
  */
 public interface LeaderboardRepo {
-        /**
-         * Computes leaderboard for a contest within a specific round range with pagination.
-         *
-         * @param contestId The contest to compute leaderboard for
-         * @param seasonId The season (for filtering round submissions)
-         * @param fromRound Start of round range (inclusive)
-         * @param toRound End of round range (inclusive)
-         * @param userId Optional user to resolve ranking details for
-         * @param offset Pagination offset (0-based)
-         * @param limit Pagination size
-         * @return Paginated leaderboard response
-         */
-        LeaderboardResponse computeLeaderboard(
-            UUID contestId,
-            UUID seasonId,
-            int fromRound,
-            int toRound,
-            UUID userId,
-            int offset,
-            int limit);
+    /**
+     * Computes leaderboard for a contest within a specific round range with pagination.
+     *
+     * @param contestId The contest to compute leaderboard for
+     * @param seasonId The season (for filtering round submissions)
+     * @param fromRound Start of round range (inclusive)
+     * @param toRound End of round range (inclusive)
+     * @param userId Optional user to resolve ranking details for
+     * @param offset Pagination offset (0-based)
+     * @param limit Pagination size
+     * @return Paginated leaderboard response
+     */
+    LeaderboardResponse computeLeaderboard(
+            UUID contestId, UUID seasonId, int fromRound, int toRound, UUID userId, int offset, int limit);
 
     /**
      * Resolves the highest round position with finalized standings within a range.

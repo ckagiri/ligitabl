@@ -69,27 +69,21 @@ public class GetLeaderboardUseCase {
         int limit = query.limit() != null ? query.limit() : 100;
 
         var response = leaderboardRepo.computeLeaderboard(
-            contest.getId(),
-            season.getId(),
-            phase.getFrom(),
-            phase.getTo(),
-            query.userId(),
-            offset,
-            limit);
+                contest.getId(), season.getId(), phase.getFrom(), phase.getTo(), query.userId(), offset, limit);
 
         return Either.right(new GetLeaderboardResult(
-            contest.getId(),
-            phase,
-            response.entries(),
-            competition.getPhases(),
-            response.userEntry(),
-            response.userInCurrentPage(),
-            response.userPageOffset(),
-            response.totalParticipants(),
-            response.hasNext(),
-            response.hasPrevious(),
-            offset,
-            limit));
+                contest.getId(),
+                phase,
+                response.entries(),
+                competition.getPhases(),
+                response.userEntry(),
+                response.userInCurrentPage(),
+                response.userPageOffset(),
+                response.totalParticipants(),
+                response.hasNext(),
+                response.hasPrevious(),
+                offset,
+                limit));
     }
 
     private RoundSpan findPhaseInCompetition(Competition competition, String phaseCode) {

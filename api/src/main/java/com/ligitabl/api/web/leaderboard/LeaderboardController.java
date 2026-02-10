@@ -2,6 +2,7 @@ package com.ligitabl.api.web.leaderboard;
 
 import java.security.Principal;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -50,30 +51,49 @@ public class LeaderboardController {
 
         log.info("GET /leaderboard - phase: {}, page: {}", phase, page);
 
-        UUID currentUserId = null;
-        String currentUserPublicId = null;
-        String currentUserName = null;
-        if (principal != null) {
-            try {
-                Email email = Email.create(principal.getName());
-                User user = userRepo.findByEmail(email).orElse(null);
-                if (user != null) {
-                    currentUserId = user.getId();
-                    currentUserPublicId = user.getPublicId().value();
-                    currentUserName = user.getDisplayName();
-                }
-            } catch (IllegalArgumentException e) {
-                log.debug("Could not resolve user from principal: {}", e.getMessage());
-            }
-        }
+        CurrentUserContext currentUser = resolveCurrentUser(principal);
 
         int offset = Math.max(0, (page - 1) * PAGE_SIZE);
-        var query = new GetLeaderboardQuery(phase, offset, PAGE_SIZE, currentUserId);
+        var query = new GetLeaderboardQuery(phase, offset, PAGE_SIZE, currentUser.userId());
 
-        return getLeaderboardUseCase.execute(query).fold(
-                error -> handleError(error, model, response, hxRequest),
-                result -> handleSuccess(
-                        result, page, currentUserPublicId, currentUserName, model, hxRequest));
+        return getLeaderboardUseCase
+                .execute(query)
+                .fold(
+                        error -> handleError(error, model, response, hxRequest),
+                        result -> handleSuccess(
+                                result,
+                                page,
+                                currentUser.publicId(),
+                                currentUser.displayName(),
+                                model,
+                                hxRequest));
+    }
+
+    private record CurrentUserContext(UUID userId, String publicId, String displayName) {
+        private static CurrentUserContext empty() {
+            return new CurrentUserContext(null, null, null);
+        }
+    }
+
+    private CurrentUserContext resolveCurrentUser(Principal principal) {
+        if (principal == null) {
+            return CurrentUserContext.empty();
+        }
+
+        try {
+            Email email = Email.create(principal.getName());
+            User user = userRepo.findByEmail(email).orElse(null);
+            if (user == null) {
+                return CurrentUserContext.empty();
+            }
+            return new CurrentUserContext(
+                    user.getId(),
+                    user.getPublicId().value(),
+                    user.getDisplayName());
+        } catch (IllegalArgumentException e) {
+            log.debug("Could not resolve user from principal: {}", e.getMessage());
+            return CurrentUserContext.empty();
+        }
     }
 
     private String handleSuccess(
@@ -128,9 +148,11 @@ public class LeaderboardController {
 
         var query = new GetUserDetailQuery(userId, phase);
 
-        return getUserDetailUseCase.execute(query).fold(
-                error -> handleUserDetailError(error, model, response),
-                result -> handleUserDetailSuccess(result, model));
+        return getUserDetailUseCase
+                .execute(query)
+                .fold(
+                        error -> handleUserDetailError(error, model, response),
+                        result -> handleUserDetailSuccess(result, model));
     }
 
     private String handleUserDetailSuccess(GetUserDetailResult result, Model model) {
@@ -141,22 +163,23 @@ public class LeaderboardController {
         return "fragments/user-detail :: user-details(user=${user}, round=${round}, status=${status})";
     }
 
-    private String handleUserDetailError(
-            GetUserDetailError error, Model model, HttpServletResponse response) {
+    private String handleUserDetailError(GetUserDetailError error, Model model, HttpServletResponse response) {
 
-        int status = switch (error) {
-            case GetUserDetailError.UserNotFound e -> 404;
-            case GetUserDetailError.NoFinalizedRounds e -> 404;
-            case GetUserDetailError.NoPredictionFound e -> 404;
-            case GetUserDetailError.LeaderboardError e -> 500;
-        };
+        int status =
+                switch (error) {
+                    case GetUserDetailError.UserNotFound e -> 404;
+                    case GetUserDetailError.NoFinalizedRounds e -> 404;
+                    case GetUserDetailError.NoPredictionFound e -> 404;
+                    case GetUserDetailError.LeaderboardError e -> 500;
+                };
 
-        String message = switch (error) {
-            case GetUserDetailError.UserNotFound e -> "User not found";
-            case GetUserDetailError.NoFinalizedRounds e -> "No finalized rounds yet";
-            case GetUserDetailError.NoPredictionFound e -> "No prediction found for round " + e.round();
-            case GetUserDetailError.LeaderboardError e -> "Could not load leaderboard";
-        };
+        String message =
+                switch (error) {
+                    case GetUserDetailError.UserNotFound e -> "User not found";
+                    case GetUserDetailError.NoFinalizedRounds e -> "No finalized rounds yet";
+                    case GetUserDetailError.NoPredictionFound e -> "No prediction found for round " + e.round();
+                    case GetUserDetailError.LeaderboardError e -> "Could not load leaderboard";
+                };
 
         response.setStatus(status);
         model.addAttribute("error", message);
@@ -165,24 +188,25 @@ public class LeaderboardController {
 
     // ========== Leaderboard Error Handler ==========
 
-    private String handleError(
-            GetLeaderboardError error, Model model, HttpServletResponse response, String hxRequest) {
+    private String handleError(GetLeaderboardError error, Model model, HttpServletResponse response, String hxRequest) {
 
-        int status = switch (error) {
-            case GetLeaderboardError.DefaultCompetitionNotFound e -> 404;
-            case GetLeaderboardError.ActiveSeasonNotFound e -> 404;
-            case GetLeaderboardError.MainContestNotFound e -> 404;
-            case GetLeaderboardError.PhasesNotConfigured e -> 500;
-            case GetLeaderboardError.InvalidPhase e -> 400;
-        };
+        int status =
+                switch (error) {
+                    case GetLeaderboardError.DefaultCompetitionNotFound e -> 404;
+                    case GetLeaderboardError.ActiveSeasonNotFound e -> 404;
+                    case GetLeaderboardError.MainContestNotFound e -> 404;
+                    case GetLeaderboardError.PhasesNotConfigured e -> 500;
+                    case GetLeaderboardError.InvalidPhase e -> 400;
+                };
 
-        String message = switch (error) {
-            case GetLeaderboardError.DefaultCompetitionNotFound e -> e.message();
-            case GetLeaderboardError.ActiveSeasonNotFound e -> e.message();
-            case GetLeaderboardError.MainContestNotFound e -> e.message();
-            case GetLeaderboardError.PhasesNotConfigured e -> "Competition phases not configured";
-            case GetLeaderboardError.InvalidPhase e -> "Invalid phase: " + e.phaseCode();
-        };
+        String message =
+                switch (error) {
+                    case GetLeaderboardError.DefaultCompetitionNotFound e -> e.message();
+                    case GetLeaderboardError.ActiveSeasonNotFound e -> e.message();
+                    case GetLeaderboardError.MainContestNotFound e -> e.message();
+                    case GetLeaderboardError.PhasesNotConfigured e -> "Competition phases not configured";
+                    case GetLeaderboardError.InvalidPhase e -> "Invalid phase: " + e.phaseCode();
+                };
 
         response.setStatus(status);
         model.addAttribute("error", message);

@@ -8,6 +8,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -209,8 +210,8 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @DisplayName("should accept any non-default ranking order")
         void shouldAcceptAnyNonDefaultRankingOrder() {
             List<TeamRankDto> rankings = new ArrayList<>(INITIAL_RANKINGS.stream()
-                .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
-                .toList());
+                    .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
+                    .toList());
             Collections.swap(rankings, 0, 1);
             CreatePredictionCommand request = new CreatePredictionCommand(rankings);
 
