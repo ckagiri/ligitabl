@@ -18,6 +18,8 @@ public sealed interface CreatePredictionError {
 
     record InvalidTeamCodes(List<String> invalidCodes) implements CreatePredictionError {}
 
+    record SameAsInitialRankings() implements CreatePredictionError {}
+
     record Ended(int currentRound, int maxRounds) implements CreatePredictionError {}
 
     record CurrentRoundNotFound(UUID seasonId) implements CreatePredictionError {}

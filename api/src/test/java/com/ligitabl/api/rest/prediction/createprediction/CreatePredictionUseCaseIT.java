@@ -206,21 +206,13 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         }
 
         @Test
-        @DisplayName("should accept any ranking order (no strategic validation)")
-        void shouldAcceptAnyRankingOrder() {
-            CreatePredictionCommand request = new CreatePredictionCommand(List.of(
-                    new TeamRankDto("WHU", 1),
-                    new TeamRankDto("BRE", 2),
-                    new TeamRankDto("CRY", 3),
-                    new TeamRankDto("BHA", 4),
-                    new TeamRankDto("TOT", 5),
-                    new TeamRankDto("MUN", 6),
-                    new TeamRankDto("NEW", 7),
-                    new TeamRankDto("CHE", 8),
-                    new TeamRankDto("AVL", 9),
-                    new TeamRankDto("LIV", 10),
-                    new TeamRankDto("ARS", 11),
-                    new TeamRankDto("MCI", 12)));
+        @DisplayName("should accept any non-default ranking order")
+        void shouldAcceptAnyNonDefaultRankingOrder() {
+            List<TeamRankDto> rankings = new ArrayList<>(INITIAL_RANKINGS.stream()
+                .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
+                .toList());
+            Collections.swap(rankings, 0, 1);
+            CreatePredictionCommand request = new CreatePredictionCommand(rankings);
 
             Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
 
@@ -237,6 +229,17 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
     @Nested
     @DisplayName("Validation Errors")
     class ValidationErrors {
+
+        @Test
+        @DisplayName("should reject when ranking order matches initial rankings")
+        void shouldRejectWhenRankingMatchesInitialRankings() {
+            CreatePredictionCommand request = validRequestFromInitialRankings();
+
+            Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
+
+            assertThat(result.isLeft()).isTrue();
+            assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.SameAsInitialRankings.class);
+        }
 
         @Test
         @DisplayName("should reject when invalid team count")
