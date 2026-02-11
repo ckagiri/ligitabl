@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.leaderboard;
+package com.ligitabl.api.rest.leaderboard.getleaderboard;
 
 import java.util.UUID;
 

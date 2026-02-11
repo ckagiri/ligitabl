@@ -289,7 +289,7 @@ public class MatchPersistenceAdapter implements MatchRepo {
         rec.setVenue(model.getVenue());
         rec.setMatchday(model.getMatchday());
 
-        rec.setWasPostponed(model.isWasPostponed());
+        rec.setWasPostponed(model.wasPostponed());
         rec.setWasSuspended(model.isWasSuspended());
 
         Score score = model.getScore();

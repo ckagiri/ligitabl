@@ -142,7 +142,7 @@ class TransitionMatchStatusUseCaseTest {
         assertEquals(round.getPosition(), ok.getRoundPosition());
         assertEquals(now, ok.getTimestamp());
 
-        verify(matchRepo).save(argThat(m -> m.getStatus() == MatchStatus.POSTPONED && m.isWasPostponed()));
+        verify(matchRepo).save(argThat(m -> m.getStatus() == MatchStatus.POSTPONED && m.wasPostponed()));
     }
 
     @Test

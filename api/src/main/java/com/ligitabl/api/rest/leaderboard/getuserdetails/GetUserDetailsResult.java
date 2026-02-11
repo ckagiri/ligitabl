@@ -1,8 +1,8 @@
-package com.ligitabl.api.rest.leaderboard;
+package com.ligitabl.api.rest.leaderboard.getuserdetails;
 
 import java.util.List;
 
-public record GetUserDetailResult(
+public record GetUserDetailsResult(
         String displayName,
         int position,
         int totalScore,

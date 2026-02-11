@@ -79,6 +79,7 @@ public class CreatePredictionController {
             case CreatePredictionError.DuplicatePositions __ -> 400;
             case CreatePredictionError.DuplicateTeamCodes __ -> 400;
             case CreatePredictionError.InvalidTeamCodes __ -> 400;
+            case CreatePredictionError.SameAsInitialRankings __ -> 400;
             case CreatePredictionError.Ended __ -> 409;
             case CreatePredictionError.CurrentRoundNotFound __ -> 404;
             case CreatePredictionError.MainContestNotFound __ -> 404;
@@ -96,6 +97,8 @@ public class CreatePredictionController {
             case CreatePredictionError.DuplicatePositions __ -> "Each position must be unique";
             case CreatePredictionError.DuplicateTeamCodes __ -> "Each team can only appear once";
             case CreatePredictionError.InvalidTeamCodes __ -> "Some team codes are not valid for this season";
+            case CreatePredictionError.SameAsInitialRankings __ ->
+                    "Prediction must differ from the season's initial rankings";
             case CreatePredictionError.Ended __ -> "Cannot join - season has ended";
             case CreatePredictionError.CurrentRoundNotFound __ -> "Current round not found";
             case CreatePredictionError.MainContestNotFound __ -> "Default contest not found";

@@ -7,19 +7,14 @@ import java.util.UUID;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.ligitabl.api.rest.leaderboard.GetLeaderboardError;
-import com.ligitabl.api.rest.leaderboard.GetLeaderboardQuery;
-import com.ligitabl.api.rest.leaderboard.GetLeaderboardResult;
-import com.ligitabl.api.rest.leaderboard.GetLeaderboardUseCase;
-import com.ligitabl.api.rest.leaderboard.GetUserDetailError;
-import com.ligitabl.api.rest.leaderboard.GetUserDetailQuery;
-import com.ligitabl.api.rest.leaderboard.GetUserDetailResult;
-import com.ligitabl.api.rest.leaderboard.GetUserDetailUseCase;
+import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardError;
+import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardQuery;
+import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardResult;
+import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardUseCase;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.domain.LeaderboardEntry;
 import com.ligitabl.model.domain.User;
@@ -29,19 +24,18 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Controller
+@Controller("webGetLeaderboardController")
 @RequestMapping("/leaderboard")
 @RequiredArgsConstructor
 @Slf4j
-public class LeaderboardController {
+public class GetLeaderboardController {
     private static final int PAGE_SIZE = 20;
 
     private final GetLeaderboardUseCase getLeaderboardUseCase;
-    private final GetUserDetailUseCase getUserDetailUseCase;
     private final UserRepo userRepo;
 
     @GetMapping
-    public String leaderboard(
+    public String getLeaderboard(
             @RequestParam(required = false) String phase,
             @RequestParam(required = false, defaultValue = "1") int page,
             Principal principal,
@@ -61,12 +55,7 @@ public class LeaderboardController {
                 .fold(
                         error -> handleError(error, model, response, hxRequest),
                         result -> handleSuccess(
-                                result,
-                                page,
-                                currentUser.publicId(),
-                                currentUser.displayName(),
-                                model,
-                                hxRequest));
+                                result, page, currentUser.publicId(), currentUser.displayName(), model, hxRequest));
     }
 
     private record CurrentUserContext(UUID userId, String publicId, String displayName) {
@@ -86,10 +75,7 @@ public class LeaderboardController {
             if (user == null) {
                 return CurrentUserContext.empty();
             }
-            return new CurrentUserContext(
-                    user.getId(),
-                    user.getPublicId().value(),
-                    user.getDisplayName());
+            return new CurrentUserContext(user.getId(), user.getPublicId().value(), user.getDisplayName());
         } catch (IllegalArgumentException e) {
             log.debug("Could not resolve user from principal: {}", e.getMessage());
             return CurrentUserContext.empty();
@@ -135,61 +121,7 @@ public class LeaderboardController {
         return "leaderboard";
     }
 
-    // ========== User Detail Drill-Down ==========
-
-    @GetMapping("/user/{userId}/details")
-    public String userDetails(
-            @PathVariable String userId,
-            @RequestParam(required = false) String phase,
-            Model model,
-            HttpServletResponse response) {
-
-        log.info("GET /leaderboard/user/{}/details - phase: {}", userId, phase);
-
-        var query = new GetUserDetailQuery(userId, phase);
-
-        return getUserDetailUseCase
-                .execute(query)
-                .fold(
-                        error -> handleUserDetailError(error, model, response),
-                        result -> handleUserDetailSuccess(result, model));
-    }
-
-    private String handleUserDetailSuccess(GetUserDetailResult result, Model model) {
-        model.addAttribute("user", result);
-        model.addAttribute("round", result.effectiveRound());
-        model.addAttribute("status", result.showingPreviousRound() ? "Finalised" : "");
-
-        return "fragments/user-detail :: user-details(user=${user}, round=${round}, status=${status})";
-    }
-
-    private String handleUserDetailError(GetUserDetailError error, Model model, HttpServletResponse response) {
-
-        int status =
-                switch (error) {
-                    case GetUserDetailError.UserNotFound e -> 404;
-                    case GetUserDetailError.NoFinalizedRounds e -> 404;
-                    case GetUserDetailError.NoPredictionFound e -> 404;
-                    case GetUserDetailError.LeaderboardError e -> 500;
-                };
-
-        String message =
-                switch (error) {
-                    case GetUserDetailError.UserNotFound e -> "User not found";
-                    case GetUserDetailError.NoFinalizedRounds e -> "No finalized rounds yet";
-                    case GetUserDetailError.NoPredictionFound e -> "No prediction found for round " + e.round();
-                    case GetUserDetailError.LeaderboardError e -> "Could not load leaderboard";
-                };
-
-        response.setStatus(status);
-        model.addAttribute("error", message);
-        return "fragments/error-banner :: banner";
-    }
-
-    // ========== Leaderboard Error Handler ==========
-
     private String handleError(GetLeaderboardError error, Model model, HttpServletResponse response, String hxRequest) {
-
         int status =
                 switch (error) {
                     case GetLeaderboardError.DefaultCompetitionNotFound e -> 404;
