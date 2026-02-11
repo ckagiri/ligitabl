@@ -72,12 +72,12 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
                 return Either.right(ctx);
             }
 
-            return validateLiveMode(ctx.match(), ctx.currentRound(), ctx.targetRound())
+            return validateOperationalMode(ctx.match(), ctx.currentRound(), ctx.targetRound())
                     .map(ignored -> ctx);
         });
     }
 
-    private Either<UseCaseError, Void> validateLiveMode(Match match, Round currentRound, Round targetRound) {
+    private Either<UseCaseError, Void> validateOperationalMode(Match match, Round currentRound, Round targetRound) {
         if (match.getStatus() == MatchStatus.SUSPENDED) {
             return Either.left(UseCaseErrors.validation(
                     "Cannot reschedule SUSPENDED match directly. Transition to POSTPONED first."));
@@ -124,7 +124,7 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
                     .newStatus(saved.getStatus())
                     .fromRound(fromRound)
                     .toRound(toRound)
-                    .wasPostponed(saved.isWasPostponed())
+                    .wasPostponed(saved.wasPostponed())
                     .timestamp(now)
                     .build());
 

@@ -94,6 +94,11 @@ public class CreatePredictionController {
                             "message", "Some team codes are not valid for this season",
                             "invalid_codes", e.invalidCodes()));
 
+            case CreatePredictionError.SameAsInitialRankings __ -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of(
+                            "error", "PREDICTION_MATCHES_INITIAL_RANKINGS",
+                            "message", "Prediction must differ from the season's initial rankings"));
+
             case CreatePredictionError.Ended e -> ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of(
                             "error",

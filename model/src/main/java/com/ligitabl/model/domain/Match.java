@@ -50,6 +50,10 @@ public class Match extends AbstractModel<UUID> {
     @Builder.Default
     private boolean wasSuspended = false;
 
+    public boolean wasPostponed() {
+        return wasPostponed;
+    }
+
     public void setScore(int homeGoals, int awayGoals) {
         this.score = Score.builder().homeGoals(homeGoals).awayGoals(awayGoals).build();
     }

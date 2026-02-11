@@ -49,9 +49,7 @@ public class LatestResultBannerController {
 
     @PostMapping("/me/latest-result-banner/dismiss")
     @ResponseBody
-    public ResponseEntity<Void> dismissBanner(
-            @RequestParam int round,
-            Principal principal) {
+    public ResponseEntity<Void> dismissBanner(@RequestParam int round, Principal principal) {
         UUID userId = resolveUserId(principal);
         if (userId == null) {
             return ResponseEntity.status(401).build();
@@ -68,7 +66,9 @@ public class LatestResultBannerController {
     }
 
     private UUID resolveUserId(Principal principal) {
-        if (principal == null || principal.getName() == null || principal.getName().isBlank()) {
+        if (principal == null
+                || principal.getName() == null
+                || principal.getName().isBlank()) {
             return null;
         }
         try {

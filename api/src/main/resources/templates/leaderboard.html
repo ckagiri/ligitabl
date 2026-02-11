@@ -27,15 +27,15 @@
               >
                 <option
                   th:each="p : ${phases}"
-                  th:value="${p.name()}"
-                  th:selected="${p.name() == currentPhase}"
-                  th:text="${p.name() == 'FS' ? 'Full Season' :
-                                              p.name() == 'Q1' ? 'Q1 (GW 1-9)' :
-                                              p.name() == 'Q2' ? 'Q2 (GW 10-19)' :
-                                              p.name() == 'Q3' ? 'Q3 (GW 20-29)' :
-                                              p.name() == 'Q4' ? 'Q4 (GW 30-38)' :
-                                              p.name() == 'H1' ? 'H1 (GW 1-19)' :
-                                              p.name() == 'H2' ? 'H2 (GW 20-38)' : p.name()}"
+                  th:value="${p.code}"
+                  th:selected="${p.code == currentPhase}"
+                  th:text="${p.code == 'FS' ? 'Full Season' :
+                                              p.code == 'Q1' ? 'Q1 (GW 1-9)' :
+                                              p.code == 'Q2' ? 'Q2 (GW 10-19)' :
+                                              p.code == 'Q3' ? 'Q3 (GW 20-29)' :
+                                              p.code == 'Q4' ? 'Q4 (GW 30-38)' :
+                                              p.code == 'H1' ? 'H1 (GW 1-19)' :
+                                              p.code == 'H2' ? 'H2 (GW 20-38)' : p.code}"
                 >
                   Full Season
                 </option>
@@ -101,16 +101,16 @@
               <tbody class="bg-white divide-y divide-gray-200">
                 <tr
                   th:each="entry : ${leaderboard}"
-                  th:classappend="${userPosition != null && entry.position == userPosition.position ? 'bg-indigo-50 border-l-4 border-indigo-500' : ''}"
+                  th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'bg-indigo-50 border-l-4 border-indigo-500' : ''}"
                   class="group hover:bg-gray-50 transition"
                 >
                   <!-- Position -->
                   <td
                     class="sticky left-0 z-10 px-3 py-4 whitespace-nowrap text-sm font-bold"
-                    th:classappend="${userPosition != null && entry.position == userPosition.position ? 'bg-indigo-50 text-indigo-900' : 'bg-white group-hover:bg-gray-50 text-gray-900'}"
+                    th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'bg-indigo-50 text-indigo-900' : 'bg-white group-hover:bg-gray-50 text-gray-900'}"
                   >
                     <span
-                      th:if="${userPosition != null && entry.position == userPosition.position}"
+                      th:if="${userPosition != null && entry.publicId == userPosition.publicId}"
                       class="text-indigo-600 mr-1.5 text-base"
                       >🔹</span
                     >
@@ -120,14 +120,14 @@
                   <!-- Player (clickable) -->
                   <td
                     class="sticky left-[64px] z-10 px-3 py-4 whitespace-nowrap"
-                    th:classappend="${userPosition != null && entry.position == userPosition.position ? 'bg-indigo-50' : 'bg-white group-hover:bg-gray-50'}"
+                    th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'bg-indigo-50' : 'bg-white group-hover:bg-gray-50'}"
                   >
                     <button
-                      th:attr="hx-get=@{/leaderboard/user/{id}/details(id=${entry.userId})}"
+                      th:attr="hx-get=@{/leaderboard/user/{id}/details(id=${entry.publicId}, phase=${currentPhase})}"
                       hx-target="#user-detail-modal"
                       hx-swap="innerHTML"
                       class="text-sm font-medium hover:text-indigo-600 hover:underline transition cursor-pointer text-left"
-                      th:classappend="${userPosition != null && entry.position == userPosition.position ? 'text-indigo-900' : 'text-gray-900'}"
+                      th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'text-indigo-900' : 'text-gray-900'}"
                       th:text="${entry.displayName}"
                     >
                       Alice Wonder
@@ -223,7 +223,7 @@
 
                       <!-- Round Score -->
                       <div class="flex items-center">
-                        <span class="text-xs text-gray-600 mr-1">Round:</span>
+                        <span class="text-xs text-gray-600 mr-1">GW:</span>
                         <span
                           class="text-sm text-gray-700"
                           th:text="${userPosition.roundScore}"
@@ -282,18 +282,49 @@
             </table>
           </div>
 
-          <!-- Pagination (below table) -->
-          <div class="mt-4 flex items-center justify-between">
-            <div class="text-sm text-gray-500">Showing 1-10 of 100 players</div>
+          <!-- Pagination -->
+          <div
+            th:if="${totalEntries > 0}"
+            class="mt-4 flex items-center justify-between"
+          >
+            <div class="text-sm text-gray-500">
+              Showing
+              <span th:text="${showingFrom}">1</span>-<span
+                th:text="${showingTo}"
+                >20</span
+              >
+              of <span th:text="${totalEntries}">100</span> players
+            </div>
             <div class="flex space-x-2">
               <button
-                class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50"
-                disabled
+                th:if="${hasPreviousPage == true}"
+                th:attr="hx-get=@{/leaderboard(phase=${currentPhase}, page=${currentPage - 1})}"
+                hx-target="#leaderboard-content"
+                hx-swap="outerHTML swap:300ms"
+                class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Previous
               </button>
               <button
+                th:if="${hasPreviousPage == false || hasPreviousPage == null}"
+                disabled
+                class="px-3 py-2 text-sm border border-gray-300 rounded-md disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                th:if="${hasNextPage == true}"
+                th:attr="hx-get=@{/leaderboard(phase=${currentPhase}, page=${currentPage + 1})}"
+                hx-target="#leaderboard-content"
+                hx-swap="outerHTML swap:300ms"
                 class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Next
+              </button>
+              <button
+                th:if="${hasNextPage == false || hasNextPage == null}"
+                disabled
+                class="px-3 py-2 text-sm border border-gray-300 rounded-md disabled:opacity-50"
               >
                 Next
               </button>

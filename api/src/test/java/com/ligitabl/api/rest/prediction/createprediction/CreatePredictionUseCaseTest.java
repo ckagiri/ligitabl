@@ -96,7 +96,7 @@ class CreatePredictionUseCaseTest {
         UUID predictionId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
 
-        CreatePredictionCommand request = createValidRequest();
+        CreatePredictionCommand request = createNonDefaultRequest();
 
         when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
@@ -129,7 +129,7 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void shouldSetNextRound_whenRoundIsLocked() {
-        CreatePredictionCommand request = createValidRequest();
+        CreatePredictionCommand request = createNonDefaultRequest();
 
         when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
@@ -149,7 +149,7 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void shouldReject_whenAlreadyJoined() {
-        CreatePredictionCommand request = createValidRequest();
+        CreatePredictionCommand request = createNonDefaultRequest();
         SeasonPrediction existingPrediction = SeasonPrediction.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
@@ -204,7 +204,7 @@ class CreatePredictionUseCaseTest {
         round.setPosition(3);
         season.setMaxRounds(3);
 
-        CreatePredictionCommand request = createValidRequest();
+        CreatePredictionCommand request = createNonDefaultRequest();
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
@@ -216,6 +216,19 @@ class CreatePredictionUseCaseTest {
 
         assertTrue(result.isLeft());
         assertInstanceOf(CreatePredictionError.Ended.class, result.getLeft());
+    }
+
+    @Test
+    void shouldReject_whenRankingsMatchInitial() {
+        CreatePredictionCommand request = createInitialRankingsRequest();
+
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
+
+        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(CreatePredictionError.SameAsInitialRankings.class, result.getLeft());
     }
 
     private Season createSeason() {
@@ -256,8 +269,13 @@ class CreatePredictionUseCaseTest {
                 .build();
     }
 
-    private CreatePredictionCommand createValidRequest() {
+    private CreatePredictionCommand createInitialRankingsRequest() {
         return new CreatePredictionCommand(
                 List.of(new TeamRankDto("ARS", 1), new TeamRankDto("LIV", 2), new TeamRankDto("MCI", 3)));
+    }
+
+    private CreatePredictionCommand createNonDefaultRequest() {
+        return new CreatePredictionCommand(
+                List.of(new TeamRankDto("LIV", 1), new TeamRankDto("ARS", 2), new TeamRankDto("MCI", 3)));
     }
 }

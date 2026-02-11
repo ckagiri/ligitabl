@@ -72,6 +72,7 @@ public class CreatePredictionUseCase {
                 .flatMap(__ -> validateNoDuplicatePositions(request))
                 .flatMap(__ -> validateNoDuplicateCodes(request))
                 .flatMap(__ -> validateTeamCodesExist(request, season))
+                .flatMap(__ -> validateNotSameAsInitialRankings(request, season))
                 .map(__ -> convertToTeamRanks(request));
     }
 
@@ -133,6 +134,27 @@ public class CreatePredictionUseCase {
 
         if (!invalidCodes.isEmpty()) {
             return Either.left(new CreatePredictionError.InvalidTeamCodes(invalidCodes));
+        }
+
+        return Either.right(null);
+    }
+
+    private Either<CreatePredictionError, Void> validateNotSameAsInitialRankings(
+            CreatePredictionCommand request, Season season) {
+        List<String> requestedOrder = request.rankings().stream()
+                .sorted(Comparator.comparingInt(TeamRankDto::position))
+                .map(TeamRankDto::code)
+                .map(String::toUpperCase)
+                .toList();
+
+        List<String> initialOrder = season.getInitialRankings().stream()
+                .sorted(Comparator.comparingInt(TeamRank::getPosition))
+                .map(TeamRank::getCode)
+                .map(String::toUpperCase)
+                .toList();
+
+        if (requestedOrder.equals(initialOrder)) {
+            return Either.left(new CreatePredictionError.SameAsInitialRankings());
         }
 
         return Either.right(null);

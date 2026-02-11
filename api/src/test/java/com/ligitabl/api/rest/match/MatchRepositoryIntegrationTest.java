@@ -138,7 +138,7 @@ class MatchRepositoryIntegrationTest extends AbstractPostgresIT {
 
         Match reloaded = matchRepo.findByRoundIdAndSlug(roundId, slug).orElseThrow();
         assertThat(reloaded.getStatus()).isEqualTo(MatchStatus.CANCELLED);
-        assertThat(reloaded.isWasPostponed()).isTrue();
+        assertThat(reloaded.wasPostponed()).isTrue();
         assertThat(reloaded.getScore())
                 .isEqualTo(Score.builder().homeGoals(2).awayGoals(1).build());
     }
