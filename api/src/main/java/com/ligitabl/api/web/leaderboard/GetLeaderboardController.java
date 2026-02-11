@@ -122,30 +122,25 @@ public class GetLeaderboardController {
     }
 
     private String handleError(GetLeaderboardError error, Model model, HttpServletResponse response, String hxRequest) {
-        int status =
-                switch (error) {
-                    case GetLeaderboardError.DefaultCompetitionNotFound e -> 404;
-                    case GetLeaderboardError.ActiveSeasonNotFound e -> 404;
-                    case GetLeaderboardError.MainContestNotFound e -> 404;
-                    case GetLeaderboardError.PhasesNotConfigured e -> 500;
-                    case GetLeaderboardError.InvalidPhase e -> 400;
-                };
+        ErrorResponse errorResponse =
+            switch (error) {
+                case GetLeaderboardError.DefaultCompetitionNotFound e -> new ErrorResponse(404, e.message());
+                case GetLeaderboardError.ActiveSeasonNotFound e -> new ErrorResponse(404, e.message());
+                case GetLeaderboardError.MainContestNotFound e -> new ErrorResponse(404, e.message());
+                case GetLeaderboardError.PhasesNotConfigured __ -> new ErrorResponse(
+                    500, "Competition phases not configured");
+                case GetLeaderboardError.InvalidPhase e -> new ErrorResponse(
+                    400, "Invalid phase: " + e.phaseCode());
+            };
 
-        String message =
-                switch (error) {
-                    case GetLeaderboardError.DefaultCompetitionNotFound e -> e.message();
-                    case GetLeaderboardError.ActiveSeasonNotFound e -> e.message();
-                    case GetLeaderboardError.MainContestNotFound e -> e.message();
-                    case GetLeaderboardError.PhasesNotConfigured e -> "Competition phases not configured";
-                    case GetLeaderboardError.InvalidPhase e -> "Invalid phase: " + e.phaseCode();
-                };
-
-        response.setStatus(status);
-        model.addAttribute("error", message);
+        response.setStatus(errorResponse.status());
+        model.addAttribute("error", errorResponse.message());
 
         if (hxRequest != null && !hxRequest.isBlank()) {
             return "fragments/error-banner :: banner";
         }
         return "error";
     }
+
+    private record ErrorResponse(int status, String message) {}
 }
