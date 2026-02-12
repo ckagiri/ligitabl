@@ -298,6 +298,7 @@ public class UserPredictionsController {
         if (data.swapCooldown() != null) {
             var cooldown = data.swapCooldown();
             var now = Instant.now();
+            boolean firstSwapBonus = cooldown.initialPredictionMade() && cooldown.swapCount() == 0;
             model.addAttribute(
                     "swapStatus",
                     new SwapStatusDTO(
@@ -305,7 +306,8 @@ public class UserPredictionsController {
                             cooldown.getStatusMessage(now),
                             cooldown.getLastSwapAtFormatted(),
                             cooldown.initialPredictionMade(),
-                            cooldown.swapCount()));
+                            cooldown.swapCount(),
+                            firstSwapBonus));
         }
 
         // Round result for historical views
@@ -431,5 +433,10 @@ public class UserPredictionsController {
      * DTO for swap status information displayed in templates.
      */
     public record SwapStatusDTO(
-            boolean canSwap, String message, String lastSwapAt, boolean initialPredictionMade, int swapCount) {}
+            boolean canSwap,
+            String message,
+            String lastSwapAt,
+            boolean initialPredictionMade,
+            int swapCount,
+            boolean firstSwapBonus) {}
 }
