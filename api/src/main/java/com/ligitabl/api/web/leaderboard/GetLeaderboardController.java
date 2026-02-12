@@ -98,6 +98,7 @@ public class GetLeaderboardController {
         LeaderboardEntry userPosition = result.userEntry();
         boolean userInCurrentPage = result.userInCurrentPage();
 
+        model.addAttribute("pageTitle", "Leaderboard");
         model.addAttribute("leaderboard", pageEntries);
         model.addAttribute("phases", result.allPhases());
         model.addAttribute("currentPhase", result.phase().getCode());

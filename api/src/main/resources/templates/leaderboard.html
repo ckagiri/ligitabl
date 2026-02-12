@@ -126,17 +126,9 @@
                       hx-post="/leaderboard/user/modal"
                       hx-target="#user-detail-modal"
                       hx-swap="innerHTML"
-                      hx-headers='{"Content-Type": "application/json"}'
-                      th:attr="hx-vals='js:{
-                        publicId: [[${entry.publicId}]],
-                        displayName: [[${entry.displayName}]],
-                        position: [[${entry.position}]],
-                        totalScore: [[${entry.totalScore}]],
-                        roundScore: [[${entry.roundScore}]],
-                        totalZeroes: [[${entry.totalZeroes}]],
-                        totalSwaps: [[${entry.totalSwaps}]],
-                        movement: [[${entry.movement}]]
-                      }'"
+                      th:attr="hx-vals='js:{publicId: &quot;' + ${entry.publicId} + '&quot;, displayName: &quot;' + ${entry.displayName} + '&quot;, ' +
+                        'position: ' + ${entry.position} + ', totalScore: ' + ${entry.totalScore} + ', roundScore: ' + ${entry.roundScore} + ', ' +
+                        'totalZeroes: ' + ${entry.totalZeroes} + ', totalSwaps: ' + ${entry.totalSwaps} + ', movement: ' + ${entry.movement} + '}'"
                       class="text-sm font-medium hover:text-indigo-600 hover:underline transition cursor-pointer text-left"
                       th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'text-indigo-900' : 'text-gray-900'}"
                       th:text="${entry.displayName}"

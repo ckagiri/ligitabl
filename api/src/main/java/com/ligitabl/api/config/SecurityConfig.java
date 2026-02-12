@@ -118,6 +118,7 @@ public class SecurityConfig {
         http.csrf(csrf -> csrf.ignoringRequestMatchers(
                         "/seasonprediction",
                         "/seasonprediction/**",
+                        "/leaderboard/user/modal",
                         "/auth/login",
                         "/auth/register")) // Allow HTMX + auth forms without CSRF
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
@@ -125,6 +126,7 @@ public class SecurityConfig {
                                 "/auth/login",
                                 "/auth/register",
                                 "/leaderboard",
+                                "/leaderboard/**",
                                 "/standings",
                                 "/matches",
                                 "/rounds/**",
