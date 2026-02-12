@@ -8,6 +8,7 @@ import java.time.OffsetDateTime;
  *
  * Strategy:
  * - All matches complete → Immediate (trigger finalization)
+ * - Round obstructed (all terminal but includes cancelled/suspended) → Immediate (trigger admin notification)
  * - Season complete → Every 24 hours (daily check for new season)
  * - No upcoming matches → Every 12 hours (twice daily - international break)
  * - Live matches → Every 90 seconds
@@ -34,12 +35,18 @@ public class SyncFrequencyCalculator {
             boolean hasScheduledMatches,
             OffsetDateTime nextKickoff,
             boolean allMatchesComplete,
+            boolean roundObstructed,
             int matchCount,
             boolean seasonComplete) {
 
         // PRIORITY 1: All matches complete - trigger finalization immediately
         if (allMatchesComplete) {
             return NextSyncSchedule.immediate("All matches complete - trigger finalization");
+        }
+
+        // PRIORITY 1b: Round obstructed - trigger admin notification immediately
+        if (roundObstructed) {
+            return NextSyncSchedule.immediate("Round obstructed - requires admin resolution");
         }
 
         // PRIORITY 2: Season complete - check daily for new season
@@ -125,6 +132,7 @@ public class SyncFrequencyCalculator {
                 hasScheduledMatches,
                 nextKickoff,
                 allMatchesComplete,
+                false,
                 matchCount,
                 false // Assume season not complete
                 );
@@ -144,8 +152,23 @@ public class SyncFrequencyCalculator {
                 hasScheduledMatches,
                 nextKickoff,
                 allMatchesComplete,
+                false,
                 1, // Assume at least 1 match
                 false // Assume season not complete
                 );
+    }
+
+    /**
+     * Assumes at least 1 match and season not complete
+     */
+    public static NextSyncSchedule calculateNextSync(
+            boolean hasLiveMatches,
+            boolean hasScheduledMatches,
+            OffsetDateTime nextKickoff,
+            boolean allMatchesComplete,
+            boolean roundObstructed) {
+
+        return calculateNextSync(
+                hasLiveMatches, hasScheduledMatches, nextKickoff, allMatchesComplete, roundObstructed, 1, false);
     }
 }

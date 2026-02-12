@@ -24,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import com.ligitabl.api.rest.round.finalizeround.AdvanceCurrentRoundUseCase;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundError;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundUseCase;
 import com.ligitabl.api.runners.demoseeding.*;
@@ -75,6 +76,9 @@ class SeedSeasonUseCaseTest {
     private FinalizeRoundUseCase finalizeRoundUseCase;
 
     @Mock
+    private AdvanceCurrentRoundUseCase advanceCurrentRoundUseCase;
+
+    @Mock
     private PasswordEncoder passwordEncoder;
 
     @Mock
@@ -106,6 +110,10 @@ class SeedSeasonUseCaseTest {
 
         // SeedSeasonUseCase resolves the default contest via season.mainContestId
         season.setMainContestId(defaultContest.getId());
+
+        lenient()
+                .when(advanceCurrentRoundUseCase.execute(any()))
+                .thenReturn(Either.right(new AdvanceCurrentRoundUseCase.AdvanceCurrentRoundResult(true, false, 2)));
     }
 
     @Nested

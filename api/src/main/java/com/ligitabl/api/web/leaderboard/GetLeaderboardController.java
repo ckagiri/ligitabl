@@ -123,15 +123,15 @@ public class GetLeaderboardController {
 
     private String handleError(GetLeaderboardError error, Model model, HttpServletResponse response, String hxRequest) {
         ErrorResponse errorResponse =
-            switch (error) {
-                case GetLeaderboardError.DefaultCompetitionNotFound e -> new ErrorResponse(404, e.message());
-                case GetLeaderboardError.ActiveSeasonNotFound e -> new ErrorResponse(404, e.message());
-                case GetLeaderboardError.MainContestNotFound e -> new ErrorResponse(404, e.message());
-                case GetLeaderboardError.PhasesNotConfigured __ -> new ErrorResponse(
-                    500, "Competition phases not configured");
-                case GetLeaderboardError.InvalidPhase e -> new ErrorResponse(
-                    400, "Invalid phase: " + e.phaseCode());
-            };
+                switch (error) {
+                    case GetLeaderboardError.DefaultCompetitionNotFound e -> new ErrorResponse(404, e.message());
+                    case GetLeaderboardError.ActiveSeasonNotFound e -> new ErrorResponse(404, e.message());
+                    case GetLeaderboardError.MainContestNotFound e -> new ErrorResponse(404, e.message());
+                    case GetLeaderboardError.PhasesNotConfigured __ -> new ErrorResponse(
+                            500, "Competition phases not configured");
+                    case GetLeaderboardError.InvalidPhase e -> new ErrorResponse(
+                            400, "Invalid phase: " + e.phaseCode());
+                };
 
         response.setStatus(errorResponse.status());
         model.addAttribute("error", errorResponse.message());

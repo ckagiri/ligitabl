@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.domain.StandingsCalculatorService;
+import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.domain.service.ScoringEngine;
@@ -24,6 +25,9 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FinalizeRoundUseCase {
 
+    private record FinalizationContext(Season season, Round round, boolean recompute, boolean autoAdvance) {}
+
+    private final HierarchyValidator hierarchyValidator;
     private final RoundRepo roundRepo;
     private final SeasonRepo seasonRepo;
     private final MatchRepo matchRepo;
@@ -34,14 +38,47 @@ public class FinalizeRoundUseCase {
     private final StandingsCalculatorService standingsCalculator;
     private final ScoringEngine scoringEngine;
     private final Clock clock;
+    private final AdvanceCurrentRoundUseCase advanceCurrentRoundUseCase;
 
     @Transactional
     public Either<FinalizeRoundError, FinalizeRoundResult> execute(UUID seasonId) {
-        log.info("Starting round finalization for season: {}", seasonId);
+        return execute(FinalizeRoundCommand.of(seasonId));
+    }
 
-        return getSeason(seasonId)
-                .flatMap(season -> getCurrentRound(season).flatMap(round -> validateRoundReady(round, season)
-                        .flatMap(__ -> executeFinalizationWorkflow(round, season))));
+    @Transactional
+    public Either<FinalizeRoundError, FinalizeRoundResult> execute(FinalizeRoundCommand command) {
+        if (command == null || command.seasonId() == null) {
+            return Either.left(new FinalizeRoundError.TransactionFailed("seasonId must not be null"));
+        }
+
+        log.info(
+                "Starting round finalization for season: {} (recompute={}, autoAdvance={})",
+                command.seasonId(),
+                command.recompute(),
+                command.autoAdvance());
+
+        return getSeason(command.seasonId())
+                .flatMap(season -> getCurrentRound(season)
+                        .map(round ->
+                                new FinalizationContext(season, round, command.recompute(), command.autoAdvance())))
+                .flatMap(ctx -> validateRoundReady(ctx).flatMap(__ -> executeFinalizationWorkflow(ctx)
+                        .flatMap(result -> maybeAutoAdvance(ctx, result))));
+    }
+
+    private Either<FinalizeRoundError, FinalizeRoundResult> maybeAutoAdvance(
+            FinalizationContext ctx, FinalizeRoundResult result) {
+        if (!ctx.autoAdvance()) {
+            return Either.right(result);
+        }
+
+        var advance = advanceCurrentRoundUseCase.execute(new AdvanceCurrentRoundUseCase.AdvanceCurrentRoundCommand(
+                ctx.season().getId(), result.roundId()));
+
+        if (advance.isLeft()) {
+            return Either.left(new FinalizeRoundError.TransactionFailed("Auto-advance failed: " + advance.getLeft()));
+        }
+
+        return Either.right(result);
     }
 
     private Either<FinalizeRoundError, Season> getSeason(UUID seasonId) {
@@ -52,54 +89,65 @@ public class FinalizeRoundUseCase {
     }
 
     private Either<FinalizeRoundError, Round> getCurrentRound(Season season) {
-        return roundRepo
-                .findById(season.getCurrentRoundId())
-                .map(Either::<FinalizeRoundError, Round>right)
-                .orElseGet(() -> Either.left(new FinalizeRoundError.RoundNotFound(season.getCurrentRoundId())));
+        return hierarchyValidator.validateCurrentRound(season).mapLeft(__ ->
+                (FinalizeRoundError) new FinalizeRoundError.RoundNotFound(season.getCurrentRoundId()));
     }
 
-    private Either<FinalizeRoundError, Void> validateRoundReady(Round round, Season season) {
-        if (round.isFinalized()) {
-            return Either.left(new FinalizeRoundError.AlreadyFinalized(round.getId()));
+    private Either<FinalizeRoundError, Void> validateRoundReady(FinalizationContext ctx) {
+        if (ctx.round().isFinalized() && !ctx.recompute()) {
+            return Either.left(
+                    new FinalizeRoundError.AlreadyFinalized(ctx.round().getId()));
         }
-        List<Match> matches = matchRepo.findByRoundId(round.getId());
-        RoundStatus status = round.computeStatus(matches);
+        List<Match> matches = matchRepo.findByRoundId(ctx.round().getId());
+
+        var obstructed = matches.stream().filter(this::isBlocking).toList();
+        boolean allTerminalOrBlocking = matches.stream().allMatch(m -> isComplete(m) || isBlocking(m));
+        if (!obstructed.isEmpty() && allTerminalOrBlocking) {
+            var obstructedIds = obstructed.stream().map(Match::getId).toList();
+            return Either.left(new FinalizeRoundError.RoundObstructed(
+                    ctx.round().getId(),
+                    obstructedIds,
+                    "Cannot finalize because some matches were cancelled or suspended."));
+        }
+
+        RoundStatus status = ctx.round().computeStatus(matches);
         if (status != RoundStatus.COMPLETED) {
             return Either.left(new FinalizeRoundError.RoundNotReady(
-                    round.getId(), "Round status is " + status + ", expected COMPLETED"));
+                    ctx.round().getId(), "Round status is " + status + ", expected COMPLETED"));
         }
 
         return Either.right(null);
     }
 
-    private Either<FinalizeRoundError, FinalizeRoundResult> executeFinalizationWorkflow(Round round, Season season) {
+    private Either<FinalizeRoundError, FinalizeRoundResult> executeFinalizationWorkflow(FinalizationContext ctx) {
         try {
             // Step 1: Calculate final standings
-            var standingsResult = calculateFinalStandings(round, season);
+            var standingsResult = calculateFinalStandings(ctx);
             if (standingsResult.isLeft()) {
                 return Either.left(standingsResult.getLeft());
             }
             Standings finalStandings = standingsResult.get();
 
-            List<SeasonPrediction> predictions =
-                    predictionRepo.findBySeasonAndAtRoundNumberLessThanEqual(season.getId(), round.getPosition());
+            List<SeasonPrediction> predictions = predictionRepo.findBySeasonAndAtRoundNumberLessThanEqual(
+                    ctx.season().getId(), ctx.round().getPosition());
 
             // Step 2: Create round submissions
-            List<RoundSubmission> submissions = createRoundSubmissions(predictions, round, season);
+            List<RoundSubmission> submissions = createRoundSubmissions(predictions, ctx);
 
             // Step 3: Calculate round results
-            List<RoundResult> results = calculateRoundResults(predictions, submissions, finalStandings, season);
+            List<RoundResult> results = calculateRoundResults(predictions, submissions, finalStandings, ctx);
 
             // Step 4: Create next round standings (if not last round)
-            boolean isLastRound = round.getPosition() >= season.getMaxRounds();
+            boolean isLastRound = ctx.round().getPosition() >= ctx.season().getMaxRounds();
             if (!isLastRound) {
-                createNextRoundStandings(round, season, finalStandings);
+                createNextRoundStandings(ctx.round(), ctx.season(), finalStandings);
             }
 
-            // Step 5: Advance current round or complete season
-            var advanceResult = advanceCurrentRound(season, round, isLastRound);
-            if (advanceResult.isLeft()) {
-                return Either.left(advanceResult.getLeft());
+            // Step 5: Mark round as finalized (do NOT advance season pointer here)
+            if (!ctx.round().isFinalized()) {
+                ctx.round().setFinalized(true);
+                roundRepo.save(ctx.round());
+                log.info("Round {} marked as finalized", ctx.round().getPosition());
             }
 
             // STEP 6: Send Notifications (TODO: implement async)
@@ -107,12 +155,17 @@ public class FinalizeRoundUseCase {
             Instant completedAt = clock.instant();
             log.info(
                     "Round finalization completed: round={}, submissions={}, results={}",
-                    round.getPosition(),
+                    ctx.round().getPosition(),
                     submissions.size(),
                     results.size());
 
             return Either.right(new FinalizeRoundResult(
-                    round.getId(), round.getPosition(), submissions.size(), results.size(), isLastRound, completedAt));
+                    ctx.round().getId(),
+                    ctx.round().getPosition(),
+                    submissions.size(),
+                    results.size(),
+                    isLastRound,
+                    completedAt));
 
         } catch (Exception e) {
             log.error("Round finalization failed", e);
@@ -121,10 +174,10 @@ public class FinalizeRoundUseCase {
     }
 
     // STEP 1: Calculate Final Standings
-    private Either<FinalizeRoundError, Standings> calculateFinalStandings(Round round, Season season) {
+    private Either<FinalizeRoundError, Standings> calculateFinalStandings(FinalizationContext ctx) {
         try {
             Either<FinalizeRoundError, List<StandingsTeamRank>> calculation = standingsCalculator
-                    .calculateRankings(season.getId(), round.getPosition())
+                    .calculateRankings(ctx.season().getId(), ctx.round().getPosition())
                     .mapLeft(error -> new FinalizeRoundError.StandingsValidationFailed(error.toString()));
 
             if (calculation.isLeft()) {
@@ -135,10 +188,11 @@ public class FinalizeRoundUseCase {
 
             // Get or create standings record
             Standings standings = standingsRepo
-                    .findBySeasonAndRoundPosition(season.getId(), round.getPosition())
+                    .findBySeasonAndRoundPosition(
+                            ctx.season().getId(), ctx.round().getPosition())
                     .orElseGet(() -> Standings.builder()
-                            .seasonId(season.getId())
-                            .roundPosition(round.getPosition())
+                            .seasonId(ctx.season().getId())
+                            .roundPosition(ctx.round().getPosition())
                             .rankings(List.of())
                             .finalised(false)
                             .finalisedAt(null)
@@ -156,20 +210,19 @@ public class FinalizeRoundUseCase {
     }
 
     // STEP 2: Create Round Submissions
-    private List<RoundSubmission> createRoundSubmissions(
-            List<SeasonPrediction> predictions, Round round, Season season) {
+    private List<RoundSubmission> createRoundSubmissions(List<SeasonPrediction> predictions, FinalizationContext ctx) {
         List<RoundSubmission> submissions = new ArrayList<>();
 
         for (SeasonPrediction prediction : predictions) {
             // Check if submission already exists (idempotency)
             Optional<RoundSubmission> existing = submissionRepo.findByUserAndSeasonAndRound(
-                    prediction.getUserId(), season.getId(), round.getPosition());
+                    prediction.getUserId(), ctx.season().getId(), ctx.round().getPosition());
 
             if (existing.isEmpty()) {
                 RoundSubmission submission = RoundSubmission.builder()
                         .userId(prediction.getUserId())
-                        .seasonId(season.getId())
-                        .roundPosition(round.getPosition())
+                        .seasonId(ctx.season().getId())
+                        .roundPosition(ctx.round().getPosition())
                         .rankings(new ArrayList<>(prediction.getInitialRankings())) // snapshot
                         .seasonPredictionId(prediction.getId())
                         .build();
@@ -189,7 +242,7 @@ public class FinalizeRoundUseCase {
             List<SeasonPrediction> predictions,
             List<RoundSubmission> submissions,
             Standings finalStandings,
-            Season season) {
+            FinalizationContext ctx) {
         Map<UUID, SeasonPrediction> predictionMap =
                 predictions.stream().collect(Collectors.toMap(SeasonPrediction::getId, p -> p));
         List<RoundResult> results = new ArrayList<>();
@@ -204,9 +257,11 @@ public class FinalizeRoundUseCase {
             // Check if result already exists (idempotency)
             Optional<RoundResult> existing = resultRepo.findByRoundSubmissionId(submission.getId());
 
-            if (existing.isEmpty()) {
+            if (existing.isEmpty() || ctx.recompute()) {
                 ScoringResult scoringResult = scoringEngine.calculateScore(
-                        submission.getRankings(), finalStandings.getRankings(), season.getMaxHitPoints());
+                        submission.getRankings(),
+                        finalStandings.getRankings(),
+                        ctx.season().getMaxHitPoints());
 
                 int swapCount = countSwapsInRound(prediction, submission.getRoundPosition());
 
@@ -249,32 +304,18 @@ public class FinalizeRoundUseCase {
         }
     }
 
-    // STEP 5: Finalize & Advance CurrentRound or Complete Season
-    private Either<FinalizeRoundError, Void> advanceCurrentRound(
-            Season season, Round currentRound, boolean isLastRound) {
-        // first finalize current round
-        currentRound.setFinalized(true);
-        roundRepo.save(currentRound);
-
-        log.info("Round {} marked as finalized", currentRound.getPosition());
-
-        if (isLastRound) {
-            season.setCompleted(true);
-            season.setCompletedAt(now());
-            log.info("Season completed: {}", season.getId());
-        } else {
-            int nextPosition = currentRound.getPosition() + 1;
-            var nextRoundOpt = roundRepo.findBySeasonIdAndPosition(season.getId(), nextPosition);
-            if (nextRoundOpt.isEmpty()) {
-                return Either.left(new FinalizeRoundError.NextRoundNotFound(season.getId(), nextPosition));
-            }
-
-            season.setCurrentRoundId(nextRoundOpt.get().getId());
-            log.info("Advanced to round: {}", nextPosition);
+    private boolean isComplete(Match match) {
+        if (match == null || match.getStatus() == null) {
+            return false;
         }
+        return match.getStatus() == MatchStatus.FINISHED || match.getStatus() == MatchStatus.POSTPONED;
+    }
 
-        seasonRepo.save(season);
-        return Either.right(null);
+    private boolean isBlocking(Match match) {
+        if (match == null || match.getStatus() == null) {
+            return false;
+        }
+        return match.getStatus() == MatchStatus.CANCELLED || match.getStatus() == MatchStatus.SUSPENDED;
     }
 
     private int countSwapsInRound(SeasonPrediction prediction, int roundPosition) {

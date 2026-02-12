@@ -48,6 +48,9 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
     FinalizeRoundUseCase finalizeRoundUseCase;
 
     @Autowired
+    AdvanceCurrentRoundUseCase advanceCurrentRoundUseCase;
+
+    @Autowired
     SeasonRepo seasonRepo;
 
     @Autowired
@@ -143,9 +146,9 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
                     .isPresent();
         }
 
-        // ensure current round advanced
+        // finalization no longer advances season pointers
         var season = seasonRepo.findById(seasonId).orElseThrow();
-        assertThat(season.getCurrentRoundId()).isEqualTo(round2.getId());
+        assertThat(season.getCurrentRoundId()).isEqualTo(round1.getId());
     }
 
     @Test
@@ -196,7 +199,7 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         var result = finalizeRoundUseCase.execute(seasonId);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(FinalizeRoundError.RoundNotReady.class);
+        assertThat(result.getLeft()).isInstanceOf(FinalizeRoundError.RoundObstructed.class);
     }
 
     @Test
@@ -312,12 +315,28 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         createPrediction(aliceId, 1);
 
         var result1 = finalizeRoundUseCase.execute(seasonId);
-        var result2 = finalizeRoundUseCase.execute(seasonId);
-        var result3 = finalizeRoundUseCase.execute(seasonId);
-
         assertThat(result1.isRight()).isTrue();
+        assertThat(advanceCurrentRoundUseCase
+                        .execute(new AdvanceCurrentRoundUseCase.AdvanceCurrentRoundCommand(
+                                seasonId, result1.get().roundId()))
+                        .isRight())
+                .isTrue();
+
+        var result2 = finalizeRoundUseCase.execute(seasonId);
         assertThat(result2.isRight()).isTrue();
+        assertThat(advanceCurrentRoundUseCase
+                        .execute(new AdvanceCurrentRoundUseCase.AdvanceCurrentRoundCommand(
+                                seasonId, result2.get().roundId()))
+                        .isRight())
+                .isTrue();
+
+        var result3 = finalizeRoundUseCase.execute(seasonId);
         assertThat(result3.isRight()).isTrue();
+        assertThat(advanceCurrentRoundUseCase
+                        .execute(new AdvanceCurrentRoundUseCase.AdvanceCurrentRoundCommand(
+                                seasonId, result3.get().roundId()))
+                        .isRight())
+                .isTrue();
 
         assertThat(standingsRepo.findBySeasonAndRoundPosition(seasonId, 1)).isPresent();
         assertThat(standingsRepo.findBySeasonAndRoundPosition(seasonId, 2)).isPresent();
@@ -343,9 +362,9 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().seasonCompleted()).isTrue();
 
+        // FinalizeRoundUseCase no longer completes the season; that happens on explicit advance.
         var season = seasonRepo.findById(seasonId).orElseThrow();
-        assertThat(season.isCompleted()).isTrue();
-        assertThat(season.getCompletedAt()).isNotNull();
+        assertThat(season.isCompleted()).isFalse();
     }
 
     @Test
@@ -387,6 +406,11 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         createPrediction(aliceId, 1);
 
         assertThat(finalizeRoundUseCase.execute(seasonId).isRight()).isTrue();
+
+        var advance1 = advanceCurrentRoundUseCase.execute(
+                new AdvanceCurrentRoundUseCase.AdvanceCurrentRoundCommand(seasonId, round1.getId()));
+        assertThat(advance1.isRight()).isTrue();
+
         var result2 = finalizeRoundUseCase.execute(seasonId);
         assertThat(result2.isRight()).isTrue();
 
@@ -424,6 +448,50 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         assertThat(submissions).hasSize(1);
         assertThat(roundResultRepo.findByRoundSubmissionId(submissions.get(0).getId()))
                 .isPresent();
+    }
+
+    @Test
+    @DisplayName("Should allow recompute after round is finalized")
+    void shouldAllowRecomputeAfterFinalized() throws Exception {
+        insertSeason(1, 4);
+
+        Round round1 = createRound(1, false);
+        setCurrentRound(round1.getId());
+
+        createFinishedMatch(round1, arsenal, chelsea, 2, 1);
+        createPrediction(aliceId, 1);
+
+        var first = finalizeRoundUseCase.execute(new FinalizeRoundCommand(seasonId, false, false));
+        assertThat(first.isRight()).isTrue();
+
+        var second = finalizeRoundUseCase.execute(new FinalizeRoundCommand(seasonId, true, false));
+        assertThat(second.isRight()).isTrue();
+
+        // No duplicates; recompute overwrites results if needed.
+        var submissions = roundSubmissionRepo.findBySeasonAndRound(seasonId, 1);
+        assertThat(submissions).hasSize(1);
+        assertThat(roundResultRepo.findByRoundSubmissionId(submissions.get(0).getId()))
+                .isPresent();
+    }
+
+    @Test
+    @DisplayName("Should auto-advance to next round when autoAdvance is true")
+    void shouldAutoAdvanceToNextRoundWhenFlagSet() throws Exception {
+        insertSeason(2, 4);
+
+        Round round1 = createRound(1, false);
+        Round round2 = createRound(2, false);
+        setCurrentRound(round1.getId());
+
+        createFinishedMatch(round1, arsenal, chelsea, 2, 1);
+        createFinishedMatch(round1, liverpool, manCity, 1, 1);
+        createPrediction(aliceId, 1);
+
+        var result = finalizeRoundUseCase.execute(new FinalizeRoundCommand(seasonId, false, true));
+        assertThat(result.isRight()).isTrue();
+
+        var season = seasonRepo.findById(seasonId).orElseThrow();
+        assertThat(season.getCurrentRoundId()).isEqualTo(round2.getId());
     }
 
     private void insertCompetition() {

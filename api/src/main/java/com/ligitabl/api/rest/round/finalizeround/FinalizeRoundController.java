@@ -3,6 +3,7 @@ package com.ligitabl.api.rest.round.finalizeround;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -21,20 +22,33 @@ public class FinalizeRoundController {
     private final CompetitionDefaults competitionDefaults;
     private final FinalizeRoundUseCase finalizeRoundUseCase;
 
+    record FinalizeCurrentRoundRequest(Boolean recompute, Boolean autoAdvance) {
+        boolean recomputeOrDefault() {
+            return recompute != null && recompute;
+        }
+
+        boolean autoAdvanceOrDefault() {
+            return autoAdvance != null && autoAdvance;
+        }
+    }
+
     /**
      * Finalizes the current round for the default competition (premier-league).
      * Only admins can execute this endpoint.
      */
-    @PostMapping("/default/finalize")
+    @PostMapping("/current/finalize")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> finalizeDefaultRound() {
+    public ResponseEntity<?> finalizeDefaultRound(@RequestBody(required = false) FinalizeCurrentRoundRequest request) {
+        boolean recompute = request != null && request.recomputeOrDefault();
+        boolean autoAdvance = request != null && request.autoAdvanceOrDefault();
+
         // Get default competition's current round
         var defaultCompetition = competitionDefaults.defaultCompetitionSlug();
         var season = seasonRepo
                 .findActiveSeason(defaultCompetition)
                 .orElseThrow(() -> new IllegalStateException("No active season for " + defaultCompetition));
 
-        var result = finalizeRoundUseCase.execute(season.getId());
+        var result = finalizeRoundUseCase.execute(new FinalizeRoundCommand(season.getId(), recompute, autoAdvance));
 
         return result.fold(
                 error -> switch (error) {
@@ -44,6 +58,8 @@ public class FinalizeRoundController {
                             .build();
                     case FinalizeRoundError.RoundNotReady e -> ResponseEntity.badRequest()
                             .body(new ErrorResponse(String.format("Round %s not ready: %s", e.roundId(), e.reason())));
+                    case FinalizeRoundError.RoundObstructed e -> ResponseEntity.status(409)
+                            .body(new RoundObstructedResponse("ROUND_OBSTRUCTED", e.message(), e.obstructedMatchIds()));
                     case FinalizeRoundError.StandingsValidationFailed e -> ResponseEntity.badRequest()
                             .body(new ErrorResponse("Standings validation failed: " + e.reason()));
                     case FinalizeRoundError.TransactionFailed e -> ResponseEntity.internalServerError()
@@ -52,8 +68,10 @@ public class FinalizeRoundController {
                     default -> ResponseEntity.internalServerError()
                             .body(new ErrorResponse("Unexpected error: " + error));
                 },
-                result_ -> ResponseEntity.ok(result_));
+                ResponseEntity::ok);
     }
 
     record ErrorResponse(String message) {}
+
+    record RoundObstructedResponse(String error, String message, java.util.List<java.util.UUID> obstructedMatches) {}
 }
