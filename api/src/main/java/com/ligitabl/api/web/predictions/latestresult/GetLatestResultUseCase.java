@@ -10,6 +10,8 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.web.shared.error.ErrorMapper;
 import com.ligitabl.model.domain.*;
+import com.ligitabl.model.repo.ContestRepo;
+import com.ligitabl.model.repo.LeaderboardRepo;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.RoundResultRepo;
@@ -25,6 +27,8 @@ public class GetLatestResultUseCase {
     private final RoundRepo roundRepo;
     private final RoundResultRepo roundResultRepo;
     private final MatchRepo matchRepo;
+    private final LeaderboardRepo leaderboardRepo;
+    private final ContestRepo contestRepo;
 
     public Either<UseCaseError, Optional<LatestResultResponse>> execute(UUID userId) {
         return Either.catching(() -> buildResult(userId), ErrorMapper::toUseCaseError);
@@ -61,17 +65,45 @@ public class GetLatestResultUseCase {
             return Optional.empty();
         }
 
-        return Optional.of(buildResponse(result, resultRound));
+        return Optional.of(buildResponse(result, resultRound, userId, season));
     }
 
-    private LatestResultResponse buildResponse(RoundResult result, int round) {
+    private LatestResultResponse buildResponse(RoundResult result, int round, UUID userId, Season season) {
         HitDistribution distribution = calculateHitDistribution(result);
+
+        // Calculate position and movement from leaderboard
+        Integer position = null;
+        Integer movement = null;
+
+        // Only calculate if we have a main contest and round > 1 (movement requires previous round)
+        if (season.getMainContestId() != null && round >= 1) {
+            var contestOpt = contestRepo.findById(season.getMainContestId());
+            if (contestOpt.isPresent()) {
+                var contest = contestOpt.get();
+                // Query leaderboard for full season (FS) up to the result round
+                var leaderboardResponse = leaderboardRepo.computeLeaderboard(
+                        contest.getId(),
+                        season.getId(),
+                        1,      // from = 1 (fullseason start)
+                        round,  // to = result round
+                        userId,
+                        0,
+                        1       // just need userEntry
+                );
+
+                LeaderboardEntry userEntry = leaderboardResponse.userEntry();
+                if (userEntry != null) {
+                    position = userEntry.position();
+                    movement = userEntry.movement();
+                }
+            }
+        }
 
         return new LatestResultResponse(
                 round,
                 result.getTotalScore(),
-                null, // position - not implemented yet
-                null, // movement - not implemented yet
+                position,
+                movement,
                 distribution);
     }
 
