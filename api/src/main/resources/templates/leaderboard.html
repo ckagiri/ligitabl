@@ -20,7 +20,7 @@
                 th:attr="hx-get=@{/leaderboard}"
                 hx-trigger="change"
                 hx-target="#leaderboard-content"
-                hx-swap="outerHTML swap:300ms"
+                hx-swap="outerHTML swap:100ms settle:100ms"
                 hx-include="this"
                 name="phase"
                 class="form-select block w-full sm:w-48 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -303,7 +303,7 @@
                 th:if="${hasPreviousPage == true}"
                 th:attr="hx-get=@{/leaderboard(phase=${currentPhase}, page=${currentPage - 1})}"
                 hx-target="#leaderboard-content"
-                hx-swap="outerHTML swap:300ms"
+                hx-swap="outerHTML swap:100ms settle:100ms"
                 class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Previous
@@ -319,7 +319,7 @@
                 th:if="${hasNextPage == true}"
                 th:attr="hx-get=@{/leaderboard(phase=${currentPhase}, page=${currentPage + 1})}"
                 hx-target="#leaderboard-content"
-                hx-swap="outerHTML swap:300ms"
+                hx-swap="outerHTML swap:100ms settle:100ms"
                 class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Next

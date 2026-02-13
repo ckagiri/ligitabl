@@ -522,17 +522,38 @@ window.Ligitabl.guestPredictionPage = function (el) {
             "/predictions/user/me/latest-result-banner/dismiss?round=" +
                 roundNumber,
             {method: "POST", headers: headers},
-        );
+        ).catch(function(err) {
+            console.warn("Failed to dismiss results banner:", err);
+        });
 
         var host = document.getElementById("results-banner");
         if (host) host.remove();
     }
 
+    // Handle direct clicks on dismiss buttons
     document.addEventListener("click", function (event) {
         var trigger = event.target.closest
             ? event.target.closest('[data-dismiss-results-banner="true"]')
             : null;
         if (!trigger) return;
+
+        var banner = document.querySelector("[data-result-round]");
+        var roundNumber = banner
+            ? banner.getAttribute("data-result-round")
+            : null;
+        if (roundNumber) {
+            dismissResultsBanner(roundNumber);
+        }
+    }, true); // Use capture phase to ensure we catch it before HTMX
+
+    // Also dismiss when HTMX navigation happens from within the banner
+    document.body.addEventListener("htmx:beforeRequest", function(event) {
+        var trigger = event.detail.elt;
+        if (!trigger) return;
+
+        // Check if the trigger has the dismiss attribute
+        var hasDismissAttr = trigger.getAttribute('data-dismiss-results-banner') === 'true';
+        if (!hasDismissAttr) return;
 
         var banner = document.querySelector("[data-result-round]");
         var roundNumber = banner

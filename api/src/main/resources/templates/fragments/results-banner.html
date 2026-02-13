@@ -114,7 +114,7 @@
         th:href="@{${baseUrl}(round=${result.round})}"
         th:attr="hx-get=@{${baseUrl}(round=${result.round})}"
         hx-target="#prediction-page"
-        hx-swap="outerHTML swap:300ms show:window:top"
+        hx-swap="outerHTML swap:100ms settle:100ms show:window:top"
         hx-push-url="true"
         data-dismiss-results-banner="true"
         class="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition"
