@@ -3,7 +3,7 @@ package com.ligitabl.api.auth.security;
 import java.util.Set;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.shared.errors.AuthenticationError;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.auth.Role;
 
@@ -24,7 +24,7 @@ public interface TokenGenerator {
      * @param token the token to validate
      * @return Either error or token claims
      */
-    Either<UseCaseError, TokenClaims> validateToken(String token);
+    Either<AuthenticationError, TokenClaims> validateToken(String token);
 
     /**
      * Token claims extracted from a validated token.

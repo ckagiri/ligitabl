@@ -10,6 +10,7 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.web.shared.error.ErrorMapper;
 import com.ligitabl.model.domain.*;
+import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.LeaderboardRepo;
 import com.ligitabl.model.repo.MatchRepo;
@@ -29,6 +30,7 @@ public class GetLatestResultUseCase {
     private final MatchRepo matchRepo;
     private final LeaderboardRepo leaderboardRepo;
     private final ContestRepo contestRepo;
+    private final CompetitionRepo competitionRepo;
 
     public Either<UseCaseError, Optional<LatestResultResponse>> execute(UUID userId) {
         return Either.catching(() -> buildResult(userId), ErrorMapper::toUseCaseError);
@@ -74,21 +76,30 @@ public class GetLatestResultUseCase {
         // Calculate position and movement from leaderboard
         Integer position = null;
         Integer movement = null;
+        String quarter = null;
 
-        // Only calculate if we have a main contest and round > 1 (movement requires previous round)
-        if (season.getMainContestId() != null && round >= 1) {
+        // Find the quarter for this round
+        var competition = competitionRepo
+                .findBySlug(competitionDefaults.defaultCompetitionSlug())
+                .orElseThrow(() -> new IllegalStateException("Competition not found"));
+
+        RoundSpan quarterPhase = findQuarterForRound(competition, round);
+        quarter = quarterPhase.getCode();
+
+        // Only calculate if we have a main contest
+        if (season.getMainContestId() != null) {
             var contestOpt = contestRepo.findById(season.getMainContestId());
             if (contestOpt.isPresent()) {
                 var contest = contestOpt.get();
-                // Query leaderboard for full season (FS) up to the result round
+                // Query leaderboard for the quarter up to the result round
                 var leaderboardResponse = leaderboardRepo.computeLeaderboard(
                         contest.getId(),
                         season.getId(),
-                        1,      // from = 1 (fullseason start)
-                        round,  // to = result round
+                        quarterPhase.getFrom(),  // from = quarter start
+                        round,                   // to = result round
                         userId,
                         0,
-                        1       // just need userEntry
+                        1                        // just need userEntry
                 );
 
                 LeaderboardEntry userEntry = leaderboardResponse.userEntry();
@@ -104,7 +115,31 @@ public class GetLatestResultUseCase {
                 result.getTotalScore(),
                 position,
                 movement,
-                distribution);
+                distribution,
+                quarter);
+    }
+
+    private RoundSpan findQuarterForRound(Competition competition, int round) {
+        if (competition.getPhases() == null || competition.getPhases().isEmpty()) {
+            throw new IllegalStateException("No phases configured for competition");
+        }
+
+        var quarters = competition.getPhases().stream()
+                .filter(phase -> phase.getCode().startsWith("Q"))
+                .filter(phase -> round >= phase.getFrom() && round <= phase.getTo())
+                .toList();
+
+        if (quarters.isEmpty()) {
+            throw new IllegalStateException(
+                    String.format("Round %d is not assigned to any quarter", round));
+        }
+
+        if (quarters.size() > 1) {
+            throw new IllegalStateException(
+                    String.format("Round %d belongs to multiple quarters (configuration error)", round));
+        }
+
+        return quarters.get(0);
     }
 
     private HitDistribution calculateHitDistribution(RoundResult result) {

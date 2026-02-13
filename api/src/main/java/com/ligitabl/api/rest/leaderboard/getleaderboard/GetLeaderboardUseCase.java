@@ -6,9 +6,11 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.RoundSpan;
+import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.LeaderboardRepo;
+import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -36,6 +38,7 @@ public class GetLeaderboardUseCase {
     private final CompetitionRepo competitionRepo;
     private final SeasonRepo seasonRepo;
     private final ContestRepo contestRepo;
+    private final RoundRepo roundRepo;
     private final CompetitionDefaults competitionDefaults;
 
     public Either<GetLeaderboardError, GetLeaderboardResult> execute(GetLeaderboardQuery query) {
@@ -60,7 +63,7 @@ public class GetLeaderboardUseCase {
             return Either.left(new GetLeaderboardError.MainContestNotFound());
         }
 
-        var phase = findPhaseInCompetition(competition, query.phase());
+        var phase = resolvePhase(competition, query.phase(), season);
         if (phase == null) {
             return Either.left(new GetLeaderboardError.InvalidPhase(query.phase()));
         }
@@ -86,15 +89,38 @@ public class GetLeaderboardUseCase {
                 limit));
     }
 
-    private RoundSpan findPhaseInCompetition(Competition competition, String phaseCode) {
-        var code = phaseCode != null ? phaseCode : "FS";
-
+    private RoundSpan resolvePhase(Competition competition, String phaseCode, Season season) {
         if (competition.getPhases() == null) {
             return null;
         }
 
+        // Explicit phase requested — look it up directly
+        if (phaseCode != null) {
+            return competition.getPhases().stream()
+                    .filter(phase -> phase.getCode().equalsIgnoreCase(phaseCode))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        // No phase specified — dynamically resolve current quarter
+        if (season.getCurrentRoundId() != null) {
+            var currentRound = roundRepo.findById(season.getCurrentRoundId()).orElse(null);
+            if (currentRound != null) {
+                int roundPos = currentRound.getPosition();
+                var quarter = competition.getPhases().stream()
+                        .filter(p -> p.getCode().startsWith("Q"))
+                        .filter(p -> roundPos >= p.getFrom() && roundPos <= p.getTo())
+                        .findFirst()
+                        .orElse(null);
+                if (quarter != null) {
+                    return quarter;
+                }
+            }
+        }
+
+        // Fallback to FS if quarter detection fails
         return competition.getPhases().stream()
-                .filter(phase -> phase.getCode().equalsIgnoreCase(code))
+                .filter(phase -> phase.getCode().equalsIgnoreCase("FS"))
                 .findFirst()
                 .orElse(null);
     }

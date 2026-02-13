@@ -12,8 +12,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.api.shared.errors.AuthenticationError;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.auth.Role;
 
@@ -49,7 +48,7 @@ public class JwtTokenGenerator implements TokenGenerator {
     }
 
     @Override
-    public Either<UseCaseError, TokenClaims> validateToken(String token) {
+    public Either<AuthenticationError, TokenClaims> validateToken(String token) {
         try {
             Claims claims = Jwts.parser()
                     .verifyWith(secretKey)
@@ -59,7 +58,9 @@ public class JwtTokenGenerator implements TokenGenerator {
 
             String publicIdStr = claims.getSubject();
 
-            return Either.catching(() -> PublicId.create(publicIdStr), UseCaseErrors::fromException)
+            return Either.<AuthenticationError, PublicId>catching(
+                            () -> PublicId.create(publicIdStr),
+                            e -> new AuthenticationError("Invalid public ID in token"))
                     .flatMap(publicId -> {
                         @SuppressWarnings("unchecked")
                         List<String> roleStrings = claims.get("roles", List.class);
@@ -75,7 +76,7 @@ public class JwtTokenGenerator implements TokenGenerator {
                     });
 
         } catch (Exception e) {
-            return Either.left(UseCaseErrors.unauthorized("Unable to parse token"));
+            return Either.left(new AuthenticationError("Unable to parse token"));
         }
     }
 }

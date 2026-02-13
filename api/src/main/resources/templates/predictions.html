@@ -76,7 +76,7 @@
                 th:replace="~{fragments/round-navigation :: round-nav(
                   '/predictions/user/me', ${viewingRound}, ${currentRound}, ${currentRound},
                         '#prediction-page', 'outerHTML swap:100ms settle:100ms show:window:top',
-                        ${isCurrentRound == false || isCurrentRound == null}, true, 'query', null, ${minRoundForNav})}"
+                        ${isCurrentRound == false || isCurrentRound == null}, false, 'query', null, ${minRoundForNav})}"
               ></div>
             </div>
           </div>

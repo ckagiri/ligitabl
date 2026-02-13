@@ -84,7 +84,7 @@ public class GetUserDetailUseCase {
             return Either.left(new GetUserDetailError.CurrentRoundNotFound());
         }
 
-        var phase = findPhase(competition, query.phase());
+        var phase = resolvePhase(competition, query.phase(), currentRound.getPosition());
         if (phase == null) {
             return Either.left(
                     new GetUserDetailError.LeaderboardError(new GetLeaderboardError.InvalidPhase(query.phase())));
@@ -167,13 +167,32 @@ public class GetUserDetailUseCase {
                 predictions));
     }
 
-    private RoundSpan findPhase(Competition competition, String phaseCode) {
-        var code = phaseCode != null ? phaseCode : "FS";
+    private RoundSpan resolvePhase(Competition competition, String phaseCode, int currentRoundPos) {
         if (competition.getPhases() == null) {
             return null;
         }
+
+        // Explicit phase requested — look it up directly
+        if (phaseCode != null) {
+            return competition.getPhases().stream()
+                    .filter(p -> p.getCode().equalsIgnoreCase(phaseCode))
+                    .findFirst()
+                    .orElse(null);
+        }
+
+        // No phase specified — dynamically resolve current quarter
+        var quarter = competition.getPhases().stream()
+                .filter(p -> p.getCode().startsWith("Q"))
+                .filter(p -> currentRoundPos >= p.getFrom() && currentRoundPos <= p.getTo())
+                .findFirst()
+                .orElse(null);
+        if (quarter != null) {
+            return quarter;
+        }
+
+        // Fallback to FS if quarter detection fails
         return competition.getPhases().stream()
-                .filter(p -> p.getCode().equalsIgnoreCase(code))
+                .filter(p -> p.getCode().equalsIgnoreCase("FS"))
                 .findFirst()
                 .orElse(null);
     }
