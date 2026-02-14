@@ -2,6 +2,8 @@ package com.ligitabl.api.scheduling.syncmatches;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 
 import org.slf4j.Logger;
@@ -12,6 +14,11 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
+
+import com.ligitabl.api.notification.AdminNotificationService;
+import com.ligitabl.api.rest.round.finalizeround.AdvanceCurrentRoundUseCase;
+import com.ligitabl.model.repo.RoundRepo;
+import com.ligitabl.model.repo.SeasonRepo;
 
 /**
  * Match Sync Scheduler
@@ -36,6 +43,10 @@ public class MatchSyncScheduler {
     private final TaskScheduler taskScheduler;
     private final SyncMatchesUseCase syncMatchesUseCase;
     private final TriggerRoundFinalizationUseCase triggerFinalizationUseCase;
+    private final AdminNotificationService adminNotificationService;
+    private final AdvanceCurrentRoundUseCase advanceCurrentRoundUseCase;
+    private final SeasonRepo seasonRepo;
+    private final RoundRepo roundRepo;
 
     @Value("${football-data.competition.code}")
     private String competitionCode;
@@ -46,6 +57,9 @@ public class MatchSyncScheduler {
     @Value("${football-data.sync.max-consecutive-failures:3}")
     private int maxConsecutiveFailures;
 
+    @Value("${ligitabl.round-advancement.delay-minutes:3}")
+    private long advancementDelayMinutes;
+
     private ScheduledFuture<?> currentTask;
     private volatile boolean running = false;
     private int consecutiveFailures = 0;
@@ -53,10 +67,18 @@ public class MatchSyncScheduler {
     public MatchSyncScheduler(
             TaskScheduler taskScheduler,
             SyncMatchesUseCase syncMatchesUseCase,
-            TriggerRoundFinalizationUseCase triggerFinalizationUseCase) {
+            TriggerRoundFinalizationUseCase triggerFinalizationUseCase,
+            AdminNotificationService adminNotificationService,
+            AdvanceCurrentRoundUseCase advanceCurrentRoundUseCase,
+            SeasonRepo seasonRepo,
+            RoundRepo roundRepo) {
         this.taskScheduler = taskScheduler;
         this.syncMatchesUseCase = syncMatchesUseCase;
         this.triggerFinalizationUseCase = triggerFinalizationUseCase;
+        this.adminNotificationService = adminNotificationService;
+        this.advanceCurrentRoundUseCase = advanceCurrentRoundUseCase;
+        this.seasonRepo = seasonRepo;
+        this.roundRepo = roundRepo;
     }
 
     /**
@@ -108,9 +130,32 @@ public class MatchSyncScheduler {
                                 success.matchesUpdated(),
                                 success.newlyFinishedMatches());
 
+                        if (success.roundObstructed()) {
+                            log.warn(
+                                    "Round obstructed (roundId={}, position={}, obstructedMatches={}); notifying admin",
+                                    success.roundId(),
+                                    success.roundPosition(),
+                                    success.obstructedMatchIds().size());
+
+                            var matchIds = success.obstructedMatchIds();
+                            var details = matchIds.stream()
+                                    .map(id -> "- Match ID: " + id)
+                                    .toList();
+
+                            adminNotificationService.notifyBlockedFinalization(
+                                    success.roundId(), success.roundPosition(), matchIds, details);
+
+                            // Avoid tight loops when obstructed: back off even though NextSyncSchedule may be
+                            // immediate.
+                            scheduleNextSync(Duration.ofHours(2));
+                            return null;
+                        }
+
                         if (success.allMatchesComplete()) {
-                            log.info("All matches complete, triggering finalization check");
-                            triggerFinalization();
+                            log.info(
+                                    "All matches complete; triggering finalization check",
+                                    success.allMatchesComplete());
+                            triggerFinalization(success);
                         }
 
                         log.info(
@@ -139,7 +184,7 @@ public class MatchSyncScheduler {
         }
     }
 
-    private void triggerFinalization() {
+    private void triggerFinalization(MatchSyncResult syncResult) {
         try {
             var result = triggerFinalizationUseCase.execute(
                     new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(competitionCode));
@@ -152,6 +197,7 @@ public class MatchSyncScheduler {
                     success -> {
                         if (success.finalized()) {
                             log.info("Round finalized successfully: {}", success.message());
+                            scheduleRoundAdvancement(syncResult.seasonId(), syncResult.roundId());
                         } else if (success.blocked()) {
                             log.warn("Round finalization blocked: {}", success.message());
                         }
@@ -159,6 +205,65 @@ public class MatchSyncScheduler {
                     });
         } catch (Exception e) {
             log.error("Error triggering finalization", e);
+        }
+    }
+
+    private void scheduleRoundAdvancement(UUID seasonId, UUID roundId) {
+        if (seasonId == null) {
+            return;
+        }
+
+        if (advancementDelayMinutes <= 0) {
+            log.info("Round advancement delay is 0, advancing immediately for season={}, round={}", seasonId, roundId);
+            executeDelayedAdvancement(seasonId, roundId);
+            return;
+        }
+
+        log.info("Scheduling round advancement in {} minutes for season={}, round={}",
+                advancementDelayMinutes, seasonId, roundId);
+
+        Instant runAt = Instant.now().plus(Duration.ofMinutes(advancementDelayMinutes));
+        taskScheduler.schedule(() -> executeDelayedAdvancement(seasonId, roundId), runAt);
+    }
+
+    private void executeDelayedAdvancement(UUID seasonId, UUID roundId) {
+        try {
+            log.info("Executing delayed round advancement for season={}, round={}", seasonId, roundId);
+
+            // Guard: verify state hasn't changed (e.g. admin manually advanced)
+            var season = seasonRepo.findById(seasonId).orElse(null);
+            if (season == null || !roundId.equals(season.getCurrentRoundId())) {
+                log.warn("Skipping delayed advancement: state has changed (season={}, expectedRound={})",
+                        seasonId, roundId);
+                return;
+            }
+
+            var round = roundRepo.findById(roundId).orElse(null);
+            if (round == null || !round.isFinalized()) {
+                log.warn("Skipping delayed advancement: round not finalized (season={}, round={})",
+                        seasonId, roundId);
+                return;
+            }
+
+            var advanceResult = advanceCurrentRoundUseCase.execute(
+                    new AdvanceCurrentRoundUseCase.AdvanceCurrentRoundCommand(seasonId, roundId));
+
+            advanceResult.fold(
+                    error -> {
+                        log.warn("AdvanceCurrentRound failed: {}", error);
+                        return null;
+                    },
+                    advance -> {
+                        if (advance.seasonCompleted()) {
+                            log.info("Season completed after finalization (seasonId={})", seasonId);
+                        } else if (advance.advanced()) {
+                            log.info("Advanced to next round: {} (seasonId={})",
+                                    advance.newRoundPosition(), seasonId);
+                        }
+                        return null;
+                    });
+        } catch (Exception e) {
+            log.error("Error during delayed round advancement for season={}, round={}", seasonId, roundId, e);
         }
     }
 
@@ -170,7 +275,7 @@ public class MatchSyncScheduler {
 
         // Schedule next execution
         Instant nextRun = Instant.now().plus(delay);
-        currentTask = taskScheduler.schedule(this::executeSync, nextRun);
+        currentTask = taskScheduler.schedule(this::executeSync, Objects.requireNonNull(nextRun));
 
         log.debug("Next sync scheduled for: {}", nextRun);
     }

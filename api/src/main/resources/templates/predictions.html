@@ -42,7 +42,12 @@
                       >🔒 Locked</span
                     >
                     <span
-                      th:if="${roundState == 'finalized'}"
+                      th:if="${roundState == 'finalized' && (seasonCompleted == false || seasonCompleted == null)}"
+                      class="text-orange-600"
+                      >⏳ Finalizing</span
+                    >
+                    <span
+                      th:if="${roundState == 'finalized' && seasonCompleted == true}"
                       class="text-blue-600"
                       >📊 Finalized</span
                     >
@@ -75,8 +80,8 @@
               <div
                 th:replace="~{fragments/round-navigation :: round-nav(
                   '/predictions/user/me', ${viewingRound}, ${currentRound}, ${currentRound},
-                        '#prediction-page', 'outerHTML swap:300ms show:window:top',
-                        ${isCurrentRound == false || isCurrentRound == null}, true, 'query', null, ${minRoundForNav})}"
+                        '#prediction-page', 'outerHTML swap:100ms settle:100ms show:window:top',
+                        ${isCurrentRound == false || isCurrentRound == null}, false, 'query', null, ${minRoundForNav})}"
               ></div>
             </div>
           </div>
@@ -88,13 +93,17 @@
           id="results-banner"
           hx-get="/predictions/user/me/latest-result-banner"
           hx-trigger="load"
-          hx-swap="innerHTML"
+          hx-swap="innerHTML swap:100ms settle:100ms"
         >
           <!-- Banner content loaded via HTMX -->
         </div>
 
         <!-- Prediction Table -->
-        <div id="prediction-content" th:fragment="predictionContent">
+        <div
+          id="prediction-content"
+          th:fragment="predictionContent"
+          th:with="isHistoricalView=${(isCurrentRound == false || isCurrentRound == null) || (isCurrentRound == true && seasonCompleted == true)}"
+        >
           <!-- Guest view uses localStorage-enabled component -->
           <div
             th:if="${isGuest == true}"
@@ -110,11 +119,14 @@
               th:replace="~{fragments/swap-instructions :: instructions(true, false, false)}"
             ></div>
 
-            <!-- Comparison Options for guests (only when round is open or locked) -->
-            <div
-              th:if="${isCurrentRound == true && (roundState == 'open' || roundState == 'locked')}"
-              th:replace="~{fragments/prediction-table :: comparison-options}"
-            ></div>
+            <!-- Comparison Options for guests (only for current editable round, not historical views) -->
+            <th:block
+              th:if="${isHistoricalView == false && (roundState == 'open' || roundState == 'locked')}"
+            >
+              <div
+                th:replace="~{fragments/prediction-table :: comparison-options}"
+              ></div>
+            </th:block>
 
             <!-- Guest Teams Table (interactive with localStorage) -->
             <div
@@ -173,23 +185,24 @@
               th:replace="~{fragments/swap-instructions :: instructions(false, ${canSwap}, ${canCreateEntry})}"
             ></div>
 
-            <!-- Comparison Options (only for current round when open or locked) -->
-            <div
-              th:if="${isCurrentRound == true && (isUserNotFound == false || isUserNotFound == null) && (roundState == 'open' || roundState == 'locked')}"
-              th:replace="~{fragments/prediction-table :: comparison-options}"
-            ></div>
+            <!-- Comparison Options (only for current editable round, not historical views) -->
+            <th:block
+              th:if="${isHistoricalView == false && (isUserNotFound == false || isUserNotFound == null) && (roundState == 'open' || roundState == 'locked')}"
+            >
+              <div
+                th:replace="~{fragments/prediction-table :: comparison-options}"
+              ></div>
+            </th:block>
 
-            <!-- Current Round: Interactive Table (not when season completed) -->
-            <th:block th:if="${isCurrentRound == true && seasonCompleted != true}">
+            <!-- Current Round: Interactive Table (when not a historical view) -->
+            <th:block th:if="${isHistoricalView == false}">
               <div
                 th:replace="~{fragments/prediction-table :: interactive-table(alwaysHoverable=false)}"
               ></div>
             </th:block>
 
             <!-- Historical Rounds: Static Table (past rounds or season completed) -->
-            <th:block
-              th:if="${(isCurrentRound == false || isCurrentRound == null) || (isCurrentRound == true && seasonCompleted == true)}"
-            >
+            <th:block th:if="${isHistoricalView == true}">
               <div
                 th:replace="~{fragments/prediction-historical-view :: historical-view(
                   ${hasRoundResult}, ${roundResultRankings}, ${predictions},
@@ -197,12 +210,15 @@
               ></div>
             </th:block>
 
-            <!-- Actions Footer -->
-            <div
-              th:if="${(canSwap || canCreateEntry) && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))}"
-              x-show="canSwap || isInitialPrediction"
-              th:replace="~{fragments/prediction-actions :: actions}"
-            ></div>
+            <!-- Actions Footer (only for current editable round, not historical views) -->
+            <th:block
+              th:if="${isHistoricalView == false && (canSwap || canCreateEntry) && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))}"
+            >
+              <div
+                x-show="canSwap || isInitialPrediction"
+                th:replace="~{fragments/prediction-actions :: actions}"
+              ></div>
+            </th:block>
           </div>
         </div>
       </div>

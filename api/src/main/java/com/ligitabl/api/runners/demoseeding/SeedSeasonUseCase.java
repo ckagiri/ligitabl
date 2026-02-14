@@ -5,10 +5,10 @@ import java.time.temporal.TemporalAdjusters;
 import java.util.*;
 import java.util.Comparator;
 
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ligitabl.api.rest.round.finalizeround.AdvanceCurrentRoundUseCase;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundError;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundResult;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundUseCase;
@@ -36,9 +36,8 @@ public class SeedSeasonUseCase {
     private final MatchRepo matchRepo;
     private final SeasonPredictionRepo predictionRepo;
     private final EntryRepo entryRepo;
-    private final StandingsRepo standingsRepo;
     private final FinalizeRoundUseCase finalizeRoundUseCase;
-    private final PasswordEncoder passwordEncoder;
+    private final AdvanceCurrentRoundUseCase advanceCurrentRoundUseCase;
     private final Clock clock;
 
     private final Random random = new Random(42);
@@ -469,6 +468,18 @@ public class SeedSeasonUseCase {
                 break; // Stop on first failure but don't fail entire seedingding
             } else {
                 finalized++;
+
+                // FinalizeRoundUseCase no longer advances pointers; do it explicitly for seeding.
+                var advance =
+                        advanceCurrentRoundUseCase.execute(new AdvanceCurrentRoundUseCase.AdvanceCurrentRoundCommand(
+                                season.getId(), result.get().roundId()));
+
+                if (advance.isLeft()) {
+                    String msg = "Failed to advance after finalization: " + advance.getLeft();
+                    warnings.add(msg);
+                    log.warn(msg);
+                    break;
+                }
             }
         }
 

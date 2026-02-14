@@ -224,21 +224,31 @@ public class SyncMatchesUseCase {
     private MatchSyncResult calculateNextSync(SyncContext context) {
         var matches = context.updatedMatches();
 
-        boolean allComplete = matches.stream()
-                .allMatch(m -> m.getStatus() == MatchStatus.FINISHED || m.getStatus() == MatchStatus.POSTPONED);
+        boolean allComplete = matches.stream().allMatch(this::isComplete);
 
-        boolean hasBlocking = matches.stream()
-                .anyMatch(m -> m.getStatus() == MatchStatus.CANCELLED || m.getStatus() == MatchStatus.SUSPENDED);
+        boolean hasBlocking = matches.stream().anyMatch(this::isBlocking);
+
+        boolean allTerminalOrBlocking = matches.stream().allMatch(m -> isComplete(m) || isBlocking(m));
+        boolean roundObstructed = allTerminalOrBlocking && hasBlocking;
+
+        var obstructedMatchIds = roundObstructed
+                ? matches.stream().filter(this::isBlocking).map(Match::getId).toList()
+                : List.<UUID>of();
 
         // Check if no upcoming matches (empty result)
         if (context.matchesProcessed() == 0) {
             return new MatchSyncResult(
+                    context.season().getId(),
+                    context.round().getId(),
+                    context.round().getPosition(),
                     0,
                     0,
                     0,
                     List.of(),
                     false,
                     false,
+                    false,
+                    List.of(),
                     NextSyncSchedule.hours(12, "No upcoming matches - checking twice daily"));
         }
 
@@ -253,16 +263,36 @@ public class SyncMatchesUseCase {
                 .min(OffsetDateTime::compareTo)
                 .orElse(null);
 
-        var nextSchedule = SyncFrequencyCalculator.calculateNextSync(hasLive, hasScheduled, nextKickoff, allComplete);
+        var nextSchedule = SyncFrequencyCalculator.calculateNextSync(
+                hasLive, hasScheduled, nextKickoff, allComplete, roundObstructed);
 
         return new MatchSyncResult(
+                context.season().getId(),
+                context.round().getId(),
+                context.round().getPosition(),
                 context.matchesProcessed(),
                 context.matchesUpdated(),
                 context.finishedMatchIds().size(),
                 context.finishedMatchIds(),
                 allComplete,
                 hasBlocking,
+                roundObstructed,
+                obstructedMatchIds,
                 nextSchedule);
+    }
+
+    private boolean isComplete(Match match) {
+        if (match == null || match.getStatus() == null) {
+            return false;
+        }
+        return match.getStatus() == MatchStatus.FINISHED || match.getStatus() == MatchStatus.POSTPONED;
+    }
+
+    private boolean isBlocking(Match match) {
+        if (match == null || match.getStatus() == null) {
+            return false;
+        }
+        return match.getStatus() == MatchStatus.CANCELLED || match.getStatus() == MatchStatus.SUSPENDED;
     }
 
     private Match findMatchByExternalId(List<Match> matches, String externalId) {

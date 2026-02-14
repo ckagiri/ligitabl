@@ -56,18 +56,34 @@
     </div>
 
     <!-- Prediction -->
-    <div class="mt-6">
+    <div class="mt-6" th:with="totalTeams=${#lists.size(user.currentPrediction)}, midpoint=${totalTeams / 2}">
       <h4 class="text-base font-semibold text-gray-700 mb-4">Prediction</h4>
-      <div class="grid grid-cols-2 gap-x-8 gap-y-2">
-        <div th:each="pred, iter : ${user.currentPrediction}">
-          <span
-            class="text-sm text-gray-500 font-medium"
-            th:text="${iter.index + 1} + '.'"
-            >1.</span
-          >
-          <span class="text-sm text-gray-900 ml-2" th:text="${pred.teamName}"
-            >Chelsea</span
-          >
+      <div class="grid grid-cols-2 gap-x-8">
+        <!-- First column: first half -->
+        <div class="space-y-2">
+          <div th:each="pred, iter : ${user.currentPrediction}" th:if="${iter.index < midpoint}">
+            <span
+              class="text-sm text-gray-500 font-medium"
+              th:text="${iter.index + 1} + '.'"
+              >1.</span
+            >
+            <span class="text-sm text-gray-900 ml-2" th:text="${pred.teamName}"
+              >Chelsea</span
+            >
+          </div>
+        </div>
+        <!-- Second column: second half -->
+        <div class="space-y-2">
+          <div th:each="pred, iter : ${user.currentPrediction}" th:if="${iter.index >= midpoint}">
+            <span
+              class="text-sm text-gray-500 font-medium"
+              th:text="${iter.index + 1} + '.'"
+              >11.</span
+            >
+            <span class="text-sm text-gray-900 ml-2" th:text="${pred.teamName}"
+              >Arsenal</span
+            >
+          </div>
         </div>
       </div>
     </div>

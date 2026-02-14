@@ -201,8 +201,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .orderBy(
                         totalScoreField.desc(),
                         totalZeroesField.desc(),
-                        totalSwapsField.asc(),
                         maxScoreField.desc(),
+                        totalSwapsField.asc(),
                         publicId.asc())
                 .as("position");
 
@@ -293,8 +293,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .orderBy(
                         totalScoreField.desc(),
                         totalZeroesField.desc(),
-                        totalSwapsField.asc(),
                         maxScoreField.desc(),
+                        totalSwapsField.asc(),
                         publicId.asc())
                 .as("position");
 
@@ -395,8 +395,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .orderBy(
                         totalScoreField.desc(),
                         totalZeroesField.desc(),
-                        totalSwapsField.asc(),
                         maxScoreField.desc(),
+                        totalSwapsField.asc(),
                         publicId.asc())
                 .as("position");
 

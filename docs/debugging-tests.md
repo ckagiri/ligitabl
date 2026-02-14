@@ -130,6 +130,8 @@ Tips:
 
 - `tail -n 80 ...` gives you “the end of the story” fast.
 - The `.exit` file is a simple breadcrumb for later automation.
+- If you run Maven with `-q`, you may not get a visible `BUILD SUCCESS`/`BUILD FAILURE` banner in the log.
+  - Prefer the exit code (`$?` / the `.exit` file) and Surefire XML (`*/target/surefire-reports/TEST-*.xml`) as the source of truth.
 
 ## Makefile test targets (quick reference)
 
@@ -142,6 +144,33 @@ Short summaries of the test-focused targets in [Makefile](Makefile):
 - `test-api-it`: DB-backed `*IT` integration tests only.
 - `test-api-all`: full API test suite (same scope as `test`).
 - `test-all`: full repo test suite (all modules).
+
+### Model “domain-only” tests (with or without jOOQ codegen)
+
+The `model` module contains both:
+
+- pure domain/unit tests (e.g. `model/src/test/java/com/ligitabl/model/domain/*Test.java`)
+- repo/infra tests that depend on jOOQ generated types (`com.ligitabl.model.db.*`)
+
+By default, jOOQ codegen is skipped to allow fast builds. That means repo/infra tests that import generated classes will fail to compile unless codegen has been run.
+
+To make “domain-only” tests easy to run in either mode, the Makefile provides:
+
+- `test-model-domain`: runs only the model domain/unit test slice using the model’s `no-jooq` profile.
+  - Why: avoids compiling/running repo/infra tests that require generated jOOQ classes.
+  - Command:
+
+    ```bash
+    make test-model-domain
+    ```
+
+- `test-model-domain-with-codegen`: runs jOOQ codegen first (heavier), then executes only the domain tests.
+  - Why: useful if you want generated code present, but still want a quick “domain-only” test run.
+  - Command:
+
+    ```bash
+    make test-model-domain-with-codegen
+    ```
 
 ## Parsing Surefire XML with a quick Python snippet
 
@@ -230,6 +259,10 @@ Once you have the failing test name or error string:
   rg -n "\[ERROR\]|FAILURE!|There are test failures" api/target/test-api.log
   ```
 
+  - If you can’t find expected strings in `api/target/test-api.log`, check whether:
+    - the test run used a different log path (VS Code tasks sometimes log to `api/target/test-api*.log` variants), or
+    - your editor search is excluding `target/` (common). In that case, use terminal `grep/rg` or enable “include ignored files”.
+
   - **Package move + refactor via a small Python snippet**
     - When renaming packages across many files, a simple `python3` pass can rewrite imports + package declarations quickly.
     - Example used to rename `com.ligitabl.api.usecases` to `com.ligitabl.api.rest` after moving folders:
@@ -304,6 +337,14 @@ Once you have the failing test name or error string:
 - **Look for DB connection errors in the _end_ of the log.**
   - Hikari errors like “Pool is empty” or “Connection refused” often appear at the tail, not near the top.
   - `tail -n 80 api/target/test-api.log` is usually enough to see the root cause.
+
+- **Mockito strict stubbing failures (`UnnecessaryStubbingException`) are usually caused by a refactor changing the call path.**
+  - Symptom: the test fails even though assertions look fine, with an error like:
+    - `org.mockito.exceptions.misusing.UnnecessaryStubbingException: Unnecessary stubbings detected`
+  - Fix (preferred): remove the stale `when(...)` stub for the call that no longer happens in that scenario.
+  - Alternatives:
+    - make the specific stub lenient (`lenient().when(...)...`) if the stubbing is intentionally shared, or
+    - reduce shared setup in `@BeforeEach` so each test only stubs what it uses.
 
 ## Integration tests (Testcontainers) diagnostics
 

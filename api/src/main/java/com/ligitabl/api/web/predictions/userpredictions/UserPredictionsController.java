@@ -21,12 +21,14 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.web.shared.dto.FixtureDto;
+import com.ligitabl.api.web.shared.dto.ResultTeamRankDto;
 import com.ligitabl.api.web.shared.dto.TeamRankDto;
 import com.ligitabl.api.web.shared.error.ErrorMapper;
 import com.ligitabl.api.web.shared.error.ErrorViewMapper;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Match;
+import com.ligitabl.model.domain.ResultTeamRank;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
@@ -298,6 +300,7 @@ public class UserPredictionsController {
         if (data.swapCooldown() != null) {
             var cooldown = data.swapCooldown();
             var now = Instant.now();
+            boolean firstSwapBonus = cooldown.initialPredictionMade() && cooldown.swapCount() == 0;
             model.addAttribute(
                     "swapStatus",
                     new SwapStatusDTO(
@@ -305,14 +308,15 @@ public class UserPredictionsController {
                             cooldown.getStatusMessage(now),
                             cooldown.getLastSwapAtFormatted(),
                             cooldown.initialPredictionMade(),
-                            cooldown.swapCount()));
+                            cooldown.swapCount(),
+                            firstSwapBonus));
         }
 
         // Round result for historical views
         if (data.hasRoundResult()) {
             var result = data.roundResult();
             model.addAttribute("roundResult", result);
-            model.addAttribute("roundResultRankings", result.getRankings());
+            model.addAttribute("roundResultRankings", enrichResultRankings(result.getRankings()));
             model.addAttribute("totalScore", result.getTotalScore());
             model.addAttribute("totalHits", result.getTotalHits());
             model.addAttribute("zeroesCount", result.getZeroesCount());
@@ -364,6 +368,21 @@ public class UserPredictionsController {
                         .stream()
                         .collect(Collectors.toMap(Team::getCode, Function.identity()));
         return TeamRankDto.listOf(sortedRanks, teamsByCode);
+    }
+
+    private List<ResultTeamRankDto> enrichResultRankings(List<ResultTeamRank> resultRanks) {
+        if (resultRanks == null || resultRanks.isEmpty()) {
+            return List.of();
+        }
+
+        Map<String, Team> teamsByCode =
+                teamRepo
+                        .findAllByCodes(resultRanks.stream()
+                                .map(r -> r.getRanking().getCode())
+                                .collect(Collectors.toSet()))
+                        .stream()
+                        .collect(Collectors.toMap(Team::getCode, Function.identity()));
+        return ResultTeamRankDto.listOf(resultRanks, teamsByCode);
     }
 
     private Map<String, List<FixtureDto>> buildFixtures(Map<String, List<Match>> matchesByTeam) {
@@ -431,5 +450,10 @@ public class UserPredictionsController {
      * DTO for swap status information displayed in templates.
      */
     public record SwapStatusDTO(
-            boolean canSwap, String message, String lastSwapAt, boolean initialPredictionMade, int swapCount) {}
+            boolean canSwap,
+            String message,
+            String lastSwapAt,
+            boolean initialPredictionMade,
+            int swapCount,
+            boolean firstSwapBonus) {}
 }

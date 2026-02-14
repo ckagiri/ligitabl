@@ -38,11 +38,11 @@ public class LatestResultBannerController {
                     log.debug("Error fetching latest result banner: {}", error.getMessage());
                     return "fragments/results-banner :: results-banner-user(result=null)";
                 },
-                optionalResult -> {
-                    if (optionalResult.isEmpty()) {
+                bannerResult -> {
+                    if (bannerResult.isEmpty()) {
                         return "fragments/results-banner :: results-banner-user(result=null)";
                     }
-                    model.addAttribute("result", optionalResult.get());
+                    model.addAttribute("result", bannerResult.get());
                     return "fragments/results-banner :: results-banner-user(result=${result})";
                 });
     }

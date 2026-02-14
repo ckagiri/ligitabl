@@ -5,6 +5,9 @@ import java.util.UUID;
 public sealed interface FinalizeRoundError {
     record RoundNotReady(UUID roundId, String reason) implements FinalizeRoundError {}
 
+    record RoundObstructed(UUID roundId, java.util.List<UUID> obstructedMatchIds, String message)
+            implements FinalizeRoundError {}
+
     record StandingsValidationFailed(String reason) implements FinalizeRoundError {}
 
     record TransactionFailed(String reason) implements FinalizeRoundError {}

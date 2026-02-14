@@ -102,11 +102,16 @@ public class Match extends AbstractModel<UUID> {
 
     private static boolean isAllowedTransition(MatchStatus from, MatchStatus to) {
         return switch (from) {
-            case SCHEDULED -> to == MatchStatus.LIVE || to == MatchStatus.POSTPONED || to == MatchStatus.CANCELLED;
-            case LIVE -> to == MatchStatus.SUSPENDED || to == MatchStatus.FINISHED || to == MatchStatus.CANCELLED;
-            case SUSPENDED -> to == MatchStatus.POSTPONED || to == MatchStatus.LIVE || to == MatchStatus.CANCELLED;
+            case SCHEDULED -> to == MatchStatus.SCHEDULED
+                    || to == MatchStatus.LIVE
+                    || to == MatchStatus.FINISHED
+                    || to == MatchStatus.POSTPONED
+                    || to == MatchStatus.CANCELLED;
+            case LIVE -> to == MatchStatus.SUSPENDED || to == MatchStatus.FINISHED;
+            case SUSPENDED -> to == MatchStatus.CANCELLED;
             case POSTPONED -> to == MatchStatus.SCHEDULED || to == MatchStatus.CANCELLED;
-            case CANCELLED, FINISHED -> false;
+            case CANCELLED -> to == MatchStatus.SCHEDULED || to == MatchStatus.POSTPONED || to == MatchStatus.FINISHED;
+            case FINISHED -> false;
         };
     }
 

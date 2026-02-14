@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class GetLeaderboardController {
-    private static final int PAGE_SIZE = 20;
+    private static final int PAGE_SIZE = 1;
 
     private final GetLeaderboardUseCase getLeaderboardUseCase;
     private final UserRepo userRepo;
@@ -98,6 +98,7 @@ public class GetLeaderboardController {
         LeaderboardEntry userPosition = result.userEntry();
         boolean userInCurrentPage = result.userInCurrentPage();
 
+        model.addAttribute("pageTitle", "Leaderboard");
         model.addAttribute("leaderboard", pageEntries);
         model.addAttribute("phases", result.allPhases());
         model.addAttribute("currentPhase", result.phase().getCode());
@@ -123,15 +124,15 @@ public class GetLeaderboardController {
 
     private String handleError(GetLeaderboardError error, Model model, HttpServletResponse response, String hxRequest) {
         ErrorResponse errorResponse =
-            switch (error) {
-                case GetLeaderboardError.DefaultCompetitionNotFound e -> new ErrorResponse(404, e.message());
-                case GetLeaderboardError.ActiveSeasonNotFound e -> new ErrorResponse(404, e.message());
-                case GetLeaderboardError.MainContestNotFound e -> new ErrorResponse(404, e.message());
-                case GetLeaderboardError.PhasesNotConfigured __ -> new ErrorResponse(
-                    500, "Competition phases not configured");
-                case GetLeaderboardError.InvalidPhase e -> new ErrorResponse(
-                    400, "Invalid phase: " + e.phaseCode());
-            };
+                switch (error) {
+                    case GetLeaderboardError.DefaultCompetitionNotFound e -> new ErrorResponse(404, e.message());
+                    case GetLeaderboardError.ActiveSeasonNotFound e -> new ErrorResponse(404, e.message());
+                    case GetLeaderboardError.MainContestNotFound e -> new ErrorResponse(404, e.message());
+                    case GetLeaderboardError.PhasesNotConfigured __ -> new ErrorResponse(
+                            500, "Competition phases not configured");
+                    case GetLeaderboardError.InvalidPhase e -> new ErrorResponse(
+                            400, "Invalid phase: " + e.phaseCode());
+                };
 
         response.setStatus(errorResponse.status());
         model.addAttribute("error", errorResponse.message());

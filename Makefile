@@ -510,6 +510,20 @@ run-api: ## Start DB and run API via spring-boot:run (ENV=$(ENV))
 		clean install
 	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -f $(API_DIR)/pom.xml -Dspring-boot.run.mainClass=com.ligitabl.api.LigitablApplication org.springframework.boot:spring-boot-maven-plugin:run
 
+.PHONY: run-api-fast
+run-api-fast: ## Start DB and run API (skip migrate, skip clean) (ENV=$(ENV))
+	$(MAKE) compose-up-db
+	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -DskipTests -Pwith-jooq -Djooq.codegen.skip=true -pl $(API_DIR) -am \
+		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
+		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
+		compile
+	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -f $(API_DIR)/pom.xml -Dspring-boot.run.mainClass=com.ligitabl.api.LigitablApplication org.springframework.boot:spring-boot-maven-plugin:run
+
+.PHONY: run-api-fastest
+run-api-fastest: ## Start DB and run API (no rebuild, assumes compiled) (ENV=$(ENV))
+	$(MAKE) compose-up-db
+	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -f $(API_DIR)/pom.xml -Dspring-boot.run.mainClass=com.ligitabl.api.LigitablApplication org.springframework.boot:spring-boot-maven-plugin:run
+
 .PHONY: run-api-fake
 run-api-fake: ## Start DB and run API with FAKE_DATA_ENABLED=true (ENV=$(ENV))
 	$(MAKE) compose-up-db
@@ -550,6 +564,18 @@ test-api-it: ## Run DB-backed integration tests
 .PHONY: test-api-all
 test-api-all: ## Run all API tests
 	mvn -pl $(API_DIR) -am test
+
+.PHONY: test-model-domain
+test-model-domain: ## Run model domain-only tests (works without jOOQ codegen)
+	# Uses the model's no-jooq profile to avoid compiling/running jOOQ-backed repo/infra tests.
+	mvn -q -pl model -am -Pno-jooq test
+
+.PHONY: test-model-domain-with-codegen
+test-model-domain-with-codegen: ## Run model domain-only tests after generating jOOQ code (heavier)
+	$(MAKE) model-codegen-local
+	# Avoid re-running jOOQ codegen during test phase; rely on generated sources produced above.
+	mvn -q -pl model -am -Pwith-jooq -Djooq.codegen.skip=true \
+		-Dsurefire.failIfNoSpecifiedTests=false -Dtest='com.ligitabl.model.domain.*Test' test
 
 .PHONY: test-all
 test-all: ## Run full test suite

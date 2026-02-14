@@ -20,7 +20,7 @@
                 th:attr="hx-get=@{/leaderboard}"
                 hx-trigger="change"
                 hx-target="#leaderboard-content"
-                hx-swap="outerHTML swap:300ms"
+                hx-swap="outerHTML swap:100ms settle:100ms"
                 hx-include="this"
                 name="phase"
                 class="form-select block w-full sm:w-48 px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
@@ -88,6 +88,12 @@
                     scope="col"
                     class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
                   >
+                    Best
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
+                  >
                     Swaps
                   </th>
                   <th
@@ -123,9 +129,12 @@
                     th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'bg-indigo-50' : 'bg-white group-hover:bg-gray-50'}"
                   >
                     <button
-                      th:attr="hx-get=@{/leaderboard/user/{id}/details(id=${entry.publicId}, phase=${currentPhase})}"
+                      hx-post="/leaderboard/user/modal"
                       hx-target="#user-detail-modal"
                       hx-swap="innerHTML"
+                      th:attr="hx-vals='js:{publicId: &quot;' + ${entry.publicId} + '&quot;, displayName: &quot;' + ${entry.displayName} + '&quot;, ' +
+                        'position: ' + ${entry.position} + ', totalScore: ' + ${entry.totalScore} + ', roundScore: ' + ${entry.roundScore} + ', ' +
+                        'maxScore: ' + ${entry.maxScore} + ', totalZeroes: ' + ${entry.totalZeroes} + ', totalSwaps: ' + ${entry.totalSwaps} + ', movement: ' + ${entry.movement} + '}'"
                       class="text-sm font-medium hover:text-indigo-600 hover:underline transition cursor-pointer text-left"
                       th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'text-indigo-900' : 'text-gray-900'}"
                       th:text="${entry.displayName}"
@@ -156,6 +165,14 @@
                     th:text="${entry.totalZeroes}"
                   >
                     198
+                  </td>
+
+                  <!-- Best -->
+                  <td
+                    class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-600"
+                    th:text="${entry.maxScore}"
+                  >
+                    52
                   </td>
 
                   <!-- Swaps -->
@@ -196,7 +213,7 @@
                 class="border-t-2 border-indigo-300"
               >
                 <tr class="bg-gradient-to-r from-indigo-50 to-blue-50">
-                  <td colspan="7" class="px-3 py-4">
+                  <td colspan="8" class="px-3 py-4">
                     <div class="flex items-center space-x-6">
                       <!-- Position -->
                       <div class="flex items-center">
@@ -238,6 +255,16 @@
                           class="text-sm font-semibold text-green-600"
                           th:text="${userPosition.totalZeroes}"
                           >175</span
+                        >
+                      </div>
+
+                      <!-- Best -->
+                      <div class="flex items-center">
+                        <span class="text-xs text-gray-600 mr-1">Best:</span>
+                        <span
+                          class="text-sm text-gray-700"
+                          th:text="${userPosition.maxScore}"
+                          >52</span
                         >
                       </div>
 
@@ -300,7 +327,7 @@
                 th:if="${hasPreviousPage == true}"
                 th:attr="hx-get=@{/leaderboard(phase=${currentPhase}, page=${currentPage - 1})}"
                 hx-target="#leaderboard-content"
-                hx-swap="outerHTML swap:300ms"
+                hx-swap="outerHTML swap:100ms settle:100ms"
                 class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Previous
@@ -316,7 +343,7 @@
                 th:if="${hasNextPage == true}"
                 th:attr="hx-get=@{/leaderboard(phase=${currentPhase}, page=${currentPage + 1})}"
                 hx-target="#leaderboard-content"
-                hx-swap="outerHTML swap:300ms"
+                hx-swap="outerHTML swap:100ms settle:100ms"
                 class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Next

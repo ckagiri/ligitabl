@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.leaderboard.getuserdetails;
+package com.ligitabl.api.rest.leaderboard.getuserdetail;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -32,13 +32,13 @@ import com.ligitabl.model.repo.SeasonPredictionRepo;
 
 @SpringBootTest
 @DisplayName("GetUserDetailsUseCase Integration Tests")
-class GetUserDetailsUseCaseIntegrationTest extends AbstractPostgresIT {
+class GetUserDetailUseCaseIntegrationTest extends AbstractPostgresIT {
 
     @Autowired
     JdbcTemplate jdbc;
 
     @Autowired
-    GetUserDetailsUseCase useCase;
+    GetUserDetailUseCase useCase;
 
     @Autowired
     CompetitionDefaults competitionDefaults;
@@ -123,11 +123,11 @@ class GetUserDetailsUseCaseIntegrationTest extends AbstractPostgresIT {
     @Test
     @DisplayName("uses season prediction when current round has no matches")
     void usesSeasonPredictionWhenCurrentRoundHasNoMatches() {
-        Either<GetUserDetailsError, GetUserDetailsResult> result =
-                useCase.execute(new GetUserDetailsQuery(USER_PUBLIC_ID, null));
+        Either<GetUserDetailError, GetUserDetailResult> result =
+                useCase.execute(new GetUserDetailQuery(USER_PUBLIC_ID, null));
 
         assertThat(result.isRight()).isTrue();
-        GetUserDetailsResult details = result.get();
+        GetUserDetailResult details = result.get();
         assertThat(details.currentPrediction()).hasSize(2);
         assertThat(details.currentPrediction().get(0).teamName()).isEqualTo("Arsenal");
     }
@@ -137,11 +137,11 @@ class GetUserDetailsUseCaseIntegrationTest extends AbstractPostgresIT {
     void usesRoundSubmissionWhenCurrentRoundLocked() {
         insertMatch(round2Id, MatchStatus.LIVE, 2);
 
-        Either<GetUserDetailsError, GetUserDetailsResult> result =
-                useCase.execute(new GetUserDetailsQuery(USER_PUBLIC_ID, null));
+        Either<GetUserDetailError, GetUserDetailResult> result =
+                useCase.execute(new GetUserDetailQuery(USER_PUBLIC_ID, null));
 
         assertThat(result.isRight()).isTrue();
-        GetUserDetailsResult details = result.get();
+        GetUserDetailResult details = result.get();
         assertThat(details.currentPrediction()).hasSize(2);
         assertThat(details.currentPrediction().get(0).teamName()).isEqualTo("Liverpool");
     }

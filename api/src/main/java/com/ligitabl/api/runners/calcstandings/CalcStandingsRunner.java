@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@ConditionalOnProperty(prefix = "workflow", name = "run-calcstandings-standings", havingValue = "true")
+@ConditionalOnProperty(prefix = "workflow", name = "run-calc-standings", havingValue = "true")
 public class CalcStandingsRunner implements ApplicationRunner {
 
     private final CalculateRoundStandingsUseCase calculateRoundStandingsUseCase;
@@ -103,10 +103,8 @@ public class CalcStandingsRunner implements ApplicationRunner {
 
             result.fold(
                     error -> {
-                        // Check if error is because standings are already finalized
-                        if (error.getMessage().contains("already finalised")
-                                || error.getMessage().contains("No finished matches in round")) {
-                            log.debug("Round {} - Skipped (already finalized)", round.getPosition());
+                        if (isSkippable(error)) {
+                            log.info("Round {} - Skipped: {}", round.getPosition(), error.getMessage());
                             skippedCount.incrementAndGet();
                         } else {
                             log.warn("Round {} - Failed: {}", round.getPosition(), error.getMessage());
@@ -160,5 +158,15 @@ public class CalcStandingsRunner implements ApplicationRunner {
         if (config.isExitAfter()) {
             System.exit(1);
         }
+    }
+
+    private static boolean isSkippable(UseCaseError error) {
+        String message = error == null || error.getMessage() == null ? "" : error.getMessage();
+        String normalized = message.toLowerCase();
+
+        // Messages come from use cases; keep matching permissive but stable.
+        return normalized.contains("already finalized")
+                || normalized.contains("already finalised")
+                || normalized.contains("no finished matches in round");
     }
 }

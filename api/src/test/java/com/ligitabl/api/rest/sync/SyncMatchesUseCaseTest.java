@@ -160,6 +160,41 @@ class SyncMatchesUseCaseTest {
     }
 
     @Test
+    void shouldDetectRoundObstructedWhenCancelledMatchPresentAndAllTerminalOrBlocking() {
+        var season = createSeason();
+        var round = createRound();
+
+        var m1 = createMatch(1, MatchStatus.SCHEDULED, OffsetDateTime.now().plusHours(10));
+        var m2 = createMatch(2, MatchStatus.SCHEDULED, OffsetDateTime.now().plusHours(11));
+        var existingMatches = List.of(m1, m2);
+
+        when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+
+        var apiMatches = List.of(
+                new MatchDto(1L, OffsetDateTime.now(), "FINISHED", 1, "REGULAR_SEASON", null, null, null),
+                new MatchDto(2L, OffsetDateTime.now(), "CANCELLED", 1, "REGULAR_SEASON", null, null, null));
+
+        when(footballDataClient.getMatchesInDateRange(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Either.right(new MatchesResponse(apiMatches, null)));
+
+        // First call in resolveHierarchy, second call after updateMatches reload.
+        when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches).thenReturn(existingMatches);
+        when(matchRepo.save(any(Match.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
+
+        assertThat(result.isRight()).isTrue();
+        assertThat(result.get().roundObstructed()).isTrue();
+        assertThat(result.get().allMatchesComplete()).isFalse();
+        assertThat(result.get().obstructedMatchIds()).containsExactly(m2.getId());
+        assertThat(result.get().nextSchedule().delay()).isZero();
+
+        // A match became FINISHED, so standings recalculation is triggered.
+        verify(standingsService).recalculateAsync(eq(seasonId), eq(1));
+    }
+
+    @Test
     void shouldCalculateNextSyncForLiveMatches() {
         var season = createSeason();
         var round = createRound();
