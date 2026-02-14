@@ -29,7 +29,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class GetLeaderboardController {
-    private static final int PAGE_SIZE = 20;
+    private static final int PAGE_SIZE = 1;
 
     private final GetLeaderboardUseCase getLeaderboardUseCase;
     private final UserRepo userRepo;
