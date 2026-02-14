@@ -51,9 +51,10 @@ After using the first swap bonus or any subsequent swap:
 | `finalized` | Results scored and published | Read-only, view scores |
 
 **State Indicator (shown in page header):**
-- 🟢 Open
-- 🔒 Locked (for locked/completed)
-- 📊 Finalized
+- 🟢 Open (green)
+- 🔒 Locked (yellow, for locked/completed)
+- ⏳ Finalizing (orange, when `roundState == 'finalized' && seasonCompleted != true`) — temporary state before round advances to next
+- 📊 Finalized (blue, when `roundState == 'finalized' && seasonCompleted == true`) — last round, season is done
 
 ## User Access Modes
 
@@ -630,9 +631,9 @@ th:replace="~{fragments/round-navigation :: round-nav(
   ${currentRound},                  /* maxRound - always currentRound */
   ${currentRound},                  /* currentRound - for labeling */
   '#prediction-page',               /* htmxTarget */
-  'outerHTML swap:300ms show:window:top', /* htmxSwap */
+  'outerHTML swap:100ms settle:100ms show:window:top', /* htmxSwap */
   ${isCurrentRound == false || isCurrentRound == null}, /* showJumpToCurrent */
-  true,                            /* dismissBanner */
+  false,                           /* dismissBanner - false to avoid marking results banner as viewed */
   'query',                         /* urlStyle */
   null,                            /* pathSuffix */
   ${minRoundForNav}                /* minRound - computed above */
