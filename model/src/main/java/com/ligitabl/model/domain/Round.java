@@ -68,6 +68,11 @@ public class Round extends AbstractModel<UUID> {
             return RoundStatus.LOCKED;
         }
 
+        // LOCKED: Round has started (some finished) but still has scheduled matches remaining.
+        if (hasScheduled && hasFinished) {
+            return RoundStatus.LOCKED;
+        }
+
         // OPEN: Has scheduled matches, no blocking statuses
         return RoundStatus.OPEN;
     }
