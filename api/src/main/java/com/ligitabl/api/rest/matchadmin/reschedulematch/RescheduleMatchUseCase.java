@@ -72,15 +72,23 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
                 return Either.right(ctx);
             }
 
-            return validateOperationalMode(ctx.match(), ctx.currentRound(), ctx.targetRound())
-                    .map(ignored -> ctx);
+            return hierarchyValidator
+                    .validateCurrentRound(ctx.season())
+                    .flatMap(seasonCurrentRound -> validateOperationalMode(
+                                    ctx.match(), seasonCurrentRound, ctx.currentRound(), ctx.targetRound())
+                            .map(ignored -> ctx));
         });
     }
 
-    private Either<UseCaseError, Void> validateOperationalMode(Match match, Round currentRound, Round targetRound) {
+    private Either<UseCaseError, Void> validateOperationalMode(
+            Match match, Round seasonCurrentRound, Round sourceRound, Round targetRound) {
         if (match.getStatus() == MatchStatus.SUSPENDED) {
             return Either.left(UseCaseErrors.validation(
-                    "Cannot reschedule SUSPENDED match directly. Transition to POSTPONED first."));
+                    "Cannot reschedule SUSPENDED match directly. Transition to CANCELLED first."));
+        }
+        if (match.getStatus() == MatchStatus.CANCELLED) {
+            return Either.left(UseCaseErrors.validation(
+                    "Cannot reschedule CANCELLED match directly. Transition to POSTPONED first."));
         }
         if (match.getStatus() == MatchStatus.LIVE) {
             return Either.left(UseCaseErrors.validation("Cannot reschedule LIVE match"));
@@ -89,10 +97,10 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
             return Either.left(UseCaseErrors.validation("Cannot reschedule FINISHED match"));
         }
 
-        if (targetRound.getPosition() < currentRound.getPosition()) {
+        if (targetRound.getPosition() < seasonCurrentRound.getPosition()) {
             return Either.left(UseCaseErrors.validation(String.format(
                     "Cannot reschedule to past round %d (current is %d)",
-                    targetRound.getPosition(), currentRound.getPosition())));
+                    targetRound.getPosition(), seasonCurrentRound.getPosition())));
         }
 
         if (targetRound.isFinalized()) {

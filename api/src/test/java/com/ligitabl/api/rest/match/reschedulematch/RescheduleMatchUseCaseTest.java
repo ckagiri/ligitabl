@@ -150,6 +150,7 @@ class RescheduleMatchUseCaseTest {
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonLive, currentRound)));
+        when(hierarchyValidator.validateCurrentRound(seasonLive)).thenReturn(Either.right(currentRound));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 20)).thenReturn(Either.right(targetRound));
         when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
@@ -224,8 +225,134 @@ class RescheduleMatchUseCaseTest {
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonLive, currentRound)));
+        when(hierarchyValidator.validateCurrentRound(seasonLive)).thenReturn(Either.right(currentRound));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 20)).thenReturn(Either.right(targetRound));
+
+        Either<UseCaseError, RescheduleResult> result = useCase.execute(cmd);
+
+        assertTrue(result.isLeft());
+        verify(matchRepo, never()).save(any());
+    }
+
+    @Test
+    void reschedule_cancelledMatch_returnsLeftInvalidState_inLiveMode() {
+        Match match = Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .roundId(currentRoundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("home-vs-away")
+                .status(MatchStatus.CANCELLED)
+                .build();
+
+        RescheduleMatchCommand cmd = RescheduleMatchCommand.builder()
+                .competitionIdentifier("premier-league")
+                .roundPosition(null)
+                .matchSlug(match.getSlug())
+                .newRoundPosition(20)
+                .reason("Invalid")
+                .build();
+
+        when(hierarchyValidator.resolveHierarchy(anyString(), any()))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonLive, currentRound)));
+        when(hierarchyValidator.validateCurrentRound(seasonLive)).thenReturn(Either.right(currentRound));
+        when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
+        when(hierarchyValidator.validateRound(seasonId, 20)).thenReturn(Either.right(targetRound));
+
+        Either<UseCaseError, RescheduleResult> result = useCase.execute(cmd);
+
+        assertTrue(result.isLeft());
+        verify(matchRepo, never()).save(any());
+    }
+
+    @Test
+    void reschedule_scheduledMatch_canMoveFromFutureRoundToCurrentRound_inLiveMode() {
+        UUID futureRoundId = UUID.randomUUID();
+        Round futureRound = Round.builder()
+                .id(futureRoundId)
+                .seasonId(seasonId)
+                .name("Matchday 20")
+                .slug("md-20")
+                .position(20)
+                .finalized(false)
+                .build();
+
+        Match match = Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .roundId(futureRoundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("home-vs-away")
+                .status(MatchStatus.SCHEDULED)
+                .build();
+
+        Round targetCurrentRound = Round.builder()
+                .id(currentRoundId)
+                .seasonId(seasonId)
+                .name("Matchday 10")
+                .slug("md-10")
+                .position(10)
+                .finalized(false)
+                .build();
+
+        RescheduleMatchCommand cmd = RescheduleMatchCommand.builder()
+                .competitionIdentifier("premier-league")
+                .roundPosition(20)
+                .matchSlug(match.getSlug())
+                .newRoundPosition(10)
+                .reason("Moved forward")
+                .build();
+
+        when(hierarchyValidator.resolveHierarchy(anyString(), any()))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonLive, futureRound)));
+        when(hierarchyValidator.validateCurrentRound(seasonLive)).thenReturn(Either.right(currentRound));
+        when(matchRepo.findByRoundIdAndSlug(futureRoundId, match.getSlug())).thenReturn(Optional.of(match));
+        when(hierarchyValidator.validateRound(seasonId, 10)).thenReturn(Either.right(targetCurrentRound));
+        when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
+
+        Either<UseCaseError, RescheduleResult> result = useCase.execute(cmd);
+
+        assertTrue(result.isRight());
+        verify(matchRepo).save(argThat(m -> m.getRoundId().equals(currentRoundId) && m.getStatus() == MatchStatus.SCHEDULED));
+    }
+
+    @Test
+    void reschedule_cannotMoveToPastOfSeasonCurrentRound_inLiveMode() {
+        Match match = Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .roundId(currentRoundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("home-vs-away")
+                .status(MatchStatus.SCHEDULED)
+                .build();
+
+        Round pastRound = Round.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .name("Matchday 9")
+                .slug("md-9")
+                .position(9)
+                .finalized(false)
+                .build();
+
+        RescheduleMatchCommand cmd = RescheduleMatchCommand.builder()
+                .competitionIdentifier("premier-league")
+                .roundPosition(null)
+                .matchSlug(match.getSlug())
+                .newRoundPosition(9)
+                .reason("Moved back")
+                .build();
+
+        when(hierarchyValidator.resolveHierarchy(anyString(), any()))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonLive, currentRound)));
+        when(hierarchyValidator.validateCurrentRound(seasonLive)).thenReturn(Either.right(currentRound));
+        when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
+        when(hierarchyValidator.validateRound(seasonId, 9)).thenReturn(Either.right(pastRound));
 
         Either<UseCaseError, RescheduleResult> result = useCase.execute(cmd);
 
