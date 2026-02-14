@@ -143,6 +143,33 @@ Short summaries of the test-focused targets in [Makefile](Makefile):
 - `test-api-all`: full API test suite (same scope as `test`).
 - `test-all`: full repo test suite (all modules).
 
+### Model “domain-only” tests (with or without jOOQ codegen)
+
+The `model` module contains both:
+
+- pure domain/unit tests (e.g. `model/src/test/java/com/ligitabl/model/domain/*Test.java`)
+- repo/infra tests that depend on jOOQ generated types (`com.ligitabl.model.db.*`)
+
+By default, jOOQ codegen is skipped to allow fast builds. That means repo/infra tests that import generated classes will fail to compile unless codegen has been run.
+
+To make “domain-only” tests easy to run in either mode, the Makefile provides:
+
+- `test-model-domain`: runs only the model domain/unit test slice using the model’s `no-jooq` profile.
+  - Why: avoids compiling/running repo/infra tests that require generated jOOQ classes.
+  - Command:
+
+    ```bash
+    make test-model-domain
+    ```
+
+- `test-model-domain-with-codegen`: runs jOOQ codegen first (heavier), then executes only the domain tests.
+  - Why: useful if you want generated code present, but still want a quick “domain-only” test run.
+  - Command:
+
+    ```bash
+    make test-model-domain-with-codegen
+    ```
+
 ## Parsing Surefire XML with a quick Python snippet
 
 If Maven output is too noisy, query the XML directly to list failing suites.

@@ -565,6 +565,18 @@ test-api-it: ## Run DB-backed integration tests
 test-api-all: ## Run all API tests
 	mvn -pl $(API_DIR) -am test
 
+.PHONY: test-model-domain
+test-model-domain: ## Run model domain-only tests (works without jOOQ codegen)
+	# Uses the model's no-jooq profile to avoid compiling/running jOOQ-backed repo/infra tests.
+	mvn -q -pl model -am -Pno-jooq test
+
+.PHONY: test-model-domain-with-codegen
+test-model-domain-with-codegen: ## Run model domain-only tests after generating jOOQ code (heavier)
+	$(MAKE) model-codegen-local
+	# Avoid re-running jOOQ codegen during test phase; rely on generated sources produced above.
+	mvn -q -pl model -am -Pwith-jooq -Djooq.codegen.skip=true \
+		-Dsurefire.failIfNoSpecifiedTests=false -Dtest='com.ligitabl.model.domain.*Test' test
+
 .PHONY: test-all
 test-all: ## Run full test suite
 	mvn test
