@@ -88,6 +88,12 @@
                     scope="col"
                     class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
                   >
+                    Best
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
+                  >
                     Swaps
                   </th>
                   <th
@@ -128,7 +134,7 @@
                       hx-swap="innerHTML"
                       th:attr="hx-vals='js:{publicId: &quot;' + ${entry.publicId} + '&quot;, displayName: &quot;' + ${entry.displayName} + '&quot;, ' +
                         'position: ' + ${entry.position} + ', totalScore: ' + ${entry.totalScore} + ', roundScore: ' + ${entry.roundScore} + ', ' +
-                        'totalZeroes: ' + ${entry.totalZeroes} + ', totalSwaps: ' + ${entry.totalSwaps} + ', movement: ' + ${entry.movement} + '}'"
+                        'maxScore: ' + ${entry.maxScore} + ', totalZeroes: ' + ${entry.totalZeroes} + ', totalSwaps: ' + ${entry.totalSwaps} + ', movement: ' + ${entry.movement} + '}'"
                       class="text-sm font-medium hover:text-indigo-600 hover:underline transition cursor-pointer text-left"
                       th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'text-indigo-900' : 'text-gray-900'}"
                       th:text="${entry.displayName}"
@@ -159,6 +165,14 @@
                     th:text="${entry.totalZeroes}"
                   >
                     198
+                  </td>
+
+                  <!-- Best -->
+                  <td
+                    class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-600"
+                    th:text="${entry.maxScore}"
+                  >
+                    52
                   </td>
 
                   <!-- Swaps -->
@@ -199,7 +213,7 @@
                 class="border-t-2 border-indigo-300"
               >
                 <tr class="bg-gradient-to-r from-indigo-50 to-blue-50">
-                  <td colspan="7" class="px-3 py-4">
+                  <td colspan="8" class="px-3 py-4">
                     <div class="flex items-center space-x-6">
                       <!-- Position -->
                       <div class="flex items-center">
@@ -241,6 +255,16 @@
                           class="text-sm font-semibold text-green-600"
                           th:text="${userPosition.totalZeroes}"
                           >175</span
+                        >
+                      </div>
+
+                      <!-- Best -->
+                      <div class="flex items-center">
+                        <span class="text-xs text-gray-600 mr-1">Best:</span>
+                        <span
+                          class="text-sm text-gray-700"
+                          th:text="${userPosition.maxScore}"
+                          >52</span
                         >
                       </div>
 

@@ -72,11 +72,11 @@ The CTE is used to ensure consistent aggregation and sorting across queries.
 
 Positions are determined by a `row_number()` window function ordered by:
 
-1. `total_score` descending
-2. `total_zeroes` descending
-3. `total_swaps` ascending (fewer is better)
-4. `max_score` descending
-5. `public_id` ascending
+1. `total_score` descending — overall points accumulated
+2. `total_zeroes` descending — perfect round predictions (nailed entire rounds)
+3. `max_score` descending — highest single-round peak
+4. `total_swaps` ascending — swaps are encouraged as a strategic tool, so this is only a late tiebreaker
+5. `public_id` ascending — deterministic ordering
 
 This ordering is used consistently for both page results and user lookups.
 

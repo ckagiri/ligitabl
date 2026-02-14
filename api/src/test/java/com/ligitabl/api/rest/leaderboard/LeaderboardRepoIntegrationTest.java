@@ -222,7 +222,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
     }
 
     @Test
-    @DisplayName("sorts by score desc, then zeroes desc, swaps asc, max score desc, display name")
+    @DisplayName("sorts by score desc, then zeroes desc, max score desc, swaps asc, public id")
     void sortsWithTiebreakers() {
         // Score DESC
         createResult(aliceId, alicePredictionId, 1, 100, 10, 5);
@@ -275,6 +275,29 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         assertThat(bySwaps.get(0).displayName()).isEqualTo("Bob");
         assertThat(bySwaps.get(1).displayName()).isEqualTo("Alice");
         assertThat(bySwaps.get(2).displayName()).isEqualTo("Charlie");
+
+        PostgresTestDbCleaner.truncateAllDomainTables(jdbc);
+        insertCompetitionSeasonAndContest();
+        aliceId = insertUser("alice@example.com", "Alice");
+        bobId = insertUser("bob@example.com", "Bob");
+        alicePredictionId = createPrediction(aliceId);
+        bobPredictionId = createPrediction(bobId);
+        entryRepo.save(Entry.builder().userId(aliceId).contestId(contestId).build());
+        entryRepo.save(Entry.builder().userId(bobId).contestId(contestId).build());
+
+        // Max score DESC (score+zeroes tied) should beat swaps ASC
+        // - Alice: higher max score but worse swaps
+        // - Bob: lower max score but better swaps
+        // Expected ordering: Alice first (max score precedes swaps)
+        createResult(aliceId, alicePredictionId, 1, 100, 0, 10);
+        createResult(aliceId, alicePredictionId, 2, 0, 0, 0);
+        createResult(bobId, bobPredictionId, 1, 60, 0, 0);
+        createResult(bobId, bobPredictionId, 2, 40, 0, 0);
+
+        var byMaxThenSwaps = computeEntries(1, 2);
+        assertThat(byMaxThenSwaps).hasSize(2);
+        assertThat(byMaxThenSwaps.get(0).displayName()).isEqualTo("Alice");
+        assertThat(byMaxThenSwaps.get(1).displayName()).isEqualTo("Bob");
 
         PostgresTestDbCleaner.truncateAllDomainTables(jdbc);
         insertCompetitionSeasonAndContest();

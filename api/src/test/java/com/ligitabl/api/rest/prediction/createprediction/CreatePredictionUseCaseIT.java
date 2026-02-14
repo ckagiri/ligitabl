@@ -125,7 +125,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("should join contest successfully with valid rankings")
         void shouldJoinContestSuccessfullyWithValidRankings() {
-            CreatePredictionCommand request = validRequestFromInitialRankings();
+            CreatePredictionCommand request = validNonDefaultRequest();
 
             Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
 
@@ -161,7 +161,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @DisplayName("should set at_round_number to current round when round is OPEN")
         void shouldSetAtRoundNumberToCurrentWhenOpen() {
             updateCurrentRoundStatus(RoundStatus.OPEN);
-            CreatePredictionCommand request = validRequestFromInitialRankings();
+            CreatePredictionCommand request = validNonDefaultRequest();
 
             Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
 
@@ -177,7 +177,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @DisplayName("should set at_round_number to next round when round is LOCKED")
         void shouldSetAtRoundNumberToNextWhenLocked() {
             updateCurrentRoundStatus(RoundStatus.LOCKED);
-            CreatePredictionCommand request = validRequestFromInitialRankings();
+            CreatePredictionCommand request = validNonDefaultRequest();
 
             Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
 
@@ -194,7 +194,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @DisplayName("should set at_round_number to next round when round is COMPLETED")
         void shouldSetAtRoundNumberToNextWhenCompleted() {
             updateCurrentRoundStatus(RoundStatus.COMPLETED);
-            CreatePredictionCommand request = validRequestFromInitialRankings();
+            CreatePredictionCommand request = validNonDefaultRequest();
 
             Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
 
@@ -209,10 +209,8 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("should accept any non-default ranking order")
         void shouldAcceptAnyNonDefaultRankingOrder() {
-            List<TeamRankDto> rankings = new ArrayList<>(INITIAL_RANKINGS.stream()
-                    .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
-                    .toList());
-            Collections.swap(rankings, 0, 1);
+            List<TeamRankDto> rankings = new ArrayList<>(validNonDefaultRequest().rankings());
+            Collections.swap(rankings, 0, rankings.size() - 1);
             CreatePredictionCommand request = new CreatePredictionCommand(rankings);
 
             Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
@@ -222,7 +220,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             var prediction =
                     predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
             TeamRank first = prediction.getCurrentRankings().getFirst();
-            assertThat(first.getCode()).isEqualTo("WHU");
+            assertThat(first.getCode()).isEqualTo("ARS");
             assertThat(first.getPosition()).isEqualTo(1);
         }
     }
@@ -319,7 +317,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             setSeasonCurrentRound(roundId, 22);
 
             Either<CreatePredictionError, CreatePredictionResult> result =
-                    useCase.execute(userId, validRequestFromInitialRankings());
+                    useCase.execute(userId, validNonDefaultRequest());
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.Ended.class);
@@ -336,7 +334,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             setSeasonCurrentRound(roundId, 22);
 
             Either<CreatePredictionError, CreatePredictionResult> result =
-                    useCase.execute(userId, validRequestFromInitialRankings());
+                    useCase.execute(userId, validNonDefaultRequest());
 
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().atRoundNumber()).isEqualTo(22);
@@ -345,7 +343,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject when already joined")
         void shouldRejectWhenAlreadyJoined() {
-            CreatePredictionCommand request = validRequestFromInitialRankings();
+            CreatePredictionCommand request = validNonDefaultRequest();
 
             Either<CreatePredictionError, CreatePredictionResult> first = useCase.execute(userId, request);
             assertThat(first.isRight()).isTrue();
@@ -363,6 +361,21 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         return new CreatePredictionCommand(INITIAL_RANKINGS.stream()
                 .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
                 .toList());
+    }
+
+    private static CreatePredictionCommand validNonDefaultRequest() {
+        var rankings = new ArrayList<>(INITIAL_RANKINGS.stream()
+                .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
+                .toList());
+
+        // Make the ranking order differ from the season initial rankings by swapping positions
+        // for the top two teams (positions must remain unique).
+        TeamRankDto first = rankings.get(0);
+        TeamRankDto second = rankings.get(1);
+        rankings.set(0, new TeamRankDto(first.code(), second.position()));
+        rankings.set(1, new TeamRankDto(second.code(), first.position()));
+
+        return new CreatePredictionCommand(rankings);
     }
 
     private void insertCompetitionAndSeason() {
