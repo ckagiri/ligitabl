@@ -151,6 +151,10 @@ public class ImportMatchesUseCase {
             return new RoundUpdateResult(false, currentPosition);
         }
 
+        if (currentMatchday != currentPosition + 1) {
+            return new RoundUpdateResult(false, currentPosition);
+        }
+
         var nextRoundOpt = roundRepo.findBySeasonIdAndPosition(season.getId(), currentMatchday);
         if (nextRoundOpt.isEmpty()) {
             return new RoundUpdateResult(false, currentPosition);
