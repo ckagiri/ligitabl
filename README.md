@@ -77,14 +77,14 @@ The project follows clean architecture with use-case-driven design:
 
 Matches are synced from Football-Data.org on a dynamic schedule:
 
-| Condition | Frequency |
-|-----------|-----------|
-| Live matches | Every 90 seconds |
-| Kickoff <= 10 min | Every 1 minute |
-| Kickoff <= 60 min | Every 10 minutes |
-| Kickoff < 6 hours | Every 1 hour |
-| No upcoming matches | Every 12 hours |
-| Season complete | Every 24 hours |
+| Condition           | Frequency        |
+| ------------------- | ---------------- |
+| Live matches        | Every 90 seconds |
+| Kickoff <= 10 min   | Every 1 minute   |
+| Kickoff <= 60 min   | Every 10 minutes |
+| Kickoff < 6 hours   | Every 1 hour     |
+| No upcoming matches | Every 12 hours   |
+| Season complete     | Every 24 hours   |
 
 When all matches in a round complete, finalization triggers automatically.
 
@@ -111,10 +111,7 @@ make db-seed-demo         # Seed demo league data
 
 # Data import
 make import-pl            # Import Premier League matches
-make import-bl            # Import Bundesliga matches
-make import-sa            # Import Serie A matches
-make import-pd            # Import La Liga matches
-make import-fl1           # Import Ligue 1 matches
+make import-pl-with-seed   # Import Premier League after seeding reference data
 
 # Code quality
 make format               # Format Java sources (Palantir Java Format)
