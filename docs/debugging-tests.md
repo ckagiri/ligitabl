@@ -412,12 +412,28 @@ make codegen
 
 If you see exceptions that look like a runtime error but are actually compiler stubs (e.g., `java.lang.Error: Unresolved compilation problem`), treat it as a build artifact issue first.
 
+This can also show up as **JUnit failing to discover tests** (e.g. `TestEngine with ID 'junit-jupiter' failed to discover tests`) when a previously-compiled test class (or something it references) can no longer be resolved at runtime.
+
 Typical fixes:
 
 - Do a clean rebuild of the affected module:
 
   ```bash
   mvn -pl api -am clean test
+  ```
+
+- If you want a faster “clean without `mvn clean`”, delete compiled outputs and re-run:
+
+  ```bash
+  rm -rf api/target/classes api/target/test-classes
+  mvn -pl api -am -DskipITs test
+  ```
+
+- Makefile shortcut (recommended):
+
+  ```bash
+  make api-clean-classes
+  make test-api-core
   ```
 
 - If it’s a `model`/jOOQ related failure, regenerate first (see the codegen section above).

@@ -18,6 +18,11 @@ IMAGE ?= $(APP_NAME):dev
 PORT ?= 8080
 DOCKER_COMPOSE ?= docker compose
 
+# DevTools restart: disabled by default (multi-module classpath issues).
+# Enable with: make run-api-fast DEVTOOLS_RESTART=true
+DEVTOOLS_RESTART ?= false
+SPRING_BOOT_RUN_ARGS := -Dspring-boot.run.mainClass=com.ligitabl.api.LigitablApplication -Dspring-boot.run.jvmArguments="-Dspring.devtools.restart.enabled=$(DEVTOOLS_RESTART)"
+
 # ------------------------------------------------------------------------------
 # Environment Configuration (SAFETY-FIRST)
 # ------------------------------------------------------------------------------
@@ -486,6 +491,12 @@ compose-down: ## Stop and remove services/volumes
 # RUN TARGETS
 # ==============================================================================
 
+.PHONY: api-clean-classes
+api-clean-classes: ## Remove compiled API class outputs (fixes stale/poisoned .class artifacts)
+	# Maven/Java incremental builds (and some IDE compilers) can leave stale .class files behind.
+	# This can surface as runtime "Unresolved compilation problems" or JUnit discovery failures.
+	rm -rf $(API_DIR)/target/classes $(API_DIR)/target/test-classes
+
 .PHONY: run
 run: $(JAR) ## Run the built JAR (ENV=$(ENV))
 ifeq ($(ENV),prod)
@@ -508,31 +519,23 @@ run-api: ## Start DB and run API via spring-boot:run (ENV=$(ENV))
 		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
 		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
 		clean install
-	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -f $(API_DIR)/pom.xml -Dspring-boot.run.mainClass=com.ligitabl.api.LigitablApplication org.springframework.boot:spring-boot-maven-plugin:run
+	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -f $(API_DIR)/pom.xml $(SPRING_BOOT_RUN_ARGS) org.springframework.boot:spring-boot-maven-plugin:run
 
 .PHONY: run-api-fast
 run-api-fast: ## Start DB and run API (skip migrate, skip clean) (ENV=$(ENV))
 	$(MAKE) compose-up-db
+	# Keep "fast" while avoiding stale/poisoned classpath issues.
+	$(MAKE) api-clean-classes
 	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -DskipTests -Pwith-jooq -Djooq.codegen.skip=true -pl $(API_DIR) -am \
 		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
 		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
 		compile
-	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -f $(API_DIR)/pom.xml -Dspring-boot.run.mainClass=com.ligitabl.api.LigitablApplication org.springframework.boot:spring-boot-maven-plugin:run
+	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -f $(API_DIR)/pom.xml $(SPRING_BOOT_RUN_ARGS) org.springframework.boot:spring-boot-maven-plugin:run
 
 .PHONY: run-api-fastest
 run-api-fastest: ## Start DB and run API (no rebuild, assumes compiled) (ENV=$(ENV))
 	$(MAKE) compose-up-db
-	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -f $(API_DIR)/pom.xml -Dspring-boot.run.mainClass=com.ligitabl.api.LigitablApplication org.springframework.boot:spring-boot-maven-plugin:run
-
-.PHONY: run-api-fake
-run-api-fake: ## Start DB and run API with FAKE_DATA_ENABLED=true (ENV=$(ENV))
-	$(MAKE) compose-up-db
-	$(MAKE) migrate
-	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -DskipTests -Pwith-jooq -Djooq.codegen.skip=false -pl $(API_DIR) -am \
-		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
-		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
-		clean install
-	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); FAKE_DATA_ENABLED=true mvn -q -f $(API_DIR)/pom.xml -Dspring-boot.run.mainClass=com.ligitabl.api.LigitablApplication org.springframework.boot:spring-boot-maven-plugin:run
+	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -f $(API_DIR)/pom.xml $(SPRING_BOOT_RUN_ARGS) org.springframework.boot:spring-boot-maven-plugin:run
 
 # ==============================================================================
 # TEST TARGETS
@@ -540,15 +543,18 @@ run-api-fake: ## Start DB and run API with FAKE_DATA_ENABLED=true (ENV=$(ENV))
 
 .PHONY: test
 test: ## Run full API test suite
+	$(MAKE) api-clean-classes
 	mvn -pl $(API_DIR) -am test
 
 .PHONY: test-unit
 test-unit: ## Run pure unit tests
+	$(MAKE) api-clean-classes
 	mvn -q -P unit-tests,no-jooq -pl $(API_DIR) -am \
 		-Dsurefire.failIfNoSpecifiedTests=false -Dtest='**/*GuardTest' test
 
 .PHONY: test-api-core
 test-api-core: ## Run core API tests (skip *IT)
+	$(MAKE) api-clean-classes
 	mvn -q -pl $(API_DIR) -am -DskipITs test
 
 .PHONY: test-api-core-with-codegen
@@ -558,11 +564,13 @@ test-api-core-with-codegen: ## Start DB, migrate, run jOOQ codegen, then run cor
 
 .PHONY: test-api-it
 test-api-it: ## Run DB-backed integration tests
+	$(MAKE) api-clean-classes
 	mvn -q -pl $(API_DIR) -am -DskipITs=false -Dtest='**/*IT' \
 		-Dsurefire.failIfNoSpecifiedTests=false test
 
 .PHONY: test-api-all
 test-api-all: ## Run all API tests
+	$(MAKE) api-clean-classes
 	mvn -pl $(API_DIR) -am test
 
 .PHONY: test-model-domain
@@ -597,7 +605,7 @@ dev-reset: ## Reset DB, migrate, codegen, seed (ENV=$(ENV))
 test-reset-run-api-fake: ## Reset test DB, migrate, codegen, seed reference data, then run API with fake data (DB_PORT=55433)
 	$(MAKE) dev-reset ENV=test
 	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); FAKE_DATA_ENABLED=true DB_HOST=$(DB_HOST) DB_PORT=$(DB_PORT) DB_NAME=$(DB_NAME) DB_USER=$(DB_USER) DB_PASSWORD=$(DB_PASSWORD) \
-		mvn -f $(API_DIR)/pom.xml org.springframework.boot:spring-boot-maven-plugin:run
+		mvn -f $(API_DIR)/pom.xml $(SPRING_BOOT_RUN_ARGS) org.springframework.boot:spring-boot-maven-plugin:run
 
 .PHONY: dev-reset-all
 dev-reset-all: ## Reset DB and seed all data (ENV=$(ENV))

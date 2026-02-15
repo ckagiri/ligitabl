@@ -1,6 +1,10 @@
 package com.ligitabl.api.shared.exceptions;
 
+import java.util.stream.Collectors;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -13,6 +17,22 @@ import lombok.extern.slf4j.Slf4j;
 @RestControllerAdvice(annotations = RestController.class)
 @Slf4j
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<UseCaseErrorResponse> handleValidation(
+            MethodArgumentNotValidException ex, WebRequest request) {
+        String message = ex.getBindingResult().getFieldErrors().stream()
+                .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
+                .collect(Collectors.joining("; "));
+        log.warn("Validation failed: {}", message);
+        return ResponseEntity.badRequest()
+                .body(UseCaseErrorResponse.builder()
+                        .message(message)
+                        .error("VALIDATION_FAILED")
+                        .status(HttpStatus.BAD_REQUEST)
+                        .path(request.getDescription(false))
+                        .build());
+    }
 
     @ExceptionHandler(UseCaseException.class)
     public ResponseEntity<UseCaseErrorResponse> handleBusinessFailure(UseCaseException ex, WebRequest request) {

@@ -375,13 +375,11 @@ public class UserPredictionsController {
             return List.of();
         }
 
-        Map<String, Team> teamsByCode =
-                teamRepo
-                        .findAllByCodes(resultRanks.stream()
-                                .map(r -> r.getRanking().getCode())
-                                .collect(Collectors.toSet()))
-                        .stream()
-                        .collect(Collectors.toMap(Team::getCode, Function.identity()));
+        Map<String, Team> teamsByCode = teamRepo
+                .findAllByCodes(
+                        resultRanks.stream().map(r -> r.getRanking().getCode()).collect(Collectors.toSet()))
+                .stream()
+                .collect(Collectors.toMap(Team::getCode, Function.identity()));
         return ResultTeamRankDto.listOf(resultRanks, teamsByCode);
     }
 

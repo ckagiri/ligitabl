@@ -226,6 +226,6 @@ class TriggerRoundFinalizationUseCaseTest {
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().finalized()).isFalse();
         assertThat(result.get().blocked()).isFalse();
-                verify(finalizeRoundUseCase, never()).execute(any(java.util.UUID.class));
+        verify(finalizeRoundUseCase, never()).execute(any(java.util.UUID.class));
     }
 }

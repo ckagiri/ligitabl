@@ -133,7 +133,8 @@ class SyncFrequencyCalculatorTest {
     void shouldCheck1HourWhenKickoffWithin6Hours() {
         var laterTodayKickoff = OffsetDateTime.now().plusHours(3);
 
-        var schedule = SyncFrequencyCalculator.calculateNextSync(false, true, laterTodayKickoff, false, false, 10, false);
+        var schedule =
+                SyncFrequencyCalculator.calculateNextSync(false, true, laterTodayKickoff, false, false, 10, false);
 
         assertThat(schedule.delay()).isEqualTo(Duration.ofHours(1));
         assertThat(schedule.reason()).contains("3 hour");
@@ -197,7 +198,8 @@ class SyncFrequencyCalculatorTest {
     void scenarioSaturdayMatchDay() {
         var saturdayAfternoon = OffsetDateTime.now().plusHours(5);
 
-        var schedule = SyncFrequencyCalculator.calculateNextSync(false, true, saturdayAfternoon, false, false, 10, false);
+        var schedule =
+                SyncFrequencyCalculator.calculateNextSync(false, true, saturdayAfternoon, false, false, 10, false);
 
         assertThat(schedule.delay()).isEqualTo(Duration.ofHours(1));
         assertThat(schedule.reason()).contains("5 hour");

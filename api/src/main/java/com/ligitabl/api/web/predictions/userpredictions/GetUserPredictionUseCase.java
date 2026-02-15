@@ -60,15 +60,23 @@ public class GetUserPredictionUseCase {
         boolean isCurrentRound = viewingRound == currentRound;
         Round viewingRoundEntity =
                 isCurrentRound ? currentRoundEntity : getRoundByPosition(season.getId(), viewingRound);
-        String roundState = resolveRoundState(viewingRoundEntity);
         boolean seasonCompleted = season.isCompleted();
+        RoundStatus currentRoundStatus = resolveRoundStatus(currentRoundEntity);
+        String roundState = isCurrentRound ? currentRoundStatus.name() : resolveRoundState(viewingRoundEntity);
 
         // Determine access mode and rankings based on user type
         return switch (ctx.userType()) {
             case GUEST -> buildGuestView(
                     query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
             case AUTHENTICATED -> buildAuthenticatedView(
-                    query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
+                    query,
+                    currentRound,
+                    lastRound,
+                    viewingRound,
+                    isCurrentRound,
+                    roundState,
+                    seasonCompleted,
+                    currentRoundStatus);
             case VIEWING_OTHER -> buildViewingOtherView(
                     query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
             case USER_NOT_FOUND -> buildUserNotFoundView(
@@ -131,7 +139,8 @@ public class GetUserPredictionUseCase {
             int viewingRound,
             boolean isCurrentRound,
             String roundState,
-            boolean seasonCompleted) {
+            boolean seasonCompleted,
+            RoundStatus currentRoundStatus) {
         UserContext ctx = qry.userContext();
 
         if (ctx.hasContestEntry()) {
@@ -212,13 +221,24 @@ public class GetUserPredictionUseCase {
                 ? standingsRepo.findPointsMap(qry.seasonId(), currentRound)
                 : standingsRepo.findPointsMap(qry.seasonId(), viewingRound);
 
-        // Can only create entry in current round
-        PredictionAccessMode accessMode =
-                isCurrentRound ? PredictionAccessMode.CAN_CREATE_ENTRY : PredictionAccessMode.READONLY_COOLDOWN;
+        // Determine if user can create entry and compute atRoundNumber
+        // Same logic as CreatePredictionUseCase.determineAtRoundNumber
+        PredictionAccessMode accessMode;
+        Integer atRoundNumber = null;
+        String message;
 
-        String message = isCurrentRound
-                ? "Arrange teams and submit to join the competition"
-                : "Viewing Gameweek " + viewingRound + " results";
+        if (!isCurrentRound) {
+            accessMode = PredictionAccessMode.READONLY_COOLDOWN;
+            message = "Viewing Gameweek " + viewingRound + " results";
+        } else if (currentRound == lastRound && currentRoundStatus != RoundStatus.OPEN) {
+            // Last round and not open - season ending, can't join
+            accessMode = PredictionAccessMode.READONLY_COOLDOWN;
+            message = "The final round is in progress. Predictions are closed.";
+        } else {
+            accessMode = PredictionAccessMode.CAN_CREATE_ENTRY;
+            atRoundNumber = currentRoundStatus == RoundStatus.OPEN ? currentRound : currentRound + 1;
+            message = "Arrange teams and submit to join the competition";
+        }
 
         return new UserPredictionViewData(
                 rankingsWithSource.rankings(),
@@ -231,7 +251,7 @@ public class GetUserPredictionUseCase {
                 currentRound,
                 lastRound,
                 viewingRound,
-                null,
+                atRoundNumber,
                 seasonCompleted,
                 roundState,
                 message,
@@ -445,20 +465,21 @@ public class GetUserPredictionUseCase {
         return roundRepo.findBySeasonIdAndPosition(seasonId, position).orElse(null);
     }
 
-    private String resolveRoundState(Round round) {
+    private RoundStatus resolveRoundStatus(Round round) {
         if (round == null) {
-            return RoundStatus.UNKNOWN.name();
+            return RoundStatus.UNKNOWN;
         }
-
         if (round.isFinalized()) {
-            return RoundStatus.FINALIZED.name();
+            return RoundStatus.FINALIZED;
         }
-
         var matches = matchRepo.findByRoundId(round.getId());
         if (matches == null || matches.isEmpty()) {
-            return RoundStatus.OPEN.name();
+            return RoundStatus.OPEN;
         }
+        return round.computeStatus(matches);
+    }
 
-        return round.computeStatus(matches).name();
+    private String resolveRoundState(Round round) {
+        return resolveRoundStatus(round).name();
     }
 }

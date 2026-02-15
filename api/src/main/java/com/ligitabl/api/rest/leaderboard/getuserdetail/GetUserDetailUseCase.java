@@ -66,8 +66,7 @@ public class GetUserDetailUseCase {
 
         var season = seasonRepo.findActiveSeason(competition.getId()).orElse(null);
         if (season == null) {
-            return Either.left(
-                    new GetUserDetailError.LeaderboardError(new GetLeaderboardError.ActiveSeasonNotFound()));
+            return Either.left(new GetUserDetailError.LeaderboardError(new GetLeaderboardError.ActiveSeasonNotFound()));
         }
 
         var contest = contestRepo.findMainBySeasonId(season.getId()).orElse(null);

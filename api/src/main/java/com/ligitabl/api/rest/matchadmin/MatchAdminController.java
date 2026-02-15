@@ -83,17 +83,17 @@ public class MatchAdminController {
     public ResponseEntity<RescheduleResult> rescheduleMatch(
             @PathVariable String position,
             @PathVariable String matchSlug,
-            @Valid @RequestBody RescheduleRequest request,
+            @Valid @RequestBody RescheduleCommand command,
             @RequestParam(required = false) String competition) {
 
-        log.info("Reschedule match: position={}, slug={}, toRound={}", position, matchSlug, request.newRoundPosition());
+        log.info("Reschedule match: position={}, slug={}, toRound={}", position, matchSlug, command.newRoundPosition());
 
         var cmd = RescheduleMatchCommand.builder()
                 .competitionIdentifier(competition)
                 .roundPosition(RoundPosition.parse(position))
                 .matchSlug(matchSlug)
-                .newRoundPosition(request.newRoundPosition())
-                .reason(request.reason())
+                .newRoundPosition(command.newRoundPosition())
+                .reason(command.reason())
                 .build();
 
         return rescheduleUseCase
@@ -131,5 +131,5 @@ public class MatchAdminController {
         public record ScoreDto(@Min(0) int homeGoals, @Min(0) int awayGoals) {}
     }
 
-    public record RescheduleRequest(@Min(1) int newRoundPosition, @NotBlank String reason) {}
+    public record RescheduleCommand(@Min(1) int newRoundPosition, String reason) {}
 }

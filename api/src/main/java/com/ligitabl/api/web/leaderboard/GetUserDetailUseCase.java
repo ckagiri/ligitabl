@@ -37,10 +37,10 @@ import lombok.extern.slf4j.Slf4j;
  * Web-layer use case that fetches user predictions for modal display.
  * Uses Either.catching to handle errors with exceptions.
  */
-@Service
+@Service("webGetUserDetailUseCase")
 @RequiredArgsConstructor
 @Slf4j
-public class GetUserPredictionsUseCase {
+public class GetUserDetailUseCase {
     private final CompetitionRepo competitionRepo;
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
@@ -73,8 +73,7 @@ public class GetUserPredictionsUseCase {
                     .orElseThrow(() -> new NotFoundException("Current round not found"));
 
             // Resolve user by publicId
-            User user = userRepo
-                    .findByPublicId(PublicId.create(publicId))
+            User user = userRepo.findByPublicId(PublicId.create(publicId))
                     .orElseThrow(() -> new NotFoundException("User not found: " + publicId));
 
             // Determine round status
@@ -111,11 +110,11 @@ public class GetUserPredictionsUseCase {
             }
 
             // Resolve team codes to names
-            List<TeamRank> sortedRanks =
-                    rankings.stream().sorted(Comparator.comparingInt(TeamRank::getPosition)).toList();
+            List<TeamRank> sortedRanks = rankings.stream()
+                    .sorted(Comparator.comparingInt(TeamRank::getPosition))
+                    .toList();
 
-            Set<String> teamCodes =
-                    sortedRanks.stream().map(TeamRank::getCode).collect(Collectors.toSet());
+            Set<String> teamCodes = sortedRanks.stream().map(TeamRank::getCode).collect(Collectors.toSet());
 
             Map<String, Team> teamsByCode = teamRepo.findAllByCodes(teamCodes).stream()
                     .collect(Collectors.toMap(Team::getCode, Function.identity()));
