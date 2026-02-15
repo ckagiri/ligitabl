@@ -105,6 +105,7 @@ public class ImportMatchesRunner implements ApplicationRunner {
         log.info("║  Total:        {}", String.format("%-44s", summary.getTotalMatches()) + "║");
         log.info("║  Created:      {}", String.format("%-44s", summary.getCreated()) + "║");
         log.info("║  Updated:      {}", String.format("%-44s", summary.getUpdated()) + "║");
+        log.info("║  Unchanged:    {}", String.format("%-44s", summary.getUnchanged()) + "║");
         log.info("║  Failed:       {}", String.format("%-44s", summary.getFailed()) + "║");
         log.info("╠══════════════════════════════════════════════════════════╣");
 

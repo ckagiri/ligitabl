@@ -303,10 +303,16 @@ public class ImportMatchesUseCase {
 
     private boolean hasChanged(Match db, Match incoming) {
         if (db.getStatus() != incoming.getStatus()) return true;
-        if (!Objects.equals(db.getKickOff(), incoming.getKickOff())) return true;
+        if (!kickOffEquals(db.getKickOff(), incoming.getKickOff())) return true;
         if (!Objects.equals(db.getRoundId(), incoming.getRoundId())) return true;
         if (!Objects.equals(db.getScore(), incoming.getScore())) return true;
         return false;
+    }
+
+    private boolean kickOffEquals(java.time.OffsetDateTime a, java.time.OffsetDateTime b) {
+        if (a == b) return true;
+        if (a == null || b == null) return false;
+        return a.isEqual(b);
     }
 
     // Helper records

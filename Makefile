@@ -201,6 +201,10 @@ api-build: ## Build the API module (skip tests)
 	mvn -q -DskipTests -pl $(API_DIR) clean
 	mvn -q -DskipTests -pl $(API_DIR) -am package
 
+.PHONY: compile
+compile: ## Compile API (incremental, no clean/package)
+	mvn -q -DskipTests -pl $(API_DIR) -am compile
+
 .PHONY: clean
 clean: ## Clean build artifacts
 	mvn -f $(API_DIR)/pom.xml clean
