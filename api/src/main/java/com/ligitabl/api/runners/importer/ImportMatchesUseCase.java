@@ -3,8 +3,11 @@ package com.ligitabl.api.runners.importer;
 import static com.ligitabl.api.shared.Either.right;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.UUID;
 
 import com.ligitabl.api.runners.importer.event.ImportEventPublisher;
@@ -96,7 +99,7 @@ public class ImportMatchesUseCase {
 
         // Process each match, collecting successes and failures
         for (ExternalMatch match : context.matches) {
-            Either<ImportError, MatchImportResult> result = processMatch(match, context.season);
+            Either<ImportError, MatchImportResult> result = processMatch(match, context);
 
             if (result.isRight()) {
                 successes.add(result.get());
@@ -186,10 +189,10 @@ public class ImportMatchesUseCase {
     /**
      * Process a single match
      */
-    private Either<ImportError, MatchImportResult> processMatch(ExternalMatch externalMatch, Season season) {
+    private Either<ImportError, MatchImportResult> processMatch(ExternalMatch externalMatch, ImportContext context) {
 
-        return mapToMatch(externalMatch, season)
-                .flatMap(this::persistMatch)
+        return mapToMatch(externalMatch, context)
+                .flatMap(match -> persistMatch(match, context))
                 .peek(result -> {
                     if (result.isCreated()) {
                         eventPublisher.publishMatchCreated(result);
@@ -209,9 +212,9 @@ public class ImportMatchesUseCase {
     /**
      * Map external match to domain match
      */
-    private Either<ImportError, Match> mapToMatch(ExternalMatch externalMatch, Season season) {
-
-        return resolveRound(season.getId(), externalMatch.getMatchday().getValue())
+    private Either<ImportError, Match> mapToMatch(ExternalMatch externalMatch, ImportContext context) {
+        Season season = context.season;
+        return resolveRound(context, season.getId(), externalMatch.getMatchday().getValue())
                 .flatMap(round ->
                         resolveTeams(externalMatch).map(teams -> buildMatch(externalMatch, season, round, teams)));
     }
@@ -219,9 +222,12 @@ public class ImportMatchesUseCase {
     /**
      * Resolve round for the match
      */
-    private Either<ImportError, Round> resolveRound(UUID seasonId, int matchday) {
+    private Either<ImportError, Round> resolveRound(ImportContext context, UUID seasonId, int matchday) {
+        String cacheKey = seasonId + ":" + matchday;
+        Optional<Round> cached = context.roundCacheBySeasonAndPosition.computeIfAbsent(
+                cacheKey, k -> roundRepo.findBySeasonIdAndPosition(seasonId, matchday));
         return Either.ofOptional(
-                roundRepo.findBySeasonIdAndPosition(seasonId, matchday),
+                cached,
                 () -> DatabaseError.notFound("Round", "seasonId=" + seasonId + ", matchday=" + matchday));
     }
 
@@ -282,7 +288,7 @@ public class ImportMatchesUseCase {
     /**
      * Persist match (create or update)
      */
-    private Either<ImportError, MatchImportResult> persistMatch(Match match) {
+    private Either<ImportError, MatchImportResult> persistMatch(Match match, ImportContext context) {
         try {
             var existing = matchRepo.findByClientId(match.getClientId());
             MatchSlug slug = new MatchSlug(match.getSlug());
@@ -290,6 +296,11 @@ public class ImportMatchesUseCase {
 
             if (existing.isPresent()) {
                 Match db = existing.get();
+                if (isAdminRescheduled(db, context)) {
+                    log.debug("Skipping admin-rescheduled match {} (matchday={}, roundId={})",
+                            slug, db.getMatchday(), db.getRoundId());
+                    return right(MatchImportResult.unchanged(externalId, slug));
+                }
                 if (!hasChanged(db, match)) {
                     return right(MatchImportResult.unchanged(externalId, slug));
                 }
@@ -303,6 +314,12 @@ public class ImportMatchesUseCase {
         } catch (Exception e) {
             return Either.left(DatabaseError.persistenceFailed("Match", e.getMessage()));
         }
+    }
+
+    private boolean isAdminRescheduled(Match db, ImportContext context) {
+        Optional<Round> round = context.roundCacheById.computeIfAbsent(
+                db.getRoundId(), roundRepo::findById);
+        return round.map(r -> r.getPosition() != db.getMatchday()).orElse(false);
     }
 
     private boolean hasChanged(Match db, Match incoming) {
@@ -320,8 +337,21 @@ public class ImportMatchesUseCase {
     }
 
     // Helper records
-    private record ImportContext(
-            CompetitionCode competitionCode, Season season, Integer currentMatchday, List<ExternalMatch> matches) {
+    private static final class ImportContext {
+        final CompetitionCode competitionCode;
+        final Season season;
+        final Integer currentMatchday;
+        final List<ExternalMatch> matches;
+        final Map<UUID, Optional<Round>> roundCacheById = new HashMap<>();
+        final Map<String, Optional<Round>> roundCacheBySeasonAndPosition = new HashMap<>();
+
+        ImportContext(CompetitionCode competitionCode, Season season, Integer currentMatchday, List<ExternalMatch> matches) {
+            this.competitionCode = competitionCode;
+            this.season = season;
+            this.currentMatchday = currentMatchday;
+            this.matches = matches;
+        }
+
         ImportContext withMatches(List<ExternalMatch> matches) {
             return new ImportContext(competitionCode, season, currentMatchday, matches);
         }

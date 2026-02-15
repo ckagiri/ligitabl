@@ -569,13 +569,13 @@ test: ## Run full API test suite
 .PHONY: test-unit
 test-unit: ## Run pure unit tests
 	$(MAKE) api-clean-classes
-	mvn -q -P unit-tests,no-jooq -pl $(API_DIR) -am \
+	mvn -P unit-tests,no-jooq -pl $(API_DIR) -am \
 		-Dsurefire.failIfNoSpecifiedTests=false -Dtest='**/*GuardTest' test
 
 .PHONY: test-api-core
 test-api-core: ## Run core API tests (skip *IT)
 	$(MAKE) api-clean-classes
-	mvn -q -pl $(API_DIR) -am -DskipITs test
+	mvn -pl $(API_DIR) -am -DskipITs test
 
 .PHONY: test-api-core-with-codegen
 test-api-core-with-codegen: ## Start DB, migrate, run jOOQ codegen, then run core API tests
@@ -585,7 +585,7 @@ test-api-core-with-codegen: ## Start DB, migrate, run jOOQ codegen, then run cor
 .PHONY: test-api-it
 test-api-it: ## Run DB-backed integration tests
 	$(MAKE) api-clean-classes
-	mvn -q -pl $(API_DIR) -am -DskipITs=false -Dtest='**/*IT' \
+	mvn -pl $(API_DIR) -am -DskipITs=false -Dtest='**/*IT' \
 		-Dsurefire.failIfNoSpecifiedTests=false test
 
 .PHONY: test-api-all
@@ -596,7 +596,7 @@ test-api-all: ## Run all API tests
 .PHONY: test-model-domain
 test-model-domain: ## Run model domain-only tests (works without jOOQ codegen)
 	# Uses the model's no-jooq profile to avoid compiling/running jOOQ-backed repo/infra tests.
-	mvn -q -pl model -am -Pno-jooq test
+	mvn -pl model -am -Pno-jooq test
 
 .PHONY: test-model-domain-with-codegen
 test-model-domain-with-codegen: ## Run model domain-only tests after generating jOOQ code (heavier)

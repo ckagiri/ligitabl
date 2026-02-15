@@ -407,6 +407,7 @@ class ImportMatchesUseCaseTest {
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
         when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(dbRound));
         when(teamRepo.findByClientId(57)).thenReturn(Optional.of(dbHome));
         when(teamRepo.findByClientId(61)).thenReturn(Optional.of(dbAway));
         when(matchRepo.findByClientId(100)).thenReturn(Optional.of(existing));
