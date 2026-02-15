@@ -405,6 +405,14 @@ import-competition-with-seed: ## Seed reference data, then import matches (COMP=
 		--workflow.competition=$(COMP) \
 		--workflow.exit-after=true
 
+.PHONY: import-pl
+import-pl: ## Import Premier League (ENV=$(ENV))
+	$(MAKE) import-competition COMP=PL
+
+.PHONY: import-pl-with-seed
+import-pl-with-seed: ## Import Premier League after seeding reference data (ENV=$(ENV))
+	$(MAKE) import-competition-with-seed COMP=PL
+
 # ==============================================================================
 # STANDINGS WORKFLOW TARGETS
 # ==============================================================================
@@ -417,14 +425,6 @@ calc-standings: ## Calculate standings for all rounds (ENV=$(ENV))
 		--spring.main.web-application-type=none \
 		--workflow.run-calc-standings=true \
 		--workflow.exit-after=true
-
-.PHONY: import-pl
-import-pl: ## Import Premier League (ENV=$(ENV))
-	$(MAKE) import-competition COMP=PL
-
-.PHONY: import-pl-with-seed
-import-pl-with-seed: ## Import Premier League after seeding reference data (ENV=$(ENV))
-	$(MAKE) import-competition-with-seed COMP=PL
 
 # ==============================================================================
 # DOCKER TARGETS
