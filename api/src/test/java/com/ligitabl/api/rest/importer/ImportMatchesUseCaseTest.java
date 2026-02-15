@@ -239,7 +239,7 @@ class ImportMatchesUseCaseTest {
                 .id(ExternalId.of(2024).get())
                 .startDate("2024-08-01")
                 .endDate("2025-05-31")
-            .currentMatchday(3)
+                .currentMatchday(3)
                 .build();
 
         var extCompetition = ExternalCompetition.builder()
@@ -336,7 +336,7 @@ class ImportMatchesUseCaseTest {
                 .id(ExternalId.of(2024).get())
                 .startDate("2024-08-01")
                 .endDate("2025-05-31")
-            .currentMatchday(3)
+                .currentMatchday(3)
                 .build();
 
         var extCompetition = ExternalCompetition.builder()
