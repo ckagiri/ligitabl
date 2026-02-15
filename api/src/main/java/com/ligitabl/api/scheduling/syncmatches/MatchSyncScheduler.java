@@ -26,13 +26,16 @@ import com.ligitabl.model.repo.SeasonRepo;
  * Dynamically schedules match synchronization based on match status.
  * Runs immediately on application startup.
  *
- * Frequency Rules:
- * - Live matches: Every 3 minutes
- * - Kickoff <= 10 min: Every 3 minutes
+ * Frequency rules are determined by {@link SyncFrequencyCalculator}:
+ * - All matches complete: Immediate (trigger finalization)
+ * - Round obstructed: Immediate (trigger admin notification), then 2h backoff
+ * - Season complete: Every 24 hours
+ * - No upcoming matches: Every 12 hours
+ * - Live matches: Every 90 seconds
+ * - Kickoff <= 10 min: Every 1 minute
  * - Kickoff <= 60 min: Every 10 minutes
  * - Kickoff < 6 hours: Every 1 hour
  * - Default: Every 6 hours
- * - All matches complete: Trigger finalization immediately
  */
 @Component
 @ConditionalOnProperty(name = "ligitabl.scheduling.enabled", havingValue = "true", matchIfMissing = true)

@@ -18,7 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GetUserDetailModalController {
 
-    private final GetUserPredictionsUseCase getUserPredictionsUseCase;
+    private final GetUserDetailUseCase getUserDetailUseCase;
 
     @PostMapping("/user/modal")
     public String getUserModal(
@@ -36,7 +36,7 @@ public class GetUserDetailModalController {
         log.info("POST /leaderboard/user/modal - publicId: {}", publicId);
 
         // Fetch predictions
-        return getUserPredictionsUseCase
+        return getUserDetailUseCase
                 .execute(publicId)
                 .fold(
                         error -> handleError(error, model, response),
@@ -44,7 +44,7 @@ public class GetUserDetailModalController {
     }
 
     private String handleSuccess(
-            GetUserPredictionsUseCase.UserPredictions result,
+            GetUserDetailUseCase.UserPredictions result,
             String displayName,
             int position,
             int totalScore,
@@ -74,5 +74,5 @@ public class GetUserDetailModalController {
             int position,
             int totalScore,
             int roundScore,
-            List<GetUserPredictionsUseCase.PredictionTeam> currentPrediction) {}
+            List<GetUserDetailUseCase.PredictionTeam> currentPrediction) {}
 }

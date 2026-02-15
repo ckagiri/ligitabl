@@ -37,10 +37,10 @@ import lombok.extern.slf4j.Slf4j;
  * Web-layer use case that fetches user predictions for modal display.
  * Uses Either.catching to handle errors with exceptions.
  */
-@Service
+@Service("webGetUserDetailUseCase")
 @RequiredArgsConstructor
 @Slf4j
-public class GetUserPredictionsUseCase {
+public class GetUserDetailUseCase {
     private final CompetitionRepo competitionRepo;
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;

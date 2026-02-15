@@ -513,6 +513,9 @@ run-api: ## Start DB and run API via spring-boot:run (ENV=$(ENV))
 .PHONY: run-api-fast
 run-api-fast: ## Start DB and run API (skip migrate, skip clean) (ENV=$(ENV))
 	$(MAKE) compose-up-db
+	# Maven's `compile` does not remove old .class files if a source file was deleted/renamed.
+	# Removing `api/target/classes` keeps this target "fast" while avoiding stale classpath issues.
+	rm -rf $(API_DIR)/target/classes
 	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -DskipTests -Pwith-jooq -Djooq.codegen.skip=true -pl $(API_DIR) -am \
 		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
 		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
@@ -523,16 +526,6 @@ run-api-fast: ## Start DB and run API (skip migrate, skip clean) (ENV=$(ENV))
 run-api-fastest: ## Start DB and run API (no rebuild, assumes compiled) (ENV=$(ENV))
 	$(MAKE) compose-up-db
 	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -f $(API_DIR)/pom.xml -Dspring-boot.run.mainClass=com.ligitabl.api.LigitablApplication org.springframework.boot:spring-boot-maven-plugin:run
-
-.PHONY: run-api-fake
-run-api-fake: ## Start DB and run API with FAKE_DATA_ENABLED=true (ENV=$(ENV))
-	$(MAKE) compose-up-db
-	$(MAKE) migrate
-	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -DskipTests -Pwith-jooq -Djooq.codegen.skip=false -pl $(API_DIR) -am \
-		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
-		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
-		clean install
-	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); FAKE_DATA_ENABLED=true mvn -q -f $(API_DIR)/pom.xml -Dspring-boot.run.mainClass=com.ligitabl.api.LigitablApplication org.springframework.boot:spring-boot-maven-plugin:run
 
 # ==============================================================================
 # TEST TARGETS
