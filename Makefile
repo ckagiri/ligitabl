@@ -486,6 +486,12 @@ compose-down: ## Stop and remove services/volumes
 # RUN TARGETS
 # ==============================================================================
 
+.PHONY: api-clean-classes
+api-clean-classes: ## Remove compiled API class outputs (fixes stale/poisoned .class artifacts)
+	# Maven/Java incremental builds (and some IDE compilers) can leave stale .class files behind.
+	# This can surface as runtime "Unresolved compilation problems" or JUnit discovery failures.
+	rm -rf $(API_DIR)/target/classes $(API_DIR)/target/test-classes
+
 .PHONY: run
 run: $(JAR) ## Run the built JAR (ENV=$(ENV))
 ifeq ($(ENV),prod)
@@ -513,9 +519,8 @@ run-api: ## Start DB and run API via spring-boot:run (ENV=$(ENV))
 .PHONY: run-api-fast
 run-api-fast: ## Start DB and run API (skip migrate, skip clean) (ENV=$(ENV))
 	$(MAKE) compose-up-db
-	# Maven's `compile` does not remove old .class files if a source file was deleted/renamed.
-	# Removing `api/target/classes` keeps this target "fast" while avoiding stale classpath issues.
-	rm -rf $(API_DIR)/target/classes
+	# Keep "fast" while avoiding stale/poisoned classpath issues.
+	$(MAKE) api-clean-classes
 	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -DskipTests -Pwith-jooq -Djooq.codegen.skip=true -pl $(API_DIR) -am \
 		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
 		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
@@ -533,15 +538,18 @@ run-api-fastest: ## Start DB and run API (no rebuild, assumes compiled) (ENV=$(E
 
 .PHONY: test
 test: ## Run full API test suite
+	$(MAKE) api-clean-classes
 	mvn -pl $(API_DIR) -am test
 
 .PHONY: test-unit
 test-unit: ## Run pure unit tests
+	$(MAKE) api-clean-classes
 	mvn -q -P unit-tests,no-jooq -pl $(API_DIR) -am \
 		-Dsurefire.failIfNoSpecifiedTests=false -Dtest='**/*GuardTest' test
 
 .PHONY: test-api-core
 test-api-core: ## Run core API tests (skip *IT)
+	$(MAKE) api-clean-classes
 	mvn -q -pl $(API_DIR) -am -DskipITs test
 
 .PHONY: test-api-core-with-codegen
@@ -551,11 +559,13 @@ test-api-core-with-codegen: ## Start DB, migrate, run jOOQ codegen, then run cor
 
 .PHONY: test-api-it
 test-api-it: ## Run DB-backed integration tests
+	$(MAKE) api-clean-classes
 	mvn -q -pl $(API_DIR) -am -DskipITs=false -Dtest='**/*IT' \
 		-Dsurefire.failIfNoSpecifiedTests=false test
 
 .PHONY: test-api-all
 test-api-all: ## Run all API tests
+	$(MAKE) api-clean-classes
 	mvn -pl $(API_DIR) -am test
 
 .PHONY: test-model-domain

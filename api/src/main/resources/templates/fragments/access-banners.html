@@ -11,9 +11,14 @@
      totalScore: Integer (can be null) - score for finalized rounds
      viewingRound: Integer - the round being viewed
      hasRoundResult: Boolean - whether round has been scored
+     currentRound: Integer - current round position
+     lastRound: Integer - last round position
+     atRoundNumber: Integer (can be null) - prediction activation round
+     seasonCompleted: Boolean - whether season is completed
+     canSwap: Boolean - whether user can swap (cooldown check)
 -->
 <div
-  th:fragment="banners(isGuest, canCreateEntry, isViewingOther, isUserNotFound, swapStatus, isCurrentRound, roundState, message, totalScore, viewingRound, hasRoundResult)"
+  th:fragment="banners(isGuest, canCreateEntry, isViewingOther, isUserNotFound, swapStatus, isCurrentRound, roundState, message, totalScore, viewingRound, hasRoundResult, currentRound, lastRound, atRoundNumber, seasonCompleted, canSwap)"
   class="mb-4 sm:mb-6 space-y-3"
 >
   <!-- Guest Banner -->

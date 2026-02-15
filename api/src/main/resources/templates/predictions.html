@@ -69,8 +69,31 @@
               th:replace="~{fragments/access-banners :: banners(
                 ${isGuest}, ${canCreateEntry}, ${isViewingOther}, ${isUserNotFound},
                 ${swapStatus}, ${isCurrentRound}, ${roundState}, ${message},
-                ${totalScore}, ${viewingRound}, ${hasRoundResult})}"
+                ${totalScore}, ${viewingRound}, ${hasRoundResult},
+                ${currentRound}, ${lastRound}, ${atRoundNumber}, ${seasonCompleted}, ${canSwap})}"
             ></div>
+
+            <!-- Debug panel (opt-in via ?debug=1) -->
+            <div th:if="${param.debug != null}" class="mt-3">
+              <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+                <p class="text-xs font-medium text-gray-700 mb-2">
+                  Debug state
+                </p>
+                <pre
+                  class="text-[11px] leading-4 text-gray-600 whitespace-pre-wrap"
+                >
+roundState=[[${roundState}]]
+isCurrentRound=[[${isCurrentRound}]] viewingRound=[[${viewingRound}]] currentRound=[[${currentRound}]] lastRound=[[${lastRound}]]
+atRoundNumber=[[${atRoundNumber}]] seasonCompleted=[[${seasonCompleted}]] hasRoundResult=[[${hasRoundResult}]]
+accessMode=[[${accessMode}]] canCreateEntry=[[${canCreateEntry}]] canSwap=[[${canSwap}]]
+isGuest=[[${isGuest}]] isViewingOther=[[${isViewingOther}]] isUserNotFound=[[${isUserNotFound}]]
+swapStatus.firstSwapBonus=[[${swapStatus != null ? swapStatus.firstSwapBonus : null}]]
+firstSwap.defaultMsg=[[${roundState != 'locked' || atRoundNumber == null || atRoundNumber == currentRound}]]
+firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRoundNumber > currentRound}]]
+message=[[${message}]]</pre
+                >
+              </div>
+            </div>
 
             <!-- Round Navigation (only for authenticated users, non-error states) -->
             <div
