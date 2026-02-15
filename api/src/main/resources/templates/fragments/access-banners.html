@@ -39,7 +39,8 @@
         <!-- Current round + open -->
         <p
           th:if="${isCurrentRound == true && roundState == 'open'}"
-          class="text-sm text-yellow-700 mt-1">
+          class="text-sm text-yellow-700 mt-1"
+        >
           Tap teams to swap and preview your prediction!
           <a
             th:href="@{/auth/register}"
@@ -52,8 +53,10 @@
         <!-- Current round + locked/completed (not last round) -->
         <p
           th:if="${isCurrentRound == true && (roundState == 'locked' || roundState == 'completed') && currentRound != lastRound}"
-          class="text-sm text-yellow-700 mt-1">
-          <strong>👋 Matches In Progress</strong> - You can still arrange teams and preview your prediction!
+          class="text-sm text-yellow-700 mt-1"
+        >
+          <strong>👋 Matches In Progress</strong> - You can still arrange teams
+          and preview your prediction!
           <a
             th:href="@{/auth/register}"
             class="underline font-medium hover:text-yellow-900"
@@ -65,8 +68,10 @@
         <!-- Current round + last round + locked -->
         <p
           th:if="${isCurrentRound == true && currentRound == lastRound && (roundState == 'locked' || roundState == 'completed')}"
-          class="text-sm text-yellow-700 mt-1">
-          This is the final round. Matches are in progress and the season is completing.
+          class="text-sm text-yellow-700 mt-1"
+        >
+          This is the final round. Matches are in progress and the season is
+          completing.
           <a
             th:href="@{/auth/register}"
             class="underline font-medium hover:text-yellow-900"
@@ -78,7 +83,8 @@
         <!-- Current round + finalized -->
         <p
           th:if="${isCurrentRound == true && roundState == 'finalized'}"
-          class="text-sm text-yellow-700 mt-1">
+          class="text-sm text-yellow-700 mt-1"
+        >
           This round has been finalized. You can browse the results.
           <a
             th:href="@{/auth/register}"
@@ -91,8 +97,10 @@
         <!-- Historical round -->
         <p
           th:if="${isCurrentRound == false || isCurrentRound == null}"
-          class="text-sm text-yellow-700 mt-1">
-          You're viewing a past gameweek. Browse results or check the current round.
+          class="text-sm text-yellow-700 mt-1"
+        >
+          You're viewing a past gameweek. Browse results or check the current
+          round.
           <a
             th:href="@{/auth/register}"
             class="underline font-medium hover:text-yellow-900"
@@ -215,9 +223,19 @@
         <p class="text-sm font-medium text-green-800">
           ✨ First Swap Available!
         </p>
-        <p class="text-sm text-green-700 mt-1">
+        <p
+          th:if="${roundState != 'locked' || atRoundNumber == null || atRoundNumber == currentRound}"
+          class="text-sm text-green-700 mt-1"
+        >
           Make your first swap without waiting 24 hours. After this, the 24h
           cooldown applies.
+        </p>
+        <p
+          th:if="${roundState == 'locked' && atRoundNumber != null && atRoundNumber > currentRound}"
+          class="text-sm text-green-700 mt-1"
+        >
+          Matches are in progress. Your prediction will be scored next round.
+          Make your first swap without waiting 24 hours.
         </p>
       </div>
     </div>
@@ -245,33 +263,47 @@
       <div>
         <!-- Last Round + Locked: Season Completing -->
         <th:block th:if="${currentRound == lastRound}">
-          <p class="text-sm font-medium text-yellow-800">🔒 Season Completing</p>
+          <p class="text-sm font-medium text-yellow-800">
+            🔒 Season Completing
+          </p>
           <p class="text-sm text-yellow-700 mt-1">
-            This is the final round. Matches are in progress and predictions are locked.
+            This is the final round. Matches are in progress and predictions are
+            locked.
           </p>
         </th:block>
 
         <!-- Initial Prediction (user can still predict) -->
-        <th:block th:if="${currentRound != lastRound && canCreateEntry == true}">
-          <p class="text-sm font-medium text-blue-800">👋 Matches In Progress</p>
+        <th:block
+          th:if="${currentRound != lastRound && canCreateEntry == true}"
+        >
+          <p class="text-sm font-medium text-blue-800">
+            👋 Matches In Progress
+          </p>
           <p class="text-sm text-blue-700 mt-1">
             You can still create your prediction! It will be scored next round.
           </p>
         </th:block>
 
         <!-- Already Predicted, future round (can still swap after cooldown) -->
-        <th:block th:if="${currentRound != lastRound && (canCreateEntry == false || canCreateEntry == null) && !(swapStatus != null && swapStatus.firstSwapBonus == true) && (atRoundNumber != null && atRoundNumber > currentRound)}">
-          <p class="text-sm font-medium text-blue-800">👋 Matches In Progress</p>
+        <th:block
+          th:if="${currentRound != lastRound && (canCreateEntry == false || canCreateEntry == null) && !(swapStatus != null && swapStatus.firstSwapBonus == true) && (atRoundNumber != null && atRoundNumber > currentRound)}"
+        >
+          <p class="text-sm font-medium text-blue-800">
+            👋 Matches In Progress
+          </p>
           <p class="text-sm text-blue-700 mt-1">
             Your prediction will be scored next round. You can still make swaps.
           </p>
         </th:block>
 
         <!-- Already Predicted, current round (locked in) -->
-        <th:block th:if="${currentRound != lastRound && (canCreateEntry == false || canCreateEntry == null) && !(swapStatus != null && swapStatus.firstSwapBonus == true) && (atRoundNumber == null || atRoundNumber <= currentRound)}">
+        <th:block
+          th:if="${currentRound != lastRound && (canCreateEntry == false || canCreateEntry == null) && !(swapStatus != null && swapStatus.firstSwapBonus == true) && (atRoundNumber == null || atRoundNumber <= currentRound)}"
+        >
           <p class="text-sm font-medium text-yellow-800">🔒 Round Locked</p>
           <p class="text-sm text-yellow-700 mt-1">
-            Matches are in progress. Predictions are locked until results are finalized.
+            Matches are in progress. Predictions are locked until results are
+            finalized.
           </p>
         </th:block>
       </div>
@@ -352,7 +384,9 @@
         />
       </svg>
       <div>
-        <p class="text-sm font-medium text-blue-800">📊 Historical Prediction</p>
+        <p class="text-sm font-medium text-blue-800">
+          📊 Historical Prediction
+        </p>
         <p class="text-sm text-blue-700 mt-1">
           This is your prediction from Gameweek
           <span th:text="${viewingRound}">18</span>.

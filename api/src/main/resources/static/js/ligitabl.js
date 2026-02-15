@@ -362,6 +362,15 @@ window.Ligitabl.predictionPage = function (el) {
             return pairs;
         },
 
+        reset() {
+            this.teams = JSON.parse(JSON.stringify(this.originalTeams));
+            this.selectedTeam = null;
+            if (this.importedFromGuest) {
+                clearGuestStorage();
+                this.importedFromGuest = false;
+            }
+        },
+
         submitChanges() {
             this.isSaving = true;
             const toast = document.getElementById("saving-toast");

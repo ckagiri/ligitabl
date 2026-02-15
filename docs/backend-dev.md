@@ -502,6 +502,54 @@ Quick checklist if startup fails or `curl` can’t connect:
 5. Port already in use
    - If the server can’t start on `8080`, set a different port: `PORT=8081 make run-app` and curl `http://localhost:8081/...`.
 
+## Spring Boot DevTools: hot reload for templates and static resources
+
+Spring Boot DevTools auto-restarts the application when class files change. However, in a multi-module Maven project, DevTools restart can fail because the `RestartClassLoader` cannot resolve classes from dependent modules (e.g., `model`).
+
+**Symptom:**
+
+```
+org.springframework.beans.factory.BeanDefinitionStoreException: Failed to parse configuration class
+Caused by: java.lang.ClassNotFoundException: ContestRepo
+    at org.springframework.boot.devtools.restart.classloader.RestartClassLoader.loadClass
+```
+
+This happens when editing HTML/JS/CSS files triggers a DevTools restart — classes in the `model` module are loaded by the base classloader but the `RestartClassLoader` can't find them during restart.
+
+**Fix:**
+
+Disable DevTools restart entirely. Templates and static resources don't need a restart — Thymeleaf already reloads templates automatically when caching is disabled, and static resources are served directly from disk:
+
+```properties
+# Already configured
+spring.thymeleaf.cache=false
+spring.web.resources.cache.cachecontrol.no-cache=true
+
+# Disable DevTools restart — RestartClassLoader can't resolve model module classes.
+# Templates and static resources reload without restart anyway.
+spring.devtools.restart.enabled=false
+```
+
+**Why not `additional-exclude`?** We initially tried `spring.devtools.restart.additional-exclude=**/*.html,**/*.js,**/*.css` but it was unreliable — DevTools still triggered restarts on file changes in some cases.
+
+**How it works:**
+
+- `spring.thymeleaf.cache=false` — Thymeleaf re-reads template files on every request (no restart needed)
+- `spring.web.resources.cache.cachecontrol.no-cache=true` — Browser always fetches fresh static resources
+- `spring.devtools.restart.enabled=false` — DevTools restart is fully disabled, avoiding the ClassNotFoundException
+
+**Development workflow:**
+
+- Edit HTML/JS/CSS → refresh browser → changes appear immediately (no restart)
+- Edit Java files → must manually restart the application (`make run-api-fast`)
+
+**Run targets:**
+
+```bash
+make run-api-fast     # Start DB, compile, run (skips migration + jOOQ codegen)
+make run-api-fastest  # Start DB, run (assumes already compiled)
+```
+
 ## Thymeleaf templates: boolean conditionals best practices
 
 **TL;DR**: When using `th:if` with `th:replace`, wrap the fragment inclusion in a `<th:block>` element. Additionally, use explicit boolean comparisons (`== true`, `== false || == null`) for clarity and to avoid SpEL evaluation quirks.
