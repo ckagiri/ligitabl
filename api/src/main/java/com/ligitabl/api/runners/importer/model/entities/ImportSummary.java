@@ -16,6 +16,7 @@ public class ImportSummary {
     int totalMatches;
     int created;
     int updated;
+    int unchanged;
     int failed;
     Integer currentRoundPosition;
     boolean currentRoundUpdated;
@@ -36,11 +37,12 @@ public class ImportSummary {
     public String getSummaryMessage() {
         if (isSuccessful()) {
             return String.format(
-                    "Successfully imported %d matches (%d created, %d updated)", getSuccessCount(), created, updated);
+                    "Successfully imported %d matches (%d created, %d updated, %d unchanged)",
+                    getSuccessCount(), created, updated, unchanged);
         } else if (isPartialSuccess()) {
             return String.format(
-                    "Partial import: %d succeeded (%d created, %d updated), %d failed",
-                    getSuccessCount(), created, updated, failed);
+                    "Partial import: %d succeeded (%d created, %d updated, %d unchanged), %d failed",
+                    getSuccessCount(), created, updated, unchanged, failed);
         } else {
             return String.format("Import failed: %d errors", errors.size());
         }

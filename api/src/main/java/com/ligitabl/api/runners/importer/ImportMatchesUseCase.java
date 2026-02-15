@@ -4,6 +4,7 @@ import static com.ligitabl.api.shared.Either.right;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import com.ligitabl.api.runners.importer.event.ImportEventPublisher;
@@ -108,6 +109,8 @@ public class ImportMatchesUseCase {
                 (int) successes.stream().filter(MatchImportResult::isCreated).count();
         int updated =
                 (int) successes.stream().filter(MatchImportResult::isUpdated).count();
+        int unchanged =
+                (int) successes.stream().filter(MatchImportResult::isUnchanged).count();
 
         RoundUpdateResult roundUpdate = updateCurrentRoundIfNeeded(context.season, context.currentMatchday);
 
@@ -117,6 +120,7 @@ public class ImportMatchesUseCase {
                 .totalMatches(context.matches.size())
                 .created(created)
                 .updated(updated)
+                .unchanged(unchanged)
                 .failed(errors.size())
                 .currentRoundPosition(roundUpdate.currentRoundPosition())
                 .currentRoundUpdated(roundUpdate.updated())
@@ -185,7 +189,7 @@ public class ImportMatchesUseCase {
                 .peek(result -> {
                     if (result.isCreated()) {
                         eventPublisher.publishMatchCreated(result);
-                    } else {
+                    } else if (result.isUpdated()) {
                         eventPublisher.publishMatchUpdated(result);
                     }
                 })
@@ -278,18 +282,31 @@ public class ImportMatchesUseCase {
         try {
             var existing = matchRepo.findByClientId(match.getClientId());
             MatchSlug slug = new MatchSlug(match.getSlug());
+            ExternalId externalId = new ExternalId(match.getClientId());
 
             if (existing.isPresent()) {
-                match.withDatabaseId(existing.get().getId());
+                Match db = existing.get();
+                if (!hasChanged(db, match)) {
+                    return right(MatchImportResult.unchanged(externalId, slug));
+                }
+                match.withDatabaseId(db.getId());
                 matchRepo.update(match);
-                return right(MatchImportResult.updated(new ExternalId(match.getClientId()), slug));
+                return right(MatchImportResult.updated(externalId, slug));
             }
 
             matchRepo.create(match);
-            return right(MatchImportResult.created(new ExternalId(match.getClientId()), slug));
+            return right(MatchImportResult.created(externalId, slug));
         } catch (Exception e) {
             return Either.left(DatabaseError.persistenceFailed("Match", e.getMessage()));
         }
+    }
+
+    private boolean hasChanged(Match db, Match incoming) {
+        if (db.getStatus() != incoming.getStatus()) return true;
+        if (!Objects.equals(db.getKickOff(), incoming.getKickOff())) return true;
+        if (!Objects.equals(db.getRoundId(), incoming.getRoundId())) return true;
+        if (!Objects.equals(db.getScore(), incoming.getScore())) return true;
+        return false;
     }
 
     // Helper records

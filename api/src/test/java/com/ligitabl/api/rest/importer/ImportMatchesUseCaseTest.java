@@ -352,7 +352,7 @@ class ImportMatchesUseCaseTest {
                 .slug("ars-che")
                 .status(MatchStatus.SCHEDULED)
                 .matchday(1)
-                .kickOff(OffsetDateTime.now().withNano(0))
+                .kickOff(OffsetDateTime.now().minusDays(1).withNano(0))
                 .build();
 
         when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));

@@ -31,4 +31,17 @@ public class MatchImportResult {
                 .slug(slug)
                 .build();
     }
+
+    public static MatchImportResult unchanged(ExternalId matchId, MatchSlug slug) {
+        return MatchImportResult.builder()
+                .matchId(matchId)
+                .created(false)
+                .updated(false)
+                .slug(slug)
+                .build();
+    }
+
+    public boolean isUnchanged() {
+        return !created && !updated;
+    }
 }
