@@ -13,6 +13,11 @@ ARTIFACT_ID := $(shell mvn -q -f $(API_POM) -DforceStdout help:evaluate -Dexpres
 VERSION := $(shell mvn -q -f $(API_POM) -DforceStdout help:evaluate -Dexpression=project.version)
 JAR := $(API_DIR)/target/$(ARTIFACT_ID)-$(VERSION).jar
 
+SEED_DIR := seed
+SEED_ARTIFACT_ID := $(shell mvn -q -f $(SEED_DIR)/pom.xml -DforceStdout help:evaluate -Dexpression=project.artifactId)
+SEED_VERSION := $(shell mvn -q -f $(SEED_DIR)/pom.xml -DforceStdout help:evaluate -Dexpression=project.version)
+SEED_JAR := $(SEED_DIR)/target/$(SEED_ARTIFACT_ID)-$(SEED_VERSION).jar
+
 # Docker configuration
 IMAGE ?= $(APP_NAME):dev
 PORT ?= 8080
@@ -315,14 +320,14 @@ reset-db: ## ⚠️  Drop and recreate the database (ENV=$(ENV))
 db-seed: ## Seed reference data (ENV=$(ENV))
 	$(MAKE) compose-up-db
 	mvn -q -pl seed -am -DskipTests package
-	java -Dseed.main=seeding/main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar \
+	java -Dseed.main=seeding/main.yaml -jar $(SEED_JAR) \
 		--spring.profiles.active=default
 
 .PHONY: db-seed-demo
 db-seed-demo: ## Seed demo league data (ENV=$(ENV))
 	$(MAKE) compose-up-db
 	mvn -q -pl seed -am -DskipTests package
-	java -Dseed.main=seeding/demo-main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar \
+	java -Dseed.main=seeding/demo-main.yaml -jar $(SEED_JAR) \
 		--spring.profiles.active=default
 	$(MAKE) db-seed-season SEEDING_CONFIG=seeding-config-demo.yaml
 
@@ -337,16 +342,16 @@ db-seed-season: ## Seed season extras (ENV=$(ENV))
 db-seed-users: ## Seed users for testing (ENV=$(ENV))
 	$(MAKE) compose-up-db
 	mvn -q -pl seed -am -DskipTests package
-	java -Dseed.main=seeding/main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar \
+	java -Dseed.main=seeding/main.yaml -jar $(SEED_JAR) \
 		--spring.profiles.active=default
 
 .PHONY: db-seed-all
 db-seed-all: ## Seed both reference and demo data (ENV=$(ENV))
 	$(MAKE) compose-up-db
 	mvn -q -pl seed -am -DskipTests package
-	java -Dseed.main=seeding/main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar \
+	java -Dseed.main=seeding/main.yaml -jar $(SEED_JAR) \
 		--spring.profiles.active=default
-	java -Dseed.main=seeding/demo-main.yaml -jar seed/target/ligitabl-seed-0.1.0-SNAPSHOT.jar \
+	java -Dseed.main=seeding/demo-main.yaml -jar $(SEED_JAR) \
 		--spring.profiles.active=default
 
 # ==============================================================================
@@ -368,6 +373,29 @@ import-competition: ## Import matches for a competition (COMP=XX, ENV=$(ENV))
 	fi; \
 	export FOOTBALL_DATA_API_TOKEN; \
 	echo "Importing $(COMP) to $(DB_NAME) (ENV=$(ENV))"; \
+	$(MAKE) compose-up-db; \
+	$(MAKE) api-build; \
+	java -jar $(JAR) \
+		--spring.main.web-application-type=none \
+		--workflow.run=true \
+		--workflow.competition=$(COMP) \
+		--workflow.exit-after=true
+
+.PHONY: import-competition-with-seed
+import-competition-with-seed: ## Seed reference data, then import matches (COMP=XX, ENV=$(ENV))
+	@if [ -z "$(COMP)" ]; then \
+		echo "❌ Error: COMP is required"; \
+		echo "Usage: make import-competition-with-seed COMP=PL [ENV=test|dev|prod]"; \
+		exit 1; \
+	fi
+	@FOOTBALL_DATA_API_TOKEN=$${FOOTBALL_DATA_API_TOKEN:-$${API_FOOTBALL_DATA_KEY:-}}; \
+	if [ -z "$$FOOTBALL_DATA_API_TOKEN" ] || [ "$$FOOTBALL_DATA_API_TOKEN" = "your-api-token-here" ]; then \
+		echo "❌ Error: FOOTBALL_DATA_API_TOKEN is not set"; \
+		echo "Set API_FOOTBALL_DATA_KEY in $(ENV_LOCAL_FILE)"; \
+		exit 1; \
+	fi; \
+	export FOOTBALL_DATA_API_TOKEN; \
+	echo "Seeding + importing $(COMP) to $(DB_NAME) (ENV=$(ENV))"; \
 	$(MAKE) compose-up-db; \
 	$(MAKE) db-seed; \
 	$(MAKE) api-build; \
@@ -394,21 +422,9 @@ calc-standings: ## Calculate standings for all rounds (ENV=$(ENV))
 import-pl: ## Import Premier League (ENV=$(ENV))
 	$(MAKE) import-competition COMP=PL
 
-.PHONY: import-bl
-import-bl: ## Import Bundesliga (ENV=$(ENV))
-	$(MAKE) import-competition COMP=BL
-
-.PHONY: import-sa
-import-sa: ## Import Serie A (ENV=$(ENV))
-	$(MAKE) import-competition COMP=SA
-
-.PHONY: import-pd
-import-pd: ## Import La Liga (ENV=$(ENV))
-	$(MAKE) import-competition COMP=PD
-
-.PHONY: import-fl1
-import-fl1: ## Import Ligue 1 (ENV=$(ENV))
-	$(MAKE) import-competition COMP=FL1
+.PHONY: import-pl-with-seed
+import-pl-with-seed: ## Import Premier League after seeding reference data (ENV=$(ENV))
+	$(MAKE) import-competition-with-seed COMP=PL
 
 # ==============================================================================
 # DOCKER TARGETS

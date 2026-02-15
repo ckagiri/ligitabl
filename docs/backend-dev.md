@@ -398,20 +398,22 @@ make codegen         # regenerate jOOQ sources against the current schema
 
 ## Importing matches (Football-Data)
 
-The repo includes a headless match importer workflow you can run after seeding.
+The repo includes a headless match importer workflow (Premier League only).
 
 Make targets:
 
 ```bash
 make import-competition COMP=PL
 make import-pl
+make import-pl-with-seed
 ````
 
 Notes:
 
 - These Make targets use the selected env file (`.env.test`, `.env.dev`, or `.env.prod`) plus the optional local override for that env.
 - Set your token in `.env.dev.local` (preferred) as `API_FOOTBALL_DATA_KEY=...` (or `FOOTBALL_DATA_API_TOKEN=...`).
-- Importer targets start DB (compose), seed reference data, build the API jar, then run the workflow in headless mode.
+- By default, importer targets start DB (compose), build the API jar, then run the workflow in headless mode (no implicit seeding).
+  - If you need reference data, run `make db-seed` first or use `make import-pl-with-seed`.
 
 ````
 
@@ -578,15 +580,20 @@ Before the fix, templates using implicit boolean checks had both mutually exclus
 
 ```html
 <!-- PROBLEMATIC: Both sections rendered at the same time -->
-<div th:if="${isGuest}">...</div>          <!-- Rendered when shouldn't -->
-<div th:unless="${isGuest}">...</div>      <!-- Also rendered -->
+<div th:if="${isGuest}">...</div>
+<!-- Rendered when shouldn't -->
+<div th:unless="${isGuest}">...</div>
+<!-- Also rendered -->
 
 <!-- Same issue with negation -->
-<div th:if="${isCurrentRound}">...</div>   <!-- Rendered -->
-<div th:if="${!isCurrentRound}">...</div>  <!-- Also rendered! -->
+<div th:if="${isCurrentRound}">...</div>
+<!-- Rendered -->
+<div th:if="${!isCurrentRound}">...</div>
+<!-- Also rendered! -->
 ```
 
 This caused:
+
 - Duplicate prediction tables appearing on the page
 - Both current round and historical round views rendering simultaneously
 - Confusing UI where guest and authenticated user views both appeared
@@ -600,11 +607,15 @@ When you need to conditionally include a fragment, wrap the `th:replace` element
 ```html
 <!-- CORRECT: th:block wrapper ensures conditional is evaluated before fragment replacement -->
 <th:block th:if="${isCurrentRound == true}">
-  <div th:replace="~{fragments/prediction-table :: interactive-table(alwaysHoverable=false)}"></div>
+  <div
+    th:replace="~{fragments/prediction-table :: interactive-table(alwaysHoverable=false)}"
+  ></div>
 </th:block>
 
 <th:block th:if="${isCurrentRound == false || isCurrentRound == null}">
-  <div th:replace="~{fragments/prediction-historical-view :: historical-view(...)}"></div>
+  <div
+    th:replace="~{fragments/prediction-historical-view :: historical-view(...)}"
+  ></div>
 </th:block>
 ```
 
@@ -628,6 +639,7 @@ For clarity and defensive programming, use explicit boolean comparisons:
 ### Why This Works
 
 Explicit comparisons force a clear three-way distinction:
+
 - `true` - explicitly true
 - `false` - explicitly false
 - `null` - explicitly handle null cases
@@ -658,19 +670,23 @@ This avoids SpEL's implicit truthiness evaluation and ensures only one section o
 ```html
 <!-- AVOID: Implicit negation -->
 <div th:if="${isCurrentRound && !isUserNotFound}">
-
-<!-- PREFER: Explicit boolean checks -->
-<div th:if="${isCurrentRound == true && (isUserNotFound == false || isUserNotFound == null)}">
+  <!-- PREFER: Explicit boolean checks -->
+  <div
+    th:if="${isCurrentRound == true && (isUserNotFound == false || isUserNotFound == null)}"
+  ></div>
+</div>
 ```
 
 ### When to Apply This
 
 **Always use `<th:block>` when:**
+
 - You have `th:if` or `th:unless` on an element that also has `th:replace` or `th:include`
 - You need mutually exclusive fragment inclusions
 - You want to ensure conditionals are evaluated before fragment replacement
 
 **Use explicit boolean comparisons when:**
+
 - You have mutually exclusive template sections (guest vs. authenticated, current vs. historical, etc.)
 - Boolean model attributes control rendering logic
 - You have complex conditional logic with multiple boolean checks
