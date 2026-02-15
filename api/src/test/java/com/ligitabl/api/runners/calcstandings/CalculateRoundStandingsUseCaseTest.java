@@ -2,7 +2,6 @@ package com.ligitabl.api.runners.calcstandings;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -47,7 +46,7 @@ class CalculateRoundStandingsUseCaseTest {
     @Mock
     HierarchyValidator hierarchyValidator;
 
-        CompetitionDefaults competitionDefaults;
+    CompetitionDefaults competitionDefaults;
 
     @Mock
     SeasonRepo seasonRepo;
@@ -74,7 +73,7 @@ class CalculateRoundStandingsUseCaseTest {
 
     @BeforeEach
     void setUp() {
-                competitionDefaults = new CompetitionDefaults("premier-league");
+        competitionDefaults = new CompetitionDefaults("premier-league");
         useCase = new CalculateRoundStandingsUseCase(
                 hierarchyValidator,
                 competitionDefaults,
