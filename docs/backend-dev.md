@@ -543,6 +543,16 @@ spring.devtools.restart.enabled=false
 - Edit HTML/JS/CSS → refresh browser → changes appear immediately (no restart)
 - Edit Java files → must manually restart the application (`make run-api-fast`)
 
+**Enabling DevTools restart (opt-in):**
+
+If you're only editing Java files in the `api` module and want auto-restart on class changes:
+
+```bash
+make run-api-fast DEVTOOLS_RESTART=true
+```
+
+Note: this may fail with `ClassNotFoundException` for classes in the `model` module. Use the default (`false`) if you see that error.
+
 **Run targets:**
 
 ```bash
