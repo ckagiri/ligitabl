@@ -73,8 +73,7 @@ public class GetUserDetailUseCase {
                     .orElseThrow(() -> new NotFoundException("Current round not found"));
 
             // Resolve user by publicId
-            User user = userRepo
-                    .findByPublicId(PublicId.create(publicId))
+            User user = userRepo.findByPublicId(PublicId.create(publicId))
                     .orElseThrow(() -> new NotFoundException("User not found: " + publicId));
 
             // Determine round status
@@ -111,11 +110,11 @@ public class GetUserDetailUseCase {
             }
 
             // Resolve team codes to names
-            List<TeamRank> sortedRanks =
-                    rankings.stream().sorted(Comparator.comparingInt(TeamRank::getPosition)).toList();
+            List<TeamRank> sortedRanks = rankings.stream()
+                    .sorted(Comparator.comparingInt(TeamRank::getPosition))
+                    .toList();
 
-            Set<String> teamCodes =
-                    sortedRanks.stream().map(TeamRank::getCode).collect(Collectors.toSet());
+            Set<String> teamCodes = sortedRanks.stream().map(TeamRank::getCode).collect(Collectors.toSet());
 
             Map<String, Team> teamsByCode = teamRepo.findAllByCodes(teamCodes).stream()
                     .collect(Collectors.toMap(Team::getCode, Function.identity()));

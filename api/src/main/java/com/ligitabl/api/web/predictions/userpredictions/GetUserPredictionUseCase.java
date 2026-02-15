@@ -62,16 +62,21 @@ public class GetUserPredictionUseCase {
                 isCurrentRound ? currentRoundEntity : getRoundByPosition(season.getId(), viewingRound);
         boolean seasonCompleted = season.isCompleted();
         RoundStatus currentRoundStatus = resolveRoundStatus(currentRoundEntity);
-        String roundState = isCurrentRound
-                ? currentRoundStatus.name()
-                : resolveRoundState(viewingRoundEntity);
+        String roundState = isCurrentRound ? currentRoundStatus.name() : resolveRoundState(viewingRoundEntity);
 
         // Determine access mode and rankings based on user type
         return switch (ctx.userType()) {
             case GUEST -> buildGuestView(
                     query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
             case AUTHENTICATED -> buildAuthenticatedView(
-                    query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted, currentRoundStatus);
+                    query,
+                    currentRound,
+                    lastRound,
+                    viewingRound,
+                    isCurrentRound,
+                    roundState,
+                    seasonCompleted,
+                    currentRoundStatus);
             case VIEWING_OTHER -> buildViewingOtherView(
                     query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
             case USER_NOT_FOUND -> buildUserNotFoundView(
@@ -231,9 +236,7 @@ public class GetUserPredictionUseCase {
             message = "The final round is in progress. Predictions are closed.";
         } else {
             accessMode = PredictionAccessMode.CAN_CREATE_ENTRY;
-            atRoundNumber = currentRoundStatus == RoundStatus.OPEN
-                    ? currentRound
-                    : currentRound + 1;
+            atRoundNumber = currentRoundStatus == RoundStatus.OPEN ? currentRound : currentRound + 1;
             message = "Arrange teams and submit to join the competition";
         }
 

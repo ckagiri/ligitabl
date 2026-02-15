@@ -209,7 +209,8 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("should accept any non-default ranking order")
         void shouldAcceptAnyNonDefaultRankingOrder() {
-            List<TeamRankDto> rankings = new ArrayList<>(validNonDefaultRequest().rankings());
+            List<TeamRankDto> rankings =
+                    new ArrayList<>(validNonDefaultRequest().rankings());
             Collections.swap(rankings, 0, rankings.size() - 1);
             CreatePredictionCommand request = new CreatePredictionCommand(rankings);
 

@@ -316,7 +316,8 @@ class RescheduleMatchUseCaseTest {
         Either<UseCaseError, RescheduleResult> result = useCase.execute(cmd);
 
         assertTrue(result.isRight());
-        verify(matchRepo).save(argThat(m -> m.getRoundId().equals(currentRoundId) && m.getStatus() == MatchStatus.SCHEDULED));
+        verify(matchRepo)
+                .save(argThat(m -> m.getRoundId().equals(currentRoundId) && m.getStatus() == MatchStatus.SCHEDULED));
     }
 
     @Test

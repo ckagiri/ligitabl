@@ -69,7 +69,8 @@ class MatchTest {
         allowed.put(MatchStatus.LIVE, EnumSet.of(MatchStatus.SUSPENDED, MatchStatus.FINISHED));
         allowed.put(MatchStatus.SUSPENDED, EnumSet.of(MatchStatus.CANCELLED));
         allowed.put(MatchStatus.POSTPONED, EnumSet.of(MatchStatus.SCHEDULED, MatchStatus.CANCELLED));
-        allowed.put(MatchStatus.CANCELLED, EnumSet.of(MatchStatus.SCHEDULED, MatchStatus.POSTPONED, MatchStatus.FINISHED));
+        allowed.put(
+                MatchStatus.CANCELLED, EnumSet.of(MatchStatus.SCHEDULED, MatchStatus.POSTPONED, MatchStatus.FINISHED));
         allowed.put(MatchStatus.FINISHED, EnumSet.noneOf(MatchStatus.class));
 
         for (MatchStatus from : MatchStatus.values()) {

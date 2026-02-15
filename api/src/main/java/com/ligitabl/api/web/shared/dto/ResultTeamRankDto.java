@@ -66,8 +66,6 @@ public class ResultTeamRankDto {
             return List.of();
         }
 
-        return resultRanks.stream()
-                .map(rank -> from(rank, teamsByCode))
-                .toList();
+        return resultRanks.stream().map(rank -> from(rank, teamsByCode)).toList();
     }
 }

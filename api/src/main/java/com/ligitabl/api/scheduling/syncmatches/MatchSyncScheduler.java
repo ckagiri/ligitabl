@@ -222,8 +222,11 @@ public class MatchSyncScheduler {
             return;
         }
 
-        log.info("Scheduling round advancement in {} minutes for season={}, round={}",
-                advancementDelayMinutes, seasonId, roundId);
+        log.info(
+                "Scheduling round advancement in {} minutes for season={}, round={}",
+                advancementDelayMinutes,
+                seasonId,
+                roundId);
 
         Instant runAt = Instant.now().plus(Duration.ofMinutes(advancementDelayMinutes));
         taskScheduler.schedule(() -> executeDelayedAdvancement(seasonId, roundId), runAt);
@@ -236,15 +239,16 @@ public class MatchSyncScheduler {
             // Guard: verify state hasn't changed (e.g. admin manually advanced)
             var season = seasonRepo.findById(seasonId).orElse(null);
             if (season == null || !roundId.equals(season.getCurrentRoundId())) {
-                log.warn("Skipping delayed advancement: state has changed (season={}, expectedRound={})",
-                        seasonId, roundId);
+                log.warn(
+                        "Skipping delayed advancement: state has changed (season={}, expectedRound={})",
+                        seasonId,
+                        roundId);
                 return;
             }
 
             var round = roundRepo.findById(roundId).orElse(null);
             if (round == null || !round.isFinalized()) {
-                log.warn("Skipping delayed advancement: round not finalized (season={}, round={})",
-                        seasonId, roundId);
+                log.warn("Skipping delayed advancement: round not finalized (season={}, round={})", seasonId, roundId);
                 return;
             }
 
@@ -260,8 +264,7 @@ public class MatchSyncScheduler {
                         if (advance.seasonCompleted()) {
                             log.info("Season completed after finalization (seasonId={})", seasonId);
                         } else if (advance.advanced()) {
-                            log.info("Advanced to next round: {} (seasonId={})",
-                                    advance.newRoundPosition(), seasonId);
+                            log.info("Advanced to next round: {} (seasonId={})", advance.newRoundPosition(), seasonId);
                         }
                         return null;
                     });

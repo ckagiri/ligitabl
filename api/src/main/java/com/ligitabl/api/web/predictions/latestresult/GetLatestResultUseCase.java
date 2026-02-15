@@ -95,12 +95,12 @@ public class GetLatestResultUseCase {
                 var leaderboardResponse = leaderboardRepo.computeLeaderboard(
                         contest.getId(),
                         season.getId(),
-                        quarterPhase.getFrom(),  // from = quarter start
-                        round,                   // to = result round
+                        quarterPhase.getFrom(), // from = quarter start
+                        round, // to = result round
                         userId,
                         0,
-                        1                        // just need userEntry
-                );
+                        1 // just need userEntry
+                        );
 
                 LeaderboardEntry userEntry = leaderboardResponse.userEntry();
                 if (userEntry != null) {
@@ -110,13 +110,7 @@ public class GetLatestResultUseCase {
             }
         }
 
-        return new LatestResultResponse(
-                round,
-                result.getTotalScore(),
-                position,
-                movement,
-                distribution,
-                quarter);
+        return new LatestResultResponse(round, result.getTotalScore(), position, movement, distribution, quarter);
     }
 
     private RoundSpan findQuarterForRound(Competition competition, int round) {
@@ -130,8 +124,7 @@ public class GetLatestResultUseCase {
                 .toList();
 
         if (quarters.isEmpty()) {
-            throw new IllegalStateException(
-                    String.format("Round %d is not assigned to any quarter", round));
+            throw new IllegalStateException(String.format("Round %d is not assigned to any quarter", round));
         }
 
         if (quarters.size() > 1) {
