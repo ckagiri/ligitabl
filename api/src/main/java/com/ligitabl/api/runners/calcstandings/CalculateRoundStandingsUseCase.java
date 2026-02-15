@@ -111,6 +111,9 @@ public class CalculateRoundStandingsUseCase
         // Get matches for this round to check if there are any finished matches
         List<Match> matches = matchRepo.findByRoundId(round.getId());
 
+        RoundStatus status = round.computeStatus(matches);
+        boolean shouldFinalise = status == RoundStatus.COMPLETED;
+
         boolean hasFinishedMatches = matches.stream().anyMatch(match -> match.getStatus() == MatchStatus.FINISHED);
 
         if (!hasFinishedMatches) {
@@ -142,8 +145,14 @@ public class CalculateRoundStandingsUseCase
         }
 
         standings.setRankings(rankings);
-        standings.setFinalised(true);
-        standings.setFinalisedAt(now());
+
+        if (shouldFinalise) {
+            standings.setFinalised(true);
+            standings.setFinalisedAt(now());
+        } else {
+            standings.setFinalised(false);
+            standings.setFinalisedAt(null);
+        }
 
         return Either.right(standingsRepo.save(standings));
     }
