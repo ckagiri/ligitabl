@@ -125,11 +125,20 @@ Arrange teams in your predicted order, then submit to join the competition.
 
 **Condition:** `swapStatus != null && swapStatus.firstSwapBonus == true`
 
-**Message:**
-```
-✨ First Swap Available!
-Make your first swap without waiting 24 hours. After this, the 24h cooldown applies.
-```
+**Messages vary by round state:**
+
+- **Round open or prediction for current round:**
+  ```
+  ✨ First Swap Available!
+  Make your first swap without waiting 24 hours. After this, the 24h cooldown applies.
+  ```
+
+- **Round locked and prediction for future round** (`atRoundNumber > currentRound`):
+  ```
+  ✨ First Swap Available!
+  Matches are in progress. Your prediction will be scored next round.
+  Make your first swap without waiting 24 hours.
+  ```
 
 ### 4. Locked State Banner (Yellow/Blue with Lock Icon)
 
@@ -146,7 +155,7 @@ Make your first swap without waiting 24 hours. After this, the 24h cooldown appl
 - Users with first swap bonus (they see First Swap Bonus Banner instead)
 - `completed` state (now handled by Scoring Banner)
 
-**Three sub-states:**
+**Four sub-states:**
 
 **a) Last Round + Locked (Yellow):**
 ```
@@ -161,7 +170,15 @@ You can still create your prediction! It will be scored next round.
 ```
 - Shows when `canCreateEntry == true`
 
-**c) Already Predicted - Locked In (Yellow):**
+**c) Already Predicted - Future Round (Blue):**
+```
+👋 Matches In Progress
+Your prediction will be scored next round. You can still make swaps.
+```
+- Shows when `atRoundNumber > currentRound` (user predicted during locked round)
+- User can still swap since their prediction targets the next round
+
+**d) Already Predicted - Current Round Locked In (Yellow):**
 ```
 🔒 Round Locked
 Matches are in progress. Predictions are locked until results are finalized.
@@ -267,11 +284,14 @@ Is user a guest?
     │
     ├─ Has first swap bonus?
     │  └─ YES → Show "First Swap Bonus" Banner (green)
+    │      └─ If locked + future round → Include "Matches in progress" context
     │
     ├─ Is current round + locked?
     │  └─ YES → Show "Locked State" Banner
     │      ├─ Last round? → "🔒 Season Completing"
-    │      └─ Not last round → "🔒 Round Locked" (if already predicted)
+    │      ├─ canCreateEntry? → "👋 Matches In Progress" (can still predict)
+    │      ├─ atRoundNumber > currentRound? → "👋 Matches In Progress" (can still swap)
+    │      └─ atRoundNumber <= currentRound → "🔒 Round Locked" (locked in)
     │
     ├─ Is current round + (completed or finalized) + NOT season completed?
     │  └─ YES → Show "Scoring" Banner: "⏳ Scoring predictions..."

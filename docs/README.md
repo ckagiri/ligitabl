@@ -2,14 +2,19 @@
 
 - Backend dev guide: [Backend Development Guide](./backend-dev.md)
 - API reference: [API Endpoints](./api-endpoints.md)
+- Prediction page: [Prediction Page UI States & Banners](./prediction-page-ui.md)
+- Leaderboard: [Leaderboard Persistence](./leaderboard.md)
 - Debugging guide: [Debugging Test Failures](./debugging-tests.md)
-- Guide: [Functional Either](./dev/functional-either.md)
+- Error handling: [Functional Either](./dev/functional-either.md)
 
 ## Common commands
 
 - Core API tests (skip `*IT`): `make test-api-core`
 - API integration tests (`*IT`): `make test-api-it`
 - Full API suite: `make test-api-all`
+- Start API (fast): `make run-api-fast`
+- Reset dev DB + seed: `make dev-reset`
+- Format code: `make format`
 
 ## Environment files (`.env`)
 

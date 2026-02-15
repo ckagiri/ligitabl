@@ -1,8 +1,8 @@
 # API Endpoints
 
-This document lists the HTTP endpoints exposed by the API. It is derived from the `@RestController` mappings under `api/src/main/java`.
+This document lists the HTTP endpoints exposed by the REST API. It is derived from the `@RestController` mappings under `api/src/main/java`.
 
-Base URL (local dev): `http://localhost:8080`
+Base URL (local dev): `http://localhost:8081`
 
 ## Public endpoints
 
@@ -12,8 +12,8 @@ Base URL (local dev): `http://localhost:8080`
 
 ### Auth
 
-- `POST /auth/login` — login (returns access token)
-- `POST /auth/register` — register a user (returns `{ publicId, email, displayName, roles }`)
+- `POST /api/auth/login` — login (returns access token)
+- `POST /api/auth/register` — register a user (returns `{ publicId, email, displayName, roles }`)
 
 ## Authenticated endpoints
 
@@ -50,7 +50,12 @@ Note: Getting by ID uses a query parameter (`id`) to avoid ambiguity with slug i
 ### Matches
 
 - `GET /api/competitions/{competitionSlug}/seasons/{seasonSlug}/rounds/{position}/matches` — matches for a given round
-- `GET /api/rounds/default/matches` — matches for the default competition’s current round
+- `GET /api/rounds/default/matches` — matches for the default competition's current round
+
+### Standings
+
+- `GET /api/rounds/current/standings` — standings for the default competition's current round
+- `GET /api/rounds/{roundPosition}/standings` — standings for a specific round position
 
 ### Season prediction
 
@@ -60,21 +65,48 @@ Note: Getting by ID uses a query parameter (`id`) to avoid ambiguity with slug i
 
 ### Leaderboard
 
-- `GET /api/contests/main/leaderboard?phase=Q2` — leaderboard for default competition’s main contest
+- `GET /api/contests/main/leaderboard?phase=Q2` — leaderboard for default competition's main contest
   - `phase` is optional; defaults to full season
 
 ## Admin endpoints
 
-- `POST /api/admin/rounds/default/finalize` — finalize the default competition’s current round (admin-only)
+All admin endpoints require `ADMIN` role.
+
+### Round management
+
+- `POST /api/admin/rounds/current/finalize` — finalize the default competition's current round
+
+### Match management
+
+- `GET /api/admin/rounds/{position}/matches/{matchSlug}` — get match admin details (available actions, current state)
+- `POST /api/admin/rounds/{position}/matches/{matchSlug}/transition` — transition match status (e.g., SCHEDULED -> LIVE -> FINISHED)
+  - Body: `{ "newStatus": "FINISHED", "reason": "Match completed", "score": { "homeGoals": 2, "awayGoals": 1 } }`
+- `POST /api/admin/rounds/{position}/matches/{matchSlug}/reschedule` — reschedule match to a different round
+  - Body: `{ "newRoundPosition": 25, "reason": "Weather postponement" }` (reason is optional)
+
+### Season setup
+
+- `POST /api/seasons/{seasonSlug}/setup-mode/enter` — enter setup mode (blocks predictions)
+- `POST /api/seasons/{seasonSlug}/setup-mode/leave` — leave setup mode (re-enables predictions)
 
 ## Example (curl)
 
 ```bash
 # 1) Login
-token=$(curl -s -X POST http://localhost:8080/auth/login \
+token=$(curl -s -X POST http://localhost:8081/api/auth/login \
   -H 'Content-Type: application/json' \
   -d '{"email":"you@example.com","password":"your-password"}' | jq -r .accessToken)
 
 # 2) Call an authenticated endpoint
-curl -s http://localhost:8080/api/me -H "Authorization: Bearer $token" | jq .
+curl -s http://localhost:8081/api/me -H "Authorization: Bearer $token" | jq .
+
+# 3) Admin: get match details
+curl -s http://localhost:8081/api/admin/rounds/22/matches/ars-vs-che \
+  -H "Authorization: Bearer $token" | jq .
+
+# 4) Admin: transition match status
+curl -s -X POST http://localhost:8081/api/admin/rounds/22/matches/ars-vs-che/transition \
+  -H 'Content-Type: application/json' \
+  -H "Authorization: Bearer $token" \
+  -d '{"newStatus":"FINISHED","reason":"Match completed","score":{"homeGoals":2,"awayGoals":1}}' | jq .
 ```
