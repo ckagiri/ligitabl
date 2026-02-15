@@ -187,7 +187,7 @@ Matches are in progress. Predictions are locked until results are finalized.
 
 ### 5. Scoring Banner (Yellow with Clock Icon)
 
-**Condition:** `isCurrentRound == true && (roundState == 'completed' || roundState == 'finalized') && seasonCompleted != true`
+**Condition:** `(isGuest == false || isGuest == null) && isCurrentRound == true && (roundState == 'completed' || roundState == 'finalized') && seasonCompleted != true`
 
 Replaces the old "Finalized State Banner" for non-season-end cases. Shows while matches are completed and scoring is in progress, or when a mid-season round is finalized (brief window before round advances).
 
