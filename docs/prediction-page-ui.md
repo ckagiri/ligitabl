@@ -24,7 +24,7 @@ This document explains the complex UI state management and banner logic for the 
 - Users must create an initial prediction during the Open or Locked state
 - After initial submission, users get ONE free swap (first swap bonus)
 - Subsequent swaps have a 24-hour cooldown
-- Predictions cannot be modified once round is finalized
+- Predictions cannot be modified once round is finalized and season is completed
 - Last round of season has special messaging
 
 ### First Swap Bonus
@@ -48,7 +48,7 @@ After using the first swap bonus or any subsequent swap:
 | `open` | Round is open for predictions | Create prediction, swap freely |
 | `locked` | Matches in progress | Create initial prediction only, first swap bonus available |
 | `completed` | Matches finished, scoring pending | Same as locked |
-| `finalized` | Results scored and published | Read-only, view scores |
+| `finalized` | Results scored and published | Read-only if season completed; otherwise brief transitional state (guests can still swap) |
 
 **State Indicator (shown in page header):**
 - 🟢 Open (green)
@@ -75,17 +75,19 @@ After using the first swap bonus or any subsequent swap:
 
 **Messages vary by round state:**
 
-- **Current Round + Open:**
+- **Current Round + Open/Finalized (editable states):**
   ```
   Guest Preview
   Tap teams to swap and preview your prediction! Sign up to save and join the competition.
   ```
+  Condition: `roundState == 'open' || (roundState == 'finalized' && seasonCompleted != true)`
+  Note: Finalized + season not completed is a brief transitional state before the round advances. Guest experience is the same as open.
 
 - **Current Round + Locked/Completed (not last round):**
   ```
   Guest Preview
-  👋 Matches In Progress - You can still arrange teams and preview your prediction!
-  Sign up to save it and join the competition.
+  👋 Matches In Progress - You can still tap teams to swap, and preview your prediction!
+  Sign up to save and join the competition.
   ```
 
 - **Current Round + Last Round + Locked/Completed:**
@@ -95,10 +97,10 @@ After using the first swap bonus or any subsequent swap:
   Sign up to join future competitions.
   ```
 
-- **Current Round + Finalized:**
+- **Current Round + Finalized (season completed):**
   ```
   Guest Preview
-  This round has been finalized. You can browse the results.
+  This season has completed. You can browse the results.
   Sign up to join future competitions.
   ```
 
@@ -115,11 +117,17 @@ After using the first swap bonus or any subsequent swap:
 
 Shows when authenticated user hasn't made initial prediction yet.
 
-**Message:**
-```
-✨ Ready to Predict! (or "Your Guest Prediction Imported!" if localStorage has guest prediction)
-Arrange teams in your predicted order, then submit to join the competition.
-```
+**Messages:**
+- **Guest prediction imported** (localStorage has guest prediction):
+  ```
+  Your Guest Prediction Imported!
+  We've loaded your prediction from when you were a guest. Review and submit to join the competition.
+  ```
+- **No guest prediction:**
+  ```
+  Ready to Predict!
+  Arrange teams in your predicted order. Make at least 1 swap to submit and join the competition.
+  ```
 
 ### 3. First Swap Bonus Banner (Green with Checkmark)
 
@@ -166,7 +174,7 @@ This is the final round. Matches are in progress and predictions are locked.
 **b) Initial Prediction Available (Blue):**
 ```
 👋 Matches In Progress
-You can still create your prediction! It will be scored next round.
+You can still make your prediction (at least 1 swap needed). It will be scored next round.
 ```
 - Shows when `canCreateEntry == true`
 
@@ -194,7 +202,7 @@ Replaces the old "Finalized State Banner" for non-season-end cases. Shows while 
 **Message:**
 ```
 ⏳ Scoring
-Scoring predictions, points will be available shortly.
+Scoring predictions. Points will be available shortly.
 ```
 
 ### 5b. Season Ended Banner (Blue with Document Icon)
@@ -362,7 +370,7 @@ Is user a guest?
 
 **Displays:**
 - ✅ Can Create Entry Banner (green): "Ready to Predict!"
-- ✅ Locked State Banner (blue): "👋 Matches In Progress - You can still create your prediction!"
+- ✅ Locked State Banner (blue): "👋 Matches In Progress - You can still make your prediction (at least 1 swap needed). It will be scored next round."
 - ✅ Interactive prediction table
 - ✅ Submit button
 
@@ -488,7 +496,7 @@ Is user a guest?
 - `seasonCompleted = false`
 
 **Displays:**
-- ✅ Scoring Banner (yellow): "⏳ Scoring - Scoring predictions, points will be available shortly."
+- ✅ Scoring Banner (yellow): "⏳ Scoring - Scoring predictions. Points will be available shortly."
 - ✅ Interactive table (season not completed)
 - ✅ Round navigation
 

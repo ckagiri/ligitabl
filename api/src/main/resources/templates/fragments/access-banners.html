@@ -60,8 +60,7 @@
           th:if="${isCurrentRound == true && (roundState == 'locked' || roundState == 'completed') && currentRound != lastRound}"
           class="text-sm text-yellow-700 mt-1"
         >
-          <strong>👋 Matches In Progress</strong> - You can still tap teams to
-          swap, and preview your prediction!
+          <strong>👋 Matches In Progress</strong> - Tap teams to swap and preview your prediction!
           <a
             th:href="@{/auth/register}"
             class="underline font-medium hover:text-yellow-900"
