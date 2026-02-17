@@ -144,7 +144,7 @@ message=[[${message}]]</pre
 
             <!-- Comparison Options for guests (only for current editable round, not historical views) -->
             <th:block
-              th:if="${isHistoricalView == false && (roundState == 'open' || roundState == 'locked')}"
+              th:if="${isHistoricalView == false && (roundState == 'open' || roundState == 'locked' || roundState == 'finalized')}"
             >
               <div
                 th:replace="~{fragments/prediction-table :: comparison-options}"
@@ -210,7 +210,7 @@ message=[[${message}]]</pre
 
             <!-- Comparison Options (only for current editable round, not historical views) -->
             <th:block
-              th:if="${isHistoricalView == false && (isUserNotFound == false || isUserNotFound == null) && (roundState == 'open' || roundState == 'locked')}"
+              th:if="${isHistoricalView == false && (isUserNotFound == false || isUserNotFound == null) && (roundState == 'open' || roundState == 'locked' || roundState == 'finalized')}"
             >
               <div
                 th:replace="~{fragments/prediction-table :: comparison-options}"
