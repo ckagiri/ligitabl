@@ -6,7 +6,7 @@
      isUserNotFound: Boolean - requested user not found
      swapStatus: SwapStatus object (can be null)
      isCurrentRound: Boolean - viewing current round
-     roundState: String - 'open', 'locked', or 'completed'
+     roundState: String - 'open', 'locked', 'completed', or 'finalized'
      message: String - contextual message
      totalScore: Integer (can be null) - score for finalized rounds
      viewingRound: Integer - the round being viewed
@@ -41,9 +41,9 @@
       <div>
         <p class="text-sm font-medium text-yellow-800">Guest Preview</p>
 
-        <!-- Current round + open -->
+        <!-- Current round + open/finalized (editable states) -->
         <p
-          th:if="${isCurrentRound == true && roundState == 'open'}"
+          th:if="${isCurrentRound == true && (roundState == 'open' || (roundState == 'finalized' && seasonCompleted != true))}"
           class="text-sm text-yellow-700 mt-1"
         >
           Tap teams to swap and preview your prediction!
@@ -60,14 +60,13 @@
           th:if="${isCurrentRound == true && (roundState == 'locked' || roundState == 'completed') && currentRound != lastRound}"
           class="text-sm text-yellow-700 mt-1"
         >
-          <strong>👋 Matches In Progress</strong> - You can still arrange teams
-          and preview your prediction!
+          <strong>👋 Matches In Progress</strong> - Tap teams to swap and preview your prediction!
           <a
             th:href="@{/auth/register}"
             class="underline font-medium hover:text-yellow-900"
             >Sign up</a
           >
-          to save it and join the competition.
+          to save and join the competition.
         </p>
 
         <!-- Current round + last round + locked -->
@@ -85,12 +84,12 @@
           to join future competitions.
         </p>
 
-        <!-- Current round + finalized -->
+        <!-- Current round + finalized (season completed) -->
         <p
-          th:if="${isCurrentRound == true && roundState == 'finalized'}"
+          th:if="${isCurrentRound == true && roundState == 'finalized' && seasonCompleted == true}"
           class="text-sm text-yellow-700 mt-1"
         >
-          This round has been finalized. You can browse the results.
+          This season has completed. You can browse the results.
           <a
             th:href="@{/auth/register}"
             class="underline font-medium hover:text-yellow-900"
@@ -119,7 +118,7 @@
 
   <!-- Can Create Entry Banner -->
   <div
-    th:if="${canCreateEntry}"
+    th:if="${canCreateEntry == true}"
     x-data="{ imported: false }"
     x-init="imported = localStorage.getItem('ligitabl.guestPrediction') !== null"
     class="bg-green-50 border border-green-200 rounded-lg p-4"
@@ -141,15 +140,14 @@
           <span x-show="imported">Your Guest Prediction Imported!</span>
           <span x-show="!imported">Ready to Predict!</span>
         </p>
-        <p class="text-sm text-green-700 mt-1">
+        <span class="text-sm text-green-700 mt-1">
           <span x-show="imported"
             >We've loaded your prediction from when you were a guest. Review and
             submit to join the competition.</span
           >
           <span x-show="!imported" th:text="${message}"
-            >Arrange teams in your predicted order, then submit to join the
-            competition.</span
-          >
+          >Arrange teams in your predicted order. Make at least 1 swap to submit
+          and join the competition.</span>
         </p>
       </div>
     </div>
@@ -157,7 +155,7 @@
 
   <!-- Viewing Other User Banner -->
   <div
-    th:if="${isViewingOther}"
+    th:if="${isViewingOther == true}"
     class="bg-blue-50 border border-blue-200 rounded-lg p-4"
   >
     <div class="flex items-start">
@@ -183,7 +181,7 @@
 
   <!-- User Not Found Banner -->
   <div
-    th:if="${isUserNotFound}"
+    th:if="${isUserNotFound == true}"
     class="bg-red-50 border border-red-200 rounded-lg p-4"
   >
     <div class="flex items-start">
@@ -285,7 +283,7 @@
             👋 Matches In Progress
           </p>
           <p class="text-sm text-blue-700 mt-1">
-            You can still create your prediction! It will be scored next round.
+            You can still make your prediction (at least 1 swap needed). It will be scored next round.
           </p>
         </th:block>
 
@@ -335,7 +333,7 @@
       <div>
         <p class="text-sm font-medium text-yellow-800">⏳ Scoring</p>
         <p class="text-sm text-yellow-700 mt-1">
-          Scoring predictions, points will be available shortly.
+          Scoring predictions. Points will be available shortly.
         </p>
       </div>
     </div>
@@ -411,14 +409,14 @@
     class="inline-flex items-center gap-2 text-sm"
   >
     <span
-      th:if="${isCurrentRound && canSwap && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))}"
+      th:if="${isCurrentRound == true && canSwap == true && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))}"
       class="flex items-center gap-1.5 text-green-600 font-medium"
     >
       <span class="w-2 h-2 bg-green-600 rounded-full"></span>
       Ready to modify
     </span>
     <span
-      th:if="${isCurrentRound && !canSwap && swapStatus != null && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))}"
+      th:if="${isCurrentRound == true && canSwap == false && swapStatus != null && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))}"
       class="flex items-center gap-1.5 text-yellow-600 font-medium"
     >
       <span class="w-2 h-2 bg-yellow-600 rounded-full"></span>

@@ -40,7 +40,7 @@
           <div class="mt-4">
             <p class="text-indigo-100 text-sm mb-2">Already have an account?</p>
             <a
-              th:href="@{/predictions/user/me}"
+              th:href="${predictionsNavLink} ?: '/predictions/user/guest'"
               class="inline-flex items-center gap-2 text-white hover:text-indigo-100 font-medium text-base underline decoration-2 underline-offset-4 transition group"
             >
               Go to My Predictions

@@ -34,7 +34,7 @@ window.Ligitabl._parseDataAttributes = function (el) {
 };
 
 // Shared base for predictionPage and guestPredictionPage
-window.Ligitabl._predictionBase = function (parsed) {
+window.Ligitabl._predictionBase = function (parsed, opts = {}) {
     return {
         teams: [],
         originalTeams: [],
@@ -42,7 +42,7 @@ window.Ligitabl._predictionBase = function (parsed) {
         alwaysHoverable: false,
         showStandings: false,
         showFixtures: false,
-        showPoints: false,
+        showPoints: opts.showPoints ?? false,
         currentStandings: parsed.currentStandings,
         fixtures: parsed.fixtures,
         currentPoints: parsed.currentPoints,
@@ -240,7 +240,7 @@ window.Ligitabl.predictionPage = function (el) {
         };
     });
 
-    const base = Ligitabl._predictionBase(parsed);
+    const base = Ligitabl._predictionBase(parsed, { showPoints: true });
 
     return Object.assign(base, {
         canSwap,
