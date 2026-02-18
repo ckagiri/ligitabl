@@ -121,6 +121,7 @@
     th:if="${canCreateEntry == true}"
     x-data="{ imported: false }"
     x-init="imported = localStorage.getItem('ligitabl.guestPrediction') !== null"
+    @guest-storage-cleared.window="imported = false"
     class="bg-green-50 border border-green-200 rounded-lg p-4"
   >
     <div class="flex items-start">
@@ -145,7 +146,7 @@
             >We've loaded your prediction from when you were a guest. Review and
             submit to join the competition.</span
           >
-          <span x-show="!imported" th:text="${message}"
+          <span x-show="!imported"
           >Arrange teams in your predicted order. Make at least 1 swap to submit
           and join the competition.</span>
         </p>
@@ -331,10 +332,18 @@
         />
       </svg>
       <div>
-        <p class="text-sm font-medium text-yellow-800">⏳ Scoring</p>
-        <p class="text-sm text-yellow-700 mt-1">
-          Scoring predictions. Points will be available shortly.
-        </p>
+        <th:block th:if="${canCreateEntry != true}">
+          <p class="text-sm font-medium text-yellow-800">⏳ Scoring</p>
+          <p class="text-sm text-yellow-700 mt-1">
+            Scoring predictions. Points will be available shortly.
+          </p>
+        </th:block>
+        <th:block th:if="${canCreateEntry == true && currentRound != lastRound}">
+          <p class="text-sm font-medium text-yellow-800">⏳ Scoring predictions</p>
+          <p class="text-sm text-yellow-700 mt-1">
+            You can still make your prediction (at least 1 swap needed). It will be scored next round.
+          </p>
+        </th:block>
       </div>
     </div>
   </div>

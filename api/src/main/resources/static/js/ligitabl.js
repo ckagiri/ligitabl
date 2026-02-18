@@ -368,6 +368,7 @@ window.Ligitabl.predictionPage = function (el) {
             if (this.importedFromGuest) {
                 clearGuestStorage();
                 this.importedFromGuest = false;
+                window.dispatchEvent(new CustomEvent('guest-storage-cleared'));
             }
         },
 
