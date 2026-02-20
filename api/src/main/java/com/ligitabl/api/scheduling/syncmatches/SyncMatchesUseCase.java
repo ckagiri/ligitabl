@@ -6,6 +6,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -38,6 +39,7 @@ public class SyncMatchesUseCase {
     private final MatchRepo matchRepo;
     private final AsyncStandingsService standingsService;
     private final CompetitionDefaults competitionDefaults;
+    private final LiveMatchTracker liveMatchTracker;
 
     @Value("${football-data.competition.code}")
     private String competitionCode;
@@ -55,6 +57,7 @@ public class SyncMatchesUseCase {
         log.info("Starting match synchronization for competition: {}", competitionCode);
 
         return resolveHierarchy()
+                .map(this::updateTracking) // Track live match transitions
                 .flatMap(this::determineAndFetchMatches) // Smart endpoint selection
                 .flatMap(this::updateMatches)
                 .flatMap(this::recalculateStandings)
@@ -69,26 +72,77 @@ public class SyncMatchesUseCase {
                 .mapLeft(error -> (SyncMatchesError) new SyncMatchesError.HierarchyError(error))
                 .map(ctx -> {
                     var existingMatches = matchRepo.findByRoundId(ctx.round().getId());
-                    return new RoundContext(ctx.season(), ctx.round(), existingMatches);
+                    return new RoundContext(ctx.season(), ctx.round(), existingMatches, null);
                 });
     }
 
     /**
-     * Determines which API endpoint to use based on current match state.
+     * Update live match tracking before fetching new data.
+     */
+    private RoundContext updateTracking(RoundContext context) {
+        var trackingResult = liveMatchTracker.updateTracking(context.existingMatches());
+
+        log.debug("Tracking state: hasLive={}, finished={}, started={}",
+                trackingResult.hasLive(),
+                trackingResult.finishedMatches().size(),
+                trackingResult.startedMatches().size());
+
+        return new RoundContext(
+                context.season(),
+                context.round(),
+                context.existingMatches(),
+                trackingResult
+        );
+    }
+
+    /**
+     * Determines which API endpoint to use based on tracking state and match timing.
      */
     private Either<SyncMatchesError, FetchedMatchData> determineAndFetchMatches(RoundContext context) {
-
         var existingMatches = context.existingMatches();
+        var trackingResult = context.trackingResult();
 
-        // Strategy 1: Check for LIVE matches first
-        boolean hasLive = existingMatches.stream().anyMatch(m -> m.getStatus() == MatchStatus.LIVE);
-
-        if (hasLive) {
-            log.debug("Live matches detected - using LIVE endpoint");
-            return fetchLiveMatches(context);
+        // Strategy 1: Live match just finished - MUST fetch TODAY to get final state
+        if (trackingResult != null && trackingResult.needsTodayFetch()) {
+            log.info("Live match finished - fetching TODAY to capture final state");
+            return fetchTodayMatches(context);
         }
 
-        // Strategy 2: Check for imminent/soon kickoffs (today only)
+        // Strategy 2: Matches currently live - fetch LIVE endpoint with validation.
+        // Falls back to TODAY if DB-tracked live matches are missing from the API response,
+        // which catches stale LIVE status after a restart and race conditions where a match
+        // finishes between the DB read and the API call.
+        if (trackingResult != null && trackingResult.hasLive()) {
+            log.debug("Live matches in progress - using LIVE endpoint with validation");
+
+            var dbLiveMatchIds = existingMatches.stream()
+                    .filter(m -> m.getStatus() == MatchStatus.LIVE)
+                    .map(Match::getClientId)
+                    .filter(id -> id != null)
+                    .map(String::valueOf)
+                    .collect(Collectors.toSet());
+
+            return fetchLiveMatches(context)
+                    .flatMap(fetchedData -> {
+                        var apiLiveMatchIds = fetchedData.matches().stream()
+                                .map(m -> m.id().toString())
+                                .collect(Collectors.toSet());
+
+                        var missingMatches = dbLiveMatchIds.stream()
+                                .filter(id -> !apiLiveMatchIds.contains(id))
+                                .collect(Collectors.toSet());
+
+                        if (!missingMatches.isEmpty()) {
+                            log.warn("DB has {} LIVE matches not in API response - fetching YESTERDAY+TODAY: {}",
+                                    missingMatches.size(), missingMatches);
+                            return fetchYesterdayAndTodayMatches(context);
+                        }
+
+                        return Either.right(fetchedData);
+                    });
+        }
+
+        // Strategy 3: Check for imminent/soon kickoffs
         var nextKickoff = existingMatches.stream()
                 .filter(m -> m.getStatus() == MatchStatus.SCHEDULED)
                 .map(Match::getKickOff)
@@ -99,20 +153,18 @@ public class SyncMatchesUseCase {
             var minutesUntilKickoff =
                     Duration.between(OffsetDateTime.now(), nextKickoff.get()).toMinutes();
 
-            // Imminent (≤10 min) or Soon (≤60 min) - check TODAY only
             if (minutesUntilKickoff <= 60) {
                 log.debug("Kickoff in {} minutes - using TODAY endpoint", minutesUntilKickoff);
                 return fetchTodayMatches(context);
             }
 
-            // Later today (< 6 hours) - still check TODAY only
             if (minutesUntilKickoff < 360) {
                 log.debug("Kickoff in {} hours - using TODAY endpoint", minutesUntilKickoff / 60);
                 return fetchTodayMatches(context);
             }
         }
 
-        // Strategy 3: Default - check today + tomorrow (lookahead)
+        // Strategy 4: Default - check today + tomorrow
         log.debug("No imminent matches - using DATE RANGE endpoint (today + tomorrow)");
         return fetchUpcomingMatches(context);
     }
@@ -135,6 +187,21 @@ public class SyncMatchesUseCase {
 
         return footballDataClient
                 .getMatchesForDate(competitionCode, today)
+                .mapLeft(error -> (SyncMatchesError) new SyncMatchesError.DataAccessError(error))
+                .map(response -> new FetchedMatchData(context, response.matches()));
+    }
+
+    /**
+     * Fetch via GET /matches?dateFrom=2daysAgo&dateTo=today
+     * Used when DB-tracked live matches are missing from the LIVE endpoint response,
+     * covering matches that finished past midnight or were processed a day late.
+     */
+    private Either<SyncMatchesError, FetchedMatchData> fetchYesterdayAndTodayMatches(RoundContext context) {
+        var yesterday = LocalDate.now().minusDays(2);
+        var today = LocalDate.now();
+
+        return footballDataClient
+                .getMatchesInDateRange(competitionCode, yesterday, today)
                 .mapLeft(error -> (SyncMatchesError) new SyncMatchesError.DataAccessError(error))
                 .map(response -> new FetchedMatchData(context, response.matches()));
     }
@@ -373,7 +440,12 @@ public class SyncMatchesUseCase {
         };
     }
 
-    private record RoundContext(Season season, Round round, List<Match> existingMatches) {}
+    private record RoundContext(
+            Season season,
+            Round round,
+            List<Match> existingMatches,
+            LiveMatchTracker.TrackingResult trackingResult
+    ) {}
 
     private record FetchedMatchData(RoundContext roundContext, List<MatchDto> matches) {}
 

@@ -9,7 +9,6 @@ import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundUseCase;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.repo.RoundRepo;
-import com.ligitabl.model.repo.RoundSubmissionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -22,7 +21,6 @@ public class TriggerRoundFinalizationUseCase {
 
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
-    private final RoundSubmissionRepo roundSubmissionRepo;
     private final FinalizeRoundUseCase finalizeRoundUseCase;
 
     public record TriggerFinalizationCommand(String competitionCode) {}
@@ -44,25 +42,7 @@ public class TriggerRoundFinalizationUseCase {
 
         log.info("Checking if round can be finalized for competition: {}", command.competitionCode());
 
-        return getActiveSeasonAndRound(command.competitionCode()).flatMap(context -> {
-            UUID seasonId = context.round().getSeasonId();
-            int roundPosition = context.round().getPosition();
-
-            if (!roundSubmissionRepo.existsByRound(seasonId, roundPosition)) {
-                log.info(
-                        "Skipping finalization: no round submissions for seasonId={} roundPosition={}",
-                        seasonId,
-                        roundPosition);
-                return Either.right(new TriggerFinalizationResult(
-                        context.round().getId(),
-                        roundPosition,
-                        false,
-                        false,
-                        "No submissions for round; skipping finalization"));
-            }
-
-            return executeFinalization(context);
-        });
+        return getActiveSeasonAndRound(command.competitionCode()).flatMap(this::executeFinalization);
     }
 
     private Either<TriggerFinalizationError, RoundContext> getActiveSeasonAndRound(String competitionCode) {
