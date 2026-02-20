@@ -12,6 +12,7 @@ import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +28,7 @@ import com.ligitabl.api.client.footballdata.MatchesResponse;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.scheduling.syncmatches.AsyncStandingsService;
+import com.ligitabl.api.scheduling.syncmatches.LiveMatchTracker;
 import com.ligitabl.api.scheduling.syncmatches.SyncMatchesUseCase;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
@@ -58,6 +60,9 @@ class SyncMatchesUseCaseTest {
     @Mock
     private AsyncStandingsService standingsService;
 
+    @Mock
+    private LiveMatchTracker liveMatchTracker;
+
     private SyncMatchesUseCase useCase;
 
     private UUID seasonId;
@@ -75,7 +80,11 @@ class SyncMatchesUseCaseTest {
                 hierarchyValidator,
                 matchRepo,
                 standingsService,
-                new CompetitionDefaults(COMPETITION_SLUG));
+                new CompetitionDefaults(COMPETITION_SLUG),
+                liveMatchTracker);
+
+        when(liveMatchTracker.updateTracking(any()))
+                .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
 
         var field = SyncMatchesUseCase.class.getDeclaredField("competitionCode");
         field.setAccessible(true);
