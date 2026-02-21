@@ -189,13 +189,14 @@ public class SyncMatchesUseCase {
     }
 
     /**
-     * Fetch via GET /matches?dateFrom=2daysAgo&dateTo=today
+     * Fetch via GET /matches?dateFrom=2daysAgo&dateTo=tomorrow
+     * dateTo is exclusive, so tomorrow is needed to include today's matches.
      * Used when DB-tracked live matches are missing from the LIVE endpoint response,
      * covering matches that finished past midnight or were processed a day late.
      */
     private Either<SyncMatchesError, FetchedMatchData> fetchYesterdayAndTodayMatches(RoundContext context) {
         var yesterday = LocalDate.now().minusDays(2);
-        var today = LocalDate.now();
+        var today = LocalDate.now().plusDays(1);
 
         return footballDataClient
                 .getMatchesInDateRange(competitionCode, yesterday, today)
