@@ -181,7 +181,6 @@ public class MakeSwapUseCase {
         // Update prediction
         prediction.setCurrentRankings(updatedRankings);
         prediction.addSwap(targetRound.getPosition(), change);
-        prediction.setAtRoundNumber(targetRound.getPosition());
         prediction.setLastSwapAt(now);
 
         SeasonPrediction saved = predictionRepo.save(prediction);

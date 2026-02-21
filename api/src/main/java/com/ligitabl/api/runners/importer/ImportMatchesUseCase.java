@@ -227,8 +227,7 @@ public class ImportMatchesUseCase {
         Optional<Round> cached = context.roundCacheBySeasonAndPosition.computeIfAbsent(
                 cacheKey, k -> roundRepo.findBySeasonIdAndPosition(seasonId, matchday));
         return Either.ofOptional(
-                cached,
-                () -> DatabaseError.notFound("Round", "seasonId=" + seasonId + ", matchday=" + matchday));
+                cached, () -> DatabaseError.notFound("Round", "seasonId=" + seasonId + ", matchday=" + matchday));
     }
 
     /**
@@ -297,8 +296,11 @@ public class ImportMatchesUseCase {
             if (existing.isPresent()) {
                 Match db = existing.get();
                 if (isAdminRescheduled(db, context)) {
-                    log.debug("Skipping admin-rescheduled match {} (matchday={}, roundId={})",
-                            slug, db.getMatchday(), db.getRoundId());
+                    log.debug(
+                            "Skipping admin-rescheduled match {} (matchday={}, roundId={})",
+                            slug,
+                            db.getMatchday(),
+                            db.getRoundId());
                     return right(MatchImportResult.unchanged(externalId, slug));
                 }
                 if (!hasChanged(db, match)) {
@@ -317,8 +319,7 @@ public class ImportMatchesUseCase {
     }
 
     private boolean isAdminRescheduled(Match db, ImportContext context) {
-        Optional<Round> round = context.roundCacheById.computeIfAbsent(
-                db.getRoundId(), roundRepo::findById);
+        Optional<Round> round = context.roundCacheById.computeIfAbsent(db.getRoundId(), roundRepo::findById);
         return round.map(r -> r.getPosition() != db.getMatchday()).orElse(false);
     }
 
@@ -345,7 +346,8 @@ public class ImportMatchesUseCase {
         final Map<UUID, Optional<Round>> roundCacheById = new HashMap<>();
         final Map<String, Optional<Round>> roundCacheBySeasonAndPosition = new HashMap<>();
 
-        ImportContext(CompetitionCode competitionCode, Season season, Integer currentMatchday, List<ExternalMatch> matches) {
+        ImportContext(
+                CompetitionCode competitionCode, Season season, Integer currentMatchday, List<ExternalMatch> matches) {
             this.competitionCode = competitionCode;
             this.season = season;
             this.currentMatchday = currentMatchday;

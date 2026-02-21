@@ -34,29 +34,19 @@ public class LiveMatchTracker {
                 .collect(Collectors.toSet());
 
         if (!finishedMatches.isEmpty()) {
-            log.info("Detected {} matches transitioning from LIVE: {}",
-                    finishedMatches.size(), finishedMatches);
+            log.info("Detected {} matches transitioning from LIVE: {}", finishedMatches.size(), finishedMatches);
         }
 
         if (!startedMatches.isEmpty()) {
-            log.info("Detected {} new LIVE matches: {}",
-                    startedMatches.size(), startedMatches);
+            log.info("Detected {} new LIVE matches: {}", startedMatches.size(), startedMatches);
         }
 
         currentLiveMatches = newLiveMatches;
 
-        return new TrackingResult(
-                !newLiveMatches.isEmpty(),
-                finishedMatches,
-                startedMatches
-        );
+        return new TrackingResult(!newLiveMatches.isEmpty(), finishedMatches, startedMatches);
     }
 
-    public record TrackingResult(
-            boolean hasLive,
-            Set<UUID> finishedMatches,
-            Set<UUID> startedMatches
-    ) {
+    public record TrackingResult(boolean hasLive, Set<UUID> finishedMatches, Set<UUID> startedMatches) {
         public boolean needsTodayFetch() {
             return !finishedMatches.isEmpty();
         }
