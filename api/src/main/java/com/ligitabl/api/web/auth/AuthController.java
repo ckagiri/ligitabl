@@ -9,6 +9,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -37,6 +38,7 @@ import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.UserRepo;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
@@ -56,6 +58,7 @@ public class AuthController {
     private final PasswordHasher passwordHasher;
     private final SeasonRepo seasonRepo;
     private final CompetitionDefaults competitionDefaults;
+    private final RememberMeServices rememberMeServices;
 
     @GetMapping("/register")
     public String showRegisterForm(Model model, HttpServletRequest request) {
@@ -143,7 +146,8 @@ public class AuthController {
             BindingResult bindingResult,
             RedirectAttributes redirectAttributes,
             Model model,
-            HttpServletRequest request) {
+            HttpServletRequest request,
+            HttpServletResponse response) {
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("pageTitle", "Login");
@@ -166,13 +170,15 @@ public class AuthController {
                 return "auth/login";
             }
 
-            authenticateUser(
+            var authentication = authenticateUser(
                     user.getId(),
                     user.getPublicId().value(),
                     user.getEmail().value(),
                     user.getDisplayName(),
                     user.getRoles(),
                     request);
+
+            rememberMeServices.loginSuccess(request, response, authentication);
 
             UUID mainContestId = getActiveSeason().getMainContestId();
             if (mainContestId != null && contestRepo.existsByUserAndContest(user.getId(), mainContestId)) {
@@ -246,7 +252,7 @@ public class AuthController {
     /**
      * Helper method to authenticate a user and create a session
      */
-    private void authenticateUser(
+    private Authentication authenticateUser(
             UUID userId,
             String publicId,
             String email,
@@ -268,6 +274,8 @@ public class AuthController {
         HttpSession session = request.getSession(true);
         session.setAttribute(
                 HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
+
+        return authentication;
     }
 
     private Season getActiveSeason() {

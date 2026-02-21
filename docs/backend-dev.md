@@ -89,11 +89,23 @@ This app has **two security flows**:
 
 ### Remember-me
 
-The login form has a “Remember me” checkbox and is now wired to Spring Security’s remember-me support.
+The login form has a “Remember me” checkbox wired to Spring Security’s `TokenBasedRememberMeServices`.
 
-Configuration (see `application.yml`):
+#### Why custom wiring was needed
 
-- `ligitabl.security.remember-me.key` — signing key for the remember-me cookie
+Login is handled by a **custom controller** (`AuthController.@PostMapping(“/auth/login”)`) rather than Spring Security’s native form login processing URL (`/auth/login/process`). This means the remember-me cookie is **not** set automatically after login — the filter chain never sees a successful form login event.
+
+To make it work, `RememberMeServices` is exposed as a shared `@Bean` in `SecurityConfig` and injected into `AuthController`. After `authenticateUser()` sets the session, the controller explicitly calls:
+
+```java
+rememberMeServices.loginSuccess(request, response, authentication);
+```
+
+`TokenBasedRememberMeServices` reads the `remember-me` request parameter internally and only sets the cookie if the checkbox was checked.
+
+#### Configuration (see `application.yml`)
+
+- `ligitabl.security.remember-me.key` — signing key for the remember-me cookie (SHA256)
 - `ligitabl.security.remember-me.token-validity-seconds` — cookie lifespan (default 14 days)
 
 Defaults are **dev-safe** and must be overridden in production using env vars:

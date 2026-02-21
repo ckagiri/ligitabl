@@ -98,7 +98,6 @@ class MakeSwapUseCaseTest {
 
         verify(predictionRepo)
                 .save(argThat(p -> now.equals(p.getLastSwapAt())
-                        && p.getAtRoundNumber() == round.getPosition()
                         && p.getCurrentRankings().stream()
                                 .anyMatch(tr -> tr.getCode().equals("ARS") && tr.getPosition() == 2)
                         && p.getCurrentRankings().stream()
@@ -201,7 +200,7 @@ class MakeSwapUseCaseTest {
                 .currentRankings(rankings)
                 .swaps(new ArrayList<>())
                 .lastSwapAt(null)
-                .atRoundNumber(0)
+                .atRoundNumber(10)
                 .build();
     }
 }

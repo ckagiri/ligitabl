@@ -82,17 +82,13 @@ public class SyncMatchesUseCase {
     private RoundContext updateTracking(RoundContext context) {
         var trackingResult = liveMatchTracker.updateTracking(context.existingMatches());
 
-        log.debug("Tracking state: hasLive={}, finished={}, started={}",
+        log.debug(
+                "Tracking state: hasLive={}, finished={}, started={}",
                 trackingResult.hasLive(),
                 trackingResult.finishedMatches().size(),
                 trackingResult.startedMatches().size());
 
-        return new RoundContext(
-                context.season(),
-                context.round(),
-                context.existingMatches(),
-                trackingResult
-        );
+        return new RoundContext(context.season(), context.round(), context.existingMatches(), trackingResult);
     }
 
     /**
@@ -122,24 +118,25 @@ public class SyncMatchesUseCase {
                     .map(String::valueOf)
                     .collect(Collectors.toSet());
 
-            return fetchLiveMatches(context)
-                    .flatMap(fetchedData -> {
-                        var apiLiveMatchIds = fetchedData.matches().stream()
-                                .map(m -> m.id().toString())
-                                .collect(Collectors.toSet());
+            return fetchLiveMatches(context).flatMap(fetchedData -> {
+                var apiLiveMatchIds = fetchedData.matches().stream()
+                        .map(m -> m.id().toString())
+                        .collect(Collectors.toSet());
 
-                        var missingMatches = dbLiveMatchIds.stream()
-                                .filter(id -> !apiLiveMatchIds.contains(id))
-                                .collect(Collectors.toSet());
+                var missingMatches = dbLiveMatchIds.stream()
+                        .filter(id -> !apiLiveMatchIds.contains(id))
+                        .collect(Collectors.toSet());
 
-                        if (!missingMatches.isEmpty()) {
-                            log.warn("DB has {} LIVE matches not in API response - fetching YESTERDAY+TODAY: {}",
-                                    missingMatches.size(), missingMatches);
-                            return fetchYesterdayAndTodayMatches(context);
-                        }
+                if (!missingMatches.isEmpty()) {
+                    log.warn(
+                            "DB has {} LIVE matches not in API response - fetching YESTERDAY+TODAY: {}",
+                            missingMatches.size(),
+                            missingMatches);
+                    return fetchYesterdayAndTodayMatches(context);
+                }
 
-                        return Either.right(fetchedData);
-                    });
+                return Either.right(fetchedData);
+            });
         }
 
         // Strategy 3: Check for imminent/soon kickoffs
@@ -441,11 +438,7 @@ public class SyncMatchesUseCase {
     }
 
     private record RoundContext(
-            Season season,
-            Round round,
-            List<Match> existingMatches,
-            LiveMatchTracker.TrackingResult trackingResult
-    ) {}
+            Season season, Round round, List<Match> existingMatches, LiveMatchTracker.TrackingResult trackingResult) {}
 
     private record FetchedMatchData(RoundContext roundContext, List<MatchDto> matches) {}
 

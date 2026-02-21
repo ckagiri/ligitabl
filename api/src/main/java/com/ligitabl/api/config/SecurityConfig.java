@@ -22,7 +22,9 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 
 import com.ligitabl.api.auth.security.JwtAuthenticationFilter;
 import com.ligitabl.api.auth.security.TokenGenerator;
@@ -111,15 +113,28 @@ public class SecurityConfig {
      * Uses session-based form login authentication
      */
     @Bean
+    public RememberMeServices rememberMeServices(
+            @Qualifier("webUserDetailsService") UserDetailsService userDetailsService) {
+        var services = new TokenBasedRememberMeServices(
+                rememberMeKey, userDetailsService, TokenBasedRememberMeServices.RememberMeTokenAlgorithm.SHA256);
+        services.setParameter("remember-me");
+        services.setTokenValiditySeconds(rememberMeTokenValiditySeconds);
+        return services;
+    }
+
+    @Bean
     @Order(2)
     public SecurityFilterChain webSecurityFilterChain(
-            HttpSecurity http, @Qualifier("webUserDetailsService") UserDetailsService userDetailsService)
+            HttpSecurity http,
+            @Qualifier("webUserDetailsService") UserDetailsService userDetailsService,
+            RememberMeServices rememberMeServices)
             throws Exception {
         http.csrf(csrf -> csrf.ignoringRequestMatchers(
                         "/seasonprediction",
                         "/seasonprediction/**",
                         "/leaderboard/user/modal",
                         "/auth/login",
+                        "/auth/login/process",
                         "/auth/register")) // Allow HTMX + auth forms without CSRF
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 "/",
@@ -154,10 +169,7 @@ public class SecurityConfig {
                         .loginProcessingUrl("/auth/login/process")
                         .defaultSuccessUrl("/predictions/user/me", true)
                         .permitAll())
-                .rememberMe(remember -> remember.key(rememberMeKey)
-                        .rememberMeParameter("remember-me")
-                        .tokenValiditySeconds(rememberMeTokenValiditySeconds)
-                        .userDetailsService(userDetailsService))
+                .rememberMe(remember -> remember.rememberMeServices(rememberMeServices))
                 .logout(logout -> logout.logoutUrl("/auth/logout")
                         .logoutSuccessUrl("/")
                         .invalidateHttpSession(true)
