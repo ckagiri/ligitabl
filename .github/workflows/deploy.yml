@@ -261,9 +261,16 @@ jobs:
           java-version: "21"
           cache: "maven"
 
+      - name: Install parent POM and jooq-codegen to local Maven repo
+        run: |
+          mvn -q -DskipTests -N install -B
+          mvn -q -DskipTests -pl jooq-codegen install -B
+
       - name: Build seed JAR
         run: |
-          mvn -q -pl seed -am -DskipTests package -B
+          # -Pno-jooq excludes model/infra/** (the only classes that import jOOQ-generated
+          # types). The seed module only needs domain entities, so this is safe.
+          mvn -q -pl seed -am -DskipTests package -B -Pno-jooq
           # Rename to a predictable filename for SCP
           cp seed/target/ligitabl-seed-*.jar seed-setup.jar
 
