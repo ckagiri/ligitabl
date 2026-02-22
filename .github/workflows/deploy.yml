@@ -22,10 +22,32 @@ env:
 jobs:
   # ============================================================
   # 1. Tests — runs on every push and PR
+  #
+  #  jOOQ codegen is skipped by default (jooq.codegen.skip=true in model/pom.xml).
+  #  Generated sources are NOT committed, so CI must:
+  #    1. Start a Postgres service container
+  #    2. Run Liquibase to build the schema
+  #    3. Run Maven with -Pwith-jooq so codegen fires in generate-sources
+  #  API integration tests use their own Testcontainers DB and are unaffected.
   # ============================================================
   test:
     name: Run Tests
     runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ligitabl_ci
+          POSTGRES_USER: ligitabl
+          POSTGRES_PASSWORD: ligitabl
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout code
@@ -38,10 +60,21 @@ jobs:
           java-version: "21"
           cache: "maven"
 
+      - name: Run Liquibase migrations (schema required for jOOQ codegen)
+        run: |
+          mvn -q -Pliquibase -DskipTests -f model/pom.xml \
+            -DDB_HOST=localhost -DDB_PORT=5432 \
+            -DDB_NAME=ligitabl_ci -DDB_USER=ligitabl -DDB_PASSWORD=ligitabl \
+            liquibase:update
+
       - name: Run tests
         run: |
-          # Testcontainers handles DB, Liquibase, and jOOQ codegen automatically
-          mvn -pl api -am clean test -B
+          # -Pwith-jooq enables codegen in generate-sources phase against the service container
+          # API integration tests launch their own Testcontainers DB independently
+          mvn -pl api -am clean test -B \
+            -Pwith-jooq \
+            -DDB_HOST=localhost -DDB_PORT=5432 \
+            -DDB_NAME=ligitabl_ci -DDB_USER=ligitabl -DDB_PASSWORD=ligitabl
 
       - name: Upload test results
         if: always()
