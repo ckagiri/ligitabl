@@ -15,16 +15,32 @@ COPY model/pom.xml model/
 COPY jooq-codegen/pom.xml jooq-codegen/
 COPY seed/pom.xml seed/
 
-# Download dependencies (cached layer — only re-runs when pom files change)
+# Install parent POM to local Maven repo (needed so jooq-codegen's artifact
+# descriptor can be resolved — it references the parent as a SNAPSHOT POM)
+RUN ./mvnw -q -DskipTests -N install -B
+
+# Copy and install jooq-codegen source before dependency:go-offline.
+# It is a plugin *dependency* of the model module's jooq-codegen-maven plugin.
+# Maven resolves plugin deps from the local repo, not the reactor, so it must
+# be installed here or dependency:go-offline will fail to resolve it.
+COPY jooq-codegen/src jooq-codegen/src
+RUN ./mvnw -q -DskipTests -pl jooq-codegen install -B
+
+# Download remaining dependencies (cached layer — only re-runs when pom files change)
 RUN ./mvnw dependency:go-offline -B
 
-# Copy source code
+# Copy application source code
 COPY api/src api/src
 COPY model/src model/src
-COPY jooq-codegen/src jooq-codegen/src
 
-# Build (skip tests — already run in CI test job)
-RUN ./mvnw clean package -DskipTests -B -pl api -am
+# Copy pre-generated jOOQ sources (generated in the CI test job and passed via
+# GitHub Actions artifact). A live DB is not available during docker build, so
+# codegen cannot run here; these files substitute for it.
+COPY model/target/generated-sources/jooq model/target/generated-sources/jooq
+
+# Build without 'clean' (fresh Docker env has no stale artifacts) and without
+# jOOQ codegen (generated sources are already present above).
+RUN ./mvnw package -DskipTests -B -pl api -am -Djooq.codegen.skip=true
 
 # ============================================
 # Runtime Stage
