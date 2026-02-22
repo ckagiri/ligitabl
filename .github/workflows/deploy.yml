@@ -390,10 +390,12 @@ jobs:
             echo "🌱 Step 1/2 — Seeding reference data (leagues, teams, seasons)..."
             docker run --rm \
               --network ligitabl-network \
+              --memory=256m --memory-swap=256m \
               -v ~/.deploy/ligitabl/seed-setup.jar:/app/seed.jar \
               --env-file .env.seed \
               eclipse-temurin:21-jre \
-              java -Dseed.main=seeding/main.yaml -jar /app/seed.jar \
+              java -Xmx192m -Xms64m -XX:+UseSerialGC -XX:ActiveProcessorCount=1 \
+                -Dseed.main=seeding/main.yaml -jar /app/seed.jar \
                 --spring.profiles.active=default
 
             rm -f .env.seed
@@ -403,6 +405,7 @@ jobs:
             grep '^POSTGRES_DB='       .env.prod | sed 's/^POSTGRES_DB=/DB_NAME=/'       >> .env.import
             grep '^POSTGRES_USER='     .env.prod | sed 's/^POSTGRES_USER=/DB_USER=/'     >> .env.import
             grep '^POSTGRES_PASSWORD=' .env.prod | sed 's/^POSTGRES_PASSWORD=/DB_PASSWORD=/' >> .env.import
+            grep '^JWT_SECRET='        .env.prod                                          >> .env.import
             printf 'FOOTBALL_DATA_API_TOKEN=%s\n' "$FOOTBALL_DATA_API_TOKEN"              >> .env.import
             printf 'APP_ARGS=%s\n' '--spring.main.web-application-type=none --workflow.run=true --workflow.competition=PL --workflow.exit-after=true' >> .env.import
 
