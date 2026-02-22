@@ -249,6 +249,7 @@ jobs:
     name: First-time Setup (seed + import-pl)
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' && inputs.run_setup
+    timeout-minutes: 30
 
     services:
       postgres:
@@ -308,6 +309,8 @@ jobs:
           key: ${{ secrets.DEPLOY_KEY }}
           source: "seed-setup.jar"
           target: "~/.deploy/ligitabl/"
+          timeout: 60s
+          command_timeout: 10m
 
       - name: Run seed and import-pl via SSH
         uses: appleboy/ssh-action@v1.2.2
