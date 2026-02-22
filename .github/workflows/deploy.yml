@@ -64,6 +64,10 @@ jobs:
         run: |
           # jooq-codegen is a plugin dependency of model — Maven resolves plugin deps
           # from the local repo, not the reactor, so it must be installed first.
+          # -N installs the root (parent) POM without recursing into modules.
+          # Without it Maven can't read jooq-codegen's artifact descriptor because
+          # the parent POM (ligitabl-parent SNAPSHOT) is also missing from the local repo.
+          mvn -q -DskipTests -N install -B
           mvn -q -DskipTests -pl jooq-codegen install -B
 
       - name: Run Liquibase migrations (schema required for jOOQ codegen)
