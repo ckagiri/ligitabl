@@ -46,9 +46,7 @@ ENV_LOCAL_FILE := .env.$(ENV).local
 
 # Verify environment file exists - FAIL LOUDLY if not
 ifeq (,$(wildcard $(ENV_FILE)))
-	$(error ❌ $(ENV_FILE) not found!\
-	\nCreate it with: cp env.$(ENV).template $(ENV_FILE)\
-	\nThen edit with your settings.)
+$(error ❌ $(ENV_FILE) not found! Create it with: cp env.$(ENV).template $(ENV_FILE) then edit with your settings.)
 endif
 
 # Load environment files
@@ -412,6 +410,76 @@ import-pl: ## Import Premier League (ENV=$(ENV))
 .PHONY: import-pl-with-seed
 import-pl-with-seed: ## Import Premier League after seeding reference data (ENV=$(ENV))
 	$(MAKE) import-competition-with-seed COMP=PL
+
+# ==============================================================================
+# PRODUCTION REMOTE OPERATIONS (via SSH tunnel)
+# ==============================================================================
+# These targets let you run seed/import from your local machine against the
+# production DB, avoiding the CPU/memory constraints of the budget droplet.
+#
+# Setup (one-time):
+#   Add to .env.prod.local:
+#     PROD_HOST=<your-droplet-ip>
+#     PROD_SSH_KEY=~/ssh-keys/digital-ocean/id_rsa
+#     PROD_SSH_USER=deployer        # optional, defaults to deployer
+#     PROD_TUNNEL_PORT=5434         # optional, defaults to 5434
+#
+# Usage:
+#   Terminal 1:  make prod-tunnel ENV=prod PROD_CONFIRMED=yes
+#   Terminal 2:  make prod-seed ENV=prod PROD_CONFIRMED=yes
+#            or  make prod-import-pl ENV=prod PROD_CONFIRMED=yes
+
+PROD_HOST       ?=
+PROD_SSH_KEY    ?=
+PROD_SSH_USER   ?= deployer
+PROD_TUNNEL_PORT ?= 5434
+
+.PHONY: prod-tunnel
+prod-tunnel: ## Open SSH tunnel to prod DB → localhost:$(PROD_TUNNEL_PORT) (keep open in a separate terminal)
+ifeq ($(ENV),prod)
+	@echo "$(PROD_WARNING)"
+endif
+	@if [ -z "$(PROD_HOST)" ]; then \
+		echo "❌ PROD_HOST is not set."; \
+		echo "   Add PROD_HOST=<ip> to .env.prod.local"; \
+		exit 1; \
+	fi
+	@echo "Tunnelling localhost:$(PROD_TUNNEL_PORT) → $(PROD_HOST):5432 (prod postgres)"
+	@echo "Keep this terminal open. Run prod-seed or prod-import-pl in another terminal."
+	ssh -L $(PROD_TUNNEL_PORT):127.0.0.1:5432 \
+		$(if $(PROD_SSH_KEY),-i $(PROD_SSH_KEY)) \
+		$(PROD_SSH_USER)@$(PROD_HOST) -N
+
+.PHONY: prod-seed
+prod-seed: ## Seed production DB from local machine via tunnel (run prod-tunnel first) (ENV=prod PROD_CONFIRMED=yes)
+	@echo "$(PROD_WARNING)"
+	@if [ -z "$(PROD_HOST)" ]; then \
+		echo "❌ PROD_HOST is not set. Add it to .env.prod.local"; exit 1; \
+	fi
+	mvn -q -pl seed -am -DskipTests package
+	DB_HOST=localhost DB_PORT=$(PROD_TUNNEL_PORT) \
+		java -Dseed.main=seeding/main.yaml -jar $(SEED_JAR) \
+			--spring.profiles.active=default
+
+.PHONY: prod-import-pl
+prod-import-pl: ## Import PL matches to production DB from local machine via tunnel (run prod-tunnel first) (ENV=prod PROD_CONFIRMED=yes)
+	@echo "$(PROD_WARNING)"
+	@if [ -z "$(PROD_HOST)" ]; then \
+		echo "❌ PROD_HOST is not set. Add it to .env.prod.local"; exit 1; \
+	fi
+	@FOOTBALL_DATA_API_TOKEN=$${FOOTBALL_DATA_API_TOKEN:-$${API_FOOTBALL_DATA_KEY:-}}; \
+	if [ -z "$$FOOTBALL_DATA_API_TOKEN" ] || [ "$$FOOTBALL_DATA_API_TOKEN" = "your-api-token-here" ]; then \
+		echo "❌ Error: FOOTBALL_DATA_API_TOKEN is not set"; \
+		echo "   Set API_FOOTBALL_DATA_KEY in $(ENV_LOCAL_FILE)"; \
+		exit 1; \
+	fi; \
+	export FOOTBALL_DATA_API_TOKEN; \
+	$(MAKE) api-build; \
+	DB_HOST=localhost DB_PORT=$(PROD_TUNNEL_PORT) java -jar $(JAR) \
+		--spring.main.web-application-type=none \
+		--workflow.run=true \
+		--workflow.competition=PL \
+		--workflow.exit-after=true
 
 # ==============================================================================
 # STANDINGS WORKFLOW TARGETS
