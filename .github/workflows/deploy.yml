@@ -1,0 +1,364 @@
+name: Build, Test & Deploy
+
+on:
+  push:
+    branches:
+      - release
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      run_setup:
+        description: "Run first-time setup: seed reference data + import Premier League"
+        type: boolean
+        default: false
+
+env:
+  REGISTRY: docker.io
+  IMAGE_PREFIX: ${{ secrets.DOCKER_USERNAME }}/ligitabl
+
+jobs:
+  # ============================================================
+  # 1. Tests — runs on every push and PR
+  #
+  #  jOOQ codegen is skipped by default (jooq.codegen.skip=true in model/pom.xml).
+  #  Generated sources are NOT committed, so CI must:
+  #    1. Start a Postgres service container
+  #    2. Run Liquibase to build the schema
+  #    3. Run Maven with -Pwith-jooq so codegen fires in generate-sources
+  #  API integration tests use their own Testcontainers DB and are unaffected.
+  # ============================================================
+  test:
+    name: Run Tests
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ligitabl_ci
+          POSTGRES_USER: ligitabl
+          POSTGRES_PASSWORD: ligitabl
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "maven"
+
+      - name: Install jooq-codegen module to local Maven repo
+        run: |
+          # jooq-codegen is a plugin dependency of model — Maven resolves plugin deps
+          # from the local repo, not the reactor, so it must be installed first.
+          # -N installs the root (parent) POM without recursing into modules.
+          # Without it Maven can't read jooq-codegen's artifact descriptor because
+          # the parent POM (ligitabl-parent SNAPSHOT) is also missing from the local repo.
+          mvn -q -DskipTests -N install -B
+          mvn -q -DskipTests -pl jooq-codegen install -B
+
+      - name: Run Liquibase migrations (schema required for jOOQ codegen)
+        run: |
+          # process-resources must run first so changelog files land in target/classes
+          # before Liquibase's classpath-based include lookup fires
+          mvn -q -Pliquibase -DskipTests -f model/pom.xml \
+            -DDB_HOST=localhost -DDB_PORT=5432 \
+            -DDB_NAME=ligitabl_ci -DDB_USER=ligitabl -DDB_PASSWORD=ligitabl \
+            process-resources liquibase:update
+
+      - name: Run tests
+        run: |
+          # -Pwith-jooq enables codegen in generate-sources phase against the service container
+          # API integration tests launch their own Testcontainers DB independently
+          mvn -pl api -am clean test -B \
+            -Pwith-jooq \
+            -DDB_HOST=localhost -DDB_PORT=5432 \
+            -DDB_NAME=ligitabl_ci -DDB_USER=ligitabl -DDB_PASSWORD=ligitabl
+
+      - name: Upload generated jOOQ sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: jooq-generated-sources
+          path: model/target/generated-sources/jooq/
+          retention-days: 1
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results
+          path: "**/target/surefire-reports/*.xml"
+
+  # ============================================================
+  # 2. Build & Push Docker image
+  #    Runs on push to main (permanent) or release (temporary — for
+  #    testing the pipeline without merging to main; remove release
+  #    from this condition once the workflow is validated).
+  # ============================================================
+  build-and-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download generated jOOQ sources
+        uses: actions/download-artifact@v4
+        with:
+          name: jooq-generated-sources
+          path: model/target/generated-sources/jooq/
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push ligitabl-api
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./api/Dockerfile
+          push: true
+          tags: |
+            ${{ env.IMAGE_PREFIX }}:api-latest
+            ${{ env.IMAGE_PREFIX }}:api-${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ============================================================
+  # 3. Deploy — runs on push to main or release (see note above)
+  # ============================================================
+  deploy:
+    name: Deploy to Production
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release')
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Create production env file
+        run: |
+          cat <<EOF > .env.prod
+          POSTGRES_DB=${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER=${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
+          SPRING_PROFILES_ACTIVE=liquibase
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          FOOTBALL_DATA_API_TOKEN=${{ secrets.FOOTBALL_DATA_API_TOKEN }}
+          DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+          IMAGE_TAG=api-${{ github.sha }}
+          VIRTUAL_HOST=${{ secrets.HOST_DOMAIN }}
+          LETSENCRYPT_HOST=${{ secrets.HOST_DOMAIN }}
+          LETSENCRYPT_EMAIL=${{ secrets.LETSENCRYPT_EMAIL }}
+          EOF
+
+      - name: Copy compose file and env to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USERNAME }}
+          port: 22
+          key: ${{ secrets.DEPLOY_KEY }}
+          source: "docker-compose.prod.yml,.env.prod"
+          target: "~/.deploy/ligitabl/"
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USERNAME }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: 22
+          envs: DOCKER_USERNAME,DOCKER_PASSWORD
+          script: |
+            set -e
+
+            echo "🔐 Logging into Docker Hub..."
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+            cd ~/.deploy/ligitabl
+
+            echo "🔄 Pulling latest images..."
+            docker compose -f docker-compose.prod.yml --env-file .env.prod pull
+
+            echo "🛑 Stopping old containers..."
+            docker compose -f docker-compose.prod.yml --env-file .env.prod down
+
+            echo "🧼 Cleaning up old images..."
+            docker image prune -f
+
+            echo "🚀 Starting new stack..."
+            # Liquibase migrations run automatically on app startup (SPRING_PROFILES_ACTIVE=liquibase)
+            docker compose -f docker-compose.prod.yml --env-file .env.prod up -d
+
+            echo "⏳ Waiting for services to be healthy..."
+            sleep 15
+
+            echo "✅ Checking service status..."
+            docker compose -f docker-compose.prod.yml --env-file .env.prod ps
+
+            echo "🔍 Checking if first-time setup has been run..."
+            SEASON_COUNT=$(docker exec ligitabl-db-prod \
+              psql -U "$(grep POSTGRES_USER .env.prod | cut -d= -f2)" \
+                   -d "$(grep POSTGRES_DB .env.prod | cut -d= -f2)" \
+                   -tAc "SELECT COUNT(*) FROM season;" 2>/dev/null || echo "0")
+            if [ "$SEASON_COUNT" = "0" ]; then
+              echo ""
+              echo "⚠️  WARNING: Database has no season data — the app will run but won't be functional."
+              echo "   Run first-time setup: Actions → 'Run workflow' → check 'Run first-time setup'"
+              echo ""
+            else
+              echo "✅ Database seeded (${SEASON_COUNT} season(s) found)."
+            fi
+
+            echo "📊 Deployment complete!"
+
+  # ============================================================
+  # 4. First-time Setup — triggered manually via workflow_dispatch
+  #    Run ONCE after the first successful deploy to seed the DB
+  #    and import Premier League data.
+  #
+  #    Trigger: Actions → "Run workflow" → check "Run first-time setup"
+  # ============================================================
+  setup:
+    name: First-time Setup (seed + import-pl)
+    runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch' && inputs.run_setup
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ligitabl_ci
+          POSTGRES_USER: ligitabl
+          POSTGRES_PASSWORD: ligitabl
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: "temurin"
+          java-version: "21"
+          cache: "maven"
+
+      - name: Install parent POM and jooq-codegen to local Maven repo
+        run: |
+          mvn -q -DskipTests -N install -B
+          mvn -q -DskipTests -pl jooq-codegen install -B
+
+      - name: Run Liquibase migrations (schema required for jOOQ codegen)
+        run: |
+          mvn -q -Pliquibase -DskipTests -f model/pom.xml \
+            -DDB_HOST=localhost -DDB_PORT=5432 \
+            -DDB_NAME=ligitabl_ci -DDB_USER=ligitabl -DDB_PASSWORD=ligitabl \
+            process-resources liquibase:update
+
+      - name: Build seed JAR
+        run: |
+          # seed module directly imports jOOQ-generated types, so it needs -Pwith-jooq
+          # to generate the sources first against the Postgres service container above
+          mvn -q -pl seed -am -DskipTests package -B \
+            -Pwith-jooq \
+            -DDB_HOST=localhost -DDB_PORT=5432 \
+            -DDB_NAME=ligitabl_ci -DDB_USER=ligitabl -DDB_PASSWORD=ligitabl
+          # Rename to a predictable filename for SCP
+          cp seed/target/ligitabl-seed-*.jar seed-setup.jar
+
+      - name: Copy seed JAR to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USERNAME }}
+          port: 22
+          key: ${{ secrets.DEPLOY_KEY }}
+          source: "seed-setup.jar"
+          target: "~/.deploy/ligitabl/"
+          timeout: 60s
+          command_timeout: 10m
+
+      - name: Run seed and import-pl via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
+          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          FOOTBALL_DATA_API_TOKEN: ${{ secrets.FOOTBALL_DATA_API_TOKEN }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USERNAME }}
+          key: ${{ secrets.DEPLOY_KEY }}
+          port: 22
+          envs: DOCKER_USERNAME,DOCKER_PASSWORD,POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD,FOOTBALL_DATA_API_TOKEN
+          # Generous timeout — import-pl calls the football-data API which can be slow
+          command_timeout: 30m
+          script: |
+            set -e
+
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
+
+            cd ~/.deploy/ligitabl
+
+            echo "🌱 Step 1/2 — Seeding reference data (leagues, teams, seasons)..."
+            docker run --rm \
+              --network ligitabl-network \
+              -v ~/.deploy/ligitabl/seed-setup.jar:/app/seed.jar \
+              -e DB_HOST=db \
+              -e DB_PORT=5432 \
+              -e DB_NAME="$POSTGRES_DB" \
+              -e DB_USER="$POSTGRES_USER" \
+              -e DB_PASSWORD="$POSTGRES_PASSWORD" \
+              eclipse-temurin:21-jre \
+              java -Dseed.main=seeding/main.yaml -jar /app/seed.jar \
+                --spring.profiles.active=default
+
+            echo "📥 Step 2/2 — Importing Premier League matches from football-data.org..."
+            docker run --rm \
+              --network ligitabl-network \
+              -e DB_HOST=db \
+              -e DB_PORT=5432 \
+              -e DB_NAME="$POSTGRES_DB" \
+              -e DB_USER="$POSTGRES_USER" \
+              -e DB_PASSWORD="$POSTGRES_PASSWORD" \
+              -e FOOTBALL_DATA_API_TOKEN="$FOOTBALL_DATA_API_TOKEN" \
+              -e APP_ARGS="--spring.main.web-application-type=none --workflow.run=true --workflow.competition=PL --workflow.exit-after=true" \
+              "$DOCKER_USERNAME/ligitabl:api-latest"
+
+            echo "✅ Setup complete! The app is ready to use."

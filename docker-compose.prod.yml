@@ -1,0 +1,84 @@
+services:
+  # PostgreSQL Database
+  db:
+    image: postgres:16
+    container_name: ligitabl-db-prod
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ligitabl}
+      POSTGRES_USER: ${POSTGRES_USER:-ligitabl}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - ligitabl-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ligitabl}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Spring Boot API
+  app:
+    image: ${DOCKER_USERNAME}/ligitabl:${IMAGE_TAG:-api-latest}
+    container_name: ligitabl-app-prod
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      # Database connection
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-ligitabl}
+      DB_USER: ${POSTGRES_USER:-ligitabl}
+      DB_PASSWORD: ${POSTGRES_PASSWORD}
+
+      # Spring profiles (enables Liquibase migrations on startup)
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-liquibase}
+
+      # Application secrets
+      JWT_SECRET: ${JWT_SECRET}
+      FOOTBALL_DATA_API_TOKEN: ${FOOTBALL_DATA_API_TOKEN}
+
+      # JVM options
+      JAVA_OPTS: >-
+        -Xmx512m
+        -Xms256m
+        -XX:+UseG1GC
+        -XX:MaxGCPauseMillis=200
+        -Djava.security.egd=file:/dev/./urandom
+
+      # nginx-proxy integration
+      VIRTUAL_HOST: ${VIRTUAL_HOST}
+      VIRTUAL_PORT: 8080
+      LETSENCRYPT_HOST: ${LETSENCRYPT_HOST}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL}
+
+    networks:
+      - ligitabl-network
+      - nginx
+
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/actuator/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  ligitabl-network:
+    driver: bridge
+    name: ligitabl-network  # explicit name so one-shot containers can join without knowing the project prefix
+  nginx:
+    external: true
+
+volumes:
+  db-data:
+    driver: local
