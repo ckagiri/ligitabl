@@ -336,9 +336,43 @@ jobs:
             # Read DB credentials from the env file used to initialise the DB.
             # This guarantees we use exactly the same values Postgres was set up with,
             # avoiding mismatches caused by secret forwarding over SSH.
+            if [ ! -f .env.prod ]; then
+              echo "❌ .env.prod not found — run the deploy job first to copy it to the server"
+              exit 1
+            fi
+
             DB_NAME=$(grep '^POSTGRES_DB=' .env.prod | cut -d= -f2-)
             DB_USER=$(grep '^POSTGRES_USER=' .env.prod | cut -d= -f2-)
             DB_PASSWORD=$(grep '^POSTGRES_PASSWORD=' .env.prod | cut -d= -f2-)
+
+            if [ -z "$DB_NAME" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASSWORD" ]; then
+              echo "❌ Could not read credentials from .env.prod"
+              echo "   DB_NAME='$DB_NAME' DB_USER='$DB_USER' DB_PASSWORD_LENGTH=${#DB_PASSWORD}"
+              echo "   Matching lines in .env.prod:"
+              grep -E '^POSTGRES_(DB|USER|PASSWORD)=' .env.prod || echo "   (none found)"
+              exit 1
+            fi
+
+            echo "✓ Credentials: DB_NAME='$DB_NAME' DB_USER='$DB_USER' DB_PASSWORD_LENGTH=${#DB_PASSWORD}"
+
+            # Verify the DB accepts these credentials before running the seed.
+            # Uses PGPASSWORD so psql doesn't prompt interactively.
+            echo "🔍 Verifying DB credentials..."
+            if ! docker exec -e PGPASSWORD="$DB_PASSWORD" ligitabl-db-prod \
+                psql -h 127.0.0.1 -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1;" > /dev/null 2>&1; then
+              echo "❌ DB authentication failed — the volume was likely initialised with different credentials."
+              echo ""
+              echo "   Fix option A (reset — destroys all data):"
+              echo "     docker compose -f docker-compose.prod.yml --env-file .env.prod down -v"
+              echo "     docker compose -f docker-compose.prod.yml --env-file .env.prod up -d"
+              echo "     Then re-run this setup job."
+              echo ""
+              echo "   Fix option B (update password in-place):"
+              echo "     docker exec ligitabl-db-prod psql -U $DB_USER -c \"ALTER USER $DB_USER PASSWORD '<old-password-here>';\""
+              echo "     Then update the POSTGRES_PASSWORD secret to match and redeploy."
+              exit 1
+            fi
+            echo "✓ DB credentials verified"
 
             echo "🌱 Step 1/2 — Seeding reference data (leagues, teams, seasons)..."
             docker run --rm \
