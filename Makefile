@@ -621,12 +621,6 @@ dev-reset: ## Reset DB, migrate, codegen, seed (ENV=$(ENV))
 	$(MAKE) codegen
 	$(MAKE) db-seed
 
-.PHONY: test-reset-run-api-fake
-test-reset-run-api-fake: ## Reset test DB, migrate, codegen, seed reference data, then run API with fake data (DB_PORT=55433)
-	$(MAKE) dev-reset ENV=test
-	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); FAKE_DATA_ENABLED=true DB_HOST=$(DB_HOST) DB_PORT=$(DB_PORT) DB_NAME=$(DB_NAME) DB_USER=$(DB_USER) DB_PASSWORD=$(DB_PASSWORD) \
-		mvn -f $(API_DIR)/pom.xml $(SPRING_BOOT_RUN_ARGS) org.springframework.boot:spring-boot-maven-plugin:run
-
 .PHONY: dev-reset-all
 dev-reset-all: ## Reset DB and seed all data (ENV=$(ENV))
 	$(MAKE) compose-up-db
