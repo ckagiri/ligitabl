@@ -60,6 +60,12 @@ jobs:
           java-version: "21"
           cache: "maven"
 
+      - name: Install jooq-codegen module to local Maven repo
+        run: |
+          # jooq-codegen is a plugin dependency of model — Maven resolves plugin deps
+          # from the local repo, not the reactor, so it must be installed first.
+          mvn -q -DskipTests -pl jooq-codegen install -B
+
       - name: Run Liquibase migrations (schema required for jOOQ codegen)
         run: |
           # process-resources must run first so changelog files land in target/classes
