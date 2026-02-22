@@ -317,16 +317,13 @@ jobs:
         env:
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
           FOOTBALL_DATA_API_TOKEN: ${{ secrets.FOOTBALL_DATA_API_TOKEN }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USERNAME }}
           key: ${{ secrets.DEPLOY_KEY }}
           port: 22
-          envs: DOCKER_USERNAME,DOCKER_PASSWORD,POSTGRES_DB,POSTGRES_USER,POSTGRES_PASSWORD,FOOTBALL_DATA_API_TOKEN
+          envs: DOCKER_USERNAME,DOCKER_PASSWORD,FOOTBALL_DATA_API_TOKEN
           # Generous timeout — import-pl calls the football-data API which can be slow
           command_timeout: 30m
           script: |
@@ -336,15 +333,22 @@ jobs:
 
             cd ~/.deploy/ligitabl
 
+            # Read DB credentials from the env file used to initialise the DB.
+            # This guarantees we use exactly the same values Postgres was set up with,
+            # avoiding mismatches caused by secret forwarding over SSH.
+            DB_NAME=$(grep '^POSTGRES_DB=' .env.prod | cut -d= -f2-)
+            DB_USER=$(grep '^POSTGRES_USER=' .env.prod | cut -d= -f2-)
+            DB_PASSWORD=$(grep '^POSTGRES_PASSWORD=' .env.prod | cut -d= -f2-)
+
             echo "🌱 Step 1/2 — Seeding reference data (leagues, teams, seasons)..."
             docker run --rm \
               --network ligitabl-network \
               -v ~/.deploy/ligitabl/seed-setup.jar:/app/seed.jar \
               -e DB_HOST=db \
               -e DB_PORT=5432 \
-              -e DB_NAME="$POSTGRES_DB" \
-              -e DB_USER="$POSTGRES_USER" \
-              -e DB_PASSWORD="$POSTGRES_PASSWORD" \
+              -e DB_NAME="$DB_NAME" \
+              -e DB_USER="$DB_USER" \
+              -e DB_PASSWORD="$DB_PASSWORD" \
               eclipse-temurin:21-jre \
               java -Dseed.main=seeding/main.yaml -jar /app/seed.jar \
                 --spring.profiles.active=default
@@ -354,9 +358,9 @@ jobs:
               --network ligitabl-network \
               -e DB_HOST=db \
               -e DB_PORT=5432 \
-              -e DB_NAME="$POSTGRES_DB" \
-              -e DB_USER="$POSTGRES_USER" \
-              -e DB_PASSWORD="$POSTGRES_PASSWORD" \
+              -e DB_NAME="$DB_NAME" \
+              -e DB_USER="$DB_USER" \
+              -e DB_PASSWORD="$DB_PASSWORD" \
               -e FOOTBALL_DATA_API_TOKEN="$FOOTBALL_DATA_API_TOKEN" \
               -e APP_ARGS="--spring.main.web-application-type=none --workflow.run=true --workflow.competition=PL --workflow.exit-after=true" \
               "$DOCKER_USERNAME/ligitabl:api-latest"
