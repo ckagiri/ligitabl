@@ -250,6 +250,21 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' && inputs.run_setup
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_DB: ligitabl_ci
+          POSTGRES_USER: ligitabl
+          POSTGRES_PASSWORD: ligitabl
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -266,11 +281,21 @@ jobs:
           mvn -q -DskipTests -N install -B
           mvn -q -DskipTests -pl jooq-codegen install -B
 
+      - name: Run Liquibase migrations (schema required for jOOQ codegen)
+        run: |
+          mvn -q -Pliquibase -DskipTests -f model/pom.xml \
+            -DDB_HOST=localhost -DDB_PORT=5432 \
+            -DDB_NAME=ligitabl_ci -DDB_USER=ligitabl -DDB_PASSWORD=ligitabl \
+            process-resources liquibase:update
+
       - name: Build seed JAR
         run: |
-          # -Pno-jooq excludes model/infra/** (the only classes that import jOOQ-generated
-          # types). The seed module only needs domain entities, so this is safe.
-          mvn -q -pl seed -am -DskipTests package -B -Pno-jooq
+          # seed module directly imports jOOQ-generated types, so it needs -Pwith-jooq
+          # to generate the sources first against the Postgres service container above
+          mvn -q -pl seed -am -DskipTests package -B \
+            -Pwith-jooq \
+            -DDB_HOST=localhost -DDB_PORT=5432 \
+            -DDB_NAME=ligitabl_ci -DDB_USER=ligitabl -DDB_PASSWORD=ligitabl
           # Rename to a predictable filename for SCP
           cp seed/target/ligitabl-seed-*.jar seed-setup.jar
 
