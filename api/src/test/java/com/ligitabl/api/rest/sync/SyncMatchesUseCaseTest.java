@@ -83,9 +83,6 @@ class SyncMatchesUseCaseTest {
                 new CompetitionDefaults(COMPETITION_SLUG),
                 liveMatchTracker);
 
-        when(liveMatchTracker.updateTracking(any()))
-                .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
-
         var field = SyncMatchesUseCase.class.getDeclaredField("competitionCode");
         field.setAccessible(true);
         field.set(useCase, COMPETITION_CODE);
@@ -126,6 +123,8 @@ class SyncMatchesUseCaseTest {
 
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+        when(liveMatchTracker.updateTracking(any()))
+                .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches);
 
         when(footballDataClient.getMatchesInDateRange(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
@@ -148,6 +147,8 @@ class SyncMatchesUseCaseTest {
 
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+        when(liveMatchTracker.updateTracking(any()))
+                .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
 
         var apiMatches = List.of(
                 new MatchDto(1L, OffsetDateTime.now(), "FINISHED", 1, "REGULAR_SEASON", null, null, null),
@@ -179,6 +180,8 @@ class SyncMatchesUseCaseTest {
 
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+        when(liveMatchTracker.updateTracking(any()))
+                .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
 
         var apiMatches = List.of(
                 new MatchDto(1L, OffsetDateTime.now(), "FINISHED", 1, "REGULAR_SEASON", null, null, null),
@@ -211,6 +214,9 @@ class SyncMatchesUseCaseTest {
         var live = createMatch(1, MatchStatus.LIVE, OffsetDateTime.now().minusMinutes(10));
         var existingMatches = List.of(live);
 
+        when(liveMatchTracker.updateTracking(any())).thenReturn(
+                new LiveMatchTracker.TrackingResult(true, Set.of(), Set.of(live.getId())));
+
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches).thenReturn(existingMatches);
@@ -238,6 +244,8 @@ class SyncMatchesUseCaseTest {
 
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+        when(liveMatchTracker.updateTracking(any()))
+                .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches).thenReturn(existingMatches);
 
         when(footballDataClient.getMatchesInDateRange(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
