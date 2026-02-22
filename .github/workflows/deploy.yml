@@ -347,19 +347,20 @@ jobs:
 
             if [ -z "$DB_NAME" ] || [ -z "$DB_USER" ] || [ -z "$DB_PASSWORD" ]; then
               echo "❌ Could not read credentials from .env.prod"
-              echo "   DB_NAME='$DB_NAME' DB_USER='$DB_USER' DB_PASSWORD_LENGTH=${#DB_PASSWORD}"
               echo "   Matching lines in .env.prod:"
               grep -E '^POSTGRES_(DB|USER|PASSWORD)=' .env.prod || echo "   (none found)"
               exit 1
             fi
 
-            echo "✓ Credentials: DB_NAME='$DB_NAME' DB_USER='$DB_USER' DB_PASSWORD_LENGTH=${#DB_PASSWORD}"
+            # DEBUG: print actual values so we can verify what the shell sees
+            echo "Shell sees: DB_NAME='$DB_NAME' DB_USER='$DB_USER' DB_PASSWORD='$DB_PASSWORD'"
 
-            # Verify the DB accepts these credentials before running the seed.
-            # Uses PGPASSWORD so psql doesn't prompt interactively.
-            echo "🔍 Verifying DB credentials..."
-            if ! docker exec -e PGPASSWORD="$DB_PASSWORD" ligitabl-db-prod \
-                psql -h 127.0.0.1 -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1;" > /dev/null 2>&1; then
+            # Verify DB accepts these credentials — connects via network (same path as the seed container)
+            echo "🔍 Verifying DB credentials via network..."
+            if ! docker run --rm --network ligitabl-network \
+                -e PGPASSWORD="$DB_PASSWORD" \
+                postgres:16 \
+                psql -h db -U "$DB_USER" -d "$DB_NAME" -c "SELECT 1;" > /dev/null 2>&1; then
               echo "❌ DB authentication failed — the volume was likely initialised with different credentials."
               echo ""
               echo "   Fix option A (reset — destroys all data):"
@@ -367,36 +368,50 @@ jobs:
               echo "     docker compose -f docker-compose.prod.yml --env-file .env.prod up -d"
               echo "     Then re-run this setup job."
               echo ""
-              echo "   Fix option B (update password in-place):"
-              echo "     docker exec ligitabl-db-prod psql -U $DB_USER -c \"ALTER USER $DB_USER PASSWORD '<old-password-here>';\""
-              echo "     Then update the POSTGRES_PASSWORD secret to match and redeploy."
+              echo "   Fix option B (update password in-place — connect via unix socket, no password needed):"
+              echo "     docker exec -it ligitabl-db-prod psql -U $DB_USER"
+              echo "     ALTER USER $DB_USER PASSWORD '<new-password>';"
+              echo "     Then update POSTGRES_PASSWORD secret + .env.prod to match."
               exit 1
             fi
-            echo "✓ DB credentials verified"
+            echo "✓ DB credentials verified via network"
+
+            # Build a seed env file by renaming keys directly from .env.prod.
+            # This avoids shell expansion of the password entirely — the value is
+            # copied byte-for-byte and docker --env-file reads it without any shell.
+            printf 'DB_HOST=db\nDB_PORT=5432\n' > .env.seed
+            grep '^POSTGRES_DB='       .env.prod | sed 's/^POSTGRES_DB=/DB_NAME=/'       >> .env.seed
+            grep '^POSTGRES_USER='     .env.prod | sed 's/^POSTGRES_USER=/DB_USER=/'     >> .env.seed
+            grep '^POSTGRES_PASSWORD=' .env.prod | sed 's/^POSTGRES_PASSWORD=/DB_PASSWORD=/' >> .env.seed
+
+            echo "DEBUG .env.seed:"
+            cat .env.seed
 
             echo "🌱 Step 1/2 — Seeding reference data (leagues, teams, seasons)..."
             docker run --rm \
               --network ligitabl-network \
               -v ~/.deploy/ligitabl/seed-setup.jar:/app/seed.jar \
-              -e DB_HOST=db \
-              -e DB_PORT=5432 \
-              -e DB_NAME="$DB_NAME" \
-              -e DB_USER="$DB_USER" \
-              -e DB_PASSWORD="$DB_PASSWORD" \
+              --env-file .env.seed \
               eclipse-temurin:21-jre \
               java -Dseed.main=seeding/main.yaml -jar /app/seed.jar \
                 --spring.profiles.active=default
 
+            rm -f .env.seed
+
+            # Build import env file the same way
+            printf 'DB_HOST=db\nDB_PORT=5432\n' > .env.import
+            grep '^POSTGRES_DB='       .env.prod | sed 's/^POSTGRES_DB=/DB_NAME=/'       >> .env.import
+            grep '^POSTGRES_USER='     .env.prod | sed 's/^POSTGRES_USER=/DB_USER=/'     >> .env.import
+            grep '^POSTGRES_PASSWORD=' .env.prod | sed 's/^POSTGRES_PASSWORD=/DB_PASSWORD=/' >> .env.import
+            printf 'FOOTBALL_DATA_API_TOKEN=%s\n' "$FOOTBALL_DATA_API_TOKEN"              >> .env.import
+            printf 'APP_ARGS=%s\n' '--spring.main.web-application-type=none --workflow.run=true --workflow.competition=PL --workflow.exit-after=true' >> .env.import
+
             echo "📥 Step 2/2 — Importing Premier League matches from football-data.org..."
             docker run --rm \
               --network ligitabl-network \
-              -e DB_HOST=db \
-              -e DB_PORT=5432 \
-              -e DB_NAME="$DB_NAME" \
-              -e DB_USER="$DB_USER" \
-              -e DB_PASSWORD="$DB_PASSWORD" \
-              -e FOOTBALL_DATA_API_TOKEN="$FOOTBALL_DATA_API_TOKEN" \
-              -e APP_ARGS="--spring.main.web-application-type=none --workflow.run=true --workflow.competition=PL --workflow.exit-after=true" \
+              --env-file .env.import \
               "$DOCKER_USERNAME/ligitabl:api-latest"
+
+            rm -f .env.import
 
             echo "✅ Setup complete! The app is ready to use."
