@@ -490,6 +490,20 @@ prod-import-pl: ## Import PL matches to production DB from local machine via tun
 		--workflow.competition=PL \
 		--workflow.exit-after=true
 
+.PHONY: prod-calc-standings
+prod-calc-standings: ## Calculate standings against production DB from local machine via tunnel (run prod-tunnel first) (ENV=prod PROD_CONFIRMED=yes)
+	@echo "$(PROD_WARNING)"
+	@if [ -z "$(PROD_HOST)" ]; then \
+		echo "❌ PROD_HOST is not set. Add it to .env.prod.local"; exit 1; \
+	fi
+	$(MAKE) api-build
+	DB_HOST=localhost DB_PORT=$(PROD_TUNNEL_PORT) \
+	SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:$(PROD_TUNNEL_PORT)/$(DB_NAME)?sslmode=disable" \
+	java -jar $(JAR) \
+		--spring.main.web-application-type=none \
+		--workflow.run-calc-standings=true \
+		--workflow.exit-after=true
+
 # ==============================================================================
 # STANDINGS WORKFLOW TARGETS
 # ==============================================================================

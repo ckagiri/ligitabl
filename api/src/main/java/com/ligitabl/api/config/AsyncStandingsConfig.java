@@ -17,9 +17,9 @@ import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
  */
 @Configuration
 @EnableAsync
-public class AsyncConfig {
+public class AsyncStandingsConfig {
 
-    private static final Logger log = LoggerFactory.getLogger(AsyncConfig.class);
+    private static final Logger log = LoggerFactory.getLogger(AsyncStandingsConfig.class);
 
     /**
      * Thread pool for async standings recalculation
