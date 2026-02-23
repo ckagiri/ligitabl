@@ -19,6 +19,12 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 512m    # hard cap — gives Postgres room to cache on 2 GB droplet
+        reservations:
+          memory: 128m
 
   # Spring Boot API
   app:
@@ -43,9 +49,9 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       FOOTBALL_DATA_API_TOKEN: ${FOOTBALL_DATA_API_TOKEN}
 
-      # JVM options (tuned for 1 vCPU / 1 GB droplet)
+      # JVM options (tuned for 1 vCPU / 2 GB droplet)
       JAVA_OPTS: >-
-        -Xmx384m
+        -Xmx512m
         -Xms128m
         -XX:+UseSerialGC
         -XX:ActiveProcessorCount=1
@@ -67,6 +73,13 @@ services:
       timeout: 10s
       retries: 3
       start_period: 60s
+
+    deploy:
+      resources:
+        limits:
+          memory: 768m    # headroom above -Xmx512m for JVM metaspace + native threads
+        reservations:
+          memory: 256m
 
     logging:
       driver: "json-file"
