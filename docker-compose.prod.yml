@@ -35,6 +35,8 @@ services:
       db:
         condition: service_healthy
     environment:
+      SERVER_PORT: 8080
+
       # Database connection
       DB_HOST: db
       DB_PORT: 5432
