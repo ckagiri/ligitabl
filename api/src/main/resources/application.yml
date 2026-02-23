@@ -55,7 +55,7 @@ ligitabl:
   default-competition-slug: ${DEFAULT_COMPETITION_SLUG:premier-league}
 
   scheduling:
-    enabled: true
+    enabled: false
 
   security:
     remember-me:
