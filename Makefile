@@ -444,9 +444,15 @@ endif
 		echo "   Add PROD_HOST=<ip> to .env.prod.local"; \
 		exit 1; \
 	fi
-	@echo "Tunnelling localhost:$(PROD_TUNNEL_PORT) → $(PROD_HOST):5432 (prod postgres)"
-	@echo "Keep this terminal open. Run prod-seed or prod-import-pl in another terminal."
-	ssh -L $(PROD_TUNNEL_PORT):127.0.0.1:5432 \
+	@DB_IP=$$(ssh $(if $(PROD_SSH_KEY),-i $(PROD_SSH_KEY)) $(PROD_SSH_USER)@$(PROD_HOST) \
+		"docker inspect ligitabl-db-prod --format '{{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}'"); \
+	if [ -z "$$DB_IP" ]; then \
+		echo "❌ Could not get IP of ligitabl-db-prod on $(PROD_HOST). Is the container running?"; \
+		exit 1; \
+	fi; \
+	echo "Tunnelling localhost:$(PROD_TUNNEL_PORT) → $$DB_IP:5432 (prod postgres, Docker bridge)"; \
+	echo "Keep this terminal open. Run prod-seed or prod-import-pl in another terminal."; \
+	ssh -L $(PROD_TUNNEL_PORT):$$DB_IP:5432 \
 		$(if $(PROD_SSH_KEY),-i $(PROD_SSH_KEY)) \
 		$(PROD_SSH_USER)@$(PROD_HOST) -N
 
@@ -458,6 +464,7 @@ prod-seed: ## Seed production DB from local machine via tunnel (run prod-tunnel 
 	fi
 	mvn -q -pl seed -am -DskipTests package
 	DB_HOST=localhost DB_PORT=$(PROD_TUNNEL_PORT) \
+	DB_URL="jdbc:postgresql://localhost:$(PROD_TUNNEL_PORT)/$(DB_NAME)?sslmode=disable" \
 		java -Dseed.main=seeding/main.yaml -jar $(SEED_JAR) \
 			--spring.profiles.active=default
 
@@ -475,7 +482,9 @@ prod-import-pl: ## Import PL matches to production DB from local machine via tun
 	fi; \
 	export FOOTBALL_DATA_API_TOKEN; \
 	$(MAKE) api-build; \
-	DB_HOST=localhost DB_PORT=$(PROD_TUNNEL_PORT) java -jar $(JAR) \
+	DB_HOST=localhost DB_PORT=$(PROD_TUNNEL_PORT) \
+	SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:$(PROD_TUNNEL_PORT)/$(DB_NAME)?sslmode=disable" \
+	java -jar $(JAR) \
 		--spring.main.web-application-type=none \
 		--workflow.run=true \
 		--workflow.competition=PL \

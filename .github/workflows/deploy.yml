@@ -352,9 +352,6 @@ jobs:
               exit 1
             fi
 
-            # DEBUG: print actual values so we can verify what the shell sees
-            echo "Shell sees: DB_NAME='$DB_NAME' DB_USER='$DB_USER' DB_PASSWORD='$DB_PASSWORD'"
-
             # Verify DB accepts these credentials — connects via network (same path as the seed container)
             echo "🔍 Verifying DB credentials via network..."
             if ! docker run --rm --network ligitabl-network \
@@ -383,9 +380,6 @@ jobs:
             grep '^POSTGRES_DB='       .env.prod | sed 's/^POSTGRES_DB=/DB_NAME=/'       >> .env.seed
             grep '^POSTGRES_USER='     .env.prod | sed 's/^POSTGRES_USER=/DB_USER=/'     >> .env.seed
             grep '^POSTGRES_PASSWORD=' .env.prod | sed 's/^POSTGRES_PASSWORD=/DB_PASSWORD=/' >> .env.seed
-
-            echo "DEBUG .env.seed:"
-            cat .env.seed
 
             echo "🌱 Step 1/2 — Seeding reference data (leagues, teams, seasons)..."
             docker run --rm \
