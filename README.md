@@ -13,24 +13,25 @@ Live demo: https://ligipredictor.com/
 - **Frontend**: Thymeleaf (server-side rendering), Alpine.js (interactivity), HTMX (partial page updates), Tailwind CSS
 - **Auth**: Session-based (web UI) + JWT (REST API), remember-me tokens
 - **Data**: Football-Data.org API integration with automated sync
-- **Testing**: JUnit 5, Testcontainers, WireMock
+- **Testing**: JUnit 5, Testcontainers (DB-backed integration tests), WireMock (API mocking); use cases have unit and integration test coverage
 - **Build**: Maven multi-module, safety-first Makefile
 
 ## Design principles
 
-- Desktop-first, responsive UI
+- Mobile-first, responsive UI
+- Server-side rendering with progressive enhancement — Thymeleaf renders complete pages; Alpine.js and HTMX layer in interactivity without requiring JS for basic use
 - API-driven match data (Football-Data.org)
-- Automated round progression and finalization
-- Simple structure validation (strategic freedom)
-- Mid-season launch friendly
-- Database-tracked "results banner" state (cross-device)
-- Immediate round opening after scoring
+- Automated round progression and leaderboard points computation
+- Explicit error handling — use cases return `Either<Error, Result>` instead of throwing; errors are handled at boundaries, not buried
+- Safety-first database operations — Makefile enforces named environments (`test`, `dev`, `prod`) with no silent fallbacks; destructive operations require confirmation
+- Type-safe database access — jOOQ generates compile-time query types from the schema; raw SQL strings are avoided
 
 ## Requirements
 
 - Java 21
 - Maven 3.9+
 - Docker + Docker Compose (recommended for local Postgres)
+- PostgreSQL 16
 
 ## Quick start
 
