@@ -8,6 +8,7 @@ import com.ligitabl.api.rest.prediction.shared.PredictionAccessMode;
 import com.ligitabl.api.rest.prediction.shared.RankingSource;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.RoundResult;
+import com.ligitabl.model.domain.SwapChange;
 import com.ligitabl.model.domain.SwapCooldown;
 import com.ligitabl.model.domain.TeamRank;
 
@@ -33,7 +34,8 @@ public record UserPredictionViewData(
         String roundState,
         String message,
         String targetDisplayName,
-        RoundResult roundResult // Present for historical views with scored results
+        RoundResult roundResult, // Present for historical views with scored results
+        List<SwapChange> roundSwapHistory // Swaps made in the viewed round; null for guests/other users
         ) {
     public UserPredictionViewData {
         Objects.requireNonNull(rankings, "rankings are required");
@@ -43,6 +45,7 @@ public record UserPredictionViewData(
         matches = matches != null ? Map.copyOf(matches) : Map.of();
         standingsMap = standingsMap != null ? Map.copyOf(standingsMap) : Map.of();
         pointsMap = pointsMap != null ? Map.copyOf(pointsMap) : Map.of();
+        roundSwapHistory = roundSwapHistory != null ? List.copyOf(roundSwapHistory) : null;
     }
 
     /**
