@@ -125,7 +125,8 @@ public class GetUserPredictionUseCase {
                 roundState,
                 message,
                 null, // no target display name
-                null // no round result for guest
+                null, // no round result for guest
+                null // no swap history for guests
                 );
     }
 
@@ -175,7 +176,8 @@ public class GetUserPredictionUseCase {
                             roundState,
                             "Viewing Gameweek " + viewingRound + " results",
                             null,
-                            roundResult.get());
+                            roundResult.get(),
+                            swapsForRound(seasonPrediction, viewingRound));
                 }
             }
 
@@ -206,8 +208,8 @@ public class GetUserPredictionUseCase {
                     roundState,
                     message,
                     null,
-                    null // No round result for current round
-                    );
+                    null, // No round result for current round
+                    swapsForRound(seasonPrediction, viewingRound));
         }
 
         // User is authenticated but has no prediction - show fallback with CAN_CREATE_ENTRY
@@ -256,7 +258,8 @@ public class GetUserPredictionUseCase {
                 roundState,
                 message,
                 null,
-                null // No round result
+                null, // No round result
+                null // No swap history — user has no prediction yet
                 );
     }
 
@@ -309,7 +312,9 @@ public class GetUserPredictionUseCase {
                         "Viewing " + (qry.targetDisplayName() != null ? qry.targetDisplayName() : "user")
                                 + "'s Gameweek " + viewingRound + " result",
                         qry.targetDisplayName(),
-                        roundResult.get());
+                        roundResult.get(),
+                        null // swap history not shown for other users
+                        );
             }
         }
 
@@ -336,7 +341,9 @@ public class GetUserPredictionUseCase {
                     roundState,
                     "Viewing " + (qry.targetDisplayName() != null ? qry.targetDisplayName() : "user") + "'s prediction",
                     qry.targetDisplayName(),
-                    null);
+                    null,
+                    null // swap history not shown for other users
+                    );
         }
 
         // Target user exists but has no prediction - show fallback
@@ -359,7 +366,9 @@ public class GetUserPredictionUseCase {
                 (qry.targetDisplayName() != null ? qry.targetDisplayName() : "This user")
                         + " hasn't made a prediction yet",
                 qry.targetDisplayName(),
-                null);
+                null,
+                null // swap history not shown for other users
+                );
     }
 
     /**
@@ -391,7 +400,9 @@ public class GetUserPredictionUseCase {
                 roundState,
                 "User not found",
                 null,
-                null);
+                null,
+                null // swap history not applicable
+                );
     }
 
     /**
@@ -430,6 +441,17 @@ public class GetUserPredictionUseCase {
                         "Season baseline rankings not found for season: " + query.seasonId()));
 
         return new RankingsWithSource(RankingSource.SEASON_BASELINE, baseline);
+    }
+
+    /**
+     * Extract swap changes for a specific round from the prediction's swap history.
+     */
+    private List<SwapChange> swapsForRound(SeasonPrediction prediction, int round) {
+        return prediction.getSwaps().stream()
+                .filter(rs -> rs.getRound() == round)
+                .findFirst()
+                .map(RoundSwap::getChanges)
+                .orElse(List.of());
     }
 
     /**

@@ -30,6 +30,7 @@ import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.ResultTeamRank;
 import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.SwapChange;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.domain.User;
@@ -312,6 +313,11 @@ public class UserPredictionsController {
                             firstSwapBonus));
         }
 
+        // Swap history (own predictions only)
+        if (data.roundSwapHistory() != null && !data.roundSwapHistory().isEmpty()) {
+            model.addAttribute("swapHistory", formatSwapHistory(data.roundSwapHistory()));
+        }
+
         // Round result for historical views
         if (data.hasRoundResult()) {
             var result = data.roundResult();
@@ -444,6 +450,26 @@ public class UserPredictionsController {
         return ErrorMapper.toHttpStatus(error);
     }
 
+    private List<SwapHistoryEntryDTO> formatSwapHistory(List<SwapChange> changes) {
+        return changes.stream()
+                .sorted(Comparator.comparing(SwapChange::timestamp))
+                .map(swap -> {
+                    String[] partsA = swap.teamA().split(":");
+                    String[] posA = partsA[1].split("\u2192"); // →
+                    String[] partsB = swap.teamB().split(":");
+                    String[] posB = partsB[1].split("\u2192"); // →
+                    return new SwapHistoryEntryDTO(
+                            partsA[0],
+                            Integer.parseInt(posA[0]),
+                            Integer.parseInt(posA[1]),
+                            partsB[0],
+                            Integer.parseInt(posB[0]),
+                            Integer.parseInt(posB[1]),
+                            swap.timestamp().toString()); // ISO 8601 UTC — formatted client-side to user's locale
+                })
+                .toList();
+    }
+
     /**
      * DTO for swap status information displayed in templates.
      */
@@ -454,4 +480,16 @@ public class UserPredictionsController {
             boolean initialPredictionMade,
             int swapCount,
             boolean firstSwapBonus) {}
+
+    /**
+     * DTO for a single swap change entry displayed in the swap history section.
+     */
+    public record SwapHistoryEntryDTO(
+            String teamACode,
+            int teamAFrom,
+            int teamATo,
+            String teamBCode,
+            int teamBFrom,
+            int teamBTo,
+            String formattedTime) {}
 }

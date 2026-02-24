@@ -434,6 +434,29 @@ document.body.addEventListener("htmx:afterSwap", (event) => {
     window.Alpine.initTree(target);
 });
 
+// Format [data-timestamp] elements to the user's local timezone and locale.
+// Falls back to the ISO string if the date is invalid.
+window.Ligitabl.formatTimestamps = function (root) {
+    const scope = root || document;
+    scope.querySelectorAll("[data-timestamp]").forEach((el) => {
+        const iso = el.getAttribute("data-timestamp");
+        if (!iso) return;
+        try {
+            const d = new Date(iso);
+            if (isNaN(d.getTime())) return;
+            el.textContent = d.toLocaleString(undefined, {
+                dateStyle: "medium",
+                timeStyle: "short",
+            });
+        } catch (e) {
+            // leave ISO string as-is
+        }
+    });
+};
+
+document.addEventListener("DOMContentLoaded", () => Ligitabl.formatTimestamps());
+document.body.addEventListener("htmx:afterSettle", (e) => Ligitabl.formatTimestamps(e.detail?.target));
+
 // --- Guest Prediction Page (localStorage support) ---
 
 window.Ligitabl.guestPredictionPage = function (el) {
