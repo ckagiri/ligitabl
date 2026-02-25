@@ -31,7 +31,6 @@ import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
-import com.ligitabl.model.repo.TeamRepo;
 
 @ExtendWith(MockitoExtension.class)
 class CreatePredictionUseCaseTest {
@@ -46,9 +45,6 @@ class CreatePredictionUseCaseTest {
 
     @Mock
     private MatchRepo matchRepo;
-
-    @Mock
-    private TeamRepo teamRepo;
 
     @Mock
     private ContestRepo contestRepo;
@@ -96,8 +92,6 @@ class CreatePredictionUseCaseTest {
         UUID predictionId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
 
-        CreatePredictionCommand request = createNonDefaultRequest();
-
         when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
@@ -117,7 +111,8 @@ class CreatePredictionUseCaseTest {
             return e;
         });
 
-        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
+        Either<CreatePredictionError, CreatePredictionResult> result =
+                useCase.execute(userId, singleSwap("LIV", "ARS"));
 
         assertTrue(result.isRight());
         CreatePredictionResult joinResult = result.get();
@@ -128,9 +123,96 @@ class CreatePredictionUseCaseTest {
     }
 
     @Test
-    void shouldSetNextRound_whenRoundIsLocked() {
-        CreatePredictionCommand request = createNonDefaultRequest();
+    void shouldApplySwapToBaseline_andRecordInitialSwap() {
+        when(clock.instant()).thenReturn(now);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
+        when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
+        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
+        when(predictionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(entryRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
+        // Baseline: ARS=1, LIV=2, MCI=3 — swap LIV and ARS → LIV=1, ARS=2, MCI=3
+        useCase.execute(userId, singleSwap("LIV", "ARS"));
+
+        verify(predictionRepo).save(argThat(p -> {
+            // currentRankings should reflect the swap
+            List<TeamRank> rankings = p.getCurrentRankings();
+            TeamRank livRank = rankings.stream()
+                    .filter(t -> t.getCode().equals("LIV"))
+                    .findFirst()
+                    .orElseThrow();
+            TeamRank arsRank = rankings.stream()
+                    .filter(t -> t.getCode().equals("ARS"))
+                    .findFirst()
+                    .orElseThrow();
+            boolean rankingsCorrect = livRank.getPosition() == 1 && arsRank.getPosition() == 2;
+
+            // initialRankings should be empty (deprecated)
+            boolean initialEmpty = p.getInitialRankings().isEmpty();
+
+            // lastSwapAt should be null (not a real swap cooldown)
+            boolean lastSwapNull = p.getLastSwapAt() == null;
+
+            // swaps should have one entry for atRoundNumber with one SwapChange
+            boolean swapRecorded = p.getSwaps().size() == 1
+                    && p.getSwaps().get(0).getRound() == round.getPosition()
+                    && p.getSwaps().get(0).getChanges().size() == 1;
+
+            return rankingsCorrect && initialEmpty && lastSwapNull && swapRecorded;
+        }));
+    }
+
+    @Test
+    void shouldApplyMultipleSwapsToBaseline_andRecordAllChanges() {
+        when(clock.instant()).thenReturn(now);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
+        when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
+        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
+        when(predictionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(entryRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        // Baseline: ARS=1, LIV=2, MCI=3
+        // Swap 1: LIV ↔ ARS → LIV=1, ARS=2, MCI=3
+        // Swap 2: MCI ↔ ARS → LIV=1, MCI=2, ARS=3
+        useCase.execute(
+                userId,
+                multiSwap(List.of(
+                        new CreatePredictionCommand.SwapPair("LIV", "ARS"),
+                        new CreatePredictionCommand.SwapPair("MCI", "ARS"))));
+
+        verify(predictionRepo).save(argThat(p -> {
+            List<TeamRank> rankings = p.getCurrentRankings();
+            TeamRank liv = rankings.stream()
+                    .filter(t -> t.getCode().equals("LIV"))
+                    .findFirst()
+                    .orElseThrow();
+            TeamRank mci = rankings.stream()
+                    .filter(t -> t.getCode().equals("MCI"))
+                    .findFirst()
+                    .orElseThrow();
+            TeamRank ars = rankings.stream()
+                    .filter(t -> t.getCode().equals("ARS"))
+                    .findFirst()
+                    .orElseThrow();
+            boolean rankingsCorrect = liv.getPosition() == 1 && mci.getPosition() == 2 && ars.getPosition() == 3;
+
+            // 2 swap changes recorded under one RoundSwap
+            boolean swapsRecorded = p.getSwaps().size() == 1
+                    && p.getSwaps().get(0).getRound() == round.getPosition()
+                    && p.getSwaps().get(0).getChanges().size() == 2;
+
+            boolean lastSwapNull = p.getLastSwapAt() == null;
+
+            return rankingsCorrect && swapsRecorded && lastSwapNull;
+        }));
+    }
+
+    @Test
+    void shouldSetNextRound_whenRoundIsLocked() {
         when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
@@ -141,7 +223,8 @@ class CreatePredictionUseCaseTest {
         when(predictionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
         when(entryRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
-        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
+        Either<CreatePredictionError, CreatePredictionResult> result =
+                useCase.execute(userId, singleSwap("LIV", "ARS"));
 
         assertTrue(result.isRight());
         assertEquals(round.getPosition() + 1, result.get().atRoundNumber());
@@ -149,12 +232,11 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void shouldReject_whenAlreadyJoined() {
-        CreatePredictionCommand request = createNonDefaultRequest();
         SeasonPrediction existingPrediction = SeasonPrediction.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
                 .seasonId(season.getId())
-                .initialRankings(season.getInitialRankings())
+                .initialRankings(List.of())
                 .currentRankings(season.getInitialRankings())
                 .atRoundNumber(1)
                 .build();
@@ -162,7 +244,8 @@ class CreatePredictionUseCaseTest {
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(existingPrediction));
 
-        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
+        Either<CreatePredictionError, CreatePredictionResult> result =
+                useCase.execute(userId, singleSwap("LIV", "ARS"));
 
         assertTrue(result.isLeft());
         assertInstanceOf(CreatePredictionError.AlreadyJoined.class, result.getLeft());
@@ -172,31 +255,58 @@ class CreatePredictionUseCaseTest {
     }
 
     @Test
-    void shouldReject_whenInvalidTeamCount() {
-        CreatePredictionCommand request =
-                new CreatePredictionCommand(List.of(new TeamRankDto("ARS", 1), new TeamRankDto("LIV", 2)));
-
+    void shouldReject_whenEmptySwapList() {
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
 
-        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
+        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, multiSwap(List.of()));
 
         assertTrue(result.isLeft());
-        assertInstanceOf(CreatePredictionError.InvalidTeamCount.class, result.getLeft());
+        assertInstanceOf(CreatePredictionError.EmptySwaps.class, result.getLeft());
     }
 
     @Test
-    void shouldReject_whenInvalidTeamCodes() {
-        CreatePredictionCommand request = new CreatePredictionCommand(
-                List.of(new TeamRankDto("XXX", 1), new TeamRankDto("ARS", 2), new TeamRankDto("LIV", 3)));
-
+    void shouldReject_whenTooManySwaps() {
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
 
-        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
+        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(
+                userId,
+                multiSwap(List.of(
+                        new CreatePredictionCommand.SwapPair("LIV", "ARS"),
+                        new CreatePredictionCommand.SwapPair("MCI", "ARS"),
+                        new CreatePredictionCommand.SwapPair("LIV", "MCI"),
+                        new CreatePredictionCommand.SwapPair("ARS", "MCI"))));
 
         assertTrue(result.isLeft());
-        assertInstanceOf(CreatePredictionError.InvalidTeamCodes.class, result.getLeft());
+        assertInstanceOf(CreatePredictionError.TooManySwaps.class, result.getLeft());
+        assertEquals(4, ((CreatePredictionError.TooManySwaps) result.getLeft()).provided());
+        assertEquals(3, ((CreatePredictionError.TooManySwaps) result.getLeft()).max());
+    }
+
+    @Test
+    void shouldReject_whenSameTeam() {
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
+
+        Either<CreatePredictionError, CreatePredictionResult> result =
+                useCase.execute(userId, singleSwap("ARS", "ARS"));
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(CreatePredictionError.SameTeam.class, result.getLeft());
+    }
+
+    @Test
+    void shouldReject_whenInvalidTeamCode() {
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
+
+        Either<CreatePredictionError, CreatePredictionResult> result =
+                useCase.execute(userId, singleSwap("XXX", "ARS"));
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(CreatePredictionError.InvalidTeamCode.class, result.getLeft());
+        assertEquals("XXX", ((CreatePredictionError.InvalidTeamCode) result.getLeft()).code());
     }
 
     @Test
@@ -204,31 +314,27 @@ class CreatePredictionUseCaseTest {
         round.setPosition(3);
         season.setMaxRounds(3);
 
-        CreatePredictionCommand request = createNonDefaultRequest();
-
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(round.getId()))
                 .thenReturn(List.of(Match.builder().status(MatchStatus.LIVE).build()));
 
-        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
+        Either<CreatePredictionError, CreatePredictionResult> result =
+                useCase.execute(userId, singleSwap("LIV", "ARS"));
 
         assertTrue(result.isLeft());
         assertInstanceOf(CreatePredictionError.Ended.class, result.getLeft());
     }
 
-    @Test
-    void shouldReject_whenRankingsMatchInitial() {
-        CreatePredictionCommand request = createInitialRankingsRequest();
+    // --- Helpers ---
 
-        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
-        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
+    private static CreatePredictionCommand singleSwap(String teamACode, String teamBCode) {
+        return multiSwap(List.of(new CreatePredictionCommand.SwapPair(teamACode, teamBCode)));
+    }
 
-        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
-
-        assertTrue(result.isLeft());
-        assertInstanceOf(CreatePredictionError.SameAsInitialRankings.class, result.getLeft());
+    private static CreatePredictionCommand multiSwap(List<CreatePredictionCommand.SwapPair> swaps) {
+        return new CreatePredictionCommand(swaps);
     }
 
     private Season createSeason() {
@@ -267,15 +373,5 @@ class CreatePredictionUseCaseTest {
                 .maxEntries(100)
                 .createdAt(now)
                 .build();
-    }
-
-    private CreatePredictionCommand createInitialRankingsRequest() {
-        return new CreatePredictionCommand(
-                List.of(new TeamRankDto("ARS", 1), new TeamRankDto("LIV", 2), new TeamRankDto("MCI", 3)));
-    }
-
-    private CreatePredictionCommand createNonDefaultRequest() {
-        return new CreatePredictionCommand(
-                List.of(new TeamRankDto("LIV", 1), new TeamRankDto("ARS", 2), new TeamRankDto("MCI", 3)));
     }
 }

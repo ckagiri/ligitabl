@@ -1,8 +1,13 @@
 package com.ligitabl.api.rest.prediction.createprediction;
 
 import java.time.Clock;
-import java.util.*;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -35,9 +40,9 @@ public class CreatePredictionUseCase {
 
         return getActiveSeason().flatMap(season -> validateSeasonActive(season)
                 .flatMap(__ -> checkNotAlreadyJoined(userId, season))
-                .flatMap(__ -> validateRankings(request, season))
-                .flatMap(rankings -> determineAtRoundNumber(season)
-                        .flatMap(atRoundNumber -> createPredictionAndEntry(userId, season, rankings, atRoundNumber))));
+                .flatMap(__ -> validateSwapTeams(request, season))
+                .flatMap(__ -> determineAtRoundNumber(season)
+                        .flatMap(atRoundNumber -> createPredictionAndEntry(userId, season, request, atRoundNumber))));
     }
 
     // Step 1: Get active season
@@ -65,106 +70,38 @@ public class CreatePredictionUseCase {
                 .orElseGet(() -> Either.right(null));
     }
 
-    // Step 4: Validate rankings structure
-    private Either<CreatePredictionError, List<TeamRank>> validateRankings(
-            CreatePredictionCommand request, Season season) {
-        return validateTeamCount(request, season)
-                .flatMap(__ -> validateNoDuplicatePositions(request))
-                .flatMap(__ -> validateNoDuplicateCodes(request))
-                .flatMap(__ -> validateTeamCodesExist(request, season))
-                .flatMap(__ -> validateNotSameAsInitialRankings(request, season))
-                .map(__ -> convertToTeamRanks(request));
-    }
+    // Step 4: Validate the swap team codes (1–3 pairs required)
+    private static final int MAX_INITIAL_SWAPS = 3;
 
-    private Either<CreatePredictionError, Void> validateTeamCount(CreatePredictionCommand request, Season season) {
-        int provided = request.rankings().size();
-        int required = season.getTotalTeams();
+    private Either<CreatePredictionError, Void> validateSwapTeams(CreatePredictionCommand cmd, Season season) {
+        List<CreatePredictionCommand.SwapPair> swaps = cmd.swaps();
 
-        if (provided != required) {
-            return Either.left(new CreatePredictionError.InvalidTeamCount(provided, required));
+        if (swaps == null || swaps.isEmpty()) {
+            return Either.left(new CreatePredictionError.EmptySwaps());
         }
-        return Either.right(null);
-    }
-
-    private Either<CreatePredictionError, Void> validateNoDuplicatePositions(CreatePredictionCommand request) {
-        List<Integer> positions =
-                request.rankings().stream().map(TeamRankDto::position).toList();
-
-        List<Integer> duplicates = positions.stream()
-                .filter(p -> Collections.frequency(positions, p) > 1)
-                .distinct()
-                .toList();
-
-        if (!duplicates.isEmpty()) {
-            return Either.left(new CreatePredictionError.DuplicatePositions(duplicates));
+        if (swaps.size() > MAX_INITIAL_SWAPS) {
+            return Either.left(new CreatePredictionError.TooManySwaps(swaps.size(), MAX_INITIAL_SWAPS));
         }
-        return Either.right(null);
-    }
 
-    private Either<CreatePredictionError, Void> validateNoDuplicateCodes(CreatePredictionCommand request) {
-        List<String> codes = request.rankings().stream()
-                .map(TeamRankDto::code)
-                .map(String::toUpperCase)
-                .toList();
-
-        List<String> duplicates = codes.stream()
-                .filter(c -> Collections.frequency(codes, c) > 1)
-                .distinct()
-                .toList();
-
-        if (!duplicates.isEmpty()) {
-            return Either.left(new CreatePredictionError.DuplicateTeamCodes(duplicates));
-        }
-        return Either.right(null);
-    }
-
-    private Either<CreatePredictionError, Void> validateTeamCodesExist(CreatePredictionCommand request, Season season) {
-        List<String> requestedCodes = request.rankings().stream()
-                .map(TeamRankDto::code)
-                .map(String::toUpperCase)
-                .toList();
-
-        // Get all valid team codes from season's initial rankings
         Set<String> validCodes =
                 season.getInitialRankings().stream().map(TeamRank::getCode).collect(Collectors.toSet());
 
-        List<String> invalidCodes = requestedCodes.stream()
-                .filter(code -> !validCodes.contains(code))
-                .toList();
+        for (CreatePredictionCommand.SwapPair swap : swaps) {
+            String codeA = swap.teamACode().toUpperCase();
+            String codeB = swap.teamBCode().toUpperCase();
 
-        if (!invalidCodes.isEmpty()) {
-            return Either.left(new CreatePredictionError.InvalidTeamCodes(invalidCodes));
+            if (codeA.equals(codeB)) {
+                return Either.left(new CreatePredictionError.SameTeam());
+            }
+            if (!validCodes.contains(codeA)) {
+                return Either.left(new CreatePredictionError.InvalidTeamCode(codeA));
+            }
+            if (!validCodes.contains(codeB)) {
+                return Either.left(new CreatePredictionError.InvalidTeamCode(codeB));
+            }
         }
 
         return Either.right(null);
-    }
-
-    private Either<CreatePredictionError, Void> validateNotSameAsInitialRankings(
-            CreatePredictionCommand request, Season season) {
-        List<String> requestedOrder = request.rankings().stream()
-                .sorted(Comparator.comparingInt(TeamRankDto::position))
-                .map(TeamRankDto::code)
-                .map(String::toUpperCase)
-                .toList();
-
-        List<String> initialOrder = season.getInitialRankings().stream()
-                .sorted(Comparator.comparingInt(TeamRank::getPosition))
-                .map(TeamRank::getCode)
-                .map(String::toUpperCase)
-                .toList();
-
-        if (requestedOrder.equals(initialOrder)) {
-            return Either.left(new CreatePredictionError.SameAsInitialRankings());
-        }
-
-        return Either.right(null);
-    }
-
-    private List<TeamRank> convertToTeamRanks(CreatePredictionCommand request) {
-        return request.rankings().stream()
-                .map(r -> new TeamRank(r.code().toUpperCase(), r.position()))
-                .sorted(Comparator.comparingInt(TeamRank::getPosition))
-                .toList();
     }
 
     // Step 5: Determine at_round_number
@@ -206,7 +143,7 @@ public class CreatePredictionUseCase {
 
     // Step 6: Create prediction and entry (transactional)
     private Either<CreatePredictionError, CreatePredictionResult> createPredictionAndEntry(
-            UUID userId, Season season, List<TeamRank> rankings, int atRoundNumber) {
+            UUID userId, Season season, CreatePredictionCommand request, int atRoundNumber) {
         var mainContestOpt = contestRepo.findById(season.getMainContestId());
         if (mainContestOpt.isEmpty()) {
             return Either.left(new CreatePredictionError.MainContestNotFound());
@@ -214,14 +151,38 @@ public class CreatePredictionUseCase {
         Contest mainContest = mainContestOpt.get();
 
         try {
-            // Create SeasonPrediction
+            Instant now = clock.instant();
+            List<TeamRank> currentRankings = new ArrayList<>(season.getInitialRankings());
+            List<SwapChange> swapChanges = new ArrayList<>();
+
+            // Apply each swap sequentially from the baseline; record each as a SwapChange
+            for (CreatePredictionCommand.SwapPair swap : request.swaps()) {
+                String codeA = swap.teamACode().toUpperCase();
+                String codeB = swap.teamBCode().toUpperCase();
+                TeamRank rankA = currentRankings.stream()
+                        .filter(t -> t.getCode().equals(codeA))
+                        .findFirst()
+                        .orElseThrow();
+                TeamRank rankB = currentRankings.stream()
+                        .filter(t -> t.getCode().equals(codeB))
+                        .findFirst()
+                        .orElseThrow();
+                swapChanges.add(new SwapChange(
+                        now,
+                        String.format("%s:%d\u2192%d", codeA, rankA.getPosition(), rankB.getPosition()),
+                        String.format("%s:%d\u2192%d", codeB, rankB.getPosition(), rankA.getPosition())));
+                currentRankings = applySwap(currentRankings, codeA, codeB);
+            }
+
+            RoundSwap initialRoundSwap = new RoundSwap(atRoundNumber, swapChanges);
+
             SeasonPrediction prediction = SeasonPrediction.builder()
                     .userId(userId)
                     .seasonId(season.getId())
-                    .initialRankings(new ArrayList<>(rankings)) // Immutable copy
-                    .currentRankings(new ArrayList<>(rankings)) // Will change with swaps
-                    .swaps(new ArrayList<>()) // Empty initially
-                    .lastSwapAt(null) // No swaps yet
+                    .initialRankings(List.of()) // deprecated — will be removed in a future cleanup
+                    .currentRankings(currentRankings)
+                    .swaps(new ArrayList<>(List.of(initialRoundSwap)))
+                    .lastSwapAt(null) // NOT set — next real swap is free immediately
                     .atRoundNumber(atRoundNumber)
                     .build();
 
@@ -232,7 +193,7 @@ public class CreatePredictionUseCase {
             Entry entry = Entry.builder()
                     .userId(userId)
                     .contestId(mainContest.getId())
-                    .joinedAt(clock.instant())
+                    .joinedAt(now)
                     .build();
 
             Entry savedEntry = entryRepo.save(entry);
@@ -253,5 +214,22 @@ public class CreatePredictionUseCase {
             log.error("Failed to create prediction and entry", e);
             return Either.left(new CreatePredictionError.TransactionFailed(e.getMessage()));
         }
+    }
+
+    private List<TeamRank> applySwap(List<TeamRank> base, String codeA, String codeB) {
+        List<TeamRank> result = new ArrayList<>(base);
+        int idxA = IntStream.range(0, result.size())
+                .filter(i -> result.get(i).getCode().equals(codeA))
+                .findFirst()
+                .orElseThrow();
+        int idxB = IntStream.range(0, result.size())
+                .filter(i -> result.get(i).getCode().equals(codeB))
+                .findFirst()
+                .orElseThrow();
+        TeamRank a = result.get(idxA);
+        TeamRank b = result.get(idxB);
+        result.set(idxA, a.withPosition(b.getPosition()));
+        result.set(idxB, b.withPosition(a.getPosition()));
+        return result;
     }
 }

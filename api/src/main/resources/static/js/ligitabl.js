@@ -195,8 +195,10 @@ window.Ligitabl.predictionPage = function (el) {
     const parsed = Ligitabl._parseDataAttributes(el);
     const predictions = parsed.predictions;
     const canSwapRaw = el?.dataset?.canSwap ?? "false";
+    const canInteractRaw = el?.dataset?.canInteract ?? "false";
     const isInitialRaw = el?.dataset?.isInitialPrediction ?? "false";
     const canSwap = canSwapRaw === "true" || canSwapRaw === "True";
+    const canInteract = canInteractRaw === "true" || canInteractRaw === "True";
     const isInitialPrediction =
         isInitialRaw === "true" || isInitialRaw === "True";
 
@@ -244,6 +246,7 @@ window.Ligitabl.predictionPage = function (el) {
 
     return Object.assign(base, {
         canSwap,
+        canInteract,
         isInitialPrediction,
         isSaving: false,
         importedFromGuest: false,
@@ -278,7 +281,7 @@ window.Ligitabl.predictionPage = function (el) {
         },
 
         teamClick(teamCode) {
-            if (!this.canSwap) return;
+            if (!this.canInteract) return;
 
             if (this.selectedTeam === null) {
                 this._selectTeam(teamCode);
@@ -294,12 +297,19 @@ window.Ligitabl.predictionPage = function (el) {
         canUpdate() {
             const swapCount = this.getSwapCount();
             if (swapCount === 0) return false;
-            if (!this.isInitialPrediction && swapCount > 1) return false;
+            if (this.isInitialPrediction) {
+                if (swapCount > 3) return false;
+            } else {
+                if (swapCount > 1) return false;
+            }
             return this.canSwap;
         },
 
         exceedsLimit() {
-            return !this.isInitialPrediction && this.getSwapCount() > 1;
+            if (this.isInitialPrediction) {
+                return this.getSwapCount() > 3;
+            }
+            return this.getSwapCount() > 1;
         },
 
         getChangedTeams() {
@@ -380,9 +390,16 @@ window.Ligitabl.predictionPage = function (el) {
             let url, body;
 
             if (this.isInitialPrediction) {
-                // Initial prediction: send full order as team codes
+                // Initial prediction: send all swap pairs (1–3) as a list
                 url = "/seasonprediction";
-                body = {teamCodes: this.teams.map((t) => t.code)};
+                const pairs = this.inferSwapPairs(this.getChangedTeams());
+                body = {
+                    swaps: pairs.map((pair) => {
+                        const teamA = this.teams.find((t) => t.name === pair.team1);
+                        const teamB = this.teams.find((t) => t.name === pair.team2);
+                        return {teamACode: teamA.code, teamBCode: teamB.code};
+                    }),
+                };
             } else {
                 // Swap: send the single pair of team codes
                 const pairs = this.inferSwapPairs(this.getChangedTeams());

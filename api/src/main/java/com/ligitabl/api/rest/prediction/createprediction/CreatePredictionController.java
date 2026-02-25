@@ -69,35 +69,16 @@ public class CreatePredictionController {
                             "message", "You have already joined this season",
                             "prediction_id", e.existingPredictionId()));
 
-            case CreatePredictionError.InvalidTeamCount e -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            case CreatePredictionError.SameTeam __ -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of(
-                            "error", "INVALID_TEAM_COUNT",
-                            "message", String.format("Expected %d teams, but received %d", e.required(), e.provided()),
-                            "provided", e.provided(),
-                            "required", e.required()));
+                            "error", "SAME_TEAM",
+                            "message", "Team A and Team B must be different"));
 
-            case CreatePredictionError.DuplicatePositions e -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
+            case CreatePredictionError.InvalidTeamCode e -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of(
-                            "error", "DUPLICATE_POSITIONS",
-                            "message", "Each position must be unique",
-                            "duplicates", e.duplicates()));
-
-            case CreatePredictionError.DuplicateTeamCodes e -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of(
-                            "error", "DUPLICATE_TEAMS",
-                            "message", "Each team can only appear once",
-                            "duplicates", e.duplicates()));
-
-            case CreatePredictionError.InvalidTeamCodes e -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of(
-                            "error", "INVALID_TEAMS",
-                            "message", "Some team codes are not valid for this season",
-                            "invalid_codes", e.invalidCodes()));
-
-            case CreatePredictionError.SameAsInitialRankings __ -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
-                    .body(Map.of(
-                            "error", "PREDICTION_MATCHES_INITIAL_RANKINGS",
-                            "message", "Prediction must differ from the season's initial rankings"));
+                            "error", "INVALID_TEAM_CODE",
+                            "message", "Team code is not valid for this season",
+                            "code", e.code()));
 
             case CreatePredictionError.Ended e -> ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of(
@@ -109,6 +90,17 @@ public class CreatePredictionController {
                             e.currentRound(),
                             "max_rounds",
                             e.maxRounds()));
+
+            case CreatePredictionError.CurrentRoundNotFound e -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "error", "CURRENT_ROUND_NOT_FOUND",
+                            "message", "Current round not found for season",
+                            "season_id", e.seasonId()));
+
+            case CreatePredictionError.MainContestNotFound __ -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "error", "MAIN_CONTEST_NOT_FOUND",
+                            "message", "Main contest not found for the active season"));
 
             case CreatePredictionError.TransactionFailed e -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(Map.of(

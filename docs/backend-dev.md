@@ -258,6 +258,19 @@ Tip: If you’re starting from scratch, you can use the one-liner:
 make dev-reset   # reset DB, run migrations, generate jOOQ, seed reference data
 ```
 
+### Troubleshooting: `clean` + missing generated sources
+
+The `model` module includes generated jOOQ sources under `model/target/generated-sources/jooq`.
+
+- By default, jOOQ codegen is skipped (fast builds).
+- A full `clean` can delete generated sources; if codegen is still skipped afterwards, compilation may fail if
+  any code imports `com.ligitabl.model.db.*`.
+
+If you hit build failures that *look* like classpath problems (e.g. `cannot access AbstractModel`, missing
+`SeasonPrediction.getId()`, or builder `.id(...)` not found), see the dedicated playbook in:
+
+- [debugging-tests.md](./debugging-tests.md) → “Build failures that look like classpath issues (stale bytecode)”
+
 If you want a one-liner that brings up Postgres via Docker Compose, runs Liquibase migrations, and generates jOOQ
 classes for local development, use:
 

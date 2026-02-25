@@ -1,6 +1,5 @@
 package com.ligitabl.api.rest.prediction.createprediction;
 
-import java.util.List;
 import java.util.UUID;
 
 public sealed interface CreatePredictionError {
@@ -10,15 +9,13 @@ public sealed interface CreatePredictionError {
 
     record AlreadyJoined(UUID existingPredictionId) implements CreatePredictionError {}
 
-    record InvalidTeamCount(int provided, int required) implements CreatePredictionError {}
+    record EmptySwaps() implements CreatePredictionError {}
 
-    record DuplicatePositions(List<Integer> duplicates) implements CreatePredictionError {}
+    record TooManySwaps(int provided, int max) implements CreatePredictionError {}
 
-    record DuplicateTeamCodes(List<String> duplicates) implements CreatePredictionError {}
+    record SameTeam() implements CreatePredictionError {}
 
-    record InvalidTeamCodes(List<String> invalidCodes) implements CreatePredictionError {}
-
-    record SameAsInitialRankings() implements CreatePredictionError {}
+    record InvalidTeamCode(String code) implements CreatePredictionError {}
 
     record Ended(int currentRound, int maxRounds) implements CreatePredictionError {}
 

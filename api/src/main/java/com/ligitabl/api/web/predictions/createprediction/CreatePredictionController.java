@@ -3,7 +3,6 @@ package com.ligitabl.api.web.predictions.createprediction;
 import java.security.Principal;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -16,7 +15,6 @@ import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionCommand
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionError;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionResult;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionUseCase;
-import com.ligitabl.api.rest.prediction.createprediction.TeamRankDto;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 
@@ -42,12 +40,16 @@ public class CreatePredictionController {
         }
 
         log.info(
-                "POST /seasonprediction - user: {}, teams: {}",
+                "POST /seasonprediction - user: {}, swaps: {}",
                 userDetails.getEmail(),
-                request.teamCodes().size());
+                request.swaps() == null ? 0 : request.swaps().size());
 
-        var teamRankings = toRankings(request.teamCodes());
-        CreatePredictionCommand command = new CreatePredictionCommand(teamRankings);
+        CreatePredictionCommand command = new CreatePredictionCommand(
+                request.swaps() == null
+                        ? List.of()
+                        : request.swaps().stream()
+                                .map(s -> new CreatePredictionCommand.SwapPair(s.teamACode(), s.teamBCode()))
+                                .toList());
 
         Either<CreatePredictionError, CreatePredictionResult> result =
                 createPredictionUseCase.execute(userDetails.getUserId(), command);
@@ -64,22 +66,15 @@ public class CreatePredictionController {
                 });
     }
 
-    List<TeamRankDto> toRankings(List<String> teamCodes) {
-        return IntStream.range(0, teamCodes.size())
-                .mapToObj(i -> TeamRankDto.of(teamCodes.get(i), i + 1))
-                .toList();
-    }
-
     public int toHttpStatus(CreatePredictionError error) {
         return switch (error) {
             case CreatePredictionError.NotFound __ -> 404;
             case CreatePredictionError.Completed __ -> 409;
             case CreatePredictionError.AlreadyJoined __ -> 409;
-            case CreatePredictionError.InvalidTeamCount __ -> 400;
-            case CreatePredictionError.DuplicatePositions __ -> 400;
-            case CreatePredictionError.DuplicateTeamCodes __ -> 400;
-            case CreatePredictionError.InvalidTeamCodes __ -> 400;
-            case CreatePredictionError.SameAsInitialRankings __ -> 400;
+            case CreatePredictionError.EmptySwaps __ -> 400;
+            case CreatePredictionError.TooManySwaps __ -> 400;
+            case CreatePredictionError.SameTeam __ -> 400;
+            case CreatePredictionError.InvalidTeamCode __ -> 400;
             case CreatePredictionError.Ended __ -> 409;
             case CreatePredictionError.CurrentRoundNotFound __ -> 404;
             case CreatePredictionError.MainContestNotFound __ -> 404;
@@ -92,13 +87,11 @@ public class CreatePredictionController {
             case CreatePredictionError.NotFound __ -> "No active season available";
             case CreatePredictionError.Completed __ -> "Cannot join a completed season";
             case CreatePredictionError.AlreadyJoined __ -> "You have already joined this season";
-            case CreatePredictionError.InvalidTeamCount e -> String.format(
-                    "Expected %d teams, but received %d", e.required(), e.provided());
-            case CreatePredictionError.DuplicatePositions __ -> "Each position must be unique";
-            case CreatePredictionError.DuplicateTeamCodes __ -> "Each team can only appear once";
-            case CreatePredictionError.InvalidTeamCodes __ -> "Some team codes are not valid for this season";
-            case CreatePredictionError.SameAsInitialRankings
-            __ -> "Prediction must differ from the season's initial rankings";
+            case CreatePredictionError.EmptySwaps __ -> "At least one swap is required";
+            case CreatePredictionError.TooManySwaps e -> "Too many swaps: provided " + e.provided() + ", maximum is "
+                    + e.max();
+            case CreatePredictionError.SameTeam __ -> "You must swap two different teams";
+            case CreatePredictionError.InvalidTeamCode e -> "Team code not valid for this season: " + e.code();
             case CreatePredictionError.Ended __ -> "Cannot join - season has ended";
             case CreatePredictionError.CurrentRoundNotFound __ -> "Current round not found";
             case CreatePredictionError.MainContestNotFound __ -> "Default contest not found";

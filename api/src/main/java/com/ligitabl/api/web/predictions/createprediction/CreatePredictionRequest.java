@@ -7,13 +7,15 @@ import java.util.Objects;
  * Request DTO for creating initial season prediction.
  *
  * <p>Used when a user first submits their season prediction (joins the competition).
- * Contains an ordered list of team codes — position is implied by array index
- * (index 0 = position 1, index 1 = position 2, etc.).</p>
+ * Contains 1–3 swap pairs applied to the season's initial rankings — everyone
+ * starts from the same baseline and submits between one and three swaps.</p>
  *
- * <p>Example JSON: {@code { "teamCodes": ["MCI", "ARS", "LIV", ...] }}</p>
+ * <p>Example JSON: {@code { "swaps": [{"teamACode": "MCI", "teamBCode": "ARS"}] }}</p>
  */
-public record CreatePredictionRequest(List<String> teamCodes) {
-    public CreatePredictionRequest(List<String> teamCodes) {
-        this.teamCodes = List.copyOf(Objects.requireNonNull(teamCodes, "teamCodes is required"));
+public record CreatePredictionRequest(List<SwapPair> swaps) {
+    public CreatePredictionRequest {
+        Objects.requireNonNull(swaps, "swaps is required");
     }
+
+    public record SwapPair(String teamACode, String teamBCode) {}
 }

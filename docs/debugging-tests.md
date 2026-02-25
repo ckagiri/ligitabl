@@ -108,6 +108,114 @@ When a failure is opaque, re-run with more diagnostics:
   mvn -pl api -am -DskipITs -DtrimStackTrace=false test
   ```
 
+## Build failures that look like classpath issues (stale bytecode)
+
+Sometimes failures present as “classpath” or “cannot access … class file not found” errors even though the
+dependency is present. In this repo, we’ve seen this happen when **`model/target/classes` contains stale or
+incompatible bytecode** (e.g. Lombok-generated builders not matching the current sources).
+
+### Common symptoms
+
+- `cannot access AbstractModel` / `class file for AbstractModel not found`
+- `cannot access TeamRank` / `RoundSwap` / `SwapChange`
+- `cannot find symbol: method getId()` on `SeasonPrediction`
+- `cannot find symbol: method id(UUID)` on `SeasonPrediction.builder()`
+- Weird generics mismatches like:
+  - `java.util.List<TeamRank> cannot be converted to java.util.List<com.ligitabl.model.domain.TeamRank>`
+
+These typically show up:
+
+- During reactor builds (`mvn -pl api -am …`) but not in `api`-only builds, or
+- During `testCompile` even when `compile` is green.
+
+### Fast isolation: api-only vs reactor
+
+Start by checking whether the failure is specific to the multi-module reactor:
+
+```bash
+# API only (uses the installed model jar from ~/.m2)
+mvn -pl api -DskipTests -DskipITs clean compile
+
+# Reactor build (uses modules from the workspace)
+mvn -pl api -am -DskipTests -DskipITs compile
+```
+
+If `api`-only succeeds but the reactor build fails, it’s a strong hint that workspace module outputs under
+`model/target/` are stale.
+
+### Inspect the compiler classpath (last resort, but definitive)
+
+Capture a full Maven debug compile and inspect what `javac` is actually seeing:
+
+```bash
+rm -f api/target/tmp-compile-debug.log
+mvn -pl api -am -DskipTests -DskipITs -X compile > api/target/tmp-compile-debug.log 2>&1
+
+# Find the javac classpath line
+rg -n -- "-classpath" api/target/tmp-compile-debug.log | head
+
+# Confirm model outputs are (or are not) on the classpath
+rg -n -- "model/target/classes" api/target/tmp-compile-debug.log | head
+```
+
+### Compare bytecode: `model/target/classes` vs the local Maven jar
+
+When the error mentions missing methods (`getId`, builder `.id(...)`), verify the compiled signatures:
+
+```bash
+# What does the workspace module output contain?
+javap -classpath model/target/classes -public com.ligitabl.model.domain.AbstractModel | head -n 40
+javap -classpath model/target/classes -public com.ligitabl.model.domain.SeasonPrediction\$SeasonPredictionBuilder | head -n 80
+
+# Compare against what Maven would normally consume for api-only builds
+javap -classpath ~/.m2/repository/com/ligitabl/ligitabl-model/0.1.0-SNAPSHOT/ligitabl-model-0.1.0-SNAPSHOT.jar \
+  -public com.ligitabl.model.domain.SeasonPrediction\$SeasonPredictionBuilder | head -n 120
+```
+
+If the `model/target/classes` builder doesn’t extend `AbstractModel$AbstractModelBuilder` but the jar version
+does, you’re compiling tests against stale bytecode.
+
+### Minimal, safe fix: delete only the stale compiled model classes
+
+Prefer this over `mvn clean` because the `model` module also contains generated jOOQ sources.
+
+```bash
+rm -rf model/target/classes/com/ligitabl/model/domain \
+       model/target/classes/com/ligitabl/model/shared \
+  && ./mvnw -pl api -am -DskipITs test
+```
+
+Notes:
+
+- This forces Maven to recompile the model domain classes without deleting `model/target/generated-sources/jooq`.
+- If you run a full `clean` on `model/` and jOOQ codegen is skipped (default), model compilation may fail if
+  something imports `com.ligitabl.model.db.*`.
+
+### If `clean` is required: regenerate jOOQ sources first
+
+If you *must* clean `model/target/` and you later hit missing `com.ligitabl.model.db.*` types, regenerate via:
+
+```bash
+# Makefile path (recommended)
+make codegen
+
+# Or pure Maven
+mvn -pl model -Pwith-jooq generate-sources
+```
+
+Then re-run your tests.
+
+## Mockito “unnecessary stubbing” (strict stubs)
+
+This repo keeps Mockito strict by default. If you see “unnecessary stubbing” failures, fix by removing or
+scoping stubs to only the tests that actually execute those code paths.
+
+Typical approach:
+
+- Don’t blanket-stub collaborators in `@BeforeEach`.
+- Stub only inside the test(s) that need it.
+- Prefer removing unused stubs over adding `lenient()`.
+
 ## Capturing logs reliably (tee + exit code)
 
 Sometimes you want a durable log you can search, share, or diff.

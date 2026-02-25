@@ -301,7 +301,7 @@ public class UserPredictionsController {
         if (data.swapCooldown() != null) {
             var cooldown = data.swapCooldown();
             var now = Instant.now();
-            boolean firstSwapBonus = cooldown.initialPredictionMade() && cooldown.swapCount() == 0;
+            boolean firstSwapBonus = cooldown.initialPredictionMade() && cooldown.lastSwapAt() == null;
             model.addAttribute(
                     "swapStatus",
                     new SwapStatusDTO(
@@ -312,6 +312,11 @@ public class UserPredictionsController {
                             cooldown.swapCount(),
                             firstSwapBonus));
         }
+
+        // canInteract: can rearrange the table regardless of cooldown (false for read-only views)
+        boolean canInteractWithTable = data.canSwap()
+                || (data.swapCooldown() != null && data.swapCooldown().initialPredictionMade());
+        model.addAttribute("canInteract", canInteractWithTable);
 
         // Swap history (own predictions only)
         if (data.roundSwapHistory() != null && !data.roundSwapHistory().isEmpty()) {
@@ -439,7 +444,7 @@ public class UserPredictionsController {
         return switch (data.source()) {
             case USER_PREDICTION -> "Your Prediction";
             case ROUND_STANDINGS -> "Current Standings";
-            case SEASON_BASELINE -> "Season Baseline";
+            case SEASON_BASELINE -> "Last Season Baseline";
         };
     }
 
