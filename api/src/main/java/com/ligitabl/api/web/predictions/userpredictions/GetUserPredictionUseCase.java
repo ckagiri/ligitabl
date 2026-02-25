@@ -96,7 +96,7 @@ public class GetUserPredictionUseCase {
             boolean isCurrentRound,
             String roundState,
             boolean seasonCompleted) {
-        RankingsWithSource rankingsWithSource = getFallbackRankings(qry);
+        RankingsWithSource rankingsWithSource = getSeasonBaselineRankings(qry);
 
         // Get standings and points - use historical data for past rounds
         Map<String, Integer> standingsMap = isCurrentRound
@@ -213,8 +213,6 @@ public class GetUserPredictionUseCase {
         }
 
         // User is authenticated but has no prediction - show fallback with CAN_CREATE_ENTRY
-        RankingsWithSource rankingsWithSource = getFallbackRankings(qry);
-
         // For past rounds without prediction, still show historical standings
         Map<String, Integer> standingsMap = isCurrentRound
                 ? standingsRepo.findPositionMap(qry.seasonId(), currentRound)
@@ -242,6 +240,8 @@ public class GetUserPredictionUseCase {
             message = "Arrange teams and submit to join the competition";
         }
 
+        RankingsWithSource rankingsWithSource = getSeasonBaselineRankings(qry);
+
         return new UserPredictionViewData(
                 rankingsWithSource.rankings(),
                 rankingsWithSource.source(),
@@ -268,12 +268,6 @@ public class GetUserPredictionUseCase {
      */
     private List<TeamRank> convertResultRankingsToTeamRankings(RoundResult result) {
         return result.getRankings().stream().map(ResultTeamRank::getRanking).toList();
-    }
-
-    private List<TeamRank> convertStandingsRankingsToTeamRankings(Standings standings) {
-        return standings.getRankings().stream()
-                .map(StandingsTeamRank::getRanking)
-                .toList();
     }
 
     /**
@@ -346,8 +340,8 @@ public class GetUserPredictionUseCase {
                     );
         }
 
-        // Target user exists but has no prediction - show fallback
-        RankingsWithSource rankingsWithSource = getFallbackRankings(qry);
+        // Target user exists but has no prediction - show season baseline
+        RankingsWithSource rankingsWithSource = getSeasonBaselineRankings(qry);
 
         return new UserPredictionViewData(
                 rankingsWithSource.rankings(),
@@ -382,7 +376,7 @@ public class GetUserPredictionUseCase {
             boolean isCurrentRound,
             String roundState,
             boolean seasonCompleted) {
-        RankingsWithSource rankingsWithSource = getFallbackRankings(qry);
+        RankingsWithSource rankingsWithSource = getSeasonBaselineRankings(qry);
 
         return new UserPredictionViewData(
                 rankingsWithSource.rankings(),
@@ -421,19 +415,9 @@ public class GetUserPredictionUseCase {
     }
 
     /**
-     * Get fallback rankings using the three-tier hierarchy:
-     * 1. Current round standings
-     * 2. Season baseline rankings
+     * Get season baseline rankings — the shared starting point for all users.
      */
-    private RankingsWithSource getFallbackRankings(GetUserPredictionQuery query) {
-        // Try current round standings first
-        var roundStandings = standingsRepo.findLatestBySeason(query.seasonId());
-        if (roundStandings.isPresent()) {
-            return new RankingsWithSource(
-                    RankingSource.ROUND_STANDINGS, convertStandingsRankingsToTeamRankings(roundStandings.get()));
-        }
-
-        // Fallback to season baseline (guaranteed to exist)
+    private RankingsWithSource getSeasonBaselineRankings(GetUserPredictionQuery query) {
         var baseline = seasonRepo
                 .findById(query.seasonId())
                 .map(Season::getInitialRankings)

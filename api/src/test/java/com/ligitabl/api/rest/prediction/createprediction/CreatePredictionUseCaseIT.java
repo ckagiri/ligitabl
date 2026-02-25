@@ -7,8 +7,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -103,7 +101,6 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
 
     @BeforeEach
     void setupMocks() {
-        // @MockBean mocks are reset between test methods.
         now = Instant.parse("2024-12-22T10:00:00Z");
         when(clock.instant()).thenReturn(now);
 
@@ -123,106 +120,83 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
     class SuccessCases {
 
         @Test
-        @DisplayName("should join contest successfully with valid rankings")
-        void shouldJoinContestSuccessfullyWithValidRankings() {
-            CreatePredictionCommand request = validNonDefaultRequest();
-
-            Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
+        @DisplayName("should join contest successfully with a valid swap")
+        void shouldJoinContestSuccessfully() {
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, new CreatePredictionCommand("MCI", "ARS"));
 
             assertThat(result.isRight()).isTrue();
             CreatePredictionResult joinResult = result.get();
             assertThat(joinResult.predictionId()).isNotNull();
             assertThat(joinResult.entryId()).isNotNull();
             assertThat(joinResult.atRoundNumber()).isEqualTo(1);
-            assertThat(joinResult.message()).contains("Welcome");
-            assertThat(joinResult.message()).contains("Round 1");
+            assertThat(joinResult.message()).contains("Welcome").contains("Round 1");
 
             var prediction = predictionRepo.findByUserAndSeason(userId, seasonId);
             assertThat(prediction).isPresent();
             assertThat(prediction.get().getId()).isEqualTo(joinResult.predictionId());
             assertThat(prediction.get().getUserId()).isEqualTo(userId);
             assertThat(prediction.get().getSeasonId()).isEqualTo(seasonId);
-            assertThat(prediction.get().getInitialRankings()).hasSize(12);
-            assertThat(prediction.get().getCurrentRankings()).hasSize(12);
-            assertThat(prediction.get().getInitialRankings())
-                    .isEqualTo(prediction.get().getCurrentRankings());
-            assertThat(prediction.get().getSwaps()).isEmpty();
+
+            // currentRankings should reflect the swap: MCI and ARS positions exchanged
+            var rankings = prediction.get().getCurrentRankings();
+            assertThat(rankings).hasSize(12);
+            TeamRank mci = rankings.stream().filter(t -> t.getCode().equals("MCI")).findFirst().orElseThrow();
+            TeamRank ars = rankings.stream().filter(t -> t.getCode().equals("ARS")).findFirst().orElseThrow();
+            assertThat(mci.getPosition()).isEqualTo(2); // ARS was at 2
+            assertThat(ars.getPosition()).isEqualTo(1); // MCI was at 1
+
+            // initialRankings is deprecated and empty
+            assertThat(prediction.get().getInitialRankings()).isEmpty();
+
+            // initial swap is recorded; lastSwapAt stays null
+            assertThat(prediction.get().getSwaps()).hasSize(1);
+            assertThat(prediction.get().getSwaps().get(0).getRound()).isEqualTo(1);
+            assertThat(prediction.get().getSwaps().get(0).getChanges()).hasSize(1);
             assertThat(prediction.get().getLastSwapAt()).isNull();
-            assertThat(prediction.get().getAtRoundNumber()).isEqualTo(joinResult.atRoundNumber());
+
+            assertThat(prediction.get().getAtRoundNumber()).isEqualTo(1);
 
             var entry = entryRepo.findByUserAndContest(userId, contestId);
             assertThat(entry).isPresent();
             assertThat(entry.get().getId()).isEqualTo(joinResult.entryId());
-            assertThat(entry.get().getUserId()).isEqualTo(userId);
-            assertThat(entry.get().getContestId()).isEqualTo(contestId);
         }
 
         @Test
         @DisplayName("should set at_round_number to current round when round is OPEN")
         void shouldSetAtRoundNumberToCurrentWhenOpen() {
             updateCurrentRoundStatus(RoundStatus.OPEN);
-            CreatePredictionCommand request = validNonDefaultRequest();
 
-            Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, new CreatePredictionCommand("MCI", "ARS"));
 
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().atRoundNumber()).isEqualTo(1);
-
-            var prediction =
-                    predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
-            assertThat(prediction.getAtRoundNumber()).isEqualTo(1);
         }
 
         @Test
         @DisplayName("should set at_round_number to next round when round is LOCKED")
         void shouldSetAtRoundNumberToNextWhenLocked() {
             updateCurrentRoundStatus(RoundStatus.LOCKED);
-            CreatePredictionCommand request = validNonDefaultRequest();
 
-            Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, new CreatePredictionCommand("MCI", "ARS"));
 
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().atRoundNumber()).isEqualTo(2);
             assertThat(result.get().message()).contains("Round 2");
-
-            var prediction =
-                    predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
-            assertThat(prediction.getAtRoundNumber()).isEqualTo(2);
         }
 
         @Test
         @DisplayName("should set at_round_number to next round when round is COMPLETED")
         void shouldSetAtRoundNumberToNextWhenCompleted() {
             updateCurrentRoundStatus(RoundStatus.COMPLETED);
-            CreatePredictionCommand request = validNonDefaultRequest();
 
-            Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, new CreatePredictionCommand("MCI", "ARS"));
 
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().atRoundNumber()).isEqualTo(2);
-
-            var prediction =
-                    predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
-            assertThat(prediction.getAtRoundNumber()).isEqualTo(2);
-        }
-
-        @Test
-        @DisplayName("should accept any non-default ranking order")
-        void shouldAcceptAnyNonDefaultRankingOrder() {
-            List<TeamRankDto> rankings =
-                    new ArrayList<>(validNonDefaultRequest().rankings());
-            Collections.swap(rankings, 0, rankings.size() - 1);
-            CreatePredictionCommand request = new CreatePredictionCommand(rankings);
-
-            Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
-
-            assertThat(result.isRight()).isTrue();
-
-            var prediction =
-                    predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
-            TeamRank first = prediction.getCurrentRankings().getFirst();
-            assertThat(first.getCode()).isEqualTo("ARS");
-            assertThat(first.getPosition()).isEqualTo(1);
         }
     }
 
@@ -231,84 +205,24 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
     class ValidationErrors {
 
         @Test
-        @DisplayName("should reject when ranking order matches initial rankings")
-        void shouldRejectWhenRankingMatchesInitialRankings() {
-            CreatePredictionCommand request = validRequestFromInitialRankings();
-
-            Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
-
-            assertThat(result.isLeft()).isTrue();
-            assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.SameAsInitialRankings.class);
-        }
-
-        @Test
-        @DisplayName("should reject when invalid team count")
-        void shouldRejectWhenInvalidTeamCount() {
-            CreatePredictionCommand request =
-                    new CreatePredictionCommand(List.of(new TeamRankDto("ARS", 1), new TeamRankDto("LIV", 2)));
-
-            Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, request);
-
-            assertThat(result.isLeft()).isTrue();
-            assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.InvalidTeamCount.class);
-        }
-
-        @Test
-        @DisplayName("should reject when invalid team codes")
-        void shouldRejectWhenInvalidTeamCodes() {
-            List<TeamRankDto> rankings = INITIAL_RANKINGS.stream()
-                    .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
-                    .toList();
-
-            // Replace one code with an invalid code but keep team count correct.
-            rankings = new java.util.ArrayList<>(rankings);
-            rankings.set(0, new TeamRankDto("XXX", 1));
-
+        @DisplayName("should reject when swapping a team with itself")
+        void shouldRejectWhenSameTeam() {
             Either<CreatePredictionError, CreatePredictionResult> result =
-                    useCase.execute(userId, new CreatePredictionCommand(rankings));
+                    useCase.execute(userId, new CreatePredictionCommand("MCI", "MCI"));
 
             assertThat(result.isLeft()).isTrue();
-            assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.InvalidTeamCodes.class);
+            assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.SameTeam.class);
         }
 
         @Test
-        @DisplayName("should reject when duplicate positions")
-        void shouldRejectWhenDuplicatePositions() {
-            List<TeamRankDto> rankings = INITIAL_RANKINGS.stream()
-                    .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
-                    .toList();
-
-            rankings = new ArrayList<>(rankings);
-            rankings.set(0, new TeamRankDto("MCI", 1));
-            rankings.set(1, new TeamRankDto("ARS", 1));
-
+        @DisplayName("should reject when team code is not in season")
+        void shouldRejectWhenInvalidTeamCode() {
             Either<CreatePredictionError, CreatePredictionResult> result =
-                    useCase.execute(userId, new CreatePredictionCommand(rankings));
+                    useCase.execute(userId, new CreatePredictionCommand("XXX", "ARS"));
 
             assertThat(result.isLeft()).isTrue();
-            assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.DuplicatePositions.class);
-            assertThat(((CreatePredictionError.DuplicatePositions) result.getLeft()).duplicates())
-                    .contains(1);
-        }
-
-        @Test
-        @DisplayName("should reject when duplicate team codes")
-        void shouldRejectWhenDuplicateTeamCodes() {
-            List<TeamRankDto> rankings = INITIAL_RANKINGS.stream()
-                    .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
-                    .toList();
-
-            rankings = new ArrayList<>(rankings);
-            rankings.set(0, new TeamRankDto("MCI", 1));
-            rankings.set(1, new TeamRankDto("MCI", 2));
-
-            Either<CreatePredictionError, CreatePredictionResult> result =
-                    useCase.execute(userId, new CreatePredictionCommand(rankings));
-
-            assertThat(result.isLeft()).isTrue();
-            assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.DuplicateTeamCodes.class);
-            assertThat(((CreatePredictionError.DuplicateTeamCodes) result.getLeft()).duplicates())
-                    .contains("MCI");
+            assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.InvalidTeamCode.class);
+            assertThat(((CreatePredictionError.InvalidTeamCode) result.getLeft()).code()).isEqualTo("XXX");
         }
 
         @Test
@@ -318,14 +232,12 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             setSeasonCurrentRound(roundId, 22);
 
             Either<CreatePredictionError, CreatePredictionResult> result =
-                    useCase.execute(userId, validNonDefaultRequest());
+                    useCase.execute(userId, new CreatePredictionCommand("MCI", "ARS"));
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.Ended.class);
-            assertThat(((CreatePredictionError.Ended) result.getLeft()).currentRound())
-                    .isEqualTo(22);
-            assertThat(((CreatePredictionError.Ended) result.getLeft()).maxRounds())
-                    .isEqualTo(22);
+            assertThat(((CreatePredictionError.Ended) result.getLeft()).currentRound()).isEqualTo(22);
+            assertThat(((CreatePredictionError.Ended) result.getLeft()).maxRounds()).isEqualTo(22);
         }
 
         @Test
@@ -335,7 +247,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             setSeasonCurrentRound(roundId, 22);
 
             Either<CreatePredictionError, CreatePredictionResult> result =
-                    useCase.execute(userId, validNonDefaultRequest());
+                    useCase.execute(userId, new CreatePredictionCommand("MCI", "ARS"));
 
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().atRoundNumber()).isEqualTo(22);
@@ -344,39 +256,18 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("should reject when already joined")
         void shouldRejectWhenAlreadyJoined() {
-            CreatePredictionCommand request = validNonDefaultRequest();
-
-            Either<CreatePredictionError, CreatePredictionResult> first = useCase.execute(userId, request);
+            Either<CreatePredictionError, CreatePredictionResult> first =
+                    useCase.execute(userId, new CreatePredictionCommand("MCI", "ARS"));
             assertThat(first.isRight()).isTrue();
 
-            Either<CreatePredictionError, CreatePredictionResult> second = useCase.execute(userId, request);
+            Either<CreatePredictionError, CreatePredictionResult> second =
+                    useCase.execute(userId, new CreatePredictionCommand("MCI", "LIV"));
 
             assertThat(second.isLeft()).isTrue();
             assertThat(second.getLeft()).isInstanceOf(CreatePredictionError.AlreadyJoined.class);
             assertThat(((CreatePredictionError.AlreadyJoined) second.getLeft()).existingPredictionId())
                     .isEqualTo(first.get().predictionId());
         }
-    }
-
-    private static CreatePredictionCommand validRequestFromInitialRankings() {
-        return new CreatePredictionCommand(INITIAL_RANKINGS.stream()
-                .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
-                .toList());
-    }
-
-    private static CreatePredictionCommand validNonDefaultRequest() {
-        var rankings = new ArrayList<>(INITIAL_RANKINGS.stream()
-                .map(tr -> new TeamRankDto(tr.getCode(), tr.getPosition()))
-                .toList());
-
-        // Make the ranking order differ from the season initial rankings by swapping positions
-        // for the top two teams (positions must remain unique).
-        TeamRankDto first = rankings.get(0);
-        TeamRankDto second = rankings.get(1);
-        rankings.set(0, new TeamRankDto(first.code(), second.position()));
-        rankings.set(1, new TeamRankDto(second.code(), first.position()));
-
-        return new CreatePredictionCommand(rankings);
     }
 
     private void insertCompetitionAndSeason() {

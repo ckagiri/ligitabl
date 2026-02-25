@@ -54,13 +54,8 @@ public record SwapCooldown(Instant lastSwapAt, boolean initialPredictionMade, in
     public boolean canSwap(Instant now) {
         Objects.requireNonNull(now, "now is required");
 
-        // Initial prediction mode - unlimited changes
-        if (!initialPredictionMade) {
-            return true;
-        }
-
-        // First swap exception - one free swap after initial prediction
-        if (swapCount == 0) {
+        // lastSwapAt == null means no real swap submitted yet — first real swap is free
+        if (lastSwapAt == null) {
             return true;
         }
 
@@ -142,11 +137,7 @@ public record SwapCooldown(Instant lastSwapAt, boolean initialPredictionMade, in
      * Get status message based on current state.
      */
     public String getStatusMessage(Instant now) {
-        if (!initialPredictionMade) {
-            return "Make your initial prediction! You can make unlimited changes before submitting.";
-        }
-
-        if (swapCount == 0) {
+        if (lastSwapAt == null) {
             return "You can make your first swap without waiting 24 hours";
         }
 
@@ -155,9 +146,6 @@ public record SwapCooldown(Instant lastSwapAt, boolean initialPredictionMade, in
         }
 
         String timeDisplay = getRemainingTimeDisplay(now);
-        if (swapCount == 1) {
-            return "Cooldown active. You've submitted changes for this period. Next change in " + timeDisplay + ".";
-        }
         return "Cooldown active. You've already submitted changes for this period. Next change in " + timeDisplay + ".";
     }
 }
