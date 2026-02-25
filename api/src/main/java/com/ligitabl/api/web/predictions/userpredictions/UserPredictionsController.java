@@ -301,7 +301,7 @@ public class UserPredictionsController {
         if (data.swapCooldown() != null) {
             var cooldown = data.swapCooldown();
             var now = Instant.now();
-            boolean firstSwapBonus = cooldown.initialPredictionMade() && cooldown.swapCount() == 0;
+            boolean firstSwapBonus = cooldown.initialPredictionMade() && cooldown.lastSwapAt() == null;
             model.addAttribute(
                     "swapStatus",
                     new SwapStatusDTO(
