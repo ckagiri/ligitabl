@@ -197,15 +197,16 @@ message=[[${message}]]</pre
             x-data="Ligitabl.predictionPage($el)"
             th:attr="data-predictions=${predictionsJson},
                     data-can-swap=${canSwap && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
+                    data-can-interact=${canInteract && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
                     data-is-initial-prediction=${canCreateEntry && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
                     data-current-standings=${currentStandingsJson},
                     data-fixtures=${fixturesJson},
                     data-current-points=${currentPointsJson},
                     data-access-mode=${accessMode}"
           >
-            <!-- Contextual Swap Instructions Banner (only for editable states) -->
+            <!-- Contextual Swap Instructions Banner (editable + cooldown-interactive states) -->
             <div
-              th:replace="~{fragments/swap-instructions :: instructions(false, ${canSwap}, ${canCreateEntry})}"
+              th:replace="~{fragments/swap-instructions :: instructions(false, ${canInteract && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))}, ${canCreateEntry})}"
             ></div>
 
             <!-- Comparison Options (only for current editable round, not historical views) -->
@@ -233,12 +234,12 @@ message=[[${message}]]</pre
               ></div>
             </th:block>
 
-            <!-- Actions Footer (only for current editable round, not historical views) -->
+            <!-- Actions Footer (editable + cooldown-interactive states) -->
             <th:block
-              th:if="${isHistoricalView == false && (canSwap || canCreateEntry) && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))}"
+              th:if="${isHistoricalView == false && canInteract && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))}"
             >
               <div
-                x-show="canSwap || isInitialPrediction"
+                x-show="canInteract || isInitialPrediction"
                 th:replace="~{fragments/prediction-actions :: actions}"
               ></div>
             </th:block>

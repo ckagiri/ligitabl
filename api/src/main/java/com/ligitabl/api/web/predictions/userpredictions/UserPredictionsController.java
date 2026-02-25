@@ -313,6 +313,11 @@ public class UserPredictionsController {
                             firstSwapBonus));
         }
 
+        // canInteract: can rearrange the table regardless of cooldown (false for read-only views)
+        boolean canInteractWithTable = data.canSwap()
+                || (data.swapCooldown() != null && data.swapCooldown().initialPredictionMade());
+        model.addAttribute("canInteract", canInteractWithTable);
+
         // Swap history (own predictions only)
         if (data.roundSwapHistory() != null && !data.roundSwapHistory().isEmpty()) {
             model.addAttribute("swapHistory", formatSwapHistory(data.roundSwapHistory()));

@@ -1,8 +1,9 @@
 <!-- Contextual Swap Instructions Banner Fragment -->
 <!-- Parameters:
      isGuest: Boolean - whether this is for guest view
-     canSwap: Boolean - whether user can swap (non-guest only)
+     canSwap: Boolean - whether the fragment should be visible (caller passes canInteract, not just canSwap)
      canCreateEntry: Boolean - whether this is initial prediction
+     Note: inside the fragment, Alpine's canSwap/canInteract come from the JS data context (data-can-swap / data-can-interact)
 -->
 <div
   th:fragment="instructions(isGuest, canSwap, canCreateEntry)"
@@ -28,10 +29,16 @@
           d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
         />
       </svg>
-      <span class="text-sm text-gray-600"
-        >Click a team to select it, then click another team to swap their
-        positions.</span
-      >
+      <span class="text-sm text-gray-600">
+        <span x-show="canSwap || isInitialPrediction"
+          >Click a team to select it, then click another team to swap their
+          positions.</span
+        >
+        <span th:if="${!isGuest}" x-cloak x-show="canInteract && !canSwap"
+          >Cooldown active. You can rearrange to plan your next swap, but
+          changes won't be saved until cooldown ends.</span
+        >
+      </span>
     </div>
   </div>
 
@@ -117,13 +124,23 @@
         <strong
           ><span x-text="getSwapCount()"></span>
           <span x-text="getSwapCount() === 1 ? 'swap' : 'swaps'"></span></strong
-        >. Review your changes below, then
-        <span x-text="isInitialPrediction ? 'submit' : 'update'"></span>
-        to save or
-        <a @click="reset()" class="underline cursor-pointer font-semibold"
-          >reset</a
-        >
-        to undo.
+        >.
+        <span x-show="canSwap || isInitialPrediction">
+          Review your changes below, then
+          <span x-text="isInitialPrediction ? 'submit' : 'update'"></span>
+          to save or
+          <a @click="reset()" class="underline cursor-pointer font-semibold"
+            >reset</a
+          >
+          to undo.
+        </span>
+        <span x-cloak x-show="canInteract && !canSwap">
+          Cooldown active — changes are local only.
+          <a @click="reset()" class="underline cursor-pointer font-semibold"
+            >Reset</a
+          >
+          to undo or wait for cooldown to submit.
+        </span>
       </span>
     </div>
   </div>

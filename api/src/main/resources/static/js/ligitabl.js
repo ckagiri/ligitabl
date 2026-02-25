@@ -195,8 +195,10 @@ window.Ligitabl.predictionPage = function (el) {
     const parsed = Ligitabl._parseDataAttributes(el);
     const predictions = parsed.predictions;
     const canSwapRaw = el?.dataset?.canSwap ?? "false";
+    const canInteractRaw = el?.dataset?.canInteract ?? "false";
     const isInitialRaw = el?.dataset?.isInitialPrediction ?? "false";
     const canSwap = canSwapRaw === "true" || canSwapRaw === "True";
+    const canInteract = canInteractRaw === "true" || canInteractRaw === "True";
     const isInitialPrediction =
         isInitialRaw === "true" || isInitialRaw === "True";
 
@@ -244,6 +246,7 @@ window.Ligitabl.predictionPage = function (el) {
 
     return Object.assign(base, {
         canSwap,
+        canInteract,
         isInitialPrediction,
         isSaving: false,
         importedFromGuest: false,
@@ -278,7 +281,7 @@ window.Ligitabl.predictionPage = function (el) {
         },
 
         teamClick(teamCode) {
-            if (!this.canSwap) return;
+            if (!this.canInteract) return;
 
             if (this.selectedTeam === null) {
                 this._selectTeam(teamCode);

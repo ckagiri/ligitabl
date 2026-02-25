@@ -61,6 +61,15 @@
       <span x-show="isSaving">Saving...</span>
     </button>
 
+    <!-- Cooldown notice: table is interactive but submit is blocked -->
+    <p
+      x-cloak
+      x-show="canInteract && !canSwap && !isInitialPrediction"
+      class="text-xs text-yellow-700 text-center"
+    >
+      Cooldown active — submit resumes when cooldown ends.
+    </p>
+
     <!-- Changes Summary -->
     <div x-cloak x-show="getDirtyCount() > 0" class="w-full max-w-md">
       <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
