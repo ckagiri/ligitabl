@@ -74,8 +74,10 @@
               <div class="flex items-center justify-end gap-1">
                 <span>Delta</span>
                 <span
-                  class="text-gray-400 cursor-help inline-block"
-                  title="&#8593; Green: Team performing better, move them up&#10;&#8595; Red: Team performing worse, move them down"
+                  class="text-gray-400 cursor-help inline-block relative"
+                  x-data="{ open: false }"
+                  @click.stop="open = !open"
+                  @click.outside="open = false"
                 >
                   <svg
                     class="h-3.5 w-3.5"
@@ -88,6 +90,14 @@
                       clip-rule="evenodd"
                     />
                   </svg>
+                  <span
+                    x-cloak
+                    x-show="open"
+                    class="absolute bottom-full right-0 mb-1 z-20 w-52 bg-gray-800 text-white text-xs rounded px-3 py-2 whitespace-normal leading-relaxed font-normal normal-case tracking-normal text-left"
+                  >
+                    ↑ Green: Team performing better, move them up<br />↓ Red:
+                    Team performing worse, move them down
+                  </span>
                 </span>
               </div>
             </th>
@@ -180,8 +190,10 @@
                         >
                           <span class="text-gray-500">Actual:</span>
                           <span
-                            class="text-gray-400 cursor-help inline-block"
-                            title="&#8593; Green: Team performing better, move them up&#10;&#8595; Red: Team performing worse, move them down"
+                            class="text-gray-400 cursor-help inline-block relative"
+                            x-data="{ open: false }"
+                            @click.stop="open = !open"
+                            @click.outside="open = false"
                           >
                             <svg
                               class="h-3 w-3"
@@ -194,6 +206,14 @@
                                 clip-rule="evenodd"
                               />
                             </svg>
+                            <span
+                              x-cloak
+                              x-show="open"
+                              class="absolute bottom-full left-0 mb-1 z-20 w-52 bg-gray-800 text-white text-xs rounded px-3 py-2 whitespace-normal leading-relaxed"
+                            >
+                              ↑ Green: Team performing better, move them up<br />↓
+                              Red: Team performing worse, move them down
+                            </span>
                           </span>
                           <span
                             class="text-gray-700 font-medium"

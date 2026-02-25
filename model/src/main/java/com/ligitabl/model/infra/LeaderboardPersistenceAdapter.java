@@ -4,6 +4,7 @@ import static com.ligitabl.model.db.tables.TEntry.T_ENTRY;
 import static com.ligitabl.model.db.tables.TRound.T_ROUND;
 import static com.ligitabl.model.db.tables.TRoundResult.T_ROUND_RESULT;
 import static com.ligitabl.model.db.tables.TRoundSubmission.T_ROUND_SUBMISSION;
+import static com.ligitabl.model.db.tables.TSeasonPrediction.T_SEASON_PREDICTION;
 import static com.ligitabl.model.db.tables.TUser.T_USER;
 
 import java.util.HashMap;
@@ -14,7 +15,7 @@ import org.jooq.CommonTableExpression;
 import org.jooq.DSLContext;
 import org.jooq.Field;
 import org.jooq.Record7;
-import org.jooq.Record8;
+import org.jooq.Record9;
 import org.jooq.impl.DSL;
 
 import com.ligitabl.model.domain.LeaderboardEntry;
@@ -33,27 +34,27 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
             UUID contestId, UUID seasonId, int fromRound, int toRound, UUID userId, int offset, int limit) {
         validateInputs(contestId, seasonId, fromRound, toRound, offset, limit);
 
+        // effectiveToRound is the max finalized round in the phase (may be null before any round is scored)
         Integer effectiveToRound = resolveEffectiveToRound(seasonId, fromRound, toRound);
-        if (effectiveToRound == null) {
-            return emptyResponse();
-        }
 
-        int totalParticipants = countParticipants(contestId, seasonId, fromRound, effectiveToRound);
+        // Count participants from season_prediction — includes users even before scoring starts
+        int totalParticipants = countParticipants(contestId, seasonId, toRound);
         if (totalParticipants == 0) {
             return emptyResponse();
         }
 
         List<RankingWithPosition> pageRankings =
-                fetchPaginatedRankings(contestId, seasonId, fromRound, effectiveToRound, offset, limit);
+                fetchPaginatedRankings(contestId, seasonId, fromRound, toRound, effectiveToRound, offset, limit);
 
         UserRankingInfo userInfo = userId != null
-                ? fetchUserRanking(contestId, seasonId, fromRound, effectiveToRound, userId, offset, limit)
+                ? fetchUserRanking(contestId, seasonId, fromRound, toRound, effectiveToRound, userId, offset, limit)
                 : new UserRankingInfo(null, false, 0);
 
-        int previousToRound = effectiveToRound - 1;
-        HashMap<UUID, Integer> previousPositions = previousToRound >= fromRound
-                ? fetchPreviousPositions(contestId, seasonId, fromRound, previousToRound)
-                : new HashMap<>();
+        // Movement only computable when at least one round has been scored
+        HashMap<UUID, Integer> previousPositions =
+                (effectiveToRound != null && effectiveToRound - 1 >= fromRound)
+                        ? fetchPreviousPositions(contestId, seasonId, fromRound, effectiveToRound - 1)
+                        : new HashMap<>();
 
         List<LeaderboardEntry> entries = pageRankings.stream()
                 .map(ranking -> buildEntry(ranking, previousPositions))
@@ -91,7 +92,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
             int roundScore,
             int maxScore,
             int totalZeroes,
-            int totalSwaps) {}
+            int totalSwaps,
+            boolean scored) {}
 
     private record UserRankingInfo(RankingWithPosition ranking, boolean userInCurrentPage, int userPageOffset) {}
 
@@ -123,25 +125,40 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         return new LeaderboardResponse(List.of(), null, false, 0, 0, false, false);
     }
 
-    private int countParticipants(UUID contestId, UUID seasonId, int fromRound, int toRound) {
-        Integer count = dsl.select(DSL.countDistinct(T_ENTRY.FK_USER_ID))
+    /**
+     * Count participants using season_prediction as the source of truth.
+     * A user is counted if they have a prediction for this season AND joined before the phase ended
+     * (atRoundNumber <= phaseToRound). This includes users whose rounds have not yet been scored.
+     */
+    private int countParticipants(UUID contestId, UUID seasonId, int phaseToRound) {
+        Integer count = dsl.select(DSL.countDistinct(T_SEASON_PREDICTION.FK_USER_ID))
                 .from(T_ENTRY)
-                .join(T_ROUND_SUBMISSION)
-                .on(T_ROUND_SUBMISSION
+                .join(T_SEASON_PREDICTION)
+                .on(T_SEASON_PREDICTION
                         .FK_USER_ID
                         .eq(T_ENTRY.FK_USER_ID)
-                        .and(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId))
-                        .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.between(fromRound, toRound)))
-                .join(T_ROUND_RESULT)
-                .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
+                        .and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId))
+                        .and(T_SEASON_PREDICTION.C_AT_ROUND_NUMBER.le(phaseToRound)))
                 .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
                 .fetchOne(0, Integer.class);
 
         return count != null ? count : 0;
     }
 
+    /**
+     * Fetch paginated rankings.
+     *
+     * <p>Starts from season_prediction (all participants) and left-joins to scored rounds.
+     * Users without any scored rounds appear at the bottom with scored=false.
+     *
+     * @param phaseToRound phase end round — used for atRoundNumber filter
+     * @param effectiveToRound max finalized round in phase (null if no rounds scored yet)
+     */
     private List<RankingWithPosition> fetchPaginatedRankings(
-            UUID contestId, UUID seasonId, int fromRound, int toRound, int offset, int limit) {
+            UUID contestId, UUID seasonId, int fromRound, int phaseToRound, Integer effectiveToRound,
+            int offset, int limit) {
+
+        int scoringToRound = effectiveToRound != null ? effectiveToRound : phaseToRound;
 
         Field<Integer> totalScore = DSL.coalesce(DSL.sum(T_ROUND_RESULT.C_SCORE), 0)
                 .cast(Integer.class)
@@ -156,14 +173,17 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .cast(Integer.class)
                 .as("max_score");
         Field<Integer> roundScore = DSL.coalesce(
-                        DSL.sum(DSL.when(T_ROUND_SUBMISSION.C_ROUND_POSITION.eq(toRound), T_ROUND_RESULT.C_SCORE)
+                        DSL.sum(DSL.when(T_ROUND_SUBMISSION.C_ROUND_POSITION.eq(scoringToRound), T_ROUND_RESULT.C_SCORE)
                                 .otherwise(DSL.inline(0))),
                         DSL.inline(0))
                 .cast(Integer.class)
                 .as("round_score");
+        Field<Integer> isScored = DSL.when(DSL.count(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID).gt(0), 1)
+                .otherwise(0)
+                .as("is_scored");
 
-        CommonTableExpression<Record8<UUID, String, String, Integer, Integer, Integer, Integer, Integer>> userStats =
-                DSL.name("user_stats")
+        CommonTableExpression<Record9<UUID, String, String, Integer, Integer, Integer, Integer, Integer, Integer>>
+                userStats = DSL.name("user_stats")
                         .as(dsl.select(
                                         T_USER.PK_ID,
                                         T_USER.C_PUBLIC_ID,
@@ -172,17 +192,24 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                                         roundScore,
                                         maxScore,
                                         totalZeroes,
-                                        totalSwaps)
+                                        totalSwaps,
+                                        isScored)
                                 .from(T_ENTRY)
                                 .join(T_USER)
                                 .on(T_USER.PK_ID.eq(T_ENTRY.FK_USER_ID))
-                                .join(T_ROUND_SUBMISSION)
+                                .join(T_SEASON_PREDICTION)
+                                .on(T_SEASON_PREDICTION
+                                        .FK_USER_ID
+                                        .eq(T_ENTRY.FK_USER_ID)
+                                        .and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId))
+                                        .and(T_SEASON_PREDICTION.C_AT_ROUND_NUMBER.le(phaseToRound)))
+                                .leftJoin(T_ROUND_SUBMISSION)
                                 .on(T_ROUND_SUBMISSION
                                         .FK_USER_ID
                                         .eq(T_ENTRY.FK_USER_ID)
                                         .and(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId))
-                                        .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.between(fromRound, toRound)))
-                                .join(T_ROUND_RESULT)
+                                        .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.between(fromRound, scoringToRound)))
+                                .leftJoin(T_ROUND_RESULT)
                                 .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
                                 .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
                                 .groupBy(T_USER.PK_ID, T_USER.C_PUBLIC_ID, T_USER.C_DISPLAY_NAME));
@@ -195,10 +222,12 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         Field<Integer> maxScoreField = userStats.field("max_score", Integer.class);
         Field<Integer> totalZeroesField = userStats.field("total_zeroes", Integer.class);
         Field<Integer> totalSwapsField = userStats.field("total_swaps", Integer.class);
+        Field<Integer> isScoredField = userStats.field("is_scored", Integer.class);
 
         Field<Integer> position = DSL.rowNumber()
                 .over()
                 .orderBy(
+                        isScoredField.desc(),       // scored users ranked above unscored
                         totalScoreField.desc(),
                         totalZeroesField.desc(),
                         maxScoreField.desc(),
@@ -216,7 +245,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         roundScoreField,
                         maxScoreField,
                         totalZeroesField,
-                        totalSwapsField)
+                        totalSwapsField,
+                        isScoredField)
                 .from(userStats)
                 .orderBy(position)
                 .limit(limit)
@@ -230,11 +260,16 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         r.get(roundScoreField),
                         r.get(maxScoreField),
                         r.get(totalZeroesField),
-                        r.get(totalSwapsField)));
+                        r.get(totalSwapsField),
+                        r.get(isScoredField) > 0));
     }
 
     private UserRankingInfo fetchUserRanking(
-            UUID contestId, UUID seasonId, int fromRound, int toRound, UUID userId, int offset, int limit) {
+            UUID contestId, UUID seasonId, int fromRound, int phaseToRound, Integer effectiveToRound,
+            UUID userId, int offset, int limit) {
+
+        int scoringToRound = effectiveToRound != null ? effectiveToRound : phaseToRound;
+
         Field<Integer> totalScore = DSL.coalesce(DSL.sum(T_ROUND_RESULT.C_SCORE), 0)
                 .cast(Integer.class)
                 .as("total_score");
@@ -248,14 +283,17 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .cast(Integer.class)
                 .as("max_score");
         Field<Integer> roundScore = DSL.coalesce(
-                        DSL.sum(DSL.when(T_ROUND_SUBMISSION.C_ROUND_POSITION.eq(toRound), T_ROUND_RESULT.C_SCORE)
+                        DSL.sum(DSL.when(T_ROUND_SUBMISSION.C_ROUND_POSITION.eq(scoringToRound), T_ROUND_RESULT.C_SCORE)
                                 .otherwise(DSL.inline(0))),
                         DSL.inline(0))
                 .cast(Integer.class)
                 .as("round_score");
+        Field<Integer> isScored = DSL.when(DSL.count(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID).gt(0), 1)
+                .otherwise(0)
+                .as("is_scored");
 
-        CommonTableExpression<Record8<UUID, String, String, Integer, Integer, Integer, Integer, Integer>> userStats =
-                DSL.name("user_stats")
+        CommonTableExpression<Record9<UUID, String, String, Integer, Integer, Integer, Integer, Integer, Integer>>
+                userStats = DSL.name("user_stats")
                         .as(dsl.select(
                                         T_USER.PK_ID,
                                         T_USER.C_PUBLIC_ID,
@@ -264,17 +302,24 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                                         roundScore,
                                         maxScore,
                                         totalZeroes,
-                                        totalSwaps)
+                                        totalSwaps,
+                                        isScored)
                                 .from(T_ENTRY)
                                 .join(T_USER)
                                 .on(T_USER.PK_ID.eq(T_ENTRY.FK_USER_ID))
-                                .join(T_ROUND_SUBMISSION)
+                                .join(T_SEASON_PREDICTION)
+                                .on(T_SEASON_PREDICTION
+                                        .FK_USER_ID
+                                        .eq(T_ENTRY.FK_USER_ID)
+                                        .and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId))
+                                        .and(T_SEASON_PREDICTION.C_AT_ROUND_NUMBER.le(phaseToRound)))
+                                .leftJoin(T_ROUND_SUBMISSION)
                                 .on(T_ROUND_SUBMISSION
                                         .FK_USER_ID
                                         .eq(T_ENTRY.FK_USER_ID)
                                         .and(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId))
-                                        .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.between(fromRound, toRound)))
-                                .join(T_ROUND_RESULT)
+                                        .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.between(fromRound, scoringToRound)))
+                                .leftJoin(T_ROUND_RESULT)
                                 .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
                                 .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
                                 .groupBy(T_USER.PK_ID, T_USER.C_PUBLIC_ID, T_USER.C_DISPLAY_NAME));
@@ -287,10 +332,12 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         Field<Integer> maxScoreField = userStats.field("max_score", Integer.class);
         Field<Integer> totalZeroesField = userStats.field("total_zeroes", Integer.class);
         Field<Integer> totalSwapsField = userStats.field("total_swaps", Integer.class);
+        Field<Integer> isScoredField = userStats.field("is_scored", Integer.class);
 
         Field<Integer> position = DSL.rowNumber()
                 .over()
                 .orderBy(
+                        isScoredField.desc(),
                         totalScoreField.desc(),
                         totalZeroesField.desc(),
                         maxScoreField.desc(),
@@ -307,7 +354,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         roundScoreField.as("round_score"),
                         maxScoreField.as("max_score"),
                         totalZeroesField.as("total_zeroes"),
-                        totalSwapsField.as("total_swaps"))
+                        totalSwapsField.as("total_swaps"),
+                        isScoredField.as("is_scored"))
                 .from(userStats)
                 .asTable("ranked_stats");
 
@@ -320,6 +368,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         Field<Integer> rankedMaxScore = rankedStats.field("max_score", Integer.class);
         Field<Integer> rankedTotalZeroes = rankedStats.field("total_zeroes", Integer.class);
         Field<Integer> rankedTotalSwaps = rankedStats.field("total_swaps", Integer.class);
+        Field<Integer> rankedIsScored = rankedStats.field("is_scored", Integer.class);
 
         RankingWithPosition ranking = dsl.with(userStats)
                 .selectFrom(rankedStats)
@@ -333,7 +382,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         r.get(rankedRoundScore),
                         r.get(rankedMaxScore),
                         r.get(rankedTotalZeroes),
-                        r.get(rankedTotalSwaps)));
+                        r.get(rankedTotalSwaps),
+                        r.get(rankedIsScored) > 0));
 
         if (ranking == null) {
             return new UserRankingInfo(null, false, 0);
@@ -426,6 +476,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 ranking.maxScore(),
                 ranking.totalZeroes(),
                 ranking.totalSwaps(),
-                movement);
+                movement,
+                ranking.scored());
     }
 }

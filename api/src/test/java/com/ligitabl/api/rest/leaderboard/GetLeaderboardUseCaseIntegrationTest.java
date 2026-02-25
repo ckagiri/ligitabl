@@ -142,11 +142,14 @@ class GetLeaderboardUseCaseIntegrationTest extends AbstractPostgresIT {
         assertThat(leaderboard.phase().getFrom()).isEqualTo(1);
         assertThat(leaderboard.phase().getTo()).isEqualTo(38);
 
-        assertThat(leaderboard.rankings()).hasSize(2);
+        // Alice and Bob scored; Charlie has an entry+prediction but no results → unscored
+        assertThat(leaderboard.rankings()).hasSize(3);
         assertThat(leaderboard.rankings().get(0).displayName()).isEqualTo("Alice");
+        assertThat(leaderboard.rankings().get(0).scored()).isTrue();
         assertThat(leaderboard.rankings().get(0).totalScore()).isEqualTo(80);
         assertThat(leaderboard.rankings().get(1).displayName()).isEqualTo("Bob");
         assertThat(leaderboard.rankings().get(1).totalScore()).isEqualTo(70);
+        assertThat(leaderboard.rankings().get(2).scored()).isFalse();
     }
 
     @Test
@@ -209,11 +212,13 @@ class GetLeaderboardUseCaseIntegrationTest extends AbstractPostgresIT {
         assertThat(result.isRight()).isTrue();
         var rankings = result.get().rankings();
 
-        assertThat(rankings).hasSize(2);
+        // Charlie has no results → unscored, ranked below Alice and Bob
+        assertThat(rankings).hasSize(3);
         assertThat(rankings.get(0).displayName()).isEqualTo("Bob");
         assertThat(rankings.get(0).totalZeroes()).isEqualTo(12);
         assertThat(rankings.get(1).displayName()).isEqualTo("Alice");
         assertThat(rankings.get(1).totalZeroes()).isEqualTo(10);
+        assertThat(rankings.get(2).scored()).isFalse();
     }
 
     @Test
@@ -228,11 +233,13 @@ class GetLeaderboardUseCaseIntegrationTest extends AbstractPostgresIT {
         assertThat(result.isRight()).isTrue();
         var rankings = result.get().rankings();
 
-        assertThat(rankings).hasSize(2);
+        // Charlie has no results → unscored, ranked below Alice and Bob
+        assertThat(rankings).hasSize(3);
         assertThat(rankings.get(0).displayName()).isEqualTo("Bob");
         assertThat(rankings.get(0).totalSwaps()).isEqualTo(3);
         assertThat(rankings.get(1).displayName()).isEqualTo("Alice");
         assertThat(rankings.get(1).totalSwaps()).isEqualTo(5);
+        assertThat(rankings.get(2).scored()).isFalse();
     }
 
     @Test
@@ -252,11 +259,13 @@ class GetLeaderboardUseCaseIntegrationTest extends AbstractPostgresIT {
         assertThat(result.isRight()).isTrue();
         var rankings = result.get().rankings();
 
-        assertThat(rankings).hasSize(2);
+        // Charlie has no results → unscored, ranked below Alice and Bob
+        assertThat(rankings).hasSize(3);
         assertThat(rankings.get(0).displayName()).isEqualTo("Bob");
         assertThat(rankings.get(0).maxScore()).isEqualTo(100);
         assertThat(rankings.get(1).displayName()).isEqualTo("Alice");
         assertThat(rankings.get(1).maxScore()).isEqualTo(50);
+        assertThat(rankings.get(2).scored()).isFalse();
     }
 
     @Test
@@ -296,12 +305,14 @@ class GetLeaderboardUseCaseIntegrationTest extends AbstractPostgresIT {
     }
 
     @Test
-    @DisplayName("returns empty leaderboard when no submissions")
-    void returnsEmptyLeaderboardWhenNoSubmissions() {
+    @DisplayName("returns participants as unscored when no submissions exist")
+    void returnsUnscoredParticipantsWhenNoSubmissions() {
+        // Alice, Bob, Charlie have predictions and entries but no round results yet
         var result = useCase.execute(new GetLeaderboardQuery(null));
 
         assertThat(result.isRight()).isTrue();
-        assertThat(result.get().rankings()).isEmpty();
+        assertThat(result.get().rankings()).hasSize(3);
+        assertThat(result.get().rankings()).allMatch(e -> !e.scored());
     }
 
     @Test
@@ -319,12 +330,15 @@ class GetLeaderboardUseCaseIntegrationTest extends AbstractPostgresIT {
         assertThat(result.isRight()).isTrue();
         var leaderboard = result.get();
 
-        assertThat(leaderboard.rankings()).hasSize(2);
+        // Alice and Bob scored; Charlie has no results in Q1 → unscored
+        assertThat(leaderboard.rankings()).hasSize(3);
         assertThat(leaderboard.rankings().get(0).displayName()).isEqualTo("Bob");
         assertThat(leaderboard.rankings().get(0).movement()).isEqualTo(1);
 
         assertThat(leaderboard.rankings().get(1).displayName()).isEqualTo("Alice");
         assertThat(leaderboard.rankings().get(1).movement()).isEqualTo(-1);
+
+        assertThat(leaderboard.rankings().get(2).scored()).isFalse();
     }
 
     @Test

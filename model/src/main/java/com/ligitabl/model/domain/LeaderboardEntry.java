@@ -12,6 +12,7 @@ package com.ligitabl.model.domain;
  * @param totalZeroes Total perfect prediction (zeroes) in phase
  * @param totalSwaps Total lineup changes (swaps) in phase
  * @param movement Position change from previous period (+ = up, - = down, 0 = same)
+ * @param scored Whether any rounds in this phase have been scored for this user
  */
 public record LeaderboardEntry(
         int position,
@@ -22,4 +23,5 @@ public record LeaderboardEntry(
         int maxScore,
         int totalZeroes,
         int totalSwaps,
-        int movement) {}
+        int movement,
+        boolean scored) {}

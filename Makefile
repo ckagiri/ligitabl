@@ -676,7 +676,7 @@ test-api-core-with-codegen: ## Start DB, migrate, run jOOQ codegen, then run cor
 .PHONY: test-api-it
 test-api-it: ## Run DB-backed integration tests
 	$(MAKE) api-clean-classes
-	mvn -pl $(API_DIR) -am -DskipITs=false -Dtest='**/*IT' \
+	mvn -pl $(API_DIR) -am -DskipITs=false -Dtest='**/*IT,**/*IntegrationTest' \
 		-Dsurefire.failIfNoSpecifiedTests=false test
 
 .PHONY: test-api-all
