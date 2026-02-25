@@ -46,11 +46,12 @@
           th:if="${isCurrentRound == true && (roundState == 'open' || (roundState == 'finalized' && seasonCompleted != true))}"
           class="text-sm text-yellow-700 mt-1"
         >
-          Tap teams to swap and preview your prediction!
+          Tap teams to swap and preview your prediction — make up to 3 swaps,
+          then
           <a
             th:href="@{/auth/register}"
             class="underline font-medium hover:text-yellow-900"
-            >Sign up</a
+            >sign up</a
           >
           to save and join the competition.
         </p>
@@ -60,7 +61,7 @@
           th:if="${isCurrentRound == true && (roundState == 'locked' || roundState == 'completed') && currentRound != lastRound}"
           class="text-sm text-yellow-700 mt-1"
         >
-          <strong>👋 Matches In Progress</strong> - Tap teams to swap and preview your prediction!
+          <strong>👋 Matches In Progress</strong> - Tap teams to swap and preview your prediction — make up to 3 swaps.
           <a
             th:href="@{/auth/register}"
             class="underline font-medium hover:text-yellow-900"
@@ -284,7 +285,7 @@
             👋 Matches In Progress
           </p>
           <p class="text-sm text-blue-700 mt-1">
-            You can still make your prediction (at least 1 swap needed). It will be scored next round.
+            You can still make your prediction (1–3 swaps needed). It will be scored next round.
           </p>
         </th:block>
 
@@ -341,7 +342,7 @@
         <th:block th:if="${canCreateEntry == true && currentRound != lastRound}">
           <p class="text-sm font-medium text-yellow-800">⏳ Scoring predictions</p>
           <p class="text-sm text-yellow-700 mt-1">
-            You can still make your prediction (at least 1 swap needed). It will be scored next round.
+            You can still make your prediction (1–3 swaps needed). It will be scored next round.
           </p>
         </th:block>
       </div>
