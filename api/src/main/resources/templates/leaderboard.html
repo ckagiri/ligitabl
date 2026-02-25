@@ -120,7 +120,8 @@
                       class="text-indigo-600 mr-1.5 text-base"
                       >🔹</span
                     >
-                    <span th:text="${entry.position}">1</span>
+                    <span th:if="${entry.scored}" th:text="${entry.position}">1</span>
+                    <span th:if="${!entry.scored}" class="text-gray-400">—</span>
                   </td>
 
                   <!-- Player (clickable) -->
@@ -144,65 +145,58 @@
                   </td>
 
                   <!-- Score -->
-                  <td
-                    class="px-3 py-4 whitespace-nowrap text-right text-sm font-bold text-indigo-600"
-                    th:text="${entry.totalScore}"
-                  >
-                    1850
+                  <td class="px-3 py-4 whitespace-nowrap text-right text-sm font-bold text-indigo-600">
+                    <span th:if="${entry.scored}" th:text="${entry.totalScore}">1850</span>
+                    <span th:if="${!entry.scored}" class="text-gray-400 font-normal">—</span>
                   </td>
 
                   <!-- Round Score -->
-                  <td
-                    class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-600"
-                    th:text="${entry.roundScore}"
-                  >
-                    45
+                  <td class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-600">
+                    <span th:if="${entry.scored}" th:text="${entry.roundScore}">45</span>
+                    <span th:if="${!entry.scored}" class="text-gray-400">—</span>
                   </td>
 
                   <!-- Zeroes -->
-                  <td
-                    class="px-3 py-4 whitespace-nowrap text-right text-sm font-semibold text-green-600"
-                    th:text="${entry.totalZeroes}"
-                  >
-                    198
+                  <td class="px-3 py-4 whitespace-nowrap text-right text-sm font-semibold text-green-600">
+                    <span th:if="${entry.scored}" th:text="${entry.totalZeroes}">198</span>
+                    <span th:if="${!entry.scored}" class="text-gray-400 font-normal">—</span>
                   </td>
 
                   <!-- Best -->
-                  <td
-                    class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-600"
-                    th:text="${entry.maxScore}"
-                  >
-                    52
+                  <td class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-600">
+                    <span th:if="${entry.scored}" th:text="${entry.maxScore}">52</span>
+                    <span th:if="${!entry.scored}" class="text-gray-400">—</span>
                   </td>
 
                   <!-- Swaps -->
-                  <td
-                    class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-500"
-                    th:text="${entry.totalSwaps}"
-                  >
-                    23
+                  <td class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                    <span th:if="${entry.scored}" th:text="${entry.totalSwaps}">23</span>
+                    <span th:if="${!entry.scored}" class="text-gray-400">—</span>
                   </td>
 
                   <!-- Movement -->
                   <td class="px-3 py-4 whitespace-nowrap text-center text-sm">
-                    <span
-                      th:if="${entry.movement > 0}"
-                      class="text-green-600 font-semibold"
-                    >
-                      ↑ <span th:text="${entry.movement}">1</span>
-                    </span>
-                    <span
-                      th:if="${entry.movement < 0}"
-                      class="text-red-600 font-semibold"
-                    >
-                      ↓
-                      <span th:text="${T(java.lang.Math).abs(entry.movement)}"
-                        >2</span
+                    <th:block th:if="${entry.scored}">
+                      <span
+                        th:if="${entry.movement > 0}"
+                        class="text-green-600 font-semibold"
                       >
-                    </span>
-                    <span th:if="${entry.movement == 0}" class="text-gray-400"
-                      >--</span
-                    >
+                        ↑ <span th:text="${entry.movement}">1</span>
+                      </span>
+                      <span
+                        th:if="${entry.movement < 0}"
+                        class="text-red-600 font-semibold"
+                      >
+                        ↓
+                        <span th:text="${T(java.lang.Math).abs(entry.movement)}"
+                          >2</span
+                        >
+                      </span>
+                      <span th:if="${entry.movement == 0}" class="text-gray-400"
+                        >--</span
+                      >
+                    </th:block>
+                    <span th:if="${!entry.scored}" class="text-gray-400">—</span>
                   </td>
                 </tr>
               </tbody>
@@ -219,7 +213,10 @@
                       <div class="flex items-center">
                         <span class="text-indigo-600 mr-1.5 text-base">🔹</span>
                         <span class="text-sm font-semibold text-indigo-900">
-                          #<span th:text="${userPosition.position}">45</span>
+                          <th:block th:if="${userPosition.scored}"
+                            >#<span th:text="${userPosition.position}">45</span></th:block
+                          >
+                          <span th:if="${!userPosition.scored}" class="text-gray-400">—</span>
                         </span>
                       </div>
 
@@ -228,80 +225,86 @@
                         You (<span th:text="${currentUserName}">Adam</span>)
                       </div>
 
-                      <!-- Score -->
-                      <div class="flex items-center">
-                        <span class="text-xs text-gray-600 mr-1">Score:</span>
-                        <span
-                          class="text-sm font-bold text-indigo-700"
-                          th:text="${userPosition.totalScore}"
-                          >1702</span
-                        >
-                      </div>
-
-                      <!-- Round Score -->
-                      <div class="flex items-center">
-                        <span class="text-xs text-gray-600 mr-1">GW:</span>
-                        <span
-                          class="text-sm text-gray-700"
-                          th:text="${userPosition.roundScore}"
-                          >156</span
-                        >
-                      </div>
-
-                      <!-- Zeroes -->
-                      <div class="flex items-center">
-                        <span class="text-xs text-gray-600 mr-1">Zeroes:</span>
-                        <span
-                          class="text-sm font-semibold text-green-600"
-                          th:text="${userPosition.totalZeroes}"
-                          >175</span
-                        >
-                      </div>
-
-                      <!-- Best -->
-                      <div class="flex items-center">
-                        <span class="text-xs text-gray-600 mr-1">Best:</span>
-                        <span
-                          class="text-sm text-gray-700"
-                          th:text="${userPosition.maxScore}"
-                          >52</span
-                        >
-                      </div>
-
-                      <!-- Swaps -->
-                      <div class="flex items-center">
-                        <span class="text-xs text-gray-600 mr-1">Swaps:</span>
-                        <span
-                          class="text-sm font-semibold text-indigo-600"
-                          th:text="${userPosition.totalSwaps}"
-                          >15</span
-                        >
-                      </div>
-
-                      <!-- Movement -->
-                      <div class="flex items-center">
-                        <span
-                          th:if="${userPosition.movement > 0}"
-                          class="text-green-600 font-bold text-sm"
-                        >
-                          ↑ <span th:text="${userPosition.movement}">3</span>
-                        </span>
-                        <span
-                          th:if="${userPosition.movement < 0}"
-                          class="text-red-600 font-bold text-sm"
-                        >
-                          ↓
+                      <th:block th:if="${userPosition.scored}">
+                        <!-- Score -->
+                        <div class="flex items-center">
+                          <span class="text-xs text-gray-600 mr-1">Score:</span>
                           <span
-                            th:text="${T(java.lang.Math).abs(userPosition.movement)}"
-                            >2</span
+                            class="text-sm font-bold text-indigo-700"
+                            th:text="${userPosition.totalScore}"
+                            >1702</span
                           >
-                        </span>
-                        <span
-                          th:if="${userPosition.movement == 0}"
-                          class="text-indigo-500 text-sm"
-                          >--</span
-                        >
-                      </div>
+                        </div>
+
+                        <!-- Round Score -->
+                        <div class="flex items-center">
+                          <span class="text-xs text-gray-600 mr-1">GW:</span>
+                          <span
+                            class="text-sm text-gray-700"
+                            th:text="${userPosition.roundScore}"
+                            >156</span
+                          >
+                        </div>
+
+                        <!-- Zeroes -->
+                        <div class="flex items-center">
+                          <span class="text-xs text-gray-600 mr-1">Zeroes:</span>
+                          <span
+                            class="text-sm font-semibold text-green-600"
+                            th:text="${userPosition.totalZeroes}"
+                            >175</span
+                          >
+                        </div>
+
+                        <!-- Best -->
+                        <div class="flex items-center">
+                          <span class="text-xs text-gray-600 mr-1">Best:</span>
+                          <span
+                            class="text-sm text-gray-700"
+                            th:text="${userPosition.maxScore}"
+                            >52</span
+                          >
+                        </div>
+
+                        <!-- Swaps -->
+                        <div class="flex items-center">
+                          <span class="text-xs text-gray-600 mr-1">Swaps:</span>
+                          <span
+                            class="text-sm font-semibold text-indigo-600"
+                            th:text="${userPosition.totalSwaps}"
+                            >15</span
+                          >
+                        </div>
+
+                        <!-- Movement -->
+                        <div class="flex items-center">
+                          <span
+                            th:if="${userPosition.movement > 0}"
+                            class="text-green-600 font-bold text-sm"
+                          >
+                            ↑ <span th:text="${userPosition.movement}">3</span>
+                          </span>
+                          <span
+                            th:if="${userPosition.movement < 0}"
+                            class="text-red-600 font-bold text-sm"
+                          >
+                            ↓
+                            <span
+                              th:text="${T(java.lang.Math).abs(userPosition.movement)}"
+                              >2</span
+                            >
+                          </span>
+                          <span
+                            th:if="${userPosition.movement == 0}"
+                            class="text-indigo-500 text-sm"
+                            >--</span
+                          >
+                        </div>
+                      </th:block>
+
+                      <th:block th:if="${!userPosition.scored}">
+                        <span class="text-xs text-gray-500 italic">Awaiting first scored round</span>
+                      </th:block>
                     </div>
                   </td>
                 </tr>

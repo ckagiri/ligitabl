@@ -215,10 +215,14 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
 
         var results = computeEntries(1, 2);
 
-        assertThat(results).hasSize(1);
+        // Alice is scored; Bob and Charlie have predictions but no results
+        assertThat(results).hasSize(3);
         assertThat(results.get(0).displayName()).isEqualTo("Alice");
+        assertThat(results.get(0).scored()).isTrue();
         assertThat(results.get(0).totalScore()).isEqualTo(100);
         assertThat(results.get(0).maxScore()).isEqualTo(90);
+        assertThat(results.get(1).scored()).isFalse();
+        assertThat(results.get(2).scored()).isFalse();
     }
 
     @Test
@@ -384,17 +388,26 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
 
         var results = computeEntries(5, 10);
 
-        assertThat(results).hasSize(1);
+        // Alice is scored with results in range; Bob and Charlie have predictions but no results in range
+        assertThat(results).hasSize(3);
+        assertThat(results.get(0).displayName()).isEqualTo("Alice");
+        assertThat(results.get(0).scored()).isTrue();
         assertThat(results.get(0).totalScore()).isEqualTo(130);
         assertThat(results.get(0).totalZeroes()).isEqualTo(13);
         assertThat(results.get(0).totalSwaps()).isEqualTo(7);
+        assertThat(results.get(1).scored()).isFalse();
+        assertThat(results.get(2).scored()).isFalse();
     }
 
     @Test
-    @DisplayName("returns empty when no results")
-    void returnsEmptyWhenNoResults() {
+    @DisplayName("returns participants as unscored when no rounds are finalized")
+    void returnsUnscoredParticipantsWhenNoRoundsFinalized() {
+        // Alice, Bob, Charlie have predictions and entries but no round results yet
         var results = computeEntries(1, 1);
-        assertThat(results).isEmpty();
+
+        assertThat(results).hasSize(3);
+        assertThat(results).allMatch(e -> !e.scored());
+        assertThat(results).allMatch(e -> e.totalScore() == 0);
     }
 
     @Test
@@ -403,14 +416,66 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         createResult(aliceId, alicePredictionId, 1, 100, 10, 5);
         createResult(bobId, bobPredictionId, 1, 90, 9, 4);
 
+        // Dave has a prediction and scores but no contest entry — must be excluded
         UUID daveId = insertUser("dave@example.com", "Dave");
         UUID davePredictionId = createPrediction(daveId);
         createResult(daveId, davePredictionId, 1, 120, 12, 6);
 
         var results = computeEntries(1, 1);
 
-        assertThat(results).hasSize(2);
-        assertThat(results).extracting(r -> r.displayName()).containsExactly("Alice", "Bob");
+        // Alice and Bob scored; Charlie has an entry+prediction but no results → unscored
+        assertThat(results).hasSize(3);
+        assertThat(results.get(0).displayName()).isEqualTo("Alice");
+        assertThat(results.get(0).scored()).isTrue();
+        assertThat(results.get(1).displayName()).isEqualTo("Bob");
+        assertThat(results.get(1).scored()).isTrue();
+        assertThat(results.get(2).displayName()).isEqualTo("Charlie");
+        assertThat(results.get(2).scored()).isFalse();
+        assertThat(results).noneMatch(e -> e.displayName().equals("Dave"));
+    }
+
+    @Test
+    @DisplayName("scored users rank above unscored users")
+    void scoredUsersRankAboveUnscoredUsers() {
+        // Only Charlie has a result; Alice and Bob have predictions but no scores
+        createResult(charlieId, charliePredictionId, 1, 50, 5, 2);
+
+        var results = computeEntries(1, 1);
+
+        assertThat(results).hasSize(3);
+        assertThat(results.get(0).displayName()).isEqualTo("Charlie");
+        assertThat(results.get(0).scored()).isTrue();
+        assertThat(results.get(1).scored()).isFalse();
+        assertThat(results.get(2).scored()).isFalse();
+    }
+
+    @Test
+    @DisplayName("late joiner is excluded from a phase that closed before they joined")
+    void lateJoinerExcludedFromPhaseTheyMissed() {
+        // Dave joins at round 15; Q1 covers rounds 1-10 — Dave should not appear
+        UUID daveId = insertUser("dave@example.com", "Dave");
+        createPredictionAtRound(daveId, 15);
+        entryRepo.save(Entry.builder().userId(daveId).contestId(contestId).build());
+
+        var results = computeEntries(1, 10);
+
+        assertThat(results).noneMatch(e -> e.displayName().equals("Dave"));
+        // Alice, Bob, Charlie (atRoundNumber=1 <= 10) still appear
+        assertThat(results).hasSize(3);
+    }
+
+    @Test
+    @DisplayName("late joiner is included in a phase that was still open when they joined")
+    void lateJoinerIncludedInPhaseTheyJoinedBefore() {
+        // Dave joins at round 15; H1 covers rounds 1-19 — Dave should appear (unscored)
+        UUID daveId = insertUser("dave@example.com", "Dave");
+        createPredictionAtRound(daveId, 15);
+        entryRepo.save(Entry.builder().userId(daveId).contestId(contestId).build());
+
+        var results = computeEntries(1, 19);
+
+        assertThat(results).hasSize(4);
+        assertThat(results).anyMatch(e -> e.displayName().equals("Dave") && !e.scored());
     }
 
     private void insertCompetitionSeasonAndContest() {
@@ -488,6 +553,10 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
     }
 
     private UUID createPrediction(UUID userId) {
+        return createPredictionAtRound(userId, 1);
+    }
+
+    private UUID createPredictionAtRound(UUID userId, int atRound) {
         SeasonPrediction prediction = SeasonPrediction.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
@@ -495,7 +564,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
                 .initialRankings(List.of())
                 .currentRankings(List.of())
                 .swaps(List.of())
-                .atRoundNumber(1)
+                .atRoundNumber(atRound)
                 .build();
 
         seasonPredictionRepo.save(prediction);

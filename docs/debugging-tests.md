@@ -24,10 +24,10 @@ Note: VS Code tasks are provided for common test flows (including “logged to r
      make test-api-it
      ```
 
-   - API integration tests (DB-backed `*IT`, direct Maven invocation):
+   - API integration tests (DB-backed `*IT` and `*IntegrationTest`, direct Maven invocation):
 
      ```bash
-     mvn -pl api -am -DskipITs=false -Dtest='**/*IT' -Dsurefire.failIfNoSpecifiedTests=false test
+     mvn -pl api -am -DskipITs=false -Dtest='**/*IT,**/*IntegrationTest' -Dsurefire.failIfNoSpecifiedTests=false test
      ```
 
 2. **Identify which tests failed** (don’t scroll the whole Maven output)
@@ -249,7 +249,7 @@ Short summaries of the test-focused targets in [Makefile](Makefile):
 - `test-unit`: only guard-style unit tests (fastest slice).
 - `test-api-core`: core API tests (skips `*IT`).
 - `test-api-core-with-codegen`: start DB, migrate, run jOOQ codegen, then `test-api-core`.
-- `test-api-it`: DB-backed `*IT` integration tests only.
+- `test-api-it`: DB-backed `*IT` and `*IntegrationTest` tests only.
 - `test-api-all`: full API test suite (same scope as `test`).
 - `test-all`: full repo test suite (all modules).
 
@@ -569,7 +569,82 @@ cat scripts/target/*.exit 2>/dev/null || true
 - Keep DB startup deterministic: start containers early and make readiness explicit; avoid “implicit” connection attempts during property registration.
 - Avoid real outbound network calls: stub external HTTP dependencies in ITs to eliminate flakiness and speed runs.
 - Prefer single-container-per-module patterns: static/singleton Postgres containers can significantly reduce overhead.
-- Separate fast vs slow suites: run `-DskipITs` by default locally, then run `*IT` explicitly via `make test-api-it` when needed.
+- Separate fast vs slow suites: run `-DskipITs` by default locally, then run `*IT` and `*IntegrationTest` explicitly via `make test-api-it` when needed.
+
+## Updating tests after a query behaviour change
+
+When a query is refactored (e.g. INNER JOIN → LEFT JOIN), existing tests often break because the result set grows or the semantics change. The workflow below was used when the leaderboard query was changed to return unscored participants.
+
+### 1. Identify which tests break — and why
+
+Run the test suite (after confirming changes compile) and note which assertions fail:
+
+```bash
+make test-api-it
+```
+
+Then ask: **did the query return _more_ rows than before, fewer, or different columns?** Each maps to a different fix pattern:
+
+| Change | Typical symptom | Fix |
+|---|---|---|
+| INNER JOIN → LEFT JOIN | `hasSize(N)` fails because unmatched rows now appear | Update expected size; add assertions for the new rows |
+| New column / flag | Compile errors or wrong defaults | Add the field to the domain record and update all call sites |
+| Different ordering | Wrong `get(0)` result | Understand new sort key; update assertions accordingly |
+
+### 2. Distinguish pre-existing failures from your changes
+
+Use `git stash` to temporarily restore the previous state and confirm which failures existed before your change:
+
+```bash
+git stash
+make test-api-it 2>&1 | grep "Tests run:"
+git stash pop
+```
+
+If the same tests fail without your changes, they are pre-existing issues — don't try to fix them as part of the current task.
+
+### 3. Test naming and Make targets
+
+**`make test-api-it` filters by `*IT` and `*IntegrationTest` naming patterns.**
+
+A class named `FooIntegrationTest` is included; one named `FooTest` is not. If a test you expect to see is missing from the run output, check its class name:
+
+```bash
+# confirm whether a test class matches the filter
+rg -rn "class.*IntegrationTest\|class.*IT " api/src/test/java
+```
+
+If a DB-backed test is named `*Test` (not `*IT` / `*IntegrationTest`), either rename it or run it with the full test suite:
+
+```bash
+make test-api-all
+```
+
+### 4. Patterns for left-join refactors (scored vs unscored rows)
+
+When a query changes from "only return rows with results" to "return all participants with results optionally joined", a `scored` flag is typically added to the domain type. Tests need updates in two ways:
+
+**Size assertions** — the result set is now larger:
+
+```java
+// Before: only scored users returned
+assertThat(results).hasSize(1);
+
+// After: all participants (scored + unscored)
+assertThat(results).hasSize(3);
+```
+
+**Ordering assertions** — scored users sort above unscored users (via `isScoredField.desc()` as the first ORDER BY key), so existing index-based assertions (`get(0)`) usually still hold for scored-only scenarios, but add explicit checks:
+
+```java
+assertThat(results.get(0).scored()).isTrue();
+assertThat(results.get(1).scored()).isFalse();
+```
+
+**New tests to add** after a left-join refactor:
+- No results exist yet → participants appear with `scored=false`
+- Scored users always rank above unscored users
+- Eligibility filter (e.g. `atRoundNumber <= phaseToRound`) excludes late joiners from phases they missed
 
 ## What to collect when asking for help
 
