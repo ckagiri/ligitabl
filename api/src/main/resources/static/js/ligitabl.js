@@ -294,11 +294,18 @@ window.Ligitabl.predictionPage = function (el) {
         canUpdate() {
             const swapCount = this.getSwapCount();
             if (swapCount === 0) return false;
-            if (swapCount > 1) return false;
+            if (this.isInitialPrediction) {
+                if (swapCount > 3) return false;
+            } else {
+                if (swapCount > 1) return false;
+            }
             return this.canSwap;
         },
 
         exceedsLimit() {
+            if (this.isInitialPrediction) {
+                return this.getSwapCount() > 3;
+            }
             return this.getSwapCount() > 1;
         },
 
@@ -380,13 +387,16 @@ window.Ligitabl.predictionPage = function (el) {
             let url, body;
 
             if (this.isInitialPrediction) {
-                // Initial prediction: send the one swap pair (same format as a regular swap)
+                // Initial prediction: send all swap pairs (1–3) as a list
                 url = "/seasonprediction";
                 const pairs = this.inferSwapPairs(this.getChangedTeams());
-                const pair = pairs[0];
-                const teamA = this.teams.find((t) => t.name === pair.team1);
-                const teamB = this.teams.find((t) => t.name === pair.team2);
-                body = {teamACode: teamA.code, teamBCode: teamB.code};
+                body = {
+                    swaps: pairs.map((pair) => {
+                        const teamA = this.teams.find((t) => t.name === pair.team1);
+                        const teamB = this.teams.find((t) => t.name === pair.team2);
+                        return {teamACode: teamA.code, teamBCode: teamB.code};
+                    }),
+                };
             } else {
                 // Swap: send the single pair of team codes
                 const pairs = this.inferSwapPairs(this.getChangedTeams());

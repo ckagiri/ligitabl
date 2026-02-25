@@ -123,7 +123,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @DisplayName("should join contest successfully with a valid swap")
         void shouldJoinContestSuccessfully() {
             Either<CreatePredictionError, CreatePredictionResult> result =
-                    useCase.execute(userId, new CreatePredictionCommand("MCI", "ARS"));
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
 
             assertThat(result.isRight()).isTrue();
             CreatePredictionResult joinResult = result.get();
@@ -163,12 +163,43 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         }
 
         @Test
+        @DisplayName("should apply multiple swaps sequentially and record all changes")
+        void shouldApplyMultipleSwapsAndRecordAllChanges() {
+            // Baseline: MCI=1, ARS=2, LIV=3
+            // Swap 1: MCI ↔ ARS → ARS=1, MCI=2, LIV=3
+            // Swap 2: LIV ↔ MCI → ARS=1, LIV=2, MCI=3
+            Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(
+                    userId,
+                    multiSwap(List.of(
+                            new CreatePredictionCommand.SwapPair("MCI", "ARS"),
+                            new CreatePredictionCommand.SwapPair("LIV", "MCI"))));
+
+            assertThat(result.isRight()).isTrue();
+
+            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId);
+            assertThat(prediction).isPresent();
+
+            var rankings = prediction.get().getCurrentRankings();
+            TeamRank ars = rankings.stream().filter(t -> t.getCode().equals("ARS")).findFirst().orElseThrow();
+            TeamRank liv = rankings.stream().filter(t -> t.getCode().equals("LIV")).findFirst().orElseThrow();
+            TeamRank mci = rankings.stream().filter(t -> t.getCode().equals("MCI")).findFirst().orElseThrow();
+            assertThat(ars.getPosition()).isEqualTo(1);
+            assertThat(liv.getPosition()).isEqualTo(2);
+            assertThat(mci.getPosition()).isEqualTo(3);
+
+            // Both swap changes recorded under one RoundSwap
+            assertThat(prediction.get().getSwaps()).hasSize(1);
+            assertThat(prediction.get().getSwaps().get(0).getChanges()).hasSize(2);
+            assertThat(prediction.get().getLastSwapAt()).isNull();
+        }
+
+        @Test
         @DisplayName("should set at_round_number to current round when round is OPEN")
         void shouldSetAtRoundNumberToCurrentWhenOpen() {
             updateCurrentRoundStatus(RoundStatus.OPEN);
 
             Either<CreatePredictionError, CreatePredictionResult> result =
-                    useCase.execute(userId, new CreatePredictionCommand("MCI", "ARS"));
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
 
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().atRoundNumber()).isEqualTo(1);
@@ -180,7 +211,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             updateCurrentRoundStatus(RoundStatus.LOCKED);
 
             Either<CreatePredictionError, CreatePredictionResult> result =
-                    useCase.execute(userId, new CreatePredictionCommand("MCI", "ARS"));
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
 
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().atRoundNumber()).isEqualTo(2);
@@ -193,7 +224,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             updateCurrentRoundStatus(RoundStatus.COMPLETED);
 
             Either<CreatePredictionError, CreatePredictionResult> result =
-                    useCase.execute(userId, new CreatePredictionCommand("MCI", "ARS"));
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
 
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().atRoundNumber()).isEqualTo(2);
@@ -205,10 +236,37 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
     class ValidationErrors {
 
         @Test
+        @DisplayName("should reject when no swaps are provided")
+        void shouldRejectWhenEmptySwaps() {
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, multiSwap(List.of()));
+
+            assertThat(result.isLeft()).isTrue();
+            assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.EmptySwaps.class);
+        }
+
+        @Test
+        @DisplayName("should reject when more than 3 swaps are provided")
+        void shouldRejectWhenTooManySwaps() {
+            Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(
+                    userId,
+                    multiSwap(List.of(
+                            new CreatePredictionCommand.SwapPair("MCI", "ARS"),
+                            new CreatePredictionCommand.SwapPair("LIV", "AVL"),
+                            new CreatePredictionCommand.SwapPair("CHE", "NEW"),
+                            new CreatePredictionCommand.SwapPair("MUN", "TOT"))));
+
+            assertThat(result.isLeft()).isTrue();
+            assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.TooManySwaps.class);
+            assertThat(((CreatePredictionError.TooManySwaps) result.getLeft()).provided()).isEqualTo(4);
+            assertThat(((CreatePredictionError.TooManySwaps) result.getLeft()).max()).isEqualTo(3);
+        }
+
+        @Test
         @DisplayName("should reject when swapping a team with itself")
         void shouldRejectWhenSameTeam() {
             Either<CreatePredictionError, CreatePredictionResult> result =
-                    useCase.execute(userId, new CreatePredictionCommand("MCI", "MCI"));
+                    useCase.execute(userId, singleSwap("MCI", "MCI"));
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.SameTeam.class);
@@ -218,7 +276,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @DisplayName("should reject when team code is not in season")
         void shouldRejectWhenInvalidTeamCode() {
             Either<CreatePredictionError, CreatePredictionResult> result =
-                    useCase.execute(userId, new CreatePredictionCommand("XXX", "ARS"));
+                    useCase.execute(userId, singleSwap("XXX", "ARS"));
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.InvalidTeamCode.class);
@@ -232,7 +290,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             setSeasonCurrentRound(roundId, 22);
 
             Either<CreatePredictionError, CreatePredictionResult> result =
-                    useCase.execute(userId, new CreatePredictionCommand("MCI", "ARS"));
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.Ended.class);
@@ -247,7 +305,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             setSeasonCurrentRound(roundId, 22);
 
             Either<CreatePredictionError, CreatePredictionResult> result =
-                    useCase.execute(userId, new CreatePredictionCommand("MCI", "ARS"));
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
 
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().atRoundNumber()).isEqualTo(22);
@@ -257,17 +315,27 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @DisplayName("should reject when already joined")
         void shouldRejectWhenAlreadyJoined() {
             Either<CreatePredictionError, CreatePredictionResult> first =
-                    useCase.execute(userId, new CreatePredictionCommand("MCI", "ARS"));
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
             assertThat(first.isRight()).isTrue();
 
             Either<CreatePredictionError, CreatePredictionResult> second =
-                    useCase.execute(userId, new CreatePredictionCommand("MCI", "LIV"));
+                    useCase.execute(userId, singleSwap("MCI", "LIV"));
 
             assertThat(second.isLeft()).isTrue();
             assertThat(second.getLeft()).isInstanceOf(CreatePredictionError.AlreadyJoined.class);
             assertThat(((CreatePredictionError.AlreadyJoined) second.getLeft()).existingPredictionId())
                     .isEqualTo(first.get().predictionId());
         }
+    }
+
+    // --- Helpers ---
+
+    private static CreatePredictionCommand singleSwap(String teamACode, String teamBCode) {
+        return multiSwap(List.of(new CreatePredictionCommand.SwapPair(teamACode, teamBCode)));
+    }
+
+    private static CreatePredictionCommand multiSwap(List<CreatePredictionCommand.SwapPair> swaps) {
+        return new CreatePredictionCommand(swaps);
     }
 
     private void insertCompetitionAndSeason() {

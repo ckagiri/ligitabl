@@ -81,8 +81,9 @@
       </svg>
       <span class="text-sm text-red-800">
         <strong>Swap limit exceeded!</strong>
-        You've made <span x-text="getSwapCount()"></span> swaps but only 1 is
-        allowed per 24h.
+        You've made <span x-text="getSwapCount()"></span> swaps but
+        <span x-show="isInitialPrediction">the limit is 3.</span>
+        <span x-show="!isInitialPrediction">only 1 is allowed per 24h.</span>
         <a
           @click="reset()"
           class="underline cursor-pointer font-semibold text-red-700 hover:text-red-900"
@@ -151,7 +152,8 @@
         <strong
           ><span x-text="getSwapCount()"></span>
           <span x-text="getSwapCount() === 1 ? 'swap' : 'swaps'"></span></strong
-        >. Changes saved locally.
+        ><span x-show="getSwapCount() > 3"> — max 3 allowed to submit</span>.
+        Changes saved locally.
         <a
           th:href="@{/auth/register}"
           class="underline font-medium hover:text-amber-900"

@@ -1,19 +1,21 @@
 package com.ligitabl.api.web.predictions.createprediction;
 
+import java.util.List;
 import java.util.Objects;
 
 /**
  * Request DTO for creating initial season prediction.
  *
  * <p>Used when a user first submits their season prediction (joins the competition).
- * Contains the two team codes to swap from the season's initial rankings — everyone
- * starts from the same baseline and submits exactly one swap.</p>
+ * Contains 1–3 swap pairs applied to the season's initial rankings — everyone
+ * starts from the same baseline and submits between one and three swaps.</p>
  *
- * <p>Example JSON: {@code { "teamACode": "MCI", "teamBCode": "ARS" }}</p>
+ * <p>Example JSON: {@code { "swaps": [{"teamACode": "MCI", "teamBCode": "ARS"}] }}</p>
  */
-public record CreatePredictionRequest(String teamACode, String teamBCode) {
+public record CreatePredictionRequest(List<SwapPair> swaps) {
     public CreatePredictionRequest {
-        Objects.requireNonNull(teamACode, "teamACode is required");
-        Objects.requireNonNull(teamBCode, "teamBCode is required");
+        Objects.requireNonNull(swaps, "swaps is required");
     }
+
+    public record SwapPair(String teamACode, String teamBCode) {}
 }

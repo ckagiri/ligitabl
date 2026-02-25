@@ -70,24 +70,36 @@ public class CreatePredictionUseCase {
                 .orElseGet(() -> Either.right(null));
     }
 
-    // Step 4: Validate the swap team codes
-    private Either<CreatePredictionError, Void> validateSwapTeams(CreatePredictionCommand cmd, Season season) {
-        String codeA = cmd.teamACode().toUpperCase();
-        String codeB = cmd.teamBCode().toUpperCase();
+    // Step 4: Validate the swap team codes (1–3 pairs required)
+    private static final int MAX_INITIAL_SWAPS = 3;
 
-        if (codeA.equals(codeB)) {
-            return Either.left(new CreatePredictionError.SameTeam());
+    private Either<CreatePredictionError, Void> validateSwapTeams(CreatePredictionCommand cmd, Season season) {
+        List<CreatePredictionCommand.SwapPair> swaps = cmd.swaps();
+
+        if (swaps == null || swaps.isEmpty()) {
+            return Either.left(new CreatePredictionError.EmptySwaps());
+        }
+        if (swaps.size() > MAX_INITIAL_SWAPS) {
+            return Either.left(new CreatePredictionError.TooManySwaps(swaps.size(), MAX_INITIAL_SWAPS));
         }
 
         Set<String> validCodes = season.getInitialRankings().stream()
                 .map(TeamRank::getCode)
                 .collect(Collectors.toSet());
 
-        if (!validCodes.contains(codeA)) {
-            return Either.left(new CreatePredictionError.InvalidTeamCode(codeA));
-        }
-        if (!validCodes.contains(codeB)) {
-            return Either.left(new CreatePredictionError.InvalidTeamCode(codeB));
+        for (CreatePredictionCommand.SwapPair swap : swaps) {
+            String codeA = swap.teamACode().toUpperCase();
+            String codeB = swap.teamBCode().toUpperCase();
+
+            if (codeA.equals(codeB)) {
+                return Either.left(new CreatePredictionError.SameTeam());
+            }
+            if (!validCodes.contains(codeA)) {
+                return Either.left(new CreatePredictionError.InvalidTeamCode(codeA));
+            }
+            if (!validCodes.contains(codeB)) {
+                return Either.left(new CreatePredictionError.InvalidTeamCode(codeB));
+            }
         }
 
         return Either.right(null);
@@ -140,26 +152,30 @@ public class CreatePredictionUseCase {
         Contest mainContest = mainContestOpt.get();
 
         try {
-            String codeA = request.teamACode().toUpperCase();
-            String codeB = request.teamBCode().toUpperCase();
-            List<TeamRank> baseline = season.getInitialRankings();
-            List<TeamRank> currentRankings = applySwap(baseline, codeA, codeB);
-
-            // Build initial swap change — recorded before saving (single save)
-            TeamRank baseA = baseline.stream()
-                    .filter(t -> t.getCode().equals(codeA))
-                    .findFirst()
-                    .orElseThrow();
-            TeamRank baseB = baseline.stream()
-                    .filter(t -> t.getCode().equals(codeB))
-                    .findFirst()
-                    .orElseThrow();
             Instant now = clock.instant();
-            SwapChange initialChange = new SwapChange(
-                    now,
-                    String.format("%s:%d\u2192%d", codeA, baseA.getPosition(), baseB.getPosition()),
-                    String.format("%s:%d\u2192%d", codeB, baseB.getPosition(), baseA.getPosition()));
-            RoundSwap initialRoundSwap = new RoundSwap(atRoundNumber, new ArrayList<>(List.of(initialChange)));
+            List<TeamRank> currentRankings = new ArrayList<>(season.getInitialRankings());
+            List<SwapChange> swapChanges = new ArrayList<>();
+
+            // Apply each swap sequentially from the baseline; record each as a SwapChange
+            for (CreatePredictionCommand.SwapPair swap : request.swaps()) {
+                String codeA = swap.teamACode().toUpperCase();
+                String codeB = swap.teamBCode().toUpperCase();
+                TeamRank rankA = currentRankings.stream()
+                        .filter(t -> t.getCode().equals(codeA))
+                        .findFirst()
+                        .orElseThrow();
+                TeamRank rankB = currentRankings.stream()
+                        .filter(t -> t.getCode().equals(codeB))
+                        .findFirst()
+                        .orElseThrow();
+                swapChanges.add(new SwapChange(
+                        now,
+                        String.format("%s:%d\u2192%d", codeA, rankA.getPosition(), rankB.getPosition()),
+                        String.format("%s:%d\u2192%d", codeB, rankB.getPosition(), rankA.getPosition())));
+                currentRankings = applySwap(currentRankings, codeA, codeB);
+            }
+
+            RoundSwap initialRoundSwap = new RoundSwap(atRoundNumber, swapChanges);
 
             SeasonPrediction prediction = SeasonPrediction.builder()
                     .userId(userId)

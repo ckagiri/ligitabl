@@ -125,8 +125,9 @@
               >
             </div>
           </div>
-          <div x-show="!isInitialPrediction" class="text-xs text-gray-500">
-            Limit: 1
+          <div class="text-xs text-gray-500">
+            <span x-show="isInitialPrediction">Limit: 3</span>
+            <span x-show="!isInitialPrediction">Limit: 1</span>
           </div>
         </div>
 
@@ -198,7 +199,8 @@
                 Too many changes
               </p>
               <p class="text-xs text-red-700 mt-0.5">
-                Only 1 swap allowed per 24h period. Reset to continue.
+                <span x-show="isInitialPrediction">Max 3 swaps allowed. Reset to continue.</span>
+                <span x-show="!isInitialPrediction">Only 1 swap allowed per 24h period. Reset to continue.</span>
               </p>
             </div>
           </div>

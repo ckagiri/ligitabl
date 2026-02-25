@@ -9,6 +9,10 @@ public sealed interface CreatePredictionError {
 
     record AlreadyJoined(UUID existingPredictionId) implements CreatePredictionError {}
 
+    record EmptySwaps() implements CreatePredictionError {}
+
+    record TooManySwaps(int provided, int max) implements CreatePredictionError {}
+
     record SameTeam() implements CreatePredictionError {}
 
     record InvalidTeamCode(String code) implements CreatePredictionError {}

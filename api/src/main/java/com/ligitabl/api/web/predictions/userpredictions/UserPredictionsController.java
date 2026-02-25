@@ -439,7 +439,7 @@ public class UserPredictionsController {
         return switch (data.source()) {
             case USER_PREDICTION -> "Your Prediction";
             case ROUND_STANDINGS -> "Current Standings";
-            case SEASON_BASELINE -> "Season Baseline";
+            case SEASON_BASELINE -> "Last Season Baseline";
         };
     }
 
