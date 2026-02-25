@@ -249,6 +249,7 @@ window.Ligitabl.predictionPage = function (el) {
         canInteract,
         isInitialPrediction,
         isSaving: false,
+        errorMessage: null,
         importedFromGuest: false,
 
         init() {
@@ -430,14 +431,14 @@ window.Ligitabl.predictionPage = function (el) {
                     } else {
                         this.isSaving = false;
                         if (toast) toast.classList.add("hidden");
-                        alert(data.message || "Something went wrong");
+                        this.errorMessage = data.message || "Something went wrong";
                     }
                 })
                 .catch((error) => {
                     console.error("Error:", error);
                     this.isSaving = false;
                     if (toast) toast.classList.add("hidden");
-                    alert("Failed to update prediction");
+                    this.errorMessage = "Failed to submit. Please check your connection and try again.";
                 });
         },
     });
