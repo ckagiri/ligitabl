@@ -51,10 +51,10 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 : new UserRankingInfo(null, false, 0);
 
         // Movement only computable when at least one round has been scored
-        HashMap<UUID, Integer> previousPositions = new HashMap<>();
-        if (effectiveToRound != null && effectiveToRound - 1 >= fromRound) {
-            previousPositions = fetchPreviousPositions(contestId, seasonId, fromRound, effectiveToRound - 1);
-        }
+        HashMap<UUID, Integer> previousPositions =
+                (effectiveToRound != null && effectiveToRound - 1 >= fromRound)
+                        ? fetchPreviousPositions(contestId, seasonId, fromRound, effectiveToRound - 1)
+                        : new HashMap<>();
 
         List<LeaderboardEntry> entries = pageRankings.stream()
                 .map(ranking -> buildEntry(ranking, previousPositions))
