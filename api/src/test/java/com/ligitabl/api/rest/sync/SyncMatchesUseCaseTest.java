@@ -214,8 +214,8 @@ class SyncMatchesUseCaseTest {
         var live = createMatch(1, MatchStatus.LIVE, OffsetDateTime.now().minusMinutes(10));
         var existingMatches = List.of(live);
 
-        when(liveMatchTracker.updateTracking(any())).thenReturn(
-                new LiveMatchTracker.TrackingResult(true, Set.of(), Set.of(live.getId())));
+        when(liveMatchTracker.updateTracking(any()))
+                .thenReturn(new LiveMatchTracker.TrackingResult(true, Set.of(), Set.of(live.getId())));
 
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));

@@ -139,8 +139,14 @@ class CreatePredictionUseCaseTest {
         verify(predictionRepo).save(argThat(p -> {
             // currentRankings should reflect the swap
             List<TeamRank> rankings = p.getCurrentRankings();
-            TeamRank livRank = rankings.stream().filter(t -> t.getCode().equals("LIV")).findFirst().orElseThrow();
-            TeamRank arsRank = rankings.stream().filter(t -> t.getCode().equals("ARS")).findFirst().orElseThrow();
+            TeamRank livRank = rankings.stream()
+                    .filter(t -> t.getCode().equals("LIV"))
+                    .findFirst()
+                    .orElseThrow();
+            TeamRank arsRank = rankings.stream()
+                    .filter(t -> t.getCode().equals("ARS"))
+                    .findFirst()
+                    .orElseThrow();
             boolean rankingsCorrect = livRank.getPosition() == 1 && arsRank.getPosition() == 2;
 
             // initialRankings should be empty (deprecated)
@@ -172,15 +178,26 @@ class CreatePredictionUseCaseTest {
         // Baseline: ARS=1, LIV=2, MCI=3
         // Swap 1: LIV ↔ ARS → LIV=1, ARS=2, MCI=3
         // Swap 2: MCI ↔ ARS → LIV=1, MCI=2, ARS=3
-        useCase.execute(userId, multiSwap(List.of(
-                new CreatePredictionCommand.SwapPair("LIV", "ARS"),
-                new CreatePredictionCommand.SwapPair("MCI", "ARS"))));
+        useCase.execute(
+                userId,
+                multiSwap(List.of(
+                        new CreatePredictionCommand.SwapPair("LIV", "ARS"),
+                        new CreatePredictionCommand.SwapPair("MCI", "ARS"))));
 
         verify(predictionRepo).save(argThat(p -> {
             List<TeamRank> rankings = p.getCurrentRankings();
-            TeamRank liv = rankings.stream().filter(t -> t.getCode().equals("LIV")).findFirst().orElseThrow();
-            TeamRank mci = rankings.stream().filter(t -> t.getCode().equals("MCI")).findFirst().orElseThrow();
-            TeamRank ars = rankings.stream().filter(t -> t.getCode().equals("ARS")).findFirst().orElseThrow();
+            TeamRank liv = rankings.stream()
+                    .filter(t -> t.getCode().equals("LIV"))
+                    .findFirst()
+                    .orElseThrow();
+            TeamRank mci = rankings.stream()
+                    .filter(t -> t.getCode().equals("MCI"))
+                    .findFirst()
+                    .orElseThrow();
+            TeamRank ars = rankings.stream()
+                    .filter(t -> t.getCode().equals("ARS"))
+                    .findFirst()
+                    .orElseThrow();
             boolean rankingsCorrect = liv.getPosition() == 1 && mci.getPosition() == 2 && ars.getPosition() == 3;
 
             // 2 swap changes recorded under one RoundSwap
@@ -242,8 +259,7 @@ class CreatePredictionUseCaseTest {
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
 
-        Either<CreatePredictionError, CreatePredictionResult> result =
-                useCase.execute(userId, multiSwap(List.of()));
+        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, multiSwap(List.of()));
 
         assertTrue(result.isLeft());
         assertInstanceOf(CreatePredictionError.EmptySwaps.class, result.getLeft());

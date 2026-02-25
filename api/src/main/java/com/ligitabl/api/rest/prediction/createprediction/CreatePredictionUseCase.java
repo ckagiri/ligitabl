@@ -83,9 +83,8 @@ public class CreatePredictionUseCase {
             return Either.left(new CreatePredictionError.TooManySwaps(swaps.size(), MAX_INITIAL_SWAPS));
         }
 
-        Set<String> validCodes = season.getInitialRankings().stream()
-                .map(TeamRank::getCode)
-                .collect(Collectors.toSet());
+        Set<String> validCodes =
+                season.getInitialRankings().stream().map(TeamRank::getCode).collect(Collectors.toSet());
 
         for (CreatePredictionCommand.SwapPair swap : swaps) {
             String codeA = swap.teamACode().toUpperCase();

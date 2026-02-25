@@ -141,8 +141,14 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             // currentRankings should reflect the swap: MCI and ARS positions exchanged
             var rankings = prediction.get().getCurrentRankings();
             assertThat(rankings).hasSize(12);
-            TeamRank mci = rankings.stream().filter(t -> t.getCode().equals("MCI")).findFirst().orElseThrow();
-            TeamRank ars = rankings.stream().filter(t -> t.getCode().equals("ARS")).findFirst().orElseThrow();
+            TeamRank mci = rankings.stream()
+                    .filter(t -> t.getCode().equals("MCI"))
+                    .findFirst()
+                    .orElseThrow();
+            TeamRank ars = rankings.stream()
+                    .filter(t -> t.getCode().equals("ARS"))
+                    .findFirst()
+                    .orElseThrow();
             assertThat(mci.getPosition()).isEqualTo(2); // ARS was at 2
             assertThat(ars.getPosition()).isEqualTo(1); // MCI was at 1
 
@@ -180,9 +186,18 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             assertThat(prediction).isPresent();
 
             var rankings = prediction.get().getCurrentRankings();
-            TeamRank ars = rankings.stream().filter(t -> t.getCode().equals("ARS")).findFirst().orElseThrow();
-            TeamRank liv = rankings.stream().filter(t -> t.getCode().equals("LIV")).findFirst().orElseThrow();
-            TeamRank mci = rankings.stream().filter(t -> t.getCode().equals("MCI")).findFirst().orElseThrow();
+            TeamRank ars = rankings.stream()
+                    .filter(t -> t.getCode().equals("ARS"))
+                    .findFirst()
+                    .orElseThrow();
+            TeamRank liv = rankings.stream()
+                    .filter(t -> t.getCode().equals("LIV"))
+                    .findFirst()
+                    .orElseThrow();
+            TeamRank mci = rankings.stream()
+                    .filter(t -> t.getCode().equals("MCI"))
+                    .findFirst()
+                    .orElseThrow();
             assertThat(ars.getPosition()).isEqualTo(1);
             assertThat(liv.getPosition()).isEqualTo(2);
             assertThat(mci.getPosition()).isEqualTo(3);
@@ -258,8 +273,10 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.TooManySwaps.class);
-            assertThat(((CreatePredictionError.TooManySwaps) result.getLeft()).provided()).isEqualTo(4);
-            assertThat(((CreatePredictionError.TooManySwaps) result.getLeft()).max()).isEqualTo(3);
+            assertThat(((CreatePredictionError.TooManySwaps) result.getLeft()).provided())
+                    .isEqualTo(4);
+            assertThat(((CreatePredictionError.TooManySwaps) result.getLeft()).max())
+                    .isEqualTo(3);
         }
 
         @Test
@@ -280,7 +297,8 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.InvalidTeamCode.class);
-            assertThat(((CreatePredictionError.InvalidTeamCode) result.getLeft()).code()).isEqualTo("XXX");
+            assertThat(((CreatePredictionError.InvalidTeamCode) result.getLeft()).code())
+                    .isEqualTo("XXX");
         }
 
         @Test
@@ -294,8 +312,10 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.Ended.class);
-            assertThat(((CreatePredictionError.Ended) result.getLeft()).currentRound()).isEqualTo(22);
-            assertThat(((CreatePredictionError.Ended) result.getLeft()).maxRounds()).isEqualTo(22);
+            assertThat(((CreatePredictionError.Ended) result.getLeft()).currentRound())
+                    .isEqualTo(22);
+            assertThat(((CreatePredictionError.Ended) result.getLeft()).maxRounds())
+                    .isEqualTo(22);
         }
 
         @Test

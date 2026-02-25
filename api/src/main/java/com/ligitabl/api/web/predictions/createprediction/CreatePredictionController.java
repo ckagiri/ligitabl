@@ -45,9 +45,11 @@ public class CreatePredictionController {
                 request.swaps() == null ? 0 : request.swaps().size());
 
         CreatePredictionCommand command = new CreatePredictionCommand(
-                request.swaps() == null ? List.of() : request.swaps().stream()
-                        .map(s -> new CreatePredictionCommand.SwapPair(s.teamACode(), s.teamBCode()))
-                        .toList());
+                request.swaps() == null
+                        ? List.of()
+                        : request.swaps().stream()
+                                .map(s -> new CreatePredictionCommand.SwapPair(s.teamACode(), s.teamBCode()))
+                                .toList());
 
         Either<CreatePredictionError, CreatePredictionResult> result =
                 createPredictionUseCase.execute(userDetails.getUserId(), command);
@@ -86,8 +88,8 @@ public class CreatePredictionController {
             case CreatePredictionError.Completed __ -> "Cannot join a completed season";
             case CreatePredictionError.AlreadyJoined __ -> "You have already joined this season";
             case CreatePredictionError.EmptySwaps __ -> "At least one swap is required";
-            case CreatePredictionError.TooManySwaps e ->
-                    "Too many swaps: provided " + e.provided() + ", maximum is " + e.max();
+            case CreatePredictionError.TooManySwaps e -> "Too many swaps: provided " + e.provided() + ", maximum is "
+                    + e.max();
             case CreatePredictionError.SameTeam __ -> "You must swap two different teams";
             case CreatePredictionError.InvalidTeamCode e -> "Team code not valid for this season: " + e.code();
             case CreatePredictionError.Ended __ -> "Cannot join - season has ended";
