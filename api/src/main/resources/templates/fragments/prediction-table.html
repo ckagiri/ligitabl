@@ -14,6 +14,17 @@
       <span class="sm:hidden">Show actual positions</span>
     </label>
 
+    <p
+      x-cloak
+      x-show="showStandings"
+      class="text-xs text-gray-500 leading-snug ml-6"
+    >
+      <span class="text-green-600 font-semibold">↑ Green</span>: Team performing
+      better (move them up).
+      <span class="text-red-600 font-semibold">↓ Red</span>: Team performing worse
+      (move them down).
+    </p>
+
     <label
       class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition"
     >
@@ -71,35 +82,7 @@
               scope="col"
               class="hidden sm:table-cell px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
             >
-              <div class="flex items-center justify-end gap-1">
-                <span>Delta</span>
-                <span
-                  class="text-gray-400 cursor-help inline-block relative"
-                  x-data="{ open: false }"
-                  @click.stop="open = !open"
-                  @click.outside="open = false"
-                >
-                  <svg
-                    class="h-3.5 w-3.5"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
-                  >
-                    <path
-                      fill-rule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                  <span
-                    x-cloak
-                    x-show="open"
-                    class="absolute bottom-full right-0 mb-1 z-20 w-52 bg-gray-800 text-white text-xs rounded px-3 py-2 whitespace-normal leading-relaxed font-normal normal-case tracking-normal text-left"
-                  >
-                    ↑ Green: Team performing better, move them up<br />↓ Red:
-                    Team performing worse, move them down
-                  </span>
-                </span>
-              </div>
+              Delta
             </th>
             <th
               x-show="showPoints"
@@ -189,32 +172,6 @@
                           class="flex items-center gap-1 text-xs"
                         >
                           <span class="text-gray-500">Actual:</span>
-                          <span
-                            class="text-gray-400 cursor-help inline-block relative"
-                            x-data="{ open: false }"
-                            @click.stop="open = !open"
-                            @click.outside="open = false"
-                          >
-                            <svg
-                              class="h-3 w-3"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                fill-rule="evenodd"
-                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                                clip-rule="evenodd"
-                              />
-                            </svg>
-                            <span
-                              x-cloak
-                              x-show="open"
-                              class="absolute bottom-full left-0 mb-1 z-20 w-52 bg-gray-800 text-white text-xs rounded px-3 py-2 whitespace-normal leading-relaxed"
-                            >
-                              ↑ Green: Team performing better, move them up<br />↓
-                              Red: Team performing worse, move them down
-                            </span>
-                          </span>
                           <span
                             class="text-gray-700 font-medium"
                             x-text="getActualPosition(team.code)"
