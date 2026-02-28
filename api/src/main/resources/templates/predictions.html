@@ -125,7 +125,9 @@ message=[[${message}]]</pre
         <div
           id="prediction-content"
           th:fragment="predictionContent"
-          th:with="isHistoricalView=${(isCurrentRound == false || isCurrentRound == null) || (isCurrentRound == true && seasonCompleted == true)}"
+          th:with="isHistoricalView=${(isCurrentRound == false || isCurrentRound == null) || (isCurrentRound == true && seasonCompleted == true)},
+                   isFinalRound=${lastRound != null && currentRound == lastRound},
+                   isFinalRoundOpen=${lastRound != null && currentRound == lastRound && roundState == 'open'}"
         >
           <!-- Guest view uses localStorage-enabled component -->
           <div
@@ -196,8 +198,10 @@ message=[[${message}]]</pre
             class="bg-white rounded-lg shadow-sm mb-6"
             x-data="Ligitabl.predictionPage($el)"
             th:attr="data-predictions=${predictionsJson},
-                    data-can-swap=${canSwap && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
-                    data-can-interact=${canInteract && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
+                    data-round-open=${roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound)},
+                    data-is-last-round=${currentRound == lastRound},
+                    data-can-swap=${canSwap && isHistoricalView == false && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
+                    data-can-interact=${canInteract && isHistoricalView == false && (!isFinalRound || isFinalRoundOpen)},
                     data-is-initial-prediction=${canCreateEntry && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
                     data-current-standings=${currentStandingsJson},
                     data-fixtures=${fixturesJson},
@@ -206,7 +210,7 @@ message=[[${message}]]</pre
           >
             <!-- Contextual Swap Instructions Banner (editable + cooldown-interactive states) -->
             <div
-              th:replace="~{fragments/swap-instructions :: instructions(false, ${canInteract && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))}, ${canCreateEntry})}"
+              th:replace="~{fragments/swap-instructions :: instructions(false, ${canInteract && isHistoricalView == false && (!isFinalRound || isFinalRoundOpen)}, ${canCreateEntry})}"
             ></div>
 
             <!-- Comparison Options (only for current editable round, not historical views) -->
@@ -236,7 +240,7 @@ message=[[${message}]]</pre
 
             <!-- Actions Footer (editable + cooldown-interactive states) -->
             <th:block
-              th:if="${isHistoricalView == false && canInteract && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))}"
+              th:if="${isHistoricalView == false && canInteract && (!isFinalRound || isFinalRoundOpen) && (roundState == 'open' || roundState == 'locked' || roundState == 'completed' || (atRoundNumber != null && atRoundNumber > currentRound))}"
             >
               <div
                 x-show="canInteract || isInitialPrediction"

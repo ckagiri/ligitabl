@@ -38,9 +38,19 @@
           >Click a team to select it, then click another team to swap their
           positions.</span
         >
-        <span th:if="${!isGuest}" x-cloak x-show="canInteract && !canSwap"
+        <span
+          th:if="${!isGuest}"
+          x-cloak
+          x-show="canInteract && !canSwap && isRoundOpen"
           >Cooldown active. You can rearrange to plan your next swap, but
           changes won't be saved until cooldown ends.</span
+        >
+        <span
+          th:if="${!isGuest}"
+          x-cloak
+          x-show="canInteract && !canSwap && !isRoundOpen && !isLastRound"
+          >Round is not open. You can rearrange to plan your next swap, but
+          changes won't be saved until the next round opens.</span
         >
       </span>
     </div>
@@ -139,11 +149,15 @@
           to undo.
         </span>
         <span x-cloak x-show="canInteract && !canSwap">
-          Cooldown active — changes are local only.
+          <span x-show="isRoundOpen">Cooldown active — changes are local only.</span>
+          <span x-show="!isRoundOpen">Round is not open — changes are local only.</span>
           <a @click="reset()" class="underline cursor-pointer font-semibold"
             >Reset</a
           >
-          to undo or wait for cooldown to submit.
+          <span x-show="isRoundOpen">to undo or wait for cooldown to submit.</span>
+          <span x-show="!isRoundOpen">
+            to undo or wait for the next round to open to submit.
+          </span>
         </span>
       </span>
     </div>

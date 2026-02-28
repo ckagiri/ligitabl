@@ -51,10 +51,9 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 : new UserRankingInfo(null, false, 0);
 
         // Movement only computable when at least one round has been scored
-        HashMap<UUID, Integer> previousPositions =
-                (effectiveToRound != null && effectiveToRound - 1 >= fromRound)
-                        ? fetchPreviousPositions(contestId, seasonId, fromRound, effectiveToRound - 1)
-                        : new HashMap<>();
+        HashMap<UUID, Integer> previousPositions = (effectiveToRound != null && effectiveToRound - 1 >= fromRound)
+                ? fetchPreviousPositions(contestId, seasonId, fromRound, effectiveToRound - 1)
+                : new HashMap<>();
 
         List<LeaderboardEntry> entries = pageRankings.stream()
                 .map(ranking -> buildEntry(ranking, previousPositions))
@@ -155,8 +154,13 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
      * @param effectiveToRound max finalized round in phase (null if no rounds scored yet)
      */
     private List<RankingWithPosition> fetchPaginatedRankings(
-            UUID contestId, UUID seasonId, int fromRound, int phaseToRound, Integer effectiveToRound,
-            int offset, int limit) {
+            UUID contestId,
+            UUID seasonId,
+            int fromRound,
+            int phaseToRound,
+            Integer effectiveToRound,
+            int offset,
+            int limit) {
 
         int scoringToRound = effectiveToRound != null ? effectiveToRound : phaseToRound;
 
@@ -178,7 +182,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         DSL.inline(0))
                 .cast(Integer.class)
                 .as("round_score");
-        Field<Integer> isScored = DSL.when(DSL.count(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID).gt(0), 1)
+        Field<Integer> isScored = DSL.when(
+                        DSL.count(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID).gt(0), 1)
                 .otherwise(0)
                 .as("is_scored");
 
@@ -227,7 +232,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         Field<Integer> position = DSL.rowNumber()
                 .over()
                 .orderBy(
-                        isScoredField.desc(),       // scored users ranked above unscored
+                        isScoredField.desc(), // scored users ranked above unscored
                         totalScoreField.desc(),
                         totalZeroesField.desc(),
                         maxScoreField.desc(),
@@ -265,8 +270,14 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
     }
 
     private UserRankingInfo fetchUserRanking(
-            UUID contestId, UUID seasonId, int fromRound, int phaseToRound, Integer effectiveToRound,
-            UUID userId, int offset, int limit) {
+            UUID contestId,
+            UUID seasonId,
+            int fromRound,
+            int phaseToRound,
+            Integer effectiveToRound,
+            UUID userId,
+            int offset,
+            int limit) {
 
         int scoringToRound = effectiveToRound != null ? effectiveToRound : phaseToRound;
 
@@ -288,7 +299,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         DSL.inline(0))
                 .cast(Integer.class)
                 .as("round_score");
-        Field<Integer> isScored = DSL.when(DSL.count(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID).gt(0), 1)
+        Field<Integer> isScored = DSL.when(
+                        DSL.count(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID).gt(0), 1)
                 .otherwise(0)
                 .as("is_scored");
 

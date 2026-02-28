@@ -101,10 +101,18 @@
     <!-- Cooldown notice: table is interactive but submit is blocked -->
     <p
       x-cloak
-      x-show="canInteract && !canSwap && !isInitialPrediction"
+      x-show="canInteract && !canSwap && !isInitialPrediction && isRoundOpen"
       class="text-xs text-yellow-700 text-center"
     >
       Cooldown active — submit resumes when cooldown ends.
+    </p>
+
+    <p
+      x-cloak
+      x-show="canInteract && !canSwap && !isInitialPrediction && !isRoundOpen && !isLastRound"
+      class="text-xs text-yellow-700 text-center"
+    >
+      Round is not open — submit resumes when the next round opens.
     </p>
 
     <!-- Changes Summary -->
