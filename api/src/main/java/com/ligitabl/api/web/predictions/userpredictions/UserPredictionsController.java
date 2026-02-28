@@ -427,12 +427,12 @@ public class UserPredictionsController {
      */
     private String getPageTitle(UserPredictionViewData data) {
         return switch (data.accessMode()) {
-            case EDITABLE, READONLY_COOLDOWN -> "My Predictions";
+            case EDITABLE, READONLY_COOLDOWN -> "My Table";
             case CAN_CREATE_ENTRY -> "Create Prediction";
-            case READONLY_GUEST -> "Predictions";
+            case READONLY_GUEST -> "My Table";
             case READONLY_VIEWING_OTHER -> data.targetDisplayName() != null
-                    ? data.targetDisplayName() + "'s Predictions"
-                    : "User Predictions";
+                    ? data.targetDisplayName() + "'s Table"
+                    : "User's Table";
             case READONLY_USER_NOT_FOUND -> "User Not Found";
         };
     }
@@ -442,7 +442,7 @@ public class UserPredictionsController {
      */
     private String getSourceLabel(UserPredictionViewData data) {
         return switch (data.source()) {
-            case USER_PREDICTION -> "Your Prediction";
+            case USER_PREDICTION -> "Your Table";
             case ROUND_STANDINGS -> "Current Standings";
             case SEASON_BASELINE -> "Last Season Baseline";
         };

@@ -32,8 +32,8 @@ import lombok.RequiredArgsConstructor;
  *
  * <p>Navbar label logic:
  * <ul>
- *   <li>Not logged in → "Predictions" (links to /predictions/user/guest)</li>
- *   <li>Logged in → "My Predictions" (links to /predictions/user/me)</li>
+ *   <li>Not logged in → "My Table" (links to /predictions/user/guest)</li>
+ *   <li>Logged in → "My Table" (links to /predictions/user/me)</li>
  * </ul>
  */
 @ControllerAdvice
@@ -72,7 +72,7 @@ public class NavbarControllerAdvice {
 
     @ModelAttribute("predictionsNavLabel")
     public String predictionsNavLabel(Principal principal) {
-        return principal != null ? "My Predictions" : "Predictions";
+        return "My Table";
     }
 
     @ModelAttribute("predictionsNavLink")
