@@ -48,9 +48,9 @@
         <span
           th:if="${!isGuest}"
           x-cloak
-          x-show="canInteract && !canSwap && !isRoundOpen"
+          x-show="canInteract && !canSwap && !isRoundOpen && !isLastRound"
           >Round is not open. You can rearrange to plan your next swap, but
-          changes won't be saved until the round opens.</span
+          changes won't be saved until the next round opens.</span
         >
       </span>
     </div>
@@ -155,7 +155,9 @@
             >Reset</a
           >
           <span x-show="isRoundOpen">to undo or wait for cooldown to submit.</span>
-          <span x-show="!isRoundOpen">to undo or wait for the round to open to submit.</span>
+          <span x-show="!isRoundOpen && !isLastRound">
+            to undo or wait for the next round to open to submit.
+          </span>
         </span>
       </span>
     </div>
