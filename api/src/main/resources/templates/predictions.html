@@ -196,8 +196,9 @@ message=[[${message}]]</pre
             class="bg-white rounded-lg shadow-sm mb-6"
             x-data="Ligitabl.predictionPage($el)"
             th:attr="data-predictions=${predictionsJson},
-                    data-can-swap=${canSwap && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
-                    data-can-interact=${canInteract && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
+                    data-round-open=${roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound)},
+                    data-can-swap=${canSwap && isHistoricalView == false && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
+                    data-can-interact=${canInteract && isHistoricalView == false},
                     data-is-initial-prediction=${canCreateEntry && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
                     data-current-standings=${currentStandingsJson},
                     data-fixtures=${fixturesJson},
@@ -206,7 +207,7 @@ message=[[${message}]]</pre
           >
             <!-- Contextual Swap Instructions Banner (editable + cooldown-interactive states) -->
             <div
-              th:replace="~{fragments/swap-instructions :: instructions(false, ${canInteract && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))}, ${canCreateEntry})}"
+              th:replace="~{fragments/swap-instructions :: instructions(false, ${canInteract && isHistoricalView == false}, ${canCreateEntry})}"
             ></div>
 
             <!-- Comparison Options (only for current editable round, not historical views) -->
@@ -236,7 +237,7 @@ message=[[${message}]]</pre
 
             <!-- Actions Footer (editable + cooldown-interactive states) -->
             <th:block
-              th:if="${isHistoricalView == false && canInteract && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))}"
+              th:if="${isHistoricalView == false && canInteract && (roundState == 'open' || roundState == 'locked' || roundState == 'completed' || (atRoundNumber != null && atRoundNumber > currentRound))}"
             >
               <div
                 x-show="canInteract || isInitialPrediction"

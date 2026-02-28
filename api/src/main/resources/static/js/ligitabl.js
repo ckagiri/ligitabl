@@ -196,9 +196,11 @@ window.Ligitabl.predictionPage = function (el) {
     const predictions = parsed.predictions;
     const canSwapRaw = el?.dataset?.canSwap ?? "false";
     const canInteractRaw = el?.dataset?.canInteract ?? "false";
+    const roundOpenRaw = el?.dataset?.roundOpen ?? "false";
     const isInitialRaw = el?.dataset?.isInitialPrediction ?? "false";
     const canSwap = canSwapRaw === "true" || canSwapRaw === "True";
     const canInteract = canInteractRaw === "true" || canInteractRaw === "True";
+    const isRoundOpen = roundOpenRaw === "true" || roundOpenRaw === "True";
     const isInitialPrediction =
         isInitialRaw === "true" || isInitialRaw === "True";
 
@@ -247,6 +249,7 @@ window.Ligitabl.predictionPage = function (el) {
     return Object.assign(base, {
         canSwap,
         canInteract,
+        isRoundOpen,
         isInitialPrediction,
         isSaving: false,
         errorMessage: null,
