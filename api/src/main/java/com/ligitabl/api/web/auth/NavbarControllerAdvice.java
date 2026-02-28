@@ -71,7 +71,7 @@ public class NavbarControllerAdvice {
     }
 
     @ModelAttribute("predictionsNavLabel")
-    public String predictionsNavLabel(Principal principal) {
+    public String predictionsNavLabel() {
         return "My Table";
     }
 
