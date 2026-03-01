@@ -461,8 +461,15 @@ document.body.addEventListener("htmx:afterSwap", (event) => {
 // Format [data-timestamp] elements to the user's local timezone and locale.
 // Falls back to the ISO string if the date is invalid.
 window.Ligitabl.formatTimestamps = function (root) {
-    const scope = root || document;
-    scope.querySelectorAll("[data-timestamp]").forEach((el) => {
+    const scope = root && document.contains(root) ? root : document;
+    const candidates = [];
+
+    if (scope !== document && scope.matches?.("[data-timestamp]")) {
+        candidates.push(scope);
+    }
+    scope.querySelectorAll("[data-timestamp]").forEach((el) => candidates.push(el));
+
+    candidates.forEach((el) => {
         const iso = el.getAttribute("data-timestamp");
         if (!iso) return;
         try {
@@ -479,7 +486,7 @@ window.Ligitabl.formatTimestamps = function (root) {
 };
 
 document.addEventListener("DOMContentLoaded", () => Ligitabl.formatTimestamps());
-document.body.addEventListener("htmx:afterSettle", (e) => Ligitabl.formatTimestamps(e.detail?.target));
+document.body.addEventListener("htmx:afterSettle", () => Ligitabl.formatTimestamps());
 
 // --- Guest Prediction Page (localStorage support) ---
 
