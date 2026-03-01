@@ -1,15 +1,7 @@
 package com.ligitabl.api.web.shared.error;
 
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
 import com.ligitabl.api.shared.errors.*;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.web.shared.domain.exception.InvalidSeasonPredictionException;
-import com.ligitabl.api.web.shared.domain.exception.MultipleSwapException;
-import com.ligitabl.api.web.shared.domain.exception.SeasonPredictionAlreadyExistsException;
-import com.ligitabl.api.web.shared.domain.exception.SeasonPredictionNotFoundException;
 
 /**
  * Maps domain exceptions to use case errors.
@@ -50,28 +42,9 @@ public class ErrorMapper {
 
     /**
      * Convert any exception to a UseCaseError.
-     *
-     * This method handles all domain exceptions and maps them to appropriate
-     * use case error types. Unknown exceptions are mapped to BusinessRuleError.</p>
      */
     public static UseCaseError toUseCaseError(Exception exception) {
         return switch (exception) {
-                // Validation errors from domain
-            case InvalidSeasonPredictionException e -> new ValidationError(
-                    List.of(ValidationMessage.of("Invalid season prediction")));
-
-                // Business rule: Multiple swaps attempted
-            case MultipleSwapException e -> new UnprocessableEntityError(
-                    "Multiple swap attempt rejected: " + e.getMessage());
-
-                // Not found errors
-            case SeasonPredictionNotFoundException e -> new NotFoundError(
-                    "SeasonPrediction", "id", extractIdFromMessage(e.getMessage()));
-
-                // Conflict errors (already exists)
-            case SeasonPredictionAlreadyExistsException e -> UseCaseErrors.conflict(
-                    "Season prediction already exists: " + e.getMessage());
-
                 // Standard Java exceptions
             case IllegalArgumentException e -> UseCaseErrors.validation("Invalid input", e.getMessage());
 
@@ -87,31 +60,5 @@ public class ErrorMapper {
                             ? exception.getMessage()
                             : exception.getClass().getSimpleName());
         };
-    }
-
-    /**
-     * Try to extract an ID from an exception message.
-     *
-     * <p>This is a best-effort attempt. If no ID can be extracted, returns "unknown".</p>
-     *
-     * @param message the exception message
-     * @return extracted ID or "unknown"
-     */
-    private static String extractIdFromMessage(String message) {
-        if (message == null) {
-            return "unknown";
-        }
-
-        // Try to extract UUID pattern
-        // Pattern: 8-4-4-4-12 hexadecimal digits
-        Pattern uuidPattern =
-                Pattern.compile("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
-        Matcher matcher = uuidPattern.matcher(message);
-
-        if (matcher.find()) {
-            return matcher.group();
-        }
-
-        return "unknown";
     }
 }

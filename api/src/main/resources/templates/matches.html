@@ -86,13 +86,13 @@
                     Upcoming
                   </span>
 
-                  <!-- Kick-off Time -->
-                  <div
+                  <!-- Kick-off Time (localized client-side) -->
+                  <span
                     class="text-sm text-gray-500 mt-1"
-                    th:text="${match.kickOff != null ? #temporals.format(match.kickOff, 'EEE, MMM dd, HH:mm') : ''}"
-                  >
-                    Sat, Dec 28, 12:30
-                  </div>
+                    th:if="${match.formattedTime != null}"
+                    th:attr="data-timestamp=${match.formattedTime}"
+                    th:text="${match.formattedTime}"
+                  >2026-02-12T14:23:00Z</span>
                 </div>
               </div>
             </div>
