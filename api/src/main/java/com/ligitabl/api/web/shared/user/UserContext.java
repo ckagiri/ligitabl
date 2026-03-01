@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.shared.domain.user;
+package com.ligitabl.api.web.shared.user;
 
 import java.util.Objects;
 import java.util.UUID;
@@ -12,7 +12,7 @@ public record UserContext(UUID userId, UserType userType, boolean hasContestEntr
      * Types of users in the prediction context.
      */
     public enum UserType {
-        AUTHENTICATED, // Logged in user viewing own predictions
+        AUTHENTICATED, // Logged-in user viewing own predictions
         GUEST, // Not logged in
         VIEWING_OTHER, // Viewing another user's predictions
         USER_NOT_FOUND // Target user doesn't exist
@@ -23,16 +23,10 @@ public record UserContext(UUID userId, UserType userType, boolean hasContestEntr
         Objects.requireNonNull(userType, "userType is required");
     }
 
-    /**
-     * Check if this is a guest user.
-     */
     public boolean isGuest() {
         return userType == UserType.GUEST;
     }
 
-    /**
-     * Check if this is an authenticated user viewing their own predictions.
-     */
     public boolean isAuthenticated() {
         return userType == UserType.AUTHENTICATED;
     }

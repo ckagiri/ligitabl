@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.Score;
 import com.ligitabl.model.domain.Team;
@@ -33,6 +34,18 @@ public class MatchDto {
     Score score;
     Integer homeScore;
     Integer awayScore;
+
+    /**
+     * UTC ISO-8601 timestamp string, intended for client-side localization via `data-timestamp`.
+     * Kept out of JSON responses to avoid API shape changes.
+     */
+    @JsonIgnore
+    public String getFormattedTime() {
+        if (getKickOff() == null) {
+            return null;
+        }
+        return getKickOff().toInstant().toString();
+    }
 
     public static MatchDto from(Match match, Team homeTeam, Team awayTeam) {
         if (match == null) return null;

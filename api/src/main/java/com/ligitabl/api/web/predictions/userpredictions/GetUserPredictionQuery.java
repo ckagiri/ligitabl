@@ -3,7 +3,7 @@ package com.ligitabl.api.web.predictions.userpredictions;
 import java.util.Objects;
 import java.util.UUID;
 
-import com.ligitabl.api.web.shared.domain.user.UserContext;
+import com.ligitabl.api.web.shared.user.UserContext;
 
 /**
  * Command for retrieving user predictions with user context and optional round.
