@@ -223,7 +223,7 @@ public class FinalizeRoundUseCase {
                         .userId(prediction.getUserId())
                         .seasonId(ctx.season().getId())
                         .roundPosition(ctx.round().getPosition())
-                        .rankings(new ArrayList<>(prediction.getInitialRankings())) // snapshot
+                        .rankings(new ArrayList<>(prediction.getCurrentRankings())) // snapshot
                         .seasonPredictionId(prediction.getId())
                         .build();
 

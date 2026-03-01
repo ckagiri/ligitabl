@@ -111,7 +111,7 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         insertSeason(2, 4);
 
         Round round1 = createRound(1, false);
-        Round round2 = createRound(2, false);
+        createRound(2, false);
         setCurrentRound(round1.getId());
 
         createFinishedMatch(round1, arsenal, chelsea, 2, 1);
@@ -288,6 +288,30 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
             assertThat(roundResult).isPresent();
             assertThat(roundResult.get().getTotalScore()).isGreaterThanOrEqualTo(0);
         }
+    }
+
+    @Test
+    @DisplayName("Should snapshot submission rankings from currentRankings (not deprecated initialRankings)")
+    void shouldSnapshotSubmissionRankingsFromCurrentRankings() throws Exception {
+        insertSeason(2, 4);
+
+        Round round1 = createRound(1, false);
+        createRound(2, false);
+        setCurrentRound(round1.getId());
+
+        createFinishedMatch(round1, arsenal, chelsea, 2, 1);
+        createFinishedMatch(round1, liverpool, manCity, 1, 1);
+
+        List<TeamRank> currentOnly =
+                List.of(TeamRank.of("MCI", 1), TeamRank.of("LIV", 2), TeamRank.of("CHE", 3), TeamRank.of("ARS", 4));
+        createPredictionWithEmptyInitial(aliceId, 1, currentOnly);
+
+        var result = finalizeRoundUseCase.execute(seasonId);
+        assertThat(result.isRight()).isTrue();
+
+        var submissions = roundSubmissionRepo.findBySeasonAndRound(seasonId, 1);
+        assertThat(submissions).hasSize(1);
+        assertThat(submissions.get(0).getRankings()).isEqualTo(currentOnly);
     }
 
     @Test
@@ -613,6 +637,16 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
                 .seasonId(seasonId)
                 .initialRankings(rankings)
                 .currentRankings(rankings)
+                .atRoundNumber(atRoundNumber)
+                .build());
+    }
+
+    private void createPredictionWithEmptyInitial(UUID userId, int atRoundNumber, List<TeamRank> currentRankings) {
+        seasonPredictionRepo.save(SeasonPrediction.builder()
+                .userId(userId)
+                .seasonId(seasonId)
+                .initialRankings(List.of())
+                .currentRankings(currentRankings)
                 .atRoundNumber(atRoundNumber)
                 .build());
     }
