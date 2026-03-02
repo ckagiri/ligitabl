@@ -26,8 +26,6 @@ public class TriggerRoundFinalizationUseCase {
     public record TriggerFinalizationCommand(String competitionCode) {}
 
     public sealed interface TriggerFinalizationError {
-        record CompetitionNotFound(String code) implements TriggerFinalizationError {}
-
         record SeasonNotFound(String competitionCode) implements TriggerFinalizationError {}
 
         record RoundNotFound(UUID roundId) implements TriggerFinalizationError {}
