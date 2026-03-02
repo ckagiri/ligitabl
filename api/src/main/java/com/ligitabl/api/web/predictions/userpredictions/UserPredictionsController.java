@@ -9,6 +9,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Controller;
@@ -363,14 +364,20 @@ public class UserPredictionsController {
         return seasonRepo.findMostRecentSeason(competitionDefaults.defaultCompetitionSlug());
     }
 
+    private static <T> List<T> sortByPosition(List<T> items, ToIntFunction<T> positionFn) {
+        if (items == null || items.isEmpty()) {
+            return List.of();
+        }
+
+        return items.stream().sorted(Comparator.comparingInt(positionFn)).toList();
+    }
+
     private List<TeamRankDto> enrichRankings(List<TeamRank> ranks) {
         if (ranks == null || ranks.isEmpty()) {
             return List.of();
         }
 
-        List<TeamRank> sortedRanks = ranks.stream()
-                .sorted(Comparator.comparingInt(TeamRank::getPosition))
-                .toList();
+        List<TeamRank> sortedRanks = sortByPosition(ranks, TeamRank::getPosition);
 
         Map<String, Team> teamsByCode =
                 teamRepo
@@ -386,12 +393,15 @@ public class UserPredictionsController {
             return List.of();
         }
 
+        List<ResultTeamRank> sortedRanks = sortByPosition(resultRanks, r -> r.getRanking().getPosition());
+
         Map<String, Team> teamsByCode = teamRepo
                 .findAllByCodes(
-                        resultRanks.stream().map(r -> r.getRanking().getCode()).collect(Collectors.toSet()))
+                sortedRanks.stream().map(r -> r.getRanking().getCode()).collect(Collectors.toSet()))
                 .stream()
                 .collect(Collectors.toMap(Team::getCode, Function.identity()));
-        return ResultTeamRankDto.listOf(resultRanks, teamsByCode);
+
+        return ResultTeamRankDto.listOf(sortedRanks, teamsByCode);
     }
 
     private Map<String, List<FixtureDto>> buildFixtures(Map<String, List<Match>> matchesByTeam) {
