@@ -246,7 +246,7 @@ window.Ligitabl.predictionPage = function (el) {
         };
     });
 
-    const base = Ligitabl._predictionBase(parsed, { showPoints: true });
+    const base = Ligitabl._predictionBase(parsed);
 
     return Object.assign(base, {
         canSwap,
