@@ -393,11 +393,12 @@ public class UserPredictionsController {
             return List.of();
         }
 
-        List<ResultTeamRank> sortedRanks = sortByPosition(resultRanks, r -> r.getRanking().getPosition());
+        List<ResultTeamRank> sortedRanks =
+                sortByPosition(resultRanks, r -> r.getRanking().getPosition());
 
         Map<String, Team> teamsByCode = teamRepo
                 .findAllByCodes(
-                sortedRanks.stream().map(r -> r.getRanking().getCode()).collect(Collectors.toSet()))
+                        sortedRanks.stream().map(r -> r.getRanking().getCode()).collect(Collectors.toSet()))
                 .stream()
                 .collect(Collectors.toMap(Team::getCode, Function.identity()));
 
