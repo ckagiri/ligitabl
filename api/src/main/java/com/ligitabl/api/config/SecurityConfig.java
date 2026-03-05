@@ -138,6 +138,8 @@ public class SecurityConfig {
                         "/auth/register")) // Allow HTMX + auth forms without CSRF
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 "/",
+                                "/my-table/guest",
+                                "/my-table/guest/**",
                                 "/auth/login",
                                 "/auth/register",
                                 "/leaderboard",
@@ -155,6 +157,8 @@ public class SecurityConfig {
                                 "/favicon.svg",
                                 "/apple-touch-icon.png")
                         .permitAll()
+                        .requestMatchers("/my-table", "/my-table/**")
+                        .hasRole("PLAYER")
                         .requestMatchers("/predictions/user/me")
                         .hasRole("PLAYER")
                         .requestMatchers("/predictions/user/guest", "/predictions/user/guest/*")
@@ -167,7 +171,7 @@ public class SecurityConfig {
                         .authenticated())
                 .formLogin(form -> form.loginPage("/auth/login")
                         .loginProcessingUrl("/auth/login/process")
-                        .defaultSuccessUrl("/predictions/user/me", true)
+                        .defaultSuccessUrl("/my-table", true)
                         .permitAll())
                 .rememberMe(remember -> remember.rememberMeServices(rememberMeServices))
                 .logout(logout -> logout.logoutUrl("/auth/logout")

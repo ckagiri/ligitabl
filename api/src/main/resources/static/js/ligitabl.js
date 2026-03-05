@@ -616,7 +616,7 @@ window.Ligitabl.guestPredictionPage = function (el) {
         }
 
         fetch(
-            "/predictions/user/me/latest-result-banner/dismiss?round=" +
+            "/my-table/latest-result-banner/dismiss?round=" +
                 roundNumber,
             {method: "POST", headers: headers},
         ).catch(function(err) {

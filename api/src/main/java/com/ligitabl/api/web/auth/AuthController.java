@@ -119,7 +119,7 @@ public class AuthController {
                                 "message", "Welcome, " + result.displayName() + "! You're now logged in.");
                         redirectAttributes.addFlashAttribute("messageType", "success");
 
-                        return "redirect:/predictions/user/me";
+                        return "redirect:/my-table";
                     });
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
@@ -191,7 +191,7 @@ public class AuthController {
             redirectAttributes.addFlashAttribute("message", "Welcome back, " + user.getDisplayName() + "!");
             redirectAttributes.addFlashAttribute("messageType", "success");
 
-            return "redirect:/predictions/user/me";
+            return "redirect:/my-table";
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("pageTitle", "Login");

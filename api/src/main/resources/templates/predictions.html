@@ -102,7 +102,7 @@ message=[[${message}]]</pre
             >
               <div
                 th:replace="~{fragments/round-navigation :: round-nav(
-                  '/predictions/user/me', ${viewingRound}, ${currentRound}, ${currentRound},
+                  '/my-table', ${viewingRound}, ${currentRound}, ${currentRound},
                         '#prediction-page', 'outerHTML swap:100ms settle:100ms show:window:top',
                         ${isCurrentRound == false || isCurrentRound == null}, false, 'query', null, ${minRoundForNav})}"
               ></div>
@@ -114,7 +114,7 @@ message=[[${message}]]</pre
         <div
           th:if="${isCurrentRound == true && (isGuest == false || isGuest == null)}"
           id="results-banner"
-          hx-get="/predictions/user/me/latest-result-banner"
+          hx-get="/my-table/latest-result-banner"
           hx-trigger="load"
           hx-swap="innerHTML swap:100ms settle:100ms"
         >

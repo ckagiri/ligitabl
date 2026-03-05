@@ -1,8 +1,8 @@
 <!-- Results Banner Fragment -->
-<!-- Fragment for /predictions/user/me -->
+<!-- Fragment for /my-table (formerly /predictions/user/me) -->
 <div th:fragment="results-banner-user(result)" th:if="${result != null}">
   <div
-    th:replace="~{fragments/results-banner :: results-banner-base(result=${result}, baseUrl='/predictions/user/me')}"
+    th:replace="~{fragments/results-banner :: results-banner-base(result=${result}, baseUrl=${predictionsNavLink} ?: '/my-table')}"
   ></div>
 </div>
 
