@@ -75,7 +75,40 @@ window.Ligitabl._predictionBase = function (parsed, opts = {}) {
         },
 
         getSwapCount() {
-            return Math.ceil(this.getDirtyCount() / 2);
+            // Use permutation cycle decomposition: for a cycle of length k,
+            // the minimum swaps needed = k - 1. Sum across all cycles.
+            const visited = new Set();
+            let swapCount = 0;
+
+            for (const team of this.teams) {
+                if (visited.has(team.code) || !this.isDirty(team.code)) continue;
+
+                // Trace the full cycle starting from this team
+                let cycleLength = 0;
+                let currentCode = team.code;
+
+                while (!visited.has(currentCode)) {
+                    visited.add(currentCode);
+                    cycleLength++;
+
+                    // Find the original position of the current team
+                    const originalPos = this.originalTeams.find(
+                        (t) => t.code === currentCode
+                    )?.position;
+
+                    // Find who is currently occupying that original position
+                    const next = this.teams.find((t) => t.position === originalPos);
+                    if (!next || next.code === currentCode) break;
+
+                    currentCode = next.code;
+                }
+
+                if (cycleLength > 1) {
+                    swapCount += cycleLength - 1;
+                }
+            }
+
+            return swapCount;
         },
 
         getPositionChange(teamCode) {
@@ -583,7 +616,7 @@ window.Ligitabl.guestPredictionPage = function (el) {
         }
 
         fetch(
-            "/predictions/user/me/latest-result-banner/dismiss?round=" +
+            "/my-table/latest-result-banner/dismiss?round=" +
                 roundNumber,
             {method: "POST", headers: headers},
         ).catch(function(err) {

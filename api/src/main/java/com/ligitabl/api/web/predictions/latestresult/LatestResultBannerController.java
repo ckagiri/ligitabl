@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Controller
-@RequestMapping("/predictions/user")
+@RequestMapping("/my-table")
 @RequiredArgsConstructor
 @Slf4j
 public class LatestResultBannerController {
@@ -24,7 +24,7 @@ public class LatestResultBannerController {
     private final DismissResultBannerUseCase dismissResultBannerUseCase;
     private final UserRepo userRepo;
 
-    @GetMapping("/me/latest-result-banner")
+    @GetMapping("/latest-result-banner")
     public String getLatestResultBanner(Principal principal, Model model) {
         UUID userId = resolveUserId(principal);
         if (userId == null) {
@@ -47,7 +47,7 @@ public class LatestResultBannerController {
                 });
     }
 
-    @PostMapping("/me/latest-result-banner/dismiss")
+    @PostMapping("/latest-result-banner/dismiss")
     @ResponseBody
     public ResponseEntity<Void> dismissBanner(@RequestParam int round, Principal principal) {
         UUID userId = resolveUserId(principal);

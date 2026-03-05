@@ -12,8 +12,8 @@ import com.ligitabl.api.rest.prediction.shared.PredictionAccessMode;
 import com.ligitabl.api.rest.prediction.shared.RankingSource;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.web.shared.user.UserContext;
 import com.ligitabl.api.web.shared.error.ErrorMapper;
+import com.ligitabl.api.web.shared.user.UserContext;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 
@@ -188,7 +188,7 @@ public class GetUserPredictionUseCase {
             Map<String, Integer> pointsMap = standingsRepo.findPointsMap(qry.seasonId(), currentRound);
 
             String message = null;
-            if (accessMode == PredictionAccessMode.READONLY_COOLDOWN) {
+            if (accessMode == PredictionAccessMode.READONLY_COOLDOWN && currentRoundStatus == RoundStatus.OPEN) {
                 message = "Swap cooldown active";
             }
 

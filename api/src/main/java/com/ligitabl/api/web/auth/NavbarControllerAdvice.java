@@ -32,8 +32,8 @@ import lombok.RequiredArgsConstructor;
  *
  * <p>Navbar label logic:
  * <ul>
- *   <li>Not logged in → "My Table" (links to /predictions/user/guest)</li>
- *   <li>Logged in → "My Table" (links to /predictions/user/me)</li>
+ *   <li>Not logged in → "My Table" (links to /my-table/guest)</li>
+ *   <li>Logged in → "My Table" (links to /my-table)</li>
  * </ul>
  */
 @ControllerAdvice
@@ -78,9 +78,9 @@ public class NavbarControllerAdvice {
     @ModelAttribute("predictionsNavLink")
     public String predictionsNavLink(Principal principal) {
         if (principal == null) {
-            return "/predictions/user/guest";
+            return "/my-table/guest";
         }
-        return "/predictions/user/me";
+        return "/my-table";
     }
 
     @ModelAttribute("userDisplayName")

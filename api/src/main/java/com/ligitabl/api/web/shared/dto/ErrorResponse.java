@@ -1,9 +1,9 @@
 package com.ligitabl.api.web.shared.dto;
 
-import lombok.Getter;
-
 import java.util.List;
 import java.util.Objects;
+
+import lombok.Getter;
 
 /**
  * DTO for error responses.

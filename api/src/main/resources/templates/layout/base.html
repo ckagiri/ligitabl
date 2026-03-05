@@ -222,7 +222,7 @@
 
           <div class="hidden md:flex items-center space-x-4">
             <a
-              th:href="${predictionsNavLink} ?: '/predictions/user/guest'"
+              th:href="${predictionsNavLink} ?: '/my-table/guest'"
               class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
               th:text="${predictionsNavLabel} ?: 'Predictions'"
             >
@@ -300,7 +300,7 @@
         >
           <div class="flex flex-col space-y-1 pt-2">
             <a
-              th:href="${predictionsNavLink} ?: '/predictions/user/guest'"
+              th:href="${predictionsNavLink} ?: '/my-table/guest'"
               class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
               th:text="${predictionsNavLabel} ?: 'Predictions'"
             >
