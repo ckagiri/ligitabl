@@ -188,7 +188,7 @@ public class GetUserPredictionUseCase {
             Map<String, Integer> pointsMap = standingsRepo.findPointsMap(qry.seasonId(), currentRound);
 
             String message = null;
-            if (accessMode == PredictionAccessMode.READONLY_COOLDOWN) {
+            if (accessMode == PredictionAccessMode.READONLY_COOLDOWN && currentRoundStatus == RoundStatus.OPEN) {
                 message = "Swap cooldown active";
             }
 
