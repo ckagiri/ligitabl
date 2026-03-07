@@ -204,6 +204,22 @@ window.Ligitabl._predictionBase = function (parsed, opts = {}) {
             });
         },
 
+        _saveToStorage(key) {
+            try {
+                localStorage.setItem(key, JSON.stringify(this.teams));
+            } catch (e) {
+                console.warn("Failed to save prediction:", e);
+            }
+        },
+
+        _clearStorage(key) {
+            try {
+                localStorage.removeItem(key);
+            } catch (e) {
+                console.warn("Failed to clear prediction:", e);
+            }
+        },
+
         reset() {
             this.teams = JSON.parse(JSON.stringify(this.originalTeams));
             this.selectedTeam = null;
@@ -240,20 +256,23 @@ window.Ligitabl.predictionPage = function (el) {
         isInitialRaw === "true" || isInitialRaw === "True";
 
     const GUEST_STORAGE_KEY = "ligitabl.guestPrediction";
+    const AUTH_STORAGE_KEY = "ligitabl.prediction";
+
+    function _validateTeamCodes(saved) {
+        const serverCodes = new Set(predictions.map((p) => p.teamCode));
+        const savedCodes = new Set(saved.map((p) => p.code));
+        return (
+            serverCodes.size === savedCodes.size &&
+            [...serverCodes].every((c) => savedCodes.has(c))
+        );
+    }
 
     function loadGuestPrediction() {
         try {
             const saved = localStorage.getItem(GUEST_STORAGE_KEY);
             if (saved) {
                 const parsed = JSON.parse(saved);
-                const serverCodes = new Set(predictions.map((p) => p.teamCode));
-                const savedCodes = new Set(parsed.map((p) => p.code));
-                if (
-                    serverCodes.size === savedCodes.size &&
-                    [...serverCodes].every((c) => savedCodes.has(c))
-                ) {
-                    return parsed;
-                }
+                if (_validateTeamCodes(parsed)) return parsed;
             }
         } catch (e) {
             console.warn("Failed to load guest prediction:", e);
@@ -261,12 +280,17 @@ window.Ligitabl.predictionPage = function (el) {
         return null;
     }
 
-    function clearGuestStorage() {
+    function loadAuthPrediction() {
         try {
-            localStorage.removeItem(GUEST_STORAGE_KEY);
+            const saved = localStorage.getItem(AUTH_STORAGE_KEY);
+            if (saved) {
+                const parsed = JSON.parse(saved);
+                if (_validateTeamCodes(parsed)) return parsed;
+            }
         } catch (e) {
-            console.warn("Failed to clear guest prediction:", e);
+            console.warn("Failed to load auth prediction:", e);
         }
+        return null;
     }
 
     const serverDataByCode = {};
@@ -292,6 +316,7 @@ window.Ligitabl.predictionPage = function (el) {
         importedFromGuest: false,
 
         init() {
+            // 1. On initial prediction, prefer guest localStorage (user swapped as guest then signed up)
             if (isInitialPrediction) {
                 const guestPrediction = loadGuestPrediction();
                 if (guestPrediction) {
@@ -309,15 +334,20 @@ window.Ligitabl.predictionPage = function (el) {
                 }
             }
 
+            // 2. Otherwise (or if no guest data), try auth localStorage
+            if (this.teams.length === 0) {
+                const authPrediction = loadAuthPrediction();
+                if (authPrediction) {
+                    this.teams = authPrediction.map((t, idx) => ({...t, position: idx + 1}));
+                }
+            }
+
+            // 3. Fall back to server predictions
             if (this.teams.length === 0) {
                 this.teams = Ligitabl._mapServerPredictions(predictions);
             }
 
-            if (this.importedFromGuest) {
-                this.originalTeams = Ligitabl._mapServerPredictions(predictions);
-            } else {
-                this.originalTeams = JSON.parse(JSON.stringify(this.teams));
-            }
+            this.originalTeams = Ligitabl._mapServerPredictions(predictions);
         },
 
         teamClick(teamCode) {
@@ -332,6 +362,7 @@ window.Ligitabl.predictionPage = function (el) {
                 return;
             }
             this._performSwap(teamCode, true);
+            this._saveToStorage(AUTH_STORAGE_KEY);
         },
 
         canUpdate() {
@@ -415,8 +446,9 @@ window.Ligitabl.predictionPage = function (el) {
         reset() {
             this.teams = JSON.parse(JSON.stringify(this.originalTeams));
             this.selectedTeam = null;
+            this._clearStorage(AUTH_STORAGE_KEY);
             if (this.importedFromGuest) {
-                clearGuestStorage();
+                this._clearStorage(GUEST_STORAGE_KEY);
                 this.importedFromGuest = false;
                 window.dispatchEvent(new CustomEvent('guest-storage-cleared'));
             }
@@ -458,8 +490,9 @@ window.Ligitabl.predictionPage = function (el) {
                 .then((response) => response.json())
                 .then((data) => {
                     if (data.success) {
+                        this._clearStorage(AUTH_STORAGE_KEY);
                         if (this.importedFromGuest || this.isInitialPrediction) {
-                            clearGuestStorage();
+                            this._clearStorage(GUEST_STORAGE_KEY);
                         }
                         setTimeout(() => {
                             window.scrollTo({top: 0, behavior: "smooth"});
@@ -552,35 +585,15 @@ window.Ligitabl.guestPredictionPage = function (el) {
 
     return Object.assign(base, {
         alwaysHoverable: true,
-        hasLocalChanges: false,
 
         init() {
             const saved = loadSavedPrediction();
             if (saved) {
                 this.teams = saved.map((t, idx) => ({...t, position: idx + 1}));
-                this.hasLocalChanges = true;
             } else {
                 this.teams = Ligitabl._mapServerPredictions(serverPredictions);
             }
             this.originalTeams = Ligitabl._mapServerPredictions(serverPredictions);
-        },
-
-        saveToLocalStorage() {
-            try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(this.teams));
-                this.hasLocalChanges = true;
-            } catch (e) {
-                console.warn("Failed to save prediction:", e);
-            }
-        },
-
-        clearLocalStorage() {
-            try {
-                localStorage.removeItem(STORAGE_KEY);
-                this.hasLocalChanges = false;
-            } catch (e) {
-                console.warn("Failed to clear prediction:", e);
-            }
         },
 
         teamClick(teamCode) {
@@ -593,13 +606,13 @@ window.Ligitabl.guestPredictionPage = function (el) {
                 return;
             }
             this._performSwap(teamCode, false);
-            this.saveToLocalStorage();
+            this._saveToStorage(STORAGE_KEY);
         },
 
         reset() {
             this.teams = JSON.parse(JSON.stringify(this.originalTeams));
             this.selectedTeam = null;
-            this.clearLocalStorage();
+            this._clearStorage(STORAGE_KEY);
         },
     });
 };
@@ -648,7 +661,6 @@ window.Ligitabl.guestPredictionPage = function (el) {
         var trigger = event.detail.elt;
         if (!trigger) return;
 
-        // Check if the trigger has the dismiss attribute
         var hasDismissAttr = trigger.getAttribute('data-dismiss-results-banner') === 'true';
         if (!hasDismissAttr) return;
 

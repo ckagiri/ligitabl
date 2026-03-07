@@ -184,7 +184,7 @@ public class AuthController {
 
             UUID mainContestId = getActiveSeason().getMainContestId();
             if (mainContestId != null && contestRepo.existsByUserAndContest(user.getId(), mainContestId)) {
-                redirectAttributes.addFlashAttribute("clearGuestPrediction", true);
+                redirectAttributes.addFlashAttribute("clearTablePrediction", true);
                 log.info("User {} has existing contest entry, will clear guest localStorage", user.getId());
             }
 
@@ -214,8 +214,8 @@ public class AuthController {
             log.warn("Failed to perform servlet logout", e);
         }
 
-        // Signal frontend to clear guest localStorage on logout
-        redirectAttributes.addFlashAttribute("clearGuestPrediction", true);
+        // Signal frontend to clear table-prediction localStorage on logout
+        redirectAttributes.addFlashAttribute("clearTablePrediction", true);
 
         redirectAttributes.addFlashAttribute("message", "You've been logged out. See you next time!");
         redirectAttributes.addFlashAttribute("messageType", "info");
