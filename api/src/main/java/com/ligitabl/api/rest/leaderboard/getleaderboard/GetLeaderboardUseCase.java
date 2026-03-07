@@ -107,9 +107,12 @@ public class GetLeaderboardUseCase {
             var currentRound = roundRepo.findById(season.getCurrentRoundId()).orElse(null);
             if (currentRound != null) {
                 int roundPos = currentRound.getPosition();
+                int effectiveRoundPos = (!currentRound.isFinalized() && roundPos > 1)
+                        ? (roundPos - 1)
+                        : roundPos;
                 var quarter = competition.getPhases().stream()
                         .filter(p -> p.getCode().startsWith("Q"))
-                        .filter(p -> roundPos >= p.getFrom() && roundPos <= p.getTo())
+                        .filter(p -> effectiveRoundPos >= p.getFrom() && effectiveRoundPos <= p.getTo())
                         .findFirst()
                         .orElse(null);
                 if (quarter != null) {
