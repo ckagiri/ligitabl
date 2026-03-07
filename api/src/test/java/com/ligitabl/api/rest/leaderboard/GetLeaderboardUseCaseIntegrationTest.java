@@ -97,6 +97,19 @@ class GetLeaderboardUseCaseIntegrationTest extends AbstractPostgresIT {
                 true);
     }
 
+    private UUID insertRound(int roundPosition, boolean finalized) {
+        UUID roundId = UUID.randomUUID();
+        jdbc.update(
+                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized) VALUES (?,?,?,?,?,?)",
+                roundId,
+                seasonId,
+                "Round " + roundPosition,
+                "round-" + roundPosition,
+                roundPosition,
+                finalized);
+        return roundId;
+    }
+
     @BeforeEach
     void setup() throws Exception {
         PostgresTestDbCleaner.truncateAllDomainTables(jdbc);
@@ -198,6 +211,24 @@ class GetLeaderboardUseCaseIntegrationTest extends AbstractPostgresIT {
         assertThat(leaderboard.rankings()).hasSize(3);
         assertThat(leaderboard.rankings().get(0).displayName()).isEqualTo("Alice");
         assertThat(leaderboard.rankings().get(0).totalScore()).isEqualTo(500);
+    }
+
+    @Test
+    @DisplayName("defaults to previous round phase when current round is not finalized")
+    void defaultsToPreviousRoundPhaseWhenCurrentRoundIsNotFinalized() {
+        UUID round11Id = insertRound(11, false);
+        jdbc.update("UPDATE t_season SET fk_current_round_id = ? WHERE pk_id = ?", round11Id, seasonId);
+
+        // Round 10 is in Q1; current round is 11 (Q2) but not finalized, so default phase should be Q1.
+        createResult(aliceId, alicePredictionId, 10, 25, 0, 0);
+
+        var result = useCase.execute(new GetLeaderboardQuery(null));
+
+        assertThat(result.isRight()).isTrue();
+        var leaderboard = result.get();
+        assertThat(leaderboard.phase().getCode()).isEqualTo("Q1");
+        assertThat(leaderboard.phase().getFrom()).isEqualTo(1);
+        assertThat(leaderboard.phase().getTo()).isEqualTo(10);
     }
 
     @Test
