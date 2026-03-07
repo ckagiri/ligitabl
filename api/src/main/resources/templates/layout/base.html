@@ -433,16 +433,11 @@
         </div>
       </div>
 
-      <!-- Clear guest localStorage on login (if user has entry) or logout -->
-      <script th:if="${clearGuestPrediction}">
+      <!-- Clear table-prediction localStorage on login (if user has entry) or logout -->
+      <script th:if="${clearTablePrediction}">
         (function () {
-          const GUEST_STORAGE_KEY = "ligitabl.guestPrediction";
-          if (localStorage.getItem(GUEST_STORAGE_KEY)) {
-            localStorage.removeItem(GUEST_STORAGE_KEY);
-            console.log(
-              "[Ligitabl] Cleared guest prediction from localStorage",
-            );
-          }
+          localStorage.removeItem("ligitabl.guestPrediction");
+          localStorage.removeItem("ligitabl.prediction");
         })();
       </script>
 
