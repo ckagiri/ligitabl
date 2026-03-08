@@ -33,16 +33,39 @@ window.Ligitabl._parseDataAttributes = function (el) {
     };
 };
 
+// --- Persisted display preferences ---
+
+window.Ligitabl._PREFS_KEY = "ligitabl.prefs";
+
+window.Ligitabl._loadPrefs = function () {
+    try {
+        const saved = localStorage.getItem(Ligitabl._PREFS_KEY);
+        if (saved) return JSON.parse(saved);
+    } catch (e) {
+        console.warn("Failed to load prefs:", e);
+    }
+    return null;
+};
+
+window.Ligitabl._savePrefs = function (prefs) {
+    try {
+        localStorage.setItem(Ligitabl._PREFS_KEY, JSON.stringify(prefs));
+    } catch (e) {
+        console.warn("Failed to save prefs:", e);
+    }
+};
+
 // Shared base for predictionPage and guestPredictionPage
-window.Ligitabl._predictionBase = function (parsed, opts = {}) {
+window.Ligitabl._predictionBase = function (parsed) {
+    const savedPrefs = Ligitabl._loadPrefs();
     return {
         teams: [],
         originalTeams: [],
         selectedTeam: null,
         alwaysHoverable: false,
-        showStandings: false,
-        showFixtures: false,
-        showPoints: opts.showPoints ?? false,
+        showStandings: savedPrefs ? (savedPrefs.showStandings ?? false) : false,
+        showFixtures: savedPrefs ? (savedPrefs.showFixtures ?? false) : false,
+        showPoints: savedPrefs ? (savedPrefs.showPoints ?? false) : false,
         currentStandings: parsed.currentStandings,
         fixtures: parsed.fixtures,
         currentPoints: parsed.currentPoints,
@@ -348,6 +371,16 @@ window.Ligitabl.predictionPage = function (el) {
             }
 
             this.originalTeams = Ligitabl._mapServerPredictions(predictions);
+
+            // Persist display preferences
+            const savePrefs = () => Ligitabl._savePrefs({
+                showStandings: this.showStandings,
+                showFixtures: this.showFixtures,
+                showPoints: this.showPoints,
+            });
+            this.$watch("showStandings", savePrefs);
+            this.$watch("showFixtures", savePrefs);
+            this.$watch("showPoints", savePrefs);
         },
 
         teamClick(teamCode) {
@@ -594,6 +627,16 @@ window.Ligitabl.guestPredictionPage = function (el) {
                 this.teams = Ligitabl._mapServerPredictions(serverPredictions);
             }
             this.originalTeams = Ligitabl._mapServerPredictions(serverPredictions);
+
+            // Persist display preferences
+            const savePrefs = () => Ligitabl._savePrefs({
+                showStandings: this.showStandings,
+                showFixtures: this.showFixtures,
+                showPoints: this.showPoints,
+            });
+            this.$watch("showStandings", savePrefs);
+            this.$watch("showFixtures", savePrefs);
+            this.$watch("showPoints", savePrefs);
         },
 
         teamClick(teamCode) {
