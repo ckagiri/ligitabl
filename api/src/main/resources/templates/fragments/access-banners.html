@@ -396,20 +396,15 @@
           clip-rule="evenodd"
         />
       </svg>
-      <div>
-        <p class="text-sm font-medium text-blue-800">
-          📊 Historical Prediction
-        </p>
-        <p class="text-sm text-blue-700 mt-1">
-          This is your <strong>table</strong> from Gameweek
-          <span th:text="${viewingRound}">18</span>.
-          <span th:if="${hasRoundResult}">
-            You scored <strong th:text="${totalScore}">42</strong> points this
-            round.
-          </span>
-          This view is read-only.
-        </p>
-      </div>
+      <p class="text-sm text-blue-800">
+        <strong>Gameweek <span th:text="${viewingRound}">18</span></strong>
+        <span th:if="${hasRoundResult}">
+          — You scored <strong th:text="${totalScore}">42</strong> points this round.
+        </span>
+        <span th:if="${!hasRoundResult}">
+          — Results pending.
+        </span>
+      </p>
     </div>
   </div>
 
