@@ -50,6 +50,13 @@
           th:fragment="leaderboardContent"
           class="px-6 py-4"
         >
+          <input
+            th:if="${effectiveToRound != null}"
+            type="hidden"
+            id="effectiveToRound"
+            name="effectiveToRound"
+            th:value="${effectiveToRound}"
+          />
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
@@ -133,6 +140,7 @@
                       hx-post="/leaderboard/user/modal"
                       hx-target="#user-detail-modal"
                       hx-swap="innerHTML"
+                      hx-include="#effectiveToRound"
                       th:attr="hx-vals='js:{publicId: &quot;' + ${entry.publicId} + '&quot;, displayName: &quot;' + ${entry.displayName} + '&quot;, ' +
                         'position: ' + ${entry.position} + ', totalScore: ' + ${entry.totalScore} + ', roundScore: ' + ${entry.roundScore} + ', ' +
                         'maxScore: ' + ${entry.maxScore} + ', totalZeroes: ' + ${entry.totalZeroes} + ', totalSwaps: ' + ${entry.totalSwaps} + ', movement: ' + ${entry.movement} + '}'"
