@@ -102,6 +102,7 @@ public class GetLeaderboardController {
         model.addAttribute("leaderboard", pageEntries);
         model.addAttribute("phases", result.allPhases());
         model.addAttribute("currentPhase", result.phase().getCode());
+        model.addAttribute("effectiveToRound", result.effectiveToRound());
         model.addAttribute("userPosition", userPosition);
         model.addAttribute("userInCurrentPage", userInCurrentPage);
         model.addAttribute("currentUserName", currentUserName);

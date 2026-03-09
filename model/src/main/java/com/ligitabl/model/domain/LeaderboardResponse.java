@@ -12,4 +12,5 @@ public record LeaderboardResponse(
         int userPageOffset,
         int totalParticipants,
         boolean hasNext,
-        boolean hasPrevious) {}
+        boolean hasPrevious,
+        Integer effectiveToRound) {}

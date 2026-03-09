@@ -396,6 +396,7 @@
         <strong>Gameweek <span th:text="${viewingRound}">18</span></strong>
         <span th:if="${hasRoundResult}">
           — You scored <strong th:text="${totalScore}">42</strong> points this round.
+          <span th:replace="~{fragments/score-emoji :: emoji(${totalScore})}"></span>
         </span>
         <span th:if="${!hasRoundResult}">
           — Results pending.

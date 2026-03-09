@@ -77,6 +77,7 @@ public class GetLeaderboardUseCase {
         return Either.right(new GetLeaderboardResult(
                 contest.getId(),
                 phase,
+                response.effectiveToRound(),
                 response.entries(),
                 competition.getPhases(),
                 response.userEntry(),
@@ -107,9 +108,7 @@ public class GetLeaderboardUseCase {
             var currentRound = roundRepo.findById(season.getCurrentRoundId()).orElse(null);
             if (currentRound != null) {
                 int roundPos = currentRound.getPosition();
-                int effectiveRoundPos = (!currentRound.isFinalized() && roundPos > 1)
-                        ? (roundPos - 1)
-                        : roundPos;
+                int effectiveRoundPos = (!currentRound.isFinalized() && roundPos > 1) ? (roundPos - 1) : roundPos;
                 var quarter = competition.getPhases().stream()
                         .filter(p -> p.getCode().startsWith("Q"))
                         .filter(p -> effectiveRoundPos >= p.getFrom() && effectiveRoundPos <= p.getTo())

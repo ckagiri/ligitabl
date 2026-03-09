@@ -69,7 +69,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 userInfo.userPageOffset(),
                 totalParticipants,
                 offset + limit < totalParticipants,
-                offset > 0);
+                offset > 0,
+                effectiveToRound);
     }
 
     @Override
@@ -121,7 +122,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
     }
 
     private LeaderboardResponse emptyResponse() {
-        return new LeaderboardResponse(List.of(), null, false, 0, 0, false, false);
+        return new LeaderboardResponse(List.of(), null, false, 0, 0, false, false, null);
     }
 
     /**

@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequestMapping("/leaderboard")
 @RequiredArgsConstructor
 @Slf4j
-public class GetUserDetailModalController {
+public class GetUserDetailController {
 
     private final GetUserDetailUseCase getUserDetailUseCase;
 
@@ -30,6 +30,7 @@ public class GetUserDetailModalController {
             @RequestParam int totalZeroes,
             @RequestParam int totalSwaps,
             @RequestParam int movement,
+            @RequestParam(required = false) Integer effectiveToRound,
             Model model,
             HttpServletResponse response) {
 
@@ -37,7 +38,7 @@ public class GetUserDetailModalController {
 
         // Fetch predictions
         return getUserDetailUseCase
-                .execute(publicId)
+                .execute(publicId, effectiveToRound)
                 .fold(
                         error -> handleError(error, model, response),
                         result -> handleSuccess(result, displayName, position, totalScore, roundScore, model));
