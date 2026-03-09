@@ -40,6 +40,7 @@
           >156</span
         >
         points
+        <span th:replace="~{fragments/score-emoji :: emoji(${result.score})}"></span>
         <span th:if="${result.movement != null && result.movement != 0}">
           <span
             th:if="${result.movement > 0}"
