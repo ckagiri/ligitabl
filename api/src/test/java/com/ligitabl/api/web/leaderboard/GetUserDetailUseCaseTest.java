@@ -10,6 +10,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import org.assertj.core.groups.Tuple;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -204,8 +205,7 @@ class GetUserDetailUseCaseTest {
                 .build();
 
         var resultRankings = List.of(
-                new ResultTeamRank(new TeamRank("ARS", 1), 3, 0),
-                new ResultTeamRank(new TeamRank("MCI", 2), 1, 3));
+                new ResultTeamRank(new TeamRank("ARS", 1), 3, 0), new ResultTeamRank(new TeamRank("MCI", 2), 1, 3));
 
         var roundResult = RoundResult.builder()
                 .id(UUID.randomUUID())
@@ -249,9 +249,7 @@ class GetUserDetailUseCaseTest {
         assertThat(payload.round()).isEqualTo(effectiveToRound);
         assertThat(payload.predictions())
                 .extracting(GetUserDetailUseCase.PredictionTeam::teamName, GetUserDetailUseCase.PredictionTeam::hit)
-                .containsExactly(
-                        org.assertj.core.groups.Tuple.tuple("ARS", 0),
-                        org.assertj.core.groups.Tuple.tuple("MCI", 3));
+                .containsExactly(Tuple.tuple("ARS", 0), Tuple.tuple("MCI", 3));
     }
 
     @Test
@@ -331,8 +329,6 @@ class GetUserDetailUseCaseTest {
         assertThat(payload.round()).isEqualTo(9);
         assertThat(payload.predictions())
                 .extracting(GetUserDetailUseCase.PredictionTeam::teamName, GetUserDetailUseCase.PredictionTeam::hit)
-                .containsExactly(
-                        org.assertj.core.groups.Tuple.tuple("ARS", null),
-                        org.assertj.core.groups.Tuple.tuple("MCI", null));
+                .containsExactly(Tuple.tuple("ARS", null), Tuple.tuple("MCI", null));
     }
 }

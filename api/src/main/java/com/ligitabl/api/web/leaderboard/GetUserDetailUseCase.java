@@ -91,9 +91,9 @@ public class GetUserDetailUseCase {
                         .orElse(null);
 
                 if (roundResult != null) {
-                                        var resultRankings = roundResult.getRankings().stream()
-                                                        .sorted(Comparator.comparingInt(r -> r.getRanking().getPosition()))
-                                                        .toList();
+                    var resultRankings = roundResult.getRankings().stream()
+                            .sorted(Comparator.comparingInt(r -> r.getRanking().getPosition()))
+                            .toList();
 
                     var roundPredictions = mapRankingsToPredictionTeams(
                             resultRankings.stream().map(r -> r.getRanking()).toList());
@@ -133,7 +133,7 @@ public class GetUserDetailUseCase {
         Map<String, Team> teamsByCode = teamRepo.findAllByCodes(teamCodes).stream()
                 .collect(Collectors.toMap(Team::getCode, Function.identity()));
 
-				return sortedRanks.stream()
+        return sortedRanks.stream()
                 .map(tr -> {
                     Team team = teamsByCode.get(tr.getCode());
                     String name = team != null ? team.getShortName() : tr.getCode();
