@@ -30,6 +30,7 @@ window.Ligitabl._parseDataAttributes = function (el) {
         currentStandings: p(el?.dataset?.currentStandings, {}),
         fixtures: p(el?.dataset?.fixtures, {}),
         currentPoints: p(el?.dataset?.currentPoints, {}),
+        currentGoalDifference: p(el?.dataset?.currentGoalDifference, {}),
     };
 };
 
@@ -69,9 +70,24 @@ window.Ligitabl._predictionBase = function (parsed) {
         currentStandings: parsed.currentStandings,
         fixtures: parsed.fixtures,
         currentPoints: parsed.currentPoints,
+        currentGoalDifference: parsed.currentGoalDifference,
 
         getCurrentPoints(teamCode) {
             return this.currentPoints[teamCode] || "-";
+        },
+
+        getCurrentGD(teamCode) {
+            const gd = this.currentGoalDifference[teamCode];
+            if (gd === undefined || gd === null) return "-";
+            return gd > 0 ? "+" + gd : gd;
+        },
+
+        getGDDirection(teamCode) {
+            const gd = this.currentGoalDifference[teamCode];
+            if (gd === undefined || gd === null) return null;
+            if (gd > 0) return "positive";
+            if (gd < 0) return "negative";
+            return "neutral";
         },
 
         getFixtures(teamCode) {
