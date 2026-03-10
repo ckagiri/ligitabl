@@ -12,6 +12,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -134,6 +135,15 @@ public class AuthController {
         request.getSession(true);
         model.addAttribute("pageTitle", "Login");
         model.addAttribute("isDemo", true);
+
+        // If Spring Security redirected here from a protected page, treat this like logout.
+        // We clear prediction + prefs localStorage (same as manual logout) to avoid stale client state.
+        HttpSession session = request.getSession(false);
+        Object saved = session == null ? null : session.getAttribute("SPRING_SECURITY_SAVED_REQUEST");
+        if (saved instanceof SavedRequest) {
+            model.addAttribute("clearTablePrediction", true);
+            model.addAttribute("clearPrefs", true);
+        }
         return "auth/login";
     }
 
