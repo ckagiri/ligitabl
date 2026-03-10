@@ -26,6 +26,7 @@ public record UserPredictionViewData(
         Map<String, List<Match>> matches,
         Map<String, Integer> standingsMap,
         Map<String, Integer> pointsMap,
+        Map<String, Integer> goalDifferenceMap,
         int currentRound,
         int lastRound,
         int viewingRound,
@@ -45,6 +46,7 @@ public record UserPredictionViewData(
         matches = matches != null ? Map.copyOf(matches) : Map.of();
         standingsMap = standingsMap != null ? Map.copyOf(standingsMap) : Map.of();
         pointsMap = pointsMap != null ? Map.copyOf(pointsMap) : Map.of();
+        goalDifferenceMap = goalDifferenceMap != null ? Map.copyOf(goalDifferenceMap) : Map.of();
         roundSwapHistory = roundSwapHistory != null ? List.copyOf(roundSwapHistory) : null;
     }
 

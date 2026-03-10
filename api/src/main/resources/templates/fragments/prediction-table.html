@@ -59,8 +59,7 @@
         autocomplete="off"
         class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
       />
-      <span class="hidden sm:inline">Show points &amp; goal diff</span>
-      <span class="sm:hidden">Show pts &amp; GD</span>
+      <span>Show points &amp; goal difference</span>
     </label>
   </div>
 
@@ -246,7 +245,6 @@
                             x-text="getCurrentPoints(team.code)"
                           >45</span>
                           <span class="text-gray-500">pts</span>
-                          <span class="text-gray-300">•</span>
                           <span
                             class="font-medium"
                             :class="{
@@ -256,7 +254,6 @@
                             }"
                             x-text="getCurrentGD(team.code)"
                           >+12</span>
-                          <span class="text-gray-500">gd</span>
                         </div>
                       </div>
 

@@ -73,6 +73,18 @@ public class StandingsPersistenceAdapter implements StandingsRepo {
     }
 
     @Override
+    public Map<String, Integer> findGoalDifferenceMap(UUID seasonId, int roundPosition) {
+        Optional<Standings> standings = findBySeasonAndRoundPosition(seasonId, roundPosition);
+        if (standings.isEmpty() || standings.get().getRankings() == null) {
+            return Map.of();
+        }
+
+        return standings.get().getRankings().stream()
+                .collect(Collectors.toMap(rank -> rank.getRanking().getCode(), rank -> rank.getMetadata()
+                        .getGd()));
+    }
+
+    @Override
     public Optional<Standings> findLatestBySeason(UUID seasonId) {
         var record = dsl.selectFrom(T_STANDINGS)
                 .where(T_STANDINGS.FK_SEASON_ID.eq(seasonId))

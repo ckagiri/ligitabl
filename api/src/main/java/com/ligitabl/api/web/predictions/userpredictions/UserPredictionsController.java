@@ -345,12 +345,14 @@ public class UserPredictionsController {
             model.addAttribute("predictionsJson", objectMapper.writeValueAsString(predictions));
             model.addAttribute("currentStandingsJson", objectMapper.writeValueAsString(data.standingsMap()));
             model.addAttribute("currentPointsJson", objectMapper.writeValueAsString(data.pointsMap()));
+            model.addAttribute("currentGoalDifferenceJson", objectMapper.writeValueAsString(data.goalDifferenceMap()));
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize data", e);
             model.addAttribute("fixturesJson", "{}");
             model.addAttribute("predictionsJson", "[]");
             model.addAttribute("currentStandingsJson", "{}");
             model.addAttribute("currentPointsJson", "{}");
+            model.addAttribute("currentGoalDifferenceJson", "{}");
         }
 
         // Return appropriate view

@@ -15,5 +15,7 @@ public interface StandingsRepo extends BaseCrudRepo<Standings, UUID> {
 
     Map<String, Integer> findPointsMap(UUID seasonId, int roundPosition);
 
+    Map<String, Integer> findGoalDifferenceMap(UUID seasonId, int roundPosition);
+
     Optional<Standings> findLatestBySeason(UUID seasonId);
 }
