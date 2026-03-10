@@ -59,8 +59,8 @@
         autocomplete="off"
         class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
       />
-      <span class="hidden sm:inline">Show current points</span>
-      <span class="sm:hidden">Show points</span>
+      <span class="hidden sm:inline">Show points &amp; goal diff</span>
+      <span class="sm:hidden">Show pts &amp; GD</span>
     </label>
   </div>
 
@@ -105,6 +105,13 @@
               class="hidden sm:table-cell px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
             >
               Pts
+            </th>
+            <th
+              x-show="showPoints"
+              scope="col"
+              class="hidden sm:table-cell px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
+            >
+              GD
             </th>
           </tr>
         </thead>
@@ -154,7 +161,7 @@
                         x-text="team.name"
                       ></div>
 
-                      <!-- Mobile: Fixtures AND/OR Standings AND/OR Points on same line -->
+                      <!-- Mobile: Fixtures AND/OR Standings AND/OR Points+GD on same line -->
                       <div
                         x-show="showFixtures || showStandings || showPoints"
                         class="sm:hidden flex items-center gap-1.5 mt-1 flex-wrap"
@@ -229,16 +236,27 @@
                           </span>
                         </div>
 
-                        <!-- Points -->
+                        <!-- Points + GD (mobile) -->
                         <div
                           x-show="showPoints"
-                          class="flex basis-full items-center gap-1 text-[11px]"
+                          class="flex basis-full items-center gap-1.5 text-[11px]"
                         >
                           <span
                             class="text-gray-700 font-medium"
                             x-text="getCurrentPoints(team.code)"
-                            >45</span
-                          ><span class="text-gray-500">pts</span>
+                          >45</span>
+                          <span class="text-gray-500">pts</span>
+                          <span class="text-gray-300">•</span>
+                          <span
+                            class="font-medium"
+                            :class="{
+                              'text-green-600': getGDDirection(team.code) === 'positive',
+                              'text-red-600': getGDDirection(team.code) === 'negative',
+                              'text-gray-500': getGDDirection(team.code) === 'neutral' || getGDDirection(team.code) === null
+                            }"
+                            x-text="getCurrentGD(team.code)"
+                          >+12</span>
+                          <span class="text-gray-500">gd</span>
                         </div>
                       </div>
 
@@ -317,6 +335,17 @@
                 x-show="showPoints"
                 class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-700"
                 x-text="getCurrentPoints(team.code)"
+              ></td>
+              <!-- GD - desktop -->
+              <td
+                x-show="showPoints"
+                class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right text-sm font-semibold"
+                :class="{
+                  'text-green-600': getGDDirection(team.code) === 'positive',
+                  'text-red-600': getGDDirection(team.code) === 'negative',
+                  'text-gray-500': getGDDirection(team.code) === 'neutral' || getGDDirection(team.code) === null
+                }"
+                x-text="getCurrentGD(team.code)"
               ></td>
             </tr>
           </template>
