@@ -214,8 +214,9 @@ public class AuthController {
             log.warn("Failed to perform servlet logout", e);
         }
 
-        // Signal frontend to clear table-prediction localStorage on logout
+        // Signal frontend to clear localStorage on logout
         redirectAttributes.addFlashAttribute("clearTablePrediction", true);
+        redirectAttributes.addFlashAttribute("clearPrefs", true);
 
         redirectAttributes.addFlashAttribute("message", "You've been logged out. See you next time!");
         redirectAttributes.addFlashAttribute("messageType", "info");

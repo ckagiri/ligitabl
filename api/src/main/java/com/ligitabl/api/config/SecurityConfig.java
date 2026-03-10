@@ -138,6 +138,7 @@ public class SecurityConfig {
                         "/auth/register")) // Allow HTMX + auth forms without CSRF
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 "/",
+                                "/home",
                                 "/my-table/guest",
                                 "/my-table/guest/**",
                                 "/auth/login",

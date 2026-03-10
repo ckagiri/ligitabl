@@ -190,7 +190,7 @@
         <div class="flex justify-between items-center h-16">
           <!-- Logo -->
           <div class="flex items-center">
-            <a th:href="@{/}" class="flex items-center text-indigo-600">
+            <a th:href="@{/home}" class="flex items-center text-indigo-600">
               <span class="text-2xl mr-1">⚽</span>
               <span class="text-xl sm:text-2xl font-bold whitespace-nowrap"
                 >LigiPredictor</span
@@ -433,11 +433,16 @@
         </div>
       </div>
 
-      <!-- Clear table-prediction localStorage on login (if user has entry) or logout -->
-      <script th:if="${clearTablePrediction}">
+      <!-- Clear localStorage on login/logout (flash attributes) -->
+      <script th:if="${clearTablePrediction} or ${clearPrefs}" th:inline="javascript">
         (function () {
+          const clearPrefs = /*[[${clearPrefs}]]*/ false;
+
           localStorage.removeItem("ligitabl.guestPrediction");
           localStorage.removeItem("ligitabl.prediction");
+          if (clearPrefs) {
+            localStorage.removeItem("ligitabl.prefs");
+          }
         })();
       </script>
 
