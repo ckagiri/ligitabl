@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Competition;
+import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
@@ -68,6 +69,9 @@ public class GetLeaderboardUseCase {
             return Either.left(new GetLeaderboardError.InvalidPhase(query.phase()));
         }
 
+        var currentSprint = resolveCurrentPhase(competition, season, PhaseType.SPRINT);
+        var currentQuarter = resolveCurrentPhase(competition, season, PhaseType.QUARTER);
+
         int offset = query.offset() != null ? query.offset() : 0;
         int limit = query.limit() != null ? query.limit() : 100;
 
@@ -77,6 +81,8 @@ public class GetLeaderboardUseCase {
         return Either.right(new GetLeaderboardResult(
                 contest.getId(),
                 phase,
+                currentSprint,
+                currentQuarter,
                 response.effectiveToRound(),
                 response.entries(),
                 competition.getPhases(),
@@ -95,7 +101,7 @@ public class GetLeaderboardUseCase {
             return null;
         }
 
-        // Explicit phase requested — look it up directly
+        // Explicit phase requested
         if (phaseCode != null) {
             return competition.getPhases().stream()
                     .filter(phase -> phase.getCode().equalsIgnoreCase(phaseCode))
@@ -103,26 +109,36 @@ public class GetLeaderboardUseCase {
                     .orElse(null);
         }
 
-        // No phase specified — dynamically resolve current quarter
-        if (season.getCurrentRoundId() != null) {
-            var currentRound = roundRepo.findById(season.getCurrentRoundId()).orElse(null);
-            if (currentRound != null) {
-                int roundPos = currentRound.getPosition();
-                int effectiveRoundPos = (!currentRound.isFinalized() && roundPos > 1) ? (roundPos - 1) : roundPos;
-                var quarter = competition.getPhases().stream()
-                        .filter(p -> p.getCode().startsWith("Q"))
-                        .filter(p -> effectiveRoundPos >= p.getFrom() && effectiveRoundPos <= p.getTo())
-                        .findFirst()
-                        .orElse(null);
-                if (quarter != null) {
-                    return quarter;
-                }
-            }
+        // Default to current sprint -> current quarter -> full season
+        RoundSpan resolved = resolveCurrentPhase(competition, season, PhaseType.SPRINT);
+        if (resolved == null) {
+            resolved = resolveCurrentPhase(competition, season, PhaseType.QUARTER);
+        }
+        if (resolved != null) {
+            return resolved;
         }
 
-        // Fallback to FS if quarter detection fails
         return competition.getPhases().stream()
-                .filter(phase -> phase.getCode().equalsIgnoreCase("FS"))
+                .filter(phase -> phase.getType() == PhaseType.FULL_SEASON)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private RoundSpan resolveCurrentPhase(Competition competition, Season season, PhaseType type) {
+        if (season.getCurrentRoundId() == null) {
+            return null;
+        }
+        var currentRound = roundRepo.findById(season.getCurrentRoundId()).orElse(null);
+        if (currentRound == null) {
+            return null;
+        }
+
+        int pos = currentRound.getPosition();
+        int effectivePos = (!currentRound.isFinalized() && pos > 1) ? pos - 1 : pos;
+
+        return competition.getPhases().stream()
+                .filter(p -> p.getType() == type)
+                .filter(p -> effectivePos >= p.getFrom() && effectivePos <= p.getTo())
                 .findFirst()
                 .orElse(null);
     }

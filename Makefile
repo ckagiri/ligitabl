@@ -630,7 +630,7 @@ run-api: ## Start DB and run API via spring-boot:run (ENV=$(ENV))
 	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -DskipTests -Pwith-jooq -Djooq.codegen.skip=false -pl $(API_DIR) -am \
 		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
 		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
-		clean install
+		install
 	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -f $(API_DIR)/pom.xml $(SPRING_BOOT_RUN_ARGS) org.springframework.boot:spring-boot-maven-plugin:run
 
 .PHONY: run-api-fast
