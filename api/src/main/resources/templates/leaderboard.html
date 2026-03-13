@@ -54,7 +54,6 @@
                 Full Season
               </button>
 
-              <!-- Quarters -->
               <button
                 type="button"
                 @click="activeGroup = 'quarters'"
@@ -66,7 +65,6 @@
                 Quarters
               </button>
 
-              <!-- Sprints -->
               <button
                 type="button"
                 @click="activeGroup = 'sprints'"
@@ -79,12 +77,18 @@
               </button>
             </div>
 
-            <!-- Quarter sub-tabs — driven from phases list, no hardcoded GW ranges -->
+            <!-- Quarter sub-tabs -->
             <div
               x-show="activeGroup === 'quarters'"
               x-cloak
               class="overflow-x-auto pb-1"
+              style="-ms-overflow-style: none; scrollbar-width: none"
             >
+              <style>
+                [x-show="activeGroup === 'quarters'"]::-webkit-scrollbar {
+                  display: none;
+                }
+              </style>
               <div class="flex gap-1.5 min-w-max">
                 <th:block
                   th:each="phase : ${phases}"
@@ -94,8 +98,7 @@
                   <button
                     th:if="${phase.code == cq}"
                     type="button"
-                    th:attr="hx-vals='|{&quot;phase&quot;:&quot;' + ${phase.code} + '&quot;}|'"
-                    hx-get="/leaderboard"
+                    th:attr="hx-get=@{/leaderboard(phase=${phase.code})}"
                     hx-target="#leaderboard-content"
                     hx-swap="outerHTML swap:100ms settle:100ms"
                     class="flex flex-col items-center px-3 py-1.5 text-xs font-medium border-2 border-indigo-400 bg-indigo-50 text-indigo-700 rounded-md whitespace-nowrap"
@@ -112,8 +115,7 @@
                   <button
                     th:if="${phase.code != cq and phase.from < cqFrom}"
                     type="button"
-                    th:attr="hx-vals='|{&quot;phase&quot;:&quot;' + ${phase.code} + '&quot;}|'"
-                    hx-get="/leaderboard"
+                    th:attr="hx-get=@{/leaderboard(phase=${phase.code})}"
                     hx-target="#leaderboard-content"
                     hx-swap="outerHTML swap:100ms settle:100ms"
                     class="flex flex-col items-center px-3 py-1.5 text-xs font-medium border border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900 rounded-md transition whitespace-nowrap"
@@ -144,10 +146,19 @@
               </div>
             </div>
 
-            <!-- Sprint sub-tabs — same pattern, driven from phases list -->
+            <!-- Sprint sub-tabs -->
+            <!--
+              x-init scrolls the active sprint (bg-indigo-600) into center view on mount.
+              The scrollbar is hidden via inline style + webkit override above the div.
+            -->
             <div
               x-show="activeGroup === 'sprints'"
+              x-init="$nextTick(() => {
+                const active = $el.querySelector('.bg-indigo-600');
+                if (active) active.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
+              })"
               class="overflow-x-auto pb-1"
+              style="-ms-overflow-style: none; scrollbar-width: none"
             >
               <div class="flex gap-1.5 min-w-max">
                 <th:block
@@ -158,8 +169,7 @@
                   <button
                     th:if="${phase.code == cs}"
                     type="button"
-                    th:attr="hx-vals='|{&quot;phase&quot;:&quot;' + ${phase.code} + '&quot;}|'"
-                    hx-get="/leaderboard"
+                    th:attr="hx-get=@{/leaderboard(phase=${phase.code})}"
                     hx-target="#leaderboard-content"
                     hx-swap="outerHTML swap:100ms settle:100ms"
                     class="flex flex-col items-center px-3 py-1.5 text-xs font-medium border border-indigo-500 bg-indigo-600 text-white rounded-md transition whitespace-nowrap"
@@ -176,8 +186,7 @@
                   <button
                     th:if="${phase.code != cs and phase.from < csFrom}"
                     type="button"
-                    th:attr="hx-vals='|{&quot;phase&quot;:&quot;' + ${phase.code} + '&quot;}|'"
-                    hx-get="/leaderboard"
+                    th:attr="hx-get=@{/leaderboard(phase=${phase.code})}"
                     hx-target="#leaderboard-content"
                     hx-swap="outerHTML swap:100ms settle:100ms"
                     class="flex flex-col items-center px-3 py-1.5 text-xs font-medium border border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900 rounded-md transition whitespace-nowrap"
@@ -318,11 +327,11 @@
                       >
                         Alice Wonder
                       </button>
-                      <!-- Mid-sprint join indicator — shown when user joined after sprint start -->
+                      <!-- Mid-sprint join indicator — very subtle, just context not emphasis -->
                       <span
-                        th:if="${entry.joinedAtGw != null}"
-                        class="text-[10px] text-gray-400 font-normal"
-                        th:text="'from GW' + ${entry.joinedAtGw}"
+                        th:if="${entry.joinedAtGw != null and entry.joinedAtGw > currentPhaseFrom}"
+                        class="text-xs text-gray-400 font-normal"
+                        th:text="'from gw' + ${entry.joinedAtGw}"
                         >from GW3</span
                       >
                     </div>

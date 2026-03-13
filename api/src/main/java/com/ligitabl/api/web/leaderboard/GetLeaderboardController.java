@@ -102,6 +102,7 @@ public class GetLeaderboardController {
         model.addAttribute("leaderboard", pageEntries);
         model.addAttribute("phases", result.phases());
         model.addAttribute("currentPhase", result.phase().getCode());
+        model.addAttribute("currentPhaseFrom", result.phase().getFrom());
         model.addAttribute(
             "currentSprint",
             result.currentSprint() != null ? result.currentSprint().getCode() : null);
