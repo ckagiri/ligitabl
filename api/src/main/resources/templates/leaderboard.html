@@ -15,16 +15,14 @@
 
           <!--
             Model attributes required:
-              currentSprint  — code of live sprint,  e.g. "S4"  (nullable)
-              currentQuarter — code of live quarter, e.g. "Q2"  (nullable)
-              phases         — List<RoundSpan> ordered, types: FULL_SEASON | QUARTER | SPRINT
+              currentSprint      — code of live sprint,  e.g. "S4"  (nullable)
+              currentQuarter     — code of live quarter, e.g. "Q2"  (nullable)
+              currentSprintFrom  — from GW of live sprint  (nullable)
+              currentQuarterFrom — from GW of live quarter (nullable)
+              phases             — List<RoundSpan> ordered, types: FULL_SEASON | QUARTER | SPRINT
 
-            Tab visual states:
-              active sprint   → solid indigo bg, white text
-              active quarter  → indigo border + text, light indigo bg
-              full season     → same as active quarter (always accumulating)
-              past            → gray border, white bg, hoverable
-              future          → muted bg, disabled, cursor-default
+            Alpine owns all visual tab state after page load.
+            Thymeleaf only stamps initial selectedPhase and disables future phases.
           -->
           <div
             th:with="
@@ -33,19 +31,26 @@
               csFrom=${currentSprintFrom != null ? currentSprintFrom : 0},
               cqFrom=${currentQuarterFrom != null ? currentQuarterFrom : 0}
             "
-            x-data="{ activeGroup: 'sprints' }"
+            th:attr="data-init-phase=${currentSprint != null ? currentSprint : ''},data-init-quarter=${currentQuarter != null ? currentQuarter : ''}"
+            x-data="{
+              activeGroup: 'sprints',
+              selectedPhase: $el.dataset.initPhase,
+              select(phase) {
+                this.selectedPhase = phase;
+                htmx.ajax('GET', '/leaderboard?phase=' + phase, {
+                  target: '#leaderboard-content',
+                  swap: 'outerHTML'
+                });
+              }
+            }"
             class="space-y-2"
           >
             <!-- Top-level group tabs -->
             <div class="flex gap-1.5">
-              <!-- Full Season — soft-active always since it is always accumulating -->
+              <!-- Full Season -->
               <button
                 type="button"
-                @click="activeGroup = 'fullSeason'"
-                hx-get="/leaderboard"
-                hx-vals='{"phase": "FS"}'
-                hx-target="#leaderboard-content"
-                hx-swap="outerHTML swap:100ms settle:100ms"
+                @click="activeGroup = 'fullSeason'; select('FS')"
                 :class="activeGroup === 'fullSeason'
                   ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
                   : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'"
@@ -54,9 +59,10 @@
                 Full Season
               </button>
 
+              <!-- Quarters -->
               <button
                 type="button"
-                @click="activeGroup = 'quarters'"
+                @click="activeGroup = 'quarters'; select($el.closest('[data-init-quarter]').dataset.initQuarter)"
                 :class="activeGroup === 'quarters'
                   ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
                   : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'"
@@ -65,9 +71,10 @@
                 Quarters
               </button>
 
+              <!-- Sprints -->
               <button
                 type="button"
-                @click="activeGroup = 'sprints'"
+                @click="activeGroup = 'sprints'; select($el.closest('[data-init-phase]').dataset.initPhase)"
                 :class="activeGroup === 'sprints'
                   ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
                   : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'"
@@ -84,136 +91,66 @@
               class="overflow-x-auto pb-1"
               style="-ms-overflow-style: none; scrollbar-width: none"
             >
-              <style>
-                [x-show="activeGroup === 'quarters'"]::-webkit-scrollbar {
-                  display: none;
-                }
-              </style>
               <div class="flex gap-1.5 min-w-max">
-                <th:block
+                <button
                   th:each="phase : ${phases}"
                   th:if="${phase.type != null and phase.type.name() == 'QUARTER'}"
+                  type="button"
+                  th:attr="data-phase=${phase.code}"
+                  th:disabled="${phase.from > cqFrom}"
+                  @click="!$el.disabled && select($el.dataset.phase)"
+                  hx-target="#leaderboard-content"
+                  hx-swap="outerHTML swap:100ms settle:100ms"
+                  :class="selectedPhase === $el.dataset.phase
+                    ? 'border-2 border-indigo-400 bg-indigo-50 text-indigo-700'
+                    : ($el.disabled
+                        ? 'border border-gray-100 bg-gray-50 text-gray-300 cursor-default pointer-events-none'
+                        : 'border border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900')"
+                  class="flex flex-col items-center px-3 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap"
                 >
-                  <!-- Active -->
-                  <button
-                    th:if="${phase.code == cq}"
-                    type="button"
-                    th:attr="hx-get=@{/leaderboard(phase=${phase.code})}"
-                    hx-target="#leaderboard-content"
-                    hx-swap="outerHTML swap:100ms settle:100ms"
-                    class="flex flex-col items-center px-3 py-1.5 text-xs font-medium border-2 border-indigo-400 bg-indigo-50 text-indigo-700 rounded-md whitespace-nowrap"
+                  <span class="font-bold" th:text="${phase.code}">Q2</span>
+                  <span
+                    class="text-[10px] opacity-75"
+                    th:text="'GW ' + ${phase.from} + '–' + ${phase.to}"
+                    >GW 10–19</span
                   >
-                    <span class="font-bold" th:text="${phase.code}">Q2</span>
-                    <span
-                      class="text-[10px] opacity-75"
-                      th:text="'GW ' + ${phase.from} + '–' + ${phase.to}"
-                      >GW 10–19</span
-                    >
-                  </button>
-
-                  <!-- Past -->
-                  <button
-                    th:if="${phase.code != cq and phase.from < cqFrom}"
-                    type="button"
-                    th:attr="hx-get=@{/leaderboard(phase=${phase.code})}"
-                    hx-target="#leaderboard-content"
-                    hx-swap="outerHTML swap:100ms settle:100ms"
-                    class="flex flex-col items-center px-3 py-1.5 text-xs font-medium border border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900 rounded-md transition whitespace-nowrap"
-                  >
-                    <span class="font-bold" th:text="${phase.code}">Q1</span>
-                    <span
-                      class="text-[10px] opacity-75"
-                      th:text="'GW ' + ${phase.from} + '–' + ${phase.to}"
-                      >GW 1–9</span
-                    >
-                  </button>
-
-                  <!-- Future -->
-                  <button
-                    th:if="${phase.code != cq and phase.from > cqFrom}"
-                    type="button"
-                    disabled
-                    class="flex flex-col items-center px-3 py-1.5 text-xs font-medium border border-gray-100 bg-gray-50 text-gray-300 rounded-md cursor-default whitespace-nowrap"
-                  >
-                    <span class="font-bold" th:text="${phase.code}">Q3</span>
-                    <span
-                      class="text-[10px]"
-                      th:text="'GW ' + ${phase.from} + '–' + ${phase.to}"
-                      >GW 20–29</span
-                    >
-                  </button>
-                </th:block>
+                </button>
               </div>
             </div>
 
             <!-- Sprint sub-tabs -->
-            <!--
-              x-init scrolls the active sprint (bg-indigo-600) into center view on mount.
-              The scrollbar is hidden via inline style + webkit override above the div.
-            -->
             <div
               x-show="activeGroup === 'sprints'"
               x-init="$nextTick(() => {
-                const active = $el.querySelector('.bg-indigo-600');
+                const active = $el.querySelector('[data-active-sprint]');
                 if (active) active.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
               })"
               class="overflow-x-auto pb-1"
               style="-ms-overflow-style: none; scrollbar-width: none"
             >
               <div class="flex gap-1.5 min-w-max">
-                <th:block
+                <button
                   th:each="phase : ${phases}"
                   th:if="${phase.type != null and phase.type.name() == 'SPRINT'}"
+                  type="button"
+                  th:attr="data-phase=${phase.code}"
+                  th:attrappend="data-active-sprint=${phase.code == cs ? true : null}"
+                  th:disabled="${phase.from > csFrom}"
+                  @click="!$el.disabled && select($el.dataset.phase)"
+                  :class="selectedPhase === $el.dataset.phase
+                    ? 'border border-indigo-500 bg-indigo-600 text-white'
+                    : ($el.disabled
+                        ? 'border border-gray-100 bg-gray-50 text-gray-300 cursor-default pointer-events-none'
+                        : 'border border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900')"
+                  class="flex flex-col items-center px-3 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap"
                 >
-                  <!-- Active -->
-                  <button
-                    th:if="${phase.code == cs}"
-                    type="button"
-                    th:attr="hx-get=@{/leaderboard(phase=${phase.code})}"
-                    hx-target="#leaderboard-content"
-                    hx-swap="outerHTML swap:100ms settle:100ms"
-                    class="flex flex-col items-center px-3 py-1.5 text-xs font-medium border border-indigo-500 bg-indigo-600 text-white rounded-md transition whitespace-nowrap"
+                  <span class="font-bold" th:text="${phase.code}">S4</span>
+                  <span
+                    class="text-[10px] opacity-75"
+                    th:text="'GW ' + ${phase.from} + '–' + ${phase.to}"
+                    >GW 15–19</span
                   >
-                    <span class="font-bold" th:text="${phase.code}">S4</span>
-                    <span
-                      class="text-[10px] opacity-80"
-                      th:text="'GW ' + ${phase.from} + '–' + ${phase.to}"
-                      >GW 15–19</span
-                    >
-                  </button>
-
-                  <!-- Past -->
-                  <button
-                    th:if="${phase.code != cs and phase.from < csFrom}"
-                    type="button"
-                    th:attr="hx-get=@{/leaderboard(phase=${phase.code})}"
-                    hx-target="#leaderboard-content"
-                    hx-swap="outerHTML swap:100ms settle:100ms"
-                    class="flex flex-col items-center px-3 py-1.5 text-xs font-medium border border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900 rounded-md transition whitespace-nowrap"
-                  >
-                    <span class="font-bold" th:text="${phase.code}">S1</span>
-                    <span
-                      class="text-[10px] opacity-75"
-                      th:text="'GW ' + ${phase.from} + '–' + ${phase.to}"
-                      >GW 1–4</span
-                    >
-                  </button>
-
-                  <!-- Future -->
-                  <button
-                    th:if="${phase.code != cs and phase.from > csFrom}"
-                    type="button"
-                    disabled
-                    class="flex flex-col items-center px-3 py-1.5 text-xs font-medium border border-gray-100 bg-gray-50 text-gray-300 rounded-md cursor-default whitespace-nowrap"
-                  >
-                    <span class="font-bold" th:text="${phase.code}">S5</span>
-                    <span
-                      class="text-[10px]"
-                      th:text="'GW ' + ${phase.from} + '–' + ${phase.to}"
-                      >GW 20–24</span
-                    >
-                  </button>
-                </th:block>
+                </button>
               </div>
             </div>
           </div>
@@ -327,7 +264,7 @@
                       >
                         Alice Wonder
                       </button>
-                      <!-- Mid-sprint join indicator — very subtle, just context not emphasis -->
+                      <!-- Mid-sprint join indicator — just context not emphasis -->
                       <span
                         th:if="${entry.joinedAtGw != null and entry.joinedAtGw > currentPhaseFrom}"
                         class="text-xs text-gray-400 font-normal"
