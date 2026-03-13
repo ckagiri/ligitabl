@@ -14,8 +14,8 @@ import java.util.UUID;
 import org.jooq.CommonTableExpression;
 import org.jooq.DSLContext;
 import org.jooq.Field;
+import org.jooq.Record10;
 import org.jooq.Record7;
-import org.jooq.Record9;
 import org.jooq.impl.DSL;
 
 import com.ligitabl.model.domain.LeaderboardEntry;
@@ -93,6 +93,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
             int maxScore,
             int totalZeroes,
             int totalSwaps,
+            Integer joinedAtGw,
             boolean scored) {}
 
     private record UserRankingInfo(RankingWithPosition ranking, boolean userInCurrentPage, int userPageOffset) {}
@@ -188,7 +189,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .otherwise(0)
                 .as("is_scored");
 
-        CommonTableExpression<Record9<UUID, String, String, Integer, Integer, Integer, Integer, Integer, Integer>>
+        CommonTableExpression<Record10<UUID, String, String, Integer, Integer, Integer, Integer, Integer, Integer, Integer>>
                 userStats = DSL.name("user_stats")
                         .as(dsl.select(
                                         T_USER.PK_ID,
@@ -199,6 +200,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                                         maxScore,
                                         totalZeroes,
                                         totalSwaps,
+                                        T_SEASON_PREDICTION.C_AT_ROUND_NUMBER.as("joined_at_gw"),
                                         isScored)
                                 .from(T_ENTRY)
                                 .join(T_USER)
@@ -218,7 +220,11 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                                 .leftJoin(T_ROUND_RESULT)
                                 .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
                                 .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
-                                .groupBy(T_USER.PK_ID, T_USER.C_PUBLIC_ID, T_USER.C_DISPLAY_NAME));
+                                .groupBy(
+                                        T_USER.PK_ID,
+                                        T_USER.C_PUBLIC_ID,
+                                        T_USER.C_DISPLAY_NAME,
+                                        T_SEASON_PREDICTION.C_AT_ROUND_NUMBER));
 
         Field<UUID> userId = userStats.field(T_USER.PK_ID);
         Field<String> publicId = userStats.field(T_USER.C_PUBLIC_ID);
@@ -228,6 +234,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         Field<Integer> maxScoreField = userStats.field("max_score", Integer.class);
         Field<Integer> totalZeroesField = userStats.field("total_zeroes", Integer.class);
         Field<Integer> totalSwapsField = userStats.field("total_swaps", Integer.class);
+        Field<Integer> joinedAtGwField = userStats.field("joined_at_gw", Integer.class);
         Field<Integer> isScoredField = userStats.field("is_scored", Integer.class);
 
         Field<Integer> position = DSL.rowNumber()
@@ -252,6 +259,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         maxScoreField,
                         totalZeroesField,
                         totalSwapsField,
+                        joinedAtGwField,
                         isScoredField)
                 .from(userStats)
                 .orderBy(position)
@@ -267,6 +275,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         r.get(maxScoreField),
                         r.get(totalZeroesField),
                         r.get(totalSwapsField),
+                        r.get(joinedAtGwField),
                         r.get(isScoredField) > 0));
     }
 
@@ -305,7 +314,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .otherwise(0)
                 .as("is_scored");
 
-        CommonTableExpression<Record9<UUID, String, String, Integer, Integer, Integer, Integer, Integer, Integer>>
+        CommonTableExpression<Record10<UUID, String, String, Integer, Integer, Integer, Integer, Integer, Integer, Integer>>
                 userStats = DSL.name("user_stats")
                         .as(dsl.select(
                                         T_USER.PK_ID,
@@ -316,6 +325,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                                         maxScore,
                                         totalZeroes,
                                         totalSwaps,
+                                        T_SEASON_PREDICTION.C_AT_ROUND_NUMBER.as("joined_at_gw"),
                                         isScored)
                                 .from(T_ENTRY)
                                 .join(T_USER)
@@ -335,7 +345,11 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                                 .leftJoin(T_ROUND_RESULT)
                                 .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
                                 .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
-                                .groupBy(T_USER.PK_ID, T_USER.C_PUBLIC_ID, T_USER.C_DISPLAY_NAME));
+                                .groupBy(
+                                        T_USER.PK_ID,
+                                        T_USER.C_PUBLIC_ID,
+                                        T_USER.C_DISPLAY_NAME,
+                                        T_SEASON_PREDICTION.C_AT_ROUND_NUMBER));
 
         Field<UUID> userIdField = userStats.field(T_USER.PK_ID);
         Field<String> publicId = userStats.field(T_USER.C_PUBLIC_ID);
@@ -345,6 +359,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         Field<Integer> maxScoreField = userStats.field("max_score", Integer.class);
         Field<Integer> totalZeroesField = userStats.field("total_zeroes", Integer.class);
         Field<Integer> totalSwapsField = userStats.field("total_swaps", Integer.class);
+        Field<Integer> joinedAtGwField = userStats.field("joined_at_gw", Integer.class);
         Field<Integer> isScoredField = userStats.field("is_scored", Integer.class);
 
         Field<Integer> position = DSL.rowNumber()
@@ -368,6 +383,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         maxScoreField.as("max_score"),
                         totalZeroesField.as("total_zeroes"),
                         totalSwapsField.as("total_swaps"),
+                        joinedAtGwField.as("joined_at_gw"),
                         isScoredField.as("is_scored"))
                 .from(userStats)
                 .asTable("ranked_stats");
@@ -381,6 +397,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         Field<Integer> rankedMaxScore = rankedStats.field("max_score", Integer.class);
         Field<Integer> rankedTotalZeroes = rankedStats.field("total_zeroes", Integer.class);
         Field<Integer> rankedTotalSwaps = rankedStats.field("total_swaps", Integer.class);
+        Field<Integer> rankedJoinedAtGw = rankedStats.field("joined_at_gw", Integer.class);
         Field<Integer> rankedIsScored = rankedStats.field("is_scored", Integer.class);
 
         RankingWithPosition ranking = dsl.with(userStats)
@@ -396,6 +413,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         r.get(rankedMaxScore),
                         r.get(rankedTotalZeroes),
                         r.get(rankedTotalSwaps),
+                        r.get(rankedJoinedAtGw),
                         r.get(rankedIsScored) > 0));
 
         if (ranking == null) {
@@ -489,6 +507,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 ranking.maxScore(),
                 ranking.totalZeroes(),
                 ranking.totalSwaps(),
+                                ranking.joinedAtGw(),
                 movement,
                 ranking.scored());
     }

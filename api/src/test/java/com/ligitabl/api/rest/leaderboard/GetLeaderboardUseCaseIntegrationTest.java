@@ -22,6 +22,7 @@ import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardUseCase;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.model.domain.Entry;
+import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.ResultTeamRank;
 import com.ligitabl.model.domain.RoundResult;
 import com.ligitabl.model.domain.RoundSpan;
@@ -414,30 +415,35 @@ class GetLeaderboardUseCaseIntegrationTest extends AbstractPostgresIT {
                     RoundSpan.builder()
                             .code("FS")
                             .name("Full Season")
+                            .type(PhaseType.FULL_SEASON)
                             .from(1)
                             .to(38)
                             .build(),
                     RoundSpan.builder()
                             .code("Q1")
                             .name("Quarter 1")
+                            .type(PhaseType.QUARTER)
                             .from(1)
                             .to(10)
                             .build(),
                     RoundSpan.builder()
                             .code("Q2")
                             .name("Quarter 2")
+                            .type(PhaseType.QUARTER)
                             .from(11)
                             .to(20)
                             .build(),
                     RoundSpan.builder()
                             .code("Q3")
                             .name("Quarter 3")
+                            .type(PhaseType.QUARTER)
                             .from(21)
                             .to(30)
                             .build(),
                     RoundSpan.builder()
                             .code("Q4")
                             .name("Quarter 4")
+                            .type(PhaseType.QUARTER)
                             .from(31)
                             .to(38)
                             .build());

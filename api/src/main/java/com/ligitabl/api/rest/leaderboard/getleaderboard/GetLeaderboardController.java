@@ -72,6 +72,7 @@ public class GetLeaderboardController {
                                                 entry.maxScore(),
                                                 entry.totalZeroes(),
                                                 entry.totalSwaps(),
+                                                entry.joinedAtGw(),
                                                 entry.movement()))
                                         .toList())));
     }

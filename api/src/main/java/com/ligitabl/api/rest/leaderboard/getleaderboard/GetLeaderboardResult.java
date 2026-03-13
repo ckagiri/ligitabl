@@ -9,9 +9,11 @@ import com.ligitabl.model.domain.RoundSpan;
 public record GetLeaderboardResult(
         UUID contestId,
         RoundSpan phase,
+        RoundSpan currentSprint,
+        RoundSpan currentQuarter,
         Integer effectiveToRound,
         List<LeaderboardEntry> rankings,
-        List<RoundSpan> allPhases,
+        List<RoundSpan> phases,
         LeaderboardEntry userEntry,
         boolean userInCurrentPage,
         int userPageOffset,

@@ -12,4 +12,5 @@ public class RoundSpan {
     String name;
     int from;
     int to;
+    PhaseType type;
 }

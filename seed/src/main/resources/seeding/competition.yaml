@@ -6,30 +6,67 @@ competition:
     maxRounds: 38
     phases:
       - code: FS
-        name: Full Season
         from: 1
         to: 38
+        name: Full Season
+        type: FULL_SEASON
       - code: Q1
-        name: Initial Quarter
         from: 1
         to: 9
+        name: Quarter 1
+        type: QUARTER
       - code: Q2
-        name: Second Quarter
         from: 10
         to: 19
+        name: Quarter 2
+        type: QUARTER
       - code: Q3
-        name: Third Quarter
         from: 20
         to: 29
+        name: Quarter 3
+        type: QUARTER
       - code: Q4
-        name: Final Quarter
         from: 30
         to: 38
-      - code: H1
-        name: First Half
+        name: Quarter 4
+        type: QUARTER
+      - code: S1
         from: 1
+        to: 4
+        name: Sprint 1
+        type: SPRINT
+      - code: S2
+        from: 5
+        to: 9
+        name: Sprint 2
+        type: SPRINT
+      - code: S3
+        from: 10
+        to: 14
+        name: Sprint 3
+        type: SPRINT
+      - code: S4
+        from: 15
         to: 19
-      - code: H2
-        name: Second Half
+        name: Sprint 4
+        type: SPRINT
+      - code: S5
         from: 20
+        to: 24
+        name: Sprint 5
+        type: SPRINT
+      - code: S6
+        from: 25
+        to: 29
+        name: Sprint 6
+        type: SPRINT
+      - code: S7
+        from: 30
+        to: 34
+        name: Sprint 7
+        type: SPRINT
+      - code: S8
+        from: 35
         to: 38
+        name: Sprint 8
+        type: SPRINT

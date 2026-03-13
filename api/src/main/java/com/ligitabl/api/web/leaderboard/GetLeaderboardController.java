@@ -100,8 +100,21 @@ public class GetLeaderboardController {
 
         model.addAttribute("pageTitle", "Leaderboard");
         model.addAttribute("leaderboard", pageEntries);
-        model.addAttribute("phases", result.allPhases());
+        model.addAttribute("phases", result.phases());
         model.addAttribute("currentPhase", result.phase().getCode());
+        model.addAttribute("currentPhaseFrom", result.phase().getFrom());
+        model.addAttribute(
+            "currentSprint",
+            result.currentSprint() != null ? result.currentSprint().getCode() : null);
+        model.addAttribute(
+            "currentQuarter",
+            result.currentQuarter() != null ? result.currentQuarter().getCode() : null);
+        model.addAttribute(
+            "currentSprintFrom",
+            result.currentSprint() != null ? result.currentSprint().getFrom() : 0);
+        model.addAttribute(
+            "currentQuarterFrom",
+            result.currentQuarter() != null ? result.currentQuarter().getFrom() : 0);
         model.addAttribute("effectiveToRound", result.effectiveToRound());
         model.addAttribute("userPosition", userPosition);
         model.addAttribute("userInCurrentPage", userInCurrentPage);
