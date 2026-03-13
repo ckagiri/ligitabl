@@ -9,4 +9,5 @@ public record LeaderboardEntryDto(
         int maxScore,
         int totalZeroes,
         int totalSwaps,
+        Integer joinedAtGw,
         int movement) {}
