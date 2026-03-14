@@ -46,16 +46,21 @@
             th:if="${result.movement > 0}"
             class="text-green-600 font-semibold"
           >
-            (<span th:text="${result.quarter}">Q3</span>: ↑
-            <span th:text="${result.movement}">3</span> positions)
+            (<span th:text="${result.sprint}">S3</span>: ↑
+            <span th:text="${result.movement}">3</span>
+            <span th:text="${result.movement == 1 ? 'position' : 'positions'}"
+              >positions</span
+            >)
           </span>
           <span
             th:if="${result.movement < 0}"
             class="text-red-600 font-semibold"
           >
-            (<span th:text="${result.quarter}">Q3</span>: ↓
+            (<span th:text="${result.sprint}">S3</span>: ↓
             <span th:text="${T(java.lang.Math).abs(result.movement)}">2</span>
-            positions)
+            <span th:text="${T(java.lang.Math).abs(result.movement) == 1 ? 'position' : 'positions'}"
+              >positions</span
+            >)
           </span>
         </span>
       </p>

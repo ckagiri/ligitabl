@@ -191,9 +191,6 @@ public class GetUserPredictionUseCase {
             Map<String, Integer> goalDifferenceMap = standingsMaps.goalDifference();
 
             String message = null;
-            if (accessMode == PredictionAccessMode.READONLY_COOLDOWN && currentRoundStatus == RoundStatus.OPEN) {
-                message = "Swap cooldown active";
-            }
 
             return new UserPredictionViewData(
                     seasonPrediction.getCurrentRankings(),

@@ -17,6 +17,8 @@ import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardResult;
 import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardUseCase;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.domain.LeaderboardEntry;
+import com.ligitabl.model.domain.PhaseType;
+import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.UserRepo;
 
@@ -103,18 +105,37 @@ public class GetLeaderboardController {
         model.addAttribute("phases", result.phases());
         model.addAttribute("currentPhase", result.phase().getCode());
         model.addAttribute("currentPhaseFrom", result.phase().getFrom());
+        RoundSpan currentSprint = result.currentSprint();
+        RoundSpan currentQuarter = result.currentQuarter();
+
+        RoundSpan nextSprint = result.phases().stream()
+                .filter(p -> p.getType() == PhaseType.SPRINT)
+                .filter(p -> currentSprint != null && p.getFrom() == currentSprint.getTo() + 1)
+                .findFirst()
+                .orElse(null);
+
+        RoundSpan nextQuarter = result.phases().stream()
+                .filter(p -> p.getType() == PhaseType.QUARTER)
+                .filter(p -> currentQuarter != null && p.getFrom() == currentQuarter.getTo() + 1)
+                .findFirst()
+                .orElse(null);
+
         model.addAttribute(
             "currentSprint",
-            result.currentSprint() != null ? result.currentSprint().getCode() : null);
+            currentSprint != null ? currentSprint.getCode() : null);
         model.addAttribute(
             "currentQuarter",
-            result.currentQuarter() != null ? result.currentQuarter().getCode() : null);
+            currentQuarter != null ? currentQuarter.getCode() : null);
         model.addAttribute(
             "currentSprintFrom",
-            result.currentSprint() != null ? result.currentSprint().getFrom() : 0);
+            currentSprint != null ? currentSprint.getFrom() : 0);
         model.addAttribute(
             "currentQuarterFrom",
-            result.currentQuarter() != null ? result.currentQuarter().getFrom() : 0);
+            currentQuarter != null ? currentQuarter.getFrom() : 0);
+        model.addAttribute("nextSprintFrom", nextSprint != null ? nextSprint.getFrom() : null);
+        model.addAttribute("nextQuarterFrom", nextQuarter != null ? nextQuarter.getFrom() : null);
+        model.addAttribute("isLastSprint", nextSprint == null && currentSprint != null);
+        model.addAttribute("isLastQuarter", nextQuarter == null && currentQuarter != null);
         model.addAttribute("effectiveToRound", result.effectiveToRound());
         model.addAttribute("userPosition", userPosition);
         model.addAttribute("userInCurrentPage", userInCurrentPage);

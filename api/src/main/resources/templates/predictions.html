@@ -298,10 +298,11 @@ message=[[${message}]]</pre
             <div x-show="open" x-transition class="border-t border-gray-100">
               <ul class="divide-y divide-gray-100">
                 <li
-                  th:each="entry : ${swapHistory}"
+                  th:each="entry, iterStat : ${swapHistory}"
                   class="px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1"
                 >
                   <span class="text-sm font-mono text-gray-700">
+                    <span class="text-gray-300 mr-1.5 select-none" th:text="${iterStat.count} + '.'">1.</span>
                     <span class="font-semibold text-gray-900" th:text="${entry.teamACode}">ARS</span>
                     <span class="text-gray-400">#</span><span th:text="${entry.teamAFrom}">1</span>
                     <span class="text-gray-400">→</span>

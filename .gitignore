@@ -27,6 +27,7 @@ nbbuild/
 dist/
 nbdist/
 .nb-gradle/
+api/node_modules/
 
 # Un-ignore compiled static assets served by Spring Boot
 !api/src/main/resources/static/dist/
