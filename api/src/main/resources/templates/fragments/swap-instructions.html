@@ -76,12 +76,12 @@
       </svg>
       <span class="text-sm text-blue-800">
         <strong><span x-text="getSelectedTeamName()"></span> selected.</strong>
-        You can click another team to swap, or click again to deselect.
+        Click another team to swap, or click again to deselect.
       </span>
     </div>
   </div>
 
-  <!-- Swap limit exceeded state (red) - Non-guest only -->
+  <!-- Swap limit exceeded (red) - Non-guest only -->
   <div
     th:if="${!isGuest}"
     x-cloak
@@ -106,15 +106,21 @@
         <span x-show="isInitialPrediction">the limit is 3.</span>
         <span x-show="!isInitialPrediction">only 1 is allowed per 24h.</span>
         <a
+          @click="undoLastSwap()"
+          class="underline cursor-pointer font-semibold text-red-700 hover:text-red-900"
+          >Undo last</a
+        >
+        or
+        <a
           @click="reset()"
           class="underline cursor-pointer font-semibold text-red-700 hover:text-red-900"
-          >Reset</a
-        >
+          >reset all</a
+        >.
       </span>
     </div>
   </div>
 
-  <!-- Swaps made state (within limit) - Non-guest version -->
+  <!-- Swaps made (within limit) - Non-guest -->
   <div
     th:if="${!isGuest}"
     x-cloak
@@ -140,30 +146,45 @@
           <span x-text="getSwapCount() === 1 ? 'swap' : 'swaps'"></span></strong
         >.
         <span x-show="canSwap || isInitialPrediction">
-          Review your changes below, then
-          <span x-text="isInitialPrediction ? 'submit' : 'update'"></span>
-          to save or
+          Review your changes, then
+          <span x-text="isInitialPrediction ? 'submit' : 'update'"></span> to
+          save,
+          <a
+            @click="undoLastSwap()"
+            x-show="canUndo() && exceedsLimit()"
+            class="underline cursor-pointer font-semibold"
+            >undo last</a
+          ><span x-show="canUndo() && exceedsLimit()"> swap, or </span>
           <a @click="reset()" class="underline cursor-pointer font-semibold"
-            >reset</a
-          >
-          to undo.
+            >reset all</a
+          >.
         </span>
         <span x-cloak x-show="canInteract && !canSwap">
-          <span x-show="isRoundOpen">Cooldown active — changes are local only.</span>
-          <span x-show="!isRoundOpen">Round is not open — changes are local only.</span>
-          <a @click="reset()" class="underline cursor-pointer font-semibold"
-            >Reset</a
+          <span x-show="isRoundOpen"
+            >Cooldown active — changes are local only,</span
           >
-          <span x-show="isRoundOpen">to undo or wait for cooldown to submit.</span>
-          <span x-show="!isRoundOpen">
-            to undo or wait for the next round to open to submit.
-          </span>
+          <span x-show="!isRoundOpen"
+            >Round is not open — changes are local only,</span
+          >
+          <a
+            @click="undoLastSwap()"
+            x-show="canUndo() && exceedsLimit()"
+            class="underline cursor-pointer font-semibold"
+            >undo last</a
+          ><span x-show="canUndo() && exceedsLimit()"> swap, or </span>
+          <a @click="reset()" class="underline cursor-pointer font-semibold"
+            >reset all</a
+          >
+          <span x-show="isRoundOpen">, or wait for cooldown to submit.</span>
+          <span x-show="!isRoundOpen"
+            >, or wait for the next round to open to submit.</span
+          >
         </span>
       </span>
     </div>
   </div>
 
-  <!-- Swaps made state - Guest version -->
+  <!-- Swaps made - Guest -->
   <div
     th:if="${isGuest}"
     x-cloak
@@ -190,15 +211,14 @@
         ><span x-show="getSwapCount() > 3"> — max 3 allowed to submit</span>.
         Changes saved locally.
         <a
-          th:href="@{/auth/register}"
-          class="underline font-medium hover:text-amber-900"
-          >Sign up</a
-        >
-        to submit or
+          @click="undoLastSwap()"
+          x-show="canUndo() && getSwapCount() > 3"
+          class="underline cursor-pointer font-semibold"
+          >Undo last</a
+        ><span x-show="canUndo() && getSwapCount() > 3"> swap, or </span>
         <a @click="reset()" class="underline cursor-pointer font-semibold"
-          >reset</a
-        >
-        to undo.
+          >reset all</a
+        >.
       </span>
     </div>
   </div>
