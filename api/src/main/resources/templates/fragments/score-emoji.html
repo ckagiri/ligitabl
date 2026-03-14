@@ -1,7 +1,9 @@
 <!-- Score Emoji Fragment -->
 <!-- Usage: <span th:replace="~{fragments/score-emoji :: emoji(${score})}"></span> -->
-<span th:fragment="emoji(score)"
-  th:text="${score >= 195 ? '🤩' :
+<span
+  th:fragment="emoji(score)"
+  th:text="${score >= 200 ? '🤯' :
+            score >= 195 ? '🤩' :
             score >= 190 ? '🥳' :
             score >= 185 ? '😎' :
             score >= 180 ? '😁' :
@@ -9,5 +11,6 @@
             score >= 170 ? '😊' :
             score >= 160 ? '🙂' :
             score >= 145 ? '😌' :
-            score >= 130 ? '😬' : '😩'}">
+            score >= 130 ? '😬' : '😩'}"
+>
 </span>
