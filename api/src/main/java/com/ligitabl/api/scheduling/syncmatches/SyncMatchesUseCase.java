@@ -396,11 +396,14 @@ public class SyncMatchesUseCase {
     private boolean hasKickoffChanged(Match existing, OffsetDateTime apiKickoff) {
         var existingKickoff = existing.getKickOff();
 
-        if (existingKickoff == null) {
-            return apiKickoff != null;
+        if (existingKickoff == null || apiKickoff == null) {
+            return existingKickoff != apiKickoff;
         }
 
-        return !existingKickoff.equals(apiKickoff);
+        boolean dateChanged = !existingKickoff.toLocalDate().equals(apiKickoff.toLocalDate());
+        boolean timeChanged = !existingKickoff.toLocalTime().equals(apiKickoff.toLocalTime());
+
+        return dateChanged || timeChanged;
     }
 
     private boolean hasScoreChanged(Match existing, Score apiScore) {
