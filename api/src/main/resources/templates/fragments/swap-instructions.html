@@ -74,9 +74,10 @@
         <strong><span x-text="getSwapCount()"></span> <span x-text="getSwapCount() === 1 ? 'swap' : 'swaps'"></span></strong>.
         <span x-show="canSwap || isInitialPrediction">
           Review your changes, then <span x-text="isInitialPrediction ? 'submit' : 'update'"></span> to save,
-          <span x-show="canUndo() && exceedsLimit() && !undoing"><a @click="undoLastSwap()" class="underline cursor-pointer font-semibold">undo last</a> swap, or </span>
           <span x-show="undoing" class="font-semibold text-amber-600 animate-pulse">↩ undoing… </span>
-          <span x-show="!undoing"><a @click="reset()" class="underline cursor-pointer font-semibold">reset all</a>.</span>
+          <span x-show="!undoing">
+            <span x-show="canUndo() && getSwapCount() > 1"><a @click="undoLastSwap()" class="underline cursor-pointer font-semibold">undo last</a> swap, or </span><span x-show="!(canUndo() && getSwapCount() > 1)">or </span><a @click="reset()" class="underline cursor-pointer font-semibold">reset all</a>.
+          </span>
         </span>
         <span x-cloak x-show="canInteract && !canSwap">
           <span x-show="isRoundOpen">Cooldown active — changes are local only,</span>
@@ -106,9 +107,10 @@
         You've made
         <strong><span x-text="getSwapCount()"></span> <span x-text="getSwapCount() === 1 ? 'swap' : 'swaps'"></span></strong><span x-show="getSwapCount() > 3"> — max 3 allowed to submit</span>.
         Changes saved locally.
-        <span x-show="canUndo() && getSwapCount() > 3 && !undoing"><a @click="undoLastSwap()" class="underline cursor-pointer font-semibold">Undo last</a> swap, or </span>
         <span x-show="undoing" class="font-semibold text-amber-600 animate-pulse">↩ undoing… </span>
-        <span x-show="!undoing"><a @click="reset()" class="underline cursor-pointer font-semibold">Reset all</a>.</span>
+        <span x-show="!undoing">
+          <span x-show="canUndo() && getSwapCount() > 1"><a @click="undoLastSwap()" class="underline cursor-pointer font-semibold">Undo last</a> swap, or </span><a @click="reset()" class="underline cursor-pointer font-semibold">Reset all</a>.
+        </span>
       </span>
     </div>
   </div>

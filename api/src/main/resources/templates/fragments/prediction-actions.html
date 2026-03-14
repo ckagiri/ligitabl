@@ -76,8 +76,8 @@
               reset all
             </button>
 
-            <!-- Undo last — only when over limit and not currently undoing -->
-            <span x-show="exceedsLimit() && canUndo() && !undoing">
+            <!-- Undo last — show when > 1 swap and not currently undoing -->
+            <span x-show="canUndo() && getSwapCount() > 1 && !undoing">
               <button
                 @click="undoLastSwap()"
                 class="text-sm font-medium text-amber-600 hover:text-amber-700 underline flex items-center gap-1"
