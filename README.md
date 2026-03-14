@@ -61,7 +61,6 @@ seed/         Seeding CLI for loading reference/demo data into the database
 jooq-codegen/ Helper module for jOOQ code generation against the current schema
 scripts/      End-to-end and smoke scripts (auth checks, seeding checks)
 docs/         Developer documentation
-admin/        Future React-based admin UI (placeholder)
 ```
 
 ## Architecture
@@ -137,6 +136,77 @@ Environment files: `.env.test`, `.env.dev`, `.env.prod` (from templates).
 make env-info             # Show current environment config
 make env-check            # Validate environment files exist
 ```
+
+## CI/CD
+
+The pipeline is defined in [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) and runs three sequential jobs.
+
+### Jobs
+
+| Job | Trigger | What it does |
+| --- | ------- | ------------ |
+| **Run Tests** | Every push & PR to `main` | Spins up a Postgres service container, runs Liquibase migrations, generates jOOQ sources via `-Pwith-jooq`, runs the full Maven test suite |
+| **Build & Push** | Push to `main` or `release` (after tests pass) | Builds the Docker image with Buildx (layer cache via GHA) and pushes two tags to Docker Hub: `api-latest` and `api-<sha>` |
+| **Deploy** | Push to `main` or `release` (after image is pushed) | SSH/SCP into the Digital Ocean droplet, writes `.env.prod` from GitHub secrets, pulls the new image, does a zero-downtime `docker compose` swap, and warns if the DB has no seed data |
+
+### Secrets required
+
+| Secret | Used for |
+| ------ | -------- |
+| `DOCKER_USERNAME` / `DOCKER_PASSWORD` | Docker Hub login |
+| `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Production DB credentials |
+| `JWT_SECRET`, `FOOTBALL_DATA_API_TOKEN` | App runtime secrets |
+| `DEPLOY_HOST`, `DEPLOY_USERNAME`, `DEPLOY_KEY` | SSH access to Digital Ocean droplet |
+| `HOST_DOMAIN`, `LETSENCRYPT_EMAIL` | nginx-proxy virtual host + TLS cert |
+
+### Production infrastructure
+
+The droplet runs two separate Docker Compose stacks that share an external `nginx` network.
+
+**nginx reverse proxy** (always-on, manually managed):
+
+```yaml
+nginx-proxy:
+  image: nginxproxy/nginx-proxy:1.7
+  ports: ["80:80", "443:443"]
+  volumes:
+    - /var/run/docker.sock:/tmp/docker.sock:ro   # auto-detects containers
+    - certs:/etc/nginx/certs:ro
+
+letsencrypt:
+  image: nginxproxy/acme-companion:2.5
+  depends_on: nginx-proxy
+  # issues/renews TLS certificates automatically via ACME
+```
+
+Any container that sets `VIRTUAL_HOST` and `LETSENCRYPT_HOST` environment variables is automatically picked up by `nginx-proxy` and gets a certificate.
+
+**Root-domain redirect** (companion stack):
+
+`ligipredictor.com` and `www.ligipredictor.com` redirect to `https://beta.ligipredictor.com` via a minimal nginx container:
+
+```nginx
+# redirect.conf
+server {
+    listen 80;
+    server_name _;
+    return 301 https://beta.ligipredictor.com$request_uri;
+}
+```
+
+```yaml
+redirect:
+  image: nginx:alpine
+  environment:
+    VIRTUAL_HOST: ligipredictor.com,www.ligipredictor.com
+    LETSENCRYPT_HOST: ligipredictor.com,www.ligipredictor.com
+  networks:
+    - nginx   # external — the shared nginx-proxy network
+  volumes:
+    - ./redirect.conf:/etc/nginx/conf.d/default.conf:ro
+```
+
+The app itself runs on `beta.ligipredictor.com` and is wired into the same `nginx` network via `VIRTUAL_HOST`/`LETSENCRYPT_HOST` values injected from secrets at deploy time.
 
 ## Documentation
 
