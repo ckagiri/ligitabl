@@ -189,7 +189,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .otherwise(0)
                 .as("is_scored");
 
-        CommonTableExpression<Record10<UUID, String, String, Integer, Integer, Integer, Integer, Integer, Integer, Integer>>
+        CommonTableExpression<
+                        Record10<UUID, String, String, Integer, Integer, Integer, Integer, Integer, Integer, Integer>>
                 userStats = DSL.name("user_stats")
                         .as(dsl.select(
                                         T_USER.PK_ID,
@@ -314,7 +315,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .otherwise(0)
                 .as("is_scored");
 
-        CommonTableExpression<Record10<UUID, String, String, Integer, Integer, Integer, Integer, Integer, Integer, Integer>>
+        CommonTableExpression<
+                        Record10<UUID, String, String, Integer, Integer, Integer, Integer, Integer, Integer, Integer>>
                 userStats = DSL.name("user_stats")
                         .as(dsl.select(
                                         T_USER.PK_ID,
@@ -507,7 +509,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 ranking.maxScore(),
                 ranking.totalZeroes(),
                 ranking.totalSwaps(),
-                                ranking.joinedAtGw(),
+                ranking.joinedAtGw(),
                 movement,
                 ranking.scored());
     }

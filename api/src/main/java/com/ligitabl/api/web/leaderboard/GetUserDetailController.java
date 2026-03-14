@@ -40,7 +40,7 @@ public class GetUserDetailController {
                 .execute(publicId, effectiveToRound)
                 .fold(
                         error -> handleError(error, model, response),
-                result -> handleSuccess(result, displayName, position, totalScore, roundScore, model));
+                        result -> handleSuccess(result, displayName, position, totalScore, roundScore, model));
     }
 
     private String handleSuccess(
@@ -52,8 +52,8 @@ public class GetUserDetailController {
             Model model) {
 
         int roundZeroes = (int) result.predictions().stream()
-            .filter(pred -> pred.hit() != null && pred.hit() == 0)
-            .count();
+                .filter(pred -> pred.hit() != null && pred.hit() == 0)
+                .count();
 
         // Create user DTO with combined leaderboard + prediction data
         var user = new UserDetailDTO(displayName, position, totalScore, roundScore, roundZeroes, result.predictions());

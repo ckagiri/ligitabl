@@ -95,7 +95,7 @@ public class GetLatestResultUseCase {
                 var leaderboardResponse = leaderboardRepo.computeLeaderboard(
                         contest.getId(),
                         season.getId(),
-                    sprintPhase.getFrom(), // from = sprint start
+                        sprintPhase.getFrom(), // from = sprint start
                         round, // to = result round
                         userId,
                         0,

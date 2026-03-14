@@ -120,18 +120,10 @@ public class GetLeaderboardController {
                 .findFirst()
                 .orElse(null);
 
-        model.addAttribute(
-            "currentSprint",
-            currentSprint != null ? currentSprint.getCode() : null);
-        model.addAttribute(
-            "currentQuarter",
-            currentQuarter != null ? currentQuarter.getCode() : null);
-        model.addAttribute(
-            "currentSprintFrom",
-            currentSprint != null ? currentSprint.getFrom() : 0);
-        model.addAttribute(
-            "currentQuarterFrom",
-            currentQuarter != null ? currentQuarter.getFrom() : 0);
+        model.addAttribute("currentSprint", currentSprint != null ? currentSprint.getCode() : null);
+        model.addAttribute("currentQuarter", currentQuarter != null ? currentQuarter.getCode() : null);
+        model.addAttribute("currentSprintFrom", currentSprint != null ? currentSprint.getFrom() : 0);
+        model.addAttribute("currentQuarterFrom", currentQuarter != null ? currentQuarter.getFrom() : 0);
         model.addAttribute("nextSprintFrom", nextSprint != null ? nextSprint.getFrom() : null);
         model.addAttribute("nextQuarterFrom", nextQuarter != null ? nextQuarter.getFrom() : null);
         model.addAttribute("isLastSprint", nextSprint == null && currentSprint != null);

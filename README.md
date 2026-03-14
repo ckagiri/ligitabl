@@ -88,6 +88,42 @@ Matches are synced from Football-Data.org on a dynamic schedule:
 
 When all matches in a round complete, finalization triggers automatically.
 
+## Frontend assets
+
+Tailwind CSS is compiled through Vite. All frontend tooling lives in `api/` alongside the Spring Boot application.
+
+### Toolchain
+
+| Tool | Version | Role |
+| ---- | ------- | ---- |
+| Vite | ^7 | Bundler & dev server |
+| Tailwind CSS | ^3 | Utility-class CSS generation |
+| PostCSS + Autoprefixer | — | CSS post-processing |
+| Terser | ^5 | JS/CSS minification (production only) |
+
+### How it works
+
+- **Entry point**: `api/src/main/resources/static/css/main.css` — this is where Tailwind's directives live
+- **Output**: `api/src/main/resources/static/dist/css/main.css` — generated file served by Spring Boot as a static resource
+- **Content scanning**: Tailwind scans all Thymeleaf templates (`templates/**/*.html`) and JS files (`static/js/**/*.js`) for class names; unused utilities are purged in production
+- **Minification**: Terser runs only in production mode; `drop_console` and `drop_debugger` are on by default
+
+### npm scripts
+
+```bash
+cd api
+
+npm run build:prod   # One-off production build (minified, no console/debugger)
+npm run build:dev    # One-off development build (unminified)
+npm run dev          # Watch mode — rebuilds on every template/CSS change
+```
+
+Run `build:prod` before packaging a JAR or building the Docker image so the compiled CSS is included. The CI pipeline runs `mvn package` which picks up whatever is already in `static/dist/`; regenerate before committing if you change Tailwind classes.
+
+### Adding new utilities
+
+Tailwind only emits classes it finds in the scanned files. If you add a new utility class directly in a template, rerun `npm run build:dev` (or keep the `dev` watcher running) and the class will appear in the output CSS.
+
 ## Key Make targets
 
 ```bash
