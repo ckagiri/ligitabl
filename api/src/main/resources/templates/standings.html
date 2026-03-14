@@ -49,6 +49,12 @@
                       </th>
                       <th
                         scope="col"
+                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
+                      >
+                        Pts
+                      </th>
+                      <th
+                        scope="col"
                         class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
                       >
                         W
@@ -83,12 +89,6 @@
                       >
                         GD
                       </th>
-                      <th
-                        scope="col"
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
-                      >
-                        Pts
-                      </th>
                     </tr>
                   </thead>
                   <tbody class="bg-white divide-y divide-gray-200">
@@ -119,6 +119,12 @@
                         th:text="${standing.played}"
                       >
                         19
+                      </td>
+                      <td
+                        class="px-3 py-4 whitespace-nowrap text-center text-sm font-bold text-indigo-600"
+                        th:text="${standing.points}"
+                      >
+                        45
                       </td>
                       <td
                         class="px-3 py-4 whitespace-nowrap text-center text-sm text-gray-500"
@@ -157,12 +163,7 @@
                       >
                         +27
                       </td>
-                      <td
-                        class="px-3 py-4 whitespace-nowrap text-center text-sm font-bold text-indigo-600"
-                        th:text="${standing.points}"
-                      >
-                        45
-                      </td>
+
                     </tr>
                   </tbody>
                 </table>

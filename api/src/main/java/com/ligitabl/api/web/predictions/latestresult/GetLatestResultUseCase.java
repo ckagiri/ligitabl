@@ -76,26 +76,26 @@ public class GetLatestResultUseCase {
         // Calculate position and movement from leaderboard
         Integer position = null;
         Integer movement = null;
-        String quarter = null;
+        String sprint = null;
 
-        // Find the quarter for this round
+        // Find the sprint for this round
         var competition = competitionRepo
                 .findBySlug(competitionDefaults.defaultCompetitionSlug())
                 .orElseThrow(() -> new IllegalStateException("Competition not found"));
 
-        RoundSpan quarterPhase = findQuarterForRound(competition, round);
-        quarter = quarterPhase.getCode();
+        RoundSpan sprintPhase = findSprintForRound(competition, round);
+        sprint = sprintPhase.getCode();
 
         // Only calculate if we have a main contest
         if (season.getMainContestId() != null) {
             var contestOpt = contestRepo.findById(season.getMainContestId());
             if (contestOpt.isPresent()) {
                 var contest = contestOpt.get();
-                // Query leaderboard for the quarter up to the result round
+                // Query leaderboard for the sprint up to the result round
                 var leaderboardResponse = leaderboardRepo.computeLeaderboard(
                         contest.getId(),
                         season.getId(),
-                        quarterPhase.getFrom(), // from = quarter start
+                    sprintPhase.getFrom(), // from = sprint start
                         round, // to = result round
                         userId,
                         0,
@@ -110,29 +110,29 @@ public class GetLatestResultUseCase {
             }
         }
 
-        return new LatestResultResponse(round, result.getTotalScore(), position, movement, distribution, quarter);
+        return new LatestResultResponse(round, result.getTotalScore(), position, movement, distribution, sprint);
     }
 
-    private RoundSpan findQuarterForRound(Competition competition, int round) {
+    private RoundSpan findSprintForRound(Competition competition, int round) {
         if (competition.getPhases() == null || competition.getPhases().isEmpty()) {
             throw new IllegalStateException("No phases configured for competition");
         }
 
-        var quarters = competition.getPhases().stream()
-                .filter(phase -> phase.getCode().startsWith("Q"))
+        var sprints = competition.getPhases().stream()
+                .filter(phase -> phase.getType() == PhaseType.SPRINT)
                 .filter(phase -> round >= phase.getFrom() && round <= phase.getTo())
                 .toList();
 
-        if (quarters.isEmpty()) {
-            throw new IllegalStateException(String.format("Round %d is not assigned to any quarter", round));
+        if (sprints.isEmpty()) {
+            throw new IllegalStateException(String.format("Round %d is not assigned to any sprint", round));
         }
 
-        if (quarters.size() > 1) {
+        if (sprints.size() > 1) {
             throw new IllegalStateException(
-                    String.format("Round %d belongs to multiple quarters (configuration error)", round));
+                    String.format("Round %d belongs to multiple sprints (configuration error)", round));
         }
 
-        return quarters.get(0);
+        return sprints.get(0);
     }
 
     private HitDistribution calculateHitDistribution(RoundResult result) {

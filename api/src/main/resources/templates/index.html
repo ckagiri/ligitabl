@@ -95,7 +95,7 @@
           </h3>
           <p class="text-gray-600">
             Compete across three tiers — the Full Season championship, Quarterly
-            battles, and fast 5-gameweek Sprints (4 at start & end). Multiple chances to win all
+            battles, and fast 5-gameweek Sprints. Multiple chances to win all
             season long.
           </p>
         </div>
@@ -192,7 +192,7 @@
               </p>
             </div>
           </div>
-          <p class="mt-5 text-sm font-semibold text-green-700 italic">
+          <p class="mt-8 text-sm font-semibold text-green-700 italic">
             "Prepare for the next sprint. Compete on a good footing."
           </p>
         </div>
@@ -322,6 +322,128 @@
             Errors
           </p>
         </div>
+      </div>
+
+      <!-- Tiebreaker Rules -->
+      <div class="bg-white rounded-lg shadow-md p-8 mb-12">
+        <h2 class="text-3xl font-bold mb-2 text-center text-gray-900">
+          Leaderboard Tiebreakers
+        </h2>
+        <p class="text-center text-gray-500 mb-8">
+          When scores are level, here's how we separate you.
+        </p>
+
+        <div class="max-w-2xl mx-auto space-y-5">
+          <!-- 1. Points -->
+          <div
+            class="flex items-start gap-4 p-4 bg-indigo-50 rounded-lg border border-indigo-100"
+          >
+            <div
+              class="flex-shrink-0 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center text-sm font-bold"
+            >
+              1
+            </div>
+            <div>
+              <h4 class="font-semibold text-gray-900">Total Points</h4>
+              <p class="text-sm text-gray-600 mt-0.5">
+                Your cumulative score for the competition period — whether
+                that's a sprint, quarter, or the full season. The primary
+                ranking criterion — highest points wins.
+              </p>
+            </div>
+          </div>
+
+          <!-- 2. Zeroes -->
+          <div
+            class="flex items-start gap-4 p-4 bg-green-50 rounded-lg border border-green-100"
+          >
+            <div
+              class="flex-shrink-0 w-8 h-8 bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold"
+            >
+              2
+            </div>
+            <div>
+              <h4 class="font-semibold text-gray-900">
+                Zeroes
+                <span class="text-xs font-normal text-green-700 ml-1"
+                  >— worth their weight in gold</span
+                >
+              </h4>
+              <p class="text-sm text-gray-600 mt-0.5">
+                The count of perfect predictions — where your predicted position
+                matched the actual position exactly (0 positions off, no points
+                lost). The more of these you accumulate, the better.
+              </p>
+            </div>
+          </div>
+
+          <!-- 3. Best Score -->
+          <div
+            class="flex items-start gap-4 p-4 bg-yellow-50 rounded-lg border border-yellow-100"
+          >
+            <div
+              class="flex-shrink-0 w-8 h-8 bg-yellow-500 text-white rounded-full flex items-center justify-center text-sm font-bold"
+            >
+              3
+            </div>
+            <div>
+              <h4 class="font-semibold text-gray-900">
+                Best Single Gameweek Score
+              </h4>
+              <p class="text-sm text-gray-600 mt-0.5">
+                Your highest scoring gameweek within the phase. Peak performance
+                counts.
+              </p>
+            </div>
+          </div>
+
+          <!-- 4. Fewest Swaps -->
+          <div
+            class="flex items-start gap-4 p-4 bg-orange-50 rounded-lg border border-orange-100"
+          >
+            <div
+              class="flex-shrink-0 w-8 h-8 bg-orange-500 text-white rounded-full flex items-center justify-center text-sm font-bold"
+            >
+              4
+            </div>
+            <div>
+              <h4 class="font-semibold text-gray-900">Fewest Swaps Used</h4>
+              <p class="text-sm text-gray-600 mt-0.5">
+                Fewer swaps used to achieve the same score signals a stronger
+                original prediction. Swaps are still encouraged — they're your
+                tool to stay competitive — but efficiency is rewarded at the
+                margin.
+              </p>
+            </div>
+          </div>
+
+          <!-- 5. Internal tiebreak -->
+          <div
+            class="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100"
+          >
+            <div
+              class="flex-shrink-0 w-8 h-8 bg-gray-400 text-white rounded-full flex items-center justify-center text-sm font-bold"
+            >
+              5
+            </div>
+            <div>
+              <h4 class="font-semibold text-gray-900 text-gray-700">
+                Internal Tiebreak
+              </h4>
+              <p class="text-sm text-gray-500 mt-0.5">
+                In the extremely rare case of a perfect tie across all criteria,
+                an internal identifier is used. This is essentially a coin flip
+                — focus on points and zeroes long before worrying about this.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <p class="text-center text-sm text-gray-400 mt-6">
+          The goal is simple:
+          <strong class="text-gray-600">more points and more zeroes.</strong>
+          Everything else is a footnote.
+        </p>
       </div>
 
       <!-- CTA Section -->

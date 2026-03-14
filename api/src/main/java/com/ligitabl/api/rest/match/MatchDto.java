@@ -25,6 +25,10 @@ public class MatchDto {
     UUID awayTeamId;
     String homeTeam;
     String awayTeam;
+    String homeTeamName;
+    String awayTeamName;
+    String homeTeamCode;
+    String awayTeamCode;
     String name; // Generated: "arsenal-v-chelsea"
     String slug;
     String status;
@@ -62,6 +66,10 @@ public class MatchDto {
                 .awayTeamId(match.getAwayTeamId())
                 .homeTeam(homeTeam.getShortName() != null ? homeTeam.getShortName() : homeTeam.getName())
                 .awayTeam(awayTeam.getShortName() != null ? awayTeam.getShortName() : awayTeam.getName())
+                .homeTeamName(homeTeam.getName() != null ? homeTeam.getName() : homeTeam.getShortName())
+                .awayTeamName(awayTeam.getName() != null ? awayTeam.getName() : awayTeam.getShortName())
+                .homeTeamCode(homeTeam.getCode())
+                .awayTeamCode(awayTeam.getCode())
                 .name(name)
                 .slug(match.getSlug())
                 .status(match.getStatus() == null ? null : match.getStatus().name())
