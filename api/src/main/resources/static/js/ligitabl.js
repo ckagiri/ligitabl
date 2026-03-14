@@ -64,6 +64,7 @@ window.Ligitabl._predictionBase = function (parsed) {
         originalTeams: [],
         selectedTeam: null,
         swapStack: [],
+        undoing: false,
         alwaysHoverable: false,
         showStandings: savedPrefs ? (savedPrefs.showStandings ?? false) : false,
         showFixtures: savedPrefs ? (savedPrefs.showFixtures ?? false) : false,
@@ -538,10 +539,14 @@ window.Ligitabl.predictionPage = function (el) {
         },
 
         undoLastSwap() {
-            if (!this.canUndo()) return;
+            if (!this.canUndo() || this.undoing) return;
+            this.undoing = true;
             const last = this.swapStack.pop();
-            this._swapTeamsDirect(last.b, last.a); // reverse
-            this._saveToStorage(AUTH_STORAGE_KEY);
+            setTimeout(() => {
+                this._swapTeamsDirect(last.b, last.a); // reverse
+                this._saveToStorage(AUTH_STORAGE_KEY);
+                this.undoing = false;
+            }, 650);
         },
 
         submitChanges() {
@@ -717,10 +722,14 @@ window.Ligitabl.guestPredictionPage = function (el) {
         },
 
         undoLastSwap() {
-            if (!this.canUndo()) return;
+            if (!this.canUndo() || this.undoing) return;
+            this.undoing = true;
             const last = this.swapStack.pop();
-            this._swapTeamsDirect(last.b, last.a); // reverse
-            this._saveToStorage(STORAGE_KEY);
+            setTimeout(() => {
+                this._swapTeamsDirect(last.b, last.a); // reverse
+                this._saveToStorage(STORAGE_KEY);
+                this.undoing = false;
+            }, 650);
         },
     });
 };
