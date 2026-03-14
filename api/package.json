@@ -1,0 +1,32 @@
+{
+  "name": "ligitabl",
+  "version": "1.0.0",
+  "description": "Ligitabl UI",
+  "main": "index.js",
+"scripts": {
+    "dev": "vite build --watch --mode development",
+    "build:dev": "vite build --mode development",
+    "build:prod": "vite build --mode production",
+    "build": "vite build --mode production"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ckagiri/ligitablui.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ckagiri/ligitablui/issues"
+  },
+  "homepage": "https://github.com/ckagiri/ligitablui#readme",
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.11",
+    "autoprefixer": "^10.4.23",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.19",
+    "terser": "^5.44.1",
+    "vite": "^7.3.1"
+  }
+}
