@@ -153,14 +153,17 @@
       <div class="flex items-center text-sm text-gray-600 mb-1">
         <span class="font-mono">200</span>
         <span class="mx-2">−</span>
-        <span class="font-mono" th:text="${totalHits}">156</span>
+        <span class="font-mono" th:text="${totalHits}">44</span>
         <span class="mx-2">=</span>
         <span
           class="font-mono font-bold text-gray-900"
           th:text="${totalScore}"
-          >44</span
+          >156</span
         >
         <span class="ml-1">points</span>
+        <span class="ml-1">
+          <span th:replace="~{fragments/score-emoji :: emoji(${totalScore})}">
+          </span>
       </div>
 
       <div class="text-xs text-green-600 font-semibold">
