@@ -63,6 +63,7 @@ window.Ligitabl._predictionBase = function (parsed) {
         teams: [],
         originalTeams: [],
         selectedTeam: null,
+        swapStack: [],
         alwaysHoverable: false,
         showStandings: savedPrefs ? (savedPrefs.showStandings ?? false) : false,
         showFixtures: savedPrefs ? (savedPrefs.showFixtures ?? false) : false,
@@ -165,6 +166,35 @@ window.Ligitabl._predictionBase = function (parsed) {
             return team ? team.name : null;
         },
 
+        pushSwap(codeA, codeB) {
+            const top = this.swapStack[this.swapStack.length - 1];
+            if (top && top.a === codeB && top.b === codeA) {
+                // Exact reverse of last swap — cancel it out
+                this.swapStack.pop();
+            } else {
+                this.swapStack.push({ a: codeA, b: codeB });
+            }
+        },
+
+        _swapTeamsDirect(codeA, codeB) {
+            const index1 = this.teams.findIndex((t) => t.code === codeA);
+            const index2 = this.teams.findIndex((t) => t.code === codeB);
+            if (index1 < 0 || index2 < 0) return;
+            // Brief animation
+            const row1 = document.querySelector(`[data-team-code='${codeA}']`);
+            const row2 = document.querySelector(`[data-team-code='${codeB}']`);
+            if (row1) { row1.classList.add("swapping"); setTimeout(() => row1.classList.remove("swapping"), 600); }
+            if (row2) { row2.classList.add("swapping"); setTimeout(() => row2.classList.remove("swapping"), 600); }
+            const temp = this.teams[index1];
+            this.teams[index1] = this.teams[index2];
+            this.teams[index2] = temp;
+            this.teams.forEach((team, idx) => (team.position = idx + 1));
+        },
+
+        canUndo() {
+            return this.swapStack.length > 0 && this.selectedTeam === null;
+        },
+
         getActualPosition(teamCode) {
             return this.currentStandings[teamCode] || "?";
         },
@@ -229,6 +259,7 @@ window.Ligitabl._predictionBase = function (parsed) {
             this.teams[index1] = this.teams[index2];
             this.teams[index2] = temp;
             this.teams.forEach((team, idx) => (team.position = idx + 1));
+            this.pushSwap(team1Code, team2Code);
         },
 
         // Shared selection handling
@@ -262,6 +293,7 @@ window.Ligitabl._predictionBase = function (parsed) {
         reset() {
             this.teams = JSON.parse(JSON.stringify(this.originalTeams));
             this.selectedTeam = null;
+            this.swapStack = [];
         },
     };
 };
@@ -386,6 +418,7 @@ window.Ligitabl.predictionPage = function (el) {
                 this.teams = Ligitabl._mapServerPredictions(predictions);
             }
 
+            // originalTeams always reflects server state — diffs are against what was last submitted
             this.originalTeams = Ligitabl._mapServerPredictions(predictions);
 
             // Persist display preferences
@@ -495,12 +528,20 @@ window.Ligitabl.predictionPage = function (el) {
         reset() {
             this.teams = JSON.parse(JSON.stringify(this.originalTeams));
             this.selectedTeam = null;
+            this.swapStack = [];
             this._clearStorage(AUTH_STORAGE_KEY);
             if (this.importedFromGuest) {
                 this._clearStorage(GUEST_STORAGE_KEY);
                 this.importedFromGuest = false;
                 window.dispatchEvent(new CustomEvent('guest-storage-cleared'));
             }
+        },
+
+        undoLastSwap() {
+            if (!this.canUndo()) return;
+            const last = this.swapStack.pop();
+            this._swapTeamsDirect(last.b, last.a); // reverse
+            this._saveToStorage(AUTH_STORAGE_KEY);
         },
 
         submitChanges() {
@@ -671,7 +712,15 @@ window.Ligitabl.guestPredictionPage = function (el) {
         reset() {
             this.teams = JSON.parse(JSON.stringify(this.originalTeams));
             this.selectedTeam = null;
+            this.swapStack = [];
             this._clearStorage(STORAGE_KEY);
+        },
+
+        undoLastSwap() {
+            if (!this.canUndo()) return;
+            const last = this.swapStack.pop();
+            this._swapTeamsDirect(last.b, last.a); // reverse
+            this._saveToStorage(STORAGE_KEY);
         },
     });
 };
