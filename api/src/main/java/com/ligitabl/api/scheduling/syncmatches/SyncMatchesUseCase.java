@@ -373,21 +373,34 @@ public class SyncMatchesUseCase {
 
         boolean statusChanged = previousStatus != newStatus;
         boolean scoreChanged = hasScoreChanged(existing, apiMatch.score());
+        boolean kickoffChanged = hasKickoffChanged(existing, apiMatch.utcDate());
 
-        if (!statusChanged && !scoreChanged) {
+        if (!statusChanged && !scoreChanged && !kickoffChanged) {
             return new UpdateResult(existing, false, false);
         }
 
         boolean becameFinished = previousStatus != MatchStatus.FINISHED && newStatus == MatchStatus.FINISHED;
 
         existing.setStatus(newStatus);
-        existing.setKickOff(apiMatch.utcDate());
+        if (kickoffChanged) {
+            existing.setKickOff(apiMatch.utcDate());
+        }
         if (apiMatch.matchday() != null) {
             existing.setMatchday(apiMatch.matchday());
         }
         applyScore(existing, apiMatch.score());
 
         return new UpdateResult(existing, true, becameFinished);
+    }
+
+    private boolean hasKickoffChanged(Match existing, OffsetDateTime apiKickoff) {
+        var existingKickoff = existing.getKickOff();
+
+        if (existingKickoff == null) {
+            return apiKickoff != null;
+        }
+
+        return !existingKickoff.equals(apiKickoff);
     }
 
     private boolean hasScoreChanged(Match existing, Score apiScore) {
