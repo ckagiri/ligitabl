@@ -69,6 +69,7 @@ window.Ligitabl._predictionBase = function (parsed) {
         showStandings: savedPrefs ? (savedPrefs.showStandings ?? false) : false,
         showFixtures: savedPrefs ? (savedPrefs.showFixtures ?? false) : false,
         showPoints: savedPrefs ? (savedPrefs.showPoints ?? false) : false,
+        showGD: savedPrefs ? (savedPrefs.showGD ?? false) : false,
         currentStandings: parsed.currentStandings,
         fixtures: parsed.fixtures,
         currentPoints: parsed.currentPoints,
@@ -427,10 +428,12 @@ window.Ligitabl.predictionPage = function (el) {
                 showStandings: this.showStandings,
                 showFixtures: this.showFixtures,
                 showPoints: this.showPoints,
+                showGD: this.showGD,
             });
             this.$watch("showStandings", savePrefs);
             this.$watch("showFixtures", savePrefs);
             this.$watch("showPoints", savePrefs);
+            this.$watch("showGD", savePrefs);
         },
 
         teamClick(teamCode) {
@@ -695,10 +698,12 @@ window.Ligitabl.guestPredictionPage = function (el) {
                 showStandings: this.showStandings,
                 showFixtures: this.showFixtures,
                 showPoints: this.showPoints,
+                showGD: this.showGD,
             });
             this.$watch("showStandings", savePrefs);
             this.$watch("showFixtures", savePrefs);
             this.$watch("showPoints", savePrefs);
+            this.$watch("showGD", savePrefs);
         },
 
         teamClick(teamCode) {

@@ -2,6 +2,46 @@
 <div xmlns:th="http://www.thymeleaf.org">
   <!-- Comparison Options (Show standings, fixtures, points checkboxes) -->
   <div th:fragment="comparison-options" class="px-6 pt-4 pb-2 space-y-2">
+    <!-- Points + GD on same line -->
+    <div class="flex items-center gap-4">
+      <label
+        class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition"
+      >
+        <input
+          type="checkbox"
+          x-model="showPoints"
+          autocomplete="off"
+          class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+        />
+        <span>Show points</span>
+      </label>
+      <label
+        class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition"
+      >
+        <input
+          type="checkbox"
+          x-model="showGD"
+          autocomplete="off"
+          class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+        />
+        <span>Show GD</span>
+      </label>
+    </div>
+
+    <!-- Show fixtures -->
+    <label
+      class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition"
+    >
+      <input
+        type="checkbox"
+        x-model="showFixtures"
+        autocomplete="off"
+        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+      />
+      <span>Show fixtures</span>
+    </label>
+
+    <!-- Compare with standings -->
     <label
       class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition"
     >
@@ -30,37 +70,13 @@
           worse (move them down).
         </span>
       </span>
-
       <span class="hidden sm:inline">
-        <span class="text-green-600 font-semibold">↑ Green</span>: Team performing
-        better (move them up). <span class="text-red-600 font-semibold">↓ Red</span
-        >: Team performing worse (move them down).
+        <span class="text-green-600 font-semibold">↑ Green</span>: Team
+        performing better (move them up).
+        <span class="text-red-600 font-semibold">↓ Red</span>: Team performing
+        worse (move them down).
       </span>
     </p>
-
-    <label
-      class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition"
-    >
-      <input
-        type="checkbox"
-        x-model="showFixtures"
-        autocomplete="off"
-        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-      />
-      <span>Show fixtures</span>
-    </label>
-
-    <label
-      class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition"
-    >
-      <input
-        type="checkbox"
-        x-model="showPoints"
-        autocomplete="off"
-        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
-      />
-      <span>Show points &amp; goal difference</span>
-    </label>
   </div>
 
   <!-- Interactive Current-Round Table
@@ -106,7 +122,7 @@
               Pts
             </th>
             <th
-              x-show="showPoints"
+              x-show="showGD"
               scope="col"
               class="hidden sm:table-cell px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
             >
@@ -162,7 +178,7 @@
 
                       <!-- Mobile: Fixtures AND/OR Standings AND/OR Points+GD on same line -->
                       <div
-                        x-show="showFixtures || showStandings || showPoints"
+                        x-show="showFixtures || showStandings || showPoints || showGD"
                         class="sm:hidden flex items-center gap-1.5 mt-1 flex-wrap"
                       >
                         <!-- Fixtures -->
@@ -235,25 +251,35 @@
                           </span>
                         </div>
 
-                        <!-- Points + GD (mobile) -->
+                        <!-- Points + GD (mobile) — own line via basis-full -->
                         <div
-                          x-show="showPoints"
+                          x-show="showPoints || showGD"
                           class="flex basis-full items-center gap-1.5 text-[11px]"
                         >
-                          <span
-                            class="text-gray-700 font-medium"
-                            x-text="getCurrentPoints(team.code)"
-                          >45</span>
-                          <span class="text-gray-500">pts</span>
-                          <span
-                            class="font-medium"
-                            :class="{
-                              'text-green-600': getGDDirection(team.code) === 'positive',
-                              'text-red-600': getGDDirection(team.code) === 'negative',
-                              'text-gray-500': getGDDirection(team.code) === 'neutral' || getGDDirection(team.code) === null
-                            }"
-                            x-text="getCurrentGD(team.code)"
-                          >+12</span>
+                          <template x-if="showPoints">
+                            <span class="flex items-center gap-1">
+                              <span
+                                class="text-gray-700 font-medium"
+                                x-text="getCurrentPoints(team.code)"
+                                >45</span
+                              >
+                              <span class="text-gray-500">pts</span>
+                            </span>
+                          </template>
+                          <template x-if="showGD">
+                            <span class="flex items-center gap-1">
+                              <span
+                                class="font-medium"
+                                :class="{
+                                  'text-green-600': getGDDirection(team.code) === 'positive',
+                                  'text-red-600': getGDDirection(team.code) === 'negative',
+                                  'text-gray-500': getGDDirection(team.code) === 'neutral' || getGDDirection(team.code) === null
+                                }"
+                                x-text="getCurrentGD(team.code)"
+                                >+12</span
+                              >
+                            </span>
+                          </template>
                         </div>
                       </div>
 
@@ -300,7 +326,6 @@
                 <div
                   class="flex items-center justify-end gap-1 text-sm font-semibold"
                 >
-                  <!-- Arrow icon -->
                   <svg
                     x-show="getDelta(team.code) !== 0 && getDelta(team.code) !== '-'"
                     class="h-4 w-4"
@@ -321,13 +346,13 @@
                       clip-rule="evenodd"
                     />
                   </svg>
-                  <!-- Delta number -->
                   <span
                     :class="getDelta(team.code) === 0 ? 'text-green-600' : (getDeltaDirection(team.code) === 'down' ? 'text-red-600' : 'text-green-600')"
                     x-text="getDelta(team.code)"
                   ></span>
                 </div>
               </td>
+              <!-- Points - desktop -->
               <td
                 x-show="showPoints"
                 class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-700"
@@ -335,7 +360,7 @@
               ></td>
               <!-- GD - desktop -->
               <td
-                x-show="showPoints"
+                x-show="showGD"
                 class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right text-sm font-semibold"
                 :class="{
                   'text-green-600': getGDDirection(team.code) === 'positive',
