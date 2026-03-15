@@ -278,7 +278,10 @@ window.Ligitabl._predictionBase = function (parsed) {
 
         _saveToStorage(key) {
             try {
-                localStorage.setItem(key, JSON.stringify(this.teams));
+                localStorage.setItem(key, JSON.stringify({
+                    teams: this.teams,
+                    swapStack: this.swapStack,
+                }));
             } catch (e) {
                 console.warn("Failed to save prediction:", e);
             }
@@ -333,7 +336,8 @@ window.Ligitabl.predictionPage = function (el) {
 
     function _validateTeamCodes(saved) {
         const serverCodes = new Set(predictions.map((p) => p.teamCode));
-        const savedCodes = new Set(saved.map((p) => p.code));
+        const teams = _extractTeams(saved);
+        const savedCodes = new Set(teams.map((p) => p.code));
         return (
             serverCodes.size === savedCodes.size &&
             [...serverCodes].every((c) => savedCodes.has(c))
@@ -366,6 +370,14 @@ window.Ligitabl.predictionPage = function (el) {
         return null;
     }
 
+    function _extractTeams(saved) {
+        return Array.isArray(saved) ? saved : (saved?.teams ?? []);
+    }
+
+    function _extractSwapStack(saved) {
+        return Array.isArray(saved) ? [] : (saved?.swapStack ?? []);
+    }
+
     const serverDataByCode = {};
     (Array.isArray(predictions) ? predictions : []).forEach((p) => {
         serverDataByCode[p.teamCode] = {
@@ -393,7 +405,7 @@ window.Ligitabl.predictionPage = function (el) {
             if (isInitialPrediction) {
                 const guestPrediction = loadGuestPrediction();
                 if (guestPrediction) {
-                    this.teams = guestPrediction.map((t, idx) => {
+                    this.teams = _extractTeams(guestPrediction).map((t, idx) => {
                         const serverData = serverDataByCode[t.code];
                         return {
                             position: idx + 1,
@@ -411,7 +423,8 @@ window.Ligitabl.predictionPage = function (el) {
             if (this.teams.length === 0) {
                 const authPrediction = loadAuthPrediction();
                 if (authPrediction) {
-                    this.teams = authPrediction.map((t, idx) => ({...t, position: idx + 1}));
+                    this.teams = _extractTeams(authPrediction).map((t, idx) => ({...t, position: idx + 1}));
+                    this.swapStack = _extractSwapStack(authPrediction);
                 }
             }
 
@@ -664,8 +677,9 @@ window.Ligitabl.guestPredictionPage = function (el) {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 const p = JSON.parse(saved);
+                const teams = Array.isArray(p) ? p : (p?.teams ?? []);
                 const serverCodes = new Set(serverPredictions.map((s) => s.teamCode));
-                const savedCodes = new Set(p.map((s) => s.code));
+                const savedCodes = new Set(teams.map((s) => s.code));
                 if (
                     serverCodes.size === savedCodes.size &&
                     [...serverCodes].every((c) => savedCodes.has(c))
@@ -687,7 +701,9 @@ window.Ligitabl.guestPredictionPage = function (el) {
         init() {
             const saved = loadSavedPrediction();
             if (saved) {
-                this.teams = saved.map((t, idx) => ({...t, position: idx + 1}));
+                const teams = Array.isArray(saved) ? saved : (saved?.teams ?? []);
+                this.teams = teams.map((t, idx) => ({...t, position: idx + 1}));
+                this.swapStack = Array.isArray(saved) ? [] : (saved?.swapStack ?? []);
             } else {
                 this.teams = Ligitabl._mapServerPredictions(serverPredictions);
             }
@@ -793,5 +809,21 @@ window.Ligitabl.guestPredictionPage = function (el) {
         if (roundNumber) {
             dismissResultsBanner(roundNumber);
         }
+    });
+})();
+
+(function() {
+    const bar = document.createElement('div');
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;height:3px;background:#6366f1;z-index:9999;display:none;';
+    bar.id = 'nav-loading-bar';
+    document.body.appendChild(bar);
+
+    document.body.addEventListener('htmx:beforeRequest', (e) => {
+        if (e.detail?.target?.id === 'prediction-page') {
+            bar.style.display = 'block';
+        }
+    });
+    document.body.addEventListener('htmx:afterSwap', (e) => {
+        bar.style.display = 'none';
     });
 })();

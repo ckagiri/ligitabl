@@ -175,7 +175,7 @@ public class GetUserPredictionUseCase {
                             seasonPrediction.getAtRoundNumber(),
                             seasonCompleted,
                             roundState,
-                            "Viewing Gameweek " + viewingRound + " results",
+                            null,
                             null,
                             roundResult.get(),
                             swapsForRound(seasonPrediction, viewingRound));
