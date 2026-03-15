@@ -336,8 +336,7 @@ window.Ligitabl.predictionPage = function (el) {
 
     function _validateTeamCodes(saved) {
         const serverCodes = new Set(predictions.map((p) => p.teamCode));
-        const teams = Array.isArray(saved) ? saved : saved.teams;
-        if (!Array.isArray(teams)) return false;
+        const teams = _extractTeams(saved);
         const savedCodes = new Set(teams.map((p) => p.code));
         return (
             serverCodes.size === savedCodes.size &&
@@ -406,8 +405,7 @@ window.Ligitabl.predictionPage = function (el) {
             if (isInitialPrediction) {
                 const guestPrediction = loadGuestPrediction();
                 if (guestPrediction) {
-                    const guestTeams = Array.isArray(guestPrediction) ? guestPrediction : (guestPrediction?.teams ?? []);
-                    this.teams = guestTeams.map((t, idx) => {
+                    this.teams = _extractTeams(guestPrediction).map((t, idx) => {
                         const serverData = serverDataByCode[t.code];
                         return {
                             position: idx + 1,
