@@ -12,9 +12,11 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         input: {
           main: resolve(__dirname, "src/main/resources/static/css/main.css"),
+          app: resolve(__dirname, "src/main/resources/static/js/ligitabl.js"),
         },
         output: {
           assetFileNames: "css/[name][extname]",
+          entryFileNames: "js/[name].js",
         },
       },
 
@@ -25,6 +27,7 @@ export default defineConfig(({ mode }) => {
               drop_console: true,
               drop_debugger: true,
             },
+            mangle: true,
           }
         : undefined,
     },
