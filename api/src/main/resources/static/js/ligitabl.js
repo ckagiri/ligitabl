@@ -813,3 +813,19 @@ window.Ligitabl.guestPredictionPage = function (el) {
         }
     });
 })();
+
+(function() {
+    const bar = document.createElement('div');
+    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;height:3px;background:#6366f1;z-index:9999;display:none;';
+    bar.id = 'nav-loading-bar';
+    document.body.appendChild(bar);
+
+    document.body.addEventListener('htmx:beforeRequest', (e) => {
+        if (e.detail?.target?.id === 'prediction-page') {
+            bar.style.display = 'block';
+        }
+    });
+    document.body.addEventListener('htmx:afterSwap', (e) => {
+        bar.style.display = 'none';
+    });
+})();
