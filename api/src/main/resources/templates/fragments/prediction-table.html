@@ -188,8 +188,19 @@
                             :key="fixture.opponent"
                           >
                             <span
-                              class="inline-flex items-center px-1.5 py-0.5 bg-gray-100 rounded text-[11px] font-medium text-gray-600"
+                              class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium border"
+                              :class="{
+                                'bg-green-50 border-green-400 text-green-700': fixture.result === 'WIN',
+                                'bg-red-50 border-red-400 text-red-700': fixture.result === 'LOSS',
+                                'bg-yellow-50 border-yellow-400 text-yellow-700': fixture.result === 'DRAW',
+                                'bg-blue-50 border-blue-400 text-blue-700 ring-1 ring-blue-400 ring-offset-1 animate-pulse': fixture.status === 'LIVE',
+                                'bg-gray-100 border-gray-200 text-gray-600': fixture.status === 'SCHEDULED' || (!fixture.result && fixture.status !== 'LIVE')
+                              }"
                             >
+                              <span
+                                x-show="fixture.status === 'LIVE'"
+                                class="inline-block w-1.5 h-1.5 bg-red-500 rounded-full mr-1 animate-pulse"
+                              ></span>
                               <span x-show="!fixture.isHome">@</span
                               ><span x-text="fixture.opponent"></span>
                             </span>
@@ -293,8 +304,19 @@
                           :key="fixture.opponent"
                         >
                           <span
-                            class="inline-flex items-center px-1.5 py-0.5 bg-gray-100 rounded text-[11px] font-medium text-gray-600"
+                            class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium border"
+                            :class="{
+                              'bg-green-50 border-green-400 text-green-700': fixture.result === 'WIN',
+                              'bg-red-50 border-red-400 text-red-700': fixture.result === 'LOSS',
+                              'bg-yellow-50 border-yellow-400 text-yellow-700': fixture.result === 'DRAW',
+                              'bg-blue-50 border-blue-400 text-blue-700 ring-1 ring-blue-400 ring-offset-1 animate-pulse': fixture.status === 'LIVE',
+                              'bg-gray-100 border-gray-200 text-gray-600': fixture.status === 'SCHEDULED' || (!fixture.result && fixture.status !== 'LIVE')
+                            }"
                           >
+                            <span
+                              x-show="fixture.status === 'LIVE'"
+                              class="inline-block w-1.5 h-1.5 bg-red-500 rounded-full mr-1 animate-pulse"
+                            ></span>
                             <span x-show="!fixture.isHome">@</span
                             ><span x-text="fixture.opponent"></span>
                           </span>

@@ -29,6 +29,8 @@ import com.ligitabl.api.web.shared.error.ErrorViewMapper;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Match;
+import com.ligitabl.model.domain.MatchResult;
+import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.ResultTeamRank;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SwapChange;
@@ -419,7 +421,7 @@ public class UserPredictionsController {
                         .toList()));
     }
 
-    private FixtureDto toFixture(String teamCode, Match match) {
+    FixtureDto toFixture(String teamCode, Match match) {
         if (match == null || !match.hasTeamsLoaded()) {
             return null;
         }
@@ -432,7 +434,36 @@ public class UserPredictionsController {
 
         boolean isHome = teamCode.equals(home.getCode());
         String opponent = isHome ? away.getCode() : home.getCode();
-        return new FixtureDto(opponent, isHome);
+        return new FixtureDto(opponent, isHome, normalizeFixtureStatus(match.getStatus()), resolveFixtureResult(match, isHome));
+    }
+
+    static String normalizeFixtureStatus(MatchStatus status) {
+        if (status == null) {
+            return MatchStatus.SCHEDULED.name();
+        }
+
+        return switch (status) {
+            case LIVE, SUSPENDED -> MatchStatus.LIVE.name();
+            case FINISHED -> MatchStatus.FINISHED.name();
+            case SCHEDULED, POSTPONED, CANCELLED -> MatchStatus.SCHEDULED.name();
+        };
+    }
+
+    static String resolveFixtureResult(Match match, boolean isHome) {
+        if (match == null || match.getStatus() != MatchStatus.FINISHED) {
+            return null;
+        }
+
+        return match.result().map(result -> toPerspectiveResult(result, isHome)).orElse(null);
+    }
+
+    private static String toPerspectiveResult(MatchResult result, boolean isHome) {
+        if (result.isDraw()) {
+            return "DRAW";
+        }
+
+        boolean teamWon = isHome ? result.isHomeWin() : result.isAwayWin();
+        return teamWon ? "WIN" : "LOSS";
     }
 
     /**
