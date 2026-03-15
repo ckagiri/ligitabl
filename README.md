@@ -90,7 +90,7 @@ When all matches in a round complete, finalization triggers automatically.
 
 ## Frontend assets
 
-Tailwind CSS is compiled through Vite. All frontend tooling lives in `api/` alongside the Spring Boot application.
+CSS and JavaScript assets are built through Vite. All frontend tooling lives in `api/` alongside the Spring Boot application.
 
 ### Toolchain
 
@@ -103,10 +103,13 @@ Tailwind CSS is compiled through Vite. All frontend tooling lives in `api/` alon
 
 ### How it works
 
-- **Entry point**: `api/src/main/resources/static/css/main.css` — this is where Tailwind's directives live
-- **Output**: `api/src/main/resources/static/dist/css/main.css` — generated file served by Spring Boot as a static resource
+- **CSS entry point**: `api/src/main/resources/static/css/main.css` — contains Tailwind directives
+- **JS entry point**: `api/src/main/resources/static/js/ligitabl.js` — app JavaScript source bundled by Vite
+- **Generated CSS**: `api/src/main/resources/static/dist/css/main.css`
+- **Generated JS**: `api/src/main/resources/static/dist/js/app.js`
+- **Template usage**: `base.html` loads assets from `/dist/css/main.css` and `/dist/js/app.js`
 - **Content scanning**: Tailwind scans all Thymeleaf templates (`templates/**/*.html`) and JS files (`static/js/**/*.js`) for class names; unused utilities are purged in production
-- **Minification**: Terser runs only in production mode; `drop_console` and `drop_debugger` are on by default
+- **Minification**: Terser runs only in production mode; `drop_console` and `drop_debugger` are on by default, and the JS bundle is mangled in production
 
 ### npm scripts
 
@@ -118,11 +121,11 @@ npm run build:dev    # One-off development build (unminified)
 npm run dev          # Watch mode — rebuilds on every template/CSS change
 ```
 
-Run `build:prod` before packaging a JAR or building the Docker image so the compiled CSS is included. The CI pipeline runs `mvn package` which picks up whatever is already in `static/dist/`; regenerate before committing if you change Tailwind classes.
+Run `build:prod` before packaging a JAR or building the Docker image so the compiled CSS and JS bundles are included. The CI pipeline runs `mvn package` which picks up whatever is already in `static/dist/`; regenerate before committing if you change Tailwind classes or frontend JavaScript.
 
-### Adding new utilities
+### Adding new utilities or JS changes
 
-Tailwind only emits classes it finds in the scanned files. If you add a new utility class directly in a template, rerun `npm run build:dev` (or keep the `dev` watcher running) and the class will appear in the output CSS.
+Tailwind only emits classes it finds in the scanned files. If you add a new utility class directly in a template, or change code in `static/js/ligitabl.js`, rerun `npm run build:dev` (or keep the `dev` watcher running) so the generated files in `static/dist/` stay in sync.
 
 ## Key Make targets
 
