@@ -722,6 +722,60 @@ This avoids SpEL's implicit truthiness evaluation and ensures only one section o
 - Template example: `api/src/main/resources/templates/predictions.html`
 - Controller setting booleans: `UserPredictionsController.java` (line 270)
 
+## HTMX + Alpine event listener reliability
+
+When wiring loading indicators or other request-lifecycle UI around HTMX swaps, do not assume Alpine's `.window`
+modifier will reliably catch HTMX events.
+
+### What was observed
+
+- HTMX dispatches lifecycle events on the target element (for example `#prediction-page`) with bubbling enabled.
+- Those events can bubble up through the DOM: element -> body -> document -> window.
+- HTMX also dispatches a duplicate event on `document.body`.
+- In practice, the `document.body` dispatch is the most reliable hook point.
+- Alpine `.window` listeners can miss HTMX events depending on where the event was dispatched and whether that
+  particular dispatch reaches `window`.
+
+### Reliability order
+
+Use these options in this order of preference:
+
+1. `document.body.addEventListener(...)` — most reliable for HTMX lifecycle hooks
+2. Alpine listener on a parent element close to the HTMX target — acceptable when the component owns the target
+3. Alpine `.window` listener — least reliable; avoid for important HTMX state transitions
+
+### Recommended pattern
+
+For reusable loading indicators, bind directly in JavaScript on `document.body`:
+
+```js
+document.body.addEventListener("htmx:beforeRequest", (event) => {
+  // show loader
+});
+
+document.body.addEventListener("htmx:afterSwap", (event) => {
+  // hide loader
+});
+
+document.body.addEventListener("htmx:responseError", (event) => {
+  // hide loader
+});
+```
+
+If the behavior is tightly scoped to one fragment, filter by `event.detail.target`, request path, or another
+HTMX detail field rather than relying on global state.
+
+### Why the leaderboard spinner worked
+
+The leaderboard loading state was attached on an Alpine component that was already the parent of the HTMX swap
+target, so the event was observed close to where it fired. That is safer than depending on the event to reach
+`window`.
+
+### Current repo example
+
+See `api/src/main/resources/static/js/ligitabl.js` for the pure JavaScript approach used after prediction-page
+round navigation proved unreliable with Alpine `.window` listeners.
+
 ## Notes
 
 - Spring Boot 3.5.3 (Java 21)
