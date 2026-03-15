@@ -812,18 +812,75 @@ window.Ligitabl.guestPredictionPage = function (el) {
     });
 })();
 
-(function() {
-    const bar = document.createElement('div');
-    bar.style.cssText = 'position:fixed;top:0;left:0;right:0;height:3px;background:#6366f1;z-index:9999;display:none;';
-    bar.id = 'nav-loading-bar';
-    document.body.appendChild(bar);
+// --- Round Navigation Loading Bar ---
+// NProgress-style sliding bar for HTMX round navigation swaps
+(function () {
+    const BAR_ID = 'nav-loading-bar';
+    let timer = null;
 
-    document.body.addEventListener('htmx:beforeRequest', (e) => {
-        if (e.detail?.target?.id === 'prediction-page') {
-            bar.style.display = 'block';
+    function getBar() {
+        let bar = document.getElementById(BAR_ID);
+        if (!bar) {
+            bar = document.createElement('div');
+            bar.id = BAR_ID;
+            bar.style.cssText = [
+                'position:fixed',
+                'top:0',
+                'left:0',
+                'width:0%',
+                'height:3px',
+                'background:#6366f1',
+                'z-index:9999',
+                'transition:width 0.3s ease,opacity 0.4s ease',
+                'opacity:0',
+                'pointer-events:none',
+            ].join(';');
+            document.body.appendChild(bar);
+        }
+        return bar;
+    }
+
+    function start() {
+        const bar = getBar();
+        // Reset
+        bar.style.transition = 'none';
+        bar.style.width = '0%';
+        bar.style.opacity = '1';
+        // Force reflow so transition kicks in
+        bar.offsetWidth;
+        bar.style.transition = 'width 0.3s ease, opacity 0.4s ease';
+        bar.style.width = '70%';
+        // Creep toward 90% slowly to show activity
+        if (timer) clearTimeout(timer);
+        timer = setTimeout(() => { bar.style.width = '90%'; }, 1000);
+    }
+
+    function finish() {
+        if (timer) clearTimeout(timer);
+        const bar = getBar();
+        bar.style.width = '100%';
+        setTimeout(() => { bar.style.opacity = '0'; }, 300);
+        setTimeout(() => {
+            bar.style.transition = 'none';
+            bar.style.width = '0%';
+        }, 700);
+    }
+
+    document.body.addEventListener('htmx:beforeRequest', function (e) {
+        const targetId = e.detail?.target?.id;
+        if (targetId === 'prediction-page' || targetId === 'matches-page' || targetId === 'standings-page') {
+            start();
         }
     });
-    document.body.addEventListener('htmx:afterSwap', (e) => {
-        bar.style.display = 'none';
+
+    document.body.addEventListener('htmx:afterSwap', function (e) {
+        const targetId = e.detail?.target?.id;
+        if (targetId === 'prediction-page' || targetId === 'matches-page' || targetId === 'standings-page') {
+            finish();
+        }
+    });
+
+    document.body.addEventListener('htmx:responseError', function () {
+        finish();
     });
 })();
