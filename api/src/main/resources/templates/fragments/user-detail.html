@@ -46,7 +46,7 @@
     <!-- Prediction -->
     <div class="mt-6" th:with="totalTeams=${#lists.size(user.currentPrediction)}, midpoint=${totalTeams / 2}">
       <h4 class="text-base font-semibold text-gray-700 mb-4">Prediction Table</h4>
-      <div class="grid grid-cols-2 gap-x-8">
+      <div class="grid grid-cols-2 gap-x-4">
         <!-- First column: first half -->
         <div class="space-y-2">
           <div th:each="pred, iter : ${user.currentPrediction}" th:if="${iter.index < midpoint}">
