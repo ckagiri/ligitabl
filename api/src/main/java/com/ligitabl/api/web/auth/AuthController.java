@@ -195,6 +195,7 @@ public class AuthController {
             UUID mainContestId = getActiveSeason().getMainContestId();
             if (mainContestId != null && contestRepo.existsByUserAndContest(user.getId(), mainContestId)) {
                 redirectAttributes.addFlashAttribute("clearTablePrediction", true);
+                redirectAttributes.addFlashAttribute("clearPrefs", true);
                 log.info("User {} has existing contest entry, will clear guest localStorage", user.getId());
             }
 
