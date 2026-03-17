@@ -87,7 +87,11 @@
             th:text="${result.hitDistribution.closeCalls}"
             >8</span
           >
-          <span class="ml-1">close calls (±1-2)</span>
+          <span
+            class="ml-1"
+            th:text="${result.hitDistribution.closeCalls == 1 ? 'close call (±1-2)' : 'close calls (±1-2)'}"
+            >close calls (±1-2)</span
+          >
         </span>
       </div>
 
@@ -100,7 +104,11 @@
             th:text="${result.hitDistribution.nearMisses}"
             >5</span
           >
-          <span class="ml-1">near misses (±3-5)</span>
+          <span
+            class="ml-1"
+            th:text="${result.hitDistribution.nearMisses == 1 ? 'near miss (±3-4)' : 'near misses (±3-4)'}"
+            >near misses (±3-4)</span
+          >
         </span>
         <span class="text-gray-400 mx-2">•</span>
         <span>
@@ -110,7 +118,11 @@
             th:text="${result.hitDistribution.bigMisses}"
             >2</span
           >
-          <span class="ml-1">big misses (±6+)</span>
+          <span
+            class="ml-1"
+            th:text="${result.hitDistribution.bigMisses == 1 ? 'big miss (±5+)' : 'big misses (±5+)'}"
+            >big misses (±5+)</span
+          >
         </span>
       </div>
     </div>
