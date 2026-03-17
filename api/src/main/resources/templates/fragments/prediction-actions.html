@@ -185,8 +185,13 @@
             </svg>
             <h4
               class="text-sm font-semibold text-gray-900"
-              x-text="canUndo() && getSwapCount() > 1 && !undoing ? 'Changes' : 'Changes Made'"
-            ></h4>
+            >
+              <span
+                class="sm:hidden"
+                x-text="canUndo() && getSwapCount() > 1 && !undoing ? 'Changes' : 'Changes Made'"
+              ></span>
+              <span class="hidden sm:inline">Changes Made</span>
+            </h4>
           </div>
         </div>
 

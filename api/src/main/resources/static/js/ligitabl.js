@@ -403,27 +403,36 @@ window.Ligitabl.predictionPage = function (el) {
         importedFromGuest: false,
 
         init() {
-            // 1. On initial prediction, prefer guest localStorage (user swapped as guest then signed up)
             if (isInitialPrediction) {
-                const guestPrediction = loadGuestPrediction();
-                if (guestPrediction) {
-                    this.teams = _extractTeams(guestPrediction).map((t, idx) => {
-                        const serverData = serverDataByCode[t.code];
-                        return {
-                            position: idx + 1,
-                            code: t.code,
-                            name: t.name,
-                            crestUrl: t.crestUrl,
-                            originalPosition: serverData ? serverData.position : idx + 1,
-                        };
-                    });
-                    this.swapStack = _extractSwapStack(guestPrediction);
-                    this.importedFromGuest = true;
+                // 1. Auth localStorage takes priority — user has already made swaps after signing up
+                const authPrediction = loadAuthPrediction();
+                if (authPrediction) {
+                    this.teams = _extractTeams(authPrediction).map((t, idx) => ({...t, position: idx + 1}));
+                    this.swapStack = _extractSwapStack(authPrediction);
+                    // Clear stale guest storage since auth has taken over
+                    this._clearStorage(GUEST_STORAGE_KEY);
                 }
-            }
 
-            // 2. Otherwise (or if no guest data), try auth localStorage
-            if (this.teams.length === 0) {
+                // 2. No auth data — fall back to guest localStorage (just signed up, no auth swaps yet)
+                if (this.teams.length === 0) {
+                    const guestPrediction = loadGuestPrediction();
+                    if (guestPrediction) {
+                        this.teams = _extractTeams(guestPrediction).map((t, idx) => {
+                            const serverData = serverDataByCode[t.code];
+                            return {
+                                position: idx + 1,
+                                code: t.code,
+                                name: t.name,
+                                crestUrl: t.crestUrl,
+                                originalPosition: serverData ? serverData.position : idx + 1,
+                            };
+                        });
+                        this.swapStack = _extractSwapStack(guestPrediction);
+                        this.importedFromGuest = true;
+                    }
+                }
+            } else {
+                // Non-initial: load auth localStorage only
                 const authPrediction = loadAuthPrediction();
                 if (authPrediction) {
                     this.teams = _extractTeams(authPrediction).map((t, idx) => ({...t, position: idx + 1}));
