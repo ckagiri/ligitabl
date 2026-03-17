@@ -30,6 +30,7 @@
             <span class="hidden sm:inline">• </span>
             Round <span th:text="${round}">18</span>:
             <span th:text="${user.roundScore}">42</span> pts
+            <span th:replace="~{fragments/score-emoji :: emoji(${user.roundScore})}"></span>
             · <span th:text="${user.roundZeroes}">2</span>
             <span th:text="${user.roundZeroes == 1 ? 'zero' : 'zeroes'}">zeroes</span>
           </span>
