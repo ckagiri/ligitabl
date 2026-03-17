@@ -261,7 +261,22 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         }
 
         @Test
-        @DisplayName("should reject when more than 3 swaps are provided")
+        @DisplayName("should allow when 5 swaps are provided")
+        void shouldAllowWhenFiveSwapsProvided() {
+            Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(
+                    userId,
+                    multiSwap(List.of(
+                            new CreatePredictionCommand.SwapPair("MCI", "ARS"),
+                            new CreatePredictionCommand.SwapPair("LIV", "AVL"),
+                            new CreatePredictionCommand.SwapPair("CHE", "NEW"),
+                            new CreatePredictionCommand.SwapPair("MUN", "TOT"),
+                            new CreatePredictionCommand.SwapPair("BRE", "WHU"))));
+
+            assertThat(result.isRight()).isTrue();
+        }
+
+        @Test
+        @DisplayName("should reject when more than 5 swaps are provided")
         void shouldRejectWhenTooManySwaps() {
             Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(
                     userId,
@@ -269,14 +284,16 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
                             new CreatePredictionCommand.SwapPair("MCI", "ARS"),
                             new CreatePredictionCommand.SwapPair("LIV", "AVL"),
                             new CreatePredictionCommand.SwapPair("CHE", "NEW"),
-                            new CreatePredictionCommand.SwapPair("MUN", "TOT"))));
+                            new CreatePredictionCommand.SwapPair("MUN", "TOT"),
+                            new CreatePredictionCommand.SwapPair("BRE", "WHU"),
+                            new CreatePredictionCommand.SwapPair("BOU", "EVE"))));
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.TooManySwaps.class);
             assertThat(((CreatePredictionError.TooManySwaps) result.getLeft()).provided())
-                    .isEqualTo(4);
+                    .isEqualTo(6);
             assertThat(((CreatePredictionError.TooManySwaps) result.getLeft()).max())
-                    .isEqualTo(3);
+                    .isEqualTo(5);
         }
 
         @Test

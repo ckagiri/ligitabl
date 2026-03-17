@@ -70,8 +70,8 @@ public class CreatePredictionUseCase {
                 .orElseGet(() -> Either.right(null));
     }
 
-    // Step 4: Validate the swap team codes (1–3 pairs required)
-    private static final int MAX_INITIAL_SWAPS = 3;
+    // Step 4: Validate the swap team codes (1-5 pairs required)
+    private static final int MAX_INITIAL_SWAPS = 5;
 
     private Either<CreatePredictionError, Void> validateSwapTeams(CreatePredictionCommand cmd, Season season) {
         List<CreatePredictionCommand.SwapPair> swaps = cmd.swaps();

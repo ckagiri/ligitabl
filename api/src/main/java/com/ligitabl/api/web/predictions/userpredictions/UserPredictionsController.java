@@ -434,7 +434,8 @@ public class UserPredictionsController {
 
         boolean isHome = teamCode.equals(home.getCode());
         String opponent = isHome ? away.getCode() : home.getCode();
-        return new FixtureDto(opponent, isHome, normalizeFixtureStatus(match.getStatus()), resolveFixtureResult(match, isHome));
+        return new FixtureDto(
+                opponent, isHome, normalizeFixtureStatus(match.getStatus()), resolveFixtureResult(match, isHome));
     }
 
     static String normalizeFixtureStatus(MatchStatus status) {

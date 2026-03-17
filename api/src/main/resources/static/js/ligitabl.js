@@ -12,6 +12,7 @@ document.body.addEventListener("htmx:afterSwap", (event) => {
 });
 
 window.Ligitabl = window.Ligitabl || {};
+window.Ligitabl._MAX_INITIAL_SWAPS = 5;
 
 // --- Shared helpers for prediction components ---
 
@@ -330,6 +331,7 @@ window.Ligitabl.predictionPage = function (el) {
     const isLastRound = isLastRoundRaw === "true" || isLastRoundRaw === "True";
     const isInitialPrediction =
         isInitialRaw === "true" || isInitialRaw === "True";
+    const MAX_INITIAL_SWAPS = Ligitabl._MAX_INITIAL_SWAPS;
 
     const GUEST_STORAGE_KEY = "ligitabl.guestPrediction";
     const AUTH_STORAGE_KEY = "ligitabl.prediction";
@@ -469,7 +471,7 @@ window.Ligitabl.predictionPage = function (el) {
             const swapCount = this.getSwapCount();
             if (swapCount === 0) return false;
             if (this.isInitialPrediction) {
-                if (swapCount > 3) return false;
+                if (swapCount > MAX_INITIAL_SWAPS) return false;
             } else {
                 if (swapCount > 1) return false;
             }
@@ -478,7 +480,7 @@ window.Ligitabl.predictionPage = function (el) {
 
         exceedsLimit() {
             if (this.isInitialPrediction) {
-                return this.getSwapCount() > 3;
+                return this.getSwapCount() > MAX_INITIAL_SWAPS;
             }
             return this.getSwapCount() > 1;
         },
@@ -574,7 +576,7 @@ window.Ligitabl.predictionPage = function (el) {
             let url, body;
 
             if (this.isInitialPrediction) {
-                // Initial prediction: send all swap pairs (1–3) as a list
+                // Initial prediction: send all swap pairs (1-5) as a list
                 url = "/seasonprediction";
                 const pairs = this.inferSwapPairs(this.getChangedTeams());
                 body = {

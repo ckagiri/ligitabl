@@ -1,6 +1,7 @@
 package com.ligitabl.api.rest.prediction.createprediction;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -266,6 +267,29 @@ class CreatePredictionUseCaseTest {
     }
 
     @Test
+    void shouldAllow_whenFiveSwapsProvided() {
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
+        when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
+        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
+
+        when(predictionRepo.save(any())).thenAnswer(returnsFirstArg());
+        when(entryRepo.save(any())).thenAnswer(returnsFirstArg());
+
+        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(
+                userId,
+                multiSwap(List.of(
+                        new CreatePredictionCommand.SwapPair("LIV", "ARS"),
+                        new CreatePredictionCommand.SwapPair("MCI", "ARS"),
+                        new CreatePredictionCommand.SwapPair("LIV", "MCI"),
+                        new CreatePredictionCommand.SwapPair("ARS", "MCI"),
+                        new CreatePredictionCommand.SwapPair("MCI", "LIV"))));
+
+        assertTrue(result.isRight());
+    }
+
+    @Test
     void shouldReject_whenTooManySwaps() {
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
@@ -276,12 +300,14 @@ class CreatePredictionUseCaseTest {
                         new CreatePredictionCommand.SwapPair("LIV", "ARS"),
                         new CreatePredictionCommand.SwapPair("MCI", "ARS"),
                         new CreatePredictionCommand.SwapPair("LIV", "MCI"),
-                        new CreatePredictionCommand.SwapPair("ARS", "MCI"))));
+                        new CreatePredictionCommand.SwapPair("ARS", "MCI"),
+                        new CreatePredictionCommand.SwapPair("CHE", "TOT"),
+                        new CreatePredictionCommand.SwapPair("AVL", "NEW"))));
 
         assertTrue(result.isLeft());
         assertInstanceOf(CreatePredictionError.TooManySwaps.class, result.getLeft());
-        assertEquals(4, ((CreatePredictionError.TooManySwaps) result.getLeft()).provided());
-        assertEquals(3, ((CreatePredictionError.TooManySwaps) result.getLeft()).max());
+        assertEquals(6, ((CreatePredictionError.TooManySwaps) result.getLeft()).provided());
+        assertEquals(5, ((CreatePredictionError.TooManySwaps) result.getLeft()).max());
     }
 
     @Test
