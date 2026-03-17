@@ -415,6 +415,7 @@ window.Ligitabl.predictionPage = function (el) {
                             originalPosition: serverData ? serverData.position : idx + 1,
                         };
                     });
+                    this.swapStack = _extractSwapStack(guestPrediction);
                     this.importedFromGuest = true;
                 }
             }
