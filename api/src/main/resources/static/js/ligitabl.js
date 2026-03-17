@@ -642,6 +642,20 @@ document.body.addEventListener("htmx:afterSwap", (event) => {
     window.Alpine.initTree(target);
 });
 
+document.body.addEventListener('htmx:beforeRequest', function(e) {
+    if (e.detail?.target?.id === 'user-detail-modal') {
+        const spinner = document.getElementById('modal-loading');
+        if (spinner) spinner.classList.remove('hidden');
+    }
+});
+
+document.body.addEventListener('htmx:afterSwap', function(e) {
+    if (e.detail?.target?.id === 'user-detail-modal') {
+        const spinner = document.getElementById('modal-loading');
+        if (spinner) spinner.classList.add('hidden');
+    }
+});
+
 // Format [data-timestamp] elements to the user's local timezone and locale.
 // Falls back to the ISO string if the date is invalid.
 window.Ligitabl.formatTimestamps = function (root) {
@@ -873,17 +887,23 @@ window.Ligitabl.guestPredictionPage = function (el) {
         }, 700);
     }
 
+    const NAV_TARGETS = ['prediction-page', 'matches-page', 'standings-page'];
+    const PAGINATION_TARGETS = ['leaderboard-content'];
+
     document.body.addEventListener('htmx:beforeRequest', function (e) {
         const targetId = e.detail?.target?.id;
-        if (targetId === 'prediction-page' || targetId === 'matches-page' || targetId === 'standings-page') {
+        if (NAV_TARGETS.includes(targetId) || PAGINATION_TARGETS.includes(targetId)) {
             start();
         }
     });
 
     document.body.addEventListener('htmx:afterSwap', function (e) {
         const targetId = e.detail?.target?.id;
-        if (targetId === 'prediction-page' || targetId === 'matches-page' || targetId === 'standings-page') {
+        if (NAV_TARGETS.includes(targetId) || PAGINATION_TARGETS.includes(targetId)) {
             finish();
+        }
+        if (PAGINATION_TARGETS.includes(targetId)) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     });
 

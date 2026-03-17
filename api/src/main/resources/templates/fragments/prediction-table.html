@@ -61,12 +61,12 @@
     >
       <span class="sm:hidden">
         <span class="block"
-          ><span class="text-green-600 font-semibold">↑ Green</span>: Team
-          performing better (move them up).</span
+          ><span class="text-green-600 font-semibold">↑ </span> Team performing
+          better (move them up).</span
         >
         <span class="block"
-          ><span class="text-red-600 font-semibold">↓ Red</span>: Team
-          performing worse (move them down).</span
+          ><span class="text-red-600 font-semibold">↓ </span> Team performing
+          worse (move them down).</span
         >
       </span>
       <span class="hidden sm:inline">
@@ -86,13 +86,13 @@
           <tr>
             <th
               scope="col"
-              class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
+              class="px-2 sm:px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10 sm:w-16"
             >
               Pos
             </th>
             <th
               scope="col"
-              class="px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+              class="px-2 sm:px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
               Team
             </th>
@@ -140,7 +140,7 @@
               }"
               class="prediction-row"
             >
-              <td class="px-3 py-4 whitespace-nowrap">
+              <td class="px-2 sm:px-3 py-4 whitespace-nowrap">
                 <div class="flex items-center">
                   <span
                     class="text-sm font-bold text-gray-900 mr-2"
@@ -154,17 +154,17 @@
                   ></span>
                 </div>
               </td>
-              <td class="px-3 py-4 whitespace-nowrap">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center">
+              <td class="px-2 sm:px-3 py-4">
+                <div class="flex items-center justify-between w-full">
+                  <div class="flex items-center min-w-0">
                     <div
-                      class="h-8 w-8 mr-3 bg-gray-200 rounded flex items-center justify-center text-xs font-bold"
+                      class="h-7 w-7 sm:h-8 sm:w-8 mr-2 sm:mr-3 bg-gray-200 rounded flex items-center justify-center text-xs font-bold flex-shrink-0"
                       x-text="team.code"
                     ></div>
-                    <div>
+                    <div class="min-w-0">
                       <!-- Team name -->
                       <div
-                        class="text-sm font-medium text-gray-900"
+                        class="text-sm font-medium text-gray-900 truncate"
                         x-text="team.name"
                       ></div>
 
@@ -197,8 +197,9 @@
                                     animation: liveFade 1.2s ease-in-out
                                       infinite !important;
                                   "
-                                ></span> </template
-                              ><span
+                                ></span>
+                              </template>
+                              <span
                                 x-show="fixture.status === 'POSTPONED'"
                                 class="mr-1 font-bold"
                                 >P</span
@@ -317,8 +318,8 @@
                                 style="
                                   animation: liveFade 1.2s ease-in-out infinite !important;
                                 "
-                              ></span
-                            ></template>
+                              ></span>
+                            </template>
                             <span
                               x-show="fixture.status === 'POSTPONED'"
                               class="mr-1 font-bold"
@@ -331,8 +332,9 @@
                       </div>
                     </div>
                   </div>
+
                   <!-- Selection indicator -->
-                  <div class="text-xs text-gray-400">
+                  <div class="text-xs text-gray-400 flex-shrink-0 ml-1">
                     <span
                       x-show="isSelected(team.code)"
                       class="text-blue-600 font-medium"
@@ -341,12 +343,14 @@
                   </div>
                 </div>
               </td>
+
               <!-- Actual Position - hide on mobile -->
               <td
                 x-show="showStandings"
                 class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right text-sm text-gray-400"
                 x-text="getActualPosition(team.code)"
               ></td>
+
               <!-- Delta with Arrow -->
               <td
                 x-show="showStandings"
@@ -381,12 +385,14 @@
                   ></span>
                 </div>
               </td>
+
               <!-- Points - desktop -->
               <td
                 x-show="showPoints"
                 class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right text-sm font-semibold text-gray-700"
                 x-text="getCurrentPoints(team.code)"
               ></td>
+
               <!-- GD - desktop -->
               <td
                 x-show="showGD"
