@@ -77,15 +77,6 @@
             </div>
 
             <!-- Quarter sub-tabs -->
-            <p
-              th:if="${isLastQuarter and cq != null}"
-              x-show="activeGroup === 'quarters'"
-              class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-1.5"
-              th:text="${cq + ' is the final quarter of the season.'}"
-            >
-              Q4 is the final quarter of the season.
-            </p>
-
             <div
               x-show="activeGroup === 'quarters'"
               x-cloak
@@ -99,7 +90,7 @@
                   type="button"
                   th:attr="data-phase=${phase.code}"
                   th:attrappend="data-is-next=${phase.from == nqFrom ? true : null}"
-                  th:disabled="${phase.from > nqFrom}"
+                  th:disabled="${nqFrom > 0 and phase.from > nqFrom}"
                   @click="!$el.disabled && select($el.dataset.phase)"
                   :class="selectedPhase === $el.dataset.phase
                     ? 'border-2 border-indigo-400 bg-indigo-50 text-indigo-700'
@@ -121,15 +112,6 @@
             </div>
 
             <!-- Sprint sub-tabs -->
-            <p
-              th:if="${isLastSprint and cs != null}"
-              x-show="activeGroup === 'sprints'"
-              class="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-1.5"
-              th:text="${cs + ' is the final sprint of the season.'}"
-            >
-              S8 is the final sprint of the season.
-            </p>
-
             <div
               x-show="activeGroup === 'sprints'"
               x-init="$nextTick(() => {
@@ -146,7 +128,7 @@
                   type="button"
                   th:attr="data-phase=${phase.code}"
                   th:attrappend="data-active-sprint=${phase.code == cs ? true : null},data-is-next=${phase.from == nsFrom ? true : null}"
-                  th:disabled="${phase.from > nsFrom}"
+                  th:disabled="${nsFrom > 0 and phase.from > nsFrom}"
                   @click="!$el.disabled && select($el.dataset.phase)"
                   :class="selectedPhase === $el.dataset.phase
                     ? 'border border-indigo-500 bg-indigo-600 text-white'
