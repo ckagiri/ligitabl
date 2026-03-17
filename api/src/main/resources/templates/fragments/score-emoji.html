@@ -2,6 +2,7 @@
 <!-- Usage: <span th:replace="~{fragments/score-emoji :: emoji(${score})}"></span> -->
 <span
   th:fragment="emoji(score)"
+  th:if="${score > 0}"
   th:text="${score >= 200 ? '🤯' :
             score >= 195 ? '🤩' :
             score >= 190 ? '🥳' :
