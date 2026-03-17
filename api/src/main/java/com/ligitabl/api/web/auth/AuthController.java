@@ -204,7 +204,9 @@ public class AuthController {
                 redirectAttributes.addFlashAttribute("clearPrefs", true);
 
                 if (switchedUserInExistingSession) {
-                    log.info("User {} logged in over an existing authenticated session, clearing localStorage", user.getId());
+                    log.info(
+                            "User {} logged in over an existing authenticated session, clearing localStorage",
+                            user.getId());
                 }
                 if (hasContestEntry) {
                     log.info("User {} has existing contest entry, will clear auth/guest localStorage", user.getId());
