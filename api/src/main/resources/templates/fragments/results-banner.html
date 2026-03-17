@@ -40,7 +40,9 @@
           >156</span
         >
         points
-        <span th:replace="~{fragments/score-emoji :: emoji(${result.score})}"></span>
+        <span
+          th:replace="~{fragments/score-emoji :: emoji(${result.score})}"
+        ></span>
         <span th:if="${result.movement != null && result.movement != 0}">
           <span
             th:if="${result.movement > 0}"
@@ -58,7 +60,8 @@
           >
             (<span th:text="${result.sprint}">S3</span>: ↓
             <span th:text="${T(java.lang.Math).abs(result.movement)}">2</span>
-            <span th:text="${T(java.lang.Math).abs(result.movement) == 1 ? 'position' : 'positions'}"
+            <span
+              th:text="${T(java.lang.Math).abs(result.movement) == 1 ? 'position' : 'positions'}"
               >positions</span
             >)
           </span>
@@ -66,63 +69,67 @@
       </p>
     </div>
 
-    <!-- Distribution (2 lines) -->
-    <div class="space-y-1 mb-4">
-      <!-- Line 1: Perfect + Close Calls -->
-      <div class="flex items-center text-sm text-gray-700">
-        <span class="mr-3">
-          <span class="text-2xl">🎯</span>
+    <!-- Distribution (2x2) -->
+    <div class="grid grid-cols-2 gap-2 mb-4">
+      <!-- Perfect — no change needed -->
+      <div class="flex items-center gap-1.5 text-sm text-gray-700">
+        <span class="text-2xl">🎯</span>
+        <span
+          class="font-bold text-green-600 text-lg"
+          th:text="${result.hitDistribution.perfect}"
+          >5</span
+        >
+        <span class="font-semibold">perfect!</span>
+      </div>
+
+      <!-- Close calls -->
+      <div class="flex items-center gap-1.5 text-sm text-gray-700">
+        <span class="text-lg">🤏</span>
+        <span
+          class="font-semibold"
+          th:text="${result.hitDistribution.closeCalls}"
+          >8</span
+        >
+        <span class="flex flex-col sm:flex-row sm:gap-1">
           <span
-            class="font-bold text-green-600 text-lg ml-1"
-            th:text="${result.hitDistribution.perfect}"
-            >5</span
+            th:text="${result.hitDistribution.closeCalls == 1 ? 'close call' : 'close calls'}"
+            >close calls</span
           >
-          <span class="ml-1 font-semibold">perfect!</span>
-        </span>
-        <span class="text-gray-400 mx-2">•</span>
-        <span>
-          <span class="text-lg">🤏</span>
-          <span
-            class="font-semibold ml-1"
-            th:text="${result.hitDistribution.closeCalls}"
-            >8</span
-          >
-          <span
-            class="ml-1"
-            th:text="${result.hitDistribution.closeCalls == 1 ? 'close call (±1-2)' : 'close calls (±1-2)'}"
-            >close calls (±1-2)</span
-          >
+          <span class="text-gray-400">(±1-2)</span>
         </span>
       </div>
 
-      <!-- Line 2: Near Misses + Big Misses -->
-      <div class="flex items-center text-sm text-gray-700">
-        <span class="mr-3">
-          <span class="text-lg">🤷</span>
+      <!-- Near misses -->
+      <div class="flex items-center gap-1.5 text-sm text-gray-700">
+        <span class="text-lg">🤷</span>
+        <span
+          class="font-semibold"
+          th:text="${result.hitDistribution.nearMisses}"
+          >5</span
+        >
+        <span class="flex flex-col sm:flex-row sm:gap-1">
           <span
-            class="font-semibold ml-1"
-            th:text="${result.hitDistribution.nearMisses}"
-            >5</span
+            th:text="${result.hitDistribution.nearMisses == 1 ? 'near miss' : 'near misses'}"
+            >near misses</span
           >
-          <span
-            class="ml-1"
-            th:text="${result.hitDistribution.nearMisses == 1 ? 'near miss (±3-4)' : 'near misses (±3-4)'}"
-            >near misses (±3-4)</span
-          >
+          <span class="text-gray-400">(±3-4)</span>
         </span>
-        <span class="text-gray-400 mx-2">•</span>
-        <span>
-          <span class="text-lg">😅</span>
+      </div>
+
+      <!-- Big misses -->
+      <div class="flex items-center gap-1.5 text-sm text-gray-700">
+        <span class="text-lg">😅</span>
+        <span
+          class="font-semibold"
+          th:text="${result.hitDistribution.bigMisses}"
+          >2</span
+        >
+        <span class="flex flex-col sm:flex-row sm:gap-1">
           <span
-            class="font-semibold ml-1"
-            th:text="${result.hitDistribution.bigMisses}"
-            >2</span
+            th:text="${result.hitDistribution.bigMisses == 1 ? 'big miss' : 'big misses'}"
+            >big misses</span
           >
-          <span
-            class="ml-1"
-            th:text="${result.hitDistribution.bigMisses == 1 ? 'big miss (±5+)' : 'big misses (±5+)'}"
-            >big misses (±5+)</span
-          >
+          <span class="text-gray-400">(±5+)</span>
         </span>
       </div>
     </div>
