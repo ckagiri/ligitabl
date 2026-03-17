@@ -46,13 +46,17 @@
       .htmx-swapping {
         opacity: 0;
         transform: translateY(10px);
-        transition: opacity 250ms ease-out, transform 250ms ease-out;
+        transition:
+          opacity 250ms ease-out,
+          transform 250ms ease-out;
       }
 
       .htmx-settling {
         opacity: 1;
         transform: translateY(0);
-        transition: opacity 250ms ease-out, transform 250ms ease-out;
+        transition:
+          opacity 250ms ease-out,
+          transform 250ms ease-out;
       }
 
       /* GPU acceleration hint for smoother animations */
@@ -153,6 +157,16 @@
 
       .live-indicator {
         animation: subtle-pulse 3s ease-in-out infinite;
+      }
+
+      @keyframes liveFade {
+        0%,
+        100% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0;
+        }
       }
     </style>
   </head>
@@ -435,7 +449,10 @@
       </div>
 
       <!-- Clear localStorage on login/logout (flash attributes) -->
-      <script th:if="${clearTablePrediction} or ${clearPrefs}" th:inline="javascript">
+      <script
+        th:if="${clearTablePrediction} or ${clearPrefs}"
+        th:inline="javascript"
+      >
         (function () {
           const clearPrefs = /*[[${clearPrefs}]]*/ false;
 

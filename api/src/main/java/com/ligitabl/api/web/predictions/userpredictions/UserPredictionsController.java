@@ -445,7 +445,8 @@ public class UserPredictionsController {
         return switch (status) {
             case LIVE, SUSPENDED -> MatchStatus.LIVE.name();
             case FINISHED -> MatchStatus.FINISHED.name();
-            case SCHEDULED, POSTPONED, CANCELLED -> MatchStatus.SCHEDULED.name();
+            case POSTPONED -> MatchStatus.POSTPONED.name();
+            case SCHEDULED, CANCELLED -> MatchStatus.SCHEDULED.name();
         };
     }
 

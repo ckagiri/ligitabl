@@ -100,6 +100,11 @@
                   >Upcoming</span>
 
                   <span
+                    th:if="${match.status == 'POSTPONED'}"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-violet-50 border border-violet-400 text-violet-700"
+                  >Postponed</span>
+
+                  <span
                     th:if="${match.formattedTime != null}"
                     class="text-[11px] text-gray-400"
                     th:attr="data-timestamp=${match.formattedTime}"
