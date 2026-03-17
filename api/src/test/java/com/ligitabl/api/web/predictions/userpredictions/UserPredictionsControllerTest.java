@@ -62,15 +62,15 @@ class UserPredictionsControllerTest {
     }
 
     @Test
-    @DisplayName("toFixture normalizes postponed fixtures to scheduled")
-    void toFixture_normalizesPostponedFixturesToScheduled() {
+    @DisplayName("toFixture preserves POSTPONED status for postponed fixtures")
+    void toFixture_preservesPostponedStatus() {
         var arsenal = team("ARS", "Arsenal");
         var chelsea = team("CHE", "Chelsea");
         var match = match(arsenal, chelsea, MatchStatus.POSTPONED, null, null);
 
         var fixture = controller.toFixture("ARS", match);
 
-        assertThat(fixture.status()).isEqualTo("SCHEDULED");
+        assertThat(fixture.status()).isEqualTo("POSTPONED");
         assertThat(fixture.result()).isNull();
     }
 
