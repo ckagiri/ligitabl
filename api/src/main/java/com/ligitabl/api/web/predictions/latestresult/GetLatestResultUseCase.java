@@ -147,7 +147,7 @@ public class GetLatestResultUseCase {
                 perfect++;
             } else if (hit <= 2) {
                 closeCalls++;
-            } else if (hit <= 5) {
+            } else if (hit <= 4) {
                 nearMisses++;
             } else {
                 bigMisses++;

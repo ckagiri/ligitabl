@@ -225,7 +225,7 @@ public class GetUserPredictionUseCase {
         // Same logic as CreatePredictionUseCase.determineAtRoundNumber
         PredictionAccessMode accessMode;
         Integer atRoundNumber = null;
-        String message;
+        String message = null;
 
         if (!isCurrentRound) {
             accessMode = PredictionAccessMode.READONLY_COOLDOWN;
@@ -237,7 +237,6 @@ public class GetUserPredictionUseCase {
         } else {
             accessMode = PredictionAccessMode.CAN_CREATE_ENTRY;
             atRoundNumber = currentRoundStatus == RoundStatus.OPEN ? currentRound : currentRound + 1;
-            message = "Arrange teams and submit to join the competition";
         }
 
         RankingsWithSource rankingsWithSource = getSeasonBaselineRankings(qry);
