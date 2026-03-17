@@ -86,7 +86,7 @@ class GetUserDetailUseCaseTest {
     }
 
     @Test
-    void effectiveToRound_present_but_roundResult_missing_returns_left() {
+    void effectiveToRound_present_but_roundResult_missing_falls_back_to_current_prediction() {
         UUID competitionId = UUID.randomUUID();
         UUID seasonId = UUID.randomUUID();
         UUID currentRoundId = UUID.randomUUID();
@@ -136,6 +136,30 @@ class GetUserDetailUseCaseTest {
                 .rankings(List.of(new TeamRank("ARS", 1)))
                 .build();
 
+        var seasonPrediction = SeasonPrediction.builder()
+                .id(UUID.randomUUID())
+                .userId(userId)
+                .seasonId(seasonId)
+                .initialRankings(List.of(new TeamRank("ARS", 1)))
+                .currentRankings(List.of(new TeamRank("ARS", 1), new TeamRank("MCI", 2)))
+                .build();
+
+        var arsenal = Team.builder()
+                .id(UUID.randomUUID())
+                .name("Arsenal")
+                .shortName("ARS")
+                .slug(TeamSlug.of("arsenal"))
+                .tla("ARS")
+                .build();
+
+        var manCity = Team.builder()
+                .id(UUID.randomUUID())
+                .name("Manchester City")
+                .shortName("MCI")
+                .slug(TeamSlug.of("manchester-city"))
+                .tla("MCI")
+                .build();
+
         given(competitionRepo.findBySlug(DEFAULT_COMPETITION_SLUG)).willReturn(Optional.of(competition));
         given(seasonRepo.findActiveSeason(competitionId)).willReturn(Optional.of(season));
         given(roundRepo.findById(currentRoundId)).willReturn(Optional.of(currentRound));
@@ -143,14 +167,101 @@ class GetUserDetailUseCaseTest {
         given(roundSubmissionRepo.findByUserAndSeasonAndRound(userId, seasonId, effectiveToRound))
                 .willReturn(Optional.of(submission));
         given(roundResultRepo.findByRoundSubmissionId(submissionId)).willReturn(Optional.empty());
+        given(seasonPredictionRepo.findByUserAndSeason(userId, seasonId)).willReturn(Optional.of(seasonPrediction));
+        given(teamRepo.findAllByCodes(eq(Set.of("ARS", "MCI")))).willReturn(List.of(arsenal, manCity));
 
         var result = useCase.execute("23456789AB", effectiveToRound);
 
-        assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft())
-                .isInstanceOf(GetUserDetailUseCase.NotFoundException.class)
-                .hasMessageContaining("Round result not found")
-                .hasMessageContaining("round " + effectiveToRound);
+        assertThat(result.isRight()).isTrue();
+        var payload = result.get();
+        assertThat(payload.round()).isEqualTo(5);
+        assertThat(payload.predictions())
+                .extracting(GetUserDetailUseCase.PredictionTeam::teamName, GetUserDetailUseCase.PredictionTeam::hit)
+                .containsExactly(Tuple.tuple("ARS", null), Tuple.tuple("MCI", null));
+    }
+
+    @Test
+    void effectiveToRound_present_but_submission_missing_falls_back_to_current_prediction() {
+        UUID competitionId = UUID.randomUUID();
+        UUID seasonId = UUID.randomUUID();
+        UUID currentRoundId = UUID.randomUUID();
+        UUID userId = UUID.randomUUID();
+
+        var competition = Competition.builder()
+                .id(competitionId)
+                .slug(CompetitionSlug.of(DEFAULT_COMPETITION_SLUG))
+                .code("PL")
+                .name("Premier League")
+                .build();
+
+        var season = Season.builder()
+                .id(seasonId)
+                .competitionId(competitionId)
+                .slug(SeasonSlug.of("2024-25"))
+                .name("2024/25")
+                .currentRoundId(currentRoundId)
+                .build();
+
+        var currentRound = Round.builder()
+                .id(currentRoundId)
+                .seasonId(seasonId)
+                .name("GW 7")
+                .slug("gw-7")
+                .position(7)
+                .finalized(false)
+                .build();
+
+        var user = User.builder()
+                .id(userId)
+                .publicId(PublicId.create("23456789AE"))
+                .displayName("Dana")
+                .roles(Set.of())
+                .emailVerified(true)
+                .build();
+
+        var seasonPrediction = SeasonPrediction.builder()
+                .id(UUID.randomUUID())
+                .userId(userId)
+                .seasonId(seasonId)
+                .initialRankings(List.of(new TeamRank("ARS", 1)))
+                .currentRankings(List.of(new TeamRank("ARS", 1), new TeamRank("MCI", 2)))
+                .build();
+
+        var arsenal = Team.builder()
+                .id(UUID.randomUUID())
+                .name("Arsenal")
+                .shortName("ARS")
+                .slug(TeamSlug.of("arsenal"))
+                .tla("ARS")
+                .build();
+
+        var manCity = Team.builder()
+                .id(UUID.randomUUID())
+                .name("Manchester City")
+                .shortName("MCI")
+                .slug(TeamSlug.of("manchester-city"))
+                .tla("MCI")
+                .build();
+
+        int effectiveToRound = 6;
+
+        given(competitionRepo.findBySlug(DEFAULT_COMPETITION_SLUG)).willReturn(Optional.of(competition));
+        given(seasonRepo.findActiveSeason(competitionId)).willReturn(Optional.of(season));
+        given(roundRepo.findById(currentRoundId)).willReturn(Optional.of(currentRound));
+        given(userRepo.findByPublicId(any())).willReturn(Optional.of(user));
+        given(roundSubmissionRepo.findByUserAndSeasonAndRound(userId, seasonId, effectiveToRound))
+                .willReturn(Optional.empty());
+        given(seasonPredictionRepo.findByUserAndSeason(userId, seasonId)).willReturn(Optional.of(seasonPrediction));
+        given(teamRepo.findAllByCodes(eq(Set.of("ARS", "MCI")))).willReturn(List.of(arsenal, manCity));
+
+        var result = useCase.execute("23456789AE", effectiveToRound);
+
+        assertThat(result.isRight()).isTrue();
+        var payload = result.get();
+        assertThat(payload.round()).isEqualTo(7);
+        assertThat(payload.predictions())
+                .extracting(GetUserDetailUseCase.PredictionTeam::teamName, GetUserDetailUseCase.PredictionTeam::hit)
+                .containsExactly(Tuple.tuple("ARS", null), Tuple.tuple("MCI", null));
     }
 
     @Test

@@ -3,6 +3,7 @@ package com.ligitabl.api.web.leaderboard;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -15,6 +16,7 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.domain.RoundResult;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonPrediction;
 import com.ligitabl.model.domain.Team;
@@ -75,52 +77,40 @@ public class GetUserDetailUseCase {
             User user = userRepo.findByPublicId(PublicId.create(publicId))
                     .orElseThrow(() -> new NotFoundException("User not found: " + publicId));
 
-            // If we have an effective round (latest finalised within the currently viewed phase),
-            // prefer showing the round result for that round (with per-team hits).
-            Integer displayRound = effectiveToRound;
-            List<PredictionTeam> predictions;
+            // If a finalized round result exists for the effective round, prefer that.
+            return Optional.ofNullable(effectiveToRound)
+                    .flatMap(round ->
+                            roundSubmissionRepo.findByUserAndSeasonAndRound(user.getId(), season.getId(), round))
+                    .flatMap(submission -> roundResultRepo.findByRoundSubmissionId(submission.getId()))
+                    .map(roundResult -> buildUserPredictionsFromResult(effectiveToRound, roundResult))
+                    .orElseGet(() -> {
+                        // No finalized results — fall back to current live prediction.
+                        SeasonPrediction prediction = seasonPredictionRepo
+                                .findByUserAndSeason(user.getId(), season.getId())
+                                .orElseThrow(() -> new NotFoundException("No prediction found for user " + publicId));
 
-            if (effectiveToRound != null) {
-                var submission = roundSubmissionRepo
-                        .findByUserAndSeasonAndRound(user.getId(), season.getId(), effectiveToRound)
-                        .orElseThrow(() -> new NotFoundException(
-                                "No prediction found for user " + publicId + " at round " + effectiveToRound));
-
-                var roundResult = roundResultRepo
-                        .findByRoundSubmissionId(submission.getId())
-                        .orElse(null);
-
-                if (roundResult != null) {
-                    var resultRankings = roundResult.getRankings().stream()
-                            .sorted(Comparator.comparingInt(r -> r.getRanking().getPosition()))
-                            .toList();
-
-                    var roundPredictions = mapRankingsToPredictionTeams(
-                            resultRankings.stream().map(r -> r.getRanking()).toList());
-
-                    predictions = IntStream.range(0, resultRankings.size())
-                            .mapToObj(i -> new PredictionTeam(
-                                    roundPredictions.get(i).teamName(),
-                                    resultRankings.get(i).getHit()))
-                            .toList();
-
-                    return new UserPredictions(displayRound, predictions);
-                }
-
-                throw new NotFoundException(
-                        "Round result not found for user " + publicId + " at round " + effectiveToRound);
-            }
-
-            // No finalized results available for the selected phase yet — show current prediction.
-            SeasonPrediction prediction = seasonPredictionRepo
-                    .findByUserAndSeason(user.getId(), season.getId())
-                    .orElseThrow(() -> new NotFoundException("No prediction found for user " + publicId));
-
-            predictions = mapRankingsToPredictionTeams(prediction.getCurrentRankings());
-            displayRound = currentRound.getPosition();
-
-            return new UserPredictions(displayRound, predictions);
+                        return new UserPredictions(
+                                currentRound.getPosition(),
+                                mapRankingsToPredictionTeams(prediction.getCurrentRankings()));
+                    });
         });
+    }
+
+    private UserPredictions buildUserPredictionsFromResult(Integer displayRound, RoundResult roundResult) {
+        var resultRankings = roundResult.getRankings().stream()
+                .sorted(Comparator.comparingInt(r -> r.getRanking().getPosition()))
+                .toList();
+
+        var roundPredictions = mapRankingsToPredictionTeams(
+                resultRankings.stream().map(r -> r.getRanking()).toList());
+
+        var predictions = IntStream.range(0, resultRankings.size())
+                .mapToObj(i -> new PredictionTeam(
+                        roundPredictions.get(i).teamName(),
+                        resultRankings.get(i).getHit()))
+                .toList();
+
+        return new UserPredictions(displayRound, predictions);
     }
 
     private List<PredictionTeam> mapRankingsToPredictionTeams(List<TeamRank> rankings) {
