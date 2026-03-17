@@ -309,6 +309,7 @@
         <!-- Mobile menu -->
         <div
           x-show="mobileMenuOpen"
+          x-cloak
           x-transition
           @click.away="mobileMenuOpen = false"
           class="md:hidden pb-3 border-t border-gray-200"

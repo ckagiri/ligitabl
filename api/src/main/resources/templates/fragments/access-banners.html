@@ -18,6 +18,7 @@
      canSwap: Boolean - whether user can swap (cooldown check)
 -->
 <div
+  x-cloak
   th:fragment="banners(isGuest, canCreateEntry, isViewingOther, isUserNotFound, swapStatus, isCurrentRound, roundState, message, totalScore, viewingRound, hasRoundResult, currentRound, lastRound, atRoundNumber, seasonCompleted, canSwap)"
   class="mb-4 sm:mb-6 space-y-3"
 >
@@ -46,7 +47,7 @@
           th:if="${isCurrentRound == true && (roundState == 'open' || (roundState == 'finalized' && seasonCompleted != true))}"
           class="text-sm text-yellow-700 mt-1"
         >
-          Tap teams to swap and preview your prediction — make up to 3 swaps,
+          Tap teams to swap and preview your prediction — make up to 5 swaps,
           then
           <a
             th:href="@{/auth/register}"
@@ -61,7 +62,7 @@
           th:if="${isCurrentRound == true && (roundState == 'locked' || roundState == 'completed') && currentRound != lastRound}"
           class="text-sm text-yellow-700 mt-1"
         >
-          <strong>👋 Matches In Progress</strong> - Tap teams to swap and preview your prediction — make up to 3 swaps.
+          <strong>👋 Matches In Progress</strong> - Tap teams to swap and preview your prediction — make up to 5 swaps.
           <a
             th:href="@{/auth/register}"
             class="underline font-medium hover:text-yellow-900"
@@ -148,7 +149,7 @@
             submit to join the competition.</span
           >
           <span x-show="!imported"
-          >Arrange teams in your predicted order. Make 1–3 swaps to submit
+          >Arrange teams in your predicted order. Make 1-5 swaps to submit
           and join the competition.</span>
         </p>
       </div>
@@ -285,7 +286,7 @@
             👋 Matches In Progress
           </p>
           <p class="text-sm text-blue-700 mt-1">
-            You can still make your prediction (1–3 swaps needed). It will be scored next round.
+            You can still make your prediction (1-5 swaps needed). It will be scored next round.
           </p>
         </th:block>
 
@@ -342,7 +343,7 @@
         <th:block th:if="${canCreateEntry == true && currentRound != lastRound}">
           <p class="text-sm font-medium text-yellow-800">⏳ Scoring predictions</p>
           <p class="text-sm text-yellow-700 mt-1">
-            You can still make your prediction (1–3 swaps needed). It will be scored next round.
+            You can still make your prediction (1-5 swaps needed). It will be scored next round.
           </p>
         </th:block>
       </div>

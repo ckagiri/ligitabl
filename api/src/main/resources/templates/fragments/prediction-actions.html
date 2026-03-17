@@ -185,8 +185,13 @@
             </svg>
             <h4
               class="text-sm font-semibold text-gray-900"
-              x-text="canUndo() && getSwapCount() > 1 && !undoing ? 'Changes' : 'Changes Made'"
-            ></h4>
+            >
+              <span
+                class="sm:hidden"
+                x-text="canUndo() && getSwapCount() > 1 && !undoing ? 'Changes' : 'Changes Made'"
+              ></span>
+              <span class="hidden sm:inline">Changes Made</span>
+            </h4>
           </div>
         </div>
 
@@ -286,7 +291,7 @@
               <p class="text-xs font-semibold text-red-800">Too many changes</p>
               <p class="text-xs text-red-700 mt-0.5">
                 <span x-show="isInitialPrediction"
-                  >Max 3 swaps allowed. Undo last or reset to continue.</span
+                  >Max 5 swaps allowed. Undo last or reset to continue.</span
                 >
                 <span x-show="!isInitialPrediction"
                   >Only 1 swap allowed per 24h. Undo last or reset to

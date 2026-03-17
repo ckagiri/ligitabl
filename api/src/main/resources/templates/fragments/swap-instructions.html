@@ -25,7 +25,7 @@
       </svg>
       <span class="text-sm text-gray-600">
         <span th:if="${isGuest}"
-          >Click a team to select it, then click another to swap. Make up to 3
+          >Click a team to select it, then click another to swap. Make up to 5
           swaps, then sign up to save.</span
         >
         <span th:if="${!isGuest}" x-show="canSwap || isInitialPrediction"
@@ -97,7 +97,7 @@
       <span class="text-sm text-red-800">
         <strong>Swap limit exceeded!</strong>
         You've made <span x-text="getSwapCount()"></span> swaps but
-        <span x-show="isInitialPrediction">the limit is 3.</span>
+        <span x-show="isInitialPrediction">the limit is 5.</span>
         <span x-show="!isInitialPrediction">only 1 is allowed per 24h.</span>
         <span x-show="!undoing"
           ><a
@@ -228,7 +228,7 @@
         <strong
           ><span x-text="getSwapCount()"></span>
           <span x-text="getSwapCount() === 1 ? 'swap' : 'swaps'"></span></strong
-        ><span x-show="getSwapCount() > 3"> — max 3 allowed to submit</span>.
+        ><span x-show="getSwapCount() > 5"> — max 5 allowed to submit</span>.
         Changes saved locally.
         <span
           x-show="undoing"

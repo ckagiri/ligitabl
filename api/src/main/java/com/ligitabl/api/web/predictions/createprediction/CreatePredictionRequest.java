@@ -7,8 +7,8 @@ import java.util.Objects;
  * Request DTO for creating initial season prediction.
  *
  * <p>Used when a user first submits their season prediction (joins the competition).
- * Contains 1–3 swap pairs applied to the season's initial rankings — everyone
- * starts from the same baseline and submits between one and three swaps.</p>
+ * Contains 1-5 swap pairs applied to the season's initial rankings — everyone
+ * starts from the same baseline and submits between one and five swaps.</p>
  *
  * <p>Example JSON: {@code { "swaps": [{"teamACode": "MCI", "teamBCode": "ARS"}] }}</p>
  */
