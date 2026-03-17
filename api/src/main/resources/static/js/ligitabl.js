@@ -887,17 +887,23 @@ window.Ligitabl.guestPredictionPage = function (el) {
         }, 700);
     }
 
+    const NAV_TARGETS = ['prediction-page', 'matches-page', 'standings-page'];
+    const PAGINATION_TARGETS = ['leaderboard-content'];
+
     document.body.addEventListener('htmx:beforeRequest', function (e) {
         const targetId = e.detail?.target?.id;
-        if (targetId === 'prediction-page' || targetId === 'matches-page' || targetId === 'standings-page') {
+        if (NAV_TARGETS.includes(targetId) || PAGINATION_TARGETS.includes(targetId)) {
             start();
         }
     });
 
     document.body.addEventListener('htmx:afterSwap', function (e) {
         const targetId = e.detail?.target?.id;
-        if (targetId === 'prediction-page' || targetId === 'matches-page' || targetId === 'standings-page') {
+        if (NAV_TARGETS.includes(targetId) || PAGINATION_TARGETS.includes(targetId)) {
             finish();
+        }
+        if (PAGINATION_TARGETS.includes(targetId)) {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
         }
     });
 
