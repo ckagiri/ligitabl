@@ -9,7 +9,9 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplicat
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.savedrequest.SavedRequest;
@@ -192,15 +194,22 @@ public class AuthController {
 
             rememberMeServices.loginSuccess(request, response, authentication);
 
+            boolean switchedUserInExistingSession = isDifferentAuthenticatedSessionUser(request, user);
             UUID mainContestId = getActiveSeason().getMainContestId();
-            if (mainContestId != null && contestRepo.existsByUserAndContest(user.getId(), mainContestId)) {
+            boolean hasContestEntry =
+                    mainContestId != null && contestRepo.existsByUserAndContest(user.getId(), mainContestId);
+
+            if (switchedUserInExistingSession || hasContestEntry) {
                 redirectAttributes.addFlashAttribute("clearTablePrediction", true);
                 redirectAttributes.addFlashAttribute("clearPrefs", true);
-                log.info("User {} has existing contest entry, will clear guest localStorage", user.getId());
-            }
 
-            redirectAttributes.addFlashAttribute("message", "Welcome back, " + user.getDisplayName() + "!");
-            redirectAttributes.addFlashAttribute("messageType", "success");
+                if (switchedUserInExistingSession) {
+                    log.info("User {} logged in over an existing authenticated session, clearing localStorage", user.getId());
+                }
+                if (hasContestEntry) {
+                    log.info("User {} has existing contest entry, will clear auth/guest localStorage", user.getId());
+                }
+            }
 
             return "redirect:/my-table";
         } catch (IllegalArgumentException e) {
@@ -290,6 +299,42 @@ public class AuthController {
                 HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
 
         return authentication;
+    }
+
+    private boolean isDifferentAuthenticatedSessionUser(HttpServletRequest request, User loginUser) {
+        HttpSession session = request.getSession(false);
+        if (session == null || loginUser == null) {
+            return false;
+        }
+
+        Object contextObj = session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+        if (!(contextObj instanceof SecurityContext securityContext)) {
+            return false;
+        }
+
+        Authentication existingAuth = securityContext.getAuthentication();
+        if (existingAuth == null || !existingAuth.isAuthenticated()) {
+            return false;
+        }
+
+        Object principal = existingAuth.getPrincipal();
+        if (principal instanceof WebUserDetails webUserDetails) {
+            return !loginUser.getId().equals(webUserDetails.getUserId());
+        }
+
+        String loginEmail = loginUser.getEmail().value();
+        if (principal instanceof UserDetails userDetails) {
+            return !loginEmail.equalsIgnoreCase(userDetails.getUsername());
+        }
+
+        if (principal instanceof String name) {
+            if ("anonymousUser".equalsIgnoreCase(name)) {
+                return false;
+            }
+            return !loginEmail.equalsIgnoreCase(name);
+        }
+
+        return false;
     }
 
     private Season getActiveSeason() {
