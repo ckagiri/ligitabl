@@ -59,7 +59,7 @@
             <span
               th:if="${pred.hit != null}"
               class="text-sm ml-1"
-              th:classappend="${pred.hit == 0} ? 'text-green-600 font-bold' : 'text-red-600'"
+              th:classappend="${pred.hit == 0} ? 'text-green-600 font-bold' : (${pred.hit <= 2} ? 'text-yellow-600' : 'text-red-600')"
               ><span th:text="${-pred.hit}">-3</span></span
             >
           </div>
@@ -76,7 +76,7 @@
             <span
               th:if="${pred.hit != null}"
               class="text-sm ml-1"
-              th:classappend="${pred.hit == 0} ? 'text-green-600 font-bold' : 'text-red-600'"
+              th:classappend="${pred.hit == 0} ? 'text-green-600 font-bold' : (${pred.hit <= 2} ? 'text-yellow-600' : 'text-red-600')"
               ><span th:text="${-pred.hit}">-3</span></span
             >
           </div>
