@@ -587,22 +587,17 @@ window.Ligitabl.predictionPage = function (el) {
             if (this.isInitialPrediction) {
                 // Initial prediction: send all swap pairs (1-5) as a list
                 url = "/seasonprediction";
-                const pairs = this.inferSwapPairs(this.getChangedTeams());
                 body = {
-                    swaps: pairs.map((pair) => {
-                        const teamA = this.teams.find((t) => t.name === pair.team1);
-                        const teamB = this.teams.find((t) => t.name === pair.team2);
-                        return {teamACode: teamA.code, teamBCode: teamB.code};
-                    }),
+                    swaps: this.swapStack.map((entry) => ({
+                        teamACode: entry.a,
+                        teamBCode: entry.b,
+                    })),
                 };
             } else {
                 // Swap: send the single pair of team codes
-                const pairs = this.inferSwapPairs(this.getChangedTeams());
-                const pair = pairs[0];
-                const teamA = this.teams.find((t) => t.name === pair.team1);
-                const teamB = this.teams.find((t) => t.name === pair.team2);
+                const entry = this.swapStack[0];
                 url = "/seasonprediction/swap";
-                body = {teamACode: teamA.code, teamBCode: teamB.code};
+                body = {teamACode: entry.a, teamBCode: entry.b};
             }
 
             fetch(url, {
