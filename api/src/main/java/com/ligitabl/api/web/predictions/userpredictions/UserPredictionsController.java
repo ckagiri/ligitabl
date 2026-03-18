@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ligitabl.api.auth.CurrentUserPublicId;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
@@ -49,6 +50,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class UserPredictionsController {
     private final ObjectMapper objectMapper;
+    private final CurrentUserPublicId currentUserPublicId;
     private final GetUserPredictionUseCase getUserPredictionUseCase;
     private final SeasonRepo seasonRepo;
     private final ContestRepo contestRepo;
@@ -99,12 +101,15 @@ public class UserPredictionsController {
             return handleNoActiveSeason(model, response, hxRequest);
         }
 
-        GetUserPredictionQuery query = buildQueryForMe(resolvedUserId, round, seasonOpt.get());
+        Season season = seasonOpt.get();
+
+        GetUserPredictionQuery query = buildQueryForMe(resolvedUserId, round, season);
 
         Either<UseCaseError, UserPredictionViewData> result = getUserPredictionUseCase.execute(query);
 
         return result.fold(
-                error -> handleError(error, model, response, hxRequest), data -> handleSuccess(data, model, hxRequest));
+                error -> handleError(error, model, response, hxRequest),
+                data -> handleSuccess(data, model, hxRequest, season));
     }
 
     /**
@@ -125,13 +130,15 @@ public class UserPredictionsController {
             return handleNoActiveSeason(model, response, hxRequest);
         }
 
-        UUID activeSeasonId = seasonOpt.get().getId();
+        Season season = seasonOpt.get();
+        UUID activeSeasonId = season.getId();
         GetUserPredictionQuery query = GetUserPredictionQuery.forGuest(activeSeasonId, round);
 
         Either<UseCaseError, UserPredictionViewData> result = getUserPredictionUseCase.execute(query);
 
         return result.fold(
-                error -> handleError(error, model, response, hxRequest), data -> handleSuccess(data, model, hxRequest));
+                error -> handleError(error, model, response, hxRequest),
+                data -> handleSuccess(data, model, hxRequest, season));
     }
 
     /**
@@ -143,7 +150,7 @@ public class UserPredictionsController {
      */
     @GetMapping("/{userId}")
     public String userPredictions(
-            @PathVariable String publicUserId,
+            @PathVariable("userId") String publicUserId,
             @RequestParam(required = false) Integer round,
             Principal principal,
             Model model,
@@ -165,12 +172,15 @@ public class UserPredictionsController {
             return handleNoActiveSeason(model, response, hxRequest);
         }
 
-        GetUserPredictionQuery query = buildQueryForUser(publicUserId, round, seasonOpt.get());
+        Season season = seasonOpt.get();
+
+        GetUserPredictionQuery query = buildQueryForUser(publicUserId, round, season);
 
         Either<UseCaseError, UserPredictionViewData> result = getUserPredictionUseCase.execute(query);
 
         return result.fold(
-                error -> handleError(error, model, response, hxRequest), data -> handleSuccess(data, model, hxRequest));
+                error -> handleError(error, model, response, hxRequest),
+                data -> handleSuccess(data, model, hxRequest, season));
     }
 
     /**
@@ -272,9 +282,14 @@ public class UserPredictionsController {
     /**
      * Handle successful use case result.
      */
-    private String handleSuccess(UserPredictionViewData data, Model model, String hxRequest) {
+    private String handleSuccess(UserPredictionViewData data, Model model, String hxRequest, Season season) {
         // Convert rankings to DTOs
         List<TeamRankDto> predictions = enrichRankings(data.rankings());
+
+        // Current authenticated user id for client-side user-scoped storage keys.
+        model.addAttribute(
+                "userId", currentUserPublicId.resolve().map(PublicId::value).orElse("guest"));
+        model.addAttribute("currentRoundId", season.getCurrentRoundId());
 
         // Set model attributes for template
         model.addAttribute("pageTitle", getPageTitle(data));
@@ -296,8 +311,6 @@ public class UserPredictionsController {
         model.addAttribute("isViewingOther", data.isViewingOther());
         model.addAttribute("isUserNotFound", data.isUserNotFound());
 
-        // Message for UI banners
-        model.addAttribute("message", data.message());
         model.addAttribute("targetDisplayName", data.targetDisplayName());
 
         // Swap status for cooldown banners

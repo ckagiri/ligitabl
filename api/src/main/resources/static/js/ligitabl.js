@@ -39,9 +39,9 @@ window.Ligitabl._parseDataAttributes = function (el) {
 
 window.Ligitabl._PREFS_KEY = "ligitabl.prefs";
 
-window.Ligitabl._loadPrefs = function () {
+window.Ligitabl._loadPrefs = function (key) {
     try {
-        const saved = localStorage.getItem(Ligitabl._PREFS_KEY);
+        const saved = localStorage.getItem(key || Ligitabl._PREFS_KEY);
         if (saved) return JSON.parse(saved);
     } catch (e) {
         console.warn("Failed to load prefs:", e);
@@ -49,18 +49,21 @@ window.Ligitabl._loadPrefs = function () {
     return null;
 };
 
-window.Ligitabl._savePrefs = function (prefs) {
+window.Ligitabl._savePrefs = function (prefs, key) {
     try {
-        localStorage.setItem(Ligitabl._PREFS_KEY, JSON.stringify(prefs));
+        localStorage.setItem(key || Ligitabl._PREFS_KEY, JSON.stringify(prefs));
     } catch (e) {
         console.warn("Failed to save prefs:", e);
     }
 };
 
 // Shared base for predictionPage and guestPredictionPage
-window.Ligitabl._predictionBase = function (parsed) {
-    const savedPrefs = Ligitabl._loadPrefs();
+window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
+    const prefsKey = userId ? 'ligitabl.prefs.' + userId : 'ligitabl.prefs.guest';
+    const savedPrefs = Ligitabl._loadPrefs(prefsKey);
     return {
+        _prefsKey: prefsKey,
+        roundId: roundId,
         teams: [],
         originalTeams: [],
         selectedTeam: null,
@@ -186,8 +189,8 @@ window.Ligitabl._predictionBase = function (parsed) {
             // Brief animation
             const row1 = document.querySelector(`[data-team-code='${codeA}']`);
             const row2 = document.querySelector(`[data-team-code='${codeB}']`);
-            if (row1) { row1.classList.add("swapping"); setTimeout(() => row1.classList.remove("swapping"), 400); }
-            if (row2) { row2.classList.add("swapping"); setTimeout(() => row2.classList.remove("swapping"), 400); }
+            if (row1) { row1.classList.add("swapping"); setTimeout(() => row1.classList.remove("swapping"), 300); }
+            if (row2) { row2.classList.add("swapping"); setTimeout(() => row2.classList.remove("swapping"), 300); }
             const temp = this.teams[index1];
             this.teams[index1] = this.teams[index2];
             this.teams[index2] = temp;
@@ -280,6 +283,7 @@ window.Ligitabl._predictionBase = function (parsed) {
         _saveToStorage(key) {
             try {
                 localStorage.setItem(key, JSON.stringify({
+                    roundId: this.roundId,
                     teams: this.teams,
                     swapStack: this.swapStack,
                 }));
@@ -329,14 +333,19 @@ window.Ligitabl.predictionPage = function (el) {
     const canInteract = canInteractRaw === "true" || canInteractRaw === "True";
     const isRoundOpen = roundOpenRaw === "true" || roundOpenRaw === "True";
     const isLastRound = isLastRoundRaw === "true" || isLastRoundRaw === "True";
-    const isInitialPrediction =
-        isInitialRaw === "true" || isInitialRaw === "True";
+    const isInitialPrediction = isInitialRaw === "true" || isInitialRaw === "True";
     const MAX_INITIAL_SWAPS = Ligitabl._MAX_INITIAL_SWAPS;
 
+    const userId = el?.dataset?.userId || 'unknown';
+    const roundId = el?.dataset?.roundId || 'unknown';
     const GUEST_STORAGE_KEY = "ligitabl.guestPrediction";
-    const AUTH_STORAGE_KEY = "ligitabl.prediction";
+    const AUTH_STORAGE_KEY = "ligitabl.prediction." + userId;
 
-    function _validateTeamCodes(saved) {
+    function _validateSaved(saved) {
+        if (!saved) return false;
+        // Discard immediately if this data is from a different round
+        if (saved.roundId !== roundId) return false;
+        // Then verify team codes still match the server set
         const serverCodes = new Set(predictions.map((p) => p.teamCode));
         const teams = _extractTeams(saved);
         const savedCodes = new Set(teams.map((p) => p.code));
@@ -351,7 +360,7 @@ window.Ligitabl.predictionPage = function (el) {
             const saved = localStorage.getItem(GUEST_STORAGE_KEY);
             if (saved) {
                 const parsed = JSON.parse(saved);
-                if (_validateTeamCodes(parsed)) return parsed;
+                if (_validateSaved(parsed)) return parsed;
             }
         } catch (e) {
             console.warn("Failed to load guest prediction:", e);
@@ -364,7 +373,7 @@ window.Ligitabl.predictionPage = function (el) {
             const saved = localStorage.getItem(AUTH_STORAGE_KEY);
             if (saved) {
                 const parsed = JSON.parse(saved);
-                if (_validateTeamCodes(parsed)) return parsed;
+                if (_validateSaved(parsed)) return parsed;
             }
         } catch (e) {
             console.warn("Failed to load auth prediction:", e);
@@ -390,7 +399,7 @@ window.Ligitabl.predictionPage = function (el) {
         };
     });
 
-    const base = Ligitabl._predictionBase(parsed);
+    const base = Ligitabl._predictionBase(parsed, userId, roundId);
 
     return Object.assign(base, {
         canSwap,
@@ -454,7 +463,7 @@ window.Ligitabl.predictionPage = function (el) {
                 showFixtures: this.showFixtures,
                 showPoints: this.showPoints,
                 showGD: this.showGD,
-            });
+            }, this._prefsKey);
             this.$watch("showStandings", savePrefs);
             this.$watch("showFixtures", savePrefs);
             this.$watch("showPoints", savePrefs);
@@ -574,7 +583,7 @@ window.Ligitabl.predictionPage = function (el) {
                 this._swapTeamsDirect(last.b, last.a); // reverse
                 this._saveToStorage(AUTH_STORAGE_KEY);
                 this.undoing = false;
-            }, 450);
+            }, 330);
         },
 
         submitChanges() {
@@ -692,12 +701,15 @@ window.Ligitabl.guestPredictionPage = function (el) {
     const STORAGE_KEY = "ligitabl.guestPrediction";
     const parsed = Ligitabl._parseDataAttributes(el);
     const serverPredictions = parsed.predictions;
+    const roundId = el?.dataset?.roundId || 'unknown';
 
     function loadSavedPrediction() {
         try {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 const p = JSON.parse(saved);
+                // Discard immediately if this data is from a different round
+                if (p.roundId !== roundId) return null;
                 const teams = Array.isArray(p) ? p : (p?.teams ?? []);
                 const serverCodes = new Set(serverPredictions.map((s) => s.teamCode));
                 const savedCodes = new Set(teams.map((s) => s.code));
@@ -714,7 +726,7 @@ window.Ligitabl.guestPredictionPage = function (el) {
         return null;
     }
 
-    const base = Ligitabl._predictionBase(parsed);
+    const base = Ligitabl._predictionBase(parsed, null, roundId);
 
     return Object.assign(base, {
         alwaysHoverable: true,
@@ -736,7 +748,7 @@ window.Ligitabl.guestPredictionPage = function (el) {
                 showFixtures: this.showFixtures,
                 showPoints: this.showPoints,
                 showGD: this.showGD,
-            });
+            }, this._prefsKey);
             this.$watch("showStandings", savePrefs);
             this.$watch("showFixtures", savePrefs);
             this.$watch("showPoints", savePrefs);
@@ -771,7 +783,7 @@ window.Ligitabl.guestPredictionPage = function (el) {
                 this._swapTeamsDirect(last.b, last.a); // reverse
                 this._saveToStorage(STORAGE_KEY);
                 this.undoing = false;
-            }, 450);
+            }, 330);
         },
     });
 };
