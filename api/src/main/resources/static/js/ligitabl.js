@@ -58,11 +58,12 @@ window.Ligitabl._savePrefs = function (prefs, key) {
 };
 
 // Shared base for predictionPage and guestPredictionPage
-window.Ligitabl._predictionBase = function (parsed, userId) {
+window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
     const prefsKey = userId ? 'ligitabl.prefs.' + userId : 'ligitabl.prefs.guest';
     const savedPrefs = Ligitabl._loadPrefs(prefsKey);
     return {
         _prefsKey: prefsKey,
+        roundId: roundId,
         teams: [],
         originalTeams: [],
         selectedTeam: null,
@@ -282,6 +283,7 @@ window.Ligitabl._predictionBase = function (parsed, userId) {
         _saveToStorage(key) {
             try {
                 localStorage.setItem(key, JSON.stringify({
+                    roundId: this.roundId,
                     teams: this.teams,
                     swapStack: this.swapStack,
                 }));
@@ -331,15 +333,19 @@ window.Ligitabl.predictionPage = function (el) {
     const canInteract = canInteractRaw === "true" || canInteractRaw === "True";
     const isRoundOpen = roundOpenRaw === "true" || roundOpenRaw === "True";
     const isLastRound = isLastRoundRaw === "true" || isLastRoundRaw === "True";
-    const isInitialPrediction =
-        isInitialRaw === "true" || isInitialRaw === "True";
+    const isInitialPrediction = isInitialRaw === "true" || isInitialRaw === "True";
     const MAX_INITIAL_SWAPS = Ligitabl._MAX_INITIAL_SWAPS;
 
     const userId = el?.dataset?.userId || 'unknown';
+    const roundId = el?.dataset?.roundId || 'unknown';
     const GUEST_STORAGE_KEY = "ligitabl.guestPrediction";
     const AUTH_STORAGE_KEY = "ligitabl.prediction." + userId;
 
-    function _validateTeamCodes(saved) {
+    function _validateSaved(saved) {
+        if (!saved) return false;
+        // Discard immediately if this data is from a different round
+        if (saved.roundId !== roundId) return false;
+        // Then verify team codes still match the server set
         const serverCodes = new Set(predictions.map((p) => p.teamCode));
         const teams = _extractTeams(saved);
         const savedCodes = new Set(teams.map((p) => p.code));
@@ -354,7 +360,7 @@ window.Ligitabl.predictionPage = function (el) {
             const saved = localStorage.getItem(GUEST_STORAGE_KEY);
             if (saved) {
                 const parsed = JSON.parse(saved);
-                if (_validateTeamCodes(parsed)) return parsed;
+                if (_validateSaved(parsed)) return parsed;
             }
         } catch (e) {
             console.warn("Failed to load guest prediction:", e);
@@ -367,7 +373,7 @@ window.Ligitabl.predictionPage = function (el) {
             const saved = localStorage.getItem(AUTH_STORAGE_KEY);
             if (saved) {
                 const parsed = JSON.parse(saved);
-                if (_validateTeamCodes(parsed)) return parsed;
+                if (_validateSaved(parsed)) return parsed;
             }
         } catch (e) {
             console.warn("Failed to load auth prediction:", e);
@@ -393,7 +399,7 @@ window.Ligitabl.predictionPage = function (el) {
         };
     });
 
-    const base = Ligitabl._predictionBase(parsed, userId);
+    const base = Ligitabl._predictionBase(parsed, userId, roundId);
 
     return Object.assign(base, {
         canSwap,
@@ -695,12 +701,15 @@ window.Ligitabl.guestPredictionPage = function (el) {
     const STORAGE_KEY = "ligitabl.guestPrediction";
     const parsed = Ligitabl._parseDataAttributes(el);
     const serverPredictions = parsed.predictions;
+    const roundId = el?.dataset?.roundId || 'unknown';
 
     function loadSavedPrediction() {
         try {
             const saved = localStorage.getItem(STORAGE_KEY);
             if (saved) {
                 const p = JSON.parse(saved);
+                // Discard immediately if this data is from a different round
+                if (p.roundId !== roundId) return null;
                 const teams = Array.isArray(p) ? p : (p?.teams ?? []);
                 const serverCodes = new Set(serverPredictions.map((s) => s.teamCode));
                 const savedCodes = new Set(teams.map((s) => s.code));
@@ -717,7 +726,7 @@ window.Ligitabl.guestPredictionPage = function (el) {
         return null;
     }
 
-    const base = Ligitabl._predictionBase(parsed, null);
+    const base = Ligitabl._predictionBase(parsed, null, roundId);
 
     return Object.assign(base, {
         alwaysHoverable: true,

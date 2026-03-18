@@ -148,7 +148,8 @@ firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRou
                     data-current-standings=${currentStandingsJson},
                     data-fixtures=${fixturesJson},
                     data-current-points=${currentPointsJson},
-                    data-current-goal-difference=${currentGoalDifferenceJson}"
+                    data-current-goal-difference=${currentGoalDifferenceJson},
+                    data-round-id=${currentRoundId}"
           >
             <!-- Contextual Swap Instructions Banner for Guests -->
             <div
@@ -218,6 +219,7 @@ firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRou
                     data-fixtures=${fixturesJson},
                     data-current-points=${currentPointsJson},
                     data-current-goal-difference=${currentGoalDifferenceJson},
+                    data-round-id=${currentRoundId},
                     data-user-id=${userId},
                     data-access-mode=${accessMode}"
           >
