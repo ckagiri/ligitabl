@@ -105,9 +105,6 @@ public class GetUserPredictionUseCase {
         Map<String, Integer> pointsMap = standingsMaps.points();
         Map<String, Integer> goalDifferenceMap = standingsMaps.goalDifference();
 
-        String message =
-                isCurrentRound ? "Sign up to create your prediction" : "Viewing Gameweek " + viewingRound + " results";
-
         return new UserPredictionViewData(
                 rankingsWithSource.rankings(),
                 rankingsWithSource.source(),
@@ -123,7 +120,6 @@ public class GetUserPredictionUseCase {
                 null,
                 seasonCompleted,
                 roundState,
-                message,
                 null, // no target display name
                 null, // no round result for guest
                 null // no swap history for guests
@@ -176,7 +172,6 @@ public class GetUserPredictionUseCase {
                             seasonCompleted,
                             roundState,
                             null,
-                            null,
                             roundResult.get(),
                             swapsForRound(seasonPrediction, viewingRound));
                 }
@@ -189,8 +184,6 @@ public class GetUserPredictionUseCase {
             Map<String, Integer> standingsMap = standingsMaps.positions();
             Map<String, Integer> pointsMap = standingsMaps.points();
             Map<String, Integer> goalDifferenceMap = standingsMaps.goalDifference();
-
-            String message = null;
 
             return new UserPredictionViewData(
                     seasonPrediction.getCurrentRankings(),
@@ -207,7 +200,6 @@ public class GetUserPredictionUseCase {
                     seasonPrediction.getAtRoundNumber(),
                     seasonCompleted,
                     roundState,
-                    message,
                     null,
                     null, // No round result for current round
                     swapsForRound(seasonPrediction, viewingRound));
@@ -225,15 +217,12 @@ public class GetUserPredictionUseCase {
         // Same logic as CreatePredictionUseCase.determineAtRoundNumber
         PredictionAccessMode accessMode;
         Integer atRoundNumber = null;
-        String message = null;
 
         if (!isCurrentRound) {
             accessMode = PredictionAccessMode.READONLY_COOLDOWN;
-            message = "Viewing Gameweek " + viewingRound + " results";
         } else if (currentRound == lastRound && currentRoundStatus != RoundStatus.OPEN) {
             // Last round and not open - season ending, can't join
             accessMode = PredictionAccessMode.READONLY_COOLDOWN;
-            message = "The final round is in progress. Predictions are closed.";
         } else {
             accessMode = PredictionAccessMode.CAN_CREATE_ENTRY;
             atRoundNumber = currentRoundStatus == RoundStatus.OPEN ? currentRound : currentRound + 1;
@@ -256,7 +245,6 @@ public class GetUserPredictionUseCase {
                 atRoundNumber,
                 seasonCompleted,
                 roundState,
-                message,
                 null,
                 null, // No round result
                 null // No swap history — user has no prediction yet
@@ -304,8 +292,6 @@ public class GetUserPredictionUseCase {
                         null,
                         seasonCompleted,
                         roundState,
-                        "Viewing " + (qry.targetDisplayName() != null ? qry.targetDisplayName() : "user")
-                                + "'s Gameweek " + viewingRound + " result",
                         qry.targetDisplayName(),
                         roundResult.get(),
                         null // swap history not shown for other users
@@ -337,7 +323,6 @@ public class GetUserPredictionUseCase {
                     prediction.getAtRoundNumber(),
                     seasonCompleted,
                     roundState,
-                    "Viewing " + (qry.targetDisplayName() != null ? qry.targetDisplayName() : "user") + "'s prediction",
                     qry.targetDisplayName(),
                     null,
                     null // swap history not shown for other users
@@ -365,8 +350,6 @@ public class GetUserPredictionUseCase {
                 null,
                 seasonCompleted,
                 roundState,
-                (qry.targetDisplayName() != null ? qry.targetDisplayName() : "This user")
-                        + " hasn't made a prediction yet",
                 qry.targetDisplayName(),
                 null,
                 null // swap history not shown for other users
@@ -404,7 +387,6 @@ public class GetUserPredictionUseCase {
                 null,
                 seasonCompleted,
                 roundState,
-                "User not found",
                 null,
                 null,
                 null // swap history not applicable

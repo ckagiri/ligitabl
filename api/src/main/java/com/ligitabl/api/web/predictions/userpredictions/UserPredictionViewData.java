@@ -33,7 +33,6 @@ public record UserPredictionViewData(
         Integer atRoundNumber,
         boolean seasonCompleted,
         String roundState,
-        String message,
         String targetDisplayName,
         RoundResult roundResult, // Present for historical views with scored results
         List<SwapChange> roundSwapHistory // Swaps made in the viewed round; null for guests/other users

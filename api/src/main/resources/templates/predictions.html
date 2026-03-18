@@ -79,7 +79,7 @@
             <div
               th:replace="~{fragments/access-banners :: banners(
                 ${isGuest}, ${canCreateEntry}, ${isViewingOther}, ${isUserNotFound},
-                ${swapStatus}, ${isCurrentRound}, ${roundState}, ${message},
+                ${swapStatus}, ${isCurrentRound}, ${roundState},
                 ${totalScore}, ${viewingRound}, ${hasRoundResult},
                 ${currentRound}, ${lastRound}, ${atRoundNumber}, ${seasonCompleted}, ${canSwap})}"
             ></div>
@@ -100,8 +100,7 @@ accessMode=[[${accessMode}]] canCreateEntry=[[${canCreateEntry}]] canSwap=[[${ca
 isGuest=[[${isGuest}]] isViewingOther=[[${isViewingOther}]] isUserNotFound=[[${isUserNotFound}]]
 swapStatus.firstSwapBonus=[[${swapStatus != null ? swapStatus.firstSwapBonus : null}]]
 firstSwap.defaultMsg=[[${roundState != 'locked' || atRoundNumber == null || atRoundNumber == currentRound}]]
-firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRoundNumber > currentRound}]]
-message=[[${message}]]</pre
+firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRoundNumber > currentRound}]]</pre
                 >
               </div>
             </div>

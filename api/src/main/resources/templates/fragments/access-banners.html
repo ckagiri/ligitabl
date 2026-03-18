@@ -7,7 +7,6 @@
      swapStatus: SwapStatus object (can be null)
      isCurrentRound: Boolean - viewing current round
      roundState: String - 'open', 'locked', 'completed', or 'finalized'
-     message: String - contextual message
      totalScore: Integer (can be null) - score for finalized rounds
      viewingRound: Integer - the round being viewed
      hasRoundResult: Boolean - whether round has been scored
@@ -19,7 +18,7 @@
 -->
 <div
   x-cloak
-  th:fragment="banners(isGuest, canCreateEntry, isViewingOther, isUserNotFound, swapStatus, isCurrentRound, roundState, message, totalScore, viewingRound, hasRoundResult, currentRound, lastRound, atRoundNumber, seasonCompleted, canSwap)"
+  th:fragment="banners(isGuest, canCreateEntry, isViewingOther, isUserNotFound, swapStatus, isCurrentRound, roundState, totalScore, viewingRound, hasRoundResult, currentRound, lastRound, atRoundNumber, seasonCompleted, canSwap)"
   class="mb-4 sm:mb-6 space-y-3"
 >
   <!-- Guest Banner -->
@@ -174,7 +173,10 @@
         />
       </svg>
       <div>
-        <p class="text-sm font-medium text-blue-800" th:text="${message}">
+        <p
+          class="text-sm font-medium text-blue-800"
+          th:text="${targetDisplayName != null ? 'Viewing ' + targetDisplayName + ' prediction' : 'Viewing user prediction'}"
+        >
           Viewing user's prediction
         </p>
         <p class="text-sm text-blue-700 mt-1">This view is read-only.</p>

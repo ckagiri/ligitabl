@@ -296,8 +296,6 @@ public class UserPredictionsController {
         model.addAttribute("isViewingOther", data.isViewingOther());
         model.addAttribute("isUserNotFound", data.isUserNotFound());
 
-        // Message for UI banners
-        model.addAttribute("message", data.message());
         model.addAttribute("targetDisplayName", data.targetDisplayName());
 
         // Swap status for cooldown banners
