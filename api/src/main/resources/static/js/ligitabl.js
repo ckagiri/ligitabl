@@ -187,8 +187,8 @@ window.Ligitabl._predictionBase = function (parsed, userId) {
             // Brief animation
             const row1 = document.querySelector(`[data-team-code='${codeA}']`);
             const row2 = document.querySelector(`[data-team-code='${codeB}']`);
-            if (row1) { row1.classList.add("swapping"); setTimeout(() => row1.classList.remove("swapping"), 400); }
-            if (row2) { row2.classList.add("swapping"); setTimeout(() => row2.classList.remove("swapping"), 400); }
+            if (row1) { row1.classList.add("swapping"); setTimeout(() => row1.classList.remove("swapping"), 300); }
+            if (row2) { row2.classList.add("swapping"); setTimeout(() => row2.classList.remove("swapping"), 300); }
             const temp = this.teams[index1];
             this.teams[index1] = this.teams[index2];
             this.teams[index2] = temp;
@@ -576,7 +576,7 @@ window.Ligitabl.predictionPage = function (el) {
                 this._swapTeamsDirect(last.b, last.a); // reverse
                 this._saveToStorage(AUTH_STORAGE_KEY);
                 this.undoing = false;
-            }, 450);
+            }, 330);
         },
 
         submitChanges() {
@@ -773,7 +773,7 @@ window.Ligitabl.guestPredictionPage = function (el) {
                 this._swapTeamsDirect(last.b, last.a); // reverse
                 this._saveToStorage(STORAGE_KEY);
                 this.undoing = false;
-            }, 450);
+            }, 330);
         },
     });
 };
