@@ -1,13 +1,12 @@
 package com.ligitabl.api.auth;
 
-import java.util.UUID;
+import java.util.Optional;
 
-import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
-import org.springframework.web.server.ResponseStatusException;
 
+import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.UserRepo;
@@ -16,21 +15,22 @@ import lombok.RequiredArgsConstructor;
 
 @Component
 @RequiredArgsConstructor
-public class CurrentUserId {
+public class CurrentUserPublicId {
     private final UserRepo userRepo;
 
-    public UUID require() {
+    public Optional<PublicId> resolve() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication == null
                 || authentication.getName() == null
                 || authentication.getName().isBlank()) {
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthenticated");
+            return Optional.empty();
         }
 
-        PublicId publicId = PublicId.create(authentication.getName());
-
-        return userRepo.findByPublicId(publicId)
-                .map(User::getId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found"));
+        try {
+            Email email = Email.create(authentication.getName());
+            return userRepo.findByEmail(email).map(User::getPublicId);
+        } catch (IllegalArgumentException e) {
+            return Optional.empty();
+        }
     }
 }

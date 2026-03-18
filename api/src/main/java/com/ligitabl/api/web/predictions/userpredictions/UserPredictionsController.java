@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ligitabl.api.auth.CurrentUserPublicId;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
@@ -49,6 +50,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class UserPredictionsController {
     private final ObjectMapper objectMapper;
+    private final CurrentUserPublicId currentUserPublicId;
     private final GetUserPredictionUseCase getUserPredictionUseCase;
     private final SeasonRepo seasonRepo;
     private final ContestRepo contestRepo;
@@ -275,6 +277,10 @@ public class UserPredictionsController {
     private String handleSuccess(UserPredictionViewData data, Model model, String hxRequest) {
         // Convert rankings to DTOs
         List<TeamRankDto> predictions = enrichRankings(data.rankings());
+
+        // Current authenticated user id for client-side user-scoped storage keys.
+        model.addAttribute(
+                "userId", currentUserPublicId.resolve().map(PublicId::value).orElse("guest"));
 
         // Set model attributes for template
         model.addAttribute("pageTitle", getPageTitle(data));
