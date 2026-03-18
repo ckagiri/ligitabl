@@ -9,10 +9,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 /**
  * Canonical "My Table" routes.
  *
- * <p>These routes forward to the existing predictions pages:
+ * <p>These routes redirect/forward to the existing predictions pages:
  * <ul>
  *   <li>/my-table -> /predictions/user/me (authenticated) or /my-table/guest (guest)</li>
- *   <li>/my-table/guest -> /predictions/user/guest</li>
+ *   <li>/my-table/guest -> /my-table (authenticated) or /predictions/user/guest (guest)</li>
  * </ul>
  */
 @Controller
@@ -25,7 +25,10 @@ public class MyTableController {
     }
 
     @GetMapping("/my-table/guest")
-    public String guestTable(@RequestParam(required = false) Integer round) {
+    public String guestTable(@RequestParam(required = false) Integer round, Principal principal) {
+        if (principal != null) {
+            return withRoundRedirect("/my-table", round);
+        }
         return withRoundForward("/predictions/user/guest", round);
     }
 
@@ -34,5 +37,12 @@ public class MyTableController {
             return "forward:" + basePath;
         }
         return "forward:" + basePath + "?round=" + round;
+    }
+
+    private String withRoundRedirect(String basePath, Integer round) {
+        if (round == null) {
+            return "redirect:" + basePath;
+        }
+        return "redirect:" + basePath + "?round=" + round;
     }
 }
