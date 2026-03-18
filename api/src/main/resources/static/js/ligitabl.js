@@ -62,6 +62,7 @@ window.Ligitabl._predictionBase = function (parsed, userId) {
     const prefsKey = userId ? 'ligitabl.prefs.' + userId : 'ligitabl.prefs.guest';
     const savedPrefs = Ligitabl._loadPrefs(prefsKey);
     return {
+        _prefsKey: prefsKey,
         teams: [],
         originalTeams: [],
         selectedTeam: null,
@@ -456,7 +457,7 @@ window.Ligitabl.predictionPage = function (el) {
                 showFixtures: this.showFixtures,
                 showPoints: this.showPoints,
                 showGD: this.showGD,
-            }, prefsKey);
+            }, this._prefsKey);
             this.$watch("showStandings", savePrefs);
             this.$watch("showFixtures", savePrefs);
             this.$watch("showPoints", savePrefs);
@@ -738,7 +739,7 @@ window.Ligitabl.guestPredictionPage = function (el) {
                 showFixtures: this.showFixtures,
                 showPoints: this.showPoints,
                 showGD: this.showGD,
-            }, prefsKey);
+            }, this._prefsKey);
             this.$watch("showStandings", savePrefs);
             this.$watch("showFixtures", savePrefs);
             this.$watch("showPoints", savePrefs);
