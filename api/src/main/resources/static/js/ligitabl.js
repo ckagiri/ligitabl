@@ -39,9 +39,9 @@ window.Ligitabl._parseDataAttributes = function (el) {
 
 window.Ligitabl._PREFS_KEY = "ligitabl.prefs";
 
-window.Ligitabl._loadPrefs = function () {
+window.Ligitabl._loadPrefs = function (key) {
     try {
-        const saved = localStorage.getItem(Ligitabl._PREFS_KEY);
+        const saved = localStorage.getItem(key || Ligitabl._PREFS_KEY);
         if (saved) return JSON.parse(saved);
     } catch (e) {
         console.warn("Failed to load prefs:", e);
@@ -49,17 +49,18 @@ window.Ligitabl._loadPrefs = function () {
     return null;
 };
 
-window.Ligitabl._savePrefs = function (prefs) {
+window.Ligitabl._savePrefs = function (prefs, key) {
     try {
-        localStorage.setItem(Ligitabl._PREFS_KEY, JSON.stringify(prefs));
+        localStorage.setItem(key || Ligitabl._PREFS_KEY, JSON.stringify(prefs));
     } catch (e) {
         console.warn("Failed to save prefs:", e);
     }
 };
 
 // Shared base for predictionPage and guestPredictionPage
-window.Ligitabl._predictionBase = function (parsed) {
-    const savedPrefs = Ligitabl._loadPrefs();
+window.Ligitabl._predictionBase = function (parsed, userId) {
+    const prefsKey = userId ? 'ligitabl.prefs.' + userId : 'ligitabl.prefs.guest';
+    const savedPrefs = Ligitabl._loadPrefs(prefsKey);
     return {
         teams: [],
         originalTeams: [],
@@ -333,8 +334,9 @@ window.Ligitabl.predictionPage = function (el) {
         isInitialRaw === "true" || isInitialRaw === "True";
     const MAX_INITIAL_SWAPS = Ligitabl._MAX_INITIAL_SWAPS;
 
+    const userId = el?.dataset?.userId || 'unknown';
     const GUEST_STORAGE_KEY = "ligitabl.guestPrediction";
-    const AUTH_STORAGE_KEY = "ligitabl.prediction";
+    const AUTH_STORAGE_KEY = "ligitabl.prediction." + userId;
 
     function _validateTeamCodes(saved) {
         const serverCodes = new Set(predictions.map((p) => p.teamCode));
@@ -390,7 +392,7 @@ window.Ligitabl.predictionPage = function (el) {
         };
     });
 
-    const base = Ligitabl._predictionBase(parsed);
+    const base = Ligitabl._predictionBase(parsed, userId);
 
     return Object.assign(base, {
         canSwap,
@@ -454,7 +456,7 @@ window.Ligitabl.predictionPage = function (el) {
                 showFixtures: this.showFixtures,
                 showPoints: this.showPoints,
                 showGD: this.showGD,
-            });
+            }, prefsKey);
             this.$watch("showStandings", savePrefs);
             this.$watch("showFixtures", savePrefs);
             this.$watch("showPoints", savePrefs);
@@ -714,7 +716,7 @@ window.Ligitabl.guestPredictionPage = function (el) {
         return null;
     }
 
-    const base = Ligitabl._predictionBase(parsed);
+    const base = Ligitabl._predictionBase(parsed, null);
 
     return Object.assign(base, {
         alwaysHoverable: true,
@@ -736,7 +738,7 @@ window.Ligitabl.guestPredictionPage = function (el) {
                 showFixtures: this.showFixtures,
                 showPoints: this.showPoints,
                 showGD: this.showGD,
-            });
+            }, prefsKey);
             this.$watch("showStandings", savePrefs);
             this.$watch("showFixtures", savePrefs);
             this.$watch("showPoints", savePrefs);
