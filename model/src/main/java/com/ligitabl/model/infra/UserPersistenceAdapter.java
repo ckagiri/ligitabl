@@ -86,6 +86,14 @@ public class UserPersistenceAdapter implements UserRepo {
         return dsl.fetchExists(dsl.selectOne().from(T_USER).where(T_USER.C_EMAIL.eq(email.value())));
     }
 
+    @Override
+    public void updatePassword(UUID userId, Password.Hashed password) {
+        dsl.update(T_USER)
+                .set(T_USER.C_PASSWORD_HASH, password.value())
+                .where(T_USER.PK_ID.eq(userId))
+                .execute();
+    }
+
     private User map(UserRecord record) {
         if (record == null) {
             return null;

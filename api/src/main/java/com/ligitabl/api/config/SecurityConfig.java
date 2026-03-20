@@ -135,7 +135,9 @@ public class SecurityConfig {
                         "/leaderboard/user/modal",
                         "/auth/login",
                         "/auth/login/process",
-                        "/auth/register")) // Allow HTMX + auth forms without CSRF
+                        "/auth/register",
+                        "/auth/forgot-password",
+                        "/auth/reset-password")) // Allow HTMX + auth forms without CSRF
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 "/",
                                 "/home",
@@ -143,6 +145,8 @@ public class SecurityConfig {
                                 "/my-table/guest/**",
                                 "/auth/login",
                                 "/auth/register",
+                                "/auth/forgot-password",
+                                "/auth/reset-password",
                                 "/leaderboard",
                                 "/leaderboard/**",
                                 "/standings",

@@ -13,6 +13,7 @@ import com.ligitabl.model.infra.ContestPersistenceAdapter;
 import com.ligitabl.model.infra.EntryPersistenceAdapter;
 import com.ligitabl.model.infra.LeaderboardPersistenceAdapter;
 import com.ligitabl.model.infra.MatchPersistenceAdapter;
+import com.ligitabl.model.infra.PasswordResetTokenPersistenceAdapter;
 import com.ligitabl.model.infra.RoundPersistenceAdapter;
 import com.ligitabl.model.infra.RoundResultPersistenceAdapter;
 import com.ligitabl.model.infra.RoundSubmissionPersistenceAdapter;
@@ -26,6 +27,7 @@ import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.LeaderboardRepo;
 import com.ligitabl.model.repo.MatchRepo;
+import com.ligitabl.model.repo.PasswordResetTokenRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.RoundResultRepo;
 import com.ligitabl.model.repo.RoundSubmissionRepo;
@@ -116,5 +118,10 @@ public class RepositoryConfig {
     @Bean
     public UserRepo userRepo(DSLContext dsl) {
         return new UserPersistenceAdapter(dsl);
+    }
+
+    @Bean
+    public PasswordResetTokenRepo passwordResetTokenRepo(DSLContext dsl) {
+        return new PasswordResetTokenPersistenceAdapter(dsl);
     }
 }
