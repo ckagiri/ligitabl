@@ -69,10 +69,10 @@ public class ResetPasswordUseCase {
 
         log.info("[PASSWORD_RESET] Success userId={}", user.getId());
 
-        try {
-            emailService.sendPasswordResetConfirmation(user.getEmail().value());
-        } catch (Exception e) {
-            log.error("[PASSWORD_RESET] Confirmation email failed userId={}", user.getId(), e);
+        var confirmationResult = emailService.sendPasswordResetConfirmation(user.getEmail().value());
+        if (confirmationResult.isLeft()) {
+            log.error("[PASSWORD_RESET] Confirmation email failed userId={} error={}",
+                    user.getId(), confirmationResult.getLeft());
             // Don't fail the use case
         }
 

@@ -50,11 +50,16 @@ public class RequestPasswordResetUseCase {
                 user.getId(), token.getExpiresAt());
 
             String resetUrl = frontendUrl + "/auth/reset-password?token=" + token.getToken();
-            emailService.sendPasswordResetEmail(email.value(), resetUrl, tokenValidityMinutes);
+            var sendResult = emailService.sendPasswordResetEmail(email.value(), resetUrl, tokenValidityMinutes);
+            if (sendResult.isLeft()) {
+                // Do not expose provider errors to avoid account-enumeration side channels.
+                log.error("[PASSWORD_RESET] Email delivery failed userId={} error={}",
+                        user.getId(), sendResult.getLeft());
+            }
 
             return Either.right(new PasswordResetResult.EmailSent(email.value()));
         } catch (Exception e) {
-            log.error("[PASSWORD_RESET] Email send failed email={}", emailStr);
+            log.error("[PASSWORD_RESET] Unexpected failure email={}", emailStr, e);
             return Either.left(new PasswordResetError.UnexpectedError());
         }
     }
