@@ -70,7 +70,7 @@ ligitabl:
 
   email:
     provider: ${EMAIL_PROVIDER:logging}
-    from-email: ${EMAIL_FROM:ligipredictor@gmail.com}
+    from-email: ${EMAIL_FROM:noreply@ligipredictor@gmail.com}
     from-name: ${EMAIL_FROM_NAME:LigiPredictor}
     aws-ses:
       region: ${AWS_SES_REGION:us-east-1}
