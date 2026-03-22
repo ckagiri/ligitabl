@@ -21,22 +21,17 @@ public class LoggingEmailProvider implements EmailProvider {
             return Either.left(new EmailError.NoValidRecipients());
         }
 
-        EmailError firstError = null;
+        log.info("[LOGGING_EMAIL_SEND] Sending to {} recipients", recipientEmails.size());
 
         for (String recipient : recipientEmails) {
             var result = sendSingle(recipient, subject, htmlBody, priority);
             if (result.isLeft()) {
-                if (firstError == null) {
-                    firstError = result.getLeft();
-                }
+                log.error("[LOGGING_EMAIL_FAILED] Failed to send to {}", recipient);
                 continue;
             }
         }
 
-        if (firstError != null) {
-            return Either.left(firstError);
-        }
-
+        log.info("[LOGGING_EMAIL_SUCCESS] Sent {} emails", recipientEmails.size());
         return Either.right(null);
     }
 
