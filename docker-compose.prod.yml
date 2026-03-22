@@ -51,6 +51,8 @@ services:
       JWT_SECRET: ${JWT_SECRET}
       FOOTBALL_DATA_API_TOKEN: ${FOOTBALL_DATA_API_TOKEN}
       EMAIL_PROVIDER: ${EMAIL_PROVIDER:-aws-ses}
+      EMAIL_FROM: ${EMAIL_FROM:-noreply@ligipredictor.com}
+      EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-LigiPredictor}
       FRONTEND_URL: ${FRONTEND_URL}
       AWS_SES_REGION: ${AWS_SES_REGION:-us-east-1}
       AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
