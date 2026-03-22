@@ -50,6 +50,7 @@ services:
       # Application secrets
       JWT_SECRET: ${JWT_SECRET}
       FOOTBALL_DATA_API_TOKEN: ${FOOTBALL_DATA_API_TOKEN}
+      FRONTEND_URL: ${FRONTEND_URL}
       GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
 
       # JVM options (tuned for 1 vCPU / 2 GB droplet)

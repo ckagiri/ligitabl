@@ -35,6 +35,7 @@ services:
       DB_PORT: 5432
       DB_USER: ${DB_USER:-ligitabl}
       DB_PASSWORD: ${DB_PASSWORD:-ligitabl}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:8080}
       GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
   # To enable Liquibase during app startup, set the liquibase Spring profile:
   # SPRING_PROFILES_ACTIVE: liquibase
