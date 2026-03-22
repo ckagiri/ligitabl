@@ -69,12 +69,12 @@ ligitabl:
       token-validity-seconds: ${REMEMBER_ME_TOKEN_VALIDITY_SECONDS:1209600}
 
   email:
-    provider: ${EMAIL_PROVIDER:logging}
+    provider: ${EMAIL_PROVIDER:gmail-smtp}
     from-email: ${EMAIL_FROM:ligipredictor@gmail.com}
     from-name: ${EMAIL_FROM_NAME:LigiPredictor}
-    gmail-api:
-      credentials-path: ${GMAIL_CREDENTIALS_PATH:/secrets/gmail-credentials.json}
-      user-id: ${GMAIL_USER_ID:me}
+    gmail-smtp:
+      username: ${GMAIL_USERNAME:ligipredictor@gmail.com}
+      password: ${GMAIL_APP_PASSWORD:}
 
 football-data:
   api:

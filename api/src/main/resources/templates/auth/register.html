@@ -30,6 +30,16 @@
             th:action="@{/auth/register}"
             method="post"
             th:object="${registerForm}"
+            x-data="{
+              password: '',
+              confirmPassword: '',
+              passwordsMatch() {
+                return this.password === this.confirmPassword && this.password.length > 0;
+              },
+              passwordsDontMatch() {
+                return this.password !== this.confirmPassword && this.confirmPassword.length > 0;
+              }
+            }"
           >
             <div
               th:if="${error}"
@@ -99,6 +109,7 @@
                     name="password"
                     :type="show ? 'text' : 'password'"
                     th:field="*{password}"
+                    x-model="password"
                     required
                     th:classappend="${#fields.hasErrors('password')} ? 'border-red-300' : 'border-gray-300'"
                     class="appearance-none relative block w-full px-3 py-2 pr-10 border placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
@@ -158,6 +169,7 @@
                     name="confirmPassword"
                     :type="show ? 'text' : 'password'"
                     th:field="*{confirmPassword}"
+                    x-model="confirmPassword"
                     required
                     th:classappend="${#fields.hasErrors('confirmPassword')} ? 'border-red-300' : 'border-gray-300'"
                     class="appearance-none relative block w-full px-3 py-2 pr-10 border placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
@@ -199,13 +211,35 @@
                   th:errors="*{confirmPassword}"
                   class="mt-1 text-sm text-red-600"
                 ></p>
+
+                <div x-show="passwordsMatch()" class="mt-1 flex items-center text-sm text-green-600">
+                  <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  Passwords match
+                </div>
+                <div x-show="passwordsDontMatch()" class="mt-1 flex items-center text-sm text-red-600">
+                  <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fill-rule="evenodd"
+                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  Passwords don't match
+                </div>
               </div>
             </div>
 
             <div>
               <button
                 type="submit"
-                class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition"
+                class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                :disabled="!passwordsMatch()"
               >
                 <span class="absolute left-0 inset-y-0 flex items-center pl-3">
                   <svg
