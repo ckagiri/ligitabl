@@ -21,8 +21,8 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
@@ -273,7 +273,8 @@ public class AuthController {
             return "auth/forgot-password";
         }
 
-        model.addAttribute("success", "If an account exists with this email, you will receive password reset instructions.");
+        model.addAttribute(
+                "success", "If an account exists with this email, you will receive password reset instructions.");
         model.addAttribute("pageTitle", "Forgot Password");
         model.addAttribute("forgotPasswordForm", new ForgotPasswordForm());
         return "auth/forgot-password";
@@ -318,15 +319,16 @@ public class AuthController {
 
         return result.fold(
                 error -> {
-                    String errorMessage = switch (error) {
-                        case ResetPasswordUseCase.ResetError.InvalidToken __ ->
-                                "Invalid or expired reset link. Please request a new one.";
-                        case ResetPasswordUseCase.ResetError.TokenExpired __ ->
-                                "This reset link has expired. Please request a new one.";
-                        case ResetPasswordUseCase.ResetError.TokenAlreadyUsed __ ->
-                                "This reset link has already been used. Please request a new one.";
-                        case ResetPasswordUseCase.ResetError.WeakPassword weak -> weak.reason();
-                    };
+                    String errorMessage =
+                            switch (error) {
+                                case ResetPasswordUseCase.ResetError.InvalidToken
+                                __ -> "Invalid or expired reset link. Please request a new one.";
+                                case ResetPasswordUseCase.ResetError.TokenExpired
+                                __ -> "This reset link has expired. Please request a new one.";
+                                case ResetPasswordUseCase.ResetError.TokenAlreadyUsed
+                                __ -> "This reset link has already been used. Please request a new one.";
+                                case ResetPasswordUseCase.ResetError.WeakPassword weak -> weak.reason();
+                            };
 
                     model.addAttribute("error", errorMessage);
                     model.addAttribute("pageTitle", "Reset Password");

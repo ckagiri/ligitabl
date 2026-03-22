@@ -46,15 +46,16 @@ public class RequestPasswordResetUseCase {
             PasswordResetToken token = PasswordResetToken.create(user.getId(), tokenValidityMinutes);
             tokenRepo.save(token);
 
-            log.info("[PASSWORD_RESET] Token created userId={} expiresAt={}",
-                user.getId(), token.getExpiresAt());
+            log.info("[PASSWORD_RESET] Token created userId={} expiresAt={}", user.getId(), token.getExpiresAt());
 
             String resetUrl = frontendUrl + "/auth/reset-password?token=" + token.getToken();
             var sendResult = emailService.sendPasswordResetEmail(email.value(), resetUrl, tokenValidityMinutes);
             if (sendResult.isLeft()) {
                 // Do not expose provider errors to avoid account-enumeration side channels.
-                log.error("[PASSWORD_RESET] Email delivery failed userId={} error={}",
-                        user.getId(), sendResult.getLeft());
+                log.error(
+                        "[PASSWORD_RESET] Email delivery failed userId={} error={}",
+                        user.getId(),
+                        sendResult.getLeft());
             }
 
             return Either.right(new PasswordResetResult.EmailSent(email.value()));

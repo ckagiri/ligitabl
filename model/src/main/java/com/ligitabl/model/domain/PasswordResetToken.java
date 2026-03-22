@@ -13,9 +13,12 @@ public class PasswordResetToken {
     String token;
     UUID userId;
     Instant expiresAt;
+
     @With
     boolean used;
+
     Instant createdAt;
+
     @With
     Instant usedAt;
 

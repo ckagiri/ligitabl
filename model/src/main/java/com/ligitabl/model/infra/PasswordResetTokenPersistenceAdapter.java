@@ -1,5 +1,7 @@
 package com.ligitabl.model.infra;
 
+import static com.ligitabl.model.db.tables.TPasswordResetToken.T_PASSWORD_RESET_TOKEN;
+
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.Optional;
@@ -9,8 +11,6 @@ import org.jooq.DSLContext;
 import com.ligitabl.model.db.tables.records.PasswordResetTokenRecord;
 import com.ligitabl.model.domain.PasswordResetToken;
 import com.ligitabl.model.repo.PasswordResetTokenRepo;
-
-import static com.ligitabl.model.db.tables.TPasswordResetToken.T_PASSWORD_RESET_TOKEN;
 
 import lombok.RequiredArgsConstructor;
 
@@ -69,10 +69,10 @@ public class PasswordResetTokenPersistenceAdapter implements PasswordResetTokenR
         OffsetDateTime createdAt = record.getCreatedAt();
 
         return PasswordResetToken.builder()
-            .token(record.getToken())
-            .userId(record.getUserId())
+                .token(record.getToken())
+                .userId(record.getUserId())
                 .expiresAt(expiresAt == null ? null : expiresAt.toInstant())
-            .used(Boolean.TRUE.equals(record.getUsed()))
+                .used(Boolean.TRUE.equals(record.getUsed()))
                 .usedAt(usedAt == null ? null : usedAt.toInstant())
                 .createdAt(createdAt == null ? null : createdAt.toInstant())
                 .build();

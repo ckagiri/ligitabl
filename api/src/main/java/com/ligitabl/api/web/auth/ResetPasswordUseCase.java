@@ -44,8 +44,7 @@ public class ResetPasswordUseCase {
 
         var resetToken = tokenResult.get();
         if (!resetToken.isValid()) {
-            log.warn("[PASSWORD_RESET] Token invalid: used={} expired={}",
-                resetToken.isUsed(), resetToken.isExpired());
+            log.warn("[PASSWORD_RESET] Token invalid: used={} expired={}", resetToken.isUsed(), resetToken.isExpired());
 
             if (resetToken.isUsed()) {
                 return Either.left(new ResetError.TokenAlreadyUsed());
@@ -69,10 +68,13 @@ public class ResetPasswordUseCase {
 
         log.info("[PASSWORD_RESET] Success userId={}", user.getId());
 
-        var confirmationResult = emailService.sendPasswordResetConfirmation(user.getEmail().value());
+        var confirmationResult =
+                emailService.sendPasswordResetConfirmation(user.getEmail().value());
         if (confirmationResult.isLeft()) {
-            log.error("[PASSWORD_RESET] Confirmation email failed userId={} error={}",
-                    user.getId(), confirmationResult.getLeft());
+            log.error(
+                    "[PASSWORD_RESET] Confirmation email failed userId={} error={}",
+                    user.getId(),
+                    confirmationResult.getLeft());
             // Don't fail the use case
         }
 
@@ -81,8 +83,11 @@ public class ResetPasswordUseCase {
 
     public sealed interface ResetError {
         record InvalidToken() implements ResetError {}
+
         record TokenExpired() implements ResetError {}
+
         record TokenAlreadyUsed() implements ResetError {}
+
         record WeakPassword(String reason) implements ResetError {}
     }
 

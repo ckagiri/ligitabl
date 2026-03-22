@@ -20,8 +20,7 @@ public class PasswordResetEmailService {
     private final EmailProvider emailProvider;
     private final EmailTemplateRenderer templateRenderer;
 
-    public Either<EmailError, Void> sendPasswordResetEmail(
-            String recipientEmail, String resetUrl, int expiryMinutes) {
+    public Either<EmailError, Void> sendPasswordResetEmail(String recipientEmail, String resetUrl, int expiryMinutes) {
         Map<String, Object> templateData = Map.of(
                 "resetUrl", resetUrl,
                 "expiryMinutes", expiryMinutes,
@@ -37,10 +36,7 @@ public class PasswordResetEmailService {
 
         log.info("[PASSWORD_RESET_EMAIL] Sending to {}", recipientEmail);
         return emailProvider.sendSingle(
-                recipientEmail,
-                rendered.subject(),
-                rendered.htmlBody(),
-                EmailCommand.Priority.HIGH);
+                recipientEmail, rendered.subject(), rendered.htmlBody(), EmailCommand.Priority.HIGH);
     }
 
     public Either<EmailError, Void> sendPasswordResetConfirmation(String recipientEmail) {
@@ -55,9 +51,6 @@ public class PasswordResetEmailService {
 
         log.info("[PASSWORD_RESET_EMAIL] Sending to {}", recipientEmail);
         return emailProvider.sendSingle(
-                recipientEmail,
-                content.subject(),
-                content.htmlBody(),
-                EmailCommand.Priority.NORMAL);
+                recipientEmail, content.subject(), content.htmlBody(), EmailCommand.Priority.NORMAL);
     }
 }
