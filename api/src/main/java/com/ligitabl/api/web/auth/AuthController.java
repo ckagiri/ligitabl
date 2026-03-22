@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
@@ -64,6 +65,8 @@ public class AuthController {
     private final SeasonRepo seasonRepo;
     private final CompetitionDefaults competitionDefaults;
     private final RememberMeServices rememberMeServices;
+    private final RequestPasswordResetUseCase requestPasswordResetUseCase;
+    private final ResetPasswordUseCase resetPasswordUseCase;
 
     @GetMapping("/register")
     public String showRegisterForm(Model model, HttpServletRequest request) {
@@ -246,6 +249,99 @@ public class AuthController {
         return "redirect:/";
     }
 
+    @GetMapping("/forgot-password")
+    public String showForgotPasswordForm(Model model, HttpServletRequest request) {
+        request.getSession(true);
+        model.addAttribute("pageTitle", "Forgot Password");
+        model.addAttribute("forgotPasswordForm", new ForgotPasswordForm());
+        return "auth/forgot-password";
+    }
+
+    @PostMapping("/forgot-password")
+    public String forgotPassword(
+            @Valid @ModelAttribute ForgotPasswordForm form, BindingResult bindingResult, Model model) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("pageTitle", "Forgot Password");
+            return "auth/forgot-password";
+        }
+
+        var result = requestPasswordResetUseCase.execute(form.getEmail());
+        if (result.isLeft()) {
+            log.error("Error processing forgot password request");
+            model.addAttribute("error", "An error occurred. Please try again later.");
+            model.addAttribute("pageTitle", "Forgot Password");
+            return "auth/forgot-password";
+        }
+
+        model.addAttribute(
+                "success", "If an account exists with this email, you will receive password reset instructions.");
+        model.addAttribute("pageTitle", "Forgot Password");
+        model.addAttribute("forgotPasswordForm", new ForgotPasswordForm());
+        return "auth/forgot-password";
+    }
+
+    @GetMapping("/reset-password")
+    public String showResetPasswordForm(
+            @RequestParam(required = false) String token, Model model, HttpServletRequest request) {
+        request.getSession(true);
+
+        if (token == null || token.isBlank()) {
+            model.addAttribute("error", "Invalid password reset link.");
+            model.addAttribute("pageTitle", "Login");
+            return "auth/login";
+        }
+
+        model.addAttribute("pageTitle", "Reset Password");
+        ResetPasswordForm form = new ResetPasswordForm();
+        form.setToken(token);
+        model.addAttribute("resetPasswordForm", form);
+        return "auth/reset-password";
+    }
+
+    @PostMapping("/reset-password")
+    public String resetPassword(
+            @Valid @ModelAttribute ResetPasswordForm form,
+            BindingResult bindingResult,
+            RedirectAttributes redirectAttributes,
+            Model model) {
+        if (bindingResult.hasErrors()) {
+            model.addAttribute("pageTitle", "Reset Password");
+            return "auth/reset-password";
+        }
+
+        if (!form.getNewPassword().equals(form.getConfirmPassword())) {
+            bindingResult.rejectValue("confirmPassword", "password.mismatch", "Passwords do not match");
+            model.addAttribute("pageTitle", "Reset Password");
+            return "auth/reset-password";
+        }
+
+        var result = resetPasswordUseCase.execute(form.getToken(), form.getNewPassword());
+
+        return result.fold(
+                error -> {
+                    String errorMessage =
+                            switch (error) {
+                                case ResetPasswordUseCase.ResetError.InvalidToken
+                                __ -> "Invalid or expired reset link. Please request a new one.";
+                                case ResetPasswordUseCase.ResetError.TokenExpired
+                                __ -> "This reset link has expired. Please request a new one.";
+                                case ResetPasswordUseCase.ResetError.TokenAlreadyUsed
+                                __ -> "This reset link has already been used. Please request a new one.";
+                                case ResetPasswordUseCase.ResetError.WeakPassword weak -> weak.reason();
+                            };
+
+                    model.addAttribute("error", errorMessage);
+                    model.addAttribute("pageTitle", "Reset Password");
+                    return "auth/reset-password";
+                },
+                success -> {
+                    redirectAttributes.addFlashAttribute(
+                            "message", "Password reset successful! You can now log in with your new password.");
+                    redirectAttributes.addFlashAttribute("messageType", "success");
+                    return "redirect:/auth/login";
+                });
+    }
+
     @Data
     public static class RegisterForm {
         @NotBlank(message = "Email is required")
@@ -272,6 +368,26 @@ public class AuthController {
 
         @NotBlank(message = "Password is required")
         private String password;
+    }
+
+    @Data
+    public static class ForgotPasswordForm {
+        @NotBlank(message = "Email is required")
+        @jakarta.validation.constraints.Email(message = "Invalid email format")
+        private String email;
+    }
+
+    @Data
+    public static class ResetPasswordForm {
+        @NotBlank(message = "Token is required")
+        private String token;
+
+        @NotBlank(message = "Password is required")
+        @Size(min = 8, message = "Password must be at least 8 characters")
+        private String newPassword;
+
+        @NotBlank(message = "Confirm password is required")
+        private String confirmPassword;
     }
 
     /**

@@ -31,3 +31,5 @@ databaseChangeLog:
       file: db/changelog/20251224_2_predictions.yaml
   - include:
       file: db/changelog/20260104_1_round_is_finalized.yaml
+  - include:
+      file: db/changelog/20260320_1_password_reset_token.yaml
