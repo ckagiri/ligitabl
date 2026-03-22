@@ -164,6 +164,8 @@ jobs:
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           FOOTBALL_DATA_API_TOKEN=${{ secrets.FOOTBALL_DATA_API_TOKEN }}
           EMAIL_PROVIDER=aws-ses
+          EMAIL_FROM=${{ secrets.EMAIL_FROM }}
+          EMAIL_FROM_NAME=${{ secrets.EMAIL_FROM_NAME }}
           FRONTEND_URL=${{ secrets.FRONTEND_URL }}
           AWS_SES_REGION=${{ secrets.AWS_SES_REGION }}
           AWS_ACCESS_KEY_ID=${{ secrets.AWS_ACCESS_KEY_ID }}
