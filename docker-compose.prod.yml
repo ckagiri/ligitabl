@@ -50,8 +50,11 @@ services:
       # Application secrets
       JWT_SECRET: ${JWT_SECRET}
       FOOTBALL_DATA_API_TOKEN: ${FOOTBALL_DATA_API_TOKEN}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-aws-ses}
       FRONTEND_URL: ${FRONTEND_URL}
-      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD}
+      AWS_SES_REGION: ${AWS_SES_REGION:-us-east-1}
+      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
+      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
 
       # JVM options (tuned for 1 vCPU / 2 GB droplet)
       JAVA_OPTS: >-

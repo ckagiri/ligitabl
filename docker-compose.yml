@@ -28,7 +28,10 @@ services:
       db:
         condition: service_healthy
     env_file:
-      - ${ENV_FILE:-.env.test}
+      - path: ${ENV_FILE:-.env.test}
+        required: true
+      - path: .env.test.local
+        required: false
     environment:
       # Inside the container, connect to the 'db' service directly
       DB_HOST: db
@@ -36,7 +39,6 @@ services:
       DB_USER: ${DB_USER:-ligitabl}
       DB_PASSWORD: ${DB_PASSWORD:-ligitabl}
       FRONTEND_URL: "${FRONTEND_URL:-http://localhost:8080}"
-      GMAIL_APP_PASSWORD: ${GMAIL_APP_PASSWORD:-}
   # To enable Liquibase during app startup, set the liquibase Spring profile:
   # SPRING_PROFILES_ACTIVE: liquibase
       # Allow extra JVM args at runtime

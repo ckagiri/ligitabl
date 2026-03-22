@@ -69,9 +69,13 @@ ligitabl:
       token-validity-seconds: ${REMEMBER_ME_TOKEN_VALIDITY_SECONDS:1209600}
 
   email:
-    provider: ${EMAIL_PROVIDER:gmail-smtp}
+    provider: ${EMAIL_PROVIDER:logging}
     from-email: ${EMAIL_FROM:ligipredictor@gmail.com}
     from-name: ${EMAIL_FROM_NAME:LigiPredictor}
+    aws-ses:
+      region: ${AWS_SES_REGION:us-east-1}
+      access-key: ${AWS_ACCESS_KEY_ID:}
+      secret-key: ${AWS_SECRET_ACCESS_KEY:}
     gmail-smtp:
       username: ${GMAIL_USERNAME:ligipredictor@gmail.com}
       password: ${GMAIL_APP_PASSWORD:}
