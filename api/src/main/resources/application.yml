@@ -76,9 +76,6 @@ ligitabl:
       region: ${AWS_SES_REGION:us-east-1}
       access-key: ${AWS_ACCESS_KEY_ID:}
       secret-key: ${AWS_SECRET_ACCESS_KEY:}
-    gmail-smtp:
-      username: ${GMAIL_USERNAME:ligipredictor@gmail.com}
-      password: ${GMAIL_APP_PASSWORD:}
 
 football-data:
   api:

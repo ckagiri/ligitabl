@@ -1,5 +1,6 @@
 package com.ligitabl.api.notification;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -11,7 +12,6 @@ import com.ligitabl.api.shared.Either;
 import lombok.extern.slf4j.Slf4j;
 import software.amazon.awssdk.services.ses.SesClient;
 import software.amazon.awssdk.services.ses.model.Body;
-import software.amazon.awssdk.services.ses.model.ConfigurationSetDoesNotExistException;
 import software.amazon.awssdk.services.ses.model.Content;
 import software.amazon.awssdk.services.ses.model.Destination;
 import software.amazon.awssdk.services.ses.model.MailFromDomainNotVerifiedException;
@@ -97,10 +97,6 @@ public class AwsSesEmailProvider implements EmailProvider {
         } catch (MailFromDomainNotVerifiedException e) {
             log.error("[AWS_SES_DOMAIN_NOT_VERIFIED] fromEmail={}", fromEmail, e);
             return Either.left(new EmailError.EmailProviderError("SES sender not verified: " + fromEmail));
-        } catch (ConfigurationSetDoesNotExistException e) {
-            log.error("[AWS_SES_CONFIGURATION_SET_MISSING] configurationSet={}", configurationSetName, e);
-            return Either.left(new EmailError.EmailProviderError(
-                    "SES configuration set not found: " + configurationSetName));
         } catch (SesException e) {
             String providerMessage = e.awsErrorDetails() == null
                     ? e.getMessage()
@@ -114,7 +110,7 @@ public class AwsSesEmailProvider implements EmailProvider {
     }
 
     private List<List<String>> partition(List<String> recipients, int batchSize) {
-        java.util.ArrayList<List<String>> partitions = new java.util.ArrayList<>();
+        ArrayList<List<String>> partitions = new ArrayList<>();
         for (int index = 0; index < recipients.size(); index += batchSize) {
             partitions.add(recipients.subList(index, Math.min(index + batchSize, recipients.size())));
         }
