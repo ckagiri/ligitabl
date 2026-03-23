@@ -47,6 +47,19 @@ public class UserPersistenceAdapter implements UserRepo {
     }
 
     @Override
+    public Optional<User> findByGoogleId(String googleId) {
+        if (googleId == null || googleId.isBlank()) {
+            return Optional.empty();
+        }
+
+        var record = dsl.selectFrom(T_USER)
+                .where(T_USER.C_GOOGLE_SUBJECT.eq(googleId))
+                .fetchOne();
+
+        return Optional.ofNullable(map(record));
+    }
+
+    @Override
     public User create(User model) {
         if (model.getId() == null) {
             throw new IllegalArgumentException("User.id must not be null on create");
@@ -63,9 +76,10 @@ public class UserPersistenceAdapter implements UserRepo {
             rec.setId(model.getId());
             rec.setPublicId(model.getPublicId().value());
             rec.setEmail(model.getEmail().value());
-            rec.setPasswordHash(model.getPassword().value());
+            rec.setPasswordHash(model.getPassword() == null ? null : model.getPassword().value());
             rec.setDisplayName(model.getDisplayName());
             rec.setEmailVerified(model.isEmailVerified());
+            rec.setGoogleSubject(model.getGoogleId());
             rec.store();
             rec.refresh();
 
@@ -79,6 +93,16 @@ public class UserPersistenceAdapter implements UserRepo {
         });
 
         return model;
+    }
+
+    @Override
+    public void update(User user) {
+        dsl.update(T_USER)
+                .set(T_USER.C_DISPLAY_NAME, user.getDisplayName())
+                .set(T_USER.C_EMAIL_VERIFIED, user.isEmailVerified())
+            .set(T_USER.C_GOOGLE_SUBJECT, user.getGoogleId())
+                .where(T_USER.PK_ID.eq(user.getId()))
+                .execute();
     }
 
     @Override
@@ -116,6 +140,7 @@ public class UserPersistenceAdapter implements UserRepo {
                 .displayName(record.getDisplayName())
                 .roles(roles)
                 .emailVerified(Boolean.TRUE.equals(record.getEmailVerified()))
+                .googleId(record.getGoogleSubject())
                 .build();
     }
 }

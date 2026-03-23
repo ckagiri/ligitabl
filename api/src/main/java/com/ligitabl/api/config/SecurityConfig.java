@@ -26,6 +26,8 @@ import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 
+import com.ligitabl.api.auth.oauth2.CustomOAuth2UserService;
+import com.ligitabl.api.auth.oauth2.OAuth2AuthenticationSuccessHandler;
 import com.ligitabl.api.auth.security.JwtAuthenticationFilter;
 import com.ligitabl.api.auth.security.TokenGenerator;
 
@@ -127,7 +129,9 @@ public class SecurityConfig {
     public SecurityFilterChain webSecurityFilterChain(
             HttpSecurity http,
             @Qualifier("webUserDetailsService") UserDetailsService userDetailsService,
-            RememberMeServices rememberMeServices)
+            RememberMeServices rememberMeServices,
+            CustomOAuth2UserService customOAuth2UserService,
+            OAuth2AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler)
             throws Exception {
         http.csrf(csrf -> csrf.ignoringRequestMatchers(
                         "/seasonprediction",
@@ -147,6 +151,8 @@ public class SecurityConfig {
                                 "/auth/register",
                                 "/auth/forgot-password",
                                 "/auth/reset-password",
+                                "/oauth2/**",
+                                "/login/oauth2/**",
                                 "/leaderboard",
                                 "/leaderboard/**",
                                 "/standings",
@@ -178,6 +184,9 @@ public class SecurityConfig {
                         .loginProcessingUrl("/auth/login/process")
                         .defaultSuccessUrl("/my-table", true)
                         .permitAll())
+                .oauth2Login(oauth2 -> oauth2.loginPage("/auth/login")
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .successHandler(oauth2AuthenticationSuccessHandler))
                 .rememberMe(remember -> remember.rememberMeServices(rememberMeServices))
                 .logout(logout -> logout.logoutUrl("/auth/logout")
                         .logoutSuccessUrl("/")

@@ -15,7 +15,11 @@ public interface UserRepo {
 
     Optional<User> findByPublicId(PublicId publicId);
 
+    Optional<User> findByGoogleId(String googleId);
+
     User create(User model);
+
+    void update(User user);
 
     boolean existsByEmail(Email email);
 

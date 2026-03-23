@@ -266,6 +266,12 @@
                 >User</span
               >
               <a
+                th:href="@{/settings/connected-accounts}"
+                class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+              >
+                Connected Accounts
+              </a>
+              <a
                 th:href="@{/auth/logout}"
                 class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
               >
@@ -363,6 +369,12 @@
                   th:text="'Signed in as ' + ${userDisplayName}"
                   >Signed in as User</span
                 >
+                <a
+                  th:href="@{/settings/connected-accounts}"
+                  class="text-gray-700 hover:bg-gray-50 py-2 rounded-md text-base font-medium block"
+                >
+                  Connected Accounts
+                </a>
                 <a
                   th:href="@{/auth/logout}"
                   class="text-gray-700 hover:bg-gray-50 py-2 rounded-md text-base font-medium block"
