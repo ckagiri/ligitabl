@@ -20,8 +20,10 @@ public class MyTableController {
 
     @GetMapping("/my-table")
     public String myTable(@RequestParam(required = false) Integer round, Principal principal) {
-        String forwardTo = principal == null ? "/my-table/guest" : "/predictions/user/me";
-        return withRoundForward(forwardTo, round);
+        if (principal == null) {
+            return withRoundRedirect("/my-table/guest", round);
+        }
+        return withRoundForward("/predictions/user/me", round);
     }
 
     @GetMapping("/my-table/guest")

@@ -177,7 +177,8 @@ public class AuthController {
             Password.Plaintext password = Password.Plaintext.create(form.getPassword());
 
             User user = userRepo.findByEmail(email)
-                    .filter(found -> passwordHasher.verify(password, found.getPassword()))
+                    .filter(found ->
+                            found.getPassword() != null && passwordHasher.verify(password, found.getPassword()))
                     .orElse(null);
 
             if (user == null) {

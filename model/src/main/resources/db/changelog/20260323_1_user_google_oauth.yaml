@@ -1,0 +1,31 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260323_1_user_google_oauth
+      author: copilot
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_user
+            schemaName: public
+      changes:
+        - addColumn:
+            tableName: t_user
+            schemaName: public
+            columns:
+              - column:
+                  name: c_google_subject
+                  type: varchar(255)
+                  constraints:
+                    nullable: true
+
+        - addUniqueConstraint:
+            tableName: t_user
+            schemaName: public
+            columnNames: c_google_subject
+            constraintName: uq_t_user_google_subject
+
+        - dropNotNullConstraint:
+            tableName: t_user
+            schemaName: public
+            columnName: c_password_hash
+            columnDataType: varchar(255)

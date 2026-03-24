@@ -30,7 +30,7 @@ services:
     env_file:
       - path: ${ENV_FILE:-.env.test}
         required: true
-      - path: .env.test.local
+      - path: ${ENV_LOCAL_FILE:-.env.test.local}
         required: false
     environment:
       # Inside the container, connect to the 'db' service directly

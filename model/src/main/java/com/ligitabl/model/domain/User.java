@@ -9,7 +9,11 @@ import com.ligitabl.model.auth.Password;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.auth.Role;
 
-import lombok.*;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Value;
+import lombok.With;
 
 /**
  * Immutable by design (using @Value from Lombok).
@@ -17,6 +21,7 @@ import lombok.*;
  */
 @Value
 @Builder
+@AllArgsConstructor(access = AccessLevel.PUBLIC)
 public class User {
 
     /**
@@ -42,6 +47,9 @@ public class User {
 
     @With
     boolean emailVerified;
+
+    @With
+    String googleId;
 
     public boolean hasRole(Role role) {
         return roles.contains(role);

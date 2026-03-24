@@ -16,11 +16,28 @@ spring:
     enabled: false
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:}
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+            scope:
+              - openid
+              - profile
+              - email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+
 server:
   port: ${PORT:8080}
   servlet:
     session:
       timeout: 1d
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
 
 logging:
   level:
@@ -70,12 +87,12 @@ ligitabl:
 
   email:
     provider: ${EMAIL_PROVIDER:logging}
-    from-email: ${EMAIL_FROM:noreply@ligipredictor.com}
+    from-email: ${EMAIL_FROM:notifications@ligipredictor.com}
     from-name: ${EMAIL_FROM_NAME:LigiPredictor}
-    aws-ses:
-      region: ${AWS_SES_REGION:us-east-1}
-      access-key: ${AWS_ACCESS_KEY_ID:}
-      secret-key: ${AWS_SECRET_ACCESS_KEY:}
+    mailgun:
+      api-key: ${MAILGUN_API_KEY:}
+      domain: ${MAILGUN_DOMAIN:ligipredictor.com}
+      api-base-url: ${MAILGUN_API_BASE_URL:https://api.mailgun.net/v3}
 
 football-data:
   api:
@@ -101,7 +118,7 @@ admin:
   email: ${ADMIN_EMAIL:admin@ligitabl.com}
 
   # Email Service (choose one when ready to migrate from stub)
-  # email-provider: stub | spring-mail | sendgrid | aws-ses
+  # email-provider: stub | spring-mail | sendgrid | mailgun
   email-provider: stub
 
 workflow:

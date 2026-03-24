@@ -12,6 +12,9 @@ import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
@@ -19,6 +22,8 @@ import org.springframework.web.bind.annotation.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.auth.CurrentUserPublicId;
+import com.ligitabl.api.auth.oauth2.LigitablOAuth2User;
+import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
@@ -234,6 +239,35 @@ public class UserPredictionsController {
     }
 
     private UUID resolveAuthenticatedUserId(Principal principal, Model model, HttpServletResponse response) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null) {
+            Object authPrincipal = authentication.getPrincipal();
+
+            if (authPrincipal instanceof WebUserDetails webUserDetails) {
+                return webUserDetails.getUserId();
+            }
+
+            if (authPrincipal instanceof LigitablOAuth2User ligitablOAuth2User) {
+                return ligitablOAuth2User.getUser().getId();
+            }
+
+            if (authPrincipal instanceof OAuth2User oauth2User) {
+                Object emailAttr = oauth2User.getAttributes().get("email");
+                if (emailAttr != null) {
+                    try {
+                        Email email = Email.create(String.valueOf(emailAttr));
+                        return userRepo.findByEmail(email).map(User::getId).orElseGet(() -> {
+                            response.setStatus(401);
+                            model.addAttribute("error", "User not found");
+                            return null;
+                        });
+                    } catch (IllegalArgumentException ignored) {
+                        // fall through to generic principal-name fallback below
+                    }
+                }
+            }
+        }
+
         if (principal == null
                 || principal.getName() == null
                 || principal.getName().isBlank()) {

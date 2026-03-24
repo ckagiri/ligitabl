@@ -97,6 +97,20 @@ public class NavbarControllerAdvice {
         return resolveUser(principal).map(User::getDisplayName).orElse(null);
     }
 
+    @ModelAttribute("userEmail")
+    public String userEmail(Principal principal) {
+        if (principal == null) {
+            return null;
+        }
+
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null && authentication.getPrincipal() instanceof WebUserDetails details) {
+            return details.getEmail();
+        }
+
+        return resolveUser(principal).map(u -> u.getEmail().value()).orElse(null);
+    }
+
     private UUID resolveUserId(Principal principal) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof WebUserDetails details) {

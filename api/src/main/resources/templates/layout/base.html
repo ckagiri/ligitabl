@@ -258,19 +258,79 @@
               Sign Up
             </a>
             <!-- Logged in user section -->
-            <div th:if="${isLoggedIn}" class="flex items-center space-x-3">
-              <span
-                th:if="${userDisplayName}"
-                class="text-sm font-medium text-gray-700"
-                th:text="${userDisplayName}"
-                >User</span
-              >
-              <a
-                th:href="@{/auth/logout}"
-                class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
-              >
-                Logout
-              </a>
+            <div th:if="${isLoggedIn}" class="flex items-center space-x-3" x-data="{ userMenuOpen: false }">
+              <div class="relative">
+                <button
+                  @click="userMenuOpen = !userMenuOpen"
+                  @click.away="userMenuOpen = false"
+                  type="button"
+                  class="flex items-center space-x-2 text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+                >
+                  <span th:if="${userDisplayName}" th:text="${userDisplayName}">User</span>
+                  <svg class="h-5 w-5" :class="{ 'rotate-180': userMenuOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="transition: transform 200ms">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+
+                <div
+                  x-show="userMenuOpen"
+                  x-cloak
+                  x-transition:enter="transition ease-out duration-100"
+                  x-transition:enter-start="transform opacity-0 scale-95"
+                  x-transition:enter-end="transform opacity-100 scale-100"
+                  x-transition:leave="transition ease-in duration-75"
+                  x-transition:leave-start="transform opacity-100 scale-100"
+                  x-transition:leave-end="transform opacity-0 scale-95"
+                  class="absolute right-0 mt-2 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                >
+                  <div class="py-1">
+                    <div class="px-4 py-3 border-b border-gray-100">
+                      <p class="text-sm font-medium text-gray-900" th:text="${userDisplayName}">User</p>
+                      <p class="text-xs text-gray-500 truncate" th:if="${userEmail}" th:text="${userEmail}">email@example.com</p>
+                    </div>
+
+                    <a
+                      th:href="@{/settings/profile}"
+                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
+                      @click="userMenuOpen = false"
+                    >
+                      <div class="flex items-center">
+                        <svg class="h-5 w-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
+                        Profile Settings
+                      </div>
+                    </a>
+
+                    <a
+                      th:href="@{/settings/connected-accounts}"
+                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
+                      @click="userMenuOpen = false"
+                    >
+                      <div class="flex items-center">
+                        <svg class="h-5 w-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                        </svg>
+                        Connected Accounts
+                      </div>
+                    </a>
+
+                    <div class="border-t border-gray-100"></div>
+
+                    <a
+                      th:href="@{/auth/logout}"
+                      class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition"
+                    >
+                      <div class="flex items-center">
+                        <svg class="h-5 w-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                        </svg>
+                        Logout
+                      </div>
+                    </a>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -357,18 +417,42 @@
               </a>
               <!-- Logged in user in mobile -->
               <div th:if="${isLoggedIn}" class="px-3 py-2">
-                <span
-                  th:if="${userDisplayName}"
-                  class="text-sm font-medium text-gray-900 block mb-2"
-                  th:text="'Signed in as ' + ${userDisplayName}"
-                  >Signed in as User</span
-                >
+                <div class="border-b border-gray-200 pb-3 mb-3">
+                  <p class="text-sm font-medium text-gray-900 mb-1" th:text="'Signed in as ' + ${userDisplayName}">Signed in as User</p>
+                  <p class="text-xs text-gray-500" th:if="${userEmail}" th:text="${userEmail}">email@example.com</p>
+                </div>
+
                 <a
-                  th:href="@{/auth/logout}"
-                  class="text-gray-700 hover:bg-gray-50 py-2 rounded-md text-base font-medium block"
+                  th:href="@{/settings/profile}"
+                  class="flex items-center text-gray-700 hover:bg-gray-50 py-2 rounded-md text-base font-medium"
                 >
-                  Logout
+                  <svg class="h-5 w-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7" />
+                  </svg>
+                  Profile Settings
                 </a>
+
+                <a
+                  th:href="@{/settings/connected-accounts}"
+                  class="flex items-center text-gray-700 hover:bg-gray-50 py-2 rounded-md text-base font-medium"
+                >
+                  <svg class="h-5 w-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                  Connected Accounts
+                </a>
+
+                <div class="border-t border-gray-200 mt-3 pt-3">
+                  <a
+                    th:href="@{/auth/logout}"
+                    class="flex items-center text-gray-700 hover:bg-gray-50 py-2 rounded-md text-base font-medium"
+                  >
+                    <svg class="h-5 w-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                    </svg>
+                    Logout
+                  </a>
+                </div>
               </div>
             </div>
           </div>

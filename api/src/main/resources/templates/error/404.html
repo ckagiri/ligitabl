@@ -1,0 +1,23 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <div layout:fragment="content">
+      <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 text-center">
+        <p class="text-6xl font-bold text-indigo-600" th:text="${status ?: 404}">404</p>
+        <h1 class="mt-4 text-2xl font-semibold text-gray-900">Page not found</h1>
+        <p class="mt-2 text-gray-500">The page you are looking for does not exist or has been moved.</p>
+        <p class="mt-1 text-sm text-gray-400" th:if="${path}" th:text="'Path: ' + ${path}">Path: /missing</p>
+        <a
+          th:href="@{/}"
+          class="mt-8 inline-flex items-center px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition"
+        >
+          Back to home
+        </a>
+      </section>
+    </div>
+  </body>
+</html>
