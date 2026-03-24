@@ -118,7 +118,7 @@ admin:
   email: ${ADMIN_EMAIL:admin@ligitabl.com}
 
   # Email Service (choose one when ready to migrate from stub)
-  # email-provider: stub | spring-mail | sendgrid | aws-ses
+  # email-provider: stub | spring-mail | sendgrid | mailgun
   email-provider: stub
 
 workflow:

@@ -50,13 +50,15 @@ services:
       # Application secrets
       JWT_SECRET: ${JWT_SECRET}
       FOOTBALL_DATA_API_TOKEN: ${FOOTBALL_DATA_API_TOKEN}
-      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-aws-ses}
-      EMAIL_FROM: ${EMAIL_FROM:-noreply@ligipredictor.com}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:-mailgun}
+      EMAIL_FROM: ${EMAIL_FROM:-notifications@ligipredictor.com}
       EMAIL_FROM_NAME: ${EMAIL_FROM_NAME:-LigiPredictor}
+      MAILGUN_API_KEY: ${MAILGUN_API_KEY}
+      MAILGUN_DOMAIN: ${MAILGUN_DOMAIN:-ligipredictor.com}
+      MAILGUN_API_BASE_URL: ${MAILGUN_API_BASE_URL:-https://api.mailgun.net/v3}
       FRONTEND_URL: ${FRONTEND_URL}
-      AWS_SES_REGION: ${AWS_SES_REGION:-us-east-1}
-      AWS_ACCESS_KEY_ID: ${AWS_ACCESS_KEY_ID}
-      AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY}
 
       # JVM options (tuned for 1 vCPU / 2 GB droplet)
       JAVA_OPTS: >-
