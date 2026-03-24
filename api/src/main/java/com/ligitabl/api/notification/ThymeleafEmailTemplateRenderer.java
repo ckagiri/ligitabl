@@ -41,8 +41,8 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
 
     private String subjectFor(EmailCommand.EmailType emailType) {
         return switch (emailType) {
-            case PASSWORD_RESET -> "Reset your LigiTabl password";
-            case PASSWORD_RESET_CONFIRMATION -> "Your LigiTabl password has been changed";
+            case PASSWORD_RESET -> "Reset your LigiPredictor password";
+            case PASSWORD_RESET_CONFIRMATION -> "Your LigiPredictor password has been changed";
         };
     }
 }
