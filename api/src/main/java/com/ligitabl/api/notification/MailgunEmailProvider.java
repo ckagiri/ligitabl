@@ -72,8 +72,7 @@ public class MailgunEmailProvider implements EmailProvider {
                 formData.add("o:tag", "high-priority");
             }
 
-            RequestEntity<MultiValueMap<String, String>> request = RequestEntity
-                    .post(uri)
+            RequestEntity<MultiValueMap<String, String>> request = RequestEntity.post(uri)
                     .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                     .header(HttpHeaders.AUTHORIZATION, "Basic " + encodedAuth)
                     .body(formData);
@@ -85,8 +84,8 @@ public class MailgunEmailProvider implements EmailProvider {
                 return Either.right(null);
             } else {
                 log.error("[MAILGUN_SEND_ERROR] status={} body={}", response.getStatusCode(), response.getBody());
-                return Either.left(new EmailError.EmailProviderError(
-                        "Mailgun send failed: " + response.getStatusCode()));
+                return Either.left(
+                        new EmailError.EmailProviderError("Mailgun send failed: " + response.getStatusCode()));
             }
 
         } catch (Exception e) {

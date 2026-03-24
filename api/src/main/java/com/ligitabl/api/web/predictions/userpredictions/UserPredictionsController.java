@@ -21,9 +21,9 @@ import org.springframework.web.bind.annotation.*;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ligitabl.api.auth.CurrentUserPublicId;
 import com.ligitabl.api.auth.oauth2.LigitablOAuth2User;
 import com.ligitabl.api.auth.security.WebUserDetails;
-import com.ligitabl.api.auth.CurrentUserPublicId;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;

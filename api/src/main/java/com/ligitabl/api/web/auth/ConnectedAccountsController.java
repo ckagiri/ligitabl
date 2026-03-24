@@ -65,8 +65,7 @@ public class ConnectedAccountsController {
 
     @PostMapping("/unlink-google")
     public String unlinkGoogle(
-            @AuthenticationPrincipal WebUserDetails userDetails,
-            RedirectAttributes redirectAttributes) {
+            @AuthenticationPrincipal WebUserDetails userDetails, RedirectAttributes redirectAttributes) {
         User user = currentUser(userDetails);
         if (user == null) {
             return "redirect:/auth/login";

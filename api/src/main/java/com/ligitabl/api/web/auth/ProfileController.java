@@ -2,11 +2,12 @@ package com.ligitabl.api.web.auth;
 
 import java.util.UUID;
 
+import org.springframework.beans.propertyeditors.StringTrimmerEditor;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -18,7 +19,6 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
-import org.springframework.beans.propertyeditors.StringTrimmerEditor;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.model.domain.User;
@@ -42,9 +42,7 @@ public class ProfileController {
     private final UserRepo userRepo;
 
     @GetMapping("/profile")
-    public String profile(
-            @AuthenticationPrincipal WebUserDetails userDetails,
-            Model model) {
+    public String profile(@AuthenticationPrincipal WebUserDetails userDetails, Model model) {
         User user = currentUser(userDetails);
         if (user == null) {
             return "redirect:/auth/login";
@@ -113,8 +111,7 @@ public class ProfileController {
         var authentication = new UsernamePasswordAuthenticationToken(updatedDetails, null, authorities);
         SecurityContextHolder.getContext().setAuthentication(authentication);
         session.setAttribute(
-                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
-                SecurityContextHolder.getContext());
+                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
     }
 
     private User currentUser(WebUserDetails userDetails) {

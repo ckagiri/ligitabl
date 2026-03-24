@@ -76,7 +76,8 @@ public class UserPersistenceAdapter implements UserRepo {
             rec.setId(model.getId());
             rec.setPublicId(model.getPublicId().value());
             rec.setEmail(model.getEmail().value());
-            rec.setPasswordHash(model.getPassword() == null ? null : model.getPassword().value());
+            rec.setPasswordHash(
+                    model.getPassword() == null ? null : model.getPassword().value());
             rec.setDisplayName(model.getDisplayName());
             rec.setEmailVerified(model.isEmailVerified());
             rec.setGoogleSubject(model.getGoogleId());
@@ -100,7 +101,7 @@ public class UserPersistenceAdapter implements UserRepo {
         dsl.update(T_USER)
                 .set(T_USER.C_DISPLAY_NAME, user.getDisplayName())
                 .set(T_USER.C_EMAIL_VERIFIED, user.isEmailVerified())
-            .set(T_USER.C_GOOGLE_SUBJECT, user.getGoogleId())
+                .set(T_USER.C_GOOGLE_SUBJECT, user.getGoogleId())
                 .where(T_USER.PK_ID.eq(user.getId()))
                 .execute();
     }

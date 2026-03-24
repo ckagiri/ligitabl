@@ -45,18 +45,18 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw oauthError("Email is missing from OAuth2 payload");
         }
 
-        return userRepo.findByGoogleId(userInfo.id())
-                .orElseGet(() -> findByEmailOrCreate(userInfo));
+        return userRepo.findByGoogleId(userInfo.id()).orElseGet(() -> findByEmailOrCreate(userInfo));
     }
 
     private OAuth2User processOAuth2User(OAuth2UserRequest userRequest, OAuth2User oauth2User) {
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
         Map<String, Object> attributes = oauth2User.getAttributes();
 
-        OAuth2UserInfo userInfo = switch (registrationId) {
-            case "google" -> OAuth2UserInfo.fromGoogle(attributes);
-            default -> throw new IllegalArgumentException("Unsupported OAuth2 provider: " + registrationId);
-        };
+        OAuth2UserInfo userInfo =
+                switch (registrationId) {
+                    case "google" -> OAuth2UserInfo.fromGoogle(attributes);
+                    default -> throw new IllegalArgumentException("Unsupported OAuth2 provider: " + registrationId);
+                };
 
         if (userInfo.id() == null || userInfo.id().isBlank()) {
             throw oauthError("Subject is missing from OAuth2 payload");
@@ -96,7 +96,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                     true,
                     googleId);
             userRepo.update(linkedUser);
-            log.info("[OAUTH_GOOGLE_LINKED] userId={} email={}", existing.getId(), existing.getEmail().value());
+            log.info(
+                    "[OAUTH_GOOGLE_LINKED] userId={} email={}",
+                    existing.getId(),
+                    existing.getEmail().value());
             return linkedUser;
         }
 
@@ -106,7 +109,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     private User createOAuth2User(Email email, OAuth2UserInfo userInfo) {
         UUID userId = UUID.randomUUID();
         String displayName = (userInfo.name() == null || userInfo.name().isBlank())
-            ? extractNameFromEmail(email.value())
+                ? extractNameFromEmail(email.value())
                 : userInfo.name();
 
         User user = User.builder()
@@ -121,7 +124,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .build();
 
         userRepo.create(user);
-        log.info("[OAUTH_GOOGLE_CREATED] userId={} email={}", user.getId(), user.getEmail().value());
+        log.info(
+                "[OAUTH_GOOGLE_CREATED] userId={} email={}",
+                user.getId(),
+                user.getEmail().value());
         return user;
     }
 

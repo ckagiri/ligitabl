@@ -81,15 +81,26 @@ public class AwsSesEmailProvider implements EmailProvider {
         try {
             SendEmailResponse response = sesClient.sendEmail(SendEmailRequest.builder()
                     .source(formatFromAddress())
-                    .destination(Destination.builder().toAddresses(recipientEmails).build())
+                    .destination(
+                            Destination.builder().toAddresses(recipientEmails).build())
                     .message(Message.builder()
-                            .subject(Content.builder().charset("UTF-8").data(subject).build())
+                            .subject(Content.builder()
+                                    .charset("UTF-8")
+                                    .data(subject)
+                                    .build())
                             .body(Body.builder()
-                                    .html(Content.builder().charset("UTF-8").data(htmlBody).build())
+                                    .html(Content.builder()
+                                            .charset("UTF-8")
+                                            .data(htmlBody)
+                                            .build())
                                     .build())
                             .build())
                     .build());
-            log.info("[AWS_SES_SENT] messageId={} recipients={} priority={}", response.messageId(), recipientEmails.size(), priority);
+            log.info(
+                    "[AWS_SES_SENT] messageId={} recipients={} priority={}",
+                    response.messageId(),
+                    recipientEmails.size(),
+                    priority);
             return Either.right(null);
         } catch (MessageRejectedException e) {
             log.error("[AWS_SES_MESSAGE_REJECTED] recipients={}", recipientEmails, e);

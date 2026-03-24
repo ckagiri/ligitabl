@@ -35,12 +35,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     @Override
     public void onAuthenticationSuccess(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            Authentication authentication)
+            HttpServletRequest request, HttpServletResponse response, Authentication authentication)
             throws IOException, ServletException {
         if (!(authentication.getPrincipal() instanceof OAuth2User)) {
-            throw new IllegalStateException("Unexpected OAuth2 principal type: " + authentication.getPrincipal().getClass());
+            throw new IllegalStateException("Unexpected OAuth2 principal type: "
+                    + authentication.getPrincipal().getClass());
         }
 
         HttpSession session = request.getSession(true);
@@ -59,13 +58,14 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             HttpServletResponse response,
             Authentication authentication,
             UUID userId,
-            HttpSession session) throws IOException {
+            HttpSession session)
+            throws IOException {
         OAuth2UserInfo userInfo = oauth2UserInfo(authentication);
 
         log.info("[LINKING_GOOGLE_ACCOUNT] userId={} googleId={} email={}", userId, userInfo.id(), userInfo.email());
 
-        User existingUser = userRepo.findById(userId)
-                .orElseThrow(() -> new IllegalStateException("Could not find user to link"));
+        User existingUser =
+                userRepo.findById(userId).orElseThrow(() -> new IllegalStateException("Could not find user to link"));
 
         if (userInfo.id() == null || userInfo.id().isBlank()) {
             throw new IllegalStateException("Google id missing during account linking");
@@ -73,8 +73,10 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         userRepo.findByGoogleId(userInfo.id()).ifPresent(otherUser -> {
             if (!otherUser.getId().equals(userId)) {
-                log.warn("[GOOGLE_ALREADY_LINKED] googleId={} already linked to userId={}",
-                        userInfo.id(), otherUser.getId());
+                log.warn(
+                        "[GOOGLE_ALREADY_LINKED] googleId={} already linked to userId={}",
+                        userInfo.id(),
+                        otherUser.getId());
                 throw new IllegalStateException("This Google account is already linked to another user");
             }
         });
@@ -100,22 +102,25 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     }
 
     private void handleNormalLogin(
-            HttpServletRequest request,
-            HttpServletResponse response,
-            Authentication authentication) throws IOException {
+            HttpServletRequest request, HttpServletResponse response, Authentication authentication)
+            throws IOException {
         User user = authentication.getPrincipal() instanceof LigitablOAuth2User oauth2User
-            ? oauth2User.getUser()
-            : customOAuth2UserService.findOrCreateUser(oauth2Attributes(authentication));
+                ? oauth2User.getUser()
+                : customOAuth2UserService.findOrCreateUser(oauth2Attributes(authentication));
 
         establishSessionAuthentication(user, request.getSession(true));
-        log.info("[OAUTH2_LOGIN_SUCCESS] userId={} email={}", user.getId(), user.getEmail().value());
+        log.info(
+                "[OAUTH2_LOGIN_SUCCESS] userId={} email={}",
+                user.getId(),
+                user.getEmail().value());
 
         getRedirectStrategy().sendRedirect(request, response, "/my-table");
     }
 
     private void establishSessionAuthentication(User user, HttpSession session) {
         var authorities = user.getRoles().stream()
-                .map(role -> new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + role.name()))
+                .map(role ->
+                        new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + role.name()))
                 .toList();
 
         WebUserDetails webUserDetails = new WebUserDetails(
@@ -131,8 +136,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         SecurityContextHolder.getContext().setAuthentication(webAuthentication);
         session.setAttribute(
-                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
-                SecurityContextHolder.getContext());
+                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
     }
 
     private OAuth2UserInfo oauth2UserInfo(Authentication authentication) {
