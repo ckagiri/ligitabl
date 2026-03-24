@@ -160,7 +160,7 @@ jobs:
           POSTGRES_DB=${{ secrets.POSTGRES_DB }}
           POSTGRES_USER=${{ secrets.POSTGRES_USER }}
           POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-          SPRING_PROFILES_ACTIVE=liquibase
+          SPRING_PROFILES_ACTIVE=prod,liquibase
           JWT_SECRET=${{ secrets.JWT_SECRET }}
           FOOTBALL_DATA_API_TOKEN=${{ secrets.FOOTBALL_DATA_API_TOKEN }}
           GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
