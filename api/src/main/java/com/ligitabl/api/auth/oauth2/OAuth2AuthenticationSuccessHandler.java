@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Component;
@@ -30,6 +31,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     public static final String LINKING_USER_ID_SESSION_KEY = "OAUTH2_LINKING_USER_ID";
 
     private final UserRepo userRepo;
+    private final CustomOAuth2UserService customOAuth2UserService;
 
     @Override
     public void onAuthenticationSuccess(
@@ -37,9 +39,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             HttpServletResponse response,
             Authentication authentication)
             throws IOException, ServletException {
-        if (!(authentication.getPrincipal() instanceof LigitablOAuth2User)) {
-            super.onAuthenticationSuccess(request, response, authentication);
-            return;
+        if (!(authentication.getPrincipal() instanceof OAuth2User)) {
+            throw new IllegalStateException("Unexpected OAuth2 principal type: " + authentication.getPrincipal().getClass());
         }
 
         HttpSession session = request.getSession(true);
@@ -59,8 +60,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             Authentication authentication,
             UUID userId,
             HttpSession session) throws IOException {
-        LigitablOAuth2User oauth2User = oauth2Principal(authentication);
-        OAuth2UserInfo userInfo = OAuth2UserInfo.fromGoogle(oauth2User.getAttributes());
+        OAuth2UserInfo userInfo = oauth2UserInfo(authentication);
 
         log.info("[LINKING_GOOGLE_ACCOUNT] userId={} googleId={} email={}", userId, userInfo.id(), userInfo.email());
 
@@ -103,8 +103,9 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             HttpServletRequest request,
             HttpServletResponse response,
             Authentication authentication) throws IOException {
-        LigitablOAuth2User oauth2User = oauth2Principal(authentication);
-        User user = oauth2User.getUser();
+        User user = authentication.getPrincipal() instanceof LigitablOAuth2User oauth2User
+            ? oauth2User.getUser()
+            : customOAuth2UserService.findOrCreateUser(oauth2Attributes(authentication));
 
         establishSessionAuthentication(user, request.getSession(true));
         log.info("[OAUTH2_LOGIN_SUCCESS] userId={} email={}", user.getId(), user.getEmail().value());
@@ -134,9 +135,13 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 SecurityContextHolder.getContext());
     }
 
-    private LigitablOAuth2User oauth2Principal(Authentication authentication) {
-        if (authentication.getPrincipal() instanceof LigitablOAuth2User oauth2User) {
-            return oauth2User;
+    private OAuth2UserInfo oauth2UserInfo(Authentication authentication) {
+        return OAuth2UserInfo.fromGoogle(oauth2Attributes(authentication));
+    }
+
+    private java.util.Map<String, Object> oauth2Attributes(Authentication authentication) {
+        if (authentication.getPrincipal() instanceof OAuth2User oauth2User) {
+            return oauth2User.getAttributes();
         }
         throw new IllegalStateException("Unexpected OAuth2 principal type");
     }

@@ -145,6 +145,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 "/",
                                 "/home",
+                                "/my-table",
+                                "/my-table/**",
                                 "/my-table/guest",
                                 "/my-table/guest/**",
                                 "/auth/login",
@@ -168,10 +170,8 @@ public class SecurityConfig {
                                 "/favicon.svg",
                                 "/apple-touch-icon.png")
                         .permitAll()
-                        .requestMatchers("/my-table", "/my-table/**")
-                        .hasRole("PLAYER")
                         .requestMatchers("/predictions/user/me")
-                        .hasRole("PLAYER")
+                        .authenticated()
                         .requestMatchers("/predictions/user/guest", "/predictions/user/guest/*")
                         .permitAll()
                         .requestMatchers("/predictions/user/*")

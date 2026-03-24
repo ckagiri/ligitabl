@@ -35,6 +35,20 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         return processOAuth2User(userRequest, oauth2User);
     }
 
+    public User findOrCreateUser(Map<String, Object> attributes) {
+        OAuth2UserInfo userInfo = OAuth2UserInfo.fromGoogle(attributes);
+
+        if (userInfo.id() == null || userInfo.id().isBlank()) {
+            throw oauthError("Subject is missing from OAuth2 payload");
+        }
+        if (userInfo.email() == null || userInfo.email().isBlank()) {
+            throw oauthError("Email is missing from OAuth2 payload");
+        }
+
+        return userRepo.findByGoogleId(userInfo.id())
+                .orElseGet(() -> findByEmailOrCreate(userInfo));
+    }
+
     private OAuth2User processOAuth2User(OAuth2UserRequest userRequest, OAuth2User oauth2User) {
         String registrationId = userRequest.getClientRegistration().getRegistrationId();
         Map<String, Object> attributes = oauth2User.getAttributes();
@@ -51,8 +65,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw oauthError("Email is missing from OAuth2 payload");
         }
 
-        User user = userRepo.findByGoogleId(userInfo.id())
-                .orElseGet(() -> findByEmailOrCreate(userInfo));
+        User user = findOrCreateUser(attributes);
 
         return new LigitablOAuth2User(user, oauth2User.getAttributes());
     }
