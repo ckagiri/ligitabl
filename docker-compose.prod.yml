@@ -44,8 +44,8 @@ services:
       DB_USER: ${POSTGRES_USER:-ligitabl}
       DB_PASSWORD: ${POSTGRES_PASSWORD}
 
-      # Spring profiles (enables Liquibase migrations on startup)
-      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-liquibase}
+      # Spring profiles (prod enables forwarded header handling; liquibase runs migrations on startup)
+      SPRING_PROFILES_ACTIVE: ${SPRING_PROFILES_ACTIVE:-prod,liquibase}
 
       # Application secrets
       JWT_SECRET: ${JWT_SECRET}
