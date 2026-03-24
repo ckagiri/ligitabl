@@ -1,0 +1,110 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <div layout:fragment="content">
+      <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+          <h1 class="text-3xl font-bold text-gray-900">Profile Settings</h1>
+          <p class="mt-2 text-gray-600">Manage your personal information.</p>
+        </div>
+
+        <div class="mb-6 border-b border-gray-200">
+          <nav class="-mb-px flex space-x-8" aria-label="Settings sections">
+            <a
+              th:href="@{/settings/profile}"
+              class="border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+            >
+              Profile
+            </a>
+            <a
+              th:href="@{/settings/connected-accounts}"
+              class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+            >
+              Connected Accounts
+            </a>
+          </nav>
+        </div>
+
+        <div class="bg-white shadow rounded-lg">
+          <form th:action="@{/settings/profile}" th:object="${profileForm}" method="post" class="p-6 space-y-6">
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+            <div>
+              <label for="displayName" class="block text-sm font-medium text-gray-700 mb-2">
+                Display Name
+              </label>
+              <input
+                type="text"
+                id="displayName"
+                th:field="*{displayName}"
+                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                placeholder="Your display name"
+              />
+              <p th:if="${#fields.hasErrors('displayName')}" th:errors="*{displayName}" class="mt-2 text-sm text-red-600"></p>
+              <p class="mt-2 text-sm text-gray-500">This name appears on leaderboards and standings.</p>
+            </div>
+
+            <div>
+              <label for="email" class="block text-sm font-medium text-gray-700 mb-2">Email Address</label>
+              <input
+                type="email"
+                id="email"
+                th:value="${profileForm.email}"
+                disabled
+                class="w-full px-4 py-2 border border-gray-200 rounded-lg bg-gray-50 text-gray-400 cursor-not-allowed select-none"
+              />
+              <p class="mt-2 text-sm text-gray-500">Email cannot be changed from profile settings.</p>
+            </div>
+
+            <!-- Divider -->
+            <div class="border-t border-gray-200"></div>
+
+            <!-- Account Information -->
+            <div class="pt-6">
+              <h2 class="text-sm font-medium text-gray-700 mb-3">Account Information</h2>
+              <dl class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <dt class="text-sm font-medium text-gray-500 mb-1">Sign-in methods</dt>
+                  <dd>
+                    <span th:if="${user.googleId != null and user.password != null}"
+                          class="inline-flex items-center gap-1.5">
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">Google</span>
+                      <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">Password</span>
+                    </span>
+                    <span th:if="${user.googleId != null and user.password == null}"
+                          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100">Google</span>
+                    <span th:if="${user.googleId == null}"
+                          class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">Email & Password</span>
+                  </dd>
+                </div>
+              </dl>
+            </div>
+
+            <!-- Divider as its own element -->
+            <div class="border-t border-gray-200 mt-6"></div>
+
+            <!-- Buttons — now pt-* works freely -->
+            <div class="flex items-center justify-between pt-6">
+              <a
+                th:href="@{/my-table}"
+                class="inline-flex items-center px-5 py-2 rounded-lg border border-gray-300 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:border-gray-400 transition"
+              >
+                Cancel
+              </a>
+              <button
+                type="submit"
+                class="inline-flex items-center px-6 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium transition"
+              >
+                Save Changes
+              </button>
+            </div>
+          </form>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

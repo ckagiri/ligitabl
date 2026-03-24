@@ -1,0 +1,137 @@
+package com.ligitabl.api.web.auth;
+
+import java.util.UUID;
+
+import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
+import org.springframework.web.bind.WebDataBinder;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.InitBinder;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
+import org.springframework.beans.propertyeditors.StringTrimmerEditor;
+
+import com.ligitabl.api.auth.security.WebUserDetails;
+import com.ligitabl.model.domain.User;
+import com.ligitabl.model.repo.UserRepo;
+
+import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+@ConditionalOnWebApplication
+@Controller
+@RequestMapping("/settings")
+@RequiredArgsConstructor
+@Slf4j
+public class ProfileController {
+
+    private final UserRepo userRepo;
+
+    @GetMapping("/profile")
+    public String profile(
+            @AuthenticationPrincipal WebUserDetails userDetails,
+            Model model) {
+        User user = currentUser(userDetails);
+        if (user == null) {
+            return "redirect:/auth/login";
+        }
+
+        ProfileForm form = new ProfileForm();
+        form.setDisplayName(user.getDisplayName());
+        form.setEmail(user.getEmail().value());
+        model.addAttribute("profileForm", form);
+
+        model.addAttribute("pageTitle", "Profile Settings");
+        model.addAttribute("user", user);
+        return "settings/profile";
+    }
+
+    @InitBinder("profileForm")
+    public void initProfileFormBinder(WebDataBinder binder) {
+        binder.registerCustomEditor(String.class, new StringTrimmerEditor(false));
+    }
+
+    @PostMapping("/profile")
+    public String updateProfile(
+            @AuthenticationPrincipal WebUserDetails userDetails,
+            @Valid @ModelAttribute("profileForm") ProfileForm form,
+            BindingResult result,
+            HttpSession session,
+            RedirectAttributes redirectAttributes,
+            Model model) {
+        User user = currentUser(userDetails);
+        if (user == null) {
+            return "redirect:/auth/login";
+        }
+
+        form.setEmail(user.getEmail().value());
+
+        if (result.hasErrors()) {
+            model.addAttribute("pageTitle", "Profile Settings");
+            model.addAttribute("user", user);
+            return "settings/profile";
+        }
+
+        User updatedUser = user.withDisplayName(form.getDisplayName());
+        userRepo.update(updatedUser);
+        refreshSessionAuthentication(updatedUser, session);
+
+        log.info("[PROFILE_UPDATED] userId={} newDisplayName={}", updatedUser.getId(), updatedUser.getDisplayName());
+        redirectAttributes.addFlashAttribute("message", "Profile updated successfully");
+        redirectAttributes.addFlashAttribute("messageType", "success");
+
+        return "redirect:/settings/profile";
+    }
+
+    private void refreshSessionAuthentication(User user, HttpSession session) {
+        var authorities = user.getRoles().stream()
+                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
+                .toList();
+
+        WebUserDetails updatedDetails = new WebUserDetails(
+                user.getId(),
+                user.getPublicId().value(),
+                user.getEmail().value(),
+                user.getDisplayName(),
+                user.getPassword() == null ? "" : user.getPassword().value(),
+                authorities);
+
+        var authentication = new UsernamePasswordAuthenticationToken(updatedDetails, null, authorities);
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        session.setAttribute(
+                HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY,
+                SecurityContextHolder.getContext());
+    }
+
+    private User currentUser(WebUserDetails userDetails) {
+        if (userDetails == null) {
+            return null;
+        }
+
+        UUID userId = userDetails.getUserId();
+        return userRepo.findById(userId).orElse(null);
+    }
+
+    @Data
+    public static class ProfileForm {
+        @NotBlank(message = "Display name is required")
+        @Size(min = 3, max = 30, message = "Display name must be between 3 and 30 characters")
+        private String displayName;
+
+        private String email;
+    }
+}

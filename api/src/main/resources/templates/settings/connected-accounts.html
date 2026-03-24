@@ -12,6 +12,23 @@
           <p class="mt-2 text-gray-600">Manage how you sign in to LigiPredictor.</p>
         </div>
 
+        <div class="mb-6 border-b border-gray-200">
+          <nav class="-mb-px flex space-x-8" aria-label="Settings sections">
+            <a
+              th:href="@{/settings/profile}"
+              class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+            >
+              Profile
+            </a>
+            <a
+              th:href="@{/settings/connected-accounts}"
+              class="border-indigo-500 text-indigo-600 whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm"
+            >
+              Connected Accounts
+            </a>
+          </nav>
+        </div>
+
         <div
           th:if="${param.linked}"
           x-data="{ show: true }"
@@ -163,6 +180,7 @@
                         You will no longer be able to sign in with Google. Make sure you can still sign in with your password.
                       </p>
                       <form th:action="@{/settings/unlink-google}" method="post" class="flex gap-3">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
                         <button type="submit" class="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700">
                           Disconnect
                         </button>
