@@ -34,6 +34,10 @@ server:
   servlet:
     session:
       timeout: 1d
+  error:
+    include-message: never
+    include-stacktrace: never
+    include-binding-errors: never
 
 logging:
   level:
