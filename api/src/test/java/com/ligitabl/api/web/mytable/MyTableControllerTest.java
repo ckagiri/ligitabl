@@ -12,19 +12,19 @@ class MyTableControllerTest {
     private final MyTableController controller = new MyTableController();
 
     @Test
-    @DisplayName("/my-table forwards guests to guest predictions")
-    void myTable_forwardsGuestToGuestPredictions() {
+    @DisplayName("/my-table redirects guests to /my-table/guest")
+    void myTable_redirectsGuestToGuestRoute() {
         String view = controller.myTable(null, null);
 
-        assertThat(view).isEqualTo("forward:/my-table/guest");
+        assertThat(view).isEqualTo("redirect:/my-table/guest");
     }
 
     @Test
-    @DisplayName("/my-table preserves round when forwarding guests")
-    void myTable_preservesRoundWhenForwardingGuest() {
+    @DisplayName("/my-table preserves round when redirecting guests")
+    void myTable_preservesRoundWhenRedirectingGuest() {
         String view = controller.myTable(7, null);
 
-        assertThat(view).isEqualTo("forward:/my-table/guest?round=7");
+        assertThat(view).isEqualTo("redirect:/my-table/guest?round=7");
     }
 
     @Test
