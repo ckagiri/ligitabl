@@ -98,7 +98,7 @@ public class GetUserPredictionUseCase {
             String roundState,
             boolean seasonCompleted,
             RoundStatus currentRoundStatus) {
-        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), currentRound, currentRoundStatus);
+        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), currentRound);
 
         int standingsRound = isCurrentRound ? currentRound : viewingRound;
         StandingsMaps standingsMaps = getStandingsMaps(qry.seasonId(), standingsRound);
@@ -229,7 +229,7 @@ public class GetUserPredictionUseCase {
             atRoundNumber = currentRoundStatus == RoundStatus.OPEN ? currentRound : currentRound + 1;
         }
 
-        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), currentRound, currentRoundStatus);
+        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), currentRound);
 
         return new UserPredictionViewData(
                 rankingsWithSource.rankings(),
@@ -332,7 +332,7 @@ public class GetUserPredictionUseCase {
         }
 
         // Target user exists but has no prediction - show previous round standings
-        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), currentRound, currentRoundStatus);
+        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), currentRound);
 
         StandingsMaps currentStandingsMaps =
                 isCurrentRound ? getStandingsMaps(qry.seasonId(), currentRound) : StandingsMaps.empty();
@@ -370,7 +370,7 @@ public class GetUserPredictionUseCase {
             String roundState,
             boolean seasonCompleted,
             RoundStatus currentRoundStatus) {
-        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), currentRound, currentRoundStatus);
+        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), currentRound);
 
         StandingsMaps currentStandingsMaps =
                 isCurrentRound ? getStandingsMaps(qry.seasonId(), currentRound) : StandingsMaps.empty();
@@ -449,18 +449,17 @@ public class GetUserPredictionUseCase {
     /**
      * Get previous round standings as fallback for users without a prediction.
      *
-     * If the current round is open (no match kicked off), the standings for currentRound
-     * equal the end-of-last-round state — safe to use directly.
-     * If the current round is not open (locked/live/finalized), use currentRound - 1.
-     * Falls back to season baseline when currentRound == 1 or standings are unavailable.
+     * Always uses currentRound - 2, giving users contrast to help decide where to move teams.
+     * Falls back to season baseline when currentRound < 3 (GW1/GW2) or standings unavailable.
+     *
+     * GW5 → GW3, GW3 → GW1, GW2/GW1 → season baseline.
      */
-    private RankingsWithSource getPreviousRoundRankings(UUID seasonId, int currentRound, RoundStatus currentRoundStatus) {
-        if (currentRound == 1) {
+    private RankingsWithSource getPreviousRoundRankings(UUID seasonId, int currentRound) {
+        if (currentRound < 3) {
             return getSeasonBaselineRankings(seasonId);
         }
 
-        int standingsRound = currentRoundStatus == RoundStatus.OPEN ? currentRound : currentRound - 1;
-        var roundStandings = standingsRepo.findBySeasonAndRoundPosition(seasonId, standingsRound);
+        var roundStandings = standingsRepo.findBySeasonAndRoundPosition(seasonId, currentRound - 2);
         if (roundStandings.isEmpty()) {
             return getSeasonBaselineRankings(seasonId);
         }
