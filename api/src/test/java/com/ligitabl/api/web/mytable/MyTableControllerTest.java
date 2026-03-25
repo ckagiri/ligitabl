@@ -42,7 +42,8 @@ class MyTableControllerTest {
     void myTable_forwardsAuthenticatedToMe() {
         Principal principal = () -> "user@example.com";
         SecurityContextHolder.getContext()
-            .setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, AuthorityUtils.NO_AUTHORITIES));
+                .setAuthentication(
+                        new UsernamePasswordAuthenticationToken(principal, null, AuthorityUtils.NO_AUTHORITIES));
 
         String view = controller.myTable(null, principal);
 
@@ -54,7 +55,8 @@ class MyTableControllerTest {
     void guestTable_redirectsAuthenticatedUsersToMyTable() {
         Principal principal = () -> "user@example.com";
         SecurityContextHolder.getContext()
-            .setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, AuthorityUtils.NO_AUTHORITIES));
+                .setAuthentication(
+                        new UsernamePasswordAuthenticationToken(principal, null, AuthorityUtils.NO_AUTHORITIES));
 
         String view = controller.guestTable(null, principal);
 
@@ -66,7 +68,8 @@ class MyTableControllerTest {
     void guestTable_preservesRoundWhenRedirectingAuthenticatedUsersToMyTable() {
         Principal principal = () -> "user@example.com";
         SecurityContextHolder.getContext()
-            .setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, AuthorityUtils.NO_AUTHORITIES));
+                .setAuthentication(
+                        new UsernamePasswordAuthenticationToken(principal, null, AuthorityUtils.NO_AUTHORITIES));
 
         String view = controller.guestTable(12, principal);
 

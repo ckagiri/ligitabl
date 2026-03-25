@@ -72,10 +72,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         if (userInfo.id() == null || userInfo.id().isBlank()) {
             log.warn("[GOOGLE_LINKING_MISSING_ID] userId={}", userId);
             clearLinkingState(session);
-            setLinkingFeedback(
-                session,
-                "We could not verify that Google account. Please try again.",
-                "error");
+            setLinkingFeedback(session, "We could not verify that Google account. Please try again.", "error");
             establishSessionAuthentication(existingUser, session);
             getRedirectStrategy().sendRedirect(request, response, "/settings/connected-accounts");
             return;
@@ -89,10 +86,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                     otherUser.getId());
             clearLinkingState(session);
             setLinkingFeedback(
-                    session,
-                    "That Google account is already linked to another LigiPredictor account.",
-                    "error");
-                establishSessionAuthentication(existingUser, session);
+                    session, "That Google account is already linked to another LigiPredictor account.", "error");
+            establishSessionAuthentication(existingUser, session);
             getRedirectStrategy().sendRedirect(request, response, "/settings/connected-accounts");
             return;
         }

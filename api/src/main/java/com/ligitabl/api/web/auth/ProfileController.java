@@ -99,8 +99,7 @@ public class ProfileController {
     }
 
     @GetMapping("/set-password")
-    public String showSetPasswordForm(
-            @AuthenticationPrincipal WebUserDetails userDetails, Model model) {
+    public String showSetPasswordForm(@AuthenticationPrincipal WebUserDetails userDetails, Model model) {
         User user = currentUser(userDetails);
         if (user == null) {
             return "redirect:/auth/login";
@@ -158,7 +157,8 @@ public class ProfileController {
         }
     }
 
-    private void refreshSessionAuthentication(User user, HttpSession session) {        var authorities = user.getRoles().stream()
+    private void refreshSessionAuthentication(User user, HttpSession session) {
+        var authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
                 .toList();
 

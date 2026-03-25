@@ -11,6 +11,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mockito;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.mock.web.MockHttpSession;
@@ -25,8 +26,6 @@ import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.auth.Role;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.UserRepo;
-
-import org.mockito.Mockito;
 
 /**
  * Integration tests for the duplicate Google account linking scenario in
@@ -81,18 +80,18 @@ class OAuth2DuplicateLinkIntegrationTest {
                 .isEqualTo("error");
 
         // Linking state cleaned up
-        assertThat(session.getAttribute(OAuth2AuthenticationSuccessHandler.LINKING_MODE_SESSION_KEY)).isNull();
-        assertThat(session.getAttribute(OAuth2AuthenticationSuccessHandler.LINKING_USER_ID_SESSION_KEY)).isNull();
+        assertThat(session.getAttribute(OAuth2AuthenticationSuccessHandler.LINKING_MODE_SESSION_KEY))
+                .isNull();
+        assertThat(session.getAttribute(OAuth2AuthenticationSuccessHandler.LINKING_USER_ID_SESSION_KEY))
+                .isNull();
 
         // Original user's session auth is restored (not left as OAuth2/anonymous)
         var secCtx = session.getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
-        assertThat(secCtx).isNotNull()
-                .isInstanceOf(org.springframework.security.core.context.SecurityContext.class);
+        assertThat(secCtx).isNotNull().isInstanceOf(org.springframework.security.core.context.SecurityContext.class);
 
         var authentication = ((org.springframework.security.core.context.SecurityContext) secCtx).getAuthentication();
         assertThat(authentication).isInstanceOf(UsernamePasswordAuthenticationToken.class);
-        assertThat(authentication.getPrincipal())
-                .isInstanceOf(com.ligitabl.api.auth.security.WebUserDetails.class);
+        assertThat(authentication.getPrincipal()).isInstanceOf(com.ligitabl.api.auth.security.WebUserDetails.class);
 
         var restoredUser = (com.ligitabl.api.auth.security.WebUserDetails) authentication.getPrincipal();
         assertThat(restoredUser.getUserId()).isEqualTo(CURRENT_USER_ID);
@@ -140,10 +139,8 @@ class OAuth2DuplicateLinkIntegrationTest {
                 "sub", googleSubject,
                 "email", email,
                 "name", "Eve");
-        DefaultOAuth2User oAuth2User = new DefaultOAuth2User(
-                List.of(new SimpleGrantedAuthority("ROLE_USER")),
-                attributes,
-                "sub");
+        DefaultOAuth2User oAuth2User =
+                new DefaultOAuth2User(List.of(new SimpleGrantedAuthority("ROLE_USER")), attributes, "sub");
         return new OAuth2AuthenticationToken(oAuth2User, List.of(new SimpleGrantedAuthority("ROLE_USER")), "google");
     }
 }

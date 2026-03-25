@@ -45,7 +45,8 @@ public class ConnectedAccountsController {
         model.addAttribute("googleEmail", googleLinked ? user.getEmail().value() : null);
         model.addAttribute("googleSubject", user.getGoogleId());
 
-        Object linkingMessage = session.getAttribute(OAuth2AuthenticationSuccessHandler.LINKING_FEEDBACK_MESSAGE_SESSION_KEY);
+        Object linkingMessage =
+                session.getAttribute(OAuth2AuthenticationSuccessHandler.LINKING_FEEDBACK_MESSAGE_SESSION_KEY);
         Object linkingMessageType =
                 session.getAttribute(OAuth2AuthenticationSuccessHandler.LINKING_FEEDBACK_TYPE_SESSION_KEY);
         if (linkingMessage instanceof String message && !message.isBlank()) {
