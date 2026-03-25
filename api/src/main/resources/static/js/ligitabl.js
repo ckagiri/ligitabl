@@ -70,6 +70,7 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         swapStack: [],
         undoing: false,
         alwaysHoverable: false,
+        isInitialPrediction: false,
         showStandings: savedPrefs ? (savedPrefs.showStandings ?? false) : false,
         showFixtures: savedPrefs ? (savedPrefs.showFixtures ?? false) : false,
         showPoints: savedPrefs ? (savedPrefs.showPoints ?? false) : false,
@@ -157,6 +158,29 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             return swapCount;
         },
 
+        // Default: guests follow MAX_INITIAL_SWAPS limit. Overridden by predictionPage for authenticated users.
+        exceedsLimit() {
+            return this.getSwapCount() > Ligitabl._MAX_INITIAL_SWAPS;
+        },
+
+        getChangedTeams() {
+            return this.teams
+                .filter((t) => this.isDirty(t.code))
+                .map((t) => {
+                    const original = this.originalTeams.find((o) => o.code === t.code);
+                    const change = original.position - t.position;
+                    return {
+                        name: t.name,
+                        code: t.code,
+                        from: original.position,
+                        to: t.position,
+                        direction: change > 0 ? "up" : "down",
+                        amount: Math.abs(change),
+                    };
+                })
+                .sort((a, b) => a.from - b.from);
+        },
+
         getPositionChange(teamCode) {
             const team = this.teams.find((t) => t.code === teamCode);
             const original = this.originalTeams.find((t) => t.code === teamCode);
@@ -186,15 +210,21 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             const index1 = this.teams.findIndex((t) => t.code === codeA);
             const index2 = this.teams.findIndex((t) => t.code === codeB);
             if (index1 < 0 || index2 < 0) return;
-            // Brief animation
             const row1 = document.querySelector(`[data-team-code='${codeA}']`);
             const row2 = document.querySelector(`[data-team-code='${codeB}']`);
-            if (row1) { row1.classList.add("swapping"); setTimeout(() => row1.classList.remove("swapping"), 250); }
-            if (row2) { row2.classList.add("swapping"); setTimeout(() => row2.classList.remove("swapping"), 250); }
-            const temp = this.teams[index1];
-            this.teams[index1] = this.teams[index2];
-            this.teams[index2] = temp;
-            this.teams.forEach((team, idx) => (team.position = idx + 1));
+            if (row1) row1.classList.add("swapping");
+            if (row2) row2.classList.add("swapping");
+            // Let the browser paint the class before mutating data
+            requestAnimationFrame(() => {
+                const temp = this.teams[index1];
+                this.teams[index1] = this.teams[index2];
+                this.teams[index2] = temp;
+                this.teams.forEach((team, idx) => (team.position = idx + 1));
+                setTimeout(() => {
+                    if (row1) row1.classList.remove("swapping");
+                    if (row2) row2.classList.remove("swapping");
+                }, 200);
+            });
         },
 
         canUndo() {
@@ -503,24 +533,6 @@ window.Ligitabl.predictionPage = function (el) {
             return this.getSwapCount() > 1;
         },
 
-        getChangedTeams() {
-            return this.teams
-                .filter((t) => this.isDirty(t.code))
-                .map((t) => {
-                    const original = this.originalTeams.find((o) => o.code === t.code);
-                    const change = original.position - t.position;
-                    return {
-                        name: t.name,
-                        code: t.code,
-                        from: original.position,
-                        to: t.position,
-                        direction: change > 0 ? "up" : "down",
-                        amount: Math.abs(change),
-                    };
-                })
-                .sort((a, b) => a.from - b.from);
-        },
-
         getChangeSummary() {
             const changed = this.getChangedTeams();
             if (changed.length === 0) return null;
@@ -582,8 +594,8 @@ window.Ligitabl.predictionPage = function (el) {
             setTimeout(() => {
                 this._swapTeamsDirect(last.b, last.a); // reverse
                 this._saveToStorage(AUTH_STORAGE_KEY);
-                this.undoing = false;
-            }, 250);
+                setTimeout(() => { this.undoing = false; }, 200);
+            }, 200);
         },
 
         submitChanges() {
@@ -730,6 +742,7 @@ window.Ligitabl.guestPredictionPage = function (el) {
 
     return Object.assign(base, {
         alwaysHoverable: true,
+        isInitialPrediction: true,
 
         init() {
             const saved = loadSavedPrediction();
@@ -782,8 +795,8 @@ window.Ligitabl.guestPredictionPage = function (el) {
             setTimeout(() => {
                 this._swapTeamsDirect(last.b, last.a); // reverse
                 this._saveToStorage(STORAGE_KEY);
-                this.undoing = false;
-            }, 250);
+                setTimeout(() => { this.undoing = false; }, 200);
+            }, 200);
         },
     });
 };

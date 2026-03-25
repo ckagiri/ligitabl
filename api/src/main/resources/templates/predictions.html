@@ -171,7 +171,7 @@ firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRou
             ></div>
 
             <!-- Guest CTA Footer -->
-            <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+            <div class="px-6 py-6 bg-gray-50 border-t border-gray-200">
               <div class="flex flex-col items-center space-y-3">
                 <a
                   th:href="@{/auth/register}"
@@ -200,6 +200,13 @@ firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRou
                     >Log in</a
                   >
                 </p>
+              </div>
+            </div>
+
+            <!-- Changes Summary -->
+            <div x-cloak x-show="getDirtyCount() > 0" class="px-6 py-6">
+              <div class="flex justify-center">
+                <div th:replace="~{fragments/prediction-actions :: changes-summary}"></div>
               </div>
             </div>
           </div>

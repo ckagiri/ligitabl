@@ -536,7 +536,8 @@ public class UserPredictionsController {
     private String getSourceLabel(UserPredictionViewData data) {
         return switch (data.source()) {
             case USER_PREDICTION -> "Your Table";
-            case ROUND_STANDINGS -> "Current Standings";
+            case CURRENT_ROUND_STANDINGS -> "Current Gameweek Standings";
+            case PREVIOUS_ROUND_STANDINGS -> "Pre-Previous Gameweek Standings";
             case SEASON_BASELINE -> "Last Season Baseline";
         };
     }
