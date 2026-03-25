@@ -70,6 +70,7 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         swapStack: [],
         undoing: false,
         alwaysHoverable: false,
+        isInitialPrediction: false,
         showStandings: savedPrefs ? (savedPrefs.showStandings ?? false) : false,
         showFixtures: savedPrefs ? (savedPrefs.showFixtures ?? false) : false,
         showPoints: savedPrefs ? (savedPrefs.showPoints ?? false) : false,
@@ -155,6 +156,29 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             }
 
             return swapCount;
+        },
+
+        // Default: guests follow MAX_INITIAL_SWAPS limit. Overridden by predictionPage for authenticated users.
+        exceedsLimit() {
+            return this.getSwapCount() > Ligitabl._MAX_INITIAL_SWAPS;
+        },
+
+        getChangedTeams() {
+            return this.teams
+                .filter((t) => this.isDirty(t.code))
+                .map((t) => {
+                    const original = this.originalTeams.find((o) => o.code === t.code);
+                    const change = original.position - t.position;
+                    return {
+                        name: t.name,
+                        code: t.code,
+                        from: original.position,
+                        to: t.position,
+                        direction: change > 0 ? "up" : "down",
+                        amount: Math.abs(change),
+                    };
+                })
+                .sort((a, b) => a.from - b.from);
         },
 
         getPositionChange(teamCode) {
@@ -503,24 +527,6 @@ window.Ligitabl.predictionPage = function (el) {
             return this.getSwapCount() > 1;
         },
 
-        getChangedTeams() {
-            return this.teams
-                .filter((t) => this.isDirty(t.code))
-                .map((t) => {
-                    const original = this.originalTeams.find((o) => o.code === t.code);
-                    const change = original.position - t.position;
-                    return {
-                        name: t.name,
-                        code: t.code,
-                        from: original.position,
-                        to: t.position,
-                        direction: change > 0 ? "up" : "down",
-                        amount: Math.abs(change),
-                    };
-                })
-                .sort((a, b) => a.from - b.from);
-        },
-
         getChangeSummary() {
             const changed = this.getChangedTeams();
             if (changed.length === 0) return null;
@@ -730,6 +736,7 @@ window.Ligitabl.guestPredictionPage = function (el) {
 
     return Object.assign(base, {
         alwaysHoverable: true,
+        isInitialPrediction: true,
 
         init() {
             const saved = loadSavedPrediction();
