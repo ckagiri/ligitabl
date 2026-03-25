@@ -28,7 +28,8 @@ public class ConnectedAccountsController {
     private final UserRepo userRepo;
 
     @GetMapping("/connected-accounts")
-    public String connectedAccounts(Model model, @AuthenticationPrincipal WebUserDetails userDetails) {
+    public String connectedAccounts(
+            Model model, @AuthenticationPrincipal WebUserDetails userDetails, HttpSession session) {
         User user = currentUser(userDetails);
         if (user == null) {
             return "redirect:/auth/login";
@@ -43,6 +44,18 @@ public class ConnectedAccountsController {
         model.addAttribute("accountEmail", user.getEmail().value());
         model.addAttribute("googleEmail", googleLinked ? user.getEmail().value() : null);
         model.addAttribute("googleSubject", user.getGoogleId());
+
+        Object linkingMessage = session.getAttribute(OAuth2AuthenticationSuccessHandler.LINKING_FEEDBACK_MESSAGE_SESSION_KEY);
+        Object linkingMessageType =
+                session.getAttribute(OAuth2AuthenticationSuccessHandler.LINKING_FEEDBACK_TYPE_SESSION_KEY);
+        if (linkingMessage instanceof String message && !message.isBlank()) {
+            model.addAttribute("message", message);
+            if (linkingMessageType instanceof String messageType && !messageType.isBlank()) {
+                model.addAttribute("messageType", messageType);
+            }
+            session.removeAttribute(OAuth2AuthenticationSuccessHandler.LINKING_FEEDBACK_MESSAGE_SESSION_KEY);
+            session.removeAttribute(OAuth2AuthenticationSuccessHandler.LINKING_FEEDBACK_TYPE_SESSION_KEY);
+        }
 
         return "settings/connected-accounts";
     }

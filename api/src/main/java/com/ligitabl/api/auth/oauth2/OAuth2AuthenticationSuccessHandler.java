@@ -29,6 +29,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     public static final String LINKING_MODE_SESSION_KEY = "OAUTH2_LINKING_MODE";
     public static final String LINKING_USER_ID_SESSION_KEY = "OAUTH2_LINKING_USER_ID";
+    public static final String LINKING_FEEDBACK_MESSAGE_SESSION_KEY = "OAUTH2_LINKING_FEEDBACK_MESSAGE";
+    public static final String LINKING_FEEDBACK_TYPE_SESSION_KEY = "OAUTH2_LINKING_FEEDBACK_TYPE";
 
     private final UserRepo userRepo;
     private final CustomOAuth2UserService customOAuth2UserService;
@@ -68,18 +70,32 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 userRepo.findById(userId).orElseThrow(() -> new IllegalStateException("Could not find user to link"));
 
         if (userInfo.id() == null || userInfo.id().isBlank()) {
-            throw new IllegalStateException("Google id missing during account linking");
+            log.warn("[GOOGLE_LINKING_MISSING_ID] userId={}", userId);
+            clearLinkingState(session);
+            setLinkingFeedback(
+                session,
+                "We could not verify that Google account. Please try again.",
+                "error");
+            establishSessionAuthentication(existingUser, session);
+            getRedirectStrategy().sendRedirect(request, response, "/settings/connected-accounts");
+            return;
         }
 
-        userRepo.findByGoogleId(userInfo.id()).ifPresent(otherUser -> {
-            if (!otherUser.getId().equals(userId)) {
-                log.warn(
-                        "[GOOGLE_ALREADY_LINKED] googleId={} already linked to userId={}",
-                        userInfo.id(),
-                        otherUser.getId());
-                throw new IllegalStateException("This Google account is already linked to another user");
-            }
-        });
+        User otherUser = userRepo.findByGoogleId(userInfo.id()).orElse(null);
+        if (otherUser != null && !otherUser.getId().equals(userId)) {
+            log.warn(
+                    "[GOOGLE_ALREADY_LINKED] googleId={} already linked to userId={}",
+                    userInfo.id(),
+                    otherUser.getId());
+            clearLinkingState(session);
+            setLinkingFeedback(
+                    session,
+                    "That Google account is already linked to another LigiPredictor account.",
+                    "error");
+                establishSessionAuthentication(existingUser, session);
+            getRedirectStrategy().sendRedirect(request, response, "/settings/connected-accounts");
+            return;
+        }
 
         User updatedUser = new User(
                 existingUser.getId(),
@@ -168,5 +184,10 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     private void clearLinkingState(HttpSession session) {
         session.removeAttribute(LINKING_MODE_SESSION_KEY);
         session.removeAttribute(LINKING_USER_ID_SESSION_KEY);
+    }
+
+    private void setLinkingFeedback(HttpSession session, String message, String type) {
+        session.setAttribute(LINKING_FEEDBACK_MESSAGE_SESSION_KEY, message);
+        session.setAttribute(LINKING_FEEDBACK_TYPE_SESSION_KEY, type);
     }
 }

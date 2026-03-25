@@ -2,6 +2,9 @@ package com.ligitabl.api.web.mytable;
 
 import java.security.Principal;
 
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -20,7 +23,7 @@ public class MyTableController {
 
     @GetMapping("/my-table")
     public String myTable(@RequestParam(required = false) Integer round, Principal principal) {
-        if (principal == null) {
+        if (!isAuthenticatedUser()) {
             return withRoundRedirect("/my-table/guest", round);
         }
         return withRoundForward("/predictions/user/me", round);
@@ -28,10 +31,22 @@ public class MyTableController {
 
     @GetMapping("/my-table/guest")
     public String guestTable(@RequestParam(required = false) Integer round, Principal principal) {
-        if (principal != null) {
+        if (isAuthenticatedUser()) {
             return withRoundRedirect("/my-table", round);
         }
         return withRoundForward("/predictions/user/guest", round);
+    }
+
+    private boolean isAuthenticatedUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+        if (authentication instanceof AnonymousAuthenticationToken) {
+            return false;
+        }
+        Object principal = authentication.getPrincipal();
+        return !(principal instanceof String value && "anonymousUser".equalsIgnoreCase(value));
     }
 
     private String withRoundForward(String basePath, Integer round) {
