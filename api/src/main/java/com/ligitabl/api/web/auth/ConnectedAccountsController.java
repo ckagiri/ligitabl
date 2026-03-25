@@ -41,6 +41,7 @@ public class ConnectedAccountsController {
         model.addAttribute("googleLinked", googleLinked);
         model.addAttribute("canUnlinkGoogle", canUnlinkGoogle);
         model.addAttribute("accountEmail", user.getEmail().value());
+        model.addAttribute("googleEmail", googleLinked ? user.getEmail().value() : null);
         model.addAttribute("googleSubject", user.getGoogleId());
 
         return "settings/connected-accounts";

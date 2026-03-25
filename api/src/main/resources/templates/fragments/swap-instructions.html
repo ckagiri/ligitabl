@@ -6,6 +6,7 @@
 >
   <!-- Initial state: No team selected, no swaps made -->
   <div
+    x-cloak
     x-show="selectedTeam === null && getSwapCount() === 0"
     class="bg-gray-50 border border-gray-200 rounded-lg p-3"
   >
@@ -34,14 +35,12 @@
         >
         <span
           th:if="${!isGuest}"
-          x-cloak
           x-show="canInteract && !canSwap && isRoundOpen"
           >Cooldown active. You can rearrange to plan your next swap, but
           changes won't be saved until cooldown ends.</span
         >
         <span
           th:if="${!isGuest}"
-          x-cloak
           x-show="canInteract && !canSwap && !isRoundOpen && !isLastRound"
           >Round is not open. You can rearrange to plan your next swap, but
           changes won't be saved until the next round opens.</span
@@ -169,7 +168,7 @@
             >.
           </span>
         </span>
-        <span x-cloak x-show="canInteract && !canSwap">
+        <span x-show="canInteract && !canSwap">
           <span x-show="isRoundOpen"
             >Cooldown active — changes are local only,</span
           >
