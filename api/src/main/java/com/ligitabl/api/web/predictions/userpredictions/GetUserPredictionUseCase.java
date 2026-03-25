@@ -68,7 +68,14 @@ public class GetUserPredictionUseCase {
         // Determine access mode and rankings based on user type
         return switch (ctx.userType()) {
             case GUEST -> buildGuestView(
-                    query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted, currentRoundStatus);
+                    query,
+                    currentRound,
+                    lastRound,
+                    viewingRound,
+                    isCurrentRound,
+                    roundState,
+                    seasonCompleted,
+                    currentRoundStatus);
             case AUTHENTICATED -> buildAuthenticatedView(
                     query,
                     currentRound,
@@ -79,9 +86,23 @@ public class GetUserPredictionUseCase {
                     seasonCompleted,
                     currentRoundStatus);
             case VIEWING_OTHER -> buildViewingOtherView(
-                    query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted, currentRoundStatus);
+                    query,
+                    currentRound,
+                    lastRound,
+                    viewingRound,
+                    isCurrentRound,
+                    roundState,
+                    seasonCompleted,
+                    currentRoundStatus);
             case USER_NOT_FOUND -> buildUserNotFoundView(
-                    query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted, currentRoundStatus);
+                    query,
+                    currentRound,
+                    lastRound,
+                    viewingRound,
+                    isCurrentRound,
+                    roundState,
+                    seasonCompleted,
+                    currentRoundStatus);
         };
     }
 
@@ -465,8 +486,7 @@ public class GetUserPredictionUseCase {
         }
 
         return new RankingsWithSource(
-                RankingSource.PREVIOUS_ROUND_STANDINGS,
-                convertStandingsRankingsToTeamRankings(roundStandings.get()));
+                RankingSource.PREVIOUS_ROUND_STANDINGS, convertStandingsRankingsToTeamRankings(roundStandings.get()));
     }
 
     private List<TeamRank> convertStandingsRankingsToTeamRankings(Standings standings) {
@@ -482,8 +502,8 @@ public class GetUserPredictionUseCase {
         var baseline = seasonRepo
                 .findById(seasonId)
                 .map(Season::getInitialRankings)
-                .orElseThrow(() -> new IllegalStateException(
-                        "Season baseline rankings not found for season: " + seasonId));
+                .orElseThrow(
+                        () -> new IllegalStateException("Season baseline rankings not found for season: " + seasonId));
 
         return new RankingsWithSource(RankingSource.SEASON_BASELINE, baseline);
     }
