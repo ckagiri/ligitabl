@@ -227,7 +227,7 @@
         <strong
           ><span x-text="getSwapCount()"></span>
           <span x-text="getSwapCount() === 1 ? 'swap' : 'swaps'"></span></strong
-        ><span x-show="getSwapCount() > 5"> — max 5 allowed to submit</span>.
+        ><span x-show="getSwapCount() > 5 && !undoing"> — max 5 allowed to submit</span>.
         Changes saved locally.
         <span
           x-show="undoing"
