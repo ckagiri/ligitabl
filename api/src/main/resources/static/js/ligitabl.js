@@ -210,15 +210,21 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             const index1 = this.teams.findIndex((t) => t.code === codeA);
             const index2 = this.teams.findIndex((t) => t.code === codeB);
             if (index1 < 0 || index2 < 0) return;
-            // Brief animation
             const row1 = document.querySelector(`[data-team-code='${codeA}']`);
             const row2 = document.querySelector(`[data-team-code='${codeB}']`);
-            if (row1) { row1.classList.add("swapping"); setTimeout(() => row1.classList.remove("swapping"), 250); }
-            if (row2) { row2.classList.add("swapping"); setTimeout(() => row2.classList.remove("swapping"), 250); }
-            const temp = this.teams[index1];
-            this.teams[index1] = this.teams[index2];
-            this.teams[index2] = temp;
-            this.teams.forEach((team, idx) => (team.position = idx + 1));
+            if (row1) row1.classList.add("swapping");
+            if (row2) row2.classList.add("swapping");
+            // Let the browser paint the class before mutating data
+            requestAnimationFrame(() => {
+                const temp = this.teams[index1];
+                this.teams[index1] = this.teams[index2];
+                this.teams[index2] = temp;
+                this.teams.forEach((team, idx) => (team.position = idx + 1));
+                setTimeout(() => {
+                    if (row1) row1.classList.remove("swapping");
+                    if (row2) row2.classList.remove("swapping");
+                }, 200);
+            });
         },
 
         canUndo() {
@@ -588,8 +594,8 @@ window.Ligitabl.predictionPage = function (el) {
             setTimeout(() => {
                 this._swapTeamsDirect(last.b, last.a); // reverse
                 this._saveToStorage(AUTH_STORAGE_KEY);
-                this.undoing = false;
-            }, 250);
+                setTimeout(() => { this.undoing = false; }, 200);
+            }, 200);
         },
 
         submitChanges() {
@@ -789,8 +795,8 @@ window.Ligitabl.guestPredictionPage = function (el) {
             setTimeout(() => {
                 this._swapTeamsDirect(last.b, last.a); // reverse
                 this._saveToStorage(STORAGE_KEY);
-                this.undoing = false;
-            }, 250);
+                setTimeout(() => { this.undoing = false; }, 200);
+            }, 200);
         },
     });
 };
