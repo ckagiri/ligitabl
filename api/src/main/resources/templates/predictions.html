@@ -204,8 +204,7 @@ firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRou
             </div>
 
             <!-- Changes Summary -->
-            <div x-cloak x-show="getDirtyCount() > 0" class="px-6 pb-4">
-              <p class="text-xs font-medium text-gray-500 uppercase tracking-wide my-2">Your changes</p>
+            <div x-cloak x-show="getDirtyCount() > 0" class="px-6 py-6">
               <div class="flex justify-center">
                 <div th:replace="~{fragments/prediction-actions :: changes-summary}"></div>
               </div>

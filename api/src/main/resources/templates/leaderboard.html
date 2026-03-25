@@ -208,6 +208,12 @@
               </p>
             </div>
 
+            <style>
+              @media (max-width: 639px) {
+                .lb-pos-col { min-width: 64px !important; max-width: 64px !important; }
+              }
+            </style>
+
             <div
               th:if="${!#lists.isEmpty(leaderboard)}"
               class="overflow-x-auto"
@@ -217,7 +223,7 @@
                   <tr>
                     <th
                       scope="col"
-                      class="sticky left-0 z-20 bg-gray-50 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
+                      class="lb-pos-col sticky left-0 z-20 bg-gray-50 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
                     >
                       Pos
                     </th>
@@ -273,7 +279,7 @@
                     class="group hover:bg-gray-50 transition"
                   >
                     <td
-                      class="sticky left-0 z-10 px-3 py-4 whitespace-nowrap text-sm font-bold"
+                      class="lb-pos-col sticky left-0 z-10 px-3 py-4 whitespace-nowrap text-sm font-bold"
                       th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'bg-indigo-50 text-indigo-900' : 'bg-white group-hover:bg-gray-50 text-gray-900'}"
                     >
                       <span
