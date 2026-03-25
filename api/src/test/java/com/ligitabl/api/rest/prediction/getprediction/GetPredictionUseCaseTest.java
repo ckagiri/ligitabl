@@ -154,7 +154,7 @@ class GetPredictionUseCaseTest {
         Either<GetPredictionError, GetPredictionResult> result = useCase.execute(userId);
 
         assertThat(result.isRight()).isTrue();
-        assertThat(result.get().rankingSource()).isEqualTo(RankingSource.ROUND_STANDINGS);
+        assertThat(result.get().rankingSource()).isEqualTo(RankingSource.CURRENT_ROUND_STANDINGS);
     }
 
     @Test

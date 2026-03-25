@@ -68,7 +68,7 @@ public class GetUserPredictionUseCase {
         // Determine access mode and rankings based on user type
         return switch (ctx.userType()) {
             case GUEST -> buildGuestView(
-                    query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
+                    query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted, currentRoundStatus);
             case AUTHENTICATED -> buildAuthenticatedView(
                     query,
                     currentRound,
@@ -79,9 +79,9 @@ public class GetUserPredictionUseCase {
                     seasonCompleted,
                     currentRoundStatus);
             case VIEWING_OTHER -> buildViewingOtherView(
-                    query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
+                    query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted, currentRoundStatus);
             case USER_NOT_FOUND -> buildUserNotFoundView(
-                    query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted);
+                    query, currentRound, lastRound, viewingRound, isCurrentRound, roundState, seasonCompleted, currentRoundStatus);
         };
     }
 
@@ -96,8 +96,9 @@ public class GetUserPredictionUseCase {
             int viewingRound,
             boolean isCurrentRound,
             String roundState,
-            boolean seasonCompleted) {
-        RankingsWithSource rankingsWithSource = getSeasonBaselineRankings(qry);
+            boolean seasonCompleted,
+            RoundStatus currentRoundStatus) {
+        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), currentRound, currentRoundStatus);
 
         int standingsRound = isCurrentRound ? currentRound : viewingRound;
         StandingsMaps standingsMaps = getStandingsMaps(qry.seasonId(), standingsRound);
@@ -228,7 +229,7 @@ public class GetUserPredictionUseCase {
             atRoundNumber = currentRoundStatus == RoundStatus.OPEN ? currentRound : currentRound + 1;
         }
 
-        RankingsWithSource rankingsWithSource = getSeasonBaselineRankings(qry);
+        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), currentRound, currentRoundStatus);
 
         return new UserPredictionViewData(
                 rankingsWithSource.rankings(),
@@ -268,7 +269,8 @@ public class GetUserPredictionUseCase {
             int viewingRound,
             boolean isCurrentRound,
             String roundState,
-            boolean seasonCompleted) {
+            boolean seasonCompleted,
+            RoundStatus currentRoundStatus) {
         UserContext ctx = qry.userContext();
 
         // For historical rounds, load RoundResult with scored data
@@ -329,8 +331,8 @@ public class GetUserPredictionUseCase {
                     );
         }
 
-        // Target user exists but has no prediction - show season baseline
-        RankingsWithSource rankingsWithSource = getSeasonBaselineRankings(qry);
+        // Target user exists but has no prediction - show previous round standings
+        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), currentRound, currentRoundStatus);
 
         StandingsMaps currentStandingsMaps =
                 isCurrentRound ? getStandingsMaps(qry.seasonId(), currentRound) : StandingsMaps.empty();
@@ -366,8 +368,9 @@ public class GetUserPredictionUseCase {
             int viewingRound,
             boolean isCurrentRound,
             String roundState,
-            boolean seasonCompleted) {
-        RankingsWithSource rankingsWithSource = getSeasonBaselineRankings(qry);
+            boolean seasonCompleted,
+            RoundStatus currentRoundStatus) {
+        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), currentRound, currentRoundStatus);
 
         StandingsMaps currentStandingsMaps =
                 isCurrentRound ? getStandingsMaps(qry.seasonId(), currentRound) : StandingsMaps.empty();
@@ -444,14 +447,44 @@ public class GetUserPredictionUseCase {
     }
 
     /**
+     * Get previous round standings as fallback for users without a prediction.
+     *
+     * If the current round is open (no match kicked off), the standings for currentRound
+     * equal the end-of-last-round state — safe to use directly.
+     * If the current round is not open (locked/live/finalized), use currentRound - 1.
+     * Falls back to season baseline when currentRound == 1 or standings are unavailable.
+     */
+    private RankingsWithSource getPreviousRoundRankings(UUID seasonId, int currentRound, RoundStatus currentRoundStatus) {
+        if (currentRound == 1) {
+            return getSeasonBaselineRankings(seasonId);
+        }
+
+        int standingsRound = currentRoundStatus == RoundStatus.OPEN ? currentRound : currentRound - 1;
+        var roundStandings = standingsRepo.findBySeasonAndRoundPosition(seasonId, standingsRound);
+        if (roundStandings.isEmpty()) {
+            return getSeasonBaselineRankings(seasonId);
+        }
+
+        return new RankingsWithSource(
+                RankingSource.PREVIOUS_ROUND_STANDINGS,
+                convertStandingsRankingsToTeamRankings(roundStandings.get()));
+    }
+
+    private List<TeamRank> convertStandingsRankingsToTeamRankings(Standings standings) {
+        return standings.getRankings().stream()
+                .map(StandingsTeamRank::getRanking)
+                .toList();
+    }
+
+    /**
      * Get season baseline rankings — the shared starting point for all users.
      */
-    private RankingsWithSource getSeasonBaselineRankings(GetUserPredictionQuery query) {
+    private RankingsWithSource getSeasonBaselineRankings(UUID seasonId) {
         var baseline = seasonRepo
-                .findById(query.seasonId())
+                .findById(seasonId)
                 .map(Season::getInitialRankings)
                 .orElseThrow(() -> new IllegalStateException(
-                        "Season baseline rankings not found for season: " + query.seasonId()));
+                        "Season baseline rankings not found for season: " + seasonId));
 
         return new RankingsWithSource(RankingSource.SEASON_BASELINE, baseline);
     }

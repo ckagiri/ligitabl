@@ -153,7 +153,7 @@ public class GetPredictionUseCase {
                 && standings.get().getRankings() != null
                 && !standings.get().getRankings().isEmpty()) {
             return Either.right(new PredictionSnapshot(
-                    null, null, RankingSource.ROUND_STANDINGS, toTeamRanks(standings.get()), List.of(), null, null));
+                    null, null, RankingSource.CURRENT_ROUND_STANDINGS, toTeamRanks(standings.get()), List.of(), null, null));
         }
 
         List<TeamRank> baseline = season.getInitialRankings();
