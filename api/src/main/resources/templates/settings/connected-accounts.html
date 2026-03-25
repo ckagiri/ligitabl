@@ -395,7 +395,8 @@
                 th:if="${googleLinked and !canUnlinkGoogle}"
                 class="text-xs text-amber-700"
               >
-                Cannot unlink Google account. Please set a password first.
+                Cannot unlink Google account.
+                <a th:href="@{/settings/set-password}" class="underline font-medium">Set a password first</a>.
               </p>
             </div>
 
@@ -428,8 +429,12 @@
                 </div>
                 <div>
                   <h3 class="text-lg font-medium text-gray-900">Google</h3>
-                  <p class="text-sm text-gray-500" th:if="${googleLinked}">
-                    Sign in with your Google account
+                  <p
+                    class="text-sm text-gray-500"
+                    th:if="${googleLinked}"
+                    th:text="${googleEmail}"
+                  >
+                    you@gmail.com
                   </p>
                   <p class="text-sm text-gray-500" th:unless="${googleLinked}">
                     Not connected
@@ -527,13 +532,15 @@
               th:if="${googleLinked and !canUnlinkGoogle}"
               class="hidden sm:block mt-3 text-sm text-amber-700"
             >
-              Cannot unlink Google account. Please set a password first.
+              Cannot unlink Google account.
+              <a th:href="@{/settings/set-password}" class="underline font-medium">Set a password first</a>.
             </p>
           </div>
         </div>
 
         <!-- Info Box -->
         <div
+          th:unless="${googleLinked}"
           class="mt-4 sm:mt-6 bg-blue-50 border border-blue-200 rounded-lg p-3 sm:p-4"
         >
           <div class="flex gap-3">
@@ -551,24 +558,11 @@
                 />
               </svg>
             </div>
-            <div class="flex-1 min-w-0">
-              <h3 class="text-sm font-medium text-blue-800">
-                Why connect Google?
-              </h3>
-              <ul class="mt-2 text-sm text-blue-700 space-y-1">
-                <li class="flex items-start">
-                  <span class="mr-2">•</span>
-                  <span>Sign in faster without typing your password</span>
-                </li>
-                <li class="flex items-start">
-                  <span class="mr-2">•</span>
-                  <span>Use the same account across devices</span>
-                </li>
-                <li class="flex items-start">
-                  <span class="mr-2">•</span>
-                  <span>No need to remember another password</span>
-                </li>
-              </ul>
+            <div class="ml-3">
+              <p class="text-sm text-blue-800">
+                Connecting Google lets you sign in with either your password or
+                your Google account — whichever is convenient.
+              </p>
             </div>
           </div>
         </div>

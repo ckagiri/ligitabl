@@ -21,7 +21,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
+import com.ligitabl.model.auth.Password;
 import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.service.PasswordHasher;
 import com.ligitabl.model.repo.UserRepo;
 
 import jakarta.servlet.http.HttpSession;
@@ -40,6 +42,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ProfileController {
 
     private final UserRepo userRepo;
+    private final PasswordHasher passwordHasher;
 
     @GetMapping("/profile")
     public String profile(@AuthenticationPrincipal WebUserDetails userDetails, Model model) {
@@ -95,8 +98,67 @@ public class ProfileController {
         return "redirect:/settings/profile";
     }
 
-    private void refreshSessionAuthentication(User user, HttpSession session) {
-        var authorities = user.getRoles().stream()
+    @GetMapping("/set-password")
+    public String showSetPasswordForm(
+            @AuthenticationPrincipal WebUserDetails userDetails, Model model) {
+        User user = currentUser(userDetails);
+        if (user == null) {
+            return "redirect:/auth/login";
+        }
+        if (user.getPassword() != null) {
+            return "redirect:/settings/profile";
+        }
+        model.addAttribute("pageTitle", "Set Password");
+        model.addAttribute("setPasswordForm", new SetPasswordForm());
+        return "settings/set-password";
+    }
+
+    @PostMapping("/set-password")
+    public String setPassword(
+            @AuthenticationPrincipal WebUserDetails userDetails,
+            @Valid @ModelAttribute("setPasswordForm") SetPasswordForm form,
+            BindingResult result,
+            HttpSession session,
+            RedirectAttributes redirectAttributes,
+            Model model) {
+        User user = currentUser(userDetails);
+        if (user == null) {
+            return "redirect:/auth/login";
+        }
+        if (user.getPassword() != null) {
+            redirectAttributes.addFlashAttribute("message", "A password is already set for this account.");
+            redirectAttributes.addFlashAttribute("messageType", "info");
+            return "redirect:/settings/profile";
+        }
+
+        if (!form.getNewPassword().equals(form.getConfirmPassword())) {
+            result.rejectValue("confirmPassword", "password.mismatch", "Passwords do not match");
+        }
+
+        if (result.hasErrors()) {
+            model.addAttribute("pageTitle", "Set Password");
+            return "settings/set-password";
+        }
+
+        try {
+            Password.Hashed hashed = passwordHasher.hash(Password.Plaintext.create(form.getNewPassword()));
+            User updatedUser = user.withPassword(hashed);
+            userRepo.update(updatedUser);
+            refreshSessionAuthentication(updatedUser, session);
+
+            log.info("[PASSWORD_SET] userId={}", updatedUser.getId());
+            redirectAttributes.addFlashAttribute(
+                    "message", "Password set successfully. You can now sign in with email and password.");
+            redirectAttributes.addFlashAttribute("messageType", "success");
+            return "redirect:/settings/connected-accounts";
+        } catch (IllegalArgumentException e) {
+            result.rejectValue("newPassword", "password.invalid", "Password does not meet requirements");
+            model.addAttribute("pageTitle", "Set Password");
+            return "settings/set-password";
+        }
+    }
+
+    private void refreshSessionAuthentication(User user, HttpSession session) {        var authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
                 .toList();
 
@@ -130,5 +192,15 @@ public class ProfileController {
         private String displayName;
 
         private String email;
+    }
+
+    @Data
+    public static class SetPasswordForm {
+        @NotBlank(message = "Password is required")
+        @Size(min = 8, message = "Password must be at least 8 characters")
+        private String newPassword;
+
+        @NotBlank(message = "Please confirm your password")
+        private String confirmPassword;
     }
 }
