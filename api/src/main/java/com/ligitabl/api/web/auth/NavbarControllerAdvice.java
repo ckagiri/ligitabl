@@ -5,6 +5,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -48,12 +49,12 @@ public class NavbarControllerAdvice {
 
     @ModelAttribute("isLoggedIn")
     public boolean isLoggedIn(Principal principal) {
-        return principal != null;
+        return isAuthenticatedUser(currentAuthentication());
     }
 
     @ModelAttribute("hasContestEntry")
     public boolean hasContestEntry(Principal principal) {
-        if (principal == null) {
+        if (!isAuthenticatedUser(currentAuthentication()) || principal == null) {
             return false;
         }
 
@@ -77,7 +78,7 @@ public class NavbarControllerAdvice {
 
     @ModelAttribute("predictionsNavLink")
     public String predictionsNavLink(Principal principal) {
-        if (principal == null) {
+        if (!isAuthenticatedUser(currentAuthentication()) || principal == null) {
             return "/my-table/guest";
         }
         return "/my-table";
@@ -85,25 +86,25 @@ public class NavbarControllerAdvice {
 
     @ModelAttribute("userDisplayName")
     public String userDisplayName(Principal principal) {
-        if (principal == null) {
+        if (!isAuthenticatedUser(currentAuthentication()) || principal == null) {
             return null;
         }
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication = currentAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof WebUserDetails details) {
             return details.getDisplayName();
         }
 
-        return resolveUser(principal).map(User::getDisplayName).orElse(null);
+        return resolveUser(principal).map(User::getDisplayName).orElse("User");
     }
 
     @ModelAttribute("userEmail")
     public String userEmail(Principal principal) {
-        if (principal == null) {
+        if (!isAuthenticatedUser(currentAuthentication()) || principal == null) {
             return null;
         }
 
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication = currentAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof WebUserDetails details) {
             return details.getEmail();
         }
@@ -112,7 +113,10 @@ public class NavbarControllerAdvice {
     }
 
     private UUID resolveUserId(Principal principal) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        Authentication authentication = currentAuthentication();
+        if (!isAuthenticatedUser(authentication)) {
+            return null;
+        }
         if (authentication != null && authentication.getPrincipal() instanceof WebUserDetails details) {
             return details.getUserId();
         }
@@ -139,5 +143,20 @@ public class NavbarControllerAdvice {
         return seasonRepo
                 .findMostRecentSeason(competitionDefaults.defaultCompetitionSlug())
                 .orElseThrow(() -> new IllegalStateException("No active season available"));
+    }
+
+    private Authentication currentAuthentication() {
+        return SecurityContextHolder.getContext().getAuthentication();
+    }
+
+    private boolean isAuthenticatedUser(Authentication authentication) {
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
+        }
+        if (authentication instanceof AnonymousAuthenticationToken) {
+            return false;
+        }
+        Object principal = authentication.getPrincipal();
+        return !(principal instanceof String value && "anonymousUser".equalsIgnoreCase(value));
     }
 }
