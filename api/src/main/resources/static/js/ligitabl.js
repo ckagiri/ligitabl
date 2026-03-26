@@ -196,6 +196,12 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             return team ? team.name : null;
         },
 
+        getSelectedTeamShortName() {
+            if (!this.selectedTeam) return null;
+            const team = this.teams.find((t) => t.code === this.selectedTeam);
+            return team ? (team.shortName || team.name) : null;
+        },
+
         pushSwap(codeA, codeB) {
             const top = this.swapStack[this.swapStack.length - 1];
             if (top && top.a === codeB && top.b === codeA) {
@@ -210,21 +216,22 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             const index1 = this.teams.findIndex((t) => t.code === codeA);
             const index2 = this.teams.findIndex((t) => t.code === codeB);
             if (index1 < 0 || index2 < 0) return;
-            const row1 = document.querySelector(`[data-team-code='${codeA}']`);
-            const row2 = document.querySelector(`[data-team-code='${codeB}']`);
-            if (row1) row1.classList.add("swapping");
-            if (row2) row2.classList.add("swapping");
-            // Let the browser paint the class before mutating data
-            requestAnimationFrame(() => {
-                const temp = this.teams[index1];
-                this.teams[index1] = this.teams[index2];
-                this.teams[index2] = temp;
-                this.teams.forEach((team, idx) => (team.position = idx + 1));
-                if (onSwapped) onSwapped();
+            // Mutate first — triggers Alpine re-render
+            const temp = this.teams[index1];
+            this.teams[index1] = this.teams[index2];
+            this.teams[index2] = temp;
+            this.teams.forEach((team, idx) => (team.position = idx + 1));
+            if (onSwapped) onSwapped();
+            // After Alpine has updated the DOM, highlight the stable re-rendered rows
+            this.$nextTick(() => {
+                const row1 = document.querySelector(`[data-team-code='${codeA}']`);
+                const row2 = document.querySelector(`[data-team-code='${codeB}']`);
+                if (row1) row1.classList.add("swapping");
+                if (row2) row2.classList.add("swapping");
                 setTimeout(() => {
                     if (row1) row1.classList.remove("swapping");
                     if (row2) row2.classList.remove("swapping");
-                }, 200);
+                }, 400);
             });
         },
 
@@ -311,6 +318,7 @@ window.Ligitabl._mapServerPredictions = function (predictions) {
         position: p.position,
         code: p.teamCode,
         name: p.teamName,
+        shortName: p.teamShortName,
         crestUrl: p.crestUrl,
         originalPosition: p.position,
     }));
