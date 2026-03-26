@@ -206,7 +206,7 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             }
         },
 
-        _swapTeamsDirect(codeA, codeB) {
+        _swapTeamsDirect(codeA, codeB, onSwapped) {
             const index1 = this.teams.findIndex((t) => t.code === codeA);
             const index2 = this.teams.findIndex((t) => t.code === codeB);
             if (index1 < 0 || index2 < 0) return;
@@ -220,6 +220,7 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
                 this.teams[index1] = this.teams[index2];
                 this.teams[index2] = temp;
                 this.teams.forEach((team, idx) => (team.position = idx + 1));
+                if (onSwapped) onSwapped();
                 setTimeout(() => {
                     if (row1) row1.classList.remove("swapping");
                     if (row2) row2.classList.remove("swapping");
@@ -250,52 +251,18 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         },
 
         // Shared swap mechanics (visual feedback + array swap)
-        _performSwap(teamCode, usePreSwapAnimation) {
-            const index1 = this.teams.findIndex((t) => t.code === this.selectedTeam);
-            const index2 = this.teams.findIndex((t) => t.code === teamCode);
+        _performSwap(teamCode) {
+            const team1Code = this.selectedTeam;
+            const team2Code = teamCode;
+            const index1 = this.teams.findIndex((t) => t.code === team1Code);
+            const index2 = this.teams.findIndex((t) => t.code === team2Code);
             if (index1 < 0 || index2 < 0) {
                 this.selectedTeam = null;
                 return;
             }
-
-            const team1Code = this.selectedTeam;
-            const team2Code = teamCode;
-            const row1 = document.querySelector(`[data-team-code='${team1Code}']`);
-            const row2 = document.querySelector(`[data-team-code='${team2Code}']`);
-
-            if (usePreSwapAnimation) {
-                if (row1) row1.classList.add("pre-swapping");
-                if (row2) row2.classList.add("pre-swapping");
-                setTimeout(() => {
-                    this.selectedTeam = null;
-                }, 10);
-                setTimeout(() => {
-                    if (row1) {
-                        row1.classList.remove("pre-swapping");
-                        row1.classList.add("swapping");
-                        setTimeout(() => row1.classList.remove("swapping"), 600);
-                    }
-                    if (row2) {
-                        row2.classList.remove("pre-swapping");
-                        row2.classList.add("swapping");
-                        setTimeout(() => row2.classList.remove("swapping"), 600);
-                    }
-                }, 80);
-            } else {
-                if (row1) row1.classList.add("swapping");
-                if (row2) row2.classList.add("swapping");
-                setTimeout(() => {
-                    if (row1) row1.classList.remove("swapping");
-                    if (row2) row2.classList.remove("swapping");
-                }, 600);
-                this.selectedTeam = null;
-            }
-
-            const temp = this.teams[index1];
-            this.teams[index1] = this.teams[index2];
-            this.teams[index2] = temp;
-            this.teams.forEach((team, idx) => (team.position = idx + 1));
+            this.selectedTeam = null;
             this.pushSwap(team1Code, team2Code);
+            this._swapTeamsDirect(team1Code, team2Code);
         },
 
         // Shared selection handling
@@ -511,7 +478,7 @@ window.Ligitabl.predictionPage = function (el) {
                 this.selectedTeam = null;
                 return;
             }
-            this._performSwap(teamCode, true);
+            this._performSwap(teamCode);
             this._saveToStorage(AUTH_STORAGE_KEY);
         },
 
@@ -592,8 +559,9 @@ window.Ligitabl.predictionPage = function (el) {
             this.undoing = true;
             const last = this.swapStack.pop();
             setTimeout(() => {
-                this._swapTeamsDirect(last.b, last.a); // reverse
-                this._saveToStorage(AUTH_STORAGE_KEY);
+                this._swapTeamsDirect(last.b, last.a, () => {
+                    this._saveToStorage(AUTH_STORAGE_KEY);
+                }); // reverse
                 setTimeout(() => { this.undoing = false; }, 200);
             }, 200);
         },
@@ -777,7 +745,7 @@ window.Ligitabl.guestPredictionPage = function (el) {
                 this.selectedTeam = null;
                 return;
             }
-            this._performSwap(teamCode, false);
+            this._performSwap(teamCode);
             this._saveToStorage(STORAGE_KEY);
         },
 
@@ -793,8 +761,9 @@ window.Ligitabl.guestPredictionPage = function (el) {
             this.undoing = true;
             const last = this.swapStack.pop();
             setTimeout(() => {
-                this._swapTeamsDirect(last.b, last.a); // reverse
-                this._saveToStorage(STORAGE_KEY);
+                this._swapTeamsDirect(last.b, last.a, () => {
+                    this._saveToStorage(STORAGE_KEY);
+                }); // reverse
                 setTimeout(() => { this.undoing = false; }, 200);
             }, 200);
         },
