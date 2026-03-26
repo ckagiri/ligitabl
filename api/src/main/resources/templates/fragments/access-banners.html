@@ -46,12 +46,11 @@
           th:if="${isCurrentRound == true && (roundState == 'open' || (roundState == 'finalized' && seasonCompleted != true))}"
           class="text-sm text-yellow-700 mt-1"
         >
-          Tap teams to swap and preview your prediction — make up to 5 swaps,
-          then
+          Tap teams to swap and preview your prediction — make up to 5 swaps.
           <a
             th:href="@{/auth/register}"
             class="underline font-medium hover:text-yellow-900"
-            >sign up</a
+            >Sign up</a
           >
           to save and join the competition.
         </p>

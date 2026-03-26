@@ -71,7 +71,7 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         undoing: false,
         alwaysHoverable: false,
         isInitialPrediction: false,
-        showStandings: savedPrefs ? (savedPrefs.showStandings ?? false) : false,
+        showStandings: savedPrefs ? (savedPrefs.showStandings ?? true) : true,
         showFixtures: savedPrefs ? (savedPrefs.showFixtures ?? false) : false,
         showPoints: savedPrefs ? (savedPrefs.showPoints ?? false) : false,
         showGD: savedPrefs ? (savedPrefs.showGD ?? false) : false,
