@@ -3,6 +3,7 @@ package com.ligitabl.api.scheduling.syncmatches;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 
 import org.slf4j.Logger;
@@ -199,7 +200,7 @@ public class MatchSyncScheduler {
         }
     }
 
-    private void scheduleRoundAdvancement(java.util.UUID roundId, java.util.UUID seasonId) {
+    private void scheduleRoundAdvancement(UUID roundId, UUID seasonId) {
         if (seasonId == null || roundId == null) {
             return;
         }
