@@ -69,7 +69,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
                 .entries();
     }
 
-    private void ensureFinalizedRound(int roundPosition) {
+    private void ensureAdvancedRound(int roundPosition) {
         Integer count = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM t_round WHERE fk_season_id = ? AND c_position = ?",
                 Integer.class,
@@ -78,19 +78,20 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
 
         if (count != null && count > 0) {
             jdbc.update(
-                    "UPDATE t_round SET c_is_finalized = true WHERE fk_season_id = ? AND c_position = ?",
+                    "UPDATE t_round SET c_is_finalized = true, c_advanced = true WHERE fk_season_id = ? AND c_position = ?",
                     seasonId,
                     roundPosition);
             return;
         }
 
         jdbc.update(
-                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized, c_advanced) VALUES (?,?,?,?,?,?,?)",
                 UUID.randomUUID(),
                 seasonId,
                 "Round " + roundPosition,
                 "round-" + roundPosition,
                 roundPosition,
+                true,
                 true);
     }
 
@@ -354,7 +355,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
     }
 
     @Test
-    @DisplayName("calculates movement relative to previous round")
+    @DisplayName("calculates movement relative to previous advanced round")
     void calculatesMovement() {
         // Round 1
         createResult(aliceId, alicePredictionId, 1, 100, 10, 5);
@@ -400,8 +401,8 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
     }
 
     @Test
-    @DisplayName("returns participants as unscored when no rounds are finalized")
-    void returnsUnscoredParticipantsWhenNoRoundsFinalized() {
+    @DisplayName("returns participants as unscored when no rounds are advanced")
+    void returnsUnscoredParticipantsWhenNoRoundsAdvanced() {
         // Alice, Bob, Charlie have predictions and entries but no round results yet
         var results = computeEntries(1, 1);
 
@@ -572,7 +573,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
     }
 
     private void createResult(UUID userId, UUID predictionId, int roundPosition, int score, int zeroes, int swaps) {
-        ensureFinalizedRound(roundPosition);
+        ensureAdvancedRound(roundPosition);
         RoundSubmission submission = RoundSubmission.builder()
                 .userId(userId)
                 .seasonId(seasonId)

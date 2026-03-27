@@ -34,9 +34,7 @@ public class RoundAdvancementController {
     @PostMapping("/current/advance-now")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> advanceNow() {
-        return advanceNowUseCase.execute().fold(
-                this::toErrorResponse,
-                ResponseEntity::ok);
+        return advanceNowUseCase.execute().fold(this::toErrorResponse, ResponseEntity::ok);
     }
 
     /**
@@ -47,9 +45,7 @@ public class RoundAdvancementController {
     @GetMapping("/current/advancement-status")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getAdvancementStatus() {
-        return statusUseCase.execute().fold(
-                this::toErrorResponse,
-                ResponseEntity::ok);
+        return statusUseCase.execute().fold(this::toErrorResponse, ResponseEntity::ok);
     }
 
     /**
@@ -60,9 +56,7 @@ public class RoundAdvancementController {
     @DeleteMapping("/current/cancel-advancement")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> cancelAdvancement() {
-        return cancelUseCase.execute().fold(
-                this::toErrorResponse,
-                ResponseEntity::ok);
+        return cancelUseCase.execute().fold(this::toErrorResponse, ResponseEntity::ok);
     }
 
     private ResponseEntity<?> toErrorResponse(UseCaseError error) {

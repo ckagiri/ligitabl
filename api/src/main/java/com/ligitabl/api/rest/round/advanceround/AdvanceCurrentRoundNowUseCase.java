@@ -15,11 +15,9 @@ import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.model.repo.RoundRepo;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 @Component
 @RequiredArgsConstructor
-@Slf4j
 public class AdvanceCurrentRoundNowUseCase {
 
     private final HierarchyValidator hierarchyValidator;
@@ -27,39 +25,31 @@ public class AdvanceCurrentRoundNowUseCase {
     private final RoundAdvancementService roundAdvancementService;
     private final RoundRepo roundRepo;
 
-    public record AdvanceNowResult(
-            UUID roundId,
-            int fromPosition,
-            int toPosition,
-            OffsetDateTime advancedAt) {}
+    public record AdvanceNowResult(UUID roundId, int fromPosition, int toPosition, OffsetDateTime advancedAt) {}
 
     @Transactional
     public Either<UseCaseError, AdvanceNowResult> execute() {
+        record AdvanceAttempt(UUID roundId, boolean advanced) {}
+
         return hierarchyValidator
                 .resolveHierarchy(competitionDefaults.defaultCompetitionSlug())
-                .flatMap(ctx -> {
-                    try {
-                        boolean advanced = roundAdvancementService.advanceManually(ctx.round().getId());
-
-                        if (!advanced) {
-                            return Either.left(UseCaseErrors.conflict("Round already advanced"));
-                        }
-
-                        var updatedRound = roundRepo.findById(ctx.round().getId())
-                                .orElseThrow(() -> new IllegalStateException("Round not found after advancement"));
-
-                        return Either.right(new AdvanceNowResult(
-                                updatedRound.getId(),
-                                updatedRound.getPosition(),
-                                updatedRound.getPosition() + 1,
-                                updatedRound.getAdvancedAt()));
-
-                    } catch (IllegalStateException e) {
-                        return Either.left(UseCaseErrors.conflict(e.getMessage()));
-                    } catch (Exception e) {
-                        log.error("Unexpected error during manual round advancement", e);
-                        return Either.left(UseCaseErrors.unexpected(e));
+                .flatMap(ctx -> Either.catching(
+                        () -> {
+                            var roundId = ctx.round().getId();
+                            var advanced = roundAdvancementService.advanceManually(roundId);
+                            return new AdvanceAttempt(roundId, advanced);
+                        },
+                        UseCaseErrors::fromException))
+                .flatMap(attempt -> {
+                    if (!attempt.advanced()) {
+                        return Either.left(UseCaseErrors.conflict("Round already advanced"));
                     }
+                    return roundRepo
+                            .findById(attempt.roundId())
+                            .map(r -> Either.<UseCaseError, AdvanceNowResult>right(new AdvanceNowResult(
+                                    r.getId(), r.getPosition(), r.getPosition() + 1, r.getAdvancedAt())))
+                            .orElseGet(
+                                    () -> Either.left(UseCaseErrors.unexpected("Round not found after advancement")));
                 });
     }
 }

@@ -45,7 +45,8 @@ public class GetRoundAdvancementStatusUseCase {
                     if (scheduled) {
                         var now = OffsetDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
                         if (round.getAdvanceAt().isAfter(now)) {
-                            minutesRemaining = (int) Duration.between(now, round.getAdvanceAt()).toMinutes();
+                            minutesRemaining = (int)
+                                    Duration.between(now, round.getAdvanceAt()).toMinutes();
                         } else {
                             minutesRemaining = 0;
                         }

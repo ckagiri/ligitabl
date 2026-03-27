@@ -80,8 +80,8 @@ class GetUserDetailUseCaseIntegrationTest extends AbstractPostgresIT {
         awayTeamId = UUID.randomUUID();
 
         insertCompetitionSeasonAndContest();
-        insertRound(round1Id, 1, true);
-        insertRound(round2Id, 2, false);
+        insertRound(round1Id, 1, true, true);
+        insertRound(round2Id, 2, false, false);
         setCurrentRound(round2Id, 2);
 
         insertTeam(homeTeamId, "Arsenal", "arsenal", "ARS");
@@ -188,15 +188,16 @@ class GetUserDetailUseCaseIntegrationTest extends AbstractPostgresIT {
         jdbc.update("UPDATE t_season SET fk_main_contest_id = ? WHERE pk_id = ?", contestId, seasonId);
     }
 
-    private void insertRound(UUID roundId, int position, boolean finalized) {
+        private void insertRound(UUID roundId, int position, boolean finalized, boolean advanced) {
         jdbc.update(
-                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized) VALUES (?,?,?,?,?,?)",
+                                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized, c_advanced) VALUES (?,?,?,?,?,?,?)",
                 roundId,
                 seasonId,
                 "Round " + position,
                 "round-" + position,
                 position,
-                finalized);
+                                finalized,
+                                advanced);
     }
 
     private void setCurrentRound(UUID roundId, int matchDay) {
