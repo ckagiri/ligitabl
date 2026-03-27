@@ -25,9 +25,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundError;
-import com.ligitabl.api.scheduling.advanceround.RoundAdvancementService;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundUseCase;
 import com.ligitabl.api.runners.demoseeding.*;
+import com.ligitabl.api.scheduling.advanceround.RoundAdvancementService;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
@@ -111,9 +111,7 @@ class SeedSeasonUseCaseTest {
         // SeedSeasonUseCase resolves the default contest via season.mainContestId
         season.setMainContestId(defaultContest.getId());
 
-        lenient()
-                .when(roundAdvancementService.advanceManually(any()))
-                .thenReturn(true);
+        lenient().when(roundAdvancementService.advanceManually(any())).thenReturn(true);
     }
 
     @Nested

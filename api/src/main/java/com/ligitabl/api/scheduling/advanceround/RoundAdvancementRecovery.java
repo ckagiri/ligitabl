@@ -47,8 +47,10 @@ public class RoundAdvancementRecovery {
 
             for (var round : missed) {
                 try {
-                    log.warn("Recovering missed advancement: roundId={} scheduledAt={}",
-                            round.getId(), round.getAdvanceAt());
+                    log.warn(
+                            "Recovering missed advancement: roundId={} scheduledAt={}",
+                            round.getId(),
+                            round.getAdvanceAt());
 
                     advancementService.attemptAutoAdvancement(round.getId(), round.getSeasonId());
 

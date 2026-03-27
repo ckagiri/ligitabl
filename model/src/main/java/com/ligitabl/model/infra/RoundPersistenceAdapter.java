@@ -59,7 +59,8 @@ public class RoundPersistenceAdapter implements RoundRepo {
     @Override
     public List<Round> findMissedAdvancements(OffsetDateTime now) {
         return dsl.selectFrom(T_ROUND)
-                .where(T_ROUND.C_IS_FINALIZED.eq(true)
+                .where(T_ROUND.C_IS_FINALIZED
+                        .eq(true)
                         .and(T_ROUND.C_ADVANCED.eq(false))
                         .and(T_ROUND.C_ADVANCE_AT.isNotNull())
                         .and(T_ROUND.C_ADVANCE_AT.le(now)))

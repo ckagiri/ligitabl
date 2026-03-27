@@ -37,6 +37,10 @@ public final class UseCaseErrors {
         return new UnexpectedError(exception);
     }
 
+    public static UnexpectedError unexpected(String message) {
+        return new UnexpectedError(new RuntimeException(message));
+    }
+
     public static AuthorizationError unauthorized(String message) {
         return new AuthorizationError(message);
     }

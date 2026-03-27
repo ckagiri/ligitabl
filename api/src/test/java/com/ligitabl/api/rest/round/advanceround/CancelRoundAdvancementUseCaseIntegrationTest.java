@@ -1,6 +1,7 @@
 package com.ligitabl.api.rest.round.advanceround;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.when;
 
 import java.time.Clock;
 import java.time.Instant;
@@ -17,8 +18,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
-
-import static org.mockito.Mockito.when;
 
 import com.ligitabl.api.shared.errors.ConflictError;
 import com.ligitabl.api.shared.errors.NotFoundError;

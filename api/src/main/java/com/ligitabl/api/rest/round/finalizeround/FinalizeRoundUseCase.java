@@ -50,8 +50,7 @@ public class FinalizeRoundUseCase {
             return Either.left(new FinalizeRoundError.TransactionFailed("seasonId must not be null"));
         }
 
-        log.info("Starting round finalization for season: {} (recompute={})",
-                command.seasonId(), command.recompute());
+        log.info("Starting round finalization for season: {} (recompute={})", command.seasonId(), command.recompute());
 
         return getSeason(command.seasonId())
                 .flatMap(season -> getCurrentRound(season)

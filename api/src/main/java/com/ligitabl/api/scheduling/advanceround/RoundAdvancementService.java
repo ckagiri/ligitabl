@@ -59,7 +59,8 @@ public class RoundAdvancementService {
      * @param seasonId         season containing the round
      */
     public void scheduleAdvancement(UUID finalizedRoundId, UUID seasonId) {
-        var season = seasonRepo.findById(seasonId)
+        var season = seasonRepo
+                .findById(seasonId)
                 .orElseThrow(() -> new IllegalArgumentException("Season not found: " + seasonId));
 
         if (!finalizedRoundId.equals(season.getCurrentRoundId())) {
@@ -67,11 +68,13 @@ public class RoundAdvancementService {
                     "Cannot schedule advancement: finalizedRoundId does not match season.currentRoundId");
         }
 
-        var round = roundRepo.findById(finalizedRoundId)
+        var round = roundRepo
+                .findById(finalizedRoundId)
                 .orElseThrow(() -> new IllegalArgumentException("Round not found: " + finalizedRoundId));
 
         if (!round.isFinalized()) {
-            throw new IllegalArgumentException("Cannot schedule advancement: round is not finalized: " + finalizedRoundId);
+            throw new IllegalArgumentException(
+                    "Cannot schedule advancement: round is not finalized: " + finalizedRoundId);
         }
 
         Instant advanceTime = clock.instant().plus(Duration.ofMinutes(delayMinutes));
@@ -84,9 +87,7 @@ public class RoundAdvancementService {
         round.setAdvanced(false);
         roundRepo.save(round);
 
-        taskScheduler.schedule(
-                () -> attemptAutoAdvancement(finalizedRoundId, seasonId),
-                advanceTime);
+        taskScheduler.schedule(() -> attemptAutoAdvancement(finalizedRoundId, seasonId), advanceTime);
 
         log.info("Scheduled advancement for round={} at {} ({} minutes)", finalizedRoundId, advanceAt, delayMinutes);
         // TODO: send pre-advancement email to admin
@@ -102,7 +103,8 @@ public class RoundAdvancementService {
     @Transactional
     public void attemptAutoAdvancement(UUID roundId, UUID seasonId) {
         try {
-            var round = roundRepo.findById(roundId)
+            var round = roundRepo
+                    .findById(roundId)
                     .orElseThrow(() -> new IllegalStateException("Round not found: " + roundId));
 
             if (round.getAdvanceAt() == null) {
@@ -120,7 +122,8 @@ public class RoundAdvancementService {
                 return;
             }
 
-            var season = seasonRepo.findById(seasonId)
+            var season = seasonRepo
+                    .findById(seasonId)
                     .orElseThrow(() -> new IllegalStateException("Season not found: " + seasonId));
 
             advanceToNextRound(season, round);
@@ -142,7 +145,8 @@ public class RoundAdvancementService {
      * @return true if advanced, false if already advanced
      */
     public boolean advanceManually(UUID roundId) {
-        var round = roundRepo.findById(roundId)
+        var round = roundRepo
+                .findById(roundId)
                 .orElseThrow(() -> new IllegalArgumentException("Round not found: " + roundId));
 
         if (round.isAdvanced()) {
@@ -155,7 +159,8 @@ public class RoundAdvancementService {
                     "Cannot advance non-finalized round: " + roundId + " (status: " + round.computeStatus(null) + ")");
         }
 
-        var season = seasonRepo.findById(round.getSeasonId())
+        var season = seasonRepo
+                .findById(round.getSeasonId())
                 .orElseThrow(() -> new IllegalStateException("Season not found: " + round.getSeasonId()));
 
         advanceToNextRound(season, round);
@@ -172,7 +177,8 @@ public class RoundAdvancementService {
      * @param roundId round whose advancement to cancel
      */
     public void cancelScheduledAdvancement(UUID roundId) {
-        var round = roundRepo.findById(roundId)
+        var round = roundRepo
+                .findById(roundId)
                 .orElseThrow(() -> new IllegalArgumentException("Round not found: " + roundId));
 
         if (round.isAdvanced()) {
@@ -210,7 +216,8 @@ public class RoundAdvancementService {
         currentRound.setAdvancedAt(now());
         roundRepo.save(currentRound);
 
-        var nextRound = roundRepo.findBySeasonIdAndPosition(season.getId(), currentPosition + 1)
+        var nextRound = roundRepo
+                .findBySeasonIdAndPosition(season.getId(), currentPosition + 1)
                 .orElseThrow(() -> new IllegalStateException(
                         "Next round not found: seasonId=" + season.getId() + " position=" + (currentPosition + 1)));
 
