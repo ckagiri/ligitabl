@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FinalizeRoundUseCase {
 
-    private record FinalizationContext(Season season, Round round, boolean recompute, boolean autoAdvance) {}
+    private record FinalizationContext(Season season, Round round, boolean recompute) {}
 
     private final HierarchyValidator hierarchyValidator;
     private final RoundRepo roundRepo;
@@ -38,7 +38,6 @@ public class FinalizeRoundUseCase {
     private final StandingsCalculatorService standingsCalculator;
     private final ScoringEngine scoringEngine;
     private final Clock clock;
-    private final AdvanceCurrentRoundUseCase advanceCurrentRoundUseCase;
 
     @Transactional
     public Either<FinalizeRoundError, FinalizeRoundResult> execute(UUID seasonId) {
@@ -51,34 +50,12 @@ public class FinalizeRoundUseCase {
             return Either.left(new FinalizeRoundError.TransactionFailed("seasonId must not be null"));
         }
 
-        log.info(
-                "Starting round finalization for season: {} (recompute={}, autoAdvance={})",
-                command.seasonId(),
-                command.recompute(),
-                command.autoAdvance());
+        log.info("Starting round finalization for season: {} (recompute={})", command.seasonId(), command.recompute());
 
         return getSeason(command.seasonId())
                 .flatMap(season -> getCurrentRound(season)
-                        .map(round ->
-                                new FinalizationContext(season, round, command.recompute(), command.autoAdvance())))
-                .flatMap(ctx -> validateRoundReady(ctx).flatMap(__ -> executeFinalizationWorkflow(ctx)
-                        .flatMap(result -> maybeAutoAdvance(ctx, result))));
-    }
-
-    private Either<FinalizeRoundError, FinalizeRoundResult> maybeAutoAdvance(
-            FinalizationContext ctx, FinalizeRoundResult result) {
-        if (!ctx.autoAdvance()) {
-            return Either.right(result);
-        }
-
-        var advance = advanceCurrentRoundUseCase.execute(new AdvanceCurrentRoundUseCase.AdvanceCurrentRoundCommand(
-                ctx.season().getId(), result.roundId()));
-
-        if (advance.isLeft()) {
-            return Either.left(new FinalizeRoundError.TransactionFailed("Auto-advance failed: " + advance.getLeft()));
-        }
-
-        return Either.right(result);
+                        .map(round -> new FinalizationContext(season, round, command.recompute())))
+                .flatMap(ctx -> validateRoundReady(ctx).flatMap(__ -> executeFinalizationWorkflow(ctx)));
     }
 
     private Either<FinalizeRoundError, Season> getSeason(UUID seasonId) {
@@ -111,6 +88,10 @@ public class FinalizeRoundUseCase {
         }
 
         RoundStatus status = ctx.round().computeStatus(matches);
+        if (ctx.recompute() && status == RoundStatus.FINALIZED) {
+            return Either.right(null);
+        }
+
         if (status != RoundStatus.COMPLETED) {
             return Either.left(new FinalizeRoundError.RoundNotReady(
                     ctx.round().getId(), "Round status is " + status + ", expected COMPLETED"));

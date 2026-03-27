@@ -8,10 +8,10 @@ import java.util.Comparator;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.api.rest.round.finalizeround.AdvanceCurrentRoundUseCase;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundError;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundResult;
 import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundUseCase;
+import com.ligitabl.api.scheduling.advanceround.RoundAdvancementService;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.domain.*;
@@ -37,7 +37,7 @@ public class SeedSeasonUseCase {
     private final SeasonPredictionRepo predictionRepo;
     private final EntryRepo entryRepo;
     private final FinalizeRoundUseCase finalizeRoundUseCase;
-    private final AdvanceCurrentRoundUseCase advanceCurrentRoundUseCase;
+    private final RoundAdvancementService roundAdvancementService;
     private final Clock clock;
 
     private final Random random = new Random(42);
@@ -469,13 +469,11 @@ public class SeedSeasonUseCase {
             } else {
                 finalized++;
 
-                // FinalizeRoundUseCase no longer advances pointers; do it explicitly for seeding.
-                var advance =
-                        advanceCurrentRoundUseCase.execute(new AdvanceCurrentRoundUseCase.AdvanceCurrentRoundCommand(
-                                season.getId(), result.get().roundId()));
-
-                if (advance.isLeft()) {
-                    String msg = "Failed to advance after finalization: " + advance.getLeft();
+                // Advance immediately for seeding (no delay window needed).
+                try {
+                    roundAdvancementService.advanceManually(result.get().roundId());
+                } catch (Exception e) {
+                    String msg = "Failed to advance after finalization: " + e.getMessage();
                     warnings.add(msg);
                     log.warn(msg);
                     break;

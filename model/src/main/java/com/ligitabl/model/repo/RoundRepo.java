@@ -1,5 +1,6 @@
 package com.ligitabl.model.repo;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,4 +18,10 @@ public interface RoundRepo {
     List<Round> findBySeasonIdOrderByPosition(UUID id);
 
     Round save(Round round);
+
+    /**
+     * Finds finalized, not-yet-advanced rounds whose scheduled advancement
+     * time has passed. Used by RoundAdvancementRecovery on startup.
+     */
+    List<Round> findMissedAdvancements(OffsetDateTime now);
 }

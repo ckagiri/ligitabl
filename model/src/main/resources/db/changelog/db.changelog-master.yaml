@@ -35,3 +35,5 @@ databaseChangeLog:
       file: db/changelog/20260320_1_password_reset_token.yaml
   - include:
       file: db/changelog/20260323_1_user_google_oauth.yaml
+  - include:
+      file: db/changelog/20260327_1_round_advancement.yaml

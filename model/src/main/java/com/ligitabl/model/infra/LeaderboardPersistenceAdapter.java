@@ -34,7 +34,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
             UUID contestId, UUID seasonId, int fromRound, int toRound, UUID userId, int offset, int limit) {
         validateInputs(contestId, seasonId, fromRound, toRound, offset, limit);
 
-        // effectiveToRound is the max finalized round in the phase (may be null before any round is scored)
+        // effectiveToRound is the max advanced round in the phase (may be null before any round is advanced)
         Integer effectiveToRound = resolveEffectiveToRound(seasonId, fromRound, toRound);
 
         // Count participants from season_prediction — includes users even before scoring starts
@@ -79,7 +79,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .from(T_ROUND)
                 .where(T_ROUND.FK_SEASON_ID.eq(seasonId))
                 .and(T_ROUND.C_POSITION.between(fromRound, toRound))
-                .and(T_ROUND.C_IS_FINALIZED.isTrue())
+                .and(T_ROUND.C_ADVANCED.isTrue())
                 .fetchOne(0, Integer.class);
     }
 
@@ -153,7 +153,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
      * Users without any scored rounds appear at the bottom with scored=false.
      *
      * @param phaseToRound phase end round — used for atRoundNumber filter
-     * @param effectiveToRound max finalized round in phase (null if no rounds scored yet)
+     * @param effectiveToRound max advanced round in phase (null if no rounds advanced yet)
      */
     private List<RankingWithPosition> fetchPaginatedRankings(
             UUID contestId,

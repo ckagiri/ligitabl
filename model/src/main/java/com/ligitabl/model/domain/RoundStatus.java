@@ -5,5 +5,6 @@ public enum RoundStatus {
     LOCKED,
     COMPLETED,
     FINALIZED,
+    ADVANCED,
     UNKNOWN
 }

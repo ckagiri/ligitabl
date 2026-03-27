@@ -73,7 +73,7 @@ class GetLeaderboardUseCaseIntegrationTest extends AbstractPostgresIT {
     private UUID bobPredictionId;
     private UUID charliePredictionId;
 
-    private void ensureFinalizedRound(int roundPosition) {
+    private void ensureAdvancedRound(int roundPosition) {
         Integer count = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM t_round WHERE fk_season_id = ? AND c_position = ?",
                 Integer.class,
@@ -82,19 +82,20 @@ class GetLeaderboardUseCaseIntegrationTest extends AbstractPostgresIT {
 
         if (count != null && count > 0) {
             jdbc.update(
-                    "UPDATE t_round SET c_is_finalized = true WHERE fk_season_id = ? AND c_position = ?",
+                    "UPDATE t_round SET c_is_finalized = true, c_advanced = true WHERE fk_season_id = ? AND c_position = ?",
                     seasonId,
                     roundPosition);
             return;
         }
 
         jdbc.update(
-                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized) VALUES (?,?,?,?,?,?)",
+                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized, c_advanced) VALUES (?,?,?,?,?,?,?)",
                 UUID.randomUUID(),
                 seasonId,
                 "Round " + roundPosition,
                 "round-" + roundPosition,
                 roundPosition,
+                true,
                 true);
     }
 
@@ -301,7 +302,7 @@ class GetLeaderboardUseCaseIntegrationTest extends AbstractPostgresIT {
     }
 
     @Test
-    @DisplayName("calculates position movement correctly")
+    @DisplayName("calculates position movement using advanced rounds only")
     void calculatesPositionMovement() {
         // Round 1 standings: Alice (1st), Bob (2nd), Charlie (3rd)
         createResult(aliceId, alicePredictionId, 1, 50, 0, 0);
@@ -348,7 +349,7 @@ class GetLeaderboardUseCaseIntegrationTest extends AbstractPostgresIT {
     }
 
     @Test
-    @DisplayName("calculates movement within the requested phase")
+    @DisplayName("calculates movement within the requested phase using advanced rounds only")
     void calculatesMovementWithinPhase() {
         // Build up Q1 such that after round 9 Alice leads, but after adding round 10 Bob overtakes.
         createResults(aliceId, alicePredictionId, 1, 9, 10); // 90
@@ -529,7 +530,7 @@ class GetLeaderboardUseCaseIntegrationTest extends AbstractPostgresIT {
     }
 
     private void createResult(UUID userId, UUID predictionId, int roundPosition, int score, int zeroes, int swaps) {
-        ensureFinalizedRound(roundPosition);
+        ensureAdvancedRound(roundPosition);
         RoundSubmission submission = RoundSubmission.builder()
                 .userId(userId)
                 .seasonId(seasonId)

@@ -2,6 +2,7 @@ package com.ligitabl.model.infra;
 
 import static com.ligitabl.model.db.tables.TRound.T_ROUND;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -56,6 +57,18 @@ public class RoundPersistenceAdapter implements RoundRepo {
     }
 
     @Override
+    public List<Round> findMissedAdvancements(OffsetDateTime now) {
+        return dsl.selectFrom(T_ROUND)
+                .where(T_ROUND.C_IS_FINALIZED
+                        .eq(true)
+                        .and(T_ROUND.C_ADVANCED.eq(false))
+                        .and(T_ROUND.C_ADVANCE_AT.isNotNull())
+                        .and(T_ROUND.C_ADVANCE_AT.le(now)))
+                .fetch()
+                .map(MAPPER::map);
+    }
+
+    @Override
     public Round save(Round round) {
         if (round == null) {
             throw new IllegalArgumentException("Round must not be null");
@@ -78,6 +91,9 @@ public class RoundPersistenceAdapter implements RoundRepo {
                 .set(T_ROUND.C_SLUG, round.getSlug())
                 .set(T_ROUND.C_POSITION, round.getPosition())
                 .set(T_ROUND.C_IS_FINALIZED, round.isFinalized())
+                .set(T_ROUND.C_ADVANCE_AT, round.getAdvanceAt())
+                .set(T_ROUND.C_ADVANCED, round.isAdvanced())
+                .set(T_ROUND.C_ADVANCED_AT, round.getAdvancedAt())
                 .execute();
 
         return findById(id).orElseThrow(() -> new IllegalStateException("Round not found after create"));
@@ -94,6 +110,9 @@ public class RoundPersistenceAdapter implements RoundRepo {
                 .set(T_ROUND.C_SLUG, round.getSlug())
                 .set(T_ROUND.C_POSITION, round.getPosition())
                 .set(T_ROUND.C_IS_FINALIZED, round.isFinalized())
+                .set(T_ROUND.C_ADVANCE_AT, round.getAdvanceAt())
+                .set(T_ROUND.C_ADVANCED, round.isAdvanced())
+                .set(T_ROUND.C_ADVANCED_AT, round.getAdvancedAt())
                 .where(T_ROUND.PK_ID.eq(round.getId()))
                 .execute();
 
@@ -118,6 +137,9 @@ public class RoundPersistenceAdapter implements RoundRepo {
                     .slug(record.getSlug())
                     .position(record.getPosition())
                     .finalized(Boolean.TRUE.equals(record.getIsFinalized()))
+                    .advanceAt(record.getAdvanceAt())
+                    .advanced(Boolean.TRUE.equals(record.getAdvanced()))
+                    .advancedAt(record.getAdvancedAt())
                     .build();
         }
     }
