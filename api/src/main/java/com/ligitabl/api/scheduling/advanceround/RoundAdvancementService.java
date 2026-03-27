@@ -141,7 +141,6 @@ public class RoundAdvancementService {
      * @param roundId round to advance
      * @return true if advanced, false if already advanced
      */
-    @Transactional
     public boolean advanceManually(UUID roundId) {
         var round = roundRepo.findById(roundId)
                 .orElseThrow(() -> new IllegalArgumentException("Round not found: " + roundId));
@@ -172,7 +171,6 @@ public class RoundAdvancementService {
      *
      * @param roundId round whose advancement to cancel
      */
-    @Transactional
     public void cancelScheduledAdvancement(UUID roundId) {
         var round = roundRepo.findById(roundId)
                 .orElseThrow(() -> new IllegalArgumentException("Round not found: " + roundId));
