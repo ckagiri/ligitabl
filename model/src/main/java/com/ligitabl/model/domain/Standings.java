@@ -27,6 +27,10 @@ public class Standings extends AbstractModel<UUID> {
 
     private OffsetDateTime finalisedAt;
 
+    // Populated by the database (defaults/triggers)
+    private OffsetDateTime createDate;
+    private OffsetDateTime updateDate;
+
     public static Standings create(UUID seasonId, int roundPosition, List<StandingsTeamRank> rankings) {
         return Standings.builder()
                 .id(UUID.randomUUID())

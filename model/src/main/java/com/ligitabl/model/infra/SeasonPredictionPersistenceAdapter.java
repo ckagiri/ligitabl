@@ -6,6 +6,7 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -62,28 +63,31 @@ public class SeasonPredictionPersistenceAdapter implements SeasonPredictionRepo 
 
     @Override
     public SeasonPrediction save(SeasonPrediction prediction) {
-        if (prediction.getId() == null) {
-            prediction.setId(UUID.randomUUID());
+        return prediction.getId() == null ? create(prediction) : update(prediction);
+    }
+
+    private SeasonPrediction create(SeasonPrediction prediction) {
+        UUID id = UUID.randomUUID();
+        SeasonPredictionRecord rec = dsl.newRecord(T_SEASON_PREDICTION);
+        rec.setId(id);
+        copyModelToRecord(prediction, rec);
+        rec.store();
+        rec.refresh();
+        return map(rec);
+    }
+
+    private SeasonPrediction update(SeasonPrediction prediction) {
+        SeasonPredictionRecord rec = dsl.selectFrom(T_SEASON_PREDICTION)
+                .where(T_SEASON_PREDICTION.PK_ID.eq(prediction.getId()))
+                .fetchOne();
+        if (rec == null) {
+            throw new NoSuchElementException(
+                    String.format("SeasonPrediction with id %s not found", prediction.getId()));
         }
-
-        dsl.insertInto(T_SEASON_PREDICTION)
-                .set(T_SEASON_PREDICTION.PK_ID, prediction.getId())
-                .set(T_SEASON_PREDICTION.FK_USER_ID, prediction.getUserId())
-                .set(T_SEASON_PREDICTION.FK_SEASON_ID, prediction.getSeasonId())
-                .set(T_SEASON_PREDICTION.C_INITIAL_RANKINGS, writeJson(prediction.getInitialRankings()))
-                .set(T_SEASON_PREDICTION.C_CURRENT_RANKINGS, writeJson(prediction.getCurrentRankings()))
-                .set(T_SEASON_PREDICTION.C_SWAPS, writeJson(prediction.getSwaps()))
-                .set(T_SEASON_PREDICTION.C_LAST_SWAP_AT, toOffsetDateTime(prediction.getLastSwapAt()))
-                .set(T_SEASON_PREDICTION.C_AT_ROUND_NUMBER, prediction.getAtRoundNumber())
-                .onConflict(T_SEASON_PREDICTION.PK_ID)
-                .doUpdate()
-                .set(T_SEASON_PREDICTION.C_CURRENT_RANKINGS, writeJson(prediction.getCurrentRankings()))
-                .set(T_SEASON_PREDICTION.C_SWAPS, writeJson(prediction.getSwaps()))
-                .set(T_SEASON_PREDICTION.C_LAST_SWAP_AT, toOffsetDateTime(prediction.getLastSwapAt()))
-                .set(T_SEASON_PREDICTION.C_AT_ROUND_NUMBER, prediction.getAtRoundNumber())
-                .execute();
-
-        return prediction;
+        copyModelToRecord(prediction, rec);
+        rec.store();
+        rec.refresh();
+        return map(rec);
     }
 
     private SeasonPrediction map(SeasonPredictionRecord record) {
@@ -100,7 +104,20 @@ public class SeasonPredictionPersistenceAdapter implements SeasonPredictionRepo 
                 .swaps(readJson(record.getSwaps(), ROUND_SWAP_LIST, List.of()))
                 .lastSwapAt(toInstant(record.getLastSwapAt()))
                 .atRoundNumber(record.getAtRoundNumber())
+                .createDate(record.getCreateDate())
+                .updateDate(record.getUpdateDate())
                 .build();
+    }
+
+    private static void copyModelToRecord(SeasonPrediction model, SeasonPredictionRecord rec) {
+        if (model == null || rec == null) return;
+        rec.setUserId(model.getUserId());
+        rec.setSeasonId(model.getSeasonId());
+        rec.setInitialRankings(writeJson(model.getInitialRankings()));
+        rec.setCurrentRankings(writeJson(model.getCurrentRankings()));
+        rec.setSwaps(writeJson(model.getSwaps()));
+        rec.setLastSwapAt(toOffsetDateTime(model.getLastSwapAt()));
+        rec.setAtRoundNumber(model.getAtRoundNumber());
     }
 
     private static Instant toInstant(OffsetDateTime value) {

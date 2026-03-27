@@ -69,6 +69,8 @@ public class UserPersistenceAdapter implements UserRepo {
             throw new IllegalArgumentException("User.publicId must not be null on create");
         }
 
+        final UserRecord[] refreshed = new UserRecord[1];
+
         dsl.transaction(configuration -> {
             DSLContext tx = DSL.using(configuration);
 
@@ -83,6 +85,7 @@ public class UserPersistenceAdapter implements UserRepo {
             rec.setGoogleSubject(model.getGoogleId());
             rec.store();
             rec.refresh();
+            refreshed[0] = rec;
 
             for (Role role : model.getRoles()) {
                 tx.insertInto(T_USER_ROLE)
@@ -93,7 +96,19 @@ public class UserPersistenceAdapter implements UserRepo {
             }
         });
 
-        return model;
+        UserRecord rec = refreshed[0];
+        return User.builder()
+                .id(rec.getId())
+                .publicId(rec.getPublicId() == null ? null : PublicId.create(rec.getPublicId()))
+                .email(rec.getEmail() == null ? null : Email.create(rec.getEmail()))
+                .password(rec.getPasswordHash() == null ? null : Password.Hashed.of(rec.getPasswordHash()))
+                .displayName(rec.getDisplayName())
+                .emailVerified(Boolean.TRUE.equals(rec.getEmailVerified()))
+                .googleId(rec.getGoogleSubject())
+                .createDate(rec.getCreateDate())
+                .updateDate(rec.getUpdateDate())
+                .roles(model.getRoles())
+                .build();
     }
 
     @Override
@@ -142,6 +157,8 @@ public class UserPersistenceAdapter implements UserRepo {
                 .roles(roles)
                 .emailVerified(Boolean.TRUE.equals(record.getEmailVerified()))
                 .googleId(record.getGoogleSubject())
+                .createDate(record.getCreateDate())
+                .updateDate(record.getUpdateDate())
                 .build();
     }
 }

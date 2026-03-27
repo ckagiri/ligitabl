@@ -37,3 +37,5 @@ databaseChangeLog:
       file: db/changelog/20260323_1_user_google_oauth.yaml
   - include:
       file: db/changelog/20260327_1_round_advancement.yaml
+  - include:
+      file: db/changelog/20260328_1_entity_timestamps.yaml

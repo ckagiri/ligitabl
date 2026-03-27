@@ -1,5 +1,6 @@
 package com.ligitabl.model.domain;
 
+import java.time.OffsetDateTime;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
@@ -50,6 +51,13 @@ public class User {
 
     @With
     String googleId;
+
+    // Populated by the database (defaults/triggers)
+    @With
+    OffsetDateTime createDate;
+
+    @With
+    OffsetDateTime updateDate;
 
     public boolean hasRole(Role role) {
         return roles.contains(role);
