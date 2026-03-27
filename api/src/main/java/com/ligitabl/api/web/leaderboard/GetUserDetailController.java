@@ -27,42 +27,51 @@ public class GetUserDetailController {
             @RequestParam int position,
             @RequestParam int totalScore,
             @RequestParam int roundScore,
-            @RequestParam int totalSwaps,
-            @RequestParam int movement,
             @RequestParam(required = false) Integer effectiveToRound,
+            @RequestParam(required = false) Integer phaseFrom,
+            @RequestParam(required = false) Integer maxRound,
             Model model,
             HttpServletResponse response) {
 
         log.info("POST /leaderboard/user/modal - publicId: {}", publicId);
 
-        // Fetch predictions
         return getUserDetailUseCase
                 .execute(publicId, effectiveToRound)
                 .fold(
                         error -> handleError(error, model, response),
-                        result -> handleSuccess(result, displayName, position, totalScore, roundScore, model));
+                        result -> handleSuccess(result, publicId, displayName, position, totalScore, roundScore, effectiveToRound, phaseFrom, maxRound, model));
     }
 
     private String handleSuccess(
             GetUserDetailUseCase.UserPredictions result,
+            String publicId,
             String displayName,
             int position,
             int totalScore,
-            int roundScore,
+            int requestRoundScore,
+            Integer effectiveToRound,
+            Integer phaseFrom,
+            Integer maxRoundParam,
             Model model) {
+
+        int roundScore = result.roundScore() != null ? result.roundScore()
+                : (result.predictions().isEmpty() ? 0 : requestRoundScore);
 
         int roundZeroes = (int) result.predictions().stream()
                 .filter(pred -> pred.hit() != null && pred.hit() == 0)
                 .count();
 
-        // Create user DTO with combined leaderboard + prediction data
-        var user = new UserDetailDTO(displayName, position, totalScore, roundScore, roundZeroes, result.predictions());
+        var user = new UserDetailDTO(publicId, displayName, position, totalScore, roundScore, roundZeroes, result.predictions());
+
+        int minRound = phaseFrom != null ? phaseFrom : 1;
+        int maxRound = maxRoundParam != null ? maxRoundParam : (effectiveToRound != null ? effectiveToRound : result.round());
 
         model.addAttribute("user", user);
         model.addAttribute("round", result.round());
-        model.addAttribute("status", ""); // Always show current round predictions
+        model.addAttribute("minRound", minRound);
+        model.addAttribute("maxRound", maxRound);
 
-        return "fragments/user-detail :: user-details(user=${user}, round=${round}, status=${status})";
+        return "fragments/user-detail :: user-details";
     }
 
     private String handleError(Exception error, Model model, HttpServletResponse response) {
@@ -74,6 +83,7 @@ public class GetUserDetailController {
     }
 
     private record UserDetailDTO(
+            String publicId,
             String displayName,
             int position,
             int totalScore,
