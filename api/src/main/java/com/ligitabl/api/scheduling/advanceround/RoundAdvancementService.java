@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -117,7 +116,7 @@ public class RoundAdvancementService {
                 return;
             }
 
-            if (round.computeStatus(null) != RoundStatus.FINALIZED) {
+            if (!round.isFinalized()) {
                 log.warn("Skipping auto-advancement for round={}: status is not FINALIZED", roundId);
                 return;
             }
