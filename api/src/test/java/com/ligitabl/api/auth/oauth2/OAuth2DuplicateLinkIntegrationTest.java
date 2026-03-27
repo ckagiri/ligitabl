@@ -131,7 +131,9 @@ class OAuth2DuplicateLinkIntegrationTest {
                 null,
                 Set.of(Role.PLAYER),
                 true,
-                googleId);
+                googleId,
+                null,
+                null);
     }
 
     private OAuth2AuthenticationToken makeOAuth2Token(String googleSubject, String email) {

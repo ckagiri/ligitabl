@@ -6,7 +6,6 @@ import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -63,27 +62,24 @@ public class SeasonPredictionPersistenceAdapter implements SeasonPredictionRepo 
 
     @Override
     public SeasonPrediction save(SeasonPrediction prediction) {
-        return prediction.getId() == null ? create(prediction) : update(prediction);
+        if (prediction.getId() != null) {
+            SeasonPredictionRecord existing = dsl.selectFrom(T_SEASON_PREDICTION)
+                    .where(T_SEASON_PREDICTION.PK_ID.eq(prediction.getId()))
+                    .fetchOne();
+            if (existing != null) {
+                copyModelToRecord(prediction, existing);
+                existing.store();
+                existing.refresh();
+                return map(existing);
+            }
+        }
+        return create(prediction);
     }
 
     private SeasonPrediction create(SeasonPrediction prediction) {
-        UUID id = UUID.randomUUID();
+        UUID id = prediction.getId() != null ? prediction.getId() : UUID.randomUUID();
         SeasonPredictionRecord rec = dsl.newRecord(T_SEASON_PREDICTION);
         rec.setId(id);
-        copyModelToRecord(prediction, rec);
-        rec.store();
-        rec.refresh();
-        return map(rec);
-    }
-
-    private SeasonPrediction update(SeasonPrediction prediction) {
-        SeasonPredictionRecord rec = dsl.selectFrom(T_SEASON_PREDICTION)
-                .where(T_SEASON_PREDICTION.PK_ID.eq(prediction.getId()))
-                .fetchOne();
-        if (rec == null) {
-            throw new NoSuchElementException(
-                    String.format("SeasonPrediction with id %s not found", prediction.getId()));
-        }
         copyModelToRecord(prediction, rec);
         rec.store();
         rec.refresh();

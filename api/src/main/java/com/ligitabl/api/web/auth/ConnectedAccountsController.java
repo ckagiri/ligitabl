@@ -100,15 +100,7 @@ public class ConnectedAccountsController {
             return "redirect:/settings/connected-accounts";
         }
 
-        User updatedUser = new User(
-                user.getId(),
-                user.getPublicId(),
-                user.getEmail(),
-                user.getDisplayName(),
-                user.getPassword(),
-                user.getRoles(),
-                user.isEmailVerified(),
-                null);
+        User updatedUser = user.withGoogleId(null);
 
         userRepo.update(updatedUser);
 
