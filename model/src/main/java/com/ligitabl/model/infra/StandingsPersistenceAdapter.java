@@ -185,6 +185,8 @@ public class StandingsPersistenceAdapter implements StandingsRepo {
                     .rankings(readRankings(record.getRankings()))
                     .finalised(Boolean.TRUE.equals(record.getFinalised()))
                     .finalisedAt(record.getFinalisedAt())
+                    .createDate(record.getCreateDate())
+                    .updateDate(record.getUpdateDate())
                     .build();
         }
     }

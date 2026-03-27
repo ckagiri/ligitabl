@@ -154,8 +154,7 @@ public class RoundAdvancementService {
         }
 
         if (!round.isFinalized()) {
-            throw new IllegalStateException(
-                    "Cannot advance non-finalized round: " + roundId);
+            throw new IllegalStateException("Cannot advance non-finalized round: " + roundId);
         }
 
         var season = seasonRepo

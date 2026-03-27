@@ -86,15 +86,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         }
 
         if (existing.getGoogleId() == null) {
-            User linkedUser = new User(
-                    existing.getId(),
-                    existing.getPublicId(),
-                    existing.getEmail(),
-                    existing.getDisplayName(),
-                    existing.getPassword(),
-                    existing.getRoles(),
-                    true,
-                    googleId);
+            User linkedUser = existing.withEmailVerified(true).withGoogleId(googleId);
             userRepo.update(linkedUser);
             log.info(
                     "[OAUTH_GOOGLE_LINKED] userId={} email={}",

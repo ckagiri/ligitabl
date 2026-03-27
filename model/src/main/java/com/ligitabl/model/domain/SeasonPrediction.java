@@ -1,6 +1,7 @@
 package com.ligitabl.model.domain;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -33,6 +34,10 @@ public class SeasonPrediction extends AbstractModel<UUID> {
     private Instant lastSwapAt;
 
     private int atRoundNumber;
+
+    // Populated by the database (defaults/triggers)
+    private OffsetDateTime createDate;
+    private OffsetDateTime updateDate;
 
     /**
      * Adds a swap to the history for a specific round.

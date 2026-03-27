@@ -92,15 +92,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             return;
         }
 
-        User updatedUser = new User(
-                existingUser.getId(),
-                existingUser.getPublicId(),
-                existingUser.getEmail(),
-                existingUser.getDisplayName(),
-                existingUser.getPassword(),
-                existingUser.getRoles(),
-                true,
-                userInfo.id());
+        User updatedUser = existingUser.withEmailVerified(true).withGoogleId(userInfo.id());
 
         userRepo.update(updatedUser);
         log.info("[GOOGLE_LINKED_SUCCESS] userId={} googleId={}", updatedUser.getId(), userInfo.id());

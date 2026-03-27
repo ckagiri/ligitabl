@@ -54,9 +54,8 @@ public class GetRoundAdvancementStatusUseCase {
                         }
                     }
 
-                    var matches = (round.isAdvanced() || round.isFinalized())
-                            ? null
-                            : matchRepo.findByRoundId(round.getId());
+                    var matches =
+                            (round.isAdvanced() || round.isFinalized()) ? null : matchRepo.findByRoundId(round.getId());
 
                     return new AdvancementStatusResult(
                             round.getId(),

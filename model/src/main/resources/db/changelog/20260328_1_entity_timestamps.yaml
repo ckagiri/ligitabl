@@ -1,0 +1,205 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260328_1_user_timestamps
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_user
+            schemaName: public
+      changes:
+        - addColumn:
+            tableName: t_user
+            schemaName: public
+            columns:
+              - column:
+                  name: c_create_date
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_update_date
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: true
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              DO $$
+              BEGIN
+                IF NOT EXISTS (
+                  SELECT 1 FROM pg_trigger WHERE tgname = 'trg_t_user_update_ts'
+                ) THEN
+                  CREATE TRIGGER trg_t_user_update_ts
+                  BEFORE UPDATE ON public.t_user
+                  FOR EACH ROW
+                  EXECUTE FUNCTION set_update_timestamp();
+                END IF;
+              END $$;
+
+  - changeSet:
+      id: 20260328_2_season_prediction_timestamps
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_season_prediction
+            schemaName: public
+      changes:
+        - addColumn:
+            tableName: t_season_prediction
+            schemaName: public
+            columns:
+              - column:
+                  name: c_create_date
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_update_date
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: true
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              DO $$
+              BEGIN
+                IF NOT EXISTS (
+                  SELECT 1 FROM pg_trigger WHERE tgname = 'trg_t_season_prediction_update_ts'
+                ) THEN
+                  CREATE TRIGGER trg_t_season_prediction_update_ts
+                  BEFORE UPDATE ON public.t_season_prediction
+                  FOR EACH ROW
+                  EXECUTE FUNCTION set_update_timestamp();
+                END IF;
+              END $$;
+
+  - changeSet:
+      id: 20260328_3_match_timestamps
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_match
+            schemaName: public
+      changes:
+        - addColumn:
+            tableName: t_match
+            schemaName: public
+            columns:
+              - column:
+                  name: c_create_date
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_update_date
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: true
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              DO $$
+              BEGIN
+                IF NOT EXISTS (
+                  SELECT 1 FROM pg_trigger WHERE tgname = 'trg_t_match_update_ts'
+                ) THEN
+                  CREATE TRIGGER trg_t_match_update_ts
+                  BEFORE UPDATE ON public.t_match
+                  FOR EACH ROW
+                  EXECUTE FUNCTION set_update_timestamp();
+                END IF;
+              END $$;
+
+  - changeSet:
+      id: 20260328_4_standings_timestamps
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_standings
+            schemaName: public
+      changes:
+        - addColumn:
+            tableName: t_standings
+            schemaName: public
+            columns:
+              - column:
+                  name: c_create_date
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_update_date
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: true
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              DO $$
+              BEGIN
+                IF NOT EXISTS (
+                  SELECT 1 FROM pg_trigger WHERE tgname = 'trg_t_standings_update_ts'
+                ) THEN
+                  CREATE TRIGGER trg_t_standings_update_ts
+                  BEFORE UPDATE ON public.t_standings
+                  FOR EACH ROW
+                  EXECUTE FUNCTION set_update_timestamp();
+                END IF;
+              END $$;
+
+  - changeSet:
+      id: 20260328_5_round_timestamps
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_round
+            schemaName: public
+      changes:
+        - addColumn:
+            tableName: t_round
+            schemaName: public
+            columns:
+              - column:
+                  name: c_create_date
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_update_date
+                  type: timestamp with time zone
+                  defaultValueComputed: now()
+                  constraints:
+                    nullable: true
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              DO $$
+              BEGIN
+                IF NOT EXISTS (
+                  SELECT 1 FROM pg_trigger WHERE tgname = 'trg_t_round_update_ts'
+                ) THEN
+                  CREATE TRIGGER trg_t_round_update_ts
+                  BEFORE UPDATE ON public.t_round
+                  FOR EACH ROW
+                  EXECUTE FUNCTION set_update_timestamp();
+                END IF;
+              END $$;

@@ -253,6 +253,8 @@ public class MatchPersistenceAdapter implements MatchRepo {
                     .score(readScore(record.getScore()))
                     .wasPostponed(Boolean.TRUE.equals(record.getWasPostponed()))
                     .wasSuspended(Boolean.TRUE.equals(record.getWasSuspended()))
+                    .createDate(record.getCreateDate())
+                    .updateDate(record.getUpdateDate())
                     .build();
         }
 

@@ -140,6 +140,8 @@ public class RoundPersistenceAdapter implements RoundRepo {
                     .advanceAt(record.getAdvanceAt())
                     .advanced(Boolean.TRUE.equals(record.getAdvanced()))
                     .advancedAt(record.getAdvancedAt())
+                    .createDate(record.getCreateDate())
+                    .updateDate(record.getUpdateDate())
                     .build();
         }
     }

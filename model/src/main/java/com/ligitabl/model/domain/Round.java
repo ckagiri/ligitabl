@@ -36,6 +36,10 @@ public class Round extends AbstractModel<UUID> {
 
     private OffsetDateTime advancedAt;
 
+    // Populated by the database (defaults/triggers)
+    private OffsetDateTime createDate;
+    private OffsetDateTime updateDate;
+
     /**
      * Computes round status based on associated matches.
      * Called from repository after loading matches.

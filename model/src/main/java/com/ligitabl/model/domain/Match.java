@@ -151,6 +151,10 @@ public class Match extends AbstractModel<UUID> {
         }
     }
 
+    // Populated by the database (defaults/triggers)
+    private OffsetDateTime createDate;
+    private OffsetDateTime updateDate;
+
     // Transient fields populated by repository
     private Team homeTeam;
 
