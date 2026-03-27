@@ -22,13 +22,9 @@ public class FinalizeRoundController {
     private final CompetitionDefaults competitionDefaults;
     private final FinalizeRoundUseCase finalizeRoundUseCase;
 
-    record FinalizeCurrentRoundRequest(Boolean recompute, Boolean autoAdvance) {
+    record FinalizeCurrentRoundRequest(Boolean recompute) {
         boolean recomputeOrDefault() {
             return recompute != null && recompute;
-        }
-
-        boolean autoAdvanceOrDefault() {
-            return autoAdvance != null && autoAdvance;
         }
     }
 
@@ -40,7 +36,6 @@ public class FinalizeRoundController {
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> finalizeDefaultRound(@RequestBody(required = false) FinalizeCurrentRoundRequest request) {
         boolean recompute = request != null && request.recomputeOrDefault();
-        boolean autoAdvance = request != null && request.autoAdvanceOrDefault();
 
         // Get default competition's current round
         var defaultCompetition = competitionDefaults.defaultCompetitionSlug();
@@ -48,7 +43,7 @@ public class FinalizeRoundController {
                 .findActiveSeason(defaultCompetition)
                 .orElseThrow(() -> new IllegalStateException("No active season for " + defaultCompetition));
 
-        var result = finalizeRoundUseCase.execute(new FinalizeRoundCommand(season.getId(), recompute, autoAdvance));
+        var result = finalizeRoundUseCase.execute(new FinalizeRoundCommand(season.getId(), recompute));
 
         return result.fold(
                 error -> switch (error) {

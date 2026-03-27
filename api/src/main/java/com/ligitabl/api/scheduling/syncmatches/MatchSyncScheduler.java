@@ -3,7 +3,6 @@ package com.ligitabl.api.scheduling.syncmatches;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Objects;
-import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 
 import org.slf4j.Logger;
@@ -16,9 +15,7 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.notification.AdminNotificationService;
-import com.ligitabl.api.rest.round.finalizeround.AdvanceCurrentRoundUseCase;
-import com.ligitabl.model.repo.RoundRepo;
-import com.ligitabl.model.repo.SeasonRepo;
+import com.ligitabl.api.scheduling.advanceround.RoundAdvancementService;
 
 /**
  * Match Sync Scheduler
@@ -47,9 +44,7 @@ public class MatchSyncScheduler {
     private final SyncMatchesUseCase syncMatchesUseCase;
     private final TriggerRoundFinalizationUseCase triggerFinalizationUseCase;
     private final AdminNotificationService adminNotificationService;
-    private final AdvanceCurrentRoundUseCase advanceCurrentRoundUseCase;
-    private final SeasonRepo seasonRepo;
-    private final RoundRepo roundRepo;
+    private final RoundAdvancementService roundAdvancementService;
 
     @Value("${football-data.competition.code}")
     private String competitionCode;
@@ -60,9 +55,6 @@ public class MatchSyncScheduler {
     @Value("${football-data.sync.max-consecutive-failures:3}")
     private int maxConsecutiveFailures;
 
-    @Value("${ligitabl.round-advancement.delay-minutes:3}")
-    private long advancementDelayMinutes;
-
     private ScheduledFuture<?> currentTask;
     private volatile boolean running = false;
     private int consecutiveFailures = 0;
@@ -72,16 +64,12 @@ public class MatchSyncScheduler {
             SyncMatchesUseCase syncMatchesUseCase,
             TriggerRoundFinalizationUseCase triggerFinalizationUseCase,
             AdminNotificationService adminNotificationService,
-            AdvanceCurrentRoundUseCase advanceCurrentRoundUseCase,
-            SeasonRepo seasonRepo,
-            RoundRepo roundRepo) {
+            RoundAdvancementService roundAdvancementService) {
         this.taskScheduler = taskScheduler;
         this.syncMatchesUseCase = syncMatchesUseCase;
         this.triggerFinalizationUseCase = triggerFinalizationUseCase;
         this.adminNotificationService = adminNotificationService;
-        this.advanceCurrentRoundUseCase = advanceCurrentRoundUseCase;
-        this.seasonRepo = seasonRepo;
-        this.roundRepo = roundRepo;
+        this.roundAdvancementService = roundAdvancementService;
     }
 
     /**
@@ -200,7 +188,7 @@ public class MatchSyncScheduler {
                     success -> {
                         if (success.finalized()) {
                             log.info("Round finalized successfully: {}", success.message());
-                            scheduleRoundAdvancement(syncResult.seasonId(), syncResult.roundId());
+                            scheduleRoundAdvancement(syncResult.roundId(), syncResult.seasonId());
                         } else if (success.blocked()) {
                             log.warn("Round finalization blocked: {}", success.message());
                         }
@@ -211,65 +199,14 @@ public class MatchSyncScheduler {
         }
     }
 
-    private void scheduleRoundAdvancement(UUID seasonId, UUID roundId) {
-        if (seasonId == null) {
+    private void scheduleRoundAdvancement(java.util.UUID roundId, java.util.UUID seasonId) {
+        if (seasonId == null || roundId == null) {
             return;
         }
-
-        if (advancementDelayMinutes <= 0) {
-            log.info("Round advancement delay is 0, advancing immediately for season={}, round={}", seasonId, roundId);
-            executeDelayedAdvancement(seasonId, roundId);
-            return;
-        }
-
-        log.info(
-                "Scheduling round advancement in {} minutes for season={}, round={}",
-                advancementDelayMinutes,
-                seasonId,
-                roundId);
-
-        Instant runAt = Instant.now().plus(Duration.ofMinutes(advancementDelayMinutes));
-        taskScheduler.schedule(() -> executeDelayedAdvancement(seasonId, roundId), runAt);
-    }
-
-    private void executeDelayedAdvancement(UUID seasonId, UUID roundId) {
         try {
-            log.info("Executing delayed round advancement for season={}, round={}", seasonId, roundId);
-
-            // Guard: verify state hasn't changed (e.g. admin manually advanced)
-            var season = seasonRepo.findById(seasonId).orElse(null);
-            if (season == null || !roundId.equals(season.getCurrentRoundId())) {
-                log.warn(
-                        "Skipping delayed advancement: state has changed (season={}, expectedRound={})",
-                        seasonId,
-                        roundId);
-                return;
-            }
-
-            var round = roundRepo.findById(roundId).orElse(null);
-            if (round == null || !round.isFinalized()) {
-                log.warn("Skipping delayed advancement: round not finalized (season={}, round={})", seasonId, roundId);
-                return;
-            }
-
-            var advanceResult = advanceCurrentRoundUseCase.execute(
-                    new AdvanceCurrentRoundUseCase.AdvanceCurrentRoundCommand(seasonId, roundId));
-
-            advanceResult.fold(
-                    error -> {
-                        log.warn("AdvanceCurrentRound failed: {}", error);
-                        return null;
-                    },
-                    advance -> {
-                        if (advance.seasonCompleted()) {
-                            log.info("Season completed after finalization (seasonId={})", seasonId);
-                        } else if (advance.advanced()) {
-                            log.info("Advanced to next round: {} (seasonId={})", advance.newRoundPosition(), seasonId);
-                        }
-                        return null;
-                    });
+            roundAdvancementService.scheduleAdvancement(roundId, seasonId);
         } catch (Exception e) {
-            log.error("Error during delayed round advancement for season={}, round={}", seasonId, roundId, e);
+            log.error("Failed to schedule round advancement: round={}, season={}", roundId, seasonId, e);
         }
     }
 

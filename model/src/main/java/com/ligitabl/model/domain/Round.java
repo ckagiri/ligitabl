@@ -1,5 +1,6 @@
 package com.ligitabl.model.domain;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,11 +29,26 @@ public class Round extends AbstractModel<UUID> {
     @Builder.Default
     private boolean finalized = false;
 
+    private OffsetDateTime advanceAt;
+
+    @Builder.Default
+    private boolean advanced = false;
+
+    private OffsetDateTime advancedAt;
+
     /**
      * Computes round status based on associated matches.
      * Called from repository after loading matches.
      */
     public RoundStatus computeStatus(List<Match> matches) {
+        if (advanced) {
+            return RoundStatus.ADVANCED;
+        }
+
+        if (finalized) {
+            return RoundStatus.FINALIZED;
+        }
+
         if (matches == null || matches.isEmpty()) {
             return RoundStatus.COMPLETED; // Empty round can finalize
         }
@@ -51,7 +67,7 @@ public class Round extends AbstractModel<UUID> {
                 case SUSPENDED -> hasSuspended = true;
                 case CANCELLED -> hasCancelled = true;
                 case POSTPONED -> {
-                    // POSTPONED is neutral: doesn’t block finalisation
+                    // POSTPONED is neutral: doesn't block finalisation
                     // No flag needed
                 }
             }

@@ -1,0 +1,61 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260327_1_round_add_advancement_columns
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_round
+            schemaName: public
+        - not:
+            - columnExists:
+                tableName: t_round
+                schemaName: public
+                columnName: c_advanced
+      changes:
+        - addColumn:
+            tableName: t_round
+            schemaName: public
+            columns:
+              - column:
+                  name: c_advance_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_advanced
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_advanced_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 20260327_2_round_backfill_advanced_from_finalized
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_round
+            schemaName: public
+        - columnExists:
+            tableName: t_round
+            schemaName: public
+            columnName: c_is_finalized
+        - columnExists:
+            tableName: t_round
+            schemaName: public
+            columnName: c_advanced
+      changes:
+        - update:
+            tableName: t_round
+            schemaName: public
+            columns:
+              - column:
+                  name: c_advanced
+                  valueBoolean: true
+            where: "c_is_finalized = true"
