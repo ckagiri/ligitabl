@@ -52,7 +52,7 @@ public class GetUserDetailUseCase {
     private final UserRepo userRepo;
     private final CompetitionDefaults competitionDefaults;
 
-    public record UserPredictions(int round, List<PredictionTeam> predictions) {}
+    public record UserPredictions(int round, Integer roundScore, List<PredictionTeam> predictions) {}
 
     public record PredictionTeam(String teamName, Integer hit) {}
 
@@ -84,14 +84,21 @@ public class GetUserDetailUseCase {
                     .flatMap(submission -> roundResultRepo.findByRoundSubmissionId(submission.getId()))
                     .map(roundResult -> buildUserPredictionsFromResult(effectiveToRound, roundResult))
                     .orElseGet(() -> {
-                        // No finalized results — fall back to current live prediction.
-                        SeasonPrediction prediction = seasonPredictionRepo
-                                .findByUserAndSeason(user.getId(), season.getId())
-                                .orElseThrow(() -> new NotFoundException("No prediction found for user " + publicId));
+                        int displayRound = effectiveToRound != null ? effectiveToRound : currentRound.getPosition();
 
-                        return new UserPredictions(
-                                currentRound.getPosition(),
-                                mapRankingsToPredictionTeams(prediction.getCurrentRankings()));
+                        // Only fall back to live prediction when viewing the current round
+                        if (effectiveToRound == null || effectiveToRound >= currentRound.getPosition()) {
+                            SeasonPrediction prediction = seasonPredictionRepo
+                                    .findByUserAndSeason(user.getId(), season.getId())
+                                    .orElseThrow(() -> new NotFoundException("No prediction found for user " + publicId));
+                            return new UserPredictions(
+                                    displayRound,
+                                    null,
+                                    mapRankingsToPredictionTeams(prediction.getCurrentRankings()));
+                        }
+
+                        // Past round with no finalized data
+                        return new UserPredictions(displayRound, null, List.of());
                     });
         });
     }
@@ -110,7 +117,7 @@ public class GetUserDetailUseCase {
                         resultRankings.get(i).getHit()))
                 .toList();
 
-        return new UserPredictions(displayRound, predictions);
+        return new UserPredictions(displayRound, roundResult.getTotalScore(), predictions);
     }
 
     private List<PredictionTeam> mapRankingsToPredictionTeams(List<TeamRank> rankings) {
