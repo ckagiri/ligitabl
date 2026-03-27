@@ -13,6 +13,7 @@ import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.model.domain.RoundStatus;
+import com.ligitabl.model.repo.MatchRepo;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +24,7 @@ public class GetRoundAdvancementStatusUseCase {
     private final HierarchyValidator hierarchyValidator;
     private final CompetitionDefaults competitionDefaults;
     private final Clock clock;
+    private final MatchRepo matchRepo;
 
     public record AdvancementStatusResult(
             UUID roundId,
@@ -52,10 +54,14 @@ public class GetRoundAdvancementStatusUseCase {
                         }
                     }
 
+                    var matches = (round.isAdvanced() || round.isFinalized())
+                            ? null
+                            : matchRepo.findByRoundId(round.getId());
+
                     return new AdvancementStatusResult(
                             round.getId(),
                             round.getPosition(),
-                            round.computeStatus(null),
+                            round.computeStatus(matches),
                             scheduled,
                             round.getAdvanceAt(),
                             minutesRemaining,
