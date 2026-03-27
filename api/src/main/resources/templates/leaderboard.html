@@ -312,6 +312,8 @@
                           hx-swap="innerHTML"
                           hx-include="#effectiveToRound, #currentPhaseFrom"
                           th:attr="hx-vals='js:{publicId: &quot;' + ${entry.publicId} + '&quot;, displayName: &quot;' + ${entry.displayName} + '&quot;, position: ' + ${entry.position} + ', totalScore: ' + ${entry.totalScore} + ', roundScore: ' + ${entry.roundScore} + ', maxScore: ' + ${entry.maxScore} + ', totalSwaps: ' + ${entry.totalSwaps} + ', movement: ' + ${entry.movement} + '}'"
+                          hx-on:click="document.getElementById('modal-loading').classList.remove('hidden')"
+                          hx-on::after-request="document.getElementById('modal-loading').classList.add('hidden')"
                           class="block max-w-[9rem] sm:max-w-full truncate sm:whitespace-normal sm:overflow-visible sm:text-clip text-sm font-medium hover:text-indigo-600 hover:underline transition cursor-pointer text-left"
                           th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'text-indigo-900' : 'text-gray-900'}"
                           th:text="${entry.displayName}"
@@ -578,33 +580,33 @@
         </div>
       </div>
 
-      <!-- Modal -->
-      <div id="user-detail-modal">
-        <div
-          id="modal-loading"
-          class="hidden fixed inset-0 z-40 flex items-center justify-center"
+      <!-- Modal loading spinner: lives outside #user-detail-modal so it survives innerHTML wipes -->
+      <div
+        id="modal-loading"
+        class="hidden fixed inset-0 z-40 flex items-center justify-center"
+      >
+        <svg
+          class="animate-spin h-8 w-8 text-indigo-500"
+          fill="none"
+          viewBox="0 0 24 24"
         >
-          <svg
-            class="animate-spin h-8 w-8 text-indigo-500"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <circle
-              class="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              stroke-width="4"
-            ></circle>
-            <path
-              class="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8v8H4z"
-            ></path>
-          </svg>
-        </div>
+          <circle
+            class="opacity-25"
+            cx="12"
+            cy="12"
+            r="10"
+            stroke="currentColor"
+            stroke-width="4"
+          ></circle>
+          <path
+            class="opacity-75"
+            fill="currentColor"
+            d="M4 12a8 8 0 018-8v8H4z"
+          ></path>
+        </svg>
       </div>
+      <!-- Modal -->
+      <div id="user-detail-modal"></div>
     </div>
   </body>
 </html>
