@@ -43,28 +43,14 @@
         <span
           th:replace="~{fragments/score-emoji :: emoji(${result.score})}"
         ></span>
-        <span th:if="${result.movement != null && result.movement != 0}">
-          <span
-            th:if="${result.movement > 0}"
-            class="text-green-600 font-semibold"
-          >
-            (<span th:text="${result.sprint}">S3</span>: ↑
-            <span th:text="${result.movement}">3</span>
-            <span th:text="${result.movement == 1 ? 'position' : 'positions'}"
-              >positions</span
-            >)
-          </span>
-          <span
-            th:if="${result.movement < 0}"
-            class="text-red-600 font-semibold"
-          >
-            (<span th:text="${result.sprint}">S3</span>: ↓
-            <span th:text="${T(java.lang.Math).abs(result.movement)}">2</span>
-            <span
-              th:text="${T(java.lang.Math).abs(result.movement) == 1 ? 'position' : 'positions'}"
-              >positions</span
-            >)
-          </span>
+      </p>
+      <p th:if="${result.movement != null && result.movement != 0}" class="text-sm mt-1 text-gray-500">
+        <span th:text="${result.sprint}">S3</span> GW <span th:text="${result.sprintFrom}">28</span>–<span th:text="${result.sprintTo}">30</span>:
+        <span th:if="${result.movement > 0}" class="text-green-600 font-semibold">
+          ↑ <span th:text="${result.movement}">3</span> <span th:text="${result.movement == 1 ? 'position' : 'positions'}">positions</span>
+        </span>
+        <span th:if="${result.movement < 0}" class="text-red-600 font-semibold">
+          ↓ <span th:text="${T(java.lang.Math).abs(result.movement)}">2</span> <span th:text="${T(java.lang.Math).abs(result.movement) == 1 ? 'position' : 'positions'}">positions</span>
         </span>
       </p>
     </div>
