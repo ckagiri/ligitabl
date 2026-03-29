@@ -387,6 +387,14 @@
             </div>
           </div>
 
+          <!-- Mobile user initials avatar -->
+          <div th:if="${isLoggedIn}" class="md:hidden mr-1">
+            <span
+              class="inline-flex items-center justify-center h-7 w-7 rounded-full bg-indigo-600 text-white text-xs font-semibold select-none"
+              th:text="${#strings.length(userDisplayName) >= 2 ? #strings.toUpperCase(#strings.substring(userDisplayName, 0, 2)) : #strings.toUpperCase(userDisplayName)}"
+            >AB</span>
+          </div>
+
           <!-- Mobile menu button -->
           <div class="md:hidden">
             <button
@@ -409,6 +417,7 @@
                 />
                 <path
                   x-show="mobileMenuOpen"
+                  style="display: none"
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
