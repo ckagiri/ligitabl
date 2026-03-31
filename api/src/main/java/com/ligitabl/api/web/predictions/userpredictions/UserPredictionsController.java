@@ -25,6 +25,7 @@ import com.ligitabl.api.auth.CurrentUserPublicId;
 import com.ligitabl.api.auth.oauth2.LigitablOAuth2User;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.standings.FormService;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.web.shared.dto.FixtureDto;
@@ -63,6 +64,7 @@ public class UserPredictionsController {
     private final UserRepo userRepo;
     private final CompetitionDefaults competitionDefaults;
     private final ErrorViewMapper errorMapper;
+    private final FormService formService;
 
     /**
      * GET /predictions/user/me - View current user's prediction.
@@ -390,11 +392,13 @@ public class UserPredictionsController {
 
         // Serialize data for JavaScript
         try {
+            var formMap = formService.buildFormMap(season.getId(), data.viewingRound());
             model.addAttribute("fixturesJson", objectMapper.writeValueAsString(buildFixtures(data.matches())));
             model.addAttribute("predictionsJson", objectMapper.writeValueAsString(predictions));
             model.addAttribute("currentStandingsJson", objectMapper.writeValueAsString(data.standingsMap()));
             model.addAttribute("currentPointsJson", objectMapper.writeValueAsString(data.pointsMap()));
             model.addAttribute("currentGoalDifferenceJson", objectMapper.writeValueAsString(data.goalDifferenceMap()));
+            model.addAttribute("formJson", objectMapper.writeValueAsString(formMap));
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize data", e);
             model.addAttribute("fixturesJson", "{}");
@@ -402,6 +406,7 @@ public class UserPredictionsController {
             model.addAttribute("currentStandingsJson", "{}");
             model.addAttribute("currentPointsJson", "{}");
             model.addAttribute("currentGoalDifferenceJson", "{}");
+            model.addAttribute("formJson", "{}");
         }
 
         // Return appropriate view

@@ -16,7 +16,7 @@ import com.ligitabl.model.domain.TeamSlug;
 class UserPredictionsControllerTest {
 
     private final UserPredictionsController controller =
-            new UserPredictionsController(new ObjectMapper(), null, null, null, null, null, null, null, null);
+            new UserPredictionsController(new ObjectMapper(), null, null, null, null, null, null, null, null, null);
 
     @Test
     @DisplayName("toFixture maps finished home fixture to win result")
