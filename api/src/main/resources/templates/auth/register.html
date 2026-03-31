@@ -55,13 +55,39 @@
             method="post"
             th:object="${registerForm}"
             x-data="{
+              email: '',
+              displayName: '',
               password: '',
               confirmPassword: '',
+              emailOk() {
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email);
+              },
+              emailInvalid() {
+                return this.email.length > 0 && !this.emailOk();
+              },
+              displayNameOk() {
+                return this.displayName.length >= 3 && this.displayName.length <= 30 && /^[a-zA-Z0-9 ]+$/.test(this.displayName);
+              },
+              displayNameTooShort() {
+                return this.displayName.length > 0 && this.displayName.length < 3;
+              },
+              displayNameInvalid() {
+                return this.displayName.length >= 3 && !/^[a-zA-Z0-9 ]+$/.test(this.displayName);
+              },
+              passwordLengthOk() {
+                return this.password.length >= 8;
+              },
+              passwordTooShort() {
+                return this.password.length > 0 && this.password.length < 8;
+              },
               passwordsMatch() {
                 return this.password === this.confirmPassword && this.password.length > 0;
               },
               passwordsDontMatch() {
                 return this.password !== this.confirmPassword && this.confirmPassword.length > 0;
+              },
+              formValid() {
+                return this.emailOk() && this.displayNameOk() && this.passwordLengthOk() && this.passwordsMatch();
               }
             }"
           >
@@ -84,6 +110,7 @@
                   name="email"
                   type="email"
                   th:field="*{email}"
+                  x-model="email"
                   required
                   th:classappend="${#fields.hasErrors('email')} ? 'border-red-300' : 'border-gray-300'"
                   class="appearance-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
@@ -94,6 +121,18 @@
                   th:errors="*{email}"
                   class="mt-1 text-sm text-red-600"
                 ></p>
+                <div x-show="emailOk()" class="mt-1 flex items-center text-sm text-green-600">
+                  <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                  </svg>
+                  Looks good
+                </div>
+                <div x-show="emailInvalid()" class="mt-1 flex items-center text-sm text-red-600">
+                  <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                  </svg>
+                  Enter a valid email address
+                </div>
               </div>
 
               <!-- Display Name -->
@@ -108,7 +147,10 @@
                   name="displayName"
                   type="text"
                   th:field="*{displayName}"
+                  x-model="displayName"
                   required
+                  minlength="3"
+                  maxlength="30"
                   th:classappend="${#fields.hasErrors('displayName')} ? 'border-red-300' : 'border-gray-300'"
                   class="appearance-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                   placeholder="Your Name"
@@ -118,6 +160,27 @@
                   th:errors="*{displayName}"
                   class="mt-1 text-sm text-red-600"
                 ></p>
+                <div x-show="displayNameOk()" class="mt-1 flex items-center justify-between text-sm text-green-600">
+                  <span class="flex items-center gap-1">
+                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    Looks good
+                  </span>
+                  <span class="text-xs text-gray-400" x-text="displayName.length + '/30'"></span>
+                </div>
+                <div x-show="displayNameTooShort()" class="mt-1 flex items-center text-sm text-red-600">
+                  <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                  </svg>
+                  Min 3 characters
+                </div>
+                <div x-show="displayNameInvalid()" class="mt-1 flex items-center text-sm text-red-600">
+                  <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                  </svg>
+                  Letters, numbers and spaces only
+                </div>
               </div>
 
               <!-- Password -->
@@ -175,9 +238,21 @@
                   th:errors="*{password}"
                   class="mt-1 text-sm text-red-600"
                 ></p>
-                <p class="mt-1 text-xs text-gray-500">
+                <p x-show="password.length === 0" class="mt-1 text-xs text-gray-500">
                   Must be at least 8 characters
                 </p>
+                <div x-show="passwordLengthOk()" class="mt-1 flex items-center text-sm text-green-600">
+                  <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                  </svg>
+                  Good length
+                </div>
+                <div x-show="passwordTooShort()" class="mt-1 flex items-center text-sm text-red-600">
+                  <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                  </svg>
+                  Min 8 characters
+                </div>
               </div>
 
               <!-- Confirm Password -->
@@ -263,7 +338,7 @@
               <button
                 type="submit"
                 class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="!passwordsMatch()"
+                :disabled="!formValid()"
               >
                 <span class="absolute left-0 inset-y-0 flex items-center pl-3">
                   <svg
