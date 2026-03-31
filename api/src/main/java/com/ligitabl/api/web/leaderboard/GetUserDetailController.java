@@ -39,7 +39,17 @@ public class GetUserDetailController {
                 .execute(publicId, effectiveToRound)
                 .fold(
                         error -> handleError(error, model, response),
-                        result -> handleSuccess(result, publicId, displayName, position, totalScore, roundScore, effectiveToRound, phaseFrom, maxRound, model));
+                        result -> handleSuccess(
+                                result,
+                                publicId,
+                                displayName,
+                                position,
+                                totalScore,
+                                roundScore,
+                                effectiveToRound,
+                                phaseFrom,
+                                maxRound,
+                                model));
     }
 
     private String handleSuccess(
@@ -54,17 +64,20 @@ public class GetUserDetailController {
             Integer maxRoundParam,
             Model model) {
 
-        int roundScore = result.roundScore() != null ? result.roundScore()
+        int roundScore = result.roundScore() != null
+                ? result.roundScore()
                 : (result.predictions().isEmpty() ? 0 : requestRoundScore);
 
         int roundZeroes = (int) result.predictions().stream()
                 .filter(pred -> pred.hit() != null && pred.hit() == 0)
                 .count();
 
-        var user = new UserDetailDTO(publicId, displayName, position, totalScore, roundScore, roundZeroes, result.predictions());
+        var user = new UserDetailDTO(
+                publicId, displayName, position, totalScore, roundScore, roundZeroes, result.predictions());
 
         int minRound = phaseFrom != null ? phaseFrom : 1;
-        int maxRound = maxRoundParam != null ? maxRoundParam : (effectiveToRound != null ? effectiveToRound : result.round());
+        int maxRound =
+                maxRoundParam != null ? maxRoundParam : (effectiveToRound != null ? effectiveToRound : result.round());
 
         model.addAttribute("user", user);
         model.addAttribute("round", result.round());

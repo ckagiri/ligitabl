@@ -43,7 +43,8 @@ public class CreatePredictionUseCase {
                 .flatMap(__ -> checkNotAlreadyJoined(userId, season))
                 .flatMap(__ -> validateSwapTeams(request, season))
                 .flatMap(__ -> determineAtRoundNumber(season)
-                        .flatMap(info -> createPredictionAndEntry(userId, season, request, info.atRoundNumber(), info.currentRoundPosition()))));
+                        .flatMap(info -> createPredictionAndEntry(
+                                userId, season, request, info.atRoundNumber(), info.currentRoundPosition()))));
     }
 
     // Step 1: Get active season
@@ -223,7 +224,8 @@ public class CreatePredictionUseCase {
         if (currentRoundPosition < 3) {
             return season.getInitialRankings();
         }
-        return standingsRepo.findBySeasonAndRoundPosition(season.getId(), currentRoundPosition - 2)
+        return standingsRepo
+                .findBySeasonAndRoundPosition(season.getId(), currentRoundPosition - 2)
                 .map(standings -> standings.getRankings().stream()
                         .map(StandingsTeamRank::getRanking)
                         .toList())

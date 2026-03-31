@@ -89,7 +89,15 @@ class CreatePredictionUseCaseTest {
         defaultContest = createDefaultContest();
 
         useCase = new CreatePredictionUseCase(
-                competitionDefaults, seasonRepo, roundRepo, matchRepo, contestRepo, predictionRepo, entryRepo, standingsRepo, clock);
+                competitionDefaults,
+                seasonRepo,
+                roundRepo,
+                matchRepo,
+                contestRepo,
+                predictionRepo,
+                entryRepo,
+                standingsRepo,
+                clock);
     }
 
     @Test
