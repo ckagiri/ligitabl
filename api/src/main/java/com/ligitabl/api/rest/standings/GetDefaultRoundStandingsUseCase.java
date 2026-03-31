@@ -9,8 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
-import com.ligitabl.api.web.shared.dto.FixtureDto;
-
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.config.CompetitionDefaults;
@@ -19,6 +17,7 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.api.web.shared.dto.FixtureDto;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
@@ -49,27 +48,27 @@ public class GetDefaultRoundStandingsUseCase
 
         return hierarchyValidator
                 .resolveHierarchy(competitionIdentifier, query.getRoundPosition())
-                .flatMap(ctx -> resolveCurrentRound(ctx.season())
-                        .flatMap(currentRound -> fetchStandings(ctx.season(), ctx.round())
-                                .flatMap(rawStandings -> {
-                                    var formByTeam = buildFormMap(
-                                            ctx.season().getId(), ctx.round().getPosition());
-                                    return standingsEnricher.enrichWithTeams(rawStandings, formByTeam);
-                                })
-                                .map(standings -> {
-                                    boolean isCurrentRound =
-                                            ctx.round().getPosition() == currentRound.getPosition();
-                                    Map<String, List<FixtureDto>> nextFixtures = isCurrentRound
-                                            ? buildNextFixtures(ctx.season().getId(), ctx.round().getPosition())
-                                            : null;
-                                    return new RoundStandingsResult(
-                                            ctx.season().getId(),
-                                            ctx.round().getPosition(),
-                                            currentRound.getPosition(),
-                                            ctx.season().getMaxRounds(),
-                                            standings,
-                                            nextFixtures);
-                                })));
+                .flatMap(ctx -> resolveCurrentRound(ctx.season()).flatMap(currentRound -> fetchStandings(
+                                ctx.season(), ctx.round())
+                        .flatMap(rawStandings -> {
+                            var formByTeam = buildFormMap(
+                                    ctx.season().getId(), ctx.round().getPosition());
+                            return standingsEnricher.enrichWithTeams(rawStandings, formByTeam);
+                        })
+                        .map(standings -> {
+                            boolean isCurrentRound = ctx.round().getPosition() == currentRound.getPosition();
+                            Map<String, List<FixtureDto>> nextFixtures = isCurrentRound
+                                    ? buildNextFixtures(
+                                            ctx.season().getId(), ctx.round().getPosition())
+                                    : null;
+                            return new RoundStandingsResult(
+                                    ctx.season().getId(),
+                                    ctx.round().getPosition(),
+                                    currentRound.getPosition(),
+                                    ctx.season().getMaxRounds(),
+                                    standings,
+                                    nextFixtures);
+                        })));
     }
 
     private Either<UseCaseError, Round> resolveCurrentRound(Season season) {
@@ -91,8 +90,7 @@ public class GetDefaultRoundStandingsUseCase
         // Sort chronologically so per-team lists end up oldest-first
         List<Match> sorted = finished.stream()
                 .filter(m -> m.hasTeamsLoaded() && m.isPlayed())
-                .sorted(Comparator.comparing(
-                        Match::getKickOff, Comparator.nullsFirst(Comparator.naturalOrder())))
+                .sorted(Comparator.comparing(Match::getKickOff, Comparator.nullsFirst(Comparator.naturalOrder())))
                 .toList();
 
         Map<String, List<FormEntry>> accumulator = new HashMap<>();
@@ -105,9 +103,11 @@ public class GetDefaultRoundStandingsUseCase
             String homeResult = homeGoals > awayGoals ? "W" : (homeGoals == awayGoals ? "D" : "L");
             String awayResult = awayGoals > homeGoals ? "W" : (homeGoals == awayGoals ? "D" : "L");
 
-            accumulator.computeIfAbsent(homeCode, k -> new ArrayList<>())
+            accumulator
+                    .computeIfAbsent(homeCode, k -> new ArrayList<>())
                     .add(new FormEntry(homeResult, true, awayCode, homeGoals, awayGoals));
-            accumulator.computeIfAbsent(awayCode, k -> new ArrayList<>())
+            accumulator
+                    .computeIfAbsent(awayCode, k -> new ArrayList<>())
                     .add(new FormEntry(awayResult, false, homeCode, awayGoals, homeGoals));
         }
 
@@ -125,18 +125,16 @@ public class GetDefaultRoundStandingsUseCase
         if (matchesByTeam == null || matchesByTeam.isEmpty()) {
             return Map.of();
         }
-        return matchesByTeam.entrySet().stream()
-                .collect(Collectors.toMap(
-                        Map.Entry::getKey,
-                        e -> e.getValue().stream()
-                                .filter(Match::hasTeamsLoaded)
-                                .map(m -> toFixtureDto(e.getKey(), m))
-                                .collect(Collectors.toList())));
+        return matchesByTeam.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().stream()
+                .filter(Match::hasTeamsLoaded)
+                .map(m -> toFixtureDto(e.getKey(), m))
+                .collect(Collectors.toList())));
     }
 
     private FixtureDto toFixtureDto(String teamCode, Match match) {
         boolean isHome = match.getHomeTeam().getCode().equals(teamCode);
-        String opponent = isHome ? match.getAwayTeam().getCode() : match.getHomeTeam().getCode();
+        String opponent =
+                isHome ? match.getAwayTeam().getCode() : match.getHomeTeam().getCode();
         String status = normalizeStatus(match.getStatus());
         String result = resolveResult(match, isHome);
         return new FixtureDto(opponent, isHome, status, result);
@@ -153,13 +151,15 @@ public class GetDefaultRoundStandingsUseCase
     }
 
     private String resolveResult(Match match, boolean isHome) {
-        return match.result().map(r -> {
-            int home = r.homeGoals();
-            int away = r.awayGoals();
-            if (home == away) return "DRAW";
-            boolean homeWon = home > away;
-            return (isHome == homeWon) ? "WIN" : "LOSS";
-        }).orElse(null);
+        return match.result()
+                .map(r -> {
+                    int home = r.homeGoals();
+                    int away = r.awayGoals();
+                    if (home == away) return "DRAW";
+                    boolean homeWon = home > away;
+                    return (isHome == homeWon) ? "WIN" : "LOSS";
+                })
+                .orElse(null);
     }
 
     private String getEffectiveCompetitionIdentifier(GetDefaultRoundStandingsQuery query) {

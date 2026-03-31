@@ -40,8 +40,7 @@ public class StandingsEnricher {
                 return Either.right(List.of());
             }
 
-            Map<String, List<FormEntry>> form =
-                    formByTeamCode != null ? formByTeamCode : Collections.emptyMap();
+            Map<String, List<FormEntry>> form = formByTeamCode != null ? formByTeamCode : Collections.emptyMap();
 
             // Extract all team codes from rankings
             Set<String> teamCodes = standings.getRankings().stream()

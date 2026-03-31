@@ -40,9 +40,7 @@ public class StandingsEntryDto {
     List<FormEntry> form;
 
     public static StandingsEntryDto from(
-            StandingsTeamRank rank,
-            Map<String, Team> teamsByCode,
-            Map<String, List<FormEntry>> formByTeamCode) {
+            StandingsTeamRank rank, Map<String, Team> teamsByCode, Map<String, List<FormEntry>> formByTeamCode) {
         Team team = teamsByCode.get(rank.teamCode());
         List<FormEntry> form = formByTeamCode.getOrDefault(rank.teamCode(), Collections.emptyList());
 
@@ -87,9 +85,7 @@ public class StandingsEntryDto {
     }
 
     public static List<StandingsEntryDto> listOf(
-            Standings standings,
-            Map<String, Team> teamsByCode,
-            Map<String, List<FormEntry>> formByTeamCode) {
+            Standings standings, Map<String, Team> teamsByCode, Map<String, List<FormEntry>> formByTeamCode) {
         if (standings == null || standings.getRankings() == null) {
             return List.of();
         }

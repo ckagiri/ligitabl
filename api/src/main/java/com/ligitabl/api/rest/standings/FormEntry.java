@@ -9,9 +9,4 @@ package com.ligitabl.api.rest.standings;
  * @param goalsFor     goals scored by the team in this match
  * @param goalsAgainst goals scored by the opponent in this match
  */
-public record FormEntry(
-        String result,
-        boolean wasHome,
-        String opponentCode,
-        int goalsFor,
-        int goalsAgainst) {}
+public record FormEntry(String result, boolean wasHome, String opponentCode, int goalsFor, int goalsAgainst) {}
