@@ -1,3 +1,4 @@
+/** @type {import('vite').Config} */
 import { defineConfig } from "vite";
 import { resolve } from "path";
 
@@ -6,12 +7,18 @@ export default defineConfig(({ mode }) => {
 
   return {
     build: {
-      outDir: resolve(__dirname, "src/main/resources/static/dist"),
-      emptyOutDir: true,
+      // dev  → static/css/main.css  (served at /css/main.css)
+      // prod → static/dist/css/main.css  (served at /dist/css/main.css)
+      outDir: isDev
+        ? resolve(__dirname, "src/main/resources/static")
+        : resolve(__dirname, "src/main/resources/static/dist"),
+
+      // Never wipe the whole static dir in dev; prod can clean dist/
+      emptyOutDir: !isDev,
 
       rollupOptions: {
         input: {
-          main: resolve(__dirname, "src/main/resources/static/css/main.css"),
+          main: resolve(__dirname, "assets/css/main.css"),
           app: resolve(__dirname, "src/main/resources/static/js/ligitabl.js"),
         },
         output: {

@@ -1,5 +1,6 @@
 package com.ligitabl.api.rest.standings;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -25,16 +26,25 @@ public class StandingsEnricher {
 
     private final TeamRepo teamRepo;
 
+    public Either<UseCaseError, List<StandingsEntryDto>> enrichWithTeams(Standings standings) {
+        return enrichWithTeams(standings, Collections.emptyMap());
+    }
+
     /**
-     * Enriches standings with team info.
+     * Enriches standings with team info and form data.
      * Returns empty list if standings has no rankings.
      * Handles missing teams gracefully by logging a warning.
+     *
+     * @param formByTeamCode last-5 form entries keyed by team TLA; may be empty but not null
      */
-    public Either<UseCaseError, List<StandingsEntryDto>> enrichWithTeams(Standings standings) {
+    public Either<UseCaseError, List<StandingsEntryDto>> enrichWithTeams(
+            Standings standings, Map<String, List<FormEntry>> formByTeamCode) {
         try {
             if (standings == null || standings.getRankings().isEmpty()) {
                 return Either.right(List.of());
             }
+
+            Map<String, List<FormEntry>> form = formByTeamCode != null ? formByTeamCode : Collections.emptyMap();
 
             // Extract all team codes from rankings
             Set<String> teamCodes = standings.getRankings().stream()
@@ -55,7 +65,7 @@ public class StandingsEnricher {
                 log.warn("Teams not found for codes: {}", missingCodes);
             }
 
-            return Either.right(StandingsEntryDto.listOf(standings, teamsByCode));
+            return Either.right(StandingsEntryDto.listOf(standings, teamsByCode, form));
         } catch (Exception e) {
             log.error("Failed to enrich standings with teams", e);
             return Either.left(UseCaseErrors.fromException(e));

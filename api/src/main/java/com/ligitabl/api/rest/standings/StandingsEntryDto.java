@@ -1,5 +1,6 @@
 package com.ligitabl.api.rest.standings;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -35,8 +36,13 @@ public class StandingsEntryDto {
     int goalDifference;
     int points;
 
-    public static StandingsEntryDto from(StandingsTeamRank rank, Map<String, Team> teamsByCode) {
+    // Last 5 results, oldest first
+    List<FormEntry> form;
+
+    public static StandingsEntryDto from(
+            StandingsTeamRank rank, Map<String, Team> teamsByCode, Map<String, List<FormEntry>> formByTeamCode) {
         Team team = teamsByCode.get(rank.teamCode());
+        List<FormEntry> form = formByTeamCode.getOrDefault(rank.teamCode(), Collections.emptyList());
 
         if (team == null) {
             // Edge case: team not found in DB - use code as fallback
@@ -55,6 +61,7 @@ public class StandingsEntryDto {
                     .goalsAgainst(rank.getMetadata().getGa())
                     .goalDifference(rank.getMetadata().getGd())
                     .points(rank.getMetadata().getPoints())
+                    .form(form)
                     .build();
         }
 
@@ -73,16 +80,18 @@ public class StandingsEntryDto {
                 .goalsAgainst(rank.getMetadata().getGa())
                 .goalDifference(rank.getMetadata().getGd())
                 .points(rank.getMetadata().getPoints())
+                .form(form)
                 .build();
     }
 
-    public static List<StandingsEntryDto> listOf(Standings standings, Map<String, Team> teamsByCode) {
+    public static List<StandingsEntryDto> listOf(
+            Standings standings, Map<String, Team> teamsByCode, Map<String, List<FormEntry>> formByTeamCode) {
         if (standings == null || standings.getRankings() == null) {
             return List.of();
         }
 
         return standings.getRankings().stream()
-                .map(rank -> from(rank, teamsByCode))
+                .map(rank -> from(rank, teamsByCode, formByTeamCode))
                 .toList();
     }
 }

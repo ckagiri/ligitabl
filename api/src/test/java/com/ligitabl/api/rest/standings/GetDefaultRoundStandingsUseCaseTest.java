@@ -88,7 +88,7 @@ class GetDefaultRoundStandingsUseCaseTest {
 
         StandingsEntryDto dto =
                 StandingsEntryDto.builder().position(1).teamName("Team").build();
-        when(standingsEnricher.enrichWithTeams(standings)).thenReturn(Either.right(List.of(dto)));
+        when(standingsEnricher.enrichWithTeams(eq(standings), anyMap())).thenReturn(Either.right(List.of(dto)));
 
         Either<UseCaseError, RoundStandingsResult> result =
                 useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
@@ -103,7 +103,7 @@ class GetDefaultRoundStandingsUseCaseTest {
         verify(hierarchyValidator).resolveHierarchy("premier-league", null);
         verify(roundRepo).findById(roundId);
         verify(standingsRepo).findBySeasonAndRoundPosition(seasonId, 1);
-        verify(standingsEnricher).enrichWithTeams(standings);
+        verify(standingsEnricher).enrichWithTeams(eq(standings), anyMap());
     }
 
     @Test
@@ -121,16 +121,6 @@ class GetDefaultRoundStandingsUseCaseTest {
 
     @Test
     void missing_current_round_returns_validation_error() {
-        UUID competitionId = UUID.randomUUID();
-        UUID seasonId = UUID.randomUUID();
-
-        var season = Season.builder()
-                .id(seasonId)
-                .competitionId(competitionId)
-                .name("2024/25")
-                .maxRounds(38)
-                .build();
-
         when(hierarchyValidator.resolveHierarchy("premier-league", null))
                 .thenReturn(Either.left(UseCaseErrors.validation("Season has no current round")));
 
@@ -169,7 +159,7 @@ class GetDefaultRoundStandingsUseCaseTest {
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(standingsRepo.findBySeasonAndRoundPosition(seasonId, 1)).thenReturn(Optional.empty());
 
-        when(standingsEnricher.enrichWithTeams(any(Standings.class))).thenReturn(Either.right(List.of()));
+        when(standingsEnricher.enrichWithTeams(any(Standings.class), anyMap())).thenReturn(Either.right(List.of()));
 
         Either<UseCaseError, RoundStandingsResult> result =
                 useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
@@ -177,6 +167,6 @@ class GetDefaultRoundStandingsUseCaseTest {
         assertThat(result.isRight()).isTrue();
         assertThat(result.getRight().standings()).isEmpty();
 
-        verify(standingsEnricher).enrichWithTeams(any(Standings.class));
+        verify(standingsEnricher).enrichWithTeams(any(Standings.class), anyMap());
     }
 }
