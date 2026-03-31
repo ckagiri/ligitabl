@@ -32,6 +32,7 @@ window.Ligitabl._parseDataAttributes = function (el) {
         fixtures: p(el?.dataset?.fixtures, {}),
         currentPoints: p(el?.dataset?.currentPoints, {}),
         currentGoalDifference: p(el?.dataset?.currentGoalDifference, {}),
+        formData: p(el?.dataset?.form, {}) || {},
     };
 };
 
@@ -75,10 +76,12 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         showFixtures: savedPrefs ? (savedPrefs.showFixtures ?? false) : false,
         showPoints: savedPrefs ? (savedPrefs.showPoints ?? false) : false,
         showGD: savedPrefs ? (savedPrefs.showGD ?? false) : false,
+        showForm: savedPrefs ? (savedPrefs.showForm ?? false) : false,
         currentStandings: parsed.currentStandings,
         fixtures: parsed.fixtures,
         currentPoints: parsed.currentPoints,
         currentGoalDifference: parsed.currentGoalDifference,
+        formData: parsed.formData,
 
         getCurrentPoints(teamCode) {
             return this.currentPoints[teamCode] || "-";
@@ -104,6 +107,10 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
 
         hasFixtures(teamCode) {
             return this.getFixtures(teamCode).length > 0;
+        },
+
+        getForm(teamCode) {
+            return this.formData[teamCode] || [];
         },
 
         isSelected(teamCode) {
@@ -468,11 +475,13 @@ window.Ligitabl.predictionPage = function (el) {
                 showFixtures: this.showFixtures,
                 showPoints: this.showPoints,
                 showGD: this.showGD,
+                showForm: this.showForm,
             }, this._prefsKey);
             this.$watch("showStandings", savePrefs);
             this.$watch("showFixtures", savePrefs);
             this.$watch("showPoints", savePrefs);
             this.$watch("showGD", savePrefs);
+            this.$watch("showForm", savePrefs);
         },
 
         teamClick(teamCode) {
@@ -737,11 +746,13 @@ window.Ligitabl.guestPredictionPage = function (el) {
                 showFixtures: this.showFixtures,
                 showPoints: this.showPoints,
                 showGD: this.showGD,
+                showForm: this.showForm,
             }, this._prefsKey);
             this.$watch("showStandings", savePrefs);
             this.$watch("showFixtures", savePrefs);
             this.$watch("showPoints", savePrefs);
             this.$watch("showGD", savePrefs);
+            this.$watch("showForm", savePrefs);
         },
 
         teamClick(teamCode) {

@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -43,13 +44,17 @@ class GetDefaultRoundStandingsUseCaseTest {
     @Mock
     MatchRepo matchRepo;
 
+    @Mock
+    FormService formService;
+
     GetDefaultRoundStandingsUseCase useCase;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
+        when(formService.buildFormMap(any(), anyInt())).thenReturn(Map.of());
         useCase = new GetDefaultRoundStandingsUseCase(
-                hierarchyValidator, competitionDefaults, roundRepo, standingsRepo, standingsEnricher, matchRepo);
+                hierarchyValidator, competitionDefaults, roundRepo, standingsRepo, standingsEnricher, matchRepo, formService);
     }
 
     @Test
