@@ -54,7 +54,13 @@ class GetDefaultRoundStandingsUseCaseTest {
         MockitoAnnotations.openMocks(this);
         when(formService.buildFormMap(any(), anyInt())).thenReturn(Map.of());
         useCase = new GetDefaultRoundStandingsUseCase(
-                hierarchyValidator, competitionDefaults, roundRepo, standingsRepo, standingsEnricher, matchRepo, formService);
+                hierarchyValidator,
+                competitionDefaults,
+                roundRepo,
+                standingsRepo,
+                standingsEnricher,
+                matchRepo,
+                formService);
     }
 
     @Test
