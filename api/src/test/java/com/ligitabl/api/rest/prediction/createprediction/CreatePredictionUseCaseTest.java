@@ -32,6 +32,7 @@ import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
+import com.ligitabl.model.repo.StandingsRepo;
 
 @ExtendWith(MockitoExtension.class)
 class CreatePredictionUseCaseTest {
@@ -55,6 +56,9 @@ class CreatePredictionUseCaseTest {
 
     @Mock
     private EntryRepo entryRepo;
+
+    @Mock
+    private StandingsRepo standingsRepo;
 
     @Mock
     private Clock clock;
@@ -85,7 +89,7 @@ class CreatePredictionUseCaseTest {
         defaultContest = createDefaultContest();
 
         useCase = new CreatePredictionUseCase(
-                competitionDefaults, seasonRepo, roundRepo, matchRepo, contestRepo, predictionRepo, entryRepo, clock);
+                competitionDefaults, seasonRepo, roundRepo, matchRepo, contestRepo, predictionRepo, entryRepo, standingsRepo, clock);
     }
 
     @Test

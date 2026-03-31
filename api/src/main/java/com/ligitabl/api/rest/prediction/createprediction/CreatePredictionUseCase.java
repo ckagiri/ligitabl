@@ -32,6 +32,7 @@ public class CreatePredictionUseCase {
     private final ContestRepo contestRepo;
     private final SeasonPredictionRepo predictionRepo;
     private final EntryRepo entryRepo;
+    private final StandingsRepo standingsRepo;
     private final Clock clock;
 
     @Transactional
@@ -42,7 +43,7 @@ public class CreatePredictionUseCase {
                 .flatMap(__ -> checkNotAlreadyJoined(userId, season))
                 .flatMap(__ -> validateSwapTeams(request, season))
                 .flatMap(__ -> determineAtRoundNumber(season)
-                        .flatMap(atRoundNumber -> createPredictionAndEntry(userId, season, request, atRoundNumber))));
+                        .flatMap(info -> createPredictionAndEntry(userId, season, request, info.atRoundNumber(), info.currentRoundPosition()))));
     }
 
     // Step 1: Get active season
@@ -105,7 +106,9 @@ public class CreatePredictionUseCase {
     }
 
     // Step 5: Determine at_round_number
-    private Either<CreatePredictionError, Integer> determineAtRoundNumber(Season season) {
+    private record RoundInfo(int atRoundNumber, int currentRoundPosition) {}
+
+    private Either<CreatePredictionError, RoundInfo> determineAtRoundNumber(Season season) {
         var currentRoundOpt = roundRepo.findById(season.getCurrentRoundId());
         if (currentRoundOpt.isEmpty()) {
             return Either.left(new CreatePredictionError.CurrentRoundNotFound(season.getId()));
@@ -138,12 +141,12 @@ public class CreatePredictionUseCase {
             return Either.left(new CreatePredictionError.Ended(currentRound.getPosition(), season.getMaxRounds()));
         }
 
-        return Either.right(atRoundNumber);
+        return Either.right(new RoundInfo(atRoundNumber, currentRound.getPosition()));
     }
 
     // Step 6: Create prediction and entry (transactional)
     private Either<CreatePredictionError, CreatePredictionResult> createPredictionAndEntry(
-            UUID userId, Season season, CreatePredictionCommand request, int atRoundNumber) {
+            UUID userId, Season season, CreatePredictionCommand request, int atRoundNumber, int currentRoundPosition) {
         var mainContestOpt = contestRepo.findById(season.getMainContestId());
         if (mainContestOpt.isEmpty()) {
             return Either.left(new CreatePredictionError.MainContestNotFound());
@@ -152,7 +155,7 @@ public class CreatePredictionUseCase {
 
         try {
             Instant now = clock.instant();
-            List<TeamRank> currentRankings = new ArrayList<>(season.getInitialRankings());
+            List<TeamRank> currentRankings = new ArrayList<>(getPreviousRoundRankings(season, currentRoundPosition));
             List<SwapChange> swapChanges = new ArrayList<>();
 
             // Apply each swap sequentially from the baseline; record each as a SwapChange
@@ -214,6 +217,17 @@ public class CreatePredictionUseCase {
             log.error("Failed to create prediction and entry", e);
             return Either.left(new CreatePredictionError.TransactionFailed(e.getMessage()));
         }
+    }
+
+    private List<TeamRank> getPreviousRoundRankings(Season season, int currentRoundPosition) {
+        if (currentRoundPosition < 3) {
+            return season.getInitialRankings();
+        }
+        return standingsRepo.findBySeasonAndRoundPosition(season.getId(), currentRoundPosition - 2)
+                .map(standings -> standings.getRankings().stream()
+                        .map(StandingsTeamRank::getRanking)
+                        .toList())
+                .orElseGet(season::getInitialRankings);
     }
 
     private List<TeamRank> applySwap(List<TeamRank> base, String codeA, String codeB) {
