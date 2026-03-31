@@ -52,7 +52,7 @@ public class CalculateRoundStandingsUseCase
                 .flatMap(this::getActiveSeason)
                 .flatMap(season -> resolveRound(season, command))
                 .flatMap(context -> calcAndSaveStandings(context.season(), context.round()))
-                .flatMap(standingsEnricher::enrichWithTeams);
+                .flatMap(standings -> standingsEnricher.enrichWithTeams(standings));
     }
 
     private String resolveCompetitionSlug(CalculateRoundStandingsCommand command) {

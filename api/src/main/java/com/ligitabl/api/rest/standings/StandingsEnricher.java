@@ -26,6 +26,10 @@ public class StandingsEnricher {
 
     private final TeamRepo teamRepo;
 
+    public Either<UseCaseError, List<StandingsEntryDto>> enrichWithTeams(Standings standings) {
+        return enrichWithTeams(standings, Collections.emptyMap());
+    }
+
     /**
      * Enriches standings with team info and form data.
      * Returns empty list if standings has no rankings.
