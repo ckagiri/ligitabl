@@ -1,0 +1,355 @@
+/* Ligitabl Prediction League - Main Styles (Compiled Version) */
+
+/* Import Tailwind CSS (for compilation, not CDN) */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom Variables */
+@layer base {
+  :root {
+    --primary-color: #4f46e5;
+    --primary-hover: #4338ca;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --danger-color: #ef4444;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-700: #374151;
+    --gray-900: #111827;
+  }
+}
+
+/* Custom Components - Wrapped in @layer to work with Tailwind compilation */
+@layer components {
+  /* HTMX Global Animations */
+  .htmx-swapping {
+    opacity: 0;
+    transition: opacity 300ms ease-out;
+  }
+
+  .htmx-settling {
+    opacity: 1;
+    transition: opacity 300ms ease-in;
+  }
+
+  /* Prediction Table Specific Animations */
+  .prediction-row {
+    position: relative;
+    transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .prediction-row.swapping {
+    background-color: #fef3c7;
+    transform: scale(1.02);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    z-index: 10;
+  }
+
+  .prediction-row.selected {
+    background-color: #ede9fe;
+    border-left: 4px solid var(--primary-color);
+  }
+
+  /* Loading Indicators */
+  .htmx-request .htmx-indicator {
+    display: inline-block;
+  }
+
+  .htmx-indicator {
+    display: none;
+  }
+
+  /* Smooth Page Transitions */
+  [hx-boost] {
+    transition: all 200ms ease;
+  }
+
+  /* Results Banner Animations */
+  .results-banner {
+    animation: slideInDown 500ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .results-banner.dismissed {
+    animation: slideOutUp 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Leaderboard Movement Indicators */
+  .movement-up {
+    color: var(--success-color);
+    animation: pulse 1s ease-in-out;
+  }
+
+  .movement-down {
+    color: var(--danger-color);
+    animation: pulse 1s ease-in-out;
+  }
+
+  /* Table Hover Effects */
+  .table-row-hover:hover {
+    background-color: var(--gray-50);
+    cursor: pointer;
+    transition: background-color 150ms ease-in-out;
+  }
+
+  /* Badge Animations */
+  .badge-pulse {
+    animation: badgePulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  /* Form Validation States */
+  .form-input-error {
+    border-color: var(--danger-color);
+    animation: shake 400ms cubic-bezier(0.36, 0.07, 0.19, 0.97);
+  }
+
+  /* Success Notification */
+  .notification-success {
+    background-color: #d1fae5;
+    border-left: 4px solid var(--success-color);
+    animation: slideInRight 400ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Loading Spinner */
+  .spinner {
+    border: 3px solid var(--gray-200);
+    border-top-color: var(--primary-color);
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    animation: spin 800ms linear infinite;
+  }
+
+  /* Modal Overlay */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 40;
+    animation: fadeIn 200ms ease-out;
+  }
+
+  .modal-content {
+    animation: scaleIn 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Utility Classes */
+  .text-gradient {
+    background: linear-gradient(135deg, var(--primary-color), #7c3aed);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .hover-lift {
+    transition: transform 200ms ease-in-out;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+  }
+
+  .glass-effect {
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+}
+
+/* Keyframe Animations - Must be outside @layer */
+@keyframes swapUp {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+@keyframes swapDown {
+  0% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(10px);
+  }
+  100% {
+    transform: translateY(0);
+  }
+}
+
+.swap-up {
+  animation: swapUp 600ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.swap-down {
+  animation: swapDown 600ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes slideInDown {
+  from {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutUp {
+  from {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes badgePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes shake {
+  10%, 90% {
+    transform: translateX(-1px);
+  }
+  20%, 80% {
+    transform: translateX(2px);
+  }
+  30%, 50%, 70% {
+    transform: translateX(-3px);
+  }
+  40%, 60% {
+    transform: translateX(3px);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* Responsive Design Helpers */
+@media (max-width: 768px) {
+  .prediction-row {
+    font-size: 0.875rem;
+  }
+
+  .table-responsive {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .prediction-row.swapping {
+    animation: none;
+    background-color: #fef3c7;
+  }
+
+  .position-change {
+    animation: none;
+  }
+
+  .contextual-banner {
+    animation: none;
+  }
+}
+
+/* Dark Mode Support (Future) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --gray-50: #1f2937;
+    --gray-100: #111827;
+    --gray-900: #f9fafb;
+  }
+}
+
+/* Reduce motion for mobile and users who prefer it */
+@media (prefers-reduced-motion: reduce), (max-width: 768px) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+
+  .prediction-row {
+    transition: background-color 150ms ease !important;
+  }
+
+  .htmx-swapping,
+  .htmx-settling {
+    transition: opacity 150ms ease !important;
+  }
+}
+
+/* Accessibility */
+.focus-visible:focus {
+  outline: 2px solid var(--primary-color);
+  outline-offset: 2px;
+}
+
+/* Print Styles */
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .prediction-row {
+    break-inside: avoid;
+  }
+}
