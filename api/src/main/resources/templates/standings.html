@@ -25,69 +25,76 @@
           <!-- Standings Table -->
           <div>
             <div class="px-6 py-4">
-              <div class="overflow-x-auto">
+              <div class="overflow-auto max-h-[calc(100vh-220px)]">
                 <table class="min-w-full divide-y divide-gray-200">
                   <thead class="bg-gray-50">
                     <tr>
                       <th
                         scope="col"
-                        class="sticky left-0 z-20 bg-gray-50 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12"
+                        class="sticky top-0 left-0 z-40 bg-gray-50 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12"
                       >
                         Pos
                       </th>
                       <th
                         scope="col"
-                        class="sticky left-[48px] z-20 bg-gray-50 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                        class="sticky top-0 left-[48px] z-40 bg-gray-50 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                       >
                         Team
                       </th>
                       <th
                         scope="col"
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
+                        class="sticky top-0 z-30 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
                       >
                         P
                       </th>
                       <th
                         scope="col"
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
+                        class="sticky top-0 z-30 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
                       >
                         Pts
                       </th>
                       <th
                         scope="col"
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
+                        class="sticky top-0 z-30 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
                       >
                         W
                       </th>
                       <th
                         scope="col"
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
+                        class="sticky top-0 z-30 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
                       >
                         D
                       </th>
                       <th
                         scope="col"
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
+                        class="sticky top-0 z-30 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-16"
                       >
                         L
                       </th>
                       <th
                         scope="col"
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
+                        class="sticky top-0 z-30 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
                       >
                         GF
                       </th>
                       <th
                         scope="col"
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
+                        class="sticky top-0 z-30 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
                       >
                         GA
                       </th>
                       <th
                         scope="col"
-                        class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
+                        class="sticky top-0 z-30 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
                       >
                         GD
+                      </th>
+                      <th
+                        th:if="${isCurrentStandings}"
+                        scope="col"
+                        class="sticky top-0 z-30 bg-gray-50 px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24"
+                      >
+                        Nxt
                       </th>
                     </tr>
                   </thead>
@@ -162,6 +169,29 @@
                         th:text="${standing.goalDifference > 0 ? '+' + standing.goalDifference : standing.goalDifference}"
                       >
                         +27
+                      </td>
+                      <td th:if="${isCurrentStandings}"
+                          class="px-3 py-4 whitespace-nowrap text-center">
+                        <th:block th:with="fixes=${nextFixtures != null ? nextFixtures[standing.teamTla] : null}">
+                          <th:block th:if="${fixes != null and !fixes.isEmpty()}">
+                            <span th:each="fix : ${fixes}"
+                                  class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium border mr-0.5"
+                                  th:class="${'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-medium border mr-0.5 ' +
+                                    (fix.result == 'WIN' ? 'bg-green-50 border-green-400 text-green-700' :
+                                    fix.result == 'LOSS' ? 'bg-red-50 border-red-400 text-red-700' :
+                                    fix.result == 'DRAW' ? 'bg-amber-100 border-amber-500 text-amber-800' :
+                                    fix.status == 'LIVE' ? 'bg-blue-50 border-blue-400 text-blue-700' :
+                                    fix.status == 'POSTPONED' ? 'bg-violet-50 border-violet-400 text-violet-700' :
+                                    'bg-gray-100 border-gray-200 text-gray-600')}">
+                              <span th:if="${fix.status == 'LIVE'}"
+                                    class="inline-block w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+                              <span th:if="${fix.status == 'POSTPONED'}" class="font-bold">P</span>
+                              <span th:unless="${fix.home}">@</span><span th:text="${fix.opponent}">MUN</span>
+                            </span>
+                          </th:block>
+                          <span th:unless="${fixes != null and !fixes.isEmpty()}"
+                                class="text-gray-300 text-[11px]">—</span>
+                        </th:block>
                       </td>
 
                     </tr>
