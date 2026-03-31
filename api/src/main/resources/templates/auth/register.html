@@ -7,7 +7,7 @@
   <body>
     <div layout:fragment="content">
       <div
-        class="flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
+        class="flex items-center justify-center bg-gray-50 px-4 sm:px-6 lg:px-8"
       >
         <div class="max-w-md w-full space-y-8">
           <div>
@@ -25,19 +25,69 @@
             </p>
           </div>
 
+          <div class="space-y-4">
+            <a
+              th:href="@{/oauth2/authorization/google}"
+              class="w-full inline-flex items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" class="h-5 w-5" aria-hidden="true">
+                <path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303C33.65 32.657 29.219 36 24 36c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.276 4 24 4 12.955 4 4 12.955 4 24s8.955 20 20 20 20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/>
+                <path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.656 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.276 4 24 4 16.318 4 9.656 8.337 6.306 14.691z"/>
+                <path fill="#4CAF50" d="M24 44c5.183 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.145 35.091 26.715 36 24 36c-5.199 0-9.617-3.325-11.283-7.946l-6.522 5.025C9.505 39.556 16.727 44 24 44z"/>
+                <path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.794 2.237-2.231 4.166-4.084 5.57l.003-.002 6.19 5.238C36.971 39.207 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/>
+              </svg>
+              Sign up with Google
+            </a>
+
+            <div class="relative">
+              <div class="absolute inset-0 flex items-center" aria-hidden="true">
+                <div class="w-full border-t border-gray-200"></div>
+              </div>
+              <div class="relative flex justify-center text-xs uppercase">
+                <span class="bg-gray-50 px-2 text-gray-500">Or sign up with email</span>
+              </div>
+            </div>
+          </div>
+
           <form
             class="mt-8 space-y-6"
             th:action="@{/auth/register}"
             method="post"
             th:object="${registerForm}"
             x-data="{
+              email: '',
+              displayName: '',
               password: '',
               confirmPassword: '',
+              emailOk() {
+                return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email);
+              },
+              emailInvalid() {
+                return this.email.length > 0 && !this.emailOk();
+              },
+              displayNameOk() {
+                return this.displayName.length >= 3 && this.displayName.length <= 30 && /^[a-zA-Z0-9 ]+$/.test(this.displayName);
+              },
+              displayNameTooShort() {
+                return this.displayName.length > 0 && this.displayName.length < 3;
+              },
+              displayNameInvalid() {
+                return this.displayName.length >= 3 && !/^[a-zA-Z0-9 ]+$/.test(this.displayName);
+              },
+              passwordLengthOk() {
+                return this.password.length >= 8;
+              },
+              passwordTooShort() {
+                return this.password.length > 0 && this.password.length < 8;
+              },
               passwordsMatch() {
                 return this.password === this.confirmPassword && this.password.length > 0;
               },
               passwordsDontMatch() {
                 return this.password !== this.confirmPassword && this.confirmPassword.length > 0;
+              },
+              formValid() {
+                return this.emailOk() && this.displayNameOk() && this.passwordLengthOk() && this.passwordsMatch();
               }
             }"
           >
@@ -60,6 +110,7 @@
                   name="email"
                   type="email"
                   th:field="*{email}"
+                  x-model="email"
                   required
                   th:classappend="${#fields.hasErrors('email')} ? 'border-red-300' : 'border-gray-300'"
                   class="appearance-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
@@ -70,6 +121,18 @@
                   th:errors="*{email}"
                   class="mt-1 text-sm text-red-600"
                 ></p>
+                <div x-show="emailOk()" class="mt-1 flex items-center text-sm text-green-600">
+                  <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                  </svg>
+                  Looks good
+                </div>
+                <div x-show="emailInvalid()" class="mt-1 flex items-center text-sm text-red-600">
+                  <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                  </svg>
+                  Enter a valid email address
+                </div>
               </div>
 
               <!-- Display Name -->
@@ -84,7 +147,10 @@
                   name="displayName"
                   type="text"
                   th:field="*{displayName}"
+                  x-model="displayName"
                   required
+                  minlength="3"
+                  maxlength="30"
                   th:classappend="${#fields.hasErrors('displayName')} ? 'border-red-300' : 'border-gray-300'"
                   class="appearance-none relative block w-full px-3 py-2 border placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
                   placeholder="Your Name"
@@ -94,6 +160,27 @@
                   th:errors="*{displayName}"
                   class="mt-1 text-sm text-red-600"
                 ></p>
+                <div x-show="displayNameOk()" class="mt-1 flex items-center justify-between text-sm text-green-600">
+                  <span class="flex items-center gap-1">
+                    <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                    </svg>
+                    Looks good
+                  </span>
+                  <span class="text-xs text-gray-400" x-text="displayName.length + '/30'"></span>
+                </div>
+                <div x-show="displayNameTooShort()" class="mt-1 flex items-center text-sm text-red-600">
+                  <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                  </svg>
+                  Min 3 characters
+                </div>
+                <div x-show="displayNameInvalid()" class="mt-1 flex items-center text-sm text-red-600">
+                  <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                  </svg>
+                  Letters, numbers and spaces only
+                </div>
               </div>
 
               <!-- Password -->
@@ -151,9 +238,21 @@
                   th:errors="*{password}"
                   class="mt-1 text-sm text-red-600"
                 ></p>
-                <p class="mt-1 text-xs text-gray-500">
+                <p x-show="password.length === 0" class="mt-1 text-xs text-gray-500">
                   Must be at least 8 characters
                 </p>
+                <div x-show="passwordLengthOk()" class="mt-1 flex items-center text-sm text-green-600">
+                  <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                  </svg>
+                  Good length
+                </div>
+                <div x-show="passwordTooShort()" class="mt-1 flex items-center text-sm text-red-600">
+                  <svg class="h-4 w-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                  </svg>
+                  Min 8 characters
+                </div>
               </div>
 
               <!-- Confirm Password -->
@@ -239,7 +338,7 @@
               <button
                 type="submit"
                 class="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition disabled:opacity-50 disabled:cursor-not-allowed"
-                :disabled="!passwordsMatch()"
+                :disabled="!formValid()"
               >
                 <span class="absolute left-0 inset-y-0 flex items-center pl-3">
                   <svg

@@ -90,11 +90,10 @@ public class GetUserDetailUseCase {
                         if (effectiveToRound == null || effectiveToRound >= currentRound.getPosition()) {
                             SeasonPrediction prediction = seasonPredictionRepo
                                     .findByUserAndSeason(user.getId(), season.getId())
-                                    .orElseThrow(() -> new NotFoundException("No prediction found for user " + publicId));
+                                    .orElseThrow(
+                                            () -> new NotFoundException("No prediction found for user " + publicId));
                             return new UserPredictions(
-                                    displayRound,
-                                    null,
-                                    mapRankingsToPredictionTeams(prediction.getCurrentRankings()));
+                                    displayRound, null, mapRankingsToPredictionTeams(prediction.getCurrentRankings()));
                         }
 
                         // Past round with no finalized data

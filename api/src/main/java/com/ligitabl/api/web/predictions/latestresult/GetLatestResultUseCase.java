@@ -110,8 +110,15 @@ public class GetLatestResultUseCase {
             }
         }
 
-        return new LatestResultResponse(round, result.getTotalScore(), position, movement, distribution,
-                sprint, sprintPhase.getFrom(), sprintPhase.getTo());
+        return new LatestResultResponse(
+                round,
+                result.getTotalScore(),
+                position,
+                movement,
+                distribution,
+                sprint,
+                sprintPhase.getFrom(),
+                sprintPhase.getTo());
     }
 
     private RoundSpan findSprintForRound(Competition competition, int round) {
