@@ -20,6 +20,7 @@ import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.Standings;
+import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.StandingsRepo;
 
@@ -39,13 +40,16 @@ class GetDefaultRoundStandingsUseCaseTest {
     @Mock
     StandingsEnricher standingsEnricher;
 
+    @Mock
+    MatchRepo matchRepo;
+
     GetDefaultRoundStandingsUseCase useCase;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
         useCase = new GetDefaultRoundStandingsUseCase(
-                hierarchyValidator, competitionDefaults, roundRepo, standingsRepo, standingsEnricher);
+                hierarchyValidator, competitionDefaults, roundRepo, standingsRepo, standingsEnricher, matchRepo);
     }
 
     @Test
