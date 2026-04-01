@@ -84,9 +84,9 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         formData: parsed.formData,
         formPopup: null,
 
-        showFormPopup(teamCode) {
+        showFormPopup(teamCode, teamName) {
             const entries = this.getForm(teamCode);
-            if (entries.length > 0) this.formPopup = { teamCode, entries };
+            if (entries.length > 0) this.formPopup = { teamCode, teamName, entries };
         },
 
         hideFormPopup() {

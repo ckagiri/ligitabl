@@ -283,7 +283,7 @@
                         <template x-if="showForm && getForm(team.code).length > 0">
                           <div
                             class="flex basis-full items-center gap-0.5 mt-0.5 cursor-pointer"
-                            @click.stop="showFormPopup(team.code)"
+                            @click.stop="showFormPopup(team.code, team.shortName)"
                           >
                             <template x-for="entry in getForm(team.code)" :key="entry.opponentCode + entry.result + entry.goalsFor">
                               <span
@@ -451,7 +451,7 @@
         @click="hideFormPopup()"
         @touchend.prevent="hideFormPopup()"
         @contextmenu.prevent
-        class="fixed inset-0 z-50 flex items-end justify-center pb-6 px-4 bg-black/40"
+        class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40"
         style="display:none"
       >
         <div
@@ -467,7 +467,7 @@
         >
           <!-- Header -->
           <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <span class="text-sm font-semibold text-gray-800" x-text="formPopup ? formPopup.teamCode + ' — Last ' + formPopup.entries.length + ' matches' : ''"></span>
+            <span class="text-sm font-semibold text-gray-800" x-text="formPopup ? formPopup.teamName + ' — Last ' + formPopup.entries.length + ' matches' : ''"></span>
             <button @click="hideFormPopup()" class="text-gray-400 hover:text-gray-600 p-1 -mr-1">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
