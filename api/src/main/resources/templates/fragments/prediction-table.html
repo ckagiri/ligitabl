@@ -287,7 +287,7 @@
                           >
                             <template x-for="entry in getForm(team.code)" :key="entry.opponentCode + entry.result + entry.goalsFor">
                               <span
-                                class="flex items-center justify-center w-2 h-2 flex-shrink-0"
+                                class="flex items-center justify-center w-2.5 h-2.5 flex-shrink-0"
                                 :class="(entry.result === 'W' ? 'bg-green-500' : entry.result === 'D' ? 'bg-amber-400' : 'bg-red-500') + (entry.wasHome ? ' rounded-full' : '')"
                               ></span>
                             </template>
