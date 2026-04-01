@@ -276,6 +276,7 @@ firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRou
           <!-- Swap History (own predictions only, collapsible) -->
           <div
             th:if="${(isGuest == false || isGuest == null) && (isViewingOther == false || isViewingOther == null) && swapHistory != null && !#lists.isEmpty(swapHistory)}"
+            x-cloak
             class="bg-white rounded-lg shadow-sm mb-6"
             x-data="{ open: false }"
           >

@@ -188,13 +188,12 @@
                           <div class="flex items-center justify-center gap-0.5">
                             <span th:each="entry : ${standing.form}"
                                   class="relative flex-shrink-0 group/badge">
-                              <!-- Circle: all filled; letter shown for away only -->
-                              <span class="flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold cursor-default text-white"
-                                    th:class="${'flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold cursor-default text-white ' +
+                              <!-- Circle for home, square for away -->
+                              <span th:class="${'flex items-center justify-center w-3 h-3 cursor-default ' +
                                       (entry.result == 'W' ? 'bg-green-500' :
                                        entry.result == 'D' ? 'bg-amber-400' :
-                                                             'bg-red-500')}"
-                                    th:text="${!entry.wasHome ? entry.result : ''}">W</span>
+                                                             'bg-red-500') + ' ' +
+                                      (entry.wasHome ? 'rounded-full' : 'rounded-sm')}"></span>
                               <!-- Hover tooltip -->
                               <span class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 z-50
                                            invisible group-hover/badge:visible opacity-0 group-hover/badge:opacity-100
