@@ -22,7 +22,8 @@ window.Ligitabl._parseDataAttributes = function(el) {
     currentStandings: p(el?.dataset?.currentStandings, {}),
     fixtures: p(el?.dataset?.fixtures, {}),
     currentPoints: p(el?.dataset?.currentPoints, {}),
-    currentGoalDifference: p(el?.dataset?.currentGoalDifference, {})
+    currentGoalDifference: p(el?.dataset?.currentGoalDifference, {}),
+    formData: p(el?.dataset?.form, {}) || {}
   };
 };
 window.Ligitabl._PREFS_KEY = "ligitabl.prefs";
@@ -59,10 +60,23 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
     showFixtures: savedPrefs ? savedPrefs.showFixtures ?? false : false,
     showPoints: savedPrefs ? savedPrefs.showPoints ?? false : false,
     showGD: savedPrefs ? savedPrefs.showGD ?? false : false,
+    showForm: savedPrefs ? savedPrefs.showForm ?? false : false,
     currentStandings: parsed.currentStandings,
     fixtures: parsed.fixtures,
     currentPoints: parsed.currentPoints,
     currentGoalDifference: parsed.currentGoalDifference,
+    formData: parsed.formData,
+    formPopup: null,
+    showFormPopup(teamCode, teamName) {
+      const entries = this.getForm(teamCode);
+      if (entries.length > 0) this.formPopup = { teamCode, teamName, entries };
+    },
+    hideFormPopup() {
+      this.formPopup = null;
+    },
+    formResultLabel(entry, teamCode) {
+      return entry.wasHome ? teamCode + " " + entry.goalsFor + "–" + entry.goalsAgainst + " " + entry.opponentCode : entry.opponentCode + " " + entry.goalsAgainst + "–" + entry.goalsFor + " " + teamCode;
+    },
     getCurrentPoints(teamCode) {
       return this.currentPoints[teamCode] || "-";
     },
@@ -83,6 +97,9 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
     },
     hasFixtures(teamCode) {
       return this.getFixtures(teamCode).length > 0;
+    },
+    getForm(teamCode) {
+      return this.formData[teamCode] || [];
     },
     isSelected(teamCode) {
       return this.selectedTeam === teamCode;
@@ -376,12 +393,14 @@ window.Ligitabl.predictionPage = function(el) {
         showStandings: this.showStandings,
         showFixtures: this.showFixtures,
         showPoints: this.showPoints,
-        showGD: this.showGD
+        showGD: this.showGD,
+        showForm: this.showForm
       }, this._prefsKey);
       this.$watch("showStandings", savePrefs);
       this.$watch("showFixtures", savePrefs);
       this.$watch("showPoints", savePrefs);
       this.$watch("showGD", savePrefs);
+      this.$watch("showForm", savePrefs);
     },
     teamClick(teamCode) {
       if (!this.canInteract) return;
@@ -605,12 +624,14 @@ window.Ligitabl.guestPredictionPage = function(el) {
         showStandings: this.showStandings,
         showFixtures: this.showFixtures,
         showPoints: this.showPoints,
-        showGD: this.showGD
+        showGD: this.showGD,
+        showForm: this.showForm
       }, this._prefsKey);
       this.$watch("showStandings", savePrefs);
       this.$watch("showFixtures", savePrefs);
       this.$watch("showPoints", savePrefs);
       this.$watch("showGD", savePrefs);
+      this.$watch("showForm", savePrefs);
     },
     teamClick(teamCode) {
       if (this.selectedTeam === null) {
