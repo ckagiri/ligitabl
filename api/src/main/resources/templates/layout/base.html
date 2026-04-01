@@ -41,6 +41,11 @@
         display: none !important;
       }
 
+      /* Skeleton placeholders: visible before Alpine initialises, removed by x-init on the real element */
+      [x-skeleton] {
+        display: block;
+      }
+
       /* Ultra-minimal - Only essential transitions */
       /* Page transitions - lightweight fade + slide */
       .htmx-swapping {
