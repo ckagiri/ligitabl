@@ -1,6 +1,7 @@
 # Project Docs
 
 - Backend dev guide: [Backend Development Guide](./backend-dev.md)
+- Frontend dev guide: [Frontend Development Guide](./frontend-dev.md)
 - API reference: [API Endpoints](./api-endpoints.md)
 - Prediction page: [Prediction Page UI States & Banners](./prediction-page-ui.md)
 - Leaderboard: [Leaderboard Persistence](./leaderboard.md)
