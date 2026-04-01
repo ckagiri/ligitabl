@@ -1,7 +1,19 @@
 <div xmlns:th="http://www.thymeleaf.org">
+  <!-- Skeleton shown while Alpine initialises -->
+  <div x-skeleton class="px-6 pt-4 pb-2 space-y-2">
+    <div class="grid grid-cols-2 gap-x-6 gap-y-2 w-fit">
+      <div class="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
+      <div class="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+      <div class="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+      <div class="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+      <div class="h-4 w-48 bg-gray-200 rounded animate-pulse col-span-2"></div>
+    </div>
+  </div>
+
   <!-- Comparison Options (Show standings, fixtures, points checkboxes) -->
   <div
     x-cloak
+    x-init="$el.previousElementSibling.remove()"
     th:fragment="comparison-options"
     class="px-6 pt-4 pb-2 space-y-2"
   >
@@ -275,18 +287,20 @@
                           </template>
                         </div>
 
-                        <!-- Form circles (mobile) — tap to see match details -->
+                        <!-- Form circles (mobile) — tap circles only to see match details -->
                         <template x-if="showForm && getForm(team.code).length > 0">
-                          <div
-                            class="flex basis-full items-center gap-0.5 mt-0.5 cursor-pointer"
-                            @click.stop="showFormPopup(team.code, team.shortName)"
-                          >
-                            <template x-for="entry in getForm(team.code)" :key="entry.opponentCode + entry.result + entry.goalsFor">
-                              <span
-                                class="flex items-center justify-center w-2.5 h-2.5 flex-shrink-0"
-                                :class="(entry.result === 'W' ? 'bg-green-500' : entry.result === 'D' ? 'bg-amber-400' : 'bg-red-500') + (entry.wasHome ? ' rounded-full' : '')"
-                              ></span>
-                            </template>
+                          <div class="flex basis-full items-center mt-0.5">
+                            <span
+                              class="inline-flex items-center gap-0.5 cursor-pointer"
+                              @click.stop="showFormPopup(team.code, team.shortName)"
+                            >
+                              <template x-for="entry in getForm(team.code)" :key="entry.opponentCode + entry.result + entry.goalsFor">
+                                <span
+                                  class="flex items-center justify-center w-2.5 h-2.5 flex-shrink-0"
+                                  :class="(entry.result === 'W' ? 'bg-green-500' : entry.result === 'D' ? 'bg-amber-400' : 'bg-red-500') + (entry.wasHome ? ' rounded-full' : '')"
+                                ></span>
+                              </template>
+                            </span>
                           </div>
                         </template>
                       </div>

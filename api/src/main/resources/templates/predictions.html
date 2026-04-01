@@ -171,8 +171,16 @@ firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRou
               th:replace="~{fragments/prediction-table :: interactive-table(alwaysHoverable=true)}"
             ></div>
 
+            <!-- Skeleton shown while Alpine initialises -->
+            <div x-skeleton class="px-6 py-6 bg-gray-50 border-t border-gray-200">
+              <div class="flex flex-col items-center space-y-3">
+                <div class="h-11 w-56 bg-gray-300 rounded-lg animate-pulse"></div>
+                <div class="h-4 w-40 bg-gray-200 rounded animate-pulse"></div>
+              </div>
+            </div>
+
             <!-- Guest CTA Footer -->
-            <div x-cloak class="px-6 py-6 bg-gray-50 border-t border-gray-200">
+            <div x-cloak x-init="$el.previousElementSibling.remove()" class="px-6 py-6 bg-gray-50 border-t border-gray-200">
               <div class="flex flex-col items-center space-y-3">
                 <a
                   th:href="@{/auth/register}"
