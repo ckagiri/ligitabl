@@ -172,6 +172,28 @@
           opacity: 0;
         }
       }
+
+      @keyframes popupBackdropIn {
+        from { opacity: 0; }
+        to   { opacity: 1; }
+      }
+      @keyframes popupBackdropOut {
+        from { opacity: 1; }
+        to   { opacity: 0; }
+      }
+      @keyframes popupCardIn {
+        from { opacity: 0; transform: translateY(24px); }
+        to   { opacity: 1; transform: translateY(0); }
+      }
+      @keyframes popupCardOut {
+        from { opacity: 1; transform: translateY(0); }
+        to   { opacity: 0; transform: translateY(40px); }
+      }
+
+      .popup-backdrop-enter { animation: popupBackdropIn 200ms ease-out forwards; }
+      .popup-backdrop-leave { animation: popupBackdropOut 300ms ease-in-out forwards; }
+      .popup-card-enter     { animation: popupCardIn 220ms ease-out forwards; }
+      .popup-card-leave     { animation: popupCardOut 300ms ease-in-out forwards; }
     </style>
   </head>
   <body class="bg-gray-50 min-h-screen" x-data="{ mobileMenuOpen: false }">

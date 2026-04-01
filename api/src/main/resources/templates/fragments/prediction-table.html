@@ -441,8 +441,8 @@
     <!-- Mobile form popup — teleported to body to avoid fixed-position containment issues -->
     <template x-teleport="body">
       <div
-        x-show="formPopup !== null"
-        x-transition.opacity.duration.150ms
+        x-show="formPopup !== null || formPopupClosing"
+        :class="formPopupClosing ? 'popup-backdrop-leave' : 'popup-backdrop-enter'"
         @click="hideFormPopup()"
         @touchend.prevent="hideFormPopup()"
         @contextmenu.prevent
@@ -452,12 +452,7 @@
         <div
           @click.stop
           @touchstart.stop
-          x-transition:enter="transition ease-out duration-200"
-          x-transition:enter-start="translate-y-4 opacity-0"
-          x-transition:enter-end="translate-y-0 opacity-100"
-          x-transition:leave="transition ease-in duration-150"
-          x-transition:leave-start="translate-y-0 opacity-100"
-          x-transition:leave-end="translate-y-4 opacity-0"
+          :class="formPopupClosing ? 'popup-card-leave' : 'popup-card-enter'"
           class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden"
         >
           <!-- Header -->
@@ -478,7 +473,20 @@
                   :class="(entry.result === 'W' ? 'bg-green-500' : entry.result === 'D' ? 'bg-amber-400' : 'bg-red-500') + (entry.wasHome ? ' rounded-full' : ' rounded-sm')"
                   x-text="entry.result"
                 ></span>
-                <span class="text-sm text-gray-700 font-mono" x-text="formResultLabel(entry, formPopup.teamCode)"></span>
+                <span class="text-sm text-gray-700 font-mono">
+                  <template x-if="entry.wasHome">
+                    <span>
+                      <span class="font-bold" x-text="formPopup.teamCode"></span>
+                      <span x-text="' ' + entry.goalsFor + '–' + entry.goalsAgainst + ' ' + entry.opponentCode"></span>
+                    </span>
+                  </template>
+                  <template x-if="!entry.wasHome">
+                    <span>
+                      <span x-text="entry.opponentCode + ' ' + entry.goalsAgainst + '–' + entry.goalsFor + ' '"></span>
+                      <span class="font-bold" x-text="formPopup.teamCode"></span>
+                    </span>
+                  </template>
+                </span>
               </li>
             </template>
           </ul>
