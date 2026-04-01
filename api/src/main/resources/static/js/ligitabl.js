@@ -83,18 +83,10 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         currentGoalDifference: parsed.currentGoalDifference,
         formData: parsed.formData,
         formPopup: null,
-        _lpTimer: null,
 
-        startFormLongPress(teamCode) {
-            this._lpTimer = setTimeout(() => {
-                const entries = this.getForm(teamCode);
-                if (entries.length > 0) this.formPopup = { teamCode, entries };
-                this._lpTimer = null;
-            }, 500);
-        },
-
-        cancelFormLongPress() {
-            if (this._lpTimer) { clearTimeout(this._lpTimer); this._lpTimer = null; }
+        showFormPopup(teamCode) {
+            const entries = this.getForm(teamCode);
+            if (entries.length > 0) this.formPopup = { teamCode, entries };
         },
 
         hideFormPopup() {
