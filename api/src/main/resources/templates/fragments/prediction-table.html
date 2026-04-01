@@ -137,18 +137,24 @@
                 </div>
               </td>
               <td class="px-2 sm:px-3 py-4">
-                <div class="flex items-center justify-between w-full">
-                  <div class="flex items-center min-w-0">
-                    <div
-                      class="h-7 w-7 sm:h-8 sm:w-8 mr-2 sm:mr-3 bg-gray-200 rounded flex items-center justify-center text-xs font-bold flex-shrink-0"
-                      x-text="team.code"
-                    ></div>
-                    <div class="min-w-0">
+                <div class="flex items-center min-w-0">
+                  <div
+                    class="h-7 w-7 sm:h-8 sm:w-8 mr-2 sm:mr-3 bg-gray-200 rounded flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    x-text="team.code"
+                  ></div>
+                  <div class="min-w-0 flex-1">
                       <!-- Team name -->
-                      <div
-                        class="text-sm font-medium text-gray-900 truncate"
-                        x-text="team.name"
-                      ></div>
+                      <div class="flex items-center gap-1">
+                        <span
+                          x-show="isSelected(team.code)"
+                          class="text-blue-600 text-xs font-medium flex-shrink-0"
+                          >●</span
+                        >
+                        <div
+                          class="text-sm font-medium text-gray-900 truncate"
+                          x-text="team.name"
+                        ></div>
+                      </div>
 
                       <!-- Mobile: Fixtures AND/OR Standings AND/OR Points+GD -->
                       <div
@@ -327,16 +333,6 @@
                           </span>
                         </template>
                       </div>
-                    </div>
-                  </div>
-
-                  <!-- Selection indicator -->
-                  <div class="text-xs text-gray-400 flex-shrink-0 ml-1">
-                    <span
-                      x-show="isSelected(team.code)"
-                      class="text-blue-600 font-medium"
-                      >●</span
-                    >
                   </div>
                 </div>
               </td>
