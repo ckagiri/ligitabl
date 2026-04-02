@@ -77,7 +77,7 @@ ligitabl:
     url: ${FRONTEND_URL:http://localhost:8080}
 
   scheduling:
-    enabled: true
+    enabled: false
 
   security:
     password-reset-token-validity-minutes: ${PASSWORD_RESET_TOKEN_VALIDITY:30}
