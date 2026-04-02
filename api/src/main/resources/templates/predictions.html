@@ -161,6 +161,16 @@ firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRou
             <th:block
               th:if="${isHistoricalView == false && (roundState == 'open' || roundState == 'locked' || roundState == 'finalized')}"
             >
+              <!-- Skeleton: visible before Alpine, removed once Alpine initialises -->
+              <div x-skeleton class="px-6 pt-4 pb-2">
+                <div class="grid grid-cols-2 gap-x-6 gap-y-2 w-fit">
+                  <div class="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
+                  <div class="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                  <div class="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                  <div class="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                  <div class="h-4 w-48 bg-gray-200 rounded animate-pulse col-span-2"></div>
+                </div>
+              </div>
               <div
                 th:replace="~{fragments/prediction-table :: comparison-options}"
               ></div>
@@ -249,6 +259,16 @@ firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRou
             <th:block
               th:if="${isHistoricalView == false && (isUserNotFound == false || isUserNotFound == null) && (roundState == 'open' || roundState == 'locked' || roundState == 'finalized')}"
             >
+              <!-- Skeleton: visible before Alpine, removed once Alpine initialises -->
+              <div x-skeleton class="px-6 pt-4 pb-2">
+                <div class="grid grid-cols-2 gap-x-6 gap-y-2 w-fit">
+                  <div class="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
+                  <div class="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                  <div class="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
+                  <div class="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
+                  <div class="h-4 w-48 bg-gray-200 rounded animate-pulse col-span-2"></div>
+                </div>
+              </div>
               <div
                 th:replace="~{fragments/prediction-table :: comparison-options}"
               ></div>
