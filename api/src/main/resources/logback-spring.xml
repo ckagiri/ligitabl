@@ -1,6 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
+  <!-- Registers Spring Boot's custom converters including %clr -->
+  <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
   <springProperty name="LOGTAIL_TOKEN" source="logtail.token" defaultValue=""/>
 
   <!-- Console: all environments, coloured output via Spring Boot's %clr() -->
