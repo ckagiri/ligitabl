@@ -125,3 +125,7 @@ workflow:
   run: false
   competition: PL
   exit-after: true
+
+# Analytics — empty by default so localhost never sends tracking data
+umami:
+  website-id: ""

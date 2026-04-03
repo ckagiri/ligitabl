@@ -1,0 +1,9 @@
+{
+  "properties": [
+    {
+      "name": "umami.website-id",
+      "type": "java.lang.String",
+      "description": "Umami analytics website ID. Leave empty to disable tracking (e.g. in local development)."
+    }
+  ]
+}

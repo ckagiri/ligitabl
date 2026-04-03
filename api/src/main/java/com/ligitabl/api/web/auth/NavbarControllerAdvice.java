@@ -4,6 +4,7 @@ import java.security.Principal;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -46,6 +47,14 @@ public class NavbarControllerAdvice {
     private final SeasonRepo seasonRepo;
     private final CompetitionDefaults competitionDefaults;
     private final UserRepo userRepo;
+
+    @Value("${umami.website-id:}")
+    private String umamiWebsiteId;
+
+    @ModelAttribute("umamiWebsiteId")
+    public String umamiWebsiteId() {
+        return umamiWebsiteId;
+    }
 
     @ModelAttribute("isLoggedIn")
     public boolean isLoggedIn(Principal principal) {
