@@ -119,6 +119,12 @@
             <artifactId>bucket4j-core</artifactId>
             <version>${bucket4j.version}</version>
         </dependency>
+        <!-- Logtail (Better Stack) log shipping -->
+        <dependency>
+            <groupId>com.logtail</groupId>
+            <artifactId>logback-logtail</artifactId>
+            <version>0.3.1</version>
+        </dependency>
         <!-- Model module: generated jOOQ code and Liquibase changelogs -->
         <dependency>
             <groupId>com.ligitabl</groupId>

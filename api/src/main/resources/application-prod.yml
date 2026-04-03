@@ -3,3 +3,6 @@ server:
 
 umami:
   website-id: "b40510d8-722f-4956-bb63-7b07bcfc3f4b"
+
+logtail:
+  token: ${LOGTAIL_TOKEN:}

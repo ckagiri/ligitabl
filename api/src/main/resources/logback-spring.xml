@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+  <springProperty name="LOGTAIL_TOKEN" source="logtail.token" defaultValue=""/>
+
+  <!-- Console: all environments, preserves MDC requestId -->
+  <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%d{yyyy-MM-dd HH:mm:ss} %5p [requestId=%X{requestId}] %logger{36} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <!-- Logtail: prod profile only, WARN and above to stay within free tier -->
+  <springProfile name="prod">
+    <appender name="Logtail" class="com.logtail.logback.LogtailAppender">
+      <appName>ligitabl</appName>
+      <sourceToken>${LOGTAIL_TOKEN}</sourceToken>
+      <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+        <level>WARN</level>
+      </filter>
+    </appender>
+
+    <root level="INFO">
+      <appender-ref ref="Console"/>
+      <appender-ref ref="Logtail"/>
+    </root>
+  </springProfile>
+
+  <springProfile name="!prod">
+    <root level="INFO">
+      <appender-ref ref="Console"/>
+    </root>
+  </springProfile>
+
+</configuration>

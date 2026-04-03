@@ -4,6 +4,11 @@
       "name": "umami.website-id",
       "type": "java.lang.String",
       "description": "Umami analytics website ID. Leave empty to disable tracking (e.g. in local development)."
+    },
+    {
+      "name": "logtail.token",
+      "type": "java.lang.String",
+      "description": "Logtail (Better Stack) source token. Set via LOGTAIL_TOKEN env var in production. Leave empty to disable log shipping."
     }
   ]
 }

@@ -50,7 +50,11 @@ logging:
               authentication:
                 configuration:
                   InitializeUserDetailsBeanManagerConfigurer: ERROR
+        web: WARN
+      jooq: WARN
     com:
+      zaxxer:
+        hikari: WARN
       ligitabl: INFO
   pattern:
     level: "%5p [requestId=%X{requestId}]"
