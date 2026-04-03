@@ -3,10 +3,10 @@
 
   <springProperty name="LOGTAIL_TOKEN" source="logtail.token" defaultValue=""/>
 
-  <!-- Console: all environments, preserves MDC requestId -->
+  <!-- Console: all environments, coloured output via Spring Boot's %clr() -->
   <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
     <encoder>
-      <pattern>%d{yyyy-MM-dd HH:mm:ss} %5p [requestId=%X{requestId}] %logger{36} - %msg%n</pattern>
+      <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss}){faint} %clr(%5p) %clr([requestId=%X{requestId}]){faint} %clr(%logger{36}){cyan} - %msg%n</pattern>
     </encoder>
   </appender>
 
