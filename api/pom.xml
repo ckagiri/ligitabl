@@ -25,6 +25,7 @@
         <!-- Version for JDBC driver used during jOOQ code generation (plugin dependency is not BOM-managed) -->
         <postgresql.version>42.7.8</postgresql.version>
         <jjwt.version>0.12.6</jjwt.version>
+        <bucket4j.version>8.10.1</bucket4j.version>
     </properties>
 
     <dependencies>
@@ -111,6 +112,12 @@
             <artifactId>jjwt-jackson</artifactId>
             <version>${jjwt.version}</version>
             <scope>runtime</scope>
+        </dependency>
+        <!-- Rate limiting -->
+        <dependency>
+            <groupId>com.bucket4j</groupId>
+            <artifactId>bucket4j-core</artifactId>
+            <version>${bucket4j.version}</version>
         </dependency>
         <!-- Model module: generated jOOQ code and Liquibase changelogs -->
         <dependency>
