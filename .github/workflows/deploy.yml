@@ -172,6 +172,7 @@ jobs:
           MAILGUN_DOMAIN=${{ secrets.MAILGUN_DOMAIN }}
           MAILGUN_API_BASE_URL=${{ secrets.MAILGUN_API_BASE_URL }}
           FRONTEND_URL=${{ secrets.FRONTEND_URL }}
+          LOGTAIL_TOKEN=${{ secrets.LOGTAIL_TOKEN }}
           DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
           IMAGE_TAG=api-${{ github.sha }}
           VIRTUAL_HOST=${{ secrets.HOST_DOMAIN }}
@@ -179,14 +180,14 @@ jobs:
           LETSENCRYPT_EMAIL=${{ secrets.LETSENCRYPT_EMAIL }}
           EOF
 
-      - name: Copy compose file and env to server
+      - name: Copy compose file, env, and nginx config to server
         uses: appleboy/scp-action@v0.1.7
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USERNAME }}
           port: 22
           key: ${{ secrets.DEPLOY_KEY }}
-          source: "docker-compose.prod.yml,.env.prod"
+          source: "docker-compose.prod.yml,.env.prod,nginx/"
           target: "~/.deploy/ligitabl/"
 
       - name: Deploy via SSH
@@ -242,3 +243,11 @@ jobs:
             fi
 
             echo "📊 Deployment complete!"
+
+            echo "🔒 Applying nginx rate limit config..."
+            docker cp ~/.deploy/ligitabl/nginx/conf.d/rate-limit.conf \
+              nginx-proxy:/etc/nginx/conf.d/rate-limit.conf
+            docker cp ~/.deploy/ligitabl/nginx/vhost.d/default_location \
+              nginx-proxy:/etc/nginx/vhost.d/default_location
+            docker exec nginx-proxy nginx -s reload
+            echo "✅ nginx rate limiting active."

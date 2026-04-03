@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+
+  <!-- Registers Spring Boot's custom converters including %clr -->
+  <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+  <springProperty name="LOGTAIL_TOKEN" source="logtail.token" defaultValue=""/>
+
+  <!-- Console: all environments, coloured output via Spring Boot's %clr() -->
+  <appender name="Console" class="ch.qos.logback.core.ConsoleAppender">
+    <encoder>
+      <pattern>%clr(%d{yyyy-MM-dd HH:mm:ss}){faint} %clr(%5p) %clr([requestId=%X{requestId}]){faint} %clr(%logger{36}){cyan} - %msg%n</pattern>
+    </encoder>
+  </appender>
+
+  <!-- Logtail: prod profile only, WARN and above to stay within free tier -->
+  <springProfile name="prod">
+    <appender name="Logtail" class="com.logtail.logback.LogtailAppender">
+      <appName>ligitabl</appName>
+      <sourceToken>${LOGTAIL_TOKEN}</sourceToken>
+      <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+        <level>WARN</level>
+      </filter>
+    </appender>
+
+    <root level="INFO">
+      <appender-ref ref="Console"/>
+      <appender-ref ref="Logtail"/>
+    </root>
+  </springProfile>
+
+  <springProfile name="!prod">
+    <root level="INFO">
+      <appender-ref ref="Console"/>
+    </root>
+  </springProfile>
+
+</configuration>

@@ -50,7 +50,11 @@ logging:
               authentication:
                 configuration:
                   InitializeUserDetailsBeanManagerConfigurer: ERROR
+        web: WARN
+      jooq: WARN
     com:
+      zaxxer:
+        hikari: WARN
       ligitabl: INFO
   pattern:
     level: "%5p [requestId=%X{requestId}]"
@@ -125,3 +129,7 @@ workflow:
   run: false
   competition: PL
   exit-after: true
+
+# Analytics — empty by default so localhost never sends tracking data
+umami:
+  website-id: ""
