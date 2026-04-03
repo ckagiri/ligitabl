@@ -1,0 +1,5 @@
+# Applied inside the location / block for all vhosts by nginx-proxy.
+#
+# burst=20  — allow short spikes up to 20 queued requests before rejecting
+# nodelay   — serve burst requests immediately rather than spacing them out
+limit_req zone=app burst=20 nodelay;
