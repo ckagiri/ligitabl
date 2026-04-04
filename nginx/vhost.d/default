@@ -1,0 +1,5 @@
+# Block common bot/scanner paths before they reach the app.
+# Return 444 = close connection with no response (denies bots any useful feedback).
+location ~* ^/(wp-admin|wp-login\.php|wp-config\.php|phpmyadmin|xmlrpc\.php|\.env|\.git|\.DS_Store) {
+    return 444;
+}
