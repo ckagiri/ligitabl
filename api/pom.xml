@@ -205,29 +205,41 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
             </plugin>
-            <plugin>
-                <groupId>io.sentry</groupId>
-                <artifactId>sentry-maven-plugin</artifactId>
-                <version>0.11.0</version>
-                <extensions>true</extensions>
-                <configuration>
-                    <debugSentryCli>true</debugSentryCli>
-                    <org>ligipredictor</org>
-                    <project>java-spring-boot</project>
-                    <authToken>${env.SENTRY_AUTH_TOKEN}</authToken>
-                </configuration>
-                <executions>
-                    <execution>
-                        <goals>
-                            <goal>uploadSourceBundle</goal>
-                        </goals>
-                    </execution>
-                </executions>
-            </plugin>
         </plugins>
     </build>
 
     <profiles>
+        <profile>
+            <id>sentry-source-bundle-upload</id>
+            <activation>
+                <property>
+                    <name>env.SENTRY_AUTH_TOKEN</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.sentry</groupId>
+                        <artifactId>sentry-maven-plugin</artifactId>
+                        <version>0.11.0</version>
+                        <extensions>true</extensions>
+                        <configuration>
+                            <debugSentryCli>true</debugSentryCli>
+                            <org>ligipredictor</org>
+                            <project>java-spring-boot</project>
+                            <authToken>${env.SENTRY_AUTH_TOKEN}</authToken>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <goals>
+                                    <goal>uploadSourceBundle</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>unit-tests</id>
             <build>
