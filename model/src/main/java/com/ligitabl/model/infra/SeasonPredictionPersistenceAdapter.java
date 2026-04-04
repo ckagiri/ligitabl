@@ -99,6 +99,8 @@ public class SeasonPredictionPersistenceAdapter implements SeasonPredictionRepo 
                 .currentRankings(readJson(record.getCurrentRankings(), TEAM_RANK_LIST, List.of()))
                 .swaps(readJson(record.getSwaps(), ROUND_SWAP_LIST, List.of()))
                 .lastSwapAt(toInstant(record.getLastSwapAt()))
+                .openingCommittedRound(
+                        record.getOpeningCommittedRound() != null ? record.getOpeningCommittedRound() : 0)
                 .atRoundNumber(record.getAtRoundNumber())
                 .createDate(record.getCreateDate())
                 .updateDate(record.getUpdateDate())
@@ -113,6 +115,7 @@ public class SeasonPredictionPersistenceAdapter implements SeasonPredictionRepo 
         rec.setCurrentRankings(writeJson(model.getCurrentRankings()));
         rec.setSwaps(writeJson(model.getSwaps()));
         rec.setLastSwapAt(toOffsetDateTime(model.getLastSwapAt()));
+        rec.setOpeningCommittedRound(model.getOpeningCommittedRound());
         rec.setAtRoundNumber(model.getAtRoundNumber());
     }
 

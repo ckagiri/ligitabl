@@ -248,6 +248,33 @@
     </div>
   </div>
 
+  <!-- Round Opening Swaps Banner (each round, after first swap bonus is spent) -->
+  <div
+    th:if="${swapStatus != null && swapStatus.openingRoundAvailable == true}"
+    class="bg-indigo-50 border border-indigo-200 rounded-lg p-4"
+  >
+    <div class="flex items-start">
+      <svg
+        class="h-5 w-5 text-indigo-600 mt-0.5 mr-3 flex-shrink-0"
+        fill="currentColor"
+        viewBox="0 0 20 20"
+      >
+        <path
+          fill-rule="evenodd"
+          d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
+          clip-rule="evenodd"
+        />
+      </svg>
+      <div>
+        <p class="text-sm font-medium text-indigo-800">🔄 Opening Swaps Available</p>
+        <p class="text-sm text-indigo-700 mt-1">
+          You have 1–5 opening swaps for this round. Stage your moves and hit
+          Update — after that, the 24h cooldown applies.
+        </p>
+      </div>
+    </div>
+  </div>
+
   <!-- Locked State Banner (locked only) - NOT for guests, NOT for first swap bonus -->
   <div
     th:if="${(isGuest == false || isGuest == null) && isCurrentRound == true && roundState == 'locked' && !(swapStatus != null && swapStatus.firstSwapBonus == true)}"

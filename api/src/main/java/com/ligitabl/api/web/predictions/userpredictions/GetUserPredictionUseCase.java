@@ -169,7 +169,10 @@ public class GetUserPredictionUseCase {
                             () -> new IllegalStateException("User context indicates prediction exists but not found"));
 
             // Get swap cooldown for this user
-            SwapCooldown swapCooldown = seasonPrediction.getSwapCooldown();
+            boolean openingRoundAvailable = seasonPrediction.getOpeningCommittedRound() != currentRound
+                    && seasonPrediction.getLastSwapAt() != null
+                    && currentRoundStatus == RoundStatus.OPEN;
+            SwapCooldown swapCooldown = new SwapCooldown(seasonPrediction.getLastSwapAt(), true, openingRoundAvailable);
 
             // For historical rounds, load RoundResult with scored data
             if (!isCurrentRound) {
@@ -425,7 +428,7 @@ public class GetUserPredictionUseCase {
             return PredictionAccessMode.READONLY_COOLDOWN; // Historical rounds are always readonly
         }
 
-        if (swapCooldown != null && swapCooldown.canSwap(Instant.now())) {
+        if (swapCooldown != null && (swapCooldown.canSwap(Instant.now()) || swapCooldown.openingRoundAvailable())) {
             return PredictionAccessMode.EDITABLE;
         }
 

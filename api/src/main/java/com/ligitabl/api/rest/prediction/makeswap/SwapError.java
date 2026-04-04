@@ -19,4 +19,6 @@ public sealed interface SwapError {
     record SeasonCompleted() implements SwapError {}
 
     record CurrentRoundNotFound(UUID seasonId) implements SwapError {}
+
+    record UseOpeningWindowFirst(int round) implements SwapError {}
 }

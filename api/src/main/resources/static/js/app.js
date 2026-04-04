@@ -295,11 +295,13 @@ window.Ligitabl.predictionPage = function(el) {
   const roundOpenRaw = el?.dataset?.roundOpen ?? "false";
   const isLastRoundRaw = el?.dataset?.isLastRound ?? "false";
   const isInitialRaw = el?.dataset?.isInitialPrediction ?? "false";
+  const isOpeningRoundRaw = el?.dataset?.isOpeningRound ?? "false";
   const canSwap = canSwapRaw === "true" || canSwapRaw === "True";
   const canInteract = canInteractRaw === "true" || canInteractRaw === "True";
   const isRoundOpen = roundOpenRaw === "true" || roundOpenRaw === "True";
   const isLastRound = isLastRoundRaw === "true" || isLastRoundRaw === "True";
   const isInitialPrediction = isInitialRaw === "true" || isInitialRaw === "True";
+  const isOpeningRound = isOpeningRoundRaw === "true" || isOpeningRoundRaw === "True";
   const MAX_INITIAL_SWAPS = Ligitabl._MAX_INITIAL_SWAPS;
   const userId = el?.dataset?.userId || "unknown";
   const roundId = el?.dataset?.roundId || "unknown";
@@ -359,18 +361,19 @@ window.Ligitabl.predictionPage = function(el) {
     isRoundOpen,
     isLastRound,
     isInitialPrediction,
+    isOpeningRound,
     isSaving: false,
     errorMessage: null,
     importedFromGuest: false,
     init() {
-      if (isInitialPrediction) {
+      if (isInitialPrediction || isOpeningRound) {
         const authPrediction = loadAuthPrediction();
         if (authPrediction) {
           this.teams = _extractTeams(authPrediction).map((t, idx) => ({ ...t, position: idx + 1 }));
           this.swapStack = _extractSwapStack(authPrediction);
           this._clearStorage(GUEST_STORAGE_KEY);
         }
-        if (this.teams.length === 0) {
+        if (this.teams.length === 0 && !isOpeningRound) {
           const guestPrediction = loadGuestPrediction();
           if (guestPrediction) {
             this.teams = _extractTeams(guestPrediction).map((t, idx) => {
@@ -427,15 +430,15 @@ window.Ligitabl.predictionPage = function(el) {
     canUpdate() {
       const swapCount = this.getSwapCount();
       if (swapCount === 0) return false;
-      if (this.isInitialPrediction) {
+      if (this.isInitialPrediction || this.isOpeningRound) {
         if (swapCount > MAX_INITIAL_SWAPS) return false;
       } else {
         if (swapCount > 1) return false;
       }
-      return this.canSwap;
+      return this.isOpeningRound ? true : this.canSwap;
     },
     exceedsLimit() {
-      if (this.isInitialPrediction) {
+      if (this.isInitialPrediction || this.isOpeningRound) {
         return this.getSwapCount() > MAX_INITIAL_SWAPS;
       }
       return this.getSwapCount() > 1;
@@ -516,6 +519,14 @@ window.Ligitabl.predictionPage = function(el) {
             teamBCode: entry.b
           }))
         };
+      } else if (this.isOpeningRound) {
+        url = "/seasonprediction/opening-swaps";
+        body = {
+          swaps: this.swapStack.map((entry) => ({
+            teamACode: entry.a,
+            teamBCode: entry.b
+          }))
+        };
       } else {
         const entry = this.swapStack[0];
         url = "/seasonprediction/swap";
@@ -528,7 +539,7 @@ window.Ligitabl.predictionPage = function(el) {
       }).then((response) => response.json()).then((data) => {
         if (data.success) {
           this._clearStorage(AUTH_STORAGE_KEY);
-          if (this.importedFromGuest || this.isInitialPrediction) {
+          if (this.importedFromGuest || (this.isInitialPrediction && !this.isOpeningRound)) {
             this._clearStorage(GUEST_STORAGE_KEY);
           }
           setTimeout(() => {

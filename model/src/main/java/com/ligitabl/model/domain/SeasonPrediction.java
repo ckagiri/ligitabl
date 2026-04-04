@@ -33,6 +33,8 @@ public class SeasonPrediction extends AbstractModel<UUID> {
 
     private Instant lastSwapAt;
 
+    private int openingCommittedRound;
+
     private int atRoundNumber;
 
     // Populated by the database (defaults/triggers)
@@ -58,13 +60,6 @@ public class SeasonPrediction extends AbstractModel<UUID> {
     }
 
     public SwapCooldown getSwapCooldown() {
-        int swapCount = swaps == null
-                ? 0
-                : swaps.stream()
-                        .mapToInt(roundSwap -> roundSwap.getChanges() == null
-                                ? 0
-                                : roundSwap.getChanges().size())
-                        .sum();
-        return new SwapCooldown(lastSwapAt, true, swapCount, false);
+        return new SwapCooldown(lastSwapAt, true, false);
     }
 }

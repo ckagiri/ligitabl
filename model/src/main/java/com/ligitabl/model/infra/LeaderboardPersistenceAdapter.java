@@ -244,8 +244,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         isScoredField.desc(), // scored users ranked above unscored
                         totalScoreField.desc(),
                         totalZeroesField.desc(),
-                        maxScoreField.desc(),
                         totalSwapsField.asc(),
+                        maxScoreField.desc(),
                         publicId.asc())
                 .as("position");
 
@@ -370,8 +370,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         isScoredField.desc(),
                         totalScoreField.desc(),
                         totalZeroesField.desc(),
-                        maxScoreField.desc(),
                         totalSwapsField.asc(),
+                        maxScoreField.desc(),
                         publicId.asc())
                 .as("position");
 
@@ -478,8 +478,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .orderBy(
                         totalScoreField.desc(),
                         totalZeroesField.desc(),
-                        maxScoreField.desc(),
                         totalSwapsField.asc(),
+                        maxScoreField.desc(),
                         publicId.asc())
                 .as("position");
 

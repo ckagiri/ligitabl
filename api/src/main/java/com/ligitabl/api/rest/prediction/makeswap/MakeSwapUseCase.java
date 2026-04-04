@@ -63,7 +63,7 @@ public class MakeSwapUseCase {
 
     private Either<SwapError, Round> validateSwapEligibility(SeasonPrediction prediction, Season season) {
         return validateRoundStatus(prediction, season)
-                .flatMap(round -> validateCooldown(prediction).map(__ -> round));
+                .flatMap(round -> validateCooldown(prediction, round).map(__ -> round));
     }
 
     private Either<SwapError, Round> validateRoundStatus(SeasonPrediction prediction, Season season) {
@@ -104,9 +104,14 @@ public class MakeSwapUseCase {
         return Either.right(currentRound);
     }
 
-    private Either<SwapError, Void> validateCooldown(SeasonPrediction prediction) {
+    private Either<SwapError, Void> validateCooldown(SeasonPrediction prediction, Round currentRound) {
         if (prediction.getLastSwapAt() == null) {
-            return Either.right(null); // First swap after submission
+            return Either.right(null); // First swap bonus — no wait required
+        }
+
+        // Once first swap bonus is spent, the opening window must be used before cooldown swaps
+        if (prediction.getOpeningCommittedRound() != currentRound.getPosition()) {
+            return Either.left(new SwapError.UseOpeningWindowFirst(currentRound.getPosition()));
         }
 
         Instant now = clock.instant();
@@ -182,6 +187,10 @@ public class MakeSwapUseCase {
         prediction.setCurrentRankings(updatedRankings);
         prediction.addSwap(targetRound.getPosition(), change);
         prediction.setLastSwapAt(now);
+        // First swap bonus: consume the opening window so it isn't shown after the bonus is used
+        if (prediction.getOpeningCommittedRound() != targetRound.getPosition()) {
+            prediction.setOpeningCommittedRound(targetRound.getPosition());
+        }
 
         SeasonPrediction saved = predictionRepo.save(prediction);
 

@@ -285,8 +285,11 @@ public class UserPredictionsController {
                             cooldown.getStatusMessage(now),
                             cooldown.getLastSwapAtFormatted(),
                             cooldown.initialPredictionMade(),
-                            cooldown.swapCount(),
-                            firstSwapBonus));
+                            firstSwapBonus,
+                            cooldown.openingRoundAvailable()));
+            model.addAttribute("isOpeningRound", cooldown.openingRoundAvailable());
+        } else {
+            model.addAttribute("isOpeningRound", false);
         }
 
         // canInteract: can rearrange the table regardless of cooldown (false for read-only views)
@@ -506,8 +509,8 @@ public class UserPredictionsController {
             String message,
             String lastSwapAt,
             boolean initialPredictionMade,
-            int swapCount,
-            boolean firstSwapBonus) {}
+            boolean firstSwapBonus,
+            boolean openingRoundAvailable) {}
 
     /**
      * DTO for a single swap change entry displayed in the swap history section.
