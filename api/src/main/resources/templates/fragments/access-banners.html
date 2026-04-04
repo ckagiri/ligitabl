@@ -2,7 +2,6 @@
 <!-- Parameters:
      isGuest: Boolean - user is a guest
      canCreateEntry: Boolean - user can create initial entry
-     isViewingOther: Boolean - viewing another user's prediction
      isUserNotFound: Boolean - requested user not found
      swapStatus: SwapStatus object (can be null)
      isCurrentRound: Boolean - viewing current round
@@ -18,7 +17,7 @@
 -->
 <div
   x-cloak
-  th:fragment="banners(isGuest, canCreateEntry, isViewingOther, isUserNotFound, swapStatus, isCurrentRound, roundState, totalScore, viewingRound, hasRoundResult, currentRound, lastRound, atRoundNumber, seasonCompleted, canSwap)"
+  th:fragment="banners(isGuest, canCreateEntry, isUserNotFound, swapStatus, isCurrentRound, roundState, totalScore, viewingRound, hasRoundResult, currentRound, lastRound, atRoundNumber, seasonCompleted, canSwap)"
   class="mb-4 sm:mb-6 space-y-3"
 >
   <!-- Guest Banner -->
@@ -150,35 +149,6 @@
           >Arrange teams in your predicted order. Make 1-5 swaps to submit
           and join the competition.</span>
         </p>
-      </div>
-    </div>
-  </div>
-
-  <!-- Viewing Other User Banner -->
-  <div
-    th:if="${isViewingOther == true}"
-    class="bg-blue-50 border border-blue-200 rounded-lg p-4"
-  >
-    <div class="flex items-start">
-      <svg
-        class="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0"
-        fill="currentColor"
-        viewBox="0 0 20 20"
-      >
-        <path
-          fill-rule="evenodd"
-          d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-          clip-rule="evenodd"
-        />
-      </svg>
-      <div>
-        <p
-          class="text-sm font-medium text-blue-800"
-          th:text="${targetDisplayName != null ? 'Viewing ' + targetDisplayName + ' prediction' : 'Viewing user prediction'}"
-        >
-          Viewing user's prediction
-        </p>
-        <p class="text-sm text-blue-700 mt-1">This view is read-only.</p>
       </div>
     </div>
   </div>
@@ -409,7 +379,7 @@
 
   <!-- Historical Round Info Banner -->
   <div
-    th:if="${(isCurrentRound == false || isCurrentRound == null) && (isGuest == false || isGuest == null) && (isViewingOther == false || isViewingOther == null) && (isUserNotFound == false || isUserNotFound == null)}"
+    th:if="${(isCurrentRound == false || isCurrentRound == null) && (isGuest == false || isGuest == null) && (isUserNotFound == false || isUserNotFound == null)}"
     class="bg-blue-50 border border-blue-200 rounded-lg p-4"
   >
     <div class="flex items-start">
@@ -435,7 +405,7 @@
 
   <!-- Status Indicator (for own predictions, not during first swap bonus which has its own banner) -->
   <div
-    th:if="${(isGuest == false || isGuest == null) && (isViewingOther == false || isViewingOther == null) && (isUserNotFound == false || isUserNotFound == null) && (canCreateEntry == false || canCreateEntry == null) && !(swapStatus != null && swapStatus.firstSwapBonus == true)}"
+    th:if="${(isGuest == false || isGuest == null) && (isUserNotFound == false || isUserNotFound == null) && (canCreateEntry == false || canCreateEntry == null) && !(swapStatus != null && swapStatus.firstSwapBonus == true)}"
     class="inline-flex items-center gap-2 text-sm"
   >
     <span

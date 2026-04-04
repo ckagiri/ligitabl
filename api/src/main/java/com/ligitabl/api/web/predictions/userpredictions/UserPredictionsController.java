@@ -268,10 +268,7 @@ public class UserPredictionsController {
         model.addAttribute("canCreateEntry", data.canCreateEntry());
         model.addAttribute("isReadonly", data.isReadonly());
         model.addAttribute("isGuest", data.isGuest());
-        model.addAttribute("isViewingOther", data.isViewingOther());
         model.addAttribute("isUserNotFound", data.isUserNotFound());
-
-        model.addAttribute("targetDisplayName", data.targetDisplayName());
 
         // Swap status for cooldown banners
         if (data.swapCooldown() != null) {
@@ -455,9 +452,6 @@ public class UserPredictionsController {
             case EDITABLE, READONLY_COOLDOWN -> "My Table";
             case CAN_CREATE_ENTRY -> "Create Prediction";
             case READONLY_GUEST -> "My Table";
-            case READONLY_VIEWING_OTHER -> data.targetDisplayName() != null
-                    ? data.targetDisplayName() + "'s Table"
-                    : "User's Table";
             case READONLY_USER_NOT_FOUND -> "User Not Found";
         };
     }

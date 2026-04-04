@@ -21,11 +21,6 @@ public enum PredictionAccessMode {
     READONLY_COOLDOWN,
 
     /**
-     * Viewing another user's prediction (readonly).
-     */
-    READONLY_VIEWING_OTHER,
-
-    /**
      * Viewing non-existent user (readonly with error message).
      */
     READONLY_USER_NOT_FOUND,

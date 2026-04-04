@@ -33,7 +33,6 @@ public record UserPredictionViewData(
         Integer atRoundNumber,
         boolean seasonCompleted,
         String roundState,
-        String targetDisplayName,
         RoundResult roundResult, // Present for historical views with scored results
         List<SwapChange> roundSwapHistory // Swaps made in the viewed round; null for guests/other users
         ) {
@@ -90,13 +89,6 @@ public record UserPredictionViewData(
      */
     public boolean isGuest() {
         return accessMode == PredictionAccessMode.READONLY_GUEST;
-    }
-
-    /**
-     * Check if viewing another user's prediction.
-     */
-    public boolean isViewingOther() {
-        return accessMode == PredictionAccessMode.READONLY_VIEWING_OTHER;
     }
 
     /**

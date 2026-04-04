@@ -27,7 +27,6 @@ import lombok.AllArgsConstructor;
  *   Guest: Returns fallback rankings as READONLY_GUEST
  *   Authenticated with prediction: Returns user's prediction as EDITABLE or READONLY_COOLDOWN
  *   Authenticated without prediction: Returns fallback as CAN_CREATE_ENTRY
- *   Viewing other user: Returns their prediction as READONLY_VIEWING_OTHER
  *   User not found: Returns fallback as READONLY_USER_NOT_FOUND
  */
 @Service
@@ -85,15 +84,6 @@ public class GetUserPredictionUseCase {
                     roundState,
                     seasonCompleted,
                     currentRoundStatus);
-            case VIEWING_OTHER -> buildViewingOtherView(
-                    query,
-                    currentRound,
-                    lastRound,
-                    viewingRound,
-                    isCurrentRound,
-                    roundState,
-                    seasonCompleted,
-                    currentRoundStatus);
             case USER_NOT_FOUND -> buildUserNotFoundView(
                     query,
                     currentRound,
@@ -142,7 +132,6 @@ public class GetUserPredictionUseCase {
                 null,
                 seasonCompleted,
                 roundState,
-                null, // no target display name
                 null, // no round result for guest
                 null // no swap history for guests
                 );
@@ -196,7 +185,6 @@ public class GetUserPredictionUseCase {
                             seasonPrediction.getAtRoundNumber(),
                             seasonCompleted,
                             roundState,
-                            null,
                             roundResult.get(),
                             swapsForRound(seasonPrediction, viewingRound));
                 }
@@ -225,7 +213,6 @@ public class GetUserPredictionUseCase {
                     seasonPrediction.getAtRoundNumber(),
                     seasonCompleted,
                     roundState,
-                    null,
                     null, // No round result for current round
                     swapsForRound(seasonPrediction, viewingRound));
         }
@@ -270,7 +257,6 @@ public class GetUserPredictionUseCase {
                 atRoundNumber,
                 seasonCompleted,
                 roundState,
-                null,
                 null, // No round result
                 null // No swap history — user has no prediction yet
                 );
@@ -281,105 +267,6 @@ public class GetUserPredictionUseCase {
      */
     private List<TeamRank> convertResultRankingsToTeamRankings(RoundResult result) {
         return result.getRankings().stream().map(ResultTeamRank::getRanking).toList();
-    }
-
-    /**
-     * Build view for viewing another user's predictions.
-     */
-    private UserPredictionViewData buildViewingOtherView(
-            GetUserPredictionQuery qry,
-            int currentRound,
-            int lastRound,
-            int viewingRound,
-            boolean isCurrentRound,
-            String roundState,
-            boolean seasonCompleted,
-            RoundStatus currentRoundStatus) {
-        UserContext ctx = qry.userContext();
-
-        // For historical rounds, load RoundResult with scored data
-        if (!isCurrentRound && ctx.hasContestEntry()) {
-            var roundResult = roundResultRepo.findByUserAndRound(ctx.userId(), viewingRound);
-            if (roundResult.isPresent()) {
-                List<TeamRank> rankings = convertResultRankingsToTeamRankings(roundResult.get());
-
-                return new UserPredictionViewData(
-                        rankings,
-                        RankingSource.USER_PREDICTION,
-                        PredictionAccessMode.READONLY_VIEWING_OTHER,
-                        null,
-                        Map.of(),
-                        Map.of(),
-                        Map.of(),
-                        Map.of(),
-                        currentRound,
-                        lastRound,
-                        viewingRound,
-                        null,
-                        seasonCompleted,
-                        roundState,
-                        qry.targetDisplayName(),
-                        roundResult.get(),
-                        null // swap history not shown for other users
-                        );
-            }
-        }
-
-        // If target user has a prediction, show it (current round)
-        if (ctx.hasContestEntry()) {
-            var prediction = seasonPredictionRepo
-                    .findByUserAndSeason(ctx.userId(), qry.seasonId())
-                    .orElseThrow(
-                            () -> new IllegalStateException("User context indicates prediction exists but not found"));
-
-            StandingsMaps standingsMaps = getStandingsMaps(qry.seasonId(), currentRound);
-
-            return new UserPredictionViewData(
-                    prediction.getCurrentRankings(),
-                    RankingSource.USER_PREDICTION,
-                    PredictionAccessMode.READONLY_VIEWING_OTHER,
-                    null, // no swap cooldown - readonly
-                    getMatches(qry.seasonId(), currentRound),
-                    standingsMaps.positions(),
-                    standingsMaps.points(),
-                    standingsMaps.goalDifference(),
-                    currentRound,
-                    lastRound,
-                    viewingRound,
-                    prediction.getAtRoundNumber(),
-                    seasonCompleted,
-                    roundState,
-                    qry.targetDisplayName(),
-                    null,
-                    null // swap history not shown for other users
-                    );
-        }
-
-        // Target user exists but has no prediction - show previous round standings
-        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), currentRound);
-
-        StandingsMaps currentStandingsMaps =
-                isCurrentRound ? getStandingsMaps(qry.seasonId(), currentRound) : StandingsMaps.empty();
-
-        return new UserPredictionViewData(
-                rankingsWithSource.rankings(),
-                rankingsWithSource.source(),
-                PredictionAccessMode.READONLY_VIEWING_OTHER,
-                null,
-                isCurrentRound ? getMatches(qry.seasonId(), currentRound) : Map.of(),
-                currentStandingsMaps.positions(),
-                currentStandingsMaps.points(),
-                currentStandingsMaps.goalDifference(),
-                currentRound,
-                lastRound,
-                viewingRound,
-                null,
-                seasonCompleted,
-                roundState,
-                qry.targetDisplayName(),
-                null,
-                null // swap history not shown for other users
-                );
     }
 
     /**
@@ -414,7 +301,6 @@ public class GetUserPredictionUseCase {
                 null,
                 seasonCompleted,
                 roundState,
-                null,
                 null,
                 null // swap history not applicable
                 );

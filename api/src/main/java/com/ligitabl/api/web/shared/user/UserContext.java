@@ -14,7 +14,6 @@ public record UserContext(UUID userId, UserType userType, boolean hasContestEntr
     public enum UserType {
         AUTHENTICATED, // Logged-in user viewing own predictions
         GUEST, // Not logged in
-        VIEWING_OTHER, // Viewing another user's predictions
         USER_NOT_FOUND // Target user doesn't exist
     }
 
@@ -29,13 +28,6 @@ public record UserContext(UUID userId, UserType userType, boolean hasContestEntr
 
     public boolean isAuthenticated() {
         return userType == UserType.AUTHENTICATED;
-    }
-
-    /**
-     * Check if viewing another user's predictions.
-     */
-    public boolean isViewingOther() {
-        return userType == UserType.VIEWING_OTHER;
     }
 
     /**
@@ -58,14 +50,6 @@ public record UserContext(UUID userId, UserType userType, boolean hasContestEntr
     public static UserContext authenticated(UUID userId, boolean hasContestEntry) {
         Objects.requireNonNull(userId, "userId is required for authenticated user");
         return new UserContext(userId, UserType.AUTHENTICATED, hasContestEntry);
-    }
-
-    /**
-     * Create context for viewing another user's predictions.
-     */
-    public static UserContext viewingOther(UUID targetUserId, boolean hasContestEntry) {
-        Objects.requireNonNull(targetUserId, "targetUserId is required when viewing other user");
-        return new UserContext(targetUserId, UserType.VIEWING_OTHER, hasContestEntry);
     }
 
     /**
