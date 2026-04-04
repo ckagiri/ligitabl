@@ -435,7 +435,7 @@ window.Ligitabl.predictionPage = function(el) {
       } else {
         if (swapCount > 1) return false;
       }
-      return this.isOpeningRound ? true : this.canSwap;
+      return this.canSwap;
     },
     exceedsLimit() {
       if (this.isInitialPrediction || this.isOpeningRound) {
@@ -511,22 +511,25 @@ window.Ligitabl.predictionPage = function(el) {
       const toast = document.getElementById("saving-toast");
       if (toast) toast.classList.remove("hidden");
       let url, body;
+      const _working = this.originalTeams.map((t) => ({ ...t }));
+      const _targetPosition = Object.fromEntries(this.teams.map((t) => [t.code, t.position]));
+      const _derivedSwaps = [];
+      for (const t of _working) {
+        const tgt = _targetPosition[t.code];
+        if (t.position === tgt) continue;
+        const partner = _working.find((w) => w.position === tgt);
+        if (!partner) continue;
+        _derivedSwaps.push({ teamACode: t.code, teamBCode: partner.code });
+        const tmp = t.position;
+        t.position = partner.position;
+        partner.position = tmp;
+      }
       if (this.isInitialPrediction) {
         url = "/seasonprediction";
-        body = {
-          swaps: this.swapStack.map((entry) => ({
-            teamACode: entry.a,
-            teamBCode: entry.b
-          }))
-        };
+        body = { swaps: _derivedSwaps };
       } else if (this.isOpeningRound) {
         url = "/seasonprediction/opening-swaps";
-        body = {
-          swaps: this.swapStack.map((entry) => ({
-            teamACode: entry.a,
-            teamBCode: entry.b
-          }))
-        };
+        body = { swaps: _derivedSwaps };
       } else {
         const entry = this.swapStack[0];
         url = "/seasonprediction/swap";
@@ -539,7 +542,7 @@ window.Ligitabl.predictionPage = function(el) {
       }).then((response) => response.json()).then((data) => {
         if (data.success) {
           this._clearStorage(AUTH_STORAGE_KEY);
-          if (this.importedFromGuest || (this.isInitialPrediction && !this.isOpeningRound)) {
+          if (this.importedFromGuest || this.isInitialPrediction && !this.isOpeningRound) {
             this._clearStorage(GUEST_STORAGE_KEY);
           }
           setTimeout(() => {

@@ -405,9 +405,6 @@
               >
                 <div
                   class="flex items-center justify-center gap-0.5 select-none cursor-pointer"
-                  @mousedown="startFormLongPress(team.code)"
-                  @mouseup="cancelFormLongPress()"
-                  @mouseleave="cancelFormLongPress()"
                   @contextmenu.prevent
                 >
                   <template x-for="entry in getForm(team.code)" :key="entry.opponentCode + entry.result + entry.goalsFor">
