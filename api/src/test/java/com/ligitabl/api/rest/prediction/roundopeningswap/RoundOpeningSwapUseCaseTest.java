@@ -299,7 +299,7 @@ class RoundOpeningSwapUseCaseTest {
         // 2 swaps in the opening batch → 1 RoundSwap with 2 changes
         assertFalse(saved.getSwaps().isEmpty());
         var roundSwap = saved.getSwaps().stream()
-                .filter(rs -> rs.getRoundPosition() == round.getPosition())
+                .filter(rs -> rs.getRound() == round.getPosition())
                 .findFirst();
         assertTrue(roundSwap.isPresent());
         assertEquals(2, roundSwap.get().getChanges().size());
