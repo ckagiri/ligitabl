@@ -107,6 +107,7 @@ class MakeSwapUseCaseTest {
     @Test
     void shouldRejectSwap_whenCooldownActive() {
         prediction.setLastSwapAt(now.minus(Duration.ofHours(23)));
+        prediction.setOpeningCommittedRound(round.getPosition()); // opening window already used
         SwapCommand command = new SwapCommand("ARS", "LIV");
 
         when(clock.instant()).thenReturn(now);
