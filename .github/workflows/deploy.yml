@@ -173,6 +173,7 @@ jobs:
           MAILGUN_API_BASE_URL=${{ secrets.MAILGUN_API_BASE_URL }}
           FRONTEND_URL=${{ secrets.FRONTEND_URL }}
           LOGTAIL_TOKEN=${{ secrets.LOGTAIL_TOKEN }}
+          SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
           DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
           IMAGE_TAG=api-${{ github.sha }}
           VIRTUAL_HOST=${{ secrets.HOST_DOMAIN }}

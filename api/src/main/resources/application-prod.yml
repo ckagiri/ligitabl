@@ -6,3 +6,7 @@ umami:
 
 logtail:
   token: ${LOGTAIL_TOKEN:}
+
+sentry:
+  dsn: "https://bac721c29308da2b713e934ccfc86e53@o4511157514665985.ingest.de.sentry.io/4511157518139472"
+  send-default-pii: true

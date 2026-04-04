@@ -130,6 +130,11 @@ workflow:
   competition: PL
   exit-after: true
 
+# Sentry — empty DSN disables it outside prod
+sentry:
+  dsn: ""
+  send-default-pii: false
+
 # Analytics — empty by default so localhost never sends tracking data
 umami:
   website-id: ""

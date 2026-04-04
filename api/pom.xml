@@ -125,6 +125,12 @@
             <artifactId>logback-logtail</artifactId>
             <version>0.3.1</version>
         </dependency>
+        <!-- Sentry error monitoring -->
+        <dependency>
+            <groupId>io.sentry</groupId>
+            <artifactId>sentry-spring-boot-starter-jakarta</artifactId>
+            <version>8.0.0</version>
+        </dependency>
         <!-- Model module: generated jOOQ code and Liquibase changelogs -->
         <dependency>
             <groupId>com.ligitabl</groupId>
@@ -198,6 +204,25 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>io.sentry</groupId>
+                <artifactId>sentry-maven-plugin</artifactId>
+                <version>0.11.0</version>
+                <extensions>true</extensions>
+                <configuration>
+                    <debugSentryCli>true</debugSentryCli>
+                    <org>ligipredictor</org>
+                    <project>java-spring-boot</project>
+                    <authToken>${env.SENTRY_AUTH_TOKEN}</authToken>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>uploadSourceBundle</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
