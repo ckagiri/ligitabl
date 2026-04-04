@@ -290,19 +290,19 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         entryRepo.save(Entry.builder().userId(aliceId).contestId(contestId).build());
         entryRepo.save(Entry.builder().userId(bobId).contestId(contestId).build());
 
-        // Max score DESC (score+zeroes tied) should beat swaps ASC
-        // - Alice: higher max score but worse swaps
-        // - Bob: lower max score but better swaps
-        // Expected ordering: Alice first (max score precedes swaps)
+        // Swaps ASC (score+zeroes tied) should beat max score DESC
+        // - Alice: higher max score (100) but worse swaps (10)
+        // - Bob: lower max score (60) but better swaps (0)
+        // Expected ordering: Bob first (swaps precedes max score)
         createResult(aliceId, alicePredictionId, 1, 100, 0, 10);
         createResult(aliceId, alicePredictionId, 2, 0, 0, 0);
         createResult(bobId, bobPredictionId, 1, 60, 0, 0);
         createResult(bobId, bobPredictionId, 2, 40, 0, 0);
 
-        var byMaxThenSwaps = computeEntries(1, 2);
-        assertThat(byMaxThenSwaps).hasSize(2);
-        assertThat(byMaxThenSwaps.get(0).displayName()).isEqualTo("Alice");
-        assertThat(byMaxThenSwaps.get(1).displayName()).isEqualTo("Bob");
+        var bySwapsThenMax = computeEntries(1, 2);
+        assertThat(bySwapsThenMax).hasSize(2);
+        assertThat(bySwapsThenMax.get(0).displayName()).isEqualTo("Bob");
+        assertThat(bySwapsThenMax.get(1).displayName()).isEqualTo("Alice");
 
         PostgresTestDbCleaner.truncateAllDomainTables(jdbc);
         insertCompetitionSeasonAndContest();

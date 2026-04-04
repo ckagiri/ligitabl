@@ -78,7 +78,7 @@
             <!-- Access Mode Banners -->
             <div
               th:replace="~{fragments/access-banners :: banners(
-                ${isGuest}, ${canCreateEntry}, ${isViewingOther}, ${isUserNotFound},
+                ${isGuest}, ${canCreateEntry}, ${isUserNotFound},
                 ${swapStatus}, ${isCurrentRound}, ${roundState},
                 ${totalScore}, ${viewingRound}, ${hasRoundResult},
                 ${currentRound}, ${lastRound}, ${atRoundNumber}, ${seasonCompleted}, ${canSwap})}"
@@ -97,7 +97,7 @@ roundState=[[${roundState}]]
 isCurrentRound=[[${isCurrentRound}]] viewingRound=[[${viewingRound}]] currentRound=[[${currentRound}]] lastRound=[[${lastRound}]]
 atRoundNumber=[[${atRoundNumber}]] seasonCompleted=[[${seasonCompleted}]] hasRoundResult=[[${hasRoundResult}]]
 accessMode=[[${accessMode}]] canCreateEntry=[[${canCreateEntry}]] canSwap=[[${canSwap}]]
-isGuest=[[${isGuest}]] isViewingOther=[[${isViewingOther}]] isUserNotFound=[[${isUserNotFound}]]
+isGuest=[[${isGuest}]] isUserNotFound=[[${isUserNotFound}]]
 swapStatus.firstSwapBonus=[[${swapStatus != null ? swapStatus.firstSwapBonus : null}]]
 firstSwap.defaultMsg=[[${roundState != 'locked' || atRoundNumber == null || atRoundNumber == currentRound}]]
 firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRoundNumber > currentRound}]]</pre
@@ -238,9 +238,10 @@ firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRou
             th:attr="data-predictions=${predictionsJson},
                     data-round-open=${roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound)},
                     data-is-last-round=${currentRound == lastRound},
-                    data-can-swap=${canSwap && isHistoricalView == false && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
+                    data-can-swap=${(canSwap || isOpeningRound == true) && isHistoricalView == false && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
                     data-can-interact=${canInteract && isHistoricalView == false && (!isFinalRound || isFinalRoundOpen)},
                     data-is-initial-prediction=${canCreateEntry && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
+                    data-is-opening-round=${isOpeningRound == true},
                     data-current-standings=${currentStandingsJson},
                     data-fixtures=${fixturesJson},
                     data-current-points=${currentPointsJson},
@@ -303,7 +304,7 @@ firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRou
 
           <!-- Swap History (own predictions only, collapsible) -->
           <div
-            th:if="${(isGuest == false || isGuest == null) && (isViewingOther == false || isViewingOther == null) && swapHistory != null && !#lists.isEmpty(swapHistory)}"
+            th:if="${(isGuest == false || isGuest == null) && swapHistory != null && !#lists.isEmpty(swapHistory)}"
             x-cloak
             class="bg-white rounded-lg shadow-sm mb-6"
             x-data="{ open: false }"

@@ -76,6 +76,7 @@ public class MakeSwapController {
             case SwapError.TeamsNotFound __ -> 400;
             case SwapError.SeasonCompleted __ -> 409;
             case SwapError.CurrentRoundNotFound __ -> 404;
+            case SwapError.UseOpeningWindowFirst __ -> 409;
         };
     }
 
@@ -90,6 +91,7 @@ public class MakeSwapController {
                     + e.teamBCode();
             case SwapError.SeasonCompleted __ -> "Cannot swap in completed season";
             case SwapError.CurrentRoundNotFound __ -> "Current round not found";
+            case SwapError.UseOpeningWindowFirst e -> "Use your opening swaps for round " + e.round() + " first";
         };
     }
 }

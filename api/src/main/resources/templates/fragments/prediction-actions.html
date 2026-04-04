@@ -225,8 +225,8 @@
         </div>
       </div>
       <div class="text-xs text-gray-500">
-        <span x-show="isInitialPrediction">Limit: 5</span>
-        <span x-show="!isInitialPrediction">Limit: 1</span>
+        <span x-show="isInitialPrediction || isOpeningRound">Limit: 5</span>
+        <span x-show="!isInitialPrediction && !isOpeningRound">Limit: 1</span>
       </div>
     </div>
 
@@ -295,10 +295,10 @@
         <div class="flex-1">
           <p class="text-xs font-semibold text-red-800">Too many changes</p>
           <p class="text-xs text-red-700 mt-0.5">
-            <span x-show="isInitialPrediction"
+            <span x-show="isInitialPrediction || isOpeningRound"
               >Max 5 swaps allowed. Undo last or reset to continue.</span
             >
-            <span x-show="!isInitialPrediction"
+            <span x-show="!isInitialPrediction && !isOpeningRound"
               >Only 1 swap allowed per 24h. Undo last or reset to
               continue.</span
             >

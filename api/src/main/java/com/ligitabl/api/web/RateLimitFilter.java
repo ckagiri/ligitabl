@@ -8,6 +8,7 @@ import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.lang.NonNull;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -18,7 +19,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.lang.NonNull;
 
 /**
  * Global rate limiting filter using Bucket4j (token bucket algorithm).
@@ -41,8 +41,7 @@ public class RateLimitFilter extends OncePerRequestFilter {
     // Known bot/scanner paths that will never succeed on a Spring Boot app.
     // Silently dropped: no logging, no rate-limit token consumed.
     private static final List<String> BOT_PROBE_PREFIXES = List.of(
-            "/wp-admin", "/wp-login", "/wp-config", "/phpmyadmin",
-            "/xmlrpc.php", "/.env", "/.git", "/.DS_Store");
+            "/wp-admin", "/wp-login", "/wp-config", "/phpmyadmin", "/xmlrpc.php", "/.env", "/.git", "/.DS_Store");
 
     private final Bucket bucket;
 
@@ -55,8 +54,11 @@ public class RateLimitFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
-            @NonNull FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(
+            @NonNull HttpServletRequest request,
+            @NonNull HttpServletResponse response,
+            @NonNull FilterChain filterChain)
+            throws ServletException, IOException {
         String uri = request.getRequestURI();
         if (BOT_PROBE_PREFIXES.stream().anyMatch(uri::startsWith)) {
             response.setStatus(HttpStatus.NOT_FOUND.value());

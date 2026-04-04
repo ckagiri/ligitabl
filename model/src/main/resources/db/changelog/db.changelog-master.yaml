@@ -39,3 +39,5 @@ databaseChangeLog:
       file: db/changelog/20260327_1_round_advancement.yaml
   - include:
       file: db/changelog/20260328_1_entity_timestamps.yaml
+  - include:
+      file: db/changelog/20260404_1_opening_committed_round.yaml

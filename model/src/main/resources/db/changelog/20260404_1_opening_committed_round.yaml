@@ -1,0 +1,20 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260404_1_opening_committed_round
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_season_prediction
+            schemaName: public
+      changes:
+        - addColumn:
+            tableName: t_season_prediction
+            schemaName: public
+            columns:
+              - column:
+                  name: c_opening_committed_round
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false

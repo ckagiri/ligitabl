@@ -266,13 +266,13 @@
                       scope="col"
                       class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
                     >
-                      Best
+                      Swaps
                     </th>
                     <th
                       scope="col"
                       class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
                     >
-                      Swaps
+                      Best
                     </th>
                     <th
                       scope="col"
@@ -378,22 +378,22 @@
                       >
                     </td>
                     <td
-                      class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-600"
-                    >
-                      <span th:if="${entry.scored}" th:text="${entry.maxScore}"
-                        >52</span
-                      >
-                      <span th:if="${!entry.scored}" class="text-gray-400"
-                        >—</span
-                      >
-                    </td>
-                    <td
                       class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-500"
                     >
                       <span
                         th:if="${entry.scored}"
                         th:text="${entry.totalSwaps}"
                         >23</span
+                      >
+                      <span th:if="${!entry.scored}" class="text-gray-400"
+                        >—</span
+                      >
+                    </td>
+                    <td
+                      class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-600"
+                    >
+                      <span th:if="${entry.scored}" th:text="${entry.maxScore}"
+                        >52</span
                       >
                       <span th:if="${!entry.scored}" class="text-gray-400"
                         >—</span
