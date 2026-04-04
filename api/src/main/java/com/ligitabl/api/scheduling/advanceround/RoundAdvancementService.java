@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
 
+import io.sentry.Sentry;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
@@ -132,6 +133,7 @@ public class RoundAdvancementService {
 
         } catch (Exception e) {
             log.error("Failed to auto-advance round={}", roundId, e);
+            Sentry.captureException(e);
             // TODO: send advancement failure email to admin
         }
     }

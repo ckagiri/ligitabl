@@ -8,7 +8,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="_csrf" th:content="${_csrf.token}" />
     <meta name="_csrf_header" th:content="${_csrf.headerName}" />
-    <title th:text="${pageTitle} + ' | LigiPredictor'">LigiPredictor</title>
+    <title th:text="${pageTitle != null ? pageTitle + ' | LigiPredictor' : 'LigiPredictor'}">LigiPredictor</title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}" />

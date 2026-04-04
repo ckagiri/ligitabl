@@ -1,5 +1,6 @@
 package com.ligitabl.api.scheduling;
 
+import io.sentry.Sentry;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +17,12 @@ public class PasswordResetTokenCleanupJob {
 
     @Scheduled(cron = "0 0 2 * * *")
     public void cleanupExpiredTokens() {
-        int removed = passwordResetTokenRepo.deleteExpired();
-        log.info("Password reset token cleanup removed {} expired tokens", removed);
+        try {
+            int removed = passwordResetTokenRepo.deleteExpired();
+            log.info("Password reset token cleanup removed {} expired tokens", removed);
+        } catch (Exception e) {
+            log.error("Password reset token cleanup failed", e);
+            Sentry.captureException(e);
+        }
     }
 }

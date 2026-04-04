@@ -2,6 +2,7 @@ package com.ligitabl.api.web;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.List;
 
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
@@ -37,6 +38,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private static final int REQUESTS_PER_MINUTE = 20;
 
+    // Known bot/scanner paths that will never succeed on a Spring Boot app.
+    // Silently dropped: no logging, no rate-limit token consumed.
+    private static final List<String> BOT_PROBE_PREFIXES = List.of(
+            "/wp-admin", "/wp-login", "/wp-config", "/phpmyadmin",
+            "/xmlrpc.php", "/.env", "/.git", "/.DS_Store");
+
     private final Bucket bucket;
 
     public RateLimitFilter() {
@@ -50,6 +57,12 @@ public class RateLimitFilter extends OncePerRequestFilter {
     @Override
     protected void doFilterInternal(@NonNull HttpServletRequest request, @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
+        String uri = request.getRequestURI();
+        if (BOT_PROBE_PREFIXES.stream().anyMatch(uri::startsWith)) {
+            response.setStatus(HttpStatus.NOT_FOUND.value());
+            return;
+        }
+
         if (bucket.tryConsume(1)) {
             filterChain.doFilter(request, response);
         } else {

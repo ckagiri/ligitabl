@@ -15,6 +15,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
 
+import io.sentry.Sentry;
 import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.api.scheduling.advanceround.RoundAdvancementService;
 
@@ -161,6 +162,7 @@ public class MatchSyncScheduler {
 
         } catch (Exception e) {
             log.error("Unexpected error during match sync", e);
+            Sentry.captureException(e);
 
             consecutiveFailures++;
             if (consecutiveFailures >= maxConsecutiveFailures) {
@@ -197,6 +199,7 @@ public class MatchSyncScheduler {
                     });
         } catch (Exception e) {
             log.error("Error triggering finalization", e);
+            Sentry.captureException(e);
         }
     }
 
@@ -208,6 +211,7 @@ public class MatchSyncScheduler {
             roundAdvancementService.scheduleAdvancement(roundId, seasonId);
         } catch (Exception e) {
             log.error("Failed to schedule round advancement: round={}, season={}", roundId, seasonId, e);
+            Sentry.captureException(e);
         }
     }
 

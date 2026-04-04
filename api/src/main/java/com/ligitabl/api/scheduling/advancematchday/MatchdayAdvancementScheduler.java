@@ -1,5 +1,6 @@
 package com.ligitabl.api.scheduling.advancematchday;
 
+import io.sentry.Sentry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -75,6 +76,7 @@ public class MatchdayAdvancementScheduler {
 
         } catch (Exception e) {
             log.error("Unexpected error during round advancement check", e);
+            Sentry.captureException(e);
         }
     }
 

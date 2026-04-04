@@ -173,6 +173,7 @@ jobs:
           MAILGUN_API_BASE_URL=${{ secrets.MAILGUN_API_BASE_URL }}
           FRONTEND_URL=${{ secrets.FRONTEND_URL }}
           LOGTAIL_TOKEN=${{ secrets.LOGTAIL_TOKEN }}
+          SENTRY_AUTH_TOKEN=${{ secrets.SENTRY_AUTH_TOKEN }}
           DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
           IMAGE_TAG=api-${{ github.sha }}
           VIRTUAL_HOST=${{ secrets.HOST_DOMAIN }}
@@ -244,10 +245,12 @@ jobs:
 
             echo "📊 Deployment complete!"
 
-            echo "🔒 Applying nginx rate limit config..."
+            echo "🔒 Applying nginx config..."
             docker cp ~/.deploy/ligitabl/nginx/conf.d/rate-limit.conf \
               nginx-proxy:/etc/nginx/conf.d/rate-limit.conf
             docker cp ~/.deploy/ligitabl/nginx/vhost.d/default_location \
               nginx-proxy:/etc/nginx/vhost.d/default_location
+            docker cp ~/.deploy/ligitabl/nginx/vhost.d/default \
+              nginx-proxy:/etc/nginx/vhost.d/default
             docker exec nginx-proxy nginx -s reload
-            echo "✅ nginx rate limiting active."
+            echo "✅ nginx rate limiting and bot blocking active."
