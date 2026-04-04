@@ -58,7 +58,9 @@ class RateLimitFilterTest {
         filter.doFilter(request, response, chain);
 
         assertThat(response.getStatus()).isEqualTo(429);
-        assertThat(chain.getRequest()).as("filter chain should NOT have been invoked").isNull();
+        assertThat(chain.getRequest())
+                .as("filter chain should NOT have been invoked")
+                .isNull();
     }
 
     @Test

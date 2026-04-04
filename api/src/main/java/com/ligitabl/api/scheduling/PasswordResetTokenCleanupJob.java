@@ -1,11 +1,11 @@
 package com.ligitabl.api.scheduling;
 
-import io.sentry.Sentry;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.model.repo.PasswordResetTokenRepo;
 
+import io.sentry.Sentry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
