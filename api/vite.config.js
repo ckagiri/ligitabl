@@ -18,8 +18,8 @@ export default defineConfig(({ mode }) => {
 
       rollupOptions: {
         input: {
-          main: resolve(__dirname, "assets/css/main.css"),
-          app: resolve(__dirname, "assets/js/ligitabl.js"),
+          main: resolve(__dirname, "src/main/resources/assets/css/main.css"),
+          app: resolve(__dirname, "src/main/resources/assets/js/ligitabl.js"),
         },
         output: {
           assetFileNames: "css/[name][extname]",
