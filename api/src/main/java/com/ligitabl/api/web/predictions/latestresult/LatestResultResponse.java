@@ -8,4 +8,6 @@ public record LatestResultResponse(
         HitDistribution hitDistribution,
         String sprint,
         int sprintFrom,
-        int sprintTo) {}
+        int sprintTo,
+        int sprintBest,
+        boolean isNewSprintBest) {}

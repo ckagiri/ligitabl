@@ -77,6 +77,8 @@ public class GetLatestResultUseCase {
         Integer position = null;
         Integer movement = null;
         String sprint = null;
+        int sprintBest = 0;
+        boolean isNewSprintBest = false;
 
         // Find the sprint for this round
         var competition = competitionRepo
@@ -106,6 +108,8 @@ public class GetLatestResultUseCase {
                 if (userEntry != null) {
                     position = userEntry.position();
                     movement = userEntry.movement();
+                    sprintBest = userEntry.maxScore();
+                    isNewSprintBest = result.getTotalScore() == sprintBest && round > sprintPhase.getFrom();
                 }
             }
         }
@@ -118,7 +122,9 @@ public class GetLatestResultUseCase {
                 distribution,
                 sprint,
                 sprintPhase.getFrom(),
-                sprintPhase.getTo());
+                sprintPhase.getTo(),
+                sprintBest,
+                isNewSprintBest);
     }
 
     private RoundSpan findSprintForRound(Competition competition, int round) {
