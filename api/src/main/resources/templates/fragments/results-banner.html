@@ -44,15 +44,29 @@
           th:replace="~{fragments/score-emoji :: emoji(${result.score})}"
         ></span>
       </p>
-      <p th:if="${result.movement != null && result.movement != 0}" class="text-sm mt-1 text-gray-500">
-        <span th:text="${result.sprint}">S3</span> GW <span th:text="${result.sprintFrom}">28</span>–<span th:text="${result.sprintTo}">30</span>:
-        <span th:if="${result.movement > 0}" class="text-green-600 font-semibold">
-          ↑ <span th:text="${result.movement}">3</span> <span th:text="${result.movement == 1 ? 'position' : 'positions'}">positions</span>
-        </span>
-        <span th:if="${result.movement < 0}" class="text-red-600 font-semibold">
-          ↓ <span th:text="${T(java.lang.Math).abs(result.movement)}">2</span> <span th:text="${T(java.lang.Math).abs(result.movement) == 1 ? 'position' : 'positions'}">positions</span>
-        </span>
-      </p>
+      <th:block th:if="${result.sprintBest > 0}">
+        <p class="text-xs text-gray-400 mt-2 font-medium">
+          <span th:text="${result.sprint}">S3</span> · GW <span th:text="${result.sprintFrom}">28</span>–<span th:text="${result.sprintTo}">30</span>
+        </p>
+        <p th:if="${result.round == result.sprintFrom}" class="text-sm mt-0.5 text-gray-500">
+          🏁 Your sprint best: <span class="font-semibold" th:text="${result.sprintBest}">180</span> pts
+        </p>
+        <p th:if="${result.isNewSprintBest}" class="text-sm mt-0.5 text-amber-600 font-semibold">
+          🎉 New sprint best — <span th:text="${result.sprintBest}">180</span> pts!
+        </p>
+        <p th:if="${result.round != result.sprintFrom && !result.isNewSprintBest}" class="text-sm mt-0.5 text-gray-400">
+          📉 Your sprint best: <span class="font-semibold" th:text="${result.sprintBest}">180</span> pts
+        </p>
+        <p th:if="${result.movement != null && result.movement != 0}" class="text-sm mt-0.5">
+          <span th:if="${result.movement > 0}" class="text-green-600 font-semibold">
+            ↑ <span th:text="${result.movement}">3</span> <span th:text="${result.movement == 1 ? 'place' : 'places'}">places</span>
+          </span>
+          <span th:if="${result.movement < 0}" class="text-red-600 font-semibold">
+            ↓ <span th:text="${T(java.lang.Math).abs(result.movement)}">2</span> <span th:text="${T(java.lang.Math).abs(result.movement) == 1 ? 'place' : 'places'}">places</span>
+          </span>
+          <span class="text-gray-400">in <span th:text="${result.sprint}">S3</span></span>
+        </p>
+      </th:block>
     </div>
 
     <!-- Distribution (2x2) -->
