@@ -27,6 +27,18 @@
               >Sign Up</a
             >
             <a
+              th:unless="${isLoggedIn}"
+              th:href="${predictionsNavLink} ?: '/my-table/guest'"
+              class="w-full sm:w-auto bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-indigo-600 transition transform hover:scale-105 shadow-lg text-center"
+              >Try the Table First →</a
+            >
+            <a
+              th:if="${isLoggedIn}"
+              th:href="${predictionsNavLink}"
+              class="w-full sm:w-auto bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition transform hover:scale-105 shadow-lg text-center"
+              >Go to My Table →</a
+            >
+            <a
               th:href="@{/leaderboard}"
               class="w-full sm:w-auto bg-indigo-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-indigo-400 transition transform hover:scale-105 shadow-lg text-center"
               >View Leaderboard</a
@@ -40,30 +52,6 @@
               >Sign in</a
             >
           </p>
-          <div class="mt-4">
-            <a
-              th:href="${predictionsNavLink} ?: '/my-table/guest'"
-              class="inline-flex items-center gap-2 text-white hover:text-indigo-100 font-medium text-base underline decoration-2 underline-offset-4 transition group"
-            >
-              <span
-                th:text="${isLoggedIn} ? 'Go to My Table' : 'Go to Prediction Table'"
-                >Go to My Table</span
-              >
-              <svg
-                class="h-5 w-5 transform group-hover:translate-x-1 transition-transform"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
-            </a>
-          </div>
         </div>
       </div>
 
@@ -81,12 +69,12 @@
             </div>
             <div>
               <h4 class="font-semibold text-gray-900 mb-1">
-                🎯 Sign Up &amp; Make Your Prediction
+                🎯 Predict the Table — No Account Needed to Try
               </h4>
               <p class="text-gray-600">
-                Create your account and rank the teams. Start from recent
-                standings — make 1 to 5 swaps to set your opening table, then
-                submit to join.
+                Tap teams to swap them and set your predicted final table. Try
+                it as a guest first — when you're ready, sign up to save your
+                prediction and compete.
               </p>
             </div>
           </div>
@@ -227,6 +215,14 @@
                 competitive in the very next sprint.
               </p>
             </div>
+          </div>
+          <div class="mt-6">
+            <a
+              th:unless="${isLoggedIn}"
+              th:href="${predictionsNavLink} ?: '/my-table/guest'"
+              class="inline-block bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition shadow-md"
+              >Preview the Table →</a
+            >
           </div>
           <p class="mt-8 text-sm font-semibold text-green-700 italic">
             "Prepare for the next sprint. Compete on a good footing."
