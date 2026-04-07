@@ -24,6 +24,64 @@
         <input type="checkbox" x-model="showForm" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
         <span>Show form</span>
       </label>
+      <!-- Form legend — visible when showForm is on -->
+      <div
+        x-show="showForm"
+        class="col-span-2 flex items-center gap-3 pl-1 text-[11px] text-gray-500 select-none"
+      >
+        <span class="relative flex items-center gap-1 cursor-help" x-data="{ tip: false }" @mouseenter="tip = true" @mouseleave="tip = false">
+          <span class="inline-block w-3 h-3 rounded-full bg-gray-400 flex-shrink-0"></span>
+          <span>Home</span>
+          <span x-show="tip" x-transition.opacity.duration.100ms
+                class="absolute bottom-full left-0 mb-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1
+                       text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none">
+            Circle = home game
+            <span class="absolute top-full left-2 border-4 border-transparent border-t-gray-200"></span>
+          </span>
+        </span>
+        <span class="relative flex items-center gap-1 cursor-help" x-data="{ tip: false }" @mouseenter="tip = true" @mouseleave="tip = false">
+          <span class="inline-block w-3 h-3 rounded-sm bg-gray-400 flex-shrink-0"></span>
+          <span>Away</span>
+          <span x-show="tip" x-transition.opacity.duration.100ms
+                class="absolute bottom-full left-0 mb-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1
+                       text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none">
+            Square = away game
+            <span class="absolute top-full left-2 border-4 border-transparent border-t-gray-200"></span>
+          </span>
+        </span>
+        <span class="text-gray-300">|</span>
+        <span class="relative flex items-center gap-1 cursor-help" x-data="{ tip: false }" @mouseenter="tip = true" @mouseleave="tip = false">
+          <span class="inline-block w-3 h-3 rounded-sm bg-green-500 flex-shrink-0"></span>
+          <span>W</span>
+          <span x-show="tip" x-transition.opacity.duration.100ms
+                class="absolute bottom-full left-0 mb-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1
+                       text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none">
+            Win
+            <span class="absolute top-full left-2 border-4 border-transparent border-t-gray-200"></span>
+          </span>
+        </span>
+        <span class="relative flex items-center gap-1 cursor-help" x-data="{ tip: false }" @mouseenter="tip = true" @mouseleave="tip = false">
+          <span class="inline-block w-3 h-3 rounded-sm bg-amber-400 flex-shrink-0"></span>
+          <span>D</span>
+          <span x-show="tip" x-transition.opacity.duration.100ms
+                class="absolute bottom-full left-0 mb-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1
+                       text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none">
+            Draw
+            <span class="absolute top-full left-2 border-4 border-transparent border-t-gray-200"></span>
+          </span>
+        </span>
+        <span class="relative flex items-center gap-1 cursor-help" x-data="{ tip: false }" @mouseenter="tip = true" @mouseleave="tip = false">
+          <span class="inline-block w-3 h-3 rounded-sm bg-red-500 flex-shrink-0"></span>
+          <span>L</span>
+          <span x-show="tip" x-transition.opacity.duration.100ms
+                class="absolute bottom-full left-0 mb-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1
+                       text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none">
+            Loss
+            <span class="absolute top-full left-2 border-4 border-transparent border-t-gray-200"></span>
+          </span>
+        </span>
+      </div>
+
       <label class="col-span-2 flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition">
         <input type="checkbox" x-model="showStandings" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
         <span class="hidden sm:inline">Compare with current standings</span>
@@ -105,12 +163,32 @@
               scope="col"
               class="hidden sm:table-cell px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider"
             >
-              Form
+              <span class="inline-flex items-center gap-1">
+                Form
+                <span
+                  class="relative"
+                  x-data="{ tip: false }"
+                  @mouseenter="tip = true"
+                  @mouseleave="tip = false"
+                >
+                  <span class="text-gray-400 cursor-help leading-none">ⓘ</span>
+                  <span
+                    x-show="tip"
+                    x-transition.opacity.duration.100ms
+                    class="absolute top-full right-0 mt-1.5 z-50
+                           bg-white border border-gray-200 shadow-md rounded px-2 py-1
+                           text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none normal-case tracking-normal"
+                  >
+                    Hover a dot to see the match score
+                    <span class="absolute bottom-full right-1 border-4 border-transparent border-b-gray-200"></span>
+                  </span>
+                </span>
+              </span>
             </th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <template x-for="team in teams" :key="team.code">
+          <template x-for="(team, teamIndex) in teams" :key="team.code">
             <tr
               @click="teamClick(team.code)"
               :data-team-code="team.code"
@@ -279,7 +357,7 @@
 
                         <!-- Form circles (mobile) — tap circles only to see match details -->
                         <template x-if="showForm && getForm(team.code).length > 0">
-                          <div class="flex basis-full items-center mt-0.5">
+                          <div class="flex basis-full items-center gap-1.5 mt-0.5">
                             <span
                               class="inline-flex items-center gap-0.5 cursor-pointer"
                               @click.stop="showFormPopup(team.code, team.shortName)"
@@ -291,6 +369,7 @@
                                 ></span>
                               </template>
                             </span>
+                            <span x-show="teamIndex === 0" class="text-[10px] text-gray-400">tap for scores</span>
                           </div>
                         </template>
                       </div>
@@ -415,7 +494,7 @@
                       @mouseleave="tip = false"
                     >
                       <span
-                        class="flex items-center justify-center w-3 h-3 flex-shrink-0 cursor-default"
+                        class="flex items-center justify-center w-3 h-3 flex-shrink-0 cursor-help"
                         :class="(entry.result === 'W' ? 'bg-green-500' : entry.result === 'D' ? 'bg-amber-400' : 'bg-red-500') + (entry.wasHome ? ' rounded-full' : ' rounded-sm')"
                       ></span>
                       <span
