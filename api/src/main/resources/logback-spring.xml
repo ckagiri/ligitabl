@@ -18,17 +18,25 @@
     <appender name="Logtail" class="com.logtail.logback.LogtailAppender">
       <appName>ligitabl</appName>
       <sourceToken>${LOGTAIL_TOKEN}</sourceToken>
-      <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
-        <evaluator class="ch.qos.logback.classic.boolex.JaninoEventEvaluator">
-          <expression>
-            level.isGreaterOrEqual(WARN) ||
-            (level.isGreaterOrEqual(INFO) &amp;&amp; logger.startsWith("com.ligitabl.api.scheduling"))
-          </expression>
-        </evaluator>
-        <onMatch>ACCEPT</onMatch>
-        <onMismatch>DENY</onMismatch>
+      <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+        <level>WARN</level>
       </filter>
     </appender>
+
+    <!-- Separate appender for scheduling: INFO+ without the WARN threshold -->
+    <appender name="LogtailScheduling" class="com.logtail.logback.LogtailAppender">
+      <appName>ligitabl</appName>
+      <sourceToken>${LOGTAIL_TOKEN}</sourceToken>
+      <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
+        <level>INFO</level>
+      </filter>
+    </appender>
+
+    <!-- additivity=false: scheduling logs go here only, not through root's WARN-filtered Logtail -->
+    <logger name="com.ligitabl.api.scheduling" level="INFO" additivity="false">
+      <appender-ref ref="Console"/>
+      <appender-ref ref="LogtailScheduling"/>
+    </logger>
 
     <root level="INFO">
       <appender-ref ref="Console"/>
