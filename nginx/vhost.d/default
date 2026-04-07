@@ -3,3 +3,8 @@
 location ~* ^/(wp-admin|wp-login\.php|wp-config\.php|phpmyadmin|xmlrpc\.php|\.env|\.git|\.DS_Store) {
     return 444;
 }
+
+# Block all .php requests — this app has no PHP; these are always scanners.
+location ~* \.php$ {
+    return 444;
+}
