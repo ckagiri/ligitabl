@@ -125,6 +125,11 @@
             <artifactId>logback-logtail</artifactId>
             <version>0.3.1</version>
         </dependency>
+        <!-- Janino: required for EvaluatorFilter expressions in logback-spring.xml -->
+        <dependency>
+            <groupId>org.codehaus.janino</groupId>
+            <artifactId>janino</artifactId>
+        </dependency>
         <!-- Sentry error monitoring -->
         <dependency>
             <groupId>io.sentry</groupId>

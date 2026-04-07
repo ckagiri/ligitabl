@@ -146,9 +146,7 @@ public class MatchSyncScheduler {
                         }
 
                         if (success.allMatchesComplete()) {
-                            log.info(
-                                    "All matches complete; triggering finalization check",
-                                    success.allMatchesComplete());
+                            log.info("All matches complete; triggering finalization check");
                             triggerFinalization(success);
                         }
 
@@ -226,7 +224,7 @@ public class MatchSyncScheduler {
         Instant nextRun = Instant.now().plus(delay);
         currentTask = taskScheduler.schedule(this::executeSync, Objects.requireNonNull(nextRun));
 
-        log.debug("Next sync scheduled for: {}", nextRun);
+        log.info("Next sync scheduled for: {}", nextRun);
     }
 
     private String formatDuration(Duration duration) {
