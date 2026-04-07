@@ -8,8 +8,7 @@ import com.ligitabl.api.web.shared.user.UserContext;
 /**
  * Command for retrieving user predictions with user context and optional round.
  */
-public record GetUserPredictionQuery(
-        UserContext userContext, UUID seasonId, Integer requestedRound) {
+public record GetUserPredictionQuery(UserContext userContext, UUID seasonId, Integer requestedRound) {
     public GetUserPredictionQuery {
         Objects.requireNonNull(userContext, "userContext is required");
         Objects.requireNonNull(seasonId, "seasonId is required");

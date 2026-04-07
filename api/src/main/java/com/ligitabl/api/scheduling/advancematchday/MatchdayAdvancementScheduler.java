@@ -67,7 +67,7 @@ public class MatchdayAdvancementScheduler {
                                     success.newMatchday(),
                                     success.seasonId());
                         } else {
-                            log.debug(
+                            log.info(
                                     "No round advancement needed: {} (matchday: {})",
                                     success.reason(),
                                     success.newMatchday());

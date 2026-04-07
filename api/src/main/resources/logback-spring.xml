@@ -13,13 +13,20 @@
     </encoder>
   </appender>
 
-  <!-- Logtail: prod profile only, WARN and above to stay within free tier -->
+  <!-- Logtail: prod profile only. WARN+ globally; INFO+ for scheduling package. -->
   <springProfile name="prod">
     <appender name="Logtail" class="com.logtail.logback.LogtailAppender">
       <appName>ligitabl</appName>
       <sourceToken>${LOGTAIL_TOKEN}</sourceToken>
-      <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-        <level>WARN</level>
+      <filter class="ch.qos.logback.core.filter.EvaluatorFilter">
+        <evaluator class="ch.qos.logback.classic.boolex.JaninoEventEvaluator">
+          <expression>
+            level.isGreaterOrEqual(WARN) ||
+            (level.isGreaterOrEqual(INFO) &amp;&amp; logger.startsWith("com.ligitabl.api.scheduling"))
+          </expression>
+        </evaluator>
+        <onMatch>ACCEPT</onMatch>
+        <onMismatch>DENY</onMismatch>
       </filter>
     </appender>
 
