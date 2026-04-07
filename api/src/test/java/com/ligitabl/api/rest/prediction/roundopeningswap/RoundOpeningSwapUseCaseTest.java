@@ -20,7 +20,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.makeswap.SwapCommand;
-import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -37,11 +36,20 @@ class RoundOpeningSwapUseCaseTest {
 
     private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
 
-    @Mock private SeasonPredictionRepo predictionRepo;
-    @Mock private SeasonRepo seasonRepo;
-    @Mock private RoundRepo roundRepo;
-    @Mock private MatchRepo matchRepo;
-    @Mock private Clock clock;
+    @Mock
+    private SeasonPredictionRepo predictionRepo;
+
+    @Mock
+    private SeasonRepo seasonRepo;
+
+    @Mock
+    private RoundRepo roundRepo;
+
+    @Mock
+    private MatchRepo matchRepo;
+
+    @Mock
+    private Clock clock;
 
     private RoundOpeningSwapUseCase useCase;
 
@@ -86,27 +94,35 @@ class RoundOpeningSwapUseCaseTest {
         assertTrue(swapResult.success());
         assertEquals(1, swapResult.swapsApplied());
 
-        verify(predictionRepo).save(argThat(p ->
-                p.getOpeningCommittedRound() == round.getPosition()
-                && now.equals(p.getLastSwapAt())
-                && p.getCurrentRankings().stream().anyMatch(t -> t.getCode().equals("ARS") && t.getPosition() == 2)
-                && p.getCurrentRankings().stream().anyMatch(t -> t.getCode().equals("LIV") && t.getPosition() == 1)));
+        verify(predictionRepo)
+                .save(argThat(p -> p.getOpeningCommittedRound() == round.getPosition()
+                        && now.equals(p.getLastSwapAt())
+                        && p.getCurrentRankings().stream()
+                                .anyMatch(t -> t.getCode().equals("ARS") && t.getPosition() == 2)
+                        && p.getCurrentRankings().stream()
+                                .anyMatch(t -> t.getCode().equals("LIV") && t.getPosition() == 1)));
     }
 
     @Test
     void shouldApplyMultipleSwaps_upToFive() {
         // ARS↔LIV, MCI↔CHE, TOT↔ARS (chain of 3)
-        var command = new RoundOpeningSwapCommand(List.of(
-                new SwapCommand("ARS", "LIV"),
-                new SwapCommand("MCI", "CHE"),
-                new SwapCommand("TOT", "MAN")));
+        var command = new RoundOpeningSwapCommand(
+                List.of(new SwapCommand("ARS", "LIV"), new SwapCommand("MCI", "CHE"), new SwapCommand("TOT", "MAN")));
 
         season = createSeasonWithRankings(List.of(
-                TeamRank.of("ARS", 1), TeamRank.of("LIV", 2), TeamRank.of("MCI", 3),
-                TeamRank.of("CHE", 4), TeamRank.of("TOT", 5), TeamRank.of("MAN", 6)));
+                TeamRank.of("ARS", 1),
+                TeamRank.of("LIV", 2),
+                TeamRank.of("MCI", 3),
+                TeamRank.of("CHE", 4),
+                TeamRank.of("TOT", 5),
+                TeamRank.of("MAN", 6)));
         prediction = createPredictionWithRankings(List.of(
-                TeamRank.of("ARS", 1), TeamRank.of("LIV", 2), TeamRank.of("MCI", 3),
-                TeamRank.of("CHE", 4), TeamRank.of("TOT", 5), TeamRank.of("MAN", 6)));
+                TeamRank.of("ARS", 1),
+                TeamRank.of("LIV", 2),
+                TeamRank.of("MCI", 3),
+                TeamRank.of("CHE", 4),
+                TeamRank.of("TOT", 5),
+                TeamRank.of("MAN", 6)));
 
         when(clock.instant()).thenReturn(now);
         when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
@@ -130,9 +146,9 @@ class RoundOpeningSwapUseCaseTest {
 
         useCase.execute(userId, command);
 
-        verify(predictionRepo).save(argThat(p ->
-                p.getOpeningCommittedRound() == round.getPosition()
-                && now.equals(p.getLastSwapAt())));
+        verify(predictionRepo)
+                .save(argThat(
+                        p -> p.getOpeningCommittedRound() == round.getPosition() && now.equals(p.getLastSwapAt())));
     }
 
     @Test
@@ -271,9 +287,8 @@ class RoundOpeningSwapUseCaseTest {
         stubHappyPath();
 
         // First swap is valid, second has a bad code
-        var command = new RoundOpeningSwapCommand(List.of(
-                new SwapCommand("ARS", "LIV"),
-                new SwapCommand("ARS", "BAD")));
+        var command =
+                new RoundOpeningSwapCommand(List.of(new SwapCommand("ARS", "LIV"), new SwapCommand("ARS", "BAD")));
         var result = useCase.execute(userId, command);
 
         assertTrue(result.isLeft());
@@ -316,8 +331,7 @@ class RoundOpeningSwapUseCaseTest {
     }
 
     private Season createSeason() {
-        return createSeasonWithRankings(List.of(
-                TeamRank.of("ARS", 1), TeamRank.of("LIV", 2), TeamRank.of("MCI", 3)));
+        return createSeasonWithRankings(List.of(TeamRank.of("ARS", 1), TeamRank.of("LIV", 2), TeamRank.of("MCI", 3)));
     }
 
     private Season createSeasonWithRankings(List<TeamRank> rankings) {
@@ -341,8 +355,8 @@ class RoundOpeningSwapUseCaseTest {
     }
 
     private SeasonPrediction createPrediction() {
-        return createPredictionWithRankings(List.of(
-                TeamRank.of("ARS", 1), TeamRank.of("LIV", 2), TeamRank.of("MCI", 3)));
+        return createPredictionWithRankings(
+                List.of(TeamRank.of("ARS", 1), TeamRank.of("LIV", 2), TeamRank.of("MCI", 3)));
     }
 
     private SeasonPrediction createPredictionWithRankings(List<TeamRank> rankings) {
