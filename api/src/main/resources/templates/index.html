@@ -15,7 +15,7 @@
             ⚽ LigiPredictor | Rank 'Em Right
           </h1>
           <p class="text-lg sm:text-xl mb-8 text-indigo-100">
-            Predict the Premier League table. Swap smart. Rank 'Em Right.
+            Predict the table after each round. Swap smart. Rank 'Em Right.
           </p>
           <div
             class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-6"
@@ -72,9 +72,9 @@
                 🎯 Predict the Table — No Account Needed to Try
               </h4>
               <p class="text-gray-600">
-                Tap teams to swap them and set your predicted final table. Try
-                it as a guest first — when you're ready, sign up to save your
-                prediction and compete.
+                Tap teams to swap them and set your predicted table for the
+                gameweek. Try it as a guest first — when you're ready, sign up
+                to save your prediction and compete.
               </p>
             </div>
           </div>
@@ -94,6 +94,28 @@
                 hours while the round is open. Every swap is a chance to gain an edge, every swap
                 counts.
               </p>
+            </div>
+          </div>
+          <div class="ml-12" x-data="{ open: false }">
+            <button
+              type="button"
+              @click="open = !open"
+              class="flex items-center gap-2 text-sm text-amber-700 font-semibold hover:text-amber-900 transition"
+            >
+              <svg
+                class="h-4 w-4 transition-transform duration-200"
+                :class="open ? 'rotate-180' : ''"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+              ⚖️ The Swap Dilemma
+            </button>
+            <div x-show="open" x-transition x-cloak class="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
+              The leaderboard ranks by Total Points → Zeroes → Fewest Swaps Used.
+              Using many swaps helps you climb — but it might cost you a tie-break later.
             </div>
           </div>
           <div class="flex items-start space-x-4">
@@ -202,9 +224,8 @@
             <div class="flex items-start gap-3">
               <span class="text-green-500 font-bold text-lg mt-0.5">✓</span>
               <p class="text-sm text-gray-700">
-                <strong>Use the current sprint to prepare.</strong> Study the
-                table, make smart swaps, and set yourself up for the next sprint
-                on the best possible footing.
+                <strong>Each round opens with a fresh batch.</strong> Study the
+                table, pick your moves, and be ready before the first fixture kicks off.
               </p>
             </div>
             <div class="flex items-start gap-3">
@@ -224,9 +245,6 @@
               >Preview the Table →</a
             >
           </div>
-          <p class="mt-8 text-sm font-semibold text-green-700 italic">
-            "Prepare for the next sprint. Compete on a good footing."
-          </p>
         </div>
       </div>
 
