@@ -11,11 +11,15 @@
         class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 sm:p-12 mb-12 text-white"
       >
         <div class="max-w-4xl mx-auto text-center">
-          <h1 class="text-4xl sm:text-5xl font-extrabold mb-6 animate-pulse">
-            ⚽ LigiPredictor | Rank 'Em Right
+          <h1 class="text-4xl sm:text-5xl font-extrabold mb-3 animate-pulse">
+            ⚽ LigiPredictor
           </h1>
-          <p class="text-lg sm:text-xl mb-8 text-indigo-100">
-            Predict the table after each round. Swap smart. Rank 'Em Right.
+          <div class="mb-8">
+            <p class="text-xs uppercase tracking-widest text-white/80 font-medium">English Premier League</p>
+            <p class="text-lg sm:text-xl font-semibold text-white italic">Rank 'Em Right</p>
+          </div>
+          <p class="text-base sm:text-lg mb-8 text-indigo-200">
+            Predict how the Premier League table looks after the current round.
           </p>
           <div
             class="flex flex-col sm:flex-row justify-center gap-3 sm:gap-4 mb-6"
@@ -114,7 +118,7 @@
               ⚖️ The Swap Dilemma
             </button>
             <div x-show="open" x-transition x-cloak class="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-              The leaderboard ranks by Total Points → Zeroes → Fewest Swaps Used.
+              The leaderboard ranks by Total Points → Total Perfect Positions → Fewest Swaps Used.
               Using many swaps helps you climb — but it might cost you a tie-break later.
             </div>
           </div>
@@ -267,36 +271,24 @@
             </h4>
             <p class="text-gray-600 mb-3">
               You start with 200 points each gameweek. For each team, you lose
-              points equal to the position difference.
+              points equal to the position difference. Examples:
             </p>
             <div class="space-y-2 text-sm">
-              <div
-                class="flex justify-between items-center p-2 bg-green-50 rounded"
-              >
-                <span class="text-gray-700"
-                  >Perfect prediction (0 positions off)</span
-                >
-                <span class="font-semibold text-green-600"
-                  >No points lost! 🎯</span
-                >
+              <div class="flex items-center gap-3 p-2 bg-green-50 rounded">
+                <span class="flex-1 text-gray-700">Perfect <span class="text-gray-500 font-medium">(0 off)</span></span>
+                <span class="flex-shrink-0 font-semibold text-green-600">No loss 🎯</span>
               </div>
-              <div
-                class="flex justify-between items-center p-2 bg-yellow-50 rounded"
-              >
-                <span class="text-gray-700">Close call (1 position off)</span>
-                <span class="font-semibold text-yellow-600">-1 point</span>
+              <div class="flex items-center gap-3 p-2 bg-yellow-50 rounded">
+                <span class="flex-1 text-gray-700">Close call <span class="text-gray-500 font-medium">(1 off)</span></span>
+                <span class="flex-shrink-0 font-semibold text-yellow-600">-1 point</span>
               </div>
-              <div
-                class="flex justify-between items-center p-2 bg-orange-50 rounded"
-              >
-                <span class="text-gray-700">Near miss (3 positions off)</span>
-                <span class="font-semibold text-orange-600">-3 points</span>
+              <div class="flex items-center gap-3 p-2 bg-orange-50 rounded">
+                <span class="flex-1 text-gray-700">Near miss <span class="text-gray-500 font-medium">(3 off)</span></span>
+                <span class="flex-shrink-0 font-semibold text-orange-600">-3 points</span>
               </div>
-              <div
-                class="flex justify-between items-center p-2 bg-red-50 rounded"
-              >
-                <span class="text-gray-700">Big miss (6 positions off)</span>
-                <span class="font-semibold text-red-600">-6 points</span>
+              <div class="flex items-center gap-3 p-2 bg-red-50 rounded">
+                <span class="flex-1 text-gray-700">Big miss <span class="text-gray-500 font-medium">(6 off)</span></span>
+                <span class="flex-shrink-0 font-semibold text-red-600">-6 points</span>
               </div>
             </div>
             <p class="text-center text-sm text-gray-400 mt-4">
