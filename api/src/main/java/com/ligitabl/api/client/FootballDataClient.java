@@ -192,6 +192,33 @@ public class FootballDataClient {
     }
 
     /**
+     * Get a single match by its external ID
+     */
+    public Either<FootballDataApiError, com.ligitabl.api.client.footballdata.MatchDto> getMatchById(int matchId) {
+        log.debug("Fetching match by id: {}", matchId);
+
+        try {
+            var response = webClient
+                    .get()
+                    .uri("/matches/{matchId}", matchId)
+                    .retrieve()
+                    .bodyToMono(com.ligitabl.api.client.footballdata.MatchDto.class)
+                    .block();
+
+            if (response == null) {
+                return Either.left(new FootballDataApiError.UnexpectedError("Null response from API"));
+            }
+
+            log.debug("Fetched match: id={}, status={}", matchId, response.status());
+
+            return Either.right(response);
+
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    /**
      * Get competition information including current matchday
      */
     public Either<FootballDataApiError, CompetitionResponse> getCompetition(String competitionCode) {

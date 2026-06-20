@@ -60,6 +60,12 @@ public class RoundMatchesController {
             model.addAttribute("lastRound", payload.lastRound());
             model.addAttribute("matches", payload.matches());
 
+            boolean isViewingCurrentRound = payload.viewingRound() == payload.currentRound();
+            boolean allMatchesTerminal = !payload.matches().isEmpty()
+                    && payload.matches().stream()
+                            .allMatch(m -> "FINISHED".equals(m.getStatus()) || "POSTPONED".equals(m.getStatus()));
+            model.addAttribute("canFinalizeRound", isViewingCurrentRound && allMatchesTerminal);
+
             // Return fragment for HTMX requests, full page otherwise
             return isHtmxRequest ? "matches :: matches-content" : "matches";
         });
