@@ -8,8 +8,6 @@ import static org.mockito.Mockito.*;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-
-import com.ligitabl.api.rest.prediction.shared.SwapHelper;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.prediction.shared.SwapHelper;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
@@ -77,7 +76,10 @@ class MakeSwapUseCaseTest {
         round = createRound(false, 10);
         prediction = createPrediction();
 
-        useCase = new MakeSwapUseCase(roundRepo, predictionRepo, clock,
+        useCase = new MakeSwapUseCase(
+                roundRepo,
+                predictionRepo,
+                clock,
                 new SwapHelper(competitionDefaults, seasonRepo, predictionRepo, matchRepo));
     }
 

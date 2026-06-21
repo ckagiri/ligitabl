@@ -374,8 +374,7 @@ public class SyncMatchesUseCase {
         if (!changed) {
             return new UpdateResult(existing, false, false);
         }
-        boolean becameFinished = previousStatus != MatchStatus.FINISHED
-                && existing.getStatus() == MatchStatus.FINISHED;
+        boolean becameFinished = previousStatus != MatchStatus.FINISHED && existing.getStatus() == MatchStatus.FINISHED;
         return new UpdateResult(existing, true, becameFinished);
     }
 

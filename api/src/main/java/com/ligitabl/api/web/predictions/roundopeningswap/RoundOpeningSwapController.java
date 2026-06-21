@@ -86,7 +86,8 @@ public class RoundOpeningSwapController {
             case SwapError.SeasonCompleted __ -> "Cannot swap in completed season";
             case SwapError.BatchSizeInvalid e -> "Opening swaps must be between 1 and 2, got " + e.size();
             case SwapError.InvalidTeamCode e -> "Invalid team code: " + e.code();
-            case SwapError.TeamsNotFound e -> "Teams not found in your prediction: " + e.teamACode() + ", " + e.teamBCode();
+            case SwapError.TeamsNotFound e -> "Teams not found in your prediction: " + e.teamACode() + ", "
+                    + e.teamBCode();
             case SwapError.UseOpeningWindowFirst __ -> "Something went wrong";
             case SwapError.CooldownActive __ -> "Something went wrong";
         };

@@ -44,8 +44,10 @@ public class FinalizeAndAdvanceRoundController {
             var error = finalizeResult.getLeft();
             log.error("Finalize failed: {}", error);
             return switch (error) {
-                case FinalizeRoundError.RoundObstructed e -> ResponseEntity.status(409).build();
-                case FinalizeRoundError.RoundNotReady e -> ResponseEntity.badRequest().build();
+                case FinalizeRoundError.RoundObstructed e -> ResponseEntity.status(409)
+                        .build();
+                case FinalizeRoundError.RoundNotReady e -> ResponseEntity.badRequest()
+                        .build();
                 default -> ResponseEntity.internalServerError().build();
             };
         }

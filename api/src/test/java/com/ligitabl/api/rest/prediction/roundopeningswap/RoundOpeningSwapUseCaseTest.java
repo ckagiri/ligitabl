@@ -76,7 +76,10 @@ class RoundOpeningSwapUseCaseTest {
         round = createRound(5);
         prediction = createPrediction();
 
-        useCase = new RoundOpeningSwapUseCase(roundRepo, predictionRepo, clock,
+        useCase = new RoundOpeningSwapUseCase(
+                roundRepo,
+                predictionRepo,
+                clock,
                 new SwapHelper(competitionDefaults, seasonRepo, predictionRepo, matchRepo));
     }
 
@@ -107,19 +110,13 @@ class RoundOpeningSwapUseCaseTest {
 
     @Test
     void shouldApplyMultipleSwaps_upToTwo() {
-        var command = new RoundOpeningSwapCommand(
-                List.of(new SwapCommand("ARS", "LIV"), new SwapCommand("MCI", "CHE")));
+        var command =
+                new RoundOpeningSwapCommand(List.of(new SwapCommand("ARS", "LIV"), new SwapCommand("MCI", "CHE")));
 
-        season = createSeasonWithRankings(List.of(
-                TeamRank.of("ARS", 1),
-                TeamRank.of("LIV", 2),
-                TeamRank.of("MCI", 3),
-                TeamRank.of("CHE", 4)));
-        prediction = createPredictionWithRankings(List.of(
-                TeamRank.of("ARS", 1),
-                TeamRank.of("LIV", 2),
-                TeamRank.of("MCI", 3),
-                TeamRank.of("CHE", 4)));
+        season = createSeasonWithRankings(
+                List.of(TeamRank.of("ARS", 1), TeamRank.of("LIV", 2), TeamRank.of("MCI", 3), TeamRank.of("CHE", 4)));
+        prediction = createPredictionWithRankings(
+                List.of(TeamRank.of("ARS", 1), TeamRank.of("LIV", 2), TeamRank.of("MCI", 3), TeamRank.of("CHE", 4)));
 
         when(clock.instant()).thenReturn(now);
         when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));

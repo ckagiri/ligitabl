@@ -48,7 +48,9 @@ public class SyncRoundUseCase {
                 .mapLeft(e -> (SyncRoundError) new SyncRoundError.HierarchyError(e))
                 .flatMap(ctx -> {
                     if (ctx.round().isFinalized()) {
-                        log.info("Round {} is already finalized, skipping sync", ctx.round().getPosition());
+                        log.info(
+                                "Round {} is already finalized, skipping sync",
+                                ctx.round().getPosition());
                         return Either.right(null);
                     }
 
@@ -58,7 +60,9 @@ public class SyncRoundUseCase {
                             .toList();
 
                     if (nonFinished.isEmpty()) {
-                        log.info("No non-finished matches in round {}", ctx.round().getPosition());
+                        log.info(
+                                "No non-finished matches in round {}",
+                                ctx.round().getPosition());
                         return Either.right(null);
                     }
 

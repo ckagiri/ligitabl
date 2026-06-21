@@ -35,18 +35,24 @@ public class MakeSwapUseCase {
     }
 
     public Either<SwapError, SwapResult> execute(UUID userId, SwapCommand command) {
-        return swapHelper.getCurrentSeason()
+        return swapHelper
+                .getCurrentSeason()
                 .flatMap(season -> swapHelper.validateSeasonNotCompleted(season).map(__ -> season))
-                .flatMap(season -> swapHelper.getPrediction(userId, season.getId())
-                        .map(p -> new Ctx(season, null, p)))
-                .flatMap(ctx -> getCurrentRound(ctx.season())
-                        .map(round -> new Ctx(ctx.season(), round, ctx.prediction())))
+                .flatMap(season ->
+                        swapHelper.getPrediction(userId, season.getId()).map(p -> new Ctx(season, null, p)))
+                .flatMap(ctx ->
+                        getCurrentRound(ctx.season()).map(round -> new Ctx(ctx.season(), round, ctx.prediction())))
                 .flatMap(ctx -> resolveTargetRound(ctx.prediction(), ctx.season(), ctx.targetRound())
                         .map(round -> new Ctx(ctx.season(), round, ctx.prediction())))
                 .flatMap(ctx -> swapHelper.validateRoundOpen(ctx.targetRound()).map(__ -> ctx))
-                .flatMap(ctx -> validateCooldown(ctx.prediction(), ctx.targetRound()).map(__ -> ctx))
-                .flatMap(ctx -> swapHelper.validateTeams(command, ctx.season(), ctx.prediction(),
-                        ctx.prediction().getCurrentRankings())
+                .flatMap(ctx ->
+                        validateCooldown(ctx.prediction(), ctx.targetRound()).map(__ -> ctx))
+                .flatMap(ctx -> swapHelper
+                        .validateTeams(
+                                command,
+                                ctx.season(),
+                                ctx.prediction(),
+                                ctx.prediction().getCurrentRankings())
                         .map(teams -> new Ctx(ctx.season(), ctx.targetRound(), ctx.prediction(), teams)))
                 .flatMap(ctx -> performSwap(ctx.prediction(), ctx.teams(), ctx.targetRound()));
     }
@@ -94,8 +100,7 @@ public class MakeSwapUseCase {
         return Either.right(null);
     }
 
-    private Either<SwapError, SwapResult> performSwap(
-            SeasonPrediction prediction, TeamPair teams, Round targetRound) {
+    private Either<SwapError, SwapResult> performSwap(SeasonPrediction prediction, TeamPair teams, Round targetRound) {
         Instant now = clock.instant();
 
         List<TeamRank> updatedRankings = new ArrayList<>(prediction.getCurrentRankings());

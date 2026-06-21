@@ -58,9 +58,7 @@ public class SwapHelper {
         }
         var matches = matchRepo.findByRoundId(round.getId());
         RoundStatus status = (matches == null || matches.isEmpty()) ? RoundStatus.OPEN : round.computeStatus(matches);
-        return status == RoundStatus.OPEN
-                ? Either.right(null)
-                : Either.left(new SwapError.RoundNotOpen(status.name()));
+        return status == RoundStatus.OPEN ? Either.right(null) : Either.left(new SwapError.RoundNotOpen(status.name()));
     }
 
     public Set<String> resolveValidCodes(Season season, SeasonPrediction prediction) {
@@ -78,8 +76,14 @@ public class SwapHelper {
         var validCodes = resolveValidCodes(season, prediction);
         if (!validCodes.contains(teamACode)) return Either.left(new SwapError.InvalidTeamCode(teamACode));
         if (!validCodes.contains(teamBCode)) return Either.left(new SwapError.InvalidTeamCode(teamBCode));
-        TeamRank teamA = rankings.stream().filter(t -> t.getCode().equals(teamACode)).findFirst().orElse(null);
-        TeamRank teamB = rankings.stream().filter(t -> t.getCode().equals(teamBCode)).findFirst().orElse(null);
+        TeamRank teamA = rankings.stream()
+                .filter(t -> t.getCode().equals(teamACode))
+                .findFirst()
+                .orElse(null);
+        TeamRank teamB = rankings.stream()
+                .filter(t -> t.getCode().equals(teamBCode))
+                .findFirst()
+                .orElse(null);
         if (teamA == null || teamB == null) return Either.left(new SwapError.TeamsNotFound(teamACode, teamBCode));
         return Either.right(new TeamPair(teamA, teamB));
     }

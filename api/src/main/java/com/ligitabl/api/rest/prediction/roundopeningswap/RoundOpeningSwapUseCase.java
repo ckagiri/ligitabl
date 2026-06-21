@@ -33,13 +33,16 @@ public class RoundOpeningSwapUseCase {
     private record Ctx(Season season, Round round, SeasonPrediction prediction) {}
 
     public Either<SwapError, RoundOpeningSwapResult> execute(UUID userId, RoundOpeningSwapCommand command) {
-        return swapHelper.getCurrentSeason()
+        return swapHelper
+                .getCurrentSeason()
                 .flatMap(season -> swapHelper.validateSeasonNotCompleted(season).map(__ -> season))
                 .flatMap(season -> getCurrentRound(season).map(round -> new Ctx(season, round, null)))
                 .flatMap(ctx -> swapHelper.validateRoundOpen(ctx.round()).map(__ -> ctx))
-                .flatMap(ctx -> swapHelper.getPrediction(userId, ctx.season().getId())
+                .flatMap(ctx -> swapHelper
+                        .getPrediction(userId, ctx.season().getId())
                         .map(p -> new Ctx(ctx.season(), ctx.round(), p)))
-                .flatMap(ctx -> validateOpeningNotUsed(ctx.prediction(), ctx.round()).map(__ -> ctx))
+                .flatMap(ctx ->
+                        validateOpeningNotUsed(ctx.prediction(), ctx.round()).map(__ -> ctx))
                 .flatMap(ctx -> validateBatchSize(command.swaps()).map(__ -> ctx))
                 .flatMap(ctx -> applySwaps(ctx.prediction(), command.swaps(), ctx.season(), ctx.round()));
     }
@@ -73,7 +76,8 @@ public class RoundOpeningSwapUseCase {
             var validated = swapHelper.validateTeams(swap, season, prediction, currentRankings);
             if (validated.isLeft()) return Either.left(validated.getLeft());
             var teams = validated.get();
-            prediction.addSwap(round.getPosition(), swapHelper.applySwap(currentRankings, teams.teamA(), teams.teamB(), now));
+            prediction.addSwap(
+                    round.getPosition(), swapHelper.applySwap(currentRankings, teams.teamA(), teams.teamB(), now));
         }
 
         prediction.setCurrentRankings(currentRankings);
