@@ -117,7 +117,7 @@
 
   <!-- Can Create Entry Banner -->
   <div
-    th:if="${canCreateEntry == true}"
+    th:if="${canCreateEntry == true && roundState != 'locked'}"
     x-data="{ imported: false }"
     x-init="imported = localStorage.getItem('ligitabl.guestPrediction') !== null"
     @guest-storage-cleared.window="imported = false"
@@ -251,6 +251,9 @@
     th:if="${(isGuest == false || isGuest == null) && isCurrentRound == true && roundState == 'locked' && !(swapStatus != null && swapStatus.firstSwapBonus == true)}"
     th:classappend="${canCreateEntry == true || (atRoundNumber != null && atRoundNumber > currentRound) ? 'bg-blue-50 border-blue-200' : 'bg-yellow-50 border-yellow-200'}"
     class="border rounded-lg p-4"
+    x-data="{ imported: false }"
+    x-init="imported = localStorage.getItem('ligitabl.guestPrediction') !== null"
+    @guest-storage-cleared.window="imported = false"
   >
     <div class="flex items-start">
       <svg
@@ -285,7 +288,8 @@
             👋 Matches In Progress
           </p>
           <p class="text-sm text-blue-700 mt-1">
-            You can still make your prediction (1-5 swaps needed). It will be scored next round.
+            <span x-show="imported">We've loaded your guest prediction. Review and submit to join the competition.</span>
+            <span x-show="!imported">You can still make your prediction (1-5 swaps needed). It will be scored next round.</span>
           </p>
         </th:block>
 
