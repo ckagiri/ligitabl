@@ -120,7 +120,7 @@
                   <th:block sec:authorize="hasRole('ADMIN')">
                     <button
                       th:if="${match.status != 'FINISHED' and match.status != 'POSTPONED'}"
-                      th:attr="hx-post=@{/web/matches/{clientId}/sync-from-api(clientId=${match.clientId})}"
+                      th:attr="hx-post=@{/matches/{clientId}/sync-from-api(clientId=${match.clientId})}"
                       hx-disabled-elt="this"
                       class="text-gray-300 hover:text-blue-500 transition-colors p-0.5 rounded htmx-indicator:animate-spin"
                       title="Sync from API"
@@ -140,7 +140,7 @@
             <th:block sec:authorize="hasRole('ADMIN')">
               <div th:if="${showRefreshButton}" class="mt-4 flex justify-end">
                 <button
-                  hx-post="/web/rounds/current/sync"
+                  hx-post="/rounds/current/sync-matches-from-api"
                   hx-disabled-elt="this"
                   class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
                 >
@@ -149,7 +149,7 @@
               </div>
               <div th:if="${canFinalizeRound}" class="mt-4 flex justify-end">
                 <button
-                  hx-post="/web/rounds/current/finalize-and-advance"
+                  hx-post="/rounds/current/finalize-and-advance"
                   hx-confirm="Finalize this round and advance to the next?"
                   hx-disabled-elt="this"
                   class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"

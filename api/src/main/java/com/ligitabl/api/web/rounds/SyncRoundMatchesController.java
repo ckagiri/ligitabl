@@ -13,19 +13,19 @@ import com.ligitabl.api.rest.match.syncfromapi.SyncRoundUseCase.SyncRoundCommand
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Controller
-@RequestMapping("/web/rounds")
+@Controller("webSyncRoundMatchesController")
+@RequestMapping("/rounds")
 @RequiredArgsConstructor
 @Slf4j
-public class SyncCurrentRoundController {
+public class SyncRoundMatchesController {
 
     private final SyncRoundUseCase syncRoundUseCase;
 
-    @PostMapping("/current/sync")
+    @PostMapping("/current/sync-matches-from-api")
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseBody
     public ResponseEntity<?> syncCurrentRound() {
-        log.info("POST /web/rounds/current/sync");
+        log.info("POST /rounds/current/sync-matches-from-api");
 
         var result = syncRoundUseCase.execute(new SyncRoundCommand());
 

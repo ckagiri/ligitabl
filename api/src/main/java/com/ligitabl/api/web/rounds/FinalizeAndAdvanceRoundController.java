@@ -17,8 +17,8 @@ import com.ligitabl.model.repo.SeasonRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Controller
-@RequestMapping("/web/rounds")
+@Controller("webFinalizeAndAdvanceRoundController")
+@RequestMapping("/rounds")
 @RequiredArgsConstructor
 @Slf4j
 public class FinalizeAndAdvanceRoundController {
@@ -32,7 +32,7 @@ public class FinalizeAndAdvanceRoundController {
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseBody
     public ResponseEntity<?> finalizeAndAdvance() {
-        log.info("POST /web/rounds/current/finalize-and-advance");
+        log.info("POST /rounds/current/finalize-and-advance");
 
         var season = seasonRepo
                 .findActiveSeason(competitionDefaults.defaultCompetitionSlug())

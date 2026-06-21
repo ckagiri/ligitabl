@@ -15,8 +15,8 @@ import com.ligitabl.api.rest.match.syncfromapi.SyncMatchUseCase.SyncMatchError;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-@Controller
-@RequestMapping("/web/matches")
+@Controller("webSyncMatchFromApiController")
+@RequestMapping("/matches")
 @RequiredArgsConstructor
 @Slf4j
 public class SyncMatchFromApiController {
@@ -27,7 +27,7 @@ public class SyncMatchFromApiController {
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseBody
     public ResponseEntity<?> syncMatch(@PathVariable int clientId) {
-        log.info("POST /web/matches/{}/sync-from-api", clientId);
+        log.info("POST /matches/{}/sync-from-api", clientId);
 
         var result = syncMatchUseCase.execute(new SyncMatchCommand(clientId));
 
