@@ -75,8 +75,9 @@ public class MakeSwapController {
             case SwapError.InvalidTeamCode __ -> 400;
             case SwapError.TeamsNotFound __ -> 400;
             case SwapError.SeasonCompleted __ -> 409;
-            case SwapError.CurrentRoundNotFound __ -> 404;
             case SwapError.UseOpeningWindowFirst __ -> 409;
+            case SwapError.OpeningAlreadyUsed __ -> 500;
+            case SwapError.BatchSizeInvalid __ -> 500;
         };
     }
 
@@ -90,8 +91,9 @@ public class MakeSwapController {
             case SwapError.TeamsNotFound e -> "Teams not found in your prediction: " + e.teamACode() + ", "
                     + e.teamBCode();
             case SwapError.SeasonCompleted __ -> "Cannot swap in completed season";
-            case SwapError.CurrentRoundNotFound __ -> "Current round not found";
             case SwapError.UseOpeningWindowFirst e -> "Use your opening swaps for round " + e.round() + " first";
+            case SwapError.OpeningAlreadyUsed __ -> "Something went wrong";
+            case SwapError.BatchSizeInvalid __ -> "Something went wrong";
         };
     }
 }

@@ -5,20 +5,15 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.prediction.shared.SwapHelper;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.*;
-import com.ligitabl.model.domain.SwapChange;
-import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
-import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,73 +21,47 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class MakeSwapUseCase {
 
-    private final CompetitionDefaults competitionDefaults;
-    private final SeasonPredictionRepo predictionRepo;
-    private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
-    private final MatchRepo matchRepo;
+    private final SeasonPredictionRepo predictionRepo;
     private final Clock clock;
+    private final SwapHelper swapHelper;
 
     private static final Duration SWAP_COOLDOWN = Duration.ofHours(24);
 
-    public Either<SwapError, SwapResult> execute(UUID userId, SwapCommand command) {
-        return getCurrentSeason().flatMap(season -> validateSeasonNotCompleted(season)
-                .flatMap(__ -> getPrediction(userId, season.getId()))
-                .flatMap(prediction -> validateSwapEligibility(prediction, season)
-                        .flatMap(targetRound -> validateTeams(command, season, prediction)
-                                .flatMap(teams -> performSwap(prediction, teams, season, targetRound)))));
-    }
-
-    private Either<SwapError, Season> getCurrentSeason() {
-        return seasonRepo
-                .findMostRecentSeason(competitionDefaults.defaultCompetitionSlug())
-                .map(Either::<SwapError, Season>right)
-                .orElseGet(() -> Either.left(new SwapError.NoPredictionFound(null, null)));
-    }
-
-    private Either<SwapError, Void> validateSeasonNotCompleted(Season season) {
-        return season.isCompleted() ? Either.left(new SwapError.SeasonCompleted()) : Either.right(null);
-    }
-
-    private Either<SwapError, SeasonPrediction> getPrediction(UUID userId, UUID seasonId) {
-        return predictionRepo
-                .findByUserAndSeason(userId, seasonId)
-                .map(Either::<SwapError, SeasonPrediction>right)
-                .orElseGet(() -> Either.left(new SwapError.NoPredictionFound(userId, seasonId)));
-    }
-
-    private Either<SwapError, Round> validateSwapEligibility(SeasonPrediction prediction, Season season) {
-        return validateRoundStatus(prediction, season)
-                .flatMap(round -> validateCooldown(prediction, round).map(__ -> round));
-    }
-
-    private Either<SwapError, Round> validateRoundStatus(SeasonPrediction prediction, Season season) {
-        var currentRoundOpt = roundRepo.findById(season.getCurrentRoundId());
-        if (currentRoundOpt.isEmpty()) {
-            return Either.left(new SwapError.CurrentRoundNotFound(season.getId()));
+    private record Ctx(Season season, Round targetRound, SeasonPrediction prediction, TeamPair teams) {
+        Ctx(Season season, Round targetRound, SeasonPrediction prediction) {
+            this(season, targetRound, prediction, null);
         }
-        Round currentRound = currentRoundOpt.get();
+    }
 
-        return resolveTargetRound(prediction, season, currentRound).flatMap(targetRound -> {
-            RoundStatus status;
-            if (targetRound.isFinalized()) {
-                status = RoundStatus.COMPLETED;
-            } else {
-                var matches = matchRepo.findByRoundId(targetRound.getId());
-                status = (matches == null || matches.isEmpty()) ? RoundStatus.OPEN : targetRound.computeStatus(matches);
-            }
+    public Either<SwapError, SwapResult> execute(UUID userId, SwapCommand command) {
+        return swapHelper.getCurrentSeason()
+                .flatMap(season -> swapHelper.validateSeasonNotCompleted(season).map(__ -> season))
+                .flatMap(season -> swapHelper.getPrediction(userId, season.getId())
+                        .map(p -> new Ctx(season, null, p)))
+                .flatMap(ctx -> getCurrentRound(ctx.season())
+                        .map(round -> new Ctx(ctx.season(), round, ctx.prediction())))
+                .flatMap(ctx -> resolveTargetRound(ctx.prediction(), ctx.season(), ctx.targetRound())
+                        .map(round -> new Ctx(ctx.season(), round, ctx.prediction())))
+                .flatMap(ctx -> swapHelper.validateRoundOpen(ctx.targetRound()).map(__ -> ctx))
+                .flatMap(ctx -> validateCooldown(ctx.prediction(), ctx.targetRound()).map(__ -> ctx))
+                .flatMap(ctx -> swapHelper.validateTeams(command, ctx.season(), ctx.prediction(),
+                        ctx.prediction().getCurrentRankings())
+                        .map(teams -> new Ctx(ctx.season(), ctx.targetRound(), ctx.prediction(), teams)))
+                .flatMap(ctx -> performSwap(ctx.prediction(), ctx.teams(), ctx.targetRound()));
+    }
 
-            return status == RoundStatus.OPEN
-                    ? Either.right(targetRound)
-                    : Either.left(new SwapError.RoundNotOpen(status.name()));
-        });
+    private Either<SwapError, Round> getCurrentRound(Season season) {
+        return roundRepo
+                .findById(season.getCurrentRoundId())
+                .map(Either::<SwapError, Round>right)
+                .orElseGet(() -> Either.left(new SwapError.RoundNotOpen(RoundStatus.UNKNOWN.name())));
     }
 
     private Either<SwapError, Round> resolveTargetRound(
             SeasonPrediction prediction, Season season, Round currentRound) {
-        int currentPosition = currentRound.getPosition();
-        int nextPosition = currentPosition + 1;
         int predictionRound = prediction.getAtRoundNumber();
+        int nextPosition = currentRound.getPosition() + 1;
 
         if (predictionRound == nextPosition) {
             return roundRepo
@@ -125,65 +94,13 @@ public class MakeSwapUseCase {
         return Either.right(null);
     }
 
-    private Either<SwapError, TeamPair> validateTeams(SwapCommand request, Season season, SeasonPrediction prediction) {
-        String teamACode = request.teamACode().toUpperCase();
-        String teamBCode = request.teamBCode().toUpperCase();
-
-        List<TeamRank> initialRankings =
-                season.getInitialRankings() != null ? season.getInitialRankings() : prediction.getInitialRankings();
-
-        Set<String> validCodes = initialRankings == null
-                ? Set.of()
-                : initialRankings.stream().map(TeamRank::getCode).collect(Collectors.toSet());
-
-        if (!validCodes.contains(teamACode)) {
-            return Either.left(new SwapError.InvalidTeamCode(teamACode));
-        }
-        if (!validCodes.contains(teamBCode)) {
-            return Either.left(new SwapError.InvalidTeamCode(teamBCode));
-        }
-
-        // Find teams in current rankings
-        TeamRank teamA = prediction.getCurrentRankings().stream()
-                .filter(t -> t.getCode().equals(teamACode))
-                .findFirst()
-                .orElse(null);
-
-        TeamRank teamB = prediction.getCurrentRankings().stream()
-                .filter(t -> t.getCode().equals(teamBCode))
-                .findFirst()
-                .orElse(null);
-
-        if (teamA == null || teamB == null) {
-            return Either.left(new SwapError.TeamsNotFound(teamACode, teamBCode));
-        }
-
-        return Either.right(new TeamPair(teamA, teamB));
-    }
-
     private Either<SwapError, SwapResult> performSwap(
-            SeasonPrediction prediction, TeamPair teams, Season season, Round targetRound) {
+            SeasonPrediction prediction, TeamPair teams, Round targetRound) {
         Instant now = clock.instant();
 
-        // Swap positions in current_rankings
         List<TeamRank> updatedRankings = new ArrayList<>(prediction.getCurrentRankings());
-        int indexA = updatedRankings.indexOf(teams.teamA());
-        int indexB = updatedRankings.indexOf(teams.teamB());
+        SwapChange change = swapHelper.applySwap(updatedRankings, teams.teamA(), teams.teamB(), now);
 
-        TeamRank newTeamA = teams.teamA().withPosition(teams.teamB().getPosition());
-        TeamRank newTeamB = teams.teamB().withPosition(teams.teamA().getPosition());
-
-        updatedRankings.set(indexA, newTeamA);
-        updatedRankings.set(indexB, newTeamB);
-
-        // Build swap history entry
-        SwapChange change = new SwapChange(
-                now,
-                String.format("%s:%d→%d", teams.teamA().getCode(), teams.teamA().getPosition(), newTeamA.getPosition()),
-                String.format(
-                        "%s:%d→%d", teams.teamB().getCode(), teams.teamB().getPosition(), newTeamB.getPosition()));
-
-        // Update prediction
         prediction.setCurrentRankings(updatedRankings);
         prediction.addSwap(targetRound.getPosition(), change);
         prediction.setLastSwapAt(now);
