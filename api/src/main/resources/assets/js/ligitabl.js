@@ -13,6 +13,7 @@ document.body.addEventListener("htmx:afterSwap", (event) => {
 
 window.Ligitabl = window.Ligitabl || {};
 window.Ligitabl._MAX_INITIAL_SWAPS = 5;
+window.Ligitabl._MAX_OPENING_SWAPS = 2;
 
 // --- Shared helpers for prediction components ---
 
@@ -374,6 +375,7 @@ window.Ligitabl.predictionPage = function (el) {
     const isInitialPrediction = isInitialRaw === "true" || isInitialRaw === "True";
     const isOpeningRound = isOpeningRoundRaw === "true" || isOpeningRoundRaw === "True";
     const MAX_INITIAL_SWAPS = Ligitabl._MAX_INITIAL_SWAPS;
+    const MAX_OPENING_SWAPS = Ligitabl._MAX_OPENING_SWAPS;
 
     const userId = el?.dataset?.userId || 'unknown';
     const roundId = el?.dataset?.roundId || 'unknown';
@@ -530,8 +532,10 @@ window.Ligitabl.predictionPage = function (el) {
         canUpdate() {
             const swapCount = this.getSwapCount();
             if (swapCount === 0) return false;
-            if (this.isInitialPrediction || this.isOpeningRound) {
+            if (this.isInitialPrediction) {
                 if (swapCount > MAX_INITIAL_SWAPS) return false;
+            } else if (this.isOpeningRound) {
+                if (swapCount > MAX_OPENING_SWAPS) return false;
             } else {
                 if (swapCount > 1) return false;
             }
@@ -539,8 +543,11 @@ window.Ligitabl.predictionPage = function (el) {
         },
 
         exceedsLimit() {
-            if (this.isInitialPrediction || this.isOpeningRound) {
+            if (this.isInitialPrediction) {
                 return this.getSwapCount() > MAX_INITIAL_SWAPS;
+            }
+            if (this.isOpeningRound) {
+                return this.getSwapCount() > MAX_OPENING_SWAPS;
             }
             return this.getSwapCount() > 1;
         },

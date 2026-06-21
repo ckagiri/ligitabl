@@ -96,7 +96,8 @@
       <span class="text-sm text-red-800">
         <strong>Swap limit exceeded!</strong>
         You've made <span x-text="getSwapCount()"></span> swaps but
-        <span x-show="isInitialPrediction || isOpeningRound">the limit is 5.</span>
+        <span x-show="isInitialPrediction">the limit is 5.</span>
+        <span x-show="isOpeningRound">the limit is 2.</span>
         <span x-show="!isInitialPrediction && !isOpeningRound">only 1 is allowed per 24h.</span>
         <span x-show="!undoing"
           ><a
