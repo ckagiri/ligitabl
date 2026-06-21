@@ -15,8 +15,8 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ligitabl.api.client.FootballDataApiError;
 import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.client.footballdata.MatchDto;
-import com.ligitabl.api.client.footballdata.Score;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.match.MatchUpdateHelper;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
@@ -40,6 +40,7 @@ public class SyncMatchesUseCase {
     private final AsyncStandingsService standingsService;
     private final CompetitionDefaults competitionDefaults;
     private final LiveMatchTracker liveMatchTracker;
+    private final MatchUpdateHelper matchUpdateHelper;
 
     @Value("${football-data.competition.code}")
     private String competitionCode;
@@ -369,89 +370,13 @@ public class SyncMatchesUseCase {
 
     private UpdateResult updateMatch(Match existing, MatchDto apiMatch) {
         var previousStatus = existing.getStatus();
-        var newStatus = mapToDomainStatus(apiMatch.status());
-
-        boolean statusChanged = previousStatus != newStatus;
-        boolean scoreChanged = hasScoreChanged(existing, apiMatch.score());
-        boolean kickoffChanged = hasKickoffChanged(existing, apiMatch.utcDate());
-
-        if (!statusChanged && !scoreChanged && !kickoffChanged) {
+        boolean changed = matchUpdateHelper.applyUpdate(existing, apiMatch);
+        if (!changed) {
             return new UpdateResult(existing, false, false);
         }
-
-        boolean becameFinished = previousStatus != MatchStatus.FINISHED && newStatus == MatchStatus.FINISHED;
-
-        existing.setStatus(newStatus);
-        if (kickoffChanged) {
-            existing.setKickOff(apiMatch.utcDate());
-        }
-        if (apiMatch.matchday() != null) {
-            existing.setMatchday(apiMatch.matchday());
-        }
-        applyScore(existing, apiMatch.score());
-
+        boolean becameFinished = previousStatus != MatchStatus.FINISHED
+                && existing.getStatus() == MatchStatus.FINISHED;
         return new UpdateResult(existing, true, becameFinished);
-    }
-
-    private boolean hasKickoffChanged(Match existing, OffsetDateTime apiKickoff) {
-        var existingKickoff = existing.getKickOff();
-
-        if (existingKickoff == null || apiKickoff == null) {
-            return existingKickoff != apiKickoff;
-        }
-
-        boolean dateChanged = !existingKickoff.toLocalDate().equals(apiKickoff.toLocalDate());
-        boolean timeChanged = !existingKickoff.toLocalTime().equals(apiKickoff.toLocalTime());
-
-        return dateChanged || timeChanged;
-    }
-
-    private boolean hasScoreChanged(Match existing, Score apiScore) {
-        var apiGoals = extractGoals(apiScore);
-        if (apiGoals == null) {
-            return false;
-        }
-
-        var existingScore = existing.getScore();
-        if (existingScore == null) {
-            return true;
-        }
-
-        return existingScore.getHomeGoals() != apiGoals[0] || existingScore.getAwayGoals() != apiGoals[1];
-    }
-
-    private void applyScore(Match existing, Score apiScore) {
-        var apiGoals = extractGoals(apiScore);
-        if (apiGoals != null) {
-            existing.setScore(apiGoals[0], apiGoals[1]);
-        }
-    }
-
-    private Integer[] extractGoals(Score apiScore) {
-        if (apiScore == null || apiScore.fullTime() == null) {
-            return null;
-        }
-        Integer home = apiScore.fullTime().home();
-        Integer away = apiScore.fullTime().away();
-        if (home == null || away == null) {
-            return null;
-        }
-        return new Integer[] {home, away};
-    }
-
-    private MatchStatus mapToDomainStatus(String matchStatus) {
-        return switch (matchStatus) {
-            case "SCHEDULED", "TIMED" -> MatchStatus.SCHEDULED;
-            case "IN_PLAY", "PAUSED" -> MatchStatus.LIVE;
-            case "FINISHED", "AWARDED" -> MatchStatus.FINISHED;
-            case "SUSPENDED" -> MatchStatus.SUSPENDED;
-            case "POSTPONED" -> MatchStatus.POSTPONED;
-            case "CANCELLED" -> MatchStatus.CANCELLED;
-            default -> {
-                log.warn("Unknown match status from API: {}", matchStatus);
-                yield MatchStatus.SCHEDULED;
-            }
-        };
     }
 
     private record RoundContext(

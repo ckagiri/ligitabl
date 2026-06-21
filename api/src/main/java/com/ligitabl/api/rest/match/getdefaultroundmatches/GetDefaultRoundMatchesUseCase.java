@@ -44,7 +44,8 @@ public class GetDefaultRoundMatchesUseCase
                                 ctx.round().getPosition(),
                                 currentRound.getPosition(),
                                 ctx.season().getMaxRounds(),
-                                matches))));
+                                matches,
+                                ctx.round().isFinalized()))));
     }
 
     private Either<UseCaseError, List<Match>> fetchMatches(Round round) {
