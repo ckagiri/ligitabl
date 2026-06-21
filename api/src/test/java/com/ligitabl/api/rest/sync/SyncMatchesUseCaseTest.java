@@ -26,6 +26,7 @@ import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.client.footballdata.MatchDto;
 import com.ligitabl.api.client.footballdata.MatchesResponse;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.match.MatchUpdateHelper;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.scheduling.syncmatches.AsyncStandingsService;
 import com.ligitabl.api.scheduling.syncmatches.LiveMatchTracker;
@@ -81,7 +82,8 @@ class SyncMatchesUseCaseTest {
                 matchRepo,
                 standingsService,
                 new CompetitionDefaults(COMPETITION_SLUG),
-                liveMatchTracker);
+                liveMatchTracker,
+                new MatchUpdateHelper());
 
         var field = SyncMatchesUseCase.class.getDeclaredField("competitionCode");
         field.setAccessible(true);
