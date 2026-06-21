@@ -136,8 +136,17 @@
               </div>
             </div>
 
-            <!-- Admin: Finalize Round button -->
+            <!-- Admin: Refresh / Finalize Round buttons -->
             <th:block sec:authorize="hasRole('ADMIN')">
+              <div th:if="${showRefreshButton}" class="mt-4 flex justify-end">
+                <button
+                  hx-post="/web/rounds/current/sync"
+                  hx-disabled-elt="this"
+                  class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                >
+                  Refresh
+                </button>
+              </div>
               <div th:if="${canFinalizeRound}" class="mt-4 flex justify-end">
                 <button
                   hx-post="/web/rounds/current/finalize-and-advance"

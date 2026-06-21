@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.ligitabl.api.rest.match.syncfromapi.SyncMatchFromApiUseCase;
-import com.ligitabl.api.rest.match.syncfromapi.SyncMatchFromApiUseCase.SyncMatchFromApiCommand;
-import com.ligitabl.api.rest.match.syncfromapi.SyncMatchFromApiUseCase.SyncMatchFromApiError;
+import com.ligitabl.api.rest.match.syncfromapi.SyncMatchUseCase;
+import com.ligitabl.api.rest.match.syncfromapi.SyncMatchUseCase.SyncMatchCommand;
+import com.ligitabl.api.rest.match.syncfromapi.SyncMatchUseCase.SyncMatchError;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,32 +21,32 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SyncMatchFromApiController {
 
-    private final SyncMatchFromApiUseCase syncMatchFromApiUseCase;
+    private final SyncMatchUseCase syncMatchUseCase;
 
     @PostMapping("/{clientId}/sync-from-api")
     @PreAuthorize("hasRole('ADMIN')")
     @ResponseBody
-    public ResponseEntity<Void> syncMatch(@PathVariable int clientId) {
+    public ResponseEntity<?> syncMatch(@PathVariable int clientId) {
         log.info("POST /web/matches/{}/sync-from-api", clientId);
 
-        var result = syncMatchFromApiUseCase.execute(new SyncMatchFromApiCommand(clientId));
+        var result = syncMatchUseCase.execute(new SyncMatchCommand(clientId));
 
         return result.fold(
                 error -> switch (error) {
-                    case SyncMatchFromApiError.NotFound e -> {
+                    case SyncMatchError.NotFound e -> {
                         log.warn("Match not found for clientId={}", e.clientId());
-                        yield ResponseEntity.<Void>notFound().build();
+                        yield ResponseEntity.notFound().build();
                     }
-                    case SyncMatchFromApiError.AlreadyFinished e -> {
+                    case SyncMatchError.AlreadyFinished e -> {
                         log.info("Match clientId={} already finished, skipping sync", e.clientId());
-                        yield ResponseEntity.<Void>status(409).build();
+                        yield ResponseEntity.status(409).build();
                     }
-                    case SyncMatchFromApiError.ApiError e -> {
+                    case SyncMatchError.ApiError e -> {
                         log.error("API error syncing match clientId={}: {}", clientId, e.cause());
-                        yield ResponseEntity.<Void>status(502).build();
+                        yield ResponseEntity.status(502).build();
                     }
                 },
-                __ -> ResponseEntity.<Void>noContent()
+                __ -> ResponseEntity.noContent()
                         .header("HX-Trigger", "matchSyncComplete")
                         .build());
     }

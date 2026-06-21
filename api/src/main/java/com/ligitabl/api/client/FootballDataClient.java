@@ -2,12 +2,15 @@ package com.ligitabl.api.client;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
 
 import com.ligitabl.api.client.footballdata.CompetitionResponse;
+import com.ligitabl.api.client.footballdata.MatchDto;
 import com.ligitabl.api.client.footballdata.MatchesResponse;
 import com.ligitabl.api.shared.Either;
 
@@ -192,9 +195,42 @@ public class FootballDataClient {
     }
 
     /**
+     * Get specific matches by their external IDs
+     */
+    public Either<FootballDataApiError, MatchesResponse> getMatchesByIds(
+            String competitionCode, List<Integer> matchIds) {
+        var ids = matchIds.stream().map(String::valueOf).collect(Collectors.joining(","));
+        log.debug("Fetching matches by ids: competition={}, ids={}", competitionCode, ids);
+
+        try {
+            var response = webClient
+                    .get()
+                    .uri(uriBuilder -> uriBuilder
+                            .path("/matches")
+                            .queryParam("competitions", competitionCode)
+                            .queryParam("ids", ids)
+                            .build())
+                    .retrieve()
+                    .bodyToMono(MatchesResponse.class)
+                    .block();
+
+            if (response == null || response.matches() == null) {
+                return Either.left(new FootballDataApiError.UnexpectedError("Null response from API"));
+            }
+
+            log.debug("Fetched {} matches by ids", response.matches().size());
+
+            return Either.right(response);
+
+        } catch (Exception e) {
+            return handleException(e);
+        }
+    }
+
+    /**
      * Get a single match by its external ID
      */
-    public Either<FootballDataApiError, com.ligitabl.api.client.footballdata.MatchDto> getMatchById(int matchId) {
+    public Either<FootballDataApiError, MatchDto> getMatchById(int matchId) {
         log.debug("Fetching match by id: {}", matchId);
 
         try {
@@ -202,7 +238,7 @@ public class FootballDataClient {
                     .get()
                     .uri("/matches/{matchId}", matchId)
                     .retrieve()
-                    .bodyToMono(com.ligitabl.api.client.footballdata.MatchDto.class)
+                    .bodyToMono(MatchDto.class)
                     .block();
 
             if (response == null) {
