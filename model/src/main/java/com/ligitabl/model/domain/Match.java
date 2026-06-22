@@ -1,6 +1,8 @@
 package com.ligitabl.model.domain;
 
 import java.time.OffsetDateTime;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
@@ -58,12 +60,15 @@ public class Match extends AbstractModel<UUID> {
         this.score = Score.builder().homeGoals(homeGoals).awayGoals(awayGoals).build();
     }
 
+    public static List<MatchStatus> validTransitionsFrom(MatchStatus status) {
+        return Arrays.stream(MatchStatus.values())
+                .filter(to -> isAllowedTransition(status, to))
+                .toList();
+    }
+
     public void transitionTo(MatchStatus newStatus, String reason) {
         if (newStatus == null) {
             throw new IllegalArgumentException("newStatus must not be null");
-        }
-        if (reason == null || reason.isBlank()) {
-            throw new IllegalArgumentException("reason must not be blank");
         }
 
         MatchStatus from = this.status;
