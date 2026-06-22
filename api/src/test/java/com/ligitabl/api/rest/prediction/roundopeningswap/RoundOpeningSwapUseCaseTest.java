@@ -20,6 +20,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.makeswap.SwapCommand;
+import com.ligitabl.api.rest.prediction.makeswap.SwapError;
+import com.ligitabl.api.rest.prediction.shared.SwapHelper;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -75,7 +77,10 @@ class RoundOpeningSwapUseCaseTest {
         prediction = createPrediction();
 
         useCase = new RoundOpeningSwapUseCase(
-                competitionDefaults, predictionRepo, seasonRepo, roundRepo, matchRepo, clock);
+                roundRepo,
+                predictionRepo,
+                clock,
+                new SwapHelper(competitionDefaults, seasonRepo, predictionRepo, matchRepo));
     }
 
     // ── Happy path ────────────────────────────────────────────────────────────
@@ -104,25 +109,14 @@ class RoundOpeningSwapUseCaseTest {
     }
 
     @Test
-    void shouldApplyMultipleSwaps_upToFive() {
-        // ARS↔LIV, MCI↔CHE, TOT↔ARS (chain of 3)
-        var command = new RoundOpeningSwapCommand(
-                List.of(new SwapCommand("ARS", "LIV"), new SwapCommand("MCI", "CHE"), new SwapCommand("TOT", "MAN")));
+    void shouldApplyMultipleSwaps_upToTwo() {
+        var command =
+                new RoundOpeningSwapCommand(List.of(new SwapCommand("ARS", "LIV"), new SwapCommand("MCI", "CHE")));
 
-        season = createSeasonWithRankings(List.of(
-                TeamRank.of("ARS", 1),
-                TeamRank.of("LIV", 2),
-                TeamRank.of("MCI", 3),
-                TeamRank.of("CHE", 4),
-                TeamRank.of("TOT", 5),
-                TeamRank.of("MAN", 6)));
-        prediction = createPredictionWithRankings(List.of(
-                TeamRank.of("ARS", 1),
-                TeamRank.of("LIV", 2),
-                TeamRank.of("MCI", 3),
-                TeamRank.of("CHE", 4),
-                TeamRank.of("TOT", 5),
-                TeamRank.of("MAN", 6)));
+        season = createSeasonWithRankings(
+                List.of(TeamRank.of("ARS", 1), TeamRank.of("LIV", 2), TeamRank.of("MCI", 3), TeamRank.of("CHE", 4)));
+        prediction = createPredictionWithRankings(
+                List.of(TeamRank.of("ARS", 1), TeamRank.of("LIV", 2), TeamRank.of("MCI", 3), TeamRank.of("CHE", 4)));
 
         when(clock.instant()).thenReturn(now);
         when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
@@ -134,7 +128,7 @@ class RoundOpeningSwapUseCaseTest {
         var result = useCase.execute(userId, command);
 
         assertTrue(result.isRight());
-        assertEquals(3, result.get().swapsApplied());
+        assertEquals(2, result.get().swapsApplied());
     }
 
     @Test
@@ -174,7 +168,7 @@ class RoundOpeningSwapUseCaseTest {
         var result = useCase.execute(userId, command);
 
         assertTrue(result.isLeft());
-        assertInstanceOf(RoundOpeningSwapError.SeasonCompleted.class, result.getLeft());
+        assertInstanceOf(SwapError.SeasonCompleted.class, result.getLeft());
         verify(predictionRepo, never()).save(any());
     }
 
@@ -191,7 +185,7 @@ class RoundOpeningSwapUseCaseTest {
         var result = useCase.execute(userId, command);
 
         assertTrue(result.isLeft());
-        assertInstanceOf(RoundOpeningSwapError.RoundNotOpen.class, result.getLeft());
+        assertInstanceOf(SwapError.RoundNotOpen.class, result.getLeft());
         verify(predictionRepo, never()).save(any());
     }
 
@@ -210,7 +204,7 @@ class RoundOpeningSwapUseCaseTest {
         var result = useCase.execute(userId, command);
 
         assertTrue(result.isLeft());
-        var error = assertInstanceOf(RoundOpeningSwapError.OpeningAlreadyUsed.class, result.getLeft());
+        var error = assertInstanceOf(SwapError.OpeningAlreadyUsed.class, result.getLeft());
         assertEquals(round.getPosition(), error.round());
         verify(predictionRepo, never()).save(any());
     }
@@ -241,12 +235,12 @@ class RoundOpeningSwapUseCaseTest {
         var result = useCase.execute(userId, command);
 
         assertTrue(result.isLeft());
-        assertInstanceOf(RoundOpeningSwapError.BatchSizeInvalid.class, result.getLeft());
+        assertInstanceOf(SwapError.BatchSizeInvalid.class, result.getLeft());
         verify(predictionRepo, never()).save(any());
     }
 
     @Test
-    void shouldReject_whenBatchExceedsFive() {
+    void shouldReject_whenBatchExceedsTwo() {
         when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
@@ -255,15 +249,12 @@ class RoundOpeningSwapUseCaseTest {
         var command = new RoundOpeningSwapCommand(List.of(
                 new SwapCommand("ARS", "LIV"),
                 new SwapCommand("ARS", "LIV"),
-                new SwapCommand("ARS", "LIV"),
-                new SwapCommand("ARS", "LIV"),
-                new SwapCommand("ARS", "LIV"),
-                new SwapCommand("ARS", "LIV"))); // 6 swaps
+                new SwapCommand("ARS", "LIV"))); // 3 swaps
         var result = useCase.execute(userId, command);
 
         assertTrue(result.isLeft());
-        var error = assertInstanceOf(RoundOpeningSwapError.BatchSizeInvalid.class, result.getLeft());
-        assertEquals(6, error.size());
+        var error = assertInstanceOf(SwapError.BatchSizeInvalid.class, result.getLeft());
+        assertEquals(3, error.size());
         verify(predictionRepo, never()).save(any());
     }
 
@@ -277,7 +268,7 @@ class RoundOpeningSwapUseCaseTest {
         var result = useCase.execute(userId, command);
 
         assertTrue(result.isLeft());
-        var error = assertInstanceOf(RoundOpeningSwapError.InvalidTeamCode.class, result.getLeft());
+        var error = assertInstanceOf(SwapError.InvalidTeamCode.class, result.getLeft());
         assertEquals("XYZ", error.code());
         verify(predictionRepo, never()).save(any());
     }
@@ -292,7 +283,7 @@ class RoundOpeningSwapUseCaseTest {
         var result = useCase.execute(userId, command);
 
         assertTrue(result.isLeft());
-        assertInstanceOf(RoundOpeningSwapError.InvalidTeamCode.class, result.getLeft());
+        assertInstanceOf(SwapError.InvalidTeamCode.class, result.getLeft());
         verify(predictionRepo, never()).save(any());
     }
 

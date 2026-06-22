@@ -12,11 +12,9 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.rest.prediction.makeswap.SwapCommand;
+import com.ligitabl.api.rest.prediction.makeswap.SwapError;
 import com.ligitabl.api.rest.prediction.roundopeningswap.RoundOpeningSwapCommand;
-import com.ligitabl.api.rest.prediction.roundopeningswap.RoundOpeningSwapError;
-import com.ligitabl.api.rest.prediction.roundopeningswap.RoundOpeningSwapResult;
 import com.ligitabl.api.rest.prediction.roundopeningswap.RoundOpeningSwapUseCase;
-import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -50,45 +48,48 @@ public class RoundOpeningSwapController {
                         .map(e -> new SwapCommand(e.teamACode(), e.teamBCode()))
                         .toList();
 
-        Either<RoundOpeningSwapError, RoundOpeningSwapResult> result =
-                roundOpeningSwapUseCase.execute(userDetails.getUserId(), new RoundOpeningSwapCommand(swapCommands));
-
-        return result.fold(
-                error -> {
-                    response.setStatus(toHttpStatus(error));
-                    log.warn("Opening swap failed: {}", error);
-                    return Map.of("success", false, "message", errorMessage(error));
-                },
-                success -> {
-                    log.info("Opening swaps committed: {} swap(s)", success.swapsApplied());
-                    return Map.of("success", true, "message", "Prediction updated successfully");
-                });
+        return roundOpeningSwapUseCase
+                .execute(userDetails.getUserId(), new RoundOpeningSwapCommand(swapCommands))
+                .fold(
+                        error -> {
+                            response.setStatus(toHttpStatus(error));
+                            log.warn("Opening swap failed: {}", error);
+                            return Map.of("success", false, "message", errorMessage(error));
+                        },
+                        success -> {
+                            log.info("Opening swaps committed: {} swap(s)", success.swapsApplied());
+                            return Map.of("success", true, "message", "Prediction updated successfully");
+                        });
     }
 
-    private int toHttpStatus(RoundOpeningSwapError error) {
+    private int toHttpStatus(SwapError error) {
         return switch (error) {
-            case RoundOpeningSwapError.NoPredictionFound __ -> 404;
-            case RoundOpeningSwapError.CurrentRoundNotFound __ -> 404;
-            case RoundOpeningSwapError.RoundNotOpen __ -> 409;
-            case RoundOpeningSwapError.OpeningAlreadyUsed __ -> 409;
-            case RoundOpeningSwapError.BatchSizeInvalid __ -> 400;
-            case RoundOpeningSwapError.InvalidTeamCode __ -> 400;
-            case RoundOpeningSwapError.TeamsNotFound __ -> 400;
-            case RoundOpeningSwapError.SeasonCompleted __ -> 409;
+            case SwapError.NoPredictionFound __ -> 404;
+            case SwapError.RoundNotFound __ -> 404;
+            case SwapError.RoundNotOpen __ -> 409;
+            case SwapError.OpeningAlreadyUsed __ -> 409;
+            case SwapError.SeasonCompleted __ -> 409;
+            case SwapError.BatchSizeInvalid __ -> 400;
+            case SwapError.InvalidTeamCode __ -> 400;
+            case SwapError.TeamsNotFound __ -> 400;
+            case SwapError.UseOpeningWindowFirst __ -> 500;
+            case SwapError.CooldownActive __ -> 500;
         };
     }
 
-    private String errorMessage(RoundOpeningSwapError error) {
+    private String errorMessage(SwapError error) {
         return switch (error) {
-            case RoundOpeningSwapError.NoPredictionFound __ -> "No prediction found for current season";
-            case RoundOpeningSwapError.CurrentRoundNotFound __ -> "Current round not found";
-            case RoundOpeningSwapError.RoundNotOpen e -> "Cannot swap when round is " + e.roundStatus();
-            case RoundOpeningSwapError.OpeningAlreadyUsed e -> "Opening swaps already used for round " + e.round();
-            case RoundOpeningSwapError.BatchSizeInvalid e -> "Opening swaps must be between 1 and 5, got " + e.size();
-            case RoundOpeningSwapError.InvalidTeamCode e -> "Invalid team code: " + e.code();
-            case RoundOpeningSwapError.TeamsNotFound e -> "Teams not found in your prediction: " + e.teamACode() + ", "
+            case SwapError.NoPredictionFound __ -> "No prediction found for current season";
+            case SwapError.RoundNotFound e -> "Round " + e.roundPosition() + " not found";
+            case SwapError.RoundNotOpen e -> "Cannot swap when round is " + e.roundStatus();
+            case SwapError.OpeningAlreadyUsed e -> "Opening swaps already used for round " + e.round();
+            case SwapError.SeasonCompleted __ -> "Cannot swap in completed season";
+            case SwapError.BatchSizeInvalid e -> "Opening swaps must be between 1 and 2, got " + e.size();
+            case SwapError.InvalidTeamCode e -> "Invalid team code: " + e.code();
+            case SwapError.TeamsNotFound e -> "Teams not found in your prediction: " + e.teamACode() + ", "
                     + e.teamBCode();
-            case RoundOpeningSwapError.SeasonCompleted __ -> "Cannot swap in completed season";
+            case SwapError.UseOpeningWindowFirst __ -> "Something went wrong";
+            case SwapError.CooldownActive __ -> "Something went wrong";
         };
     }
 }

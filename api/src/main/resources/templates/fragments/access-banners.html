@@ -117,7 +117,7 @@
 
   <!-- Can Create Entry Banner -->
   <div
-    th:if="${canCreateEntry == true}"
+    th:if="${canCreateEntry == true && roundState != 'locked'}"
     x-data="{ imported: false }"
     x-init="imported = localStorage.getItem('ligitabl.guestPrediction') !== null"
     @guest-storage-cleared.window="imported = false"
@@ -221,24 +221,26 @@
   <!-- Round Opening Swaps Banner (each round, after first swap bonus is spent) -->
   <div
     th:if="${swapStatus != null && swapStatus.openingRoundAvailable == true}"
-    class="bg-indigo-50 border border-indigo-200 rounded-lg p-4"
+    class="bg-amber-50 border border-amber-200 rounded-lg p-4"
   >
     <div class="flex items-start">
-      <svg
-        class="h-5 w-5 text-indigo-600 mt-0.5 mr-3 flex-shrink-0"
-        fill="currentColor"
-        viewBox="0 0 20 20"
-      >
-        <path
-          fill-rule="evenodd"
-          d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z"
-          clip-rule="evenodd"
-        />
-      </svg>
+      <div class="bg-amber-100 rounded-full p-1.5 mr-3 flex-shrink-0">
+        <svg
+          class="h-5 w-5 text-amber-600"
+          fill="currentColor"
+          viewBox="0 0 20 20"
+        >
+          <path
+            fill-rule="evenodd"
+            d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </div>
       <div>
-        <p class="text-sm font-medium text-indigo-800">🔄 Opening Swaps Available</p>
-        <p class="text-sm text-indigo-700 mt-1">
-          Make 1–5 swaps and hit Update — cooldown starts after.
+        <p class="text-sm font-semibold text-slate-800">⚡ Opening Swap Available</p>
+        <p class="text-sm text-slate-600 mt-1">
+          Make 1 or 2 swaps and hit Update — cooldown starts after.
         </p>
       </div>
     </div>
@@ -249,6 +251,9 @@
     th:if="${(isGuest == false || isGuest == null) && isCurrentRound == true && roundState == 'locked' && !(swapStatus != null && swapStatus.firstSwapBonus == true)}"
     th:classappend="${canCreateEntry == true || (atRoundNumber != null && atRoundNumber > currentRound) ? 'bg-blue-50 border-blue-200' : 'bg-yellow-50 border-yellow-200'}"
     class="border rounded-lg p-4"
+    x-data="{ imported: false }"
+    x-init="imported = localStorage.getItem('ligitabl.guestPrediction') !== null"
+    @guest-storage-cleared.window="imported = false"
   >
     <div class="flex items-start">
       <svg
@@ -283,7 +288,8 @@
             👋 Matches In Progress
           </p>
           <p class="text-sm text-blue-700 mt-1">
-            You can still make your prediction (1-5 swaps needed). It will be scored next round.
+            <span x-show="imported">We've loaded your guest prediction. Review and submit to join the competition.</span>
+            <span x-show="!imported">You can still make your prediction (1-5 swaps needed). It will be scored next round.</span>
           </p>
         </th:block>
 

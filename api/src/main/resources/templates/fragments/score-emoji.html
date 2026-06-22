@@ -5,7 +5,8 @@
   th:if="${score > 0}"
   class="inline-flex items-center gap-0.5"
 >
-  <span th:text="${score >= 200 ? '🤯' :
+  <span
+    th:text="${score >= 200 ? '🤯' :
             score >= 195 ? '🤩' :
             score >= 190 ? '🥳' :
             score >= 185 ? '😎' :
@@ -14,10 +15,13 @@
             score >= 170 ? '😊' :
             score >= 160 ? '🙂' :
             score >= 145 ? '😌' :
-            score >= 130 ? '😬' : '😩'}"></span>
+            score >= 130 ? '😬' : '😩'}"
+  ></span>
   <span
     class="text-xs font-bold"
-    style="color: #f59e0b"
+    th:class="${score >= 185 ? 'text-xs font-bold text-indigo-500' :
+               score >= 160 ? 'text-xs font-bold text-green-600' :
+                              'text-xs font-bold text-orange-500'}"
     th:text="${score >= 200 ? 'S' :
               score >= 195 ? 'A+' :
               score >= 190 ? 'A' :
