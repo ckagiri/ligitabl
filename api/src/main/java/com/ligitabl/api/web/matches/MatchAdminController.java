@@ -1,5 +1,10 @@
 package com.ligitabl.api.web.matches;
 
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
+
 import jakarta.servlet.http.HttpServletResponse;
 
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -16,6 +21,7 @@ import com.ligitabl.api.rest.matchadmin.reschedulematch.RescheduleMatchCommand;
 import com.ligitabl.api.rest.matchadmin.reschedulematch.RescheduleMatchUseCase;
 import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionMatchCommand;
 import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionMatchStatusUseCase;
+import com.ligitabl.api.rest.matchadmin.updatekickoff.UpdateMatchKickoffUseCase;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
@@ -36,6 +42,7 @@ public class MatchAdminController {
     private final RoundRepo roundRepo;
     private final TransitionMatchStatusUseCase transitionUseCase;
     private final RescheduleMatchUseCase rescheduleUseCase;
+    private final UpdateMatchKickoffUseCase updateKickoffUseCase;
     private final CompetitionDefaults competitionDefaults;
 
     public record RoundOption(int position, String label) {}
@@ -72,12 +79,20 @@ public class MatchAdminController {
         MatchStatus status = match.getStatus();
         boolean canReschedule = status == MatchStatus.SCHEDULED || status == MatchStatus.POSTPONED;
 
+        boolean canEditKickoff = status != MatchStatus.FINISHED && status != MatchStatus.LIVE;
+
         model.addAttribute("matchSlug", matchSlug);
         model.addAttribute("matchLabel", buildLabel(home, away));
         model.addAttribute("currentStatus", status.name());
         model.addAttribute("validTransitions", Match.validTransitionsFrom(status));
         model.addAttribute("canReschedule", canReschedule);
+        model.addAttribute("canEditKickoff", canEditKickoff);
         model.addAttribute("round", round);
+
+        if (canEditKickoff && match.getKickOff() != null) {
+            model.addAttribute("currentKickOffUtc",
+                    match.getKickOff().withOffsetSameInstant(ZoneOffset.UTC).toInstant().toString());
+        }
 
         if (canReschedule) {
             int floorPosition = hierarchyValidator.validateCurrentRound(ctx.season())
@@ -85,7 +100,9 @@ public class MatchAdminController {
 
             var availableRounds = roundRepo.findBySeasonIdOrderByPosition(ctx.season().getId())
                     .stream()
-                    .filter(r -> r.getPosition() > floorPosition && !r.isFinalized())
+                    .filter(r -> r.getPosition() >= floorPosition
+                            && !r.isFinalized()
+                            && r.getPosition() != round)
                     .map(r -> new RoundOption(r.getPosition(), "GW " + r.getPosition()))
                     .toList();
             model.addAttribute("availableRounds", availableRounds);
@@ -168,6 +185,55 @@ public class MatchAdminController {
         return rescheduleUseCase.execute(cmd).fold(
                 err -> {
                     log.warn("Move failed for {}: {}", matchSlug, err.getMessage());
+                    response.setStatus(422);
+                    model.addAttribute("error", err.getMessage());
+                    return "fragments/match-admin-modal :: error-message";
+                },
+                __ -> {
+                    response.setHeader("HX-Trigger", "matchSyncComplete");
+                    return "fragments/match-admin-modal :: done";
+                });
+    }
+
+    @PostMapping("/{matchSlug}/update-kickoff")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String updateKickoff(
+            @PathVariable String matchSlug,
+            @RequestParam Integer round,
+            @RequestParam String kickOffDate,
+            @RequestParam String kickOffTime,
+            @RequestParam Integer utcOffset,
+            Model model,
+            HttpServletResponse response) {
+
+        log.info("POST /matches/{}/update-kickoff, round={}, date={}, time={}, utcOffset={}",
+                matchSlug, round, kickOffDate, kickOffTime, utcOffset);
+
+        if (kickOffDate == null || kickOffDate.isBlank() || kickOffTime == null || kickOffTime.isBlank()) {
+            response.setStatus(400);
+            model.addAttribute("error", "Date and time are required");
+            return "fragments/match-admin-modal :: error-message";
+        }
+
+        OffsetDateTime newKickOff;
+        try {
+            // utcOffset is minutes WEST of UTC (browser's getTimezoneOffset()):
+            // UTC+2 → utcOffset = -120, ZoneOffset = +02:00
+            ZoneOffset zoneOffset = ZoneOffset.ofTotalSeconds(-utcOffset * 60);
+            newKickOff = OffsetDateTime.of(
+                    LocalDateTime.parse(kickOffDate + "T" + kickOffTime + ":00"),
+                    zoneOffset);
+        } catch (DateTimeParseException e) {
+            response.setStatus(400);
+            model.addAttribute("error", "Invalid date or time format");
+            return "fragments/match-admin-modal :: error-message";
+        }
+
+        var cmd = new UpdateMatchKickoffUseCase.Command(round, matchSlug, newKickOff);
+
+        return updateKickoffUseCase.execute(cmd).fold(
+                err -> {
+                    log.warn("Kickoff update failed for {}: {}", matchSlug, err.getMessage());
                     response.setStatus(422);
                     model.addAttribute("error", err.getMessage());
                     return "fragments/match-admin-modal :: error-message";
