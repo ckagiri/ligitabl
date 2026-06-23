@@ -41,7 +41,7 @@ public class SyncRoundUseCase {
 
     @Transactional
     public Either<SyncRoundError, Void> execute(SyncRoundCommand command) {
-        log.info("Syncing non-finished round matches from API");
+        log.info("Syncing non-terminal, same-matchday round matches from API");
 
         return hierarchyValidator
                 .resolveHierarchy(competitionDefaults.defaultCompetitionSlug())
@@ -55,23 +55,27 @@ public class SyncRoundUseCase {
                     }
 
                     var allMatches = matchRepo.findByRoundId(ctx.round().getId());
-                    var nonFinished = allMatches.stream()
-                            .filter(m -> m.getStatus() != MatchStatus.FINISHED)
+                    // Exclude POSTPONED (may be in wrong round) and wrong-matchday matches;
+                    // those require individual sync.
+                    var syncable = allMatches.stream()
+                            .filter(m -> m.getStatus() != MatchStatus.FINISHED
+                                    && m.getStatus() != MatchStatus.POSTPONED
+                                    && m.getMatchday() == ctx.round().getPosition())
                             .toList();
 
-                    if (nonFinished.isEmpty()) {
+                    if (syncable.isEmpty()) {
                         log.info(
-                                "No non-finished matches in round {}",
+                                "No syncable matches in round {}",
                                 ctx.round().getPosition());
                         return Either.right(null);
                     }
 
-                    var clientIds = nonFinished.stream()
+                    var clientIds = syncable.stream()
                             .map(m -> m.getClientId())
                             .filter(id -> id != null)
                             .toList();
 
-                    log.info("Fetching {} non-finished matches by IDs from API", clientIds.size());
+                    log.info("Fetching {} syncable matches by IDs from API", clientIds.size());
 
                     var apiResult = footballDataClient.getMatchesByIds(competitionCode, clientIds);
                     if (apiResult.isLeft()) {
@@ -81,7 +85,7 @@ public class SyncRoundUseCase {
                     var apiMatches = apiResult.get().matches();
                     int updated = 0;
                     for (var apiMatch : apiMatches) {
-                        var dbMatch = nonFinished.stream()
+                        var dbMatch = syncable.stream()
                                 .filter(m -> m.getClientId() != null
                                         && m.getClientId().longValue() == apiMatch.id())
                                 .findFirst()

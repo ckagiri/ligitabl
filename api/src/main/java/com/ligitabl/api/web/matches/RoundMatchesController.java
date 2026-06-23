@@ -61,16 +61,16 @@ public class RoundMatchesController {
             model.addAttribute("matches", payload.matches());
 
             boolean isViewingCurrentRound = payload.viewingRound() == payload.currentRound();
-            boolean allMatchesTerminal = !payload.matches().isEmpty()
-                    && payload.matches().stream()
-                            .allMatch(m -> "FINISHED".equals(m.getStatus()) || "POSTPONED".equals(m.getStatus()));
             boolean allMatchesFinished = !payload.matches().isEmpty()
                     && payload.matches().stream().allMatch(m -> "FINISHED".equals(m.getStatus()));
+            boolean hasNonTerminalMatches = !payload.matches().isEmpty()
+                    && payload.matches().stream()
+                            .anyMatch(m -> !"FINISHED".equals(m.getStatus()) && !"POSTPONED".equals(m.getStatus()));
 
             model.addAttribute(
-                    "canFinalizeRound", isViewingCurrentRound && allMatchesTerminal && !payload.roundFinalized());
+                    "canFinalizeRound", isViewingCurrentRound && allMatchesFinished && !payload.roundFinalized());
             model.addAttribute(
-                    "showRefreshButton", isViewingCurrentRound && !payload.roundFinalized() && !allMatchesFinished);
+                    "showRefreshButton", isViewingCurrentRound && !payload.roundFinalized() && hasNonTerminalMatches);
 
             // Return fragment for HTMX requests, full page otherwise
             return isHtmxRequest ? "matches :: matches-content" : "matches";

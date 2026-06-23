@@ -51,7 +51,7 @@
                     >Chelsea</span>
                   </div>
 
-                  <!-- Score (finished/live) or VS (scheduled) -->
+                  <!-- Score (finished/live) or VS (anything else) -->
                   <div class="flex-shrink-0 flex items-center gap-1.5 min-w-[56px] justify-center">
                     <th:block th:if="${match.status == 'FINISHED' or match.status == 'LIVE'}">
                       <span
@@ -64,7 +64,7 @@
                         th:text="${match.awayScore}"
                       >1</span>
                     </th:block>
-                    <th:block th:if="${match.status == 'SCHEDULED'}">
+                    <th:block th:if="${match.status != 'FINISHED' and match.status != 'LIVE'}">
                       <span class="text-xs font-semibold text-gray-400 tracking-widest">VS</span>
                     </th:block>
                   </div>
@@ -110,6 +110,16 @@
                   >Postponed</span>
 
                   <span
+                    th:if="${match.status == 'SUSPENDED'}"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-orange-50 border border-orange-300 text-orange-700"
+                  >Suspended</span>
+
+                  <span
+                    th:if="${match.status == 'CANCELLED'}"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-medium bg-red-50 border border-red-300 text-red-600"
+                  >Cancelled</span>
+
+                  <span
                     th:if="${match.formattedTime != null}"
                     class="text-[11px] text-gray-400"
                     th:attr="data-timestamp=${match.formattedTime}"
@@ -127,6 +137,19 @@
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                      </svg>
+                    </button>
+                    <!-- Manage button (hidden for FINISHED — no valid transitions or reschedule) -->
+                    <button
+                      th:if="${match.status != 'FINISHED'}"
+                      th:attr="hx-get=@{/matches/{slug}/admin-modal(slug=${match.slug},round=${viewingRound},home=${match.homeTeam},away=${match.awayTeam})}"
+                      hx-target="#match-admin-modal"
+                      hx-swap="innerHTML"
+                      class="text-gray-300 hover:text-indigo-500 transition-colors p-0.5 rounded"
+                      title="Manage match"
+                    >
+                      <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 20h9M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
                       </svg>
                     </button>
                   </th:block>
@@ -163,6 +186,9 @@
 
         </div>
       </div>
+
+      <!-- Match admin modal container -->
+      <div id="match-admin-modal"></div>
     </div>
   </body>
 </html>
