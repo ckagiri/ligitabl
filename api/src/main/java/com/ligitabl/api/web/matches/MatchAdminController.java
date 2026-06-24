@@ -5,8 +5,6 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -28,6 +26,7 @@ import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -59,8 +58,7 @@ public class MatchAdminController {
 
         log.info("GET /matches/{}/admin-modal, round={}", matchSlug, round);
 
-        var hierarchyResult = hierarchyValidator.resolveHierarchy(
-                competitionDefaults.defaultCompetitionSlug(), round);
+        var hierarchyResult = hierarchyValidator.resolveHierarchy(competitionDefaults.defaultCompetitionSlug(), round);
         if (hierarchyResult.isLeft()) {
             response.setStatus(400);
             model.addAttribute("error", hierarchyResult.getLeft().getMessage());
@@ -90,19 +88,23 @@ public class MatchAdminController {
         model.addAttribute("round", round);
 
         if (canEditKickoff && match.getKickOff() != null) {
-            model.addAttribute("currentKickOffUtc",
-                    match.getKickOff().withOffsetSameInstant(ZoneOffset.UTC).toInstant().toString());
+            model.addAttribute(
+                    "currentKickOffUtc",
+                    match.getKickOff()
+                            .withOffsetSameInstant(ZoneOffset.UTC)
+                            .toInstant()
+                            .toString());
         }
 
         if (canReschedule) {
-            int floorPosition = hierarchyValidator.validateCurrentRound(ctx.season())
+            int floorPosition = hierarchyValidator
+                    .validateCurrentRound(ctx.season())
                     .fold(__ -> round, currentRound -> currentRound.getPosition());
 
-            var availableRounds = roundRepo.findBySeasonIdOrderByPosition(ctx.season().getId())
+            var availableRounds = roundRepo
+                    .findBySeasonIdOrderByPosition(ctx.season().getId())
                     .stream()
-                    .filter(r -> r.getPosition() >= floorPosition
-                            && !r.isFinalized()
-                            && r.getPosition() != round)
+                    .filter(r -> r.getPosition() >= floorPosition && !r.isFinalized() && r.getPosition() != round)
                     .map(r -> new RoundOption(r.getPosition(), "GW " + r.getPosition()))
                     .toList();
             model.addAttribute("availableRounds", availableRounds);
@@ -151,17 +153,19 @@ public class MatchAdminController {
                 .score(score)
                 .build();
 
-        return transitionUseCase.execute(cmd).fold(
-                err -> {
-                    log.warn("Transition failed for {}: {}", matchSlug, err.getMessage());
-                    response.setStatus(422);
-                    model.addAttribute("error", err.getMessage());
-                    return "fragments/match-admin-modal :: error-message";
-                },
-                __ -> {
-                    response.setHeader("HX-Trigger", "matchSyncComplete");
-                    return "fragments/match-admin-modal :: done";
-                });
+        return transitionUseCase
+                .execute(cmd)
+                .fold(
+                        err -> {
+                            log.warn("Transition failed for {}: {}", matchSlug, err.getMessage());
+                            response.setStatus(422);
+                            model.addAttribute("error", err.getMessage());
+                            return "fragments/match-admin-modal :: error-message";
+                        },
+                        __ -> {
+                            response.setHeader("HX-Trigger", "matchSyncComplete");
+                            return "fragments/match-admin-modal :: done";
+                        });
     }
 
     @PostMapping("/{matchSlug}/move")
@@ -182,17 +186,19 @@ public class MatchAdminController {
                 .reason(null)
                 .build();
 
-        return rescheduleUseCase.execute(cmd).fold(
-                err -> {
-                    log.warn("Move failed for {}: {}", matchSlug, err.getMessage());
-                    response.setStatus(422);
-                    model.addAttribute("error", err.getMessage());
-                    return "fragments/match-admin-modal :: error-message";
-                },
-                __ -> {
-                    response.setHeader("HX-Trigger", "matchSyncComplete");
-                    return "fragments/match-admin-modal :: done";
-                });
+        return rescheduleUseCase
+                .execute(cmd)
+                .fold(
+                        err -> {
+                            log.warn("Move failed for {}: {}", matchSlug, err.getMessage());
+                            response.setStatus(422);
+                            model.addAttribute("error", err.getMessage());
+                            return "fragments/match-admin-modal :: error-message";
+                        },
+                        __ -> {
+                            response.setHeader("HX-Trigger", "matchSyncComplete");
+                            return "fragments/match-admin-modal :: done";
+                        });
     }
 
     @PostMapping("/{matchSlug}/update-kickoff")
@@ -206,8 +212,13 @@ public class MatchAdminController {
             Model model,
             HttpServletResponse response) {
 
-        log.info("POST /matches/{}/update-kickoff, round={}, date={}, time={}, utcOffset={}",
-                matchSlug, round, kickOffDate, kickOffTime, utcOffset);
+        log.info(
+                "POST /matches/{}/update-kickoff, round={}, date={}, time={}, utcOffset={}",
+                matchSlug,
+                round,
+                kickOffDate,
+                kickOffTime,
+                utcOffset);
 
         if (kickOffDate == null || kickOffDate.isBlank() || kickOffTime == null || kickOffTime.isBlank()) {
             response.setStatus(400);
@@ -220,9 +231,7 @@ public class MatchAdminController {
             // utcOffset is minutes WEST of UTC (browser's getTimezoneOffset()):
             // UTC+2 → utcOffset = -120, ZoneOffset = +02:00
             ZoneOffset zoneOffset = ZoneOffset.ofTotalSeconds(-utcOffset * 60);
-            newKickOff = OffsetDateTime.of(
-                    LocalDateTime.parse(kickOffDate + "T" + kickOffTime + ":00"),
-                    zoneOffset);
+            newKickOff = OffsetDateTime.of(LocalDateTime.parse(kickOffDate + "T" + kickOffTime + ":00"), zoneOffset);
         } catch (DateTimeParseException e) {
             response.setStatus(400);
             model.addAttribute("error", "Invalid date or time format");
@@ -231,17 +240,19 @@ public class MatchAdminController {
 
         var cmd = new UpdateMatchKickoffUseCase.Command(round, matchSlug, newKickOff);
 
-        return updateKickoffUseCase.execute(cmd).fold(
-                err -> {
-                    log.warn("Kickoff update failed for {}: {}", matchSlug, err.getMessage());
-                    response.setStatus(422);
-                    model.addAttribute("error", err.getMessage());
-                    return "fragments/match-admin-modal :: error-message";
-                },
-                __ -> {
-                    response.setHeader("HX-Trigger", "matchSyncComplete");
-                    return "fragments/match-admin-modal :: done";
-                });
+        return updateKickoffUseCase
+                .execute(cmd)
+                .fold(
+                        err -> {
+                            log.warn("Kickoff update failed for {}: {}", matchSlug, err.getMessage());
+                            response.setStatus(422);
+                            model.addAttribute("error", err.getMessage());
+                            return "fragments/match-admin-modal :: error-message";
+                        },
+                        __ -> {
+                            response.setHeader("HX-Trigger", "matchSyncComplete");
+                            return "fragments/match-admin-modal :: done";
+                        });
     }
 
     private static String buildLabel(String home, String away) {

@@ -1,4 +1,5 @@
-# ==============================================================================
+Set your predicted order for next gameweek.
+Take your time — no swaps needed, but up to 5 to fine-tune.# ==============================================================================
 # Makefile for ligitabl (Spring Boot + Maven + Docker)
 # SAFETY-FIRST: No fallbacks, explicit environments, loud failures
 # ==============================================================================
