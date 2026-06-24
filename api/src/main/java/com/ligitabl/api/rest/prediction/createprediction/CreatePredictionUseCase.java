@@ -78,9 +78,6 @@ public class CreatePredictionUseCase {
     private Either<CreatePredictionError, Void> validateSwapTeams(CreatePredictionCommand cmd, Season season) {
         List<CreatePredictionCommand.SwapPair> swaps = cmd.swaps();
 
-        if (swaps == null || swaps.isEmpty()) {
-            return Either.left(new CreatePredictionError.EmptySwaps());
-        }
         if (swaps.size() > MAX_INITIAL_SWAPS) {
             return Either.left(new CreatePredictionError.TooManySwaps(swaps.size(), MAX_INITIAL_SWAPS));
         }

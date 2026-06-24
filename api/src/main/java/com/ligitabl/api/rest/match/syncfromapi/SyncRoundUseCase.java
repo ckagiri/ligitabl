@@ -64,9 +64,7 @@ public class SyncRoundUseCase {
                             .toList();
 
                     if (syncable.isEmpty()) {
-                        log.info(
-                                "No syncable matches in round {}",
-                                ctx.round().getPosition());
+                        log.info("No syncable matches in round {}", ctx.round().getPosition());
                         return Either.right(null);
                     }
 

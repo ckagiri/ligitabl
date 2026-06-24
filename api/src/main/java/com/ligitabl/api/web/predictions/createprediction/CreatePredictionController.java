@@ -71,7 +71,6 @@ public class CreatePredictionController {
             case CreatePredictionError.NotFound __ -> 404;
             case CreatePredictionError.Completed __ -> 409;
             case CreatePredictionError.AlreadyJoined __ -> 409;
-            case CreatePredictionError.EmptySwaps __ -> 400;
             case CreatePredictionError.TooManySwaps __ -> 400;
             case CreatePredictionError.SameTeam __ -> 400;
             case CreatePredictionError.InvalidTeamCode __ -> 400;
@@ -87,7 +86,6 @@ public class CreatePredictionController {
             case CreatePredictionError.NotFound __ -> "No active season available";
             case CreatePredictionError.Completed __ -> "Cannot join a completed season";
             case CreatePredictionError.AlreadyJoined __ -> "You have already joined this season";
-            case CreatePredictionError.EmptySwaps __ -> "At least one swap is required";
             case CreatePredictionError.TooManySwaps e -> "Too many swaps: provided " + e.provided() + ", maximum is "
                     + e.max();
             case CreatePredictionError.SameTeam __ -> "You must swap two different teams";

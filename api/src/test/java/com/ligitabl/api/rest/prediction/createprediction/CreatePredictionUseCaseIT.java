@@ -251,13 +251,12 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
     class ValidationErrors {
 
         @Test
-        @DisplayName("should reject when no swaps are provided")
-        void shouldRejectWhenEmptySwaps() {
+        @DisplayName("should allow when no swaps are provided")
+        void shouldAllowWhenEmptySwaps() {
             Either<CreatePredictionError, CreatePredictionResult> result =
                     useCase.execute(userId, multiSwap(List.of()));
 
-            assertThat(result.isLeft()).isTrue();
-            assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.EmptySwaps.class);
+            assertThat(result.isRight()).isTrue();
         }
 
         @Test

@@ -268,14 +268,19 @@ class CreatePredictionUseCaseTest {
     }
 
     @Test
-    void shouldReject_whenEmptySwapList() {
+    void shouldAllow_whenEmptySwapList() {
+        when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
+        when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
+        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
+        when(predictionRepo.save(any())).thenAnswer(returnsFirstArg());
+        when(entryRepo.save(any())).thenAnswer(returnsFirstArg());
 
         Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, multiSwap(List.of()));
 
-        assertTrue(result.isLeft());
-        assertInstanceOf(CreatePredictionError.EmptySwaps.class, result.getLeft());
+        assertTrue(result.isRight());
     }
 
     @Test
