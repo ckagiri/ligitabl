@@ -429,7 +429,7 @@ window.Ligitabl.predictionPage = function(el) {
     },
     canUpdate() {
       const swapCount = this.getSwapCount();
-      if (swapCount === 0) return false;
+      if (!this.isInitialPrediction && swapCount === 0) return false;
       if (this.isInitialPrediction || this.isOpeningRound) {
         if (swapCount > MAX_INITIAL_SWAPS) return false;
       } else {
