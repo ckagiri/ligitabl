@@ -4,10 +4,8 @@ import static com.ligitabl.model.db.tables.TContest.T_CONTEST;
 import static com.ligitabl.model.db.tables.TEntry.T_ENTRY;
 import static com.ligitabl.model.db.tables.TRoundSubmission.T_ROUND_SUBMISSION;
 import static org.jooq.impl.DSL.greatest;
-import static org.jooq.impl.DSL.inline;
 
 import java.nio.charset.StandardCharsets;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -41,7 +39,6 @@ public class EntryPersistenceAdapter implements EntryRepo {
                 .onConflict(T_ENTRY.FK_USER_ID, T_ENTRY.FK_CONTEST_ID)
                 .doUpdate()
                 .set(T_ENTRY.C_JOINED_AT_ROUND, entry.getJoinedAtRound())
-                .set(T_ENTRY.C_REMOVED_AT, (OffsetDateTime) null)
                 .set(T_ENTRY.C_REMOVED_AT_ROUND, (Integer) null)
                 .execute();
 
@@ -83,13 +80,12 @@ public class EntryPersistenceAdapter implements EntryRepo {
                 dsl.selectOne()
                         .from(T_ENTRY)
                         .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
-                        .and(T_ENTRY.C_REMOVED_AT.isNull()));
+                        .and(T_ENTRY.C_REMOVED_AT_ROUND.isNull()));
     }
 
     @Override
     public void softRemove(UUID userId, UUID contestId, int removedAtRound) {
         dsl.update(T_ENTRY)
-                .set(T_ENTRY.C_REMOVED_AT, OffsetDateTime.now())
                 .set(T_ENTRY.C_REMOVED_AT_ROUND, removedAtRound)
                 .where(T_ENTRY.FK_USER_ID.eq(userId))
                 .and(T_ENTRY.FK_CONTEST_ID.eq(contestId))
@@ -118,15 +114,11 @@ public class EntryPersistenceAdapter implements EntryRepo {
             return null;
         }
 
-        var removedAt = record.getRemovedAt();
-
         return Entry.builder()
                 .id(syntheticId(record.getUserId(), record.getContestId()))
                 .userId(record.getUserId())
                 .contestId(record.getContestId())
-                .joinedAt(null)
                 .joinedAtRound(record.getJoinedAtRound() != null ? record.getJoinedAtRound() : 0)
-                .removedAt(removedAt != null ? removedAt.toInstant() : null)
                 .removedAtRound(record.getRemovedAtRound())
                 .build();
     }

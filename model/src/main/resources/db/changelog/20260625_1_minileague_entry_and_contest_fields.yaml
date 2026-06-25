@@ -23,11 +23,6 @@ databaseChangeLog:
                   constraints:
                     nullable: false
               - column:
-                  name: c_removed_at
-                  type: timestamp with time zone
-                  constraints:
-                    nullable: true
-              - column:
                   name: c_removed_at_round
                   type: int
                   constraints:
@@ -57,7 +52,7 @@ databaseChangeLog:
             referencedTableSchemaName: public
 
   - changeSet:
-      id: 20260625_2_minileague_entry_backfill_joined_at_round
+      id: 20260625_2_minileague_backfill_joined_at_round
       author: system
       preConditions:
         - onFail: MARK_RAN

@@ -94,7 +94,7 @@ public class ContestPersistenceAdapter implements ContestRepo {
                         dsl.select(T_ENTRY.FK_CONTEST_ID)
                                 .from(T_ENTRY)
                                 .where(T_ENTRY.FK_USER_ID.eq(userId))
-                                .and(T_ENTRY.C_REMOVED_AT.isNull())))
+                                .and(T_ENTRY.C_REMOVED_AT_ROUND.isNull())))
                 .fetch()
                 .map(ContestPersistenceAdapter::map);
     }

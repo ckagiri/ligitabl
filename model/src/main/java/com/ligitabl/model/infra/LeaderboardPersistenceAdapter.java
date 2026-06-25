@@ -6,7 +6,6 @@ import static com.ligitabl.model.db.tables.TRoundResult.T_ROUND_RESULT;
 import static com.ligitabl.model.db.tables.TRoundSubmission.T_ROUND_SUBMISSION;
 import static com.ligitabl.model.db.tables.TUser.T_USER;
 
-import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -133,9 +132,9 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .and(T_ENTRY.C_JOINED_AT_ROUND.le(phaseToRound));
 
         if (activeOnly) {
-            query = query.and(T_ENTRY.C_REMOVED_AT.isNull());
+            query = query.and(T_ENTRY.C_REMOVED_AT_ROUND.isNull());
         } else {
-            query = query.and(T_ENTRY.C_REMOVED_AT.isNull()
+            query = query.and(T_ENTRY.C_REMOVED_AT_ROUND.isNull()
                     .or(T_ENTRY.C_REMOVED_AT_ROUND.ge(fromRound)));
         }
 
@@ -189,7 +188,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         totalSwaps,
                         T_ENTRY.C_JOINED_AT_ROUND.as("joined_at_gw"),
                         isScored,
-                        T_ENTRY.C_REMOVED_AT.as("removed_at"))
+                        T_ENTRY.C_REMOVED_AT_ROUND.as("removed_at_round"))
                 .from(T_ENTRY)
                 .join(T_USER)
                 .on(T_USER.PK_ID.eq(T_ENTRY.FK_USER_ID))
@@ -207,9 +206,9 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .and(T_ENTRY.C_JOINED_AT_ROUND.le(phaseToRound));
 
         if (activeOnly) {
-            baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT.isNull());
+            baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT_ROUND.isNull());
         } else {
-            baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT.isNull()
+            baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT_ROUND.isNull()
                     .or(T_ENTRY.C_REMOVED_AT_ROUND.ge(fromRound)));
         }
 
@@ -219,7 +218,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         T_USER.C_PUBLIC_ID,
                         T_USER.C_DISPLAY_NAME,
                         T_ENTRY.C_JOINED_AT_ROUND,
-                        T_ENTRY.C_REMOVED_AT));
+                        T_ENTRY.C_REMOVED_AT_ROUND));
 
         Field<UUID> userId = userStats.field(T_USER.PK_ID);
         Field<String> publicId = userStats.field(T_USER.C_PUBLIC_ID);
@@ -231,7 +230,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         Field<Integer> totalSwapsField = userStats.field("total_swaps", Integer.class);
         Field<Integer> joinedAtGwField = userStats.field("joined_at_gw", Integer.class);
         Field<Integer> isScoredField = userStats.field("is_scored", Integer.class);
-        Field<OffsetDateTime> removedAtField = userStats.field("removed_at", OffsetDateTime.class);
+        Field<Integer> removedAtRoundField = userStats.field("removed_at_round", Integer.class);
 
         Field<Integer> position = DSL.rowNumber()
                 .over()
@@ -257,7 +256,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         totalSwapsField,
                         joinedAtGwField,
                         isScoredField,
-                        removedAtField)
+                        removedAtRoundField)
                 .from(userStats)
                 .orderBy(position)
                 .limit(limit)
@@ -274,7 +273,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         r.get(totalSwapsField),
                         r.get(joinedAtGwField),
                         r.get(isScoredField) > 0,
-                        r.get(removedAtField) != null));
+                        r.get(removedAtRoundField) != null));
     }
 
     private UserRankingInfo fetchUserRanking(
@@ -324,7 +323,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         totalSwaps,
                         T_ENTRY.C_JOINED_AT_ROUND.as("joined_at_gw"),
                         isScored,
-                        T_ENTRY.C_REMOVED_AT.as("removed_at"))
+                        T_ENTRY.C_REMOVED_AT_ROUND.as("removed_at_round"))
                 .from(T_ENTRY)
                 .join(T_USER)
                 .on(T_USER.PK_ID.eq(T_ENTRY.FK_USER_ID))
@@ -342,9 +341,9 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .and(T_ENTRY.C_JOINED_AT_ROUND.le(phaseToRound));
 
         if (activeOnly) {
-            baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT.isNull());
+            baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT_ROUND.isNull());
         } else {
-            baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT.isNull()
+            baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT_ROUND.isNull()
                     .or(T_ENTRY.C_REMOVED_AT_ROUND.ge(fromRound)));
         }
 
@@ -354,7 +353,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         T_USER.C_PUBLIC_ID,
                         T_USER.C_DISPLAY_NAME,
                         T_ENTRY.C_JOINED_AT_ROUND,
-                        T_ENTRY.C_REMOVED_AT));
+                        T_ENTRY.C_REMOVED_AT_ROUND));
 
         Field<UUID> userIdField = userStats.field(T_USER.PK_ID);
         Field<String> publicId = userStats.field(T_USER.C_PUBLIC_ID);
@@ -366,7 +365,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         Field<Integer> totalSwapsField = userStats.field("total_swaps", Integer.class);
         Field<Integer> joinedAtGwField = userStats.field("joined_at_gw", Integer.class);
         Field<Integer> isScoredField = userStats.field("is_scored", Integer.class);
-        Field<OffsetDateTime> removedAtField = userStats.field("removed_at", OffsetDateTime.class);
+        Field<Integer> removedAtRoundField = userStats.field("removed_at_round", Integer.class);
 
         Field<Integer> position = DSL.rowNumber()
                 .over()
@@ -391,7 +390,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         totalSwapsField.as("total_swaps"),
                         joinedAtGwField.as("joined_at_gw"),
                         isScoredField.as("is_scored"),
-                        removedAtField.as("removed_at"))
+                        removedAtRoundField.as("removed_at_round"))
                 .from(userStats)
                 .asTable("ranked_stats");
 
@@ -406,7 +405,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         Field<Integer> rankedTotalSwaps = rankedStats.field("total_swaps", Integer.class);
         Field<Integer> rankedJoinedAtGw = rankedStats.field("joined_at_gw", Integer.class);
         Field<Integer> rankedIsScored = rankedStats.field("is_scored", Integer.class);
-        Field<OffsetDateTime> rankedRemovedAt = rankedStats.field("removed_at", OffsetDateTime.class);
+        Field<Integer> rankedRemovedAtRound = rankedStats.field("removed_at_round", Integer.class);
 
         RankingWithPosition ranking = dsl.with(userStats)
                 .selectFrom(rankedStats)
@@ -423,7 +422,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         r.get(rankedTotalSwaps),
                         r.get(rankedJoinedAtGw),
                         r.get(rankedIsScored) > 0,
-                        r.get(rankedRemovedAt) != null));
+                        r.get(rankedRemovedAtRound) != null));
 
         if (ranking == null) {
             return new UserRankingInfo(null, false, 0);

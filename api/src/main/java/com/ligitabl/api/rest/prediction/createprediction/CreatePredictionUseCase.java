@@ -194,7 +194,6 @@ public class CreatePredictionUseCase {
             Entry entry = Entry.builder()
                     .userId(userId)
                     .contestId(mainContest.getId())
-                    .joinedAt(now)
                     .joinedAtRound(atRoundNumber)
                     .build();
 

@@ -337,7 +337,7 @@ public class SeedSeasonUseCase {
             Entry entry = Entry.builder()
                     .userId(user.getId())
                     .contestId(defaultContestId)
-                    .joinedAt(clock.instant())
+                    .joinedAtRound(prediction.getAtRoundNumber())
                     .build();
             entryRepo.save(entry);
 
