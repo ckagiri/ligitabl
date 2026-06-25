@@ -20,4 +20,8 @@ public interface EntryRepo {
     void softRemove(UUID userId, UUID contestId, int removedAtRound);
 
     boolean hasAnyScore(UUID userId, UUID contestId);
+
+    void deleteByUserAndContest(UUID userId, UUID contestId);
+
+    void deleteByContestId(UUID contestId);
 }

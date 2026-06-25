@@ -18,4 +18,6 @@ public interface ContestRepo {
     List<Contest> findPrivateByUserId(UUID userId);
 
     Optional<Contest> findByJoinCode(String joinCode);
+
+    void delete(UUID contestId);
 }

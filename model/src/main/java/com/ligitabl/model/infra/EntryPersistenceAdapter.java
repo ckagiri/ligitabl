@@ -93,6 +93,21 @@ public class EntryPersistenceAdapter implements EntryRepo {
     }
 
     @Override
+    public void deleteByUserAndContest(UUID userId, UUID contestId) {
+        dsl.deleteFrom(T_ENTRY)
+                .where(T_ENTRY.FK_USER_ID.eq(userId))
+                .and(T_ENTRY.FK_CONTEST_ID.eq(contestId))
+                .execute();
+    }
+
+    @Override
+    public void deleteByContestId(UUID contestId) {
+        dsl.deleteFrom(T_ENTRY)
+                .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
+                .execute();
+    }
+
+    @Override
     public boolean hasAnyScore(UUID userId, UUID contestId) {
         return dsl.fetchExists(
                 dsl.selectOne()

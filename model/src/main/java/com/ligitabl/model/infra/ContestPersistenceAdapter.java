@@ -100,6 +100,13 @@ public class ContestPersistenceAdapter implements ContestRepo {
     }
 
     @Override
+    public void delete(UUID contestId) {
+        dsl.deleteFrom(T_CONTEST)
+                .where(T_CONTEST.PK_ID.eq(contestId))
+                .execute();
+    }
+
+    @Override
     public Optional<Contest> findByJoinCode(String joinCode) {
         var record = dsl.selectFrom(T_CONTEST)
                 .where(upper(T_CONTEST.C_JOIN_CODE).eq(upper(joinCode)))
