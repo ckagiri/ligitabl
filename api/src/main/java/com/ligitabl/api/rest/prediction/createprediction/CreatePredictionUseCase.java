@@ -195,6 +195,7 @@ public class CreatePredictionUseCase {
                     .userId(userId)
                     .contestId(mainContest.getId())
                     .joinedAt(now)
+                    .joinedAtRound(atRoundNumber)
                     .build();
 
             Entry savedEntry = entryRepo.save(entry);

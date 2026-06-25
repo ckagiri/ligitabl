@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
@@ -32,7 +33,10 @@ public class CreatePredictionController {
     @PostMapping
     @ResponseBody
     public Map<String, Object> createSeasonPrediction(
-            @RequestBody CreatePredictionRequest request, Principal principal, HttpServletResponse response) {
+            @RequestBody CreatePredictionRequest request,
+            @RequestParam(name = "next", required = false) String nextUrl,
+            Principal principal,
+            HttpServletResponse response) {
         WebUserDetails userDetails = WebSecurity.resolveUser(principal);
         if (userDetails == null) {
             response.setStatus(401);
@@ -62,6 +66,9 @@ public class CreatePredictionController {
                 },
                 created -> {
                     log.info("Created season prediction: {}", created.predictionId());
+                    if (nextUrl != null && !nextUrl.isBlank()) {
+                        return Map.of("success", true, "message", "Prediction created successfully", "nextUrl", nextUrl);
+                    }
                     return Map.of("success", true, "message", "Prediction created successfully");
                 });
     }

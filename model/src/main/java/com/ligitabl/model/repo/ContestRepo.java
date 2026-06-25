@@ -1,5 +1,6 @@
 package com.ligitabl.model.repo;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -13,4 +14,8 @@ public interface ContestRepo {
     Optional<Contest> findMainBySeasonId(UUID seasonId);
 
     boolean existsByUserAndContest(UUID userId, UUID contestId);
+
+    List<Contest> findPrivateByUserId(UUID userId);
+
+    Optional<Contest> findByJoinCode(String joinCode);
 }

@@ -19,4 +19,10 @@ public class Entry extends AbstractModel<UUID> {
     UUID contestId;
 
     Instant joinedAt;
+
+    int joinedAtRound;
+
+    Instant removedAt;
+
+    Integer removedAtRound;
 }

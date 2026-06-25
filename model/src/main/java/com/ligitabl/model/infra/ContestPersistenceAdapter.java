@@ -1,7 +1,10 @@
 package com.ligitabl.model.infra;
 
 import static com.ligitabl.model.db.tables.TContest.T_CONTEST;
+import static com.ligitabl.model.db.tables.TEntry.T_ENTRY;
+import static org.jooq.impl.DSL.upper;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -40,6 +43,8 @@ public class ContestPersistenceAdapter implements ContestRepo {
                 .set(T_CONTEST.C_FROM_ROUND_POSITION, contest.getFromRoundPosition())
                 .set(T_CONTEST.C_TO_ROUND_POSITION, contest.getToRoundPosition())
                 .set(T_CONTEST.C_MAX_ENTRIES, contest.getMaxEntries())
+                .set(T_CONTEST.C_OWNER_ID, contest.getOwnerId())
+                .set(T_CONTEST.C_IS_OPEN, contest.isOpen())
                 .onConflict(T_CONTEST.PK_ID)
                 .doUpdate()
                 .set(T_CONTEST.FK_SEASON_ID, contest.getSeasonId())
@@ -49,6 +54,8 @@ public class ContestPersistenceAdapter implements ContestRepo {
                 .set(T_CONTEST.C_FROM_ROUND_POSITION, contest.getFromRoundPosition())
                 .set(T_CONTEST.C_TO_ROUND_POSITION, contest.getToRoundPosition())
                 .set(T_CONTEST.C_MAX_ENTRIES, contest.getMaxEntries())
+                .set(T_CONTEST.C_OWNER_ID, contest.getOwnerId())
+                .set(T_CONTEST.C_IS_OPEN, contest.isOpen())
                 .execute();
 
         return contest;
@@ -74,9 +81,31 @@ public class ContestPersistenceAdapter implements ContestRepo {
         }
 
         return dsl.fetchExists(dsl.selectOne()
-                .from(com.ligitabl.model.db.tables.TEntry.T_ENTRY)
-                .where(com.ligitabl.model.db.tables.TEntry.T_ENTRY.FK_USER_ID.eq(userId))
-                .and(com.ligitabl.model.db.tables.TEntry.T_ENTRY.FK_CONTEST_ID.eq(contestId)));
+                .from(T_ENTRY)
+                .where(T_ENTRY.FK_USER_ID.eq(userId))
+                .and(T_ENTRY.FK_CONTEST_ID.eq(contestId)));
+    }
+
+    @Override
+    public List<Contest> findPrivateByUserId(UUID userId) {
+        return dsl.selectFrom(T_CONTEST)
+                .where(T_CONTEST.C_IS_PRIVATE.eq(true))
+                .and(T_CONTEST.PK_ID.in(
+                        dsl.select(T_ENTRY.FK_CONTEST_ID)
+                                .from(T_ENTRY)
+                                .where(T_ENTRY.FK_USER_ID.eq(userId))
+                                .and(T_ENTRY.C_REMOVED_AT.isNull())))
+                .fetch()
+                .map(ContestPersistenceAdapter::map);
+    }
+
+    @Override
+    public Optional<Contest> findByJoinCode(String joinCode) {
+        var record = dsl.selectFrom(T_CONTEST)
+                .where(upper(T_CONTEST.C_JOIN_CODE).eq(upper(joinCode)))
+                .fetchOne();
+
+        return Optional.ofNullable(map(record));
     }
 
     private static Contest map(ContestRecord record) {
@@ -93,7 +122,8 @@ public class ContestPersistenceAdapter implements ContestRepo {
                 .fromRoundPosition(record.getFromRoundPosition())
                 .toRoundPosition(record.getToRoundPosition())
                 .maxEntries(record.getMaxEntries())
-                .createdAt(null)
+                .ownerId(record.getOwnerId())
+                .isOpen(Boolean.TRUE.equals(record.getIsOpen()))
                 .build();
     }
 }

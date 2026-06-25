@@ -14,4 +14,10 @@ public interface EntryRepo {
     List<Entry> findByContestId(UUID contestId);
 
     List<Entry> findByUserId(UUID userId);
+
+    int countActiveByContestId(UUID contestId);
+
+    void softRemove(UUID userId, UUID contestId, int removedAtRound);
+
+    boolean hasAnyScore(UUID userId, UUID contestId);
 }

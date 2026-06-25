@@ -1,0 +1,77 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260625_1_minileague_entry_and_contest_fields_schema
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - and:
+          - tableExists:
+              tableName: t_entry
+              schemaName: public
+          - tableExists:
+              tableName: t_contest
+              schemaName: public
+      changes:
+        - addColumn:
+            tableName: t_entry
+            schemaName: public
+            columns:
+              - column:
+                  name: c_joined_at_round
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_removed_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_removed_at_round
+                  type: int
+                  constraints:
+                    nullable: true
+        - addColumn:
+            tableName: t_contest
+            schemaName: public
+            columns:
+              - column:
+                  name: c_owner_id
+                  type: uuid
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_is_open
+                  type: boolean
+                  defaultValueBoolean: true
+                  constraints:
+                    nullable: false
+        - addForeignKeyConstraint:
+            baseTableName: t_contest
+            baseColumnNames: c_owner_id
+            baseTableSchemaName: public
+            constraintName: fk_contest_owner_id
+            referencedTableName: t_user
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+  - changeSet:
+      id: 20260625_2_minileague_entry_backfill_joined_at_round
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_entry
+            schemaName: public
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              UPDATE t_entry
+              SET    c_joined_at_round = sp.c_at_round_number
+              FROM   t_season_prediction sp, t_contest c
+              WHERE  sp.fk_user_id   = t_entry.fk_user_id
+                AND  c.pk_id         = t_entry.fk_contest_id
+                AND  sp.fk_season_id = c.fk_season_id;
