@@ -1,5 +1,6 @@
 package com.ligitabl.model.repo;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -8,6 +9,12 @@ import java.util.UUID;
 import com.ligitabl.model.domain.Match;
 
 public interface MatchRepo {
+
+    /**
+     * Min/max kickoff times for a single round position within a season.
+     * Used to derive sprint start/end dates for display.
+     */
+    record RoundDateRange(int roundPosition, OffsetDateTime firstKickoff, OffsetDateTime lastKickoff) {}
 
     List<Match> findByRoundId(UUID roundId);
 
@@ -44,4 +51,10 @@ public interface MatchRepo {
     boolean existsBySeasonAndRoundAndTeams(UUID seasonId, UUID roundId, UUID homeTeamId, UUID awayTeamId);
 
     Map<String, List<Match>> findBySeasonAndRound(UUID seasonId, int round);
+
+    /**
+     * Returns min/max kickoff times per round position for all rounds in a season.
+     * Keyed by round position.
+     */
+    Map<Integer, RoundDateRange> findRoundDateRangesBySeason(UUID seasonId);
 }
