@@ -4,9 +4,9 @@ import static com.ligitabl.model.db.tables.TEntry.T_ENTRY;
 import static com.ligitabl.model.db.tables.TRound.T_ROUND;
 import static com.ligitabl.model.db.tables.TRoundResult.T_ROUND_RESULT;
 import static com.ligitabl.model.db.tables.TRoundSubmission.T_ROUND_SUBMISSION;
-import static com.ligitabl.model.db.tables.TSeasonPrediction.T_SEASON_PREDICTION;
 import static com.ligitabl.model.db.tables.TUser.T_USER;
 
+import java.time.OffsetDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
@@ -14,7 +14,6 @@ import java.util.UUID;
 import org.jooq.CommonTableExpression;
 import org.jooq.DSLContext;
 import org.jooq.Field;
-import org.jooq.Record10;
 import org.jooq.Record7;
 import org.jooq.impl.DSL;
 
@@ -31,23 +30,23 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
 
     @Override
     public LeaderboardResponse computeLeaderboard(
-            UUID contestId, UUID seasonId, int fromRound, int toRound, UUID userId, int offset, int limit) {
+            UUID contestId, UUID seasonId, int fromRound, int toRound, UUID userId, int offset, int limit,
+            boolean activeOnly) {
         validateInputs(contestId, seasonId, fromRound, toRound, offset, limit);
 
         // effectiveToRound is the max advanced round in the phase (may be null before any round is advanced)
         Integer effectiveToRound = resolveEffectiveToRound(seasonId, fromRound, toRound);
 
-        // Count participants from season_prediction — includes users even before scoring starts
-        int totalParticipants = countParticipants(contestId, seasonId, toRound);
+        int totalParticipants = countParticipants(contestId, fromRound, toRound, activeOnly);
         if (totalParticipants == 0) {
             return emptyResponse();
         }
 
         List<RankingWithPosition> pageRankings =
-                fetchPaginatedRankings(contestId, seasonId, fromRound, toRound, effectiveToRound, offset, limit);
+                fetchPaginatedRankings(contestId, seasonId, fromRound, toRound, effectiveToRound, offset, limit, activeOnly);
 
         UserRankingInfo userInfo = userId != null
-                ? fetchUserRanking(contestId, seasonId, fromRound, toRound, effectiveToRound, userId, offset, limit)
+                ? fetchUserRanking(contestId, seasonId, fromRound, toRound, effectiveToRound, userId, offset, limit, activeOnly)
                 : new UserRankingInfo(null, false, 0);
 
         // Movement only computable when at least one round has been scored
@@ -94,7 +93,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
             int totalZeroes,
             int totalSwaps,
             Integer joinedAtGw,
-            boolean scored) {}
+            boolean scored,
+            boolean isFormerMember) {}
 
     private record UserRankingInfo(RankingWithPosition ranking, boolean userInCurrentPage, int userPageOffset) {}
 
@@ -126,35 +126,23 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         return new LeaderboardResponse(List.of(), null, false, 0, 0, false, false, null);
     }
 
-    /**
-     * Count participants using season_prediction as the source of truth.
-     * A user is counted if they have a prediction for this season AND joined before the phase ended
-     * (atRoundNumber <= phaseToRound). This includes users whose rounds have not yet been scored.
-     */
-    private int countParticipants(UUID contestId, UUID seasonId, int phaseToRound) {
-        Integer count = dsl.select(DSL.countDistinct(T_SEASON_PREDICTION.FK_USER_ID))
+    private int countParticipants(UUID contestId, int fromRound, int phaseToRound, boolean activeOnly) {
+        var query = dsl.select(DSL.count())
                 .from(T_ENTRY)
-                .join(T_SEASON_PREDICTION)
-                .on(T_SEASON_PREDICTION
-                        .FK_USER_ID
-                        .eq(T_ENTRY.FK_USER_ID)
-                        .and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId))
-                        .and(T_SEASON_PREDICTION.C_AT_ROUND_NUMBER.le(phaseToRound)))
                 .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
-                .fetchOne(0, Integer.class);
+                .and(T_ENTRY.C_JOINED_AT_ROUND.le(phaseToRound));
 
+        if (activeOnly) {
+            query = query.and(T_ENTRY.C_REMOVED_AT.isNull());
+        } else {
+            query = query.and(T_ENTRY.C_REMOVED_AT.isNull()
+                    .or(T_ENTRY.C_REMOVED_AT_ROUND.ge(fromRound)));
+        }
+
+        Integer count = query.fetchOne(0, Integer.class);
         return count != null ? count : 0;
     }
 
-    /**
-     * Fetch paginated rankings.
-     *
-     * <p>Starts from season_prediction (all participants) and left-joins to scored rounds.
-     * Users without any scored rounds appear at the bottom with scored=false.
-     *
-     * @param phaseToRound phase end round — used for atRoundNumber filter
-     * @param effectiveToRound max advanced round in phase (null if no rounds advanced yet)
-     */
     private List<RankingWithPosition> fetchPaginatedRankings(
             UUID contestId,
             UUID seasonId,
@@ -162,7 +150,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
             int phaseToRound,
             Integer effectiveToRound,
             int offset,
-            int limit) {
+            int limit,
+            boolean activeOnly) {
 
         int scoringToRound = effectiveToRound != null ? effectiveToRound : phaseToRound;
 
@@ -189,43 +178,48 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .otherwise(0)
                 .as("is_scored");
 
-        CommonTableExpression<
-                        Record10<UUID, String, String, Integer, Integer, Integer, Integer, Integer, Integer, Integer>>
-                userStats = DSL.name("user_stats")
-                        .as(dsl.select(
-                                        T_USER.PK_ID,
-                                        T_USER.C_PUBLIC_ID,
-                                        T_USER.C_DISPLAY_NAME,
-                                        totalScore,
-                                        roundScore,
-                                        maxScore,
-                                        totalZeroes,
-                                        totalSwaps,
-                                        T_SEASON_PREDICTION.C_AT_ROUND_NUMBER.as("joined_at_gw"),
-                                        isScored)
-                                .from(T_ENTRY)
-                                .join(T_USER)
-                                .on(T_USER.PK_ID.eq(T_ENTRY.FK_USER_ID))
-                                .join(T_SEASON_PREDICTION)
-                                .on(T_SEASON_PREDICTION
-                                        .FK_USER_ID
-                                        .eq(T_ENTRY.FK_USER_ID)
-                                        .and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId))
-                                        .and(T_SEASON_PREDICTION.C_AT_ROUND_NUMBER.le(phaseToRound)))
-                                .leftJoin(T_ROUND_SUBMISSION)
-                                .on(T_ROUND_SUBMISSION
-                                        .FK_USER_ID
-                                        .eq(T_ENTRY.FK_USER_ID)
-                                        .and(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId))
-                                        .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.between(fromRound, scoringToRound)))
-                                .leftJoin(T_ROUND_RESULT)
-                                .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
-                                .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
-                                .groupBy(
-                                        T_USER.PK_ID,
-                                        T_USER.C_PUBLIC_ID,
-                                        T_USER.C_DISPLAY_NAME,
-                                        T_SEASON_PREDICTION.C_AT_ROUND_NUMBER));
+        var baseQuery = dsl.select(
+                        T_USER.PK_ID,
+                        T_USER.C_PUBLIC_ID,
+                        T_USER.C_DISPLAY_NAME,
+                        totalScore,
+                        roundScore,
+                        maxScore,
+                        totalZeroes,
+                        totalSwaps,
+                        T_ENTRY.C_JOINED_AT_ROUND.as("joined_at_gw"),
+                        isScored,
+                        T_ENTRY.C_REMOVED_AT.as("removed_at"))
+                .from(T_ENTRY)
+                .join(T_USER)
+                .on(T_USER.PK_ID.eq(T_ENTRY.FK_USER_ID))
+                .leftJoin(T_ROUND_SUBMISSION)
+                .on(T_ROUND_SUBMISSION
+                        .FK_USER_ID
+                        .eq(T_ENTRY.FK_USER_ID)
+                        .and(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId))
+                        .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.ge(
+                                DSL.greatest(DSL.inline(fromRound), T_ENTRY.C_JOINED_AT_ROUND)))
+                        .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.le(scoringToRound)))
+                .leftJoin(T_ROUND_RESULT)
+                .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
+                .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
+                .and(T_ENTRY.C_JOINED_AT_ROUND.le(phaseToRound));
+
+        if (activeOnly) {
+            baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT.isNull());
+        } else {
+            baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT.isNull()
+                    .or(T_ENTRY.C_REMOVED_AT_ROUND.ge(fromRound)));
+        }
+
+        CommonTableExpression<?> userStats = DSL.name("user_stats")
+                .as(baseQuery.groupBy(
+                        T_USER.PK_ID,
+                        T_USER.C_PUBLIC_ID,
+                        T_USER.C_DISPLAY_NAME,
+                        T_ENTRY.C_JOINED_AT_ROUND,
+                        T_ENTRY.C_REMOVED_AT));
 
         Field<UUID> userId = userStats.field(T_USER.PK_ID);
         Field<String> publicId = userStats.field(T_USER.C_PUBLIC_ID);
@@ -237,6 +231,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         Field<Integer> totalSwapsField = userStats.field("total_swaps", Integer.class);
         Field<Integer> joinedAtGwField = userStats.field("joined_at_gw", Integer.class);
         Field<Integer> isScoredField = userStats.field("is_scored", Integer.class);
+        Field<OffsetDateTime> removedAtField = userStats.field("removed_at", OffsetDateTime.class);
 
         Field<Integer> position = DSL.rowNumber()
                 .over()
@@ -261,7 +256,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         totalZeroesField,
                         totalSwapsField,
                         joinedAtGwField,
-                        isScoredField)
+                        isScoredField,
+                        removedAtField)
                 .from(userStats)
                 .orderBy(position)
                 .limit(limit)
@@ -277,7 +273,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         r.get(totalZeroesField),
                         r.get(totalSwapsField),
                         r.get(joinedAtGwField),
-                        r.get(isScoredField) > 0));
+                        r.get(isScoredField) > 0,
+                        r.get(removedAtField) != null));
     }
 
     private UserRankingInfo fetchUserRanking(
@@ -288,7 +285,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
             Integer effectiveToRound,
             UUID userId,
             int offset,
-            int limit) {
+            int limit,
+            boolean activeOnly) {
 
         int scoringToRound = effectiveToRound != null ? effectiveToRound : phaseToRound;
 
@@ -315,43 +313,48 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 .otherwise(0)
                 .as("is_scored");
 
-        CommonTableExpression<
-                        Record10<UUID, String, String, Integer, Integer, Integer, Integer, Integer, Integer, Integer>>
-                userStats = DSL.name("user_stats")
-                        .as(dsl.select(
-                                        T_USER.PK_ID,
-                                        T_USER.C_PUBLIC_ID,
-                                        T_USER.C_DISPLAY_NAME,
-                                        totalScore,
-                                        roundScore,
-                                        maxScore,
-                                        totalZeroes,
-                                        totalSwaps,
-                                        T_SEASON_PREDICTION.C_AT_ROUND_NUMBER.as("joined_at_gw"),
-                                        isScored)
-                                .from(T_ENTRY)
-                                .join(T_USER)
-                                .on(T_USER.PK_ID.eq(T_ENTRY.FK_USER_ID))
-                                .join(T_SEASON_PREDICTION)
-                                .on(T_SEASON_PREDICTION
-                                        .FK_USER_ID
-                                        .eq(T_ENTRY.FK_USER_ID)
-                                        .and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId))
-                                        .and(T_SEASON_PREDICTION.C_AT_ROUND_NUMBER.le(phaseToRound)))
-                                .leftJoin(T_ROUND_SUBMISSION)
-                                .on(T_ROUND_SUBMISSION
-                                        .FK_USER_ID
-                                        .eq(T_ENTRY.FK_USER_ID)
-                                        .and(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId))
-                                        .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.between(fromRound, scoringToRound)))
-                                .leftJoin(T_ROUND_RESULT)
-                                .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
-                                .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
-                                .groupBy(
-                                        T_USER.PK_ID,
-                                        T_USER.C_PUBLIC_ID,
-                                        T_USER.C_DISPLAY_NAME,
-                                        T_SEASON_PREDICTION.C_AT_ROUND_NUMBER));
+        var baseQuery = dsl.select(
+                        T_USER.PK_ID,
+                        T_USER.C_PUBLIC_ID,
+                        T_USER.C_DISPLAY_NAME,
+                        totalScore,
+                        roundScore,
+                        maxScore,
+                        totalZeroes,
+                        totalSwaps,
+                        T_ENTRY.C_JOINED_AT_ROUND.as("joined_at_gw"),
+                        isScored,
+                        T_ENTRY.C_REMOVED_AT.as("removed_at"))
+                .from(T_ENTRY)
+                .join(T_USER)
+                .on(T_USER.PK_ID.eq(T_ENTRY.FK_USER_ID))
+                .leftJoin(T_ROUND_SUBMISSION)
+                .on(T_ROUND_SUBMISSION
+                        .FK_USER_ID
+                        .eq(T_ENTRY.FK_USER_ID)
+                        .and(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId))
+                        .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.ge(
+                                DSL.greatest(DSL.inline(fromRound), T_ENTRY.C_JOINED_AT_ROUND)))
+                        .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.le(scoringToRound)))
+                .leftJoin(T_ROUND_RESULT)
+                .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
+                .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
+                .and(T_ENTRY.C_JOINED_AT_ROUND.le(phaseToRound));
+
+        if (activeOnly) {
+            baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT.isNull());
+        } else {
+            baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT.isNull()
+                    .or(T_ENTRY.C_REMOVED_AT_ROUND.ge(fromRound)));
+        }
+
+        CommonTableExpression<?> userStats = DSL.name("user_stats")
+                .as(baseQuery.groupBy(
+                        T_USER.PK_ID,
+                        T_USER.C_PUBLIC_ID,
+                        T_USER.C_DISPLAY_NAME,
+                        T_ENTRY.C_JOINED_AT_ROUND,
+                        T_ENTRY.C_REMOVED_AT));
 
         Field<UUID> userIdField = userStats.field(T_USER.PK_ID);
         Field<String> publicId = userStats.field(T_USER.C_PUBLIC_ID);
@@ -363,6 +366,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         Field<Integer> totalSwapsField = userStats.field("total_swaps", Integer.class);
         Field<Integer> joinedAtGwField = userStats.field("joined_at_gw", Integer.class);
         Field<Integer> isScoredField = userStats.field("is_scored", Integer.class);
+        Field<OffsetDateTime> removedAtField = userStats.field("removed_at", OffsetDateTime.class);
 
         Field<Integer> position = DSL.rowNumber()
                 .over()
@@ -386,7 +390,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         totalZeroesField.as("total_zeroes"),
                         totalSwapsField.as("total_swaps"),
                         joinedAtGwField.as("joined_at_gw"),
-                        isScoredField.as("is_scored"))
+                        isScoredField.as("is_scored"),
+                        removedAtField.as("removed_at"))
                 .from(userStats)
                 .asTable("ranked_stats");
 
@@ -401,6 +406,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         Field<Integer> rankedTotalSwaps = rankedStats.field("total_swaps", Integer.class);
         Field<Integer> rankedJoinedAtGw = rankedStats.field("joined_at_gw", Integer.class);
         Field<Integer> rankedIsScored = rankedStats.field("is_scored", Integer.class);
+        Field<OffsetDateTime> rankedRemovedAt = rankedStats.field("removed_at", OffsetDateTime.class);
 
         RankingWithPosition ranking = dsl.with(userStats)
                 .selectFrom(rankedStats)
@@ -416,7 +422,8 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                         r.get(rankedTotalZeroes),
                         r.get(rankedTotalSwaps),
                         r.get(rankedJoinedAtGw),
-                        r.get(rankedIsScored) > 0));
+                        r.get(rankedIsScored) > 0,
+                        r.get(rankedRemovedAt) != null));
 
         if (ranking == null) {
             return new UserRankingInfo(null, false, 0);
@@ -511,6 +518,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 ranking.totalSwaps(),
                 ranking.joinedAtGw(),
                 movement,
-                ranking.scored());
+                ranking.scored(),
+                ranking.isFormerMember());
     }
 }

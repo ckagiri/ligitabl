@@ -65,7 +65,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
 
     private List<LeaderboardEntry> computeEntries(int fromRound, int toRound) {
         return leaderboardRepo
-                .computeLeaderboard(contestId, seasonId, fromRound, toRound, null, 0, 100)
+                .computeLeaderboard(contestId, seasonId, fromRound, toRound, null, 0, 100, true)
                 .entries();
     }
 
@@ -164,7 +164,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
 
         var users = createParticipantsWithScores(40, 1, 1000);
 
-        var response = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 1, users.get(0), 20, 20);
+        var response = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 1, users.get(0), 20, 20, true);
 
         assertThat(response.entries()).hasSize(20);
         assertThat(response.entries().get(0).position()).isEqualTo(21);
@@ -182,7 +182,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         var users = createParticipantsWithScores(40, 1, 1000);
         UUID midRankedUser = users.get(29);
 
-        var response = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 1, midRankedUser, 0, 20);
+        var response = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 1, midRankedUser, 0, 20, true);
 
         assertThat(response.userEntry()).isNotNull();
         assertThat(response.userEntry().position()).isEqualTo(30);
@@ -200,7 +200,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         var users = createParticipantsWithScores(40, 1, 1000);
         UUID topRankedUser = users.get(14);
 
-        var response = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 1, topRankedUser, 0, 20);
+        var response = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 1, topRankedUser, 0, 20, true);
 
         assertThat(response.userEntry()).isNotNull();
         assertThat(response.userEntry().position()).isEqualTo(15);

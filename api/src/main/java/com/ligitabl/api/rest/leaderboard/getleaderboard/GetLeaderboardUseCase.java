@@ -76,7 +76,7 @@ public class GetLeaderboardUseCase {
         int limit = query.limit() != null ? query.limit() : 100;
 
         var response = leaderboardRepo.computeLeaderboard(
-                contest.getId(), season.getId(), phase.getFrom(), phase.getTo(), query.userId(), offset, limit);
+                contest.getId(), season.getId(), phase.getFrom(), phase.getTo(), query.userId(), offset, limit, true);
 
         return Either.right(new GetLeaderboardResult(
                 contest.getId(),

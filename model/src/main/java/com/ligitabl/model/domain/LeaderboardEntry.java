@@ -11,9 +11,10 @@ package com.ligitabl.model.domain;
  * @param maxScore Highest single round score in phase
  * @param totalZeroes Total perfect prediction (zeroes) in phase
  * @param totalSwaps Total lineup changes (swaps) in phase
- * @param joinedAtGw Gameweek where the user joined (season prediction atRoundNumber)
+ * @param joinedAtGw Gameweek where the user joined
  * @param movement Position change from previous period (+ = up, - = down, 0 = same)
  * @param scored Whether any rounds in this phase have been scored for this user
+ * @param isFormerMember Whether the user has been removed from the contest
  */
 public record LeaderboardEntry(
         int position,
@@ -26,4 +27,5 @@ public record LeaderboardEntry(
         int totalSwaps,
         Integer joinedAtGw,
         int movement,
-        boolean scored) {}
+        boolean scored,
+        boolean isFormerMember) {}

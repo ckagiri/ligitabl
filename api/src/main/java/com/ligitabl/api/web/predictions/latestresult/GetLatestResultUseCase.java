@@ -101,8 +101,8 @@ public class GetLatestResultUseCase {
                         round, // to = result round
                         userId,
                         0,
-                        1 // just need userEntry
-                        );
+                        1, // just need userEntry
+                        true);
 
                 LeaderboardEntry userEntry = leaderboardResponse.userEntry();
                 if (userEntry != null) {
