@@ -1,0 +1,19 @@
+package com.ligitabl.api.rest.contest;
+
+public sealed interface JoinPrivateContestError {
+    record ContestNotFound(String joinCode) implements JoinPrivateContestError {}
+
+    record NoPrediction() implements JoinPrivateContestError {}
+
+    record ContestClosed() implements JoinPrivateContestError {}
+
+    record MemberCapReached(int cap) implements JoinPrivateContestError {}
+
+    record AlreadyMember() implements JoinPrivateContestError {}
+
+    record JoinWindowClosed() implements JoinPrivateContestError {}
+
+    record MaxContestsReached(int max) implements JoinPrivateContestError {}
+
+    record CurrentRoundNotFound() implements JoinPrivateContestError {}
+}
