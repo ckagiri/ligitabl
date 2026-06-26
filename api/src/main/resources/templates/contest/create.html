@@ -162,17 +162,17 @@
         </div>
 
       </div>
+
+      <script th:inline="javascript">
+        /*<![CDATA[*/
+        window.__contestCreateData = {
+          sprints:        /*[[${sprints}]]*/ [],
+          fromSprintCode: /*[[${fromSprintCode}]]*/ '',
+          toSprintCode:   /*[[${toSprintCode}]]*/ ''
+        };
+        /*]]>*/
+      </script>
+
     </div>
-
-    <script th:inline="javascript">
-      /*<![CDATA[*/
-      window.__contestCreateData = {
-        sprints:        /*[[${sprints}]]*/ [],
-        fromSprintCode: /*[[${fromSprintCode}]]*/ '',
-        toSprintCode:   /*[[${toSprintCode}]]*/ ''
-      };
-      /*]]>*/
-    </script>
-
   </body>
 </html>

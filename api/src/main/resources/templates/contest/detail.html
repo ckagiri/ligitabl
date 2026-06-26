@@ -369,17 +369,17 @@
         </th:block>
 
       </div>
+
+      <script th:inline="javascript">
+        /*<![CDATA[*/
+        window.__contestDetailData = {
+          contestId:      /*[[${contest.id}]]*/ '',
+          segmentTree:    /*[[${segmentTree}]]*/ [],
+          currentSegment: /*[[${currentSegment}]]*/ 'overall'
+        };
+        /*]]>*/
+      </script>
+
     </div>
-
-    <script th:inline="javascript">
-      /*<![CDATA[*/
-      window.__contestDetailData = {
-        contestId:      /*[[${contest.id}]]*/ '',
-        segmentTree:    /*[[${segmentTree}]]*/ [],
-        currentSegment: /*[[${currentSegment}]]*/ 'overall'
-      };
-      /*]]>*/
-    </script>
-
   </body>
 </html>
