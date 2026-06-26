@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.contest;
+package com.ligitabl.api.rest.contest.joinprivatecontest;
 
 public sealed interface JoinPrivateContestError {
     record ContestNotFound(String joinCode) implements JoinPrivateContestError {}

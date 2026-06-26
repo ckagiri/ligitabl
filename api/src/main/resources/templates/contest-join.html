@@ -1,0 +1,263 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <div layout:fragment="content">
+      <div class="max-w-lg mx-auto px-4 py-12">
+
+        <!-- ── State 1: no code — blank form ── -->
+        <th:block th:if="${contest == null and errorCode == null}">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+            <h1 class="text-2xl font-bold text-gray-900 mb-2">Join a Private Contest</h1>
+            <p class="text-gray-500 mb-6">Enter the invite code shared with you.</p>
+
+            <form method="get" action="/contests/join">
+              <label for="code" class="block text-sm font-medium text-gray-700 mb-1">
+                Invite code
+              </label>
+              <input
+                id="code"
+                name="code"
+                type="text"
+                placeholder="e.g. AB3K7PQ"
+                autocomplete="off"
+                autocapitalize="characters"
+                maxlength="7"
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-4"
+                th:value="${code}"
+              />
+              <button
+                type="submit"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg transition"
+              >
+                Continue →
+              </button>
+            </form>
+          </div>
+        </th:block>
+
+        <!-- ── State 2: error (invalid code or closed) ── -->
+        <th:block th:if="${errorCode != null}">
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+            <h1 class="text-2xl font-bold text-gray-900 mb-6">Join a Private Contest</h1>
+
+            <!-- NOT_FOUND error -->
+            <th:block th:if="${errorCode == 'NOT_FOUND'}">
+              <div class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <div>
+                  <p class="text-sm font-medium text-red-800">
+                    This invite code has expired or doesn't exist.
+                  </p>
+                  <p class="text-sm text-red-600 mt-0.5">
+                    Check with the person who shared it.
+                  </p>
+                </div>
+              </div>
+            </th:block>
+
+            <!-- CLOSED error -->
+            <th:block th:if="${errorCode == 'CLOSED'}">
+              <div class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4 mb-6">
+                <svg class="h-5 w-5 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+                </svg>
+                <div>
+                  <p class="text-sm font-medium text-amber-800">
+                    This contest is closed to new members.
+                  </p>
+                  <p class="text-sm text-amber-600 mt-0.5">
+                    <a th:href="@{/leaderboard}" class="underline hover:no-underline">Browse public contests →</a>
+                  </p>
+                </div>
+              </div>
+            </th:block>
+
+            <!-- Generic join errors shown after a failed confirm POST -->
+            <th:block th:if="${errorCode == 'ALREADY_MEMBER'}">
+              <div class="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                <svg class="h-5 w-5 text-blue-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+                </svg>
+                <p class="text-sm font-medium text-blue-800">You're already a member of this contest.</p>
+              </div>
+            </th:block>
+
+            <th:block th:if="${errorCode == 'CAP_REACHED'}">
+              <div class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <p class="text-sm font-medium text-red-800">This contest has reached its member limit.</p>
+              </div>
+            </th:block>
+
+            <th:block th:if="${errorCode == 'WINDOW_CLOSED'}">
+              <div class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <p class="text-sm font-medium text-red-800">The join window for this contest has closed.</p>
+              </div>
+            </th:block>
+
+            <th:block th:if="${errorCode == 'MAX_CONTESTS'}">
+              <div class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                <p class="text-sm font-medium text-red-800">You've reached the maximum number of private contests (20).</p>
+              </div>
+            </th:block>
+
+            <!-- Try again form -->
+            <form method="get" action="/contests/join">
+              <label for="code-retry" class="block text-sm font-medium text-gray-700 mb-1">
+                Try a different code
+              </label>
+              <input
+                id="code-retry"
+                name="code"
+                type="text"
+                placeholder="e.g. AB3K7PQ"
+                autocomplete="off"
+                autocapitalize="characters"
+                maxlength="7"
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent mb-4"
+                th:value="${code}"
+              />
+              <button
+                type="submit"
+                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg transition"
+              >
+                Continue →
+              </button>
+            </form>
+          </div>
+        </th:block>
+
+        <!-- ── State 3: valid code — preview card + confirm ── -->
+        <th:block th:if="${contest != null}">
+          <h1 class="text-2xl font-bold text-gray-900 mb-6">You've been invited to join</h1>
+
+          <!-- Preview card -->
+          <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex items-start gap-4">
+              <div class="flex-shrink-0 h-10 w-10 rounded-full bg-indigo-100 flex items-center justify-center">
+                <svg class="h-5 w-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                </svg>
+              </div>
+              <div class="flex-1 min-w-0">
+                <h2 class="text-lg font-semibold text-gray-900 truncate" th:text="${contest.name}">Contest Name</h2>
+                <p class="text-sm text-gray-500 mt-0.5">
+                  <span th:text="${contest.scopeLabel}">Quarter 3</span>
+                  <span class="mx-1.5 text-gray-300">·</span>
+                  <span th:text="${contest.gwRange}">GW 20–29</span>
+                </p>
+                <div class="flex items-center gap-3 mt-2">
+                  <span class="text-sm text-gray-600">
+                    <span class="font-medium" th:text="${contest.memberCount}">8</span> members
+                  </span>
+                  <span
+                    th:if="${contest.isOpen}"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+                  >Open</span>
+                  <span
+                    th:unless="${contest.isOpen}"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
+                  >Closed</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Confirm form -->
+          <form method="post" th:action="@{/contests/join/confirm}">
+            <input type="hidden" name="code" th:value="${code}" />
+            <div class="flex gap-3">
+              <button
+                type="submit"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2.5 px-4 rounded-lg transition text-sm"
+                th:text="'Join ' + ${contest.name}"
+              >
+                Join Contest
+              </button>
+              <a
+                th:href="@{/contests}"
+                class="flex-1 text-center bg-white hover:bg-gray-50 text-gray-700 font-medium py-2.5 px-4 rounded-lg border border-gray-300 transition text-sm"
+              >
+                Not now
+              </a>
+            </div>
+          </form>
+        </th:block>
+
+      </div>
+    </div>
+
+    <!-- ── HTMX preview fragment (used by /contests page inline join form) ── -->
+    <th:block th:fragment="preview-fragment">
+      <!-- Error state -->
+      <th:block th:if="${errorCode != null}">
+        <div class="flex items-center gap-2 text-sm text-red-600 py-2">
+          <svg class="h-4 w-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span th:if="${errorCode == 'CLOSED'}">This contest is closed to new members.</span>
+          <span th:if="${errorCode != 'CLOSED'}">Invalid or expired code.</span>
+        </div>
+      </th:block>
+
+      <!-- Preview card -->
+      <th:block th:if="${contest != null}">
+        <div class="bg-gray-50 rounded-lg border border-gray-200 p-4 mb-3">
+          <div class="flex items-start justify-between gap-2">
+            <div>
+              <p class="text-sm font-semibold text-gray-900" th:text="${contest.name}">Contest Name</p>
+              <p class="text-xs text-gray-500 mt-0.5">
+                <span th:text="${contest.scopeLabel}">Quarter 3</span>
+                <span class="mx-1 text-gray-300">·</span>
+                <span th:text="${contest.gwRange}">GW 20–29</span>
+                <span class="mx-1 text-gray-300">·</span>
+                <span th:text="${contest.memberCount} + ' members'">8 members</span>
+              </p>
+            </div>
+            <span
+              th:if="${contest.isOpen}"
+              class="shrink-0 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800"
+            >Open</span>
+          </div>
+        </div>
+        <form method="post" th:action="@{/contests/join/confirm}">
+          <input type="hidden" name="code" th:value="${code}" />
+          <div class="flex gap-2">
+            <button
+              type="submit"
+              class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 px-3 rounded-lg transition"
+              th:text="'Join ' + ${contest.name}"
+            >Join</button>
+            <button
+              type="button"
+              @click="showJoinForm = false; joinCode = ''"
+              class="px-3 py-2 text-sm text-gray-600 hover:text-gray-900 rounded-lg hover:bg-gray-100 transition"
+            >Cancel</button>
+          </div>
+        </form>
+      </th:block>
+    </th:block>
+
+  </body>
+</html>

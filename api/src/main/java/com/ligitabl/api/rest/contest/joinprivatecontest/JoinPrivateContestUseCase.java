@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.contest;
+package com.ligitabl.api.rest.contest.joinprivatecontest;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.contest;
+package com.ligitabl.api.rest.contest.previewcontestbycode;
 
 import java.util.UUID;
 

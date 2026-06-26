@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.contest;
+package com.ligitabl.api.rest.contest.createprivatecontest;
 
 public sealed interface CreatePrivateContestError {
     record CompetitionNotFound(String slug) implements CreatePrivateContestError {}

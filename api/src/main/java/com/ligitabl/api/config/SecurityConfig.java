@@ -176,6 +176,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers("/seasonprediction/**")
                         .hasRole("PLAYER")
+                        .requestMatchers("/contests/**")
+                        .authenticated()
                         .requestMatchers("/settings/**")
                         .authenticated()
                         .anyRequest()
