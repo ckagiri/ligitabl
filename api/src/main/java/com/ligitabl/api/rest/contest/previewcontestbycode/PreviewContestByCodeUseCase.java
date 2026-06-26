@@ -1,11 +1,14 @@
 package com.ligitabl.api.rest.contest.previewcontestbycode;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Competition;
+import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.repo.CompetitionRepo;
@@ -28,39 +31,50 @@ public class PreviewContestByCodeUseCase {
 
         if (!contest.isOpen()) return Either.left(new PreviewContestByCodeError.ContestClosed());
 
-        Competition competition = competitionRepo.findAll().stream()
-                .filter(c -> c.getActiveSeasonId() != null
-                        && c.getActiveSeasonId().equals(contest.getSeasonId()))
-                .findFirst()
-                .orElse(null);
-
-        if (competition == null)
-            return Either.left(
-                    new PreviewContestByCodeError.CompetitionNotFound(contest.getSeasonId().toString()));
+        var competitionResult = resolveCompetition(contest.getSeasonId());
+        if (competitionResult.isLeft()) return competitionResult.map(c -> null);
+        Competition competition = competitionResult.get();
 
         List<RoundSpan> phases = competition.getPhases();
         int memberCount = entryRepo.countActiveByContestId(contest.getId());
         String gwRange = "GW " + contest.getFromRoundPosition() + "–" + contest.getToRoundPosition();
 
-        RoundSpan matchingPhase = phases.stream()
-                .filter(p -> p.getFrom() == contest.getFromRoundPosition()
-                        && p.getTo() == contest.getToRoundPosition())
-                .findFirst()
-                .orElse(null);
-
-        String scopeCode = matchingPhase != null ? matchingPhase.getCode() : "custom";
-        String scopeLabel = matchingPhase != null
-                ? buildPhaseName(matchingPhase, phases)
-                : gwRange;
-
         return Either.right(new ContestPreviewDto(
                 contest.getId(),
                 contest.getName(),
-                scopeCode,
-                scopeLabel,
+                resolveScopeCode(contest, phases),
+                resolveScopeLabel(contest, phases, gwRange),
                 gwRange,
                 memberCount,
                 contest.isOpen()));
+    }
+
+    private Either<PreviewContestByCodeError, Competition> resolveCompetition(UUID seasonId) {
+        return competitionRepo.findAll().stream()
+                .filter(c -> c.getActiveSeasonId() != null && c.getActiveSeasonId().equals(seasonId))
+                .findFirst()
+                .<Either<PreviewContestByCodeError, Competition>>map(Either::right)
+                .orElseGet(() -> Either.left(
+                        new PreviewContestByCodeError.CompetitionNotFound(seasonId.toString())));
+    }
+
+    private String resolveScopeCode(Contest contest, List<RoundSpan> phases) {
+        return findMatchingPhase(contest, phases)
+                .map(RoundSpan::getCode)
+                .orElse("custom");
+    }
+
+    private String resolveScopeLabel(Contest contest, List<RoundSpan> phases, String gwRange) {
+        return findMatchingPhase(contest, phases)
+                .map(p -> buildPhaseName(p, phases))
+                .orElse(gwRange);
+    }
+
+    private Optional<RoundSpan> findMatchingPhase(Contest contest, List<RoundSpan> phases) {
+        return phases.stream()
+                .filter(p -> p.getFrom() == contest.getFromRoundPosition()
+                        && p.getTo() == contest.getToRoundPosition())
+                .findFirst();
     }
 
     private String buildPhaseName(RoundSpan phase, List<RoundSpan> allPhases) {

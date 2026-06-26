@@ -1,6 +1,7 @@
 package com.ligitabl.api.rest.contest.getprivatecontest;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
@@ -34,25 +35,18 @@ public class GetPrivateContestUseCase {
     private final SegmentTreeBuilder segmentTreeBuilder;
 
     public Either<GetPrivateContestError, GetPrivateContestResult> execute(GetPrivateContestQuery query) {
-        Contest contest = contestRepo.findById(query.contestId()).orElse(null);
-        if (contest == null)
-            return Either.left(new GetPrivateContestError.ContestNotFound(query.contestId()));
+        var contestResult = resolveContest(query.contestId());
+        if (contestResult.isLeft()) return contestResult.map(c -> null);
+        Contest contest = contestResult.get();
 
-        Entry membership = entryRepo
-                .findByUserAndContest(query.userId(), contest.getId())
-                .orElse(null);
-        if (membership == null || membership.getRemovedAtRound() != null)
-            return Either.left(new GetPrivateContestError.NotAMember(query.userId(), contest.getId()));
+        var membershipResult = validateMembership(query.userId(), contest.getId());
+        if (membershipResult.isLeft()) return membershipResult.map(m -> null);
 
-        Season season = seasonRepo.findById(contest.getSeasonId()).orElse(null);
-        if (season == null) return Either.left(new GetPrivateContestError.SeasonNotFound());
+        var seasonResult = resolveSeason(contest.getSeasonId());
+        if (seasonResult.isLeft()) return seasonResult.map(s -> null);
+        Season season = seasonResult.get();
 
-        Competition competition = competitionRepo.findAll().stream()
-                .filter(c -> c.getActiveSeasonId() != null
-                        && c.getActiveSeasonId().equals(contest.getSeasonId()))
-                .findFirst()
-                .orElse(null);
-
+        Competition competition = resolveCompetition(contest.getSeasonId());
         int currentPosition = resolveCurrentPosition(season);
 
         var segmentResult = resolveSelectedSegment(
@@ -76,6 +70,32 @@ public class GetPrivateContestUseCase {
                 contest, selectedSegment, leaderboard,
                 contest.isOwnedBy(query.userId()), members, contest.getJoinCode(),
                 segmentTree));
+    }
+
+    private Either<GetPrivateContestError, Contest> resolveContest(UUID contestId) {
+        return contestRepo.findById(contestId)
+                .<Either<GetPrivateContestError, Contest>>map(Either::right)
+                .orElseGet(() -> Either.left(new GetPrivateContestError.ContestNotFound(contestId)));
+    }
+
+    private Either<GetPrivateContestError, Entry> validateMembership(UUID userId, UUID contestId) {
+        Entry membership = entryRepo.findByUserAndContest(userId, contestId).orElse(null);
+        if (membership == null || membership.getRemovedAtRound() != null)
+            return Either.left(new GetPrivateContestError.NotAMember(userId, contestId));
+        return Either.right(membership);
+    }
+
+    private Either<GetPrivateContestError, Season> resolveSeason(UUID seasonId) {
+        return seasonRepo.findById(seasonId)
+                .<Either<GetPrivateContestError, Season>>map(Either::right)
+                .orElseGet(() -> Either.left(new GetPrivateContestError.SeasonNotFound()));
+    }
+
+    private Competition resolveCompetition(UUID seasonId) {
+        return competitionRepo.findAll().stream()
+                .filter(c -> c.getActiveSeasonId() != null && c.getActiveSeasonId().equals(seasonId))
+                .findFirst()
+                .orElse(null);
     }
 
     private int resolveCurrentPosition(Season season) {
