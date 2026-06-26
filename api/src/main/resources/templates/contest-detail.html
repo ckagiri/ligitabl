@@ -1,0 +1,400 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <div layout:fragment="content">
+      <div
+        class="max-w-4xl mx-auto px-4 py-6"
+        x-data="contestDetail()"
+        x-init="init()"
+      >
+
+        <!-- ── Back link ── -->
+        <a th:href="@{/contests}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-4 transition">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          My Contests
+        </a>
+
+        <!-- ── Contest header ── -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-4">
+          <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-3 mb-1">
+                <h1 class="text-xl font-bold text-gray-900" th:text="${contest.name}">Contest Name</h1>
+                <span
+                  th:if="${contest.isOpen}"
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700"
+                >Open</span>
+                <span
+                  th:unless="${contest.isOpen}"
+                  class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
+                >Closed</span>
+              </div>
+              <p class="text-sm text-gray-500">
+                <span th:text="'GW ' + ${contest.fromRoundPosition} + '–' + ${contest.toRoundPosition}">GW 1–10</span>
+                <span th:if="${contest.maxEntries != null}">
+                  <span class="mx-1.5 text-gray-300">·</span>
+                  <span th:text="${contest.maxEntries} + ' member limit'">10 member limit</span>
+                </span>
+              </p>
+            </div>
+
+            <!-- Invite code (owner only) -->
+            <th:block th:if="${isOwner == true}">
+              <div class="flex-shrink-0">
+                <p class="text-xs font-medium text-gray-500 mb-1">Invite code</p>
+                <div
+                  class="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2 cursor-pointer"
+                  x-data="{ copied: false }"
+                  @click="navigator.clipboard.writeText($el.dataset.code); copied = true; setTimeout(() => copied = false, 2000)"
+                  th:attr="data-code=${joinCode}"
+                  title="Click to copy"
+                >
+                  <span class="font-mono text-sm font-semibold text-gray-900 tracking-widest" th:text="${joinCode}">AB3K7PQ</span>
+                  <svg x-show="!copied" class="h-4 w-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                  </svg>
+                  <svg x-show="copied" x-cloak class="h-4 w-4 text-green-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+              </div>
+            </th:block>
+          </div>
+        </div>
+
+        <!-- Delete error banner -->
+        <th:block th:if="${param.deleteError != null}">
+          <div class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+            </svg>
+            <p class="text-sm text-red-800">Cannot delete this contest — it has 2 or more active members with scored rounds.</p>
+          </div>
+        </th:block>
+
+        <!-- ── Segment filter + leaderboard ── -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-4">
+
+          <!-- Segment tree navigation -->
+          <div class="px-4 py-3 border-b border-gray-100">
+            <div class="flex gap-1.5 flex-wrap" th:if="${segmentTree != null and not #lists.isEmpty(segmentTree)}">
+              <template x-for="node in segmentTree" :key="node.id">
+                <div class="flex flex-col gap-1">
+                  <!-- Root or single-sprint node -->
+                  <button
+                    type="button"
+                    @click="selectSegment(node.id)"
+                    :class="activeSegment === node.id
+                      ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'"
+                    class="px-3 py-1.5 text-sm font-medium border rounded-md transition whitespace-nowrap"
+                  >
+                    <span x-text="node.label"></span>
+                    <span
+                      x-show="node.rank != null"
+                      x-text="' · #' + node.rank"
+                      :class="node.isTopTen ? 'text-indigo-600' : ''"
+                      class="text-xs font-normal"
+                    ></span>
+                  </button>
+
+                  <!-- Children (sprints under a quarter) -->
+                  <template x-if="node.children && node.children.length > 0">
+                    <div class="flex gap-1 flex-wrap ml-2">
+                      <template x-for="child in node.children" :key="child.id">
+                        <button
+                          type="button"
+                          @click="selectSegment(child.id)"
+                          :class="activeSegment === child.id
+                            ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
+                            : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-800'"
+                          class="px-2.5 py-1 text-xs font-medium border rounded-md transition whitespace-nowrap"
+                        >
+                          <span x-text="child.label"></span>
+                          <span
+                            x-show="child.rank != null"
+                            x-text="' · #' + child.rank"
+                            :class="child.isTopTen ? 'text-indigo-600' : ''"
+                            class="font-normal"
+                          ></span>
+                        </button>
+                        <!-- Grandchildren (sprints under a quarter under overall) -->
+                        <template x-if="child.children && child.children.length > 0">
+                          <div class="flex gap-1 flex-wrap ml-2 mt-1">
+                            <template x-for="grandchild in child.children" :key="grandchild.id">
+                              <button
+                                type="button"
+                                @click="selectSegment(grandchild.id)"
+                                :class="activeSegment === grandchild.id
+                                  ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
+                                  : 'border-gray-200 bg-white text-gray-400 hover:border-gray-300 hover:text-gray-700'"
+                                class="px-2 py-0.5 text-xs border rounded transition whitespace-nowrap"
+                              >
+                                <span x-text="grandchild.label"></span>
+                                <span
+                                  x-show="grandchild.rank != null"
+                                  x-text="' · #' + grandchild.rank"
+                                  :class="grandchild.isTopTen ? 'text-indigo-600' : ''"
+                                  class="font-normal"
+                                ></span>
+                              </button>
+                            </template>
+                          </div>
+                        </template>
+                      </template>
+                    </div>
+                  </template>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Leaderboard content (HTMX swap target) -->
+          <div id="leaderboard-content" th:fragment="leaderboard-content">
+            <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <p class="text-sm font-medium text-gray-700" th:text="${selectedSegment.name}">Sprint 1</p>
+                <p class="text-xs text-gray-500"
+                   th:text="'GW ' + ${selectedSegment.from} + '–' + ${selectedSegment.to}">GW 1–5</p>
+              </div>
+              <p class="text-xs text-gray-500" th:text="${leaderboard.totalParticipants} + ' members'">8 members</p>
+            </div>
+
+            <!-- Leaderboard table -->
+            <th:block th:if="${leaderboard != null and not #lists.isEmpty(leaderboard.entries)}">
+              <table class="min-w-full divide-y divide-gray-100">
+                <thead>
+                  <tr class="bg-gray-50">
+                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500 w-10">#</th>
+                    <th class="px-4 py-2.5 text-left text-xs font-medium text-gray-500">Name</th>
+                    <th class="px-4 py-2.5 text-right text-xs font-medium text-gray-500">Score</th>
+                    <th class="px-4 py-2.5 text-right text-xs font-medium text-gray-500 hidden sm:table-cell">Best</th>
+                    <th class="px-4 py-2.5 text-right text-xs font-medium text-gray-500 hidden sm:table-cell">0s</th>
+                    <th class="px-4 py-2.5 text-right text-xs font-medium text-gray-500">Chg</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  <tr
+                    th:each="entry : ${leaderboard.entries}"
+                    th:class="${entry.isFormerMember} ? 'opacity-60 bg-gray-50' : 'hover:bg-gray-50'"
+                    class="transition"
+                  >
+                    <td class="px-4 py-3 text-sm font-medium text-gray-500" th:text="${entry.position}">1</td>
+                    <td class="px-4 py-3">
+                      <span class="text-sm font-medium text-gray-900" th:text="${entry.displayName}">Alice</span>
+                      <span
+                        th:if="${entry.isFormerMember}"
+                        class="ml-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500"
+                      >Former Member</span>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-right font-semibold text-gray-900" th:text="${entry.totalScore}">42</td>
+                    <td class="px-4 py-3 text-sm text-right text-gray-600 hidden sm:table-cell" th:text="${entry.maxScore}">8</td>
+                    <td class="px-4 py-3 text-sm text-right text-gray-600 hidden sm:table-cell" th:text="${entry.totalZeroes}">2</td>
+                    <td class="px-4 py-3 text-sm text-right">
+                      <span th:if="${entry.movement > 0}" class="text-green-600 font-medium">↑<span th:text="${entry.movement}">3</span></span>
+                      <span th:if="${entry.movement < 0}" class="text-red-600 font-medium">↓<span th:text="${-entry.movement}">2</span></span>
+                      <span th:if="${entry.movement == 0}" class="text-gray-400">—</span>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </th:block>
+
+            <th:block th:if="${leaderboard == null or #lists.isEmpty(leaderboard.entries)}">
+              <div class="px-4 py-10 text-center text-sm text-gray-500">
+                No scores yet for this segment.
+              </div>
+            </th:block>
+
+            <!-- User's own position (when not in current page) -->
+            <th:block th:if="${leaderboard != null and leaderboard.userEntry != null and not leaderboard.userInCurrentPage}">
+              <div class="border-t border-dashed border-gray-200 px-4 py-3 bg-indigo-50">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-3">
+                    <span class="text-sm font-medium text-indigo-700" th:text="${leaderboard.userEntry.position} + 'th'">12th</span>
+                    <span class="text-sm font-medium text-gray-900" th:text="${leaderboard.userEntry.displayName}">You</span>
+                  </div>
+                  <span class="text-sm font-semibold text-indigo-700" th:text="${leaderboard.userEntry.totalScore}">28</span>
+                </div>
+              </div>
+            </th:block>
+          </div>
+        </div>
+
+        <!-- ── Leave contest (non-owner only) ── -->
+        <th:block th:if="${isOwner == false}">
+          <div class="mb-4">
+            <form method="post" th:action="@{/contests/{id}/leave(id=${contest.id})}"
+                  onsubmit="return confirm('Leave this contest? If you\'ve scored rounds, you\'ll appear as Former Member.')">
+              <button type="submit"
+                      class="text-sm text-red-600 hover:text-red-800 font-medium transition">
+                Leave contest
+              </button>
+            </form>
+          </div>
+        </th:block>
+
+        <!-- ── Admin panel (owner only) ── -->
+        <th:block th:if="${isOwner == true}">
+          <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+               x-data="{ open: false, deleteConfirmName: '' }">
+
+            <!-- Toggle header -->
+            <button
+              type="button"
+              @click="open = !open"
+              class="w-full flex items-center justify-between px-4 py-3 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"
+            >
+              <span class="flex items-center gap-2">
+                <svg class="h-4 w-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                Admin panel
+              </span>
+              <svg :class="open ? 'rotate-180' : ''" class="h-4 w-4 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+              </svg>
+            </button>
+
+            <div x-show="open" x-cloak class="border-t border-gray-100 divide-y divide-gray-100">
+
+              <!-- Toggle open/close joining -->
+              <div class="px-4 py-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-sm font-medium text-gray-800">Allow new members to join</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Toggle whether the contest is open to new joiners.</p>
+                  </div>
+                  <form method="post" th:action="@{/contests/{id}/toggle-joining(id=${contest.id})}">
+                    <button
+                      type="submit"
+                      th:class="${contest.isOpen}
+                        ? 'bg-green-500 hover:bg-green-600 text-white'
+                        : 'bg-gray-200 hover:bg-gray-300 text-gray-700'"
+                      class="px-3 py-1.5 text-sm font-medium rounded-lg transition"
+                      th:text="${contest.isOpen} ? 'Open → Close' : 'Closed → Open'"
+                    >Toggle</button>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Regenerate join code -->
+              <div class="px-4 py-4">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-sm font-medium text-gray-800">Regenerate invite code</p>
+                    <p class="text-xs text-gray-500 mt-0.5">Current members remain; old code stops working immediately.</p>
+                  </div>
+                  <form method="post" th:action="@{/contests/{id}/regenerate-code(id=${contest.id})}"
+                        onsubmit="return confirm('Generate a new invite code? The current code will stop working.')">
+                    <button type="submit"
+                            class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                      Regenerate
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+              <!-- Member list -->
+              <th:block th:if="${members != null and not #lists.isEmpty(members)}">
+                <div class="px-4 py-4">
+                  <p class="text-sm font-medium text-gray-800 mb-3">Members</p>
+                  <div class="space-y-2">
+                    <div
+                      th:each="member : ${members}"
+                      class="flex items-center justify-between py-1.5"
+                    >
+                      <div class="flex items-center gap-2">
+                        <span class="text-sm text-gray-900" th:text="${member.displayName}">Alice</span>
+                        <span
+                          th:if="${member.isOwner}"
+                          class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700"
+                        >Owner</span>
+                        <span
+                          th:unless="${member.isActive}"
+                          class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500"
+                        >Removed</span>
+                      </div>
+                      <th:block th:if="${member.isActive and !member.isOwner}">
+                        <form method="post"
+                              th:action="@{/contests/{id}/members/{memberId}/remove(id=${contest.id},memberId=${member.userId})}"
+                              th:onsubmit="'return confirm(\'Remove ' + ${member.displayName} + ' from this contest?\')'"
+                        >
+                          <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-medium transition">
+                            Remove
+                          </button>
+                        </form>
+                      </th:block>
+                    </div>
+                  </div>
+                </div>
+              </th:block>
+
+              <!-- Delete contest -->
+              <div class="px-4 py-4">
+                <p class="text-sm font-medium text-red-700 mb-1">Danger zone</p>
+                <p class="text-xs text-gray-500 mb-3">
+                  Deleting is blocked once 2+ members have scored rounds. All data is permanently removed.
+                </p>
+                <div class="flex items-center gap-2">
+                  <input
+                    type="text"
+                    x-model="deleteConfirmName"
+                    placeholder="Type contest name to confirm"
+                    class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-red-400"
+                  />
+                  <form method="post" th:action="@{/contests/{id}/delete(id=${contest.id})}">
+                    <button
+                      type="submit"
+                      :disabled="deleteConfirmName !== [[${contest.name}]]"
+                      class="px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 disabled:opacity-40 disabled:cursor-not-allowed rounded-lg transition"
+                    >
+                      Delete
+                    </button>
+                  </form>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </th:block>
+
+      </div>
+    </div>
+
+    <script th:inline="javascript">
+      /*<![CDATA[*/
+      function contestDetail() {
+        return {
+          contestId: /*[[${contest.id}]]*/ '',
+          segmentTree: /*[[${segmentTree}]]*/ [],
+          activeSegment: /*[[${currentSegment}]]*/ 'overall',
+
+          init() {
+            // no-op — segment tree is already rendered server-side
+          },
+
+          selectSegment(segmentCode) {
+            if (this.activeSegment === segmentCode) return;
+            this.activeSegment = segmentCode;
+            htmx.ajax('GET', '/contests/' + this.contestId + '?segment=' + segmentCode, {
+              target: '#leaderboard-content',
+              swap: 'outerHTML'
+            });
+          }
+        };
+      }
+      /*]]>*/
+    </script>
+
+  </body>
+</html>

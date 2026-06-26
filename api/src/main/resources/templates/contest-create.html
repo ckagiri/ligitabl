@@ -1,0 +1,259 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <div layout:fragment="content">
+      <div class="max-w-2xl mx-auto px-4 py-8">
+
+        <!-- Back link -->
+        <a th:href="@{/contests}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6 transition">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to My Contests
+        </a>
+
+        <h1 class="text-2xl font-bold text-gray-900 mb-1">Create a Private Contest</h1>
+        <p class="text-gray-500 text-sm mb-8">Set up a contest for your group with a custom name and window.</p>
+
+        <!-- Error banner -->
+        <th:block th:if="${error != null}">
+          <div class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+            <p class="text-sm text-red-800" th:text="${error}">Error message</p>
+          </div>
+        </th:block>
+
+        <div x-data="contestCreator()" x-init="init()">
+          <form method="post" th:action="@{/contests}">
+
+            <!-- Contest name -->
+            <div class="mb-6">
+              <label for="name" class="block text-sm font-medium text-gray-700 mb-1">
+                Contest name <span class="text-red-500">*</span>
+              </label>
+              <input
+                id="name"
+                name="name"
+                type="text"
+                maxlength="60"
+                placeholder="e.g. OfficeMates, Weekend Rivals"
+                th:value="${name}"
+                required
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+            </div>
+
+            <!-- Member cap (optional) -->
+            <div class="mb-6">
+              <label for="maxEntries" class="block text-sm font-medium text-gray-700 mb-1">
+                Member limit <span class="text-gray-400 font-normal">(optional)</span>
+              </label>
+              <input
+                id="maxEntries"
+                name="maxEntries"
+                type="number"
+                min="2"
+                max="500"
+                placeholder="No limit"
+                th:value="${maxEntries}"
+                class="w-full px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+              />
+              <p class="text-xs text-gray-500 mt-1">Leave blank for unlimited members.</p>
+            </div>
+
+            <!-- Contest Window -->
+            <div class="mb-6">
+              <p class="block text-sm font-medium text-gray-700 mb-3">
+                Contest window <span class="text-red-500">*</span>
+              </p>
+              <div class="grid grid-cols-2 gap-4 mb-4">
+                <!-- FROM dropdown -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">From</label>
+                  <div class="relative">
+                    <select
+                      x-model="fromCode"
+                      @change="onFromChange()"
+                      class="w-full appearance-none px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white pr-8"
+                    >
+                      <option value="">Select sprint…</option>
+                      <template x-for="s in sprints" :key="s.code">
+                        <option
+                          :value="s.code"
+                          :disabled="s.status === 'PAST'"
+                          :class="s.status === 'OPEN' ? 'font-semibold' : ''"
+                          x-text="s.name + ' (' + s.gwLabel + ')' + (s.status === 'OPEN' ? ' ★' : '')"
+                        ></option>
+                      </template>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                  <template x-if="selectedFrom && selectedFrom.status === 'OPEN'">
+                    <p class="text-xs text-green-600 mt-1 flex items-center gap-1">
+                      <span class="h-1.5 w-1.5 rounded-full bg-green-500 inline-block"></span>
+                      Open now
+                    </p>
+                  </template>
+                </div>
+
+                <!-- TO dropdown -->
+                <div>
+                  <label class="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">To</label>
+                  <div class="relative">
+                    <select
+                      x-model="toCode"
+                      :disabled="!fromCode"
+                      @change="updatePreview()"
+                      class="w-full appearance-none px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white pr-8 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="">Select end…</option>
+                      <template x-for="opt in toOptions" :key="opt.code">
+                        <option :value="opt.code" x-text="opt.label"></option>
+                      </template>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
+                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Contest structure preview -->
+              <div x-show="fromCode && toCode" x-cloak class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Contest structure</p>
+                <pre class="text-xs font-mono text-gray-700 whitespace-pre-wrap leading-relaxed" x-text="structurePreview"></pre>
+              </div>
+            </div>
+
+            <!-- Hidden form inputs synced with Alpine -->
+            <input type="hidden" name="fromSprintCode" :value="fromCode" />
+            <input type="hidden" name="toSprintCode" :value="toCode" />
+
+            <!-- Submit -->
+            <div class="flex gap-3">
+              <button
+                type="submit"
+                :disabled="!fromCode || !toCode"
+                class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2.5 px-4 rounded-lg transition text-sm"
+              >
+                Create Contest
+              </button>
+              <a
+                th:href="@{/contests}"
+                class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition"
+              >
+                Cancel
+              </a>
+            </div>
+
+          </form>
+        </div>
+
+      </div>
+    </div>
+
+    <script th:inline="javascript">
+      /*<![CDATA[*/
+      function contestCreator() {
+        return {
+          sprints: /*[[${sprints}]]*/ [],
+          fromCode: /*[[${fromSprintCode}]]*/ '',
+          toCode: /*[[${toSprintCode}]]*/ '',
+          toOptions: [],
+          structurePreview: '',
+
+          get selectedFrom() {
+            return this.sprints.find(s => s.code === this.fromCode) || null;
+          },
+
+          init() {
+            if (this.fromCode) this.onFromChange();
+            if (this.fromCode && this.toCode) this.updatePreview();
+          },
+
+          onFromChange() {
+            this.toCode = '';
+            this.toOptions = [];
+            this.structurePreview = '';
+            const from = this.selectedFrom;
+            if (!from) return;
+
+            const options = [{ code: from.code, label: from.name + ' (single sprint)' }];
+
+            const quarterCodes = [...new Set(this.sprints.map(s => s.quarterCode))];
+            const fromQIdx = quarterCodes.indexOf(from.quarterCode);
+            const quarterSprints = this.sprints.filter(s => s.quarterCode === from.quarterCode);
+            const isQuarterStart = quarterSprints.length > 0 && quarterSprints[0].code === from.code;
+
+            if (isQuarterStart) {
+              const lastInSameQ = quarterSprints[quarterSprints.length - 1];
+              if (lastInSameQ.code !== from.code) {
+                options.push({ code: lastInSameQ.code, label: from.quarterName + ' (end of quarter)' });
+              }
+              for (let qi = fromQIdx + 1; qi < quarterCodes.length; qi++) {
+                const qSprints = this.sprints.filter(s => s.quarterCode === quarterCodes[qi]);
+                if (qSprints.length > 0) {
+                  const last = qSprints[qSprints.length - 1];
+                  options.push({ code: last.code, label: 'Through end of ' + qSprints[0].quarterName });
+                }
+              }
+            }
+
+            this.toOptions = options;
+          },
+
+          updatePreview() {
+            const from = this.selectedFrom;
+            const to = this.sprints.find(s => s.code === this.toCode);
+            if (!from || !to) { this.structurePreview = ''; return; }
+
+            const fromIdx = this.sprints.indexOf(from);
+            const toIdx = this.sprints.indexOf(to);
+            const window = this.sprints.slice(fromIdx, toIdx + 1);
+            const quarters = [...new Set(window.map(s => s.quarterCode))];
+
+            const fromGw = from.gwLabel.split('–')[0];
+            const toGw = to.gwLabel.split('–')[1];
+
+            if (window.length === 1) {
+              this.structurePreview = from.name + ' · ' + from.gwLabel;
+            } else if (quarters.length === 1) {
+              const lines = [from.quarterName + ' · ' + fromGw + '–' + toGw];
+              window.forEach((s, i) => {
+                lines.push('  ' + (i < window.length - 1 ? '├─' : '└─') + ' ' + s.name + ' · ' + s.gwLabel);
+              });
+              this.structurePreview = lines.join('\n');
+            } else {
+              const lines = ['Overall · ' + fromGw + '–' + toGw];
+              quarters.forEach(qCode => {
+                const qSprints = window.filter(s => s.quarterCode === qCode);
+                const qName = qSprints[0].quarterName;
+                const qFrom = qSprints[0].gwLabel.split('–')[0];
+                const qTo = qSprints[qSprints.length - 1].gwLabel.split('–')[1];
+                lines.push('  ├─ ' + qName + ' · ' + qFrom + '–' + qTo);
+                qSprints.forEach((s, i) => {
+                  lines.push('  │  ' + (i < qSprints.length - 1 ? '├─' : '└─') + ' ' + s.name + ' · ' + s.gwLabel);
+                });
+              });
+              this.structurePreview = lines.join('\n');
+            }
+          }
+        };
+      }
+      /*]]>*/
+    </script>
+
+  </body>
+</html>
