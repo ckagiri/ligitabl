@@ -11,7 +11,15 @@
         x-data="{
           showJoinForm: false,
           joinCode: '',
-          get canPreview() { return this.joinCode.length === 7 }
+          openJoinForm() {
+            this.showJoinForm = true;
+            this.$nextTick(() => this.$refs.joinInput.focus());
+          },
+          closeJoinForm() {
+            this.showJoinForm = false;
+            this.joinCode = '';
+            document.getElementById('inline-preview').innerHTML = '';
+          }
         }"
       >
         <!-- ── Header ── -->
@@ -21,7 +29,7 @@
             <!-- Join inline toggle -->
             <button
               type="button"
-              @click="showJoinForm = !showJoinForm"
+              @click="showJoinForm ? closeJoinForm() : openJoinForm()"
               :class="showJoinForm
                 ? 'bg-indigo-50 text-indigo-700 border-indigo-300'
                 : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'"
@@ -35,7 +43,7 @@
             </button>
             <a
               th:href="@{/contests/create}"
-              class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition"
+              class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-lg transition"
             >
               <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
@@ -48,22 +56,35 @@
         <!-- ── Inline join form (Alpine.js x-show) ── -->
         <div x-show="showJoinForm" x-cloak class="mb-6 bg-white rounded-xl border border-gray-200 shadow-sm p-5">
           <p class="text-sm font-medium text-gray-700 mb-3">Enter contest code</p>
-          <div class="flex gap-3">
+          <div class="flex gap-2">
             <input
+              x-ref="joinInput"
               x-model="joinCode"
+              name="code"
               type="text"
               placeholder="e.g. AB3K7PQ"
               autocomplete="off"
               autocapitalize="characters"
               maxlength="7"
+              @keydown.enter.prevent="$refs.joinBtn.click()"
+              @input="document.getElementById('inline-preview').innerHTML = ''"
               class="flex-1 px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-mono focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+            />
+            <button
+              x-ref="joinBtn"
+              type="button"
               hx-get="/contests/join/preview"
-              hx-trigger="input delay:400ms[joinCode.length === 7]"
               hx-include="[name='code']"
-              :name="'code'"
               hx-target="#inline-preview"
               hx-swap="innerHTML"
-            />
+              class="inline-flex items-center gap-2 px-4 py-2.5 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg transition"
+            >
+              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
+              Join
+            </button>
           </div>
 
           <!-- Preview result area -->
@@ -174,7 +195,7 @@
                 <div class="flex justify-center gap-3">
                   <button
                     type="button"
-                    @click="showJoinForm = true; $nextTick(() => $el.closest('.max-w-4xl').querySelector('input[maxlength=\\'7\\']').focus())"
+                    @click="openJoinForm()"
                     class="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
                   >Join with a code</button>
                   <span class="text-gray-300">·</span>

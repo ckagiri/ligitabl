@@ -97,12 +97,12 @@ public class JoinContestController {
         var previewResult = previewContestByCodeUseCase.execute(code);
         if (previewResult.isLeft()) {
             model.addAttribute("errorCode", toPreviewErrorCode(previewResult.getLeft()));
-            return "contest-join :: preview-fragment";
+            return "contest/join :: preview-fragment";
         }
 
         model.addAttribute("contest", previewResult.get());
         model.addAttribute("code", code);
-        return "contest-join :: preview-fragment";
+        return "contest/join :: preview-fragment";
     }
 
     /** POST /contests/join/confirm — executes the join, redirects to /contests/{id} on success. */
