@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 @Component
 public class ContestCodeGenerator {
     private static final String ALPHABET =
-            "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";
+            "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
     private static final int LENGTH = 7;
     private final SecureRandom random = new SecureRandom();
 

@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import org.springframework.beans.factory.annotation.Value;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.auth.security.WebUserDetails;
@@ -33,6 +35,9 @@ public class ContestDetailController {
     private final GetPrivateContestUseCase getPrivateContestUseCase;
     private final UserRepo userRepo;
     private final ObjectMapper objectMapper;
+
+    @Value("${ligitabl.frontend.url:http://localhost:8080}")
+    private String frontendUrl;
 
     private record MemberRow(UUID userId, String displayName, boolean isActive, boolean isOwner) {}
 
@@ -61,7 +66,12 @@ public class ContestDetailController {
                     model.addAttribute("selectedSegment", detail.selectedSegment());
                     model.addAttribute("leaderboard", detail.leaderboard());
                     model.addAttribute("isOwner", detail.isOwner());
-                    model.addAttribute("joinCode", detail.joinCode());
+                    String joinCode = detail.joinCode() != null
+                            ? detail.joinCode().toUpperCase()
+                            : null;
+                    model.addAttribute("joinCode", joinCode);
+                    model.addAttribute("inviteUrl",
+                            joinCode != null ? frontendUrl + "/i/" + joinCode : null);
                     model.addAttribute("segmentTree", detail.segmentTree());
                     model.addAttribute("members",
                             buildMemberRows(detail.members(), detail.contest().getOwnerId()));
@@ -77,7 +87,7 @@ public class ContestDetailController {
                     }
 
                     if (hxRequest != null && !hxRequest.isBlank()) {
-                        return "contest-detail :: leaderboard-content";
+                        return "contest/detail :: leaderboard-content";
                     }
                     return "contest/detail";
                 });
