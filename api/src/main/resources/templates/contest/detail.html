@@ -84,7 +84,7 @@
         </th:block>
 
         <!-- ── Segment filter + leaderboard ── -->
-        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-4">
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-4">
 
           <!-- Segment navigator: dropdown + [O][Q][S] shortcut buttons -->
           <div class="px-4 py-3 border-b border-gray-100 flex items-center gap-2 flex-wrap">
@@ -95,7 +95,7 @@
                       @click="openMenu()"
                       class="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 whitespace-nowrap">
                 <span x-text="currentIcon"></span>
-                <span class="font-medium text-gray-900" x-text="currentNode ? currentNode.label : 'Select'"></span>
+                <span class="font-medium text-gray-900" x-text="currentLabel"></span>
                 <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform" :class="dropdownOpen ? 'rotate-180' : ''"
                      fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>

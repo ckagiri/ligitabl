@@ -174,6 +174,13 @@ window.contestDetail = function () {
       return find(this.segmentTree) || this.segmentTree[0] || null;
     },
 
+    get currentLabel() {
+      const node = this.currentNode;
+      if (!node) return 'Select';
+      if (node.dateLabel) return node.label + ' · ' + node.dateLabel;
+      return node.label;
+    },
+
     get currentIcon() {
       const node = this.currentNode;
       if (!node) return '';
