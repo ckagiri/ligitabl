@@ -5,6 +5,8 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.web.contest.SegmentNodeDto;
+import com.ligitabl.api.web.contest.SegmentTreeBuilder;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.Entry;
@@ -29,6 +31,7 @@ public class GetPrivateContestUseCase {
     private final CompetitionRepo competitionRepo;
     private final LeaderboardRepo leaderboardRepo;
     private final RoundRepo roundRepo;
+    private final SegmentTreeBuilder segmentTreeBuilder;
 
     public Either<GetPrivateContestError, GetPrivateContestResult> execute(GetPrivateContestQuery query) {
         Contest contest = contestRepo.findById(query.contestId()).orElse(null);
@@ -66,9 +69,13 @@ public class GetPrivateContestUseCase {
 
         List<Entry> members = entryRepo.findByContestId(contest.getId());
 
+        List<SegmentNodeDto> segmentTree =
+                segmentTreeBuilder.build(contest, competition, query.userId(), currentPosition);
+
         return Either.right(new GetPrivateContestResult(
                 contest, selectedSegment, leaderboard,
-                contest.isOwnedBy(query.userId()), members, contest.getJoinCode()));
+                contest.isOwnedBy(query.userId()), members, contest.getJoinCode(),
+                segmentTree));
     }
 
     private int resolveCurrentPosition(Season season) {
@@ -80,6 +87,15 @@ public class GetPrivateContestUseCase {
 
     private Either<GetPrivateContestError, RoundSpan> resolveSelectedSegment(
             Contest contest, Competition competition, String segmentCode, int currentPosition) {
+
+        if ("overall".equalsIgnoreCase(segmentCode)) {
+            return Either.right(RoundSpan.builder()
+                    .code("overall")
+                    .name("Overall")
+                    .from(contest.getFromRoundPosition())
+                    .to(contest.getToRoundPosition())
+                    .build());
+        }
 
         List<RoundSpan> phases = competition != null && competition.getPhases() != null
                 ? competition.getPhases()

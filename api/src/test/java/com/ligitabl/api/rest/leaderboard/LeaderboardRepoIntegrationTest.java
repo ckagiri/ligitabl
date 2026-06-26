@@ -113,9 +113,9 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         bobPredictionId = createPrediction(bobId);
         charliePredictionId = createPrediction(charlieId);
 
-        entryRepo.save(Entry.builder().userId(aliceId).contestId(contestId).build());
-        entryRepo.save(Entry.builder().userId(bobId).contestId(contestId).build());
-        entryRepo.save(Entry.builder().userId(charlieId).contestId(contestId).build());
+        entryRepo.save(Entry.builder().userId(aliceId).contestId(contestId).joinedAtRound(1).build());
+        entryRepo.save(Entry.builder().userId(bobId).contestId(contestId).joinedAtRound(1).build());
+        entryRepo.save(Entry.builder().userId(charlieId).contestId(contestId).joinedAtRound(1).build());
     }
 
     @Test
@@ -247,9 +247,9 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         alicePredictionId = createPrediction(aliceId);
         bobPredictionId = createPrediction(bobId);
         charliePredictionId = createPrediction(charlieId);
-        entryRepo.save(Entry.builder().userId(aliceId).contestId(contestId).build());
-        entryRepo.save(Entry.builder().userId(bobId).contestId(contestId).build());
-        entryRepo.save(Entry.builder().userId(charlieId).contestId(contestId).build());
+        entryRepo.save(Entry.builder().userId(aliceId).contestId(contestId).joinedAtRound(1).build());
+        entryRepo.save(Entry.builder().userId(bobId).contestId(contestId).joinedAtRound(1).build());
+        entryRepo.save(Entry.builder().userId(charlieId).contestId(contestId).joinedAtRound(1).build());
 
         // Zeroes DESC (score tied)
         createResult(aliceId, alicePredictionId, 1, 100, 10, 5);
@@ -268,9 +268,9 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         alicePredictionId = createPrediction(aliceId);
         bobPredictionId = createPrediction(bobId);
         charliePredictionId = createPrediction(charlieId);
-        entryRepo.save(Entry.builder().userId(aliceId).contestId(contestId).build());
-        entryRepo.save(Entry.builder().userId(bobId).contestId(contestId).build());
-        entryRepo.save(Entry.builder().userId(charlieId).contestId(contestId).build());
+        entryRepo.save(Entry.builder().userId(aliceId).contestId(contestId).joinedAtRound(1).build());
+        entryRepo.save(Entry.builder().userId(bobId).contestId(contestId).joinedAtRound(1).build());
+        entryRepo.save(Entry.builder().userId(charlieId).contestId(contestId).joinedAtRound(1).build());
 
         // Swaps ASC (score+zeroes tied)
         createResult(aliceId, alicePredictionId, 1, 100, 10, 5);
@@ -287,8 +287,8 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         bobId = insertUser("bob@example.com", "Bob");
         alicePredictionId = createPrediction(aliceId);
         bobPredictionId = createPrediction(bobId);
-        entryRepo.save(Entry.builder().userId(aliceId).contestId(contestId).build());
-        entryRepo.save(Entry.builder().userId(bobId).contestId(contestId).build());
+        entryRepo.save(Entry.builder().userId(aliceId).contestId(contestId).joinedAtRound(1).build());
+        entryRepo.save(Entry.builder().userId(bobId).contestId(contestId).joinedAtRound(1).build());
 
         // Swaps ASC (score+zeroes tied) should beat max score DESC
         // - Alice: higher max score (100) but worse swaps (10)
@@ -312,9 +312,9 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         alicePredictionId = createPrediction(aliceId);
         bobPredictionId = createPrediction(bobId);
         charliePredictionId = createPrediction(charlieId);
-        entryRepo.save(Entry.builder().userId(aliceId).contestId(contestId).build());
-        entryRepo.save(Entry.builder().userId(bobId).contestId(contestId).build());
-        entryRepo.save(Entry.builder().userId(charlieId).contestId(contestId).build());
+        entryRepo.save(Entry.builder().userId(aliceId).contestId(contestId).joinedAtRound(1).build());
+        entryRepo.save(Entry.builder().userId(bobId).contestId(contestId).joinedAtRound(1).build());
+        entryRepo.save(Entry.builder().userId(charlieId).contestId(contestId).joinedAtRound(1).build());
 
         // Max score DESC (score+zeroes+swaps tied)
         createResult(aliceId, alicePredictionId, 1, 50, 5, 2);
@@ -337,9 +337,9 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         alicePredictionId = createPrediction(aliceId);
         bobPredictionId = createPrediction(bobId);
         charliePredictionId = createPrediction(charlieId);
-        entryRepo.save(Entry.builder().userId(aliceId).contestId(contestId).build());
-        entryRepo.save(Entry.builder().userId(bobId).contestId(contestId).build());
-        entryRepo.save(Entry.builder().userId(charlieId).contestId(contestId).build());
+        entryRepo.save(Entry.builder().userId(aliceId).contestId(contestId).joinedAtRound(1).build());
+        entryRepo.save(Entry.builder().userId(bobId).contestId(contestId).joinedAtRound(1).build());
+        entryRepo.save(Entry.builder().userId(charlieId).contestId(contestId).joinedAtRound(1).build());
 
         // Public id (everything tied)
         updateUserPublicId(aliceId, "alice");
@@ -456,7 +456,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         // Dave joins at round 15; Q1 covers rounds 1-10 — Dave should not appear
         UUID daveId = insertUser("dave@example.com", "Dave");
         createPredictionAtRound(daveId, 15);
-        entryRepo.save(Entry.builder().userId(daveId).contestId(contestId).build());
+        entryRepo.save(Entry.builder().userId(daveId).contestId(contestId).joinedAtRound(15).build());
 
         var results = computeEntries(1, 10);
 
@@ -471,7 +471,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         // Dave joins at round 15; H1 covers rounds 1-19 — Dave should appear (unscored)
         UUID daveId = insertUser("dave@example.com", "Dave");
         createPredictionAtRound(daveId, 15);
-        entryRepo.save(Entry.builder().userId(daveId).contestId(contestId).build());
+        entryRepo.save(Entry.builder().userId(daveId).contestId(contestId).joinedAtRound(15).build());
 
         var results = computeEntries(1, 19);
 
@@ -546,7 +546,7 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         for (int i = 1; i <= count; i++) {
             UUID userId = insertUser("user" + i + "@example.com", "User " + i);
             UUID predictionId = createPrediction(userId);
-            entryRepo.save(Entry.builder().userId(userId).contestId(contestId).build());
+            entryRepo.save(Entry.builder().userId(userId).contestId(contestId).joinedAtRound(1).build());
             createResult(userId, predictionId, roundPosition, baseScore - i, 0, 0);
             users.add(userId);
         }
