@@ -36,7 +36,7 @@ public class CreateContestController {
 
         model.addAttribute("sprints", contestSupport.resolveSprintOptions());
         model.addAttribute("pageTitle", "Create a Contest");
-        return "contest-create";
+        return "contest/create";
     }
 
     @PostMapping
@@ -65,7 +65,7 @@ public class CreateContestController {
                     model.addAttribute("toSprintCode", toSprintCode);
                     model.addAttribute("sprints", contestSupport.resolveSprintOptions());
                     model.addAttribute("pageTitle", "Create a Contest");
-                    return "contest-create";
+                    return "contest/create";
                 },
                 success -> "redirect:/contests/" + success.contestId());
     }

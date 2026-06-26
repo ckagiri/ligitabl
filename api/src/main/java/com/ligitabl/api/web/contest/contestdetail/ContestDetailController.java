@@ -78,7 +78,7 @@ public class ContestDetailController {
                     if (hxRequest != null && !hxRequest.isBlank()) {
                         return "contest-detail :: leaderboard-content";
                     }
-                    return "contest-detail";
+                    return "contest/detail";
                 });
     }
 

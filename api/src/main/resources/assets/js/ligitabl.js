@@ -1,3 +1,5 @@
+import './contests.js';
+
 // HTMX Configuration
 document.body.addEventListener("htmx:configRequest", (event) => {
     event.detail.headers["X-CSRF-TOKEN"] =

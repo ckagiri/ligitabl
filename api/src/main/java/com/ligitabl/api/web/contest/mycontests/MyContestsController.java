@@ -36,6 +36,6 @@ public class MyContestsController {
         model.addAttribute("generalContests", result.generalContests());
         model.addAttribute("privateContests", result.privateContests());
         model.addAttribute("pageTitle", "My Contests");
-        return "contests";
+        return "contest/index";
     }
 }

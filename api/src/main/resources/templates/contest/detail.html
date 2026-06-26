@@ -373,26 +373,11 @@
 
     <script th:inline="javascript">
       /*<![CDATA[*/
-      function contestDetail() {
-        return {
-          contestId: /*[[${contest.id}]]*/ '',
-          segmentTree: /*[[${segmentTree}]]*/ [],
-          activeSegment: /*[[${currentSegment}]]*/ 'overall',
-
-          init() {
-            // no-op — segment tree is already rendered server-side
-          },
-
-          selectSegment(segmentCode) {
-            if (this.activeSegment === segmentCode) return;
-            this.activeSegment = segmentCode;
-            htmx.ajax('GET', '/contests/' + this.contestId + '?segment=' + segmentCode, {
-              target: '#leaderboard-content',
-              swap: 'outerHTML'
-            });
-          }
-        };
-      }
+      window.__contestDetailData = {
+        contestId:      /*[[${contest.id}]]*/ '',
+        segmentTree:    /*[[${segmentTree}]]*/ [],
+        currentSegment: /*[[${currentSegment}]]*/ 'overall'
+      };
       /*]]>*/
     </script>
 

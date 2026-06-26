@@ -56,14 +56,14 @@ public class JoinContestController {
         if (user == null) return "redirect:/auth/login";
 
         if (code == null || code.isBlank()) {
-            return "contest-join";
+            return "contest/join";
         }
 
         var previewResult = previewContestByCodeUseCase.execute(code);
         if (previewResult.isLeft()) {
             model.addAttribute("errorCode", toPreviewErrorCode(previewResult.getLeft()));
             model.addAttribute("code", code);
-            return "contest-join";
+            return "contest/join";
         }
 
         ContestPreviewDto preview = previewResult.get();
@@ -78,7 +78,7 @@ public class JoinContestController {
 
         model.addAttribute("contest", preview);
         model.addAttribute("code", code);
-        return "contest-join";
+        return "contest/join";
     }
 
     /** GET /contests/join/preview — HTMX fragment; fires after 7-char input on /contests page. */
@@ -120,7 +120,7 @@ public class JoinContestController {
                 error -> {
                     model.addAttribute("errorCode", toJoinErrorCode(error));
                     model.addAttribute("code", code);
-                    return "contest-join";
+                    return "contest/join";
                 },
                 success -> "redirect:/contests/" + success.contestId());
     }
