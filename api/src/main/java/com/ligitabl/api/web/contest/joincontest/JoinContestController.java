@@ -73,7 +73,7 @@ public class JoinContestController {
         var contest = contestRepo.findByJoinCode(code).orElse(null);
         if (contest != null && !predictionRepo.existsByUserAndSeason(userId, contest.getSeasonId())) {
             String nextUrl = "/contests/join?code=" + URLEncoder.encode(code, StandardCharsets.UTF_8);
-            return "redirect:/predictions?next=" + URLEncoder.encode(nextUrl, StandardCharsets.UTF_8);
+            return "redirect:/predictions/user/me?next=" + URLEncoder.encode(nextUrl, StandardCharsets.UTF_8);
         }
 
         model.addAttribute("contest", preview);

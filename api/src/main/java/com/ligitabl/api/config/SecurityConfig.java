@@ -184,7 +184,7 @@ public class SecurityConfig {
                         .permitAll())
                 .formLogin(form -> form.loginPage("/auth/login")
                         .loginProcessingUrl("/auth/login/process")
-                        .defaultSuccessUrl("/my-table", true)
+                        .defaultSuccessUrl("/my-table", false)
                         .permitAll())
                 .oauth2Login(oauth2 -> oauth2.loginPage("/auth/login")
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))

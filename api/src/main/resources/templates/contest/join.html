@@ -169,7 +169,8 @@
                 </p>
                 <div class="flex items-center gap-3 mt-2">
                   <span class="text-sm text-gray-600">
-                    <span class="font-medium" th:text="${contest.memberCount}">8</span> members
+                    <span class="font-medium" th:text="${contest.memberCount}">8</span>
+                    <span th:text="${contest.memberCount} == 1 ? ' member' : ' members'"> members</span>
                   </span>
                   <span
                     th:if="${contest.isOpen}"
@@ -232,7 +233,7 @@
                 <span class="mx-1 text-gray-300">·</span>
                 <span th:text="${contest.gwRange}">GW 20–29</span>
                 <span class="mx-1 text-gray-300">·</span>
-                <span th:text="${contest.memberCount} + ' members'">8 members</span>
+                <span th:text="${contest.memberCount} + (${contest.memberCount} == 1 ? ' member' : ' members')">8 members</span>
               </p>
             </div>
             <span

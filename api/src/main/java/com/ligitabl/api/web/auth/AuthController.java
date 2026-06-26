@@ -14,6 +14,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
+import org.springframework.security.web.savedrequest.RequestCache;
 import org.springframework.security.web.savedrequest.SavedRequest;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -83,7 +85,8 @@ public class AuthController {
             BindingResult bindingResult,
             RedirectAttributes redirectAttributes,
             Model model,
-            HttpServletRequest request) {
+            HttpServletRequest request,
+            HttpServletResponse response) {
         if (bindingResult.hasErrors()) {
             model.addAttribute("pageTitle", "Register");
             return "auth/register";
@@ -126,7 +129,7 @@ public class AuthController {
                                 "message", "Welcome, " + result.displayName() + "! You're now logged in.");
                         redirectAttributes.addFlashAttribute("messageType", "success");
 
-                        return "redirect:/my-table";
+                        return savedOrDefault(request, response);
                     });
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
@@ -218,7 +221,7 @@ public class AuthController {
                 }
             }
 
-            return "redirect:/my-table";
+            return savedOrDefault(request, response);
         } catch (IllegalArgumentException e) {
             model.addAttribute("error", e.getMessage());
             model.addAttribute("pageTitle", "Login");
@@ -456,6 +459,16 @@ public class AuthController {
         }
 
         return false;
+    }
+
+    private String savedOrDefault(HttpServletRequest request, HttpServletResponse response) {
+        RequestCache requestCache = new HttpSessionRequestCache();
+        SavedRequest saved = requestCache.getRequest(request, response);
+        if (saved != null) {
+            requestCache.removeRequest(request, response);
+            return "redirect:" + saved.getRedirectUrl();
+        }
+        return "redirect:/my-table";
     }
 
     private Season getActiveSeason() {

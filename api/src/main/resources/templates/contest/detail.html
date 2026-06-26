@@ -386,7 +386,8 @@
                       <th:block th:if="${member.isActive and !member.isOwner}">
                         <form method="post"
                               th:action="@{/contests/{id}/members/{memberId}/remove(id=${contest.id},memberId=${member.userId})}"
-                              th:onsubmit="'return confirm(\'Remove ' + ${member.displayName} + ' from this contest?\')'"
+                              th:attr="data-name=${member.displayName}"
+                              onsubmit="return confirm('Remove ' + this.dataset.name + ' from this contest?')"
                         >
                           <button type="submit" class="text-xs text-red-600 hover:text-red-800 font-medium transition">
                             Remove
