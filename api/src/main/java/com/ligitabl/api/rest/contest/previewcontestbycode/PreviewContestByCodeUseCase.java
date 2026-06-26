@@ -1,6 +1,8 @@
 package com.ligitabl.api.rest.contest.previewcontestbycode;
 
+import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,6 +16,8 @@ import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
+import com.ligitabl.model.repo.MatchRepo;
+import com.ligitabl.model.repo.MatchRepo.RoundDateRange;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,9 +25,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class PreviewContestByCodeUseCase {
 
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("MMM d");
+
     private final ContestRepo contestRepo;
     private final EntryRepo entryRepo;
     private final CompetitionRepo competitionRepo;
+    private final MatchRepo matchRepo;
 
     public Either<PreviewContestByCodeError, ContestPreviewDto> execute(String joinCode) {
         var contest = contestRepo.findByJoinCode(joinCode).orElse(null);
@@ -39,12 +46,16 @@ public class PreviewContestByCodeUseCase {
         int memberCount = entryRepo.countActiveByContestId(contest.getId());
         String gwRange = "GW " + contest.getFromRoundPosition() + "–" + contest.getToRoundPosition();
 
+        Map<Integer, RoundDateRange> roundDates = matchRepo.groupRoundDateRangesBySeason(contest.getSeasonId());
+        String dateRange = resolveDateRange(contest, roundDates);
+
         return Either.right(new ContestPreviewDto(
                 contest.getId(),
                 contest.getName(),
                 resolveScopeCode(contest, phases),
                 resolveScopeLabel(contest, phases, gwRange),
                 gwRange,
+                dateRange,
                 memberCount,
                 contest.isOpen()));
     }
@@ -75,6 +86,15 @@ public class PreviewContestByCodeUseCase {
                 .filter(p -> p.getFrom() == contest.getFromRoundPosition()
                         && p.getTo() == contest.getToRoundPosition())
                 .findFirst();
+    }
+
+    private String resolveDateRange(Contest contest, Map<Integer, RoundDateRange> roundDates) {
+        RoundDateRange from = roundDates.get(contest.getFromRoundPosition());
+        RoundDateRange to = roundDates.get(contest.getToRoundPosition());
+        if (from == null || to == null) return null;
+        String start = from.firstKickoff().atZoneSameInstant(java.time.ZoneOffset.UTC).format(DATE_FMT);
+        String end = to.lastKickoff().atZoneSameInstant(java.time.ZoneOffset.UTC).format(DATE_FMT);
+        return start + " – " + end;
     }
 
     private String buildPhaseName(RoundSpan phase, List<RoundSpan> allPhases) {

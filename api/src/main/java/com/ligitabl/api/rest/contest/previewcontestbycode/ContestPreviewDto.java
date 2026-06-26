@@ -8,5 +8,6 @@ public record ContestPreviewDto(
         String scopeCode,
         String scopeLabel,
         String gwRange,
+        String dateRange,
         int memberCount,
         boolean isOpen) {}

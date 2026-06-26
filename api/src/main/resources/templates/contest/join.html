@@ -161,10 +161,15 @@
                 </svg>
               </div>
               <div class="flex-1 min-w-0">
-                <h2 class="text-lg font-semibold text-gray-900 truncate" th:text="${contest.name}">Contest Name</h2>
+                <h2 class="text-lg text-gray-900 truncate">
+                  <span class="font-semibold" th:text="${contest.name}">Contest Name</span>
+                  <span class="font-normal"> contest</span>
+                </h2>
                 <p class="text-sm text-gray-500 mt-0.5">
-                  <span th:text="${contest.scopeLabel}">Quarter 3</span>
-                  <span class="mx-1.5 text-gray-300">·</span>
+                  <th:block th:if="${contest.dateRange != null}">
+                    <span th:text="${contest.dateRange}">May 1 – May 24</span>
+                    <span class="mx-1.5 text-gray-300">·</span>
+                  </th:block>
                   <span th:text="${contest.gwRange}">GW 20–29</span>
                 </p>
                 <div class="flex items-center gap-3 mt-2">
@@ -227,10 +232,15 @@
         <div class="bg-gray-50 rounded-lg border border-gray-200 p-4 mb-3">
           <div class="flex items-start justify-between gap-2">
             <div>
-              <p class="text-sm font-semibold text-gray-900" th:text="${contest.name}">Contest Name</p>
+              <p class="text-sm text-gray-900">
+                <span class="font-semibold" th:text="${contest.name}">Contest Name</span>
+                <span class="font-normal"> contest</span>
+              </p>
               <p class="text-xs text-gray-500 mt-0.5">
-                <span th:text="${contest.scopeLabel}">Quarter 3</span>
-                <span class="mx-1 text-gray-300">·</span>
+                <th:block th:if="${contest.dateRange != null}">
+                  <span th:text="${contest.dateRange}">May 1 – May 24</span>
+                  <span class="mx-1 text-gray-300">·</span>
+                </th:block>
                 <span th:text="${contest.gwRange}">GW 20–29</span>
                 <span class="mx-1 text-gray-300">·</span>
                 <span th:text="${contest.memberCount} + (${contest.memberCount} == 1 ? ' member' : ' members')">8 members</span>
