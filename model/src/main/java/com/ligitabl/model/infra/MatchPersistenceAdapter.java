@@ -205,7 +205,7 @@ public class MatchPersistenceAdapter implements MatchRepo {
     }
 
     @Override
-    public Map<Integer, RoundDateRange> findRoundDateRangesBySeason(UUID seasonId) {
+    public Map<Integer, RoundDateRange> groupRoundDateRangesBySeason(UUID seasonId) {
         return dsl.select(
                         T_ROUND.C_POSITION,
                         DSL.min(T_MATCH.C_KICK_OFF).as("first_kickoff"),

@@ -136,7 +136,8 @@
                   <tr
                     th:each="row : ${privateContests}"
                     class="hover:bg-gray-50 transition cursor-pointer"
-                    th:onclick="|window.location.href='/contests/${row.id}'|"
+                    th:attr="data-href=@{/contests/{id}(id=${row.id})}"
+                    onclick="window.location.href = this.dataset.href"
                   >
                     <td class="px-4 py-3">
                       <span class="text-sm font-medium text-gray-900" th:text="${row.name}">OfficeMates</span>

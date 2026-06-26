@@ -73,79 +73,146 @@
                 Contest window <span class="text-red-500">*</span>
               </p>
               <div class="grid grid-cols-2 gap-4 mb-4">
-                <!-- FROM dropdown -->
+
+                <!-- FROM custom dropdown -->
                 <div>
                   <label class="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">From</label>
                   <div class="relative">
-                    <select
-                      x-model="fromCode"
-                      @change="onFromChange()"
-                      class="w-full appearance-none px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white pr-8"
-                    >
-                      <option value="">Select sprint…</option>
-                      <template x-for="s in sprints" :key="s.code">
-                        <option
-                          :value="s.code"
-                          :disabled="s.status === 'PAST'"
-                          :class="s.status === 'OPEN' ? 'font-semibold' : ''"
-                          x-text="s.name + ' (' + s.gwLabel + ')' + (s.status === 'OPEN' ? ' ★' : '')"
-                        ></option>
-                      </template>
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    <button type="button"
+                            @click="fromOpen = !fromOpen; toOpen = false"
+                            class="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                      <span :class="selectedFrom ? 'text-gray-900' : 'text-gray-400'" class="truncate"
+                            x-text="selectedFrom ? selectedFrom.name + ' • ' + selectedFrom.startDate : 'Select sprint…'"></span>
+                      <svg class="w-4 h-4 text-gray-400 ml-1 shrink-0 transition-transform" :class="fromOpen ? 'rotate-180' : ''"
+                           fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                       </svg>
+                    </button>
+
+                    <div x-show="fromOpen" @click.away="fromOpen = false" x-cloak x-transition
+                         class="absolute z-50 w-64 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                      <div class="overflow-y-auto max-h-72">
+
+                        <!-- Available sprints grouped by quarter -->
+                        <template x-for="quarter in getAvailableQuarters()" :key="'avail-' + quarter.code">
+                          <div>
+                            <div class="px-3 py-1.5 bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
+                              <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide" x-text="quarter.name"></span>
+                            </div>
+                            <template x-for="sprint in getAvailableSprintsForQuarter(quarter.code)" :key="sprint.code">
+                              <div @click="selectFrom(sprint)"
+                                   :class="{
+                                     'border-l-2 border-green-500 bg-green-50 hover:bg-green-100': sprint.status === 'OPEN',
+                                     'hover:bg-indigo-50': sprint.status !== 'OPEN',
+                                     'bg-indigo-50': selectedFrom && selectedFrom.code === sprint.code
+                                   }"
+                                   class="px-3 py-2 cursor-pointer">
+                                <div class="flex items-center justify-between">
+                                  <div class="flex items-center gap-1.5">
+                                    <span x-show="sprint.status === 'OPEN'" class="text-green-600 text-xs font-bold">▶</span>
+                                    <span class="text-sm font-medium" x-text="sprint.name"></span>
+                                  </div>
+                                  <span class="text-xs text-gray-400" x-text="sprint.startDate"></span>
+                                </div>
+                                <div class="text-xs mt-0.5 ml-4"
+                                     :class="sprint.status === 'OPEN' ? 'text-green-600 font-medium' : 'text-blue-500'"
+                                     x-text="sprint.status === 'OPEN' ? 'Open now' : 'Upcoming'"></div>
+                              </div>
+                            </template>
+                          </div>
+                        </template>
+
+                        <!-- Past divider -->
+                        <template x-if="getPastQuarters().length > 0">
+                          <div class="px-3 py-2 bg-gray-100 border-t border-b border-gray-200">
+                            <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Past</span>
+                          </div>
+                        </template>
+
+                        <!-- Past sprints grouped by quarter -->
+                        <template x-for="quarter in getPastQuarters()" :key="'past-' + quarter.code">
+                          <div>
+                            <div class="px-3 py-1.5 bg-gray-50 border-b border-gray-100">
+                              <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide" x-text="quarter.name"></span>
+                            </div>
+                            <template x-for="sprint in getPastSprintsForQuarter(quarter.code)" :key="sprint.code">
+                              <div class="px-3 py-2 opacity-40 cursor-not-allowed">
+                                <div class="flex items-center justify-between">
+                                  <span class="text-sm font-medium" x-text="sprint.name"></span>
+                                  <span class="text-xs text-gray-400" x-text="sprint.startDate"></span>
+                                </div>
+                                <div class="text-xs mt-0.5 text-gray-400">Locked</div>
+                              </div>
+                            </template>
+                          </div>
+                        </template>
+
+                      </div>
                     </div>
                   </div>
-                  <template x-if="selectedFrom && selectedFrom.status === 'OPEN'">
-                    <p class="text-xs text-green-600 mt-1 flex items-center gap-1">
-                      <span class="h-1.5 w-1.5 rounded-full bg-green-500 inline-block"></span>
-                      Open now
-                    </p>
-                  </template>
                 </div>
 
-                <!-- TO dropdown -->
+                <!-- TO custom dropdown -->
                 <div>
                   <label class="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">To</label>
                   <div class="relative">
-                    <select
-                      x-model="toCode"
-                      :disabled="!fromCode"
-                      @change="updatePreview()"
-                      class="w-full appearance-none px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent bg-white pr-8 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      <option value="">Select end…</option>
-                      <template x-for="opt in toOptions" :key="opt.code">
-                        <option :value="opt.code" x-text="opt.label"></option>
-                      </template>
-                    </select>
-                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-500">
-                      <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    <button type="button"
+                            @click="selectedFrom && (toOpen = !toOpen); fromOpen = false"
+                            :class="selectedFrom ? 'hover:border-gray-400 bg-white' : 'opacity-50 cursor-not-allowed bg-gray-50'"
+                            class="w-full flex items-center justify-between px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                      <span :class="selectedTo ? 'text-gray-900' : 'text-gray-400'" class="truncate"
+                            x-text="selectedTo ? selectedTo.name + ' • ' + selectedTo.endDate : 'Select end…'"></span>
+                      <svg class="w-4 h-4 text-gray-400 ml-1 shrink-0 transition-transform" :class="toOpen ? 'rotate-180' : ''"
+                           fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
                       </svg>
+                    </button>
+
+                    <div x-show="toOpen" @click.away="toOpen = false" x-cloak x-transition
+                         class="absolute z-50 w-64 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                      <div class="overflow-y-auto max-h-72">
+                        <template x-for="quarter in quarters" :key="quarter.code">
+                          <div x-show="hasValidToInQuarter(quarter.code)">
+                            <div class="px-3 py-1.5 bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
+                              <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide" x-text="quarter.name"></span>
+                            </div>
+                            <template x-for="sprint in getSprintsForQuarter(quarter.code)" :key="sprint.code">
+                              <div x-show="isValidTo(sprint)"
+                                   @click="selectTo(sprint)"
+                                   :class="selectedTo && selectedTo.code === sprint.code ? 'bg-indigo-50' : 'hover:bg-indigo-50'"
+                                   class="px-3 py-2 cursor-pointer">
+                                <div class="flex items-center justify-between">
+                                  <span class="text-sm font-medium" x-text="sprint.name"></span>
+                                  <span class="text-xs text-gray-400" x-text="sprint.endDate"></span>
+                                </div>
+                                <div class="text-xs mt-0.5 text-gray-400" x-text="toSubLabel(sprint)"></div>
+                              </div>
+                            </template>
+                          </div>
+                        </template>
+                      </div>
                     </div>
                   </div>
                 </div>
+
               </div>
 
               <!-- Contest structure preview -->
-              <div x-show="fromCode && toCode" x-cloak class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+              <div x-show="selectedFrom && selectedTo" x-cloak class="bg-gray-50 rounded-lg border border-gray-200 p-4">
                 <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Contest structure</p>
-                <pre class="text-xs font-mono text-gray-700 whitespace-pre-wrap leading-relaxed" x-text="structurePreview"></pre>
+                <pre class="text-xs font-mono text-gray-700 whitespace-pre-wrap leading-relaxed" x-text="renderHierarchy()"></pre>
               </div>
             </div>
 
             <!-- Hidden form inputs synced with Alpine -->
-            <input type="hidden" name="fromSprintCode" :value="fromCode" />
-            <input type="hidden" name="toSprintCode" :value="toCode" />
+            <input type="hidden" name="fromSprintCode" :value="selectedFrom ? selectedFrom.code : ''" />
+            <input type="hidden" name="toSprintCode" :value="selectedTo ? selectedTo.code : ''" />
 
             <!-- Submit -->
             <div class="flex gap-3">
               <button
                 type="submit"
-                :disabled="!fromCode || !toCode"
+                :disabled="!selectedFrom || !selectedTo"
                 class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2.5 px-4 rounded-lg transition text-sm"
               >
                 Create Contest
@@ -167,6 +234,7 @@
         /*<![CDATA[*/
         window.__contestCreateData = {
           sprints:        /*[[${sprints}]]*/ [],
+          quarters:       /*[[${quarters}]]*/ [],
           fromSprintCode: /*[[${fromSprintCode}]]*/ '',
           toSprintCode:   /*[[${toSprintCode}]]*/ ''
         };

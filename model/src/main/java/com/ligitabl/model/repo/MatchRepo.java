@@ -56,5 +56,5 @@ public interface MatchRepo {
      * Returns min/max kickoff times per round position for all rounds in a season.
      * Keyed by round position.
      */
-    Map<Integer, RoundDateRange> findRoundDateRangesBySeason(UUID seasonId);
+    Map<Integer, RoundDateRange> groupRoundDateRangesBySeason(UUID seasonId);
 }

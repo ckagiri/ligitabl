@@ -45,7 +45,7 @@ public class SegmentTreeBuilder {
         if (competition == null || competition.getPhases() == null) return List.of();
 
         Map<Integer, MatchRepo.RoundDateRange> dateRanges =
-                matchRepo.findRoundDateRangesBySeason(contest.getSeasonId());
+                matchRepo.groupRoundDateRangesBySeason(contest.getSeasonId());
 
         List<RoundSpan> phases = competition.getPhases();
         int from = contest.getFromRoundPosition();

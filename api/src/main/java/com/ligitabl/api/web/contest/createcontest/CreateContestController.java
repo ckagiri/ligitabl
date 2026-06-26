@@ -35,6 +35,7 @@ public class CreateContestController {
         if (user == null) return "redirect:/auth/login";
 
         model.addAttribute("sprints", contestSupport.resolveSprintOptions());
+        model.addAttribute("quarters", contestSupport.resolveQuarterOptions());
         model.addAttribute("pageTitle", "Create a Contest");
         return "contest/create";
     }
@@ -64,6 +65,7 @@ public class CreateContestController {
                     model.addAttribute("fromSprintCode", fromSprintCode);
                     model.addAttribute("toSprintCode", toSprintCode);
                     model.addAttribute("sprints", contestSupport.resolveSprintOptions());
+                    model.addAttribute("quarters", contestSupport.resolveQuarterOptions());
                     model.addAttribute("pageTitle", "Create a Contest");
                     return "contest/create";
                 },
