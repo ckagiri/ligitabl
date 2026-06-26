@@ -66,10 +66,13 @@ public class GetPrivateContestUseCase {
         List<SegmentNodeDto> segmentTree =
                 segmentTreeBuilder.build(contest, competition, query.userId(), currentPosition);
 
+        String contestDateLabel = segmentTreeBuilder.contestDateLabel(
+                contest.getSeasonId(), contest.getFromRoundPosition(), contest.getToRoundPosition());
+
         return Either.right(new GetPrivateContestResult(
                 contest, selectedSegment, leaderboard,
                 contest.isOwnedBy(query.userId()), members, contest.getJoinCode(),
-                segmentTree));
+                segmentTree, contestDateLabel));
     }
 
     private Either<GetPrivateContestError, Contest> resolveContest(UUID contestId) {

@@ -8,6 +8,7 @@ public record SegmentNodeDto(
         String gwLabel,
         String dateLabel,
         String status,
+        String nodeType,
         Integer rank,
         boolean isTopTen,
         List<SegmentNodeDto> children) {}

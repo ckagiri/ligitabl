@@ -65,6 +65,7 @@ public class ContestDetailController {
                     model.addAttribute("segmentTree", detail.segmentTree());
                     model.addAttribute("members",
                             buildMemberRows(detail.members(), detail.contest().getOwnerId()));
+                    model.addAttribute("contestDateLabel", detail.contestDateLabel());
                     model.addAttribute("pageTitle", detail.contest().getName());
                     model.addAttribute("currentSegment", segmentCode);
 

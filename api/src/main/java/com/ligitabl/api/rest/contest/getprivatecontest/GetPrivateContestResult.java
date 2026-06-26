@@ -15,4 +15,5 @@ public record GetPrivateContestResult(
         boolean isOwner,
         List<Entry> members,
         String joinCode,
-        List<SegmentNodeDto> segmentTree) {}
+        List<SegmentNodeDto> segmentTree,
+        String contestDateLabel) {}

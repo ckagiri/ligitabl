@@ -37,6 +37,10 @@
               </div>
               <p class="text-sm text-gray-500">
                 <span th:text="'GW ' + ${contest.fromRoundPosition} + '–' + ${contest.toRoundPosition}">GW 1–10</span>
+                <th:block th:if="${contestDateLabel != null and not #strings.isEmpty(contestDateLabel)}">
+                  <span class="mx-1.5 text-gray-300">·</span>
+                  <span th:text="${contestDateLabel}">Aug 16 – May 25</span>
+                </th:block>
                 <span th:if="${contest.maxEntries != null}">
                   <span class="mx-1.5 text-gray-300">·</span>
                   <span th:text="${contest.maxEntries} + ' member limit'">10 member limit</span>
@@ -82,77 +86,60 @@
         <!-- ── Segment filter + leaderboard ── -->
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-4">
 
-          <!-- Segment tree navigation -->
-          <div class="px-4 py-3 border-b border-gray-100">
-            <div class="flex gap-1.5 flex-wrap" th:if="${segmentTree != null and not #lists.isEmpty(segmentTree)}">
-              <template x-for="node in segmentTree" :key="node.id">
-                <div class="flex flex-col gap-1">
-                  <!-- Root or single-sprint node -->
-                  <button
-                    type="button"
-                    @click="selectSegment(node.id)"
-                    :class="activeSegment === node.id
-                      ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
-                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'"
-                    class="px-3 py-1.5 text-sm font-medium border rounded-md transition whitespace-nowrap"
-                  >
-                    <span x-text="node.label"></span>
-                    <span
-                      x-show="node.rank != null"
-                      x-text="' · #' + node.rank"
-                      :class="node.isTopTen ? 'text-indigo-600' : ''"
-                      class="text-xs font-normal"
-                    ></span>
-                  </button>
+          <!-- Segment navigator: dropdown + [O][Q][S] shortcut buttons -->
+          <div class="px-4 py-3 border-b border-gray-100 flex items-center gap-2 flex-wrap">
 
-                  <!-- Children (sprints under a quarter) -->
-                  <template x-if="node.children && node.children.length > 0">
-                    <div class="flex gap-1 flex-wrap ml-2">
-                      <template x-for="child in node.children" :key="child.id">
-                        <button
-                          type="button"
-                          @click="selectSegment(child.id)"
-                          :class="activeSegment === child.id
-                            ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
-                            : 'border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:text-gray-800'"
-                          class="px-2.5 py-1 text-xs font-medium border rounded-md transition whitespace-nowrap"
-                        >
-                          <span x-text="child.label"></span>
-                          <span
-                            x-show="child.rank != null"
-                            x-text="' · #' + child.rank"
-                            :class="child.isTopTen ? 'text-indigo-600' : ''"
-                            class="font-normal"
-                          ></span>
-                        </button>
-                        <!-- Grandchildren (sprints under a quarter under overall) -->
-                        <template x-if="child.children && child.children.length > 0">
-                          <div class="flex gap-1 flex-wrap ml-2 mt-1">
-                            <template x-for="grandchild in child.children" :key="grandchild.id">
-                              <button
-                                type="button"
-                                @click="selectSegment(grandchild.id)"
-                                :class="activeSegment === grandchild.id
-                                  ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
-                                  : 'border-gray-200 bg-white text-gray-400 hover:border-gray-300 hover:text-gray-700'"
-                                class="px-2 py-0.5 text-xs border rounded transition whitespace-nowrap"
-                              >
-                                <span x-text="grandchild.label"></span>
-                                <span
-                                  x-show="grandchild.rank != null"
-                                  x-text="' · #' + grandchild.rank"
-                                  :class="grandchild.isTopTen ? 'text-indigo-600' : ''"
-                                  class="font-normal"
-                                ></span>
-                              </button>
-                            </template>
-                          </div>
-                        </template>
-                      </template>
-                    </div>
-                  </template>
-                </div>
-              </template>
+            <!-- Dropdown trigger -->
+            <div class="relative">
+              <button type="button"
+                      @click="openMenu()"
+                      class="flex items-center gap-2 px-3 py-1.5 bg-white border border-gray-300 rounded-lg text-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 whitespace-nowrap">
+                <span x-text="currentIcon"></span>
+                <span class="font-medium text-gray-900" x-text="currentNode ? currentNode.label : 'Select'"></span>
+                <svg class="w-4 h-4 text-gray-400 shrink-0 transition-transform" :class="dropdownOpen ? 'rotate-180' : ''"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+              </button>
+
+              <!-- Desktop dropdown panel -->
+              <div x-show="dropdownOpen" @click.away="dropdownOpen = false" x-cloak x-transition
+                   class="hidden md:block absolute z-50 w-80 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-[500px] overflow-y-auto">
+                <div x-html="renderMenu()"></div>
+              </div>
+            </div>
+
+            <!-- [O][Q][S] shortcut buttons -->
+            <template x-for="s in shortcuts()" :key="s.key">
+              <button
+                type="button"
+                @click="selectSegment(s.node.id)"
+                :disabled="s.node.status === 'FUTURE'"
+                :class="activeSegment === s.node.id
+                  ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-semibold'
+                  : s.node.status === 'FUTURE'
+                    ? 'border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'"
+                class="px-2.5 py-1.5 text-xs font-medium border rounded-md transition"
+                x-text="s.key"
+              ></button>
+            </template>
+
+          </div>
+
+          <!-- Mobile bottom sheet -->
+          <div x-show="sheetOpen" x-cloak @click="sheetOpen = false"
+               class="md:hidden fixed inset-0 z-50 flex items-end bg-black bg-opacity-40">
+            <div @click.stop class="w-full bg-white rounded-t-2xl shadow-xl max-h-[70vh] overflow-y-auto">
+              <div class="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
+                <h2 class="text-base font-semibold text-gray-900">Select leaderboard</h2>
+                <button @click="sheetOpen = false" class="p-1 hover:bg-gray-100 rounded">
+                  <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                </button>
+              </div>
+              <div x-html="renderMenu()"></div>
             </div>
           </div>
 

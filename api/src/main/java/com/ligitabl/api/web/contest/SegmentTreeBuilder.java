@@ -132,14 +132,25 @@ public class SegmentTreeBuilder {
         return List.of(root);
     }
 
+    public String contestDateLabel(UUID seasonId, int from, int to) {
+        Map<Integer, MatchRepo.RoundDateRange> dateRanges = matchRepo.groupRoundDateRangesBySeason(seasonId);
+        MatchRepo.RoundDateRange startRange = dateRanges.get(from);
+        MatchRepo.RoundDateRange endRange = dateRanges.get(to);
+        if (startRange == null || endRange == null) return "";
+        return format(startRange.firstKickoff()) + " – " + format(endRange.lastKickoff());
+    }
+
     private SegmentNodeDto buildNode(String id, String label, RoundSpan span,
             int currentPosition, Map<Integer, MatchRepo.RoundDateRange> dateRanges,
             Integer rank, List<SegmentNodeDto> children) {
+        String nodeType = children.isEmpty() ? "SPRINT"
+                : (id.equals("overall") ? "OVERALL" : "QUARTER");
         return new SegmentNodeDto(
                 id, label,
                 gwLabel(span),
                 dateLabel(span, dateRanges),
                 deriveStatus(span, currentPosition),
+                nodeType,
                 rank,
                 rank != null && rank <= 10,
                 children);
