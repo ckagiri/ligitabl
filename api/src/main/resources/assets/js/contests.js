@@ -277,12 +277,24 @@ window.contestDetail = function () {
         let sprintsHtml = '';
         if (isExpanded && hasChildren) {
           sprintsHtml = '<div class="mt-2 space-y-1">';
-          node.children.forEach(sprint => {
+          const sortedSprints = (() => {
+            const sprints = [...node.children];
+            if (node.status === 'LIVE') {
+              return [
+                ...sprints.filter(s => s.status === 'LIVE'),
+                ...sprints.filter(s => s.status === 'NEXT'),
+                ...sprints.filter(s => s.status === 'FUTURE'),
+                ...sprints.filter(s => s.status === 'FINISHED').reverse(),
+              ];
+            }
+            return [...sprints].reverse();
+          })();
+          sortedSprints.forEach(sprint => {
             const sprintSelected  = sprint.id === this.activeSegment;
             const sprintHighlight = sprint.status === 'LIVE' ? 'bg-green-50' : '';
-            const clickable       = sprint.status === 'LIVE' || sprint.status === 'FINISHED';
+            const clickable       = sprint.status === 'LIVE' || sprint.status === 'FINISHED' || sprint.status === 'NEXT';
             const sprintStatus    = this.getStatusText(sprint);
-            const sprintIcon      = sprint.status === 'LIVE' ? '🟢' : '🏁';
+            const sprintIcon      = sprint.status === 'LIVE' ? '🟢' : sprint.status === 'NEXT' ? '🎯' : '🏁';
             sprintsHtml += `
               <div class="border-l-2 border-gray-200 ml-4 pl-3 py-1.5 rounded ${sprintHighlight} ${clickable ? 'cursor-pointer hover:bg-gray-50' : 'opacity-50'}"
                    ${clickable ? `onclick="event.stopPropagation(); window.leagueApp.selectSegment('${sprint.id}')"` : ''}>
@@ -328,10 +340,16 @@ window.contestDetail = function () {
         // OVERALL
         renderSeason(root);
         if (root.children && root.children.length > 0) {
-          html += `<div class="px-4 py-2 bg-gray-50 border-t border-gray-200">
-            <span class="text-xs font-semibold text-gray-500 uppercase tracking-wide">Quarters</span>
-          </div>`;
-          root.children.forEach(q => renderQuarter(q));
+          const active   = root.children.filter(q => q.status === 'LIVE' || q.status === 'NEXT');
+          const upcoming = root.children.filter(q => q.status === 'FUTURE');
+          const past     = root.children.filter(q => q.status === 'FINISHED').reverse();
+          [...active, ...upcoming].forEach(q => renderQuarter(q));
+          if (past.length > 0) {
+            html += `<div class="px-4 py-2 bg-gray-50 border-t border-gray-200">
+              <span class="text-xs font-semibold text-gray-400 uppercase tracking-wide">Past</span>
+            </div>`;
+            past.forEach(q => renderQuarter(q));
+          }
         }
       }
 
