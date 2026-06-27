@@ -10,7 +10,9 @@ import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.model.domain.PhaseType;
+import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundSpan;
+import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
@@ -51,6 +53,15 @@ public class ContestSupport {
                 .orElse(1);
     }
 
+    private Round resolveCurrentRound() {
+        String slug = competitionDefaults.defaultCompetitionSlug();
+        var competition = competitionRepo.findBySlug(slug).orElse(null);
+        if (competition == null) return null;
+        var season = seasonRepo.findActiveSeason(competition.getId()).orElse(null);
+        if (season == null || season.getCurrentRoundId() == null) return null;
+        return roundRepo.findById(season.getCurrentRoundId()).orElse(null);
+    }
+
     public List<QuarterOption> resolveQuarterOptions() {
         String slug = competitionDefaults.defaultCompetitionSlug();
         var competition = competitionRepo.findBySlug(slug).orElse(null);
@@ -73,6 +84,7 @@ public class ContestSupport {
                 : Map.of();
 
         int currentPos = resolveCurrentRoundPosition();
+        Round currentRound = resolveCurrentRound();
         List<RoundSpan> phases = competition.getPhases();
         List<RoundSpan> quarters = phases.stream()
                 .filter(p -> p.getType() == PhaseType.QUARTER)
@@ -86,9 +98,19 @@ public class ContestSupport {
                     RoundSpan sprint = sprints.get(i);
 
                     String status;
-                    if (sprint.getTo() < currentPos) status = "PAST";
-                    else if (sprint.getFrom() > currentPos) status = "FUTURE";
-                    else status = "OPEN";
+                    if (sprint.getTo() < currentPos) {
+                        status = "PAST";
+                    } else if (sprint.getFrom() > currentPos) {
+                        status = "FUTURE";
+                    } else if (currentRound != null) {
+                        var matches = matchRepo.findByRoundId(currentRound.getId());
+                        RoundStatus rs = currentRound.isFinalized()
+                                ? RoundStatus.FINALIZED
+                                : currentRound.computeStatus(matches);
+                        status = (rs == RoundStatus.OPEN) ? "OPEN" : "LOCKED";
+                    } else {
+                        status = "OPEN";
+                    }
 
                     RoundSpan quarter = quarters.stream()
                             .filter(q -> q.getFrom() <= sprint.getFrom() && q.getTo() >= sprint.getTo())

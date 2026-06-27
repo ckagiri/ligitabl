@@ -23,9 +23,9 @@
         }"
       >
         <!-- ── Header ── -->
-        <div class="flex items-center justify-between mb-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-8">
           <h1 class="text-2xl font-bold text-gray-900">Contests</h1>
-          <div class="flex gap-2">
+          <div class="flex flex-wrap gap-2">
             <!-- Join inline toggle -->
             <button
               type="button"
@@ -96,6 +96,7 @@
           <h2 class="text-base font-semibold text-gray-700 uppercase tracking-wide mb-3">General Contests</h2>
           <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <th:block th:if="${generalContests != null and not #lists.isEmpty(generalContests)}">
+              <div class="overflow-x-auto">
               <table class="min-w-full divide-y divide-gray-100">
                 <thead>
                   <tr class="bg-gray-50">
@@ -115,7 +116,7 @@
                     <td class="px-4 py-3 text-sm font-medium text-gray-900" th:text="${row.label}">Overall Season</td>
                     <td class="px-4 py-3 text-sm text-gray-500" th:text="${row.gwLabel}">GW 1–38</td>
                     <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">
-                      <span th:if="${row.rank != null}" th:text="${row.rank + 'th'}">245th</span>
+                      <span th:if="${row.rank != null}" th:text="${row.rank}">245</span>
                       <span th:if="${row.rank == null}" class="text-gray-400">—</span>
                     </td>
                     <td class="px-4 py-3 text-sm text-right">
@@ -130,6 +131,7 @@
                   </tr>
                 </tbody>
               </table>
+              </div>
             </th:block>
             <th:block th:if="${generalContests == null or #lists.isEmpty(generalContests)}">
               <div class="px-4 py-8 text-center text-sm text-gray-500">
@@ -144,11 +146,12 @@
           <h2 class="text-base font-semibold text-gray-700 uppercase tracking-wide mb-3">Private Contests</h2>
           <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             <th:block th:if="${privateContests != null and not #lists.isEmpty(privateContests)}">
+              <div class="overflow-x-auto">
               <table class="min-w-full divide-y divide-gray-100">
                 <thead>
                   <tr class="bg-gray-50">
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contest</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Phase</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GW Range</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                   </tr>
@@ -167,9 +170,10 @@
                         class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700"
                       >Owner</span>
                     </td>
-                    <td class="px-4 py-3 text-sm text-gray-500" th:text="${row.currentPhaseLabel}">Quarter 3</td>
+                    <td class="px-4 py-3 text-sm text-gray-500" th:text="${row.gwLabel}">GW 1–38</td>
                     <td class="px-4 py-3 text-sm text-gray-600">
-                      <span th:text="${row.memberCount}">8</span> members
+                      <span th:text="${row.memberCount}">8</span>
+                      <span th:text="${row.memberCount == 1} ? 'member' : 'members'">members</span>
                     </td>
                     <td class="px-4 py-3 text-right">
                       <a
@@ -181,6 +185,7 @@
                   </tr>
                 </tbody>
               </table>
+              </div>
             </th:block>
             <th:block th:if="${privateContests == null or #lists.isEmpty(privateContests)}">
               <div class="px-4 py-12 text-center">

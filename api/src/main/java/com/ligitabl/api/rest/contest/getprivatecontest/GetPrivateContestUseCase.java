@@ -56,10 +56,12 @@ public class GetPrivateContestUseCase {
 
         boolean activeOnly = isSegmentLive(selectedSegment, currentPosition);
 
+        int pageSize = 10;
+        int offset = query.page() * pageSize;
         var leaderboard = leaderboardRepo.computeLeaderboard(
                 contest.getId(), season.getId(),
                 selectedSegment.getFrom(), selectedSegment.getTo(),
-                query.userId(), 0, 100, activeOnly);
+                query.userId(), offset, pageSize, activeOnly);
 
         List<Entry> members = entryRepo.findByContestId(contest.getId());
 

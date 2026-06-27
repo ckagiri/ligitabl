@@ -103,8 +103,8 @@ public class CreatePrivateContestUseCase {
         int pos = currentRound.getPosition();
         if (sprint.getTo() < pos) return Either.left(new CreatePrivateContestError.InvalidFromSprint(fromCode));
 
-        // Sprint's last round is current — only valid if that round is still OPEN
-        if (sprint.getTo() == pos) {
+        // Sprint contains current round — only valid if that round is still OPEN
+        if (sprint.getFrom() <= pos && pos <= sprint.getTo()) {
             var matches = matchRepo.findByRoundId(currentRound.getId());
             RoundStatus status = currentRound.isFinalized()
                     ? RoundStatus.FINALIZED

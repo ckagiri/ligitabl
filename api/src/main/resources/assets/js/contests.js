@@ -13,22 +13,24 @@ window.contestCreator = function () {
       if (d.toSprintCode)   this.selectedTo   = this.sprints.find(s => s.code === d.toSprintCode)   || null;
     },
 
+    isUnavailable(s) { return s.status === 'PAST' || s.status === 'LOCKED'; },
+
     getAvailableQuarters() {
-      const ids = new Set(this.sprints.filter(s => s.status === 'OPEN' || s.status === 'FUTURE').map(s => s.quarterCode));
+      const ids = new Set(this.sprints.filter(s => !this.isUnavailable(s)).map(s => s.quarterCode));
       return this.quarters.filter(q => ids.has(q.code));
     },
 
     getPastQuarters() {
-      const ids = new Set(this.sprints.filter(s => s.status === 'PAST').map(s => s.quarterCode));
+      const ids = new Set(this.sprints.filter(s => this.isUnavailable(s)).map(s => s.quarterCode));
       return this.quarters.filter(q => ids.has(q.code));
     },
 
     getAvailableSprintsForQuarter(quarterCode) {
-      return this.sprints.filter(s => s.quarterCode === quarterCode && (s.status === 'OPEN' || s.status === 'FUTURE'));
+      return this.sprints.filter(s => s.quarterCode === quarterCode && !this.isUnavailable(s));
     },
 
     getPastSprintsForQuarter(quarterCode) {
-      return this.sprints.filter(s => s.quarterCode === quarterCode && s.status === 'PAST');
+      return this.sprints.filter(s => s.quarterCode === quarterCode && this.isUnavailable(s));
     },
 
     getSprintsForQuarter(quarterCode) {

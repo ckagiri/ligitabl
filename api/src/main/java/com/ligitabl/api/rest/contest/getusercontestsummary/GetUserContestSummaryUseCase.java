@@ -1,7 +1,10 @@
 package com.ligitabl.api.rest.contest.getusercontestsummary;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -18,6 +21,7 @@ import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.LeaderboardRepo;
+import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
@@ -29,12 +33,15 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class GetUserContestSummaryUseCase {
 
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH);
+
     private final CompetitionRepo competitionRepo;
     private final SeasonRepo seasonRepo;
     private final ContestRepo contestRepo;
     private final EntryRepo entryRepo;
     private final LeaderboardRepo leaderboardRepo;
     private final RoundRepo roundRepo;
+    private final MatchRepo matchRepo;
 
     public GetUserContestSummaryResult execute(GetUserContestSummaryQuery query) {
         var competition = competitionRepo.findBySlug(query.competitionSlug()).orElse(null);
@@ -50,17 +57,21 @@ public class GetUserContestSummaryUseCase {
                 ? roundRepo.findById(season.getCurrentRoundId()).orElse(null)
                 : null;
 
+        Map<Integer, MatchRepo.RoundDateRange> dateRanges =
+                matchRepo.groupRoundDateRangesBySeason(season.getId());
+
         List<GeneralContestRowDto> generalRows =
-                buildGeneralRows(competition, season, mainContest.getId(), query.userId(), currentRound);
+                buildGeneralRows(competition, season, mainContest.getId(), query.userId(), currentRound, dateRanges);
 
         List<PrivateContestRowDto> privateRows =
-                buildPrivateRows(query.userId(), competition, currentRound);
+                buildPrivateRows(query.userId());
 
         return new GetUserContestSummaryResult(generalRows, privateRows);
     }
 
     private List<GeneralContestRowDto> buildGeneralRows(
-            Competition competition, Season season, UUID mainContestId, UUID userId, Round currentRound) {
+            Competition competition, Season season, UUID mainContestId, UUID userId, Round currentRound,
+            Map<Integer, MatchRepo.RoundDateRange> dateRanges) {
 
         List<RoundSpan> phases = competition.getPhases();
 
@@ -89,24 +100,30 @@ public class GetUserContestSummaryUseCase {
                     rows.add(new GeneralContestRowDto(
                             phase.getCode(),
                             phase.getName(),
-                            "GW " + phase.getFrom() + "–" + phase.getTo(),
+                            buildGwLabel(phase.getFrom(), phase.getTo(), dateRanges),
                             rank,
                             movement));
                 });
         return rows;
     }
 
-    private List<PrivateContestRowDto> buildPrivateRows(
-            UUID userId, Competition competition, Round currentRound) {
+    private String buildGwLabel(int from, int to, Map<Integer, MatchRepo.RoundDateRange> dateRanges) {
+        String gwPart = "GW " + from + "–" + to;
+        MatchRepo.RoundDateRange startRange = dateRanges.get(from);
+        MatchRepo.RoundDateRange endRange = dateRanges.get(to);
+        if (startRange == null || endRange == null) return gwPart;
+        String startDate = startRange.firstKickoff().format(DATE_FMT);
+        String endDate = endRange.lastKickoff().format(DATE_FMT);
+        return startDate + " – " + endDate + " · " + gwPart;
+    }
 
+    private List<PrivateContestRowDto> buildPrivateRows(UUID userId) {
         List<PrivateContestRowDto> rows = new ArrayList<>();
         for (Contest contest : contestRepo.findPrivateByUserId(userId)) {
             int memberCount = entryRepo.countActiveByContestId(contest.getId());
-            String phaseLabel = currentRound != null
-                    ? resolveCurrentPhaseLabel(contest, competition.getPhases(), currentRound.getPosition())
-                    : "";
+            String gwLabel = "GW " + contest.getFromRoundPosition() + "–" + contest.getToRoundPosition();
             rows.add(new PrivateContestRowDto(
-                    contest.getId(), contest.getName(), phaseLabel, memberCount, contest.isOwnedBy(userId)));
+                    contest.getId(), contest.getName(), gwLabel, memberCount, contest.isOwnedBy(userId)));
         }
         return rows;
     }
@@ -117,27 +134,5 @@ public class GetUserContestSummaryUseCase {
                 .filter(p -> roundPosition >= p.getFrom() && roundPosition <= p.getTo())
                 .findFirst()
                 .orElse(null);
-    }
-
-    private String resolveCurrentPhaseLabel(Contest contest, List<RoundSpan> phases, int currentPosition) {
-        RoundSpan match = phases.stream()
-                .filter(p -> p.getType() == PhaseType.SPRINT)
-                .filter(p -> currentPosition >= p.getFrom() && currentPosition <= p.getTo())
-                .filter(p -> p.getFrom() >= contest.getFromRoundPosition()
-                        && p.getTo() <= contest.getToRoundPosition())
-                .findFirst()
-                .orElse(null);
-
-        if (match == null) {
-            match = phases.stream()
-                    .filter(p -> p.getType() == PhaseType.QUARTER)
-                    .filter(p -> currentPosition >= p.getFrom() && currentPosition <= p.getTo())
-                    .filter(p -> p.getFrom() >= contest.getFromRoundPosition()
-                            && p.getTo() <= contest.getToRoundPosition())
-                    .findFirst()
-                    .orElse(null);
-        }
-
-        return match != null ? match.getName() : "";
     }
 }

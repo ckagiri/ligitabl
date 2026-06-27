@@ -21,6 +21,7 @@ import com.ligitabl.api.rest.contest.getprivatecontest.GetPrivateContestQuery;
 import com.ligitabl.api.rest.contest.getprivatecontest.GetPrivateContestUseCase;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 import com.ligitabl.model.domain.Entry;
+import com.ligitabl.model.domain.LeaderboardResponse;
 import com.ligitabl.model.repo.UserRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -32,6 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ContestDetailController {
 
+    private static final int PAGE_SIZE = 10;
+
     private final GetPrivateContestUseCase getPrivateContestUseCase;
     private final UserRepo userRepo;
     private final ObjectMapper objectMapper;
@@ -39,12 +42,13 @@ public class ContestDetailController {
     @Value("${ligitabl.frontend.url:http://localhost:8080}")
     private String frontendUrl;
 
-    private record MemberRow(UUID userId, String displayName, boolean isActive, boolean isOwner) {}
+    public record MemberRow(UUID userId, String displayName, boolean isActive, boolean isOwner) {}
 
     @GetMapping("/{id}")
     public String contestDetail(
             @PathVariable UUID id,
             @RequestParam(required = false) String segment,
+            @RequestParam(defaultValue = "0") int page,
             @RequestHeader(value = "HX-Request", required = false) String hxRequest,
             Model model,
             Principal principal) {
@@ -53,7 +57,7 @@ public class ContestDetailController {
         if (user == null) return "redirect:/auth/login";
 
         String segmentCode = (segment != null && !segment.isBlank()) ? segment : "overall";
-        var query = new GetPrivateContestQuery(id, user.getUserId(), segmentCode);
+        var query = new GetPrivateContestQuery(id, user.getUserId(), segmentCode, page);
 
         return getPrivateContestUseCase.execute(query).fold(
                 error -> {
@@ -62,9 +66,15 @@ public class ContestDetailController {
                     return "error";
                 },
                 detail -> {
+                    LeaderboardResponse lb = detail.leaderboard();
+                    int totalPages = lb.totalParticipants() == 0 ? 1
+                            : (int) Math.ceil((double) lb.totalParticipants() / PAGE_SIZE);
+                    int showingFrom = lb.totalParticipants() == 0 ? 0 : page * PAGE_SIZE + 1;
+                    int showingTo = Math.min((page + 1) * PAGE_SIZE, lb.totalParticipants());
+
                     model.addAttribute("contest", detail.contest());
                     model.addAttribute("selectedSegment", detail.selectedSegment());
-                    model.addAttribute("leaderboard", detail.leaderboard());
+                    model.addAttribute("leaderboard", lb);
                     model.addAttribute("isOwner", detail.isOwner());
                     String joinCode = detail.joinCode() != null
                             ? detail.joinCode().toUpperCase()
@@ -78,6 +88,24 @@ public class ContestDetailController {
                     model.addAttribute("contestDateLabel", detail.contestDateLabel());
                     model.addAttribute("pageTitle", detail.contest().getName());
                     model.addAttribute("currentSegment", segmentCode);
+
+                    // Leaderboard pagination
+                    model.addAttribute("currentPage", page);
+                    model.addAttribute("totalPages", totalPages);
+                    model.addAttribute("totalEntries", lb.totalParticipants());
+                    model.addAttribute("hasPreviousPage", page > 0);
+                    model.addAttribute("hasNextPage", lb.hasNext());
+                    model.addAttribute("showingFrom", showingFrom);
+                    model.addAttribute("showingTo", showingTo);
+
+                    // For leaderboard current-user indicator and "from GW" label
+                    model.addAttribute("userPosition", lb.userEntry());
+                    model.addAttribute("userInCurrentPage", lb.userInCurrentPage());
+                    model.addAttribute("currentPhaseFrom", detail.selectedSegment().getFrom());
+                    model.addAttribute("effectiveToRound", lb.effectiveToRound());
+                    if (lb.userEntry() != null) {
+                        model.addAttribute("currentUserName", lb.userEntry().displayName());
+                    }
 
                     try {
                         model.addAttribute("segmentTreeJson",

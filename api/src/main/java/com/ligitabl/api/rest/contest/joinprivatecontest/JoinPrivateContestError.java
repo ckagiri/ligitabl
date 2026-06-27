@@ -16,4 +16,6 @@ public sealed interface JoinPrivateContestError {
     record MaxContestsReached(int max) implements JoinPrivateContestError {}
 
     record CurrentRoundNotFound() implements JoinPrivateContestError {}
+
+    record CompetitionNotFound() implements JoinPrivateContestError {}
 }
