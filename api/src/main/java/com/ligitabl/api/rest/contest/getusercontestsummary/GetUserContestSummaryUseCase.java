@@ -100,30 +100,42 @@ public class GetUserContestSummaryUseCase {
                     rows.add(new GeneralContestRowDto(
                             phase.getCode(),
                             phase.getName(),
-                            buildGwLabel(phase.getFrom(), phase.getTo(), dateRanges),
+                            buildDateLabel(phase.getFrom(), phase.getTo(), dateRanges),
+                            buildGwLabel(phase.getFrom(), phase.getTo()),
                             rank,
                             movement));
                 });
         return rows;
     }
 
-    private String buildGwLabel(int from, int to, Map<Integer, MatchRepo.RoundDateRange> dateRanges) {
-        String gwPart = "GW " + from + "–" + to;
+    private String buildDateLabel(int from, int to, Map<Integer, MatchRepo.RoundDateRange> dateRanges) {
         MatchRepo.RoundDateRange startRange = dateRanges.get(from);
         MatchRepo.RoundDateRange endRange = dateRanges.get(to);
-        if (startRange == null || endRange == null) return gwPart;
-        String startDate = startRange.firstKickoff().format(DATE_FMT);
-        String endDate = endRange.lastKickoff().format(DATE_FMT);
-        return startDate + " – " + endDate + " · " + gwPart;
+        if (startRange == null || endRange == null) return null;
+        return startRange.firstKickoff().format(DATE_FMT) + " – " + endRange.lastKickoff().format(DATE_FMT);
+    }
+
+    private String buildGwLabel(int from, int to) {
+        return from + "–" + to;
     }
 
     private List<PrivateContestRowDto> buildPrivateRows(UUID userId) {
+        Map<Integer, MatchRepo.RoundDateRange> dateRanges = null;
+        List<Contest> contests = contestRepo.findPrivateByUserId(userId);
+        if (!contests.isEmpty()) {
+            // resolve season id from first contest (all share the same active season)
+            UUID seasonId = contests.get(0).getSeasonId();
+            dateRanges = matchRepo.groupRoundDateRangesBySeason(seasonId);
+        }
         List<PrivateContestRowDto> rows = new ArrayList<>();
-        for (Contest contest : contestRepo.findPrivateByUserId(userId)) {
+        for (Contest contest : contests) {
             int memberCount = entryRepo.countActiveByContestId(contest.getId());
-            String gwLabel = "GW " + contest.getFromRoundPosition() + "–" + contest.getToRoundPosition();
+            String dateLabel = dateRanges != null
+                    ? buildDateLabel(contest.getFromRoundPosition(), contest.getToRoundPosition(), dateRanges)
+                    : null;
+            String gwLabel = buildGwLabel(contest.getFromRoundPosition(), contest.getToRoundPosition());
             rows.add(new PrivateContestRowDto(
-                    contest.getId(), contest.getName(), gwLabel, memberCount, contest.isOwnedBy(userId)));
+                    contest.getId(), contest.getName(), dateLabel, gwLabel, memberCount, contest.isOwnedBy(userId)));
         }
         return rows;
     }

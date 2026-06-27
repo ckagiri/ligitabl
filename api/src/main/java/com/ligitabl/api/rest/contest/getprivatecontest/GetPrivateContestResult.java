@@ -11,6 +11,7 @@ import com.ligitabl.model.domain.RoundSpan;
 public record GetPrivateContestResult(
         Contest contest,
         RoundSpan selectedSegment,
+        String currentSegmentCode,
         LeaderboardResponse leaderboard,
         boolean isOwner,
         List<Entry> members,

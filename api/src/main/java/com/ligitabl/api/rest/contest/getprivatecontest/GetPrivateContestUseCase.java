@@ -1,6 +1,8 @@
 package com.ligitabl.api.rest.contest.getprivatecontest;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -49,8 +51,8 @@ public class GetPrivateContestUseCase {
         Competition competition = resolveCompetition(contest.getSeasonId());
         int currentPosition = resolveCurrentPosition(season);
 
-        var segmentResult = resolveSelectedSegment(
-                contest, competition, query.selectedSegmentCode(), currentPosition);
+        String segmentCode = query.selectedSegmentCode();
+        var segmentResult = resolveSelectedSegment(contest, competition, segmentCode, currentPosition);
         if (segmentResult.isLeft()) return segmentResult.map(s -> null);
         RoundSpan selectedSegment = segmentResult.get();
 
@@ -72,7 +74,7 @@ public class GetPrivateContestUseCase {
                 contest.getSeasonId(), contest.getFromRoundPosition(), contest.getToRoundPosition());
 
         return Either.right(new GetPrivateContestResult(
-                contest, selectedSegment, leaderboard,
+                contest, selectedSegment, selectedSegment.getCode(), leaderboard,
                 contest.isOwnedBy(query.userId()), members, contest.getJoinCode(),
                 segmentTree, contestDateLabel));
     }
@@ -113,6 +115,10 @@ public class GetPrivateContestUseCase {
     private Either<GetPrivateContestError, RoundSpan> resolveSelectedSegment(
             Contest contest, Competition competition, String segmentCode, int currentPosition) {
 
+        if (segmentCode == null) {
+            return Either.right(findCurrentSprint(contest, competition, currentPosition));
+        }
+
         if ("overall".equalsIgnoreCase(segmentCode)) {
             return Either.right(RoundSpan.builder()
                     .code("overall")
@@ -137,6 +143,25 @@ public class GetPrivateContestUseCase {
             return Either.left(new GetPrivateContestError.SegmentNotFound(segmentCode));
 
         return Either.right(segment);
+    }
+
+    private RoundSpan findCurrentSprint(Contest contest, Competition competition, int currentPos) {
+        List<RoundSpan> contestSprints = (competition != null && competition.getPhases() != null
+                ? competition.getPhases()
+                : List.<RoundSpan>of()).stream()
+                .filter(p -> p.getType() == com.ligitabl.model.domain.PhaseType.SPRINT)
+                .filter(p -> p.getFrom() >= contest.getFromRoundPosition()
+                        && p.getTo() <= contest.getToRoundPosition())
+                .sorted(Comparator.comparingInt(RoundSpan::getFrom))
+                .toList();
+
+        return contestSprints.stream()
+                .filter(s -> currentPos >= s.getFrom() && currentPos <= s.getTo())
+                .findFirst()
+                .or(() -> currentPos < contest.getFromRoundPosition()
+                        ? contestSprints.stream().findFirst()
+                        : Optional.empty())
+                .orElse(contestSprints.getLast());
     }
 
     private boolean isSegmentLive(RoundSpan segment, int currentPosition) {

@@ -37,7 +37,7 @@
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                 </svg>
-                Actions
+                Admin
                 <svg class="h-4 w-4 text-gray-400 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
                 </svg>
@@ -211,7 +211,7 @@
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm mb-4">
 
           <!-- Segment navigator -->
-          <div class="px-4 py-3 border-b border-gray-100 flex items-center gap-2 flex-wrap">
+          <div class="px-4 py-3 border-b border-gray-100 flex flex-col sm:flex-row sm:items-center gap-2">
             <div class="relative">
               <button type="button"
                       @click="openMenu()"
@@ -224,26 +224,33 @@
                 </svg>
               </button>
 
-              <div x-show="dropdownOpen" @click.away="dropdownOpen = false" x-cloak x-transition
-                   class="hidden md:block absolute z-50 w-80 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-[500px] overflow-y-auto">
-                <div x-html="renderMenu()"></div>
-              </div>
+              <!-- Desktop: centered fixed overlay -->
+              <template x-if="dropdownOpen">
+                <div class="hidden md:block">
+                  <div class="fixed inset-0 z-40 bg-black bg-opacity-20" @click="dropdownOpen = false"></div>
+                  <div x-transition class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-80 bg-white border border-gray-200 rounded-xl shadow-xl max-h-[500px] overflow-y-auto text-xs">
+                    <div x-html="renderMenu()"></div>
+                  </div>
+                </div>
+              </template>
             </div>
 
-            <template x-for="s in shortcuts()" :key="s.key">
-              <button
-                type="button"
-                @click="selectSegment(s.node.id)"
-                :disabled="s.node.status === 'FUTURE'"
-                :class="activeSegment === s.node.id
-                  ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-semibold'
-                  : s.node.status === 'FUTURE'
-                    ? 'border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed'
-                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'"
-                class="px-2.5 py-1.5 text-xs font-medium border rounded-md transition"
-                x-text="s.key"
-              ></button>
-            </template>
+            <div class="flex gap-1.5 flex-wrap">
+              <template x-for="s in shortcuts()" :key="s.key">
+                <button
+                  type="button"
+                  @click="selectSegment(s.node.id)"
+                  :disabled="s.node.status === 'FUTURE'"
+                  :class="activeSegment === s.node.id
+                    ? 'border-indigo-400 bg-indigo-50 text-indigo-700 font-semibold'
+                    : s.node.status === 'FUTURE'
+                      ? 'border-gray-200 bg-gray-50 text-gray-300 cursor-not-allowed'
+                      : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'"
+                  class="px-2.5 py-1.5 text-xs font-medium border rounded-md transition"
+                  x-text="s.key"
+                ></button>
+              </template>
+            </div>
           </div>
 
           <!-- Mobile bottom sheet -->
@@ -278,6 +285,12 @@
               id="currentPhaseFrom"
               name="phaseFrom"
               th:value="${currentPhaseFrom}"
+            />
+            <input
+              type="hidden"
+              id="contestMaxRound"
+              name="maxRound"
+              th:value="${contest.toRoundPosition}"
             />
 
             <!-- Segment sub-header -->
@@ -321,11 +334,11 @@
                       </th>
                       <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Score</th>
                       <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-16">GW</th>
-                      <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20 hidden sm:table-cell">
+                      <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                         <span class="hidden sm:inline">Zeroes</span>
                         <span class="sm:hidden" title="Zeroes">&#x00D8;s</span>
                       </th>
-                      <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-16 hidden sm:table-cell">Swaps</th>
+                      <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Swaps</th>
                       <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Change</th>
                     </tr>
                   </thead>
@@ -356,7 +369,7 @@
                             hx-post="/leaderboard/user/modal"
                             hx-target="#user-detail-modal"
                             hx-swap="innerHTML"
-                            hx-include="#effectiveToRound, #currentPhaseFrom"
+                            hx-include="#effectiveToRound, #currentPhaseFrom, #contestMaxRound"
                             th:attr="hx-vals='js:{publicId: &quot;' + ${entry.publicId} + '&quot;, displayName: &quot;' + ${entry.displayName} + '&quot;, position: ' + ${entry.position} + ', totalScore: ' + ${entry.totalScore} + ', roundScore: ' + ${entry.roundScore} + ', maxScore: ' + ${entry.maxScore} + ', totalSwaps: ' + ${entry.totalSwaps} + ', movement: ' + ${entry.movement} + '}'"
                             hx-on:click="document.getElementById('modal-loading').classList.remove('hidden')"
                             hx-on::after-request="document.getElementById('modal-loading').classList.add('hidden')"
@@ -395,13 +408,13 @@
                       </td>
 
                       <!-- Zeroes -->
-                      <td class="px-3 py-4 whitespace-nowrap text-right text-sm font-semibold text-green-600 hidden sm:table-cell">
+                      <td class="px-3 py-4 whitespace-nowrap text-right text-sm font-semibold text-green-600">
                         <span th:if="${entry.scored}" th:text="${entry.totalZeroes}">2</span>
                         <span th:if="${!entry.scored}" class="text-gray-400 font-normal">—</span>
                       </td>
 
                       <!-- Swaps -->
-                      <td class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-500 hidden sm:table-cell">
+                      <td class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-500">
                         <span th:if="${entry.scored}" th:text="${entry.totalSwaps}">1</span>
                         <span th:if="${!entry.scored}" class="text-gray-400">—</span>
                       </td>
@@ -451,7 +464,7 @@
               <div th:if="${totalEntries > 0}" class="px-4 py-3 border-t border-gray-100 flex items-center justify-between">
                 <span class="text-sm text-gray-500">
                   Showing <span th:text="${showingFrom}">1</span>–<span th:text="${showingTo}">10</span>
-                  of <span th:text="${totalEntries}">18</span> players
+                  of <span th:text="${totalEntries}">18</span>
                 </span>
                 <div class="flex gap-2">
                   <button

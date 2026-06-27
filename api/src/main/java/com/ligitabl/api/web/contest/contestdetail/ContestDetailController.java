@@ -56,7 +56,7 @@ public class ContestDetailController {
         WebUserDetails user = WebSecurity.resolveUser(principal);
         if (user == null) return "redirect:/auth/login";
 
-        String segmentCode = (segment != null && !segment.isBlank()) ? segment : "overall";
+        String segmentCode = (segment != null && !segment.isBlank()) ? segment : null;
         var query = new GetPrivateContestQuery(id, user.getUserId(), segmentCode, page);
 
         return getPrivateContestUseCase.execute(query).fold(
@@ -87,7 +87,7 @@ public class ContestDetailController {
                             buildMemberRows(detail.members(), detail.contest().getOwnerId()));
                     model.addAttribute("contestDateLabel", detail.contestDateLabel());
                     model.addAttribute("pageTitle", detail.contest().getName());
-                    model.addAttribute("currentSegment", segmentCode);
+                    model.addAttribute("currentSegment", detail.currentSegmentCode());
 
                     // Leaderboard pagination
                     model.addAttribute("currentPage", page);
