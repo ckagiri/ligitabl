@@ -287,7 +287,8 @@ firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRou
               <div
                 th:replace="~{fragments/prediction-historical-view :: historical-view(
                   ${hasRoundResult}, ${roundResultRankings}, ${predictions},
-                  ${totalHits}, ${totalScore}, ${zeroesCount})}"
+                  ${totalHits}, ${totalScore}, ${zeroesCount},
+                  ${seasonBestScore}, ${sprintBestScore}, ${sprintLabel})}"
               ></div>
             </th:block>
 

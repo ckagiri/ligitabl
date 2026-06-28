@@ -85,7 +85,7 @@ public class GetLatestResultUseCase {
                 .findBySlug(competitionDefaults.defaultCompetitionSlug())
                 .orElseThrow(() -> new IllegalStateException("Competition not found"));
 
-        RoundSpan sprintPhase = findSprintForRound(competition, round);
+        RoundSpan sprintPhase = competition.sprintForRound(round);
         sprint = sprintPhase.getCode();
 
         // Only calculate if we have a main contest
@@ -125,28 +125,6 @@ public class GetLatestResultUseCase {
                 sprintPhase.getTo(),
                 sprintBest,
                 isNewSprintBest);
-    }
-
-    private RoundSpan findSprintForRound(Competition competition, int round) {
-        if (competition.getPhases() == null || competition.getPhases().isEmpty()) {
-            throw new IllegalStateException("No phases configured for competition");
-        }
-
-        var sprints = competition.getPhases().stream()
-                .filter(phase -> phase.getType() == PhaseType.SPRINT)
-                .filter(phase -> round >= phase.getFrom() && round <= phase.getTo())
-                .toList();
-
-        if (sprints.isEmpty()) {
-            throw new IllegalStateException(String.format("Round %d is not assigned to any sprint", round));
-        }
-
-        if (sprints.size() > 1) {
-            throw new IllegalStateException(
-                    String.format("Round %d belongs to multiple sprints (configuration error)", round));
-        }
-
-        return sprints.get(0);
     }
 
     private HitDistribution calculateHitDistribution(RoundResult result) {

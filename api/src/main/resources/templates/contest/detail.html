@@ -332,6 +332,7 @@
                         <span class="sm:hidden" title="Zeroes">&#x00D8;s</span>
                       </th>
                       <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Swaps</th>
+                      <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Best</th>
                       <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Change</th>
                     </tr>
                   </thead>
@@ -412,6 +413,12 @@
                         <span th:if="${!entry.scored}" class="text-gray-400">—</span>
                       </td>
 
+                      <!-- Best -->
+                      <td class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-600">
+                        <span th:if="${entry.scored}" th:text="${entry.maxScore}">52</span>
+                        <span th:if="${!entry.scored}" class="text-gray-400">—</span>
+                      </td>
+
                       <!-- Change -->
                       <td class="px-3 py-4 whitespace-nowrap text-center text-sm">
                         <th:block th:if="${entry.scored}">
@@ -431,7 +438,7 @@
                   <!-- Sticky user row when not on current page -->
                   <tfoot th:if="${userPosition != null and !userInCurrentPage}" class="border-t-2 border-indigo-300">
                     <tr class="bg-gradient-to-r from-indigo-50 to-blue-50">
-                      <td colspan="7" class="px-3 py-4">
+                      <td colspan="8" class="px-3 py-4">
                         <div class="flex items-center gap-4 flex-wrap">
                           <div class="flex items-center gap-1">
                             <span class="text-indigo-600 text-base">🔹</span>
