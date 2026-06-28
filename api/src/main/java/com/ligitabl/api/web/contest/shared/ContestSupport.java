@@ -107,7 +107,10 @@ public class ContestSupport {
                         RoundStatus rs = currentRound.isFinalized()
                                 ? RoundStatus.FINALIZED
                                 : currentRound.computeStatus(matches);
-                        status = (rs == RoundStatus.OPEN) ? "OPEN" : "LOCKED";
+                        // Only mark OPEN when we're exactly at the sprint's first round.
+                    // Mid-sprint (pos > sprint.from) means the join window is already closed
+                    // for any single-sprint contest starting here.
+                    status = (rs == RoundStatus.OPEN && currentPos == sprint.getFrom()) ? "OPEN" : "LOCKED";
                     } else {
                         status = "OPEN";
                     }

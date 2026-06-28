@@ -100,8 +100,8 @@
               <table class="min-w-full divide-y divide-gray-100">
                 <thead>
                   <tr class="bg-gray-50">
-                    <th class="sticky left-0 z-20 bg-gray-50 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contest</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Range</th>
+                    <th class="sticky left-0 z-20 bg-gray-50 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[7rem]">Contest</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GW</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
@@ -114,12 +114,24 @@
                     onclick="window.location.href='/leaderboard?phase='+this.dataset.phase"
                     th:attr="data-phase=${row.phaseCode}"
                   >
-                    <td class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-4 py-3 text-sm font-medium text-gray-900" th:text="${row.label}">Overall Season</td>
+                    <td class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-4 py-3 text-sm font-medium text-indigo-600" th:text="${row.label}">Overall Season</td>
                     <td class="px-4 py-3 text-sm text-gray-500">
-                      <span th:if="${row.dateLabel != null}" th:text="${row.dateLabel}">Aug 16 – May 25</span>
+                      <th:block th:if="${row.dateLabel != null}">
+                        <span class="hidden sm:inline" th:text="${row.dateLabel}">Aug 16 – May 25</span>
+                        <span class="sm:hidden flex flex-col text-xs leading-snug">
+                          <span class="whitespace-nowrap" th:text="${row.dateFrom}">Aug 16</span>
+                          <span class="whitespace-nowrap" th:text="${row.dateTo}">May 25</span>
+                        </span>
+                      </th:block>
                       <span th:if="${row.dateLabel == null}" class="text-gray-400">—</span>
                     </td>
-                    <td class="px-4 py-3 text-sm text-gray-500" th:text="${row.gwLabel}">1–38</td>
+                    <td class="px-4 py-3 text-sm text-gray-500">
+                      <span class="hidden sm:inline" th:text="${row.gwLabel}">1–38</span>
+                      <span class="sm:hidden flex flex-col text-xs leading-snug">
+                        <span th:text="${row.gwFrom}">1</span>
+                        <span th:text="${row.gwTo}">38</span>
+                      </span>
+                    </td>
                     <td class="px-4 py-3 text-sm text-right font-medium text-gray-900">
                       <span th:if="${row.rank != null}" th:text="${row.rank}">245</span>
                       <span th:if="${row.rank == null}" class="text-gray-400">—</span>
@@ -155,11 +167,10 @@
               <table class="min-w-full divide-y divide-gray-100">
                 <thead>
                   <tr class="bg-gray-50">
-                    <th class="sticky left-0 z-20 bg-gray-50 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contest</th>
-                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Range</th>
+                    <th class="sticky left-0 z-20 bg-gray-50 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[7rem]">Contest</th>
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GW</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -170,25 +181,30 @@
                     onclick="window.location.href = this.dataset.href"
                   >
                     <td class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-4 py-3">
-                      <span class="text-sm font-medium text-gray-900" th:text="${row.name}">OfficeMates</span>
+                      <span class="text-sm font-medium text-indigo-600" th:text="${row.name}">OfficeMates</span>
                       <span
                         th:if="${row.isOwner}"
                         class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700"
                       >Owner</span>
                     </td>
                     <td class="px-4 py-3 text-sm text-gray-500">
-                      <span th:if="${row.dateLabel != null}" th:text="${row.dateLabel}">Aug 16 – May 25</span>
+                      <th:block th:if="${row.dateLabel != null}">
+                        <span class="hidden sm:inline" th:text="${row.dateLabel}">Aug 16 – May 25</span>
+                        <span class="sm:hidden flex flex-col text-xs leading-snug">
+                          <span class="whitespace-nowrap" th:text="${row.dateFrom}">Aug 16</span>
+                          <span class="whitespace-nowrap" th:text="${row.dateTo}">May 25</span>
+                        </span>
+                      </th:block>
                       <span th:if="${row.dateLabel == null}" class="text-gray-400">—</span>
                     </td>
-                    <td class="px-4 py-3 text-sm text-gray-500" th:text="${row.gwLabel}">1–38</td>
-                    <td class="px-4 py-3 text-sm text-gray-600" th:text="${row.memberCount}">8</td>
-                    <td class="px-4 py-3 text-right">
-                      <a
-                        th:href="@{/contests/{id}(id=${row.id})}"
-                        class="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
-                        @click.stop=""
-                      >View →</a>
+                    <td class="px-4 py-3 text-sm text-gray-500">
+                      <span class="hidden sm:inline" th:text="${row.gwLabel}">1–38</span>
+                      <span class="sm:hidden flex flex-col text-xs leading-snug">
+                        <span th:text="${row.gwFrom}">1</span>
+                        <span th:text="${row.gwTo}">38</span>
+                      </span>
                     </td>
+                    <td class="px-4 py-3 text-sm text-gray-600" th:text="${row.memberCount}">8</td>
                   </tr>
                 </tbody>
               </table>

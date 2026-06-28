@@ -224,15 +224,14 @@
                 </svg>
               </button>
 
-              <!-- Desktop: centered fixed overlay -->
-              <template x-if="dropdownOpen">
-                <div class="hidden md:block">
-                  <div class="fixed inset-0 z-40 bg-black bg-opacity-20" @click="dropdownOpen = false"></div>
-                  <div x-transition class="fixed left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 z-50 w-80 bg-white border border-gray-200 rounded-xl shadow-xl max-h-[500px] overflow-y-auto text-xs">
-                    <div x-html="renderMenu()"></div>
-                  </div>
-                </div>
-              </template>
+              <!-- Desktop: anchored dropdown -->
+              <div x-show="dropdownOpen"
+                   x-cloak
+                   @click.away="dropdownOpen = false"
+                   x-transition
+                   class="hidden md:block absolute left-0 z-50 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-xl max-h-[500px] overflow-y-auto">
+                <div x-html="renderMenu()"></div>
+              </div>
             </div>
 
             <div class="flex gap-1.5 flex-wrap">
@@ -255,8 +254,8 @@
 
           <!-- Mobile bottom sheet -->
           <div x-show="sheetOpen" x-cloak @click="sheetOpen = false"
-               class="md:hidden fixed inset-0 z-50 flex items-end bg-black bg-opacity-40">
-            <div @click.stop class="w-full bg-white rounded-t-2xl shadow-xl max-h-[70vh] overflow-y-auto">
+               class="md:hidden fixed inset-0 z-50 flex items-end bg-black bg-opacity-40 px-2 pb-2">
+            <div @click.stop class="w-full bg-white rounded-2xl shadow-xl max-h-[70vh] overflow-y-auto">
               <div class="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
                 <h2 class="text-base font-semibold text-gray-900">Select leaderboard</h2>
                 <button @click="sheetOpen = false" class="p-1 hover:bg-gray-100 rounded">
@@ -285,12 +284,6 @@
               id="currentPhaseFrom"
               name="phaseFrom"
               th:value="${currentPhaseFrom}"
-            />
-            <input
-              type="hidden"
-              id="contestMaxRound"
-              name="maxRound"
-              th:value="${contest.toRoundPosition}"
             />
 
             <!-- Segment sub-header -->
@@ -369,7 +362,7 @@
                             hx-post="/leaderboard/user/modal"
                             hx-target="#user-detail-modal"
                             hx-swap="innerHTML"
-                            hx-include="#effectiveToRound, #currentPhaseFrom, #contestMaxRound"
+                            hx-include="#effectiveToRound, #currentPhaseFrom"
                             th:attr="hx-vals='js:{publicId: &quot;' + ${entry.publicId} + '&quot;, displayName: &quot;' + ${entry.displayName} + '&quot;, position: ' + ${entry.position} + ', totalScore: ' + ${entry.totalScore} + ', roundScore: ' + ${entry.roundScore} + ', maxScore: ' + ${entry.maxScore} + ', totalSwaps: ' + ${entry.totalSwaps} + ', movement: ' + ${entry.movement} + '}'"
                             hx-on:click="document.getElementById('modal-loading').classList.remove('hidden')"
                             hx-on::after-request="document.getElementById('modal-loading').classList.add('hidden')"

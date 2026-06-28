@@ -101,7 +101,11 @@ public class GetUserContestSummaryUseCase {
                             phase.getCode(),
                             phase.getName(),
                             buildDateLabel(phase.getFrom(), phase.getTo(), dateRanges),
+                            buildDateFrom(phase.getFrom(), dateRanges),
+                            buildDateTo(phase.getTo(), dateRanges),
                             buildGwLabel(phase.getFrom(), phase.getTo()),
+                            phase.getFrom(),
+                            phase.getTo(),
                             rank,
                             movement));
                 });
@@ -113,6 +117,16 @@ public class GetUserContestSummaryUseCase {
         MatchRepo.RoundDateRange endRange = dateRanges.get(to);
         if (startRange == null || endRange == null) return null;
         return startRange.firstKickoff().format(DATE_FMT) + " – " + endRange.lastKickoff().format(DATE_FMT);
+    }
+
+    private String buildDateFrom(int from, Map<Integer, MatchRepo.RoundDateRange> dateRanges) {
+        var r = dateRanges.get(from);
+        return r != null ? r.firstKickoff().format(DATE_FMT) : null;
+    }
+
+    private String buildDateTo(int to, Map<Integer, MatchRepo.RoundDateRange> dateRanges) {
+        var r = dateRanges.get(to);
+        return r != null ? r.lastKickoff().format(DATE_FMT) : null;
     }
 
     private String buildGwLabel(int from, int to) {
@@ -135,7 +149,16 @@ public class GetUserContestSummaryUseCase {
                     : null;
             String gwLabel = buildGwLabel(contest.getFromRoundPosition(), contest.getToRoundPosition());
             rows.add(new PrivateContestRowDto(
-                    contest.getId(), contest.getName(), dateLabel, gwLabel, memberCount, contest.isOwnedBy(userId)));
+                    contest.getId(),
+                    contest.getName(),
+                    dateLabel,
+                    dateRanges != null ? buildDateFrom(contest.getFromRoundPosition(), dateRanges) : null,
+                    dateRanges != null ? buildDateTo(contest.getToRoundPosition(), dateRanges) : null,
+                    gwLabel,
+                    contest.getFromRoundPosition(),
+                    contest.getToRoundPosition(),
+                    memberCount,
+                    contest.isOwnedBy(userId)));
         }
         return rows;
     }

@@ -232,7 +232,7 @@ window.contestDetail = function () {
 
     getStatusText(node) {
       if (node.status === 'LIVE' && node.rank) {
-        return 'Live: ' + this.getRankText(node.rank) + (node.isTopTen ? ' 🔥' : '');
+        return 'Live: ' + this.getRankText(node.rank) +  ' 👀';
       }
       if (node.status === 'FINISHED') return 'Finished';
       if (node.status === 'NEXT' || node.status === 'FUTURE') {
