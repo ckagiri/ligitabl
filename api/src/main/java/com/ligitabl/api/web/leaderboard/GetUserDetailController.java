@@ -30,6 +30,7 @@ public class GetUserDetailController {
             @RequestParam(required = false) Integer effectiveToRound,
             @RequestParam(required = false) Integer phaseFrom,
             @RequestParam(required = false) Integer maxRound,
+            @RequestParam(required = false, defaultValue = "true") boolean scored,
             Model model,
             HttpServletResponse response) {
 
@@ -49,6 +50,7 @@ public class GetUserDetailController {
                                 effectiveToRound,
                                 phaseFrom,
                                 maxRound,
+                                scored,
                                 model));
     }
 
@@ -62,6 +64,7 @@ public class GetUserDetailController {
             Integer effectiveToRound,
             Integer phaseFrom,
             Integer maxRoundParam,
+            boolean scored,
             Model model) {
 
         int roundScore = result.roundScore() != null
@@ -83,6 +86,7 @@ public class GetUserDetailController {
         model.addAttribute("round", result.round());
         model.addAttribute("minRound", minRound);
         model.addAttribute("maxRound", maxRound);
+        model.addAttribute("scored", scored);
 
         return "fragments/user-detail :: user-details";
     }
