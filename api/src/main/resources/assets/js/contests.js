@@ -254,12 +254,12 @@ window.contestDetail = function () {
         const highlight  = node.status === 'LIVE' ? 'border-l-4 border-green-500 bg-green-50' : '';
         const statusText = this.getStatusText(node);
         html += `
-          <div class="px-3 py-2 cursor-pointer hover:bg-gray-50 ${highlight}"
+          <div class="px-4 py-3 cursor-pointer hover:bg-gray-50 ${highlight}"
                onclick="window.leagueApp.selectSegment('${node.id}')">
             <div class="flex items-center gap-2 mb-0.5">
-              <span class="text-sm">🏆</span>
-              <span class="text-xs font-medium text-gray-900">${node.label}</span>
-              ${isSelected ? '<span class="text-indigo-600 ml-auto text-xs">✓</span>' : ''}
+              <span class="text-base">🏆</span>
+              <span class="text-sm font-medium text-gray-900">${node.label}</span>
+              ${isSelected ? '<span class="text-indigo-600 ml-auto text-sm">✓</span>' : ''}
             </div>
             <div class="text-xs text-gray-500">${node.gwLabel}${node.dateLabel ? ' · ' + node.dateLabel : ''}</div>
             ${statusText ? `<div class="text-xs mt-0.5 text-green-700 font-medium">${statusText}</div>` : ''}
@@ -276,7 +276,7 @@ window.contestDetail = function () {
         const sprintCount = hasChildren ? node.children.length : 0;
         const sprintHint  = (!isExpanded && hasChildren)
           ? `<span class="ml-auto text-xs text-gray-400 font-normal">${sprintCount} sprint${sprintCount !== 1 ? 's' : ''}</span>` : '';
-        const chevron = `<svg class="w-3.5 h-3.5 shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>`;
+        const chevron = `<svg class="w-4 h-4 shrink-0 transition-transform ${isExpanded ? 'rotate-90' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>`;
 
         let sprintsHtml = '';
         if (isExpanded && hasChildren) {
@@ -300,12 +300,12 @@ window.contestDetail = function () {
             const sprintStatus    = this.getStatusText(sprint);
             const sprintIcon      = sprint.status === 'LIVE' ? '🟢' : sprint.status === 'NEXT' ? '🎯' : '🏁';
             sprintsHtml += `
-              <div class="border-l-2 border-gray-200 ml-3 pl-2.5 py-1 rounded ${sprintHighlight} ${clickable ? 'cursor-pointer hover:bg-gray-50' : 'opacity-50'}"
+              <div class="border-l-2 border-gray-200 ml-4 pl-3 py-1.5 rounded ${sprintHighlight} ${clickable ? 'cursor-pointer hover:bg-gray-50' : 'opacity-50'}"
                    ${clickable ? `onclick="event.stopPropagation(); window.leagueApp.selectSegment('${sprint.id}')"` : ''}>
-                <div class="flex items-center gap-1 mb-0.5">
-                  <span class="text-xs">${sprintIcon}</span>
-                  <span class="text-xs font-medium text-gray-800">${sprint.label}</span>
-                  ${sprintSelected ? '<span class="text-indigo-600 ml-auto text-xs">✓</span>' : ''}
+                <div class="flex items-center gap-1.5 mb-0.5">
+                  <span class="text-sm">${sprintIcon}</span>
+                  <span class="text-sm font-medium text-gray-800">${sprint.label}</span>
+                  ${sprintSelected ? '<span class="text-indigo-600 ml-auto text-sm">✓</span>' : ''}
                 </div>
                 <div class="text-xs text-gray-400">${sprint.gwLabel}${sprint.dateLabel ? ' · ' + sprint.dateLabel : ''}</div>
                 ${sprintStatus ? `<div class="text-xs mt-0.5 ${sprint.status === 'LIVE' ? 'text-green-700 font-medium' : 'text-gray-400'}">${sprintStatus}</div>` : ''}
@@ -316,16 +316,16 @@ window.contestDetail = function () {
 
         html += `
           <div class="${highlight}">
-            <div class="px-3 pt-2 ${isExpanded ? 'pb-1.5' : 'pb-0'}">
-              <div class="flex items-center gap-1.5 mb-0.5 cursor-pointer select-none"
+            <div class="px-4 pt-3 ${isExpanded ? 'pb-2' : 'pb-0'}">
+              <div class="flex items-center gap-2 mb-0.5 cursor-pointer select-none"
                    onclick="event.stopPropagation(); window.leagueApp.toggleQuarter('${node.id}')">
                 ${chevron}
-                <span class="text-xs">${icon}</span>
-                <span class="text-xs font-medium text-gray-900">${node.label}</span>
-                ${isSelected && !sprintHint ? '<span class="text-indigo-600 ml-auto text-xs">✓</span>' : ''}
+                <span class="text-base">${icon}</span>
+                <span class="text-sm font-medium text-gray-900">${node.label}</span>
+                ${isSelected && !sprintHint ? '<span class="text-indigo-600 ml-auto text-sm">✓</span>' : ''}
                 ${sprintHint}
               </div>
-              <div class="pb-2 cursor-pointer rounded hover:bg-gray-50"
+              <div class="pb-2.5 cursor-pointer rounded hover:bg-gray-50"
                    onclick="window.leagueApp.selectSegment('${node.id}')">
                 <div class="text-xs text-gray-500">${node.gwLabel}${node.dateLabel ? ' · ' + node.dateLabel : ''}</div>
                 ${statusText ? `<div class="text-xs mt-0.5 ${node.status === 'LIVE' ? 'text-green-700 font-medium' : 'text-gray-400'}">${statusText}</div>` : ''}
