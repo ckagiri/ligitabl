@@ -130,9 +130,21 @@ class GetLeaderboardUseCaseIntegrationTest extends AbstractPostgresIT {
         bobPredictionId = createPrediction(bobId);
         charliePredictionId = createPrediction(charlieId);
 
-        entryRepo.save(Entry.builder().userId(aliceId).contestId(contestId).joinedAtRound(1).build());
-        entryRepo.save(Entry.builder().userId(bobId).contestId(contestId).joinedAtRound(1).build());
-        entryRepo.save(Entry.builder().userId(charlieId).contestId(contestId).joinedAtRound(1).build());
+        entryRepo.save(Entry.builder()
+                .userId(aliceId)
+                .contestId(contestId)
+                .joinedAtRound(1)
+                .build());
+        entryRepo.save(Entry.builder()
+                .userId(bobId)
+                .contestId(contestId)
+                .joinedAtRound(1)
+                .build());
+        entryRepo.save(Entry.builder()
+                .userId(charlieId)
+                .contestId(contestId)
+                .joinedAtRound(1)
+                .build());
     }
 
     @Test

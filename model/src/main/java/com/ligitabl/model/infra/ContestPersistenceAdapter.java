@@ -90,20 +90,17 @@ public class ContestPersistenceAdapter implements ContestRepo {
     public List<Contest> findPrivateByUserId(UUID userId) {
         return dsl.selectFrom(T_CONTEST)
                 .where(T_CONTEST.C_IS_PRIVATE.eq(true))
-                .and(T_CONTEST.PK_ID.in(
-                        dsl.select(T_ENTRY.FK_CONTEST_ID)
-                                .from(T_ENTRY)
-                                .where(T_ENTRY.FK_USER_ID.eq(userId))
-                                .and(T_ENTRY.C_REMOVED_AT_ROUND.isNull())))
+                .and(T_CONTEST.PK_ID.in(dsl.select(T_ENTRY.FK_CONTEST_ID)
+                        .from(T_ENTRY)
+                        .where(T_ENTRY.FK_USER_ID.eq(userId))
+                        .and(T_ENTRY.C_REMOVED_AT_ROUND.isNull())))
                 .fetch()
                 .map(ContestPersistenceAdapter::map);
     }
 
     @Override
     public void delete(UUID contestId) {
-        dsl.deleteFrom(T_CONTEST)
-                .where(T_CONTEST.PK_ID.eq(contestId))
-                .execute();
+        dsl.deleteFrom(T_CONTEST).where(T_CONTEST.PK_ID.eq(contestId)).execute();
     }
 
     @Override

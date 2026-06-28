@@ -38,9 +38,17 @@ public class ContestAdminController {
         WebUserDetails user = WebSecurity.resolveUser(principal);
         if (user == null) return "redirect:/auth/login";
 
-        toggleContestJoiningUseCase.execute(id, user.getUserId()).fold(
-                error -> { log.warn("Toggle joining error for {}: {}", id, error); return null; },
-                result -> { log.info("Toggled joining for contest {} → isOpen={}", id, result.isOpen()); return null; });
+        toggleContestJoiningUseCase
+                .execute(id, user.getUserId())
+                .fold(
+                        error -> {
+                            log.warn("Toggle joining error for {}: {}", id, error);
+                            return null;
+                        },
+                        result -> {
+                            log.info("Toggled joining for contest {} → isOpen={}", id, result.isOpen());
+                            return null;
+                        });
 
         return "redirect:/contests/" + id;
     }
@@ -50,26 +58,36 @@ public class ContestAdminController {
         WebUserDetails user = WebSecurity.resolveUser(principal);
         if (user == null) return "redirect:/auth/login";
 
-        regenerateContestCodeUseCase.execute(id, user.getUserId()).fold(
-                error -> { log.warn("Regenerate code error for {}: {}", id, error); return null; },
-                result -> { log.info("Regenerated code for contest {} → {}", id, result.joinCode()); return null; });
+        regenerateContestCodeUseCase
+                .execute(id, user.getUserId())
+                .fold(
+                        error -> {
+                            log.warn("Regenerate code error for {}: {}", id, error);
+                            return null;
+                        },
+                        result -> {
+                            log.info("Regenerated code for contest {} → {}", id, result.joinCode());
+                            return null;
+                        });
 
         return "redirect:/contests/" + id;
     }
 
     @PostMapping("/{id}/members/{memberId}/remove")
-    public String removeMember(
-            @PathVariable UUID id,
-            @PathVariable UUID memberId,
-            Principal principal) {
+    public String removeMember(@PathVariable UUID id, @PathVariable UUID memberId, Principal principal) {
 
         WebUserDetails user = WebSecurity.resolveUser(principal);
         if (user == null) return "redirect:/auth/login";
 
         int currentRound = contestSupport.resolveCurrentRoundPosition();
-        removeContestMemberUseCase.execute(id, user.getUserId(), memberId, currentRound).fold(
-                error -> { log.warn("Remove member error for {}/{}: {}", id, memberId, error); return null; },
-                result -> null);
+        removeContestMemberUseCase
+                .execute(id, user.getUserId(), memberId, currentRound)
+                .fold(
+                        error -> {
+                            log.warn("Remove member error for {}/{}: {}", id, memberId, error);
+                            return null;
+                        },
+                        result -> null);
 
         return "redirect:/contests/" + id;
     }
@@ -80,9 +98,14 @@ public class ContestAdminController {
         if (user == null) return "redirect:/auth/login";
 
         int currentRound = contestSupport.resolveCurrentRoundPosition();
-        leavePrivateContestUseCase.execute(id, user.getUserId(), currentRound).fold(
-                error -> { log.warn("Leave contest error for {}: {}", id, error); return null; },
-                result -> null);
+        leavePrivateContestUseCase
+                .execute(id, user.getUserId(), currentRound)
+                .fold(
+                        error -> {
+                            log.warn("Leave contest error for {}: {}", id, error);
+                            return null;
+                        },
+                        result -> null);
 
         return "redirect:/contests";
     }
@@ -92,11 +115,13 @@ public class ContestAdminController {
         WebUserDetails user = WebSecurity.resolveUser(principal);
         if (user == null) return "redirect:/auth/login";
 
-        return deleteContestUseCase.execute(id, user.getUserId()).fold(
-                error -> {
-                    log.warn("Delete contest error for {}: {}", id, error);
-                    return "redirect:/contests/" + id + "?deleteError=true";
-                },
-                result -> "redirect:/contests");
+        return deleteContestUseCase
+                .execute(id, user.getUserId())
+                .fold(
+                        error -> {
+                            log.warn("Delete contest error for {}: {}", id, error);
+                            return "redirect:/contests/" + id + "?deleteError=true";
+                        },
+                        result -> "redirect:/contests");
     }
 }

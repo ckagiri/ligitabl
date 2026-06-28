@@ -6,7 +6,6 @@ import static com.ligitabl.model.db.tables.TUserRole.T_USER_ROLE;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -143,9 +142,7 @@ public class UserPersistenceAdapter implements UserRepo {
     public Map<UUID, User> findByIds(Collection<UUID> ids) {
         if (ids == null || ids.isEmpty()) return Map.of();
 
-        var records = dsl.selectFrom(T_USER)
-                .where(T_USER.PK_ID.in(ids))
-                .fetch();
+        var records = dsl.selectFrom(T_USER).where(T_USER.PK_ID.in(ids)).fetch();
 
         if (records.isEmpty()) return Map.of();
 

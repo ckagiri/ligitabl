@@ -62,17 +62,15 @@ public class PreviewContestByCodeUseCase {
 
     private Either<PreviewContestByCodeError, Competition> resolveCompetition(UUID seasonId) {
         return competitionRepo.findAll().stream()
-                .filter(c -> c.getActiveSeasonId() != null && c.getActiveSeasonId().equals(seasonId))
+                .filter(c ->
+                        c.getActiveSeasonId() != null && c.getActiveSeasonId().equals(seasonId))
                 .findFirst()
                 .<Either<PreviewContestByCodeError, Competition>>map(Either::right)
-                .orElseGet(() -> Either.left(
-                        new PreviewContestByCodeError.CompetitionNotFound(seasonId.toString())));
+                .orElseGet(() -> Either.left(new PreviewContestByCodeError.CompetitionNotFound(seasonId.toString())));
     }
 
     private String resolveScopeCode(Contest contest, List<RoundSpan> phases) {
-        return findMatchingPhase(contest, phases)
-                .map(RoundSpan::getCode)
-                .orElse("custom");
+        return findMatchingPhase(contest, phases).map(RoundSpan::getCode).orElse("custom");
     }
 
     private String resolveScopeLabel(Contest contest, List<RoundSpan> phases, String gwRange) {
@@ -83,8 +81,7 @@ public class PreviewContestByCodeUseCase {
 
     private Optional<RoundSpan> findMatchingPhase(Contest contest, List<RoundSpan> phases) {
         return phases.stream()
-                .filter(p -> p.getFrom() == contest.getFromRoundPosition()
-                        && p.getTo() == contest.getToRoundPosition())
+                .filter(p -> p.getFrom() == contest.getFromRoundPosition() && p.getTo() == contest.getToRoundPosition())
                 .findFirst();
     }
 
@@ -92,8 +89,10 @@ public class PreviewContestByCodeUseCase {
         RoundDateRange from = roundDates.get(contest.getFromRoundPosition());
         RoundDateRange to = roundDates.get(contest.getToRoundPosition());
         if (from == null || to == null) return null;
-        String start = from.firstKickoff().atZoneSameInstant(java.time.ZoneOffset.UTC).format(DATE_FMT);
-        String end = to.lastKickoff().atZoneSameInstant(java.time.ZoneOffset.UTC).format(DATE_FMT);
+        String start =
+                from.firstKickoff().atZoneSameInstant(java.time.ZoneOffset.UTC).format(DATE_FMT);
+        String end =
+                to.lastKickoff().atZoneSameInstant(java.time.ZoneOffset.UTC).format(DATE_FMT);
         return start + " – " + end;
     }
 

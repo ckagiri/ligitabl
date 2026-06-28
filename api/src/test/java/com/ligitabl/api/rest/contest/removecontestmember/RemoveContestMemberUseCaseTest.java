@@ -20,8 +20,11 @@ import com.ligitabl.model.repo.EntryRepo;
 @ExtendWith(MockitoExtension.class)
 class RemoveContestMemberUseCaseTest {
 
-    @Mock ContestRepo contestRepo;
-    @Mock EntryRepo entryRepo;
+    @Mock
+    ContestRepo contestRepo;
+
+    @Mock
+    EntryRepo entryRepo;
 
     private RemoveContestMemberUseCase useCase;
 
@@ -41,10 +44,18 @@ class RemoveContestMemberUseCaseTest {
         seasonId = UUID.randomUUID();
 
         contest = Contest.builder()
-                .id(contestId).seasonId(seasonId).name("Test").isOpen(true).ownerId(ownerId).build();
+                .id(contestId)
+                .seasonId(seasonId)
+                .name("Test")
+                .isOpen(true)
+                .ownerId(ownerId)
+                .build();
 
         activeEntry = Entry.builder()
-                .userId(memberId).contestId(contestId).joinedAtRound(1).build();
+                .userId(memberId)
+                .contestId(contestId)
+                .joinedAtRound(1)
+                .build();
     }
 
     @Test

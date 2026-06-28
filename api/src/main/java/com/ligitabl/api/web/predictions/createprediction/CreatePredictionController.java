@@ -67,7 +67,8 @@ public class CreatePredictionController {
                 created -> {
                     log.info("Created season prediction: {}", created.predictionId());
                     if (nextUrl != null && !nextUrl.isBlank()) {
-                        return Map.of("success", true, "message", "Prediction created successfully", "nextUrl", nextUrl);
+                        return Map.of(
+                                "success", true, "message", "Prediction created successfully", "nextUrl", nextUrl);
                     }
                     return Map.of("success", true, "message", "Prediction created successfully");
                 });

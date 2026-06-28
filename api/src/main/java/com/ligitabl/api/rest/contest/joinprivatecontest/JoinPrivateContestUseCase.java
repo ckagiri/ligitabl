@@ -69,7 +69,8 @@ public class JoinPrivateContestUseCase {
         }
 
         // Check if user already has an entry (active or removed)
-        var existingEntry = entryRepo.findByUserAndContest(cmd.userId(), contest.getId()).orElse(null);
+        var existingEntry =
+                entryRepo.findByUserAndContest(cmd.userId(), contest.getId()).orElse(null);
 
         if (existingEntry != null && existingEntry.getRemovedAtRound() == null) {
             return Either.left(new JoinPrivateContestError.AlreadyMember());
@@ -113,8 +114,7 @@ public class JoinPrivateContestUseCase {
      *   pos 36+           → closed (past opening round of last sprint, regardless of status)
      *   pos 39+           → closed (past contest end)
      */
-    private boolean isJoinWindowClosed(int toRoundPosition,
-            Round currentRound, Competition competition) {
+    private boolean isJoinWindowClosed(int toRoundPosition, Round currentRound, Competition competition) {
         int pos = currentRound.getPosition();
 
         if (pos > toRoundPosition) return true;
@@ -137,9 +137,7 @@ public class JoinPrivateContestUseCase {
 
         // Exactly at the opening round of the last sprint → open only if round is OPEN
         var matches = matchRepo.findByRoundId(currentRound.getId());
-        RoundStatus status = currentRound.isFinalized()
-                ? RoundStatus.FINALIZED
-                : currentRound.computeStatus(matches);
+        RoundStatus status = currentRound.isFinalized() ? RoundStatus.FINALIZED : currentRound.computeStatus(matches);
         return status != RoundStatus.OPEN;
     }
 }

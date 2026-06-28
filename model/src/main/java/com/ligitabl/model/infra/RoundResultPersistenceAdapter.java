@@ -80,12 +80,15 @@ public class RoundResultPersistenceAdapter implements RoundResultRepo {
 
     // userId is optional — null means all users in the season
     private List<RoundResult> queryByRange(UUID userId, UUID seasonId, int fromRound, int toRound) {
-        var condition = T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId)
+        var condition = T_ROUND_SUBMISSION
+                .FK_SEASON_ID
+                .eq(seasonId)
                 .and(T_ROUND_SUBMISSION.C_ROUND_POSITION.between(fromRound, toRound));
         if (userId != null) {
             condition = condition.and(T_ROUND_SUBMISSION.FK_USER_ID.eq(userId));
         }
-        return dsl.select(T_ROUND_RESULT.fields())
+        return dsl
+                .select(T_ROUND_RESULT.fields())
                 .from(T_ROUND_RESULT)
                 .join(T_ROUND_SUBMISSION)
                 .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))

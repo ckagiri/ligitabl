@@ -36,10 +36,7 @@ public class ContestMembersController {
 
     @GetMapping("/{id}/members")
     public String contestMembers(
-            @PathVariable UUID id,
-            @RequestParam(defaultValue = "0") int page,
-            Model model,
-            Principal principal) {
+            @PathVariable UUID id, @RequestParam(defaultValue = "0") int page, Model model, Principal principal) {
 
         WebUserDetails user = WebSecurity.resolveUser(principal);
         if (user == null) return "redirect:/auth/login";

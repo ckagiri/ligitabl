@@ -88,7 +88,11 @@ class GetUserDetailUseCaseIntegrationTest extends AbstractPostgresIT {
         insertTeam(awayTeamId, "Liverpool", "liverpool", "LIV");
 
         insertUser(userId, USER_PUBLIC_ID, "Alice");
-        entryRepo.save(Entry.builder().userId(userId).contestId(contestId).joinedAtRound(1).build());
+        entryRepo.save(Entry.builder()
+                .userId(userId)
+                .contestId(contestId)
+                .joinedAtRound(1)
+                .build());
 
         UUID seasonPredictionId = UUID.randomUUID();
         seasonPredictionRepo.save(SeasonPrediction.builder()

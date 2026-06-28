@@ -27,10 +27,17 @@ import com.ligitabl.model.repo.SeasonPredictionRepo;
 @DisplayName("ContestPersistenceAdapter Integration Tests")
 class ContestPersistenceAdapterIT extends AbstractPostgresIT {
 
-    @Autowired JdbcTemplate jdbc;
-    @Autowired ContestRepo contestRepo;
-    @Autowired EntryRepo entryRepo;
-    @Autowired SeasonPredictionRepo predictionRepo;
+    @Autowired
+    JdbcTemplate jdbc;
+
+    @Autowired
+    ContestRepo contestRepo;
+
+    @Autowired
+    EntryRepo entryRepo;
+
+    @Autowired
+    SeasonPredictionRepo predictionRepo;
 
     private UUID seasonId;
     private UUID userId;
@@ -81,14 +88,29 @@ class ContestPersistenceAdapterIT extends AbstractPostgresIT {
         insertPrediction(userId, 1);
 
         Contest privateContest = contestRepo.save(privateContest("CODE001"));
-        entryRepo.save(Entry.builder().userId(userId).contestId(privateContest.getId()).joinedAtRound(1).build());
+        entryRepo.save(Entry.builder()
+                .userId(userId)
+                .contestId(privateContest.getId())
+                .joinedAtRound(1)
+                .build());
 
         // Main (public) contest — should not appear
         UUID mainContestId = UUID.randomUUID();
         jdbc.update(
                 "INSERT INTO t_contest (pk_id, fk_season_id, c_name, c_is_private, c_join_code, c_from_round_position, c_to_round_position, c_max_entries) VALUES (?,?,?,?,?,?,?,?)",
-                mainContestId, seasonId, "Main League", false, null, 1, 38, null);
-        entryRepo.save(Entry.builder().userId(userId).contestId(mainContestId).joinedAtRound(1).build());
+                mainContestId,
+                seasonId,
+                "Main League",
+                false,
+                null,
+                1,
+                38,
+                null);
+        entryRepo.save(Entry.builder()
+                .userId(userId)
+                .contestId(mainContestId)
+                .joinedAtRound(1)
+                .build());
 
         List<Contest> privateContests = contestRepo.findPrivateByUserId(userId);
 
@@ -104,8 +126,16 @@ class ContestPersistenceAdapterIT extends AbstractPostgresIT {
         Contest c1 = contestRepo.save(privateContest("CODE001"));
         Contest c2 = contestRepo.save(privateContest("CODE002"));
 
-        entryRepo.save(Entry.builder().userId(userId).contestId(c1.getId()).joinedAtRound(1).build());
-        entryRepo.save(Entry.builder().userId(userId).contestId(c2.getId()).joinedAtRound(1).build());
+        entryRepo.save(Entry.builder()
+                .userId(userId)
+                .contestId(c1.getId())
+                .joinedAtRound(1)
+                .build());
+        entryRepo.save(Entry.builder()
+                .userId(userId)
+                .contestId(c2.getId())
+                .joinedAtRound(1)
+                .build());
 
         // Soft-remove user from c2
         entryRepo.softRemove(userId, c2.getId(), 3);
@@ -129,8 +159,13 @@ class ContestPersistenceAdapterIT extends AbstractPostgresIT {
     @DisplayName("save persists ownerId and isOpen fields")
     void save_persistsOwnerIdAndIsOpen() {
         Contest contest = Contest.builder()
-                .seasonId(seasonId).name("Private").isPrivate(true).isOpen(true)
-                .joinCode("NEWCODE").fromRoundPosition(1).toRoundPosition(10)
+                .seasonId(seasonId)
+                .name("Private")
+                .isPrivate(true)
+                .isOpen(true)
+                .joinCode("NEWCODE")
+                .fromRoundPosition(1)
+                .toRoundPosition(10)
                 .ownerId(userId)
                 .build();
 
@@ -156,8 +191,13 @@ class ContestPersistenceAdapterIT extends AbstractPostgresIT {
 
     private Contest privateContest(String joinCode) {
         return Contest.builder()
-                .seasonId(seasonId).name("Private").isPrivate(true).isOpen(true)
-                .joinCode(joinCode).fromRoundPosition(1).toRoundPosition(10)
+                .seasonId(seasonId)
+                .name("Private")
+                .isPrivate(true)
+                .isOpen(true)
+                .joinCode(joinCode)
+                .fromRoundPosition(1)
+                .toRoundPosition(10)
                 .ownerId(userId)
                 .build();
     }
@@ -166,27 +206,51 @@ class ContestPersistenceAdapterIT extends AbstractPostgresIT {
         UUID competitionId = UUID.randomUUID();
         jdbc.update(
                 "INSERT INTO t_competition (pk_id, c_name, c_slug, c_code, c_phases, fk_active_season_id) VALUES (?,?,?,?,'[]'::jsonb,?)",
-                competitionId, "PL", "premier-league", "PL", seasonId);
+                competitionId,
+                "PL",
+                "premier-league",
+                "PL",
+                seasonId);
 
         jdbc.update(
                 "INSERT INTO t_season (pk_id, c_client_id, fk_competition_id, c_name, c_slug, c_start_date, c_end_date, c_max_rounds, c_total_teams, c_initial_rankings, c_completed, fk_current_round_id, c_current_match_day) VALUES (?,?,?,?,?,?,?,?,?,?::jsonb,?,?,?)",
-                seasonId, 1, competitionId, "2025/26", "2025-26",
-                LocalDate.of(2025, 8, 1), LocalDate.of(2026, 5, 31),
-                38, 12, "[]", false, null, 1);
+                seasonId,
+                1,
+                competitionId,
+                "2025/26",
+                "2025-26",
+                LocalDate.of(2025, 8, 1),
+                LocalDate.of(2026, 5, 31),
+                38,
+                12,
+                "[]",
+                false,
+                null,
+                1);
     }
 
     private void insertUser(UUID id, String email, String displayName) {
         jdbc.update(
                 "INSERT INTO t_user (pk_id, c_email, c_password_hash, c_display_name, c_public_id, c_email_verified) VALUES (?,?,?,?,?,?)",
-                id, email, "hash", displayName, randomPublicId(), true);
+                id,
+                email,
+                "hash",
+                displayName,
+                randomPublicId(),
+                true);
         jdbc.update("INSERT INTO t_user_role (fk_user_id, c_role) VALUES (?,?)", id, "PLAYER");
     }
 
     private void insertPrediction(UUID userId, int atRound) {
         SeasonPrediction pred = SeasonPrediction.builder()
-                .id(UUID.randomUUID()).userId(userId).seasonId(seasonId)
-                .initialRankings(List.of()).currentRankings(List.of()).swaps(List.of())
-                .atRoundNumber(atRound).build();
+                .id(UUID.randomUUID())
+                .userId(userId)
+                .seasonId(seasonId)
+                .initialRankings(List.of())
+                .currentRankings(List.of())
+                .swaps(List.of())
+                .atRoundNumber(atRound)
+                .build();
         predictionRepo.save(pred);
     }
 
@@ -194,7 +258,8 @@ class ContestPersistenceAdapterIT extends AbstractPostgresIT {
         String alpha = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
         StringBuilder sb = new StringBuilder(10);
         for (int i = 0; i < 10; i++) {
-            sb.append(alpha.charAt(java.util.concurrent.ThreadLocalRandom.current().nextInt(alpha.length())));
+            sb.append(alpha.charAt(
+                    java.util.concurrent.ThreadLocalRandom.current().nextInt(alpha.length())));
         }
         return sb.toString();
     }

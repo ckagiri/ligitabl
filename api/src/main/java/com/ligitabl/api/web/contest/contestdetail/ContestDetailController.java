@@ -4,6 +4,7 @@ import java.security.Principal;
 import java.util.List;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -11,8 +12,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-
-import org.springframework.beans.factory.annotation.Value;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -59,66 +58,72 @@ public class ContestDetailController {
         String segmentCode = (segment != null && !segment.isBlank()) ? segment : null;
         var query = new GetPrivateContestQuery(id, user.getUserId(), segmentCode, page);
 
-        return getPrivateContestUseCase.execute(query).fold(
-                error -> {
-                    log.warn("Contest detail error for {}: {}", id, error);
-                    model.addAttribute("error", "Contest not found or you're not a member.");
-                    return "error";
-                },
-                detail -> {
-                    LeaderboardResponse lb = detail.leaderboard();
-                    int totalPages = lb.totalParticipants() == 0 ? 1
-                            : (int) Math.ceil((double) lb.totalParticipants() / PAGE_SIZE);
-                    int showingFrom = lb.totalParticipants() == 0 ? 0 : page * PAGE_SIZE + 1;
-                    int showingTo = Math.min((page + 1) * PAGE_SIZE, lb.totalParticipants());
+        return getPrivateContestUseCase
+                .execute(query)
+                .fold(
+                        error -> {
+                            log.warn("Contest detail error for {}: {}", id, error);
+                            model.addAttribute("error", "Contest not found or you're not a member.");
+                            return "error";
+                        },
+                        detail -> {
+                            LeaderboardResponse lb = detail.leaderboard();
+                            int totalPages = lb.totalParticipants() == 0
+                                    ? 1
+                                    : (int) Math.ceil((double) lb.totalParticipants() / PAGE_SIZE);
+                            int showingFrom = lb.totalParticipants() == 0 ? 0 : page * PAGE_SIZE + 1;
+                            int showingTo = Math.min((page + 1) * PAGE_SIZE, lb.totalParticipants());
 
-                    model.addAttribute("contest", detail.contest());
-                    model.addAttribute("selectedSegment", detail.selectedSegment());
-                    model.addAttribute("leaderboard", lb);
-                    model.addAttribute("isOwner", detail.isOwner());
-                    String joinCode = detail.joinCode() != null
-                            ? detail.joinCode().toUpperCase()
-                            : null;
-                    model.addAttribute("joinCode", joinCode);
-                    model.addAttribute("inviteUrl",
-                            joinCode != null ? frontendUrl + "/i/" + joinCode : null);
-                    model.addAttribute("segmentTree", detail.segmentTree());
-                    model.addAttribute("members",
-                            buildMemberRows(detail.members(), detail.contest().getOwnerId()));
-                    model.addAttribute("contestDateLabel", detail.contestDateLabel());
-                    model.addAttribute("pageTitle", detail.contest().getName());
-                    model.addAttribute("currentSegment", detail.currentSegmentCode());
+                            model.addAttribute("contest", detail.contest());
+                            model.addAttribute("selectedSegment", detail.selectedSegment());
+                            model.addAttribute("leaderboard", lb);
+                            model.addAttribute("isOwner", detail.isOwner());
+                            String joinCode = detail.joinCode() != null
+                                    ? detail.joinCode().toUpperCase()
+                                    : null;
+                            model.addAttribute("joinCode", joinCode);
+                            model.addAttribute("inviteUrl", joinCode != null ? frontendUrl + "/i/" + joinCode : null);
+                            model.addAttribute("segmentTree", detail.segmentTree());
+                            model.addAttribute(
+                                    "members",
+                                    buildMemberRows(
+                                            detail.members(), detail.contest().getOwnerId()));
+                            model.addAttribute("contestDateLabel", detail.contestDateLabel());
+                            model.addAttribute("pageTitle", detail.contest().getName());
+                            model.addAttribute("currentSegment", detail.currentSegmentCode());
 
-                    // Leaderboard pagination
-                    model.addAttribute("currentPage", page);
-                    model.addAttribute("totalPages", totalPages);
-                    model.addAttribute("totalEntries", lb.totalParticipants());
-                    model.addAttribute("hasPreviousPage", page > 0);
-                    model.addAttribute("hasNextPage", lb.hasNext());
-                    model.addAttribute("showingFrom", showingFrom);
-                    model.addAttribute("showingTo", showingTo);
+                            // Leaderboard pagination
+                            model.addAttribute("currentPage", page);
+                            model.addAttribute("totalPages", totalPages);
+                            model.addAttribute("totalEntries", lb.totalParticipants());
+                            model.addAttribute("hasPreviousPage", page > 0);
+                            model.addAttribute("hasNextPage", lb.hasNext());
+                            model.addAttribute("showingFrom", showingFrom);
+                            model.addAttribute("showingTo", showingTo);
 
-                    // For leaderboard current-user indicator and "from GW" label
-                    model.addAttribute("userPosition", lb.userEntry());
-                    model.addAttribute("userInCurrentPage", lb.userInCurrentPage());
-                    model.addAttribute("currentPhaseFrom", detail.selectedSegment().getFrom());
-                    model.addAttribute("effectiveToRound", lb.effectiveToRound());
-                    if (lb.userEntry() != null) {
-                        model.addAttribute("currentUserName", lb.userEntry().displayName());
-                    }
+                            // For leaderboard current-user indicator and "from GW" label
+                            model.addAttribute("userPosition", lb.userEntry());
+                            model.addAttribute("userInCurrentPage", lb.userInCurrentPage());
+                            model.addAttribute(
+                                    "currentPhaseFrom", detail.selectedSegment().getFrom());
+                            model.addAttribute("effectiveToRound", lb.effectiveToRound());
+                            if (lb.userEntry() != null) {
+                                model.addAttribute(
+                                        "currentUserName", lb.userEntry().displayName());
+                            }
 
-                    try {
-                        model.addAttribute("segmentTreeJson",
-                                objectMapper.writeValueAsString(detail.segmentTree()));
-                    } catch (JsonProcessingException e) {
-                        model.addAttribute("segmentTreeJson", "[]");
-                    }
+                            try {
+                                model.addAttribute(
+                                        "segmentTreeJson", objectMapper.writeValueAsString(detail.segmentTree()));
+                            } catch (JsonProcessingException e) {
+                                model.addAttribute("segmentTreeJson", "[]");
+                            }
 
-                    if (hxRequest != null && !hxRequest.isBlank()) {
-                        return "contest/detail :: leaderboard-content";
-                    }
-                    return "contest/detail";
-                });
+                            if (hxRequest != null && !hxRequest.isBlank()) {
+                                return "contest/detail :: leaderboard-content";
+                            }
+                            return "contest/detail";
+                        });
     }
 
     private List<MemberRow> buildMemberRows(List<Entry> members, UUID ownerId) {

@@ -21,8 +21,11 @@ import com.ligitabl.model.repo.MatchRepo;
 @ExtendWith(MockitoExtension.class)
 class SegmentTreeBuilderTest {
 
-    @Mock MatchRepo matchRepo;
-    @Mock LeaderboardRepo leaderboardRepo;
+    @Mock
+    MatchRepo matchRepo;
+
+    @Mock
+    LeaderboardRepo leaderboardRepo;
 
     private SegmentTreeBuilder builder;
 
@@ -42,16 +45,54 @@ class SegmentTreeBuilderTest {
         userId = UUID.randomUUID();
 
         phases = List.of(
-                RoundSpan.builder().code("S1").name("Sprint 1").type(PhaseType.SPRINT).from(1).to(5).build(),
-                RoundSpan.builder().code("S2").name("Sprint 2").type(PhaseType.SPRINT).from(6).to(10).build(),
-                RoundSpan.builder().code("Q1").name("Quarter 1").type(PhaseType.QUARTER).from(1).to(10).build(),
-                RoundSpan.builder().code("S3").name("Sprint 3").type(PhaseType.SPRINT).from(11).to(15).build(),
-                RoundSpan.builder().code("S4").name("Sprint 4").type(PhaseType.SPRINT).from(16).to(20).build(),
-                RoundSpan.builder().code("Q2").name("Quarter 2").type(PhaseType.QUARTER).from(11).to(20).build());
+                RoundSpan.builder()
+                        .code("S1")
+                        .name("Sprint 1")
+                        .type(PhaseType.SPRINT)
+                        .from(1)
+                        .to(5)
+                        .build(),
+                RoundSpan.builder()
+                        .code("S2")
+                        .name("Sprint 2")
+                        .type(PhaseType.SPRINT)
+                        .from(6)
+                        .to(10)
+                        .build(),
+                RoundSpan.builder()
+                        .code("Q1")
+                        .name("Quarter 1")
+                        .type(PhaseType.QUARTER)
+                        .from(1)
+                        .to(10)
+                        .build(),
+                RoundSpan.builder()
+                        .code("S3")
+                        .name("Sprint 3")
+                        .type(PhaseType.SPRINT)
+                        .from(11)
+                        .to(15)
+                        .build(),
+                RoundSpan.builder()
+                        .code("S4")
+                        .name("Sprint 4")
+                        .type(PhaseType.SPRINT)
+                        .from(16)
+                        .to(20)
+                        .build(),
+                RoundSpan.builder()
+                        .code("Q2")
+                        .name("Quarter 2")
+                        .type(PhaseType.QUARTER)
+                        .from(11)
+                        .to(20)
+                        .build());
 
         competition = Competition.builder()
-                .id(UUID.randomUUID()).name("Premier League")
-                .slug(CompetitionSlug.of("premier-league")).code("PL")
+                .id(UUID.randomUUID())
+                .name("Premier League")
+                .slug(CompetitionSlug.of("premier-league"))
+                .code("PL")
                 .phases(phases)
                 .build();
 
@@ -139,12 +180,12 @@ class SegmentTreeBuilderTest {
         SegmentNodeDto q1 = overall.children().get(0);
         assertThat(q1.status()).isEqualTo("LIVE");
         assertThat(q1.children().get(0).status()).isEqualTo("FINISHED"); // S1: 1-5 < 6
-        assertThat(q1.children().get(1).status()).isEqualTo("LIVE");     // S2: 6-10 contains 6
+        assertThat(q1.children().get(1).status()).isEqualTo("LIVE"); // S2: 6-10 contains 6
 
         SegmentNodeDto q2 = overall.children().get(1);
         assertThat(q2.status()).isEqualTo("FUTURE");
-        assertThat(q2.children().get(0).status()).isEqualTo("NEXT");     // S3: 11-15, 11 == 6+1? no, 6+1=7 ≠ 11, so FUTURE
-        assertThat(q2.children().get(1).status()).isEqualTo("FUTURE");   // S4: 16-20
+        assertThat(q2.children().get(0).status()).isEqualTo("NEXT"); // S3: 11-15, 11 == 6+1? no, 6+1=7 ≠ 11, so FUTURE
+        assertThat(q2.children().get(1).status()).isEqualTo("FUTURE"); // S4: 16-20
     }
 
     @Test
@@ -168,8 +209,9 @@ class SegmentTreeBuilderTest {
 
         builder.build(contest, competition, userId, 18); // current inside S4 → LIVE
 
-        verify(leaderboardRepo, times(1)).computeLeaderboard(
-                eq(contestId), eq(seasonId), anyInt(), anyInt(), eq(userId), anyInt(), anyInt(), anyBoolean());
+        verify(leaderboardRepo, times(1))
+                .computeLeaderboard(
+                        eq(contestId), eq(seasonId), anyInt(), anyInt(), eq(userId), anyInt(), anyInt(), anyBoolean());
     }
 
     @Test
@@ -179,7 +221,8 @@ class SegmentTreeBuilderTest {
 
         builder.build(contest, competition, userId, 6); // S1 is FINISHED
 
-        verify(leaderboardRepo, never()).computeLeaderboard(any(), any(), anyInt(), anyInt(), any(), anyInt(), anyInt(), anyBoolean());
+        verify(leaderboardRepo, never())
+                .computeLeaderboard(any(), any(), anyInt(), anyInt(), any(), anyInt(), anyInt(), anyBoolean());
     }
 
     @Test
@@ -190,7 +233,8 @@ class SegmentTreeBuilderTest {
         builder.build(contest, competition, userId, 3);
 
         // Quarter root (LIVE) + S1 sprint (LIVE) = 2 calls max
-        verify(leaderboardRepo, atMost(2)).computeLeaderboard(any(), any(), anyInt(), anyInt(), any(), anyInt(), anyInt(), anyBoolean());
+        verify(leaderboardRepo, atMost(2))
+                .computeLeaderboard(any(), any(), anyInt(), anyInt(), any(), anyInt(), anyInt(), anyBoolean());
     }
 
     @Test
@@ -201,7 +245,8 @@ class SegmentTreeBuilderTest {
         builder.build(contest, competition, userId, 3);
 
         // Overall root (LIVE) + Q1 quarter (LIVE) + S1 sprint (LIVE) = 3 calls max
-        verify(leaderboardRepo, atMost(3)).computeLeaderboard(any(), any(), anyInt(), anyInt(), any(), anyInt(), anyInt(), anyBoolean());
+        verify(leaderboardRepo, atMost(3))
+                .computeLeaderboard(any(), any(), anyInt(), anyInt(), any(), anyInt(), anyInt(), anyBoolean());
     }
 
     @Test
@@ -229,7 +274,11 @@ class SegmentTreeBuilderTest {
     @Test
     void nullPhases_returnsEmptyTree() {
         Competition noPhases = Competition.builder()
-                .id(UUID.randomUUID()).name("Bare").slug(CompetitionSlug.of("bare")).code("B").build();
+                .id(UUID.randomUUID())
+                .name("Bare")
+                .slug(CompetitionSlug.of("bare"))
+                .code("B")
+                .build();
         Contest contest = contest(1, 20);
 
         List<SegmentNodeDto> tree = builder.build(contest, noPhases, userId, 5);
@@ -250,8 +299,12 @@ class SegmentTreeBuilderTest {
 
     private Contest contest(int from, int to) {
         return Contest.builder()
-                .id(contestId).seasonId(seasonId).name("C")
-                .fromRoundPosition(from).toRoundPosition(to).build();
+                .id(contestId)
+                .seasonId(seasonId)
+                .name("C")
+                .fromRoundPosition(from)
+                .toRoundPosition(to)
+                .build();
     }
 
     private void stubNoRanks() {
@@ -264,7 +317,8 @@ class SegmentTreeBuilderTest {
         when(mockEntry.position()).thenReturn(rank);
         LeaderboardResponse mockResponse = mock(LeaderboardResponse.class);
         when(mockResponse.userEntry()).thenReturn(mockEntry);
-        when(leaderboardRepo.computeLeaderboard(any(), any(), anyInt(), anyInt(), any(), anyInt(), anyInt(), anyBoolean()))
+        when(leaderboardRepo.computeLeaderboard(
+                        any(), any(), anyInt(), anyInt(), any(), anyInt(), anyInt(), anyBoolean()))
                 .thenReturn(mockResponse);
     }
 }

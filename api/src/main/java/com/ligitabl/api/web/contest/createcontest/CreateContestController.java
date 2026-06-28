@@ -54,39 +54,36 @@ public class CreateContestController {
 
         UUID userId = user.getUserId();
         var cmd = new CreatePrivateContestCommand(
-                userId, name, maxEntries, fromSprintCode, toSprintCode,
-                competitionDefaults.defaultCompetitionSlug());
+                userId, name, maxEntries, fromSprintCode, toSprintCode, competitionDefaults.defaultCompetitionSlug());
 
-        return createPrivateContestUseCase.execute(cmd).fold(
-                error -> {
-                    model.addAttribute("error", toErrorMessage(error));
-                    model.addAttribute("name", name);
-                    model.addAttribute("maxEntries", maxEntries);
-                    model.addAttribute("fromSprintCode", fromSprintCode);
-                    model.addAttribute("toSprintCode", toSprintCode);
-                    model.addAttribute("sprints", contestSupport.resolveSprintOptions());
-                    model.addAttribute("quarters", contestSupport.resolveQuarterOptions());
-                    model.addAttribute("pageTitle", "Create a Contest");
-                    return "contest/create";
-                },
-                success -> "redirect:/contests/" + success.contestId());
+        return createPrivateContestUseCase
+                .execute(cmd)
+                .fold(
+                        error -> {
+                            model.addAttribute("error", toErrorMessage(error));
+                            model.addAttribute("name", name);
+                            model.addAttribute("maxEntries", maxEntries);
+                            model.addAttribute("fromSprintCode", fromSprintCode);
+                            model.addAttribute("toSprintCode", toSprintCode);
+                            model.addAttribute("sprints", contestSupport.resolveSprintOptions());
+                            model.addAttribute("quarters", contestSupport.resolveQuarterOptions());
+                            model.addAttribute("pageTitle", "Create a Contest");
+                            return "contest/create";
+                        },
+                        success -> "redirect:/contests/" + success.contestId());
     }
 
     private static String toErrorMessage(CreatePrivateContestError error) {
         return switch (error) {
-            case CreatePrivateContestError.CompetitionNotFound e ->
-                    "Competition not found: " + e.slug();
-            case CreatePrivateContestError.SeasonNotFound ignored ->
-                    "No active season found.";
-            case CreatePrivateContestError.CurrentRoundNotFound ignored ->
-                    "Could not determine current round.";
-            case CreatePrivateContestError.InvalidFromSprint e ->
-                    "The selected start sprint (" + e.sprintCode() + ") has already ended or is locked.";
-            case CreatePrivateContestError.InvalidToCombination e ->
-                    "Invalid contest window: " + e.fromCode() + " → " + e.toCode()
-                            + ". The end sprint must be in the same or a following quarter.";
-            case CreatePrivateContestError.MaxContestsReached e ->
-                    "You've reached the limit of " + e.max() + " private contests.";
+            case CreatePrivateContestError.CompetitionNotFound e -> "Competition not found: " + e.slug();
+            case CreatePrivateContestError.SeasonNotFound ignored -> "No active season found.";
+            case CreatePrivateContestError.CurrentRoundNotFound ignored -> "Could not determine current round.";
+            case CreatePrivateContestError.InvalidFromSprint e -> "The selected start sprint (" + e.sprintCode()
+                    + ") has already ended or is locked.";
+            case CreatePrivateContestError.InvalidToCombination e -> "Invalid contest window: " + e.fromCode() + " → "
+                    + e.toCode() + ". The end sprint must be in the same or a following quarter.";
+            case CreatePrivateContestError.MaxContestsReached e -> "You've reached the limit of " + e.max()
+                    + " private contests.";
         };
     }
 }

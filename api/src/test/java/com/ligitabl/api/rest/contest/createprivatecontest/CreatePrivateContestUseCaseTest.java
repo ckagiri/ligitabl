@@ -16,20 +16,32 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.contest.ContestCodeGenerator;
-import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 
 @ExtendWith(MockitoExtension.class)
 class CreatePrivateContestUseCaseTest {
 
-    @Mock CompetitionRepo competitionRepo;
-    @Mock SeasonRepo seasonRepo;
-    @Mock RoundRepo roundRepo;
-    @Mock MatchRepo matchRepo;
-    @Mock ContestRepo contestRepo;
-    @Mock EntryRepo entryRepo;
-    @Mock ContestCodeGenerator codeGenerator;
+    @Mock
+    CompetitionRepo competitionRepo;
+
+    @Mock
+    SeasonRepo seasonRepo;
+
+    @Mock
+    RoundRepo roundRepo;
+
+    @Mock
+    MatchRepo matchRepo;
+
+    @Mock
+    ContestRepo contestRepo;
+
+    @Mock
+    EntryRepo entryRepo;
+
+    @Mock
+    ContestCodeGenerator codeGenerator;
 
     private CreatePrivateContestUseCase useCase;
 
@@ -59,12 +71,48 @@ class CreatePrivateContestUseCaseTest {
         roundId = UUID.randomUUID();
 
         phases = List.of(
-                RoundSpan.builder().code("S1").name("Sprint 1").type(PhaseType.SPRINT).from(1).to(5).build(),
-                RoundSpan.builder().code("S2").name("Sprint 2").type(PhaseType.SPRINT).from(6).to(10).build(),
-                RoundSpan.builder().code("Q1").name("Quarter 1").type(PhaseType.QUARTER).from(1).to(10).build(),
-                RoundSpan.builder().code("S3").name("Sprint 3").type(PhaseType.SPRINT).from(11).to(15).build(),
-                RoundSpan.builder().code("S4").name("Sprint 4").type(PhaseType.SPRINT).from(16).to(20).build(),
-                RoundSpan.builder().code("Q2").name("Quarter 2").type(PhaseType.QUARTER).from(11).to(20).build());
+                RoundSpan.builder()
+                        .code("S1")
+                        .name("Sprint 1")
+                        .type(PhaseType.SPRINT)
+                        .from(1)
+                        .to(5)
+                        .build(),
+                RoundSpan.builder()
+                        .code("S2")
+                        .name("Sprint 2")
+                        .type(PhaseType.SPRINT)
+                        .from(6)
+                        .to(10)
+                        .build(),
+                RoundSpan.builder()
+                        .code("Q1")
+                        .name("Quarter 1")
+                        .type(PhaseType.QUARTER)
+                        .from(1)
+                        .to(10)
+                        .build(),
+                RoundSpan.builder()
+                        .code("S3")
+                        .name("Sprint 3")
+                        .type(PhaseType.SPRINT)
+                        .from(11)
+                        .to(15)
+                        .build(),
+                RoundSpan.builder()
+                        .code("S4")
+                        .name("Sprint 4")
+                        .type(PhaseType.SPRINT)
+                        .from(16)
+                        .to(20)
+                        .build(),
+                RoundSpan.builder()
+                        .code("Q2")
+                        .name("Quarter 2")
+                        .type(PhaseType.QUARTER)
+                        .from(11)
+                        .to(20)
+                        .build());
 
         competition = Competition.builder()
                 .id(competitionId)
@@ -174,7 +222,12 @@ class CreatePrivateContestUseCaseTest {
     @Test
     void fromSprintFullyPassed_returnsInvalidFromSprintError() {
         Round roundAtPosition6 = Round.builder()
-                .id(roundId).seasonId(seasonId).position(6).name("Round 6").slug("round-6").build();
+                .id(roundId)
+                .seasonId(seasonId)
+                .position(6)
+                .name("Round 6")
+                .slug("round-6")
+                .build();
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(roundAtPosition6));
@@ -191,9 +244,14 @@ class CreatePrivateContestUseCaseTest {
     void fromSprintCurrentRoundLocked_returnsInvalidFromSprintError() {
         // Current round is round 1 (at sprint start) but round is LOCKED
         Match lockedMatch = Match.builder()
-                .id(UUID.randomUUID()).clientId(1).seasonId(seasonId).roundId(roundId)
-                .homeTeamId(UUID.randomUUID()).awayTeamId(UUID.randomUUID())
-                .slug("h-v-a").status(MatchStatus.LIVE)
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .seasonId(seasonId)
+                .roundId(roundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("h-v-a")
+                .status(MatchStatus.LIVE)
                 .kickOff(java.time.OffsetDateTime.now().minusMinutes(30))
                 .build();
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
@@ -212,7 +270,12 @@ class CreatePrivateContestUseCaseTest {
     void fromSprintMidSprint_returnsInvalidFromSprintError() {
         // Current round is 3 (mid-sprint S1 which spans 1-5)
         Round midSprint = Round.builder()
-                .id(roundId).seasonId(seasonId).position(3).name("Round 3").slug("round-3").build();
+                .id(roundId)
+                .seasonId(seasonId)
+                .position(3)
+                .name("Round 3")
+                .slug("round-3")
+                .build();
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(midSprint));
@@ -243,7 +306,12 @@ class CreatePrivateContestUseCaseTest {
     void fromSprintNotQuarterStart_multiSprint_returnsInvalidToCombinationError() {
         // Current round is at the start of S3 (position 11)
         Round roundAtS3 = Round.builder()
-                .id(roundId).seasonId(seasonId).position(11).name("Round 11").slug("round-11").build();
+                .id(roundId)
+                .seasonId(seasonId)
+                .position(11)
+                .name("Round 11")
+                .slug("round-11")
+                .build();
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(roundAtS3));
@@ -264,8 +332,8 @@ class CreatePrivateContestUseCaseTest {
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(scheduledMatch()));
 
-        List<Contest> twentyContests = java.util.Collections.nCopies(20,
-                Contest.builder().seasonId(seasonId).name("x").build());
+        List<Contest> twentyContests = java.util.Collections.nCopies(
+                20, Contest.builder().seasonId(seasonId).name("x").build());
         when(contestRepo.findPrivateByUserId(userId)).thenReturn(twentyContests);
 
         var cmd = new CreatePrivateContestCommand(userId, "Contest", null, "S1", "S1", SLUG);
@@ -283,11 +351,13 @@ class CreatePrivateContestUseCaseTest {
         when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(scheduledMatch()));
         when(contestRepo.findPrivateByUserId(userId)).thenReturn(List.of());
 
-        Contest existing = Contest.builder().id(UUID.randomUUID()).seasonId(seasonId).name("x").build();
-        when(contestRepo.findByJoinCode("FIRST11"))
-                .thenReturn(Optional.of(existing));
-        when(contestRepo.findByJoinCode("SECOND2"))
-                .thenReturn(Optional.empty());
+        Contest existing = Contest.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .name("x")
+                .build();
+        when(contestRepo.findByJoinCode("FIRST11")).thenReturn(Optional.of(existing));
+        when(contestRepo.findByJoinCode("SECOND2")).thenReturn(Optional.empty());
         when(codeGenerator.generate()).thenReturn("FIRST11", "SECOND2");
         when(contestRepo.save(any())).thenAnswer(inv -> {
             Contest c = inv.getArgument(0);
@@ -316,9 +386,14 @@ class CreatePrivateContestUseCaseTest {
 
     private Match scheduledMatch() {
         return Match.builder()
-                .id(UUID.randomUUID()).clientId(1).seasonId(seasonId).roundId(roundId)
-                .homeTeamId(UUID.randomUUID()).awayTeamId(UUID.randomUUID())
-                .slug("h-v-a").status(MatchStatus.SCHEDULED)
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .seasonId(seasonId)
+                .roundId(roundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("h-v-a")
+                .status(MatchStatus.SCHEDULED)
                 .kickOff(java.time.OffsetDateTime.now().plusHours(1))
                 .build();
     }

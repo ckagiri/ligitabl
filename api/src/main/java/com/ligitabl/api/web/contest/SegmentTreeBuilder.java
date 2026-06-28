@@ -27,8 +27,7 @@ public class SegmentTreeBuilder {
     private final MatchRepo matchRepo;
     private final LeaderboardRepo leaderboardRepo;
 
-    private static final DateTimeFormatter DATE_FMT =
-            DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH);
+    private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH);
 
     /**
      * Builds a segment tree for the contest's round window.
@@ -39,8 +38,7 @@ public class SegmentTreeBuilder {
      *
      * Rank is computed for at most 3 nodes: root, current quarter, current sprint.
      */
-    public List<SegmentNodeDto> build(
-            Contest contest, Competition competition, UUID userId, int currentPosition) {
+    public List<SegmentNodeDto> build(Contest contest, Competition competition, UUID userId, int currentPosition) {
 
         if (competition == null || competition.getPhases() == null) return List.of();
 
@@ -64,8 +62,8 @@ public class SegmentTreeBuilder {
             Integer rank = isLive(sprint, currentPosition)
                     ? computeRank(contest, sprint.getFrom(), sprint.getTo(), userId)
                     : null;
-            return List.of(buildNode(sprint.getCode(), sprint.getName(), sprint,
-                    currentPosition, dateRanges, rank, List.of()));
+            return List.of(buildNode(
+                    sprint.getCode(), sprint.getName(), sprint, currentPosition, dateRanges, rank, List.of()));
         }
 
         // QUARTER phases whose full range lies within the contest window
@@ -78,11 +76,8 @@ public class SegmentTreeBuilder {
         // Compute current-sprint rank (used by both single-quarter and multi-quarter paths)
         RoundSpan currentSprintPhase = findContaining(phases, currentPosition, PhaseType.SPRINT);
         Map<String, Integer> sprintRanks = new HashMap<>();
-        if (currentSprintPhase != null
-                && currentSprintPhase.getFrom() >= from
-                && currentSprintPhase.getTo() <= to) {
-            Integer rank = computeRank(contest,
-                    currentSprintPhase.getFrom(), currentSprintPhase.getTo(), userId);
+        if (currentSprintPhase != null && currentSprintPhase.getFrom() >= from && currentSprintPhase.getTo() <= to) {
+            Integer rank = computeRank(contest, currentSprintPhase.getFrom(), currentSprintPhase.getTo(), userId);
             sprintRanks.put(currentSprintPhase.getCode(), rank);
         }
 
@@ -93,42 +88,67 @@ public class SegmentTreeBuilder {
                     ? computeRank(contest, quarter.getFrom(), quarter.getTo(), userId)
                     : null;
             List<SegmentNodeDto> sprintNodes = sprints.stream()
-                    .map(s -> buildNode(s.getCode(), s.getName(), s, currentPosition,
-                            dateRanges, sprintRanks.get(s.getCode()), List.of()))
+                    .map(s -> buildNode(
+                            s.getCode(),
+                            s.getName(),
+                            s,
+                            currentPosition,
+                            dateRanges,
+                            sprintRanks.get(s.getCode()),
+                            List.of()))
                     .toList();
-            return List.of(buildNode(quarter.getCode(), quarter.getName(), quarter,
-                    currentPosition, dateRanges, quarterRank, sprintNodes));
+            return List.of(buildNode(
+                    quarter.getCode(),
+                    quarter.getName(),
+                    quarter,
+                    currentPosition,
+                    dateRanges,
+                    quarterRank,
+                    sprintNodes));
         }
 
         // Multi-quarter: root "Overall" + at most 2 more rank calls
         RoundSpan contestWindow = RoundSpan.builder()
-                .code("overall").name("Overall").from(from).to(to).build();
-        Integer rootRank = isLive(contestWindow, currentPosition)
-                ? computeRank(contest, from, to, userId)
-                : null;
+                .code("overall")
+                .name("Overall")
+                .from(from)
+                .to(to)
+                .build();
+        Integer rootRank = isLive(contestWindow, currentPosition) ? computeRank(contest, from, to, userId) : null;
 
         RoundSpan currentQuarterPhase = findContaining(phases, currentPosition, PhaseType.QUARTER);
         Map<String, Integer> quarterRanks = new HashMap<>();
-        if (currentQuarterPhase != null
-                && currentQuarterPhase.getFrom() >= from
-                && currentQuarterPhase.getTo() <= to) {
-            Integer rank = computeRank(contest,
-                    currentQuarterPhase.getFrom(), currentQuarterPhase.getTo(), userId);
+        if (currentQuarterPhase != null && currentQuarterPhase.getFrom() >= from && currentQuarterPhase.getTo() <= to) {
+            Integer rank = computeRank(contest, currentQuarterPhase.getFrom(), currentQuarterPhase.getTo(), userId);
             quarterRanks.put(currentQuarterPhase.getCode(), rank);
         }
 
-        List<SegmentNodeDto> quarterNodes = quarters.stream().map(q -> {
-            List<SegmentNodeDto> sprintNodes = sprints.stream()
-                    .filter(s -> s.getFrom() >= q.getFrom() && s.getTo() <= q.getTo())
-                    .map(s -> buildNode(s.getCode(), s.getName(), s, currentPosition,
-                            dateRanges, sprintRanks.get(s.getCode()), List.of()))
-                    .toList();
-            return buildNode(q.getCode(), q.getName(), q, currentPosition,
-                    dateRanges, quarterRanks.get(q.getCode()), sprintNodes);
-        }).toList();
+        List<SegmentNodeDto> quarterNodes = quarters.stream()
+                .map(q -> {
+                    List<SegmentNodeDto> sprintNodes = sprints.stream()
+                            .filter(s -> s.getFrom() >= q.getFrom() && s.getTo() <= q.getTo())
+                            .map(s -> buildNode(
+                                    s.getCode(),
+                                    s.getName(),
+                                    s,
+                                    currentPosition,
+                                    dateRanges,
+                                    sprintRanks.get(s.getCode()),
+                                    List.of()))
+                            .toList();
+                    return buildNode(
+                            q.getCode(),
+                            q.getName(),
+                            q,
+                            currentPosition,
+                            dateRanges,
+                            quarterRanks.get(q.getCode()),
+                            sprintNodes);
+                })
+                .toList();
 
-        SegmentNodeDto root = buildNode("overall", "Overall", contestWindow,
-                currentPosition, dateRanges, rootRank, quarterNodes);
+        SegmentNodeDto root =
+                buildNode("overall", "Overall", contestWindow, currentPosition, dateRanges, rootRank, quarterNodes);
         return List.of(root);
     }
 
@@ -140,13 +160,18 @@ public class SegmentTreeBuilder {
         return format(startRange.firstKickoff()) + " – " + format(endRange.lastKickoff());
     }
 
-    private SegmentNodeDto buildNode(String id, String label, RoundSpan span,
-            int currentPosition, Map<Integer, MatchRepo.RoundDateRange> dateRanges,
-            Integer rank, List<SegmentNodeDto> children) {
-        String nodeType = children.isEmpty() ? "SPRINT"
-                : (id.equals("overall") ? "OVERALL" : "QUARTER");
+    private SegmentNodeDto buildNode(
+            String id,
+            String label,
+            RoundSpan span,
+            int currentPosition,
+            Map<Integer, MatchRepo.RoundDateRange> dateRanges,
+            Integer rank,
+            List<SegmentNodeDto> children) {
+        String nodeType = children.isEmpty() ? "SPRINT" : (id.equals("overall") ? "OVERALL" : "QUARTER");
         return new SegmentNodeDto(
-                id, label,
+                id,
+                label,
                 gwLabel(span),
                 dateLabel(span, dateRanges),
                 deriveStatus(span, currentPosition),

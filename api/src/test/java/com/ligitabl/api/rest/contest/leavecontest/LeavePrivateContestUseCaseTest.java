@@ -20,8 +20,11 @@ import com.ligitabl.model.repo.EntryRepo;
 @ExtendWith(MockitoExtension.class)
 class LeavePrivateContestUseCaseTest {
 
-    @Mock ContestRepo contestRepo;
-    @Mock EntryRepo entryRepo;
+    @Mock
+    ContestRepo contestRepo;
+
+    @Mock
+    EntryRepo entryRepo;
 
     private LeavePrivateContestUseCase useCase;
 
@@ -41,11 +44,18 @@ class LeavePrivateContestUseCaseTest {
         seasonId = UUID.randomUUID();
 
         contest = Contest.builder()
-                .id(contestId).seasonId(seasonId).name("Test").isOpen(true)
-                .ownerId(ownerId).build();
+                .id(contestId)
+                .seasonId(seasonId)
+                .name("Test")
+                .isOpen(true)
+                .ownerId(ownerId)
+                .build();
 
         activeEntry = Entry.builder()
-                .userId(memberId).contestId(contestId).joinedAtRound(1).build();
+                .userId(memberId)
+                .contestId(contestId)
+                .joinedAtRound(1)
+                .build();
     }
 
     @Test
@@ -74,7 +84,11 @@ class LeavePrivateContestUseCaseTest {
     @Test
     void softRemovedMemberTriesToLeave_returnsNotAMemberError() {
         Entry removedEntry = Entry.builder()
-                .userId(memberId).contestId(contestId).joinedAtRound(1).removedAtRound(3).build();
+                .userId(memberId)
+                .contestId(contestId)
+                .joinedAtRound(1)
+                .removedAtRound(3)
+                .build();
         when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
         when(entryRepo.findByUserAndContest(memberId, contestId)).thenReturn(Optional.of(removedEntry));
 

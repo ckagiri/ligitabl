@@ -47,10 +47,7 @@ public class JoinContestController {
      *  - code + valid         → preview card + confirm button
      */
     @GetMapping("/join")
-    public String joinForm(
-            @RequestParam(required = false) String code,
-            Model model,
-            Principal principal) {
+    public String joinForm(@RequestParam(required = false) String code, Model model, Principal principal) {
 
         WebUserDetails user = WebSecurity.resolveUser(principal);
         if (user == null) return "redirect:/auth/login";
@@ -83,10 +80,7 @@ public class JoinContestController {
 
     /** GET /contests/join/preview — HTMX fragment; fires after 7-char input on /contests page. */
     @GetMapping("/join/preview")
-    public String joinPreview(
-            @RequestParam String code,
-            Model model,
-            Principal principal) {
+    public String joinPreview(@RequestParam String code, Model model, Principal principal) {
 
         WebUserDetails user = WebSecurity.resolveUser(principal);
         if (user == null) {
@@ -107,10 +101,7 @@ public class JoinContestController {
 
     /** POST /contests/join/confirm — executes the join, redirects to /contests/{id} on success. */
     @PostMapping("/join/confirm")
-    public String joinConfirm(
-            @RequestParam String code,
-            Model model,
-            Principal principal) {
+    public String joinConfirm(@RequestParam String code, Model model, Principal principal) {
 
         WebUserDetails user = WebSecurity.resolveUser(principal);
         if (user == null) return "redirect:/auth/login";

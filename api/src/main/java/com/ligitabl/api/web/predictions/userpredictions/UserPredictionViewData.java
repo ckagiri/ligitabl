@@ -35,9 +35,9 @@ public record UserPredictionViewData(
         String roundState,
         RoundResult roundResult, // Present for historical views with scored results
         List<SwapChange> roundSwapHistory, // Swaps made in the viewed round; null for guests/other users
-        Integer seasonBestScore,  // Best single-GW score in the season up to viewingRound
-        Integer sprintBestScore,  // Best single-GW score in viewingRound's sprint up to viewingRound
-        String sprintLabel        // e.g. "Sprint 5"
+        Integer seasonBestScore, // Best single-GW score in the season up to viewingRound
+        Integer sprintBestScore, // Best single-GW score in viewingRound's sprint up to viewingRound
+        String sprintLabel // e.g. "Sprint 5"
         ) {
     public UserPredictionViewData {
         Objects.requireNonNull(rankings, "rankings are required");

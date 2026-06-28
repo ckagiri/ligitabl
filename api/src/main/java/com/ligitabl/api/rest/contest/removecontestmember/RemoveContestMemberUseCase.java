@@ -22,16 +22,19 @@ public class RemoveContestMemberUseCase {
 
     public sealed interface Error {
         record ContestNotFound(UUID contestId) implements Error {}
+
         record NotOwner(UUID requesterId, UUID contestId) implements Error {}
+
         record CannotRemoveOwner(UUID contestId) implements Error {}
+
         record NotAMember(UUID targetUserId, UUID contestId) implements Error {}
     }
 
     public record Result(boolean shouldSuggestCodeRegen) {}
 
     @Transactional
-    public Either<Error, Result> execute(UUID contestId, UUID requesterId, UUID targetUserId,
-            int currentRoundPosition) {
+    public Either<Error, Result> execute(
+            UUID contestId, UUID requesterId, UUID targetUserId, int currentRoundPosition) {
         var contest = contestRepo.findById(contestId).orElse(null);
         if (contest == null) {
             return Either.left(new Error.ContestNotFound(contestId));

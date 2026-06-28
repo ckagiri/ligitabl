@@ -23,7 +23,9 @@ public class LeavePrivateContestUseCase {
 
     public sealed interface Error {
         record ContestNotFound(UUID contestId) implements Error {}
+
         record OwnerCannotLeave(UUID contestId) implements Error {}
+
         record NotAMember(UUID userId, UUID contestId) implements Error {}
     }
 

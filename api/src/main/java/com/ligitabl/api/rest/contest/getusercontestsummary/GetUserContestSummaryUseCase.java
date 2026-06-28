@@ -57,20 +57,22 @@ public class GetUserContestSummaryUseCase {
                 ? roundRepo.findById(season.getCurrentRoundId()).orElse(null)
                 : null;
 
-        Map<Integer, MatchRepo.RoundDateRange> dateRanges =
-                matchRepo.groupRoundDateRangesBySeason(season.getId());
+        Map<Integer, MatchRepo.RoundDateRange> dateRanges = matchRepo.groupRoundDateRangesBySeason(season.getId());
 
         List<GeneralContestRowDto> generalRows =
                 buildGeneralRows(competition, season, mainContest.getId(), query.userId(), currentRound, dateRanges);
 
-        List<PrivateContestRowDto> privateRows =
-                buildPrivateRows(query.userId());
+        List<PrivateContestRowDto> privateRows = buildPrivateRows(query.userId());
 
         return new GetUserContestSummaryResult(generalRows, privateRows);
     }
 
     private List<GeneralContestRowDto> buildGeneralRows(
-            Competition competition, Season season, UUID mainContestId, UUID userId, Round currentRound,
+            Competition competition,
+            Season season,
+            UUID mainContestId,
+            UUID userId,
+            Round currentRound,
             Map<Integer, MatchRepo.RoundDateRange> dateRanges) {
 
         List<RoundSpan> phases = competition.getPhases();
@@ -84,9 +86,8 @@ public class GetUserContestSummaryUseCase {
                 ? findContainingPhase(phases, currentRound.getPosition(), PhaseType.QUARTER)
                 : null;
 
-        RoundSpan currentSprint = currentRound != null
-                ? findContainingPhase(phases, currentRound.getPosition(), PhaseType.SPRINT)
-                : null;
+        RoundSpan currentSprint =
+                currentRound != null ? findContainingPhase(phases, currentRound.getPosition(), PhaseType.SPRINT) : null;
 
         List<GeneralContestRowDto> rows = new ArrayList<>();
         Stream.of(fullSeason, currentQuarter, currentSprint)
@@ -116,7 +117,8 @@ public class GetUserContestSummaryUseCase {
         MatchRepo.RoundDateRange startRange = dateRanges.get(from);
         MatchRepo.RoundDateRange endRange = dateRanges.get(to);
         if (startRange == null || endRange == null) return null;
-        return startRange.firstKickoff().format(DATE_FMT) + " – " + endRange.lastKickoff().format(DATE_FMT);
+        return startRange.firstKickoff().format(DATE_FMT) + " – "
+                + endRange.lastKickoff().format(DATE_FMT);
     }
 
     private String buildDateFrom(int from, Map<Integer, MatchRepo.RoundDateRange> dateRanges) {

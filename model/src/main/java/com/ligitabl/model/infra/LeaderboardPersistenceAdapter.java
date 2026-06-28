@@ -29,7 +29,13 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
 
     @Override
     public LeaderboardResponse computeLeaderboard(
-            UUID contestId, UUID seasonId, int fromRound, int toRound, UUID userId, int offset, int limit,
+            UUID contestId,
+            UUID seasonId,
+            int fromRound,
+            int toRound,
+            UUID userId,
+            int offset,
+            int limit,
             boolean activeOnly) {
         validateInputs(contestId, seasonId, fromRound, toRound, offset, limit);
 
@@ -41,11 +47,12 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
             return emptyResponse();
         }
 
-        List<RankingWithPosition> pageRankings =
-                fetchPaginatedRankings(contestId, seasonId, fromRound, toRound, effectiveToRound, offset, limit, activeOnly);
+        List<RankingWithPosition> pageRankings = fetchPaginatedRankings(
+                contestId, seasonId, fromRound, toRound, effectiveToRound, offset, limit, activeOnly);
 
         UserRankingInfo userInfo = userId != null
-                ? fetchUserRanking(contestId, seasonId, fromRound, toRound, effectiveToRound, userId, offset, limit, activeOnly)
+                ? fetchUserRanking(
+                        contestId, seasonId, fromRound, toRound, effectiveToRound, userId, offset, limit, activeOnly)
                 : new UserRankingInfo(null, false, 0);
 
         // Movement only computable when at least one round has been scored
@@ -134,8 +141,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         if (activeOnly) {
             query = query.and(T_ENTRY.C_REMOVED_AT_ROUND.isNull());
         } else {
-            query = query.and(T_ENTRY.C_REMOVED_AT_ROUND.isNull()
-                    .or(T_ENTRY.C_REMOVED_AT_ROUND.ge(fromRound)));
+            query = query.and(T_ENTRY.C_REMOVED_AT_ROUND.isNull().or(T_ENTRY.C_REMOVED_AT_ROUND.ge(fromRound)));
         }
 
         Integer count = query.fetchOne(0, Integer.class);
@@ -208,8 +214,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         if (activeOnly) {
             baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT_ROUND.isNull());
         } else {
-            baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT_ROUND.isNull()
-                    .or(T_ENTRY.C_REMOVED_AT_ROUND.ge(fromRound)));
+            baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT_ROUND.isNull().or(T_ENTRY.C_REMOVED_AT_ROUND.ge(fromRound)));
         }
 
         CommonTableExpression<?> userStats = DSL.name("user_stats")
@@ -343,8 +348,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         if (activeOnly) {
             baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT_ROUND.isNull());
         } else {
-            baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT_ROUND.isNull()
-                    .or(T_ENTRY.C_REMOVED_AT_ROUND.ge(fromRound)));
+            baseQuery = baseQuery.and(T_ENTRY.C_REMOVED_AT_ROUND.isNull().or(T_ENTRY.C_REMOVED_AT_ROUND.ge(fromRound)));
         }
 
         CommonTableExpression<?> userStats = DSL.name("user_stats")

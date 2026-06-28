@@ -22,9 +22,7 @@ public class JoinLandingController {
      *   which triggers authentication and then drops the user onto the join-preview page.
      */
     @GetMapping("/join")
-    public String joinLanding(
-            @RequestParam(required = false) String code,
-            Principal principal) {
+    public String joinLanding(@RequestParam(required = false) String code, Principal principal) {
 
         if (WebSecurity.resolveUser(principal) != null) {
             if (code != null && !code.isBlank()) {

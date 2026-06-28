@@ -30,11 +30,20 @@ import com.ligitabl.model.repo.SeasonPredictionRepo;
 @DisplayName("EntryPersistenceAdapter Integration Tests")
 class EntryPersistenceAdapterIT extends AbstractPostgresIT {
 
-    @Autowired JdbcTemplate jdbc;
-    @Autowired EntryRepo entryRepo;
-    @Autowired SeasonPredictionRepo predictionRepo;
-    @Autowired RoundSubmissionRepo roundSubmissionRepo;
-    @Autowired RoundResultRepo roundResultRepo;
+    @Autowired
+    JdbcTemplate jdbc;
+
+    @Autowired
+    EntryRepo entryRepo;
+
+    @Autowired
+    SeasonPredictionRepo predictionRepo;
+
+    @Autowired
+    RoundSubmissionRepo roundSubmissionRepo;
+
+    @Autowired
+    RoundResultRepo roundResultRepo;
 
     private UUID seasonId;
     private UUID contestId;
@@ -114,7 +123,14 @@ class EntryPersistenceAdapterIT extends AbstractPostgresIT {
         UUID contestNarrow = UUID.randomUUID();
         jdbc.update(
                 "INSERT INTO t_contest (pk_id, fk_season_id, c_name, c_is_private, c_join_code, c_from_round_position, c_to_round_position, c_max_entries) VALUES (?,?,?,?,?,?,?,?)",
-                contestNarrow, seasonId, "Narrow", false, null, 1, 10, null);
+                contestNarrow,
+                seasonId,
+                "Narrow",
+                false,
+                null,
+                1,
+                10,
+                null);
 
         entryRepo.save(entry(userId, contestNarrow, 1));
 
@@ -147,17 +163,38 @@ class EntryPersistenceAdapterIT extends AbstractPostgresIT {
         UUID competitionId = UUID.randomUUID();
         jdbc.update(
                 "INSERT INTO t_competition (pk_id, c_name, c_slug, c_code, c_phases, fk_active_season_id) VALUES (?,?,?,?,'[]'::jsonb,?)",
-                competitionId, "PL", "premier-league", "PL", seasonId);
+                competitionId,
+                "PL",
+                "premier-league",
+                "PL",
+                seasonId);
 
         jdbc.update(
                 "INSERT INTO t_season (pk_id, c_client_id, fk_competition_id, c_name, c_slug, c_start_date, c_end_date, c_max_rounds, c_total_teams, c_initial_rankings, c_completed, fk_current_round_id, c_current_match_day) VALUES (?,?,?,?,?,?,?,?,?,?::jsonb,?,?,?)",
-                seasonId, 1, competitionId, "2025/26", "2025-26",
-                LocalDate.of(2025, 8, 1), LocalDate.of(2026, 5, 31),
-                38, 12, "[]", false, null, 1);
+                seasonId,
+                1,
+                competitionId,
+                "2025/26",
+                "2025-26",
+                LocalDate.of(2025, 8, 1),
+                LocalDate.of(2026, 5, 31),
+                38,
+                12,
+                "[]",
+                false,
+                null,
+                1);
 
         jdbc.update(
                 "INSERT INTO t_contest (pk_id, fk_season_id, c_name, c_is_private, c_join_code, c_from_round_position, c_to_round_position, c_max_entries) VALUES (?,?,?,?,?,?,?,?)",
-                contestId, seasonId, "Main League", false, null, 1, 38, null);
+                contestId,
+                seasonId,
+                "Main League",
+                false,
+                null,
+                1,
+                38,
+                null);
 
         jdbc.update("UPDATE t_season SET fk_main_contest_id = ? WHERE pk_id = ?", contestId, seasonId);
     }
@@ -165,7 +202,12 @@ class EntryPersistenceAdapterIT extends AbstractPostgresIT {
     private void insertUser(UUID id, String email, String displayName) {
         jdbc.update(
                 "INSERT INTO t_user (pk_id, c_email, c_password_hash, c_display_name, c_public_id, c_email_verified) VALUES (?,?,?,?,?,?)",
-                id, email, "hash", displayName, randomPublicId(), true);
+                id,
+                email,
+                "hash",
+                displayName,
+                randomPublicId(),
+                true);
         jdbc.update("INSERT INTO t_user_role (fk_user_id, c_role) VALUES (?,?)", id, "PLAYER");
     }
 
@@ -173,15 +215,22 @@ class EntryPersistenceAdapterIT extends AbstractPostgresIT {
         // Return existing prediction id if already present
         Integer count = jdbc.queryForObject(
                 "SELECT COUNT(*) FROM t_season_prediction WHERE fk_user_id = ? AND fk_season_id = ?",
-                Integer.class, userId, seasonId);
+                Integer.class,
+                userId,
+                seasonId);
         if (count != null && count > 0) {
             return getPredictionId(userId);
         }
         UUID id = UUID.randomUUID();
         SeasonPrediction pred = SeasonPrediction.builder()
-                .id(id).userId(userId).seasonId(seasonId)
-                .initialRankings(List.of()).currentRankings(List.of()).swaps(List.of())
-                .atRoundNumber(atRound).build();
+                .id(id)
+                .userId(userId)
+                .seasonId(seasonId)
+                .initialRankings(List.of())
+                .currentRankings(List.of())
+                .swaps(List.of())
+                .atRoundNumber(atRound)
+                .build();
         predictionRepo.save(pred);
         return id;
     }
@@ -189,48 +238,70 @@ class EntryPersistenceAdapterIT extends AbstractPostgresIT {
     private UUID getPredictionId(UUID userId) {
         return jdbc.queryForObject(
                 "SELECT pk_id FROM t_season_prediction WHERE fk_user_id = ? AND fk_season_id = ?",
-                UUID.class, userId, seasonId);
+                UUID.class,
+                userId,
+                seasonId);
     }
 
     private void createRoundSubmissionWithResult(UUID userId, UUID predId, int roundPosition) {
         ensureRound(roundPosition);
 
         RoundSubmission sub = RoundSubmission.builder()
-                .userId(userId).seasonId(seasonId).roundPosition(roundPosition)
-                .rankings(List.<TeamRank>of()).seasonPredictionId(predId).build();
+                .userId(userId)
+                .seasonId(seasonId)
+                .roundPosition(roundPosition)
+                .rankings(List.<TeamRank>of())
+                .seasonPredictionId(predId)
+                .build();
         RoundSubmission saved = roundSubmissionRepo.save(sub);
 
         RoundResult result = RoundResult.builder()
-                .id(UUID.randomUUID()).roundSubmissionId(saved.getId())
+                .id(UUID.randomUUID())
+                .roundSubmissionId(saved.getId())
                 .rankings(List.<ResultTeamRank>of())
-                .totalScore(50).zeroesCount(0).swapCount(0).userViewed(false).build();
+                .totalScore(50)
+                .zeroesCount(0)
+                .swapCount(0)
+                .userViewed(false)
+                .build();
         roundResultRepo.save(result);
     }
 
     private void ensureRound(int pos) {
         Integer count = jdbc.queryForObject(
-                "SELECT COUNT(*) FROM t_round WHERE fk_season_id = ? AND c_position = ?",
-                Integer.class, seasonId, pos);
+                "SELECT COUNT(*) FROM t_round WHERE fk_season_id = ? AND c_position = ?", Integer.class, seasonId, pos);
         if (count == null || count == 0) {
             jdbc.update(
                     "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized, c_advanced) VALUES (?,?,?,?,?,?,?)",
-                    UUID.randomUUID(), seasonId, "Round " + pos, "round-" + pos, pos, true, true);
+                    UUID.randomUUID(),
+                    seasonId,
+                    "Round " + pos,
+                    "round-" + pos,
+                    pos,
+                    true,
+                    true);
         } else {
             jdbc.update(
                     "UPDATE t_round SET c_is_finalized = true, c_advanced = true WHERE fk_season_id = ? AND c_position = ?",
-                    seasonId, pos);
+                    seasonId,
+                    pos);
         }
     }
 
     private static Entry entry(UUID userId, UUID contestId, int joinedAtRound) {
-        return Entry.builder().userId(userId).contestId(contestId).joinedAtRound(joinedAtRound).build();
+        return Entry.builder()
+                .userId(userId)
+                .contestId(contestId)
+                .joinedAtRound(joinedAtRound)
+                .build();
     }
 
     private static String randomPublicId() {
         String alpha = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
         StringBuilder sb = new StringBuilder(10);
         for (int i = 0; i < 10; i++) {
-            sb.append(alpha.charAt(java.util.concurrent.ThreadLocalRandom.current().nextInt(alpha.length())));
+            sb.append(alpha.charAt(
+                    java.util.concurrent.ThreadLocalRandom.current().nextInt(alpha.length())));
         }
         return sb.toString();
     }

@@ -22,6 +22,7 @@ public class RegenerateContestCodeUseCase {
 
     public sealed interface Error {
         record ContestNotFound(UUID contestId) implements Error {}
+
         record NotOwner(UUID userId, UUID contestId) implements Error {}
     }
 

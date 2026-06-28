@@ -20,9 +20,14 @@ import com.ligitabl.model.repo.LeaderboardRepo;
 @ExtendWith(MockitoExtension.class)
 class DeleteContestUseCaseTest {
 
-    @Mock ContestRepo contestRepo;
-    @Mock EntryRepo entryRepo;
-    @Mock LeaderboardRepo leaderboardRepo;
+    @Mock
+    ContestRepo contestRepo;
+
+    @Mock
+    EntryRepo entryRepo;
+
+    @Mock
+    LeaderboardRepo leaderboardRepo;
 
     private DeleteContestUseCase useCase;
 
@@ -39,9 +44,13 @@ class DeleteContestUseCaseTest {
         seasonId = UUID.randomUUID();
 
         contest = Contest.builder()
-                .id(contestId).seasonId(seasonId).name("Test")
-                .isOpen(true).ownerId(ownerId)
-                .fromRoundPosition(1).toRoundPosition(10)
+                .id(contestId)
+                .seasonId(seasonId)
+                .name("Test")
+                .isOpen(true)
+                .ownerId(ownerId)
+                .fromRoundPosition(1)
+                .toRoundPosition(10)
                 .build();
     }
 

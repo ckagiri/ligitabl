@@ -38,8 +38,7 @@ public class Competition extends AbstractModel<UUID> {
             throw new IllegalStateException("Round " + round + " is not assigned to any sprint");
         }
         if (matches.size() > 1) {
-            throw new IllegalStateException(
-                    "Round " + round + " belongs to multiple sprints (configuration error)");
+            throw new IllegalStateException("Round " + round + " belongs to multiple sprints (configuration error)");
         }
         return matches.get(0);
     }

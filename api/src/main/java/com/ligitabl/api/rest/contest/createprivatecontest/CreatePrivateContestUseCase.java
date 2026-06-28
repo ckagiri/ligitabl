@@ -39,8 +39,7 @@ public class CreatePrivateContestUseCase {
     private final ContestCodeGenerator codeGenerator;
 
     @Transactional
-    public Either<CreatePrivateContestError, CreatePrivateContestResult> execute(
-            CreatePrivateContestCommand cmd) {
+    public Either<CreatePrivateContestError, CreatePrivateContestResult> execute(CreatePrivateContestCommand cmd) {
         var competition = competitionRepo.findBySlug(cmd.competitionSlug()).orElse(null);
         if (competition == null)
             return Either.left(new CreatePrivateContestError.CompetitionNotFound(cmd.competitionSlug()));
@@ -106,12 +105,10 @@ public class CreatePrivateContestUseCase {
         // Sprint contains current round — only valid at the sprint's first round and OPEN.
         // Mid-sprint (pos > sprint.from) would immediately close the join window for others.
         if (sprint.getFrom() <= pos && pos <= sprint.getTo()) {
-            if (pos > sprint.getFrom())
-                return Either.left(new CreatePrivateContestError.InvalidFromSprint(fromCode));
+            if (pos > sprint.getFrom()) return Either.left(new CreatePrivateContestError.InvalidFromSprint(fromCode));
             var matches = matchRepo.findByRoundId(currentRound.getId());
-            RoundStatus status = currentRound.isFinalized()
-                    ? RoundStatus.FINALIZED
-                    : currentRound.computeStatus(matches);
+            RoundStatus status =
+                    currentRound.isFinalized() ? RoundStatus.FINALIZED : currentRound.computeStatus(matches);
             if (status != RoundStatus.OPEN)
                 return Either.left(new CreatePrivateContestError.InvalidFromSprint(fromCode));
         }
@@ -129,8 +126,7 @@ public class CreatePrivateContestUseCase {
                 .orElse(null);
 
         if (toSprint == null)
-            return Either.left(
-                    new CreatePrivateContestError.InvalidToCombination(fromSprint.getCode(), toCode));
+            return Either.left(new CreatePrivateContestError.InvalidToCombination(fromSprint.getCode(), toCode));
 
         if (fromSprint.getCode().equalsIgnoreCase(toCode)) return Either.right(toSprint);
 
@@ -138,19 +134,16 @@ public class CreatePrivateContestUseCase {
         List<RoundSpan> quarters =
                 phases.stream().filter(p -> p.getType() == PhaseType.QUARTER).toList();
 
-        boolean fromIsQuarterStart = quarters.stream()
-                .anyMatch(q -> fromSprint.getFrom() == q.getFrom()
-                        && fromSprint.getTo() <= q.getTo());
+        boolean fromIsQuarterStart =
+                quarters.stream().anyMatch(q -> fromSprint.getFrom() == q.getFrom() && fromSprint.getTo() <= q.getTo());
 
-        boolean toIsQuarterEnd = quarters.stream()
-                .anyMatch(q -> toSprint.getTo() == q.getTo()
-                        && toSprint.getFrom() >= q.getFrom());
+        boolean toIsQuarterEnd =
+                quarters.stream().anyMatch(q -> toSprint.getTo() == q.getTo() && toSprint.getFrom() >= q.getFrom());
 
         boolean toIsAfterFrom = toSprint.getFrom() > fromSprint.getTo();
 
         if (!fromIsQuarterStart || !toIsQuarterEnd || !toIsAfterFrom)
-            return Either.left(
-                    new CreatePrivateContestError.InvalidToCombination(fromSprint.getCode(), toCode));
+            return Either.left(new CreatePrivateContestError.InvalidToCombination(fromSprint.getCode(), toCode));
 
         return Either.right(toSprint);
     }

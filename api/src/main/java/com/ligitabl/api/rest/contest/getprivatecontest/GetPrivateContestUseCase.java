@@ -61,9 +61,14 @@ public class GetPrivateContestUseCase {
         int pageSize = 10;
         int offset = query.page() * pageSize;
         var leaderboard = leaderboardRepo.computeLeaderboard(
-                contest.getId(), season.getId(),
-                selectedSegment.getFrom(), selectedSegment.getTo(),
-                query.userId(), offset, pageSize, activeOnly);
+                contest.getId(),
+                season.getId(),
+                selectedSegment.getFrom(),
+                selectedSegment.getTo(),
+                query.userId(),
+                offset,
+                pageSize,
+                activeOnly);
 
         List<Entry> members = entryRepo.findByContestId(contest.getId());
 
@@ -74,13 +79,20 @@ public class GetPrivateContestUseCase {
                 contest.getSeasonId(), contest.getFromRoundPosition(), contest.getToRoundPosition());
 
         return Either.right(new GetPrivateContestResult(
-                contest, selectedSegment, selectedSegment.getCode(), leaderboard,
-                contest.isOwnedBy(query.userId()), members, contest.getJoinCode(),
-                segmentTree, contestDateLabel));
+                contest,
+                selectedSegment,
+                selectedSegment.getCode(),
+                leaderboard,
+                contest.isOwnedBy(query.userId()),
+                members,
+                contest.getJoinCode(),
+                segmentTree,
+                contestDateLabel));
     }
 
     private Either<GetPrivateContestError, Contest> resolveContest(UUID contestId) {
-        return contestRepo.findById(contestId)
+        return contestRepo
+                .findById(contestId)
                 .<Either<GetPrivateContestError, Contest>>map(Either::right)
                 .orElseGet(() -> Either.left(new GetPrivateContestError.ContestNotFound(contestId)));
     }
@@ -93,21 +105,24 @@ public class GetPrivateContestUseCase {
     }
 
     private Either<GetPrivateContestError, Season> resolveSeason(UUID seasonId) {
-        return seasonRepo.findById(seasonId)
+        return seasonRepo
+                .findById(seasonId)
                 .<Either<GetPrivateContestError, Season>>map(Either::right)
                 .orElseGet(() -> Either.left(new GetPrivateContestError.SeasonNotFound()));
     }
 
     private Competition resolveCompetition(UUID seasonId) {
         return competitionRepo.findAll().stream()
-                .filter(c -> c.getActiveSeasonId() != null && c.getActiveSeasonId().equals(seasonId))
+                .filter(c ->
+                        c.getActiveSeasonId() != null && c.getActiveSeasonId().equals(seasonId))
                 .findFirst()
                 .orElse(null);
     }
 
     private int resolveCurrentPosition(Season season) {
         if (season.getCurrentRoundId() == null) return 1;
-        return roundRepo.findById(season.getCurrentRoundId())
+        return roundRepo
+                .findById(season.getCurrentRoundId())
                 .map(r -> r.getPosition())
                 .orElse(1);
     }
@@ -128,32 +143,30 @@ public class GetPrivateContestUseCase {
                     .build());
         }
 
-        List<RoundSpan> phases = competition != null && competition.getPhases() != null
-                ? competition.getPhases()
-                : List.of();
+        List<RoundSpan> phases =
+                competition != null && competition.getPhases() != null ? competition.getPhases() : List.of();
 
         RoundSpan segment = phases.stream()
                 .filter(p -> p.getCode().equalsIgnoreCase(segmentCode))
-                .filter(p -> p.getFrom() >= contest.getFromRoundPosition()
-                        && p.getTo() <= contest.getToRoundPosition())
+                .filter(p -> p.getFrom() >= contest.getFromRoundPosition() && p.getTo() <= contest.getToRoundPosition())
                 .findFirst()
                 .orElse(null);
 
-        if (segment == null)
-            return Either.left(new GetPrivateContestError.SegmentNotFound(segmentCode));
+        if (segment == null) return Either.left(new GetPrivateContestError.SegmentNotFound(segmentCode));
 
         return Either.right(segment);
     }
 
     private RoundSpan findCurrentSprint(Contest contest, Competition competition, int currentPos) {
         List<RoundSpan> contestSprints = (competition != null && competition.getPhases() != null
-                ? competition.getPhases()
-                : List.<RoundSpan>of()).stream()
-                .filter(p -> p.getType() == com.ligitabl.model.domain.PhaseType.SPRINT)
-                .filter(p -> p.getFrom() >= contest.getFromRoundPosition()
-                        && p.getTo() <= contest.getToRoundPosition())
-                .sorted(Comparator.comparingInt(RoundSpan::getFrom))
-                .toList();
+                        ? competition.getPhases()
+                        : List.<RoundSpan>of())
+                .stream()
+                        .filter(p -> p.getType() == com.ligitabl.model.domain.PhaseType.SPRINT)
+                        .filter(p -> p.getFrom() >= contest.getFromRoundPosition()
+                                && p.getTo() <= contest.getToRoundPosition())
+                        .sorted(Comparator.comparingInt(RoundSpan::getFrom))
+                        .toList();
 
         return contestSprints.stream()
                 .filter(s -> currentPos >= s.getFrom() && currentPos <= s.getTo())

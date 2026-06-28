@@ -31,7 +31,13 @@ public interface LeaderboardRepo {
      * @return Paginated leaderboard response
      */
     LeaderboardResponse computeLeaderboard(
-            UUID contestId, UUID seasonId, int fromRound, int toRound, UUID userId, int offset, int limit,
+            UUID contestId,
+            UUID seasonId,
+            int fromRound,
+            int toRound,
+            UUID userId,
+            int offset,
+            int limit,
             boolean activeOnly);
 
     /**

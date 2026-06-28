@@ -135,7 +135,9 @@ public class GetUserPredictionUseCase {
                 roundState,
                 null, // no round result for guest
                 null, // no swap history for guests
-                null, null, null // no best scores for guests
+                null,
+                null,
+                null // no best scores for guests
                 );
     }
 
@@ -178,17 +180,19 @@ public class GetUserPredictionUseCase {
 
                     RoundSpan sprint = competition.sprintForRound(viewingRound);
 
-                    List<RoundResult> sprintResults = roundResultRepo
-                            .findByUserAndSeasonAndRoundPositionRange(
-                                    ctx.userId(), qry.seasonId(), sprint.getFrom(), viewingRound);
+                    List<RoundResult> sprintResults = roundResultRepo.findByUserAndSeasonAndRoundPositionRange(
+                            ctx.userId(), qry.seasonId(), sprint.getFrom(), viewingRound);
                     int sprintBest = sprintResults.stream()
-                            .mapToInt(RoundResult::getTotalScore).max().orElse(0);
+                            .mapToInt(RoundResult::getTotalScore)
+                            .max()
+                            .orElse(0);
 
-                    List<RoundResult> seasonResults = roundResultRepo
-                            .findByUserAndSeasonAndRoundPositionRange(
-                                    ctx.userId(), qry.seasonId(), 1, viewingRound);
+                    List<RoundResult> seasonResults = roundResultRepo.findByUserAndSeasonAndRoundPositionRange(
+                            ctx.userId(), qry.seasonId(), 1, viewingRound);
                     int seasonBest = seasonResults.stream()
-                            .mapToInt(RoundResult::getTotalScore).max().orElse(0);
+                            .mapToInt(RoundResult::getTotalScore)
+                            .max()
+                            .orElse(0);
 
                     return new UserPredictionViewData(
                             rankings,
@@ -238,7 +242,9 @@ public class GetUserPredictionUseCase {
                     roundState,
                     null, // No round result for current round
                     swapsForRound(seasonPrediction, viewingRound),
-                    null, null, null);
+                    null,
+                    null,
+                    null);
         }
 
         // User is authenticated but has no prediction - show fallback with CAN_CREATE_ENTRY
@@ -283,7 +289,9 @@ public class GetUserPredictionUseCase {
                 roundState,
                 null, // No round result
                 null, // No swap history — user has no prediction yet
-                null, null, null);
+                null,
+                null,
+                null);
     }
 
     /**
@@ -327,7 +335,9 @@ public class GetUserPredictionUseCase {
                 roundState,
                 null,
                 null, // swap history not applicable
-                null, null, null);
+                null,
+                null,
+                null);
     }
 
     /**

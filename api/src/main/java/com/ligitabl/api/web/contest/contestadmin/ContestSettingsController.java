@@ -25,10 +25,7 @@ public class ContestSettingsController {
     private final ContestRepo contestRepo;
 
     @GetMapping("/{id}/edit")
-    public String contestSettings(
-            @PathVariable UUID id,
-            Model model,
-            Principal principal) {
+    public String contestSettings(@PathVariable UUID id, Model model, Principal principal) {
 
         WebUserDetails user = WebSecurity.resolveUser(principal);
         if (user == null) return "redirect:/auth/login";
