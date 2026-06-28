@@ -3,6 +3,8 @@ window.contestCreator = function () {
   return {
     fromOpen: false,
     toOpen: false,
+    fromMaxH: '18rem',
+    windowHelpOpen: false,
     selectedFrom: null,
     selectedTo: null,
     sprints: d.sprints || [],
@@ -22,7 +24,7 @@ window.contestCreator = function () {
 
     getPastQuarters() {
       const ids = new Set(this.sprints.filter(s => this.isUnavailable(s)).map(s => s.quarterCode));
-      return this.quarters.filter(q => ids.has(q.code));
+      return this.quarters.filter(q => ids.has(q.code)).slice().reverse();
     },
 
     getAvailableSprintsForQuarter(quarterCode) {
@@ -30,7 +32,7 @@ window.contestCreator = function () {
     },
 
     getPastSprintsForQuarter(quarterCode) {
-      return this.sprints.filter(s => s.quarterCode === quarterCode && this.isUnavailable(s));
+      return this.sprints.filter(s => s.quarterCode === quarterCode && this.isUnavailable(s)).slice().reverse();
     },
 
     getSprintsForQuarter(quarterCode) {

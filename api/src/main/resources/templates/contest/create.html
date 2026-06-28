@@ -69,9 +69,28 @@
 
             <!-- Contest Window -->
             <div class="mb-6">
-              <p class="block text-sm font-medium text-gray-700 mb-3">
-                Contest window <span class="text-red-500">*</span>
-              </p>
+              <div class="flex items-center justify-between mb-3">
+                <p class="block text-sm font-medium text-gray-700">
+                  Contest window <span class="text-red-500">*</span>
+                </p>
+                <button type="button" @click="windowHelpOpen = !windowHelpOpen"
+                        class="text-xs text-indigo-500 hover:text-indigo-700 flex items-center gap-1 transition">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                          d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                  </svg>
+                  How does this work?
+                </button>
+              </div>
+
+              <!-- Window explainer -->
+              <div x-show="windowHelpOpen" x-cloak x-transition
+                   class="bg-indigo-50 border border-indigo-100 rounded-lg p-4 mb-4 text-xs text-gray-700 space-y-2">
+                <p><span class="font-semibold">FROM</span> and <span class="font-semibold">TO</span> set the sprint range your contest covers. A sprint is a block of game weeks (e.g. Sprint 5 = GW20–24).</p>
+                <p>A contest must cover a single sprint, a full quarter, or multiple full quarters — no partial quarters.</p>
+                <p>Anyone with the join code can join before the final sprint's opening match kicks off.</p>
+              </div>
+
               <div class="grid grid-cols-2 gap-4 mb-4">
 
                 <!-- FROM custom dropdown -->
@@ -79,7 +98,7 @@
                   <label class="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">From</label>
                   <div class="relative">
                     <button type="button"
-                            @click="fromOpen = !fromOpen; toOpen = false"
+                            @click="fromOpen = !fromOpen; toOpen = false; if (fromOpen) $nextTick(() => { const r = $el.getBoundingClientRect(); fromMaxH = (window.innerHeight - r.bottom - 16) + 'px'; })"
                             class="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                       <span :class="selectedFrom ? 'text-gray-900' : 'text-gray-400'" class="truncate"
                             x-text="selectedFrom ? selectedFrom.name + ' • ' + selectedFrom.startDate : 'Select sprint…'"></span>
@@ -91,7 +110,7 @@
 
                     <div x-show="fromOpen" @click.away="fromOpen = false" x-cloak x-transition
                          class="absolute z-50 w-64 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
-                      <div class="overflow-y-auto max-h-72">
+                      <div class="overflow-y-auto pb-2" :style="{ maxHeight: fromMaxH }">
 
                         <!-- Available sprints grouped by quarter -->
                         <template x-for="quarter in getAvailableQuarters()" :key="'avail-' + quarter.code">
