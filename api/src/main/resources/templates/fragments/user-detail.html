@@ -1,11 +1,11 @@
 <!-- Minimal User Detail Modal -->
 <div
   th:fragment="user-details"
-  class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+  class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-start justify-center px-3 pt-16 pb-6 overflow-y-auto"
   @click.self="document.getElementById('user-detail-modal').innerHTML = ''"
 >
   <div
-    class="relative top-20 mx-auto p-6 border w-11/12 max-w-2xl shadow-lg rounded-lg bg-white"
+    class="relative w-full max-w-2xl p-6 border shadow-lg rounded-xl bg-white"
   >
     <!-- Header: static across round navigation -->
     <div
