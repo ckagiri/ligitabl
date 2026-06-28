@@ -479,6 +479,126 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         assertThat(results).anyMatch(e -> e.displayName().equals("Dave") && !e.scored());
     }
 
+    // ─── Per-member scoring floor (Phase 2 leaderboard change) ────────────────
+
+    @Test
+    @DisplayName("per-member scoring floor: mid-segment joiner accumulates scores from join round only")
+    void perMemberScoringFloor_lateJoinerScoresFromJoinRoundOnly() {
+        // Alice joined at round 1 (via @BeforeEach). Dave joins at round 4.
+        UUID daveId = insertUser("dave@example.com", "Dave");
+        UUID davePredId = createPredictionAtRound(daveId, 4);
+        entryRepo.save(Entry.builder().userId(daveId).contestId(contestId).joinedAtRound(4).build());
+
+        // Both have scores in rounds 1–8
+        createResult(aliceId, alicePredictionId, 1, 10, 0, 0);
+        createResult(aliceId, alicePredictionId, 4, 20, 0, 0);
+        createResult(aliceId, alicePredictionId, 8, 30, 0, 0);
+
+        createResult(daveId, davePredId, 1, 10, 0, 0); // before join round — must be excluded
+        createResult(daveId, davePredId, 4, 20, 0, 0);
+        createResult(daveId, davePredId, 8, 30, 0, 0);
+
+        var results = computeEntries(1, 8);
+
+        LeaderboardEntry alice = results.stream().filter(e -> e.displayName().equals("Alice")).findFirst().orElseThrow();
+        LeaderboardEntry dave = results.stream().filter(e -> e.displayName().equals("Dave")).findFirst().orElseThrow();
+
+        // Alice: rounds 1 + 4 + 8 = 60
+        assertThat(alice.totalScore()).isEqualTo(60);
+        // Dave: only rounds 4 + 8 = 50 (round 1 excluded by GREATEST(joinedAtRound=4, from=1))
+        assertThat(dave.totalScore()).isEqualTo(50);
+    }
+
+    @Test
+    @DisplayName("per-member scoring floor: member who joined before segment start is unaffected")
+    void perMemberScoringFloor_earlyJoinerUnaffected() {
+        // Alice joined at round 1; segment queried from round 1 — scoring floor = 1 (no change)
+        createResult(aliceId, alicePredictionId, 1, 50, 0, 0);
+        createResult(aliceId, alicePredictionId, 5, 50, 0, 0);
+
+        var results = computeEntries(1, 5);
+
+        LeaderboardEntry alice = results.stream().filter(e -> e.displayName().equals("Alice")).findFirst().orElseThrow();
+        assertThat(alice.totalScore()).isEqualTo(100);
+    }
+
+    // ─── activeOnly filter (Phase 2 leaderboard change) ────────────────────────
+
+    @Test
+    @DisplayName("activeOnly=true excludes soft-removed members from results and participant count")
+    void activeOnly_true_excludesSoftRemovedMembers() {
+        // Charlie is soft-removed at round 5
+        entryRepo.softRemove(charlieId, contestId, 5);
+
+        createResult(aliceId, alicePredictionId, 1, 100, 0, 0);
+        createResult(bobId, bobPredictionId, 1, 90, 0, 0);
+        createResult(charlieId, charliePredictionId, 1, 80, 0, 0);
+
+        var response = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 8, null, 0, 100, true);
+
+        assertThat(response.entries()).noneMatch(e -> e.displayName().equals("Charlie"));
+        assertThat(response.totalParticipants()).isEqualTo(2);
+    }
+
+    @Test
+    @DisplayName("activeOnly=false includes soft-removed members with isFormerMember=true")
+    void activeOnly_false_includesSoftRemovedMembersAsFormer() {
+        // Charlie is soft-removed at round 5; segment queried from round 1 (overlaps removal)
+        entryRepo.softRemove(charlieId, contestId, 5);
+
+        createResult(aliceId, alicePredictionId, 1, 100, 0, 0);
+        createResult(bobId, bobPredictionId, 1, 90, 0, 0);
+        createResult(charlieId, charliePredictionId, 1, 80, 0, 0);
+
+        var response = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 8, null, 0, 100, false);
+
+        assertThat(response.entries()).hasSize(3);
+        assertThat(response.totalParticipants()).isEqualTo(3);
+
+        LeaderboardEntry charlie = response.entries().stream()
+                .filter(e -> e.displayName().equals("Charlie"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(charlie.isFormerMember()).isTrue();
+
+        LeaderboardEntry alice = response.entries().stream()
+                .filter(e -> e.displayName().equals("Alice"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(alice.isFormerMember()).isFalse();
+    }
+
+    @Test
+    @DisplayName("activeOnly=false excludes members removed before segment start (no historical overlap)")
+    void activeOnly_false_excludesMembersRemovedBeforeSegmentStart() {
+        // Charlie removed at round 2; segment starts at round 5 — no overlap
+        entryRepo.softRemove(charlieId, contestId, 2);
+
+        createResult(aliceId, alicePredictionId, 5, 100, 0, 0);
+
+        var response = leaderboardRepo.computeLeaderboard(contestId, seasonId, 5, 8, null, 0, 100, false);
+
+        assertThat(response.entries()).noneMatch(e -> e.displayName().equals("Charlie"));
+    }
+
+    // ─── Regression: main contest unaffected by T_SEASON_PREDICTION join removal ──
+
+    @Test
+    @DisplayName("regression: activeOnly=true matches pre-refactor behaviour for main contest")
+    void regression_mainContestActiveOnlyMatchesPreRefactorBehaviour() {
+        createResult(aliceId, alicePredictionId, 1, 100, 10, 5);
+        createResult(bobId, bobPredictionId, 1, 90, 9, 4);
+        createResult(charlieId, charliePredictionId, 1, 80, 8, 3);
+
+        var response = leaderboardRepo.computeLeaderboard(contestId, seasonId, 1, 38, null, 0, 100, true);
+
+        assertThat(response.entries()).hasSize(3);
+        assertThat(response.entries().get(0).displayName()).isEqualTo("Alice");
+        assertThat(response.entries().get(0).totalScore()).isEqualTo(100);
+        assertThat(response.totalParticipants()).isEqualTo(3);
+        assertThat(response.entries()).noneMatch(LeaderboardEntry::isFormerMember);
+    }
+
     private void insertCompetitionSeasonAndContest() {
         jdbc.update(
                 "INSERT INTO t_competition (pk_id, c_name, c_slug, c_code, c_phases, fk_active_season_id) VALUES (?,?,?,?, '[]'::jsonb, ?)",
