@@ -142,7 +142,6 @@ class JoinPrivateContestUseCaseTest {
         when(predictionRepo.existsByUserAndSeason(userId, seasonId)).thenReturn(true);
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
-        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(scheduledMatch()));
         when(entryRepo.findByUserAndContest(userId, contestId)).thenReturn(Optional.empty());
         when(contestRepo.findPrivateByUserId(userId)).thenReturn(List.of());
         when(entryRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -204,7 +203,6 @@ class JoinPrivateContestUseCaseTest {
         when(predictionRepo.existsByUserAndSeason(userId, seasonId)).thenReturn(true);
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
-        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(scheduledMatch()));
 
         Entry activeEntry = Entry.builder()
                 .userId(userId)
@@ -237,7 +235,6 @@ class JoinPrivateContestUseCaseTest {
         when(predictionRepo.existsByUserAndSeason(userId, seasonId)).thenReturn(true);
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
-        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(scheduledMatch()));
         when(entryRepo.findByUserAndContest(userId, contestId)).thenReturn(Optional.empty());
         when(entryRepo.countActiveByContestId(contestId)).thenReturn(5);
 
@@ -254,7 +251,6 @@ class JoinPrivateContestUseCaseTest {
         when(predictionRepo.existsByUserAndSeason(userId, seasonId)).thenReturn(true);
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
-        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(scheduledMatch()));
 
         Entry removedEntry = Entry.builder()
                 .userId(userId)

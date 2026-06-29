@@ -310,6 +310,39 @@ reset-db: ## ⚠️  Drop and recreate the database (ENV=$(ENV))
 		-c "CREATE DATABASE $(DB_NAME) OWNER $(DB_USER);"
 	@echo "✓ Database $(DB_NAME) created"
 
+# Backup directory (local, gitignored)
+BACKUP_DIR := .db-backups
+BACKUP_FILE ?= $(BACKUP_DIR)/$(DB_NAME)-latest.dump
+
+.PHONY: db-backup
+db-backup: ## Snapshot the current DB to .db-backups/ (ENV=$(ENV))
+	@if ! docker ps --format '{{.Names}}' | grep -q '^ligitabl-db$$'; then \
+		echo "❌ Postgres container 'ligitabl-db' not running."; \
+		exit 1; \
+	fi
+	@mkdir -p $(BACKUP_DIR)
+	docker exec ligitabl-db pg_dump -U $(DB_USER) -Fc $(DB_NAME) > $(BACKUP_FILE)
+	@echo "✓ Snapshot saved to $(BACKUP_FILE)"
+
+.PHONY: db-restore
+db-restore: ## Restore DB from .db-backups/ snapshot (ENV=$(ENV))
+	@if ! docker ps --format '{{.Names}}' | grep -q '^ligitabl-db$$'; then \
+		echo "❌ Postgres container 'ligitabl-db' not running."; \
+		exit 1; \
+	fi
+	@if [ ! -f $(BACKUP_FILE) ]; then \
+		echo "❌ No snapshot found at $(BACKUP_FILE). Run: make db-backup"; \
+		exit 1; \
+	fi
+	docker exec -i ligitabl-db psql -U $(DB_USER) -d postgres -v ON_ERROR_STOP=1 \
+		-c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$(DB_NAME)';" || true
+	docker exec -i ligitabl-db psql -U $(DB_USER) -d postgres -v ON_ERROR_STOP=1 \
+		-c "DROP DATABASE IF EXISTS $(DB_NAME) WITH (FORCE);"
+	docker exec -i ligitabl-db psql -U $(DB_USER) -d postgres -v ON_ERROR_STOP=1 \
+		-c "CREATE DATABASE $(DB_NAME) OWNER $(DB_USER);"
+	docker exec -i ligitabl-db pg_restore -U $(DB_USER) -d $(DB_NAME) < $(BACKUP_FILE)
+	@echo "✓ $(DB_NAME) restored from $(BACKUP_FILE)"
+
 # ==============================================================================
 # SEEDING TARGETS
 # ==============================================================================
@@ -700,6 +733,11 @@ test-model-domain-with-codegen: ## Run model domain-only tests after generating 
 .PHONY: test-all
 test-all: ## Run full test suite
 	mvn test
+
+.PHONY: test-with-restore
+test-with-restore: ## Snapshot DB, run test-api-core-with-codegen, then restore DB (ENV=$(ENV))
+	$(MAKE) db-backup
+	$(MAKE) test-api-core-with-codegen; EXIT=$$?; $(MAKE) db-restore; exit $$EXIT
 
 # ==============================================================================
 # DEVELOPMENT WORKFLOW TARGETS

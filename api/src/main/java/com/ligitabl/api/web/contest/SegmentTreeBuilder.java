@@ -184,6 +184,7 @@ public class SegmentTreeBuilder {
     private Integer computeRank(Contest contest, int from, int to, UUID userId) {
         var response = leaderboardRepo.computeLeaderboard(
                 contest.getId(), contest.getSeasonId(), from, to, userId, 0, 1, true);
+        if (response == null) return null;
         var entry = response.userEntry();
         return entry != null ? entry.position() : null;
     }

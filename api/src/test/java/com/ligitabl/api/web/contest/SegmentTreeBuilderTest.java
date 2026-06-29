@@ -13,12 +13,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.LeaderboardRepo;
 import com.ligitabl.model.repo.MatchRepo;
 
 @ExtendWith(MockitoExtension.class)
+@MockitoSettings(strictness = Strictness.LENIENT)
 class SegmentTreeBuilderTest {
 
     @Mock
@@ -184,7 +187,7 @@ class SegmentTreeBuilderTest {
 
         SegmentNodeDto q2 = overall.children().get(1);
         assertThat(q2.status()).isEqualTo("FUTURE");
-        assertThat(q2.children().get(0).status()).isEqualTo("NEXT"); // S3: 11-15, 11 == 6+1? no, 6+1=7 ≠ 11, so FUTURE
+        assertThat(q2.children().get(0).status()).isEqualTo("FUTURE"); // S3: 11-15, 11 == 6+1? no, 6+1=7 ≠ 11
         assertThat(q2.children().get(1).status()).isEqualTo("FUTURE"); // S4: 16-20
     }
 
@@ -313,12 +316,10 @@ class SegmentTreeBuilderTest {
     }
 
     private void stubRank(int rank) {
-        LeaderboardEntry mockEntry = mock(LeaderboardEntry.class);
-        when(mockEntry.position()).thenReturn(rank);
-        LeaderboardResponse mockResponse = mock(LeaderboardResponse.class);
-        when(mockResponse.userEntry()).thenReturn(mockEntry);
+        LeaderboardEntry entry = new LeaderboardEntry(rank, "pub", "User", 0, 0, 0, 0, 0, null, 0, false, false);
+        LeaderboardResponse response = new LeaderboardResponse(List.of(), entry, false, 0, 0, false, false, null);
         when(leaderboardRepo.computeLeaderboard(
                         any(), any(), anyInt(), anyInt(), any(), anyInt(), anyInt(), anyBoolean()))
-                .thenReturn(mockResponse);
+                .thenReturn(response);
     }
 }

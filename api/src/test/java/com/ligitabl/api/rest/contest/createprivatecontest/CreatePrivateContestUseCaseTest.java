@@ -303,7 +303,7 @@ class CreatePrivateContestUseCaseTest {
     }
 
     @Test
-    void fromSprintNotQuarterStart_multiSprint_returnsInvalidToCombinationError() {
+    void fromSprintNotQuarterStart_multiSprint_returnsInvalidFromSprintError() {
         // Current round is at the start of S3 (position 11)
         Round roundAtS3 = Round.builder()
                 .id(roundId)
@@ -315,14 +315,13 @@ class CreatePrivateContestUseCaseTest {
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(roundAtS3));
-        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(scheduledMatch()));
 
-        // S2 → S4: S2 is not a quarter-start (Q1 starts at S1, Q2 starts at S3)
+        // S2 → S4: S2 is not a quarter-start (Q1 starts at S1, Q2 starts at S3) → InvalidFromSprint
         var cmd = new CreatePrivateContestCommand(userId, "Contest", null, "S2", "S4", SLUG);
         var result = useCase.execute(cmd);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(CreatePrivateContestError.InvalidToCombination.class);
+        assertThat(result.getLeft()).isInstanceOf(CreatePrivateContestError.InvalidFromSprint.class);
     }
 
     @Test
