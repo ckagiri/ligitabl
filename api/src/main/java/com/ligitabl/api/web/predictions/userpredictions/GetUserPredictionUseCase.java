@@ -33,6 +33,7 @@ import lombok.AllArgsConstructor;
 @AllArgsConstructor
 public class GetUserPredictionUseCase {
     private final CompetitionDefaults competitionDefaults;
+    private final CompetitionRepo competitionRepo;
     private final SeasonPredictionRepo seasonPredictionRepo;
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
@@ -133,7 +134,10 @@ public class GetUserPredictionUseCase {
                 seasonCompleted,
                 roundState,
                 null, // no round result for guest
-                null // no swap history for guests
+                null, // no swap history for guests
+                null,
+                null,
+                null // no best scores for guests
                 );
     }
 
@@ -170,6 +174,26 @@ public class GetUserPredictionUseCase {
                     // Convert RoundResult rankings to TeamRanking for display
                     List<TeamRank> rankings = convertResultRankingsToTeamRankings(roundResult.get());
 
+                    Competition competition = competitionRepo
+                            .findBySlug(competitionDefaults.defaultCompetitionSlug())
+                            .orElseThrow(() -> new IllegalStateException("Competition not found"));
+
+                    RoundSpan sprint = competition.sprintForRound(viewingRound);
+
+                    List<RoundResult> sprintResults = roundResultRepo.findByUserAndSeasonAndRoundPositionRange(
+                            ctx.userId(), qry.seasonId(), sprint.getFrom(), viewingRound);
+                    int sprintBest = sprintResults.stream()
+                            .mapToInt(RoundResult::getTotalScore)
+                            .max()
+                            .orElse(0);
+
+                    List<RoundResult> seasonResults = roundResultRepo.findByUserAndSeasonAndRoundPositionRange(
+                            ctx.userId(), qry.seasonId(), 1, viewingRound);
+                    int seasonBest = seasonResults.stream()
+                            .mapToInt(RoundResult::getTotalScore)
+                            .max()
+                            .orElse(0);
+
                     return new UserPredictionViewData(
                             rankings,
                             RankingSource.USER_PREDICTION,
@@ -186,7 +210,10 @@ public class GetUserPredictionUseCase {
                             seasonCompleted,
                             roundState,
                             roundResult.get(),
-                            swapsForRound(seasonPrediction, viewingRound));
+                            swapsForRound(seasonPrediction, viewingRound),
+                            seasonBest,
+                            sprintBest,
+                            sprint.getName());
                 }
             }
 
@@ -214,7 +241,10 @@ public class GetUserPredictionUseCase {
                     seasonCompleted,
                     roundState,
                     null, // No round result for current round
-                    swapsForRound(seasonPrediction, viewingRound));
+                    swapsForRound(seasonPrediction, viewingRound),
+                    null,
+                    null,
+                    null);
         }
 
         // User is authenticated but has no prediction - show fallback with CAN_CREATE_ENTRY
@@ -258,8 +288,10 @@ public class GetUserPredictionUseCase {
                 seasonCompleted,
                 roundState,
                 null, // No round result
-                null // No swap history — user has no prediction yet
-                );
+                null, // No swap history — user has no prediction yet
+                null,
+                null,
+                null);
     }
 
     /**
@@ -302,8 +334,10 @@ public class GetUserPredictionUseCase {
                 seasonCompleted,
                 roundState,
                 null,
-                null // swap history not applicable
-                );
+                null, // swap history not applicable
+                null,
+                null,
+                null);
     }
 
     /**

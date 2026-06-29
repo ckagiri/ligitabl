@@ -70,3 +70,6 @@ venv.bak/
 .copilot
 .github/copilot-instructions.md
 .claude
+
+# Local DB snapshots
+.db-backups/

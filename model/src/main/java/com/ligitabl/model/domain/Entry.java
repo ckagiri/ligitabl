@@ -1,6 +1,5 @@
 package com.ligitabl.model.domain;
 
-import java.time.Instant;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
@@ -18,5 +17,8 @@ public class Entry extends AbstractModel<UUID> {
     @NotNull
     UUID contestId;
 
-    Instant joinedAt;
+    @NotNull
+    Integer joinedAtRound;
+
+    Integer removedAtRound;
 }

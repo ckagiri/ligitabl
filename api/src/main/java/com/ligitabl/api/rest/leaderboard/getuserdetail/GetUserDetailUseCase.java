@@ -104,7 +104,7 @@ public class GetUserDetailUseCase {
 
         // Compute leaderboard and find user's entry
         var leaderboardResponse = leaderboardRepo.computeLeaderboard(
-                contest.getId(), season.getId(), phase.getFrom(), phase.getTo(), user.getId(), 0, 1);
+                contest.getId(), season.getId(), phase.getFrom(), phase.getTo(), user.getId(), 0, 1, true);
 
         LeaderboardEntry userEntry = leaderboardResponse.userEntry();
         if (userEntry == null) {

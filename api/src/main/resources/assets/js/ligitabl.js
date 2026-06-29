@@ -1,3 +1,5 @@
+import './contests.js';
+
 // HTMX Configuration
 document.body.addEventListener("htmx:configRequest", (event) => {
     event.detail.headers["X-CSRF-TOKEN"] =
@@ -643,6 +645,8 @@ window.Ligitabl.predictionPage = function (el) {
 
             if (this.isInitialPrediction) {
                 url = "/seasonprediction";
+                const _next = new URLSearchParams(window.location.search).get('next');
+                if (_next) url += '?next=' + encodeURIComponent(_next);
                 body = {swaps: _derivedSwaps};
             } else if (this.isOpeningRound) {
                 url = "/seasonprediction/opening-swaps";
@@ -665,6 +669,10 @@ window.Ligitabl.predictionPage = function (el) {
                         this._clearStorage(AUTH_STORAGE_KEY);
                         if (this.importedFromGuest || (this.isInitialPrediction && !this.isOpeningRound)) {
                             this._clearStorage(GUEST_STORAGE_KEY);
+                        }
+                        if (data.nextUrl) {
+                            window.location.href = data.nextUrl;
+                            return;
                         }
                         setTimeout(() => {
                             window.scrollTo({top: 0, behavior: "smooth"});

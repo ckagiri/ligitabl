@@ -1,5 +1,7 @@
 package com.ligitabl.model.repo;
 
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -10,6 +12,10 @@ import com.ligitabl.model.domain.User;
 
 public interface UserRepo {
     Optional<User> findById(UUID id);
+
+    Map<UUID, User> findByIds(Collection<UUID> ids);
+
+    Map<UUID, String> findDisplayNamesByIds(Collection<UUID> ids);
 
     Optional<User> findByEmail(Email email);
 

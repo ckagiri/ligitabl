@@ -307,6 +307,9 @@ public class UserPredictionsController {
             model.addAttribute("totalScore", result.getTotalScore());
             model.addAttribute("totalHits", result.getTotalHits());
             model.addAttribute("zeroesCount", result.getZeroesCount());
+            model.addAttribute("seasonBestScore", data.seasonBestScore());
+            model.addAttribute("sprintBestScore", data.sprintBestScore());
+            model.addAttribute("sprintLabel", data.sprintLabel());
         }
         model.addAttribute("hasRoundResult", data.hasRoundResult());
 

@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 import org.jooq.DSLContext;
 import org.jooq.JSONB;
 import org.jooq.RecordMapper;
+import org.jooq.impl.DSL;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -201,6 +202,25 @@ public class MatchPersistenceAdapter implements MatchRepo {
         }
 
         return byTeam;
+    }
+
+    @Override
+    public Map<Integer, RoundDateRange> groupRoundDateRangesBySeason(UUID seasonId) {
+        return dsl
+                .select(
+                        T_ROUND.C_POSITION,
+                        DSL.min(T_MATCH.C_KICK_OFF).as("first_kickoff"),
+                        DSL.max(T_MATCH.C_KICK_OFF).as("last_kickoff"))
+                .from(T_MATCH)
+                .join(T_ROUND)
+                .on(T_ROUND.PK_ID.eq(T_MATCH.FK_ROUND_ID))
+                .where(T_ROUND.FK_SEASON_ID.eq(seasonId))
+                .groupBy(T_ROUND.C_POSITION)
+                .orderBy(T_ROUND.C_POSITION.asc())
+                .fetch()
+                .stream()
+                .collect(
+                        Collectors.toMap(r -> r.value1(), r -> new RoundDateRange(r.value1(), r.value2(), r.value3())));
     }
 
     @Override

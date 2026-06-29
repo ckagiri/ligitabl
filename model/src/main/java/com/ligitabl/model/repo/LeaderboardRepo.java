@@ -27,10 +27,18 @@ public interface LeaderboardRepo {
      * @param userId Optional user to resolve ranking details for
      * @param offset Pagination offset (0-based)
      * @param limit Pagination size
+     * @param activeOnly When true, exclude soft-removed members; when false, include them as former members
      * @return Paginated leaderboard response
      */
     LeaderboardResponse computeLeaderboard(
-            UUID contestId, UUID seasonId, int fromRound, int toRound, UUID userId, int offset, int limit);
+            UUID contestId,
+            UUID seasonId,
+            int fromRound,
+            int toRound,
+            UUID userId,
+            int offset,
+            int limit,
+            boolean activeOnly);
 
     /**
      * Resolves the highest round position with finalized standings within a range.

@@ -9,6 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
+import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
@@ -117,7 +118,11 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 user.getId(),
                 user.getEmail().value());
 
-        getRedirectStrategy().sendRedirect(request, response, "/my-table");
+        var requestCache = new HttpSessionRequestCache();
+        var saved = requestCache.getRequest(request, response);
+        String target = saved != null ? saved.getRedirectUrl() : "/my-table";
+        if (saved != null) requestCache.removeRequest(request, response);
+        getRedirectStrategy().sendRedirect(request, response, target);
     }
 
     private void establishSessionAuthentication(User user, HttpSession session) {

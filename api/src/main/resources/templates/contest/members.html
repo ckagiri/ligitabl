@@ -1,0 +1,125 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <div layout:fragment="content">
+      <div class="max-w-3xl mx-auto px-4 py-6">
+
+        <!-- ── Back link ── -->
+        <a th:href="@{/contests/{id}(id=${contest.id})}"
+           class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 mb-6 transition">
+          <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+          </svg>
+          Back
+        </a>
+
+        <h1 class="text-xl font-bold text-gray-900 mb-6">
+          <span th:text="${contest.name}">Contest</span> — Members
+        </h1>
+
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+          <th:block th:if="${members != null and not #lists.isEmpty(members)}">
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-gray-100">
+                <thead>
+                  <tr class="bg-gray-50">
+                    <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Player</th>
+                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Admin</th>
+                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-24">Remove</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  <tr
+                    th:each="member : ${members}"
+                    th:class="${member.isActive == false} ? 'opacity-50 bg-gray-50' : 'hover:bg-gray-50'"
+                    class="transition"
+                  >
+                    <!-- Player name -->
+                    <td class="px-4 py-3">
+                      <div class="flex items-center gap-2">
+                        <span class="text-sm font-medium text-gray-900" th:text="${member.displayName}">Alice</span>
+                        <span
+                          th:if="${member.isActive == false}"
+                          class="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500"
+                        >Removed</span>
+                      </div>
+                    </td>
+
+                    <!-- Admin checkbox (shows owner status; read-only) -->
+                    <td class="px-4 py-3 text-center">
+                      <input
+                        type="checkbox"
+                        th:checked="${member.isOwner}"
+                        disabled
+                        class="h-4 w-4 text-indigo-600 border-gray-300 rounded cursor-not-allowed opacity-70"
+                      />
+                    </td>
+
+                    <!-- Remove button -->
+                    <td class="px-4 py-3 text-center">
+                      <th:block th:if="${member.isActive == true and member.isOwner == false}">
+                        <form method="post"
+                              th:action="@{/contests/{id}/members/{memberId}/remove(id=${contest.id},memberId=${member.userId})}"
+                              th:attr="data-name=${member.displayName}"
+                              onsubmit="return confirm('Remove ' + this.dataset.name + ' from this contest?')"
+                        >
+                          <button type="submit"
+                                  class="inline-flex items-center justify-center h-8 w-8 rounded-md bg-red-50 hover:bg-red-100 text-red-600 transition"
+                                  title="Remove member">
+                            <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                          </button>
+                        </form>
+                      </th:block>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </th:block>
+
+          <th:block th:if="${members == null or #lists.isEmpty(members)}">
+            <div class="px-4 py-10 text-center text-sm text-gray-500">No members found.</div>
+          </th:block>
+        </div>
+
+        <!-- ── Pagination ── -->
+        <th:block th:if="${totalEntries > 0}">
+          <div class="mt-4 flex items-center justify-between text-sm">
+            <span class="text-gray-500">
+              Showing <span th:text="${showingFrom}">1</span>–<span th:text="${showingTo}">20</span>
+              of <span th:text="${totalEntries}">100</span>
+            </span>
+            <div class="flex gap-2">
+              <a
+                th:if="${hasPreviousPage == true}"
+                th:href="@{/contests/{id}/members(id=${contest.id}, page=${currentPage - 1})}"
+                class="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+              >Previous</a>
+              <span
+                th:if="${hasPreviousPage == false}"
+                class="px-3 py-1.5 text-sm border border-gray-200 rounded-md text-gray-300 cursor-not-allowed"
+              >Previous</span>
+              <a
+                th:if="${hasNextPage == true}"
+                th:href="@{/contests/{id}/members(id=${contest.id}, page=${currentPage + 1})}"
+                class="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+              >Next</a>
+              <span
+                th:if="${hasNextPage == false}"
+                class="px-3 py-1.5 text-sm border border-gray-200 rounded-md text-gray-300 cursor-not-allowed"
+              >Next</span>
+            </div>
+          </div>
+        </th:block>
+
+      </div>
+    </div>
+  </body>
+</html>

@@ -7,7 +7,7 @@
      totalScore: Integer - final score
      zeroesCount: Integer - number of perfect predictions
 -->
-<div th:fragment="historical-view(hasRoundResult, roundResultRankings, predictions, totalHits, totalScore, zeroesCount)">
+<div th:fragment="historical-view(hasRoundResult, roundResultRankings, predictions, totalHits, totalScore, zeroesCount, seasonBestScore, sprintBestScore, sprintLabel)">
   <!-- Historical Rounds: Static Table -->
   <div class="px-6 py-4">
     <div class="overflow-x-auto sm:overflow-hidden">
@@ -172,6 +172,15 @@
 
       <div class="text-xs text-gray-500">
         (Max: 200, Lost: <span th:text="${totalHits}">156</span>)
+      </div>
+
+      <div th:if="${seasonBestScore != null}" class="mt-2 flex gap-2 flex-wrap justify-center">
+        <span class="inline-flex items-center gap-1 px-2 py-1 bg-indigo-50 text-indigo-700 rounded text-xs font-medium">
+          🏆 Season best: <span th:text="${seasonBestScore}">195</span>
+        </span>
+        <span th:if="${sprintBestScore != null}" class="inline-flex items-center gap-1 px-2 py-1 bg-purple-50 text-purple-700 rounded text-xs font-medium">
+          ⚡ <span th:text="${sprintLabel}">Sprint 5</span> best: <span th:text="${sprintBestScore}">178</span>
+        </span>
       </div>
     </div>
   </div>

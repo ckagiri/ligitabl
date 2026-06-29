@@ -1,11 +1,11 @@
 <!-- Minimal User Detail Modal -->
 <div
   th:fragment="user-details"
-  class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50"
+  class="fixed inset-0 bg-gray-600 bg-opacity-50 z-50 flex items-start justify-center px-3 pt-16 pb-6 overflow-y-auto"
   @click.self="document.getElementById('user-detail-modal').innerHTML = ''"
 >
   <div
-    class="relative top-20 mx-auto p-6 border w-11/12 max-w-2xl shadow-lg rounded-lg bg-white"
+    class="relative w-full max-w-2xl p-6 border shadow-lg rounded-xl bg-white"
   >
     <!-- Header: static across round navigation -->
     <div
@@ -52,19 +52,20 @@
       <input type="hidden" class="modal-param" name="roundScore" th:value="${user.roundScore}">
       <input type="hidden" class="modal-param" name="phaseFrom" th:value="${minRound}">
       <input type="hidden" class="modal-param" name="maxRound" th:value="${maxRound}">
+      <input type="hidden" class="modal-param" name="scored" th:value="${scored != null ? scored : true}">
 
       <!-- Round nav bar -->
       <div class="flex items-center justify-between mb-3">
         <div>
           <span class="text-base font-semibold text-gray-700">GW <span th:text="${round}">18</span></span>
           <!-- Mobile: compact -->
-          <span class="sm:hidden text-sm text-gray-500 ml-2">
+          <span th:if="${scored != false}" class="sm:hidden text-sm text-gray-500 ml-2">
             <span th:text="${user.roundScore}">42</span> pts
             <span th:replace="~{fragments/score-emoji :: emoji(${user.roundScore})}"></span>
             · <span th:text="${user.roundZeroes}">2</span> <span th:text="${user.roundZeroes == 1 ? 'Ø' : 'Øs'}">Øs</span>
           </span>
           <!-- Desktop: full -->
-          <span class="hidden sm:inline text-sm text-gray-500 ml-2">
+          <span th:if="${scored != false}" class="hidden sm:inline text-sm text-gray-500 ml-2">
             <span th:text="${user.roundScore}">42</span> pts
             <span th:replace="~{fragments/score-emoji :: emoji(${user.roundScore})}"></span>
             · <span th:text="${user.roundZeroes}">2</span>
@@ -107,8 +108,8 @@
         </div>
       </div>
 
-      <p th:if="${!hasData}" class="text-sm text-gray-400 text-center py-4">No predictions for this round</p>
-      <div th:if="${hasData}" class="grid grid-cols-2 gap-x-4">
+      <p th:if="${scored == false or !hasData}" class="text-sm text-gray-400 text-center py-4">No predictions for this round</p>
+      <div th:if="${scored != false and hasData}" class="grid grid-cols-2 gap-x-4">
         <!-- First column: first half -->
         <div class="space-y-2">
           <div class="flex items-center" th:each="pred, iter : ${user.currentPrediction}" th:if="${iter.index < midpoint}">

@@ -30,7 +30,15 @@ public class Contest extends AbstractModel<UUID> {
 
     private Instant createdAt;
 
+    private UUID ownerId;
+
+    private boolean isOpen;
+
     public boolean isMain() {
         return !isPrivate && fromRoundPosition == 1;
+    }
+
+    public boolean isOwnedBy(UUID userId) {
+        return ownerId != null && ownerId.equals(userId);
     }
 }
