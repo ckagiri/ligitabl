@@ -23,4 +23,6 @@ public interface CompetitionRepo {
     }
 
     boolean existsById(UUID id);
+
+    void updateActiveSeasonId(UUID competitionId, UUID seasonId);
 }

@@ -232,6 +232,107 @@
           </form>
         </div>
       </section>
+
+      <!-- My Contests Section -->
+      <section class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 pt-0">
+        <div class="mb-6">
+          <h2 class="text-xl sm:text-2xl font-bold text-gray-900">My Contests</h2>
+        </div>
+
+        <div
+          x-data="{ tab: 'active' }"
+          class="bg-white shadow rounded-lg"
+        >
+          <!-- Tabs -->
+          <div class="border-b border-gray-200 px-4 sm:px-6">
+            <nav class="-mb-px flex space-x-6" aria-label="Contest tabs">
+              <button
+                @click="tab = 'active'"
+                :class="tab === 'active'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm"
+              >
+                Active
+              </button>
+              <button
+                @click="tab = 'past'"
+                :class="tab === 'past'
+                  ? 'border-indigo-500 text-indigo-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
+                class="whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm"
+              >
+                Past
+              </button>
+            </nav>
+          </div>
+
+          <!-- Active tab -->
+          <div x-show="tab === 'active'" class="p-4 sm:p-6">
+            <th:block th:if="${activeContests != null and !activeContests.isEmpty()}">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                  <tr>
+                    <th class="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contest</th>
+                    <th class="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                    <th class="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  <tr th:each="c : ${activeContests}">
+                    <td class="py-3 pr-4">
+                      <div class="text-sm font-medium text-gray-900" th:text="${c.contestName()}"></div>
+                      <div class="text-xs text-gray-500" th:text="${c.seasonName()}"></div>
+                    </td>
+                    <td class="py-3 pr-4 text-sm text-gray-700">
+                      <span th:if="${c.rank() != null}" th:text="${'#' + c.rank()}"></span>
+                      <span th:if="${c.rank() == null}" class="text-gray-400">—</span>
+                    </td>
+                    <td class="py-3 text-sm text-gray-700" th:text="${c.memberCount()}"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </th:block>
+            <th:block th:if="${activeContests == null or activeContests.isEmpty()}">
+              <p class="text-sm text-gray-500">No active contests.</p>
+            </th:block>
+          </div>
+
+          <!-- Past tab -->
+          <div x-show="tab === 'past'" style="display:none" class="p-4 sm:p-6">
+            <th:block th:if="${pastContests != null and !pastContests.isEmpty()}">
+              <table class="min-w-full divide-y divide-gray-200">
+                <thead>
+                  <tr>
+                    <th class="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Contest</th>
+                    <th class="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                    <th class="py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100">
+                  <tr th:each="c : ${pastContests}">
+                    <td class="py-3 pr-4">
+                      <div class="text-sm font-medium text-gray-900">
+                        <span th:text="${c.contestName()}"></span>
+                        <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">Over</span>
+                      </div>
+                      <div class="text-xs text-gray-500" th:text="${c.seasonName()}"></div>
+                    </td>
+                    <td class="py-3 pr-4 text-sm text-gray-700">
+                      <span th:if="${c.rank() != null}" th:text="${'#' + c.rank()}"></span>
+                      <span th:if="${c.rank() == null}" class="text-gray-400">—</span>
+                    </td>
+                    <td class="py-3 text-sm text-gray-700" th:text="${c.memberCount()}"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </th:block>
+            <th:block th:if="${pastContests == null or pastContests.isEmpty()}">
+              <p class="text-sm text-gray-500">No past contests.</p>
+            </th:block>
+          </div>
+        </div>
+      </section>
     </div>
   </body>
 </html>

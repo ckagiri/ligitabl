@@ -65,6 +65,8 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
                 .set(T_SEASON.FK_CURRENT_ROUND_ID, season.getCurrentRoundId())
                 .set(T_SEASON.C_CURRENT_MATCH_DAY, season.getCurrentMatchDay())
                 .set(T_SEASON.FK_DETACHED_CONTEST_ID, season.getDetachedContestId())
+                .set(T_SEASON.C_PRE_SEASON_OPENS_AT, season.getPreSeasonOpensAt())
+                .set(T_SEASON.C_PREDICTIONS_OPEN_AT, season.getPredictionsOpenAt())
                 .where(T_SEASON.PK_ID.eq(season.getId()))
                 .execute();
 
@@ -162,6 +164,23 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
         return Optional.ofNullable(MAPPER.map(record));
     }
 
+    @Override
+    public Optional<Season> findUpcomingSeason(UUID competitionId, UUID activeSeasonId) {
+        if (competitionId == null) throw new IllegalArgumentException("competitionId must not be null");
+        if (activeSeasonId == null) throw new IllegalArgumentException("activeSeasonId must not be null");
+
+        var record = dsl.selectFrom(T_SEASON)
+                .where(T_SEASON.FK_COMPETITION_ID
+                        .eq(competitionId)
+                        .and(T_SEASON.C_COMPLETED.eq(false))
+                        .and(T_SEASON.PK_ID.ne(activeSeasonId)))
+                .orderBy(T_SEASON.C_START_DATE.asc())
+                .limit(1)
+                .fetchOne();
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
     private static class SeasonRecordMapper implements RecordMapper<SeasonRecord, Season> {
         @Override
         public Season map(SeasonRecord record) {
@@ -187,6 +206,8 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
                     .initialRankings(readTeams(record.getInitialRankings()))
                     .mainContestId(record.getMainContestId())
                     .detachedContestId(record.getDetachedContestId())
+                    .preSeasonOpensAt(record.getPreSeasonOpensAt())
+                    .predictionsOpenAt(record.getPredictionsOpenAt())
                     .build();
         }
 

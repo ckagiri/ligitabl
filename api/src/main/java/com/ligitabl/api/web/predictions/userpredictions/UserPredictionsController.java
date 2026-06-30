@@ -2,6 +2,8 @@ package com.ligitabl.api.web.predictions.userpredictions;
 
 import java.security.Principal;
 import java.time.Instant;
+import java.time.OffsetDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -312,6 +314,19 @@ public class UserPredictionsController {
             model.addAttribute("sprintLabel", data.sprintLabel());
         }
         model.addAttribute("hasRoundResult", data.hasRoundResult());
+
+        // Season phase state — used for off-season/pre-season UI branches
+        model.addAttribute("isPreSeason", season.isPreSeason());
+        model.addAttribute("isPredictionsOpen", season.isPredictionsOpen());
+        if (season.getPreSeasonOpensAt() != null && !season.isPreSeasonOpen()) {
+            long days = ChronoUnit.DAYS.between(OffsetDateTime.now(), season.getPreSeasonOpensAt());
+            model.addAttribute("daysToPreSeason", Math.max(0, days));
+        }
+        if (season.isPreSeason() && season.getPredictionsOpenAt() != null) {
+            long days = ChronoUnit.DAYS.between(OffsetDateTime.now(), season.getPredictionsOpenAt());
+            model.addAttribute("daysToPredictions", Math.max(0, days));
+            model.addAttribute("predictionsOpenAt", season.getPredictionsOpenAt());
+        }
 
         // Source information
         model.addAttribute("source", data.source().name());

@@ -370,6 +370,28 @@ class CreatePredictionUseCaseTest {
         assertInstanceOf(CreatePredictionError.Ended.class, result.getLeft());
     }
 
+    @Test
+    void shouldReject_whenPreSeasonPredictionExistsAtRoundZero() {
+        // Pre-season registration (atRoundNumber=0) must count as AlreadyJoined
+        SeasonPrediction preSeasonPrediction = SeasonPrediction.builder()
+                .id(UUID.randomUUID())
+                .userId(userId)
+                .seasonId(season.getId())
+                .initialRankings(List.of())
+                .currentRankings(season.getInitialRankings())
+                .atRoundNumber(0)
+                .build();
+
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(preSeasonPrediction));
+
+        Either<CreatePredictionError, CreatePredictionResult> result =
+                useCase.execute(userId, singleSwap("LIV", "ARS"));
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(CreatePredictionError.AlreadyJoined.class, result.getLeft());
+    }
+
     // --- Helpers ---
 
     private static CreatePredictionCommand singleSwap(String teamACode, String teamBCode) {

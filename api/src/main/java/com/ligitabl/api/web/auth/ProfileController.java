@@ -1,5 +1,7 @@
 package com.ligitabl.api.web.auth;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
@@ -8,7 +10,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -22,11 +23,19 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.model.auth.Password;
+import com.ligitabl.model.domain.Contest;
+import com.ligitabl.model.domain.LeaderboardResponse;
+import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.domain.service.PasswordHasher;
+import com.ligitabl.model.repo.ContestRepo;
+import com.ligitabl.model.repo.EntryRepo;
+import com.ligitabl.model.repo.LeaderboardRepo;
+import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.UserRepo;
 
 import jakarta.servlet.http.HttpSession;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -43,6 +52,10 @@ public class ProfileController {
 
     private final UserRepo userRepo;
     private final PasswordHasher passwordHasher;
+    private final EntryRepo entryRepo;
+    private final ContestRepo contestRepo;
+    private final SeasonRepo seasonRepo;
+    private final LeaderboardRepo leaderboardRepo;
 
     @GetMapping("/profile")
     public String profile(@AuthenticationPrincipal WebUserDetails userDetails, Model model) {
@@ -58,6 +71,9 @@ public class ProfileController {
 
         model.addAttribute("pageTitle", "Profile Settings");
         model.addAttribute("user", user);
+
+        buildContestLists(user.getId(), model);
+
         return "settings/profile";
     }
 
@@ -84,6 +100,7 @@ public class ProfileController {
         if (result.hasErrors()) {
             model.addAttribute("pageTitle", "Profile Settings");
             model.addAttribute("user", user);
+            buildContestLists(user.getId(), model);
             return "settings/profile";
         }
 
@@ -157,6 +174,47 @@ public class ProfileController {
         }
     }
 
+    private void buildContestLists(UUID userId, Model model) {
+        List<ContestSummary> activeContests = new ArrayList<>();
+        List<ContestSummary> pastContests = new ArrayList<>();
+
+        entryRepo.findByUserId(userId).forEach(entry -> {
+            contestRepo.findById(entry.getContestId()).ifPresent(contest -> {
+                if (!contest.isMain()) {
+                    return;
+                }
+                seasonRepo.findById(contest.getSeasonId()).ifPresent(season -> {
+                    if (season.getMaxRounds() > 0 && contest.getToRoundPosition() != season.getMaxRounds()) {
+                        return;
+                    }
+                    int memberCount = entryRepo.countActiveByContestId(contest.getId());
+                    Integer rank = resolveRank(contest, season, userId);
+                    ContestSummary summary = new ContestSummary(
+                            contest.getName(), season.getName(), memberCount, rank);
+                    if (season.isCompleted()) {
+                        pastContests.add(summary);
+                    } else {
+                        activeContests.add(summary);
+                    }
+                });
+            });
+        });
+
+        model.addAttribute("activeContests", activeContests);
+        model.addAttribute("pastContests", pastContests);
+    }
+
+    private Integer resolveRank(Contest contest, Season season, UUID userId) {
+        try {
+            LeaderboardResponse leaderboard = leaderboardRepo.computeLeaderboard(
+                    contest.getId(), season.getId(), 1, season.getMaxRounds(), userId, 0, 1, true);
+            return leaderboard.userEntry() != null ? leaderboard.userEntry().position() : null;
+        } catch (Exception e) {
+            log.warn("Could not resolve rank for user {} in contest {}: {}", userId, contest.getId(), e.getMessage());
+            return null;
+        }
+    }
+
     private void refreshSessionAuthentication(User user, HttpSession session) {
         var authorities = user.getRoles().stream()
                 .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
@@ -184,6 +242,8 @@ public class ProfileController {
         UUID userId = userDetails.getUserId();
         return userRepo.findById(userId).orElse(null);
     }
+
+    public record ContestSummary(String contestName, String seasonName, int memberCount, Integer rank) {}
 
     @Data
     public static class ProfileForm {

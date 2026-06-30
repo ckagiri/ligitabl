@@ -84,6 +84,38 @@
                 ${currentRound}, ${lastRound}, ${atRoundNumber}, ${seasonCompleted}, ${canSwap})}"
             ></div>
 
+            <!-- Pre-season / Off-season countdowns -->
+            <th:block th:if="${isPreSeason == true}">
+              <!-- Registered: predictions not yet open -->
+              <th:block th:if="${canCreateEntry == false && atRoundNumber != null && atRoundNumber == 0}">
+                <div class="mt-3 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
+                  You're registered for the new season.
+                  <th:block th:if="${predictionsOpenAt != null}">
+                    Predictions open on <strong th:text="${#temporals.format(predictionsOpenAt, 'dd MMM yyyy')}"></strong>.
+                  </th:block>
+                  <th:block th:if="${daysToPredictions != null}">
+                    (<span th:text="${daysToPredictions}"></span> day<th:block th:if="${daysToPredictions != 1}">s</th:block> to go)
+                  </th:block>
+                </div>
+              </th:block>
+              <!-- Not yet registered: call-to-action -->
+              <th:block th:if="${canCreateEntry == true}">
+                <div class="mt-3 rounded-lg bg-indigo-50 border border-indigo-200 px-4 py-3 text-sm text-indigo-800">
+                  Pre-season is open! Set your table and register below.
+                  <th:block th:if="${daysToPredictions != null}">
+                    Predictions open in <strong><span th:text="${daysToPredictions}"></span> day<th:block th:if="${daysToPredictions != 1}">s</th:block></strong>.
+                  </th:block>
+                </div>
+              </th:block>
+            </th:block>
+
+            <!-- Off-season countdown (season completed, pre-season not yet open) -->
+            <th:block th:if="${seasonCompleted == true && daysToPreSeason != null}">
+              <div class="mt-3 rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-sm text-gray-700">
+                Pre-season opens in <strong><span th:text="${daysToPreSeason}"></span> day<th:block th:if="${daysToPreSeason != 1}">s</th:block></strong>.
+              </div>
+            </th:block>
+
             <!-- Debug panel (opt-in via ?debug=1) -->
             <div th:if="${param.debug != null}" class="mt-3">
               <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
@@ -100,7 +132,8 @@ accessMode=[[${accessMode}]] canCreateEntry=[[${canCreateEntry}]] canSwap=[[${ca
 isGuest=[[${isGuest}]] isUserNotFound=[[${isUserNotFound}]]
 swapStatus.firstSwapBonus=[[${swapStatus != null ? swapStatus.firstSwapBonus : null}]]
 firstSwap.defaultMsg=[[${roundState != 'locked' || atRoundNumber == null || atRoundNumber == currentRound}]]
-firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRoundNumber > currentRound}]]</pre
+firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRoundNumber > currentRound}]]
+isPreSeason=[[${isPreSeason}]] isPredictionsOpen=[[${isPredictionsOpen}]] daysToPredictions=[[${daysToPredictions}]] daysToPreSeason=[[${daysToPreSeason}]]</pre
                 >
               </div>
             </div>
@@ -292,14 +325,68 @@ firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRou
               ></div>
             </th:block>
 
+            <!-- Pre-season registration footer (replaces normal actions during pre-season) -->
+            <th:block th:if="${isPreSeason == true && canCreateEntry == true}">
+              <div
+                x-data="{
+                  swaps: [],
+                  loading: false,
+                  errorMsg: '',
+                  addSwap() { if (this.swaps.length < 5) this.swaps.push({ teamACode: '', teamBCode: '' }) },
+                  removeSwap(i) { this.swaps.splice(i, 1) },
+                  async register() {
+                    this.loading = true; this.errorMsg = '';
+                    try {
+                      const resp = await fetch('/api/pre-season/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ swaps: this.swaps.filter(s => s.teamACode && s.teamBCode) })
+                      });
+                      if (resp.ok) { window.location.reload(); }
+                      else { const d = await resp.json(); this.errorMsg = d.error || 'Registration failed'; }
+                    } catch(e) { this.errorMsg = 'Network error'; }
+                    this.loading = false;
+                  }
+                }"
+                class="border-t border-gray-100 px-6 py-4 space-y-3"
+              >
+                <p class="text-sm font-medium text-gray-700">Pre-season swaps (0–5 optional)</p>
+                <template x-for="(swap, i) in swaps" :key="i">
+                  <div class="flex items-center gap-2">
+                    <input type="text" x-model="swap.teamACode" placeholder="Team A code" maxlength="3" class="w-24 uppercase px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                    <span class="text-gray-400">↔</span>
+                    <input type="text" x-model="swap.teamBCode" placeholder="Team B code" maxlength="3" class="w-24 uppercase px-2 py-1.5 border border-gray-300 rounded text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                    <button type="button" @click="removeSwap(i)" class="text-xs text-red-500 hover:text-red-700">Remove</button>
+                  </div>
+                </template>
+                <div class="flex flex-wrap items-center gap-3">
+                  <button type="button" @click="addSwap()" x-show="swaps.length < 5" class="text-sm text-indigo-600 hover:underline">+ Add swap</button>
+                  <button
+                    type="button"
+                    @click="register()"
+                    :disabled="loading"
+                    class="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
+                  >
+                    <span x-show="!loading">Register</span>
+                    <span x-show="loading">Registering…</span>
+                  </button>
+                  <span x-text="errorMsg" class="text-sm text-red-600"></span>
+                </div>
+              </div>
+            </th:block>
+
             <!-- Actions Footer (editable + cooldown-interactive states) -->
             <th:block
-              th:if="${isHistoricalView == false && canInteract && (!isFinalRound || isFinalRoundOpen) && (roundState == 'open' || roundState == 'locked' || roundState == 'completed' || (atRoundNumber != null && atRoundNumber > currentRound))}"
+              th:if="${isPreSeason == false || isPreSeason == null}"
             >
-              <div
-                x-show="canInteract || isInitialPrediction"
-                th:replace="~{fragments/prediction-actions :: actions}"
-              ></div>
+              <th:block
+                th:if="${isHistoricalView == false && canInteract && (!isFinalRound || isFinalRoundOpen) && (roundState == 'open' || roundState == 'locked' || roundState == 'completed' || (atRoundNumber != null && atRoundNumber > currentRound))}"
+              >
+                <div
+                  x-show="canInteract || isInitialPrediction"
+                  th:replace="~{fragments/prediction-actions :: actions}"
+                ></div>
+              </th:block>
             </th:block>
           </div>
 

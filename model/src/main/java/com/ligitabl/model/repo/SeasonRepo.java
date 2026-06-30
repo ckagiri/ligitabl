@@ -33,4 +33,10 @@ public interface SeasonRepo {
     boolean existsById(UUID id);
 
     Optional<Season> findActiveSeason(UUID competitionId);
+
+    /**
+     * Finds the upcoming (not yet active) season for a competition: an incomplete season
+     * whose id differs from activeSeasonId. Used by SeasonActivationService.
+     */
+    Optional<Season> findUpcomingSeason(UUID competitionId, UUID activeSeasonId);
 }

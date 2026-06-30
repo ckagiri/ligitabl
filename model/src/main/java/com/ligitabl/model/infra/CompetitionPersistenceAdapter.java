@@ -76,6 +76,14 @@ public class CompetitionPersistenceAdapter implements CompetitionRepo {
         return dsl.fetchExists(dsl.selectOne().from(T_COMPETITION).where(T_COMPETITION.PK_ID.eq(id)));
     }
 
+    @Override
+    public void updateActiveSeasonId(UUID competitionId, UUID seasonId) {
+        dsl.update(T_COMPETITION)
+                .set(T_COMPETITION.FK_ACTIVE_SEASON_ID, seasonId)
+                .where(T_COMPETITION.PK_ID.eq(competitionId))
+                .execute();
+    }
+
     private static class CompetitionRecordMapper implements RecordMapper<CompetitionRecord, Competition> {
         @Override
         public Competition map(CompetitionRecord record) {

@@ -57,6 +57,12 @@ public class Season extends AbstractModel<UUID> {
 
     private int currentMatchDay;
 
+    /** Set on the outgoing season: when to auto-switch activeSeasonId to the upcoming season. */
+    private OffsetDateTime preSeasonOpensAt;
+
+    /** Set on the upcoming season: when predictions and swaps open for in-season play. */
+    private OffsetDateTime predictionsOpenAt;
+
     /**
      * Setup mode is represented by the absence of a main contest.
      */
@@ -84,5 +90,20 @@ public class Season extends AbstractModel<UUID> {
 
         this.mainContestId = detachedContestId;
         this.detachedContestId = null;
+    }
+
+    /** On the outgoing season: has the pre-season window opened? */
+    public boolean isPreSeasonOpen() {
+        return preSeasonOpensAt != null && OffsetDateTime.now().isAfter(preSeasonOpensAt);
+    }
+
+    /** On the upcoming (active) season: are predictions and swaps open for in-season play? */
+    public boolean isPredictionsOpen() {
+        return predictionsOpenAt != null && OffsetDateTime.now().isAfter(predictionsOpenAt);
+    }
+
+    /** On the active season (post-switch): true during the pre-season registration window. */
+    public boolean isPreSeason() {
+        return !completed && !isPredictionsOpen();
     }
 }
