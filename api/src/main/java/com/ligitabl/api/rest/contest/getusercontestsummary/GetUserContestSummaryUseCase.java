@@ -10,9 +10,9 @@ import java.util.stream.Stream;
 
 import org.springframework.stereotype.Service;
 
+import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
-import com.ligitabl.model.domain.LeaderboardEntry;
 import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundSpan;
@@ -20,7 +20,6 @@ import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
-import com.ligitabl.model.repo.LeaderboardRepo;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -39,9 +38,9 @@ public class GetUserContestSummaryUseCase {
     private final SeasonRepo seasonRepo;
     private final ContestRepo contestRepo;
     private final EntryRepo entryRepo;
-    private final LeaderboardRepo leaderboardRepo;
     private final RoundRepo roundRepo;
     private final MatchRepo matchRepo;
+    private final ContestRankResolver contestRankResolver;
 
     public GetUserContestSummaryResult execute(GetUserContestSummaryQuery query) {
         var competition = competitionRepo.findBySlug(query.competitionSlug()).orElse(null);
@@ -93,11 +92,8 @@ public class GetUserContestSummaryUseCase {
         Stream.of(fullSeason, currentQuarter, currentSprint)
                 .filter(p -> p != null)
                 .forEach(phase -> {
-                    var response = leaderboardRepo.computeLeaderboard(
-                            mainContestId, season.getId(), phase.getFrom(), phase.getTo(), userId, 0, 1, true);
-                    LeaderboardEntry userEntry = response.userEntry();
-                    Integer rank = userEntry != null ? userEntry.position() : null;
-                    int movement = userEntry != null ? userEntry.movement() : 0;
+                    var rankInfo = contestRankResolver.resolve(
+                            mainContestId, season.getId(), phase.getFrom(), phase.getTo(), userId);
                     rows.add(new GeneralContestRowDto(
                             phase.getCode(),
                             phase.getName(),
@@ -107,8 +103,8 @@ public class GetUserContestSummaryUseCase {
                             buildGwLabel(phase.getFrom(), phase.getTo()),
                             phase.getFrom(),
                             phase.getTo(),
-                            rank,
-                            movement));
+                            rankInfo.position(),
+                            rankInfo.movement()));
                 });
         return rows;
     }

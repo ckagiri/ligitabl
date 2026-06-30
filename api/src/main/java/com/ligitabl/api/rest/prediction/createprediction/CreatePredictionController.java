@@ -69,6 +69,13 @@ public class CreatePredictionController {
                             "message", "You have already joined this season",
                             "prediction_id", e.existingPredictionId()));
 
+            case CreatePredictionError.TooManySwaps e -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(Map.of(
+                            "error", "TOO_MANY_SWAPS",
+                            "message", "Too many swaps provided",
+                            "provided", e.provided(),
+                            "max", e.max()));
+
             case CreatePredictionError.SameTeam __ -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of(
                             "error", "SAME_TEAM",
@@ -108,7 +115,12 @@ public class CreatePredictionController {
                             "message", "Failed to create prediction",
                             "details", e.reason()));
 
-            default -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "UNKNOWN_ERROR"));
+            case CreatePredictionError.CorruptPreSeasonRegistration e ->
+                    ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                            .body(Map.of(
+                                    "error", "CORRUPT_PRE_SEASON_REGISTRATION",
+                                    "message", "Pre-season registration is in an invalid state",
+                                    "prediction_id", e.predictionId()));
         };
     }
 }

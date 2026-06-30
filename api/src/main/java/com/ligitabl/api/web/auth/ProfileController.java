@@ -23,15 +23,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
+import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
 import com.ligitabl.model.auth.Password;
 import com.ligitabl.model.domain.Contest;
-import com.ligitabl.model.domain.LeaderboardResponse;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.domain.service.PasswordHasher;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
-import com.ligitabl.model.repo.LeaderboardRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.UserRepo;
 
@@ -55,7 +54,7 @@ public class ProfileController {
     private final EntryRepo entryRepo;
     private final ContestRepo contestRepo;
     private final SeasonRepo seasonRepo;
-    private final LeaderboardRepo leaderboardRepo;
+    private final ContestRankResolver contestRankResolver;
 
     @GetMapping("/profile")
     public String profile(@AuthenticationPrincipal WebUserDetails userDetails, Model model) {
@@ -205,9 +204,9 @@ public class ProfileController {
 
     private Integer resolveRank(Contest contest, Season season, UUID userId) {
         try {
-            LeaderboardResponse leaderboard = leaderboardRepo.computeLeaderboard(
-                    contest.getId(), season.getId(), 1, season.getMaxRounds(), userId, 0, 1, true);
-            return leaderboard.userEntry() != null ? leaderboard.userEntry().position() : null;
+            return contestRankResolver
+                    .resolve(contest.getId(), season.getId(), 1, season.getMaxRounds(), userId)
+                    .position();
         } catch (Exception e) {
             log.warn("Could not resolve rank for user {} in contest {}: {}", userId, contest.getId(), e.getMessage());
             return null;

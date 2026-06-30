@@ -1,4 +1,4 @@
-package com.ligitabl.api.domain;
+package com.ligitabl.api.domain.season;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

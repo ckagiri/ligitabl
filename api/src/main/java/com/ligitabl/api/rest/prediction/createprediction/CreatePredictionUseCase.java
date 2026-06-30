@@ -6,13 +6,12 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.prediction.shared.SwapHelper;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
@@ -46,16 +45,28 @@ public class CreatePredictionUseCase {
     private final SeasonPredictionRepo predictionRepo;
     private final EntryRepo entryRepo;
     private final StandingsRepo standingsRepo;
+    private final SwapHelper swapHelper;
     private final Clock clock;
+
+    private record Ctx(Season season, Contest mainContest, JoinPlan plan) {
+        Ctx(Season season) {
+            this(season, null, null);
+        }
+    }
 
     @Transactional
     public Either<CreatePredictionError, CreatePredictionResult> execute(UUID userId, CreatePredictionCommand request) {
         log.info("User {} attempting to join contest", userId);
 
-        return getActiveSeason().flatMap(season -> validateSeasonActive(season)
-                .flatMap(__ -> resolveJoinPlan(userId, season))
-                .flatMap(plan -> validateSwapTeams(request, season)
-                        .flatMap(__ -> executeJoinPlan(userId, season, request, plan))));
+        return getActiveSeason()
+                .map(Ctx::new)
+                .flatMap(ctx -> validateSeasonActive(ctx.season()).map(__ -> ctx))
+                .flatMap(ctx -> resolveJoinPlan(userId, ctx.season())
+                        .map(plan -> new Ctx(ctx.season(), ctx.mainContest(), plan)))
+                .flatMap(ctx -> validateSwapTeams(request, ctx.season()).map(__ -> ctx))
+                .flatMap(ctx ->
+                        findMainContest(ctx.season()).map(contest -> new Ctx(ctx.season(), contest, ctx.plan())))
+                .flatMap(ctx -> executeJoinPlan(userId, ctx.season(), ctx.mainContest(), request, ctx.plan()));
     }
 
     // Step 1: Get active season
@@ -103,19 +114,6 @@ public class CreatePredictionUseCase {
         return Either.left(new CreatePredictionError.AlreadyJoined(existing.getId()));
     }
 
-    private Either<CreatePredictionError, CreatePredictionResult> executeJoinPlan(
-            UUID userId, Season season, CreatePredictionCommand request, JoinPlan plan) {
-        return switch (plan) {
-            case JoinPlan.NewJoin __ -> determineAtRoundNumber(season)
-                    .flatMap(info -> createPredictionAndEntry(
-                            userId, season, request, info.atRoundNumber(), info.currentRoundPosition()));
-            case JoinPlan.NewPreSeasonRegistration __ -> registerPreSeason(userId, season, request);
-            case JoinPlan.MergePreSeasonRegistration merge -> determineAtRoundNumber(season)
-                    .flatMap(info -> mergePreSeasonRegistration(
-                            userId, season, request, merge.existing(), info.atRoundNumber()));
-        };
-    }
-
     // Step 4: Validate the swap team codes (0-5 pairs allowed)
     private Either<CreatePredictionError, Void> validateSwapTeams(CreatePredictionCommand cmd, Season season) {
         List<CreatePredictionCommand.SwapPair> swaps = cmd.swaps();
@@ -124,8 +122,7 @@ public class CreatePredictionUseCase {
             return Either.left(new CreatePredictionError.TooManySwaps(swaps.size(), MAX_INITIAL_SWAPS));
         }
 
-        Set<String> validCodes =
-                season.getInitialRankings().stream().map(TeamRank::getCode).collect(Collectors.toSet());
+        Set<String> validCodes = swapHelper.resolveValidCodes(season, null);
 
         for (CreatePredictionCommand.SwapPair swap : swaps) {
             String codeA = swap.teamACode().toUpperCase();
@@ -145,7 +142,28 @@ public class CreatePredictionUseCase {
         return Either.right(null);
     }
 
-    // Step 5: Determine at_round_number
+    // Step 5: Resolve the main contest once, shared by every join plan branch
+    private Either<CreatePredictionError, Contest> findMainContest(Season season) {
+        return contestRepo
+                .findById(season.getMainContestId())
+                .map(Either::<CreatePredictionError, Contest>right)
+                .orElseGet(() -> Either.left(new CreatePredictionError.MainContestNotFound()));
+    }
+
+    private Either<CreatePredictionError, CreatePredictionResult> executeJoinPlan(
+            UUID userId, Season season, Contest mainContest, CreatePredictionCommand request, JoinPlan plan) {
+        return switch (plan) {
+            case JoinPlan.NewJoin __ -> determineAtRoundNumber(season)
+                    .flatMap(info -> createPredictionAndEntry(
+                            userId, season, mainContest, request, info.atRoundNumber(), info.currentRoundPosition()));
+            case JoinPlan.NewPreSeasonRegistration __ -> registerPreSeason(userId, season, mainContest, request);
+            case JoinPlan.MergePreSeasonRegistration merge -> determineAtRoundNumber(season)
+                    .flatMap(info -> mergePreSeasonRegistration(
+                            userId, mainContest, request, merge.existing(), info.atRoundNumber()));
+        };
+    }
+
+    // Step 6: Determine at_round_number
     private record RoundInfo(int atRoundNumber, int currentRoundPosition) {}
 
     private Either<CreatePredictionError, RoundInfo> determineAtRoundNumber(Season season) {
@@ -194,33 +212,26 @@ public class CreatePredictionUseCase {
         for (CreatePredictionCommand.SwapPair swap : swaps) {
             String codeA = swap.teamACode().toUpperCase();
             String codeB = swap.teamBCode().toUpperCase();
-            TeamRank rankA = currentRankings.stream()
-                    .filter(t -> t.getCode().equals(codeA))
-                    .findFirst()
-                    .orElseThrow();
-            TeamRank rankB = currentRankings.stream()
-                    .filter(t -> t.getCode().equals(codeB))
-                    .findFirst()
-                    .orElseThrow();
-            swapChanges.add(new SwapChange(
-                    now,
-                    String.format("%s:%d→%d", codeA, rankA.getPosition(), rankB.getPosition()),
-                    String.format("%s:%d→%d", codeB, rankB.getPosition(), rankA.getPosition())));
-            currentRankings = applySwap(currentRankings, codeA, codeB);
+            TeamRank rankA = findByCode(currentRankings, codeA);
+            TeamRank rankB = findByCode(currentRankings, codeB);
+            swapChanges.add(swapHelper.applySwap(currentRankings, rankA, rankB, now));
         }
 
         return new SwapResult(currentRankings, swapChanges);
     }
 
-    // Step 6a: Create prediction and entry for a normal (in-season) join
-    private Either<CreatePredictionError, CreatePredictionResult> createPredictionAndEntry(
-            UUID userId, Season season, CreatePredictionCommand request, int atRoundNumber, int currentRoundPosition) {
-        var mainContestOpt = contestRepo.findById(season.getMainContestId());
-        if (mainContestOpt.isEmpty()) {
-            return Either.left(new CreatePredictionError.MainContestNotFound());
-        }
-        Contest mainContest = mainContestOpt.get();
+    private TeamRank findByCode(List<TeamRank> rankings, String code) {
+        return rankings.stream().filter(t -> t.getCode().equals(code)).findFirst().orElseThrow();
+    }
 
+    // Step 7a: Create prediction and entry for a normal (in-season) join
+    private Either<CreatePredictionError, CreatePredictionResult> createPredictionAndEntry(
+            UUID userId,
+            Season season,
+            Contest mainContest,
+            CreatePredictionCommand request,
+            int atRoundNumber,
+            int currentRoundPosition) {
         try {
             Instant now = clock.instant();
             SwapResult swapResult =
@@ -264,16 +275,10 @@ public class CreatePredictionUseCase {
         }
     }
 
-    // Step 6b: Pre-season registration — the "easter egg". One-time 0-5 swap shot,
+    // Step 7b: Pre-season registration — the "easter egg". One-time 0-5 swap shot,
     // stored at atRoundNumber=0, excluded from leaderboard scoring (round > 0 filter).
     private Either<CreatePredictionError, CreatePredictionResult> registerPreSeason(
-            UUID userId, Season season, CreatePredictionCommand request) {
-        var mainContestOpt = contestRepo.findById(season.getMainContestId());
-        if (mainContestOpt.isEmpty()) {
-            return Either.left(new CreatePredictionError.MainContestNotFound());
-        }
-        Contest mainContest = mainContestOpt.get();
-
+            UUID userId, Season season, Contest mainContest, CreatePredictionCommand request) {
         try {
             Instant now = clock.instant();
             SwapResult swapResult = applySwaps(season.getInitialRankings(), request.swaps(), now);
@@ -315,29 +320,27 @@ public class CreatePredictionUseCase {
         }
     }
 
-    // Step 6c: Merge an existing pre-season registration into a real entry once predictions open.
+    // Step 7c: Merge an existing pre-season registration into a real entry once predictions open.
     // Updates the existing SeasonPrediction/Entry in place rather than creating duplicates.
     private Either<CreatePredictionError, CreatePredictionResult> mergePreSeasonRegistration(
-            UUID userId, Season season, CreatePredictionCommand request, SeasonPrediction existing, int atRoundNumber) {
-        var mainContestOpt = contestRepo.findById(season.getMainContestId());
-        if (mainContestOpt.isEmpty()) {
-            return Either.left(new CreatePredictionError.MainContestNotFound());
-        }
-        Contest mainContest = mainContestOpt.get();
-
+            UUID userId, Contest mainContest, CreatePredictionCommand request, SeasonPrediction existing, int atRoundNumber) {
         Entry entry =
                 entryRepo.findByUserAndContest(userId, mainContest.getId()).orElse(null);
         if (entry == null) {
             return Either.left(new CreatePredictionError.MainContestNotFound());
         }
 
+        // initialRankings is the permanent pre-registration marker, always set by registerPreSeason —
+        // null/empty here means this round-0 row is corrupt rather than a genuine pre-registration.
+        if (existing.getInitialRankings() == null || existing.getInitialRankings().isEmpty()) {
+            return Either.left(new CreatePredictionError.CorruptPreSeasonRegistration(existing.getId()));
+        }
+
         try {
             Instant now = clock.instant();
             // Baseline is the pre-registration snapshot, not season-wide standings — this user's
             // starting point is whatever they set during pre-season registration.
-            List<TeamRank> baseline = existing.getInitialRankings() != null
-                    ? existing.getInitialRankings()
-                    : existing.getCurrentRankings();
+            List<TeamRank> baseline = existing.getInitialRankings();
             SwapResult swapResult = applySwaps(baseline, request.swaps(), now);
 
             existing.setAtRoundNumber(atRoundNumber);
@@ -375,22 +378,5 @@ public class CreatePredictionUseCase {
                         .map(StandingsTeamRank::getRanking)
                         .toList())
                 .orElseGet(season::getInitialRankings);
-    }
-
-    private List<TeamRank> applySwap(List<TeamRank> base, String codeA, String codeB) {
-        List<TeamRank> result = new ArrayList<>(base);
-        int idxA = IntStream.range(0, result.size())
-                .filter(i -> result.get(i).getCode().equals(codeA))
-                .findFirst()
-                .orElseThrow();
-        int idxB = IntStream.range(0, result.size())
-                .filter(i -> result.get(i).getCode().equals(codeB))
-                .findFirst()
-                .orElseThrow();
-        TeamRank a = result.get(idxA);
-        TeamRank b = result.get(idxB);
-        result.set(idxA, a.withPosition(b.getPosition()));
-        result.set(idxB, b.withPosition(a.getPosition()));
-        return result;
     }
 }

@@ -85,6 +85,7 @@ public class CreatePredictionController {
             case CreatePredictionError.Ended __ -> 409;
             case CreatePredictionError.CurrentRoundNotFound __ -> 404;
             case CreatePredictionError.MainContestNotFound __ -> 404;
+            case CreatePredictionError.CorruptPreSeasonRegistration __ -> 500;
             case CreatePredictionError.TransactionFailed __ -> 500;
         };
     }
@@ -101,6 +102,8 @@ public class CreatePredictionController {
             case CreatePredictionError.Ended __ -> "Cannot join - season has ended";
             case CreatePredictionError.CurrentRoundNotFound __ -> "Current round not found";
             case CreatePredictionError.MainContestNotFound __ -> "Default contest not found";
+            case CreatePredictionError.CorruptPreSeasonRegistration __ -> "Your pre-season registration is in an "
+                    + "invalid state. Please contact support.";
             case CreatePredictionError.TransactionFailed e -> "Failed to create prediction: " + e.reason();
         };
     }

@@ -18,6 +18,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.prediction.shared.SwapHelper;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.Match;
@@ -97,6 +98,7 @@ class CreatePredictionUseCaseTest {
                 predictionRepo,
                 entryRepo,
                 standingsRepo,
+                new SwapHelper(competitionDefaults, seasonRepo, predictionRepo, matchRepo),
                 clock);
     }
 
@@ -358,6 +360,7 @@ class CreatePredictionUseCaseTest {
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
+        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(round.getId()))
                 .thenReturn(List.of(Match.builder().status(MatchStatus.LIVE).build()));
@@ -478,6 +481,62 @@ class CreatePredictionUseCaseTest {
                         && p.getAtRoundNumber() == round.getPosition()
                         && p.getInitialRankings() != null
                         && p.getInitialRankings().equals(preSeasonRankings)));
+    }
+
+    @Test
+    void shouldReject_whenMergingPreSeasonRegistration_withNullInitialRankings() {
+        // predictions now open (season has null predictionsOpenAt → isPredictionsOpen() == true)
+        UUID existingId = UUID.randomUUID();
+        SeasonPrediction corrupt = SeasonPrediction.builder()
+                .id(existingId)
+                .userId(userId)
+                .seasonId(season.getId())
+                .initialRankings(null) // corrupt: no pre-reg marker
+                .currentRankings(season.getInitialRankings())
+                .atRoundNumber(0)
+                .build();
+
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(corrupt));
+        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
+        when(entryRepo.findByUserAndContest(userId, contestId)).thenReturn(Optional.of(
+                com.ligitabl.model.domain.Entry.builder()
+                        .id(UUID.randomUUID()).userId(userId).contestId(contestId).joinedAtRound(0).build()));
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
+        when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
+
+        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, multiSwap(List.of()));
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(CreatePredictionError.CorruptPreSeasonRegistration.class, result.getLeft());
+        assertEquals(existingId, ((CreatePredictionError.CorruptPreSeasonRegistration) result.getLeft()).predictionId());
+    }
+
+    @Test
+    void shouldReject_whenMergingPreSeasonRegistration_withEmptyInitialRankings() {
+        UUID existingId = UUID.randomUUID();
+        SeasonPrediction corrupt = SeasonPrediction.builder()
+                .id(existingId)
+                .userId(userId)
+                .seasonId(season.getId())
+                .initialRankings(List.of()) // empty is also corrupt
+                .currentRankings(season.getInitialRankings())
+                .atRoundNumber(0)
+                .build();
+
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(corrupt));
+        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
+        when(entryRepo.findByUserAndContest(userId, contestId)).thenReturn(Optional.of(
+                com.ligitabl.model.domain.Entry.builder()
+                        .id(UUID.randomUUID()).userId(userId).contestId(contestId).joinedAtRound(0).build()));
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
+        when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
+
+        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, multiSwap(List.of()));
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(CreatePredictionError.CorruptPreSeasonRegistration.class, result.getLeft());
     }
 
     // --- Helpers ---
