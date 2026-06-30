@@ -64,8 +64,8 @@ public class CreatePredictionUseCase {
                 .flatMap(ctx -> resolveJoinPlan(userId, ctx.season())
                         .map(plan -> new Ctx(ctx.season(), ctx.mainContest(), plan)))
                 .flatMap(ctx -> validateSwapTeams(request, ctx.season()).map(__ -> ctx))
-                .flatMap(ctx ->
-                        findMainContest(ctx.season()).map(contest -> new Ctx(ctx.season(), contest, ctx.plan())))
+                .flatMap(
+                        ctx -> findMainContest(ctx.season()).map(contest -> new Ctx(ctx.season(), contest, ctx.plan())))
                 .flatMap(ctx -> executeJoinPlan(userId, ctx.season(), ctx.mainContest(), request, ctx.plan()));
     }
 
@@ -221,7 +221,10 @@ public class CreatePredictionUseCase {
     }
 
     private TeamRank findByCode(List<TeamRank> rankings, String code) {
-        return rankings.stream().filter(t -> t.getCode().equals(code)).findFirst().orElseThrow();
+        return rankings.stream()
+                .filter(t -> t.getCode().equals(code))
+                .findFirst()
+                .orElseThrow();
     }
 
     // Step 7a: Create prediction and entry for a normal (in-season) join
@@ -323,7 +326,11 @@ public class CreatePredictionUseCase {
     // Step 7c: Merge an existing pre-season registration into a real entry once predictions open.
     // Updates the existing SeasonPrediction/Entry in place rather than creating duplicates.
     private Either<CreatePredictionError, CreatePredictionResult> mergePreSeasonRegistration(
-            UUID userId, Contest mainContest, CreatePredictionCommand request, SeasonPrediction existing, int atRoundNumber) {
+            UUID userId,
+            Contest mainContest,
+            CreatePredictionCommand request,
+            SeasonPrediction existing,
+            int atRoundNumber) {
         Entry entry =
                 entryRepo.findByUserAndContest(userId, mainContest.getId()).orElse(null);
         if (entry == null) {
@@ -332,7 +339,8 @@ public class CreatePredictionUseCase {
 
         // initialRankings is the permanent pre-registration marker, always set by registerPreSeason —
         // null/empty here means this round-0 row is corrupt rather than a genuine pre-registration.
-        if (existing.getInitialRankings() == null || existing.getInitialRankings().isEmpty()) {
+        if (existing.getInitialRankings() == null
+                || existing.getInitialRankings().isEmpty()) {
             return Either.left(new CreatePredictionError.CorruptPreSeasonRegistration(existing.getId()));
         }
 

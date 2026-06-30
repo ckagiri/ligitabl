@@ -499,9 +499,13 @@ class CreatePredictionUseCaseTest {
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(corrupt));
         when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
-        when(entryRepo.findByUserAndContest(userId, contestId)).thenReturn(Optional.of(
-                com.ligitabl.model.domain.Entry.builder()
-                        .id(UUID.randomUUID()).userId(userId).contestId(contestId).joinedAtRound(0).build()));
+        when(entryRepo.findByUserAndContest(userId, contestId))
+                .thenReturn(Optional.of(com.ligitabl.model.domain.Entry.builder()
+                        .id(UUID.randomUUID())
+                        .userId(userId)
+                        .contestId(contestId)
+                        .joinedAtRound(0)
+                        .build()));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
 
@@ -509,7 +513,8 @@ class CreatePredictionUseCaseTest {
 
         assertTrue(result.isLeft());
         assertInstanceOf(CreatePredictionError.CorruptPreSeasonRegistration.class, result.getLeft());
-        assertEquals(existingId, ((CreatePredictionError.CorruptPreSeasonRegistration) result.getLeft()).predictionId());
+        assertEquals(
+                existingId, ((CreatePredictionError.CorruptPreSeasonRegistration) result.getLeft()).predictionId());
     }
 
     @Test
@@ -527,9 +532,13 @@ class CreatePredictionUseCaseTest {
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(corrupt));
         when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
-        when(entryRepo.findByUserAndContest(userId, contestId)).thenReturn(Optional.of(
-                com.ligitabl.model.domain.Entry.builder()
-                        .id(UUID.randomUUID()).userId(userId).contestId(contestId).joinedAtRound(0).build()));
+        when(entryRepo.findByUserAndContest(userId, contestId))
+                .thenReturn(Optional.of(com.ligitabl.model.domain.Entry.builder()
+                        .id(UUID.randomUUID())
+                        .userId(userId)
+                        .contestId(contestId)
+                        .joinedAtRound(0)
+                        .build()));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
 
