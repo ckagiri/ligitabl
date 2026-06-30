@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260701_2_season_prediction_initial_rankings_nullable
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_season_prediction
+            schemaName: public
+      changes:
+        - dropNotNullConstraint:
+            tableName: t_season_prediction
+            schemaName: public
+            columnName: c_initial_rankings
+            columnDataType: jsonb

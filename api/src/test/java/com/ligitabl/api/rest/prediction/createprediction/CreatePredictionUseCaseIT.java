@@ -152,8 +152,8 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             assertThat(mci.getPosition()).isEqualTo(2); // ARS was at 2
             assertThat(ars.getPosition()).isEqualTo(1); // MCI was at 1
 
-            // initialRankings is deprecated and empty
-            assertThat(prediction.get().getInitialRankings()).isEmpty();
+            // initialRankings stays null for a normal (non pre-season) join
+            assertThat(prediction.get().getInitialRankings()).isNull();
 
             // initial swap is recorded; lastSwapAt stays null
             assertThat(prediction.get().getSwaps()).hasSize(1);
@@ -364,7 +364,111 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         }
     }
 
+    @Nested
+    @DisplayName("Pre-Season Registration")
+    class PreSeasonRegistration {
+
+        @BeforeEach
+        void markSeasonAsPreSeason() {
+            setPredictionsOpenAt(OffsetDateTime.now().plusDays(30));
+        }
+
+        @Test
+        @DisplayName("should register at round 0 with initialRankings populated as the permanent marker")
+        void shouldRegisterPreSeason() {
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
+
+            assertThat(result.isRight()).isTrue();
+            assertThat(result.get().atRoundNumber()).isEqualTo(0);
+
+            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId);
+            assertThat(prediction).isPresent();
+            assertThat(prediction.get().getAtRoundNumber()).isEqualTo(0);
+            assertThat(prediction.get().getInitialRankings()).isNotNull().isEqualTo(prediction.get().getCurrentRankings());
+            assertThat(prediction.get().getSwaps()).hasSize(1);
+            assertThat(prediction.get().getSwaps().get(0).getRound()).isEqualTo(0);
+
+            var entry = entryRepo.findByUserAndContest(userId, contestId);
+            assertThat(entry).isPresent();
+            assertThat(entry.get().getJoinedAtRound()).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("should allow registering with zero swaps")
+        void shouldRegisterWithNoSwaps() {
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, multiSwap(List.of()));
+
+            assertThat(result.isRight()).isTrue();
+            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId);
+            assertThat(prediction.get().getInitialRankings()).isEqualTo(INITIAL_RANKINGS);
+            assertThat(prediction.get().getCurrentRankings()).isEqualTo(INITIAL_RANKINGS);
+        }
+
+        @Test
+        @DisplayName("should reject re-registration while still pre-season")
+        void shouldRejectDoubleRegistration() {
+            Either<CreatePredictionError, CreatePredictionResult> first =
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
+            assertThat(first.isRight()).isTrue();
+
+            Either<CreatePredictionError, CreatePredictionResult> second =
+                    useCase.execute(userId, singleSwap("MCI", "LIV"));
+
+            assertThat(second.isLeft()).isTrue();
+            assertThat(second.getLeft()).isInstanceOf(CreatePredictionError.AlreadyJoined.class);
+        }
+
+        @Test
+        @DisplayName("should merge the pre-season row into a real entry once predictions open, without duplicating")
+        void shouldMergeIntoRealEntryOncePredictionsOpen() {
+            Either<CreatePredictionError, CreatePredictionResult> registration =
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
+            assertThat(registration.isRight()).isTrue();
+            UUID predictionId = registration.get().predictionId();
+            UUID entryId = registration.get().entryId();
+
+            setPredictionsOpenAt(OffsetDateTime.now().minusMinutes(1));
+
+            Either<CreatePredictionError, CreatePredictionResult> merged =
+                    useCase.execute(userId, multiSwap(List.of()));
+
+            assertThat(merged.isRight()).isTrue();
+            assertThat(merged.get().predictionId()).isEqualTo(predictionId);
+            assertThat(merged.get().entryId()).isEqualTo(entryId);
+            assertThat(merged.get().atRoundNumber()).isEqualTo(1);
+
+            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId);
+            assertThat(prediction).isPresent();
+            assertThat(prediction.get().getId()).isEqualTo(predictionId);
+            assertThat(prediction.get().getAtRoundNumber()).isEqualTo(1);
+            // permanent pre-registration marker is preserved, not cleared
+            assertThat(prediction.get().getInitialRankings()).isNotNull();
+
+            // No duplicate prediction/entry rows
+            assertThat(countSeasonPredictionsForUser(userId)).isEqualTo(1);
+            assertThat(countEntriesForUser(userId)).isEqualTo(1);
+        }
+    }
+
     // --- Helpers ---
+
+    private void setPredictionsOpenAt(OffsetDateTime value) {
+        jdbcTemplate.update("UPDATE t_season SET c_predictions_open_at = ? WHERE pk_id = ?", value, seasonId);
+    }
+
+    private int countSeasonPredictionsForUser(UUID userId) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM t_season_prediction WHERE fk_user_id = ?", Integer.class, userId);
+        return count == null ? 0 : count;
+    }
+
+    private int countEntriesForUser(UUID userId) {
+        Integer count =
+                jdbcTemplate.queryForObject("SELECT COUNT(*) FROM t_entry WHERE fk_user_id = ?", Integer.class, userId);
+        return count == null ? 0 : count;
+    }
 
     private static CreatePredictionCommand singleSwap(String teamACode, String teamBCode) {
         return multiSwap(List.of(new CreatePredictionCommand.SwapPair(teamACode, teamBCode)));
