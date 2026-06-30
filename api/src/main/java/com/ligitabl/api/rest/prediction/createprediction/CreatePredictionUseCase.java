@@ -54,8 +54,8 @@ public class CreatePredictionUseCase {
 
         return getActiveSeason().flatMap(season -> validateSeasonActive(season)
                 .flatMap(__ -> resolveJoinPlan(userId, season))
-                .flatMap(plan -> validateSwapTeams(request, season).flatMap(__ -> executeJoinPlan(
-                        userId, season, request, plan))));
+                .flatMap(plan -> validateSwapTeams(request, season)
+                        .flatMap(__ -> executeJoinPlan(userId, season, request, plan))));
     }
 
     // Step 1: Get active season
@@ -111,7 +111,8 @@ public class CreatePredictionUseCase {
                             userId, season, request, info.atRoundNumber(), info.currentRoundPosition()));
             case JoinPlan.NewPreSeasonRegistration __ -> registerPreSeason(userId, season, request);
             case JoinPlan.MergePreSeasonRegistration merge -> determineAtRoundNumber(season)
-                    .flatMap(info -> mergePreSeasonRegistration(userId, season, request, merge.existing(), info.atRoundNumber()));
+                    .flatMap(info -> mergePreSeasonRegistration(
+                            userId, season, request, merge.existing(), info.atRoundNumber()));
         };
     }
 
@@ -324,7 +325,8 @@ public class CreatePredictionUseCase {
         }
         Contest mainContest = mainContestOpt.get();
 
-        Entry entry = entryRepo.findByUserAndContest(userId, mainContest.getId()).orElse(null);
+        Entry entry =
+                entryRepo.findByUserAndContest(userId, mainContest.getId()).orElse(null);
         if (entry == null) {
             return Either.left(new CreatePredictionError.MainContestNotFound());
         }

@@ -32,9 +32,7 @@ public class SeasonActivationService {
     @Scheduled(fixedDelay = 15 * 60 * 1000)
     @Transactional
     public void checkAndActivateUpcomingSeason() {
-        competitionRepo
-                .findBySlug(competitionDefaults.defaultCompetitionSlug())
-                .ifPresent(this::maybeSwitch);
+        competitionRepo.findBySlug(competitionDefaults.defaultCompetitionSlug()).ifPresent(this::maybeSwitch);
     }
 
     private void maybeSwitch(Competition competition) {
@@ -42,7 +40,8 @@ public class SeasonActivationService {
             return;
         }
 
-        Season activeSeason = seasonRepo.findById(competition.getActiveSeasonId()).orElse(null);
+        Season activeSeason =
+                seasonRepo.findById(competition.getActiveSeasonId()).orElse(null);
         if (activeSeason == null) {
             return;
         }
@@ -60,7 +59,9 @@ public class SeasonActivationService {
 
         log.info(
                 "[SEASON_ACTIVATION] Promoting competition {} upcomingSeasonId {} to activeSeasonId (was {})",
-                competition.getSlug(), competition.getUpcomingSeasonId(), activeSeason.getId());
+                competition.getSlug(),
+                competition.getUpcomingSeasonId(),
+                activeSeason.getId());
         competitionRepo.promoteUpcomingSeason(
                 competition.getId(), competition.getUpcomingSeasonId(), activeSeason.getId());
     }

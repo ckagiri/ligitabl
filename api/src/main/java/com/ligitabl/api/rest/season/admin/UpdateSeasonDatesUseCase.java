@@ -18,10 +18,14 @@ public class UpdateSeasonDatesUseCase {
 
     private final SeasonRepo seasonRepo;
 
-    public sealed interface Result permits Result.Ok, Result.OutgoingSeasonNotFound, Result.UpcomingSeasonNotFound, Result.InvalidDateOrder {
+    public sealed interface Result
+            permits Result.Ok, Result.OutgoingSeasonNotFound, Result.UpcomingSeasonNotFound, Result.InvalidDateOrder {
         record Ok() implements Result {}
+
         record OutgoingSeasonNotFound(UUID seasonId) implements Result {}
+
         record UpcomingSeasonNotFound(UUID seasonId) implements Result {}
+
         record InvalidDateOrder(String message) implements Result {}
     }
 
@@ -32,8 +36,7 @@ public class UpdateSeasonDatesUseCase {
             UUID upcomingSeasonId,
             OffsetDateTime predictionsOpenAt) {
 
-        if (preSeasonOpensAt != null && predictionsOpenAt != null
-                && !preSeasonOpensAt.isBefore(predictionsOpenAt)) {
+        if (preSeasonOpensAt != null && predictionsOpenAt != null && !preSeasonOpensAt.isBefore(predictionsOpenAt)) {
             return new Result.InvalidDateOrder("preSeasonOpensAt must be before predictionsOpenAt");
         }
 

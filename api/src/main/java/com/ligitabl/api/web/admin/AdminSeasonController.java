@@ -88,14 +88,13 @@ public class AdminSeasonController {
         model.addAttribute("now", OffsetDateTime.now());
 
         if (activeSeason != null && activeSeason.getPreSeasonOpensAt() != null) {
-            long daysToPreSeason = ChronoUnit.DAYS.between(
-                    OffsetDateTime.now(), activeSeason.getPreSeasonOpensAt());
+            long daysToPreSeason = ChronoUnit.DAYS.between(OffsetDateTime.now(), activeSeason.getPreSeasonOpensAt());
             model.addAttribute("daysToPreSeason", Math.max(0, daysToPreSeason));
         }
 
         if (upcomingSeason != null && upcomingSeason.getPredictionsOpenAt() != null) {
-            long daysToPredictions = ChronoUnit.DAYS.between(
-                    OffsetDateTime.now(), upcomingSeason.getPredictionsOpenAt());
+            long daysToPredictions =
+                    ChronoUnit.DAYS.between(OffsetDateTime.now(), upcomingSeason.getPredictionsOpenAt());
             model.addAttribute("daysToPredictions", Math.max(0, daysToPredictions));
         }
 
@@ -109,28 +108,27 @@ public class AdminSeasonController {
         var result = assignUpcomingSeasonUseCase.execute(slug, request.seasonId());
         return switch (result) {
             case AssignUpcomingSeasonUseCase.Result.Ok ok -> ResponseEntity.ok().build();
-            case AssignUpcomingSeasonUseCase.Result.CompetitionNotFound e ->
-                    ResponseEntity.notFound().build();
-            case AssignUpcomingSeasonUseCase.Result.SeasonNotFound e ->
-                    ResponseEntity.notFound().build();
-            case AssignUpcomingSeasonUseCase.Result.SeasonNotBelongToCompetition e ->
-                    ResponseEntity.badRequest().build();
-            case AssignUpcomingSeasonUseCase.Result.SeasonAlreadyCompleted e ->
-                    ResponseEntity.badRequest().build();
+            case AssignUpcomingSeasonUseCase.Result.CompetitionNotFound e -> ResponseEntity.notFound()
+                    .build();
+            case AssignUpcomingSeasonUseCase.Result.SeasonNotFound e -> ResponseEntity.notFound()
+                    .build();
+            case AssignUpcomingSeasonUseCase.Result.SeasonNotBelongToCompetition e -> ResponseEntity.badRequest()
+                    .build();
+            case AssignUpcomingSeasonUseCase.Result.SeasonAlreadyCompleted e -> ResponseEntity.badRequest()
+                    .build();
         };
     }
 
     @PatchMapping("/competitions/{slug}/activate-season")
     @ResponseBody
-    public ResponseEntity<?> activateSeason(
-            @PathVariable String slug, @RequestBody ActivateSeasonRequest request) {
+    public ResponseEntity<?> activateSeason(@PathVariable String slug, @RequestBody ActivateSeasonRequest request) {
         var result = activateSeasonUseCase.execute(slug, request.predictionsOpenAt());
         return switch (result) {
             case ActivateSeasonUseCase.Result.Ok ok -> ResponseEntity.ok().build();
-            case ActivateSeasonUseCase.Result.CompetitionNotFound e ->
-                    ResponseEntity.notFound().build();
-            case ActivateSeasonUseCase.Result.NoUpcomingSeason e ->
-                    ResponseEntity.badRequest().build();
+            case ActivateSeasonUseCase.Result.CompetitionNotFound e -> ResponseEntity.notFound()
+                    .build();
+            case ActivateSeasonUseCase.Result.NoUpcomingSeason e -> ResponseEntity.badRequest()
+                    .build();
         };
     }
 
@@ -140,10 +138,10 @@ public class AdminSeasonController {
         var result = revertSeasonUseCase.execute(slug);
         return switch (result) {
             case RevertSeasonUseCase.Result.Ok ok -> ResponseEntity.ok().build();
-            case RevertSeasonUseCase.Result.CompetitionNotFound e ->
-                    ResponseEntity.notFound().build();
-            case RevertSeasonUseCase.Result.NoFormerSeason e ->
-                    ResponseEntity.badRequest().build();
+            case RevertSeasonUseCase.Result.CompetitionNotFound e -> ResponseEntity.notFound()
+                    .build();
+            case RevertSeasonUseCase.Result.NoFormerSeason e -> ResponseEntity.badRequest()
+                    .build();
         };
     }
 
@@ -158,12 +156,12 @@ public class AdminSeasonController {
                 request.predictionsOpenAt());
         return switch (result) {
             case UpdateSeasonDatesUseCase.Result.Ok ok -> ResponseEntity.ok().build();
-            case UpdateSeasonDatesUseCase.Result.OutgoingSeasonNotFound e ->
-                    ResponseEntity.notFound().build();
-            case UpdateSeasonDatesUseCase.Result.UpcomingSeasonNotFound e ->
-                    ResponseEntity.notFound().build();
-            case UpdateSeasonDatesUseCase.Result.InvalidDateOrder e ->
-                    ResponseEntity.badRequest().body(e.message());
+            case UpdateSeasonDatesUseCase.Result.OutgoingSeasonNotFound e -> ResponseEntity.notFound()
+                    .build();
+            case UpdateSeasonDatesUseCase.Result.UpcomingSeasonNotFound e -> ResponseEntity.notFound()
+                    .build();
+            case UpdateSeasonDatesUseCase.Result.InvalidDateOrder e -> ResponseEntity.badRequest()
+                    .body(e.message());
         };
     }
 

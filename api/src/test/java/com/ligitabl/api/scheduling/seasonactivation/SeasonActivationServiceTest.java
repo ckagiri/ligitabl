@@ -26,8 +26,11 @@ class SeasonActivationServiceTest {
 
     private static final CompetitionDefaults DEFAULTS = new CompetitionDefaults("premier-league");
 
-    @Mock CompetitionRepo competitionRepo;
-    @Mock SeasonRepo seasonRepo;
+    @Mock
+    CompetitionRepo competitionRepo;
+
+    @Mock
+    SeasonRepo seasonRepo;
 
     private SeasonActivationService service;
     private UUID competitionId;

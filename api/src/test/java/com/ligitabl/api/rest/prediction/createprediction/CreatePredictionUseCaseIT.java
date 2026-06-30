@@ -385,7 +385,9 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             var prediction = predictionRepo.findByUserAndSeason(userId, seasonId);
             assertThat(prediction).isPresent();
             assertThat(prediction.get().getAtRoundNumber()).isEqualTo(0);
-            assertThat(prediction.get().getInitialRankings()).isNotNull().isEqualTo(prediction.get().getCurrentRankings());
+            assertThat(prediction.get().getInitialRankings())
+                    .isNotNull()
+                    .isEqualTo(prediction.get().getCurrentRankings());
             assertThat(prediction.get().getSwaps()).hasSize(1);
             assertThat(prediction.get().getSwaps().get(0).getRound()).isEqualTo(0);
 

@@ -25,7 +25,9 @@ public class RevertSeasonUseCase {
 
     public sealed interface Result permits Result.Ok, Result.CompetitionNotFound, Result.NoFormerSeason {
         record Ok(UUID newActiveSeasonId) implements Result {}
+
         record CompetitionNotFound(String slug) implements Result {}
+
         record NoFormerSeason(UUID competitionId) implements Result {}
     }
 
@@ -43,8 +45,11 @@ public class RevertSeasonUseCase {
 
         competitionRepo.revertToFormerSeason(competition.getId(), formerSeasonId, competition.getActiveSeasonId());
 
-        log.info("[ADMIN_REVERT_SEASON] competition={} newActiveSeasonId={} newUpcomingSeasonId={}",
-                competitionSlug, formerSeasonId, competition.getActiveSeasonId());
+        log.info(
+                "[ADMIN_REVERT_SEASON] competition={} newActiveSeasonId={} newUpcomingSeasonId={}",
+                competitionSlug,
+                formerSeasonId,
+                competition.getActiveSeasonId());
 
         return new Result.Ok(formerSeasonId);
     }

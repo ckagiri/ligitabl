@@ -10,6 +10,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -35,7 +36,6 @@ import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.UserRepo;
 
 import jakarta.servlet.http.HttpSession;
-import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -189,8 +189,7 @@ public class ProfileController {
                     }
                     int memberCount = entryRepo.countActiveByContestId(contest.getId());
                     Integer rank = resolveRank(contest, season, userId);
-                    ContestSummary summary = new ContestSummary(
-                            contest.getName(), season.getName(), memberCount, rank);
+                    ContestSummary summary = new ContestSummary(contest.getName(), season.getName(), memberCount, rank);
                     if (season.isCompleted()) {
                         pastContests.add(summary);
                     } else {

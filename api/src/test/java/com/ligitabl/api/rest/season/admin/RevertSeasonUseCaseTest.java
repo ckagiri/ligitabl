@@ -19,7 +19,8 @@ import com.ligitabl.model.repo.CompetitionRepo;
 @ExtendWith(MockitoExtension.class)
 class RevertSeasonUseCaseTest {
 
-    @Mock CompetitionRepo competitionRepo;
+    @Mock
+    CompetitionRepo competitionRepo;
 
     private RevertSeasonUseCase useCase;
     private UUID competitionId;

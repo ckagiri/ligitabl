@@ -23,12 +23,19 @@ public class AssignUpcomingSeasonUseCase {
     private final SeasonRepo seasonRepo;
 
     public sealed interface Result
-            permits Result.Ok, Result.CompetitionNotFound, Result.SeasonNotFound, Result.SeasonNotBelongToCompetition,
+            permits Result.Ok,
+                    Result.CompetitionNotFound,
+                    Result.SeasonNotFound,
+                    Result.SeasonNotBelongToCompetition,
                     Result.SeasonAlreadyCompleted {
         record Ok(UUID seasonId) implements Result {}
+
         record CompetitionNotFound(String slug) implements Result {}
+
         record SeasonNotFound(UUID seasonId) implements Result {}
+
         record SeasonNotBelongToCompetition(UUID seasonId, UUID competitionId) implements Result {}
+
         record SeasonAlreadyCompleted(UUID seasonId) implements Result {}
     }
 

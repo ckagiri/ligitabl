@@ -24,8 +24,11 @@ import com.ligitabl.model.repo.SeasonRepo;
 @ExtendWith(MockitoExtension.class)
 class ActivateSeasonUseCaseTest {
 
-    @Mock CompetitionRepo competitionRepo;
-    @Mock SeasonRepo seasonRepo;
+    @Mock
+    CompetitionRepo competitionRepo;
+
+    @Mock
+    SeasonRepo seasonRepo;
 
     private ActivateSeasonUseCase useCase;
     private UUID competitionId;
@@ -68,7 +71,8 @@ class ActivateSeasonUseCaseTest {
         var result = useCase.execute("premier-league", null);
 
         assertThat(result).isInstanceOf(ActivateSeasonUseCase.Result.Ok.class);
-        assertThat(((ActivateSeasonUseCase.Result.Ok) result).newActiveSeasonId()).isEqualTo(upcomingSeasonId);
+        assertThat(((ActivateSeasonUseCase.Result.Ok) result).newActiveSeasonId())
+                .isEqualTo(upcomingSeasonId);
         verify(competitionRepo).promoteUpcomingSeason(competitionId, upcomingSeasonId, activeSeasonId);
     }
 

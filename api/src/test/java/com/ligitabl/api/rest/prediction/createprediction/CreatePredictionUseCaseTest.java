@@ -401,12 +401,13 @@ class CreatePredictionUseCaseTest {
         assertEquals(0, result.get().atRoundNumber());
         verify(roundRepo, never()).findById(any());
 
-        verify(predictionRepo).save(argThat(p -> p.getAtRoundNumber() == 0
-                && p.getInitialRankings() != null
-                && p.getInitialRankings().equals(p.getCurrentRankings())
-                && p.getSwaps().size() == 1
-                && p.getSwaps().get(0).getRound() == 0
-                && p.getSwaps().get(0).getChanges().size() == 1));
+        verify(predictionRepo)
+                .save(argThat(p -> p.getAtRoundNumber() == 0
+                        && p.getInitialRankings() != null
+                        && p.getInitialRankings().equals(p.getCurrentRankings())
+                        && p.getSwaps().size() == 1
+                        && p.getSwaps().get(0).getRound() == 0
+                        && p.getSwaps().get(0).getChanges().size() == 1));
     }
 
     @Test
@@ -436,8 +437,7 @@ class CreatePredictionUseCaseTest {
         // season.predictionsOpenAt is null on the default fixture => isPredictionsOpen()==true => isPreSeason()==false
         UUID existingId = UUID.randomUUID();
         UUID existingEntryId = UUID.randomUUID();
-        List<TeamRank> preSeasonRankings =
-                List.of(TeamRank.of("LIV", 1), TeamRank.of("ARS", 2), TeamRank.of("MCI", 3));
+        List<TeamRank> preSeasonRankings = List.of(TeamRank.of("LIV", 1), TeamRank.of("ARS", 2), TeamRank.of("MCI", 3));
         SeasonPrediction existing = SeasonPrediction.builder()
                 .id(existingId)
                 .userId(userId)
@@ -473,10 +473,11 @@ class CreatePredictionUseCaseTest {
         assertEquals(existingId, result.get().predictionId());
 
         verify(entryRepo, never()).save(any());
-        verify(predictionRepo).save(argThat(p -> p.getId().equals(existingId)
-                && p.getAtRoundNumber() == round.getPosition()
-                && p.getInitialRankings() != null
-                && p.getInitialRankings().equals(preSeasonRankings)));
+        verify(predictionRepo)
+                .save(argThat(p -> p.getId().equals(existingId)
+                        && p.getAtRoundNumber() == round.getPosition()
+                        && p.getInitialRankings() != null
+                        && p.getInitialRankings().equals(preSeasonRankings)));
     }
 
     // --- Helpers ---
