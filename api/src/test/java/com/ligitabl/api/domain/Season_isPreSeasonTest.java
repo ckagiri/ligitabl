@@ -23,9 +23,10 @@ class Season_isPreSeasonTest {
     }
 
     @Test
-    void notCompletedAndNullPredictionsOpenAt_returnsTrue() {
+    void notCompletedAndNullPredictionsOpenAt_returnsFalse() {
+        // null predictionsOpenAt now defaults to "predictions open" (back-compat), so pre-season is false
         Season season = buildSeason(false, null);
-        assertThat(season.isPreSeason()).isTrue();
+        assertThat(season.isPreSeason()).isFalse();
     }
 
     @Test

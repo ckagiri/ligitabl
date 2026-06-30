@@ -109,10 +109,15 @@
               </th:block>
             </th:block>
 
-            <!-- Off-season countdown (season completed, pre-season not yet open) -->
-            <th:block th:if="${seasonCompleted == true && daysToPreSeason != null}">
+            <!-- Off-season banner (season completed, predictions not yet open for the new season) -->
+            <th:block th:if="${isOffSeason == true}">
               <div class="mt-3 rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-sm text-gray-700">
-                Pre-season opens in <strong><span th:text="${daysToPreSeason}"></span> day<th:block th:if="${daysToPreSeason != 1}">s</th:block></strong>.
+                <th:block th:if="${daysToPreSeason != null}">
+                  Pre-season opens in <strong><span th:text="${daysToPreSeason}"></span> day<th:block th:if="${daysToPreSeason != 1}">s</th:block></strong>.
+                </th:block>
+                <th:block th:if="${daysToPreSeason == null}">
+                  Off-season. Pre-season dates haven't been announced yet.
+                </th:block>
               </div>
             </th:block>
 
@@ -133,7 +138,7 @@ isGuest=[[${isGuest}]] isUserNotFound=[[${isUserNotFound}]]
 swapStatus.firstSwapBonus=[[${swapStatus != null ? swapStatus.firstSwapBonus : null}]]
 firstSwap.defaultMsg=[[${roundState != 'locked' || atRoundNumber == null || atRoundNumber == currentRound}]]
 firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRoundNumber > currentRound}]]
-isPreSeason=[[${isPreSeason}]] isPredictionsOpen=[[${isPredictionsOpen}]] daysToPredictions=[[${daysToPredictions}]] daysToPreSeason=[[${daysToPreSeason}]]</pre
+isPreSeason=[[${isPreSeason}]] isOffSeason=[[${isOffSeason}]] isPredictionsOpen=[[${isPredictionsOpen}]] daysToPredictions=[[${daysToPredictions}]] daysToPreSeason=[[${daysToPreSeason}]]</pre
                 >
               </div>
             </div>
