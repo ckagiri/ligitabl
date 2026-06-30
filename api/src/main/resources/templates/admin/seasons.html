@@ -48,13 +48,15 @@
                     <span th:if="${activeSeason.preSeasonOpensAt != null}" th:text="${activeSeason.preSeasonOpensAt}"></span>
                     <span th:if="${activeSeason.preSeasonOpensAt == null}" class="text-gray-400">Not set</span>
                     <span th:if="${daysToPreSeason != null}" class="ml-2 text-xs text-gray-500" th:text="${'(' + daysToPreSeason + ' days)'}"></span>
+                    <span th:if="${activeSeason.preSeasonOpensAt != null and activeSeason.isPreSeasonOpen() == true}" class="ml-2 text-xs text-green-600">(opened)</span>
                   </dd>
                 </div>
                 <div>
                   <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Predictions open at</dt>
                   <dd class="mt-1 text-sm text-gray-700">
                     <span th:if="${activeSeason.predictionsOpenAt != null}" th:text="${activeSeason.predictionsOpenAt}"></span>
-                    <span th:if="${activeSeason.predictionsOpenAt == null}" class="text-gray-400">Not set</span>
+                    <span th:if="${activeSeason.predictionsOpenAt == null}" class="text-gray-400">Not set (open by default)</span>
+                    <span th:if="${activeSeason.predictionsOpenAt != null and activeSeason.isPredictionsOpen() == true}" class="ml-2 text-xs text-green-600">(opened)</span>
                   </dd>
                 </div>
                 <div>
@@ -96,7 +98,27 @@
               </dl>
             </th:block>
             <th:block th:if="${upcomingSeason == null}">
-              <p class="text-sm text-gray-500">No upcoming season found.</p>
+              <p class="text-sm text-gray-500 mb-4">No upcoming season assigned.</p>
+              <div
+                x-data="{ seasonId: '', loading: false, result: '' }"
+                class="flex flex-wrap gap-3 items-end"
+              >
+                <div>
+                  <label class="block text-xs text-gray-500 mb-1">Assign a season as upcoming</label>
+                  <select x-model="seasonId" class="form-select w-64 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                    <option value="">Select a season…</option>
+                    <option th:each="s : ${assignableSeasons}" th:value="${s.id}" th:text="${s.name}"></option>
+                  </select>
+                </div>
+                <button
+                  @click="loading=true; fetch('/admin/competitions/' + [[${competition?.slug?.value() ?: ''}]] + '/upcoming-season', { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ seasonId }) }).then(r => { result = r.ok ? 'Done! Reload to see changes.' : 'Error: ' + r.status; loading=false })"
+                  :disabled="loading || !seasonId"
+                  class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
+                >
+                  Assign
+                </button>
+                <span x-text="result" class="text-sm text-gray-600"></span>
+              </div>
             </th:block>
           </div>
         </div>
@@ -108,27 +130,34 @@
           </div>
           <div class="p-6 space-y-6">
 
-            <!-- Activate a season -->
+            <!-- Activate / Revert -->
             <div>
               <h3 class="text-sm font-medium text-gray-700 mb-3">Activate / Revert Season</h3>
               <div
-                x-data="{ seasonId: '', predictionsOpenAt: '', loading: false, result: '' }"
+                x-data="{ predictionsOpenAt: '', loading: false, result: '' }"
                 class="flex flex-wrap gap-3 items-end"
               >
                 <div>
-                  <label class="block text-xs text-gray-500 mb-1">Season ID</label>
-                  <input type="text" x-model="seasonId" placeholder="uuid" class="w-64 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                </div>
-                <div>
-                  <label class="block text-xs text-gray-500 mb-1">predictionsOpenAt (optional)</label>
+                  <label class="block text-xs text-gray-500 mb-1">predictionsOpenAt (optional, applied to the promoted season)</label>
                   <input type="datetime-local" x-model="predictionsOpenAt" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
                 <button
-                  @click="loading=true; fetch('/admin/competitions/' + [[${competition?.slug?.value() ?: ''}]] + '/activate-season', { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ seasonId, predictionsOpenAt: predictionsOpenAt || null }) }).then(r => { result = r.ok ? 'Done! Reload to see changes.' : 'Error: ' + r.status; loading=false })"
-                  :disabled="loading || !seasonId"
+                  @click="loading=true; fetch('/admin/competitions/' + [[${competition?.slug?.value() ?: ''}]] + '/activate-season', { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ predictionsOpenAt: predictionsOpenAt || null }) }).then(r => { result = r.ok ? 'Done! Reload to see changes.' : 'Error: ' + r.status; loading=false })"
+                  th:disabled="${upcomingSeason == null}"
+                  :disabled="loading"
                   class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
                 >
-                  Activate
+                  <span th:if="${upcomingSeason != null}">Activate "<span th:text="${upcomingSeason.name}"></span>"</span>
+                  <span th:if="${upcomingSeason == null}">Activate (no upcoming season)</span>
+                </button>
+                <button
+                  @click="loading=true; fetch('/admin/competitions/' + [[${competition?.slug?.value() ?: ''}]] + '/revert-season', { method: 'PATCH' }).then(r => { result = r.ok ? 'Done! Reload to see changes.' : 'Error: ' + r.status; loading=false })"
+                  th:disabled="${formerSeason == null}"
+                  :disabled="loading"
+                  class="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
+                >
+                  <span th:if="${formerSeason != null}">Revert to "<span th:text="${formerSeason.name}"></span>"</span>
+                  <span th:if="${formerSeason == null}">Revert (no former season)</span>
                 </button>
                 <span x-text="result" class="text-sm text-gray-600"></span>
               </div>
@@ -140,31 +169,32 @@
             <div>
               <h3 class="text-sm font-medium text-gray-700 mb-3">Update Season Dates</h3>
               <div
-                x-data="{ outgoingId: '', preSeasonOpensAt: '', upcomingId: '', predictionsOpenAt: '', loading: false, result: '' }"
+                th:attr="data-outgoing-id=${activeSeason != null ? activeSeason.id : ''}, data-upcoming-id=${upcomingSeason != null ? upcomingSeason.id : ''}"
+                x-data="{
+                  preSeasonOpensAt: '', predictionsOpenAt: '', loading: false, result: '',
+                  outgoingId: $el.dataset.outgoingId || null,
+                  upcomingId: $el.dataset.upcomingId || null
+                }"
                 class="space-y-3"
               >
-                <div class="flex flex-wrap gap-3">
+                <div class="flex flex-wrap gap-3 items-end">
                   <div>
-                    <label class="block text-xs text-gray-500 mb-1">Outgoing season ID</label>
-                    <input type="text" x-model="outgoingId" placeholder="uuid" class="w-64 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                  </div>
-                  <div>
-                    <label class="block text-xs text-gray-500 mb-1">preSeasonOpensAt</label>
+                    <label class="block text-xs text-gray-500 mb-1">
+                      Outgoing season: <span class="font-medium text-gray-700" th:text="${activeSeason != null ? activeSeason.name : 'none'}"></span>
+                    </label>
+                    <label class="block text-xs text-gray-500 mb-1 mt-1">preSeasonOpensAt</label>
                     <input type="datetime-local" x-model="preSeasonOpensAt" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                   </div>
-                </div>
-                <div class="flex flex-wrap gap-3">
                   <div>
-                    <label class="block text-xs text-gray-500 mb-1">Upcoming season ID</label>
-                    <input type="text" x-model="upcomingId" placeholder="uuid" class="w-64 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-                  </div>
-                  <div>
-                    <label class="block text-xs text-gray-500 mb-1">predictionsOpenAt</label>
+                    <label class="block text-xs text-gray-500 mb-1">
+                      Upcoming season: <span class="font-medium text-gray-700" th:text="${upcomingSeason != null ? upcomingSeason.name : 'none assigned'}"></span>
+                    </label>
+                    <label class="block text-xs text-gray-500 mb-1 mt-1">predictionsOpenAt</label>
                     <input type="datetime-local" x-model="predictionsOpenAt" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                   </div>
                 </div>
                 <button
-                  @click="loading=true; fetch('/admin/competitions/' + [[${competition?.slug?.value() ?: ''}]] + '/season-dates', { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ outgoingSeasonId: outgoingId || null, preSeasonOpensAt: preSeasonOpensAt || null, upcomingSeasonId: upcomingId || null, predictionsOpenAt: predictionsOpenAt || null }) }).then(r => r.ok ? r.text().then(t => { result = 'Done!'; loading=false }) : r.text().then(t => { result = 'Error: ' + t; loading=false }))"
+                  @click="loading=true; fetch('/admin/competitions/' + [[${competition?.slug?.value() ?: ''}]] + '/season-dates', { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ outgoingSeasonId: outgoingId, preSeasonOpensAt: preSeasonOpensAt || null, upcomingSeasonId: upcomingId, predictionsOpenAt: predictionsOpenAt || null }) }).then(r => r.ok ? r.text().then(t => { result = 'Done!'; loading=false }) : r.text().then(t => { result = 'Error: ' + t; loading=false }))"
                   :disabled="loading"
                   class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
                 >
@@ -193,8 +223,13 @@
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100">
-                <tr th:each="s : ${allSeasons}" :class="${s.id == activeSeason?.id} ? 'bg-indigo-50' : ''">
-                  <td class="px-6 py-3 text-sm font-medium text-gray-900" th:text="${s.name}"></td>
+                <tr th:each="s : ${allSeasons}" :class="${s.id == activeSeason?.id} ? 'bg-indigo-50' : (${s.id == upcomingSeason?.id} ? 'bg-yellow-50' : '')">
+                  <td class="px-6 py-3 text-sm font-medium text-gray-900">
+                    <span th:text="${s.name}"></span>
+                    <span th:if="${s.id == activeSeason?.id}" class="ml-1 text-xs font-medium text-indigo-600">(active)</span>
+                    <span th:if="${s.id == upcomingSeason?.id}" class="ml-1 text-xs font-medium text-yellow-700">(upcoming)</span>
+                    <span th:if="${s.id == formerSeason?.id}" class="ml-1 text-xs font-medium text-gray-500">(former)</span>
+                  </td>
                   <td class="px-6 py-3">
                     <span th:if="${s.completed == true}" class="text-xs font-medium bg-gray-100 text-gray-600 px-2 py-0.5 rounded">Completed</span>
                     <span th:if="${s.completed == false}" class="text-xs font-medium bg-green-100 text-green-700 px-2 py-0.5 rounded">Active</span>

@@ -22,39 +22,38 @@ public class ActivateSeasonUseCase {
     private final CompetitionRepo competitionRepo;
     private final SeasonRepo seasonRepo;
 
-    public sealed interface Result permits Result.Ok, Result.CompetitionNotFound, Result.SeasonNotFound, Result.SeasonNotBelongToCompetition {
+    public sealed interface Result permits Result.Ok, Result.CompetitionNotFound, Result.NoUpcomingSeason {
         record Ok(UUID newActiveSeasonId) implements Result {}
         record CompetitionNotFound(String slug) implements Result {}
-        record SeasonNotFound(UUID seasonId) implements Result {}
-        record SeasonNotBelongToCompetition(UUID seasonId, UUID competitionId) implements Result {}
+        record NoUpcomingSeason(UUID competitionId) implements Result {}
     }
 
+    /** Promotes competition.upcomingSeasonId to activeSeasonId, demoting the current active season to former. */
     @Transactional
-    public Result execute(String competitionSlug, UUID seasonId, OffsetDateTime predictionsOpenAt) {
+    public Result execute(String competitionSlug, OffsetDateTime predictionsOpenAt) {
         Competition competition = competitionRepo.findBySlug(competitionSlug).orElse(null);
         if (competition == null) {
             return new Result.CompetitionNotFound(competitionSlug);
         }
 
-        Season season = seasonRepo.findById(seasonId).orElse(null);
-        if (season == null) {
-            return new Result.SeasonNotFound(seasonId);
-        }
-
-        if (!season.getCompetitionId().equals(competition.getId())) {
-            return new Result.SeasonNotBelongToCompetition(seasonId, competition.getId());
+        UUID upcomingSeasonId = competition.getUpcomingSeasonId();
+        if (upcomingSeasonId == null) {
+            return new Result.NoUpcomingSeason(competition.getId());
         }
 
         if (predictionsOpenAt != null) {
-            season.setPredictionsOpenAt(predictionsOpenAt);
-            seasonRepo.save(season);
+            Season upcoming = seasonRepo.findById(upcomingSeasonId).orElse(null);
+            if (upcoming != null) {
+                upcoming.setPredictionsOpenAt(predictionsOpenAt);
+                seasonRepo.save(upcoming);
+            }
         }
 
-        competitionRepo.updateActiveSeasonId(competition.getId(), seasonId);
+        competitionRepo.promoteUpcomingSeason(competition.getId(), upcomingSeasonId, competition.getActiveSeasonId());
 
-        log.info("[ADMIN_ACTIVATE_SEASON] competition={} newActiveSeasonId={} predictionsOpenAt={}",
-                competitionSlug, seasonId, predictionsOpenAt);
+        log.info("[ADMIN_ACTIVATE_SEASON] competition={} newActiveSeasonId={} formerSeasonId={} predictionsOpenAt={}",
+                competitionSlug, upcomingSeasonId, competition.getActiveSeasonId(), predictionsOpenAt);
 
-        return new Result.Ok(seasonId);
+        return new Result.Ok(upcomingSeasonId);
     }
 }

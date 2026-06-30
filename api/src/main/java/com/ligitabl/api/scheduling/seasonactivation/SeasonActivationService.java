@@ -14,10 +14,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Watches the outgoing season's preSeasonOpensAt date and auto-switches
- * Competition.activeSeasonId to the upcoming season when that date passes.
+ * Watches the outgoing season's preSeasonOpensAt date and auto-promotes
+ * Competition.upcomingSeasonId to activeSeasonId when that date passes.
  *
- * Runs every 15 minutes. Idempotent — safe to call multiple times.
+ * Requires an upcoming season to already be assigned to the competition (via admin) —
+ * does not derive one. Runs every 15 minutes. Idempotent — safe to call multiple times.
  */
 @Service
 @RequiredArgsConstructor
@@ -50,15 +51,17 @@ public class SeasonActivationService {
             return;
         }
 
-        seasonRepo.findUpcomingSeason(competition.getId(), activeSeason.getId()).ifPresentOrElse(
-                upcoming -> {
-                    log.info(
-                            "[SEASON_ACTIVATION] Switching competition {} activeSeasonId from {} to {}",
-                            competition.getSlug(), activeSeason.getId(), upcoming.getId());
-                    competitionRepo.updateActiveSeasonId(competition.getId(), upcoming.getId());
-                },
-                () -> log.debug(
-                        "[SEASON_ACTIVATION] No upcoming season found for competition {}, no switch",
-                        competition.getSlug()));
+        if (competition.getUpcomingSeasonId() == null) {
+            log.debug(
+                    "[SEASON_ACTIVATION] No upcoming season assigned for competition {}, no switch",
+                    competition.getSlug());
+            return;
+        }
+
+        log.info(
+                "[SEASON_ACTIVATION] Promoting competition {} upcomingSeasonId {} to activeSeasonId (was {})",
+                competition.getSlug(), competition.getUpcomingSeasonId(), activeSeason.getId());
+        competitionRepo.promoteUpcomingSeason(
+                competition.getId(), competition.getUpcomingSeasonId(), activeSeason.getId());
     }
 }

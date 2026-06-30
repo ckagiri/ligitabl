@@ -267,6 +267,53 @@
                 class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
                 >Contests</a
               >
+
+              <!-- Admin dropdown (desktop) -->
+              <div th:if="${isAdmin}" class="relative" x-data="{ adminMenuOpen: false }">
+                <button
+                  @click="adminMenuOpen = !adminMenuOpen"
+                  @click.away="adminMenuOpen = false"
+                  type="button"
+                  class="flex items-center space-x-1 text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+                >
+                  <span>Admin</span>
+                  <svg
+                    class="h-4 w-4"
+                    :class="{ 'rotate-180': adminMenuOpen }"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    style="transition: transform 200ms"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+                <div
+                  x-show="adminMenuOpen"
+                  x-cloak
+                  x-transition:enter="transition ease-out duration-100"
+                  x-transition:enter-start="transform opacity-0 scale-95"
+                  x-transition:enter-end="transform opacity-100 scale-100"
+                  x-transition:leave="transition ease-in duration-75"
+                  x-transition:leave-start="transform opacity-100 scale-100"
+                  x-transition:leave-end="transform opacity-0 scale-95"
+                  class="absolute left-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                >
+                  <div class="py-1">
+                    <a
+                      th:href="@{/admin/seasons}"
+                      class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
+                      @click="adminMenuOpen = false"
+                      >Season Management</a
+                    >
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -500,6 +547,12 @@
               th:href="@{/contests}"
               class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
               >Contests</a
+            >
+            <a
+              th:if="${isAdmin}"
+              th:href="@{/admin/seasons}"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+              >Admin: Season Management</a
             >
 
             <div class="border-t border-gray-200 pt-2 mt-2">

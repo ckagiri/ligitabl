@@ -32,24 +32,17 @@ class SeasonActivationServiceTest {
     private SeasonActivationService service;
     private UUID competitionId;
     private UUID activeSeasonId;
-    private Competition competition;
 
     @BeforeEach
     void setUp() {
         service = new SeasonActivationService(DEFAULTS, competitionRepo, seasonRepo);
         competitionId = UUID.randomUUID();
         activeSeasonId = UUID.randomUUID();
-        competition = Competition.builder()
-                .id(competitionId)
-                .name("Premier League")
-                .slug(CompetitionSlug.of("premier-league"))
-                .code("PL")
-                .activeSeasonId(activeSeasonId)
-                .build();
     }
 
     @Test
     void preSeasonNotOpen_noSwitch() {
+        Competition competition = buildCompetition(null);
         Season activeSeason = buildSeason(activeSeasonId, OffsetDateTime.now().plusDays(1));
 
         when(competitionRepo.findBySlug("premier-league")).thenReturn(Optional.of(competition));
@@ -57,51 +50,41 @@ class SeasonActivationServiceTest {
 
         service.checkAndActivateUpcomingSeason();
 
-        verify(competitionRepo, never()).updateActiveSeasonId(any(), any());
+        verify(competitionRepo, never()).promoteUpcomingSeason(any(), any(), any());
     }
 
     @Test
-    void preSeasonOpenButNoUpcomingSeason_noSwitch() {
+    void preSeasonOpenButNoUpcomingSeasonAssigned_noSwitch() {
+        Competition competition = buildCompetition(null);
         Season activeSeason = buildSeason(activeSeasonId, OffsetDateTime.now().minusDays(1));
 
         when(competitionRepo.findBySlug("premier-league")).thenReturn(Optional.of(competition));
         when(seasonRepo.findById(activeSeasonId)).thenReturn(Optional.of(activeSeason));
-        when(seasonRepo.findUpcomingSeason(competitionId, activeSeasonId)).thenReturn(Optional.empty());
 
         service.checkAndActivateUpcomingSeason();
 
-        verify(competitionRepo, never()).updateActiveSeasonId(any(), any());
+        verify(competitionRepo, never()).promoteUpcomingSeason(any(), any(), any());
     }
 
     @Test
-    void preSeasonOpenAndUpcomingExists_switchesActiveSeasonId() {
-        Season activeSeason = buildSeason(activeSeasonId, OffsetDateTime.now().minusDays(1));
+    void preSeasonOpenAndUpcomingAssigned_promotes() {
         UUID upcomingId = UUID.randomUUID();
-        Season upcomingSeason = Season.builder()
-                .id(upcomingId)
-                .clientId(1)
-                .competitionId(competitionId)
-                .name("2026/27")
-                .slug(SeasonSlug.of("2026-27"))
-                .startDate(LocalDate.now().plusMonths(1))
-                .endDate(LocalDate.now().plusMonths(10))
-                .completed(false)
-                .initialRankings(java.util.List.of())
-                .build();
+        Competition competition = buildCompetition(upcomingId);
+        Season activeSeason = buildSeason(activeSeasonId, OffsetDateTime.now().minusDays(1));
 
         when(competitionRepo.findBySlug("premier-league")).thenReturn(Optional.of(competition));
         when(seasonRepo.findById(activeSeasonId)).thenReturn(Optional.of(activeSeason));
-        when(seasonRepo.findUpcomingSeason(competitionId, activeSeasonId)).thenReturn(Optional.of(upcomingSeason));
 
         service.checkAndActivateUpcomingSeason();
 
-        verify(competitionRepo).updateActiveSeasonId(competitionId, upcomingId);
+        verify(competitionRepo).promoteUpcomingSeason(competitionId, upcomingId, activeSeasonId);
     }
 
     @Test
     void alreadySwitched_idempotent() {
         // If active season is the upcoming one (already switched), isPreSeasonOpen() is false
         // because the upcoming season has no preSeasonOpensAt set
+        Competition competition = buildCompetition(null);
         Season alreadySwitchedSeason = Season.builder()
                 .id(activeSeasonId)
                 .clientId(1)
@@ -120,7 +103,18 @@ class SeasonActivationServiceTest {
 
         service.checkAndActivateUpcomingSeason();
 
-        verify(competitionRepo, never()).updateActiveSeasonId(any(), any());
+        verify(competitionRepo, never()).promoteUpcomingSeason(any(), any(), any());
+    }
+
+    private Competition buildCompetition(UUID upcomingSeasonId) {
+        return Competition.builder()
+                .id(competitionId)
+                .name("Premier League")
+                .slug(CompetitionSlug.of("premier-league"))
+                .code("PL")
+                .activeSeasonId(activeSeasonId)
+                .upcomingSeasonId(upcomingSeasonId)
+                .build();
     }
 
     private Season buildSeason(UUID id, OffsetDateTime preSeasonOpensAt) {

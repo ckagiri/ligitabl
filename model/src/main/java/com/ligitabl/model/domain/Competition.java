@@ -26,6 +26,12 @@ public class Competition extends AbstractModel<UUID> {
 
     private UUID activeSeasonId;
 
+    /** Set once an admin assigns a season to take over from activeSeasonId. Cleared on activation. */
+    private UUID upcomingSeasonId;
+
+    /** Set when activeSeasonId is promoted from upcomingSeasonId — the previously active season. Cleared on revert. */
+    private UUID formerSeasonId;
+
     public RoundSpan sprintForRound(int round) {
         if (phases == null || phases.isEmpty()) {
             throw new IllegalStateException("No phases configured for competition");

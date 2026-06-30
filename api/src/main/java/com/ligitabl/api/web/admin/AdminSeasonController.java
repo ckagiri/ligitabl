@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.season.admin.ActivateSeasonUseCase;
+import com.ligitabl.api.rest.season.admin.AssignUpcomingSeasonUseCase;
+import com.ligitabl.api.rest.season.admin.RevertSeasonUseCase;
 import com.ligitabl.api.rest.season.admin.UpdateSeasonDatesUseCase;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Season;
@@ -39,6 +41,8 @@ public class AdminSeasonController {
     private final CompetitionRepo competitionRepo;
     private final SeasonRepo seasonRepo;
     private final ActivateSeasonUseCase activateSeasonUseCase;
+    private final RevertSeasonUseCase revertSeasonUseCase;
+    private final AssignUpcomingSeasonUseCase assignUpcomingSeasonUseCase;
     private final UpdateSeasonDatesUseCase updateSeasonDatesUseCase;
 
     @GetMapping("/seasons")
@@ -56,16 +60,30 @@ public class AdminSeasonController {
                 ? seasonRepo.findById(competition.getActiveSeasonId()).orElse(null)
                 : null;
 
-        Season upcomingSeason = activeSeason != null
-                ? seasonRepo.findUpcomingSeason(competition.getId(), activeSeason.getId()).orElse(null)
+        Season upcomingSeason = competition.getUpcomingSeasonId() != null
+                ? seasonRepo.findById(competition.getUpcomingSeasonId()).orElse(null)
+                : null;
+
+        Season formerSeason = competition.getFormerSeasonId() != null
+                ? seasonRepo.findById(competition.getFormerSeasonId()).orElse(null)
                 : null;
 
         List<Season> allSeasons = seasonRepo.findAllByCompetitionId(competition.getId());
+
+        // Seasons eligible to be assigned as upcoming: not completed, not already active/upcoming/former
+        List<Season> assignableSeasons = allSeasons.stream()
+                .filter(s -> !s.isCompleted())
+                .filter(s -> !s.getId().equals(competition.getActiveSeasonId()))
+                .filter(s -> !s.getId().equals(competition.getUpcomingSeasonId()))
+                .filter(s -> !s.getId().equals(competition.getFormerSeasonId()))
+                .toList();
 
         model.addAttribute("pageTitle", "Season Management");
         model.addAttribute("competition", competition);
         model.addAttribute("activeSeason", activeSeason);
         model.addAttribute("upcomingSeason", upcomingSeason);
+        model.addAttribute("formerSeason", formerSeason);
+        model.addAttribute("assignableSeasons", assignableSeasons);
         model.addAttribute("allSeasons", allSeasons);
         model.addAttribute("now", OffsetDateTime.now());
 
@@ -84,18 +102,47 @@ public class AdminSeasonController {
         return "admin/seasons";
     }
 
+    @PatchMapping("/competitions/{slug}/upcoming-season")
+    @ResponseBody
+    public ResponseEntity<?> assignUpcomingSeason(
+            @PathVariable String slug, @RequestBody AssignUpcomingSeasonRequest request) {
+        var result = assignUpcomingSeasonUseCase.execute(slug, request.seasonId());
+        return switch (result) {
+            case AssignUpcomingSeasonUseCase.Result.Ok ok -> ResponseEntity.ok().build();
+            case AssignUpcomingSeasonUseCase.Result.CompetitionNotFound e ->
+                    ResponseEntity.notFound().build();
+            case AssignUpcomingSeasonUseCase.Result.SeasonNotFound e ->
+                    ResponseEntity.notFound().build();
+            case AssignUpcomingSeasonUseCase.Result.SeasonNotBelongToCompetition e ->
+                    ResponseEntity.badRequest().build();
+            case AssignUpcomingSeasonUseCase.Result.SeasonAlreadyCompleted e ->
+                    ResponseEntity.badRequest().build();
+        };
+    }
+
     @PatchMapping("/competitions/{slug}/activate-season")
     @ResponseBody
     public ResponseEntity<?> activateSeason(
             @PathVariable String slug, @RequestBody ActivateSeasonRequest request) {
-        var result = activateSeasonUseCase.execute(slug, request.seasonId(), request.predictionsOpenAt());
+        var result = activateSeasonUseCase.execute(slug, request.predictionsOpenAt());
         return switch (result) {
             case ActivateSeasonUseCase.Result.Ok ok -> ResponseEntity.ok().build();
             case ActivateSeasonUseCase.Result.CompetitionNotFound e ->
                     ResponseEntity.notFound().build();
-            case ActivateSeasonUseCase.Result.SeasonNotFound e ->
+            case ActivateSeasonUseCase.Result.NoUpcomingSeason e ->
+                    ResponseEntity.badRequest().build();
+        };
+    }
+
+    @PatchMapping("/competitions/{slug}/revert-season")
+    @ResponseBody
+    public ResponseEntity<?> revertSeason(@PathVariable String slug) {
+        var result = revertSeasonUseCase.execute(slug);
+        return switch (result) {
+            case RevertSeasonUseCase.Result.Ok ok -> ResponseEntity.ok().build();
+            case RevertSeasonUseCase.Result.CompetitionNotFound e ->
                     ResponseEntity.notFound().build();
-            case ActivateSeasonUseCase.Result.SeasonNotBelongToCompetition e ->
+            case RevertSeasonUseCase.Result.NoFormerSeason e ->
                     ResponseEntity.badRequest().build();
         };
     }
@@ -120,7 +167,9 @@ public class AdminSeasonController {
         };
     }
 
-    public record ActivateSeasonRequest(@NotNull UUID seasonId, OffsetDateTime predictionsOpenAt) {}
+    public record AssignUpcomingSeasonRequest(@NotNull UUID seasonId) {}
+
+    public record ActivateSeasonRequest(OffsetDateTime predictionsOpenAt) {}
 
     public record UpdateSeasonDatesRequest(
             UUID outgoingSeasonId,

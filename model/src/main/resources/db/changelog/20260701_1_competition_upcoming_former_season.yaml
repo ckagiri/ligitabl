@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260701_1_competition_upcoming_former_season
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_competition
+            schemaName: public
+      changes:
+        - addColumn:
+            tableName: t_competition
+            schemaName: public
+            columns:
+              - column:
+                  name: fk_upcoming_season_id
+                  type: uuid
+                  constraints:
+                    nullable: true
+              - column:
+                  name: fk_former_season_id
+                  type: uuid
+                  constraints:
+                    nullable: true

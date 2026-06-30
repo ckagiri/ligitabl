@@ -45,3 +45,5 @@ databaseChangeLog:
       file: db/changelog/20260625_1_minileague_entry_and_contest_fields.yaml
   - include:
       file: db/changelog/20260630_1_season_phase_dates.yaml
+  - include:
+      file: db/changelog/20260701_1_competition_upcoming_former_season.yaml

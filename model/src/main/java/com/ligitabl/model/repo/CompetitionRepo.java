@@ -24,5 +24,12 @@ public interface CompetitionRepo {
 
     boolean existsById(UUID id);
 
-    void updateActiveSeasonId(UUID competitionId, UUID seasonId);
+    /** Assigns a season as the competition's upcoming season (does not touch active/former). */
+    void assignUpcomingSeason(UUID competitionId, UUID seasonId);
+
+    /** Promotes upcomingSeasonId to activeSeasonId, demotes the old active season to formerSeasonId, clears upcoming. */
+    void promoteUpcomingSeason(UUID competitionId, UUID newActiveSeasonId, UUID newFormerSeasonId);
+
+    /** Reverts formerSeasonId back to activeSeasonId, demotes the current active season to upcomingSeasonId, clears former. */
+    void revertToFormerSeason(UUID competitionId, UUID newActiveSeasonId, UUID newUpcomingSeasonId);
 }
