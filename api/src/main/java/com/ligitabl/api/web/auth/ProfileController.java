@@ -25,13 +25,10 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
 import com.ligitabl.model.auth.Password;
-import com.ligitabl.model.domain.Contest;
-import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.domain.service.PasswordHasher;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
-import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.UserRepo;
 
 import jakarta.servlet.http.HttpSession;
@@ -53,7 +50,6 @@ public class ProfileController {
     private final PasswordHasher passwordHasher;
     private final EntryRepo entryRepo;
     private final ContestRepo contestRepo;
-    private final SeasonRepo seasonRepo;
     private final ContestRankResolver contestRankResolver;
 
     @GetMapping("/profile")
@@ -177,38 +173,38 @@ public class ProfileController {
         List<ContestSummary> activeContests = new ArrayList<>();
         List<ContestSummary> pastContests = new ArrayList<>();
 
-        entryRepo.findByUserId(userId).forEach(entry -> {
-            contestRepo.findById(entry.getContestId()).ifPresent(contest -> {
-                if (!contest.isMain()) {
-                    return;
-                }
-                seasonRepo.findById(contest.getSeasonId()).ifPresent(season -> {
-                    if (season.getMaxRounds() > 0 && contest.getToRoundPosition() != season.getMaxRounds()) {
-                        return;
-                    }
-                    int memberCount = entryRepo.countActiveByContestId(contest.getId());
-                    Integer rank = resolveRank(contest, season, userId);
-                    ContestSummary summary = new ContestSummary(contest.getName(), season.getName(), memberCount, rank);
-                    if (season.isCompleted()) {
-                        pastContests.add(summary);
-                    } else {
-                        activeContests.add(summary);
-                    }
-                });
-            });
+        // General contests first, then private — each group already ordered by most recently joined
+        var allViews = new ArrayList<ContestRepo.UserContestView>();
+        allViews.addAll(contestRepo.findGeneralContestsByUserId(userId));
+        allViews.addAll(contestRepo.findPrivateContestsByUserId(userId));
+
+        allViews.forEach(view -> {
+            int memberCount = entryRepo.countActiveByContestId(view.contestId());
+            Integer rank = resolveRank(view, userId);
+            ContestSummary summary = new ContestSummary(view.contestName(), view.seasonName(), memberCount, rank);
+            if (view.seasonCompleted()) {
+                pastContests.add(summary);
+            } else {
+                activeContests.add(summary);
+            }
         });
 
         model.addAttribute("activeContests", activeContests);
         model.addAttribute("pastContests", pastContests);
     }
 
-    private Integer resolveRank(Contest contest, Season season, UUID userId) {
+    private Integer resolveRank(ContestRepo.UserContestView view, UUID userId) {
         try {
             return contestRankResolver
-                    .resolve(contest.getId(), season.getId(), 1, season.getMaxRounds(), userId)
+                    .resolve(
+                            view.contestId(),
+                            view.seasonId(),
+                            view.fromRoundPosition(),
+                            view.toRoundPosition(),
+                            userId)
                     .position();
         } catch (Exception e) {
-            log.warn("Could not resolve rank for user {} in contest {}: {}", userId, contest.getId(), e.getMessage());
+            log.warn("Could not resolve rank for user {} in contest {}: {}", userId, view.contestId(), e.getMessage());
             return null;
         }
     }

@@ -2,6 +2,7 @@ package com.ligitabl.model.infra;
 
 import static com.ligitabl.model.db.tables.TContest.T_CONTEST;
 import static com.ligitabl.model.db.tables.TEntry.T_ENTRY;
+import static com.ligitabl.model.db.tables.TSeason.T_SEASON;
 import static org.jooq.impl.DSL.upper;
 
 import java.util.List;
@@ -101,6 +102,64 @@ public class ContestPersistenceAdapter implements ContestRepo {
     @Override
     public void delete(UUID contestId) {
         dsl.deleteFrom(T_CONTEST).where(T_CONTEST.PK_ID.eq(contestId)).execute();
+    }
+
+    @Override
+    public List<ContestRepo.UserContestView> findGeneralContestsByUserId(UUID userId) {
+        return dsl.select(
+                        T_CONTEST.PK_ID,
+                        T_CONTEST.C_NAME,
+                        T_SEASON.PK_ID,
+                        T_SEASON.C_NAME,
+                        T_SEASON.C_COMPLETED,
+                        T_CONTEST.C_FROM_ROUND_POSITION,
+                        T_CONTEST.C_TO_ROUND_POSITION)
+                .from(T_CONTEST)
+                .join(T_SEASON).on(T_SEASON.PK_ID.eq(T_CONTEST.FK_SEASON_ID))
+                .join(T_ENTRY).on(T_ENTRY.FK_CONTEST_ID.eq(T_CONTEST.PK_ID)
+                        .and(T_ENTRY.FK_USER_ID.eq(userId)))
+                .where(T_CONTEST.C_IS_PRIVATE.eq(false))
+                .and(T_CONTEST.C_FROM_ROUND_POSITION.eq(1))
+                .and(T_CONTEST.C_TO_ROUND_POSITION.eq(T_SEASON.C_MAX_ROUNDS))
+                .and(T_SEASON.C_MAX_ROUNDS.gt(0))
+                .orderBy(T_SEASON.C_START_DATE.desc(), T_ENTRY.C_JOINED_AT_ROUND.desc())
+                .fetch(r -> new ContestRepo.UserContestView(
+                        r.get(T_CONTEST.PK_ID),
+                        r.get(T_CONTEST.C_NAME),
+                        r.get(T_SEASON.PK_ID),
+                        r.get(T_SEASON.C_NAME),
+                        Boolean.TRUE.equals(r.get(T_SEASON.C_COMPLETED)),
+                        r.get(T_CONTEST.C_FROM_ROUND_POSITION),
+                        r.get(T_CONTEST.C_TO_ROUND_POSITION),
+                        false));
+    }
+
+    @Override
+    public List<ContestRepo.UserContestView> findPrivateContestsByUserId(UUID userId) {
+        return dsl.select(
+                        T_CONTEST.PK_ID,
+                        T_CONTEST.C_NAME,
+                        T_SEASON.PK_ID,
+                        T_SEASON.C_NAME,
+                        T_SEASON.C_COMPLETED,
+                        T_CONTEST.C_FROM_ROUND_POSITION,
+                        T_CONTEST.C_TO_ROUND_POSITION)
+                .from(T_CONTEST)
+                .join(T_SEASON).on(T_SEASON.PK_ID.eq(T_CONTEST.FK_SEASON_ID))
+                .join(T_ENTRY).on(T_ENTRY.FK_CONTEST_ID.eq(T_CONTEST.PK_ID)
+                        .and(T_ENTRY.FK_USER_ID.eq(userId))
+                        .and(T_ENTRY.C_REMOVED_AT_ROUND.isNull()))
+                .where(T_CONTEST.C_IS_PRIVATE.eq(true))
+                .orderBy(T_SEASON.C_START_DATE.desc(), T_ENTRY.C_JOINED_AT_ROUND.desc())
+                .fetch(r -> new ContestRepo.UserContestView(
+                        r.get(T_CONTEST.PK_ID),
+                        r.get(T_CONTEST.C_NAME),
+                        r.get(T_SEASON.PK_ID),
+                        r.get(T_SEASON.C_NAME),
+                        Boolean.TRUE.equals(r.get(T_SEASON.C_COMPLETED)),
+                        r.get(T_CONTEST.C_FROM_ROUND_POSITION),
+                        r.get(T_CONTEST.C_TO_ROUND_POSITION),
+                        true));
     }
 
     @Override
