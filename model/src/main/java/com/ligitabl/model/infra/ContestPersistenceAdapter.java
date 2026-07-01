@@ -113,8 +113,7 @@ public class ContestPersistenceAdapter implements ContestRepo {
         var generals = unionBranchForContests(userId, completed, false);
         var privates = unionBranchForContests(userId, completed, true);
 
-        return generals
-                .unionAll(privates)
+        return generals.unionAll(privates)
                 .orderBy(
                         DSL.field("sort_group"),
                         DSL.field("season_start_date").desc(),
@@ -137,9 +136,8 @@ public class ContestPersistenceAdapter implements ContestRepo {
         var generals = unionBranchForContests(userId, completed, false);
         var privates = unionBranchForContests(userId, completed, true);
 
-        Integer count = dsl.selectCount()
-                .from(generals.unionAll(privates).asTable("t"))
-                .fetchOne(0, Integer.class);
+        Integer count =
+                dsl.selectCount().from(generals.unionAll(privates).asTable("t")).fetchOne(0, Integer.class);
         return count != null ? count : 0;
     }
 
@@ -161,20 +159,19 @@ public class ContestPersistenceAdapter implements ContestRepo {
 
         var baseJoin = dsl.select(fields)
                 .from(T_CONTEST)
-                .join(T_SEASON).on(T_SEASON.PK_ID.eq(T_CONTEST.FK_SEASON_ID))
+                .join(T_SEASON)
+                .on(T_SEASON.PK_ID.eq(T_CONTEST.FK_SEASON_ID))
                 .join(T_ENTRY)
                 .on(T_ENTRY.FK_CONTEST_ID.eq(T_CONTEST.PK_ID).and(T_ENTRY.FK_USER_ID.eq(userId)));
 
         if (!isPrivate) {
-            return baseJoin
-                    .where(T_CONTEST.C_IS_PRIVATE.eq(false))
+            return baseJoin.where(T_CONTEST.C_IS_PRIVATE.eq(false))
                     .and(T_CONTEST.C_FROM_ROUND_POSITION.eq(1))
                     .and(T_CONTEST.C_TO_ROUND_POSITION.eq(T_SEASON.C_MAX_ROUNDS))
                     .and(T_SEASON.C_MAX_ROUNDS.gt(0))
                     .and(T_SEASON.C_COMPLETED.eq(completed));
         } else {
-            return baseJoin
-                    .where(T_CONTEST.C_IS_PRIVATE.eq(true))
+            return baseJoin.where(T_CONTEST.C_IS_PRIVATE.eq(true))
                     .and(T_ENTRY.C_REMOVED_AT_ROUND.isNull())
                     .and(T_SEASON.C_COMPLETED.eq(completed));
         }

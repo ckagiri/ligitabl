@@ -55,17 +55,15 @@ public class ProfileContestsController {
         int activeOffset = (Math.max(1, activePage) - 1) * PAGE_SIZE;
         int pastOffset = (Math.max(1, pastPage) - 1) * PAGE_SIZE;
 
-        List<ContestSummary> activeContests = contestRepo
-                .findContestsByUserId(userId, false, PAGE_SIZE, activeOffset)
-                .stream()
-                .map(v -> toSummary(v, userId))
-                .toList();
+        List<ContestSummary> activeContests =
+                contestRepo.findContestsByUserId(userId, false, PAGE_SIZE, activeOffset).stream()
+                        .map(v -> toSummary(v, userId))
+                        .toList();
 
-        List<ContestSummary> pastContests = contestRepo
-                .findContestsByUserId(userId, true, PAGE_SIZE, pastOffset)
-                .stream()
-                .map(v -> toSummary(v, userId))
-                .toList();
+        List<ContestSummary> pastContests =
+                contestRepo.findContestsByUserId(userId, true, PAGE_SIZE, pastOffset).stream()
+                        .map(v -> toSummary(v, userId))
+                        .toList();
 
         model.addAttribute("activeContests", activeContests);
         model.addAttribute("activeTotal", activeTotal);
@@ -95,11 +93,7 @@ public class ProfileContestsController {
         try {
             return contestRankResolver
                     .resolve(
-                            view.contestId(),
-                            view.seasonId(),
-                            view.fromRoundPosition(),
-                            view.toRoundPosition(),
-                            userId)
+                            view.contestId(), view.seasonId(), view.fromRoundPosition(), view.toRoundPosition(), userId)
                     .position();
         } catch (Exception e) {
             log.warn("Could not resolve rank for user {} in contest {}: {}", userId, view.contestId(), e.getMessage());
