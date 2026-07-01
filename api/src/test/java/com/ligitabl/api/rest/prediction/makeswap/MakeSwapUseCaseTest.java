@@ -80,7 +80,7 @@ class MakeSwapUseCaseTest {
                 roundRepo,
                 predictionRepo,
                 clock,
-                new SwapHelper(competitionDefaults, seasonRepo, predictionRepo, matchRepo));
+                new SwapHelper(competitionDefaults, seasonRepo, roundRepo, predictionRepo, matchRepo));
     }
 
     @Test
@@ -89,7 +89,7 @@ class MakeSwapUseCaseTest {
 
         when(clock.instant()).thenReturn(now);
 
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(predictionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
@@ -117,7 +117,7 @@ class MakeSwapUseCaseTest {
 
         when(clock.instant()).thenReturn(now);
 
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
 
@@ -132,7 +132,7 @@ class MakeSwapUseCaseTest {
     void shouldRejectSwap_whenRoundNotOpen() {
         SwapCommand command = new SwapCommand("ARS", "LIV");
 
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(round.getId()))
@@ -161,7 +161,7 @@ class MakeSwapUseCaseTest {
         season.setCurrentRoundId(round.getId());
 
         when(clock.instant()).thenReturn(now);
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(roundRepo.findBySeasonIdAndPosition(season.getId(), 11)).thenReturn(Optional.of(nextRound));

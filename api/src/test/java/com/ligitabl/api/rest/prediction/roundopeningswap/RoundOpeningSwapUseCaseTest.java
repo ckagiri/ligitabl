@@ -77,10 +77,9 @@ class RoundOpeningSwapUseCaseTest {
         prediction = createPrediction();
 
         useCase = new RoundOpeningSwapUseCase(
-                roundRepo,
                 predictionRepo,
                 clock,
-                new SwapHelper(competitionDefaults, seasonRepo, predictionRepo, matchRepo));
+                new SwapHelper(competitionDefaults, seasonRepo, roundRepo, predictionRepo, matchRepo));
     }
 
     // ── Happy path ────────────────────────────────────────────────────────────
@@ -119,7 +118,7 @@ class RoundOpeningSwapUseCaseTest {
                 List.of(TeamRank.of("ARS", 1), TeamRank.of("LIV", 2), TeamRank.of("MCI", 3), TeamRank.of("CHE", 4)));
 
         when(clock.instant()).thenReturn(now);
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
@@ -161,8 +160,7 @@ class RoundOpeningSwapUseCaseTest {
 
     @Test
     void shouldReject_whenSeasonCompleted() {
-        season.setCompleted(true);
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.empty());
 
         var command = new RoundOpeningSwapCommand(List.of(new SwapCommand("ARS", "LIV")));
         var result = useCase.execute(userId, command);
@@ -176,7 +174,7 @@ class RoundOpeningSwapUseCaseTest {
 
     @Test
     void shouldReject_whenRoundNotOpen() {
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(round.getId()))
                 .thenReturn(List.of(Match.builder().status(MatchStatus.LIVE).build()));
@@ -195,7 +193,7 @@ class RoundOpeningSwapUseCaseTest {
     void shouldReject_whenOpeningAlreadyUsedThisRound() {
         prediction.setOpeningCommittedRound(round.getPosition()); // already committed
 
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
@@ -226,7 +224,7 @@ class RoundOpeningSwapUseCaseTest {
 
     @Test
     void shouldReject_whenBatchIsEmpty() {
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
@@ -241,7 +239,7 @@ class RoundOpeningSwapUseCaseTest {
 
     @Test
     void shouldReject_whenBatchExceedsTwo() {
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
@@ -315,7 +313,7 @@ class RoundOpeningSwapUseCaseTest {
 
     private void stubHappyPath() {
         when(clock.instant()).thenReturn(now);
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));

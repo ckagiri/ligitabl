@@ -37,11 +37,12 @@ public class MakeSwapUseCase {
     public Either<SwapError, SwapResult> execute(UUID userId, SwapCommand command) {
         return swapHelper
                 .getCurrentSeason()
-                .flatMap(season -> swapHelper.validateSeasonNotCompleted(season).map(__ -> season))
-                .flatMap(season ->
-                        swapHelper.getPrediction(userId, season.getId()).map(p -> new Ctx(season, null, p)))
-                .flatMap(ctx ->
-                        getCurrentRound(ctx.season()).map(round -> new Ctx(ctx.season(), round, ctx.prediction())))
+                .flatMap(season -> swapHelper
+                        .getPrediction(userId, season.getId())
+                        .map(p -> new Ctx(season, null, p)))
+                .flatMap(ctx -> swapHelper
+                        .getCurrentRound(ctx.season())
+                        .map(round -> new Ctx(ctx.season(), round, ctx.prediction())))
                 .flatMap(ctx -> resolveTargetRound(ctx.prediction(), ctx.season(), ctx.targetRound())
                         .map(round -> new Ctx(ctx.season(), round, ctx.prediction())))
                 .flatMap(ctx -> swapHelper.validateRoundOpen(ctx.targetRound()).map(__ -> ctx))
@@ -55,13 +56,6 @@ public class MakeSwapUseCase {
                                 ctx.prediction().getCurrentRankings())
                         .map(teams -> new Ctx(ctx.season(), ctx.targetRound(), ctx.prediction(), teams)))
                 .flatMap(ctx -> performSwap(ctx.prediction(), ctx.teams(), ctx.targetRound()));
-    }
-
-    private Either<SwapError, Round> getCurrentRound(Season season) {
-        return roundRepo
-                .findById(season.getCurrentRoundId())
-                .map(Either::<SwapError, Round>right)
-                .orElseGet(() -> Either.left(new SwapError.RoundNotOpen(RoundStatus.UNKNOWN.name())));
     }
 
     private Either<SwapError, Round> resolveTargetRound(
