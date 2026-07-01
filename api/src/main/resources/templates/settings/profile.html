@@ -269,7 +269,7 @@
 
           <!-- Active tab -->
           <div x-show="tab === 'active'" class="p-4 sm:p-6">
-            <th:block th:if="${activeContests != null and !activeContests.isEmpty()}">
+            <th:block th:if="${activeTotal > 0}">
               <table class="min-w-full divide-y divide-gray-200">
                 <thead>
                   <tr>
@@ -279,9 +279,12 @@
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                  <tr th:each="c : ${activeContests}">
+                  <tr th:each="c : ${activeContests}"
+                      class="group hover:bg-gray-50 transition cursor-pointer"
+                      th:attr="data-href=${c.link()}"
+                      onclick="window.location.href=this.dataset.href">
                     <td class="py-3 pr-4">
-                      <div class="text-sm font-medium text-gray-900" th:text="${c.contestName()}"></div>
+                      <div class="text-sm font-medium text-indigo-600 group-hover:text-indigo-800" th:text="${c.contestName()}"></div>
                       <div class="text-xs text-gray-500" th:text="${c.seasonName()}"></div>
                     </td>
                     <td class="py-3 pr-4 text-sm text-gray-700">
@@ -292,15 +295,31 @@
                   </tr>
                 </tbody>
               </table>
+              <!-- Active pager -->
+              <th:block th:if="${activePages > 1}">
+                <div class="mt-4 flex items-center justify-between text-sm text-gray-600">
+                  <span th:text="${activeFrom + '–' + activeTo + ' of ' + activeTotal}"></span>
+                  <div class="flex items-center gap-2">
+                    <a th:if="${activePage > 1}"
+                       th:href="@{/settings/profile(activePage=${activePage - 1}, pastPage=${pastPage})}"
+                       class="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 transition">Prev</a>
+                    <span th:if="${activePage <= 1}" class="px-3 py-1 border border-gray-200 rounded text-sm text-gray-300 cursor-not-allowed">Prev</span>
+                    <a th:if="${activePage < activePages}"
+                       th:href="@{/settings/profile(activePage=${activePage + 1}, pastPage=${pastPage})}"
+                       class="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 transition">Next</a>
+                    <span th:if="${activePage >= activePages}" class="px-3 py-1 border border-gray-200 rounded text-sm text-gray-300 cursor-not-allowed">Next</span>
+                  </div>
+                </div>
+              </th:block>
             </th:block>
-            <th:block th:if="${activeContests == null or activeContests.isEmpty()}">
+            <th:block th:if="${activeTotal == 0}">
               <p class="text-sm text-gray-500">No active contests.</p>
             </th:block>
           </div>
 
           <!-- Past tab -->
           <div x-show="tab === 'past'" style="display:none" class="p-4 sm:p-6">
-            <th:block th:if="${pastContests != null and !pastContests.isEmpty()}">
+            <th:block th:if="${pastTotal > 0}">
               <table class="min-w-full divide-y divide-gray-200">
                 <thead>
                   <tr>
@@ -310,9 +329,12 @@
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                  <tr th:each="c : ${pastContests}">
+                  <tr th:each="c : ${pastContests}"
+                      class="group hover:bg-gray-50 transition cursor-pointer"
+                      th:attr="data-href=${c.link()}"
+                      onclick="window.location.href=this.dataset.href">
                     <td class="py-3 pr-4">
-                      <div class="text-sm font-medium text-gray-900">
+                      <div class="text-sm font-medium text-indigo-600 group-hover:text-indigo-800">
                         <span th:text="${c.contestName()}"></span>
                         <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">Over</span>
                       </div>
@@ -326,8 +348,24 @@
                   </tr>
                 </tbody>
               </table>
+              <!-- Past pager -->
+              <th:block th:if="${pastPages > 1}">
+                <div class="mt-4 flex items-center justify-between text-sm text-gray-600">
+                  <span th:text="${pastFrom + '–' + pastTo + ' of ' + pastTotal}"></span>
+                  <div class="flex items-center gap-2">
+                    <a th:if="${pastPage > 1}"
+                       th:href="@{/settings/profile(activePage=${activePage}, pastPage=${pastPage - 1})}"
+                       class="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 transition">Prev</a>
+                    <span th:if="${pastPage <= 1}" class="px-3 py-1 border border-gray-200 rounded text-sm text-gray-300 cursor-not-allowed">Prev</span>
+                    <a th:if="${pastPage < pastPages}"
+                       th:href="@{/settings/profile(activePage=${activePage}, pastPage=${pastPage + 1})}"
+                       class="px-3 py-1 border border-gray-300 rounded text-sm hover:bg-gray-50 transition">Next</a>
+                    <span th:if="${pastPage >= pastPages}" class="px-3 py-1 border border-gray-200 rounded text-sm text-gray-300 cursor-not-allowed">Next</span>
+                  </div>
+                </div>
+              </th:block>
             </th:block>
-            <th:block th:if="${pastContests == null or pastContests.isEmpty()}">
+            <th:block th:if="${pastTotal == 0}">
               <p class="text-sm text-gray-500">No past contests.</p>
             </th:block>
           </div>

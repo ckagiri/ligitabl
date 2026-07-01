@@ -30,15 +30,13 @@ public interface ContestRepo {
     List<Contest> findPrivateByUserId(UUID userId);
 
     /**
-     * Returns all full-season general (non-private) contests the user has joined, most recently joined first.
-     * Filters to from-round=1 and to-round=season.maxRounds (full-season scope only).
+     * Returns a paginated slice of contests the user has joined for the given tab (active or past),
+     * ordered general-first then private, each group by most recently joined.
      */
-    List<UserContestView> findGeneralContestsByUserId(UUID userId);
+    List<UserContestView> findContestsByUserId(UUID userId, boolean completed, int limit, int offset);
 
-    /**
-     * Returns all private contests the user has actively joined, most recently joined first.
-     */
-    List<UserContestView> findPrivateContestsByUserId(UUID userId);
+    /** Total number of contests for the given tab (active or past). Used to drive the pager. */
+    int countContestsByUserId(UUID userId, boolean completed);
 
     Optional<Contest> findByJoinCode(String joinCode);
 

@@ -1,6 +1,5 @@
 package com.ligitabl.api.web.auth;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -20,6 +19,7 @@ import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
@@ -48,12 +48,18 @@ public class ProfileController {
 
     private final UserRepo userRepo;
     private final PasswordHasher passwordHasher;
+    private static final int PAGE_SIZE = 10;
+
     private final EntryRepo entryRepo;
     private final ContestRepo contestRepo;
     private final ContestRankResolver contestRankResolver;
 
     @GetMapping("/profile")
-    public String profile(@AuthenticationPrincipal WebUserDetails userDetails, Model model) {
+    public String profile(
+            @AuthenticationPrincipal WebUserDetails userDetails,
+            @RequestParam(defaultValue = "1") int activePage,
+            @RequestParam(defaultValue = "1") int pastPage,
+            Model model) {
         User user = currentUser(userDetails);
         if (user == null) {
             return "redirect:/auth/login";
@@ -67,7 +73,7 @@ public class ProfileController {
         model.addAttribute("pageTitle", "Profile Settings");
         model.addAttribute("user", user);
 
-        buildContestLists(user.getId(), model);
+        buildContestLists(user.getId(), activePage, pastPage, model);
 
         return "settings/profile";
     }
@@ -95,7 +101,7 @@ public class ProfileController {
         if (result.hasErrors()) {
             model.addAttribute("pageTitle", "Profile Settings");
             model.addAttribute("user", user);
-            buildContestLists(user.getId(), model);
+            buildContestLists(user.getId(), 1, 1, model);
             return "settings/profile";
         }
 
@@ -169,28 +175,45 @@ public class ProfileController {
         }
     }
 
-    private void buildContestLists(UUID userId, Model model) {
-        List<ContestSummary> activeContests = new ArrayList<>();
-        List<ContestSummary> pastContests = new ArrayList<>();
+    private void buildContestLists(UUID userId, int activePage, int pastPage, Model model) {
+        int activeTotal = contestRepo.countContestsByUserId(userId, false);
+        int pastTotal = contestRepo.countContestsByUserId(userId, true);
 
-        // General contests first, then private — each group already ordered by most recently joined
-        var allViews = new ArrayList<ContestRepo.UserContestView>();
-        allViews.addAll(contestRepo.findGeneralContestsByUserId(userId));
-        allViews.addAll(contestRepo.findPrivateContestsByUserId(userId));
+        int activeOffset = (Math.max(1, activePage) - 1) * PAGE_SIZE;
+        int pastOffset = (Math.max(1, pastPage) - 1) * PAGE_SIZE;
 
-        allViews.forEach(view -> {
-            int memberCount = entryRepo.countActiveByContestId(view.contestId());
-            Integer rank = resolveRank(view, userId);
-            ContestSummary summary = new ContestSummary(view.contestName(), view.seasonName(), memberCount, rank);
-            if (view.seasonCompleted()) {
-                pastContests.add(summary);
-            } else {
-                activeContests.add(summary);
-            }
-        });
+        List<ContestSummary> activeContests = contestRepo
+                .findContestsByUserId(userId, false, PAGE_SIZE, activeOffset)
+                .stream()
+                .map(v -> toSummary(v, userId))
+                .toList();
+
+        List<ContestSummary> pastContests = contestRepo
+                .findContestsByUserId(userId, true, PAGE_SIZE, pastOffset)
+                .stream()
+                .map(v -> toSummary(v, userId))
+                .toList();
 
         model.addAttribute("activeContests", activeContests);
+        model.addAttribute("activeTotal", activeTotal);
+        model.addAttribute("activePage", activePage);
+        model.addAttribute("activePages", (int) Math.ceil((double) activeTotal / PAGE_SIZE));
+        model.addAttribute("activeFrom", activeTotal == 0 ? 0 : activeOffset + 1);
+        model.addAttribute("activeTo", Math.min(activeOffset + PAGE_SIZE, activeTotal));
+
         model.addAttribute("pastContests", pastContests);
+        model.addAttribute("pastTotal", pastTotal);
+        model.addAttribute("pastPage", pastPage);
+        model.addAttribute("pastPages", (int) Math.ceil((double) pastTotal / PAGE_SIZE));
+        model.addAttribute("pastFrom", pastTotal == 0 ? 0 : pastOffset + 1);
+        model.addAttribute("pastTo", Math.min(pastOffset + PAGE_SIZE, pastTotal));
+    }
+
+    private ContestSummary toSummary(ContestRepo.UserContestView view, UUID userId) {
+        int memberCount = entryRepo.countActiveByContestId(view.contestId());
+        Integer rank = resolveRank(view, userId);
+        String link = view.isPrivate() ? "/contests/" + view.contestId() : "/leaderboard";
+        return new ContestSummary(view.contestName(), view.seasonName(), memberCount, rank, link);
     }
 
     private Integer resolveRank(ContestRepo.UserContestView view, UUID userId) {
@@ -237,7 +260,7 @@ public class ProfileController {
         return userRepo.findById(userId).orElse(null);
     }
 
-    public record ContestSummary(String contestName, String seasonName, int memberCount, Integer rank) {}
+    public record ContestSummary(String contestName, String seasonName, int memberCount, Integer rank, String link) {}
 
     @Data
     public static class ProfileForm {
