@@ -178,7 +178,7 @@ public class SecurityConfig {
                         .hasRole("PLAYER")
                         .requestMatchers("/contests/**")
                         .authenticated()
-                        .requestMatchers("/settings/**")
+                        .requestMatchers("/profile/**")
                         .authenticated()
                         .anyRequest()
                         .permitAll())

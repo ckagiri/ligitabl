@@ -1,6 +1,5 @@
 package com.ligitabl.api.web.auth;
 
-import java.util.List;
 import java.util.UUID;
 
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
@@ -19,16 +18,12 @@ import org.springframework.web.bind.annotation.InitBinder;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
-import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
 import com.ligitabl.model.auth.Password;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.domain.service.PasswordHasher;
-import com.ligitabl.model.repo.ContestRepo;
-import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.UserRepo;
 
 import jakarta.servlet.http.HttpSession;
@@ -41,25 +36,16 @@ import lombok.extern.slf4j.Slf4j;
 
 @ConditionalOnWebApplication
 @Controller
-@RequestMapping("/settings")
+@RequestMapping("/profile")
 @RequiredArgsConstructor
 @Slf4j
 public class ProfileController {
 
     private final UserRepo userRepo;
     private final PasswordHasher passwordHasher;
-    private static final int PAGE_SIZE = 10;
 
-    private final EntryRepo entryRepo;
-    private final ContestRepo contestRepo;
-    private final ContestRankResolver contestRankResolver;
-
-    @GetMapping("/profile")
-    public String profile(
-            @AuthenticationPrincipal WebUserDetails userDetails,
-            @RequestParam(defaultValue = "1") int activePage,
-            @RequestParam(defaultValue = "1") int pastPage,
-            Model model) {
+    @GetMapping("/settings")
+    public String profile(@AuthenticationPrincipal WebUserDetails userDetails, Model model) {
         User user = currentUser(userDetails);
         if (user == null) {
             return "redirect:/auth/login";
@@ -73,9 +59,7 @@ public class ProfileController {
         model.addAttribute("pageTitle", "Profile Settings");
         model.addAttribute("user", user);
 
-        buildContestLists(user.getId(), activePage, pastPage, model);
-
-        return "settings/profile";
+        return "profile/settings";
     }
 
     @InitBinder("profileForm")
@@ -83,7 +67,7 @@ public class ProfileController {
         binder.registerCustomEditor(String.class, new StringTrimmerEditor(false));
     }
 
-    @PostMapping("/profile")
+    @PostMapping("/settings")
     public String updateProfile(
             @AuthenticationPrincipal WebUserDetails userDetails,
             @Valid @ModelAttribute("profileForm") ProfileForm form,
@@ -101,8 +85,7 @@ public class ProfileController {
         if (result.hasErrors()) {
             model.addAttribute("pageTitle", "Profile Settings");
             model.addAttribute("user", user);
-            buildContestLists(user.getId(), 1, 1, model);
-            return "settings/profile";
+            return "profile/settings";
         }
 
         User updatedUser = user.withDisplayName(form.getDisplayName());
@@ -113,7 +96,7 @@ public class ProfileController {
         redirectAttributes.addFlashAttribute("message", "Profile updated successfully");
         redirectAttributes.addFlashAttribute("messageType", "success");
 
-        return "redirect:/settings/profile";
+        return "redirect:/profile/settings";
     }
 
     @GetMapping("/set-password")
@@ -123,11 +106,11 @@ public class ProfileController {
             return "redirect:/auth/login";
         }
         if (user.getPassword() != null) {
-            return "redirect:/settings/profile";
+            return "redirect:/profile/settings";
         }
         model.addAttribute("pageTitle", "Set Password");
         model.addAttribute("setPasswordForm", new SetPasswordForm());
-        return "settings/set-password";
+        return "profile/set-password";
     }
 
     @PostMapping("/set-password")
@@ -145,7 +128,7 @@ public class ProfileController {
         if (user.getPassword() != null) {
             redirectAttributes.addFlashAttribute("message", "A password is already set for this account.");
             redirectAttributes.addFlashAttribute("messageType", "info");
-            return "redirect:/settings/profile";
+            return "redirect:/profile/settings";
         }
 
         if (!form.getNewPassword().equals(form.getConfirmPassword())) {
@@ -154,7 +137,7 @@ public class ProfileController {
 
         if (result.hasErrors()) {
             model.addAttribute("pageTitle", "Set Password");
-            return "settings/set-password";
+            return "profile/set-password";
         }
 
         try {
@@ -167,68 +150,11 @@ public class ProfileController {
             redirectAttributes.addFlashAttribute(
                     "message", "Password set successfully. You can now sign in with email and password.");
             redirectAttributes.addFlashAttribute("messageType", "success");
-            return "redirect:/settings/connected-accounts";
+            return "redirect:/profile/connected-accounts";
         } catch (IllegalArgumentException e) {
             result.rejectValue("newPassword", "password.invalid", "Password does not meet requirements");
             model.addAttribute("pageTitle", "Set Password");
-            return "settings/set-password";
-        }
-    }
-
-    private void buildContestLists(UUID userId, int activePage, int pastPage, Model model) {
-        int activeTotal = contestRepo.countContestsByUserId(userId, false);
-        int pastTotal = contestRepo.countContestsByUserId(userId, true);
-
-        int activeOffset = (Math.max(1, activePage) - 1) * PAGE_SIZE;
-        int pastOffset = (Math.max(1, pastPage) - 1) * PAGE_SIZE;
-
-        List<ContestSummary> activeContests = contestRepo
-                .findContestsByUserId(userId, false, PAGE_SIZE, activeOffset)
-                .stream()
-                .map(v -> toSummary(v, userId))
-                .toList();
-
-        List<ContestSummary> pastContests = contestRepo
-                .findContestsByUserId(userId, true, PAGE_SIZE, pastOffset)
-                .stream()
-                .map(v -> toSummary(v, userId))
-                .toList();
-
-        model.addAttribute("activeContests", activeContests);
-        model.addAttribute("activeTotal", activeTotal);
-        model.addAttribute("activePage", activePage);
-        model.addAttribute("activePages", (int) Math.ceil((double) activeTotal / PAGE_SIZE));
-        model.addAttribute("activeFrom", activeTotal == 0 ? 0 : activeOffset + 1);
-        model.addAttribute("activeTo", Math.min(activeOffset + PAGE_SIZE, activeTotal));
-
-        model.addAttribute("pastContests", pastContests);
-        model.addAttribute("pastTotal", pastTotal);
-        model.addAttribute("pastPage", pastPage);
-        model.addAttribute("pastPages", (int) Math.ceil((double) pastTotal / PAGE_SIZE));
-        model.addAttribute("pastFrom", pastTotal == 0 ? 0 : pastOffset + 1);
-        model.addAttribute("pastTo", Math.min(pastOffset + PAGE_SIZE, pastTotal));
-    }
-
-    private ContestSummary toSummary(ContestRepo.UserContestView view, UUID userId) {
-        int memberCount = entryRepo.countActiveByContestId(view.contestId());
-        Integer rank = resolveRank(view, userId);
-        String link = "/contests/" + view.contestId() + (view.isPrivate() ? "" : "?segment=overall");
-        return new ContestSummary(view.contestName(), view.seasonName(), memberCount, rank, link);
-    }
-
-    private Integer resolveRank(ContestRepo.UserContestView view, UUID userId) {
-        try {
-            return contestRankResolver
-                    .resolve(
-                            view.contestId(),
-                            view.seasonId(),
-                            view.fromRoundPosition(),
-                            view.toRoundPosition(),
-                            userId)
-                    .position();
-        } catch (Exception e) {
-            log.warn("Could not resolve rank for user {} in contest {}: {}", userId, view.contestId(), e.getMessage());
-            return null;
+            return "profile/set-password";
         }
     }
 
@@ -259,8 +185,6 @@ public class ProfileController {
         UUID userId = userDetails.getUserId();
         return userRepo.findById(userId).orElse(null);
     }
-
-    public record ContestSummary(String contestName, String seasonName, int memberCount, Integer rank, String link) {}
 
     @Data
     public static class ProfileForm {

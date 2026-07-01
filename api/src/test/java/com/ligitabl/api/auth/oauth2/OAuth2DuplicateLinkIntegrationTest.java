@@ -71,7 +71,7 @@ class OAuth2DuplicateLinkIntegrationTest {
         handler.onAuthenticationSuccess(request, response, oauthToken);
 
         // Redirected to connected accounts
-        assertThat(response.getRedirectedUrl()).isEqualTo("/settings/connected-accounts");
+        assertThat(response.getRedirectedUrl()).isEqualTo("/profile/connected-accounts");
 
         // Error feedback stored in session
         assertThat(session.getAttribute(OAuth2AuthenticationSuccessHandler.LINKING_FEEDBACK_MESSAGE_SESSION_KEY))

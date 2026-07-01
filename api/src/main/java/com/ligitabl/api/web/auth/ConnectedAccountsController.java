@@ -20,7 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @ConditionalOnWebApplication
 @Controller
-@RequestMapping("/settings")
+@RequestMapping("/profile")
 @RequiredArgsConstructor
 @Slf4j
 public class ConnectedAccountsController {
@@ -58,7 +58,7 @@ public class ConnectedAccountsController {
             session.removeAttribute(OAuth2AuthenticationSuccessHandler.LINKING_FEEDBACK_TYPE_SESSION_KEY);
         }
 
-        return "settings/connected-accounts";
+        return "profile/connected-accounts";
     }
 
     @GetMapping("/link-google")
@@ -90,14 +90,14 @@ public class ConnectedAccountsController {
         if (!googleLinked) {
             redirectAttributes.addFlashAttribute("message", "Google account is not linked.");
             redirectAttributes.addFlashAttribute("messageType", "info");
-            return "redirect:/settings/connected-accounts";
+            return "redirect:/profile/connected-accounts";
         }
 
         if (user.getPassword() == null) {
             redirectAttributes.addFlashAttribute(
                     "message", "Set a password before unlinking Google so you can still sign in.");
             redirectAttributes.addFlashAttribute("messageType", "error");
-            return "redirect:/settings/connected-accounts";
+            return "redirect:/profile/connected-accounts";
         }
 
         User updatedUser = user.withGoogleId(null);
@@ -107,7 +107,7 @@ public class ConnectedAccountsController {
         log.info("[GOOGLE_UNLINKED] userId={}", user.getId());
         redirectAttributes.addFlashAttribute("message", "Google account unlinked successfully.");
         redirectAttributes.addFlashAttribute("messageType", "success");
-        return "redirect:/settings/connected-accounts";
+        return "redirect:/profile/connected-accounts";
     }
 
     private User currentUser(WebUserDetails userDetails) {

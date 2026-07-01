@@ -399,7 +399,7 @@
                       </p>
                     </div>
                     <a
-                      th:href="@{/settings/profile}"
+                      th:href="@{/profile/settings}"
                       class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
                       @click="userMenuOpen = false"
                     >
@@ -421,7 +421,29 @@
                       </div>
                     </a>
                     <a
-                      th:href="@{/settings/connected-accounts}"
+                      th:href="@{/profile/my-contests}"
+                      class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
+                      @click="userMenuOpen = false"
+                    >
+                      <div class="flex items-center">
+                        <svg
+                          class="h-4 w-4 mr-3 text-gray-400"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                            stroke-width="2"
+                            d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                          />
+                        </svg>
+                        My Contests
+                      </div>
+                    </a>
+                    <a
+                      th:href="@{/profile/connected-accounts}"
                       class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
                       @click="userMenuOpen = false"
                     >
@@ -589,7 +611,7 @@
 
                 <!-- Secondary links — text-sm, smaller icons -->
                 <a
-                  th:href="@{/settings/profile}"
+                  th:href="@{/profile/settings}"
                   class="flex items-center text-gray-600 hover:bg-gray-50 py-2 rounded-md text-sm font-medium"
                 >
                   <svg
@@ -608,7 +630,26 @@
                   Profile Settings
                 </a>
                 <a
-                  th:href="@{/settings/connected-accounts}"
+                  th:href="@{/profile/my-contests}"
+                  class="flex items-center text-gray-600 hover:bg-gray-50 py-2 rounded-md text-sm font-medium"
+                >
+                  <svg
+                    class="h-4 w-4 mr-3 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                    />
+                  </svg>
+                  My Contests
+                </a>
+                <a
+                  th:href="@{/profile/connected-accounts}"
                   class="flex items-center text-gray-600 hover:bg-gray-50 py-2 rounded-md text-sm font-medium"
                 >
                   <svg
