@@ -37,9 +37,8 @@ public class MakeSwapUseCase {
     public Either<SwapError, SwapResult> execute(UUID userId, SwapCommand command) {
         return swapHelper
                 .getCurrentSeason()
-                .flatMap(season -> swapHelper
-                        .getPrediction(userId, season.getId())
-                        .map(p -> new Ctx(season, null, p)))
+                .flatMap(season ->
+                        swapHelper.getPrediction(userId, season.getId()).map(p -> new Ctx(season, null, p)))
                 .flatMap(ctx -> swapHelper
                         .getCurrentRound(ctx.season())
                         .map(round -> new Ctx(ctx.season(), round, ctx.prediction())))
