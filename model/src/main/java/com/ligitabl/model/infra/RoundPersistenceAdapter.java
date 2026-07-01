@@ -69,6 +69,15 @@ public class RoundPersistenceAdapter implements RoundRepo {
     }
 
     @Override
+    public void markUnfinalizedBetween(UUID seasonId, int fromPositionInclusive, int toPositionInclusive) {
+        dsl.update(T_ROUND)
+                .set(T_ROUND.C_IS_FINALIZED, false)
+                .where(T_ROUND.FK_SEASON_ID.eq(seasonId))
+                .and(T_ROUND.C_POSITION.between(fromPositionInclusive, toPositionInclusive))
+                .execute();
+    }
+
+    @Override
     public Round save(Round round) {
         if (round == null) {
             throw new IllegalArgumentException("Round must not be null");

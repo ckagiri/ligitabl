@@ -18,4 +18,10 @@ public interface StandingsRepo extends BaseCrudRepo<Standings, UUID> {
     Map<String, Integer> findGoalDifferenceMap(UUID seasonId, int roundPosition);
 
     Optional<Standings> findLatestBySeason(UUID seasonId);
+
+    /**
+     * Bulk-marks standings unfinalised for a season, between the given round positions inclusive,
+     * clearing finalisedAt. Used by the setup-mode refinalize cascade to flag downstream rounds as out of sync.
+     */
+    void markUnfinalisedBetween(UUID seasonId, int fromPositionInclusive, int toPositionInclusive);
 }

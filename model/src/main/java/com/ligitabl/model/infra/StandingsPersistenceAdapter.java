@@ -96,6 +96,16 @@ public class StandingsPersistenceAdapter implements StandingsRepo {
     }
 
     @Override
+    public void markUnfinalisedBetween(UUID seasonId, int fromPositionInclusive, int toPositionInclusive) {
+        dsl.update(T_STANDINGS)
+                .set(T_STANDINGS.C_FINALISED, false)
+                .set(T_STANDINGS.C_FINALISED_AT, (java.time.OffsetDateTime) null)
+                .where(T_STANDINGS.FK_SEASON_ID.eq(seasonId))
+                .and(T_STANDINGS.C_ROUND_POSITION.between(fromPositionInclusive, toPositionInclusive))
+                .execute();
+    }
+
+    @Override
     public Optional<Standings> findById(UUID id) {
         var record = dsl.selectFrom(T_STANDINGS).where(T_STANDINGS.PK_ID.eq(id)).fetchOne();
 
