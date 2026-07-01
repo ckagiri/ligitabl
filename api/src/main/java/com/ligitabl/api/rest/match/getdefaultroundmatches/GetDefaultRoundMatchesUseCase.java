@@ -3,6 +3,7 @@ package com.ligitabl.api.rest.match.getdefaultroundmatches;
 import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
@@ -16,8 +17,10 @@ import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.Standings;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
+import com.ligitabl.model.repo.StandingsRepo;
 
 import lombok.RequiredArgsConstructor;
 
@@ -30,6 +33,7 @@ public class GetDefaultRoundMatchesUseCase
     private final HierarchyValidator hierarchyValidator;
     private final CompetitionDefaults competitionDefaults;
     private final RoundRepo roundRepo;
+    private final StandingsRepo standingsRepo;
 
     @Override
     public Either<UseCaseError, RoundMatchesResult> execute(GetDefaultRoundMatchesQuery query) {
@@ -41,11 +45,21 @@ public class GetDefaultRoundMatchesUseCase
                         .flatMap(matchEnricher::enrichWithTeams)
                         .map(matches -> new RoundMatchesResult(
                                 ctx.season().getId(),
+                                ctx.season().getSlug().value(),
                                 ctx.round().getPosition(),
                                 currentRound.getPosition(),
                                 ctx.season().getMaxRounds(),
                                 matches,
-                                ctx.round().isFinalized()))));
+                                ctx.round().isFinalized(),
+                                ctx.season().isInSetupMode(),
+                                isStandingsFinalised(ctx.season().getId(), ctx.round().getPosition())))));
+    }
+
+    private boolean isStandingsFinalised(UUID seasonId, int roundPosition) {
+        return standingsRepo
+                .findBySeasonAndRoundPosition(seasonId, roundPosition)
+                .map(Standings::isFinalised)
+                .orElse(false);
     }
 
     private Either<UseCaseError, List<Match>> fetchMatches(Round round) {

@@ -55,10 +55,12 @@ public class RoundMatchesController {
         return result.fold(error -> handleMatchesError(error, model, response), payload -> {
             model.addAttribute("pageTitle", "Matches");
             model.addAttribute("seasonId", payload.seasonId());
+            model.addAttribute("seasonSlug", payload.seasonSlug());
             model.addAttribute("viewingRound", payload.viewingRound());
             model.addAttribute("currentRound", payload.currentRound());
             model.addAttribute("lastRound", payload.lastRound());
             model.addAttribute("matches", payload.matches());
+            model.addAttribute("seasonInSetupMode", payload.seasonInSetupMode());
 
             boolean isViewingCurrentRound = payload.viewingRound() == payload.currentRound();
             boolean allMatchesFinished = !payload.matches().isEmpty()
@@ -67,14 +69,31 @@ public class RoundMatchesController {
                     && payload.matches().stream()
                             .anyMatch(m -> !"FINISHED".equals(m.getStatus()) && !"POSTPONED".equals(m.getStatus()));
 
-            model.addAttribute(
-                    "canFinalizeRound", isViewingCurrentRound && allMatchesFinished && !payload.roundFinalized());
+            // A viewed non-current round whose standings aren't finalized is out of sync — this can
+            // only really happen after a setup-mode refinalize cascade marked it that way.
+            boolean isOutOfSync = !isViewingCurrentRound && !payload.standingsFinalised();
+            boolean canRefinalizeRound =
+                    payload.seasonInSetupMode() && (payload.roundFinalized() || isOutOfSync);
+            // Finalize and Refinalize must never both be true for the same render — Finalize only
+            // ever applies to the current, not-yet-finalized round; make that exclusion explicit.
+            boolean canFinalizeRound =
+                    isViewingCurrentRound && allMatchesFinished && !payload.roundFinalized() && !canRefinalizeRound;
+
+            model.addAttribute("isOutOfSync", isOutOfSync);
+            model.addAttribute("canRefinalizeRound", canRefinalizeRound);
+            model.addAttribute("canFinalizeRound", canFinalizeRound);
             model.addAttribute(
                     "showRefreshButton", isViewingCurrentRound && !payload.roundFinalized() && hasNonTerminalMatches);
+            model.addAttribute("nextRoundQuery", nextRoundAfterViewing(payload.viewingRound(), payload.currentRound()));
 
             // Return fragment for HTMX requests, full page otherwise
             return isHtmxRequest ? "matches :: matches-content" : "matches";
         });
+    }
+
+    private Integer nextRoundAfterViewing(int viewingRound, int currentRound) {
+        int next = viewingRound + 1;
+        return next == currentRound ? null : next; // null -> land on /rounds/current/matches
     }
 
     private String handleMatchesError(UseCaseError error, Model model, HttpServletResponse response) {
