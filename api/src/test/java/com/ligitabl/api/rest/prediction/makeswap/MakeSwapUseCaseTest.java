@@ -129,6 +129,20 @@ class MakeSwapUseCaseTest {
     }
 
     @Test
+    void shouldRejectSwap_whenSeasonInSetupMode() {
+        season.enterSetupMode();
+        SwapCommand command = new SwapCommand("ARS", "LIV");
+
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+
+        Either<SwapError, SwapResult> result = useCase.execute(userId, command);
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(SwapError.SeasonInSetupMode.class, result.getLeft());
+        verify(predictionRepo, never()).save(any());
+    }
+
+    @Test
     void shouldRejectSwap_whenRoundNotOpen() {
         SwapCommand command = new SwapCommand("ARS", "LIV");
 
@@ -181,6 +195,7 @@ class MakeSwapUseCaseTest {
                 .id(seasonId)
                 .currentRoundId(roundId)
                 .completed(false)
+                .mainContestId(UUID.randomUUID())
                 .build();
     }
 

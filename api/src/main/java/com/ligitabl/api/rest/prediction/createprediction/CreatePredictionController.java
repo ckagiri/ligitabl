@@ -63,6 +63,11 @@ public class CreatePredictionController {
                             "error", "SEASON_COMPLETED",
                             "message", "Cannot join a completed season"));
 
+            case CreatePredictionError.SeasonInSetupMode __ -> ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of(
+                            "error", "SEASON_IN_SETUP_MODE",
+                            "message", "Season is being reconfigured. Please try again shortly."));
+
             case CreatePredictionError.AlreadyJoined e -> ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of(
                             "error", "ALREADY_JOINED",

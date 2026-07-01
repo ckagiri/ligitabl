@@ -40,7 +40,10 @@ public class SwapHelper {
         return seasonRepo
                 .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
                 .map(Either::<SwapError, Season>right)
-                .orElseGet(() -> Either.left(new SwapError.SeasonCompleted()));
+                .orElseGet(() -> Either.left(new SwapError.SeasonCompleted()))
+                .flatMap(season -> season.isInSetupMode()
+                        ? Either.left(new SwapError.SeasonInSetupMode())
+                        : Either.right(season));
     }
 
     public Either<SwapError, Round> getCurrentRound(Season season) {

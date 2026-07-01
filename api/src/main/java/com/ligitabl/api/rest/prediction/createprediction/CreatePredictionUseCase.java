@@ -61,6 +61,7 @@ public class CreatePredictionUseCase {
         return getActiveSeason()
                 .map(Ctx::new)
                 .flatMap(ctx -> validateSeasonActive(ctx.season()).map(__ -> ctx))
+                .flatMap(ctx -> checkNotInSetupMode(ctx.season()).map(__ -> ctx))
                 .flatMap(ctx -> resolveJoinPlan(userId, ctx.season())
                         .map(plan -> new Ctx(ctx.season(), ctx.mainContest(), plan)))
                 .flatMap(ctx -> validateSwapTeams(request, ctx.season()).map(__ -> ctx))
@@ -83,6 +84,13 @@ public class CreatePredictionUseCase {
             return Either.left(new CreatePredictionError.Completed());
         }
         return Either.right(null);
+    }
+
+    // Step 2.5: Block new joins while the season is in setup mode (main contest detached)
+    private Either<CreatePredictionError, Season> checkNotInSetupMode(Season season) {
+        return season.isInSetupMode()
+                ? Either.left(new CreatePredictionError.SeasonInSetupMode())
+                : Either.right(season);
     }
 
     // Step 3: Decide whether this is a fresh join, a fresh pre-season registration,

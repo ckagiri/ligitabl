@@ -75,6 +75,13 @@
               </div>
             </div>
 
+            <!-- Setup Mode Banner (season under admin reconfiguration — swaps/joins paused) -->
+            <th:block th:if="${seasonInSetupMode == true}">
+              <div class="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-4">
+                🛠️ Setup mode: an admin is reconfiguring this season's fixtures. Swaps and new entries are paused until it's back online.
+              </div>
+            </th:block>
+
             <!-- Access Mode Banners -->
             <div
               th:replace="~{fragments/access-banners :: banners(
@@ -276,9 +283,9 @@ isPreSeason=[[${isPreSeason}]] isOffSeason=[[${isOffSeason}]] isPredictionsOpen=
             th:attr="data-predictions=${predictionsJson},
                     data-round-open=${roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound)},
                     data-is-last-round=${currentRound == lastRound},
-                    data-can-swap=${(canSwap || isOpeningRound == true) && isHistoricalView == false && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
-                    data-can-interact=${canInteract && isHistoricalView == false && (!isFinalRound || isFinalRoundOpen)},
-                    data-is-initial-prediction=${canCreateEntry && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
+                    data-can-swap=${(canSwap || isOpeningRound == true) && isHistoricalView == false && seasonInSetupMode == false && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
+                    data-can-interact=${canInteract && isHistoricalView == false && seasonInSetupMode == false && (!isFinalRound || isFinalRoundOpen)},
+                    data-is-initial-prediction=${canCreateEntry && seasonInSetupMode == false && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
                     data-is-opening-round=${isOpeningRound == true},
                     data-current-standings=${currentStandingsJson},
                     data-fixtures=${fixturesJson},
@@ -332,7 +339,7 @@ isPreSeason=[[${isPreSeason}]] isOffSeason=[[${isOffSeason}]] isPredictionsOpen=
 
             <!-- Actions Footer (editable + cooldown-interactive states; also used for pre-season registration) -->
             <th:block
-              th:if="${isHistoricalView == false && canInteract && (!isFinalRound || isFinalRoundOpen) && (roundState == 'open' || roundState == 'locked' || roundState == 'completed' || (atRoundNumber != null && atRoundNumber > currentRound))}"
+              th:if="${isHistoricalView == false && canInteract && seasonInSetupMode == false && (!isFinalRound || isFinalRoundOpen) && (roundState == 'open' || roundState == 'locked' || roundState == 'completed' || (atRoundNumber != null && atRoundNumber > currentRound))}"
             >
               <div
                 x-show="canInteract || isInitialPrediction"
