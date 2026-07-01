@@ -110,6 +110,7 @@ public class GetUserContestSummaryUseCase {
     }
 
     private String buildDateLabel(int from, int to, Map<Integer, MatchRepo.RoundDateRange> dateRanges) {
+        if (dateRanges == null) return null;
         MatchRepo.RoundDateRange startRange = dateRanges.get(from);
         MatchRepo.RoundDateRange endRange = dateRanges.get(to);
         if (startRange == null || endRange == null) return null;
@@ -118,11 +119,13 @@ public class GetUserContestSummaryUseCase {
     }
 
     private String buildDateFrom(int from, Map<Integer, MatchRepo.RoundDateRange> dateRanges) {
+        if (dateRanges == null) return null;
         var r = dateRanges.get(from);
         return r != null ? r.firstKickoff().format(DATE_FMT) : null;
     }
 
     private String buildDateTo(int to, Map<Integer, MatchRepo.RoundDateRange> dateRanges) {
+        if (dateRanges == null) return null;
         var r = dateRanges.get(to);
         return r != null ? r.lastKickoff().format(DATE_FMT) : null;
     }
@@ -142,17 +145,13 @@ public class GetUserContestSummaryUseCase {
         List<PrivateContestRowDto> rows = new ArrayList<>();
         for (Contest contest : contests) {
             int memberCount = entryRepo.countActiveByContestId(contest.getId());
-            String dateLabel = dateRanges != null
-                    ? buildDateLabel(contest.getFromRoundPosition(), contest.getToRoundPosition(), dateRanges)
-                    : null;
-            String gwLabel = buildGwLabel(contest.getFromRoundPosition(), contest.getToRoundPosition());
             rows.add(new PrivateContestRowDto(
                     contest.getId(),
                     contest.getName(),
-                    dateLabel,
-                    dateRanges != null ? buildDateFrom(contest.getFromRoundPosition(), dateRanges) : null,
-                    dateRanges != null ? buildDateTo(contest.getToRoundPosition(), dateRanges) : null,
-                    gwLabel,
+                    buildDateLabel(contest.getFromRoundPosition(), contest.getToRoundPosition(), dateRanges),
+                    buildDateFrom(contest.getFromRoundPosition(), dateRanges),
+                    buildDateTo(contest.getToRoundPosition(), dateRanges),
+                    buildGwLabel(contest.getFromRoundPosition(), contest.getToRoundPosition()),
                     contest.getFromRoundPosition(),
                     contest.getToRoundPosition(),
                     memberCount,
