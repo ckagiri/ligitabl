@@ -134,9 +134,9 @@
         <!-- Share card (owner only) -->
         <th:block th:if="${isOwner == true}">
           <div class="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden mb-4"
-               x-data="{ open: false, copiedAll: false, copiedLink: false, inviteUrl: '', joinCode: '', contestName: '' }"
-               x-init="inviteUrl = $el.dataset.inviteUrl; joinCode = $el.dataset.joinCode; contestName = $el.dataset.contestName"
-               th:attr="data-invite-url=${inviteUrl}, data-join-code=${joinCode}, data-contest-name=${contest.name}">
+               x-data="{ open: false, copiedAll: false, copiedLink: false, inviteUrl: '', joinUrl: '', joinCode: '', contestName: '' }"
+               x-init="inviteUrl = $el.dataset.inviteUrl; joinUrl = $el.dataset.joinUrl; joinCode = $el.dataset.joinCode; contestName = $el.dataset.contestName"
+               th:attr="data-invite-url=${inviteUrl}, data-join-url=${joinUrl}, data-join-code=${joinCode}, data-contest-name=${contest.name}">
 
             <button
               type="button"
@@ -161,11 +161,11 @@
                 <div class="flex items-start gap-2 bg-gray-50 border border-gray-200 rounded-lg p-3">
                   <div class="font-mono text-gray-700 leading-snug flex-1 min-w-0 break-words">
                     Join my contest "<span th:text="${contest.name}">Name</span>" on LigiPredictor 🏆<br>
-                    <span class="text-gray-500" x-text="inviteUrl.replace(/^https?:\/\//, '')"></span>
+                    <span class="text-gray-500" x-text="joinUrl.replace(/^https?:\/\//, '')"></span>
                   </div>
                   <button type="button"
                           title="Copy share text"
-                          @click="navigator.clipboard.writeText('Join my contest &quot;' + contestName + '&quot; on LigiPredictor 🏆\n' + inviteUrl); copiedAll = true; setTimeout(() => copiedAll = false, 2000)"
+                          @click="navigator.clipboard.writeText('Join my contest &quot;' + contestName + '&quot; on LigiPredictor 🏆\n' + joinUrl); copiedAll = true; setTimeout(() => copiedAll = false, 2000)"
                           class="shrink-0 p-1 rounded hover:bg-gray-200 transition text-gray-400 hover:text-gray-600">
                     <svg x-show="!copiedAll" class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />

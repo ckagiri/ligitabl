@@ -13,7 +13,6 @@ import com.ligitabl.api.rest.prediction.makeswap.SwapError;
 import com.ligitabl.api.rest.prediction.shared.SwapHelper;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.*;
-import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -25,7 +24,6 @@ public class RoundOpeningSwapUseCase {
     private static final int MIN_SWAPS = 1;
     private static final int MAX_SWAPS = 2;
 
-    private final RoundRepo roundRepo;
     private final SeasonPredictionRepo predictionRepo;
     private final Clock clock;
     private final SwapHelper swapHelper;
@@ -35,8 +33,7 @@ public class RoundOpeningSwapUseCase {
     public Either<SwapError, RoundOpeningSwapResult> execute(UUID userId, RoundOpeningSwapCommand command) {
         return swapHelper
                 .getCurrentSeason()
-                .flatMap(season -> swapHelper.validateSeasonNotCompleted(season).map(__ -> season))
-                .flatMap(season -> getCurrentRound(season).map(round -> new Ctx(season, round, null)))
+                .flatMap(season -> swapHelper.getCurrentRound(season).map(round -> new Ctx(season, round, null)))
                 .flatMap(ctx -> swapHelper.validateRoundOpen(ctx.round()).map(__ -> ctx))
                 .flatMap(ctx -> swapHelper
                         .getPrediction(userId, ctx.season().getId())
@@ -45,13 +42,6 @@ public class RoundOpeningSwapUseCase {
                         validateOpeningNotUsed(ctx.prediction(), ctx.round()).map(__ -> ctx))
                 .flatMap(ctx -> validateBatchSize(command.swaps()).map(__ -> ctx))
                 .flatMap(ctx -> applySwaps(ctx.prediction(), command.swaps(), ctx.season(), ctx.round()));
-    }
-
-    private Either<SwapError, Round> getCurrentRound(Season season) {
-        return roundRepo
-                .findById(season.getCurrentRoundId())
-                .map(Either::<SwapError, Round>right)
-                .orElseGet(() -> Either.left(new SwapError.RoundNotOpen(RoundStatus.UNKNOWN.name())));
     }
 
     private Either<SwapError, Void> validateOpeningNotUsed(SeasonPrediction prediction, Round round) {

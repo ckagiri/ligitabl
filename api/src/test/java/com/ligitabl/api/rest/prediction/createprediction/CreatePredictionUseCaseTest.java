@@ -98,7 +98,7 @@ class CreatePredictionUseCaseTest {
                 predictionRepo,
                 entryRepo,
                 standingsRepo,
-                new SwapHelper(competitionDefaults, seasonRepo, predictionRepo, matchRepo),
+                new SwapHelper(competitionDefaults, seasonRepo, roundRepo, predictionRepo, matchRepo),
                 clock);
     }
 

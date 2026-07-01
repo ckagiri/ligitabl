@@ -20,6 +20,7 @@ import com.ligitabl.model.domain.SeasonPrediction;
 import com.ligitabl.model.domain.SwapChange;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.repo.MatchRepo;
+import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
@@ -31,18 +32,22 @@ public class SwapHelper {
 
     private final CompetitionDefaults competitionDefaults;
     private final SeasonRepo seasonRepo;
+    private final RoundRepo roundRepo;
     private final SeasonPredictionRepo predictionRepo;
     private final MatchRepo matchRepo;
 
     public Either<SwapError, Season> getCurrentSeason() {
         return seasonRepo
-                .findMostRecentSeason(competitionDefaults.defaultCompetitionSlug())
+                .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
                 .map(Either::<SwapError, Season>right)
-                .orElseGet(() -> Either.left(new SwapError.NoPredictionFound(null, null)));
+                .orElseGet(() -> Either.left(new SwapError.SeasonCompleted()));
     }
 
-    public Either<SwapError, Void> validateSeasonNotCompleted(Season season) {
-        return season.isCompleted() ? Either.left(new SwapError.SeasonCompleted()) : Either.right(null);
+    public Either<SwapError, Round> getCurrentRound(Season season) {
+        return roundRepo
+                .findById(season.getCurrentRoundId())
+                .map(Either::<SwapError, Round>right)
+                .orElseGet(() -> Either.left(new SwapError.RoundNotOpen(RoundStatus.UNKNOWN.name())));
     }
 
     public Either<SwapError, SeasonPrediction> getPrediction(UUID userId, UUID seasonId) {
