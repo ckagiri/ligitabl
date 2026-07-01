@@ -66,27 +66,37 @@ public class GetMatchAdminDetailsUseCase
 
         List<String> actions = new ArrayList<>();
 
-        switch (status) {
-            case SCHEDULED -> {
-                actions.add("TRANSITION_TO_LIVE");
-                actions.add("TRANSITION_TO_POSTPONED");
-                actions.add("TRANSITION_TO_CANCELLED");
+        if (setup) {
+            // Setup mode bypasses the normal match-day state machine — any other status is
+            // reachable, same as Match.transitionTo(..., isSetupMode=true).
+            for (MatchStatus target : MatchStatus.values()) {
+                if (target != status) {
+                    actions.add("TRANSITION_TO_" + target.name());
+                }
             }
-            case LIVE -> {
-                actions.add("TRANSITION_TO_SUSPENDED");
-                actions.add("TRANSITION_TO_FINISHED");
-                actions.add("TRANSITION_TO_CANCELLED");
-            }
-            case SUSPENDED -> {
-                actions.add("TRANSITION_TO_POSTPONED");
-                actions.add("TRANSITION_TO_CANCELLED");
-            }
-            case POSTPONED -> {
-                actions.add("TRANSITION_TO_CANCELLED");
-                actions.add("TRANSITION_TO_SCHEDULED");
-            }
-            case CANCELLED, FINISHED -> {
-                // No actions
+        } else {
+            switch (status) {
+                case SCHEDULED -> {
+                    actions.add("TRANSITION_TO_LIVE");
+                    actions.add("TRANSITION_TO_POSTPONED");
+                    actions.add("TRANSITION_TO_CANCELLED");
+                }
+                case LIVE -> {
+                    actions.add("TRANSITION_TO_SUSPENDED");
+                    actions.add("TRANSITION_TO_FINISHED");
+                    actions.add("TRANSITION_TO_CANCELLED");
+                }
+                case SUSPENDED -> {
+                    actions.add("TRANSITION_TO_POSTPONED");
+                    actions.add("TRANSITION_TO_CANCELLED");
+                }
+                case POSTPONED -> {
+                    actions.add("TRANSITION_TO_CANCELLED");
+                    actions.add("TRANSITION_TO_SCHEDULED");
+                }
+                case CANCELLED, FINISHED -> {
+                    // No actions
+                }
             }
         }
 

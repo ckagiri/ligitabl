@@ -58,6 +58,7 @@ public class TransitionMatchStatusUseCase
     private Either<UseCaseError, TransitionContext> validateAndTransition(
             MatchContext matchCtx, TransitionMatchCommand cmd) {
         Match match = matchCtx.match();
+        boolean isSetupMode = matchCtx.context().season().isInSetupMode();
 
         try {
             MatchStatus oldStatus = match.getStatus();
@@ -69,7 +70,8 @@ public class TransitionMatchStatusUseCase
                 match.setScore(cmd.getScore().getHomeGoals(), cmd.getScore().getAwayGoals());
             }
 
-            match.transitionTo(cmd.getNewStatus(), cmd.getReason());
+            // Setup mode bypasses the normal match-day state machine.
+            match.transitionTo(cmd.getNewStatus(), cmd.getReason(), isSetupMode);
             return Either.right(new TransitionContext(matchCtx.context(), match, oldStatus));
 
         } catch (IllegalStateException | IllegalArgumentException e) {

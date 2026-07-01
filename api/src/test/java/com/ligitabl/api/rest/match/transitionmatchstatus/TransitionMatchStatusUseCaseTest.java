@@ -202,6 +202,41 @@ class TransitionMatchStatusUseCaseTest {
     }
 
     @Test
+    void transition_invalidTransition_allowedInSetupMode() {
+        season.enterSetupMode(); // mainContestId -> null
+
+        Match match = Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .roundId(roundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("home-vs-away")
+                .status(MatchStatus.FINISHED)
+                .build();
+
+        TransitionMatchCommand cmd = TransitionMatchCommand.builder()
+                .competitionIdentifier("premier-league")
+                .roundPosition(null)
+                .matchSlug(match.getSlug())
+                .newStatus(MatchStatus.LIVE)
+                .reason("Correcting a bad score in setup mode")
+                .build();
+
+        Instant now = Instant.parse("2026-01-13T10:00:00Z");
+
+        when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
+        when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
+        when(clock.instant()).thenReturn(now);
+
+        Either<UseCaseError, TransitionResult> result = useCase.execute(cmd);
+
+        assertTrue(result.isRight());
+        assertEquals(MatchStatus.LIVE, result.get().getNewStatus());
+        verify(matchRepo).save(argThat(m -> m.getStatus() == MatchStatus.LIVE));
+    }
+
+    @Test
     void transition_matchNotFound_returnsLeft() {
         TransitionMatchCommand cmd = TransitionMatchCommand.builder()
                 .competitionIdentifier("premier-league")

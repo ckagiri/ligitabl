@@ -75,14 +75,16 @@ public class MatchAdminController {
         var match = matchOpt.get();
 
         MatchStatus status = match.getStatus();
-        boolean canReschedule = status == MatchStatus.SCHEDULED || status == MatchStatus.POSTPONED;
+        boolean setupMode = ctx.season().isInSetupMode();
+        // Setup mode - any status is reschedulable/transitionable outside the normal match-day state machine.
+        boolean canReschedule = setupMode || status == MatchStatus.SCHEDULED || status == MatchStatus.POSTPONED;
 
         boolean canEditKickoff = status != MatchStatus.FINISHED && status != MatchStatus.LIVE;
 
         model.addAttribute("matchSlug", matchSlug);
         model.addAttribute("matchLabel", buildLabel(home, away));
         model.addAttribute("currentStatus", status.name());
-        model.addAttribute("validTransitions", Match.validTransitionsFrom(status));
+        model.addAttribute("validTransitions", Match.validTransitionsFrom(status, setupMode));
         model.addAttribute("canReschedule", canReschedule);
         model.addAttribute("canEditKickoff", canEditKickoff);
         model.addAttribute("round", round);
@@ -101,10 +103,12 @@ public class MatchAdminController {
                     .validateCurrentRound(ctx.season())
                     .fold(__ -> round, currentRound -> currentRound.getPosition());
 
+            // In setup mode any round is a valid target.
             var availableRounds = roundRepo
                     .findBySeasonIdOrderByPosition(ctx.season().getId())
                     .stream()
-                    .filter(r -> r.getPosition() >= floorPosition && !r.isFinalized() && r.getPosition() != round)
+                    .filter(r -> r.getPosition() != round)
+                    .filter(r -> setupMode || (r.getPosition() >= floorPosition && !r.isFinalized()))
                     .map(r -> new RoundOption(r.getPosition(), "GW " + r.getPosition()))
                     .toList();
             model.addAttribute("availableRounds", availableRounds);

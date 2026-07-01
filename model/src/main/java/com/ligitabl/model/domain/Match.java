@@ -61,12 +61,20 @@ public class Match extends AbstractModel<UUID> {
     }
 
     public static List<MatchStatus> validTransitionsFrom(MatchStatus status) {
+        return validTransitionsFrom(status, false);
+    }
+
+    public static List<MatchStatus> validTransitionsFrom(MatchStatus status, boolean isSetupMode) {
         return Arrays.stream(MatchStatus.values())
-                .filter(to -> isAllowedTransition(status, to))
+                .filter(to -> to != status && (isSetupMode || isAllowedTransition(status, to)))
                 .toList();
     }
 
     public void transitionTo(MatchStatus newStatus, String reason) {
+        transitionTo(newStatus, reason, false);
+    }
+
+    public void transitionTo(MatchStatus newStatus, String reason, boolean isSetupMode) {
         if (newStatus == null) {
             throw new IllegalArgumentException("newStatus must not be null");
         }
@@ -79,7 +87,9 @@ public class Match extends AbstractModel<UUID> {
             return;
         }
 
-        if (!isAllowedTransition(from, newStatus)) {
+        // In setup mode an admin may need to correct a mis-recorded status (e.g. a wrongly
+        // FINISHED match) outside the normal match-day state machine.
+        if (!isSetupMode && !isAllowedTransition(from, newStatus)) {
             throw new IllegalStateException(String.format("Cannot transition from %s to %s", from, newStatus));
         }
 
