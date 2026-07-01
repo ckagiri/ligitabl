@@ -13,7 +13,6 @@ import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.repo.RoundSubmissionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -26,7 +25,6 @@ public class ManageSeasonSetupModeUseCase
         implements UseCase<SeasonSetupModeCommand, Either<UseCaseError, SetupModeResult>> {
 
     private final SeasonRepo seasonRepo;
-    private final RoundSubmissionRepo roundSubmissionRepo;
     private final HierarchyValidator hierarchyValidator;
     private final CompetitionDefaults competitionDefaults;
     private final Clock clock;
@@ -45,12 +43,6 @@ public class ManageSeasonSetupModeUseCase
     private Either<UseCaseError, SetupModeResult> enterSetupMode(Season season) {
         if (season.isInSetupMode()) {
             return Either.left(UseCaseErrors.validation("Season is already in setup mode"));
-        }
-
-        if (roundSubmissionRepo.existsBySeasonId(season.getId())) {
-            return Either.left(
-                    UseCaseErrors.validation(
-                            "Cannot enter setup mode: season has submissions. Setup mode is only for initial fixture arrangement."));
         }
 
         try {

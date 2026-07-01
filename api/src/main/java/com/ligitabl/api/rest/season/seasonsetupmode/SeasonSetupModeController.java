@@ -26,7 +26,7 @@ public class SeasonSetupModeController {
      * POST /api/seasons/{seasonSlug}/setup-mode/enter?competition=bundesliga
      */
     @PostMapping("/{seasonSlug}/setup-mode/enter")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<SetupModeResult> enter(
             @PathVariable String seasonSlug, @RequestParam(required = false) String competition) {
 
@@ -51,7 +51,7 @@ public class SeasonSetupModeController {
      * POST /api/seasons/{seasonSlug}/setup-mode/leave?competition=bundesliga
      */
     @PostMapping("/{seasonSlug}/setup-mode/leave")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasRole('SUPER_ADMIN')")
     public ResponseEntity<SetupModeResult> leave(
             @PathVariable String seasonSlug, @RequestParam(required = false) String competition) {
 
