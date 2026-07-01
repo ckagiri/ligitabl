@@ -61,6 +61,16 @@ public class NavbarControllerAdvice {
         return isAuthenticatedUser(currentAuthentication());
     }
 
+    @ModelAttribute("isAdmin")
+    public boolean isAdmin(Principal principal) {
+        Authentication authentication = currentAuthentication();
+        if (!isAuthenticatedUser(authentication)) {
+            return false;
+        }
+        return authentication.getAuthorities().stream()
+                .anyMatch(authority -> "ROLE_ADMIN".equals(authority.getAuthority()));
+    }
+
     @ModelAttribute("hasContestEntry")
     public boolean hasContestEntry(Principal principal) {
         if (!isAuthenticatedUser(currentAuthentication()) || principal == null) {

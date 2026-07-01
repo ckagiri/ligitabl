@@ -75,7 +75,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             clearLinkingState(session);
             setLinkingFeedback(session, "We could not verify that Google account. Please try again.", "error");
             establishSessionAuthentication(existingUser, session);
-            getRedirectStrategy().sendRedirect(request, response, "/settings/connected-accounts");
+            getRedirectStrategy().sendRedirect(request, response, "/profile/connected-accounts");
             return;
         }
 
@@ -89,7 +89,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             setLinkingFeedback(
                     session, "That Google account is already linked to another LigiPredictor account.", "error");
             establishSessionAuthentication(existingUser, session);
-            getRedirectStrategy().sendRedirect(request, response, "/settings/connected-accounts");
+            getRedirectStrategy().sendRedirect(request, response, "/profile/connected-accounts");
             return;
         }
 
@@ -102,7 +102,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         session.setAttribute("accountLinkingSuccess", true);
 
         establishSessionAuthentication(updatedUser, session);
-        getRedirectStrategy().sendRedirect(request, response, "/settings/connected-accounts?linked=1");
+        getRedirectStrategy().sendRedirect(request, response, "/profile/connected-accounts?linked=1");
     }
 
     private void handleNormalLogin(

@@ -22,7 +22,11 @@ public class SeasonPrediction extends AbstractModel<UUID> {
     @NotNull
     private UUID seasonId;
 
-    @NotNull
+    /**
+     * Non-null only when this user pre-registered during the off-season window: the rankings
+     * snapshot (after their one-time 0-5 swaps) at the moment of pre-registration. Null means
+     * this prediction was created through the normal in-season join flow.
+     */
     private List<TeamRank> initialRankings;
 
     @NotNull

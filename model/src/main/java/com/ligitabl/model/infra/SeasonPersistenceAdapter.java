@@ -65,6 +65,8 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
                 .set(T_SEASON.FK_CURRENT_ROUND_ID, season.getCurrentRoundId())
                 .set(T_SEASON.C_CURRENT_MATCH_DAY, season.getCurrentMatchDay())
                 .set(T_SEASON.FK_DETACHED_CONTEST_ID, season.getDetachedContestId())
+                .set(T_SEASON.C_PRE_SEASON_OPENS_AT, season.getPreSeasonOpensAt())
+                .set(T_SEASON.C_PREDICTIONS_OPEN_AT, season.getPredictionsOpenAt())
                 .where(T_SEASON.PK_ID.eq(season.getId()))
                 .execute();
 
@@ -187,6 +189,8 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
                     .initialRankings(readTeams(record.getInitialRankings()))
                     .mainContestId(record.getMainContestId())
                     .detachedContestId(record.getDetachedContestId())
+                    .preSeasonOpensAt(record.getPreSeasonOpensAt())
+                    .predictionsOpenAt(record.getPredictionsOpenAt())
                     .build();
         }
 

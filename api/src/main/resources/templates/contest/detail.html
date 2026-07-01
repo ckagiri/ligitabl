@@ -14,12 +14,12 @@
 
         <!-- ── Top bar: back link + Actions button ── -->
         <div class="flex items-center justify-between mb-4">
-          <a th:href="@{/contests}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition">
+          <button onclick="history.back()" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition">
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
-            My Contests
-          </a>
+            Back
+          </button>
 
           <!-- Actions dropdown (owner only) -->
           <th:block th:if="${isOwner == true}">
@@ -509,8 +509,8 @@
           </div>
         </div>
 
-        <!-- ── Leave contest (non-owner only) ── -->
-        <th:block th:if="${isOwner == false}">
+        <!-- ── Leave contest (non-owner, private contests only) ── -->
+        <th:block th:if="${isOwner == false and contest.private == true}">
           <div class="mb-4">
             <form method="post" th:action="@{/contests/{id}/leave(id=${contest.id})}"
                   onsubmit="return confirm('Leave this contest? If you\'ve scored rounds, you\'ll appear as Former Member.')">

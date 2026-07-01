@@ -1,0 +1,24 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260630_1_season_phase_dates
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_season
+            schemaName: public
+      changes:
+        - addColumn:
+            tableName: t_season
+            schemaName: public
+            columns:
+              - column:
+                  name: c_pre_season_opens_at
+                  type: timestamptz
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_predictions_open_at
+                  type: timestamptz
+                  constraints:
+                    nullable: true

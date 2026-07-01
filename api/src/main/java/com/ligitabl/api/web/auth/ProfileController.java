@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 
 @ConditionalOnWebApplication
 @Controller
-@RequestMapping("/settings")
+@RequestMapping("/profile")
 @RequiredArgsConstructor
 @Slf4j
 public class ProfileController {
@@ -44,7 +44,7 @@ public class ProfileController {
     private final UserRepo userRepo;
     private final PasswordHasher passwordHasher;
 
-    @GetMapping("/profile")
+    @GetMapping("/settings")
     public String profile(@AuthenticationPrincipal WebUserDetails userDetails, Model model) {
         User user = currentUser(userDetails);
         if (user == null) {
@@ -58,7 +58,8 @@ public class ProfileController {
 
         model.addAttribute("pageTitle", "Profile Settings");
         model.addAttribute("user", user);
-        return "settings/profile";
+
+        return "profile/settings";
     }
 
     @InitBinder("profileForm")
@@ -66,7 +67,7 @@ public class ProfileController {
         binder.registerCustomEditor(String.class, new StringTrimmerEditor(false));
     }
 
-    @PostMapping("/profile")
+    @PostMapping("/settings")
     public String updateProfile(
             @AuthenticationPrincipal WebUserDetails userDetails,
             @Valid @ModelAttribute("profileForm") ProfileForm form,
@@ -84,7 +85,7 @@ public class ProfileController {
         if (result.hasErrors()) {
             model.addAttribute("pageTitle", "Profile Settings");
             model.addAttribute("user", user);
-            return "settings/profile";
+            return "profile/settings";
         }
 
         User updatedUser = user.withDisplayName(form.getDisplayName());
@@ -95,7 +96,7 @@ public class ProfileController {
         redirectAttributes.addFlashAttribute("message", "Profile updated successfully");
         redirectAttributes.addFlashAttribute("messageType", "success");
 
-        return "redirect:/settings/profile";
+        return "redirect:/profile/settings";
     }
 
     @GetMapping("/set-password")
@@ -105,11 +106,11 @@ public class ProfileController {
             return "redirect:/auth/login";
         }
         if (user.getPassword() != null) {
-            return "redirect:/settings/profile";
+            return "redirect:/profile/settings";
         }
         model.addAttribute("pageTitle", "Set Password");
         model.addAttribute("setPasswordForm", new SetPasswordForm());
-        return "settings/set-password";
+        return "profile/set-password";
     }
 
     @PostMapping("/set-password")
@@ -127,7 +128,7 @@ public class ProfileController {
         if (user.getPassword() != null) {
             redirectAttributes.addFlashAttribute("message", "A password is already set for this account.");
             redirectAttributes.addFlashAttribute("messageType", "info");
-            return "redirect:/settings/profile";
+            return "redirect:/profile/settings";
         }
 
         if (!form.getNewPassword().equals(form.getConfirmPassword())) {
@@ -136,7 +137,7 @@ public class ProfileController {
 
         if (result.hasErrors()) {
             model.addAttribute("pageTitle", "Set Password");
-            return "settings/set-password";
+            return "profile/set-password";
         }
 
         try {
@@ -149,11 +150,11 @@ public class ProfileController {
             redirectAttributes.addFlashAttribute(
                     "message", "Password set successfully. You can now sign in with email and password.");
             redirectAttributes.addFlashAttribute("messageType", "success");
-            return "redirect:/settings/connected-accounts";
+            return "redirect:/profile/connected-accounts";
         } catch (IllegalArgumentException e) {
             result.rejectValue("newPassword", "password.invalid", "Password does not meet requirements");
             model.addAttribute("pageTitle", "Set Password");
-            return "settings/set-password";
+            return "profile/set-password";
         }
     }
 

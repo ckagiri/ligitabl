@@ -688,6 +688,47 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         assertThat(response.entries()).noneMatch(LeaderboardEntry::isFormerMember);
     }
 
+    // ─── Pre-season (round-0) swap exclusion ───────────────────────────────────
+
+    @Test
+    @DisplayName("round-0 pre-season swaps/scores never count toward leaderboard totals")
+    void round0PreSeasonResultsExcludedFromTotals() {
+        // Defensive regression test: pre-season registration is bookkept as round 0 on
+        // SeasonPrediction.swaps and never reaches FinalizeRoundUseCase in production (round 0
+        // is not a real Round entity). But even if a RoundResult existed at round_position=0,
+        // it must never be counted — fromRound is always >= 1 (validateInputs), and the join's
+        // GREATEST(fromRound, joinedAtRound) lower bound excludes round 0 by construction.
+        RoundSubmission preSeasonSubmission = RoundSubmission.builder()
+                .userId(aliceId)
+                .seasonId(seasonId)
+                .roundPosition(0)
+                .rankings(List.<TeamRank>of())
+                .seasonPredictionId(alicePredictionId)
+                .build();
+        RoundSubmission savedPreSeasonSubmission = roundSubmissionRepo.save(preSeasonSubmission);
+        roundResultRepo.save(RoundResult.builder()
+                .id(UUID.randomUUID())
+                .roundSubmissionId(savedPreSeasonSubmission.getId())
+                .rankings(List.<ResultTeamRank>of())
+                .totalScore(999)
+                .zeroesCount(99)
+                .swapCount(5)
+                .userViewed(false)
+                .build());
+
+        createResult(aliceId, alicePredictionId, 1, 50, 5, 2);
+
+        var results = computeEntries(1, 1);
+
+        LeaderboardEntry alice = results.stream()
+                .filter(e -> e.displayName().equals("Alice"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(alice.totalScore()).isEqualTo(50);
+        assertThat(alice.totalZeroes()).isEqualTo(5);
+        assertThat(alice.totalSwaps()).isEqualTo(2);
+    }
+
     private void insertCompetitionSeasonAndContest() {
         jdbc.update(
                 "INSERT INTO t_competition (pk_id, c_name, c_slug, c_code, c_phases, fk_active_season_id) VALUES (?,?,?,?, '[]'::jsonb, ?)",

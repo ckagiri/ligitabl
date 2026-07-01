@@ -76,6 +76,34 @@ public class CompetitionPersistenceAdapter implements CompetitionRepo {
         return dsl.fetchExists(dsl.selectOne().from(T_COMPETITION).where(T_COMPETITION.PK_ID.eq(id)));
     }
 
+    @Override
+    public void assignUpcomingSeason(UUID competitionId, UUID seasonId) {
+        dsl.update(T_COMPETITION)
+                .set(T_COMPETITION.FK_UPCOMING_SEASON_ID, seasonId)
+                .where(T_COMPETITION.PK_ID.eq(competitionId))
+                .execute();
+    }
+
+    @Override
+    public void promoteUpcomingSeason(UUID competitionId, UUID newActiveSeasonId, UUID newFormerSeasonId) {
+        dsl.update(T_COMPETITION)
+                .set(T_COMPETITION.FK_ACTIVE_SEASON_ID, newActiveSeasonId)
+                .set(T_COMPETITION.FK_FORMER_SEASON_ID, newFormerSeasonId)
+                .setNull(T_COMPETITION.FK_UPCOMING_SEASON_ID)
+                .where(T_COMPETITION.PK_ID.eq(competitionId))
+                .execute();
+    }
+
+    @Override
+    public void revertToFormerSeason(UUID competitionId, UUID newActiveSeasonId, UUID newUpcomingSeasonId) {
+        dsl.update(T_COMPETITION)
+                .set(T_COMPETITION.FK_ACTIVE_SEASON_ID, newActiveSeasonId)
+                .set(T_COMPETITION.FK_UPCOMING_SEASON_ID, newUpcomingSeasonId)
+                .setNull(T_COMPETITION.FK_FORMER_SEASON_ID)
+                .where(T_COMPETITION.PK_ID.eq(competitionId))
+                .execute();
+    }
+
     private static class CompetitionRecordMapper implements RecordMapper<CompetitionRecord, Competition> {
         @Override
         public Competition map(CompetitionRecord record) {
@@ -89,6 +117,8 @@ public class CompetitionPersistenceAdapter implements CompetitionRepo {
                     .slug(CompetitionSlug.of(record.getSlug()))
                     .code(record.getCode())
                     .activeSeasonId(record.getActiveSeasonId())
+                    .upcomingSeasonId(record.getUpcomingSeasonId())
+                    .formerSeasonId(record.getFormerSeasonId())
                     .phases(readPhases(record.getPhases()))
                     .build();
         }

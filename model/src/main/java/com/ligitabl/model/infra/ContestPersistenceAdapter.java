@@ -2,6 +2,7 @@ package com.ligitabl.model.infra;
 
 import static com.ligitabl.model.db.tables.TContest.T_CONTEST;
 import static com.ligitabl.model.db.tables.TEntry.T_ENTRY;
+import static com.ligitabl.model.db.tables.TSeason.T_SEASON;
 import static org.jooq.impl.DSL.upper;
 
 import java.util.List;
@@ -9,6 +10,9 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.jooq.DSLContext;
+import org.jooq.Record;
+import org.jooq.SelectConditionStep;
+import org.jooq.impl.DSL;
 
 import com.ligitabl.model.db.tables.records.ContestRecord;
 import com.ligitabl.model.domain.Contest;
@@ -101,6 +105,76 @@ public class ContestPersistenceAdapter implements ContestRepo {
     @Override
     public void delete(UUID contestId) {
         dsl.deleteFrom(T_CONTEST).where(T_CONTEST.PK_ID.eq(contestId)).execute();
+    }
+
+    @Override
+    public List<ContestRepo.UserContestView> findContestsByUserId(
+            UUID userId, boolean completed, int limit, int offset) {
+        var generals = unionBranchForContests(userId, completed, false);
+        var privates = unionBranchForContests(userId, completed, true);
+
+        return generals.unionAll(privates)
+                .orderBy(
+                        DSL.field("sort_group"),
+                        DSL.field("season_start_date").desc(),
+                        DSL.field("joined_at_round").desc())
+                .limit(limit)
+                .offset(offset)
+                .fetch(r -> new ContestRepo.UserContestView(
+                        r.get("contest_id", UUID.class),
+                        r.get("contest_name", String.class),
+                        r.get("season_id", UUID.class),
+                        r.get("season_name", String.class),
+                        Boolean.TRUE.equals(r.get("season_completed", Boolean.class)),
+                        r.get("from_round", Integer.class),
+                        r.get("to_round", Integer.class),
+                        Boolean.TRUE.equals(r.get("is_private", Boolean.class))));
+    }
+
+    @Override
+    public int countContestsByUserId(UUID userId, boolean completed) {
+        var generals = unionBranchForContests(userId, completed, false);
+        var privates = unionBranchForContests(userId, completed, true);
+
+        Integer count =
+                dsl.selectCount().from(generals.unionAll(privates).asTable("t")).fetchOne(0, Integer.class);
+        return count != null ? count : 0;
+    }
+
+    private SelectConditionStep<Record> unionBranchForContests(UUID userId, boolean completed, boolean isPrivate) {
+        // Use List<Field<?>> overload so jOOQ returns SelectConditionStep<Record> instead of
+        // the strongly-typed SelectConditionStep<Record11<...>> that the varargs overload produces.
+        var fields = List.<org.jooq.Field<?>>of(
+                DSL.inline(isPrivate ? 1 : 0).as("sort_group"),
+                T_CONTEST.PK_ID.as("contest_id"),
+                T_CONTEST.C_NAME.as("contest_name"),
+                T_SEASON.PK_ID.as("season_id"),
+                T_SEASON.C_NAME.as("season_name"),
+                T_SEASON.C_COMPLETED.as("season_completed"),
+                T_CONTEST.C_FROM_ROUND_POSITION.as("from_round"),
+                T_CONTEST.C_TO_ROUND_POSITION.as("to_round"),
+                DSL.inline(isPrivate).as("is_private"),
+                T_SEASON.C_START_DATE.as("season_start_date"),
+                T_ENTRY.C_JOINED_AT_ROUND.as("joined_at_round"));
+
+        var baseJoin = dsl.select(fields)
+                .from(T_CONTEST)
+                .join(T_SEASON)
+                .on(T_SEASON.PK_ID.eq(T_CONTEST.FK_SEASON_ID))
+                .join(T_ENTRY)
+                .on(T_ENTRY.FK_CONTEST_ID.eq(T_CONTEST.PK_ID).and(T_ENTRY.FK_USER_ID.eq(userId)));
+
+        if (!isPrivate) {
+            return baseJoin.where(T_CONTEST.C_IS_PRIVATE.eq(false))
+                    .and(T_CONTEST.C_FROM_ROUND_POSITION.eq(1))
+                    .and(T_CONTEST.C_TO_ROUND_POSITION.eq(T_SEASON.C_MAX_ROUNDS))
+                    .and(T_SEASON.C_MAX_ROUNDS.gt(0))
+                    .and(T_SEASON.C_COMPLETED.eq(completed));
+        } else {
+            return baseJoin.where(T_CONTEST.C_IS_PRIVATE.eq(true))
+                    .and(T_ENTRY.C_REMOVED_AT_ROUND.isNull())
+                    .and(T_SEASON.C_COMPLETED.eq(completed));
+        }
     }
 
     @Override

@@ -95,7 +95,7 @@ public class SeasonPredictionPersistenceAdapter implements SeasonPredictionRepo 
                 .id(record.getId())
                 .userId(record.getUserId())
                 .seasonId(record.getSeasonId())
-                .initialRankings(readJson(record.getInitialRankings(), TEAM_RANK_LIST, List.of()))
+                .initialRankings(readJson(record.getInitialRankings(), TEAM_RANK_LIST, null))
                 .currentRankings(readJson(record.getCurrentRankings(), TEAM_RANK_LIST, List.of()))
                 .swaps(readJson(record.getSwaps(), ROUND_SWAP_LIST, List.of()))
                 .lastSwapAt(toInstant(record.getLastSwapAt()))
@@ -111,7 +111,7 @@ public class SeasonPredictionPersistenceAdapter implements SeasonPredictionRepo 
         if (model == null || rec == null) return;
         rec.setUserId(model.getUserId());
         rec.setSeasonId(model.getSeasonId());
-        rec.setInitialRankings(writeJson(model.getInitialRankings()));
+        rec.setInitialRankings(writeJsonNullable(model.getInitialRankings()));
         rec.setCurrentRankings(writeJson(model.getCurrentRankings()));
         rec.setSwaps(writeJson(model.getSwaps()));
         rec.setLastSwapAt(toOffsetDateTime(model.getLastSwapAt()));
@@ -130,6 +130,18 @@ public class SeasonPredictionPersistenceAdapter implements SeasonPredictionRepo 
     private static JSONB writeJson(Object value) {
         try {
             return JSONB.valueOf(OBJECT_MAPPER.writeValueAsString(value == null ? List.of() : value));
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to serialize JSON", e);
+        }
+    }
+
+    /** Unlike writeJson, preserves a Java null as SQL NULL instead of defaulting to an empty JSON array. */
+    private static JSONB writeJsonNullable(Object value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            return JSONB.valueOf(OBJECT_MAPPER.writeValueAsString(value));
         } catch (JsonProcessingException e) {
             throw new IllegalStateException("Failed to serialize JSON", e);
         }
