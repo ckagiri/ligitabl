@@ -212,7 +212,7 @@ public class ProfileController {
     private ContestSummary toSummary(ContestRepo.UserContestView view, UUID userId) {
         int memberCount = entryRepo.countActiveByContestId(view.contestId());
         Integer rank = resolveRank(view, userId);
-        String link = view.isPrivate() ? "/contests/" + view.contestId() : "/leaderboard";
+        String link = "/contests/" + view.contestId() + (view.isPrivate() ? "" : "?segment=overall");
         return new ContestSummary(view.contestName(), view.seasonName(), memberCount, rank, link);
     }
 

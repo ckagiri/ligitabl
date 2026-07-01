@@ -279,12 +279,9 @@
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                  <tr th:each="c : ${activeContests}"
-                      class="group hover:bg-gray-50 transition cursor-pointer"
-                      th:attr="data-href=${c.link()}"
-                      onclick="window.location.href=this.dataset.href">
+                  <tr th:each="c : ${activeContests}" class="hover:bg-gray-50 transition">
                     <td class="py-3 pr-4">
-                      <div class="text-sm font-medium text-indigo-600 group-hover:text-indigo-800" th:text="${c.contestName()}"></div>
+                      <a th:href="${c.link()}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800" th:text="${c.contestName()}"></a>
                       <div class="text-xs text-gray-500" th:text="${c.seasonName()}"></div>
                     </td>
                     <td class="py-3 pr-4 text-sm text-gray-700">
@@ -329,13 +326,10 @@
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
-                  <tr th:each="c : ${pastContests}"
-                      class="group hover:bg-gray-50 transition cursor-pointer"
-                      th:attr="data-href=${c.link()}"
-                      onclick="window.location.href=this.dataset.href">
+                  <tr th:each="c : ${pastContests}" class="hover:bg-gray-50 transition">
                     <td class="py-3 pr-4">
-                      <div class="text-sm font-medium text-indigo-600 group-hover:text-indigo-800">
-                        <span th:text="${c.contestName()}"></span>
+                      <div class="text-sm">
+                        <a th:href="${c.link()}" class="font-medium text-indigo-600 hover:text-indigo-800" th:text="${c.contestName()}"></a>
                         <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-red-100 text-red-700">Over</span>
                       </div>
                       <div class="text-xs text-gray-500" th:text="${c.seasonName()}"></div>
