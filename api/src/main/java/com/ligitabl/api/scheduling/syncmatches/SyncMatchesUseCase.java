@@ -298,7 +298,10 @@ public class SyncMatchesUseCase {
         boolean roundObstructed = allTerminalOrBlocking && hasBlocking;
 
         var obstructedMatchIds = roundObstructed
-                ? matches.stream().filter(m -> m.isBlocking()).map(m -> m.getId()).toList()
+                ? matches.stream()
+                        .filter(m -> m.isBlocking())
+                        .map(m -> m.getId())
+                        .toList()
                 : List.<UUID>of();
 
         // Check if no upcoming matches (empty result)

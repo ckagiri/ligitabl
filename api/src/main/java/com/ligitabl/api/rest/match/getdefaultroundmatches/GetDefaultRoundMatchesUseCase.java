@@ -58,10 +58,9 @@ public class GetDefaultRoundMatchesUseCase
     }
 
     private Either<UseCaseError, MatchesContext> withMatches(RoundContext roundContext) {
-        return fetchMatches(roundContext.ctx().round())
-                .flatMap(rawMatches -> matchEnricher
-                        .enrichWithTeams(rawMatches)
-                        .map(matches -> new MatchesContext(roundContext, rawMatches, matches)));
+        return fetchMatches(roundContext.ctx().round()).flatMap(rawMatches -> matchEnricher
+                .enrichWithTeams(rawMatches)
+                .map(matches -> new MatchesContext(roundContext, rawMatches, matches)));
     }
 
     private RoundMatchesResult toResult(MatchesContext matchesContext) {
@@ -78,7 +77,8 @@ public class GetDefaultRoundMatchesUseCase
                 .matches(matchesContext.matches())
                 .roundFinalized(ctx.round().isFinalized())
                 .seasonInSetupMode(ctx.season().isInSetupMode())
-                .standingsFinalised(isStandingsFinalised(ctx.season().getId(), ctx.round().getPosition()))
+                .standingsFinalised(
+                        isStandingsFinalised(ctx.season().getId(), ctx.round().getPosition()))
                 .allMatchesTerminalOrBlocking(rawMatches.stream().allMatch(m -> m.isComplete() || m.isBlocking()))
                 .matchesComplete(Round.computeMatchStatus(rawMatches) == RoundStatus.COMPLETED)
                 .build();
