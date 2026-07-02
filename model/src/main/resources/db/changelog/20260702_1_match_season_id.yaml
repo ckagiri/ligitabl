@@ -1,0 +1,112 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260702_1_match_add_season_id
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_match
+            schemaName: public
+        - not:
+            - columnExists:
+                tableName: t_match
+                schemaName: public
+                columnName: fk_season_id
+      changes:
+        - addColumn:
+            tableName: t_match
+            schemaName: public
+            columns:
+              - column:
+                  name: fk_season_id
+                  type: uuid
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 20260702_2_match_backfill_season_id
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_match
+            schemaName: public
+        - columnExists:
+            tableName: t_match
+            schemaName: public
+            columnName: fk_season_id
+      changes:
+        - sql:
+            dbms: postgresql
+            splitStatements: false
+            sql: |
+              UPDATE t_match
+              SET    fk_season_id = t_round.fk_season_id
+              FROM   t_round
+              WHERE  t_round.pk_id = t_match.fk_round_id;
+
+  - changeSet:
+      id: 20260702_3_match_season_id_not_null
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_match
+            schemaName: public
+        - columnExists:
+            tableName: t_match
+            schemaName: public
+            columnName: fk_season_id
+      changes:
+        - addNotNullConstraint:
+            tableName: t_match
+            schemaName: public
+            columnName: fk_season_id
+            columnDataType: uuid
+
+  - changeSet:
+      id: 20260702_4_match_season_id_fk
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_match
+            schemaName: public
+      changes:
+        - addForeignKeyConstraint:
+            baseTableName: t_match
+            baseColumnNames: fk_season_id
+            baseTableSchemaName: public
+            constraintName: fk_match_season_id
+            referencedTableName: t_season
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+  - changeSet:
+      id: 20260702_5_match_drop_unique_slug
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_match
+            schemaName: public
+      changes:
+        - dropUniqueConstraint:
+            tableName: t_match
+            schemaName: public
+            constraintName: uq_t_match_slug
+
+  - changeSet:
+      id: 20260702_6_match_unique_season_slug
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_match
+            schemaName: public
+      changes:
+        - addUniqueConstraint:
+            tableName: t_match
+            schemaName: public
+            columnNames: fk_season_id, c_slug
+            constraintName: uq_t_match_season_slug

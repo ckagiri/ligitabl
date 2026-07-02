@@ -262,6 +262,7 @@ public class MatchPersistenceAdapter implements MatchRepo {
             return Match.builder()
                     .id(record.getId())
                     .clientId(record.getClientId())
+                    .seasonId(record.getSeasonId())
                     .roundId(record.getRoundId())
                     .homeTeamId(record.getHomeTeamId())
                     .awayTeamId(record.getAwayTeamId())
@@ -302,6 +303,7 @@ public class MatchPersistenceAdapter implements MatchRepo {
         if (model == null || rec == null) return;
 
         rec.setClientId(model.getClientId());
+        rec.setSeasonId(model.getSeasonId());
         rec.setRoundId(model.getRoundId());
         rec.setHomeTeamId(model.getHomeTeamId());
         rec.setAwayTeamId(model.getAwayTeamId());
