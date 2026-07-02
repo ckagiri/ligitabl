@@ -170,6 +170,19 @@ class RoundOpeningSwapUseCaseTest {
         verify(predictionRepo, never()).save(any());
     }
 
+    @Test
+    void shouldReject_whenSeasonInSetupMode() {
+        season.enterSetupMode();
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+
+        var command = new RoundOpeningSwapCommand(List.of(new SwapCommand("ARS", "LIV")));
+        var result = useCase.execute(userId, command);
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(SwapError.SeasonInSetupMode.class, result.getLeft());
+        verify(predictionRepo, never()).save(any());
+    }
+
     // ── Guard: round state ────────────────────────────────────────────────────
 
     @Test
@@ -329,6 +342,7 @@ class RoundOpeningSwapUseCaseTest {
                 .currentRoundId(roundId)
                 .completed(false)
                 .initialRankings(rankings)
+                .mainContestId(UUID.randomUUID())
                 .build();
     }
 

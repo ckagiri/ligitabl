@@ -21,6 +21,8 @@ import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.MatchRepo;
+import com.ligitabl.model.repo.RoundRepo;
+import com.ligitabl.model.repo.StandingsRepo;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -31,6 +33,8 @@ import lombok.extern.slf4j.Slf4j;
 public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, Either<UseCaseError, RescheduleResult>> {
 
     private final MatchRepo matchRepo;
+    private final RoundRepo roundRepo;
+    private final StandingsRepo standingsRepo;
     private final HierarchyValidator hierarchyValidator;
     private final CompetitionDefaults competitionDefaults;
     private final Clock clock;
@@ -64,24 +68,27 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
     }
 
     private Either<UseCaseError, RescheduleContext> validateReschedule(MatchContext matchCtx, int newRoundPosition) {
-        return resolveTargetRound(matchCtx.context().season(), newRoundPosition).flatMap(targetRound -> {
-            RescheduleContext ctx = new RescheduleContext(
-                    matchCtx.context().season(), matchCtx.context().round(), targetRound, matchCtx.match());
+        Season season = matchCtx.context().season();
 
-            if (ctx.season().isInSetupMode()) {
-                return Either.right(ctx);
-            }
-
-            return hierarchyValidator
-                    .validateCurrentRound(ctx.season())
-                    .flatMap(seasonCurrentRound -> validateOperationalMode(
-                                    ctx.match(), seasonCurrentRound, ctx.currentRound(), ctx.targetRound())
-                            .map(ignored -> ctx));
-        });
+        return resolveTargetRound(season, newRoundPosition)
+                .flatMap(targetRound -> hierarchyValidator
+                        .validateCurrentRound(season)
+                        .map(seasonCurrentRound -> new RescheduleContext(
+                                season, matchCtx.context().round(), targetRound, seasonCurrentRound, matchCtx.match())))
+                .flatMap(ctx -> validateOperationalMode(ctx).map(ignored -> ctx));
     }
 
-    private Either<UseCaseError, Void> validateOperationalMode(
-            Match match, Round seasonCurrentRound, Round sourceRound, Round targetRound) {
+    // SUSPENDED/CANCELLED/LIVE are always blocked, in both modes — an actively-live or
+    // mid-transition match can't be rescheduled regardless of setup mode. FINISHED, and the
+    // past-round/finalized-round restrictions for SCHEDULED/POSTPONED, are relaxed in setup mode
+    // so admins can rearrange historical fixture data (see RescheduleMatchUseCase javadoc / task
+    // notes) — but a FINISHED match still can't be pushed into an unplayed future round.
+    private Either<UseCaseError, Void> validateOperationalMode(RescheduleContext ctx) {
+        Match match = ctx.match();
+        Round seasonCurrentRound = ctx.seasonCurrentRound();
+        Round targetRound = ctx.targetRound();
+        boolean setupMode = ctx.season().isInSetupMode();
+
         if (match.getStatus() == MatchStatus.SUSPENDED) {
             return Either.left(UseCaseErrors.validation(
                     "Cannot reschedule SUSPENDED match directly. Transition to CANCELLED first."));
@@ -93,19 +100,31 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
         if (match.getStatus() == MatchStatus.LIVE) {
             return Either.left(UseCaseErrors.validation("Cannot reschedule LIVE match"));
         }
+
         if (match.getStatus() == MatchStatus.FINISHED) {
-            return Either.left(UseCaseErrors.validation("Cannot reschedule FINISHED match"));
+            if (!setupMode) {
+                return Either.left(UseCaseErrors.validation("Cannot reschedule FINISHED match"));
+            }
+            if (targetRound.getPosition() > seasonCurrentRound.getPosition()) {
+                return Either.left(UseCaseErrors.validation(String.format(
+                        "Cannot reschedule a FINISHED match to future round %d (current is %d)",
+                        targetRound.getPosition(), seasonCurrentRound.getPosition())));
+            }
+            return Either.right(null);
         }
 
-        if (targetRound.getPosition() < seasonCurrentRound.getPosition()) {
-            return Either.left(UseCaseErrors.validation(String.format(
-                    "Cannot reschedule to past round %d (current is %d)",
-                    targetRound.getPosition(), seasonCurrentRound.getPosition())));
-        }
+        // Remaining statuses: SCHEDULED, POSTPONED.
+        if (!setupMode) {
+            if (targetRound.getPosition() < seasonCurrentRound.getPosition()) {
+                return Either.left(UseCaseErrors.validation(String.format(
+                        "Cannot reschedule to past round %d (current is %d)",
+                        targetRound.getPosition(), seasonCurrentRound.getPosition())));
+            }
 
-        if (targetRound.isFinalized()) {
-            return Either.left(UseCaseErrors.validation(
-                    String.format("Round %d is already finalized", targetRound.getPosition())));
+            if (targetRound.isFinalized()) {
+                return Either.left(UseCaseErrors.validation(
+                        String.format("Round %d is already finalized", targetRound.getPosition())));
+            }
         }
 
         return Either.right(null);
@@ -118,12 +137,14 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
             Instant now = clock.instant();
 
             MatchStatus oldStatus = match.getStatus();
-            int fromRound = ctx.currentRound().getPosition();
+            int fromRound = ctx.sourceRound().getPosition();
             int toRound = ctx.targetRound().getPosition();
 
             match.rescheduleToRound(ctx.targetRound().getId(), ctx.season().isInSetupMode());
 
             Match saved = matchRepo.save(match);
+
+            markOutOfSyncIfMovedToPastRound(ctx, fromRound, toRound);
 
             return Either.right(RescheduleResult.builder()
                     .matchId(saved.getId())
@@ -141,7 +162,33 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
         }
     }
 
+    // Only reachable in setup mode (validateOperationalMode blocks any past-round move otherwise).
+    // Landing in a round before the season's current one means whatever finalized standings
+    // included that round range are now stale — mirrors FinalizeRoundUseCase's refinalize cascade:
+    // mark unfinalized, don't auto-recompute. Applies regardless of the match's status: the common
+    // case is moving a not-yet-played match into the past to backfill it, then editing its
+    // score/status afterward — by then standings are already correctly flagged out of sync.
+    private void markOutOfSyncIfMovedToPastRound(RescheduleContext ctx, int fromRound, int toRound) {
+        int currentPosition = ctx.seasonCurrentRound().getPosition();
+        if (toRound >= currentPosition) {
+            return; // not moved into the past
+        }
+
+        int from = Math.min(fromRound, toRound);
+        UUID seasonId = ctx.season().getId();
+        roundRepo.markUnfinalizedBetween(seasonId, from, currentPosition);
+        standingsRepo.markUnfinalisedBetween(seasonId, from, currentPosition);
+        log.info(
+                "Reschedule cascade: marked rounds {}-{} unfinalized for season {} (match moved {} -> {})",
+                from,
+                currentPosition,
+                seasonId,
+                fromRound,
+                toRound);
+    }
+
     private record MatchContext(HierarchyContext context, Match match) {}
 
-    private record RescheduleContext(Season season, Round currentRound, Round targetRound, Match match) {}
+    private record RescheduleContext(
+            Season season, Round sourceRound, Round targetRound, Round seasonCurrentRound, Match match) {}
 }

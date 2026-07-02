@@ -17,6 +17,8 @@ import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.api.scheduling.advanceround.RoundAdvancementService;
+import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.repo.SeasonRepo;
 
 import io.sentry.Sentry;
 
@@ -48,6 +50,9 @@ public class MatchSyncScheduler {
     private final TriggerRoundFinalizationUseCase triggerFinalizationUseCase;
     private final AdminNotificationService adminNotificationService;
     private final RoundAdvancementService roundAdvancementService;
+    private final SeasonRepo seasonRepo;
+
+    private static final Duration SETUP_MODE_DEFER_DELAY = Duration.ofMinutes(30);
 
     @Value("${football-data.competition.code}")
     private String competitionCode;
@@ -67,12 +72,14 @@ public class MatchSyncScheduler {
             SyncMatchesUseCase syncMatchesUseCase,
             TriggerRoundFinalizationUseCase triggerFinalizationUseCase,
             AdminNotificationService adminNotificationService,
-            RoundAdvancementService roundAdvancementService) {
+            RoundAdvancementService roundAdvancementService,
+            SeasonRepo seasonRepo) {
         this.taskScheduler = taskScheduler;
         this.syncMatchesUseCase = syncMatchesUseCase;
         this.triggerFinalizationUseCase = triggerFinalizationUseCase;
         this.adminNotificationService = adminNotificationService;
         this.roundAdvancementService = roundAdvancementService;
+        this.seasonRepo = seasonRepo;
     }
 
     /**
@@ -146,6 +153,14 @@ public class MatchSyncScheduler {
                         }
 
                         if (success.allMatchesComplete()) {
+                            if (isSeasonInSetupMode(success.seasonId())) {
+                                log.info(
+                                        "All matches complete but season is in setup mode; deferring "
+                                                + "finalization check by {}",
+                                        formatDuration(SETUP_MODE_DEFER_DELAY));
+                                scheduleNextSync(SETUP_MODE_DEFER_DELAY);
+                                return null;
+                            }
                             log.info("All matches complete; triggering finalization check");
                             triggerFinalization(success);
                         }
@@ -175,6 +190,13 @@ public class MatchSyncScheduler {
         } finally {
             running = false;
         }
+    }
+
+    private boolean isSeasonInSetupMode(UUID seasonId) {
+        if (seasonId == null) {
+            return false;
+        }
+        return seasonRepo.findById(seasonId).map(Season::isInSetupMode).orElse(false);
     }
 
     private void triggerFinalization(MatchSyncResult syncResult) {

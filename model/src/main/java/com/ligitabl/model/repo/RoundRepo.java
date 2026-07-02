@@ -24,4 +24,10 @@ public interface RoundRepo {
      * time has passed. Used by RoundAdvancementRecovery on startup.
      */
     List<Round> findMissedAdvancements(OffsetDateTime now);
+
+    /**
+     * Bulk-marks rounds unfinalized for a season, between the given positions inclusive.
+     * Used by the setup-mode refinalize cascade to flag downstream rounds as out of sync.
+     */
+    void markUnfinalizedBetween(UUID seasonId, int fromPositionInclusive, int toPositionInclusive);
 }

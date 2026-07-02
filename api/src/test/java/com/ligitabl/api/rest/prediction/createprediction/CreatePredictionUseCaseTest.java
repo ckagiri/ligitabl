@@ -246,6 +246,21 @@ class CreatePredictionUseCaseTest {
     }
 
     @Test
+    void shouldReject_whenSeasonInSetupMode() {
+        season.enterSetupMode(); // mainContestId -> null, detachedContestId <- previous mainContestId
+
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+
+        Either<CreatePredictionError, CreatePredictionResult> result =
+                useCase.execute(userId, singleSwap("LIV", "ARS"));
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(CreatePredictionError.SeasonInSetupMode.class, result.getLeft());
+        verify(predictionRepo, never()).findByUserAndSeason(any(), any());
+        verify(contestRepo, never()).findById(any());
+    }
+
+    @Test
     void shouldReject_whenAlreadyJoined() {
         SeasonPrediction existingPrediction = SeasonPrediction.builder()
                 .id(UUID.randomUUID())

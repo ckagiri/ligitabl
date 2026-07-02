@@ -25,7 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class FinalizeRoundUseCase {
 
-    private record FinalizationContext(Season season, Round round, boolean recompute) {}
+    private record FinalizationContext(Season season, Round round, Round currentRound, boolean recompute) {}
 
     private final HierarchyValidator hierarchyValidator;
     private final RoundRepo roundRepo;
@@ -50,12 +50,21 @@ public class FinalizeRoundUseCase {
             return Either.left(new FinalizeRoundError.TransactionFailed("seasonId must not be null"));
         }
 
-        log.info("Starting round finalization for season: {} (recompute={})", command.seasonId(), command.recompute());
+        log.info(
+                "Starting round finalization for season: {} (roundPosition={}, recompute={})",
+                command.seasonId(),
+                command.roundPosition(),
+                command.recompute());
 
         return getSeason(command.seasonId())
-                .flatMap(season -> getCurrentRound(season)
-                        .map(round -> new FinalizationContext(season, round, command.recompute())))
-                .flatMap(ctx -> validateRoundReady(ctx).flatMap(__ -> executeFinalizationWorkflow(ctx)));
+                .flatMap(season -> checkExplicitRefinalizeAllowed(season, command.roundPosition())
+                        .map(__ -> season))
+                .flatMap(season -> getCurrentRound(season).flatMap(currentRound -> getTargetRound(
+                                season, currentRound, command.roundPosition())
+                        .map(round -> new FinalizationContext(season, round, currentRound, command.recompute()))))
+                .flatMap(ctx -> checkTargetNotAheadOfCurrent(ctx)
+                        .flatMap(__ -> validateRoundReady(ctx))
+                        .flatMap(__ -> executeFinalizationWorkflow(ctx)));
     }
 
     private Either<FinalizeRoundError, Season> getSeason(UUID seasonId) {
@@ -65,9 +74,38 @@ public class FinalizeRoundUseCase {
                 .orElseGet(() -> Either.left(new FinalizeRoundError.SeasonNotFound(seasonId)));
     }
 
+    // An explicit refinalize (roundPosition provided) is only valid while the season is in setup mode.
+    private Either<FinalizeRoundError, Void> checkExplicitRefinalizeAllowed(Season season, Integer roundPosition) {
+        if (roundPosition != null && !season.isInSetupMode()) {
+            return Either.left(new FinalizeRoundError.NotInSetupMode(season.getId()));
+        }
+        return Either.right(null);
+    }
+
     private Either<FinalizeRoundError, Round> getCurrentRound(Season season) {
         return hierarchyValidator.validateCurrentRound(season).mapLeft(__ ->
                 (FinalizeRoundError) new FinalizeRoundError.RoundNotFound(season.getCurrentRoundId()));
+    }
+
+    private Either<FinalizeRoundError, Round> getTargetRound(Season season, Round currentRound, Integer roundPosition) {
+        if (roundPosition == null) {
+            return Either.right(currentRound);
+        }
+        return roundRepo
+                .findBySeasonIdAndPosition(season.getId(), roundPosition)
+                .map(Either::<FinalizeRoundError, Round>right)
+                .orElseGet(() -> Either.left(new FinalizeRoundError.RoundNotFound(null)));
+    }
+
+    // A target round beyond the season's current round is never valid — the round hasn't been
+    // reached yet, so there's nothing to (re)finalize. Equal is fine (normal finalize of the
+    // current round); only strictly ahead is rejected.
+    private Either<FinalizeRoundError, Void> checkTargetNotAheadOfCurrent(FinalizationContext ctx) {
+        if (ctx.round().getPosition() > ctx.currentRound().getPosition()) {
+            return Either.left(new FinalizeRoundError.RoundAheadOfCurrent(
+                    ctx.round().getPosition(), ctx.currentRound().getPosition()));
+        }
+        return Either.right(null);
     }
 
     private Either<FinalizeRoundError, Void> validateRoundReady(FinalizationContext ctx) {
@@ -77,10 +115,10 @@ public class FinalizeRoundUseCase {
         }
         List<Match> matches = matchRepo.findByRoundId(ctx.round().getId());
 
-        var obstructed = matches.stream().filter(this::isBlocking).toList();
-        boolean allTerminalOrBlocking = matches.stream().allMatch(m -> isComplete(m) || isBlocking(m));
+        var obstructed = matches.stream().filter(m -> m.isBlocking()).toList();
+        boolean allTerminalOrBlocking = matches.stream().allMatch(m -> m.isComplete() || m.isBlocking());
         if (!obstructed.isEmpty() && allTerminalOrBlocking) {
-            var obstructedIds = obstructed.stream().map(Match::getId).toList();
+            var obstructedIds = obstructed.stream().map(m -> m.getId()).toList();
             return Either.left(new FinalizeRoundError.RoundObstructed(
                     ctx.round().getId(),
                     obstructedIds,
@@ -88,7 +126,7 @@ public class FinalizeRoundUseCase {
         }
 
         RoundStatus status = ctx.round().computeStatus(matches);
-        if (ctx.recompute() && status == RoundStatus.FINALIZED) {
+        if (ctx.recompute() && (status == RoundStatus.FINALIZED || status == RoundStatus.ADVANCED)) {
             return Either.right(null);
         }
 
@@ -131,6 +169,14 @@ public class FinalizeRoundUseCase {
                 log.info("Round {} marked as finalized", ctx.round().getPosition());
             }
 
+            // Step 5.5: Refinalize cascade — a recompute of a round before the current one means
+            // every round's cumulative standings from here through the current round (inclusive)
+            // are now stale. Mark them unfinalized/out-of-sync; nothing here re-scores them — the
+            // admin walks forward refinalizing each in turn.
+            if (ctx.recompute()) {
+                markDownstreamOutOfSync(ctx);
+            }
+
             // STEP 6: Send Notifications (TODO: implement async)
 
             Instant completedAt = clock.instant();
@@ -152,6 +198,21 @@ public class FinalizeRoundUseCase {
             log.error("Round finalization failed", e);
             return Either.left(new FinalizeRoundError.TransactionFailed(e.getMessage()));
         }
+    }
+
+    private void markDownstreamOutOfSync(FinalizationContext ctx) {
+        int refinalizedPosition = ctx.round().getPosition();
+        int currentPosition = ctx.currentRound().getPosition();
+
+        if (refinalizedPosition == currentPosition) {
+            return;
+        }
+
+        int from = refinalizedPosition + 1;
+        UUID seasonId = ctx.season().getId();
+        roundRepo.markUnfinalizedBetween(seasonId, from, currentPosition);
+        standingsRepo.markUnfinalisedBetween(seasonId, from, currentPosition);
+        log.info("Refinalize cascade: marked rounds {}-{} unfinalized for season {}", from, currentPosition, seasonId);
     }
 
     // STEP 1: Calculate Final Standings
@@ -283,20 +344,6 @@ public class FinalizeRoundUseCase {
 
             saveStandings(nextStandings);
         }
-    }
-
-    private boolean isComplete(Match match) {
-        if (match == null || match.getStatus() == null) {
-            return false;
-        }
-        return match.getStatus() == MatchStatus.FINISHED || match.getStatus() == MatchStatus.POSTPONED;
-    }
-
-    private boolean isBlocking(Match match) {
-        if (match == null || match.getStatus() == null) {
-            return false;
-        }
-        return match.getStatus() == MatchStatus.CANCELLED || match.getStatus() == MatchStatus.SUSPENDED;
     }
 
     private int countSwapsInRound(SeasonPrediction prediction, int roundPosition) {

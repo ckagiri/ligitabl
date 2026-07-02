@@ -7,6 +7,8 @@ public sealed interface CreatePredictionError {
 
     record Completed() implements CreatePredictionError {}
 
+    record SeasonInSetupMode() implements CreatePredictionError {}
+
     record AlreadyJoined(UUID existingPredictionId) implements CreatePredictionError {}
 
     record TooManySwaps(int provided, int max) implements CreatePredictionError {}

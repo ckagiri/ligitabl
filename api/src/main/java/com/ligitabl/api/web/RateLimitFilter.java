@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.time.Duration;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.http.HttpStatus;
@@ -36,8 +37,6 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RateLimitFilter extends OncePerRequestFilter {
 
-    private static final int REQUESTS_PER_MINUTE = 20;
-
     // Known bot/scanner paths that will never succeed on a Spring Boot app.
     // Silently dropped: no logging, no rate-limit token consumed.
     private static final List<String> BOT_PROBE_PREFIXES = List.of(
@@ -45,10 +44,18 @@ public class RateLimitFilter extends OncePerRequestFilter {
 
     private final Bucket bucket;
 
-    public RateLimitFilter() {
+    // Configurable per environment (RATE_LIMIT_REQUESTS_PER_MINUTE) — dev/test can set this high
+    // to avoid tripping the limiter during manual testing without touching prod's default.
+    //
+    // TODO: this bucket is global (shared across every client), not per-IP/per-user, so the
+    // current 120/min default is really "120/min for the whole app combined." That's a stopgap —
+    // the correct long-term fix is a per-client bucket (keyed by IP or authenticated user id,
+    // e.g. via a Caffeine-backed Map<String, Bucket>) so one abusive client can't exhaust the
+    // budget for everyone else, and legitimate concurrent users aren't throttled together.
+    public RateLimitFilter(@Value("${ligitabl.rate-limit.requests-per-minute:120}") int requestsPerMinute) {
         Bandwidth limit = Bandwidth.builder()
-                .capacity(REQUESTS_PER_MINUTE)
-                .refillGreedy(REQUESTS_PER_MINUTE, Duration.ofMinutes(1))
+                .capacity(requestsPerMinute)
+                .refillGreedy(requestsPerMinute, Duration.ofMinutes(1))
                 .build();
         this.bucket = Bucket.builder().addLimit(limit).build();
     }

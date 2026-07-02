@@ -22,6 +22,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.model.auth.Password;
+import com.ligitabl.model.auth.Role;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.domain.service.PasswordHasher;
 import com.ligitabl.model.repo.UserRepo;
@@ -58,6 +59,7 @@ public class ProfileController {
 
         model.addAttribute("pageTitle", "Profile Settings");
         model.addAttribute("user", user);
+        model.addAttribute("showRoles", hasNonDefaultRoles(user));
 
         return "profile/settings";
     }
@@ -85,6 +87,7 @@ public class ProfileController {
         if (result.hasErrors()) {
             model.addAttribute("pageTitle", "Profile Settings");
             model.addAttribute("user", user);
+            model.addAttribute("showRoles", hasNonDefaultRoles(user));
             return "profile/settings";
         }
 
@@ -175,6 +178,10 @@ public class ProfileController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         session.setAttribute(
                 HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
+    }
+
+    private boolean hasNonDefaultRoles(User user) {
+        return !(user.getRoles().size() == 1 && user.getRoles().contains(Role.PLAYER));
     }
 
     private User currentUser(WebUserDetails userDetails) {

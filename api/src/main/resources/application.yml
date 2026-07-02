@@ -83,6 +83,11 @@ ligitabl:
   scheduling:
     enabled: true
 
+  rate-limit:
+    # Global bucket shared across all clients (not per-IP) — see TODO in RateLimitFilter for the
+    # long-term per-client fix. 120/min is a stopgap so normal multi-user traffic doesn't trip it.
+    requests-per-minute: ${RATE_LIMIT_REQUESTS_PER_MINUTE:120}
+
   security:
     password-reset-token-validity-minutes: ${PASSWORD_RESET_TOKEN_VALIDITY:30}
     remember-me:

@@ -53,6 +53,15 @@ public class Round extends AbstractModel<UUID> {
             return RoundStatus.FINALIZED;
         }
 
+        return computeMatchStatus(matches);
+    }
+
+    /**
+     * Matches-only classification (OPEN/LOCKED/COMPLETED), independent of round lifecycle state
+     * (advanced/finalized) — usable without a Round instance, e.g. when only a match list is
+     * available.
+     */
+    public static RoundStatus computeMatchStatus(List<Match> matches) {
         if (matches == null || matches.isEmpty()) {
             return RoundStatus.COMPLETED; // Empty round can finalize
         }

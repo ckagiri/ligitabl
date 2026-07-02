@@ -7,7 +7,8 @@ import java.util.Arrays;
 public enum Role {
     ADMIN("ADMIN"),
     PLAYER("PLAYER"),
-    MODERATOR("MODERATOR");
+    MODERATOR("MODERATOR"),
+    SUPER_ADMIN("SUPER_ADMIN");
 
     private final String value;
 

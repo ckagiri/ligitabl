@@ -5,10 +5,18 @@ import java.util.UUID;
 
 import com.ligitabl.api.rest.match.MatchDto;
 
+import lombok.Builder;
+
+@Builder
 public record RoundMatchesResult(
         UUID seasonId,
+        String seasonSlug,
         int viewingRound,
         int currentRound,
         int lastRound,
         List<MatchDto> matches,
-        boolean roundFinalized) {}
+        boolean roundFinalized,
+        boolean seasonInSetupMode,
+        boolean standingsFinalised,
+        boolean allMatchesTerminalOrBlocking,
+        boolean matchesComplete) {}

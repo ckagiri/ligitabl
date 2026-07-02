@@ -98,6 +98,58 @@ class RoundTest {
         assertThat(round.computeStatus(matches)).isEqualTo(RoundStatus.OPEN);
     }
 
+    @Test
+    void shouldReturnAdvancedRegardlessOfMatches() {
+        var round = Round.builder()
+                .id(UUID.randomUUID())
+                .seasonId(UUID.randomUUID())
+                .name("Round 1")
+                .slug("round-1")
+                .position(1)
+                .advanced(true)
+                .build();
+        var matches = List.of(createMatch(MatchStatus.SCHEDULED));
+
+        assertThat(round.computeStatus(matches)).isEqualTo(RoundStatus.ADVANCED);
+    }
+
+    @Test
+    void shouldReturnFinalizedRegardlessOfMatches() {
+        var round = Round.builder()
+                .id(UUID.randomUUID())
+                .seasonId(UUID.randomUUID())
+                .name("Round 1")
+                .slug("round-1")
+                .position(1)
+                .finalized(true)
+                .build();
+        var matches = List.of(createMatch(MatchStatus.SCHEDULED));
+
+        assertThat(round.computeStatus(matches)).isEqualTo(RoundStatus.FINALIZED);
+    }
+
+    @Test
+    void computeMatchStatus_staticVariant_matchesInstanceMethod_whenNotAdvancedOrFinalized() {
+        var matches = List.of(createMatch(MatchStatus.FINISHED), createMatch(MatchStatus.SCHEDULED));
+
+        assertThat(Round.computeMatchStatus(matches)).isEqualTo(RoundStatus.LOCKED);
+    }
+
+    @Test
+    void computeMatchStatus_staticVariant_ignoresAdvancedAndFinalized() {
+        // Unlike the instance method, the static matches-only variant has no Round to short-circuit
+        // on advanced/finalized — it always classifies purely from the match list.
+        var matches = List.of(createMatch(MatchStatus.FINISHED), createMatch(MatchStatus.FINISHED));
+
+        assertThat(Round.computeMatchStatus(matches)).isEqualTo(RoundStatus.COMPLETED);
+    }
+
+    @Test
+    void computeMatchStatus_staticVariant_returnsCompletedForNullOrEmpty() {
+        assertThat(Round.computeMatchStatus(null)).isEqualTo(RoundStatus.COMPLETED);
+        assertThat(Round.computeMatchStatus(List.of())).isEqualTo(RoundStatus.COMPLETED);
+    }
+
     private static Round createRound() {
         return Round.builder()
                 .id(UUID.randomUUID())

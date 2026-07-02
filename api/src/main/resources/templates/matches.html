@@ -20,6 +20,14 @@
               <h1 class="text-xl sm:text-2xl font-bold text-gray-900">
                 Fixtures &amp; Results
               </h1>
+
+              <!-- Out-of-sync banner (admin-only) -->
+              <th:block sec:authorize="hasRole('ADMIN')">
+                <div th:if="${isOutOfSync}" class="rounded-lg bg-red-50 border border-red-200 text-red-800 text-sm px-4 py-3">
+                  Standings for this round are out of sync with round <span th:text="${currentRound}">22</span>. Refinalize to recompute.
+                </div>
+              </th:block>
+
               <div
                 th:replace="~{fragments/round-navigation :: round-nav(
                   '/rounds', ${viewingRound}, ${lastRound}, ${currentRound},
@@ -139,9 +147,9 @@
                         <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
                       </svg>
                     </button>
-                    <!-- Manage button (hidden for FINISHED — no valid transitions or reschedule) -->
+                    <!-- Manage button (hidden for FINISHED unless in setup mode, which unlocks transitions/reschedule) -->
                     <button
-                      th:if="${match.status != 'FINISHED'}"
+                      th:if="${match.status != 'FINISHED' or seasonInSetupMode}"
                       th:attr="hx-get=@{/matches/{slug}/admin-modal(slug=${match.slug},round=${viewingRound},home=${match.homeTeam},away=${match.awayTeam})}"
                       hx-target="#match-admin-modal"
                       hx-swap="innerHTML"
@@ -159,28 +167,61 @@
               </div>
             </div>
 
-            <!-- Admin: Refresh / Finalize Round buttons -->
-            <th:block sec:authorize="hasRole('ADMIN')">
-              <div th:if="${showRefreshButton}" class="mt-4 flex justify-end">
-                <button
-                  hx-post="/rounds/current/sync-matches-from-api"
-                  hx-disabled-elt="this"
-                  class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                >
-                  Refresh
-                </button>
+            <!-- Admin footer: setup-mode toggle (left) opposite Refresh/Finalize/Refinalize (right) -->
+            <div class="mt-4 flex items-center justify-between">
+              <div>
+                <th:block sec:authorize="hasRole('SUPER_ADMIN')">
+                  <button
+                    th:if="${!seasonInSetupMode and isViewingCurrentRound == true}"
+                    th:attr="hx-post=@{/admin/seasons/{slug}/setup-mode/enter(slug=${seasonSlug})}"
+                    hx-confirm="Enter setup mode? This detaches the main contest and pauses swaps/new entries for all users."
+                    hx-disabled-elt="this"
+                    class="px-4 py-2 text-sm font-medium text-white bg-gray-700 hover:bg-gray-800 rounded-lg transition-colors"
+                  >Enter Setup Mode</button>
+                  <button
+                    th:if="${seasonInSetupMode}"
+                    th:attr="hx-post=@{/admin/seasons/{slug}/setup-mode/leave(slug=${seasonSlug})}"
+                    hx-confirm="Exit setup mode and reattach the main contest?"
+                    hx-disabled-elt="this"
+                    hx-on::response-error="alert(event.detail.xhr.responseText)"
+                    class="px-4 py-2 text-sm font-medium text-white bg-green-700 hover:bg-green-800 rounded-lg transition-colors"
+                  >Exit Setup Mode</button>
+                </th:block>
               </div>
-              <div th:if="${canFinalizeRound}" class="mt-4 flex justify-end">
-                <button
-                  hx-post="/rounds/current/finalize-and-advance"
-                  hx-confirm="Finalize this round and advance to the next?"
-                  hx-disabled-elt="this"
-                  class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
-                >
-                  Finalize Round
-                </button>
+
+              <div class="flex gap-3">
+                <th:block sec:authorize="hasRole('ADMIN')">
+                  <button
+                    th:if="${showRefreshButton}"
+                    hx-post="/rounds/current/sync-matches-from-api"
+                    hx-disabled-elt="this"
+                    class="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                  >
+                    Refresh
+                  </button>
+                  <button
+                    th:if="${canFinalizeRound}"
+                    hx-post="/rounds/current/finalize-and-advance"
+                    hx-confirm="Finalize this round and advance to the next?"
+                    hx-disabled-elt="this"
+                    class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
+                  >
+                    Finalize Round
+                  </button>
+                </th:block>
+                <th:block sec:authorize="hasRole('SUPER_ADMIN')">
+                  <button
+                    th:if="${canRefinalizeRound}"
+                    th:attr="hx-post=@{/rounds/{pos}/refinalize(pos=${viewingRound})}"
+                    hx-confirm="Refinalize this round? Later rounds (including the current one) will be marked out of sync until refinalized in turn."
+                    hx-disabled-elt="this"
+                    class="px-4 py-2 text-sm font-medium text-white bg-amber-600 hover:bg-amber-700 rounded-lg transition-colors"
+                  >
+                    Refinalize
+                  </button>
+                </th:block>
               </div>
-            </th:block>
+            </div>
 
           </div>
 

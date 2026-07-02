@@ -32,6 +32,8 @@ import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
 import com.ligitabl.model.repo.MatchRepo;
+import com.ligitabl.model.repo.RoundRepo;
+import com.ligitabl.model.repo.StandingsRepo;
 
 @ExtendWith(MockitoExtension.class)
 class RescheduleMatchUseCaseTest {
@@ -40,6 +42,12 @@ class RescheduleMatchUseCaseTest {
 
     @Mock
     private MatchRepo matchRepo;
+
+    @Mock
+    private RoundRepo roundRepo;
+
+    @Mock
+    private StandingsRepo standingsRepo;
 
     @Mock
     private HierarchyValidator hierarchyValidator;
@@ -122,7 +130,8 @@ class RescheduleMatchUseCaseTest {
                 .finalized(false)
                 .build();
 
-        useCase = new RescheduleMatchUseCase(matchRepo, hierarchyValidator, competitionDefaults, clock);
+        useCase = new RescheduleMatchUseCase(
+                matchRepo, roundRepo, standingsRepo, hierarchyValidator, competitionDefaults, clock);
     }
 
     @Test
@@ -171,7 +180,55 @@ class RescheduleMatchUseCaseTest {
     }
 
     @Test
-    void reschedule_inSetupMode_skipsLiveModeValidation_and_preservesStatus() {
+    void reschedule_inSetupMode_finishedMatchCanMoveToPastRound_andMarksOutOfSync() {
+        Match match = Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .roundId(currentRoundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("home-vs-away")
+                .status(MatchStatus.FINISHED)
+                .build();
+
+        // Setup mode allows a FINISHED match to move into the past (unlike live mode, where
+        // FINISHED matches can't be rescheduled at all) — and doing so marks the affected rounds
+        // out of sync, from the target round through the season's current round (10).
+        Round pastRound = Round.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .name("Matchday 5")
+                .slug("md-5")
+                .position(5)
+                .finalized(false)
+                .build();
+
+        RescheduleMatchCommand cmd = RescheduleMatchCommand.builder()
+                .competitionIdentifier("premier-league")
+                .roundPosition(null)
+                .matchSlug(match.getSlug())
+                .newRoundPosition(5)
+                .reason("Setup fixtures")
+                .build();
+
+        when(hierarchyValidator.resolveHierarchy(anyString(), any()))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonSetup, currentRound)));
+        when(hierarchyValidator.validateCurrentRound(seasonSetup)).thenReturn(Either.right(currentRound));
+        when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
+        when(hierarchyValidator.validateRound(seasonId, 5)).thenReturn(Either.right(pastRound));
+        when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
+
+        Either<UseCaseError, RescheduleResult> result = useCase.execute(cmd);
+
+        assertTrue(result.isRight());
+        verify(matchRepo)
+                .save(argThat(m -> m.getRoundId().equals(pastRound.getId()) && m.getStatus() == MatchStatus.FINISHED));
+        verify(roundRepo).markUnfinalizedBetween(seasonId, 5, 10);
+        verify(standingsRepo).markUnfinalisedBetween(seasonId, 5, 10);
+    }
+
+    @Test
+    void reschedule_inSetupMode_liveMatchStillBlocked() {
         Match match = Match.builder()
                 .id(UUID.randomUUID())
                 .clientId(1)
@@ -192,6 +249,117 @@ class RescheduleMatchUseCaseTest {
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonSetup, currentRound)));
+        when(hierarchyValidator.validateCurrentRound(seasonSetup)).thenReturn(Either.right(currentRound));
+        when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
+        when(hierarchyValidator.validateRound(seasonId, 20)).thenReturn(Either.right(targetRound));
+
+        Either<UseCaseError, RescheduleResult> result = useCase.execute(cmd);
+
+        // SUSPENDED/CANCELLED/LIVE are never bypassed by setup mode, unlike FINISHED.
+        assertTrue(result.isLeft());
+        verify(matchRepo, never()).save(any());
+    }
+
+    @Test
+    void reschedule_inSetupMode_finishedMatchCannotMoveToFutureRound() {
+        Match match = Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .roundId(currentRoundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("home-vs-away")
+                .status(MatchStatus.FINISHED)
+                .build();
+
+        RescheduleMatchCommand cmd = RescheduleMatchCommand.builder()
+                .competitionIdentifier("premier-league")
+                .roundPosition(null)
+                .matchSlug(match.getSlug())
+                .newRoundPosition(20)
+                .reason("Setup fixtures")
+                .build();
+
+        when(hierarchyValidator.resolveHierarchy(anyString(), any()))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonSetup, currentRound)));
+        when(hierarchyValidator.validateCurrentRound(seasonSetup)).thenReturn(Either.right(currentRound));
+        when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
+        when(hierarchyValidator.validateRound(seasonId, 20)).thenReturn(Either.right(targetRound));
+
+        Either<UseCaseError, RescheduleResult> result = useCase.execute(cmd);
+
+        assertTrue(result.isLeft());
+        verify(matchRepo, never()).save(any());
+    }
+
+    @Test
+    void reschedule_inSetupMode_scheduledMatchMovedToPastRound_marksOutOfSync() {
+        Match match = Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .roundId(currentRoundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("home-vs-away")
+                .status(MatchStatus.SCHEDULED)
+                .build();
+
+        // The core "backfill" scenario: a not-yet-played match moved into the past so it can later
+        // be transitioned to FINISHED with a score — standings are marked out of sync immediately.
+        Round pastRound = Round.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .name("Matchday 5")
+                .slug("md-5")
+                .position(5)
+                .finalized(false)
+                .build();
+
+        RescheduleMatchCommand cmd = RescheduleMatchCommand.builder()
+                .competitionIdentifier("premier-league")
+                .roundPosition(null)
+                .matchSlug(match.getSlug())
+                .newRoundPosition(5)
+                .reason("Backfilling a fixture")
+                .build();
+
+        when(hierarchyValidator.resolveHierarchy(anyString(), any()))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonSetup, currentRound)));
+        when(hierarchyValidator.validateCurrentRound(seasonSetup)).thenReturn(Either.right(currentRound));
+        when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
+        when(hierarchyValidator.validateRound(seasonId, 5)).thenReturn(Either.right(pastRound));
+        when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
+
+        Either<UseCaseError, RescheduleResult> result = useCase.execute(cmd);
+
+        assertTrue(result.isRight());
+        verify(roundRepo).markUnfinalizedBetween(seasonId, 5, 10);
+        verify(standingsRepo).markUnfinalisedBetween(seasonId, 5, 10);
+    }
+
+    @Test
+    void reschedule_inSetupMode_scheduledMatchCanMoveAheadOfCurrentRound() {
+        Match match = Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .roundId(currentRoundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("home-vs-away")
+                .status(MatchStatus.SCHEDULED)
+                .build();
+
+        RescheduleMatchCommand cmd = RescheduleMatchCommand.builder()
+                .competitionIdentifier("premier-league")
+                .roundPosition(null)
+                .matchSlug(match.getSlug())
+                .newRoundPosition(20)
+                .reason("Setup fixtures")
+                .build();
+
+        when(hierarchyValidator.resolveHierarchy(anyString(), any()))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonSetup, currentRound)));
+        when(hierarchyValidator.validateCurrentRound(seasonSetup)).thenReturn(Either.right(currentRound));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 20)).thenReturn(Either.right(targetRound));
         when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
@@ -199,7 +367,55 @@ class RescheduleMatchUseCaseTest {
         Either<UseCaseError, RescheduleResult> result = useCase.execute(cmd);
 
         assertTrue(result.isRight());
-        verify(matchRepo).save(argThat(m -> m.getRoundId().equals(targetRoundId) && m.getStatus() == MatchStatus.LIVE));
+        verify(matchRepo)
+                .save(argThat(m -> m.getRoundId().equals(targetRoundId) && m.getStatus() == MatchStatus.SCHEDULED));
+    }
+
+    @Test
+    void reschedule_inSetupMode_finishedMatchCanMoveIntoFinalizedRound() {
+        Match match = Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .roundId(currentRoundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("home-vs-away")
+                .status(MatchStatus.FINISHED)
+                .build();
+
+        // Target round is already finalized — proves the isFinalized block is skipped in setup
+        // mode, on top of the past-round move itself.
+        Round pastRound = Round.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .name("Matchday 3")
+                .slug("md-3")
+                .position(3)
+                .finalized(true)
+                .build();
+
+        RescheduleMatchCommand cmd = RescheduleMatchCommand.builder()
+                .competitionIdentifier("premier-league")
+                .roundPosition(null)
+                .matchSlug(match.getSlug())
+                .newRoundPosition(3)
+                .reason("Fixing wrong round assignment")
+                .build();
+
+        when(hierarchyValidator.resolveHierarchy(anyString(), any()))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonSetup, currentRound)));
+        when(hierarchyValidator.validateCurrentRound(seasonSetup)).thenReturn(Either.right(currentRound));
+        when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
+        when(hierarchyValidator.validateRound(seasonId, 3)).thenReturn(Either.right(pastRound));
+        when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
+
+        Either<UseCaseError, RescheduleResult> result = useCase.execute(cmd);
+
+        assertTrue(result.isRight());
+        // source round (10, the match's current round) and current round (10) are the same here,
+        // so the cascade range is [min(10, 3), 10] = [3, 10]
+        verify(roundRepo).markUnfinalizedBetween(seasonId, 3, 10);
+        verify(standingsRepo).markUnfinalisedBetween(seasonId, 3, 10);
     }
 
     @Test

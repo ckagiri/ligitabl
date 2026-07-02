@@ -43,7 +43,7 @@ public class FinalizeRoundController {
                 .findActiveSeason(defaultCompetition)
                 .orElseThrow(() -> new IllegalStateException("No active season for " + defaultCompetition));
 
-        var result = finalizeRoundUseCase.execute(new FinalizeRoundCommand(season.getId(), recompute));
+        var result = finalizeRoundUseCase.execute(new FinalizeRoundCommand(season.getId(), null, recompute));
 
         return result.fold(
                 error -> switch (error) {

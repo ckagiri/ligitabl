@@ -262,6 +262,7 @@ public class UserPredictionsController {
         model.addAttribute("isCurrentRound", data.isCurrentRound());
         model.addAttribute("roundState", data.roundState().toLowerCase());
         model.addAttribute("seasonCompleted", data.seasonCompleted());
+        model.addAttribute("seasonInSetupMode", season.isInSetupMode());
         model.addAttribute("predictions", predictions);
 
         // Access mode attributes

@@ -78,6 +78,7 @@ public class CreatePredictionController {
         return switch (error) {
             case CreatePredictionError.NotFound __ -> 404;
             case CreatePredictionError.Completed __ -> 409;
+            case CreatePredictionError.SeasonInSetupMode __ -> 409;
             case CreatePredictionError.AlreadyJoined __ -> 409;
             case CreatePredictionError.TooManySwaps __ -> 400;
             case CreatePredictionError.SameTeam __ -> 400;
@@ -94,6 +95,8 @@ public class CreatePredictionController {
         return switch (error) {
             case CreatePredictionError.NotFound __ -> "No active season available";
             case CreatePredictionError.Completed __ -> "Cannot join a completed season";
+            case CreatePredictionError.SeasonInSetupMode __ -> "Season is being reconfigured. Please try again "
+                    + "shortly.";
             case CreatePredictionError.AlreadyJoined __ -> "You have already joined this season";
             case CreatePredictionError.TooManySwaps e -> "Too many swaps: provided " + e.provided() + ", maximum is "
                     + e.max();

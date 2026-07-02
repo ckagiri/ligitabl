@@ -21,8 +21,10 @@ import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.SeasonSlug;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
+import com.ligitabl.model.repo.StandingsRepo;
 
 class GetDefaultRoundMatchesUseCaseTest {
 
@@ -40,13 +42,16 @@ class GetDefaultRoundMatchesUseCaseTest {
     @Mock
     RoundRepo roundRepo;
 
+    @Mock
+    StandingsRepo standingsRepo;
+
     GetDefaultRoundMatchesUseCase useCase;
 
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
         useCase = new GetDefaultRoundMatchesUseCase(
-                matchRepo, matchEnricher, hierarchyValidator, competitionDefaults, roundRepo);
+                matchRepo, matchEnricher, hierarchyValidator, competitionDefaults, roundRepo, standingsRepo);
     }
 
     @Test
@@ -55,8 +60,10 @@ class GetDefaultRoundMatchesUseCaseTest {
 
         var season = Season.builder()
                 .id(UUID.randomUUID())
+                .slug(SeasonSlug.of("2024-25"))
                 .maxRounds(38)
                 .currentRoundId(roundId)
+                .mainContestId(UUID.randomUUID())
                 .build();
         var round = Round.builder().id(roundId).position(1).build();
 
@@ -70,6 +77,7 @@ class GetDefaultRoundMatchesUseCaseTest {
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
         when(roundRepo.findById(roundId)).thenReturn(java.util.Optional.of(round));
         when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(match));
+        when(standingsRepo.findBySeasonAndRoundPosition(season.getId(), 1)).thenReturn(java.util.Optional.empty());
 
         MatchDto dto = MatchDto.builder().roundId(roundId).build();
         when(matchEnricher.enrichWithTeams(List.of(match))).thenReturn(Either.right(List.of(dto)));
@@ -83,10 +91,101 @@ class GetDefaultRoundMatchesUseCaseTest {
         assertThat(result.getRight().viewingRound()).isEqualTo(1);
         assertThat(result.getRight().currentRound()).isEqualTo(1);
         assertThat(result.getRight().lastRound()).isEqualTo(38);
+        assertThat(result.getRight().seasonSlug()).isEqualTo("2024-25");
+        assertThat(result.getRight().seasonInSetupMode()).isFalse();
+        assertThat(result.getRight().standingsFinalised()).isFalse();
+        assertThat(result.getRight().allMatchesTerminalOrBlocking())
+                .as("SCHEDULED match is neither complete nor blocking")
+                .isFalse();
+        assertThat(result.getRight().matchesComplete()).isFalse();
         verify(hierarchyValidator).resolveHierarchy("premier-league", null);
         verify(roundRepo).findById(roundId);
         verify(matchRepo).findByRoundId(roundId);
         verify(matchEnricher).enrichWithTeams(List.of(match));
+    }
+
+    @Test
+    void all_matches_finished_or_postponed_marks_terminal_and_complete() {
+        UUID roundId = UUID.randomUUID();
+
+        var season = Season.builder()
+                .id(UUID.randomUUID())
+                .slug(SeasonSlug.of("2024-25"))
+                .maxRounds(38)
+                .currentRoundId(roundId)
+                .mainContestId(UUID.randomUUID())
+                .build();
+        var round = Round.builder().id(roundId).position(1).build();
+
+        var finished = Match.builder()
+                .id(UUID.randomUUID())
+                .roundId(roundId)
+                .status(MatchStatus.FINISHED)
+                .build();
+        var postponed = Match.builder()
+                .id(UUID.randomUUID())
+                .roundId(roundId)
+                .status(MatchStatus.POSTPONED)
+                .build();
+        var matches = List.of(finished, postponed);
+
+        when(hierarchyValidator.resolveHierarchy("premier-league", null))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+        when(roundRepo.findById(roundId)).thenReturn(java.util.Optional.of(round));
+        when(matchRepo.findByRoundId(roundId)).thenReturn(matches);
+        when(standingsRepo.findBySeasonAndRoundPosition(season.getId(), 1)).thenReturn(java.util.Optional.empty());
+        when(matchEnricher.enrichWithTeams(matches)).thenReturn(Either.right(List.of()));
+
+        Either<UseCaseError, RoundMatchesResult> result =
+                useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
+
+        assertThat(result.isRight()).isTrue();
+        assertThat(result.getRight().allMatchesTerminalOrBlocking()).isTrue();
+        assertThat(result.getRight().matchesComplete()).isTrue();
+    }
+
+    @Test
+    void blocking_match_marks_terminal_but_not_complete() {
+        UUID roundId = UUID.randomUUID();
+
+        var season = Season.builder()
+                .id(UUID.randomUUID())
+                .slug(SeasonSlug.of("2024-25"))
+                .maxRounds(38)
+                .currentRoundId(roundId)
+                .mainContestId(UUID.randomUUID())
+                .build();
+        var round = Round.builder().id(roundId).position(1).build();
+
+        var finished = Match.builder()
+                .id(UUID.randomUUID())
+                .roundId(roundId)
+                .status(MatchStatus.FINISHED)
+                .build();
+        var cancelled = Match.builder()
+                .id(UUID.randomUUID())
+                .roundId(roundId)
+                .status(MatchStatus.CANCELLED)
+                .build();
+        var matches = List.of(finished, cancelled);
+
+        when(hierarchyValidator.resolveHierarchy("premier-league", null))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+        when(roundRepo.findById(roundId)).thenReturn(java.util.Optional.of(round));
+        when(matchRepo.findByRoundId(roundId)).thenReturn(matches);
+        when(standingsRepo.findBySeasonAndRoundPosition(season.getId(), 1)).thenReturn(java.util.Optional.empty());
+        when(matchEnricher.enrichWithTeams(matches)).thenReturn(Either.right(List.of()));
+
+        Either<UseCaseError, RoundMatchesResult> result =
+                useCase.execute(GetDefaultRoundMatchesQuery.currentRound(null));
+
+        assertThat(result.isRight()).isTrue();
+        assertThat(result.getRight().allMatchesTerminalOrBlocking())
+                .as("no SCHEDULED/LIVE matches remain, so it's terminal-or-blocking")
+                .isTrue();
+        assertThat(result.getRight().matchesComplete())
+                .as("a CANCELLED match makes the round LOCKED, not COMPLETED")
+                .isFalse();
     }
 
     @Test

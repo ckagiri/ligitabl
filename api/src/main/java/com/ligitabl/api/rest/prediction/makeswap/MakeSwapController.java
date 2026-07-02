@@ -78,6 +78,11 @@ public class MakeSwapController {
                             "error", "SEASON_COMPLETED",
                             "message", "Cannot swap in completed season"));
 
+            case SwapError.SeasonInSetupMode __ -> ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of(
+                            "error", "SEASON_IN_SETUP_MODE",
+                            "message", "Season is being reconfigured. Please try again shortly."));
+
             default -> ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(Map.of("error", "UNKNOWN_ERROR"));
         };
     }

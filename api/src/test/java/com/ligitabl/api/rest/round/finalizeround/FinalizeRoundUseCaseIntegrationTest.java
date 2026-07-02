@@ -471,10 +471,10 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         createFinishedMatch(round1, arsenal, chelsea, 2, 1);
         createPrediction(aliceId, 1);
 
-        var first = finalizeRoundUseCase.execute(new FinalizeRoundCommand(seasonId, false));
+        var first = finalizeRoundUseCase.execute(new FinalizeRoundCommand(seasonId, null, false));
         assertThat(first.isRight()).isTrue();
 
-        var second = finalizeRoundUseCase.execute(new FinalizeRoundCommand(seasonId, true));
+        var second = finalizeRoundUseCase.execute(new FinalizeRoundCommand(seasonId, null, true));
         assertThat(second.isRight()).isTrue();
 
         // No duplicates; recompute overwrites results if needed.
@@ -482,6 +482,145 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         assertThat(submissions).hasSize(1);
         assertThat(roundResultRepo.findByRoundSubmissionId(submissions.get(0).getId()))
                 .isPresent();
+    }
+
+    @Test
+    @DisplayName("Should reject an explicit refinalize when the season is not in setup mode")
+    void shouldRejectRefinalize_whenSeasonNotInSetupMode() throws Exception {
+        insertSeason(2, 4);
+
+        Round round1 = createRound(1, false);
+        createRound(2, false);
+        setCurrentRound(round1.getId());
+
+        createFinishedMatch(round1, arsenal, chelsea, 2, 1);
+        assertThat(finalizeRoundUseCase.execute(seasonId).isRight()).isTrue();
+
+        // Attach a main contest so the season is no longer in setup mode.
+        insertContest(UUID.randomUUID());
+
+        var result = finalizeRoundUseCase.execute(FinalizeRoundCommand.refinalize(seasonId, 1));
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(FinalizeRoundError.NotInSetupMode.class);
+    }
+
+    @Test
+    @DisplayName("Should reject an explicit refinalize targeting a round ahead of the current round")
+    void shouldRejectRefinalize_whenRoundAheadOfCurrent() throws Exception {
+        insertSeason(3, 4);
+
+        Round round1 = createRound(1, false);
+        createRound(2, false);
+        createRound(3, false);
+        setCurrentRound(round1.getId());
+
+        createFinishedMatch(round1, arsenal, chelsea, 2, 1);
+        assertThat(finalizeRoundUseCase.execute(seasonId).isRight()).isTrue();
+
+        // current round is still round 1 (never advanced); round 2 is ahead of it.
+        var result = finalizeRoundUseCase.execute(FinalizeRoundCommand.refinalize(seasonId, 2));
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(FinalizeRoundError.RoundAheadOfCurrent.class);
+        var error = (FinalizeRoundError.RoundAheadOfCurrent) result.getLeft();
+        assertThat(error.roundPosition()).isEqualTo(2);
+        assertThat(error.currentRoundPosition()).isEqualTo(1);
+
+        // no side effects — round 1 finalization state is untouched
+        assertThat(roundRepo.findById(round1.getId()).orElseThrow().isFinalized())
+                .isTrue();
+    }
+
+    @Test
+    @DisplayName("Refinalizing a past round marks downstream rounds (through current, inclusive) unfinalized")
+    void shouldCascadeOutOfSync_whenRefinalizingPastRound() throws Exception {
+        insertSeason(3, 4);
+
+        Round round1 = createRound(1, false);
+        Round round2 = createRound(2, false);
+        Round round3 = createRound(3, false);
+        setCurrentRound(round1.getId());
+
+        createFinishedMatch(round1, arsenal, chelsea, 2, 0);
+        createFinishedMatch(round2, chelsea, liverpool, 3, 0);
+        createFinishedMatch(round3, arsenal, liverpool, 2, 0);
+
+        assertThat(finalizeRoundUseCase.execute(seasonId).isRight()).isTrue();
+        roundAdvancementService.advanceManually(round1.getId());
+
+        assertThat(finalizeRoundUseCase.execute(seasonId).isRight()).isTrue();
+        roundAdvancementService.advanceManually(round2.getId());
+
+        assertThat(finalizeRoundUseCase.execute(seasonId).isRight()).isTrue();
+
+        // season is left in setup mode by default (insertSeason never sets fk_main_contest_id)
+        var refinalizeResult = finalizeRoundUseCase.execute(FinalizeRoundCommand.refinalize(seasonId, 1));
+        assertThat(refinalizeResult.isRight()).isTrue();
+
+        assertThat(roundRepo.findById(round1.getId()).orElseThrow().isFinalized())
+                .isTrue();
+        assertThat(roundRepo.findById(round2.getId()).orElseThrow().isFinalized())
+                .isFalse();
+        assertThat(roundRepo.findById(round3.getId()).orElseThrow().isFinalized())
+                .isFalse();
+
+        assertThat(standingsRepo
+                        .findBySeasonAndRoundPosition(seasonId, 1)
+                        .orElseThrow()
+                        .isFinalised())
+                .isTrue();
+        var standings2 = standingsRepo.findBySeasonAndRoundPosition(seasonId, 2).orElseThrow();
+        assertThat(standings2.isFinalised()).isFalse();
+        assertThat(standings2.getFinalisedAt()).isNull();
+        var standings3 = standingsRepo.findBySeasonAndRoundPosition(seasonId, 3).orElseThrow();
+        assertThat(standings3.isFinalised()).isFalse();
+        assertThat(standings3.getFinalisedAt()).isNull();
+    }
+
+    @Test
+    @DisplayName("Refinalizing the current round does not cascade")
+    void shouldNotCascade_whenRefinalizingCurrentRound() throws Exception {
+        insertSeason(2, 4);
+
+        Round round1 = createRound(1, false);
+        Round round2 = createRound(2, false);
+        setCurrentRound(round1.getId());
+
+        createFinishedMatch(round1, arsenal, chelsea, 2, 0);
+        createFinishedMatch(round2, chelsea, liverpool, 3, 0);
+
+        assertThat(finalizeRoundUseCase.execute(seasonId).isRight()).isTrue();
+        roundAdvancementService.advanceManually(round1.getId());
+        assertThat(finalizeRoundUseCase.execute(seasonId).isRight()).isTrue();
+
+        // round2 is now the current round; refinalizing it should not touch round1.
+        var result = finalizeRoundUseCase.execute(FinalizeRoundCommand.refinalize(seasonId, 2));
+        assertThat(result.isRight()).isTrue();
+
+        assertThat(roundRepo.findById(round1.getId()).orElseThrow().isFinalized())
+                .isTrue();
+        assertThat(roundRepo.findById(round2.getId()).orElseThrow().isFinalized())
+                .isTrue();
+        assertThat(standingsRepo
+                        .findBySeasonAndRoundPosition(seasonId, 1)
+                        .orElseThrow()
+                        .isFinalised())
+                .isTrue();
+    }
+
+    private void insertContest(UUID id) {
+        jdbc.update(
+                "INSERT INTO t_contest (pk_id, fk_season_id, c_name, c_is_private, c_join_code, c_from_round_position, c_to_round_position, c_max_entries) VALUES (?,?,?,?,?,?,?,?)",
+                id,
+                seasonId,
+                "Main",
+                false,
+                null,
+                1,
+                38,
+                null);
+        jdbc.update("UPDATE t_season SET fk_main_contest_id = ? WHERE pk_id = ?", id, seasonId);
     }
 
     private void insertCompetition() {
