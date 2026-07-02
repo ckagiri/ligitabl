@@ -361,7 +361,7 @@ public class UserPredictionsController {
     }
 
     private Optional<Season> getActiveSeason() {
-        return seasonRepo.findMostRecentSeason(competitionDefaults.defaultCompetitionSlug());
+        return seasonRepo.findActiveSeason(competitionDefaults.defaultCompetitionSlug());
     }
 
     private static <T> List<T> sortByPosition(List<T> items, ToIntFunction<T> positionFn) {
