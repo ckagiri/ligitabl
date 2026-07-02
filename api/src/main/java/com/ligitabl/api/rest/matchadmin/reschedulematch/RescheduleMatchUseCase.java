@@ -71,8 +71,9 @@ public class RescheduleMatchUseCase implements UseCase<RescheduleMatchCommand, E
         Season season = matchCtx.context().season();
 
         return resolveTargetRound(season, newRoundPosition)
-                .flatMap(targetRound -> hierarchyValidator.validateCurrentRound(season).map(seasonCurrentRound ->
-                        new RescheduleContext(
+                .flatMap(targetRound -> hierarchyValidator
+                        .validateCurrentRound(season)
+                        .map(seasonCurrentRound -> new RescheduleContext(
                                 season, matchCtx.context().round(), targetRound, seasonCurrentRound, matchCtx.match())))
                 .flatMap(ctx -> validateOperationalMode(ctx).map(ignored -> ctx));
     }

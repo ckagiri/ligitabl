@@ -64,7 +64,13 @@ class MatchAdminControllerTest {
     @BeforeEach
     void setUp() {
         controller = new MatchAdminController(
-                hierarchyValidator, matchRepo, roundRepo, transitionUseCase, rescheduleUseCase, updateKickoffUseCase, competitionDefaults);
+                hierarchyValidator,
+                matchRepo,
+                roundRepo,
+                transitionUseCase,
+                rescheduleUseCase,
+                updateKickoffUseCase,
+                competitionDefaults);
 
         seasonId = UUID.randomUUID();
         roundId = UUID.randomUUID();
@@ -92,15 +98,15 @@ class MatchAdminControllerTest {
 
     @Test
     void finishedMatch_outsideSetupMode_offersNoTransitionsAndCannotReschedule() {
-        Season season = Season.builder().id(seasonId).mainContestId(UUID.randomUUID()).build();
+        Season season =
+                Season.builder().id(seasonId).mainContestId(UUID.randomUUID()).build();
         when(hierarchyValidator.resolveHierarchy("premier-league", 5))
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
         Match match = finishedMatch();
         when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
 
         Model model = new ExtendedModelMap();
-        String view = controller.adminModal(
-                match.getSlug(), 5, "Home", "Away", model, new MockHttpServletResponse());
+        String view = controller.adminModal(match.getSlug(), 5, "Home", "Away", model, new MockHttpServletResponse());
 
         assertThat(view).isEqualTo("fragments/match-admin-modal :: modal");
         assertThat((List<?>) model.getAttribute("validTransitions")).isEmpty();
@@ -127,20 +133,26 @@ class MatchAdminControllerTest {
         when(roundRepo.findBySeasonIdOrderByPosition(seasonId)).thenReturn(List.of(round, finalizedRound));
 
         Model model = new ExtendedModelMap();
-        String view = controller.adminModal(
-                match.getSlug(), 5, "Home", "Away", model, new MockHttpServletResponse());
+        String view = controller.adminModal(match.getSlug(), 5, "Home", "Away", model, new MockHttpServletResponse());
 
         assertThat(view).isEqualTo("fragments/match-admin-modal :: modal");
         @SuppressWarnings("unchecked")
         List<MatchStatus> validTransitions = (List<MatchStatus>) model.getAttribute("validTransitions");
-        assertThat(validTransitions).containsExactlyInAnyOrder(
-                MatchStatus.SCHEDULED, MatchStatus.LIVE, MatchStatus.SUSPENDED, MatchStatus.POSTPONED, MatchStatus.CANCELLED);
+        assertThat(validTransitions)
+                .containsExactlyInAnyOrder(
+                        MatchStatus.SCHEDULED,
+                        MatchStatus.LIVE,
+                        MatchStatus.SUSPENDED,
+                        MatchStatus.POSTPONED,
+                        MatchStatus.CANCELLED);
         assertThat((Boolean) model.getAttribute("canReschedule")).isTrue();
 
         @SuppressWarnings("unchecked")
         List<MatchAdminController.RoundOption> availableRounds =
                 (List<MatchAdminController.RoundOption>) model.getAttribute("availableRounds");
         // finalized round 2 is offered as a target in setup mode (blocked outside setup mode)
-        assertThat(availableRounds).extracting(MatchAdminController.RoundOption::position).contains(2);
+        assertThat(availableRounds)
+                .extracting(MatchAdminController.RoundOption::position)
+                .contains(2);
     }
 }

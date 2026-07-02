@@ -111,8 +111,8 @@ class MatchSyncSchedulerTest {
         MatchSyncResult result = completeResult();
         when(syncMatchesUseCase.execute(any())).thenReturn(Either.right(result));
         when(triggerFinalizationUseCase.execute(any()))
-                .thenReturn(Either.left(new TriggerRoundFinalizationUseCase.TriggerFinalizationError.RoundNotFound(
-                        roundId)));
+                .thenReturn(Either.left(
+                        new TriggerRoundFinalizationUseCase.TriggerFinalizationError.RoundNotFound(roundId)));
 
         scheduler.triggerManualSync();
 

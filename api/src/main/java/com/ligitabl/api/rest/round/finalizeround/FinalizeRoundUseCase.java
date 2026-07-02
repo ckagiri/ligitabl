@@ -57,10 +57,11 @@ public class FinalizeRoundUseCase {
                 command.recompute());
 
         return getSeason(command.seasonId())
-                .flatMap(season -> checkExplicitRefinalizeAllowed(season, command.roundPosition()).map(__ -> season))
-                .flatMap(season -> getCurrentRound(season)
-                        .flatMap(currentRound -> getTargetRound(season, currentRound, command.roundPosition())
-                                .map(round -> new FinalizationContext(season, round, currentRound, command.recompute()))))
+                .flatMap(season -> checkExplicitRefinalizeAllowed(season, command.roundPosition())
+                        .map(__ -> season))
+                .flatMap(season -> getCurrentRound(season).flatMap(currentRound -> getTargetRound(
+                                season, currentRound, command.roundPosition())
+                        .map(round -> new FinalizationContext(season, round, currentRound, command.recompute()))))
                 .flatMap(ctx -> checkTargetNotAheadOfCurrent(ctx)
                         .flatMap(__ -> validateRoundReady(ctx))
                         .flatMap(__ -> executeFinalizationWorkflow(ctx)));

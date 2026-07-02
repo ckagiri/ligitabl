@@ -50,7 +50,8 @@ public class RefinalizeRoundController {
                 error -> {
                     log.warn("Refinalize failed: {}", error);
                     return switch (error) {
-                        case FinalizeRoundError.NotInSetupMode e -> ResponseEntity.status(409).build();
+                        case FinalizeRoundError.NotInSetupMode e -> ResponseEntity.status(409)
+                                .build();
                         case FinalizeRoundError.RoundAheadOfCurrent e -> ResponseEntity.badRequest()
                                 .build();
                         case FinalizeRoundError.RoundObstructed e -> ResponseEntity.status(409)

@@ -222,8 +222,7 @@ class RescheduleMatchUseCaseTest {
 
         assertTrue(result.isRight());
         verify(matchRepo)
-                .save(argThat(
-                        m -> m.getRoundId().equals(pastRound.getId()) && m.getStatus() == MatchStatus.FINISHED));
+                .save(argThat(m -> m.getRoundId().equals(pastRound.getId()) && m.getStatus() == MatchStatus.FINISHED));
         verify(roundRepo).markUnfinalizedBetween(seasonId, 5, 10);
         verify(standingsRepo).markUnfinalisedBetween(seasonId, 5, 10);
     }

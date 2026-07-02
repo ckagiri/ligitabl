@@ -72,8 +72,7 @@ public class RoundMatchesController {
             // A viewed non-current round whose standings aren't finalized is out of sync — this can
             // only really happen after a setup-mode refinalize cascade marked it that way.
             boolean isOutOfSync = !isViewingCurrentRound && !payload.standingsFinalised();
-            boolean canRefinalizeRound =
-                    payload.seasonInSetupMode() && (payload.roundFinalized() || isOutOfSync);
+            boolean canRefinalizeRound = payload.seasonInSetupMode() && (payload.roundFinalized() || isOutOfSync);
             // Finalize and Refinalize must never both be true for the same render — Finalize only
             // ever applies to the current, not-yet-finalized round; make that exclusion explicit.
             boolean canFinalizeRound =

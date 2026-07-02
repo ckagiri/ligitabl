@@ -52,7 +52,8 @@ public class GetDefaultRoundMatchesUseCase
                                 matches,
                                 ctx.round().isFinalized(),
                                 ctx.season().isInSetupMode(),
-                                isStandingsFinalised(ctx.season().getId(), ctx.round().getPosition())))));
+                                isStandingsFinalised(
+                                        ctx.season().getId(), ctx.round().getPosition())))));
     }
 
     private boolean isStandingsFinalised(UUID seasonId, int roundPosition) {
