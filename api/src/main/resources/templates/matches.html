@@ -172,7 +172,7 @@
               <div>
                 <th:block sec:authorize="hasRole('SUPER_ADMIN')">
                   <button
-                    th:if="${!seasonInSetupMode}"
+                    th:if="${!seasonInSetupMode and isViewingCurrentRound == true}"
                     th:attr="hx-post=@{/admin/seasons/{slug}/setup-mode/enter(slug=${seasonSlug})}"
                     hx-confirm="Enter setup mode? This detaches the main contest and pauses swaps/new entries for all users."
                     hx-disabled-elt="this"

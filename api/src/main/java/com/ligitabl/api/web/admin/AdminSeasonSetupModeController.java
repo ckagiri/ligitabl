@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.ligitabl.api.rest.season.seasonsetupmode.ManageSeasonSetupModeUseCase;
 import com.ligitabl.api.rest.season.seasonsetupmode.SeasonSetupModeCommand;
 import com.ligitabl.api.rest.season.seasonsetupmode.SetupModeAction;
-import com.ligitabl.api.rest.season.seasonsetupmode.SetupModeResult;
 import com.ligitabl.api.shared.exceptions.UseCaseException;
 
 import lombok.RequiredArgsConstructor;
@@ -33,7 +32,7 @@ public class AdminSeasonSetupModeController {
     @PostMapping("/{seasonSlug}/setup-mode/enter")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @ResponseBody
-    public ResponseEntity<SetupModeResult> enter(
+    public ResponseEntity<?> enter(
             @PathVariable String seasonSlug, @RequestParam(required = false) String competition) {
 
         log.info("Enter setup mode: season={}", seasonSlug);
@@ -49,7 +48,9 @@ public class AdminSeasonSetupModeController {
                         err -> {
                             throw new UseCaseException(err);
                         },
-                        ResponseEntity::ok);
+                        result -> ResponseEntity.ok()
+                                .header("HX-Redirect", "/rounds/current/matches")
+                                .build());
     }
 
     /**
@@ -59,7 +60,7 @@ public class AdminSeasonSetupModeController {
     @PostMapping("/{seasonSlug}/setup-mode/leave")
     @PreAuthorize("hasRole('SUPER_ADMIN')")
     @ResponseBody
-    public ResponseEntity<SetupModeResult> leave(
+    public ResponseEntity<?> leave(
             @PathVariable String seasonSlug, @RequestParam(required = false) String competition) {
 
         log.info("Leave setup mode: season={}", seasonSlug);
@@ -75,6 +76,8 @@ public class AdminSeasonSetupModeController {
                         err -> {
                             throw new UseCaseException(err);
                         },
-                        ResponseEntity::ok);
+                        result -> ResponseEntity.ok()
+                                .header("HX-Redirect", "/rounds/current/matches")
+                                .build());
     }
 }

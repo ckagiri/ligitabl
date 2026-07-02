@@ -69,15 +69,18 @@ public class RoundMatchesController {
                     && payload.matches().stream()
                             .anyMatch(m -> !"FINISHED".equals(m.getStatus()) && !"POSTPONED".equals(m.getStatus()));
 
-            // A viewed non-current round whose standings aren't finalized is out of sync — this can
+            // A viewed past round whose standings aren't finalized is out of sync — this can
             // only really happen after a setup-mode refinalize cascade marked it that way.
-            boolean isOutOfSync = !isViewingCurrentRound && !payload.standingsFinalised();
+            // Future rounds are excluded: they're never finalized simply because they haven't happened yet.
+            boolean isPastRound = payload.viewingRound() < payload.currentRound();
+            boolean isOutOfSync = isPastRound && !payload.standingsFinalised();
             boolean canRefinalizeRound = payload.seasonInSetupMode() && (payload.roundFinalized() || isOutOfSync);
             // Finalize and Refinalize must never both be true for the same render — Finalize only
             // ever applies to the current, not-yet-finalized round; make that exclusion explicit.
             boolean canFinalizeRound =
                     isViewingCurrentRound && allMatchesFinished && !payload.roundFinalized() && !canRefinalizeRound;
 
+            model.addAttribute("isViewingCurrentRound", isViewingCurrentRound);
             model.addAttribute("isOutOfSync", isOutOfSync);
             model.addAttribute("canRefinalizeRound", canRefinalizeRound);
             model.addAttribute("canFinalizeRound", canFinalizeRound);
