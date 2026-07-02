@@ -200,6 +200,21 @@
               </dl>
             </div>
 
+            <!-- Roles -->
+            <th:block th:if="${showRoles == true}">
+              <div class="border-t border-gray-200"></div>
+              <div class="pt-4 sm:pt-6">
+                <h2 class="text-sm font-medium text-gray-700 mb-3">Roles</h2>
+                <div class="flex flex-wrap gap-2">
+                  <span
+                    th:each="role : ${user.roles}"
+                    th:text="${role.value}"
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"
+                  ></span>
+                </div>
+              </div>
+            </th:block>
+
             <!-- Divider -->
             <div class="border-t border-gray-200"></div>
 
