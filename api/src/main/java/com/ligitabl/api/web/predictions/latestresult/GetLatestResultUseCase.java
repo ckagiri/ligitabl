@@ -38,7 +38,7 @@ public class GetLatestResultUseCase {
 
     private Optional<LatestResultResponse> buildResult(UUID userId) {
         Season season = seasonRepo
-                .findMostRecentSeason(competitionDefaults.defaultCompetitionSlug())
+                .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
                 .orElseThrow(() -> new IllegalStateException("No active season available"));
 
         Round currentRoundEntity = getCurrentRoundEntity(season);

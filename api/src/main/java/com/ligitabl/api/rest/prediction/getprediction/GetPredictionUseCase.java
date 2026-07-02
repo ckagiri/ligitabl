@@ -56,7 +56,7 @@ public class GetPredictionUseCase {
 
     private Either<GetPredictionError, Season> getCurrentSeason() {
         return seasonRepo
-                .findMostRecentSeason(competitionDefaults.defaultCompetitionSlug())
+                .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
                 .map(Either::<GetPredictionError, Season>right)
                 .orElseGet(() -> Either.left(new GetPredictionError.NotFound()));
     }
