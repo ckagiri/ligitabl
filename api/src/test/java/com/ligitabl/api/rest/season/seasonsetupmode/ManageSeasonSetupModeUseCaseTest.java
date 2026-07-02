@@ -6,6 +6,7 @@ import static org.mockito.Mockito.*;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -16,14 +17,19 @@ import org.mockito.MockitoAnnotations;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
+import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 class ManageSeasonSetupModeUseCaseTest {
 
     @Mock
     SeasonRepo seasonRepo;
+
+    @Mock
+    RoundRepo roundRepo;
 
     @Mock
     HierarchyValidator hierarchyValidator;
@@ -37,7 +43,8 @@ class ManageSeasonSetupModeUseCaseTest {
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        useCase = new ManageSeasonSetupModeUseCase(seasonRepo, hierarchyValidator, competitionDefaults, clock);
+        useCase = new ManageSeasonSetupModeUseCase(
+                seasonRepo, roundRepo, hierarchyValidator, competitionDefaults, clock);
     }
 
     private Season.SeasonBuilder<?, ?> baseSeason(UUID seasonId, UUID mainContestId, UUID detachedContestId) {
@@ -97,7 +104,12 @@ class ManageSeasonSetupModeUseCaseTest {
         UUID detachedContestId = UUID.randomUUID();
         Season season = baseSeason(seasonId, null, detachedContestId).build();
 
+        Round currentRound =
+                Round.builder().id(UUID.randomUUID()).seasonId(seasonId).position(5).build();
+
         when(hierarchyValidator.validateCompetitionAndSeason(any(), any())).thenReturn(Either.right(season));
+        when(hierarchyValidator.validateCurrentRound(season)).thenReturn(Either.right(currentRound));
+        when(roundRepo.findBySeasonIdOrderByPosition(seasonId)).thenReturn(List.of());
         when(seasonRepo.save(any(Season.class))).thenAnswer(inv -> inv.getArgument(0));
 
         var cmd = SeasonSetupModeCommand.builder()
@@ -111,6 +123,43 @@ class ManageSeasonSetupModeUseCaseTest {
         assertThat(result.get().isInSetupMode()).isFalse();
         assertThat(season.getMainContestId()).isEqualTo(detachedContestId);
         assertThat(season.getDetachedContestId()).isNull();
+    }
+
+    @Test
+    void leave_setup_mode_fails_when_past_rounds_out_of_sync() {
+        UUID seasonId = UUID.randomUUID();
+        UUID detachedContestId = UUID.randomUUID();
+        Season season = baseSeason(seasonId, null, detachedContestId).build();
+
+        Round currentRound =
+                Round.builder().id(UUID.randomUUID()).seasonId(seasonId).position(5).build();
+        Round outOfSyncRound = Round.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .position(3)
+                .finalized(false)
+                .build();
+        Round finalizedRound = Round.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .position(4)
+                .finalized(true)
+                .build();
+
+        when(hierarchyValidator.validateCompetitionAndSeason(any(), any())).thenReturn(Either.right(season));
+        when(hierarchyValidator.validateCurrentRound(season)).thenReturn(Either.right(currentRound));
+        when(roundRepo.findBySeasonIdOrderByPosition(seasonId)).thenReturn(List.of(outOfSyncRound, finalizedRound));
+
+        var cmd = SeasonSetupModeCommand.builder()
+                .seasonSlug("2025-26")
+                .action(SetupModeAction.LEAVE)
+                .build();
+
+        var result = useCase.execute(cmd);
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft().getMessage()).contains("out of sync").contains("3");
+        verify(seasonRepo, never()).save(any());
     }
 
     @Test

@@ -183,6 +183,7 @@
                     th:attr="hx-post=@{/admin/seasons/{slug}/setup-mode/leave(slug=${seasonSlug})}"
                     hx-confirm="Exit setup mode and reattach the main contest?"
                     hx-disabled-elt="this"
+                    hx-on::response-error="alert(event.detail.xhr.responseText)"
                     class="px-4 py-2 text-sm font-medium text-white bg-green-700 hover:bg-green-800 rounded-lg transition-colors"
                   >Exit Setup Mode</button>
                 </th:block>

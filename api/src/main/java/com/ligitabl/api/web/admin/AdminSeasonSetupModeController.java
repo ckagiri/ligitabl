@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.ligitabl.api.rest.season.seasonsetupmode.ManageSeasonSetupModeUseCase;
 import com.ligitabl.api.rest.season.seasonsetupmode.SeasonSetupModeCommand;
 import com.ligitabl.api.rest.season.seasonsetupmode.SetupModeAction;
-import com.ligitabl.api.shared.exceptions.UseCaseException;
+import com.ligitabl.api.web.shared.error.ErrorMapper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -45,9 +45,7 @@ public class AdminSeasonSetupModeController {
 
         return useCase.execute(cmd)
                 .fold(
-                        err -> {
-                            throw new UseCaseException(err);
-                        },
+                        err -> ResponseEntity.status(ErrorMapper.toHttpStatus(err)).body(err.getMessage()),
                         result -> ResponseEntity.ok()
                                 .header("HX-Redirect", "/rounds/current/matches")
                                 .build());
@@ -73,9 +71,7 @@ public class AdminSeasonSetupModeController {
 
         return useCase.execute(cmd)
                 .fold(
-                        err -> {
-                            throw new UseCaseException(err);
-                        },
+                        err -> ResponseEntity.status(ErrorMapper.toHttpStatus(err)).body(err.getMessage()),
                         result -> ResponseEntity.ok()
                                 .header("HX-Redirect", "/rounds/current/matches")
                                 .build());
