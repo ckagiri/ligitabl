@@ -45,7 +45,8 @@ public class AdminSeasonSetupModeController {
 
         return useCase.execute(cmd)
                 .fold(
-                        err -> ResponseEntity.status(ErrorMapper.toHttpStatus(err)).body(err.getMessage()),
+                        err -> ResponseEntity.status(ErrorMapper.toHttpStatus(err))
+                                .body(err.getMessage()),
                         result -> ResponseEntity.ok()
                                 .header("HX-Redirect", "/rounds/current/matches")
                                 .build());
@@ -71,7 +72,8 @@ public class AdminSeasonSetupModeController {
 
         return useCase.execute(cmd)
                 .fold(
-                        err -> ResponseEntity.status(ErrorMapper.toHttpStatus(err)).body(err.getMessage()),
+                        err -> ResponseEntity.status(ErrorMapper.toHttpStatus(err))
+                                .body(err.getMessage()),
                         result -> ResponseEntity.ok()
                                 .header("HX-Redirect", "/rounds/current/matches")
                                 .build());

@@ -121,7 +121,8 @@ class MatchTest {
                     assertDoesNotThrow(() -> match.transitionTo(to, "setup mode correction", true));
                     assertEquals(to, match.getStatus());
                 } else {
-                    assertThrows(IllegalStateException.class, () -> match.transitionTo(to, "setup mode correction", true));
+                    assertThrows(
+                            IllegalStateException.class, () -> match.transitionTo(to, "setup mode correction", true));
                     assertEquals(from, match.getStatus());
                 }
             }
@@ -131,7 +132,8 @@ class MatchTest {
     @Test
     void validTransitionsFrom_inSetupMode_isFixedToScheduledPostponedFinished() {
         for (MatchStatus status : MatchStatus.values()) {
-            EnumSet<MatchStatus> expected = EnumSet.of(MatchStatus.SCHEDULED, MatchStatus.POSTPONED, MatchStatus.FINISHED);
+            EnumSet<MatchStatus> expected =
+                    EnumSet.of(MatchStatus.SCHEDULED, MatchStatus.POSTPONED, MatchStatus.FINISHED);
             expected.remove(status);
 
             assertEquals(expected, EnumSet.copyOf(Match.validTransitionsFrom(status, true)));

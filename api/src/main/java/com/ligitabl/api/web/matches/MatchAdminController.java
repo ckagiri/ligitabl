@@ -108,11 +108,14 @@ public class MatchAdminController {
             // In setup mode any round is a valid target, and moves are typically retroactive
             // corrections (e.g. GW 34 -> GW 32), so list those newest-first. Outside setup mode
             // reschedules only ever move forward to a future round, so keep ascending order.
-            var roundsStream = roundRepo.findBySeasonIdOrderByPosition(ctx.season().getId()).stream()
+            var roundsStream = roundRepo
+                    .findBySeasonIdOrderByPosition(ctx.season().getId())
+                    .stream()
                     .filter(r -> r.getPosition() != round)
                     .filter(r -> setupMode || (r.getPosition() >= floorPosition && !r.isFinalized()));
             if (setupMode) {
-                roundsStream = roundsStream.sorted(Comparator.comparingInt(Round::getPosition).reversed());
+                roundsStream = roundsStream.sorted(
+                        Comparator.comparingInt(Round::getPosition).reversed());
             }
             var availableRounds = roundsStream
                     .map(r -> new RoundOption(r.getPosition(), "GW " + r.getPosition()))

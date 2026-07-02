@@ -43,8 +43,8 @@ class ManageSeasonSetupModeUseCaseTest {
     @BeforeEach
     void setup() {
         MockitoAnnotations.openMocks(this);
-        useCase = new ManageSeasonSetupModeUseCase(
-                seasonRepo, roundRepo, hierarchyValidator, competitionDefaults, clock);
+        useCase =
+                new ManageSeasonSetupModeUseCase(seasonRepo, roundRepo, hierarchyValidator, competitionDefaults, clock);
     }
 
     private Season.SeasonBuilder<?, ?> baseSeason(UUID seasonId, UUID mainContestId, UUID detachedContestId) {
@@ -104,8 +104,11 @@ class ManageSeasonSetupModeUseCaseTest {
         UUID detachedContestId = UUID.randomUUID();
         Season season = baseSeason(seasonId, null, detachedContestId).build();
 
-        Round currentRound =
-                Round.builder().id(UUID.randomUUID()).seasonId(seasonId).position(5).build();
+        Round currentRound = Round.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .position(5)
+                .build();
 
         when(hierarchyValidator.validateCompetitionAndSeason(any(), any())).thenReturn(Either.right(season));
         when(hierarchyValidator.validateCurrentRound(season)).thenReturn(Either.right(currentRound));
@@ -131,8 +134,11 @@ class ManageSeasonSetupModeUseCaseTest {
         UUID detachedContestId = UUID.randomUUID();
         Season season = baseSeason(seasonId, null, detachedContestId).build();
 
-        Round currentRound =
-                Round.builder().id(UUID.randomUUID()).seasonId(seasonId).position(5).build();
+        Round currentRound = Round.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .position(5)
+                .build();
         Round outOfSyncRound = Round.builder()
                 .id(UUID.randomUUID())
                 .seasonId(seasonId)

@@ -65,28 +65,32 @@ public class TransitionMatchStatusUseCase
         Match match = matchCtx.match();
         boolean isSetupMode = matchCtx.context().season().isInSetupMode();
 
-        return hierarchyValidator.validateCurrentRound(matchCtx.context().season()).flatMap(currentRound -> {
-            try {
-                MatchStatus oldStatus = match.getStatus();
+        return hierarchyValidator
+                .validateCurrentRound(matchCtx.context().season())
+                .flatMap(currentRound -> {
+                    try {
+                        MatchStatus oldStatus = match.getStatus();
 
-                if (cmd.getNewStatus() == MatchStatus.FINISHED) {
-                    if (cmd.getScore() == null) {
-                        return Either.left(
-                                UseCaseErrors.validation("Score is required when transitioning to FINISHED"));
+                        if (cmd.getNewStatus() == MatchStatus.FINISHED) {
+                            if (cmd.getScore() == null) {
+                                return Either.left(
+                                        UseCaseErrors.validation("Score is required when transitioning to FINISHED"));
+                            }
+                            match.setScore(
+                                    cmd.getScore().getHomeGoals(),
+                                    cmd.getScore().getAwayGoals());
+                        }
+
+                        // Setup mode bypasses the normal match-day state machine.
+                        match.transitionTo(cmd.getNewStatus(), cmd.getReason(), isSetupMode);
+                        return Either.right(new TransitionContext(matchCtx.context(), match, oldStatus, currentRound));
+
+                    } catch (IllegalStateException | IllegalArgumentException e) {
+                        return Either.left(UseCaseErrors.validation(e.getMessage()));
+                    } catch (Exception e) {
+                        return Either.left(UseCaseErrors.fromException(e));
                     }
-                    match.setScore(cmd.getScore().getHomeGoals(), cmd.getScore().getAwayGoals());
-                }
-
-                // Setup mode bypasses the normal match-day state machine.
-                match.transitionTo(cmd.getNewStatus(), cmd.getReason(), isSetupMode);
-                return Either.right(new TransitionContext(matchCtx.context(), match, oldStatus, currentRound));
-
-            } catch (IllegalStateException | IllegalArgumentException e) {
-                return Either.left(UseCaseErrors.validation(e.getMessage()));
-            } catch (Exception e) {
-                return Either.left(UseCaseErrors.fromException(e));
-            }
-        });
+                });
     }
 
     private Either<UseCaseError, TransitionResult> save(TransitionContext ctx) {
@@ -109,7 +113,8 @@ public class TransitionMatchStatusUseCase
         }
     }
 
-    // Only fires in setup mode — A status correction on a match already in a past round means that round's (and everything
+    // Only fires in setup mode — A status correction on a match already in a past round means that round's (and
+    // everything
     // since) finalized standings are now stale.
     private void markOutOfSyncIfPastRound(TransitionContext ctx) {
         if (!ctx.context().season().isInSetupMode()) {
@@ -135,5 +140,6 @@ public class TransitionMatchStatusUseCase
 
     private record MatchContext(HierarchyContext context, Match match) {}
 
-    private record TransitionContext(HierarchyContext context, Match match, MatchStatus oldStatus, Round seasonCurrentRound) {}
+    private record TransitionContext(
+            HierarchyContext context, Match match, MatchStatus oldStatus, Round seasonCurrentRound) {}
 }

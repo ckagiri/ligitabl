@@ -74,7 +74,8 @@ public class RoundMatchesController {
             // Future rounds are excluded: they're never finalized simply because they haven't happened yet.
             boolean isPastRound = payload.viewingRound() < payload.currentRound();
             boolean isOutOfSync = isPastRound && !payload.standingsFinalised();
-            boolean canRefinalizeRound = payload.seasonInSetupMode() && (payload.roundFinalized() || isOutOfSync);
+            boolean canRefinalizeRound =
+                    payload.seasonInSetupMode() && allMatchesFinished && (payload.roundFinalized() || isOutOfSync);
             // Finalize and Refinalize must never both be true for the same render — Finalize only
             // ever applies to the current, not-yet-finalized round; make that exclusion explicit.
             boolean canFinalizeRound =
