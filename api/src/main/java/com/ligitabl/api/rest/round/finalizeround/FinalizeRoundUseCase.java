@@ -115,8 +115,8 @@ public class FinalizeRoundUseCase {
         }
         List<Match> matches = matchRepo.findByRoundId(ctx.round().getId());
 
-        var obstructed = matches.stream().filter(this::isBlocking).toList();
-        boolean allTerminalOrBlocking = matches.stream().allMatch(m -> isComplete(m) || isBlocking(m));
+        var obstructed = matches.stream().filter(Match::isBlocking).toList();
+        boolean allTerminalOrBlocking = matches.stream().allMatch(m -> m.isComplete() || m.isBlocking());
         if (!obstructed.isEmpty() && allTerminalOrBlocking) {
             var obstructedIds = obstructed.stream().map(Match::getId).toList();
             return Either.left(new FinalizeRoundError.RoundObstructed(
@@ -344,20 +344,6 @@ public class FinalizeRoundUseCase {
 
             saveStandings(nextStandings);
         }
-    }
-
-    private boolean isComplete(Match match) {
-        if (match == null || match.getStatus() == null) {
-            return false;
-        }
-        return match.getStatus() == MatchStatus.FINISHED || match.getStatus() == MatchStatus.POSTPONED;
-    }
-
-    private boolean isBlocking(Match match) {
-        if (match == null || match.getStatus() == null) {
-            return false;
-        }
-        return match.getStatus() == MatchStatus.CANCELLED || match.getStatus() == MatchStatus.SUSPENDED;
     }
 
     private int countSwapsInRound(SeasonPrediction prediction, int roundPosition) {

@@ -139,4 +139,30 @@ class MatchTest {
             assertEquals(expected, EnumSet.copyOf(Match.validTransitionsFrom(status, true)));
         }
     }
+
+    @Test
+    void isComplete_isTrueOnlyForFinishedAndPostponed() {
+        EnumSet<MatchStatus> complete = EnumSet.of(MatchStatus.FINISHED, MatchStatus.POSTPONED);
+
+        for (MatchStatus status : MatchStatus.values()) {
+            assertEquals(complete.contains(status), matchWithStatus(status).isComplete());
+        }
+    }
+
+    @Test
+    void isBlocking_isTrueOnlyForCancelledAndSuspended() {
+        EnumSet<MatchStatus> blocking = EnumSet.of(MatchStatus.CANCELLED, MatchStatus.SUSPENDED);
+
+        for (MatchStatus status : MatchStatus.values()) {
+            assertEquals(blocking.contains(status), matchWithStatus(status).isBlocking());
+        }
+    }
+
+    @Test
+    void isComplete_and_isBlocking_areMutuallyExclusive() {
+        for (MatchStatus status : MatchStatus.values()) {
+            Match match = matchWithStatus(status);
+            assertFalse(match.isComplete() && match.isBlocking());
+        }
+    }
 }

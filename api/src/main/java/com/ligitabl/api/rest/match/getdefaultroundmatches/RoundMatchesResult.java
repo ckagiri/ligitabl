@@ -14,4 +14,6 @@ public record RoundMatchesResult(
         List<MatchDto> matches,
         boolean roundFinalized,
         boolean seasonInSetupMode,
-        boolean standingsFinalised) {}
+        boolean standingsFinalised,
+        boolean allMatchesTerminalOrBlocking,
+        boolean matchesComplete) {}

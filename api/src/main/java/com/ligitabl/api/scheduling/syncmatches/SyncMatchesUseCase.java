@@ -290,15 +290,15 @@ public class SyncMatchesUseCase {
     private MatchSyncResult calculateNextSync(SyncContext context) {
         var matches = context.updatedMatches();
 
-        boolean allComplete = matches.stream().allMatch(this::isComplete);
+        boolean allComplete = matches.stream().allMatch(Match::isComplete);
 
-        boolean hasBlocking = matches.stream().anyMatch(this::isBlocking);
+        boolean hasBlocking = matches.stream().anyMatch(Match::isBlocking);
 
-        boolean allTerminalOrBlocking = matches.stream().allMatch(m -> isComplete(m) || isBlocking(m));
+        boolean allTerminalOrBlocking = matches.stream().allMatch(m -> m.isComplete() || m.isBlocking());
         boolean roundObstructed = allTerminalOrBlocking && hasBlocking;
 
         var obstructedMatchIds = roundObstructed
-                ? matches.stream().filter(this::isBlocking).map(Match::getId).toList()
+                ? matches.stream().filter(Match::isBlocking).map(Match::getId).toList()
                 : List.<UUID>of();
 
         // Check if no upcoming matches (empty result)
@@ -345,20 +345,6 @@ public class SyncMatchesUseCase {
                 roundObstructed,
                 obstructedMatchIds,
                 nextSchedule);
-    }
-
-    private boolean isComplete(Match match) {
-        if (match == null || match.getStatus() == null) {
-            return false;
-        }
-        return match.getStatus() == MatchStatus.FINISHED || match.getStatus() == MatchStatus.POSTPONED;
-    }
-
-    private boolean isBlocking(Match match) {
-        if (match == null || match.getStatus() == null) {
-            return false;
-        }
-        return match.getStatus() == MatchStatus.CANCELLED || match.getStatus() == MatchStatus.SUSPENDED;
     }
 
     private Match findMatchByExternalId(List<Match> matches, String externalId) {

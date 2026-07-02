@@ -143,6 +143,14 @@ public class Match extends AbstractModel<UUID> {
         return score != null;
     }
 
+    public boolean isComplete() {
+        return status == MatchStatus.FINISHED || status == MatchStatus.POSTPONED;
+    }
+
+    public boolean isBlocking() {
+        return status == MatchStatus.CANCELLED || status == MatchStatus.SUSPENDED;
+    }
+
     public void withDatabaseId(UUID id) {
         this.setId(id);
     }
