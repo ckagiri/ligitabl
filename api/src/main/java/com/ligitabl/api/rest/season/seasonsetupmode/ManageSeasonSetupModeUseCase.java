@@ -15,7 +15,9 @@ import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
@@ -30,6 +32,7 @@ public class ManageSeasonSetupModeUseCase
 
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
+    private final MatchRepo matchRepo;
     private final HierarchyValidator hierarchyValidator;
     private final CompetitionDefaults competitionDefaults;
     private final Clock clock;
@@ -103,15 +106,21 @@ public class ManageSeasonSetupModeUseCase
         });
     }
 
-    // Rounds are marked unfinalized by the setup-mode reschedule/transition/refinalize cascades
-    // whenever a past-round correction is made; leaving setup mode with any of those still
-    // unresolved would silently ship stale standings once contests reattach.
+    // A past round is out of sync if it was marked
+    // unfinalized by a setup-mode reschedule/transition/refinalize cascade, OR its matches aren't
+    // actually complete (e.g. one was reverted to SCHEDULED mid-correction). Leaving setup mode
+    // with any of those still unresolved would silently ship stale standings once main-contest reattaches.
     private Either<UseCaseError, List<Round>> findOutOfSyncRounds(Season season) {
         return hierarchyValidator.validateCurrentRound(season).map(currentRound -> {
             int currentPosition = currentRound.getPosition();
             return roundRepo.findBySeasonIdOrderByPosition(season.getId()).stream()
-                    .filter(r -> r.getPosition() < currentPosition && !r.isFinalized())
+                    .filter(r -> r.getPosition() < currentPosition)
+                    .filter(r -> !r.isFinalized() || !matchesComplete(r))
                     .toList();
         });
+    }
+
+    private boolean matchesComplete(Round round) {
+        return Round.computeMatchStatus(matchRepo.findByRoundId(round.getId())) == RoundStatus.COMPLETED;
     }
 }

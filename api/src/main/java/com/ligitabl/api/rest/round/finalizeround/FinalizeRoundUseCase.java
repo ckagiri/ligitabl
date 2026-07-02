@@ -115,10 +115,10 @@ public class FinalizeRoundUseCase {
         }
         List<Match> matches = matchRepo.findByRoundId(ctx.round().getId());
 
-        var obstructed = matches.stream().filter(Match::isBlocking).toList();
+        var obstructed = matches.stream().filter(m -> m.isBlocking()).toList();
         boolean allTerminalOrBlocking = matches.stream().allMatch(m -> m.isComplete() || m.isBlocking());
         if (!obstructed.isEmpty() && allTerminalOrBlocking) {
-            var obstructedIds = obstructed.stream().map(Match::getId).toList();
+            var obstructedIds = obstructed.stream().map(m -> m.getId()).toList();
             return Either.left(new FinalizeRoundError.RoundObstructed(
                     ctx.round().getId(),
                     obstructedIds,

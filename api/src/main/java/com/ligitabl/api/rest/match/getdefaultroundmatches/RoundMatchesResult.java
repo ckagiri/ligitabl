@@ -5,6 +5,9 @@ import java.util.UUID;
 
 import com.ligitabl.api.rest.match.MatchDto;
 
+import lombok.Builder;
+
+@Builder
 public record RoundMatchesResult(
         UUID seasonId,
         String seasonSlug,

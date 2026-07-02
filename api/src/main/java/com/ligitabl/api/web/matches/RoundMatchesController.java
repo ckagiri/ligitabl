@@ -70,11 +70,10 @@ public class RoundMatchesController {
             // A viewed past round whose standings aren't finalized is out of sync — this can
             // only really happen after a setup-mode refinalize cascade marked it that way.
             // Future rounds are excluded: they're never finalized simply because they haven't happened yet.
-            // Also requires matches to actually be complete: a round mid-correction (e.g. a match
-            // temporarily reverted to SCHEDULED in setup mode) isn't finalize-ready yet, so it
-            // isn't meaningfully "out of sync" until it is.
+            // Matches not being complete (e.g. a match temporarily reverted to SCHEDULED in setup
+            // mode) is itself a sign the round is out of sync with the season's progression.
             boolean isPastRound = payload.viewingRound() < payload.currentRound();
-            boolean isOutOfSync = isPastRound && !payload.standingsFinalised() && payload.matchesComplete();
+            boolean isOutOfSync = isPastRound && (!payload.standingsFinalised() || !payload.matchesComplete());
             boolean canRefinalizeRound = payload.seasonInSetupMode()
                     && payload.allMatchesTerminalOrBlocking()
                     && (payload.roundFinalized() || isOutOfSync);

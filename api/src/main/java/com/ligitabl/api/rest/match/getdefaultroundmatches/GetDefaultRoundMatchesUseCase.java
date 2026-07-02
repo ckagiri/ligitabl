@@ -8,8 +8,10 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.match.MatchDto;
 import com.ligitabl.api.rest.match.MatchEnricher;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
+import com.ligitabl.api.rest.shared.HierarchyValidator.HierarchyContext;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
@@ -36,31 +38,50 @@ public class GetDefaultRoundMatchesUseCase
     private final RoundRepo roundRepo;
     private final StandingsRepo standingsRepo;
 
+    private record RoundContext(HierarchyContext ctx, Round currentRound) {}
+
+    private record MatchesContext(RoundContext roundContext, List<Match> rawMatches, List<MatchDto> matches) {}
+
     @Override
     public Either<UseCaseError, RoundMatchesResult> execute(GetDefaultRoundMatchesQuery query) {
         String competitionIdentifier = getEffectiveCompetitionIdentifier(query);
 
         return hierarchyValidator
                 .resolveHierarchy(competitionIdentifier, query.getRoundPosition())
-                .flatMap(ctx -> resolveCurrentRound(ctx.season())
-                        .flatMap(currentRound -> fetchMatches(ctx.round())
-                                .flatMap(rawMatches -> matchEnricher
-                                        .enrichWithTeams(rawMatches)
-                                        .map(matches -> new RoundMatchesResult(
-                                                ctx.season().getId(),
-                                                ctx.season().getSlug().value(),
-                                                ctx.round().getPosition(),
-                                                currentRound.getPosition(),
-                                                ctx.season().getMaxRounds(),
-                                                matches,
-                                                ctx.round().isFinalized(),
-                                                ctx.season().isInSetupMode(),
-                                                isStandingsFinalised(
-                                                        ctx.season().getId(), ctx.round().getPosition()),
-                                                rawMatches.stream()
-                                                        .allMatch(m -> m.isComplete() || m.isBlocking()),
-                                                Round.computeMatchStatus(rawMatches)
-                                                        == RoundStatus.COMPLETED)))));
+                .flatMap(this::withCurrentRound)
+                .flatMap(this::withMatches)
+                .map(this::toResult);
+    }
+
+    private Either<UseCaseError, RoundContext> withCurrentRound(HierarchyContext ctx) {
+        return resolveCurrentRound(ctx.season()).map(currentRound -> new RoundContext(ctx, currentRound));
+    }
+
+    private Either<UseCaseError, MatchesContext> withMatches(RoundContext roundContext) {
+        return fetchMatches(roundContext.ctx().round())
+                .flatMap(rawMatches -> matchEnricher
+                        .enrichWithTeams(rawMatches)
+                        .map(matches -> new MatchesContext(roundContext, rawMatches, matches)));
+    }
+
+    private RoundMatchesResult toResult(MatchesContext matchesContext) {
+        HierarchyContext ctx = matchesContext.roundContext().ctx();
+        Round currentRound = matchesContext.roundContext().currentRound();
+        List<Match> rawMatches = matchesContext.rawMatches();
+
+        return RoundMatchesResult.builder()
+                .seasonId(ctx.season().getId())
+                .seasonSlug(ctx.season().getSlug().value())
+                .viewingRound(ctx.round().getPosition())
+                .currentRound(currentRound.getPosition())
+                .lastRound(ctx.season().getMaxRounds())
+                .matches(matchesContext.matches())
+                .roundFinalized(ctx.round().isFinalized())
+                .seasonInSetupMode(ctx.season().isInSetupMode())
+                .standingsFinalised(isStandingsFinalised(ctx.season().getId(), ctx.round().getPosition()))
+                .allMatchesTerminalOrBlocking(rawMatches.stream().allMatch(m -> m.isComplete() || m.isBlocking()))
+                .matchesComplete(Round.computeMatchStatus(rawMatches) == RoundStatus.COMPLETED)
+                .build();
     }
 
     private boolean isStandingsFinalised(UUID seasonId, int roundPosition) {

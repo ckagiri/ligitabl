@@ -290,15 +290,15 @@ public class SyncMatchesUseCase {
     private MatchSyncResult calculateNextSync(SyncContext context) {
         var matches = context.updatedMatches();
 
-        boolean allComplete = matches.stream().allMatch(Match::isComplete);
+        boolean allComplete = matches.stream().allMatch(m -> m.isComplete());
 
-        boolean hasBlocking = matches.stream().anyMatch(Match::isBlocking);
+        boolean hasBlocking = matches.stream().anyMatch(m -> m.isBlocking());
 
         boolean allTerminalOrBlocking = matches.stream().allMatch(m -> m.isComplete() || m.isBlocking());
         boolean roundObstructed = allTerminalOrBlocking && hasBlocking;
 
         var obstructedMatchIds = roundObstructed
-                ? matches.stream().filter(Match::isBlocking).map(Match::getId).toList()
+                ? matches.stream().filter(m -> m.isBlocking()).map(m -> m.getId()).toList()
                 : List.<UUID>of();
 
         // Check if no upcoming matches (empty result)
