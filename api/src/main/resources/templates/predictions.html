@@ -75,8 +75,9 @@
               </div>
             </div>
 
-            <!-- Setup Mode Banner (season under admin reconfiguration — swaps/joins paused) -->
-            <th:block th:if="${seasonInSetupMode == true}">
+            <!-- Setup Mode Banner (season under admin reconfiguration — swaps/joins paused).
+                 Guests can only register/login here, so this admin-state banner isn't relevant to them. -->
+            <th:block th:if="${seasonInSetupMode == true and isGuest == false}">
               <div class="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-4">
                 🛠️ Setup mode: an admin is reconfiguring this season's fixtures. Swaps and new entries are paused until it's back online.
               </div>

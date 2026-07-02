@@ -107,7 +107,6 @@ class TransitionMatchStatusUseCaseTest {
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
-        lenient().when(hierarchyValidator.validateCurrentRound(any())).thenReturn(Either.right(round));
 
         useCase = new TransitionMatchStatusUseCase(
                 matchRepo, roundRepo, standingsRepo, hierarchyValidator, competitionDefaults, clock);
@@ -135,6 +134,7 @@ class TransitionMatchStatusUseCaseTest {
 
         Instant now = Instant.parse("2026-01-13T10:00:00Z");
 
+        when(hierarchyValidator.validateCurrentRound(season)).thenReturn(Either.right(round));
         when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
         when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
         when(clock.instant()).thenReturn(now);
@@ -171,6 +171,7 @@ class TransitionMatchStatusUseCaseTest {
                 .reason("Full time")
                 .build();
 
+        when(hierarchyValidator.validateCurrentRound(season)).thenReturn(Either.right(round));
         when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
 
         Either<UseCaseError, TransitionResult> result = useCase.execute(cmd);
@@ -199,6 +200,7 @@ class TransitionMatchStatusUseCaseTest {
                 .reason("Invalid")
                 .build();
 
+        when(hierarchyValidator.validateCurrentRound(season)).thenReturn(Either.right(round));
         when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
 
         Either<UseCaseError, TransitionResult> result = useCase.execute(cmd);
@@ -231,6 +233,7 @@ class TransitionMatchStatusUseCaseTest {
 
         Instant now = Instant.parse("2026-01-13T10:00:00Z");
 
+        when(hierarchyValidator.validateCurrentRound(season)).thenReturn(Either.right(round));
         when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
         when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
         when(clock.instant()).thenReturn(now);
@@ -264,6 +267,7 @@ class TransitionMatchStatusUseCaseTest {
                 .reason("Not a valid setup-mode target")
                 .build();
 
+        when(hierarchyValidator.validateCurrentRound(season)).thenReturn(Either.right(round));
         when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
 
         Either<UseCaseError, TransitionResult> result = useCase.execute(cmd);
@@ -319,8 +323,6 @@ class TransitionMatchStatusUseCaseTest {
     @Test
     void transition_inSetupMode_currentRoundMatch_doesNotMarkOutOfSync() {
         season.enterSetupMode(); // mainContestId -> null
-        // Default stub already returns `round` (position 1) as both the match's round and the
-        // season's current round, i.e. the match is not in the past.
 
         Match match = Match.builder()
                 .id(UUID.randomUUID())
@@ -340,6 +342,9 @@ class TransitionMatchStatusUseCaseTest {
                 .reason("Not a past round")
                 .build();
 
+        // `round` (position 1) is used as both the match's round and the season's current round,
+        // i.e. the match is not in the past.
+        when(hierarchyValidator.validateCurrentRound(season)).thenReturn(Either.right(round));
         when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
         when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
         when(clock.instant()).thenReturn(Instant.parse("2026-01-13T10:00:00Z"));
