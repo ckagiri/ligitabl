@@ -171,7 +171,7 @@ public class FinalizeRoundUseCase {
             // Step 5.5: Refinalize cascade — a recompute of a round before the current one means
             // every round's cumulative standings from here through the current round (inclusive)
             // are now stale. Mark them unfinalized/out-of-sync; nothing here re-scores them — the
-            // admin walks forward refinalizing each in turn (see FinalizeRoundController).
+            // admin walks forward refinalizing each in turn.
             if (ctx.recompute()) {
                 markDownstreamOutOfSync(ctx);
             }

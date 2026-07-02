@@ -173,14 +173,14 @@
                 <th:block sec:authorize="hasRole('SUPER_ADMIN')">
                   <button
                     th:if="${!seasonInSetupMode}"
-                    th:attr="hx-post=@{/api/seasons/{slug}/setup-mode/enter(slug=${seasonSlug})}"
+                    th:attr="hx-post=@{/admin/seasons/{slug}/setup-mode/enter(slug=${seasonSlug})}"
                     hx-confirm="Enter setup mode? This detaches the main contest and pauses swaps/new entries for all users."
                     hx-disabled-elt="this"
                     class="px-4 py-2 text-sm font-medium text-white bg-gray-700 hover:bg-gray-800 rounded-lg transition-colors"
                   >Enter Setup Mode</button>
                   <button
                     th:if="${seasonInSetupMode}"
-                    th:attr="hx-post=@{/api/seasons/{slug}/setup-mode/leave(slug=${seasonSlug})}"
+                    th:attr="hx-post=@{/admin/seasons/{slug}/setup-mode/leave(slug=${seasonSlug})}"
                     hx-confirm="Exit setup mode and reattach the main contest?"
                     hx-disabled-elt="this"
                     class="px-4 py-2 text-sm font-medium text-white bg-green-700 hover:bg-green-800 rounded-lg transition-colors"
