@@ -33,6 +33,7 @@ import com.ligitabl.model.domain.SeasonSlug;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
+import com.ligitabl.model.repo.StandingsRepo;
 
 @ExtendWith(MockitoExtension.class)
 class TransitionMatchStatusUseCaseTest {
@@ -47,6 +48,9 @@ class TransitionMatchStatusUseCaseTest {
 
     @Mock
     private RoundRepo roundRepo;
+
+    @Mock
+    private StandingsRepo standingsRepo;
 
     @Mock
     private HierarchyValidator hierarchyValidator;
@@ -103,8 +107,10 @@ class TransitionMatchStatusUseCaseTest {
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+        lenient().when(hierarchyValidator.validateCurrentRound(any())).thenReturn(Either.right(round));
 
-        useCase = new TransitionMatchStatusUseCase(matchRepo, hierarchyValidator, competitionDefaults, clock);
+        useCase = new TransitionMatchStatusUseCase(
+                matchRepo, roundRepo, standingsRepo, hierarchyValidator, competitionDefaults, clock);
     }
 
     @Test
@@ -219,7 +225,7 @@ class TransitionMatchStatusUseCaseTest {
                 .competitionIdentifier("premier-league")
                 .roundPosition(null)
                 .matchSlug(match.getSlug())
-                .newStatus(MatchStatus.LIVE)
+                .newStatus(MatchStatus.SCHEDULED)
                 .reason("Correcting a bad score in setup mode")
                 .build();
 
@@ -232,8 +238,159 @@ class TransitionMatchStatusUseCaseTest {
         Either<UseCaseError, TransitionResult> result = useCase.execute(cmd);
 
         assertTrue(result.isRight());
-        assertEquals(MatchStatus.LIVE, result.get().getNewStatus());
-        verify(matchRepo).save(argThat(m -> m.getStatus() == MatchStatus.LIVE));
+        assertEquals(MatchStatus.SCHEDULED, result.get().getNewStatus());
+        verify(matchRepo).save(argThat(m -> m.getStatus() == MatchStatus.SCHEDULED));
+    }
+
+    @Test
+    void transition_liveTarget_stillBlockedInSetupMode() {
+        season.enterSetupMode(); // mainContestId -> null
+
+        Match match = Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .roundId(roundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("home-vs-away")
+                .status(MatchStatus.FINISHED)
+                .build();
+
+        TransitionMatchCommand cmd = TransitionMatchCommand.builder()
+                .competitionIdentifier("premier-league")
+                .roundPosition(null)
+                .matchSlug(match.getSlug())
+                .newStatus(MatchStatus.LIVE)
+                .reason("Not a valid setup-mode target")
+                .build();
+
+        when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
+
+        Either<UseCaseError, TransitionResult> result = useCase.execute(cmd);
+
+        assertTrue(result.isLeft());
+        verify(matchRepo, never()).save(any());
+    }
+
+    @Test
+    void transition_inSetupMode_pastRoundMatch_marksOutOfSync() {
+        season.enterSetupMode(); // mainContestId -> null
+
+        Round laterRound = Round.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .name("Matchday 5")
+                .slug("md-5")
+                .position(5)
+                .finalized(true)
+                .build();
+        when(hierarchyValidator.validateCurrentRound(season)).thenReturn(Either.right(laterRound));
+
+        Match match = Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .roundId(roundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("home-vs-away")
+                .status(MatchStatus.SCHEDULED)
+                .build();
+
+        TransitionMatchCommand cmd = TransitionMatchCommand.builder()
+                .competitionIdentifier("premier-league")
+                .roundPosition(null)
+                .matchSlug(match.getSlug())
+                .newStatus(MatchStatus.FINISHED)
+                .score(new TransitionMatchCommand.ScoreDto(1, 0))
+                .reason("Backfilling a past-round result")
+                .build();
+
+        when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
+        when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
+        when(clock.instant()).thenReturn(Instant.parse("2026-01-13T10:00:00Z"));
+
+        Either<UseCaseError, TransitionResult> result = useCase.execute(cmd);
+
+        assertTrue(result.isRight());
+        verify(roundRepo).markUnfinalizedBetween(seasonId, round.getPosition(), laterRound.getPosition());
+        verify(standingsRepo).markUnfinalisedBetween(seasonId, round.getPosition(), laterRound.getPosition());
+    }
+
+    @Test
+    void transition_inSetupMode_currentRoundMatch_doesNotMarkOutOfSync() {
+        season.enterSetupMode(); // mainContestId -> null
+        // Default stub already returns `round` (position 1) as both the match's round and the
+        // season's current round, i.e. the match is not in the past.
+
+        Match match = Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .roundId(roundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("home-vs-away")
+                .status(MatchStatus.SCHEDULED)
+                .build();
+
+        TransitionMatchCommand cmd = TransitionMatchCommand.builder()
+                .competitionIdentifier("premier-league")
+                .roundPosition(null)
+                .matchSlug(match.getSlug())
+                .newStatus(MatchStatus.POSTPONED)
+                .reason("Not a past round")
+                .build();
+
+        when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
+        when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
+        when(clock.instant()).thenReturn(Instant.parse("2026-01-13T10:00:00Z"));
+
+        Either<UseCaseError, TransitionResult> result = useCase.execute(cmd);
+
+        assertTrue(result.isRight());
+        verify(roundRepo, never()).markUnfinalizedBetween(any(), anyInt(), anyInt());
+        verify(standingsRepo, never()).markUnfinalisedBetween(any(), anyInt(), anyInt());
+    }
+
+    @Test
+    void transition_pastRoundMatch_outsideSetupMode_doesNotMarkOutOfSync() {
+        // Live mode (default season fixture, mainContestId set) — cascade must never fire.
+        Round laterRound = Round.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .name("Matchday 5")
+                .slug("md-5")
+                .position(5)
+                .finalized(true)
+                .build();
+        when(hierarchyValidator.validateCurrentRound(season)).thenReturn(Either.right(laterRound));
+
+        Match match = Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .roundId(roundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("home-vs-away")
+                .status(MatchStatus.SCHEDULED)
+                .build();
+
+        TransitionMatchCommand cmd = TransitionMatchCommand.builder()
+                .competitionIdentifier("premier-league")
+                .roundPosition(null)
+                .matchSlug(match.getSlug())
+                .newStatus(MatchStatus.POSTPONED)
+                .reason("Live mode edit")
+                .build();
+
+        when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
+        when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
+        when(clock.instant()).thenReturn(Instant.parse("2026-01-13T10:00:00Z"));
+
+        Either<UseCaseError, TransitionResult> result = useCase.execute(cmd);
+
+        assertTrue(result.isRight());
+        verify(roundRepo, never()).markUnfinalizedBetween(any(), anyInt(), anyInt());
+        verify(standingsRepo, never()).markUnfinalisedBetween(any(), anyInt(), anyInt());
     }
 
     @Test

@@ -114,7 +114,7 @@ class MatchAdminControllerTest {
     }
 
     @Test
-    void finishedMatch_inSetupMode_offersAllTransitionsAndCanReschedule() {
+    void finishedMatch_inSetupMode_offersWhitelistedTransitionsAndCanReschedule() {
         Season season = Season.builder().id(seasonId).mainContestId(null).build(); // in setup mode
         when(hierarchyValidator.resolveHierarchy("premier-league", 5))
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
@@ -138,13 +138,7 @@ class MatchAdminControllerTest {
         assertThat(view).isEqualTo("fragments/match-admin-modal :: modal");
         @SuppressWarnings("unchecked")
         List<MatchStatus> validTransitions = (List<MatchStatus>) model.getAttribute("validTransitions");
-        assertThat(validTransitions)
-                .containsExactlyInAnyOrder(
-                        MatchStatus.SCHEDULED,
-                        MatchStatus.LIVE,
-                        MatchStatus.SUSPENDED,
-                        MatchStatus.POSTPONED,
-                        MatchStatus.CANCELLED);
+        assertThat(validTransitions).containsExactlyInAnyOrder(MatchStatus.SCHEDULED, MatchStatus.POSTPONED);
         assertThat((Boolean) model.getAttribute("canReschedule")).isTrue();
 
         @SuppressWarnings("unchecked")

@@ -64,41 +64,9 @@ public class GetMatchAdminDetailsUseCase
         boolean setup = season.isInSetupMode();
         MatchStatus status = match.getStatus();
 
-        List<String> actions = new ArrayList<>();
-
-        if (setup) {
-            // Setup mode bypasses the normal match-day state machine — any other status is
-            // reachable, same as Match.transitionTo(..., isSetupMode=true).
-            for (MatchStatus target : MatchStatus.values()) {
-                if (target != status) {
-                    actions.add("TRANSITION_TO_" + target.name());
-                }
-            }
-        } else {
-            switch (status) {
-                case SCHEDULED -> {
-                    actions.add("TRANSITION_TO_LIVE");
-                    actions.add("TRANSITION_TO_POSTPONED");
-                    actions.add("TRANSITION_TO_CANCELLED");
-                }
-                case LIVE -> {
-                    actions.add("TRANSITION_TO_SUSPENDED");
-                    actions.add("TRANSITION_TO_FINISHED");
-                    actions.add("TRANSITION_TO_CANCELLED");
-                }
-                case SUSPENDED -> {
-                    actions.add("TRANSITION_TO_POSTPONED");
-                    actions.add("TRANSITION_TO_CANCELLED");
-                }
-                case POSTPONED -> {
-                    actions.add("TRANSITION_TO_CANCELLED");
-                    actions.add("TRANSITION_TO_SCHEDULED");
-                }
-                case CANCELLED, FINISHED -> {
-                    // No actions
-                }
-            }
-        }
+        List<String> actions = new ArrayList<>(Match.validTransitionsFrom(status, setup).stream()
+                .map(target -> "TRANSITION_TO_" + target.name())
+                .toList());
 
         boolean reschedulable = setup
                 || (status != MatchStatus.SUSPENDED && status != MatchStatus.LIVE && status != MatchStatus.FINISHED);

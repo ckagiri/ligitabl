@@ -4,6 +4,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
+import java.util.Comparator;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -23,6 +24,7 @@ import com.ligitabl.api.rest.matchadmin.updatekickoff.UpdateMatchKickoffUseCase;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
+import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 
@@ -103,12 +105,16 @@ public class MatchAdminController {
                     .validateCurrentRound(ctx.season())
                     .fold(__ -> round, currentRound -> currentRound.getPosition());
 
-            // In setup mode any round is a valid target.
-            var availableRounds = roundRepo
-                    .findBySeasonIdOrderByPosition(ctx.season().getId())
-                    .stream()
+            // In setup mode any round is a valid target, and moves are typically retroactive
+            // corrections (e.g. GW 34 -> GW 32), so list those newest-first. Outside setup mode
+            // reschedules only ever move forward to a future round, so keep ascending order.
+            var roundsStream = roundRepo.findBySeasonIdOrderByPosition(ctx.season().getId()).stream()
                     .filter(r -> r.getPosition() != round)
-                    .filter(r -> setupMode || (r.getPosition() >= floorPosition && !r.isFinalized()))
+                    .filter(r -> setupMode || (r.getPosition() >= floorPosition && !r.isFinalized()));
+            if (setupMode) {
+                roundsStream = roundsStream.sorted(Comparator.comparingInt(Round::getPosition).reversed());
+            }
+            var availableRounds = roundsStream
                     .map(r -> new RoundOption(r.getPosition(), "GW " + r.getPosition()))
                     .toList();
             model.addAttribute("availableRounds", availableRounds);

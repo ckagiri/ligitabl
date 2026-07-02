@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
@@ -60,13 +61,19 @@ public class Match extends AbstractModel<UUID> {
         this.score = Score.builder().homeGoals(homeGoals).awayGoals(awayGoals).build();
     }
 
+    // Setup mode exists for retroactive data correction (wrong score, wrongly-FINISHED match,
+    // marking something POSTPONED) — not for re-simulating match-day states like LIVE/SUSPENDED.
+    private static final Set<MatchStatus> SETUP_MODE_TARGETS =
+            Set.of(MatchStatus.SCHEDULED, MatchStatus.POSTPONED, MatchStatus.FINISHED);
+
     public static List<MatchStatus> validTransitionsFrom(MatchStatus status) {
         return validTransitionsFrom(status, false);
     }
 
     public static List<MatchStatus> validTransitionsFrom(MatchStatus status, boolean isSetupMode) {
         return Arrays.stream(MatchStatus.values())
-                .filter(to -> to != status && (isSetupMode || isAllowedTransition(status, to)))
+                .filter(to -> to != status
+                        && (isSetupMode ? SETUP_MODE_TARGETS.contains(to) : isAllowedTransition(status, to)))
                 .toList();
     }
 
@@ -88,8 +95,10 @@ public class Match extends AbstractModel<UUID> {
         }
 
         // In setup mode an admin may need to correct a mis-recorded status (e.g. a wrongly
-        // FINISHED match) outside the normal match-day state machine.
-        if (!isSetupMode && !isAllowedTransition(from, newStatus)) {
+        // FINISHED match) outside the normal match-day state machine, but only to the fixed
+        // set of retroactive-correction targets — LIVE/SUSPENDED/CANCELLED still aren't reachable.
+        boolean allowed = isSetupMode ? SETUP_MODE_TARGETS.contains(newStatus) : isAllowedTransition(from, newStatus);
+        if (!allowed) {
             throw new IllegalStateException(String.format("Cannot transition from %s to %s", from, newStatus));
         }
 

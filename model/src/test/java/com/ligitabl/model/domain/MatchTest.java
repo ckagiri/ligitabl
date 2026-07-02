@@ -101,4 +101,40 @@ class MatchTest {
             }
         }
     }
+
+    @Test
+    void setupMode_onlyAllowsScheduledPostponedFinishedAsTargets_regardlessOfCurrentStatus() {
+        EnumSet<MatchStatus> setupModeTargets =
+                EnumSet.of(MatchStatus.SCHEDULED, MatchStatus.POSTPONED, MatchStatus.FINISHED);
+
+        for (MatchStatus from : MatchStatus.values()) {
+            for (MatchStatus to : MatchStatus.values()) {
+                Match match = matchWithStatus(from);
+
+                if (from == to) {
+                    assertDoesNotThrow(() -> match.transitionTo(to, "noop", true));
+                    assertEquals(from, match.getStatus());
+                    continue;
+                }
+
+                if (setupModeTargets.contains(to)) {
+                    assertDoesNotThrow(() -> match.transitionTo(to, "setup mode correction", true));
+                    assertEquals(to, match.getStatus());
+                } else {
+                    assertThrows(IllegalStateException.class, () -> match.transitionTo(to, "setup mode correction", true));
+                    assertEquals(from, match.getStatus());
+                }
+            }
+        }
+    }
+
+    @Test
+    void validTransitionsFrom_inSetupMode_isFixedToScheduledPostponedFinished() {
+        for (MatchStatus status : MatchStatus.values()) {
+            EnumSet<MatchStatus> expected = EnumSet.of(MatchStatus.SCHEDULED, MatchStatus.POSTPONED, MatchStatus.FINISHED);
+            expected.remove(status);
+
+            assertEquals(expected, EnumSet.copyOf(Match.validTransitionsFrom(status, true)));
+        }
+    }
 }
