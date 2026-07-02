@@ -47,3 +47,51 @@ season:
         position: 19
       - code: SUN
         position: 20
+  - clientId: 2502
+    competitionSlug: premier-league
+    name: 2026/27
+    slug: 2026-27
+    startDate: 2026-08-21
+    endDate: 2027-05-30
+    totalTeams: 20
+    initialRankings:
+      - code: ARS
+        position: 1
+      - code: MCI
+        position: 2
+      - code: MUN
+        position: 3
+      - code: AVL
+        position: 4
+      - code: LIV
+        position: 5
+      - code: BOU
+        position: 6
+      - code: SUN
+        position: 7
+      - code: BHA
+        position: 8
+      - code: BRE
+        position: 9
+      - code: CHE
+        position: 10
+      - code: FUL
+        position: 11
+      - code: NEW
+        position: 12
+      - code: EVE
+        position: 13
+      - code: LEE
+        position: 14
+      - code: CRY
+        position: 15
+      - code: NFO
+        position: 16
+      - code: TOT
+        position: 17
+      - code: COV
+        position: 18
+      - code: IPS
+        position: 19
+      - code: HUL
+        position: 20
