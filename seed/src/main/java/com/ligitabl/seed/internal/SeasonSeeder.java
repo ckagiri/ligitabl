@@ -225,10 +225,10 @@ public class SeasonSeeder extends AbstractSeeder<List<Map<String, Object>>> {
                         T_SEASON.C_START_DATE,
                         T_SEASON.C_END_DATE,
                         T_SEASON.C_MAX_ROUNDS,
-                T_SEASON.C_INITIAL_RANKINGS,
-                T_SEASON.C_COMPLETED,
-                T_SEASON.C_TOTAL_TEAMS,
-                T_SEASON.C_MAX_HIT_POINTS,
+                        T_SEASON.C_INITIAL_RANKINGS,
+                        T_SEASON.C_COMPLETED,
+                        T_SEASON.C_TOTAL_TEAMS,
+                        T_SEASON.C_MAX_HIT_POINTS,
                         T_SEASON.C_CURRENT_MATCH_DAY)
                 .values(
                         UUID.randomUUID(),

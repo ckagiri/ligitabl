@@ -95,11 +95,12 @@ class MatchEndpointsIT extends AbstractPostgresIT {
                 1);
 
         jdbcTemplate.update(
-                "INSERT INTO t_match (pk_id, c_client_id, fk_round_id, fk_home_team_id, fk_away_team_id, c_slug, c_status, c_kick_off, c_venue, c_matchday) "
-                        + "VALUES (?,?,?,?,?,?,?,?,?,?)",
+                "INSERT INTO t_match (pk_id, c_client_id, fk_round_id, fk_season_id, fk_home_team_id, fk_away_team_id, c_slug, c_status, c_kick_off, c_venue, c_matchday) "
+                        + "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
                 UUID.randomUUID(),
                 1,
                 roundId,
+                seasonId,
                 homeTeamId,
                 awayTeamId,
                 "home-vs-away",

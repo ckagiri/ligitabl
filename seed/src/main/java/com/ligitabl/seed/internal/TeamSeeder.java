@@ -58,11 +58,6 @@ public class TeamSeeder extends AbstractSeeder<List<Map<String, Object>>> {
             tla = tla.substring(0, 3);
         }
 
-        if (teamExists(slug)) {
-            recordSkip();
-            return;
-        }
-
         int rowsAffected = dsl.insertInto(
                 T_TEAM,
                 T_TEAM.PK_ID,
@@ -72,6 +67,12 @@ public class TeamSeeder extends AbstractSeeder<List<Map<String, Object>>> {
                 T_TEAM.C_TLA,
                 T_TEAM.C_CLIENT_ID)
             .values(UUID.randomUUID(), name, shortName, slug, tla, clientId)
+                .onConflict(T_TEAM.C_SLUG)
+                .doUpdate()
+                .set(T_TEAM.C_NAME, name)
+                .set(T_TEAM.C_SHORT_NAME, shortName)
+                .set(T_TEAM.C_TLA, tla)
+                .set(T_TEAM.C_CLIENT_ID, clientId)
                 .execute();
 
         if (rowsAffected > 0) {
@@ -79,10 +80,5 @@ public class TeamSeeder extends AbstractSeeder<List<Map<String, Object>>> {
         } else {
             recordSkip();
         }
-    }
-
-    private boolean teamExists(String slug) {
-        return dsl.fetchExists(
-                dsl.selectOne().from(T_TEAM).where(T_TEAM.C_SLUG.eq(slug)));
     }
 }

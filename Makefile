@@ -677,10 +677,34 @@ run-api-fast: ## Start DB and run API (skip migrate) (ENV=$(ENV))
 		compile
 	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -f $(API_DIR)/pom.xml $(SPRING_BOOT_RUN_ARGS) org.springframework.boot:spring-boot-maven-plugin:run
 
+.PHONY: run-api-fast-model
+run-api-fast-model: ## Start DB and run API (skip migrate, reinstall model so its changes are picked up) (ENV=$(ENV))
+	$(MAKE) compose-up-db
+	# Keep "fast" while avoiding stale/poisoned classpath issues.
+	$(MAKE) api-clean-classes
+	# install (not compile) so the model jar in ~/.m2 is refreshed — the standalone
+	# `spring-boot:run` below resolves model as a packaged dependency, not a reactor
+	# sibling, so a stale .m2 jar is otherwise invisible to it (and to devtools).
+	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -DskipTests -Pwith-jooq -Djooq.codegen.skip=true -pl $(API_DIR) -am \
+		-DDB_HOST=$(DB_HOST) -DDB_PORT=$(DB_PORT) -DDB_NAME=$(DB_NAME) \
+		-DDB_USER=$(DB_USER) -DDB_PASSWORD=$(DB_PASSWORD) \
+		install
+	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -f $(API_DIR)/pom.xml $(SPRING_BOOT_RUN_ARGS) org.springframework.boot:spring-boot-maven-plugin:run
+
 .PHONY: run-api-fastest
 run-api-fastest: ## Start DB and run API (no rebuild, assumes compiled) (ENV=$(ENV))
 	$(MAKE) compose-up-db
 	@$(EXPORT_FOOTBALL_DATA_API_TOKEN); mvn -q -f $(API_DIR)/pom.xml $(SPRING_BOOT_RUN_ARGS) org.springframework.boot:spring-boot-maven-plugin:run
+
+.PHONY: kill-api
+kill-api: ## Kill whatever is listening on $(PORT) (ENV=$(ENV) -> PORT from .env.$(ENV))
+	@PIDS="$$(lsof -ti tcp:$(PORT))"; \
+	if [ -z "$$PIDS" ]; then \
+		echo "No process listening on port $(PORT) (ENV=$(ENV))"; \
+	else \
+		echo "Killing process(es) on port $(PORT) (ENV=$(ENV)): $$PIDS"; \
+		kill $$PIDS; \
+	fi
 
 # ==============================================================================
 # TEST TARGETS

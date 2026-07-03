@@ -473,7 +473,7 @@ public class AuthController {
 
     private Season getActiveSeason() {
         return seasonRepo
-                .findMostRecentSeason(competitionDefaults.defaultCompetitionSlug())
+                .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
                 .orElseThrow(() -> new IllegalStateException("No active season available"));
     }
 }

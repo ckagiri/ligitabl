@@ -86,32 +86,11 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
         SeasonRecord record = dsl.select(T_SEASON.fields())
                 .from(T_SEASON)
                 .join(T_COMPETITION)
-                .on(T_SEASON.FK_COMPETITION_ID.eq(T_COMPETITION.PK_ID))
+                .on(T_COMPETITION.FK_ACTIVE_SEASON_ID.eq(T_SEASON.PK_ID))
                 .where(T_COMPETITION
                         .C_SLUG
                         .eq(competitionSlugOrCode)
                         .or(T_COMPETITION.C_CODE.eq(competitionSlugOrCode)))
-                .and(T_SEASON.C_COMPLETED.eq(false))
-                .orderBy(T_SEASON.C_START_DATE.desc())
-                .limit(1)
-                .fetchOneInto(SeasonRecord.class);
-
-        return Optional.ofNullable(MAPPER.map(record));
-    }
-
-    @Override
-    public Optional<Season> findMostRecentSeason(String competitionSlug) {
-        if (competitionSlug == null || competitionSlug.isBlank()) {
-            throw new IllegalArgumentException("competitionSlug must not be blank");
-        }
-
-        SeasonRecord record = dsl.select(T_SEASON.fields())
-                .from(T_SEASON)
-                .join(T_COMPETITION)
-                .on(T_SEASON.FK_COMPETITION_ID.eq(T_COMPETITION.PK_ID))
-                .where(T_COMPETITION.C_SLUG.eq(competitionSlug))
-                .orderBy(T_SEASON.C_START_DATE.desc())
-                .limit(1)
                 .fetchOneInto(SeasonRecord.class);
 
         return Optional.ofNullable(MAPPER.map(record));
@@ -155,11 +134,12 @@ public class SeasonPersistenceAdapter implements SeasonRepo {
             throw new IllegalArgumentException("competitionId must not be null");
         }
 
-        var record = dsl.selectFrom(T_SEASON)
-                .where(T_SEASON.FK_COMPETITION_ID.eq(competitionId).and(T_SEASON.C_COMPLETED.eq(false)))
-                .orderBy(T_SEASON.C_START_DATE.desc())
-                .limit(1)
-                .fetchOne();
+        SeasonRecord record = dsl.select(T_SEASON.fields())
+                .from(T_SEASON)
+                .join(T_COMPETITION)
+                .on(T_COMPETITION.FK_ACTIVE_SEASON_ID.eq(T_SEASON.PK_ID))
+                .where(T_COMPETITION.PK_ID.eq(competitionId))
+                .fetchOneInto(SeasonRecord.class);
 
         return Optional.ofNullable(MAPPER.map(record));
     }

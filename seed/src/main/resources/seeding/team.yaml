@@ -92,6 +92,7 @@ team:
     shortName: Ipswich Town
     slug: ipswich-town
     tla: IPS
+    clientId: 349
   - name: Leicester City
     shortName: Leicester City
     slug: leicester-city
@@ -115,3 +116,13 @@ team:
     shortName: Watford
     slug: watford
     tla: WAT
+  - name: Coventry City
+    shortName: Coventry City
+    slug: coventry-city
+    tla: COV
+    clientId: 1076
+  - name: Hull City
+    shortName: Hull City
+    slug: hull-city
+    tla: HUL
+    clientId: 322

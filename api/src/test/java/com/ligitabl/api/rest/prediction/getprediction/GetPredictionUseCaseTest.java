@@ -110,7 +110,7 @@ class GetPredictionUseCaseTest {
                 .initialRankings(List.of(TeamRank.of("ARS", 1)))
                 .build();
 
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(roundId)).thenReturn(List.of());
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
@@ -144,7 +144,7 @@ class GetPredictionUseCaseTest {
                 .finalised(false)
                 .build();
 
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(roundId)).thenReturn(List.of());
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.empty());
@@ -159,7 +159,7 @@ class GetPredictionUseCaseTest {
 
     @Test
     void falls_back_to_baseline_when_no_prediction_and_no_standings() {
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(roundId)).thenReturn(List.of());
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.empty());
@@ -181,7 +181,7 @@ class GetPredictionUseCaseTest {
                 .initialRankings(List.of())
                 .build();
 
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(noBaselineSeason));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(noBaselineSeason));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.empty());
         when(standingsRepo.findBySeasonAndRoundPosition(seasonId, 1)).thenReturn(Optional.empty());
@@ -194,7 +194,7 @@ class GetPredictionUseCaseTest {
 
     @Test
     void returns_error_when_round_missing_for_anonymous() {
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.empty());
 
         Either<GetPredictionError, GetPredictionResult> result = useCase.execute(null);
@@ -206,7 +206,7 @@ class GetPredictionUseCaseTest {
 
     @Test
     void returns_error_when_round_missing_for_user() {
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.empty());
 
         Either<GetPredictionError, GetPredictionResult> result = useCase.execute(userId);
@@ -224,7 +224,7 @@ class GetPredictionUseCaseTest {
                 .initialRankings(List.of(TeamRank.of("ARS", 1)))
                 .build();
 
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(noRoundSeason));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(noRoundSeason));
 
         Either<GetPredictionError, GetPredictionResult> result = useCase.execute(userId);
 
@@ -235,7 +235,7 @@ class GetPredictionUseCaseTest {
 
     @Test
     void returns_error_when_season_not_found() {
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.empty());
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.empty());
 
         Either<GetPredictionError, GetPredictionResult> result = useCase.execute(userId);
 
@@ -262,7 +262,7 @@ class GetPredictionUseCaseTest {
                 .lastSwapAt(Instant.parse("2024-12-22T10:00:00Z"))
                 .build();
 
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(completedSeason));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(completedSeason));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(roundId)).thenReturn(List.of());
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
@@ -289,7 +289,7 @@ class GetPredictionUseCaseTest {
                 .build();
 
         when(clock.instant()).thenReturn(now);
-        when(seasonRepo.findMostRecentSeason("premier-league")).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(roundId)).thenReturn(List.of());
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
