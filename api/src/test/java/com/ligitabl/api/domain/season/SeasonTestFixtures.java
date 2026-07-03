@@ -17,8 +17,10 @@ final class SeasonTestFixtures {
         // (not-yet-started) season's are both in the future — matches getSeasonState()'s
         // PRE_SEASON/OFF_SEASON boundary checks (past endDate when completed, before startDate
         // when not). Use the overload below when a test needs to vary start/end independently.
-        LocalDate startDate = completed ? LocalDate.now().minusMonths(9) : LocalDate.now().plusDays(1);
-        LocalDate endDate = completed ? LocalDate.now().minusDays(1) : LocalDate.now().plusMonths(9);
+        LocalDate startDate =
+                completed ? LocalDate.now().minusMonths(9) : LocalDate.now().plusDays(1);
+        LocalDate endDate =
+                completed ? LocalDate.now().minusDays(1) : LocalDate.now().plusMonths(9);
         return season(completed, preSeasonOpensAt, predictionsOpenAt, startDate, endDate);
     }
 
