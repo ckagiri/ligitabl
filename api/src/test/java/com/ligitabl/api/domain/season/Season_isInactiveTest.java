@@ -7,6 +7,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.stream.Stream;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -26,12 +27,12 @@ class Season_isInactiveTest {
 
     private static Stream<Arguments> truthTable() {
         return Stream.of(
-                // Only reachable when: not completed (rules out OFF_SEASON), predictionsOpenAt in
-                // the future (rules out IN_PLAY), and preSeasonOpensAt null/future (rules out
-                // PRE_SEASON, since that requires preSeasonOpensAt already in the past) — an active
-                // season promoted before its own pre-season window has been configured/opened.
-                Arguments.of(false, NULL, FUTURE, true),
-                Arguments.of(false, FUTURE, FUTURE, true),
+                // completed=false + predictionsOpenAt=FUTURE + preSeasonOpensAt=NULL/FUTURE, with
+                // this fixture's beforeActualStart always true for completed=false, is exactly the
+                // "OFF_SEASON !completed" branch's target case (an active season promoted before
+                // its own pre-season window has been configured/opened) — NOT inactive.
+                Arguments.of(false, NULL, FUTURE, false),
+                Arguments.of(false, FUTURE, FUTURE, false),
 
                 // Every other combination is claimed by one of the other three phases.
                 Arguments.of(false, NULL, NULL, false),
@@ -50,5 +51,25 @@ class Season_isInactiveTest {
                 Arguments.of(true, PAST, NULL, false),
                 Arguments.of(true, PAST, PAST, false),
                 Arguments.of(true, PAST, FUTURE, false));
+    }
+
+    /**
+     * With this package's shared fixture, beforeActualStart is unconditionally true for every
+     * completed=false row (startDate is always tomorrow), so the 18-combination truthTable above
+     * can never actually reach INACTIVE — every completed=false case is claimed by IN_PLAY,
+     * PRE_SEASON, or the OFF_SEASON !completed branch. INACTIVE only shows up once startDate has
+     * already passed (season nominally started) while predictionsOpenAt/preSeasonOpensAt are both
+     * still pending — a genuine misconfiguration, tested here with an explicit startDate.
+     */
+    @Test
+    void isInactive_reachable_whenPastStartDateButNeitherWindowHasOpened() {
+        Season season = SeasonTestFixtures.season(
+                false,
+                FUTURE.resolve(),
+                FUTURE.resolve(),
+                java.time.LocalDate.now().minusDays(1),
+                java.time.LocalDate.now().plusMonths(9));
+
+        assertThat(season.isInactive()).isTrue();
     }
 }

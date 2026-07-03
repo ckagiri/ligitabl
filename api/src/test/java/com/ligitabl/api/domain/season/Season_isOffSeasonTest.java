@@ -32,7 +32,7 @@ class Season_isOffSeasonTest {
                 Arguments.of(false, FUTURE, false),
                 Arguments.of(false, PAST, false),
                 // completed: off-season until preSeasonOpensAt passes — a null preSeasonOpensAt
-                // never counts as "opened" (a legacy season with no pre-season config configured)
+                // never counts as "opened"
                 Arguments.of(true, NULL, true),
                 Arguments.of(true, FUTURE, true),
                 Arguments.of(true, PAST, false));

@@ -411,7 +411,8 @@ class CreatePredictionUseCaseTest {
     void shouldRegisterPreSeason_whenSeasonIsPreSeason() {
         season.setPredictionsOpenAt(java.time.OffsetDateTime.now().plusDays(30));
         season.setPreSeasonOpensAt(java.time.OffsetDateTime.now().minusDays(1));
-        // isPreSeason() == true: !isOffSeason && !isInPlay && isPreSeasonOpen
+        season.setStartDate(java.time.LocalDate.now().plusDays(1));
+        // isPreSeason() == true: !isOffSeason && !isInPlay && preSeasonOpen && beforeActualStart
 
         UUID predictionId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
@@ -453,6 +454,7 @@ class CreatePredictionUseCaseTest {
     void shouldReject_whenAlreadyPreRegistered_andStillPreSeason() {
         season.setPredictionsOpenAt(java.time.OffsetDateTime.now().plusDays(30));
         season.setPreSeasonOpensAt(java.time.OffsetDateTime.now().minusDays(1));
+        season.setStartDate(java.time.LocalDate.now().plusDays(1));
         SeasonPrediction preSeasonPrediction = SeasonPrediction.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)

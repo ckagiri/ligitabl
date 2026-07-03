@@ -13,13 +13,28 @@ final class SeasonTestFixtures {
     private SeasonTestFixtures() {}
 
     static Season season(boolean completed, OffsetDateTime preSeasonOpensAt, OffsetDateTime predictionsOpenAt) {
+        // A completed season's own start/end are naturally both in the past; an upcoming
+        // (not-yet-started) season's are both in the future — matches getSeasonState()'s
+        // PRE_SEASON/OFF_SEASON boundary checks (past endDate when completed, before startDate
+        // when not). Use the overload below when a test needs to vary start/end independently.
+        LocalDate startDate = completed ? LocalDate.now().minusMonths(9) : LocalDate.now().plusDays(1);
+        LocalDate endDate = completed ? LocalDate.now().minusDays(1) : LocalDate.now().plusMonths(9);
+        return season(completed, preSeasonOpensAt, predictionsOpenAt, startDate, endDate);
+    }
+
+    static Season season(
+            boolean completed,
+            OffsetDateTime preSeasonOpensAt,
+            OffsetDateTime predictionsOpenAt,
+            LocalDate startDate,
+            LocalDate endDate) {
         return Season.builder()
                 .clientId(1)
                 .competitionId(UUID.randomUUID())
                 .name("Test Season")
                 .slug(SeasonSlug.of("2025-26"))
-                .startDate(LocalDate.now())
-                .endDate(LocalDate.now().plusMonths(9))
+                .startDate(startDate)
+                .endDate(endDate)
                 .completed(completed)
                 .preSeasonOpensAt(preSeasonOpensAt)
                 .predictionsOpenAt(predictionsOpenAt)
