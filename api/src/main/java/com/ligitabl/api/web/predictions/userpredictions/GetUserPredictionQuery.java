@@ -33,8 +33,8 @@ public record GetUserPredictionQuery(UserContext userContext, UUID seasonId, Int
      * Create command for an authenticated user viewing their own predictions.
      */
     public static GetUserPredictionQuery forAuthenticatedUser(
-            UUID userId, UUID seasonId, boolean hasContestEntry, Integer round) {
-        return new GetUserPredictionQuery(UserContext.authenticated(userId, hasContestEntry), seasonId, round);
+            UUID userId, UUID seasonId, boolean hasMainContestEntry, Integer round) {
+        return new GetUserPredictionQuery(UserContext.authenticated(userId, hasMainContestEntry), seasonId, round);
     }
 
     /**

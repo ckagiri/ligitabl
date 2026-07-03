@@ -155,7 +155,7 @@ public class GetUserPredictionUseCase {
             RoundStatus currentRoundStatus) {
         UserContext ctx = qry.userContext();
 
-        if (ctx.hasContestEntry()) {
+        if (ctx.hasMainContestEntry()) {
             var seasonPrediction = seasonPredictionRepo
                     .findByUserAndSeason(ctx.userId(), qry.seasonId())
                     .orElseThrow(

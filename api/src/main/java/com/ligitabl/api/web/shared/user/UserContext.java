@@ -7,7 +7,7 @@ import java.util.UUID;
  * Represents the context of a user viewing predictions.
  * Encapsulates user resolution logic and state.
  */
-public record UserContext(UUID userId, UserType userType, boolean hasContestEntry) {
+public record UserContext(UUID userId, UserType userType, boolean hasMainContestEntry) {
     /**
      * Types of users in the prediction context.
      */
@@ -47,9 +47,9 @@ public record UserContext(UUID userId, UserType userType, boolean hasContestEntr
     /**
      * Create context for an authenticated user viewing their own predictions.
      */
-    public static UserContext authenticated(UUID userId, boolean hasContestEntry) {
+    public static UserContext authenticated(UUID userId, boolean hasMainContestEntry) {
         Objects.requireNonNull(userId, "userId is required for authenticated user");
-        return new UserContext(userId, UserType.AUTHENTICATED, hasContestEntry);
+        return new UserContext(userId, UserType.AUTHENTICATED, hasMainContestEntry);
     }
 
     /**
