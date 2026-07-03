@@ -51,7 +51,8 @@ public class SwapHelper {
                 .map(Either::<SwapError, Round>right)
                 .orElseGet(() -> Either.left(new SwapError.RoundNotOpen(RoundStatus.UNKNOWN.name())))
                 .flatMap(round -> isLastRoundClosed(round, season)
-                        ? Either.left(new SwapError.RoundNotOpen(resolveClosedStatus(round).name()))
+                        ? Either.left(new SwapError.RoundNotOpen(
+                                resolveClosedStatus(round).name()))
                         : Either.right(round));
     }
 

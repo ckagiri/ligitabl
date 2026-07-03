@@ -73,8 +73,14 @@ class GetUserPredictionUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new GetUserPredictionUseCase(
-                competitionDefaults, competitionRepo, seasonPredictionRepo, seasonRepo, roundRepo, roundResultRepo,
-                standingsRepo, matchRepo);
+                competitionDefaults,
+                competitionRepo,
+                seasonPredictionRepo,
+                seasonRepo,
+                roundRepo,
+                roundResultRepo,
+                standingsRepo,
+                matchRepo);
 
         seasonId = UUID.randomUUID();
         roundId = UUID.randomUUID();
@@ -155,7 +161,10 @@ class GetUserPredictionUseCaseTest {
                 .build();
         // findBySeasonAndRound keys matches by team code — the same match appears under both
         // ARS and LIV, with homeTeam/awayTeam NOT loaded, exactly like the real (team-less) finder.
-        Match match = Match.builder().id(UUID.randomUUID()).status(MatchStatus.SCHEDULED).build();
+        Match match = Match.builder()
+                .id(UUID.randomUUID())
+                .status(MatchStatus.SCHEDULED)
+                .build();
 
         stubActiveSeason(season);
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));

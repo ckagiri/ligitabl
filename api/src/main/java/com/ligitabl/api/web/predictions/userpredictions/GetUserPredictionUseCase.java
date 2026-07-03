@@ -143,8 +143,7 @@ public class GetUserPredictionUseCase {
 
         var seasonPrediction = seasonPredictionRepo
                 .findByUserAndSeason(ctx.userId(), qry.seasonId())
-                .orElseThrow(
-                        () -> new IllegalStateException("User context indicates prediction exists but not found"));
+                .orElseThrow(() -> new IllegalStateException("User context indicates prediction exists but not found"));
 
         // Once the season's last round has advanced, it stays "current" (currentRoundId never
         // moves further), but must be rendered like a historical/scored round, not a live one.
@@ -178,11 +177,17 @@ public class GetUserPredictionUseCase {
 
         List<RoundResult> sprintResults = roundResultRepo.findByUserAndSeasonAndRoundPositionRange(
                 ctx.userId(), qry.seasonId(), sprint.getFrom(), rc.viewingRound());
-        int sprintBest = sprintResults.stream().mapToInt(RoundResult::getTotalScore).max().orElse(0);
+        int sprintBest = sprintResults.stream()
+                .mapToInt(RoundResult::getTotalScore)
+                .max()
+                .orElse(0);
 
         List<RoundResult> seasonResults = roundResultRepo.findByUserAndSeasonAndRoundPositionRange(
                 ctx.userId(), qry.seasonId(), 1, rc.viewingRound());
-        int seasonBest = seasonResults.stream().mapToInt(RoundResult::getTotalScore).max().orElse(0);
+        int seasonBest = seasonResults.stream()
+                .mapToInt(RoundResult::getTotalScore)
+                .max()
+                .orElse(0);
 
         return UserPredictionViewData.builder()
                 .rankings(rankings)

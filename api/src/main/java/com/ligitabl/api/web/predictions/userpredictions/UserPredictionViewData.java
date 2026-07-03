@@ -92,5 +92,4 @@ public record UserPredictionViewData(
     public boolean isReadonly() {
         return accessMode.isReadonly();
     }
-
 }

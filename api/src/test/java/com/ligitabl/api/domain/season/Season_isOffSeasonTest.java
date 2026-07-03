@@ -40,15 +40,15 @@ class Season_isOffSeasonTest {
 
     @ParameterizedTest(name = "completed={0}, preSeasonOpensAt={1}, predictionsOpenAt={2}")
     @MethodSource("allInputCombinations")
-    void neverOverlapsWithIsPreSeason(boolean completed, RelativeDate preSeasonOpensAt, RelativeDate predictionsOpenAt) {
+    void neverOverlapsWithIsPreSeason(
+            boolean completed, RelativeDate preSeasonOpensAt, RelativeDate predictionsOpenAt) {
         Season season = SeasonTestFixtures.season(completed, preSeasonOpensAt.resolve(), predictionsOpenAt.resolve());
         assertThat(season.isOffSeason() && season.isPreSeason()).isFalse();
     }
 
     @ParameterizedTest(name = "completed={0}, preSeasonOpensAt={1}, predictionsOpenAt={2}")
     @MethodSource("allInputCombinations")
-    void neverOverlapsWithIsInPlay(
-            boolean completed, RelativeDate preSeasonOpensAt, RelativeDate predictionsOpenAt) {
+    void neverOverlapsWithIsInPlay(boolean completed, RelativeDate preSeasonOpensAt, RelativeDate predictionsOpenAt) {
         Season season = SeasonTestFixtures.season(completed, preSeasonOpensAt.resolve(), predictionsOpenAt.resolve());
         assertThat(season.isOffSeason() && season.isInPlay()).isFalse();
     }
