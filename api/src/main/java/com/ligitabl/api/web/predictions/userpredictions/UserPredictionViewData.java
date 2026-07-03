@@ -41,7 +41,8 @@ public record UserPredictionViewData(
         Integer seasonBestScore, // Best single-GW score in the season up to viewingRound
         Integer sprintBestScore, // Best single-GW score in viewingRound's sprint up to viewingRound
         String sprintLabel, // e.g. "Sprint 5"
-        boolean isGuest // Set from UserContext.isGuest() — not derivable from accessMode alone
+        boolean isGuest, // Set from UserContext.isGuest() — not derivable from accessMode alone
+        boolean hasPreSeasonRegistration // SeasonPrediction.isPreSeasonRegistration() for the owning prediction
         ) {
     public UserPredictionViewData {
         Objects.requireNonNull(rankings, "rankings are required");

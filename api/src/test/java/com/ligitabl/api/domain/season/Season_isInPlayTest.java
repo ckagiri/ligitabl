@@ -14,13 +14,13 @@ import org.junit.jupiter.params.provider.MethodSource;
 import com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate;
 import com.ligitabl.model.domain.Season;
 
-class Season_isPredictionsOpenTest {
+class Season_isInPlayTest {
 
     @ParameterizedTest(name = "completed={0}, predictionsOpenAt={1} -> {2}")
     @MethodSource("cases")
-    void isPredictionsOpen(boolean completed, RelativeDate predictionsOpenAt, boolean expected) {
+    void isInPlay(boolean completed, RelativeDate predictionsOpenAt, boolean expected) {
         Season season = SeasonTestFixtures.season(completed, null, predictionsOpenAt.resolve());
-        assertThat(season.isPredictionsOpen()).isEqualTo(expected);
+        assertThat(season.isInPlay()).isEqualTo(expected);
     }
 
     private static Stream<Arguments> cases() {
@@ -29,8 +29,8 @@ class Season_isPredictionsOpenTest {
                 Arguments.of(false, NULL, true),
                 Arguments.of(false, PAST, true),
                 Arguments.of(false, FUTURE, false),
-                // completed: never "predictions open", regardless of predictionsOpenAt — this is what
-                // makes isOffSeason()/isPredictionsOpen() mutually exclusive
+                // completed: never "in play", regardless of predictionsOpenAt — this is what makes
+                // isOffSeason()/isInPlay() mutually exclusive
                 Arguments.of(true, NULL, false),
                 Arguments.of(true, PAST, false),
                 Arguments.of(true, FUTURE, false));

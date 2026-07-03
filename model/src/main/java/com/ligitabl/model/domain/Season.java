@@ -100,16 +100,16 @@ public class Season extends AbstractModel<UUID> {
     /**
      * On the upcoming (active) season: are predictions and swaps open for in-season play?
      * Null predictionsOpenAt defaults to open — covers seasons created before this field existed.
-     * A completed season is never "predictions open" — this makes isOffSeason() and
-     * isPredictionsOpen() mutually exclusive.
+     * A completed season is never "in play" — this makes isOffSeason() and isInPlay() mutually
+     * exclusive.
      */
-    public boolean isPredictionsOpen() {
+    public boolean isInPlay() {
         return !completed && (predictionsOpenAt == null || OffsetDateTime.now().isAfter(predictionsOpenAt));
     }
 
     /** On the active season (post-switch): true during the pre-season registration window. */
     public boolean isPreSeason() {
-        return !isOffSeason() && !isPredictionsOpen() && isPreSeasonOpen();
+        return !isOffSeason() && !isInPlay() && isPreSeasonOpen();
     }
 
     /**
@@ -119,10 +119,36 @@ public class Season extends AbstractModel<UUID> {
      * A null preSeasonOpensAt still counts as off-season — a completed legacy season with no
      * pre-season config was never "pre-season open".
      *
-     * <p>isOffSeason() and isPredictionsOpen() can never both be true — isOffSeason() requires
-     * completed, isPredictionsOpen() requires !completed.
+     * <p>isOffSeason() and isInPlay() can never both be true — isOffSeason() requires completed,
+     * isInPlay() requires !completed.
      */
     public boolean isOffSeason() {
         return completed && (preSeasonOpensAt == null || OffsetDateTime.now().isBefore(preSeasonOpensAt));
+    }
+
+    /**
+     * True when none of the other three phases apply — e.g. a completed season whose
+     * preSeasonOpensAt has passed but whose successor hasn't been promoted/configured yet.
+     */
+    public boolean isInactive() {
+        return !isOffSeason() && !isInPlay() && !isPreSeason();
+    }
+
+    /**
+     * Coarse-grained season phase for display/gating, in priority order: OFF_SEASON takes
+     * precedence over IN_PLAY, which takes precedence over PRE_SEASON, with INACTIVE as the
+     * fallback when none of the three apply.
+     */
+    public SeasonState getSeasonState() {
+        if (isOffSeason()) {
+            return SeasonState.OFF_SEASON;
+        }
+        if (isInPlay()) {
+            return SeasonState.IN_PLAY;
+        }
+        if (isPreSeason()) {
+            return SeasonState.PRE_SEASON;
+        }
+        return SeasonState.INACTIVE;
     }
 }

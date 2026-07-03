@@ -172,6 +172,58 @@ class GetUserPredictionUseCaseTest {
         verify(matchRepo, never()).findByRoundId(any());
     }
 
+    // ── hasPreSeasonRegistration wiring ──────────────────────────────────────
+
+    @Test
+    void authenticatedCurrentRound_hasPreSeasonRegistration_trueWhenAtRoundNumberZero() {
+        Season season = createSeason(20);
+        Round round = createRound(5, false, false);
+        SeasonPrediction prediction = SeasonPrediction.builder()
+                .id(UUID.randomUUID())
+                .userId(userId)
+                .seasonId(seasonId)
+                .currentRankings(baselineRankings)
+                .atRoundNumber(0)
+                .build();
+
+        stubActiveSeason(season);
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(matchRepo.findBySeasonAndRound(seasonId, 5)).thenReturn(Map.of());
+        when(seasonPredictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
+        when(standingsRepo.findBySeasonAndRoundPosition(seasonId, 5)).thenReturn(Optional.empty());
+
+        var query = GetUserPredictionQuery.forAuthenticatedUser(userId, seasonId, true, null);
+        Either<?, UserPredictionViewData> result = useCase.execute(query);
+
+        assertTrue(result.isRight());
+        assertTrue(result.get().hasPreSeasonRegistration());
+    }
+
+    @Test
+    void authenticatedCurrentRound_hasPreSeasonRegistration_falseWhenAtRoundNumberNonZero() {
+        Season season = createSeason(20);
+        Round round = createRound(5, false, false);
+        SeasonPrediction prediction = SeasonPrediction.builder()
+                .id(UUID.randomUUID())
+                .userId(userId)
+                .seasonId(seasonId)
+                .currentRankings(baselineRankings)
+                .atRoundNumber(3)
+                .build();
+
+        stubActiveSeason(season);
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(matchRepo.findBySeasonAndRound(seasonId, 5)).thenReturn(Map.of());
+        when(seasonPredictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
+        when(standingsRepo.findBySeasonAndRoundPosition(seasonId, 5)).thenReturn(Optional.empty());
+
+        var query = GetUserPredictionQuery.forAuthenticatedUser(userId, seasonId, true, null);
+        Either<?, UserPredictionViewData> result = useCase.execute(query);
+
+        assertTrue(result.isRight());
+        assertFalse(result.get().hasPreSeasonRegistration());
+    }
+
     // ── Historical round (genuinely past) ──────────────────────────────────
 
     @Test

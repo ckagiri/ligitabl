@@ -318,7 +318,10 @@ public class UserPredictionsController {
         // Season phase state — used for off-season/pre-season UI branches
         model.addAttribute("isPreSeason", season.isPreSeason());
         model.addAttribute("isOffSeason", season.isOffSeason());
-        model.addAttribute("isPredictionsOpen", season.isPredictionsOpen());
+        model.addAttribute("isInPlay", season.isInPlay());
+        model.addAttribute("isInactive", season.isInactive());
+        model.addAttribute(
+                "seasonAllowsUpdate", season.isInPlay() || (season.isPreSeason() && !data.hasPreSeasonRegistration()));
         if (season.getPreSeasonOpensAt() != null && !season.isPreSeasonOpen()) {
             long days = ChronoUnit.DAYS.between(OffsetDateTime.now(), season.getPreSeasonOpensAt());
             model.addAttribute("daysToPreSeason", Math.max(0, days));

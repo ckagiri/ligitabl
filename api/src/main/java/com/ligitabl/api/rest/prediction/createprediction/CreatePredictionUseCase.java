@@ -114,7 +114,7 @@ public class CreatePredictionUseCase {
     private Either<CreatePredictionError, JoinPlan> resolveExistingPrediction(
             Season season, SeasonPrediction existing) {
         boolean isPreSeasonRegistrationRow = existing.getAtRoundNumber() == ROUND_ZERO;
-        boolean predictionsNowOpen = season.isPredictionsOpen();
+        boolean predictionsNowOpen = season.isInPlay();
 
         if (isPreSeasonRegistrationRow && predictionsNowOpen) {
             return Either.right(new JoinPlan.MergePreSeasonRegistration(existing));

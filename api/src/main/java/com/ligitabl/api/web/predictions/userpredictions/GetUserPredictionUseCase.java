@@ -237,6 +237,7 @@ public class GetUserPredictionUseCase {
                 .roundState(rc.roundState())
                 .roundSwapHistory(swapsForRound(seasonPrediction, rc.viewingRound()))
                 .isGuest(false)
+                .hasPreSeasonRegistration(seasonPrediction.isPreSeasonRegistration())
                 .build();
     }
 

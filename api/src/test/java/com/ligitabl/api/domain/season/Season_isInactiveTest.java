@@ -14,44 +14,41 @@ import org.junit.jupiter.params.provider.MethodSource;
 import com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate;
 import com.ligitabl.model.domain.Season;
 
-class Season_isPreSeasonTest {
+class Season_isInactiveTest {
 
     @ParameterizedTest(name = "completed={0}, preSeasonOpensAt={1}, predictionsOpenAt={2} -> {3}")
     @MethodSource("truthTable")
-    void isPreSeason(
+    void isInactive(
             boolean completed, RelativeDate preSeasonOpensAt, RelativeDate predictionsOpenAt, boolean expected) {
         Season season = SeasonTestFixtures.season(completed, preSeasonOpensAt.resolve(), predictionsOpenAt.resolve());
-        assertThat(season.isPreSeason()).isEqualTo(expected);
+        assertThat(season.isInactive()).isEqualTo(expected);
     }
 
     private static Stream<Arguments> truthTable() {
         return Stream.of(
-                // preSeasonOpensAt null or future: isPreSeasonOpen() is false, so isPreSeason() is
-                // false regardless of completed/predictionsOpenAt
+                // Only reachable when: not completed (rules out OFF_SEASON), predictionsOpenAt in
+                // the future (rules out IN_PLAY), and preSeasonOpensAt null/future (rules out
+                // PRE_SEASON, since that requires preSeasonOpensAt already in the past) — an active
+                // season promoted before its own pre-season window has been configured/opened.
+                Arguments.of(false, NULL, FUTURE, true),
+                Arguments.of(false, FUTURE, FUTURE, true),
+
+                // Every other combination is claimed by one of the other three phases.
                 Arguments.of(false, NULL, NULL, false),
-                Arguments.of(false, NULL, FUTURE, false),
                 Arguments.of(false, NULL, PAST, false),
                 Arguments.of(true, NULL, NULL, false),
                 Arguments.of(true, NULL, FUTURE, false),
                 Arguments.of(true, NULL, PAST, false),
                 Arguments.of(false, FUTURE, NULL, false),
-                Arguments.of(false, FUTURE, FUTURE, false),
                 Arguments.of(false, FUTURE, PAST, false),
                 Arguments.of(true, FUTURE, NULL, false),
                 Arguments.of(true, FUTURE, FUTURE, false),
                 Arguments.of(true, FUTURE, PAST, false),
-
-                // preSeasonOpensAt past: isPreSeasonOpen() is true, and isOffSeason() is false
-                // (preSeasonOpensAt has already passed, regardless of completed) — so, when not
-                // completed, isPreSeason() depends only on whether predictions have opened yet
-                Arguments.of(false, PAST, NULL, false), // isInPlay(): null defaults to open
-                Arguments.of(false, PAST, PAST, false), // isInPlay(): already open
-                Arguments.of(false, PAST, FUTURE, true), // isInPlay(): not yet open
-
-                // completed: isInPlay() is unconditionally false, so isPreSeason() is true
-                // regardless of predictionsOpenAt
-                Arguments.of(true, PAST, NULL, true),
-                Arguments.of(true, PAST, PAST, true),
-                Arguments.of(true, PAST, FUTURE, true));
+                Arguments.of(false, PAST, NULL, false),
+                Arguments.of(false, PAST, PAST, false),
+                Arguments.of(false, PAST, FUTURE, false),
+                Arguments.of(true, PAST, NULL, false),
+                Arguments.of(true, PAST, PAST, false),
+                Arguments.of(true, PAST, FUTURE, false));
     }
 }

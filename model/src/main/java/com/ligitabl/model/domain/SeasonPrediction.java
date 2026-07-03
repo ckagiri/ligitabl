@@ -66,4 +66,13 @@ public class SeasonPrediction extends AbstractModel<UUID> {
     public SwapCooldown getSwapCooldown() {
         return new SwapCooldown(lastSwapAt, true, false);
     }
+
+    /**
+     * True for the one-time pre-season registration row (created via the off-season 0-5 swap
+     * window, before predictions officially open) — mirrors the atRoundNumber==0 convention used
+     * by CreatePredictionUseCase's pre-season registration flow.
+     */
+    public boolean isPreSeasonRegistration() {
+        return atRoundNumber == 0;
+    }
 }

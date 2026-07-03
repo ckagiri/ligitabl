@@ -411,7 +411,7 @@ class CreatePredictionUseCaseTest {
     void shouldRegisterPreSeason_whenSeasonIsPreSeason() {
         season.setPredictionsOpenAt(java.time.OffsetDateTime.now().plusDays(30));
         season.setPreSeasonOpensAt(java.time.OffsetDateTime.now().minusDays(1));
-        // isPreSeason() == true: !isOffSeason && !isPredictionsOpen && isPreSeasonOpen
+        // isPreSeason() == true: !isOffSeason && !isInPlay && isPreSeasonOpen
 
         UUID predictionId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
@@ -474,7 +474,7 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void shouldMergePreSeasonRegistration_whenPredictionsNowOpen_updatesInPlace() {
-        // season.predictionsOpenAt is null on the default fixture => isPredictionsOpen()==true => isPreSeason()==false
+        // season.predictionsOpenAt is null on the default fixture => isInPlay()==true => isPreSeason()==false
         UUID existingId = UUID.randomUUID();
         UUID existingEntryId = UUID.randomUUID();
         List<TeamRank> preSeasonRankings = List.of(TeamRank.of("LIV", 1), TeamRank.of("ARS", 2), TeamRank.of("MCI", 3));
@@ -522,7 +522,7 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void shouldReject_whenMergingPreSeasonRegistration_withNullInitialRankings() {
-        // predictions now open (season has null predictionsOpenAt → isPredictionsOpen() == true)
+        // predictions now open (season has null predictionsOpenAt → isInPlay() == true)
         UUID existingId = UUID.randomUUID();
         SeasonPrediction corrupt = SeasonPrediction.builder()
                 .id(existingId)

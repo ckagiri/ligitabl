@@ -28,9 +28,9 @@
                   <span class="text-sm sm:text-base text-gray-600">
                     Gameweek <span th:text="${viewingRound}">19</span>
                   </span>
-                  <!-- State indicators -->
+                  <!-- State indicators (shown only while the season is in play — pre-season/off-season have their own banners below) -->
                   <span
-                    th:if="${isCurrentRound}"
+                    th:if="${isCurrentRound && isInPlay == true}"
                     class="inline-flex items-center gap-1 text-xs sm:text-sm font-medium"
                   >
                     <span th:if="${roundState == 'open'}" class="text-green-600"
@@ -83,14 +83,16 @@
               </div>
             </th:block>
 
-            <!-- Access Mode Banners -->
-            <div
-              th:replace="~{fragments/access-banners :: banners(
-                ${isGuest}, ${canCreateEntry},
-                ${swapStatus}, ${isCurrentRound}, ${roundState},
-                ${totalScore}, ${viewingRound}, ${hasRoundResult},
-                ${currentRound}, ${lastRound}, ${atRoundNumber}, ${seasonCompleted}, ${canSwap})}"
-            ></div>
+            <!-- Access Mode Banners (shown only while the season is in play) -->
+            <th:block th:if="${isInPlay == true}">
+              <div
+                th:replace="~{fragments/access-banners :: banners(
+                  ${isGuest}, ${canCreateEntry},
+                  ${swapStatus}, ${isCurrentRound}, ${roundState},
+                  ${totalScore}, ${viewingRound}, ${hasRoundResult},
+                  ${currentRound}, ${lastRound}, ${atRoundNumber}, ${seasonCompleted}, ${canSwap})}"
+              ></div>
+            </th:block>
 
             <!-- Pre-season / Off-season countdowns -->
             <th:block th:if="${isPreSeason == true}">
@@ -146,7 +148,7 @@ isGuest=[[${isGuest}]]
 swapStatus.firstSwapBonus=[[${swapStatus != null ? swapStatus.firstSwapBonus : null}]]
 firstSwap.defaultMsg=[[${roundState != 'locked' || atRoundNumber == null || atRoundNumber == currentRound}]]
 firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRoundNumber > currentRound}]]
-isPreSeason=[[${isPreSeason}]] isOffSeason=[[${isOffSeason}]] isPredictionsOpen=[[${isPredictionsOpen}]] daysToPredictions=[[${daysToPredictions}]] daysToPreSeason=[[${daysToPreSeason}]]</pre
+isPreSeason=[[${isPreSeason}]] isOffSeason=[[${isOffSeason}]] isInPlay=[[${isInPlay}]] isInactive=[[${isInactive}]] seasonAllowsUpdate=[[${seasonAllowsUpdate}]] daysToPredictions=[[${daysToPredictions}]] daysToPreSeason=[[${daysToPreSeason}]]</pre
                 >
               </div>
             </div>
@@ -284,7 +286,7 @@ isPreSeason=[[${isPreSeason}]] isOffSeason=[[${isOffSeason}]] isPredictionsOpen=
             th:attr="data-predictions=${predictionsJson},
                     data-round-open=${roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound)},
                     data-is-last-round=${currentRound == lastRound},
-                    data-can-swap=${(canSwap || isOpeningRound == true) && isHistoricalView == false && seasonInSetupMode == false && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
+                    data-can-swap=${(canSwap || isOpeningRound == true) && isHistoricalView == false && seasonInSetupMode == false && seasonAllowsUpdate && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
                     data-can-interact=${canInteract && isHistoricalView == false && seasonInSetupMode == false && (!isFinalRound || isFinalRoundOpen)},
                     data-is-initial-prediction=${canCreateEntry && seasonInSetupMode == false && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
                     data-is-opening-round=${isOpeningRound == true},
