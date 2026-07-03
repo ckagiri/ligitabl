@@ -388,6 +388,26 @@ class CreatePredictionUseCaseTest {
     }
 
     @Test
+    void shouldReject_whenLastRoundAdvanced() {
+        round.setPosition(3);
+        round.setFinalized(true);
+        round.setAdvanced(true);
+        season.setMaxRounds(3);
+
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
+        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
+
+        Either<CreatePredictionError, CreatePredictionResult> result =
+                useCase.execute(userId, singleSwap("LIV", "ARS"));
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(CreatePredictionError.Ended.class, result.getLeft());
+        verify(matchRepo, never()).findByRoundId(any());
+    }
+
+    @Test
     void shouldRegisterPreSeason_whenSeasonIsPreSeason() {
         season.setPredictionsOpenAt(java.time.OffsetDateTime.now().plusDays(30));
         season.setPreSeasonOpensAt(java.time.OffsetDateTime.now().minusDays(1));
