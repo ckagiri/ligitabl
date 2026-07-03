@@ -100,9 +100,11 @@ public class Season extends AbstractModel<UUID> {
     /**
      * On the upcoming (active) season: are predictions and swaps open for in-season play?
      * Null predictionsOpenAt defaults to open — covers seasons created before this field existed.
+     * A completed season is never "predictions open" — this makes isOffSeason() and
+     * isPredictionsOpen() mutually exclusive.
      */
     public boolean isPredictionsOpen() {
-        return predictionsOpenAt == null || OffsetDateTime.now().isAfter(predictionsOpenAt);
+        return !completed && (predictionsOpenAt == null || OffsetDateTime.now().isAfter(predictionsOpenAt));
     }
 
     /** On the active season (post-switch): true during the pre-season registration window. */
@@ -117,9 +119,8 @@ public class Season extends AbstractModel<UUID> {
      * A null preSeasonOpensAt still counts as off-season — a completed legacy season with no
      * pre-season config was never "pre-season open".
      *
-     * <p>Note: it is valid (and expected, for backward compatibility with seasons lacking
-     * preSeasonOpensAt) for isOffSeason() and isPredictionsOpen() to both be true simultaneously.
-     * No mutual-exclusion guard is added between them by design.
+     * <p>isOffSeason() and isPredictionsOpen() can never both be true — isOffSeason() requires
+     * completed, isPredictionsOpen() requires !completed.
      */
     public boolean isOffSeason() {
         return completed && (preSeasonOpensAt == null || OffsetDateTime.now().isBefore(preSeasonOpensAt));
