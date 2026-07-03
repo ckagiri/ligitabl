@@ -312,6 +312,44 @@ class GetUserPredictionUseCaseTest {
         assertTrue(result.isLeft());
     }
 
+    // ── seasonCompleted derivation (F2): from round state, not Season.completed ────
+
+    @Test
+    void seasonCompleted_trueWhenLastRoundAdvanced_regardlessOfSeasonCompletedFlag() {
+        Season season = createSeason(5);
+        season.setCompleted(false); // admin hasn't completed the season — irrelevant to the new derivation
+        Round round = createRound(5, true, true); // finalized + advanced, last round
+
+        stubActiveSeason(season);
+        stubSeasonBaseline(season);
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(matchRepo.findBySeasonAndRound(seasonId, 5)).thenReturn(Map.of());
+
+        var query = GetUserPredictionQuery.forGuest(seasonId, null);
+        Either<?, UserPredictionViewData> result = useCase.execute(query);
+
+        assertTrue(result.isRight());
+        assertTrue(result.get().seasonCompleted());
+    }
+
+    @Test
+    void seasonCompleted_falseWhenCurrentRoundNotAdvanced_evenIfSeasonCompletedFlagIsTrue() {
+        Season season = createSeason(20);
+        season.setCompleted(true); // stale/admin-set flag — no longer authoritative
+        Round round = createRound(5, false, false); // not the last round, not advanced
+
+        stubActiveSeason(season);
+        stubSeasonBaseline(season);
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(matchRepo.findBySeasonAndRound(seasonId, 5)).thenReturn(Map.of());
+
+        var query = GetUserPredictionQuery.forGuest(seasonId, null);
+        Either<?, UserPredictionViewData> result = useCase.execute(query);
+
+        assertTrue(result.isRight());
+        assertFalse(result.get().seasonCompleted());
+    }
+
     // ── resolveRoundStatus: advanced takes precedence over finalized ───────
 
     @Test

@@ -53,8 +53,8 @@
           to join future competitions.
         </p>
 
-        <!-- Current round + finalized (season completed) -->
-        <p th:if="${isCurrentRound == true && roundState == 'finalized' && seasonCompleted == true}"
+        <!-- Current round + season completed -->
+        <p th:if="${isCurrentRound == true && seasonCompleted == true}"
           class="text-sm text-yellow-700 mt-1">
           This season has completed. You can browse the results.
           <a th:href="@{/auth/register}" class="underline font-medium hover:text-yellow-900">Sign up</a>

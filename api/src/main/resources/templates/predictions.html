@@ -42,12 +42,12 @@
                       >🔒 Locked</span
                     >
                     <span
-                      th:if="${roundState == 'finalized' && (seasonCompleted == false || seasonCompleted == null)}"
+                      th:if="${roundState == 'finalized'}"
                       class="text-orange-600"
                       >⏳ Finalizing</span
                     >
                     <span
-                      th:if="${roundState == 'finalized' && seasonCompleted == true}"
+                      th:if="${roundState == 'advanced' && currentRound == lastRound}"
                       class="text-blue-600"
                       >📊 Finalized</span
                     >

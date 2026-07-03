@@ -74,11 +74,15 @@ public class GetUserPredictionUseCase {
         boolean isCurrentRound = viewingRound == currentRound;
         Round viewingRoundEntity =
                 isCurrentRound ? currentRoundEntity : getRoundByPosition(season.getId(), viewingRound);
-        boolean seasonCompleted = season.isCompleted();
 
         Map<String, List<Match>> currentRoundMatches = getMatches(season.getId(), currentRound);
         RoundStatus currentRoundStatus = resolveRoundStatus(currentRoundEntity, currentRoundMatches);
         String roundState = isCurrentRound ? currentRoundStatus.name() : resolveRoundState(viewingRoundEntity);
+
+        // The season completion flag is no longer an automatic side effect of the last round
+        // advancing (RoundAdvancementService leaves season.completed for an admin to set
+        // explicitly) — derive the UI-facing "season is done" signal from round state instead.
+        boolean seasonCompleted = currentRoundStatus == RoundStatus.ADVANCED && currentRound == lastRound;
 
         RequestContext rc = new RequestContext(
                 currentRound,
