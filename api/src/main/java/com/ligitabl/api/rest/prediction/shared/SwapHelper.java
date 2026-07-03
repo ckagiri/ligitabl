@@ -49,7 +49,19 @@ public class SwapHelper {
         return roundRepo
                 .findById(season.getCurrentRoundId())
                 .map(Either::<SwapError, Round>right)
-                .orElseGet(() -> Either.left(new SwapError.RoundNotOpen(RoundStatus.UNKNOWN.name())));
+                .orElseGet(() -> Either.left(new SwapError.RoundNotOpen(RoundStatus.UNKNOWN.name())))
+                .flatMap(round -> isLastRoundClosed(round, season)
+                        ? Either.left(new SwapError.RoundNotOpen(
+                                resolveClosedStatus(round).name()))
+                        : Either.right(round));
+    }
+
+    private boolean isLastRoundClosed(Round round, Season season) {
+        return round.getPosition() == season.getMaxRounds() && (round.isFinalized() || round.isAdvanced());
+    }
+
+    private RoundStatus resolveClosedStatus(Round round) {
+        return round.isAdvanced() ? RoundStatus.ADVANCED : RoundStatus.FINALIZED;
     }
 
     public Either<SwapError, SeasonPrediction> getPrediction(UUID userId, UUID seasonId) {

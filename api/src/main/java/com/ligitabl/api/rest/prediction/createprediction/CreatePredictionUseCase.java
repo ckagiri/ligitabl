@@ -114,7 +114,7 @@ public class CreatePredictionUseCase {
     private Either<CreatePredictionError, JoinPlan> resolveExistingPrediction(
             Season season, SeasonPrediction existing) {
         boolean isPreSeasonRegistrationRow = existing.getAtRoundNumber() == ROUND_ZERO;
-        boolean predictionsNowOpen = !season.isPreSeason();
+        boolean predictionsNowOpen = season.isInPlay();
 
         if (isPreSeasonRegistrationRow && predictionsNowOpen) {
             return Either.right(new JoinPlan.MergePreSeasonRegistration(existing));
@@ -183,7 +183,9 @@ public class CreatePredictionUseCase {
 
         RoundStatus roundStatus;
         if (currentRound.isFinalized()) {
-            roundStatus = RoundStatus.COMPLETED;
+            roundStatus = RoundStatus.FINALIZED;
+        } else if (currentRound.isAdvanced()) {
+            roundStatus = RoundStatus.ADVANCED;
         } else {
             var matches = matchRepo.findByRoundId(currentRound.getId());
             roundStatus =

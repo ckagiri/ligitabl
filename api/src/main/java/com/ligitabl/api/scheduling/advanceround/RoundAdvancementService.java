@@ -202,19 +202,17 @@ public class RoundAdvancementService {
     private void advanceToNextRound(Season season, Round currentRound) {
         int currentPosition = currentRound.getPosition();
 
-        if (currentPosition >= season.getMaxRounds()) {
-            if (!season.isCompleted()) {
-                season.setCompleted(true);
-                season.setCompletedAt(now());
-                seasonRepo.save(season);
-                log.info("Season completed: seasonId={}", season.getId());
-            }
-            return;
-        }
-
         currentRound.setAdvanced(true);
         currentRound.setAdvancedAt(now());
         roundRepo.save(currentRound);
+
+        if (currentPosition >= season.getMaxRounds()) {
+            log.info(
+                    "Last round advanced: seasonId={}, roundPosition={}. Season completion is a separate admin action.",
+                    season.getId(),
+                    currentPosition);
+            return;
+        }
 
         var nextRound = roundRepo
                 .findBySeasonIdAndPosition(season.getId(), currentPosition + 1)

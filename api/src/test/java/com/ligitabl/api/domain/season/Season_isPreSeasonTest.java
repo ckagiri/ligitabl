@@ -1,56 +1,57 @@
 package com.ligitabl.api.domain.season;
 
+import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.FUTURE;
+import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.NULL;
+import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.PAST;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.OffsetDateTime;
+import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate;
 import com.ligitabl.model.domain.Season;
 
 class Season_isPreSeasonTest {
 
-    @Test
-    void completedTrue_alwaysFalse_regardlessOfPredictionsOpenAt() {
-        Season season = buildSeason(true, null);
-        assertThat(season.isPreSeason()).isFalse();
-
-        Season seasonWithFuture = buildSeason(true, OffsetDateTime.now().plusDays(1));
-        assertThat(seasonWithFuture.isPreSeason()).isFalse();
-
-        Season seasonWithPast = buildSeason(true, OffsetDateTime.now().minusDays(1));
-        assertThat(seasonWithPast.isPreSeason()).isFalse();
+    @ParameterizedTest(name = "completed={0}, preSeasonOpensAt={1}, predictionsOpenAt={2} -> {3}")
+    @MethodSource("truthTable")
+    void isPreSeason(
+            boolean completed, RelativeDate preSeasonOpensAt, RelativeDate predictionsOpenAt, boolean expected) {
+        Season season = SeasonTestFixtures.season(completed, preSeasonOpensAt.resolve(), predictionsOpenAt.resolve());
+        assertThat(season.isPreSeason()).isEqualTo(expected);
     }
 
-    @Test
-    void notCompletedAndNullPredictionsOpenAt_returnsFalse() {
-        // null predictionsOpenAt now defaults to "predictions open" (back-compat), so pre-season is false
-        Season season = buildSeason(false, null);
-        assertThat(season.isPreSeason()).isFalse();
-    }
+    private static Stream<Arguments> truthTable() {
+        return Stream.of(
+                // preSeasonOpensAt null or future: isPreSeasonOpen() is false, so isPreSeason() is
+                // false regardless of completed/predictionsOpenAt
+                Arguments.of(false, NULL, NULL, false),
+                Arguments.of(false, NULL, FUTURE, false),
+                Arguments.of(false, NULL, PAST, false),
+                Arguments.of(true, NULL, NULL, false),
+                Arguments.of(true, NULL, FUTURE, false),
+                Arguments.of(true, NULL, PAST, false),
+                Arguments.of(false, FUTURE, NULL, false),
+                Arguments.of(false, FUTURE, FUTURE, false),
+                Arguments.of(false, FUTURE, PAST, false),
+                Arguments.of(true, FUTURE, NULL, false),
+                Arguments.of(true, FUTURE, FUTURE, false),
+                Arguments.of(true, FUTURE, PAST, false),
 
-    @Test
-    void notCompletedAndPredictionsOpenAtInFuture_returnsTrue() {
-        Season season = buildSeason(false, OffsetDateTime.now().plusDays(1));
-        assertThat(season.isPreSeason()).isTrue();
-    }
+                // preSeasonOpensAt past: isPreSeasonOpen() is true, and isOffSeason() is false
+                // (preSeasonOpensAt has already passed, regardless of completed) — so, when not
+                // completed, isPreSeason() depends only on whether predictions have opened yet
+                Arguments.of(false, PAST, NULL, false), // isInPlay(): null defaults to open
+                Arguments.of(false, PAST, PAST, false), // isInPlay(): already open
+                Arguments.of(false, PAST, FUTURE, true), // isInPlay(): not yet open
 
-    @Test
-    void notCompletedAndPredictionsOpenAtInPast_returnsFalse() {
-        Season season = buildSeason(false, OffsetDateTime.now().minusMinutes(1));
-        assertThat(season.isPreSeason()).isFalse();
-    }
-
-    private Season buildSeason(boolean completed, OffsetDateTime predictionsOpenAt) {
-        return Season.builder()
-                .clientId(1)
-                .competitionId(java.util.UUID.randomUUID())
-                .name("Test Season")
-                .slug(com.ligitabl.model.domain.SeasonSlug.of("2025-26"))
-                .startDate(java.time.LocalDate.now())
-                .endDate(java.time.LocalDate.now().plusMonths(9))
-                .completed(completed)
-                .predictionsOpenAt(predictionsOpenAt)
-                .build();
+                // completed: isInPlay() is unconditionally false, so isPreSeason() is true
+                // regardless of predictionsOpenAt
+                Arguments.of(true, PAST, NULL, true),
+                Arguments.of(true, PAST, PAST, true),
+                Arguments.of(true, PAST, FUTURE, true));
     }
 }

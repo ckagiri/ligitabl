@@ -11,19 +11,9 @@ public enum PredictionAccessMode {
     EDITABLE,
 
     /**
-     * Guest viewing fallback - must login to modify.
+     * Readonly — guest viewing fallback, user on cooldown, or a historical round.
      */
-    READONLY_GUEST,
-
-    /**
-     * User on cooldown - temporarily readonly.
-     */
-    READONLY_COOLDOWN,
-
-    /**
-     * Viewing non-existent user (readonly with error message).
-     */
-    READONLY_USER_NOT_FOUND,
+    READONLY,
 
     /**
      * Authenticated but no entry yet - can submit to join.

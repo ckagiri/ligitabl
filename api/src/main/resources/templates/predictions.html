@@ -28,9 +28,9 @@
                   <span class="text-sm sm:text-base text-gray-600">
                     Gameweek <span th:text="${viewingRound}">19</span>
                   </span>
-                  <!-- State indicators -->
+                  <!-- State indicators (shown only while the season is in play — pre-season/off-season have their own banners below) -->
                   <span
-                    th:if="${isCurrentRound}"
+                    th:if="${isCurrentRound && isInPlay == true}"
                     class="inline-flex items-center gap-1 text-xs sm:text-sm font-medium"
                   >
                     <span th:if="${roundState == 'open'}" class="text-green-600"
@@ -42,12 +42,12 @@
                       >🔒 Locked</span
                     >
                     <span
-                      th:if="${roundState == 'finalized' && (seasonCompleted == false || seasonCompleted == null)}"
+                      th:if="${roundState == 'finalized'}"
                       class="text-orange-600"
                       >⏳ Finalizing</span
                     >
                     <span
-                      th:if="${roundState == 'finalized' && seasonCompleted == true}"
+                      th:if="${roundState == 'advanced' && currentRound == lastRound}"
                       class="text-blue-600"
                       >📊 Finalized</span
                     >
@@ -83,49 +83,93 @@
               </div>
             </th:block>
 
-            <!-- Access Mode Banners -->
-            <div
-              th:replace="~{fragments/access-banners :: banners(
-                ${isGuest}, ${canCreateEntry}, ${isUserNotFound},
-                ${swapStatus}, ${isCurrentRound}, ${roundState},
-                ${totalScore}, ${viewingRound}, ${hasRoundResult},
-                ${currentRound}, ${lastRound}, ${atRoundNumber}, ${seasonCompleted}, ${canSwap})}"
-            ></div>
+            <!-- Access Mode Banners (shown only while the season is in play) -->
+            <th:block th:if="${isInPlay == true}">
+              <div
+                th:replace="~{fragments/access-banners :: banners(
+                  ${isGuest}, ${canCreateEntry},
+                  ${swapStatus}, ${isCurrentRound}, ${roundState},
+                  ${totalScore}, ${viewingRound}, ${hasRoundResult},
+                  ${currentRound}, ${lastRound}, ${atRoundNumber}, ${seasonCompleted}, ${canSwap})}"
+              ></div>
+            </th:block>
 
             <!-- Pre-season / Off-season countdowns -->
             <th:block th:if="${isPreSeason == true}">
               <!-- Registered: predictions not yet open -->
               <th:block th:if="${canCreateEntry == false && atRoundNumber != null && atRoundNumber == 0}">
-                <div class="mt-3 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
-                  You're registered for the new season.
-                  <th:block th:if="${predictionsOpenAt != null}">
-                    Predictions open on <strong th:text="${#temporals.format(predictionsOpenAt, 'dd MMM yyyy')}"></strong>.
-                  </th:block>
-                  <th:block th:if="${daysToPredictions != null}">
-                    (<span th:text="${daysToPredictions}"></span> day<th:block th:if="${daysToPredictions != 1}">s</th:block> to go)
-                  </th:block>
+                <div class="mt-3 rounded-lg bg-green-50 border border-green-200 px-4 py-4">
+                  <div class="flex items-start">
+                    <svg class="h-6 w-6 text-green-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd"
+                        d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                        clip-rule="evenodd" />
+                    </svg>
+                    <div>
+                      <p class="text-sm font-semibold text-green-800">✅ You're Registered!</p>
+                      <p class="text-sm text-green-700 mt-1">
+                        Your table is set for the new season.
+                        <th:block th:if="${predictionsOpenAt != null}">
+                          Predictions open on <strong th:text="${#temporals.format(predictionsOpenAt, 'dd MMM yyyy')}"></strong>.
+                        </th:block>
+                        <th:block th:if="${daysToPredictions != null}">
+                          <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full bg-green-100 text-xs font-medium text-green-800">
+                            <span th:text="${daysToPredictions}"></span> day<th:block th:if="${daysToPredictions != 1}">s</th:block> to go
+                          </span>
+                        </th:block>
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </th:block>
               <!-- Not yet registered: call-to-action -->
               <th:block th:if="${canCreateEntry == true}">
-                <div class="mt-3 rounded-lg bg-indigo-50 border border-indigo-200 px-4 py-3 text-sm text-indigo-800">
-                  Pre-season is open! Set your table and register below.
-                  <th:block th:if="${daysToPredictions != null}">
-                    Predictions open in <strong><span th:text="${daysToPredictions}"></span> day<th:block th:if="${daysToPredictions != 1}">s</th:block></strong>.
-                  </th:block>
+                <div class="mt-3 rounded-lg bg-indigo-50 border border-indigo-200 px-4 py-4">
+                  <div class="flex items-start">
+                    <svg class="h-6 w-6 text-indigo-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd"
+                        d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
+                        clip-rule="evenodd" />
+                    </svg>
+                    <div>
+                      <p class="text-sm font-semibold text-indigo-800">🚀 Pre-Season is Open!</p>
+                      <p class="text-sm text-indigo-700 mt-1">
+                        Set your predicted order and register below — up to 5 swaps, no rush.
+                        <th:block th:if="${daysToPredictions != null}">
+                          <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full bg-indigo-100 text-xs font-medium text-indigo-800">
+                            Predictions open in <span th:text="${daysToPredictions}"></span> day<th:block th:if="${daysToPredictions != 1}">s</th:block>
+                          </span>
+                        </th:block>
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </th:block>
             </th:block>
 
             <!-- Off-season banner (season completed, predictions not yet open for the new season) -->
             <th:block th:if="${isOffSeason == true}">
-              <div class="mt-3 rounded-lg bg-gray-50 border border-gray-200 px-4 py-3 text-sm text-gray-700">
-                <th:block th:if="${daysToPreSeason != null}">
-                  Pre-season opens in <strong><span th:text="${daysToPreSeason}"></span> day<th:block th:if="${daysToPreSeason != 1}">s</th:block></strong>.
-                </th:block>
-                <th:block th:if="${daysToPreSeason == null}">
-                  Off-season. Pre-season dates haven't been announced yet.
-                </th:block>
+              <div class="mt-3 rounded-lg bg-slate-50 border border-slate-200 px-4 py-4">
+                <div class="flex items-start">
+                  <svg class="h-6 w-6 text-slate-500 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                  </svg>
+                  <div>
+                    <p class="text-sm font-semibold text-slate-700">🌙 Off-Season</p>
+                    <th:block th:if="${daysToPreSeason != null}">
+                      <p class="text-sm text-slate-600 mt-1">
+                        Pre-season opens in
+                        <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-200 text-xs font-medium text-slate-700">
+                          <span th:text="${daysToPreSeason}"></span> day<th:block th:if="${daysToPreSeason != 1}">s</th:block>
+                        </span>
+                      </p>
+                    </th:block>
+                    <th:block th:if="${daysToPreSeason == null}">
+                      <p class="text-sm text-slate-600 mt-1">Pre-season dates haven't been announced yet — check back soon.</p>
+                    </th:block>
+                  </div>
+                </div>
               </div>
             </th:block>
 
@@ -142,19 +186,20 @@ roundState=[[${roundState}]]
 isCurrentRound=[[${isCurrentRound}]] viewingRound=[[${viewingRound}]] currentRound=[[${currentRound}]] lastRound=[[${lastRound}]]
 atRoundNumber=[[${atRoundNumber}]] seasonCompleted=[[${seasonCompleted}]] hasRoundResult=[[${hasRoundResult}]]
 accessMode=[[${accessMode}]] canCreateEntry=[[${canCreateEntry}]] canSwap=[[${canSwap}]]
-isGuest=[[${isGuest}]] isUserNotFound=[[${isUserNotFound}]]
+isGuest=[[${isGuest}]]
 swapStatus.firstSwapBonus=[[${swapStatus != null ? swapStatus.firstSwapBonus : null}]]
 firstSwap.defaultMsg=[[${roundState != 'locked' || atRoundNumber == null || atRoundNumber == currentRound}]]
 firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRoundNumber > currentRound}]]
-isPreSeason=[[${isPreSeason}]] isOffSeason=[[${isOffSeason}]] isPredictionsOpen=[[${isPredictionsOpen}]] daysToPredictions=[[${daysToPredictions}]] daysToPreSeason=[[${daysToPreSeason}]]</pre
+isPreSeason=[[${isPreSeason}]] isOffSeason=[[${isOffSeason}]] isInPlay=[[${isInPlay}]] isInactive=[[${isInactive}]] seasonAllowsUpdate=[[${seasonAllowsUpdate}]] daysToPredictions=[[${daysToPredictions}]] daysToPreSeason=[[${daysToPreSeason}]]</pre
                 >
               </div>
             </div>
 
             <!-- Round Navigation (only for authenticated users, non-error states) -->
             <div
-              th:if="${(isGuest == false || isGuest == null) && (isUserNotFound == false || isUserNotFound == null)}"
+              th:if="${isGuest == false || isGuest == null}"
               th:with="minRoundForNav=${canCreateEntry == true ? currentRound : (atRoundNumber != null && atRoundNumber > 0 && atRoundNumber <= currentRound ? atRoundNumber : currentRound)}"
+              class="mt-4"
             >
               <div
                 th:replace="~{fragments/round-navigation :: round-nav(
@@ -284,7 +329,7 @@ isPreSeason=[[${isPreSeason}]] isOffSeason=[[${isOffSeason}]] isPredictionsOpen=
             th:attr="data-predictions=${predictionsJson},
                     data-round-open=${roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound)},
                     data-is-last-round=${currentRound == lastRound},
-                    data-can-swap=${(canSwap || isOpeningRound == true) && isHistoricalView == false && seasonInSetupMode == false && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
+                    data-can-swap=${(canSwap || isOpeningRound == true) && isHistoricalView == false && seasonInSetupMode == false && seasonAllowsUpdate && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
                     data-can-interact=${canInteract && isHistoricalView == false && seasonInSetupMode == false && (!isFinalRound || isFinalRoundOpen)},
                     data-is-initial-prediction=${canCreateEntry && seasonInSetupMode == false && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))},
                     data-is-opening-round=${isOpeningRound == true},
@@ -304,7 +349,7 @@ isPreSeason=[[${isPreSeason}]] isOffSeason=[[${isOffSeason}]] isPredictionsOpen=
 
             <!-- Comparison Options (only for current editable round, not historical views) -->
             <th:block
-              th:if="${isHistoricalView == false && (isUserNotFound == false || isUserNotFound == null) && (roundState == 'open' || roundState == 'locked' || roundState == 'finalized')}"
+              th:if="${isHistoricalView == false && (roundState == 'open' || roundState == 'locked' || roundState == 'finalized')}"
             >
               <!-- Skeleton: visible before Alpine, removed once Alpine initialises -->
               <div x-skeleton class="px-6 pt-4 pb-2">

@@ -355,8 +355,11 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         assertThat(standingsRepo.findBySeasonAndRoundPosition(seasonId, 2)).isPresent();
         assertThat(standingsRepo.findBySeasonAndRoundPosition(seasonId, 3)).isPresent();
 
+        // RoundAdvancementService no longer auto-completes the season on the last round advancing
+        // (that's now a separate, explicit admin action) — it just marks the round advanced.
+        assertThat(roundRepo.findById(round3.getId()).orElseThrow().isAdvanced()).isTrue();
         var season = seasonRepo.findById(seasonId).orElseThrow();
-        assertThat(season.isCompleted()).isTrue();
+        assertThat(season.isCompleted()).isFalse();
     }
 
     @Test

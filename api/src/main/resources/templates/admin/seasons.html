@@ -32,10 +32,10 @@
                     <th:block th:if="${activeSeason.completed == true}">
                       <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">Completed</span>
                     </th:block>
-                    <th:block th:if="${activeSeason.completed == false and activeSeason.isPredictionsOpen() == true}">
+                    <th:block th:if="${activeSeason.completed == false and activeSeason.isInPlay() == true}">
                       <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">Predictions Open</span>
                     </th:block>
-                    <th:block th:if="${activeSeason.completed == false and activeSeason.isPredictionsOpen() == false}">
+                    <th:block th:if="${activeSeason.completed == false and activeSeason.isInPlay() == false}">
                       <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">Pre-season</span>
                     </th:block>
                   </dd>
@@ -58,7 +58,7 @@
                   <dd class="mt-1 text-sm text-gray-700">
                     <span th:if="${activeSeason.predictionsOpenAt != null}" th:text="${activeSeason.predictionsOpenAt}"></span>
                     <span th:if="${activeSeason.predictionsOpenAt == null}" class="text-gray-400">Not set (open by default)</span>
-                    <span th:if="${activeSeason.predictionsOpenAt != null and activeSeason.isPredictionsOpen() == true}" class="ml-2 text-xs text-green-600">(opened)</span>
+                    <span th:if="${activeSeason.predictionsOpenAt != null and activeSeason.isInPlay() == true}" class="ml-2 text-xs text-green-600">(opened)</span>
                   </dd>
                 </div>
                 <div>

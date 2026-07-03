@@ -1,66 +1,67 @@
 package com.ligitabl.api.domain.season;
 
+import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.FUTURE;
+import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.NULL;
+import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.PAST;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
+import com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate;
 import com.ligitabl.model.domain.Season;
 
 class Season_isOffSeasonTest {
 
-    @Test
-    void notCompleted_alwaysFalse_regardlessOfPredictionsOpenAt() {
-        assertThat(buildSeason(false, null).isOffSeason()).isFalse();
-        assertThat(buildSeason(false, OffsetDateTime.now().plusDays(1)).isOffSeason())
-                .isFalse();
-        assertThat(buildSeason(false, OffsetDateTime.now().minusDays(1)).isOffSeason())
-                .isFalse();
+    @ParameterizedTest(name = "completed={0}, preSeasonOpensAt={1} -> {2}")
+    @MethodSource("truthTable")
+    void isOffSeason(boolean completed, RelativeDate preSeasonOpensAt, boolean expected) {
+        Season season = SeasonTestFixtures.season(completed, preSeasonOpensAt.resolve(), null);
+        assertThat(season.isOffSeason()).isEqualTo(expected);
     }
 
-    @Test
-    void completedAndNullPredictionsOpenAt_returnsTrue() {
-        // A finished legacy season with no pre-season config was never "predictions open" —
-        // unlike isPredictionsOpen(), null here must NOT default to open.
-        Season season = buildSeason(true, null);
-        assertThat(season.isOffSeason()).isTrue();
+    private static Stream<Arguments> truthTable() {
+        return Stream.of(
+                // not completed: never off-season, regardless of preSeasonOpensAt
+                Arguments.of(false, NULL, false),
+                Arguments.of(false, FUTURE, false),
+                Arguments.of(false, PAST, false),
+                // completed: off-season until preSeasonOpensAt passes — a null preSeasonOpensAt
+                // never counts as "opened"
+                Arguments.of(true, NULL, true),
+                Arguments.of(true, FUTURE, true),
+                Arguments.of(true, PAST, false));
     }
 
-    @Test
-    void completedAndPredictionsOpenAtInFuture_returnsTrue() {
-        Season season = buildSeason(true, OffsetDateTime.now().plusDays(1));
-        assertThat(season.isOffSeason()).isTrue();
+    @ParameterizedTest(name = "completed={0}, preSeasonOpensAt={1}, predictionsOpenAt={2}")
+    @MethodSource("allInputCombinations")
+    void neverOverlapsWithIsPreSeason(
+            boolean completed, RelativeDate preSeasonOpensAt, RelativeDate predictionsOpenAt) {
+        Season season = SeasonTestFixtures.season(completed, preSeasonOpensAt.resolve(), predictionsOpenAt.resolve());
+        assertThat(season.isOffSeason() && season.isPreSeason()).isFalse();
     }
 
-    @Test
-    void completedAndPredictionsOpenAtInPast_returnsFalse() {
-        Season season = buildSeason(true, OffsetDateTime.now().minusMinutes(1));
-        assertThat(season.isOffSeason()).isFalse();
+    @ParameterizedTest(name = "completed={0}, preSeasonOpensAt={1}, predictionsOpenAt={2}")
+    @MethodSource("allInputCombinations")
+    void neverOverlapsWithIsInPlay(boolean completed, RelativeDate preSeasonOpensAt, RelativeDate predictionsOpenAt) {
+        Season season = SeasonTestFixtures.season(completed, preSeasonOpensAt.resolve(), predictionsOpenAt.resolve());
+        assertThat(season.isOffSeason() && season.isInPlay()).isFalse();
     }
 
-    @Test
-    void isOffSeasonAndIsPreSeason_neverBothTrue() {
+    private static Stream<Arguments> allInputCombinations() {
+        List<Arguments> combinations = new ArrayList<>();
         for (boolean completed : new boolean[] {true, false}) {
-            for (OffsetDateTime predictionsOpenAt : new OffsetDateTime[] {
-                null, OffsetDateTime.now().plusDays(1), OffsetDateTime.now().minusDays(1)
-            }) {
-                Season season = buildSeason(completed, predictionsOpenAt);
-                assertThat(season.isOffSeason() && season.isPreSeason()).isFalse();
+            for (RelativeDate preSeasonOpensAt : RelativeDate.values()) {
+                for (RelativeDate predictionsOpenAt : RelativeDate.values()) {
+                    combinations.add(Arguments.of(completed, preSeasonOpensAt, predictionsOpenAt));
+                }
             }
         }
-    }
-
-    private Season buildSeason(boolean completed, OffsetDateTime predictionsOpenAt) {
-        return Season.builder()
-                .clientId(1)
-                .competitionId(java.util.UUID.randomUUID())
-                .name("Test Season")
-                .slug(com.ligitabl.model.domain.SeasonSlug.of("2025-26"))
-                .startDate(java.time.LocalDate.now())
-                .endDate(java.time.LocalDate.now().plusMonths(9))
-                .completed(completed)
-                .predictionsOpenAt(predictionsOpenAt)
-                .build();
+        return combinations.stream();
     }
 }

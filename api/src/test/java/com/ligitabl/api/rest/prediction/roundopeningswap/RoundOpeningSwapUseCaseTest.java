@@ -200,6 +200,39 @@ class RoundOpeningSwapUseCaseTest {
         verify(predictionRepo, never()).save(any());
     }
 
+    @Test
+    void shouldReject_whenLastRoundFinalized() {
+        season.setMaxRounds(5);
+        round.setFinalized(true);
+
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
+
+        var command = new RoundOpeningSwapCommand(List.of(new SwapCommand("ARS", "LIV")));
+        var result = useCase.execute(userId, command);
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(SwapError.RoundNotOpen.class, result.getLeft());
+        verify(predictionRepo, never()).save(any());
+    }
+
+    @Test
+    void shouldReject_whenLastRoundAdvanced() {
+        season.setMaxRounds(5);
+        round.setFinalized(true);
+        round.setAdvanced(true);
+
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
+
+        var command = new RoundOpeningSwapCommand(List.of(new SwapCommand("ARS", "LIV")));
+        var result = useCase.execute(userId, command);
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(SwapError.RoundNotOpen.class, result.getLeft());
+        verify(predictionRepo, never()).save(any());
+    }
+
     // ── Guard: opening window ─────────────────────────────────────────────────
 
     @Test

@@ -12,12 +12,15 @@ import com.ligitabl.model.domain.SwapChange;
 import com.ligitabl.model.domain.SwapCooldown;
 import com.ligitabl.model.domain.TeamRank;
 
+import lombok.Builder;
+
 /**
  * Complete view data returned by this use case.
  *
  * <p>Contains all information needed by the template to render the prediction view,
  * including access mode for UI control rendering.</p>
  */
+@Builder
 public record UserPredictionViewData(
         List<TeamRank> rankings,
         RankingSource source,
@@ -37,7 +40,9 @@ public record UserPredictionViewData(
         List<SwapChange> roundSwapHistory, // Swaps made in the viewed round; null for guests/other users
         Integer seasonBestScore, // Best single-GW score in the season up to viewingRound
         Integer sprintBestScore, // Best single-GW score in viewingRound's sprint up to viewingRound
-        String sprintLabel // e.g. "Sprint 5"
+        String sprintLabel, // e.g. "Sprint 5"
+        boolean isGuest, // Set from UserContext.isGuest() — not derivable from accessMode alone
+        boolean hasPreSeasonRegistration // SeasonPrediction.isPreSeasonRegistration() for the owning prediction
         ) {
     public UserPredictionViewData {
         Objects.requireNonNull(rankings, "rankings are required");
@@ -86,19 +91,5 @@ public record UserPredictionViewData(
      */
     public boolean isReadonly() {
         return accessMode.isReadonly();
-    }
-
-    /**
-     * Check if this is a guest user.
-     */
-    public boolean isGuest() {
-        return accessMode == PredictionAccessMode.READONLY_GUEST;
-    }
-
-    /**
-     * Check if target user was not found.
-     */
-    public boolean isUserNotFound() {
-        return accessMode == PredictionAccessMode.READONLY_USER_NOT_FOUND;
     }
 }

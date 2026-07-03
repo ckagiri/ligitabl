@@ -160,6 +160,43 @@ class MakeSwapUseCaseTest {
     }
 
     @Test
+    void shouldRejectSwap_whenLastRoundFinalized() {
+        season.setMaxRounds(10);
+        round = createRound(true, 10);
+        season.setCurrentRoundId(round.getId());
+        SwapCommand command = new SwapCommand("ARS", "LIV");
+
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
+
+        Either<SwapError, SwapResult> result = useCase.execute(userId, command);
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(SwapError.RoundNotOpen.class, result.getLeft());
+        verify(predictionRepo, never()).save(any());
+    }
+
+    @Test
+    void shouldRejectSwap_whenLastRoundAdvanced() {
+        season.setMaxRounds(10);
+        round = createRound(true, 10);
+        round.setAdvanced(true);
+        season.setCurrentRoundId(round.getId());
+        SwapCommand command = new SwapCommand("ARS", "LIV");
+
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
+
+        Either<SwapError, SwapResult> result = useCase.execute(userId, command);
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(SwapError.RoundNotOpen.class, result.getLeft());
+        verify(predictionRepo, never()).save(any());
+    }
+
+    @Test
     void shouldValidateNextRound_whenPredictionAlreadyOnNextRound() {
         SwapCommand command = new SwapCommand("ARS", "LIV");
         Round nextRound = Round.builder()

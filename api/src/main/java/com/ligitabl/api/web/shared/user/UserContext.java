@@ -7,18 +7,17 @@ import java.util.UUID;
  * Represents the context of a user viewing predictions.
  * Encapsulates user resolution logic and state.
  */
-public record UserContext(UUID userId, UserType userType, boolean hasContestEntry) {
+public record UserContext(UUID userId, UserType userType, boolean hasMainContestEntry) {
     /**
      * Types of users in the prediction context.
      */
     public enum UserType {
         AUTHENTICATED, // Logged-in user viewing own predictions
-        GUEST, // Not logged in
-        USER_NOT_FOUND // Target user doesn't exist
+        GUEST // Not logged in
     }
 
     public UserContext {
-        // userId can be null for GUEST and USER_NOT_FOUND
+        // userId can be null for GUEST
         Objects.requireNonNull(userType, "userType is required");
     }
 
@@ -31,13 +30,6 @@ public record UserContext(UUID userId, UserType userType, boolean hasContestEntr
     }
 
     /**
-     * Check if the target user was not found.
-     */
-    public boolean isUserNotFound() {
-        return userType == UserType.USER_NOT_FOUND;
-    }
-
-    /**
      * Create context for a guest user (not logged in).
      */
     public static UserContext guest() {
@@ -47,15 +39,8 @@ public record UserContext(UUID userId, UserType userType, boolean hasContestEntr
     /**
      * Create context for an authenticated user viewing their own predictions.
      */
-    public static UserContext authenticated(UUID userId, boolean hasContestEntry) {
+    public static UserContext authenticated(UUID userId, boolean hasMainContestEntry) {
         Objects.requireNonNull(userId, "userId is required for authenticated user");
-        return new UserContext(userId, UserType.AUTHENTICATED, hasContestEntry);
-    }
-
-    /**
-     * Create context when the target user was not found.
-     */
-    public static UserContext userNotFound() {
-        return new UserContext(null, UserType.USER_NOT_FOUND, false);
+        return new UserContext(userId, UserType.AUTHENTICATED, hasMainContestEntry);
     }
 }
