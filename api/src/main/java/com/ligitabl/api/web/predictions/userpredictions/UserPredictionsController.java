@@ -74,7 +74,7 @@ public class UserPredictionsController {
      * <p>Resolves user from Principal:
      * <ul>
      *   <li>Not logged in → Redirects to /prediction/user/guest</li>
-     *   <li>Logged in + has prediction → Returns user's prediction (EDITABLE or READONLY_COOLDOWN)</li>
+     *   <li>Logged in + has prediction → Returns user's prediction (EDITABLE or READONLY)</li>
      *   <li>Logged in + no prediction → Returns fallback as CAN_CREATE_ENTRY</li>
      * </ul>
      */
@@ -124,7 +124,7 @@ public class UserPredictionsController {
     /**
      * GET /predictions/user/guest - Explicit guest view.
      *
-     * <p>Always returns fallback rankings as READONLY_GUEST, regardless of authentication.</p>
+     * <p>Always returns fallback rankings as READONLY, regardless of authentication.</p>
      */
     @GetMapping("/guest")
     public String guestPredictions(
@@ -271,7 +271,6 @@ public class UserPredictionsController {
         model.addAttribute("canCreateEntry", data.canCreateEntry());
         model.addAttribute("isReadonly", data.isReadonly());
         model.addAttribute("isGuest", data.isGuest());
-        model.addAttribute("isUserNotFound", data.isUserNotFound());
 
         // Swap status for cooldown banners
         if (data.swapCooldown() != null) {
@@ -469,10 +468,8 @@ public class UserPredictionsController {
      */
     private String getPageTitle(UserPredictionViewData data) {
         return switch (data.accessMode()) {
-            case EDITABLE, READONLY_COOLDOWN -> "My Table";
+            case EDITABLE, READONLY -> "My Table";
             case CAN_CREATE_ENTRY -> "Create Prediction";
-            case READONLY_GUEST -> "My Table";
-            case READONLY_USER_NOT_FOUND -> "User Not Found";
         };
     }
 

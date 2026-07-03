@@ -37,7 +37,8 @@ public record UserPredictionViewData(
         List<SwapChange> roundSwapHistory, // Swaps made in the viewed round; null for guests/other users
         Integer seasonBestScore, // Best single-GW score in the season up to viewingRound
         Integer sprintBestScore, // Best single-GW score in viewingRound's sprint up to viewingRound
-        String sprintLabel // e.g. "Sprint 5"
+        String sprintLabel, // e.g. "Sprint 5"
+        boolean isGuest // Set from UserContext.isGuest() — not derivable from accessMode alone
         ) {
     public UserPredictionViewData {
         Objects.requireNonNull(rankings, "rankings are required");
@@ -88,17 +89,4 @@ public record UserPredictionViewData(
         return accessMode.isReadonly();
     }
 
-    /**
-     * Check if this is a guest user.
-     */
-    public boolean isGuest() {
-        return accessMode == PredictionAccessMode.READONLY_GUEST;
-    }
-
-    /**
-     * Check if target user was not found.
-     */
-    public boolean isUserNotFound() {
-        return accessMode == PredictionAccessMode.READONLY_USER_NOT_FOUND;
-    }
 }

@@ -2,7 +2,6 @@
 <!-- Parameters:
      isGuest: Boolean - user is a guest
      canCreateEntry: Boolean - user can create initial entry
-     isUserNotFound: Boolean - requested user not found
      swapStatus: SwapStatus object (can be null)
      isCurrentRound: Boolean - viewing current round
      roundState: String - 'open', 'locked', 'completed', or 'finalized'
@@ -16,7 +15,7 @@
      canSwap: Boolean - whether user can swap (cooldown check)
 -->
 <div x-cloak
-  th:fragment="banners(isGuest, canCreateEntry, isUserNotFound, swapStatus, isCurrentRound, roundState, totalScore, viewingRound, hasRoundResult, currentRound, lastRound, atRoundNumber, seasonCompleted, canSwap)"
+  th:fragment="banners(isGuest, canCreateEntry, swapStatus, isCurrentRound, roundState, totalScore, viewingRound, hasRoundResult, currentRound, lastRound, atRoundNumber, seasonCompleted, canSwap)"
   class="mb-4 sm:mb-6 space-y-3">
   <!-- Guest Banner -->
   <div th:if="${isGuest == true}" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
@@ -250,7 +249,7 @@
 
   <!-- Historical Round Info Banner -->
   <div
-    th:if="${(isCurrentRound == false || isCurrentRound == null) && (isGuest == false || isGuest == null) && (isUserNotFound == false || isUserNotFound == null)}"
+    th:if="${(isCurrentRound == false || isCurrentRound == null) && (isGuest == false || isGuest == null)}"
     class="bg-blue-50 border border-blue-200 rounded-lg p-4">
     <div class="flex items-start">
       <svg class="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -272,7 +271,7 @@
 
   <!-- Status Indicator (for own predictions, not during first swap bonus which has its own banner) -->
   <div
-    th:if="${(isGuest == false || isGuest == null) && (isUserNotFound == false || isUserNotFound == null) && (canCreateEntry == false || canCreateEntry == null) && !(swapStatus != null && swapStatus.firstSwapBonus == true)}"
+    th:if="${(isGuest == false || isGuest == null) && (canCreateEntry == false || canCreateEntry == null) && !(swapStatus != null && swapStatus.firstSwapBonus == true)}"
     class="inline-flex items-center gap-2 text-sm">
     <span
       th:if="${isCurrentRound == true && canSwap == true && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))}"

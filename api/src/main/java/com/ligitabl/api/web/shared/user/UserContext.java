@@ -13,12 +13,11 @@ public record UserContext(UUID userId, UserType userType, boolean hasMainContest
      */
     public enum UserType {
         AUTHENTICATED, // Logged-in user viewing own predictions
-        GUEST, // Not logged in
-        USER_NOT_FOUND // Target user doesn't exist
+        GUEST // Not logged in
     }
 
     public UserContext {
-        // userId can be null for GUEST and USER_NOT_FOUND
+        // userId can be null for GUEST
         Objects.requireNonNull(userType, "userType is required");
     }
 
@@ -28,13 +27,6 @@ public record UserContext(UUID userId, UserType userType, boolean hasMainContest
 
     public boolean isAuthenticated() {
         return userType == UserType.AUTHENTICATED;
-    }
-
-    /**
-     * Check if the target user was not found.
-     */
-    public boolean isUserNotFound() {
-        return userType == UserType.USER_NOT_FOUND;
     }
 
     /**
@@ -50,12 +42,5 @@ public record UserContext(UUID userId, UserType userType, boolean hasMainContest
     public static UserContext authenticated(UUID userId, boolean hasMainContestEntry) {
         Objects.requireNonNull(userId, "userId is required for authenticated user");
         return new UserContext(userId, UserType.AUTHENTICATED, hasMainContestEntry);
-    }
-
-    /**
-     * Create context when the target user was not found.
-     */
-    public static UserContext userNotFound() {
-        return new UserContext(null, UserType.USER_NOT_FOUND, false);
     }
 }

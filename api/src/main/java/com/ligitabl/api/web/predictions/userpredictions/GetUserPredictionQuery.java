@@ -43,11 +43,4 @@ public record GetUserPredictionQuery(UserContext userContext, UUID seasonId, Int
     public static GetUserPredictionQuery forGuest(UUID seasonId, Integer round) {
         return new GetUserPredictionQuery(UserContext.guest(), seasonId, round);
     }
-
-    /**
-     * Create command for a non-existent user.
-     */
-    public static GetUserPredictionQuery forNonExistentUser(UUID seasonId, Integer round) {
-        return new GetUserPredictionQuery(UserContext.userNotFound(), seasonId, round);
-    }
 }

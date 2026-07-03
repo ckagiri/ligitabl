@@ -86,7 +86,7 @@
             <!-- Access Mode Banners -->
             <div
               th:replace="~{fragments/access-banners :: banners(
-                ${isGuest}, ${canCreateEntry}, ${isUserNotFound},
+                ${isGuest}, ${canCreateEntry},
                 ${swapStatus}, ${isCurrentRound}, ${roundState},
                 ${totalScore}, ${viewingRound}, ${hasRoundResult},
                 ${currentRound}, ${lastRound}, ${atRoundNumber}, ${seasonCompleted}, ${canSwap})}"
@@ -142,7 +142,7 @@ roundState=[[${roundState}]]
 isCurrentRound=[[${isCurrentRound}]] viewingRound=[[${viewingRound}]] currentRound=[[${currentRound}]] lastRound=[[${lastRound}]]
 atRoundNumber=[[${atRoundNumber}]] seasonCompleted=[[${seasonCompleted}]] hasRoundResult=[[${hasRoundResult}]]
 accessMode=[[${accessMode}]] canCreateEntry=[[${canCreateEntry}]] canSwap=[[${canSwap}]]
-isGuest=[[${isGuest}]] isUserNotFound=[[${isUserNotFound}]]
+isGuest=[[${isGuest}]]
 swapStatus.firstSwapBonus=[[${swapStatus != null ? swapStatus.firstSwapBonus : null}]]
 firstSwap.defaultMsg=[[${roundState != 'locked' || atRoundNumber == null || atRoundNumber == currentRound}]]
 firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRoundNumber > currentRound}]]
@@ -153,7 +153,7 @@ isPreSeason=[[${isPreSeason}]] isOffSeason=[[${isOffSeason}]] isPredictionsOpen=
 
             <!-- Round Navigation (only for authenticated users, non-error states) -->
             <div
-              th:if="${(isGuest == false || isGuest == null) && (isUserNotFound == false || isUserNotFound == null)}"
+              th:if="${isGuest == false || isGuest == null}"
               th:with="minRoundForNav=${canCreateEntry == true ? currentRound : (atRoundNumber != null && atRoundNumber > 0 && atRoundNumber <= currentRound ? atRoundNumber : currentRound)}"
             >
               <div
@@ -304,7 +304,7 @@ isPreSeason=[[${isPreSeason}]] isOffSeason=[[${isOffSeason}]] isPredictionsOpen=
 
             <!-- Comparison Options (only for current editable round, not historical views) -->
             <th:block
-              th:if="${isHistoricalView == false && (isUserNotFound == false || isUserNotFound == null) && (roundState == 'open' || roundState == 'locked' || roundState == 'finalized')}"
+              th:if="${isHistoricalView == false && (roundState == 'open' || roundState == 'locked' || roundState == 'finalized')}"
             >
               <!-- Skeleton: visible before Alpine, removed once Alpine initialises -->
               <div x-skeleton class="px-6 pt-4 pb-2">

@@ -24,10 +24,9 @@ import lombok.AllArgsConstructor;
  * Use case for retrieving user predictions with access mode resolution.
  *
  * Handles different user contexts:
- *   Guest: Returns fallback rankings as READONLY_GUEST
- *   Authenticated with prediction: Returns user's prediction as EDITABLE or READONLY_COOLDOWN
+ *   Guest: Returns fallback rankings as READONLY
+ *   Authenticated with prediction: Returns user's prediction as EDITABLE or READONLY
  *   Authenticated without prediction: Returns fallback as CAN_CREATE_ENTRY
- *   User not found: Returns fallback as READONLY_USER_NOT_FOUND
  */
 @Service
 @AllArgsConstructor
@@ -85,21 +84,12 @@ public class GetUserPredictionUseCase {
                     roundState,
                     seasonCompleted,
                     currentRoundStatus);
-            case USER_NOT_FOUND -> buildUserNotFoundView(
-                    query,
-                    currentRound,
-                    lastRound,
-                    viewingRound,
-                    isCurrentRound,
-                    roundState,
-                    seasonCompleted,
-                    currentRoundStatus);
         };
     }
 
     /**
      * Build view for guest users (not logged in).
-     * Always returns fallback rankings with READONLY_GUEST access mode.
+     * Always returns fallback rankings with READONLY access mode.
      */
     private UserPredictionViewData buildGuestView(
             GetUserPredictionQuery qry,
@@ -121,7 +111,7 @@ public class GetUserPredictionUseCase {
         return new UserPredictionViewData(
                 rankingsWithSource.rankings(),
                 rankingsWithSource.source(),
-                PredictionAccessMode.READONLY_GUEST,
+                PredictionAccessMode.READONLY,
                 null, // swapCooldown not applicable
                 isCurrentRound ? getMatches(qry.seasonId(), currentRound) : Map.of(),
                 standingsMap,
@@ -137,7 +127,8 @@ public class GetUserPredictionUseCase {
                 null, // no swap history for guests
                 null,
                 null,
-                null // no best scores for guests
+                null, // no best scores for guests
+                true // isGuest
                 );
     }
 
@@ -197,7 +188,7 @@ public class GetUserPredictionUseCase {
                     return new UserPredictionViewData(
                             rankings,
                             RankingSource.USER_PREDICTION,
-                            PredictionAccessMode.READONLY_COOLDOWN, // Historical is always readonly
+                            PredictionAccessMode.READONLY, // Historical is always readonly
                             null, // No swap cooldown for historical
                             Map.of(), // No matches for historical
                             Map.of(), // Standings come from RoundResult
@@ -213,7 +204,9 @@ public class GetUserPredictionUseCase {
                             swapsForRound(seasonPrediction, viewingRound),
                             seasonBest,
                             sprintBest,
-                            sprint.getName());
+                            sprint.getName(),
+                            false // isGuest
+                            );
                 }
             }
 
@@ -244,7 +237,9 @@ public class GetUserPredictionUseCase {
                     swapsForRound(seasonPrediction, viewingRound),
                     null,
                     null,
-                    null);
+                    null,
+                    false // isGuest
+                    );
         }
 
         // User is authenticated but has no prediction - show fallback with CAN_CREATE_ENTRY
@@ -261,10 +256,10 @@ public class GetUserPredictionUseCase {
         Integer atRoundNumber = null;
 
         if (!isCurrentRound) {
-            accessMode = PredictionAccessMode.READONLY_COOLDOWN;
+            accessMode = PredictionAccessMode.READONLY;
         } else if (currentRound == lastRound && currentRoundStatus != RoundStatus.OPEN) {
             // Last round and not open - season ending, can't join
-            accessMode = PredictionAccessMode.READONLY_COOLDOWN;
+            accessMode = PredictionAccessMode.READONLY;
         } else {
             accessMode = PredictionAccessMode.CAN_CREATE_ENTRY;
             atRoundNumber = currentRoundStatus == RoundStatus.OPEN ? currentRound : currentRound + 1;
@@ -291,7 +286,9 @@ public class GetUserPredictionUseCase {
                 null, // No swap history — user has no prediction yet
                 null,
                 null,
-                null);
+                null,
+                false // isGuest
+                );
     }
 
     /**
@@ -302,57 +299,18 @@ public class GetUserPredictionUseCase {
     }
 
     /**
-     * Build view when the target user was not found.
-     */
-    private UserPredictionViewData buildUserNotFoundView(
-            GetUserPredictionQuery qry,
-            int currentRound,
-            int lastRound,
-            int viewingRound,
-            boolean isCurrentRound,
-            String roundState,
-            boolean seasonCompleted,
-            RoundStatus currentRoundStatus) {
-        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), currentRound);
-
-        StandingsMaps currentStandingsMaps =
-                isCurrentRound ? getStandingsMaps(qry.seasonId(), currentRound) : StandingsMaps.empty();
-
-        return new UserPredictionViewData(
-                rankingsWithSource.rankings(),
-                rankingsWithSource.source(),
-                PredictionAccessMode.READONLY_USER_NOT_FOUND,
-                null,
-                isCurrentRound ? getMatches(qry.seasonId(), currentRound) : Map.of(),
-                currentStandingsMaps.positions(),
-                currentStandingsMaps.points(),
-                currentStandingsMaps.goalDifference(),
-                currentRound,
-                lastRound,
-                viewingRound,
-                null,
-                seasonCompleted,
-                roundState,
-                null,
-                null, // swap history not applicable
-                null,
-                null,
-                null);
-    }
-
-    /**
      * Determine access mode based on swap cooldown status.
      */
     private PredictionAccessMode determineAccessMode(SwapCooldown swapCooldown, boolean isCurrentRound) {
         if (!isCurrentRound) {
-            return PredictionAccessMode.READONLY_COOLDOWN; // Historical rounds are always readonly
+            return PredictionAccessMode.READONLY; // Historical rounds are always readonly
         }
 
         if (swapCooldown != null && (swapCooldown.canSwap(Instant.now()) || swapCooldown.openingRoundAvailable())) {
             return PredictionAccessMode.EDITABLE;
         }
 
-        return PredictionAccessMode.READONLY_COOLDOWN;
+        return PredictionAccessMode.READONLY;
     }
 
     private StandingsMaps getStandingsMaps(UUID seasonId, int roundPosition) {
