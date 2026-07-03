@@ -122,7 +122,7 @@ class AdvanceCurrentRoundNowUseCaseIntegrationTest extends AbstractPostgresIT {
     }
 
     @Test
-    @DisplayName("Should mark season completed when advancing last round")
+    @DisplayName("Should mark last round advanced, not the season completed, when advancing the last round")
     void shouldMarkSeasonCompletedOnLastRound() {
         Round lastRound = setupSeasonWithRounds(1); // maxRounds = 1
         setCurrentRound(lastRound.getId());
@@ -131,8 +131,12 @@ class AdvanceCurrentRoundNowUseCaseIntegrationTest extends AbstractPostgresIT {
 
         assertThat(result.isRight()).isTrue();
 
+        // Season completion is a separate, explicit admin action — advancing the last round only
+        // marks the round itself advanced.
+        assertThat(roundRepo.findById(lastRound.getId()).orElseThrow().isAdvanced())
+                .isTrue();
         var season = seasonRepo.findById(seasonId).orElseThrow();
-        assertThat(season.isCompleted()).isTrue();
+        assertThat(season.isCompleted()).isFalse();
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────────
