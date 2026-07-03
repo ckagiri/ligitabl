@@ -2,6 +2,7 @@ package com.ligitabl.api.web.predictions.userpredictions;
 
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -48,6 +49,19 @@ public class GetUserPredictionUseCase {
     }
 
     /**
+     * Request-scoped values shared by every view-builder branch, resolved once per request.
+     */
+    private record RequestContext(
+            int currentRound,
+            int lastRound,
+            int viewingRound,
+            boolean isCurrentRound,
+            String roundState,
+            boolean seasonCompleted,
+            RoundStatus currentRoundStatus,
+            Map<String, List<Match>> currentRoundMatches) {}
+
+    /**
      * Build complete prediction view data based on user context.
      */
     private UserPredictionViewData buildViewData(GetUserPredictionQuery query) {
@@ -61,29 +75,24 @@ public class GetUserPredictionUseCase {
         Round viewingRoundEntity =
                 isCurrentRound ? currentRoundEntity : getRoundByPosition(season.getId(), viewingRound);
         boolean seasonCompleted = season.isCompleted();
-        RoundStatus currentRoundStatus = resolveRoundStatus(currentRoundEntity);
+
+        Map<String, List<Match>> currentRoundMatches = getMatches(season.getId(), currentRound);
+        RoundStatus currentRoundStatus = resolveRoundStatus(currentRoundEntity, currentRoundMatches);
         String roundState = isCurrentRound ? currentRoundStatus.name() : resolveRoundState(viewingRoundEntity);
 
-        // Determine access mode and rankings based on user type
+        RequestContext rc = new RequestContext(
+                currentRound,
+                lastRound,
+                viewingRound,
+                isCurrentRound,
+                roundState,
+                seasonCompleted,
+                currentRoundStatus,
+                currentRoundMatches);
+
         return switch (ctx.userType()) {
-            case GUEST -> buildGuestView(
-                    query,
-                    currentRound,
-                    lastRound,
-                    viewingRound,
-                    isCurrentRound,
-                    roundState,
-                    seasonCompleted,
-                    currentRoundStatus);
-            case AUTHENTICATED -> buildAuthenticatedView(
-                    query,
-                    currentRound,
-                    lastRound,
-                    viewingRound,
-                    isCurrentRound,
-                    roundState,
-                    seasonCompleted,
-                    currentRoundStatus);
+            case GUEST -> buildGuestView(query, rc);
+            case AUTHENTICATED -> buildAuthenticatedView(query, rc);
         };
     }
 
@@ -91,204 +100,182 @@ public class GetUserPredictionUseCase {
      * Build view for guest users (not logged in).
      * Always returns fallback rankings with READONLY access mode.
      */
-    private UserPredictionViewData buildGuestView(
-            GetUserPredictionQuery qry,
-            int currentRound,
-            int lastRound,
-            int viewingRound,
-            boolean isCurrentRound,
-            String roundState,
-            boolean seasonCompleted,
-            RoundStatus currentRoundStatus) {
-        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), currentRound);
+    private UserPredictionViewData buildGuestView(GetUserPredictionQuery qry, RequestContext rc) {
+        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), rc.currentRound());
 
-        int standingsRound = isCurrentRound ? currentRound : viewingRound;
+        int standingsRound = rc.isCurrentRound() ? rc.currentRound() : rc.viewingRound();
         StandingsMaps standingsMaps = getStandingsMaps(qry.seasonId(), standingsRound);
-        Map<String, Integer> standingsMap = standingsMaps.positions();
-        Map<String, Integer> pointsMap = standingsMaps.points();
-        Map<String, Integer> goalDifferenceMap = standingsMaps.goalDifference();
 
-        return new UserPredictionViewData(
-                rankingsWithSource.rankings(),
-                rankingsWithSource.source(),
-                PredictionAccessMode.READONLY,
-                null, // swapCooldown not applicable
-                isCurrentRound ? getMatches(qry.seasonId(), currentRound) : Map.of(),
-                standingsMap,
-                pointsMap,
-                goalDifferenceMap,
-                currentRound,
-                lastRound,
-                viewingRound,
-                null,
-                seasonCompleted,
-                roundState,
-                null, // no round result for guest
-                null, // no swap history for guests
-                null,
-                null,
-                null, // no best scores for guests
-                true // isGuest
-                );
+        return UserPredictionViewData.builder()
+                .rankings(rankingsWithSource.rankings())
+                .source(rankingsWithSource.source())
+                .accessMode(PredictionAccessMode.READONLY)
+                .matches(rc.isCurrentRound() ? rc.currentRoundMatches() : Map.of())
+                .standingsMap(standingsMaps.positions())
+                .pointsMap(standingsMaps.points())
+                .goalDifferenceMap(standingsMaps.goalDifference())
+                .currentRound(rc.currentRound())
+                .lastRound(rc.lastRound())
+                .viewingRound(rc.viewingRound())
+                .seasonCompleted(rc.seasonCompleted())
+                .roundState(rc.roundState())
+                .isGuest(true)
+                .build();
     }
 
     /**
      * Build view for authenticated users viewing their own predictions.
+     *
+     * <p>Dispatches to one of three shapes: no prediction yet (fallback + can-create-entry),
+     * a historical/scored round (own prediction, but genuinely past or the season's last round
+     * once it has advanced), or the current, still-editable round.</p>
      */
-    private UserPredictionViewData buildAuthenticatedView(
-            GetUserPredictionQuery qry,
-            int currentRound,
-            int lastRound,
-            int viewingRound,
-            boolean isCurrentRound,
-            String roundState,
-            boolean seasonCompleted,
-            RoundStatus currentRoundStatus) {
+    private UserPredictionViewData buildAuthenticatedView(GetUserPredictionQuery qry, RequestContext rc) {
         UserContext ctx = qry.userContext();
 
-        if (ctx.hasMainContestEntry()) {
-            var seasonPrediction = seasonPredictionRepo
-                    .findByUserAndSeason(ctx.userId(), qry.seasonId())
-                    .orElseThrow(
-                            () -> new IllegalStateException("User context indicates prediction exists but not found"));
-
-            // Get swap cooldown for this user
-            boolean openingRoundAvailable = seasonPrediction.getOpeningCommittedRound() != currentRound
-                    && seasonPrediction.getLastSwapAt() != null
-                    && currentRoundStatus == RoundStatus.OPEN;
-            SwapCooldown swapCooldown = new SwapCooldown(seasonPrediction.getLastSwapAt(), true, openingRoundAvailable);
-
-            // For historical rounds, load RoundResult with scored data
-            if (!isCurrentRound) {
-                var roundResult = roundResultRepo.findByUserAndRound(ctx.userId(), viewingRound);
-                if (roundResult.isPresent()) {
-                    // Convert RoundResult rankings to TeamRanking for display
-                    List<TeamRank> rankings = convertResultRankingsToTeamRankings(roundResult.get());
-
-                    Competition competition = competitionRepo
-                            .findBySlug(competitionDefaults.defaultCompetitionSlug())
-                            .orElseThrow(() -> new IllegalStateException("Competition not found"));
-
-                    RoundSpan sprint = competition.sprintForRound(viewingRound);
-
-                    List<RoundResult> sprintResults = roundResultRepo.findByUserAndSeasonAndRoundPositionRange(
-                            ctx.userId(), qry.seasonId(), sprint.getFrom(), viewingRound);
-                    int sprintBest = sprintResults.stream()
-                            .mapToInt(RoundResult::getTotalScore)
-                            .max()
-                            .orElse(0);
-
-                    List<RoundResult> seasonResults = roundResultRepo.findByUserAndSeasonAndRoundPositionRange(
-                            ctx.userId(), qry.seasonId(), 1, viewingRound);
-                    int seasonBest = seasonResults.stream()
-                            .mapToInt(RoundResult::getTotalScore)
-                            .max()
-                            .orElse(0);
-
-                    return new UserPredictionViewData(
-                            rankings,
-                            RankingSource.USER_PREDICTION,
-                            PredictionAccessMode.READONLY, // Historical is always readonly
-                            null, // No swap cooldown for historical
-                            Map.of(), // No matches for historical
-                            Map.of(), // Standings come from RoundResult
-                            Map.of(), // Points not needed for historical
-                            Map.of(), // Goal difference not needed for historical
-                            currentRound,
-                            lastRound,
-                            viewingRound,
-                            seasonPrediction.getAtRoundNumber(),
-                            seasonCompleted,
-                            roundState,
-                            roundResult.get(),
-                            swapsForRound(seasonPrediction, viewingRound),
-                            seasonBest,
-                            sprintBest,
-                            sprint.getName(),
-                            false // isGuest
-                            );
-                }
-            }
-
-            PredictionAccessMode accessMode = determineAccessMode(swapCooldown, isCurrentRound);
-
-            // Get standings and points for current round
-            StandingsMaps standingsMaps = getStandingsMaps(qry.seasonId(), currentRound);
-            Map<String, Integer> standingsMap = standingsMaps.positions();
-            Map<String, Integer> pointsMap = standingsMaps.points();
-            Map<String, Integer> goalDifferenceMap = standingsMaps.goalDifference();
-
-            return new UserPredictionViewData(
-                    seasonPrediction.getCurrentRankings(),
-                    RankingSource.USER_PREDICTION,
-                    accessMode,
-                    swapCooldown,
-                    getMatches(qry.seasonId(), currentRound),
-                    standingsMap,
-                    pointsMap,
-                    goalDifferenceMap,
-                    currentRound,
-                    lastRound,
-                    viewingRound,
-                    seasonPrediction.getAtRoundNumber(),
-                    seasonCompleted,
-                    roundState,
-                    null, // No round result for current round
-                    swapsForRound(seasonPrediction, viewingRound),
-                    null,
-                    null,
-                    null,
-                    false // isGuest
-                    );
+        if (!ctx.hasMainContestEntry()) {
+            return buildNoPredictionFallbackView(qry, rc);
         }
 
-        // User is authenticated but has no prediction - show fallback with CAN_CREATE_ENTRY
-        // For past rounds without prediction, still show historical standings
-        int standingsRound = isCurrentRound ? currentRound : viewingRound;
-        StandingsMaps standingsMaps = getStandingsMaps(qry.seasonId(), standingsRound);
-        Map<String, Integer> standingsMap = standingsMaps.positions();
-        Map<String, Integer> pointsMap = standingsMaps.points();
-        Map<String, Integer> goalDifferenceMap = standingsMaps.goalDifference();
+        var seasonPrediction = seasonPredictionRepo
+                .findByUserAndSeason(ctx.userId(), qry.seasonId())
+                .orElseThrow(
+                        () -> new IllegalStateException("User context indicates prediction exists but not found"));
 
-        // Determine if user can create entry and compute atRoundNumber
+        // Once the season's last round has advanced, it stays "current" (currentRoundId never
+        // moves further), but must be rendered like a historical/scored round, not a live one.
+        boolean showAsHistorical = !rc.isCurrentRound()
+                || (rc.currentRound() == rc.lastRound() && rc.currentRoundStatus() == RoundStatus.ADVANCED);
+
+        return showAsHistorical
+                ? buildHistoricalResultView(qry, rc, ctx, seasonPrediction)
+                : buildCurrentEditableView(qry, rc, seasonPrediction);
+    }
+
+    /**
+     * Build view for a scored round — genuinely historical, or the current round once it's the
+     * season's last round and has advanced.
+     */
+    private UserPredictionViewData buildHistoricalResultView(
+            GetUserPredictionQuery qry, RequestContext rc, UserContext ctx, SeasonPrediction seasonPrediction) {
+        RoundResult roundResult = roundResultRepo
+                .findByUserAndRound(ctx.userId(), rc.viewingRound())
+                .orElseThrow(() -> new IllegalStateException("Expected RoundResult for user " + ctx.userId()
+                        + " at round " + rc.viewingRound() + " but none found (isCurrentRound=" + rc.isCurrentRound()
+                        + ", roundStatus=" + rc.currentRoundStatus() + ")"));
+
+        List<TeamRank> rankings = convertResultRankingsToTeamRankings(roundResult);
+
+        Competition competition = competitionRepo
+                .findBySlug(competitionDefaults.defaultCompetitionSlug())
+                .orElseThrow(() -> new IllegalStateException("Competition not found"));
+
+        RoundSpan sprint = competition.sprintForRound(rc.viewingRound());
+
+        List<RoundResult> sprintResults = roundResultRepo.findByUserAndSeasonAndRoundPositionRange(
+                ctx.userId(), qry.seasonId(), sprint.getFrom(), rc.viewingRound());
+        int sprintBest = sprintResults.stream().mapToInt(RoundResult::getTotalScore).max().orElse(0);
+
+        List<RoundResult> seasonResults = roundResultRepo.findByUserAndSeasonAndRoundPositionRange(
+                ctx.userId(), qry.seasonId(), 1, rc.viewingRound());
+        int seasonBest = seasonResults.stream().mapToInt(RoundResult::getTotalScore).max().orElse(0);
+
+        return UserPredictionViewData.builder()
+                .rankings(rankings)
+                .source(RankingSource.USER_PREDICTION)
+                .accessMode(PredictionAccessMode.READONLY) // Historical is always readonly
+                .matches(Map.of()) // No matches for historical
+                .standingsMap(Map.of()) // Standings come from RoundResult
+                .pointsMap(Map.of())
+                .goalDifferenceMap(Map.of())
+                .currentRound(rc.currentRound())
+                .lastRound(rc.lastRound())
+                .viewingRound(rc.viewingRound())
+                .atRoundNumber(seasonPrediction.getAtRoundNumber())
+                .seasonCompleted(rc.seasonCompleted())
+                .roundState(rc.roundState())
+                .roundResult(roundResult)
+                .roundSwapHistory(swapsForRound(seasonPrediction, rc.viewingRound()))
+                .seasonBestScore(seasonBest)
+                .sprintBestScore(sprintBest)
+                .sprintLabel(sprint.getName())
+                .isGuest(false)
+                .build();
+    }
+
+    /**
+     * Build view for the current, still-editable round — the user's live prediction.
+     */
+    private UserPredictionViewData buildCurrentEditableView(
+            GetUserPredictionQuery qry, RequestContext rc, SeasonPrediction seasonPrediction) {
+        boolean openingRoundAvailable = seasonPrediction.getOpeningCommittedRound() != rc.currentRound()
+                && seasonPrediction.getLastSwapAt() != null
+                && rc.currentRoundStatus() == RoundStatus.OPEN;
+        SwapCooldown swapCooldown = new SwapCooldown(seasonPrediction.getLastSwapAt(), true, openingRoundAvailable);
+        PredictionAccessMode accessMode = determineAccessMode(swapCooldown, rc.isCurrentRound());
+
+        StandingsMaps standingsMaps = getStandingsMaps(qry.seasonId(), rc.currentRound());
+
+        return UserPredictionViewData.builder()
+                .rankings(seasonPrediction.getCurrentRankings())
+                .source(RankingSource.USER_PREDICTION)
+                .accessMode(accessMode)
+                .swapCooldown(swapCooldown)
+                .matches(rc.currentRoundMatches())
+                .standingsMap(standingsMaps.positions())
+                .pointsMap(standingsMaps.points())
+                .goalDifferenceMap(standingsMaps.goalDifference())
+                .currentRound(rc.currentRound())
+                .lastRound(rc.lastRound())
+                .viewingRound(rc.viewingRound())
+                .atRoundNumber(seasonPrediction.getAtRoundNumber())
+                .seasonCompleted(rc.seasonCompleted())
+                .roundState(rc.roundState())
+                .roundSwapHistory(swapsForRound(seasonPrediction, rc.viewingRound()))
+                .isGuest(false)
+                .build();
+    }
+
+    /**
+     * Build view for an authenticated user with no prediction yet — fallback rankings, and
+     * CAN_CREATE_ENTRY when the current round is still open to join.
+     */
+    private UserPredictionViewData buildNoPredictionFallbackView(GetUserPredictionQuery qry, RequestContext rc) {
+        int standingsRound = rc.isCurrentRound() ? rc.currentRound() : rc.viewingRound();
+        StandingsMaps standingsMaps = getStandingsMaps(qry.seasonId(), standingsRound);
+
         // Same logic as CreatePredictionUseCase.determineAtRoundNumber
         PredictionAccessMode accessMode;
         Integer atRoundNumber = null;
 
-        if (!isCurrentRound) {
+        if (!rc.isCurrentRound()) {
             accessMode = PredictionAccessMode.READONLY;
-        } else if (currentRound == lastRound && currentRoundStatus != RoundStatus.OPEN) {
+        } else if (rc.currentRound() == rc.lastRound() && rc.currentRoundStatus() != RoundStatus.OPEN) {
             // Last round and not open - season ending, can't join
             accessMode = PredictionAccessMode.READONLY;
         } else {
             accessMode = PredictionAccessMode.CAN_CREATE_ENTRY;
-            atRoundNumber = currentRoundStatus == RoundStatus.OPEN ? currentRound : currentRound + 1;
+            atRoundNumber = rc.currentRoundStatus() == RoundStatus.OPEN ? rc.currentRound() : rc.currentRound() + 1;
         }
 
-        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), currentRound);
+        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), rc.currentRound());
 
-        return new UserPredictionViewData(
-                rankingsWithSource.rankings(),
-                rankingsWithSource.source(),
-                accessMode,
-                null, // no swap cooldown yet
-                isCurrentRound ? getMatches(qry.seasonId(), currentRound) : Map.of(),
-                standingsMap,
-                pointsMap,
-                goalDifferenceMap,
-                currentRound,
-                lastRound,
-                viewingRound,
-                atRoundNumber,
-                seasonCompleted,
-                roundState,
-                null, // No round result
-                null, // No swap history — user has no prediction yet
-                null,
-                null,
-                null,
-                false // isGuest
-                );
+        return UserPredictionViewData.builder()
+                .rankings(rankingsWithSource.rankings())
+                .source(rankingsWithSource.source())
+                .accessMode(accessMode)
+                .matches(rc.isCurrentRound() ? rc.currentRoundMatches() : Map.of())
+                .standingsMap(standingsMaps.positions())
+                .pointsMap(standingsMaps.points())
+                .goalDifferenceMap(standingsMaps.goalDifference())
+                .currentRound(rc.currentRound())
+                .lastRound(rc.lastRound())
+                .viewingRound(rc.viewingRound())
+                .atRoundNumber(atRoundNumber)
+                .seasonCompleted(rc.seasonCompleted())
+                .roundState(rc.roundState())
+                .isGuest(false)
+                .build();
     }
 
     /**
@@ -433,21 +420,41 @@ public class GetUserPredictionUseCase {
         return roundRepo.findBySeasonIdAndPosition(seasonId, position).orElse(null);
     }
 
-    private RoundStatus resolveRoundStatus(Round round) {
+    /**
+     * Resolve a round's status from an already-fetched matches map (avoids re-querying matches
+     * for the same round the caller already fetched for the view payload).
+     *
+     * <p>{@code matchesByTeam} is keyed by team code, so every match appears under both its home
+     * and away team's list — dedupe by id, not equality: {@link Match}'s Lombok-generated
+     * equals/hashCode call {@code getHomeTeam()}/{@code getAwayTeam()}, which throw when those
+     * transient, repository-populated fields aren't loaded (as here — this map comes from a
+     * plain, team-less finder).</p>
+     */
+    private RoundStatus resolveRoundStatus(Round round, Map<String, List<Match>> matchesByTeam) {
+        Map<UUID, Match> byId = new LinkedHashMap<>();
+        matchesByTeam.values().stream().flatMap(List::stream).forEach(match -> byId.putIfAbsent(match.getId(), match));
+        return statusForRound(round, List.copyOf(byId.values()));
+    }
+
+    private String resolveRoundState(Round round) {
+        List<Match> matches = round == null ? List.of() : matchRepo.findByRoundId(round.getId());
+        return statusForRound(round, matches).name();
+    }
+
+    /**
+     * Shared status precedence: advanced rounds are always ADVANCED (even though a round is
+     * always finalized before it's advanced), then finalized, then match-based.
+     */
+    private RoundStatus statusForRound(Round round, List<Match> matches) {
         if (round == null) {
             return RoundStatus.UNKNOWN;
+        }
+        if (round.isAdvanced()) {
+            return RoundStatus.ADVANCED;
         }
         if (round.isFinalized()) {
             return RoundStatus.FINALIZED;
         }
-        var matches = matchRepo.findByRoundId(round.getId());
-        if (matches == null || matches.isEmpty()) {
-            return RoundStatus.OPEN;
-        }
-        return round.computeStatus(matches);
-    }
-
-    private String resolveRoundState(Round round) {
-        return resolveRoundStatus(round).name();
+        return (matches == null || matches.isEmpty()) ? RoundStatus.OPEN : round.computeStatus(matches);
     }
 }

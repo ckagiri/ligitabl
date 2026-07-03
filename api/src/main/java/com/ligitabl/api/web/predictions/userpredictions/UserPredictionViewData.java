@@ -12,12 +12,15 @@ import com.ligitabl.model.domain.SwapChange;
 import com.ligitabl.model.domain.SwapCooldown;
 import com.ligitabl.model.domain.TeamRank;
 
+import lombok.Builder;
+
 /**
  * Complete view data returned by this use case.
  *
  * <p>Contains all information needed by the template to render the prediction view,
  * including access mode for UI control rendering.</p>
  */
+@Builder
 public record UserPredictionViewData(
         List<TeamRank> rankings,
         RankingSource source,
