@@ -29,15 +29,14 @@
                 <div>
                   <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">State</dt>
                   <dd class="mt-1">
-                    <th:block th:if="${activeSeason.completed == true}">
-                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">Completed</span>
-                    </th:block>
-                    <th:block th:if="${activeSeason.completed == false and activeSeason.isInPlay() == true}">
-                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">Predictions Open</span>
-                    </th:block>
-                    <th:block th:if="${activeSeason.completed == false and activeSeason.isInPlay() == false}">
-                      <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">Pre-season</span>
-                    </th:block>
+                    <span th:if="${activeSeasonState == 'IN_PLAY'}"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">In Play</span>
+                    <span th:if="${activeSeasonState == 'PRE_SEASON'}"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">Pre-season</span>
+                    <span th:if="${activeSeasonState == 'OFF_SEASON'}"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">Off-season</span>
+                    <span th:if="${activeSeasonState == 'INACTIVE'}"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-200 text-slate-700">Setup Mode</span>
                   </dd>
                 </div>
                 <div>
@@ -47,16 +46,16 @@
                 <div>
                   <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Pre-season opens at</dt>
                   <dd class="mt-1 text-sm text-gray-700">
-                    <span th:if="${activeSeason.preSeasonOpensAt != null}" th:text="${activeSeason.preSeasonOpensAt}"></span>
+                    <span th:if="${activeSeason.preSeasonOpensAt != null}" th:text="${#temporals.format(activeSeason.preSeasonOpensAt, 'dd MMM yyyy, HH:mm')}"></span>
                     <span th:if="${activeSeason.preSeasonOpensAt == null}" class="text-gray-400">Not set</span>
-                    <span th:if="${daysToPreSeason != null}" class="ml-2 text-xs text-gray-500" th:text="${'(' + daysToPreSeason + ' days)'}"></span>
-                    <span th:if="${activeSeason.preSeasonOpensAt != null and activeSeason.isPreSeasonOpen() == true}" class="ml-2 text-xs text-green-600">(opened)</span>
+                    <span th:if="${daysToPreSeason != null}" class="ml-2 text-xs text-gray-500" th:text="${'(in ' + daysToPreSeason + ' days)'}"></span>
+                    <span th:if="${activeSeason.preSeasonOpensAt != null and daysToPreSeason == null}" class="ml-2 text-xs text-green-600">(past)</span>
                   </dd>
                 </div>
                 <div>
                   <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Predictions open at</dt>
                   <dd class="mt-1 text-sm text-gray-700">
-                    <span th:if="${activeSeason.predictionsOpenAt != null}" th:text="${activeSeason.predictionsOpenAt}"></span>
+                    <span th:if="${activeSeason.predictionsOpenAt != null}" th:text="${#temporals.format(activeSeason.predictionsOpenAt, 'dd MMM yyyy, HH:mm')}"></span>
                     <span th:if="${activeSeason.predictionsOpenAt == null}" class="text-gray-400">Not set (open by default)</span>
                     <span th:if="${activeSeason.predictionsOpenAt != null and activeSeason.isInPlay() == true}" class="ml-2 text-xs text-green-600">(opened)</span>
                   </dd>
@@ -86,11 +85,25 @@
                   <dd class="mt-1 text-sm font-medium text-gray-900" th:text="${upcomingSeason.name}"></dd>
                 </div>
                 <div>
+                  <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">State</dt>
+                  <dd class="mt-1">
+                    <span th:if="${upcomingSeasonState == 'IN_PLAY'}"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">In Play</span>
+                    <span th:if="${upcomingSeasonState == 'PRE_SEASON'}"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">Pre-season</span>
+                    <span th:if="${upcomingSeasonState == 'OFF_SEASON'}"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">Off-season</span>
+                    <span th:if="${upcomingSeasonState == 'INACTIVE'}"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-200 text-slate-700">Setup Mode</span>
+                  </dd>
+                </div>
+                <div>
                   <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Predictions open at</dt>
                   <dd class="mt-1 text-sm text-gray-700">
-                    <span th:if="${upcomingSeason.predictionsOpenAt != null}" th:text="${upcomingSeason.predictionsOpenAt}"></span>
+                    <span th:if="${upcomingSeason.predictionsOpenAt != null}" th:text="${#temporals.format(upcomingSeason.predictionsOpenAt, 'dd MMM yyyy, HH:mm')}"></span>
                     <span th:if="${upcomingSeason.predictionsOpenAt == null}" class="text-gray-400">Not set</span>
-                    <span th:if="${daysToPredictions != null}" class="ml-2 text-xs text-gray-500" th:text="${'(' + daysToPredictions + ' days)'}"></span>
+                    <span th:if="${daysToPredictions != null}" class="ml-2 text-xs text-gray-500" th:text="${'(in ' + daysToPredictions + ' days)'}"></span>
+                    <span th:if="${upcomingSeason.predictionsOpenAt != null and daysToPredictions == null}" class="ml-2 text-xs text-green-600">(past)</span>
                   </dd>
                 </div>
                 <div>
@@ -98,6 +111,10 @@
                   <dd class="mt-1 text-xs text-gray-500 font-mono" th:text="${upcomingSeason.id}"></dd>
                 </div>
               </dl>
+              <p th:if="${upcomingSeason.predictionsOpenAt == null}"
+                 class="mt-3 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+                ⚠️ No predictions-open date set — this season will open for predictions immediately once activated.
+              </p>
             </th:block>
             <th:block th:if="${upcomingSeason == null}">
               <p class="text-sm text-gray-500 mb-4">No upcoming season assigned.</p>
@@ -113,7 +130,7 @@
                   </select>
                 </div>
                 <button
-                  @click="loading=true; fetch('/admin/competitions/' + document.getElementById('admin-seasons').dataset.slug + '/upcoming-season', { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ seasonId }) }).then(r => { result = r.ok ? 'Done! Reload to see changes.' : 'Error: ' + r.status; loading=false })"
+                  @click="loading=true; fetch('/admin/competitions/' + document.getElementById('admin-seasons').dataset.slug + '/upcoming-season', { method: 'PATCH', headers: {'Content-Type':'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=\'_csrf\']')?.content}, body: JSON.stringify({ seasonId }) }).then(r => { result = r.ok ? 'Done! Reload to see changes.' : 'Error: ' + r.status; loading=false })"
                   :disabled="loading || !seasonId"
                   class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
                 >
@@ -123,6 +140,45 @@
               </div>
             </th:block>
           </div>
+        </div>
+
+        <!-- Former Season card -->
+        <div class="bg-white shadow rounded-lg mb-6" th:if="${formerSeason != null}">
+          <details>
+            <summary class="px-6 py-4 border-b border-gray-200 cursor-pointer">
+              <h2 class="inline text-lg font-semibold text-gray-900">Former Season</h2>
+              <span class="ml-2 text-sm text-gray-500" th:text="${formerSeason.name}"></span>
+            </summary>
+            <div class="p-6">
+              <dl class="grid grid-cols-2 gap-4 sm:grid-cols-3">
+                <div>
+                  <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Name</dt>
+                  <dd class="mt-1 text-sm font-medium text-gray-900" th:text="${formerSeason.name}"></dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">State</dt>
+                  <dd class="mt-1">
+                    <span th:if="${formerSeasonState == 'IN_PLAY'}"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700">In Play</span>
+                    <span th:if="${formerSeasonState == 'PRE_SEASON'}"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-yellow-100 text-yellow-700">Pre-season</span>
+                    <span th:if="${formerSeasonState == 'OFF_SEASON'}"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">Off-season</span>
+                    <span th:if="${formerSeasonState == 'INACTIVE'}"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-200 text-slate-700">Setup Mode</span>
+                  </dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">Completed</dt>
+                  <dd class="mt-1 text-sm text-gray-700" th:text="${formerSeason.completed}"></dd>
+                </div>
+                <div>
+                  <dt class="text-xs font-medium text-gray-500 uppercase tracking-wide">ID</dt>
+                  <dd class="mt-1 text-xs text-gray-500 font-mono" th:text="${formerSeason.id}"></dd>
+                </div>
+              </dl>
+            </div>
+          </details>
         </div>
 
         <!-- Manual Overrides -->
@@ -149,7 +205,7 @@
                   <input type="datetime-local" x-model="predictionsOpenAt" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
                 </div>
                 <button
-                  @click="loading=true; fetch('/admin/competitions/' + document.getElementById('admin-seasons').dataset.slug + '/activate-season', { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ predictionsOpenAt: predictionsOpenAt || null }) }).then(r => { result = r.ok ? 'Done! Reload to see changes.' : 'Error: ' + r.status; loading=false })"
+                  @click="loading=true; fetch('/admin/competitions/' + document.getElementById('admin-seasons').dataset.slug + '/activate-season', { method: 'PATCH', headers: {'Content-Type':'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=\'_csrf\']')?.content}, body: JSON.stringify({ predictionsOpenAt: predictionsOpenAt ? new Date(predictionsOpenAt).toISOString() : null }) }).then(r => { result = r.ok ? 'Done! Reload to see changes.' : 'Error: ' + r.status; loading=false })"
                   :disabled="loading || !canActivate"
                   class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
                 >
@@ -157,7 +213,7 @@
                   <span th:if="${upcomingSeason == null}">Activate (no upcoming season)</span>
                 </button>
                 <button
-                  @click="loading=true; fetch('/admin/competitions/' + document.getElementById('admin-seasons').dataset.slug + '/revert-season', { method: 'PATCH' }).then(r => { result = r.ok ? 'Done! Reload to see changes.' : 'Error: ' + r.status; loading=false })"
+                  @click="loading=true; fetch('/admin/competitions/' + document.getElementById('admin-seasons').dataset.slug + '/revert-season', { method: 'PATCH', headers: {'X-CSRF-TOKEN': document.querySelector('meta[name=\'_csrf\']')?.content} }).then(r => { result = r.ok ? 'Done! Reload to see changes.' : 'Error: ' + r.status; loading=false })"
                   :disabled="loading || !canRevert"
                   class="px-4 py-2 bg-amber-600 hover:bg-amber-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
                 >
@@ -199,7 +255,7 @@
                   </div>
                 </div>
                 <button
-                  @click="loading=true; fetch('/admin/competitions/' + document.getElementById('admin-seasons').dataset.slug + '/season-dates', { method: 'PATCH', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ outgoingSeasonId: outgoingId, preSeasonOpensAt: preSeasonOpensAt || null, upcomingSeasonId: upcomingId, predictionsOpenAt: predictionsOpenAt || null }) }).then(r => r.ok ? r.text().then(t => { result = 'Done!'; loading=false }) : r.text().then(t => { result = 'Error: ' + t; loading=false }))"
+                  @click="loading=true; fetch('/admin/competitions/' + document.getElementById('admin-seasons').dataset.slug + '/season-dates', { method: 'PATCH', headers: {'Content-Type':'application/json', 'X-CSRF-TOKEN': document.querySelector('meta[name=\'_csrf\']')?.content}, body: JSON.stringify({ outgoingSeasonId: outgoingId, preSeasonOpensAt: preSeasonOpensAt ? new Date(preSeasonOpensAt).toISOString() : null, upcomingSeasonId: upcomingId, predictionsOpenAt: predictionsOpenAt ? new Date(predictionsOpenAt).toISOString() : null }) }).then(r => r.ok ? r.text().then(t => { result = 'Done!'; loading=false }) : r.text().then(t => { result = 'Error: ' + t; loading=false }))"
                   :disabled="loading"
                   class="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white text-sm font-medium rounded-lg transition"
                 >
@@ -222,6 +278,7 @@
                 <tr class="bg-gray-50">
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Completed</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">State</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Pre-season opens</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Predictions open</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
@@ -239,12 +296,13 @@
                     <span th:if="${s.completed == true}" class="text-green-600" title="Completed">✅</span>
                     <span th:if="${s.completed == false}" class="text-gray-400" title="Not completed">—</span>
                   </td>
+                  <td class="px-6 py-3 text-sm text-gray-600" th:text="${s.getSeasonState().name()}"></td>
                   <td class="px-6 py-3 text-sm text-gray-600">
-                    <span th:if="${s.preSeasonOpensAt != null}" th:text="${s.preSeasonOpensAt}"></span>
+                    <span th:if="${s.preSeasonOpensAt != null}" th:text="${#temporals.format(s.preSeasonOpensAt, 'dd MMM yyyy, HH:mm')}"></span>
                     <span th:if="${s.preSeasonOpensAt == null}" class="text-gray-400">—</span>
                   </td>
                   <td class="px-6 py-3 text-sm text-gray-600">
-                    <span th:if="${s.predictionsOpenAt != null}" th:text="${s.predictionsOpenAt}"></span>
+                    <span th:if="${s.predictionsOpenAt != null}" th:text="${#temporals.format(s.predictionsOpenAt, 'dd MMM yyyy, HH:mm')}"></span>
                     <span th:if="${s.predictionsOpenAt == null}" class="text-gray-400">—</span>
                   </td>
                   <td class="px-6 py-3 text-xs text-gray-400 font-mono" th:text="${s.id}"></td>

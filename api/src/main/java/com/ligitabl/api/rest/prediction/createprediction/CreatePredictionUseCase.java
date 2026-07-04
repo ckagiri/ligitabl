@@ -184,8 +184,6 @@ public class CreatePredictionUseCase {
         RoundStatus roundStatus;
         if (currentRound.isFinalized()) {
             roundStatus = RoundStatus.FINALIZED;
-        } else if (currentRound.isAdvanced()) {
-            roundStatus = RoundStatus.ADVANCED;
         } else {
             var matches = matchRepo.findByRoundId(currentRound.getId());
             roundStatus =
