@@ -58,10 +58,8 @@ public class CreatePredictionUseCase {
     public Either<CreatePredictionError, CreatePredictionResult> execute(UUID userId, CreatePredictionCommand request) {
         log.info("User {} attempting to join contest", userId);
 
-        return getActiveSeason()
+        return getCurrentSeason()
                 .map(Ctx::new)
-                .flatMap(ctx -> validateSeasonActive(ctx.season()).map(__ -> ctx))
-                .flatMap(ctx -> checkNotInSetupMode(ctx.season()).map(__ -> ctx))
                 .flatMap(ctx -> resolveJoinPlan(userId, ctx.season())
                         .map(plan -> new Ctx(ctx.season(), ctx.mainContest(), plan)))
                 .flatMap(ctx -> validateSwapTeams(request, ctx.season()).map(__ -> ctx))
@@ -70,27 +68,22 @@ public class CreatePredictionUseCase {
                 .flatMap(ctx -> executeJoinPlan(userId, ctx.season(), ctx.mainContest(), request, ctx.plan()));
     }
 
-    // Step 1: Get active season
-    private Either<CreatePredictionError, Season> getActiveSeason() {
+    // Steps 1-3: resolve the active season, and reject unless it's genuinely joinable
+    // (not completed, not in setup mode).
+    private Either<CreatePredictionError, Season> getCurrentSeason() {
         return seasonRepo
                 .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
                 .map(Either::<CreatePredictionError, Season>right)
-                .orElseGet(() -> Either.left(new CreatePredictionError.NotFound()));
-    }
-
-    // Step 2: Validate season is active
-    private Either<CreatePredictionError, Void> validateSeasonActive(Season season) {
-        if (season.isCompleted()) {
-            return Either.left(new CreatePredictionError.Completed());
-        }
-        return Either.right(null);
-    }
-
-    // Step 2.5: Block new joins while the season is in setup mode (main contest detached)
-    private Either<CreatePredictionError, Season> checkNotInSetupMode(Season season) {
-        return season.isInSetupMode()
-                ? Either.left(new CreatePredictionError.SeasonInSetupMode())
-                : Either.right(season);
+                .orElseGet(() -> Either.left(new CreatePredictionError.SeasonNotFound()))
+                .flatMap(season -> {
+                    if (season.isCompleted()) {
+                        return Either.left(new CreatePredictionError.Completed());
+                    }
+                    if (season.isInSetupMode()) {
+                        return Either.left(new CreatePredictionError.SeasonInSetupMode());
+                    }
+                    return Either.right(season);
+                });
     }
 
     // Step 3: Decide whether this is a fresh join, a fresh pre-season registration,

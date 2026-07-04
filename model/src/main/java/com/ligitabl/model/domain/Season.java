@@ -102,7 +102,7 @@ public class Season extends AbstractModel<UUID> {
     }
 
     /**
-     * Coarse-grained season phase, in priority order: OFF_SEASON, then PRE_SEASON, then IN_PLAY,
+     * Coarse-grained season phase, in priority order: OFF_SEASON, then IN_PLAY, then PRE_SEASON,
      * with INACTIVE as the fallback when none of the three apply. Single source of truth for
      * phase precedence — isOffSeason()/isInPlay()/isPreSeason()/isInactive() all just compare
      * against this.
@@ -127,11 +127,11 @@ public class Season extends AbstractModel<UUID> {
         if ((!preSeasonOpen && pastActualEnd) || (!predictionsOpen && !preSeasonOpen && beforeActualStart)) {
             return SeasonState.OFF_SEASON;
         }
-        if (preSeasonOpen && (pastActualEnd || beforeActualStart)) {
-            return SeasonState.PRE_SEASON;
-        }
         if (!completed && predictionsOpen) {
             return SeasonState.IN_PLAY;
+        }
+        if (preSeasonOpen && (pastActualEnd || beforeActualStart)) {
+            return SeasonState.PRE_SEASON;
         }
         return SeasonState.INACTIVE;
     }

@@ -75,6 +75,8 @@ public class MakeSwapController {
             case SwapError.InvalidTeamCode __ -> 400;
             case SwapError.TeamsNotFound __ -> 400;
             case SwapError.SeasonCompleted __ -> 409;
+            case SwapError.SeasonNotFound __ -> 404;
+            case SwapError.SeasonNotInPlay __ -> 409;
             case SwapError.SeasonInSetupMode __ -> 409;
             case SwapError.UseOpeningWindowFirst __ -> 409;
             case SwapError.OpeningAlreadyUsed __ -> 500;
@@ -92,6 +94,8 @@ public class MakeSwapController {
             case SwapError.TeamsNotFound e -> "Teams not found in your prediction: " + e.teamACode() + ", "
                     + e.teamBCode();
             case SwapError.SeasonCompleted __ -> "Cannot swap in completed season";
+            case SwapError.SeasonNotFound __ -> "No active season found";
+            case SwapError.SeasonNotInPlay __ -> "Cannot swap when the season is not in play";
             case SwapError.SeasonInSetupMode __ -> "Season is being reconfigured. Please try again shortly.";
             case SwapError.UseOpeningWindowFirst e -> "Use your opening swaps for round " + e.round() + " first";
             case SwapError.OpeningAlreadyUsed __ -> "Something went wrong";

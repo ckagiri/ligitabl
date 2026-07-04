@@ -69,6 +69,8 @@ public class RoundOpeningSwapController {
             case SwapError.RoundNotOpen __ -> 409;
             case SwapError.OpeningAlreadyUsed __ -> 409;
             case SwapError.SeasonCompleted __ -> 409;
+            case SwapError.SeasonNotFound __ -> 404;
+            case SwapError.SeasonNotInPlay __ -> 409;
             case SwapError.SeasonInSetupMode __ -> 409;
             case SwapError.BatchSizeInvalid __ -> 400;
             case SwapError.InvalidTeamCode __ -> 400;
@@ -85,6 +87,8 @@ public class RoundOpeningSwapController {
             case SwapError.RoundNotOpen e -> "Cannot swap when round is " + e.roundStatus();
             case SwapError.OpeningAlreadyUsed e -> "Opening swaps already used for round " + e.round();
             case SwapError.SeasonCompleted __ -> "Cannot swap in completed season";
+            case SwapError.SeasonNotFound __ -> "No active season found";
+            case SwapError.SeasonNotInPlay __ -> "Cannot swap when the season is not in play";
             case SwapError.SeasonInSetupMode __ -> "Season is being reconfigured. Please try again shortly.";
             case SwapError.BatchSizeInvalid e -> "Opening swaps must be between 1 and 2, got " + e.size();
             case SwapError.InvalidTeamCode e -> "Invalid team code: " + e.code();

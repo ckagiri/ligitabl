@@ -53,7 +53,7 @@ public class CreatePredictionController {
 
     private ResponseEntity<?> handleCreateError(CreatePredictionError error) {
         return switch (error) {
-            case CreatePredictionError.NotFound __ -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+            case CreatePredictionError.SeasonNotFound __ -> ResponseEntity.status(HttpStatus.NOT_FOUND)
                     .body(Map.of(
                             "error", "SEASON_NOT_FOUND",
                             "message", "No active season available"));
