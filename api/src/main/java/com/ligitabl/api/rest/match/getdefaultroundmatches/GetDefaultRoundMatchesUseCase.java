@@ -76,6 +76,8 @@ public class GetDefaultRoundMatchesUseCase
                 .lastRound(ctx.season().getMaxRounds())
                 .matches(matchesContext.matches())
                 .roundFinalized(ctx.round().isFinalized())
+                .roundAdvanced(currentRound.isAdvanced())
+                .autoAdvanceScheduled(currentRound.getAdvanceAt() != null)
                 .seasonInSetupMode(ctx.season().isInSetupMode())
                 .standingsFinalised(
                         isStandingsFinalised(ctx.season().getId(), ctx.round().getPosition()))

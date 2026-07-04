@@ -83,11 +83,21 @@ public class RoundMatchesController {
                     && payload.allMatchesTerminalOrBlocking()
                     && !payload.roundFinalized()
                     && !canRefinalizeRound;
+            boolean canAdvanceRound =
+                    isViewingCurrentRound && payload.roundFinalized() && !payload.roundAdvanced();
+            boolean canCancelAutoAdvancement = canAdvanceRound && payload.autoAdvanceScheduled();
+            boolean canCompleteSeason = isViewingCurrentRound
+                    && payload.viewingRound() == payload.lastRound()
+                    && payload.roundFinalized()
+                    && payload.roundAdvanced();
 
             model.addAttribute("isViewingCurrentRound", isViewingCurrentRound);
             model.addAttribute("isOutOfSync", isOutOfSync);
             model.addAttribute("canRefinalizeRound", canRefinalizeRound);
             model.addAttribute("canFinalizeRound", canFinalizeRound);
+            model.addAttribute("canAdvanceRound", canAdvanceRound);
+            model.addAttribute("canCancelAutoAdvancement", canCancelAutoAdvancement);
+            model.addAttribute("canCompleteSeason", canCompleteSeason);
             model.addAttribute(
                     "showRefreshButton", isViewingCurrentRound && !payload.roundFinalized() && hasNonTerminalMatches);
             model.addAttribute("nextRoundQuery", nextRoundAfterViewing(payload.viewingRound(), payload.currentRound()));

@@ -1,0 +1,146 @@
+package com.ligitabl.api.rest.season.admin;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.*;
+
+import java.time.LocalDate;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.SeasonSlug;
+import com.ligitabl.model.repo.RoundRepo;
+import com.ligitabl.model.repo.SeasonRepo;
+
+@ExtendWith(MockitoExtension.class)
+class CompleteSeasonUseCaseTest {
+
+    private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
+
+    @Mock
+    SeasonRepo seasonRepo;
+
+    @Mock
+    RoundRepo roundRepo;
+
+    private CompleteSeasonUseCase useCase;
+    private UUID seasonId;
+    private UUID roundId;
+
+    @BeforeEach
+    void setUp() {
+        useCase = new CompleteSeasonUseCase(seasonRepo, roundRepo, competitionDefaults);
+        seasonId = UUID.randomUUID();
+        roundId = UUID.randomUUID();
+    }
+
+    @Test
+    void noActiveSeason_returnsSeasonNotFound() {
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.empty());
+
+        var result = useCase.execute();
+
+        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.SeasonNotFound.class);
+    }
+
+    @Test
+    void currentRoundNotFound_returnsSeasonNotEligible() {
+        Season season = buildSeason(3);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.empty());
+
+        var result = useCase.execute();
+
+        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.SeasonNotEligible.class);
+        verify(seasonRepo, never()).save(any());
+    }
+
+    @Test
+    void currentRoundNotLastRound_returnsSeasonNotEligible() {
+        Season season = buildSeason(3);
+        Round round = buildRound(2, true, true);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+
+        var result = useCase.execute();
+
+        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.SeasonNotEligible.class);
+        verify(seasonRepo, never()).save(any());
+    }
+
+    @Test
+    void lastRoundNotFinalized_returnsSeasonNotEligible() {
+        Season season = buildSeason(3);
+        Round round = buildRound(3, false, false);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+
+        var result = useCase.execute();
+
+        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.SeasonNotEligible.class);
+        verify(seasonRepo, never()).save(any());
+    }
+
+    @Test
+    void lastRoundFinalizedButNotAdvanced_returnsSeasonNotEligible() {
+        Season season = buildSeason(3);
+        Round round = buildRound(3, true, false);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+
+        var result = useCase.execute();
+
+        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.SeasonNotEligible.class);
+        verify(seasonRepo, never()).save(any());
+    }
+
+    @Test
+    void lastRoundFinalizedAndAdvanced_completesSeason() {
+        Season season = buildSeason(3);
+        Round round = buildRound(3, true, true);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+
+        var result = useCase.execute();
+
+        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.Ok.class);
+        assertThat(season.isCompleted()).isTrue();
+        assertThat(season.getCompletedAt()).isNotNull();
+        verify(seasonRepo).save(season);
+    }
+
+    private Season buildSeason(int maxRounds) {
+        return Season.builder()
+                .id(seasonId)
+                .clientId(1)
+                .competitionId(UUID.randomUUID())
+                .name("2026/27")
+                .slug(SeasonSlug.of("2026-27"))
+                .startDate(LocalDate.now().minusMonths(9))
+                .endDate(LocalDate.now())
+                .maxRounds(maxRounds)
+                .completed(false)
+                .currentRoundId(roundId)
+                .build();
+    }
+
+    private Round buildRound(int position, boolean finalized, boolean advanced) {
+        return Round.builder()
+                .id(roundId)
+                .seasonId(seasonId)
+                .position(position)
+                .finalized(finalized)
+                .advanced(advanced)
+                .name("Round " + position)
+                .slug("round-" + position)
+                .build();
+    }
+}
