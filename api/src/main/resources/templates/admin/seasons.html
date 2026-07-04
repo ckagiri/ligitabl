@@ -273,7 +273,8 @@
                 <div class="flex flex-wrap gap-3 items-end">
                   <div>
                     <label class="block text-xs text-gray-500 mb-1">
-                      Outgoing season: <span class="font-medium text-gray-700" th:text="${activeSeason != null ? activeSeason.name : 'none'}"></span>
+                      <span th:text="${upcomingSeason != null ? 'Outgoing season:' : 'Active season:'}">Outgoing season:</span>
+                      <span class="font-medium text-gray-700" th:text="${activeSeason != null ? activeSeason.name : 'none'}"></span>
                     </label>
                     <label class="block text-xs text-gray-500 mb-1 mt-1">preSeasonOpensAt</label>
                     <input type="date" x-model="preSeasonOpensAt" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
@@ -283,7 +284,7 @@
                       Upcoming season: <span class="font-medium text-gray-700" th:text="${upcomingSeason != null ? upcomingSeason.name : 'none assigned'}"></span>
                     </label>
                     <label class="block text-xs text-gray-500 mb-1 mt-1">predictionsOpenAt</label>
-                    <input type="date" x-model="predictionsOpenAt" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500" />
+                    <input :disabled="!upcomingId" type="date" x-model="predictionsOpenAt" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:opacity-50 disabled:bg-gray-100" />
                   </div>
                 </div>
                 <button

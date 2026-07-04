@@ -117,7 +117,37 @@ class CompleteSeasonUseCaseTest {
         verify(seasonRepo).save(season);
     }
 
+    @Test
+    void wouldBecomeInactive_rejectsWithoutSaving() {
+        // endDate still in the future: once completed=true, pastActualEnd stays false and (with
+        // preSeasonOpensAt/predictionsOpenAt both null) the season lands on INACTIVE, not
+        // OFF_SEASON — the "outgoing season needs its pre-season dates configured" case.
+        Season season = Season.builder()
+                .id(seasonId)
+                .clientId(1)
+                .competitionId(UUID.randomUUID())
+                .name("2026/27")
+                .slug(SeasonSlug.of("2026-27"))
+                .startDate(LocalDate.now().minusMonths(9))
+                .endDate(LocalDate.now().plusMonths(1))
+                .maxRounds(3)
+                .completed(false)
+                .currentRoundId(roundId)
+                .build();
+        Round round = buildRound(3, true, true);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+
+        var result = useCase.execute();
+
+        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.SeasonNotEligible.class);
+        verify(seasonRepo, never()).save(any());
+    }
+
     private Season buildSeason(int maxRounds) {
+        // endDate in the past: once completed=true, this makes pastActualEnd true and
+        // preSeasonOpensAt/predictionsOpenAt null lands the season on OFF_SEASON, not INACTIVE —
+        // the realistic "season just ended, pre-season dates not configured yet" case.
         return Season.builder()
                 .id(seasonId)
                 .clientId(1)
@@ -125,7 +155,7 @@ class CompleteSeasonUseCaseTest {
                 .name("2026/27")
                 .slug(SeasonSlug.of("2026-27"))
                 .startDate(LocalDate.now().minusMonths(9))
-                .endDate(LocalDate.now())
+                .endDate(LocalDate.now().minusDays(1))
                 .maxRounds(maxRounds)
                 .completed(false)
                 .currentRoundId(roundId)

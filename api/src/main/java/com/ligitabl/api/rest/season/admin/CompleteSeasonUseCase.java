@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.model.domain.SeasonState;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
@@ -52,6 +53,16 @@ public class CompleteSeasonUseCase {
 
         season.setCompleted(true);
         season.setCompletedAt(OffsetDateTime.now());
+
+        // Completing the season should land it on OFF_SEASON (predictions closed, pre-season not
+        // yet open), not INACTIVE — INACTIVE here means preSeasonOpensAt isn't configured/ordered
+        // correctly. Reject rather than leave the season in limbo; the
+        // admin needs to fix the season's dates first (see UpdateSeasonDatesUseCase).
+        if (season.getSeasonState() == SeasonState.INACTIVE) {
+            return new Result.SeasonNotEligible(
+                    "Completing this season would leave it INACTIVE — check preSeasonOpensAt/season.endDate");
+        }
+
         seasonRepo.save(season);
 
         log.info("[ADMIN_COMPLETE_SEASON] season={} marked completed", season.getId());
