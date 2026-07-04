@@ -117,6 +117,11 @@
                             <span th:text="${daysToPredictions}"></span> day<th:block th:if="${daysToPredictions != 1}">s</th:block> to go
                           </span>
                         </th:block>
+                        <th:block th:if="${predictionsAboutToStart == true}">
+                          <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full bg-green-100 text-xs font-medium text-green-800">
+                            Starting soon
+                          </span>
+                        </th:block>
                       </p>
                     </div>
                   </div>
@@ -132,12 +137,17 @@
                         clip-rule="evenodd" />
                     </svg>
                     <div>
-                      <p class="text-sm font-semibold text-indigo-800">🚀 Pre-Season is Open!</p>
+                      <p class="text-sm font-semibold text-indigo-800">🚀 Pre-Season</p>
                       <p class="text-sm text-indigo-700 mt-1">
                         Set your predicted order and register below — up to 5 swaps, no rush.
                         <th:block th:if="${daysToPredictions != null}">
                           <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full bg-indigo-100 text-xs font-medium text-indigo-800">
-                            Predictions open in <span th:text="${daysToPredictions}"></span> day<th:block th:if="${daysToPredictions != 1}">s</th:block>
+                            Competition starts in <span th:text="${daysToPredictions}"></span> day<th:block th:if="${daysToPredictions != 1}">s</th:block>
+                          </span>
+                        </th:block>
+                        <th:block th:if="${predictionsAboutToStart == true}">
+                          <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full bg-indigo-100 text-xs font-medium text-indigo-800">
+                            Competition is about to start
                           </span>
                         </th:block>
                       </p>
@@ -165,7 +175,10 @@
                         </span>
                       </p>
                     </th:block>
-                    <th:block th:if="${daysToPreSeason == null}">
+                    <th:block th:if="${preSeasonAboutToStart == true}">
+                      <p class="text-sm text-slate-600 mt-1">Pre-season is about to open.</p>
+                    </th:block>
+                    <th:block th:if="${daysToPreSeason == null and preSeasonAboutToStart != true}">
                       <p class="text-sm text-slate-600 mt-1">Pre-season dates haven't been announced yet — check back soon.</p>
                     </th:block>
                   </div>
@@ -190,7 +203,7 @@ isGuest=[[${isGuest}]]
 swapStatus.firstSwapBonus=[[${swapStatus != null ? swapStatus.firstSwapBonus : null}]]
 firstSwap.defaultMsg=[[${roundState != 'locked' || atRoundNumber == null || atRoundNumber == currentRound}]]
 firstSwap.lockedMsg=[[${roundState == 'locked' && atRoundNumber != null && atRoundNumber > currentRound}]]
-isPreSeason=[[${isPreSeason}]] isOffSeason=[[${isOffSeason}]] isInPlay=[[${isInPlay}]] isInactive=[[${isInactive}]] seasonAllowsUpdate=[[${seasonAllowsUpdate}]] daysToPredictions=[[${daysToPredictions}]] daysToPreSeason=[[${daysToPreSeason}]]</pre
+isPreSeason=[[${isPreSeason}]] isOffSeason=[[${isOffSeason}]] isInPlay=[[${isInPlay}]] isInactive=[[${isInactive}]] seasonAllowsUpdate=[[${seasonAllowsUpdate}]] daysToPredictions=[[${daysToPredictions}]] daysToPreSeason=[[${daysToPreSeason}]] predictionsAboutToStart=[[${predictionsAboutToStart}]] preSeasonAboutToStart=[[${preSeasonAboutToStart}]]</pre
                 >
               </div>
             </div>
