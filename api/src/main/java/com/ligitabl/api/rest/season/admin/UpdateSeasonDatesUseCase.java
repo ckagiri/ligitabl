@@ -65,7 +65,8 @@ public class UpdateSeasonDatesUseCase {
         // the idea being that the outgoing season's pre-season-opens date becomes the incoming
         // season's pre-season-opens date too, ready for when it becomes outgoing in turn.
         if (outgoing != null) {
-            var competition = competitionRepo.findById(outgoing.getCompetitionId()).orElse(null);
+            var competition =
+                    competitionRepo.findById(outgoing.getCompetitionId()).orElse(null);
             UUID competitionUpcomingId = competition != null ? competition.getUpcomingSeasonId() : null;
             if (competitionUpcomingId != null) {
                 if (upcoming != null && competitionUpcomingId.equals(upcomingSeasonId)) {

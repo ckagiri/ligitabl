@@ -85,12 +85,9 @@ public class RoundMatchesController {
             boolean isLastRound = payload.viewingRound() == payload.lastRound();
             boolean matchesReadyToFinalize =
                     isLastRound ? payload.allMatchesFinished() : payload.allMatchesTerminalOrBlocking();
-            boolean canFinalizeRound = isViewingCurrentRound
-                    && matchesReadyToFinalize
-                    && !payload.roundFinalized()
-                    && !canRefinalizeRound;
-            boolean canAdvanceRound =
-                    isViewingCurrentRound && payload.roundFinalized() && !payload.roundAdvanced();
+            boolean canFinalizeRound =
+                    isViewingCurrentRound && matchesReadyToFinalize && !payload.roundFinalized() && !canRefinalizeRound;
+            boolean canAdvanceRound = isViewingCurrentRound && payload.roundFinalized() && !payload.roundAdvanced();
             boolean canCancelAutoAdvancement = canAdvanceRound && payload.autoAdvanceScheduled();
             boolean canCompleteSeason = isViewingCurrentRound
                     && payload.viewingRound() == payload.lastRound()

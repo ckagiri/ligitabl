@@ -91,13 +91,9 @@ public class FinalizeAndAdvanceRoundController {
     public ResponseEntity<?> advance() {
         log.info("POST /rounds/current/advance");
 
-        return advanceCurrentRoundNowUseCase
-                .execute()
-                .fold(
-                        this::toUseCaseErrorResponse,
-                        result -> ResponseEntity.ok()
-                                .header("HX-Redirect", "/rounds/current/matches")
-                                .build());
+        return advanceCurrentRoundNowUseCase.execute().fold(this::toUseCaseErrorResponse, result -> ResponseEntity.ok()
+                .header("HX-Redirect", "/rounds/current/matches")
+                .build());
     }
 
     @PostMapping("/current/cancel-advancement")
@@ -106,19 +102,17 @@ public class FinalizeAndAdvanceRoundController {
     public ResponseEntity<?> cancelAdvancement() {
         log.info("POST /rounds/current/cancel-advancement");
 
-        return cancelRoundAdvancementUseCase
-                .execute()
-                .fold(
-                        this::toUseCaseErrorResponse,
-                        result -> ResponseEntity.ok()
-                                .header("HX-Redirect", "/rounds/current/matches")
-                                .build());
+        return cancelRoundAdvancementUseCase.execute().fold(this::toUseCaseErrorResponse, result -> ResponseEntity.ok()
+                .header("HX-Redirect", "/rounds/current/matches")
+                .build());
     }
 
     private ResponseEntity<?> toFinalizeErrorResponse(FinalizeRoundError error) {
         return switch (error) {
-            case FinalizeRoundError.RoundObstructed e -> ResponseEntity.status(409).body(e.message());
-            case FinalizeRoundError.RoundNotReady e -> ResponseEntity.badRequest().body(e.reason());
+            case FinalizeRoundError.RoundObstructed e -> ResponseEntity.status(409)
+                    .body(e.message());
+            case FinalizeRoundError.RoundNotReady e -> ResponseEntity.badRequest()
+                    .body(e.reason());
             default -> ResponseEntity.internalServerError().body(String.valueOf(error));
         };
     }

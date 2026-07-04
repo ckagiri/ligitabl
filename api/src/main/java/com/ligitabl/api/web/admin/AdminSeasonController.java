@@ -86,14 +86,18 @@ public class AdminSeasonController {
         model.addAttribute("assignableSeasons", assignableSeasons);
         model.addAttribute("allSeasons", allSeasons);
         model.addAttribute("now", OffsetDateTime.now());
-        model.addAttribute("activeSeasonState", activeSeason != null ? activeSeason.getSeasonState().name() : null);
         model.addAttribute(
-                "upcomingSeasonState", upcomingSeason != null ? upcomingSeason.getSeasonState().name() : null);
-        model.addAttribute("formerSeasonState", formerSeason != null ? formerSeason.getSeasonState().name() : null);
+                "activeSeasonState",
+                activeSeason != null ? activeSeason.getSeasonState().name() : null);
+        model.addAttribute(
+                "upcomingSeasonState",
+                upcomingSeason != null ? upcomingSeason.getSeasonState().name() : null);
+        model.addAttribute(
+                "formerSeasonState",
+                formerSeason != null ? formerSeason.getSeasonState().name() : null);
 
         if (activeSeason != null && activeSeason.getPreSeasonOpensAt() != null) {
-            long daysToPreSeason =
-                    ChronoUnit.DAYS.between(OffsetDateTime.now(), activeSeason.getPreSeasonOpensAt());
+            long daysToPreSeason = ChronoUnit.DAYS.between(OffsetDateTime.now(), activeSeason.getPreSeasonOpensAt());
             if (daysToPreSeason > 0) {
                 model.addAttribute("daysToPreSeason", daysToPreSeason);
             }

@@ -84,8 +84,8 @@ public class GetDefaultRoundMatchesUseCase
                 .standingsFinalised(
                         isStandingsFinalised(ctx.season().getId(), ctx.round().getPosition()))
                 .allMatchesTerminalOrBlocking(rawMatches.stream().allMatch(m -> m.isComplete() || m.isBlocking()))
-                .allMatchesFinished(
-                        !rawMatches.isEmpty() && rawMatches.stream().allMatch(m -> m.getStatus() == MatchStatus.FINISHED))
+                .allMatchesFinished(!rawMatches.isEmpty()
+                        && rawMatches.stream().allMatch(m -> m.getStatus() == MatchStatus.FINISHED))
                 .matchesComplete(Round.computeMatchStatus(rawMatches) == RoundStatus.COMPLETED)
                 .build();
     }

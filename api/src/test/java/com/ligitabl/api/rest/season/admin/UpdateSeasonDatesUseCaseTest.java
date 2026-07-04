@@ -90,7 +90,8 @@ class UpdateSeasonDatesUseCaseTest {
 
         // Must pass a real future date here — passing null would overwrite the fixture's
         // pre-set predictionsOpenAt back to null (open), masking the INACTIVE combo.
-        var result = useCase.execute(null, null, upcomingId, OffsetDateTime.now().plusDays(5));
+        var result =
+                useCase.execute(null, null, upcomingId, OffsetDateTime.now().plusDays(5));
 
         assertThat(result).isInstanceOf(UpdateSeasonDatesUseCase.Result.InvalidDateOrder.class);
         verify(seasonRepo, never()).save(any());
