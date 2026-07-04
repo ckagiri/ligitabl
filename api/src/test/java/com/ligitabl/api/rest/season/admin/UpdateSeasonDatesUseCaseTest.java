@@ -68,7 +68,9 @@ class UpdateSeasonDatesUseCaseTest {
     }
 
     @Test
-    void outgoingWouldBeInactive_rejectsWithoutSaving() {
+    void outgoingAllowedToBecomeInactive_savesWithoutRejection() {
+        // The outgoing season is on its way out regardless — landing on INACTIVE is fine and
+        // should not block the update, unlike the same combination on an incoming season.
         Season outgoing = inactiveSeason(outgoingId);
 
         when(seasonRepo.findById(outgoingId)).thenReturn(Optional.of(outgoing));
@@ -76,8 +78,8 @@ class UpdateSeasonDatesUseCaseTest {
 
         var result = useCase.execute(outgoingId, null, null, null);
 
-        assertThat(result).isInstanceOf(UpdateSeasonDatesUseCase.Result.InvalidDateOrder.class);
-        verify(seasonRepo, never()).save(any());
+        assertThat(result).isInstanceOf(UpdateSeasonDatesUseCase.Result.Ok.class);
+        verify(seasonRepo).save(outgoing);
     }
 
     @Test

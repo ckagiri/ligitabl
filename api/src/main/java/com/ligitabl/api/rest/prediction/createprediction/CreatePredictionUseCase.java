@@ -68,7 +68,7 @@ public class CreatePredictionUseCase {
                 .flatMap(ctx -> executeJoinPlan(userId, ctx.season(), ctx.mainContest(), request, ctx.plan()));
     }
 
-    // Steps 1-3: resolve the active season, and reject unless it's genuinely joinable
+    // Step 1: resolve the active season, and reject unless it's genuinely joinable
     // (not completed, not in setup mode).
     private Either<CreatePredictionError, Season> getCurrentSeason() {
         return seasonRepo
@@ -86,7 +86,7 @@ public class CreatePredictionUseCase {
                 });
     }
 
-    // Step 3: Decide whether this is a fresh join, a fresh pre-season registration,
+    // Step 2: Decide whether this is a fresh join, a fresh pre-season registration,
     // or a merge of an existing pre-season registration into a real entry.
     private sealed interface JoinPlan {
         record NewJoin() implements JoinPlan {}
@@ -115,7 +115,7 @@ public class CreatePredictionUseCase {
         return Either.left(new CreatePredictionError.AlreadyJoined(existing.getId()));
     }
 
-    // Step 4: Validate the swap team codes (0-5 pairs allowed)
+    // Step 3: Validate the swap team codes (0-5 pairs allowed)
     private Either<CreatePredictionError, Void> validateSwapTeams(CreatePredictionCommand cmd, Season season) {
         List<CreatePredictionCommand.SwapPair> swaps = cmd.swaps();
 
@@ -143,7 +143,7 @@ public class CreatePredictionUseCase {
         return Either.right(null);
     }
 
-    // Step 5: Resolve the main contest once, shared by every join plan branch
+    // Step 4: Resolve the main contest once, shared by every join plan branch
     private Either<CreatePredictionError, Contest> findMainContest(Season season) {
         return contestRepo
                 .findById(season.getMainContestId())
@@ -164,7 +164,7 @@ public class CreatePredictionUseCase {
         };
     }
 
-    // Step 6: Determine at_round_number
+    // Step 5: Determine at_round_number
     private record RoundInfo(int atRoundNumber, int currentRoundPosition) {}
 
     private Either<CreatePredictionError, RoundInfo> determineAtRoundNumber(Season season) {
@@ -228,7 +228,7 @@ public class CreatePredictionUseCase {
                 .orElseThrow();
     }
 
-    // Step 7a: Create prediction and entry for a normal (in-season) join
+    // Step 6a: Create prediction and entry for a normal (in-season) join
     private Either<CreatePredictionError, CreatePredictionResult> createPredictionAndEntry(
             UUID userId,
             Season season,
@@ -279,7 +279,7 @@ public class CreatePredictionUseCase {
         }
     }
 
-    // Step 7b: Pre-season registration — the "easter egg". One-time 0-5 swap shot,
+    // Step 6b: Pre-season registration — the "easter egg". One-time 0-5 swap shot,
     // stored at atRoundNumber=0, excluded from leaderboard scoring (round > 0 filter).
     private Either<CreatePredictionError, CreatePredictionResult> registerPreSeason(
             UUID userId, Season season, Contest mainContest, CreatePredictionCommand request) {
@@ -324,7 +324,7 @@ public class CreatePredictionUseCase {
         }
     }
 
-    // Step 7c: Merge an existing pre-season registration into a real entry once predictions open.
+    // Step 6c: Merge an existing pre-season registration into a real entry once predictions open.
     // Updates the existing SeasonPrediction/Entry in place rather than creating duplicates.
     private Either<CreatePredictionError, CreatePredictionResult> mergePreSeasonRegistration(
             UUID userId,

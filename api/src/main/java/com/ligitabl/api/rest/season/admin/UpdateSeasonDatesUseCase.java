@@ -80,11 +80,8 @@ public class UpdateSeasonDatesUseCase {
             }
         }
 
-        // Reject if either touched season would land on INACTIVE, before persisting anything.
-        if (outgoing != null && outgoing.getSeasonState() == SeasonState.INACTIVE) {
-            return new Result.InvalidDateOrder(
-                    "Resulting state for outgoing season " + outgoingSeasonId + " would be INACTIVE");
-        }
+        // Reject if either incoming season would land on INACTIVE, before persisting anything.
+        // The outgoing season is allowed to become INACTIVE — it's on its way out regardless.
         if (upcoming != null && upcoming.getSeasonState() == SeasonState.INACTIVE) {
             return new Result.InvalidDateOrder(
                     "Resulting state for upcoming season " + upcomingSeasonId + " would be INACTIVE");

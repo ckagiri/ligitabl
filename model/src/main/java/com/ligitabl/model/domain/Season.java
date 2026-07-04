@@ -115,6 +115,11 @@ public class Season extends AbstractModel<UUID> {
      * fall into INACTIVE (predictions not yet open AND pre-season not yet open) as OFF_SEASON —
      * it never preempts a genuine IN_PLAY reading, since it's gated on predictionsOpenAt NOT being
      * open, checked before the beforeActualStart branch is considered.
+     *
+     * <p>A completed season whose preSeasonOpensAt and predictionsOpenAt have both already passed
+     * is explicitly INACTIVE rather than PRE_SEASON — once predictions are open, staying
+     * "completed" is a data inconsistency (the season should have been promoted/reverted), not a
+     * genuine pre-season window.
      */
     public SeasonState getSeasonState() {
         boolean pastActualEnd = completed && endDate != null && LocalDate.now().isAfter(endDate);
@@ -129,6 +134,9 @@ public class Season extends AbstractModel<UUID> {
         }
         if (!completed && predictionsOpen) {
             return SeasonState.IN_PLAY;
+        }
+        if (completed && preSeasonOpen && predictionsOpen) {
+            return SeasonState.INACTIVE;
         }
         if (preSeasonOpen && (pastActualEnd || beforeActualStart)) {
             return SeasonState.PRE_SEASON;
