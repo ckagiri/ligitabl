@@ -52,37 +52,30 @@ public class UpdateSeasonDatesUseCase {
             outgoing = seasonRepo.findById(outgoingSeasonId).orElse(null);
             if (outgoing == null) return new Result.OutgoingSeasonNotFound(outgoingSeasonId);
             outgoing.setPreSeasonOpensAt(preSeasonOpensAt);
-
-            // Propagate the outgoing season's preSeasonOpensAt onto the competition's actual
-            // upcoming season, which may differ from (or be absent vs.) upcomingSeasonId above —
-            // the idea being that the outgoing season's pre-season-opens date becomes the
-            // incoming season's pre-season-opens date too, ready for when it becomes outgoing.
-            var competition = competitionRepo.findById(outgoing.getCompetitionId()).orElse(null);
-            if (competition != null && competition.getUpcomingSeasonId() != null) {
-                if (competition.getUpcomingSeasonId().equals(upcomingSeasonId)) {
-                    // Same season the request already targets below — avoid a duplicate fetch/save.
-                } else {
-                    competitionUpcoming = seasonRepo
-                            .findById(competition.getUpcomingSeasonId())
-                            .orElse(null);
-                    if (competitionUpcoming != null) {
-                        competitionUpcoming.setPreSeasonOpensAt(preSeasonOpensAt);
-                    }
-                }
-            }
         }
 
         if (upcomingSeasonId != null) {
             upcoming = seasonRepo.findById(upcomingSeasonId).orElse(null);
             if (upcoming == null) return new Result.UpcomingSeasonNotFound(upcomingSeasonId);
             upcoming.setPredictionsOpenAt(predictionsOpenAt);
-            if (competitionUpcoming == null && outgoing != null) {
-                // The request's own upcomingSeasonId matched the competition's upcoming season —
-                // apply the preSeasonOpensAt propagation to this same object.
-                var competition =
-                        competitionRepo.findById(outgoing.getCompetitionId()).orElse(null);
-                if (competition != null && upcomingSeasonId.equals(competition.getUpcomingSeasonId())) {
+        }
+
+        // Propagate the outgoing season's preSeasonOpensAt onto the competition's actual upcoming
+        // season, which may differ from (or be absent vs.) the request's own upcomingSeasonId —
+        // the idea being that the outgoing season's pre-season-opens date becomes the incoming
+        // season's pre-season-opens date too, ready for when it becomes outgoing in turn.
+        if (outgoing != null) {
+            var competition = competitionRepo.findById(outgoing.getCompetitionId()).orElse(null);
+            UUID competitionUpcomingId = competition != null ? competition.getUpcomingSeasonId() : null;
+            if (competitionUpcomingId != null) {
+                if (upcoming != null && competitionUpcomingId.equals(upcomingSeasonId)) {
                     upcoming.setPreSeasonOpensAt(preSeasonOpensAt);
+                } else {
+                    competitionUpcoming =
+                            seasonRepo.findById(competitionUpcomingId).orElse(null);
+                    if (competitionUpcoming != null) {
+                        competitionUpcoming.setPreSeasonOpensAt(preSeasonOpensAt);
+                    }
                 }
             }
         }
