@@ -117,20 +117,21 @@ public class FinalizeAndAdvanceRoundController {
 
     private ResponseEntity<?> toFinalizeErrorResponse(FinalizeRoundError error) {
         return switch (error) {
-            case FinalizeRoundError.RoundObstructed e -> ResponseEntity.status(409).build();
-            case FinalizeRoundError.RoundNotReady e -> ResponseEntity.badRequest().build();
-            default -> ResponseEntity.internalServerError().build();
+            case FinalizeRoundError.RoundObstructed e -> ResponseEntity.status(409).body(e.message());
+            case FinalizeRoundError.RoundNotReady e -> ResponseEntity.badRequest().body(e.reason());
+            default -> ResponseEntity.internalServerError().body(String.valueOf(error));
         };
     }
 
     private ResponseEntity<?> toUseCaseErrorResponse(UseCaseError error) {
+        log.warn("Round advancement action failed: {}", error.getMessage());
         return switch (error) {
             case NotFoundError e -> ResponseEntity.notFound().build();
-            case ConflictError e -> ResponseEntity.status(409).build();
-            case ValidationError e -> ResponseEntity.badRequest().build();
+            case ConflictError e -> ResponseEntity.status(409).body(e.getMessage());
+            case ValidationError e -> ResponseEntity.badRequest().body(e.getMessage());
             default -> {
                 log.error("Unexpected error: {}", error);
-                yield ResponseEntity.internalServerError().build();
+                yield ResponseEntity.internalServerError().body(error.getMessage());
             }
         };
     }

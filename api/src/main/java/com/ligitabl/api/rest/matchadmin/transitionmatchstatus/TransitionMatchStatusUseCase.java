@@ -113,9 +113,10 @@ public class TransitionMatchStatusUseCase
         }
     }
 
-    // Only fires in setup mode — A status correction on a match already in a past round means that round's (and
-    // everything
-    // since) finalized standings are now stale.
+    // Only fires in setup mode — a status correction on a match in a round at or before the
+    // season's current round means that round's (and everything since) finalized standings are
+    // now stale. Includes the current round itself: in setup mode the current round can already
+    // be finalized+advanced (via a refinalize cascade), so a status change there is just as stale.
     private void markOutOfSyncIfPastRound(TransitionContext ctx) {
         if (!ctx.context().season().isInSetupMode()) {
             return;
@@ -123,7 +124,7 @@ public class TransitionMatchStatusUseCase
 
         int matchRoundPosition = ctx.context().round().getPosition();
         int currentPosition = ctx.seasonCurrentRound().getPosition();
-        if (matchRoundPosition >= currentPosition) {
+        if (matchRoundPosition > currentPosition) {
             return;
         }
 

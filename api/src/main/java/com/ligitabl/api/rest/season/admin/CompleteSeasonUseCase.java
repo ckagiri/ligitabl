@@ -7,6 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.model.domain.SeasonState;
+import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
@@ -20,6 +21,7 @@ public class CompleteSeasonUseCase {
 
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
+    private final MatchRepo matchRepo;
     private final CompetitionDefaults competitionDefaults;
 
     public sealed interface Result permits Result.Ok, Result.SeasonNotFound, Result.SeasonNotEligible {
@@ -49,6 +51,16 @@ public class CompleteSeasonUseCase {
         }
         if (!currentRound.isFinalized() || !currentRound.isAdvanced()) {
             return new Result.SeasonNotEligible("Last round must be finalized and advanced first");
+        }
+
+        var notReady = roundRepo.findFirstNotFinalizedOrAdvanced(season.getId());
+        if (notReady.isPresent()) {
+            return new Result.SeasonNotEligible(
+                    "Round " + notReady.get().getPosition() + " is not finalized and advanced");
+        }
+
+        if (!matchRepo.allMatchesFinished(currentRound.getId())) {
+            return new Result.SeasonNotEligible("All matches in the last round must be finished");
         }
 
         season.setCompleted(true);

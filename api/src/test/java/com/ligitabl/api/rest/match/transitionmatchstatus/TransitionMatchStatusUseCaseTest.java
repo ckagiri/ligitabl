@@ -321,7 +321,7 @@ class TransitionMatchStatusUseCaseTest {
     }
 
     @Test
-    void transition_inSetupMode_currentRoundMatch_doesNotMarkOutOfSync() {
+    void transition_inSetupMode_currentRoundMatch_alsoMarksOutOfSync() {
         season.enterSetupMode(); // mainContestId -> null
 
         Match match = Match.builder()
@@ -339,11 +339,12 @@ class TransitionMatchStatusUseCaseTest {
                 .roundPosition(null)
                 .matchSlug(match.getSlug())
                 .newStatus(MatchStatus.POSTPONED)
-                .reason("Not a past round")
+                .reason("Same round as current")
                 .build();
 
-        // `round` (position 1) is used as both the match's round and the season's current round,
-        // i.e. the match is not in the past.
+        // `round` (position 1) is used as both the match's round and the season's current round —
+        // in setup mode, the current round can already be finalized+advanced (via a refinalize
+        // cascade), so a status change here is just as stale as one in a genuinely past round.
         when(hierarchyValidator.validateCurrentRound(season)).thenReturn(Either.right(round));
         when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
         when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
@@ -352,8 +353,8 @@ class TransitionMatchStatusUseCaseTest {
         Either<UseCaseError, TransitionResult> result = useCase.execute(cmd);
 
         assertTrue(result.isRight());
-        verify(roundRepo, never()).markUnfinalizedBetween(any(), anyInt(), anyInt());
-        verify(standingsRepo, never()).markUnfinalisedBetween(any(), anyInt(), anyInt());
+        verify(roundRepo).markUnfinalizedBetween(seasonId, round.getPosition(), round.getPosition());
+        verify(standingsRepo).markUnfinalisedBetween(seasonId, round.getPosition(), round.getPosition());
     }
 
     @Test

@@ -78,6 +78,17 @@ public class RoundPersistenceAdapter implements RoundRepo {
     }
 
     @Override
+    public Optional<Round> findFirstNotFinalizedOrAdvanced(UUID seasonId) {
+        var record = dsl.selectFrom(T_ROUND)
+                .where(T_ROUND.FK_SEASON_ID.eq(seasonId))
+                .and(T_ROUND.C_IS_FINALIZED.eq(false).or(T_ROUND.C_ADVANCED.eq(false)))
+                .orderBy(T_ROUND.C_POSITION.asc())
+                .fetchAny();
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
+    @Override
     public Round save(Round round) {
         if (round == null) {
             throw new IllegalArgumentException("Round must not be null");

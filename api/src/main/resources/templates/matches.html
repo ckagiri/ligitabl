@@ -204,6 +204,7 @@
                     hx-post="/rounds/current/finalize"
                     hx-confirm="Finalize this round? It will not advance automatically."
                     hx-disabled-elt="this"
+                    hx-on::response-error="alert(event.detail.xhr.responseText || 'Finalize failed (status ' + event.detail.xhr.status + ')')"
                     class="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors"
                   >
                     Finalize
@@ -213,6 +214,7 @@
                     hx-post="/rounds/current/finalize-and-advance"
                     hx-confirm="Finalize this round and advance to the next?"
                     hx-disabled-elt="this"
+                    hx-on::response-error="alert(event.detail.xhr.responseText || 'Finalize & Advance failed (status ' + event.detail.xhr.status + ')')"
                     class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
                   >
                     Finalize &amp; Advance
@@ -222,6 +224,7 @@
                     hx-post="/rounds/current/cancel-advancement"
                     hx-confirm="Cancel the scheduled auto-advance? The round stays finalized until advanced manually."
                     hx-disabled-elt="this"
+                    hx-on::response-error="alert(event.detail.xhr.responseText || 'Cancel failed (status ' + event.detail.xhr.status + ')')"
                     class="px-4 py-2 text-sm font-medium text-white bg-gray-600 hover:bg-gray-700 rounded-lg transition-colors"
                   >
                     Cancel Auto-Advancement
@@ -231,6 +234,7 @@
                     hx-post="/rounds/current/advance"
                     hx-confirm="Advance to the next round now?"
                     hx-disabled-elt="this"
+                    hx-on::response-error="alert(event.detail.xhr.responseText || 'Advance failed (status ' + event.detail.xhr.status + ')')"
                     class="px-4 py-2 text-sm font-medium text-white bg-green-600 hover:bg-green-700 rounded-lg transition-colors"
                   >
                     Advance
@@ -240,6 +244,7 @@
                     hx-post="/seasons/current/complete"
                     hx-confirm="Mark this season as completed? This cannot be easily undone."
                     hx-disabled-elt="this"
+                    hx-on::response-error="alert(event.detail.xhr.responseText || 'Complete Season failed (status ' + event.detail.xhr.status + ')')"
                     class="px-4 py-2 text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-lg transition-colors"
                   >
                     Complete Season

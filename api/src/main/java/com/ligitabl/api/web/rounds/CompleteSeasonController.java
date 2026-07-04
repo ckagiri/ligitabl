@@ -31,9 +31,14 @@ public class CompleteSeasonController {
             case CompleteSeasonUseCase.Result.Ok ok -> ResponseEntity.ok()
                     .header("HX-Redirect", "/rounds/current/matches")
                     .build();
-            case CompleteSeasonUseCase.Result.SeasonNotFound e -> ResponseEntity.notFound().build();
-            case CompleteSeasonUseCase.Result.SeasonNotEligible e -> ResponseEntity.badRequest()
-                    .body(e.reason());
+            case CompleteSeasonUseCase.Result.SeasonNotFound e -> {
+                log.warn("Complete season failed: no active season found");
+                yield ResponseEntity.notFound().build();
+            }
+            case CompleteSeasonUseCase.Result.SeasonNotEligible e -> {
+                log.warn("Complete season rejected: {}", e.reason());
+                yield ResponseEntity.badRequest().body(e.reason());
+            }
         };
     }
 }

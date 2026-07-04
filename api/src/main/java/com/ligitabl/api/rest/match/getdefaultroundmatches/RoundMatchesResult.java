@@ -19,6 +19,8 @@ public record RoundMatchesResult(
         boolean roundAdvanced,
         boolean autoAdvanceScheduled,
         boolean seasonInSetupMode,
+        boolean seasonCompleted,
         boolean standingsFinalised,
         boolean allMatchesTerminalOrBlocking,
+        boolean allMatchesFinished,
         boolean matchesComplete) {}

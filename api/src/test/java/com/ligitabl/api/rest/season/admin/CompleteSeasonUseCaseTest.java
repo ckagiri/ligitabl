@@ -17,6 +17,7 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
+import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
@@ -31,13 +32,16 @@ class CompleteSeasonUseCaseTest {
     @Mock
     RoundRepo roundRepo;
 
+    @Mock
+    MatchRepo matchRepo;
+
     private CompleteSeasonUseCase useCase;
     private UUID seasonId;
     private UUID roundId;
 
     @BeforeEach
     void setUp() {
-        useCase = new CompleteSeasonUseCase(seasonRepo, roundRepo, competitionDefaults);
+        useCase = new CompleteSeasonUseCase(seasonRepo, roundRepo, matchRepo, competitionDefaults);
         seasonId = UUID.randomUUID();
         roundId = UUID.randomUUID();
     }
@@ -108,6 +112,8 @@ class CompleteSeasonUseCaseTest {
         Round round = buildRound(3, true, true);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(roundRepo.findFirstNotFinalizedOrAdvanced(seasonId)).thenReturn(Optional.empty());
+        when(matchRepo.allMatchesFinished(roundId)).thenReturn(true);
 
         var result = useCase.execute();
 
@@ -115,6 +121,35 @@ class CompleteSeasonUseCaseTest {
         assertThat(season.isCompleted()).isTrue();
         assertThat(season.getCompletedAt()).isNotNull();
         verify(seasonRepo).save(season);
+    }
+
+    @Test
+    void earlierRoundNotFinalized_returnsSeasonNotEligible() {
+        Season season = buildSeason(3);
+        Round round = buildRound(3, true, true);
+        Round notReadyRound = buildOtherRound(2, false, false);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(roundRepo.findFirstNotFinalizedOrAdvanced(seasonId)).thenReturn(Optional.of(notReadyRound));
+
+        var result = useCase.execute();
+
+        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.SeasonNotEligible.class);
+        verify(seasonRepo, never()).save(any());
+    }
+
+    @Test
+    void lastRoundMatchNotFinished_returnsSeasonNotEligible() {
+        Season season = buildSeason(3);
+        Round round = buildRound(3, true, true);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(matchRepo.allMatchesFinished(roundId)).thenReturn(false);
+
+        var result = useCase.execute();
+
+        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.SeasonNotEligible.class);
+        verify(seasonRepo, never()).save(any());
     }
 
     @Test
@@ -137,6 +172,8 @@ class CompleteSeasonUseCaseTest {
         Round round = buildRound(3, true, true);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(matchRepo.allMatchesFinished(roundId)).thenReturn(true);
+        when(roundRepo.findFirstNotFinalizedOrAdvanced(seasonId)).thenReturn(Optional.empty());
 
         var result = useCase.execute();
 
@@ -165,6 +202,19 @@ class CompleteSeasonUseCaseTest {
     private Round buildRound(int position, boolean finalized, boolean advanced) {
         return Round.builder()
                 .id(roundId)
+                .seasonId(seasonId)
+                .position(position)
+                .finalized(finalized)
+                .advanced(advanced)
+                .name("Round " + position)
+                .slug("round-" + position)
+                .build();
+    }
+
+    /** A round other than the season's current round (distinct id), for the all-rounds check. */
+    private Round buildOtherRound(int position, boolean finalized, boolean advanced) {
+        return Round.builder()
+                .id(UUID.randomUUID())
                 .seasonId(seasonId)
                 .position(position)
                 .finalized(finalized)
