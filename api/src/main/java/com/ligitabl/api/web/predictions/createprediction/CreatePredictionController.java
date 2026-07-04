@@ -76,7 +76,7 @@ public class CreatePredictionController {
 
     public int toHttpStatus(CreatePredictionError error) {
         return switch (error) {
-            case CreatePredictionError.NotFound __ -> 404;
+            case CreatePredictionError.SeasonNotFound __ -> 404;
             case CreatePredictionError.Completed __ -> 409;
             case CreatePredictionError.SeasonInSetupMode __ -> 409;
             case CreatePredictionError.AlreadyJoined __ -> 409;
@@ -93,7 +93,7 @@ public class CreatePredictionController {
 
     private String errorMessage(CreatePredictionError error) {
         return switch (error) {
-            case CreatePredictionError.NotFound __ -> "No active season available";
+            case CreatePredictionError.SeasonNotFound __ -> "No active season available";
             case CreatePredictionError.Completed __ -> "Cannot join a completed season";
             case CreatePredictionError.SeasonInSetupMode __ -> "Season is being reconfigured. Please try again "
                     + "shortly.";

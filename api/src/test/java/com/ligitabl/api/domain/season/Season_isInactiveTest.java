@@ -48,18 +48,21 @@ class Season_isInactiveTest {
                 Arguments.of(false, PAST, NULL, false),
                 Arguments.of(false, PAST, PAST, false),
                 Arguments.of(false, PAST, FUTURE, false),
-                Arguments.of(true, PAST, NULL, false),
-                Arguments.of(true, PAST, PAST, false),
+                // completed + preSeasonOpen + predictionsOpen (NULL defaults open, or PAST): the
+                // explicit "completed && preSeasonOpen && predictionsOpen" branch in
+                // getSeasonState() claims these as INACTIVE directly.
+                Arguments.of(true, PAST, NULL, true),
+                Arguments.of(true, PAST, PAST, true),
                 Arguments.of(true, PAST, FUTURE, false));
     }
 
     /**
      * With this package's shared fixture, beforeActualStart is unconditionally true for every
-     * completed=false row (startDate is always tomorrow), so the 18-combination truthTable above
-     * can never actually reach INACTIVE — every completed=false case is claimed by IN_PLAY,
-     * PRE_SEASON, or the OFF_SEASON !completed branch. INACTIVE only shows up once startDate has
-     * already passed (season nominally started) while predictionsOpenAt/preSeasonOpensAt are both
-     * still pending — a genuine misconfiguration, tested here with an explicit startDate.
+     * completed=false row (startDate is always tomorrow), so most of the truthTable above can
+     * never reach INACTIVE via that path — those cases are claimed by IN_PLAY, PRE_SEASON, or the
+     * OFF_SEASON !completed branch. It's also reachable, as two rows above show, via the explicit
+     * "completed && preSeasonOpen && predictionsOpen" branch. This @Test method covers a third
+     * route: past startDate with neither window open.
      */
     @Test
     void isInactive_reachable_whenPastStartDateButNeitherWindowHasOpened() {

@@ -224,6 +224,20 @@ public class MatchPersistenceAdapter implements MatchRepo {
     }
 
     @Override
+    public boolean allMatchesFinished(UUID roundId) {
+        int total = dsl.fetchCount(dsl.selectFrom(T_MATCH).where(T_MATCH.FK_ROUND_ID.eq(roundId)));
+        if (total == 0) {
+            return false;
+        }
+
+        int notFinished = dsl.fetchCount(dsl.selectFrom(T_MATCH)
+                .where(T_MATCH.FK_ROUND_ID.eq(roundId))
+                .and(T_MATCH.C_STATUS.ne(MatchStatus.FINISHED.name())));
+
+        return notFinished == 0;
+    }
+
+    @Override
     public Match create(Match model) {
         if (model.getId() != null) {
             throw new IllegalArgumentException(

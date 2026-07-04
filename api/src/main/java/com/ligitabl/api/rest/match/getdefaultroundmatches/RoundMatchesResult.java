@@ -16,7 +16,11 @@ public record RoundMatchesResult(
         int lastRound,
         List<MatchDto> matches,
         boolean roundFinalized,
+        boolean roundAdvanced,
+        boolean autoAdvanceScheduled,
         boolean seasonInSetupMode,
+        boolean seasonCompleted,
         boolean standingsFinalised,
         boolean allMatchesTerminalOrBlocking,
+        boolean allMatchesFinished,
         boolean matchesComplete) {}

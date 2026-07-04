@@ -86,16 +86,29 @@ public class AdminSeasonController {
         model.addAttribute("assignableSeasons", assignableSeasons);
         model.addAttribute("allSeasons", allSeasons);
         model.addAttribute("now", OffsetDateTime.now());
+        model.addAttribute(
+                "activeSeasonState",
+                activeSeason != null ? activeSeason.getSeasonState().name() : null);
+        model.addAttribute(
+                "upcomingSeasonState",
+                upcomingSeason != null ? upcomingSeason.getSeasonState().name() : null);
+        model.addAttribute(
+                "formerSeasonState",
+                formerSeason != null ? formerSeason.getSeasonState().name() : null);
 
         if (activeSeason != null && activeSeason.getPreSeasonOpensAt() != null) {
             long daysToPreSeason = ChronoUnit.DAYS.between(OffsetDateTime.now(), activeSeason.getPreSeasonOpensAt());
-            model.addAttribute("daysToPreSeason", Math.max(0, daysToPreSeason));
+            if (daysToPreSeason > 0) {
+                model.addAttribute("daysToPreSeason", daysToPreSeason);
+            }
         }
 
         if (upcomingSeason != null && upcomingSeason.getPredictionsOpenAt() != null) {
             long daysToPredictions =
                     ChronoUnit.DAYS.between(OffsetDateTime.now(), upcomingSeason.getPredictionsOpenAt());
-            model.addAttribute("daysToPredictions", Math.max(0, daysToPredictions));
+            if (daysToPredictions > 0) {
+                model.addAttribute("daysToPredictions", daysToPredictions);
+            }
         }
 
         return "admin/seasons";

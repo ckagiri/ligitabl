@@ -32,7 +32,7 @@ public class RoundOpeningSwapUseCase {
 
     public Either<SwapError, RoundOpeningSwapResult> execute(UUID userId, RoundOpeningSwapCommand command) {
         return swapHelper
-                .getCurrentSeason()
+                .getActiveSeason()
                 .flatMap(season -> swapHelper.getCurrentRound(season).map(round -> new Ctx(season, round, null)))
                 .flatMap(ctx -> swapHelper.validateRoundOpen(ctx.round()).map(__ -> ctx))
                 .flatMap(ctx -> swapHelper

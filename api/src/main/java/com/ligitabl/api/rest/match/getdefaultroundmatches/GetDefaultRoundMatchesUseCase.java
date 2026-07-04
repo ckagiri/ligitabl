@@ -17,6 +17,7 @@ import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.model.domain.Match;
+import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
@@ -76,10 +77,15 @@ public class GetDefaultRoundMatchesUseCase
                 .lastRound(ctx.season().getMaxRounds())
                 .matches(matchesContext.matches())
                 .roundFinalized(ctx.round().isFinalized())
+                .roundAdvanced(currentRound.isAdvanced())
+                .autoAdvanceScheduled(currentRound.getAdvanceAt() != null)
                 .seasonInSetupMode(ctx.season().isInSetupMode())
+                .seasonCompleted(ctx.season().isCompleted())
                 .standingsFinalised(
                         isStandingsFinalised(ctx.season().getId(), ctx.round().getPosition()))
                 .allMatchesTerminalOrBlocking(rawMatches.stream().allMatch(m -> m.isComplete() || m.isBlocking()))
+                .allMatchesFinished(!rawMatches.isEmpty()
+                        && rawMatches.stream().allMatch(m -> m.getStatus() == MatchStatus.FINISHED))
                 .matchesComplete(Round.computeMatchStatus(rawMatches) == RoundStatus.COMPLETED)
                 .build();
     }

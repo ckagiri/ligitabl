@@ -57,4 +57,11 @@ public interface MatchRepo {
      * Keyed by round position.
      */
     Map<Integer, RoundDateRange> groupRoundDateRangesBySeason(UUID seasonId);
+
+    /**
+     * True only if the round has at least one match and every match is FINISHED.
+     * Used to guard season completion — the last round's matches must be genuinely finished,
+     * not merely terminal-or-blocking (postponed/cancelled/suspended).
+     */
+    boolean allMatchesFinished(UUID roundId);
 }

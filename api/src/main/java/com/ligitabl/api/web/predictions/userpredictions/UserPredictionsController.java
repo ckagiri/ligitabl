@@ -324,11 +324,19 @@ public class UserPredictionsController {
                 "seasonAllowsUpdate", season.isInPlay() || (season.isPreSeason() && !data.hasPreSeasonRegistration()));
         if (season.getPreSeasonOpensAt() != null && !season.isPreSeasonOpen()) {
             long days = ChronoUnit.DAYS.between(OffsetDateTime.now(), season.getPreSeasonOpensAt());
-            model.addAttribute("daysToPreSeason", Math.max(0, days));
+            if (days >= 1) {
+                model.addAttribute("daysToPreSeason", days);
+            } else {
+                model.addAttribute("preSeasonAboutToStart", true);
+            }
         }
         if (season.isPreSeason() && season.getPredictionsOpenAt() != null) {
             long days = ChronoUnit.DAYS.between(OffsetDateTime.now(), season.getPredictionsOpenAt());
-            model.addAttribute("daysToPredictions", Math.max(0, days));
+            if (days >= 1) {
+                model.addAttribute("daysToPredictions", days);
+            } else {
+                model.addAttribute("predictionsAboutToStart", true);
+            }
             model.addAttribute("predictionsOpenAt", season.getPredictionsOpenAt());
         }
 

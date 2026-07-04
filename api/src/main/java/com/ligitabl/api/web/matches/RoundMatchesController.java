@@ -79,15 +79,29 @@ public class RoundMatchesController {
                     && (payload.roundFinalized() || isOutOfSync);
             // Finalize and Refinalize must never both be true for the same render — Finalize only
             // ever applies to the current, not-yet-finalized round; make that exclusion explicit.
-            boolean canFinalizeRound = isViewingCurrentRound
-                    && payload.allMatchesTerminalOrBlocking()
-                    && !payload.roundFinalized()
-                    && !canRefinalizeRound;
+            // The season's last round requires every match to genuinely be FINISHED (not merely
+            // terminal-or-blocking, i.e. postponed/cancelled/suspended) before it can be finalized
+            // — there's no future round left to carry over a postponed match into.
+            boolean isLastRound = payload.viewingRound() == payload.lastRound();
+            boolean matchesReadyToFinalize =
+                    isLastRound ? payload.allMatchesFinished() : payload.allMatchesTerminalOrBlocking();
+            boolean canFinalizeRound =
+                    isViewingCurrentRound && matchesReadyToFinalize && !payload.roundFinalized() && !canRefinalizeRound;
+            boolean canAdvanceRound = isViewingCurrentRound && payload.roundFinalized() && !payload.roundAdvanced();
+            boolean canCancelAutoAdvancement = canAdvanceRound && payload.autoAdvanceScheduled();
+            boolean canCompleteSeason = isViewingCurrentRound
+                    && payload.viewingRound() == payload.lastRound()
+                    && payload.roundFinalized()
+                    && payload.roundAdvanced()
+                    && !payload.seasonCompleted();
 
             model.addAttribute("isViewingCurrentRound", isViewingCurrentRound);
             model.addAttribute("isOutOfSync", isOutOfSync);
             model.addAttribute("canRefinalizeRound", canRefinalizeRound);
             model.addAttribute("canFinalizeRound", canFinalizeRound);
+            model.addAttribute("canAdvanceRound", canAdvanceRound);
+            model.addAttribute("canCancelAutoAdvancement", canCancelAutoAdvancement);
+            model.addAttribute("canCompleteSeason", canCompleteSeason);
             model.addAttribute(
                     "showRefreshButton", isViewingCurrentRound && !payload.roundFinalized() && hasNonTerminalMatches);
             model.addAttribute("nextRoundQuery", nextRoundAfterViewing(payload.viewingRound(), payload.currentRound()));

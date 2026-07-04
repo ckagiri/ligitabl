@@ -45,12 +45,16 @@ class Season_getSeasonStateTest {
                 Arguments.of(false, PAST, NULL, SeasonState.IN_PLAY),
                 Arguments.of(false, PAST, PAST, SeasonState.IN_PLAY),
                 Arguments.of(false, PAST, FUTURE, SeasonState.PRE_SEASON),
-                Arguments.of(true, PAST, NULL, SeasonState.PRE_SEASON),
-                Arguments.of(true, PAST, PAST, SeasonState.PRE_SEASON),
+                // completed + preSeasonOpen + predictionsOpen (NULL defaults open, or PAST): the
+                // explicit "completed && preSeasonOpen && predictionsOpen" branch claims these as
+                // INACTIVE — a completed season isn't genuinely "pre-season" once predictions have
+                // already opened too, regardless of how preSeasonOpensAt/predictionsOpenAt compare.
+                Arguments.of(true, PAST, NULL, SeasonState.INACTIVE),
+                Arguments.of(true, PAST, PAST, SeasonState.INACTIVE),
                 Arguments.of(true, PAST, FUTURE, SeasonState.PRE_SEASON));
     }
 
-    /** See Season_isInactiveTest for why the 18-combination table above can never reach INACTIVE. */
+    /** See Season_isInactiveTest for why most rows of the truth table above can never reach INACTIVE. */
     @Test
     void getSeasonState_reachesInactive_whenPastStartDateButNeitherWindowHasOpened() {
         Season season = SeasonTestFixtures.season(

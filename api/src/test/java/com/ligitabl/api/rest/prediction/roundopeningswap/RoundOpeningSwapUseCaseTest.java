@@ -160,13 +160,26 @@ class RoundOpeningSwapUseCaseTest {
 
     @Test
     void shouldReject_whenSeasonCompleted() {
-        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.empty());
+        season.setCompleted(true);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
 
         var command = new RoundOpeningSwapCommand(List.of(new SwapCommand("ARS", "LIV")));
         var result = useCase.execute(userId, command);
 
         assertTrue(result.isLeft());
         assertInstanceOf(SwapError.SeasonCompleted.class, result.getLeft());
+        verify(predictionRepo, never()).save(any());
+    }
+
+    @Test
+    void shouldReject_whenSeasonNotFound() {
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.empty());
+
+        var command = new RoundOpeningSwapCommand(List.of(new SwapCommand("ARS", "LIV")));
+        var result = useCase.execute(userId, command);
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(SwapError.SeasonNotFound.class, result.getLeft());
         verify(predictionRepo, never()).save(any());
     }
 

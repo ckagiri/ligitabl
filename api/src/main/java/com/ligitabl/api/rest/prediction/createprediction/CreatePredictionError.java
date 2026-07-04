@@ -3,7 +3,7 @@ package com.ligitabl.api.rest.prediction.createprediction;
 import java.util.UUID;
 
 public sealed interface CreatePredictionError {
-    record NotFound() implements CreatePredictionError {}
+    record SeasonNotFound() implements CreatePredictionError {}
 
     record Completed() implements CreatePredictionError {}
 

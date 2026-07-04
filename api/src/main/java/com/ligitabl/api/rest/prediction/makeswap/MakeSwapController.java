@@ -78,6 +78,16 @@ public class MakeSwapController {
                             "error", "SEASON_COMPLETED",
                             "message", "Cannot swap in completed season"));
 
+            case SwapError.SeasonNotFound __ -> ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(Map.of(
+                            "error", "SEASON_NOT_FOUND",
+                            "message", "No active season found"));
+
+            case SwapError.SeasonNotInPlay __ -> ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of(
+                            "error", "SEASON_NOT_IN_PLAY",
+                            "message", "Cannot swap when the season is not in play"));
+
             case SwapError.SeasonInSetupMode __ -> ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(Map.of(
                             "error", "SEASON_IN_SETUP_MODE",

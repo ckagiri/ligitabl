@@ -25,9 +25,11 @@ import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class SwapHelper {
 
     private final CompetitionDefaults competitionDefaults;
@@ -36,13 +38,29 @@ public class SwapHelper {
     private final SeasonPredictionRepo predictionRepo;
     private final MatchRepo matchRepo;
 
-    public Either<SwapError, Season> getCurrentSeason() {
+    public Either<SwapError, Season> getActiveSeason() {
         return seasonRepo
                 .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
                 .map(Either::<SwapError, Season>right)
-                .orElseGet(() -> Either.left(new SwapError.SeasonCompleted()))
-                .flatMap(season ->
-                        season.isInSetupMode() ? Either.left(new SwapError.SeasonInSetupMode()) : Either.right(season));
+                .orElseGet(() -> {
+                    log.warn("No active season found for competition {}", competitionDefaults.defaultCompetitionSlug());
+                    return Either.left(new SwapError.SeasonNotFound(null));
+                })
+                .flatMap(season -> {
+                    if (season.isCompleted()) {
+                        log.info("Season {} is completed, rejecting swap", season.getId());
+                        return Either.left(new SwapError.SeasonCompleted());
+                    }
+                    if (!season.isInPlay()) {
+                        log.info("Season {} is not in play, rejecting swap", season.getId());
+                        return Either.left(new SwapError.SeasonNotInPlay(season.getId()));
+                    }
+                    if (season.isInSetupMode()) {
+                        log.info("Season {} is in setup mode, rejecting swap", season.getId());
+                        return Either.left(new SwapError.SeasonInSetupMode());
+                    }
+                    return Either.right(season);
+                });
     }
 
     public Either<SwapError, Round> getCurrentRound(Season season) {

@@ -18,6 +18,10 @@ public sealed interface SwapError {
 
     record SeasonCompleted() implements SwapError {}
 
+    record SeasonNotFound(UUID seasonId) implements SwapError {}
+
+    record SeasonNotInPlay(UUID seasonId) implements SwapError {}
+
     record SeasonInSetupMode() implements SwapError {}
 
     record UseOpeningWindowFirst(int round) implements SwapError {}

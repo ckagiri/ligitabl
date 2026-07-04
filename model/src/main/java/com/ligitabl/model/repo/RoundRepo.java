@@ -30,4 +30,10 @@ public interface RoundRepo {
      * Used by the setup-mode refinalize cascade to flag downstream rounds as out of sync.
      */
     void markUnfinalizedBetween(UUID seasonId, int fromPositionInclusive, int toPositionInclusive);
+
+    /**
+     * The first (lowest-position) round in the season that isn't both finalized and advanced.
+     * Used to guard season completion — every round must be fully closed out first.
+     */
+    Optional<Round> findFirstNotFinalizedOrAdvanced(UUID seasonId);
 }
