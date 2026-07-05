@@ -47,6 +47,9 @@ public class UpdateSeasonDatesUseCase {
         Season outgoing = null;
         Season upcoming = null;
         Season competitionUpcoming = null;
+        // When there's no real upcoming season, the admin UI targets predictionsOpenAt at the
+        // active/outgoing season itself, so outgoingSeasonId and upcomingSeasonId arrive equal.
+        boolean sameSeason = outgoingSeasonId != null && outgoingSeasonId.equals(upcomingSeasonId);
 
         if (outgoingSeasonId != null) {
             outgoing = seasonRepo.findById(outgoingSeasonId).orElse(null);
@@ -55,9 +58,10 @@ public class UpdateSeasonDatesUseCase {
         }
 
         if (upcomingSeasonId != null) {
-            upcoming = seasonRepo.findById(upcomingSeasonId).orElse(null);
-            if (upcoming == null) return new Result.UpcomingSeasonNotFound(upcomingSeasonId);
-            upcoming.setPredictionsOpenAt(predictionsOpenAt);
+            Season resolvedUpcoming = sameSeason ? outgoing : seasonRepo.findById(upcomingSeasonId).orElse(null);
+            if (resolvedUpcoming == null) return new Result.UpcomingSeasonNotFound(upcomingSeasonId);
+            resolvedUpcoming.setPredictionsOpenAt(predictionsOpenAt);
+            upcoming = resolvedUpcoming;
         }
 
         // Propagate the outgoing season's preSeasonOpensAt onto the competition's actual upcoming
@@ -103,9 +107,14 @@ public class UpdateSeasonDatesUseCase {
                     competitionUpcoming.getId(),
                     preSeasonOpensAt);
         }
-        if (upcoming != null) {
+        if (upcoming != null && !sameSeason) {
             seasonRepo.save(upcoming);
             log.info("[ADMIN_SEASON_DATES] upcoming={} predictionsOpenAt={}", upcomingSeasonId, predictionsOpenAt);
+        } else if (upcoming != null) {
+            log.info(
+                    "[ADMIN_SEASON_DATES] predictionsOpenAt={} applied to active season {} (no upcoming season)",
+                    predictionsOpenAt,
+                    upcomingSeasonId);
         }
 
         return new Result.Ok();
