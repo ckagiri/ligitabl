@@ -4,6 +4,7 @@ window.contestCreator = function () {
     fromOpen: false,
     toOpen: false,
     fromMaxH: '18rem',
+    toMaxH: '18rem',
     windowHelpOpen: false,
     selectedFrom: null,
     selectedTo: null,

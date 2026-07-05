@@ -176,7 +176,7 @@
                   <label class="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">To</label>
                   <div class="relative">
                     <button type="button"
-                            @click="selectedFrom && (toOpen = !toOpen); fromOpen = false"
+                            @click="if (selectedFrom) { toOpen = !toOpen; fromOpen = false; if (toOpen) $nextTick(() => { const r = $el.getBoundingClientRect(); toMaxH = (window.innerHeight - r.bottom - 16) + 'px'; }); }"
                             :class="selectedFrom ? 'hover:border-gray-400 bg-white' : 'opacity-50 cursor-not-allowed bg-gray-50'"
                             class="w-full flex items-center justify-between px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                       <span :class="selectedTo ? 'text-gray-900' : 'text-gray-400'" class="truncate"
@@ -189,7 +189,7 @@
 
                     <div x-show="toOpen" @click.away="toOpen = false" x-cloak x-transition
                          class="absolute z-50 w-64 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
-                      <div class="overflow-y-auto max-h-72">
+                      <div class="overflow-y-auto" :style="{ maxHeight: toMaxH }">
                         <template x-for="quarter in quarters" :key="quarter.code">
                           <div x-show="hasValidToInQuarter(quarter.code)">
                             <div class="px-3 py-1.5 bg-gray-50 border-b border-gray-100 sticky top-0 z-10">
