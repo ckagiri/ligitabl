@@ -219,8 +219,7 @@ public class GetUserPredictionUseCase {
             GetUserPredictionQuery qry, RequestContext rc, SeasonPrediction seasonPrediction) {
         // A still-unmerged pre-season "easter egg" registration (atRoundNumber == 0) must behave
         // exactly like a brand-new predictor once the season starts — any swap made while it was
-        // just a pre-season row (unlimited, no cooldown) must not count toward the real opening-round
-        // bonus or first-swap-bonus messaging.
+        // just a pre-season row must not count toward the real opening-round bonus or first-swap-bonus messaging.
         SwapCooldown swapCooldown;
         if (seasonPrediction.isPreSeasonRegistration()) {
             swapCooldown = SwapCooldown.initial();
