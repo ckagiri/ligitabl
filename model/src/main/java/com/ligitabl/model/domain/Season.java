@@ -175,9 +175,4 @@ public class Season extends AbstractModel<UUID> {
     public boolean isInactive() {
         return getSeasonState() == SeasonState.INACTIVE;
     }
-
-    /** Convenience negation of {@link #isInactive()} — reads better at call sites. */
-    public boolean isActive() {
-        return !isInactive();
-    }
 }

@@ -320,10 +320,9 @@ public class UserPredictionsController {
         model.addAttribute("swapStatus", swapStatus);
         model.addAttribute("isOpeningRound", isOpeningRound);
 
-        // canInteract: can rearrange the table regardless of cooldown (false for read-only views)
+        // canInteractWithTable: can rearrange the table regardless of cooldown (false for read-only views)
         boolean canInteractWithTable = data.canSwap()
                 || (data.swapCooldown() != null && data.swapCooldown().initialPredictionMade());
-        model.addAttribute("canInteract", canInteractWithTable);
 
         // Swap history (own predictions only)
         if (data.roundSwapHistory() != null && !data.roundSwapHistory().isEmpty()) {
@@ -353,16 +352,15 @@ public class UserPredictionsController {
                 season.isInPlay() || (season.isPreSeason() && !data.hasPreSeasonRegistration());
         model.addAttribute("seasonAllowsUpdate", seasonAllowsUpdate);
 
-        // Combined editing gates, computed once rather than re-derived per template/fragment
-        boolean seasonEditingAllowed = !season.isInSetupMode() && season.isActive() && seasonAllowsUpdate;
+        // Combined editing gates, computed once rather than re-derived per template/fragment.
+        boolean seasonEditingAllowed = !season.isInSetupMode() && seasonAllowsUpdate;
         boolean canInteractEffective =
                 canInteractWithTable && !isHistoricalView && seasonEditingAllowed && notLastRoundClosed;
         boolean canSwapEditable = (data.canSwap() || isOpeningRound)
                 && !isHistoricalView
                 && seasonEditingAllowed
                 && isRoundOpenForPrediction;
-        boolean isInitialPredictionEditable =
-                data.canCreateEntry() && !season.isInSetupMode() && season.isActive() && isRoundOpenForPrediction;
+        boolean isInitialPredictionEditable = data.canCreateEntry() && seasonEditingAllowed && isRoundOpenForPrediction;
         model.addAttribute("seasonEditingAllowed", seasonEditingAllowed);
         model.addAttribute("canInteractEffective", canInteractEffective);
         model.addAttribute("canSwapEditable", canSwapEditable);
