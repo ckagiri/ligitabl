@@ -87,6 +87,18 @@ public sealed interface Either<L, R> permits Either.Left, Either.Right {
 
     <T> Either<L, T> map(Function<? super R, ? extends T> mapper);
 
+    /**
+     * Retypes a known-Left Either to a different Right type parameter, e.g. when propagating an
+     * error out of a method whose success type differs from the current step's. Throws if called
+     * on a Right, since there is no value to discard safely.
+     */
+    default <T> Either<L, T> castLeft() {
+        if (isRight()) {
+            throw new IllegalStateException("castLeft() called on a Right value: " + get());
+        }
+        return Either.left(getLeft());
+    }
+
     <T> Either<L, T> flatMap(Function<? super R, ? extends Either<L, T>> mapper);
 
     <T> Either<T, R> mapLeft(Function<? super L, ? extends T> mapper);

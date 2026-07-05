@@ -38,25 +38,25 @@ public class GetPrivateContestUseCase {
 
     public Either<GetPrivateContestError, GetPrivateContestResult> execute(GetPrivateContestQuery query) {
         var contestResult = resolveContest(query.contestId());
-        if (contestResult.isLeft()) return contestResult.map(c -> null);
+        if (contestResult.isLeft()) return contestResult.castLeft();
         Contest contest = contestResult.get();
 
         var membershipResult = validateMembership(query.userId(), contest.getId());
-        if (membershipResult.isLeft()) return membershipResult.map(m -> null);
+        if (membershipResult.isLeft()) return membershipResult.castLeft();
 
         var seasonResult = resolveSeason(contest.getSeasonId());
-        if (seasonResult.isLeft()) return seasonResult.map(s -> null);
+        if (seasonResult.isLeft()) return seasonResult.castLeft();
         Season season = seasonResult.get();
 
         var competitionResult = resolveCompetition(season);
-        if (competitionResult.isLeft()) return competitionResult.map(c -> null);
+        if (competitionResult.isLeft()) return competitionResult.castLeft();
         Competition competition = competitionResult.get();
 
         int currentPosition = resolveCurrentPosition(season);
 
         String segmentCode = query.selectedSegmentCode();
         var segmentResult = resolveSelectedSegment(contest, competition, segmentCode, currentPosition);
-        if (segmentResult.isLeft()) return segmentResult.map(s -> null);
+        if (segmentResult.isLeft()) return segmentResult.castLeft();
         RoundSpan selectedSegment = segmentResult.get();
 
         boolean activeOnly = isSegmentLive(selectedSegment, currentPosition);
