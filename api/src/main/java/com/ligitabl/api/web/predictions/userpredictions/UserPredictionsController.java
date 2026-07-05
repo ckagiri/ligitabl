@@ -260,10 +260,42 @@ public class UserPredictionsController {
         model.addAttribute("viewingRound", data.viewingRound());
         model.addAttribute("atRoundNumber", data.atRoundNumber());
         model.addAttribute("isCurrentRound", data.isCurrentRound());
-        model.addAttribute("roundState", data.roundState().toLowerCase());
+        String roundStateValue = data.roundState().toLowerCase();
+        model.addAttribute("roundState", roundStateValue);
         model.addAttribute("seasonCompleted", data.seasonCompleted());
         model.addAttribute("seasonInSetupMode", season.isInSetupMode());
         model.addAttribute("predictions", predictions);
+
+        // Round-level derived flags, computed once here rather than re-derived per template/fragment
+        boolean isOpenRoundState = roundStateValue.equals("open");
+        boolean isLockedRoundState = roundStateValue.equals("locked");
+        boolean isCompletedRoundState = roundStateValue.equals("completed");
+        boolean isFinalizedRoundState = roundStateValue.equals("finalized");
+        boolean isFutureRoundPrediction = data.atRoundNumber() != null && data.atRoundNumber() > data.currentRound();
+        boolean isRoundOpenForPrediction = isOpenRoundState || isFutureRoundPrediction;
+        boolean isFinalRound = data.currentRound() == data.lastRound();
+        boolean notLastRound = !isFinalRound;
+        boolean isCurrentFinalRound = data.isCurrentRound() && isFinalRound;
+        boolean isFinalRoundOpen = isFinalRound && isOpenRoundState;
+        boolean isHistoricalView = !data.isCurrentRound() || (data.isCurrentRound() && data.seasonCompleted());
+        boolean notLastRoundClosed = !isFinalRound || isFinalRoundOpen;
+        // The comparison widget and the submit-actions footer always show together — both cover all
+        // 4 pre-advancement round states (comparison-only or footer-only gating was a drift bug).
+        boolean isActiveRoundState = isOpenRoundState || isLockedRoundState || isCompletedRoundState || isFinalizedRoundState;
+        // Games have started (locked), finished (completed), or just been finalized — but not yet advanced.
+        boolean isRoundLockedOrBeyond = isLockedRoundState || isCompletedRoundState || isFinalizedRoundState;
+        boolean isRegisteredAwaitingPredictionsOpen =
+                !data.canCreateEntry() && data.atRoundNumber() != null && data.atRoundNumber() == 0;
+        model.addAttribute("isFutureRoundPrediction", isFutureRoundPrediction);
+        model.addAttribute("isRoundOpenForPrediction", isRoundOpenForPrediction);
+        model.addAttribute("isFinalRound", isFinalRound);
+        model.addAttribute("notLastRound", notLastRound);
+        model.addAttribute("isCurrentFinalRound", isCurrentFinalRound);
+        model.addAttribute("isFinalRoundOpen", isFinalRoundOpen);
+        model.addAttribute("isHistoricalView", isHistoricalView);
+        model.addAttribute("isActiveRoundState", isActiveRoundState);
+        model.addAttribute("isRoundLockedOrBeyond", isRoundLockedOrBeyond);
+        model.addAttribute("isRegisteredAwaitingPredictionsOpen", isRegisteredAwaitingPredictionsOpen);
 
         // Access mode attributes
         model.addAttribute("accessMode", data.accessMode().name());
@@ -273,6 +305,7 @@ public class UserPredictionsController {
         model.addAttribute("isGuest", data.isGuest());
 
         // Swap status for cooldown banners
+        boolean isOpeningRound;
         if (data.swapCooldown() != null) {
             var cooldown = data.swapCooldown();
             var now = Instant.now();
@@ -286,10 +319,11 @@ public class UserPredictionsController {
                             cooldown.initialPredictionMade(),
                             firstSwapBonus,
                             cooldown.openingRoundAvailable()));
-            model.addAttribute("isOpeningRound", cooldown.openingRoundAvailable());
+            isOpeningRound = cooldown.openingRoundAvailable();
         } else {
-            model.addAttribute("isOpeningRound", false);
+            isOpeningRound = false;
         }
+        model.addAttribute("isOpeningRound", isOpeningRound);
 
         // canInteract: can rearrange the table regardless of cooldown (false for read-only views)
         boolean canInteractWithTable = data.canSwap()
@@ -320,8 +354,24 @@ public class UserPredictionsController {
         model.addAttribute("isOffSeason", season.isOffSeason());
         model.addAttribute("isInPlay", season.isInPlay());
         model.addAttribute("isInactive", season.isInactive());
-        model.addAttribute(
-                "seasonAllowsUpdate", season.isInPlay() || (season.isPreSeason() && !data.hasPreSeasonRegistration()));
+        boolean seasonAllowsUpdate =
+                season.isInPlay() || (season.isPreSeason() && !data.hasPreSeasonRegistration());
+        model.addAttribute("seasonAllowsUpdate", seasonAllowsUpdate);
+
+        // Combined editing gates, computed once rather than re-derived per template/fragment
+        boolean seasonEditingAllowed = !season.isInSetupMode() && season.isActive() && seasonAllowsUpdate;
+        boolean canInteractEffective =
+                canInteractWithTable && !isHistoricalView && seasonEditingAllowed && notLastRoundClosed;
+        boolean canSwapEditable = (data.canSwap() || isOpeningRound)
+                && !isHistoricalView
+                && seasonEditingAllowed
+                && isRoundOpenForPrediction;
+        boolean isInitialPredictionEditable =
+                data.canCreateEntry() && !season.isInSetupMode() && season.isActive() && isRoundOpenForPrediction;
+        model.addAttribute("seasonEditingAllowed", seasonEditingAllowed);
+        model.addAttribute("canInteractEffective", canInteractEffective);
+        model.addAttribute("canSwapEditable", canSwapEditable);
+        model.addAttribute("isInitialPredictionEditable", isInitialPredictionEditable);
         if (season.getPreSeasonOpensAt() != null && !season.isPreSeasonOpen()) {
             long days = ChronoUnit.DAYS.between(OffsetDateTime.now(), season.getPreSeasonOpensAt());
             if (days >= 1) {
