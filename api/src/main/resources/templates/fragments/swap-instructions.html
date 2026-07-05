@@ -1,7 +1,7 @@
 <!-- Contextual Swap Instructions Banner Fragment -->
 <div
-  th:fragment="instructions(isGuest, canSwap, canCreateEntry)"
-  th:if="${isGuest || canSwap || canCreateEntry}"
+  th:fragment="instructions(isGuest, canSwap, isInitialPredictionEditable)"
+  th:if="${isGuest || canSwap || isInitialPredictionEditable}"
   class="px-6 pt-4"
 >
   <!-- Initial state: No team selected, no swaps made -->

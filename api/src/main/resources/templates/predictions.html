@@ -211,13 +211,13 @@ isCurrentRound=[[${isCurrentRound}]] viewingRound=[[${viewingRound}]] currentRou
 atRoundNumber=[[${atRoundNumber}]] seasonCompleted=[[${seasonCompleted}]] hasRoundResult=[[${hasRoundResult}]]
 accessMode=[[${accessMode}]] canCreateEntry=[[${canCreateEntry}]] canSwap=[[${canSwap}]]
 isGuest=[[${isGuest}]]
-swapStatus.firstSwapBonus=[[${swapStatus != null ? swapStatus.firstSwapBonus : null}]]
+swapStatus.firstSwapBonus=[[${swapStatus.firstSwapBonus}]]
 firstSwap.defaultMsg=[[${roundState != 'locked' || !isFutureRoundPrediction}]]
 firstSwap.lockedMsg=[[${roundState == 'locked' && isFutureRoundPrediction}]]
 isPreSeason=[[${isPreSeason}]] isOffSeason=[[${isOffSeason}]] isInPlay=[[${isInPlay}]] isInactive=[[${isInactive}]] seasonAllowsUpdate=[[${seasonAllowsUpdate}]] daysToPredictions=[[${daysToPredictions}]] daysToPreSeason=[[${daysToPreSeason}]] predictionsAboutToStart=[[${predictionsAboutToStart}]] preSeasonAboutToStart=[[${preSeasonAboutToStart}]]
 isRoundOpenForPrediction=[[${isRoundOpenForPrediction}]] isFutureRoundPrediction=[[${isFutureRoundPrediction}]] isLastRound=[[${isLastRound}]] isLastRoundOpen=[[${isLastRoundOpen}]] isHistoricalView=[[${isHistoricalView}]]
 seasonEditingAllowed=[[${seasonEditingAllowed}]] canInteractEffective=[[${canInteractEffective}]] canSwapEditable=[[${canSwapEditable}]] isInitialPredictionEditable=[[${isInitialPredictionEditable}]]
-isActiveRoundState=[[${isActiveRoundState}]] isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound}]] isCurrentRoundLast=[[${isCurrentRoundLast}]] isRegisteredAwaitingPredictionsOpen=[[${isRegisteredAwaitingPredictionsOpen}]] isPreSeasonRegistration=[[${isPreSeasonRegistration}]]</pre
+isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound}]] isCurrentRoundLast=[[${isCurrentRoundLast}]] isRegisteredAwaitingPredictionsOpen=[[${isRegisteredAwaitingPredictionsOpen}]] isPreSeasonRegistration=[[${isPreSeasonRegistration}]]</pre
                 >
               </div>
             </div>
@@ -274,7 +274,7 @@ isActiveRoundState=[[${isActiveRoundState}]] isRoundLockedOrBeyond=[[${isRoundLo
 
             <!-- Comparison Options for guests (only for current editable round, not historical views) -->
             <th:block
-              th:if="${!isHistoricalView && isActiveRoundState}"
+              th:if="${!isHistoricalView}"
             >
               <!-- Skeleton: visible before Alpine, removed once Alpine initialises -->
               <div x-skeleton class="px-6 pt-4 pb-2">
@@ -369,12 +369,12 @@ isActiveRoundState=[[${isActiveRoundState}]] isRoundLockedOrBeyond=[[${isRoundLo
           >
             <!-- Contextual Swap Instructions Banner (editable + cooldown-interactive states) -->
             <div
-              th:replace="~{fragments/swap-instructions :: instructions(false, ${canInteractEffective}, ${canCreateEntry})}"
+              th:replace="~{fragments/swap-instructions :: instructions(false, ${canInteractEffective}, ${isInitialPredictionEditable})}"
             ></div>
 
             <!-- Comparison Options (only for current editable round, not historical views) -->
             <th:block
-              th:if="${!isHistoricalView && isActiveRoundState}"
+              th:if="${!isHistoricalView}"
             >
               <!-- Skeleton: visible before Alpine, removed once Alpine initialises -->
               <div x-skeleton class="px-6 pt-4 pb-2">
@@ -410,7 +410,7 @@ isActiveRoundState=[[${isActiveRoundState}]] isRoundLockedOrBeyond=[[${isRoundLo
 
             <!-- Actions Footer (editable + cooldown-interactive states; also used for pre-season registration) -->
             <th:block
-              th:if="${!isHistoricalView && canInteractEffective && (isActiveRoundState || isRoundOpenForPrediction)}"
+              th:if="${canInteractEffective}"
             >
               <div
                 x-show="canInteract || isInitialPrediction"

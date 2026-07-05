@@ -279,9 +279,6 @@ public class UserPredictionsController {
         boolean isLastRoundOpen = isLastRound && isOpenRoundState;
         boolean isHistoricalView = !data.isCurrentRound() || (data.isCurrentRound() && data.seasonCompleted());
         boolean notLastRoundClosed = !isLastRound || isLastRoundOpen;
-        // The comparison widget and the submit-actions footer always show together — both cover all
-        // 4 pre-advancement round states (comparison-only or footer-only gating was a drift bug).
-        boolean isActiveRoundState = isOpenRoundState || isLockedRoundState || isCompletedRoundState || isFinalizedRoundState;
         // Games have started (locked), finished (completed), or just been finalized — but not yet advanced.
         boolean isRoundLockedOrBeyond = isLockedRoundState || isCompletedRoundState || isFinalizedRoundState;
         boolean isRegisteredAwaitingPredictionsOpen =
@@ -293,7 +290,6 @@ public class UserPredictionsController {
         model.addAttribute("isCurrentRoundLast", isCurrentRoundLast);
         model.addAttribute("isLastRoundOpen", isLastRoundOpen);
         model.addAttribute("isHistoricalView", isHistoricalView);
-        model.addAttribute("isActiveRoundState", isActiveRoundState);
         model.addAttribute("isRoundLockedOrBeyond", isRoundLockedOrBeyond);
         model.addAttribute("isRegisteredAwaitingPredictionsOpen", isRegisteredAwaitingPredictionsOpen);
 
@@ -304,25 +300,24 @@ public class UserPredictionsController {
         model.addAttribute("isReadonly", data.isReadonly());
         model.addAttribute("isGuest", data.isGuest());
 
-        // Swap status for cooldown banners
-        boolean isOpeningRound;
+        // Swap status for cooldown banners — SwapStatusDTO.none() when there's no cooldown at all
+        // (guest, no-prediction-fallback, historical view), so templates never need swapStatus != null.
+        SwapStatusDTO swapStatus = SwapStatusDTO.none();
+        boolean isOpeningRound = false;
         if (data.swapCooldown() != null) {
             var cooldown = data.swapCooldown();
             var now = Instant.now();
             boolean firstSwapBonus = cooldown.initialPredictionMade() && cooldown.lastSwapAt() == null;
-            model.addAttribute(
-                    "swapStatus",
-                    new SwapStatusDTO(
-                            cooldown.canSwap(now),
-                            cooldown.getStatusMessage(now),
-                            cooldown.getLastSwapAtFormatted(),
-                            cooldown.initialPredictionMade(),
-                            firstSwapBonus,
-                            cooldown.openingRoundAvailable()));
+            swapStatus = new SwapStatusDTO(
+                    cooldown.canSwap(now),
+                    cooldown.getStatusMessage(now),
+                    cooldown.getLastSwapAtFormatted(),
+                    cooldown.initialPredictionMade(),
+                    firstSwapBonus,
+                    cooldown.openingRoundAvailable());
             isOpeningRound = cooldown.openingRoundAvailable();
-        } else {
-            isOpeningRound = false;
         }
+        model.addAttribute("swapStatus", swapStatus);
         model.addAttribute("isOpeningRound", isOpeningRound);
 
         // canInteract: can rearrange the table regardless of cooldown (false for read-only views)
@@ -586,7 +581,18 @@ public class UserPredictionsController {
             String lastSwapAt,
             boolean initialPredictionMade,
             boolean firstSwapBonus,
-            boolean openingRoundAvailable) {}
+            boolean openingRoundAvailable) {
+
+        /**
+         * Null object for views with no swap cooldown (guest, no-prediction-fallback, historical
+         * views) — lets templates read {@code swapStatus.firstSwapBonus}/{@code
+         * .openingRoundAvailable} directly instead of guarding every read with {@code swapStatus !=
+         * null}.
+         */
+        public static SwapStatusDTO none() {
+            return new SwapStatusDTO(false, "", "Never", false, false, false);
+        }
+    }
 
     /**
      * DTO for a single swap change entry displayed in the swap history section.

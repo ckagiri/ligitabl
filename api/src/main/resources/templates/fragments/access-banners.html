@@ -2,7 +2,7 @@
 <!-- Parameters:
      isGuest: Boolean - user is a guest
      canCreateEntry: Boolean - user can create initial entry
-     swapStatus: SwapStatus object (can be null)
+     swapStatus: SwapStatusDTO (never null; SwapStatusDTO.none() when no cooldown applies)
      isCurrentRound: Boolean - viewing current round
      roundState: String - 'open', 'locked', 'completed', or 'finalized'
      totalScore: Integer (can be null) - score for finalized rounds
@@ -97,7 +97,7 @@
   </div>
 
   <!-- First Swap Bonus Banner (after initial submission) -->
-  <div th:if="${swapStatus != null && swapStatus.firstSwapBonus}"
+  <div th:if="${swapStatus.firstSwapBonus}"
     class="bg-green-50 border border-green-200 rounded-lg p-4">
     <div class="flex items-start">
       <svg class="h-5 w-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -124,7 +124,7 @@
   </div>
 
   <!-- Round Opening Swaps Banner (each round, after first swap bonus is spent) -->
-  <div th:if="${swapStatus != null && swapStatus.openingRoundAvailable}"
+  <div th:if="${swapStatus.openingRoundAvailable}"
     class="bg-amber-50 border border-amber-200 rounded-lg p-4">
     <div class="flex items-start">
       <div class="bg-amber-100 rounded-full p-1.5 mr-3 flex-shrink-0">
@@ -145,7 +145,7 @@
 
   <!-- Locked State Banner (locked only) - NOT for guests, NOT for first swap bonus -->
   <div
-    th:if="${!isGuest && isCurrentRound && roundState == 'locked' && !(swapStatus != null && swapStatus.firstSwapBonus)}"
+    th:if="${!isGuest && isCurrentRound && roundState == 'locked' && !swapStatus.firstSwapBonus}"
     th:with="lockedVariant=${isLastRound ? 'seasonCompleting'
                : (canCreateEntry ? 'initialPrediction'
                : (isFutureRoundPrediction ? 'futureRoundSwap' : 'locked'))}"
@@ -279,7 +279,7 @@
 
   <!-- Status Indicator (for own predictions, not during first swap bonus which has its own banner) -->
   <div
-    th:if="${!isGuest && !canCreateEntry && !(swapStatus != null && swapStatus.firstSwapBonus)}"
+    th:if="${!isGuest && !canCreateEntry && !swapStatus.firstSwapBonus}"
     class="inline-flex items-center gap-2 text-sm">
     <span
       th:if="${isCurrentRound && canSwap && isRoundOpenForPrediction}"
@@ -288,7 +288,7 @@
       Ready to modify
     </span>
     <span
-      th:if="${isCurrentRound && !canSwap && swapStatus != null && isRoundOpenForPrediction}"
+      th:if="${isCurrentRound && !canSwap && isRoundOpenForPrediction}"
       class="flex items-center gap-1.5 text-yellow-600 font-medium">
       <span class="w-2 h-2 bg-yellow-600 rounded-full"></span>
       Cooldown active -
