@@ -260,10 +260,38 @@ public class UserPredictionsController {
         model.addAttribute("viewingRound", data.viewingRound());
         model.addAttribute("atRoundNumber", data.atRoundNumber());
         model.addAttribute("isCurrentRound", data.isCurrentRound());
-        model.addAttribute("roundState", data.roundState().toLowerCase());
+        String roundStateValue = data.roundState().toLowerCase();
+        model.addAttribute("roundState", roundStateValue);
         model.addAttribute("seasonCompleted", data.seasonCompleted());
         model.addAttribute("seasonInSetupMode", season.isInSetupMode());
         model.addAttribute("predictions", predictions);
+
+        // Round-level derived flags, computed once here rather than re-derived per template/fragment
+        boolean isOpenRoundState = roundStateValue.equals("open");
+        boolean isLockedRoundState = roundStateValue.equals("locked");
+        boolean isCompletedRoundState = roundStateValue.equals("completed");
+        boolean isFinalizedRoundState = roundStateValue.equals("finalized");
+        boolean isFutureRoundPrediction = data.atRoundNumber() != null && data.atRoundNumber() > data.currentRound();
+        boolean isRoundOpenForPrediction = isOpenRoundState || isFutureRoundPrediction;
+        boolean isLastRound = data.currentRound() == data.lastRound();
+        boolean notLastRound = !isLastRound;
+        boolean isCurrentRoundLast = data.isCurrentRound() && isLastRound;
+        boolean isLastRoundOpen = isLastRound && isOpenRoundState;
+        boolean isHistoricalView = !data.isCurrentRound() || (data.isCurrentRound() && data.seasonCompleted());
+        boolean notLastRoundClosed = !isLastRound || isLastRoundOpen;
+        // Games have started (locked), finished (completed), or just been finalized — but not yet advanced.
+        boolean isRoundLockedOrBeyond = isLockedRoundState || isCompletedRoundState || isFinalizedRoundState;
+        boolean isRegisteredAwaitingPredictionsOpen =
+                !data.canCreateEntry() && data.atRoundNumber() != null && data.atRoundNumber() == 0;
+        model.addAttribute("isFutureRoundPrediction", isFutureRoundPrediction);
+        model.addAttribute("isRoundOpenForPrediction", isRoundOpenForPrediction);
+        model.addAttribute("isLastRound", isLastRound);
+        model.addAttribute("notLastRound", notLastRound);
+        model.addAttribute("isCurrentRoundLast", isCurrentRoundLast);
+        model.addAttribute("isLastRoundOpen", isLastRoundOpen);
+        model.addAttribute("isHistoricalView", isHistoricalView);
+        model.addAttribute("isRoundLockedOrBeyond", isRoundLockedOrBeyond);
+        model.addAttribute("isRegisteredAwaitingPredictionsOpen", isRegisteredAwaitingPredictionsOpen);
 
         // Access mode attributes
         model.addAttribute("accessMode", data.accessMode().name());
@@ -272,29 +300,29 @@ public class UserPredictionsController {
         model.addAttribute("isReadonly", data.isReadonly());
         model.addAttribute("isGuest", data.isGuest());
 
-        // Swap status for cooldown banners
+        // Swap status for cooldown banners — SwapStatusDTO.none() when there's no cooldown at all
+        // (guest, no-prediction-fallback, historical view), so templates never need swapStatus != null.
+        SwapStatusDTO swapStatus = SwapStatusDTO.none();
+        boolean isOpeningRound = false;
         if (data.swapCooldown() != null) {
             var cooldown = data.swapCooldown();
             var now = Instant.now();
             boolean firstSwapBonus = cooldown.initialPredictionMade() && cooldown.lastSwapAt() == null;
-            model.addAttribute(
-                    "swapStatus",
-                    new SwapStatusDTO(
-                            cooldown.canSwap(now),
-                            cooldown.getStatusMessage(now),
-                            cooldown.getLastSwapAtFormatted(),
-                            cooldown.initialPredictionMade(),
-                            firstSwapBonus,
-                            cooldown.openingRoundAvailable()));
-            model.addAttribute("isOpeningRound", cooldown.openingRoundAvailable());
-        } else {
-            model.addAttribute("isOpeningRound", false);
+            swapStatus = new SwapStatusDTO(
+                    cooldown.canSwap(now),
+                    cooldown.getStatusMessage(now),
+                    cooldown.getLastSwapAtFormatted(),
+                    cooldown.initialPredictionMade(),
+                    firstSwapBonus,
+                    cooldown.openingRoundAvailable());
+            isOpeningRound = cooldown.openingRoundAvailable();
         }
+        model.addAttribute("swapStatus", swapStatus);
+        model.addAttribute("isOpeningRound", isOpeningRound);
 
-        // canInteract: can rearrange the table regardless of cooldown (false for read-only views)
+        // canInteractWithTable: can rearrange the table regardless of cooldown (false for read-only views)
         boolean canInteractWithTable = data.canSwap()
                 || (data.swapCooldown() != null && data.swapCooldown().initialPredictionMade());
-        model.addAttribute("canInteract", canInteractWithTable);
 
         // Swap history (own predictions only)
         if (data.roundSwapHistory() != null && !data.roundSwapHistory().isEmpty()) {
@@ -320,8 +348,26 @@ public class UserPredictionsController {
         model.addAttribute("isOffSeason", season.isOffSeason());
         model.addAttribute("isInPlay", season.isInPlay());
         model.addAttribute("isInactive", season.isInactive());
-        model.addAttribute(
-                "seasonAllowsUpdate", season.isInPlay() || (season.isPreSeason() && !data.hasPreSeasonRegistration()));
+        boolean seasonAllowsUpdate = season.isInPlay() || (season.isPreSeason() && !data.hasPreSeasonRegistration());
+        model.addAttribute("seasonAllowsUpdate", seasonAllowsUpdate);
+
+        // Combined editing gates, computed once rather than re-derived per template/fragment.
+        boolean seasonEditingAllowed = !season.isInSetupMode() && seasonAllowsUpdate;
+        boolean canInteractEffective =
+                canInteractWithTable && !isHistoricalView && seasonEditingAllowed && notLastRoundClosed;
+        boolean canSwapEditable = (data.canSwap() || isOpeningRound)
+                && !isHistoricalView
+                && seasonEditingAllowed
+                && isRoundOpenForPrediction;
+        boolean isInitialPredictionEditable = data.canCreateEntry() && seasonEditingAllowed && isRoundOpenForPrediction;
+        model.addAttribute("seasonEditingAllowed", seasonEditingAllowed);
+        model.addAttribute("canInteractEffective", canInteractEffective);
+        model.addAttribute("canSwapEditable", canSwapEditable);
+        model.addAttribute("isInitialPredictionEditable", isInitialPredictionEditable);
+        // Still-unmerged pre-season "easter egg" registration (atRoundNumber == 0) — treated like an
+        // initial prediction (5-swap allowance, no cooldown) everywhere isInitialPrediction is checked,
+        // without changing accessMode itself.
+        model.addAttribute("isPreSeasonRegistration", data.hasPreSeasonRegistration());
         if (season.getPreSeasonOpensAt() != null && !season.isPreSeasonOpen()) {
             long days = ChronoUnit.DAYS.between(OffsetDateTime.now(), season.getPreSeasonOpensAt());
             if (days >= 1) {
@@ -532,7 +578,18 @@ public class UserPredictionsController {
             String lastSwapAt,
             boolean initialPredictionMade,
             boolean firstSwapBonus,
-            boolean openingRoundAvailable) {}
+            boolean openingRoundAvailable) {
+
+        /**
+         * Null object for views with no swap cooldown (guest, no-prediction-fallback, historical
+         * views) — lets templates read {@code swapStatus.firstSwapBonus}/{@code
+         * .openingRoundAvailable} directly instead of guarding every read with {@code swapStatus !=
+         * null}.
+         */
+        public static SwapStatusDTO none() {
+            return new SwapStatusDTO(false, "", "Never", false, false, false);
+        }
+    }
 
     /**
      * DTO for a single swap change entry displayed in the swap history section.

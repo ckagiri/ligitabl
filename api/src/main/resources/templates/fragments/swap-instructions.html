@@ -1,7 +1,7 @@
 <!-- Contextual Swap Instructions Banner Fragment -->
 <div
-  th:fragment="instructions(isGuest, canSwap, canCreateEntry)"
-  th:if="${isGuest || canSwap || canCreateEntry}"
+  th:fragment="instructions(isGuest, canSwap, isInitialPredictionEditable)"
+  th:if="${isGuest || canSwap || isInitialPredictionEditable}"
   class="px-6 pt-4"
 >
   <!-- Initial state: No team selected, no swaps made -->
@@ -96,9 +96,9 @@
       <span class="text-sm text-red-800">
         <strong>Swap limit exceeded!</strong>
         You've made <span x-text="getSwapCount()"></span> swaps but
-        <span x-show="isInitialPrediction">the limit is 5.</span>
+        <span x-show="isInitialPrediction || isPreSeasonRegistration">the limit is 5.</span>
         <span x-show="isOpeningRound">the limit is 2.</span>
-        <span x-show="!isInitialPrediction && !isOpeningRound">only 1 is allowed per 24h.</span>
+        <span x-show="!isInitialPrediction && !isPreSeasonRegistration && !isOpeningRound">only 1 is allowed per 24h.</span>
         <span x-show="!undoing"
           ><a
             @click="undoLastSwap()"
@@ -148,7 +148,7 @@
         >.
         <span x-show="canSwap || isInitialPrediction">
           Review your changes, then
-          <span x-text="isInitialPrediction ? 'submit' : 'update'"></span> to
+          <span x-text="(isInitialPrediction || isPreSeasonRegistration) ? 'submit' : 'update'"></span> to
           save,
           <span
             x-show="undoing"

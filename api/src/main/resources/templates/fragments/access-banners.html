@@ -2,7 +2,7 @@
 <!-- Parameters:
      isGuest: Boolean - user is a guest
      canCreateEntry: Boolean - user can create initial entry
-     swapStatus: SwapStatus object (can be null)
+     swapStatus: SwapStatusDTO (never null; SwapStatusDTO.none() when no cooldown applies)
      isCurrentRound: Boolean - viewing current round
      roundState: String - 'open', 'locked', 'completed', or 'finalized'
      totalScore: Integer (can be null) - score for finalized rounds
@@ -13,12 +13,21 @@
      atRoundNumber: Integer (can be null) - prediction activation round
      seasonCompleted: Boolean - whether season is completed
      canSwap: Boolean - whether user can swap (cooldown check)
+     isRoundOpenForPrediction: Boolean - roundState == 'open', or predicting ahead of a future round
+     isFutureRoundPrediction: Boolean - atRoundNumber is set and ahead of currentRound
+     isLastRound: Boolean - currentRound == lastRound
+     notLastRound: Boolean - currentRound != lastRound
+     isCurrentRoundLast: Boolean - isCurrentRound && isLastRound
+     isRoundLockedOrBeyond: Boolean - roundState in {locked, completed, finalized} (started, finished, or just finalized — not yet advanced)
+     isPreSeasonRegistration: Boolean - unmerged pre-season "easter egg" registration (atRoundNumber == 0), treated like an initial prediction
+     isInitialPredictionEditable: Boolean - canCreateEntry, gated by setup mode/season active/round open
+     seasonEditingAllowed: Boolean - !seasonInSetupMode && seasonAllowsUpdate
 -->
 <div x-cloak
-  th:fragment="banners(isGuest, canCreateEntry, swapStatus, isCurrentRound, roundState, totalScore, viewingRound, hasRoundResult, currentRound, lastRound, atRoundNumber, seasonCompleted, canSwap)"
+  th:fragment="banners(isGuest, canCreateEntry, swapStatus, isCurrentRound, roundState, totalScore, viewingRound, hasRoundResult, currentRound, lastRound, atRoundNumber, seasonCompleted, canSwap, isRoundOpenForPrediction, isFutureRoundPrediction, isLastRound, notLastRound, isCurrentRoundLast, isRoundLockedOrBeyond, isPreSeasonRegistration, isInitialPredictionEditable, seasonEditingAllowed)"
   class="mb-4 sm:mb-6 space-y-3">
   <!-- Guest Banner -->
-  <div th:if="${isGuest == true}" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+  <div th:if="${isGuest}" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
     <div class="flex items-start">
       <svg class="h-5 w-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
         <path fill-rule="evenodd"
@@ -28,24 +37,24 @@
       <div>
         <p class="text-sm font-medium text-yellow-800">Guest Preview</p>
 
-        <!-- Current round + open/finalized (editable states) -->
-        <p th:if="${isCurrentRound == true && (roundState == 'open' || (roundState == 'finalized' && seasonCompleted != true))}"
+        <!-- Current round + open (editable state) -->
+        <p th:if="${isCurrentRound && roundState == 'open'}"
           class="text-sm text-yellow-700 mt-1">
           Tap teams to swap and build your prediction — up to 5 swaps.
           <a th:href="@{/auth/register}" class="underline font-medium hover:text-yellow-900">Sign up</a>
           to save and join the competition.
         </p>
 
-        <!-- Current round + locked/completed (not last round) -->
-        <p th:if="${isCurrentRound == true && (roundState == 'locked' || roundState == 'completed') && currentRound != lastRound}"
+        <!-- Current round + locked/completed/finalized (not last round) -->
+        <p th:if="${isCurrentRound && isRoundLockedOrBeyond && notLastRound}"
           class="text-sm text-yellow-700 mt-1">
           <strong>👋 Matches In Progress</strong> - Tap teams to swap and build your prediction — up to 5 swaps.
           <a th:href="@{/auth/register}" class="underline font-medium hover:text-yellow-900">Sign up</a>
           to save and join the competition.
         </p>
 
-        <!-- Current round + last round + locked -->
-        <p th:if="${isCurrentRound == true && currentRound == lastRound && (roundState == 'locked' || roundState == 'completed')}"
+        <!-- Current round + last round + locked/completed/finalized -->
+        <p th:if="${isCurrentRoundLast && isRoundLockedOrBeyond}"
           class="text-sm text-yellow-700 mt-1">
           This is the final round. Matches are in progress and the season is
           completing.
@@ -54,7 +63,7 @@
         </p>
 
         <!-- Current round + season completed -->
-        <p th:if="${isCurrentRound == true && seasonCompleted == true}"
+        <p th:if="${isCurrentRound && seasonCompleted}"
           class="text-sm text-yellow-700 mt-1">
           This season has completed. You can browse the results.
           <a th:href="@{/auth/register}" class="underline font-medium hover:text-yellow-900">Sign up</a>
@@ -64,8 +73,8 @@
     </div>
   </div>
 
-  <!-- Can Create Entry Banner -->
-  <div th:if="${canCreateEntry == true && roundState != 'locked'}" x-data="{ imported: false }"
+  <!-- Can Create Entry Banner (pre-season registration is an easter egg) -->
+  <div th:if="${(canCreateEntry || isPreSeasonRegistration) && roundState != 'locked' && seasonEditingAllowed}" x-data="{ imported: false }"
     x-init="imported = localStorage.getItem('ligitabl.guestPrediction') !== null"
     @guest-storage-cleared.window="imported = false" class="bg-green-50 border border-green-200 rounded-lg p-4">
     <div class="flex items-start">
@@ -81,7 +90,7 @@
         </p>
         <span class="text-sm text-green-700 mt-1">
           <span x-show="imported">We've loaded your prediction - review it and
-            submit to join the competition.</span>
+            submit<th:block th:if="${!isPreSeasonRegistration}">&nbsp;to join the competition</th:block>.</span>
           <span x-show="!imported">Set your predicted order and submit. Take your time —
             no swaps needed, but up to 5 to fine-tune.</span>
           </p>
@@ -90,7 +99,7 @@
   </div>
 
   <!-- First Swap Bonus Banner (after initial submission) -->
-  <div th:if="${swapStatus != null && swapStatus.firstSwapBonus}"
+  <div th:if="${swapStatus.firstSwapBonus && seasonEditingAllowed}"
     class="bg-green-50 border border-green-200 rounded-lg p-4">
     <div class="flex items-start">
       <svg class="h-5 w-5 text-green-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -102,12 +111,12 @@
         <p class="text-sm font-medium text-green-800">
           ✨ Next Swap Available!
         </p>
-        <p th:if="${roundState != 'locked' || atRoundNumber == null || atRoundNumber == currentRound}"
+        <p th:if="${roundState != 'locked' || !isFutureRoundPrediction}"
           class="text-sm text-green-700 mt-1">
           Make your next swap without waiting 24 hours. After this, the 24h
           cooldown applies.
         </p>
-        <p th:if="${roundState == 'locked' && atRoundNumber != null && atRoundNumber > currentRound}"
+        <p th:if="${roundState == 'locked' && isFutureRoundPrediction}"
           class="text-sm text-green-700 mt-1">
           Matches are in progress. Your prediction will be scored next round.
           Make your next swap without waiting 24 hours.
@@ -117,7 +126,7 @@
   </div>
 
   <!-- Round Opening Swaps Banner (each round, after first swap bonus is spent) -->
-  <div th:if="${swapStatus != null && swapStatus.openingRoundAvailable == true}"
+  <div th:if="${swapStatus.openingRoundAvailable && seasonEditingAllowed}"
     class="bg-amber-50 border border-amber-200 rounded-lg p-4">
     <div class="flex items-start">
       <div class="bg-amber-100 rounded-full p-1.5 mr-3 flex-shrink-0">
@@ -138,22 +147,25 @@
 
   <!-- Locked State Banner (locked only) - NOT for guests, NOT for first swap bonus -->
   <div
-    th:if="${(isGuest == false || isGuest == null) && isCurrentRound == true && roundState == 'locked' && !(swapStatus != null && swapStatus.firstSwapBonus == true)}"
-    th:classappend="${canCreateEntry == true || (atRoundNumber != null && atRoundNumber > currentRound) ? 'bg-blue-50 border-blue-200' : 'bg-yellow-50 border-yellow-200'}"
+    th:if="${!isGuest && isCurrentRound && roundState == 'locked' && !swapStatus.firstSwapBonus}"
+    th:with="lockedVariant=${isLastRound ? 'seasonCompleting'
+               : (isInitialPredictionEditable ? 'initialPrediction'
+               : ((isFutureRoundPrediction and seasonEditingAllowed) ? 'futureRoundSwap' : 'locked'))}"
+    th:classappend="${lockedVariant == 'initialPrediction' || lockedVariant == 'futureRoundSwap' ? 'bg-blue-50 border-blue-200' : 'bg-yellow-50 border-yellow-200'}"
     class="border rounded-lg p-4" x-data="{ imported: false }"
     x-init="imported = localStorage.getItem('ligitabl.guestPrediction') !== null"
     @guest-storage-cleared.window="imported = false">
     <div class="flex items-start">
       <svg
-        th:classappend="${canCreateEntry == true || (atRoundNumber != null && atRoundNumber > currentRound) ? 'text-blue-600' : 'text-yellow-600'}"
+        th:classappend="${lockedVariant == 'initialPrediction' || lockedVariant == 'futureRoundSwap' ? 'text-blue-600' : 'text-yellow-600'}"
         class="h-5 w-5 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
         <path fill-rule="evenodd"
           d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z"
           clip-rule="evenodd" />
       </svg>
-      <div>
+      <div th:switch="${lockedVariant}">
         <!-- Last Round + Locked: Season Completing -->
-        <th:block th:if="${currentRound == lastRound}">
+        <th:block th:case="'seasonCompleting'">
           <p class="text-sm font-medium text-yellow-800">
             🔒 Season Completing
           </p>
@@ -164,7 +176,7 @@
         </th:block>
 
         <!-- Initial Prediction (user can still predict) -->
-        <th:block th:if="${currentRound != lastRound && canCreateEntry == true}">
+        <th:block th:case="'initialPrediction'">
           <p class="text-sm font-medium text-blue-800">
             👋 Matches In Progress
           </p>
@@ -177,8 +189,7 @@
         </th:block>
 
         <!-- Already Predicted, future round (can still swap after cooldown) -->
-        <th:block
-          th:if="${currentRound != lastRound && (canCreateEntry == false || canCreateEntry == null) && !(swapStatus != null && swapStatus.firstSwapBonus == true) && (atRoundNumber != null && atRoundNumber > currentRound)}">
+        <th:block th:case="'futureRoundSwap'">
           <p class="text-sm font-medium text-blue-800">
             👋 Matches In Progress
           </p>
@@ -188,8 +199,7 @@
         </th:block>
 
         <!-- Already Predicted, current round (locked in) -->
-        <th:block
-          th:if="${currentRound != lastRound && (canCreateEntry == false || canCreateEntry == null) && !(swapStatus != null && swapStatus.firstSwapBonus == true) && (atRoundNumber == null || atRoundNumber <= currentRound)}">
+        <th:block th:case="*">
           <p class="text-sm font-medium text-yellow-800">🔒 Round Locked</p>
           <p class="text-sm text-yellow-700 mt-1">
             Matches are in progress. Predictions are locked until results are
@@ -202,7 +212,7 @@
 
   <!-- Scoring Banner (completed or finalized, but season not ended) -->
   <div
-    th:if="${(isGuest == false || isGuest == null) && isCurrentRound == true && (roundState == 'completed' || roundState == 'finalized') && seasonCompleted != true}"
+    th:if="${!isGuest && isCurrentRound && (roundState == 'completed' || roundState == 'finalized') && !seasonCompleted}"
     class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
     <div class="flex items-start">
       <svg class="h-5 w-5 text-yellow-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -211,13 +221,13 @@
           clip-rule="evenodd" />
       </svg>
       <div>
-        <th:block th:if="${canCreateEntry != true}">
+        <th:block th:if="${!isInitialPredictionEditable}">
           <p class="text-sm font-medium text-yellow-800">⏳ Scoring</p>
           <p class="text-sm text-yellow-700 mt-1">
             Scoring predictions. Points will be available shortly.
           </p>
         </th:block>
-        <th:block th:if="${canCreateEntry == true && currentRound != lastRound}">
+        <th:block th:if="${isInitialPredictionEditable && notLastRound}">
           <p class="text-sm font-medium text-yellow-800">⏳ Scoring predictions</p>
           <p class="text-sm text-yellow-700 mt-1">
             Set your predicted order for next round. Take your time — no swaps needed, but up to 5 to fine-tune.
@@ -228,7 +238,7 @@
   </div>
 
   <!-- Season Ended Banner -->
-  <div th:if="${isCurrentRound == true && seasonCompleted == true}"
+  <div th:if="${isCurrentRound && seasonCompleted}"
     class="bg-blue-50 border border-blue-200 rounded-lg p-4">
     <div class="flex items-start">
       <svg class="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -249,7 +259,7 @@
 
   <!-- Historical Round Info Banner -->
   <div
-    th:if="${(isCurrentRound == false || isCurrentRound == null) && (isGuest == false || isGuest == null)}"
+    th:if="${!isCurrentRound && !isGuest}"
     class="bg-blue-50 border border-blue-200 rounded-lg p-4">
     <div class="flex items-start">
       <svg class="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -271,16 +281,16 @@
 
   <!-- Status Indicator (for own predictions, not during first swap bonus which has its own banner) -->
   <div
-    th:if="${(isGuest == false || isGuest == null) && (canCreateEntry == false || canCreateEntry == null) && !(swapStatus != null && swapStatus.firstSwapBonus == true)}"
+    th:if="${!isGuest && !canCreateEntry && !swapStatus.firstSwapBonus && seasonEditingAllowed}"
     class="inline-flex items-center gap-2 text-sm">
     <span
-      th:if="${isCurrentRound == true && canSwap == true && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))}"
+      th:if="${isCurrentRound && canSwap && isRoundOpenForPrediction}"
       class="flex items-center gap-1.5 text-green-600 font-medium">
       <span class="w-2 h-2 bg-green-600 rounded-full"></span>
       Ready to modify
     </span>
     <span
-      th:if="${isCurrentRound == true && canSwap == false && swapStatus != null && (roundState == 'open' || (atRoundNumber != null && atRoundNumber > currentRound))}"
+      th:if="${isCurrentRound && !canSwap && isRoundOpenForPrediction}"
       class="flex items-center gap-1.5 text-yellow-600 font-medium">
       <span class="w-2 h-2 bg-yellow-600 rounded-full"></span>
       Cooldown active -

@@ -357,6 +357,9 @@ public class CreatePredictionUseCase {
             for (SwapChange change : swapResult.changes()) {
                 existing.addSwap(atRoundNumber, change);
             }
+            // pre-season "easter egg" was their bonus, so no First Swap Bonus afterward
+            existing.setLastSwapAt(now);
+            existing.setOpeningCommittedRound(atRoundNumber);
 
             SeasonPrediction saved = predictionRepo.save(existing);
             log.info(

@@ -519,7 +519,9 @@ class CreatePredictionUseCaseTest {
                 .save(argThat(p -> p.getId().equals(existingId)
                         && p.getAtRoundNumber() == round.getPosition()
                         && p.getInitialRankings() != null
-                        && p.getInitialRankings().equals(preSeasonRankings)));
+                        && p.getInitialRankings().equals(preSeasonRankings)
+                        && now.equals(p.getLastSwapAt())
+                        && p.getOpeningCommittedRound() == round.getPosition()));
     }
 
     @Test

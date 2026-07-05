@@ -370,12 +370,14 @@ window.Ligitabl.predictionPage = function (el) {
     const isLastRoundRaw = el?.dataset?.isLastRound ?? "false";
     const isInitialRaw = el?.dataset?.isInitialPrediction ?? "false";
     const isOpeningRoundRaw = el?.dataset?.isOpeningRound ?? "false";
+    const isPreSeasonRegistrationRaw = el?.dataset?.isPreSeasonRegistration ?? "false";
     const canSwap = canSwapRaw === "true" || canSwapRaw === "True";
     const canInteract = canInteractRaw === "true" || canInteractRaw === "True";
     const isRoundOpen = roundOpenRaw === "true" || roundOpenRaw === "True";
     const isLastRound = isLastRoundRaw === "true" || isLastRoundRaw === "True";
     const isInitialPrediction = isInitialRaw === "true" || isInitialRaw === "True";
     const isOpeningRound = isOpeningRoundRaw === "true" || isOpeningRoundRaw === "True";
+    const isPreSeasonRegistration = isPreSeasonRegistrationRaw === "true" || isPreSeasonRegistrationRaw === "True";
     const MAX_INITIAL_SWAPS = Ligitabl._MAX_INITIAL_SWAPS;
     const MAX_OPENING_SWAPS = Ligitabl._MAX_OPENING_SWAPS;
 
@@ -451,12 +453,13 @@ window.Ligitabl.predictionPage = function (el) {
         isLastRound,
         isInitialPrediction,
         isOpeningRound,
+        isPreSeasonRegistration,
         isSaving: false,
         errorMessage: null,
         importedFromGuest: false,
 
         init() {
-            if (isInitialPrediction || isOpeningRound) {
+            if (isInitialPrediction || isOpeningRound || isPreSeasonRegistration) {
                 // 1. Auth localStorage takes priority — user has already made swaps after signing up
                 const authPrediction = loadAuthPrediction();
                 if (authPrediction) {
@@ -533,8 +536,9 @@ window.Ligitabl.predictionPage = function (el) {
 
         canUpdate() {
             const swapCount = this.getSwapCount();
-            if (!this.isInitialPrediction && swapCount === 0) return false;
-            if (this.isInitialPrediction) {
+            const treatAsInitial = this.isInitialPrediction || this.isPreSeasonRegistration;
+            if (!treatAsInitial && swapCount === 0) return false;
+            if (treatAsInitial) {
                 if (swapCount > MAX_INITIAL_SWAPS) return false;
             } else if (this.isOpeningRound) {
                 if (swapCount > MAX_OPENING_SWAPS) return false;
@@ -545,7 +549,7 @@ window.Ligitabl.predictionPage = function (el) {
         },
 
         exceedsLimit() {
-            if (this.isInitialPrediction) {
+            if (this.isInitialPrediction || this.isPreSeasonRegistration) {
                 return this.getSwapCount() > MAX_INITIAL_SWAPS;
             }
             if (this.isOpeningRound) {
@@ -643,7 +647,7 @@ window.Ligitabl.predictionPage = function (el) {
                 partner.position = tmp;
             }
 
-            if (this.isInitialPrediction) {
+            if (this.isInitialPrediction || this.isPreSeasonRegistration) {
                 url = "/seasonprediction";
                 const _next = new URLSearchParams(window.location.search).get('next');
                 if (_next) url += '?next=' + encodeURIComponent(_next);
@@ -667,7 +671,7 @@ window.Ligitabl.predictionPage = function (el) {
                 .then((data) => {
                     if (data.success) {
                         this._clearStorage(AUTH_STORAGE_KEY);
-                        if (this.importedFromGuest || (this.isInitialPrediction && !this.isOpeningRound)) {
+                        if (this.importedFromGuest || ((this.isInitialPrediction || this.isPreSeasonRegistration) && !this.isOpeningRound)) {
                             this._clearStorage(GUEST_STORAGE_KEY);
                         }
                         if (data.nextUrl) {
