@@ -53,11 +53,11 @@ public class CreatePrivateContestUseCase {
         List<RoundSpan> phases = competition.getPhases() != null ? competition.getPhases() : List.of();
 
         var fromResult = validateFromSprint(cmd.fromSprintCode(), phases, currentRound);
-        if (fromResult.isLeft()) return fromResult.map(s -> null);
+        if (fromResult.isLeft()) return fromResult.castLeft();
         RoundSpan fromSprint = fromResult.get();
 
         var toResult = validateToSprint(cmd.toSprintCode(), fromSprint, phases);
-        if (toResult.isLeft()) return toResult.map(s -> null);
+        if (toResult.isLeft()) return toResult.castLeft();
         RoundSpan toSprint = toResult.get();
 
         if (contestRepo.findPrivateByUserId(cmd.userId()).size() >= MAX_PRIVATE_CONTESTS)

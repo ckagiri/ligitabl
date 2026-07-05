@@ -61,7 +61,7 @@ public class GetUserContestSummaryUseCase {
         List<GeneralContestRowDto> generalRows =
                 buildGeneralRows(competition, season, mainContest.getId(), query.userId(), currentRound, dateRanges);
 
-        List<PrivateContestRowDto> privateRows = buildPrivateRows(query.userId());
+        List<PrivateContestRowDto> privateRows = buildPrivateRows(query.userId(), season.getId());
 
         return new GetUserContestSummaryResult(generalRows, privateRows);
     }
@@ -134,17 +134,15 @@ public class GetUserContestSummaryUseCase {
         return from + "–" + to;
     }
 
-    private List<PrivateContestRowDto> buildPrivateRows(UUID userId) {
-        Map<Integer, MatchRepo.RoundDateRange> dateRanges = null;
-        List<Contest> contests = contestRepo.findPrivateByUserId(userId);
-        if (!contests.isEmpty()) {
-            // resolve season id from first contest (all share the same active season)
-            UUID seasonId = contests.get(0).getSeasonId();
-            dateRanges = matchRepo.groupRoundDateRangesBySeason(seasonId);
-        }
+    private List<PrivateContestRowDto> buildPrivateRows(UUID userId, UUID seasonId) {
+        List<Contest> contests = contestRepo.findPrivateByUserId(userId, seasonId);
+        Map<Integer, MatchRepo.RoundDateRange> dateRanges =
+                !contests.isEmpty() ? matchRepo.groupRoundDateRangesBySeason(seasonId) : null;
+        Map<UUID, Integer> memberCounts =
+                entryRepo.countActiveByContestIds(contests.stream().map(Contest::getId).toList());
         List<PrivateContestRowDto> rows = new ArrayList<>();
         for (Contest contest : contests) {
-            int memberCount = entryRepo.countActiveByContestId(contest.getId());
+            int memberCount = memberCounts.getOrDefault(contest.getId(), 0);
             rows.add(new PrivateContestRowDto(
                     contest.getId(),
                     contest.getName(),

@@ -1,6 +1,7 @@
 package com.ligitabl.model.repo;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,6 +17,12 @@ public interface EntryRepo {
     List<Entry> findByUserId(UUID userId);
 
     int countActiveByContestId(UUID contestId);
+
+    /**
+     * Active member counts for multiple contests in one query. Contest ids with no active
+     * entries are omitted from the result map (treat missing as 0).
+     */
+    Map<UUID, Integer> countActiveByContestIds(List<UUID> contestIds);
 
     void softRemove(UUID userId, UUID contestId, int removedAtRound);
 

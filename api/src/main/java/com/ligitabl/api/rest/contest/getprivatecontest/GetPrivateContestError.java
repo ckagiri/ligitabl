@@ -9,5 +9,7 @@ public sealed interface GetPrivateContestError {
 
     record SeasonNotFound() implements GetPrivateContestError {}
 
+    record CompetitionNotFound(UUID seasonId) implements GetPrivateContestError {}
+
     record SegmentNotFound(String segmentCode) implements GetPrivateContestError {}
 }

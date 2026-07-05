@@ -103,15 +103,28 @@ public class ContestPersistenceAdapter implements ContestRepo {
     }
 
     @Override
+    public List<Contest> findPrivateByUserId(UUID userId, UUID seasonId) {
+        return dsl.selectFrom(T_CONTEST)
+                .where(T_CONTEST.C_IS_PRIVATE.eq(true))
+                .and(T_CONTEST.FK_SEASON_ID.eq(seasonId))
+                .and(T_CONTEST.PK_ID.in(dsl.select(T_ENTRY.FK_CONTEST_ID)
+                        .from(T_ENTRY)
+                        .where(T_ENTRY.FK_USER_ID.eq(userId))
+                        .and(T_ENTRY.C_REMOVED_AT_ROUND.isNull())))
+                .fetch()
+                .map(ContestPersistenceAdapter::map);
+    }
+
+    @Override
     public void delete(UUID contestId) {
         dsl.deleteFrom(T_CONTEST).where(T_CONTEST.PK_ID.eq(contestId)).execute();
     }
 
     @Override
     public List<ContestRepo.UserContestView> findContestsByUserId(
-            UUID userId, boolean completed, int limit, int offset) {
-        var generals = unionBranchForContests(userId, completed, false);
-        var privates = unionBranchForContests(userId, completed, true);
+            UUID userId, UUID activeSeasonId, boolean activeTab, int limit, int offset) {
+        var generals = unionBranchForContests(userId, activeSeasonId, activeTab, false);
+        var privates = unionBranchForContests(userId, activeSeasonId, activeTab, true);
 
         return generals.unionAll(privates)
                 .orderBy(
@@ -132,16 +145,17 @@ public class ContestPersistenceAdapter implements ContestRepo {
     }
 
     @Override
-    public int countContestsByUserId(UUID userId, boolean completed) {
-        var generals = unionBranchForContests(userId, completed, false);
-        var privates = unionBranchForContests(userId, completed, true);
+    public int countContestsByUserId(UUID userId, UUID activeSeasonId, boolean activeTab) {
+        var generals = unionBranchForContests(userId, activeSeasonId, activeTab, false);
+        var privates = unionBranchForContests(userId, activeSeasonId, activeTab, true);
 
         Integer count =
                 dsl.selectCount().from(generals.unionAll(privates).asTable("t")).fetchOne(0, Integer.class);
         return count != null ? count : 0;
     }
 
-    private SelectConditionStep<Record> unionBranchForContests(UUID userId, boolean completed, boolean isPrivate) {
+    private SelectConditionStep<Record> unionBranchForContests(
+            UUID userId, UUID activeSeasonId, boolean activeTab, boolean isPrivate) {
         // Use List<Field<?>> overload so jOOQ returns SelectConditionStep<Record> instead of
         // the strongly-typed SelectConditionStep<Record11<...>> that the varargs overload produces.
         var fields = List.<org.jooq.Field<?>>of(
@@ -164,16 +178,22 @@ public class ContestPersistenceAdapter implements ContestRepo {
                 .join(T_ENTRY)
                 .on(T_ENTRY.FK_CONTEST_ID.eq(T_CONTEST.PK_ID).and(T_ENTRY.FK_USER_ID.eq(userId)));
 
+        // activeTab: contest's season is the competition's current active season.
+        // past tab: any other season. If there is no active season, every season counts as past.
+        var seasonScope = activeTab
+                ? (activeSeasonId != null ? T_SEASON.PK_ID.eq(activeSeasonId) : DSL.falseCondition())
+                : (activeSeasonId != null ? T_SEASON.PK_ID.ne(activeSeasonId) : DSL.trueCondition());
+
         if (!isPrivate) {
             return baseJoin.where(T_CONTEST.C_IS_PRIVATE.eq(false))
                     .and(T_CONTEST.C_FROM_ROUND_POSITION.eq(1))
                     .and(T_CONTEST.C_TO_ROUND_POSITION.eq(T_SEASON.C_MAX_ROUNDS))
                     .and(T_SEASON.C_MAX_ROUNDS.gt(0))
-                    .and(T_SEASON.C_COMPLETED.eq(completed));
+                    .and(seasonScope);
         } else {
             return baseJoin.where(T_CONTEST.C_IS_PRIVATE.eq(true))
                     .and(T_ENTRY.C_REMOVED_AT_ROUND.isNull())
-                    .and(T_SEASON.C_COMPLETED.eq(completed));
+                    .and(seasonScope);
         }
     }
 

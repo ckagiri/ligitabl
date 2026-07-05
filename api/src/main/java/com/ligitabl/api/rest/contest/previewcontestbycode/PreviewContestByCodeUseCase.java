@@ -39,7 +39,7 @@ public class PreviewContestByCodeUseCase {
         if (!contest.isOpen()) return Either.left(new PreviewContestByCodeError.ContestClosed());
 
         var competitionResult = resolveCompetition(contest.getSeasonId());
-        if (competitionResult.isLeft()) return competitionResult.map(c -> null);
+        if (competitionResult.isLeft()) return competitionResult.castLeft();
         Competition competition = competitionResult.get();
 
         List<RoundSpan> phases = competition.getPhases();

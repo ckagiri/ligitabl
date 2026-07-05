@@ -38,22 +38,25 @@ public class GetPrivateContestUseCase {
 
     public Either<GetPrivateContestError, GetPrivateContestResult> execute(GetPrivateContestQuery query) {
         var contestResult = resolveContest(query.contestId());
-        if (contestResult.isLeft()) return contestResult.map(c -> null);
+        if (contestResult.isLeft()) return contestResult.castLeft();
         Contest contest = contestResult.get();
 
         var membershipResult = validateMembership(query.userId(), contest.getId());
-        if (membershipResult.isLeft()) return membershipResult.map(m -> null);
+        if (membershipResult.isLeft()) return membershipResult.castLeft();
 
         var seasonResult = resolveSeason(contest.getSeasonId());
-        if (seasonResult.isLeft()) return seasonResult.map(s -> null);
+        if (seasonResult.isLeft()) return seasonResult.castLeft();
         Season season = seasonResult.get();
 
-        Competition competition = resolveCompetition(contest.getSeasonId());
+        var competitionResult = resolveCompetition(season);
+        if (competitionResult.isLeft()) return competitionResult.castLeft();
+        Competition competition = competitionResult.get();
+
         int currentPosition = resolveCurrentPosition(season);
 
         String segmentCode = query.selectedSegmentCode();
         var segmentResult = resolveSelectedSegment(contest, competition, segmentCode, currentPosition);
-        if (segmentResult.isLeft()) return segmentResult.map(s -> null);
+        if (segmentResult.isLeft()) return segmentResult.castLeft();
         RoundSpan selectedSegment = segmentResult.get();
 
         boolean activeOnly = isSegmentLive(selectedSegment, currentPosition);
@@ -111,12 +114,11 @@ public class GetPrivateContestUseCase {
                 .orElseGet(() -> Either.left(new GetPrivateContestError.SeasonNotFound()));
     }
 
-    private Competition resolveCompetition(UUID seasonId) {
-        return competitionRepo.findAll().stream()
-                .filter(c ->
-                        c.getActiveSeasonId() != null && c.getActiveSeasonId().equals(seasonId))
-                .findFirst()
-                .orElse(null);
+    private Either<GetPrivateContestError, Competition> resolveCompetition(Season season) {
+        return competitionRepo
+                .findById(season.getCompetitionId())
+                .<Either<GetPrivateContestError, Competition>>map(Either::right)
+                .orElseGet(() -> Either.left(new GetPrivateContestError.CompetitionNotFound(season.getId())));
     }
 
     private int resolveCurrentPosition(Season season) {
