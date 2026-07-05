@@ -7,10 +7,12 @@ import static org.jooq.impl.DSL.greatest;
 
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.jooq.DSLContext;
+import org.jooq.impl.DSL;
 
 import com.ligitabl.model.db.tables.records.EntryRecord;
 import com.ligitabl.model.domain.Entry;
@@ -80,6 +82,19 @@ public class EntryPersistenceAdapter implements EntryRepo {
                 .from(T_ENTRY)
                 .where(T_ENTRY.FK_CONTEST_ID.eq(contestId))
                 .and(T_ENTRY.C_REMOVED_AT_ROUND.isNull()));
+    }
+
+    @Override
+    public Map<UUID, Integer> countActiveByContestIds(List<UUID> contestIds) {
+        if (contestIds.isEmpty()) return Map.of();
+
+        var countField = DSL.count();
+        return dsl.select(T_ENTRY.FK_CONTEST_ID, countField)
+                .from(T_ENTRY)
+                .where(T_ENTRY.FK_CONTEST_ID.in(contestIds))
+                .and(T_ENTRY.C_REMOVED_AT_ROUND.isNull())
+                .groupBy(T_ENTRY.FK_CONTEST_ID)
+                .fetchMap(T_ENTRY.FK_CONTEST_ID, countField);
     }
 
     @Override

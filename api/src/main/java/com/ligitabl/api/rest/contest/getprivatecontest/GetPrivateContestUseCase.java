@@ -48,7 +48,10 @@ public class GetPrivateContestUseCase {
         if (seasonResult.isLeft()) return seasonResult.map(s -> null);
         Season season = seasonResult.get();
 
-        Competition competition = resolveCompetition(contest.getSeasonId());
+        var competitionResult = resolveCompetition(season);
+        if (competitionResult.isLeft()) return competitionResult.map(c -> null);
+        Competition competition = competitionResult.get();
+
         int currentPosition = resolveCurrentPosition(season);
 
         String segmentCode = query.selectedSegmentCode();
@@ -111,12 +114,11 @@ public class GetPrivateContestUseCase {
                 .orElseGet(() -> Either.left(new GetPrivateContestError.SeasonNotFound()));
     }
 
-    private Competition resolveCompetition(UUID seasonId) {
-        return competitionRepo.findAll().stream()
-                .filter(c ->
-                        c.getActiveSeasonId() != null && c.getActiveSeasonId().equals(seasonId))
-                .findFirst()
-                .orElse(null);
+    private Either<GetPrivateContestError, Competition> resolveCompetition(Season season) {
+        return competitionRepo
+                .findById(season.getCompetitionId())
+                .<Either<GetPrivateContestError, Competition>>map(Either::right)
+                .orElseGet(() -> Either.left(new GetPrivateContestError.CompetitionNotFound(season.getId())));
     }
 
     private int resolveCurrentPosition(Season season) {

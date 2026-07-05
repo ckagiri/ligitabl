@@ -95,6 +95,38 @@ class EntryPersistenceAdapterIT extends AbstractPostgresIT {
         assertThat(entryRepo.countActiveByContestId(contestId)).isEqualTo(1);
     }
 
+    // ─── countActiveByContestIds ───────────────────────────────────────────────
+
+    @Test
+    @DisplayName("countActiveByContestIds returns per-contest active counts in one call, omitting contests with none")
+    void countActiveByContestIds_returnsCountsPerContest() {
+        UUID otherContestId = UUID.randomUUID();
+        insertContest(otherContestId);
+        UUID emptyContestId = UUID.randomUUID();
+        insertContest(emptyContestId);
+
+        UUID user2 = UUID.randomUUID();
+        insertUser(user2, "user2@test.com", "User2");
+        insertPrediction(user2, 1);
+
+        entryRepo.save(entry(userId, contestId, 1));
+        entryRepo.save(entry(user2, contestId, 1));
+        entryRepo.save(entry(userId, otherContestId, 1));
+        entryRepo.softRemove(userId, otherContestId, 3);
+
+        var counts = entryRepo.countActiveByContestIds(List.of(contestId, otherContestId, emptyContestId));
+
+        assertThat(counts).containsEntry(contestId, 2);
+        assertThat(counts).doesNotContainKey(otherContestId);
+        assertThat(counts).doesNotContainKey(emptyContestId);
+    }
+
+    @Test
+    @DisplayName("countActiveByContestIds returns empty map for empty input")
+    void countActiveByContestIds_emptyInput() {
+        assertThat(entryRepo.countActiveByContestIds(List.of())).isEmpty();
+    }
+
     // ─── hasAnyScore ──────────────────────────────────────────────────────────
 
     @Test
@@ -197,6 +229,19 @@ class EntryPersistenceAdapterIT extends AbstractPostgresIT {
                 null);
 
         jdbc.update("UPDATE t_season SET fk_main_contest_id = ? WHERE pk_id = ?", contestId, seasonId);
+    }
+
+    private void insertContest(UUID id) {
+        jdbc.update(
+                "INSERT INTO t_contest (pk_id, fk_season_id, c_name, c_is_private, c_join_code, c_from_round_position, c_to_round_position, c_max_entries) VALUES (?,?,?,?,?,?,?,?)",
+                id,
+                seasonId,
+                "Private League " + id,
+                true,
+                id.toString().substring(0, 8),
+                1,
+                38,
+                null);
     }
 
     private void insertUser(UUID id, String email, String displayName) {

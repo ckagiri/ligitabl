@@ -29,14 +29,20 @@ public interface ContestRepo {
 
     List<Contest> findPrivateByUserId(UUID userId);
 
-    /**
-     * Returns a paginated slice of contests the user has joined for the given tab (active or past),
-     * ordered general-first then private, each group by most recently joined.
-     */
-    List<UserContestView> findContestsByUserId(UUID userId, boolean completed, int limit, int offset);
+    List<Contest> findPrivateByUserId(UUID userId, UUID seasonId);
 
-    /** Total number of contests for the given tab (active or past). Used to drive the pager. */
-    int countContestsByUserId(UUID userId, boolean completed);
+    /**
+     * Returns a paginated slice of contests the user has joined for the given tab, ordered
+     * general-first then private, each group by most recently joined. When {@code activeTab} is
+     * true, only contests belonging to {@code activeSeasonId} are returned; otherwise contests
+     * from any other season. {@code activeSeasonId} may be null if the competition has no active
+     * season, in which case the active tab is empty and the past tab includes every season.
+     */
+    List<UserContestView> findContestsByUserId(
+            UUID userId, UUID activeSeasonId, boolean activeTab, int limit, int offset);
+
+    /** Total number of contests for the given tab. Used to drive the pager. */
+    int countContestsByUserId(UUID userId, UUID activeSeasonId, boolean activeTab);
 
     Optional<Contest> findByJoinCode(String joinCode);
 
