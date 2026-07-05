@@ -16,10 +16,10 @@
           nsFrom=${nextSprintFrom != null ? nextSprintFrom : 0},
           nqFrom=${nextQuarterFrom != null ? nextQuarterFrom : 0}
         "
-        th:attr="data-init-phase=${currentSprint != null ? currentSprint : ''},data-init-quarter=${currentQuarter != null ? currentQuarter : ''}"
+        th:attr="data-current-sprint=${currentSprint != null ? currentSprint : ''},data-current-quarter=${currentQuarter != null ? currentQuarter : ''},data-selected-phase=${currentPhase},data-selected-group=${currentPhaseType}"
         x-data="{
-          activeGroup: 'sprints',
-          selectedPhase: $el.dataset.initPhase,
+          activeGroup: ({FULL_SEASON: 'fullSeason', QUARTER: 'quarters', SPRINT: 'sprints'})[$el.dataset.selectedGroup] || 'sprints',
+          selectedPhase: $el.dataset.selectedPhase,
           loading: false,
           select(phase) {
             this.selectedPhase = phase;
@@ -28,6 +28,7 @@
               target: '#leaderboard-content',
               swap: 'outerHTML'
             });
+            history.pushState({}, '', '/leaderboard?phase=' + phase);
           }
         }"
         @htmx:after-swap.window="if ($event.detail.target && $event.detail.target.id === 'leaderboard-content') loading = false"
@@ -55,7 +56,7 @@
 
               <button
                 type="button"
-                @click="activeGroup = 'quarters'; select($el.closest('[data-init-quarter]').dataset.initQuarter)"
+                @click="activeGroup = 'quarters'; select($el.closest('[data-current-quarter]').dataset.currentQuarter)"
                 :class="activeGroup === 'quarters'
                   ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
                   : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'"
@@ -66,7 +67,7 @@
 
               <button
                 type="button"
-                @click="activeGroup = 'sprints'; select($el.closest('[data-init-phase]').dataset.initPhase)"
+                @click="activeGroup = 'sprints'; select($el.closest('[data-current-sprint]').dataset.currentSprint)"
                 :class="activeGroup === 'sprints'
                   ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
                   : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'"

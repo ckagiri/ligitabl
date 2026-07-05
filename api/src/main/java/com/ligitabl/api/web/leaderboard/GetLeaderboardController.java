@@ -104,6 +104,7 @@ public class GetLeaderboardController {
         model.addAttribute("leaderboard", pageEntries);
         model.addAttribute("phases", result.phases());
         model.addAttribute("currentPhase", result.phase().getCode());
+        model.addAttribute("currentPhaseType", result.phase().getType().name());
         model.addAttribute("currentPhaseFrom", result.phase().getFrom());
         RoundSpan currentSprint = result.currentSprint();
         RoundSpan currentQuarter = result.currentQuarter();
