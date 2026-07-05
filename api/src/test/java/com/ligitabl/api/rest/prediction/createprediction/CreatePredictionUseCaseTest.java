@@ -520,10 +520,6 @@ class CreatePredictionUseCaseTest {
                         && p.getAtRoundNumber() == round.getPosition()
                         && p.getInitialRankings() != null
                         && p.getInitialRankings().equals(preSeasonRankings)
-                        // Merge must look like a normal first real swap (mirrors
-                        // MakeSwapUseCase.performSwap), so the pre-season "easter egg" bonus doesn't
-                        // also trigger the First Swap Bonus banner, and the opening-round bonus
-                        // correctly waits for the next round instead of firing immediately.
                         && now.equals(p.getLastSwapAt())
                         && p.getOpeningCommittedRound() == round.getPosition()));
     }
