@@ -348,8 +348,7 @@ public class UserPredictionsController {
         model.addAttribute("isOffSeason", season.isOffSeason());
         model.addAttribute("isInPlay", season.isInPlay());
         model.addAttribute("isInactive", season.isInactive());
-        boolean seasonAllowsUpdate =
-                season.isInPlay() || (season.isPreSeason() && !data.hasPreSeasonRegistration());
+        boolean seasonAllowsUpdate = season.isInPlay() || (season.isPreSeason() && !data.hasPreSeasonRegistration());
         model.addAttribute("seasonAllowsUpdate", seasonAllowsUpdate);
 
         // Combined editing gates, computed once rather than re-derived per template/fragment.
