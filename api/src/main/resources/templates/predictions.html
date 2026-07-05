@@ -47,7 +47,7 @@
                       >⏳ Finalizing</span
                     >
                     <span
-                      th:if="${roundState == 'advanced' && isFinalRound}"
+                      th:if="${roundState == 'advanced' && isLastRound}"
                       class="text-blue-600"
                       >📊 Finalized</span
                     >
@@ -100,7 +100,8 @@
                   ${totalScore}, ${viewingRound}, ${hasRoundResult},
                   ${currentRound}, ${lastRound}, ${atRoundNumber}, ${seasonCompleted}, ${canSwap},
                   ${isRoundOpenForPrediction}, ${isFutureRoundPrediction},
-                  ${isFinalRound}, ${notLastRound}, ${isCurrentFinalRound}, ${isRoundLockedOrBeyond})}"
+                  ${isLastRound}, ${notLastRound}, ${isCurrentRoundLast}, ${isRoundLockedOrBeyond},
+                  ${isPreSeasonRegistration})}"
               ></div>
             </th:block>
 
@@ -214,9 +215,9 @@ swapStatus.firstSwapBonus=[[${swapStatus != null ? swapStatus.firstSwapBonus : n
 firstSwap.defaultMsg=[[${roundState != 'locked' || !isFutureRoundPrediction}]]
 firstSwap.lockedMsg=[[${roundState == 'locked' && isFutureRoundPrediction}]]
 isPreSeason=[[${isPreSeason}]] isOffSeason=[[${isOffSeason}]] isInPlay=[[${isInPlay}]] isInactive=[[${isInactive}]] seasonAllowsUpdate=[[${seasonAllowsUpdate}]] daysToPredictions=[[${daysToPredictions}]] daysToPreSeason=[[${daysToPreSeason}]] predictionsAboutToStart=[[${predictionsAboutToStart}]] preSeasonAboutToStart=[[${preSeasonAboutToStart}]]
-isRoundOpenForPrediction=[[${isRoundOpenForPrediction}]] isFutureRoundPrediction=[[${isFutureRoundPrediction}]] isFinalRound=[[${isFinalRound}]] isFinalRoundOpen=[[${isFinalRoundOpen}]] isHistoricalView=[[${isHistoricalView}]]
+isRoundOpenForPrediction=[[${isRoundOpenForPrediction}]] isFutureRoundPrediction=[[${isFutureRoundPrediction}]] isLastRound=[[${isLastRound}]] isLastRoundOpen=[[${isLastRoundOpen}]] isHistoricalView=[[${isHistoricalView}]]
 seasonEditingAllowed=[[${seasonEditingAllowed}]] canInteractEffective=[[${canInteractEffective}]] canSwapEditable=[[${canSwapEditable}]] isInitialPredictionEditable=[[${isInitialPredictionEditable}]]
-isActiveRoundState=[[${isActiveRoundState}]] isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound}]] isCurrentFinalRound=[[${isCurrentFinalRound}]] isRegisteredAwaitingPredictionsOpen=[[${isRegisteredAwaitingPredictionsOpen}]]</pre
+isActiveRoundState=[[${isActiveRoundState}]] isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound}]] isCurrentRoundLast=[[${isCurrentRoundLast}]] isRegisteredAwaitingPredictionsOpen=[[${isRegisteredAwaitingPredictionsOpen}]] isPreSeasonRegistration=[[${isPreSeasonRegistration}]]</pre
                 >
               </div>
             </div>
@@ -351,11 +352,12 @@ isActiveRoundState=[[${isActiveRoundState}]] isRoundLockedOrBeyond=[[${isRoundLo
             x-data="Ligitabl.predictionPage($el)"
             th:attr="data-predictions=${predictionsJson},
                     data-round-open=${isRoundOpenForPrediction},
-                    data-is-last-round=${isFinalRound},
+                    data-is-last-round=${isLastRound},
                     data-can-swap=${canSwapEditable},
                     data-can-interact=${canInteractEffective},
                     data-is-initial-prediction=${isInitialPredictionEditable},
                     data-is-opening-round=${isOpeningRound},
+                    data-is-pre-season-registration=${isPreSeasonRegistration},
                     data-current-standings=${currentStandingsJson},
                     data-fixtures=${fixturesJson},
                     data-current-points=${currentPointsJson},

@@ -83,11 +83,12 @@
         ></path>
       </svg>
       <span x-show="!isSaving">
+        <span x-show="isPreSeasonRegistration">Submit Prediction</span>
         <span x-show="isInitialPrediction">Submit Prediction &amp; Join</span>
-        <span x-show="!isInitialPrediction && getSwapCount() === 0"
+        <span x-show="!isInitialPrediction && !isPreSeasonRegistration && getSwapCount() === 0"
           >Update Prediction</span
         >
-        <span x-show="!isInitialPrediction && getSwapCount() > 0">
+        <span x-show="!isInitialPrediction && !isPreSeasonRegistration && getSwapCount() > 0">
           Update Prediction (<span x-text="getSwapCount()"></span>)
         </span>
       </span>
@@ -225,9 +226,9 @@
         </div>
       </div>
       <div class="text-xs text-gray-500">
-        <span x-show="isInitialPrediction">Limit: 5</span>
+        <span x-show="isPreSeasonRegistration || isInitialPrediction">Limit: 5</span>
         <span x-show="isOpeningRound">Limit: 2</span>
-        <span x-show="!isInitialPrediction && !isOpeningRound">Limit: 1</span>
+        <span x-show="!isPreSeasonRegistration && !isInitialPrediction && !isOpeningRound">Limit: 1</span>
       </div>
     </div>
 
@@ -296,13 +297,13 @@
         <div class="flex-1">
           <p class="text-xs font-semibold text-red-800">Too many changes</p>
           <p class="text-xs text-red-700 mt-0.5">
-            <span x-show="isInitialPrediction"
+            <span x-show="isInitialPrediction || isPreSeasonRegistration"
               >Max 5 swaps allowed. Undo last or reset to continue.</span
             >
             <span x-show="isOpeningRound"
               >Max 2 swaps allowed. Undo last or reset to continue.</span
             >
-            <span x-show="!isInitialPrediction && !isOpeningRound"
+            <span x-show="!isInitialPrediction && !isPreSeasonRegistration && !isOpeningRound"
               >Only 1 swap allowed per 24h. Undo last or reset to
               continue.</span
             >

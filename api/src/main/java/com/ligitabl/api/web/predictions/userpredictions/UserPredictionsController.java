@@ -273,12 +273,12 @@ public class UserPredictionsController {
         boolean isFinalizedRoundState = roundStateValue.equals("finalized");
         boolean isFutureRoundPrediction = data.atRoundNumber() != null && data.atRoundNumber() > data.currentRound();
         boolean isRoundOpenForPrediction = isOpenRoundState || isFutureRoundPrediction;
-        boolean isFinalRound = data.currentRound() == data.lastRound();
-        boolean notLastRound = !isFinalRound;
-        boolean isCurrentFinalRound = data.isCurrentRound() && isFinalRound;
-        boolean isFinalRoundOpen = isFinalRound && isOpenRoundState;
+        boolean isLastRound = data.currentRound() == data.lastRound();
+        boolean notLastRound = !isLastRound;
+        boolean isCurrentRoundLast = data.isCurrentRound() && isLastRound;
+        boolean isLastRoundOpen = isLastRound && isOpenRoundState;
         boolean isHistoricalView = !data.isCurrentRound() || (data.isCurrentRound() && data.seasonCompleted());
-        boolean notLastRoundClosed = !isFinalRound || isFinalRoundOpen;
+        boolean notLastRoundClosed = !isLastRound || isLastRoundOpen;
         // The comparison widget and the submit-actions footer always show together — both cover all
         // 4 pre-advancement round states (comparison-only or footer-only gating was a drift bug).
         boolean isActiveRoundState = isOpenRoundState || isLockedRoundState || isCompletedRoundState || isFinalizedRoundState;
@@ -288,10 +288,10 @@ public class UserPredictionsController {
                 !data.canCreateEntry() && data.atRoundNumber() != null && data.atRoundNumber() == 0;
         model.addAttribute("isFutureRoundPrediction", isFutureRoundPrediction);
         model.addAttribute("isRoundOpenForPrediction", isRoundOpenForPrediction);
-        model.addAttribute("isFinalRound", isFinalRound);
+        model.addAttribute("isLastRound", isLastRound);
         model.addAttribute("notLastRound", notLastRound);
-        model.addAttribute("isCurrentFinalRound", isCurrentFinalRound);
-        model.addAttribute("isFinalRoundOpen", isFinalRoundOpen);
+        model.addAttribute("isCurrentRoundLast", isCurrentRoundLast);
+        model.addAttribute("isLastRoundOpen", isLastRoundOpen);
         model.addAttribute("isHistoricalView", isHistoricalView);
         model.addAttribute("isActiveRoundState", isActiveRoundState);
         model.addAttribute("isRoundLockedOrBeyond", isRoundLockedOrBeyond);
@@ -372,6 +372,10 @@ public class UserPredictionsController {
         model.addAttribute("canInteractEffective", canInteractEffective);
         model.addAttribute("canSwapEditable", canSwapEditable);
         model.addAttribute("isInitialPredictionEditable", isInitialPredictionEditable);
+        // Still-unmerged pre-season "easter egg" registration (atRoundNumber == 0) — treated like an
+        // initial prediction (5-swap allowance, no cooldown) everywhere isInitialPrediction is checked,
+        // without changing accessMode itself.
+        model.addAttribute("isPreSeasonRegistration", data.hasPreSeasonRegistration());
         if (season.getPreSeasonOpensAt() != null && !season.isPreSeasonOpen()) {
             long days = ChronoUnit.DAYS.between(OffsetDateTime.now(), season.getPreSeasonOpensAt());
             if (days >= 1) {
