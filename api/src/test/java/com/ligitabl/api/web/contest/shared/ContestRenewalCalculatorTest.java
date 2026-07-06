@@ -139,7 +139,7 @@ class ContestRenewalCalculatorTest {
 
     @Test
     void validToOptions_fromS8_onlyS8_noDropdownNeeded() {
-        // Edge case (spec section 10): only S8 remains after a single-sprint original — TO fixed, no dropdown.
+        // Edge case: only S8 remains after a single-sprint original — TO fixed, no dropdown.
         assertThat(ContestRenewalCalculator.resolveValidToOptions(s("S8"), phases)).containsExactly(s("S8"));
     }
 
