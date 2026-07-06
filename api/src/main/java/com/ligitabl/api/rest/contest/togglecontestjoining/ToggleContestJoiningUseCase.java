@@ -5,6 +5,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ligitabl.api.rest.contest.shared.ContestSeasonSupport;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.repo.ContestRepo;
 
@@ -17,11 +18,15 @@ import lombok.extern.slf4j.Slf4j;
 public class ToggleContestJoiningUseCase {
 
     private final ContestRepo contestRepo;
+    private final ContestSeasonSupport contestSeasonSupport;
 
     public sealed interface Error {
         record ContestNotFound(UUID contestId) implements Error {}
 
         record NotOwner(UUID userId, UUID contestId) implements Error {}
+
+        /** The contest belongs to a past (no longer active) season — historical, read-only. */
+        record PastSeasonContest(UUID contestId) implements Error {}
     }
 
     public record Result(UUID contestId, boolean isOpen) {}
@@ -35,6 +40,10 @@ public class ToggleContestJoiningUseCase {
 
         if (!contest.isOwnedBy(userId)) {
             return Either.left(new Error.NotOwner(userId, contestId));
+        }
+
+        if (contestSeasonSupport.isPastSeason(contest)) {
+            return Either.left(new Error.PastSeasonContest(contestId));
         }
 
         contest.setOpen(!contest.isOpen());

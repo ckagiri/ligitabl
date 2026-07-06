@@ -5,7 +5,9 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ligitabl.api.rest.contest.shared.ContestSeasonSupport;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
 
@@ -19,6 +21,7 @@ public class RemoveContestMemberUseCase {
 
     private final ContestRepo contestRepo;
     private final EntryRepo entryRepo;
+    private final ContestSeasonSupport contestSeasonSupport;
 
     public sealed interface Error {
         record ContestNotFound(UUID contestId) implements Error {}
@@ -28,6 +31,12 @@ public class RemoveContestMemberUseCase {
         record CannotRemoveOwner(UUID contestId) implements Error {}
 
         record NotAMember(UUID targetUserId, UUID contestId) implements Error {}
+
+        /** The contest belongs to a past (no longer active) season — historical, read-only. */
+        record PastSeasonContest(UUID contestId) implements Error {}
+
+        /** The contest's own final sprint is underway — membership is locked until it ends. */
+        record FinalSprintUnderway(UUID contestId) implements Error {}
     }
 
     public record Result(boolean shouldSuggestCodeRegen) {}
@@ -35,7 +44,7 @@ public class RemoveContestMemberUseCase {
     @Transactional
     public Either<Error, Result> execute(
             UUID contestId, UUID requesterId, UUID targetUserId, int currentRoundPosition) {
-        var contest = contestRepo.findById(contestId).orElse(null);
+        Contest contest = contestRepo.findById(contestId).orElse(null);
         if (contest == null) {
             return Either.left(new Error.ContestNotFound(contestId));
         }
@@ -51,6 +60,14 @@ public class RemoveContestMemberUseCase {
         var entry = entryRepo.findByUserAndContest(targetUserId, contestId).orElse(null);
         if (entry == null || entry.getRemovedAtRound() != null) {
             return Either.left(new Error.NotAMember(targetUserId, contestId));
+        }
+
+        if (contestSeasonSupport.isPastSeason(contest)) {
+            return Either.left(new Error.PastSeasonContest(contestId));
+        }
+
+        if (contestSeasonSupport.isFinalSprintUnderway(contest, currentRoundPosition)) {
+            return Either.left(new Error.FinalSprintUnderway(contestId));
         }
 
         if (entryRepo.hasAnyScore(targetUserId, contestId)) {

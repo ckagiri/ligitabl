@@ -7,12 +7,15 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.rest.contest.deletecontest.DeleteContestUseCase;
 import com.ligitabl.api.rest.contest.leavecontest.LeavePrivateContestUseCase;
 import com.ligitabl.api.rest.contest.regeneratecontestcode.RegenerateContestCodeUseCase;
 import com.ligitabl.api.rest.contest.removecontestmember.RemoveContestMemberUseCase;
+import com.ligitabl.api.rest.contest.renewcontest.RenewContestCommand;
+import com.ligitabl.api.rest.contest.renewcontest.RenewContestUseCase;
 import com.ligitabl.api.rest.contest.togglecontestjoining.ToggleContestJoiningUseCase;
 import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.api.web.shared.security.WebSecurity;
@@ -31,6 +34,7 @@ public class ContestAdminController {
     private final RemoveContestMemberUseCase removeContestMemberUseCase;
     private final LeavePrivateContestUseCase leavePrivateContestUseCase;
     private final DeleteContestUseCase deleteContestUseCase;
+    private final RenewContestUseCase renewContestUseCase;
     private final ContestSupport contestSupport;
 
     @PostMapping("/{id}/toggle-joining")
@@ -80,16 +84,14 @@ public class ContestAdminController {
         if (user == null) return "redirect:/auth/login";
 
         int currentRound = contestSupport.resolveCurrentRoundPosition();
-        removeContestMemberUseCase
+        return removeContestMemberUseCase
                 .execute(id, user.getUserId(), memberId, currentRound)
                 .fold(
                         error -> {
                             log.warn("Remove member error for {}/{}: {}", id, memberId, error);
-                            return null;
+                            return "redirect:/contests/" + id + "/members?removeBlocked=true";
                         },
-                        result -> null);
-
-        return "redirect:/contests/" + id;
+                        result -> "redirect:/contests/" + id + "/members");
     }
 
     @PostMapping("/{id}/leave")
@@ -98,16 +100,31 @@ public class ContestAdminController {
         if (user == null) return "redirect:/auth/login";
 
         int currentRound = contestSupport.resolveCurrentRoundPosition();
-        leavePrivateContestUseCase
+        return leavePrivateContestUseCase
                 .execute(id, user.getUserId(), currentRound)
                 .fold(
                         error -> {
                             log.warn("Leave contest error for {}: {}", id, error);
-                            return null;
+                            return "redirect:/contests/" + id + "?leaveBlocked=true";
                         },
-                        result -> null);
+                        result -> "redirect:/contests");
+    }
 
-        return "redirect:/contests";
+    @PostMapping("/{id}/renew")
+    public String renewContest(
+            @PathVariable UUID id, @RequestParam String toSprintCode, Principal principal) {
+        WebUserDetails user = WebSecurity.resolveUser(principal);
+        if (user == null) return "redirect:/auth/login";
+
+        var cmd = new RenewContestCommand(user.getUserId(), id, toSprintCode);
+        return renewContestUseCase
+                .execute(cmd)
+                .fold(
+                        error -> {
+                            log.warn("Renew contest error for {}: {}", id, error);
+                            return "redirect:/contests/" + id + "?renewError=true";
+                        },
+                        result -> "redirect:/contests/" + result.renewedContestId() + "?renewed=true");
     }
 
     @PostMapping("/{id}/delete")

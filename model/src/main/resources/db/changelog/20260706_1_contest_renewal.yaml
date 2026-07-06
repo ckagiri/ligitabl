@@ -1,0 +1,27 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260706_1_contest_renewal_schema
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_contest
+            schemaName: public
+      changes:
+        - addColumn:
+            tableName: t_contest
+            schemaName: public
+            columns:
+              - column:
+                  name: c_renewed_into_contest_id
+                  type: uuid
+                  constraints:
+                    nullable: true
+        - addForeignKeyConstraint:
+            baseTableName: t_contest
+            baseColumnNames: c_renewed_into_contest_id
+            baseTableSchemaName: public
+            constraintName: fk_contest_renewed_into
+            referencedTableName: t_contest
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public

@@ -6,7 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Entry;
-import com.ligitabl.model.domain.PhaseType;
+import com.ligitabl.model.domain.PhaseRules;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.domain.RoundStatus;
@@ -47,9 +47,19 @@ public class JoinPrivateContestUseCase {
             return Either.left(new JoinPrivateContestError.ContestClosed());
         }
 
-        // Verify user has made a prediction (is participating in the season)
         var season = seasonRepo.findById(contest.getSeasonId()).orElse(null);
-        if (season == null || !predictionRepo.existsByUserAndSeason(cmd.userId(), contest.getSeasonId())) {
+        if (season == null) {
+            return Either.left(new JoinPrivateContestError.NoPrediction());
+        }
+
+        // Only join a season that's currently in play or in its pre-season window — not
+        // off-season/inactive, and never a past season (which resolves to one of those states).
+        if (!season.isInPlay() && !season.isPreSeason()) {
+            return Either.left(new JoinPrivateContestError.SeasonNotJoinable());
+        }
+
+        // Verify user has made a prediction (is participating in the season)
+        if (!predictionRepo.existsByUserAndSeason(cmd.userId(), contest.getSeasonId())) {
             return Either.left(new JoinPrivateContestError.NoPrediction());
         }
 
@@ -121,11 +131,8 @@ public class JoinPrivateContestUseCase {
 
         if (competition.getPhases() == null) return false;
 
-        RoundSpan endSprint = competition.getPhases().stream()
-                .filter(p -> p.getType() == PhaseType.SPRINT)
-                .filter(p -> p.getFrom() <= toRoundPosition && toRoundPosition <= p.getTo())
-                .findFirst()
-                .orElse(null);
+        RoundSpan endSprint =
+                PhaseRules.sprintContaining(competition.getPhases(), toRoundPosition).orElse(null);
 
         if (endSprint == null) return false;
 

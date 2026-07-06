@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.rest.contest.shared.ContestSeasonSupport;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.Entry;
 import com.ligitabl.model.repo.ContestRepo;
@@ -26,6 +27,9 @@ class RemoveContestMemberUseCaseTest {
     @Mock
     EntryRepo entryRepo;
 
+    @Mock
+    ContestSeasonSupport contestSeasonSupport;
+
     private RemoveContestMemberUseCase useCase;
 
     private UUID ownerId;
@@ -37,7 +41,7 @@ class RemoveContestMemberUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new RemoveContestMemberUseCase(contestRepo, entryRepo);
+        useCase = new RemoveContestMemberUseCase(contestRepo, entryRepo, contestSeasonSupport);
         ownerId = UUID.randomUUID();
         memberId = UUID.randomUUID();
         contestId = UUID.randomUUID();
@@ -94,6 +98,8 @@ class RemoveContestMemberUseCaseTest {
     void targetHasNoScores_hardDeletesEntry_suggestsCodeRegen() {
         when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
         when(entryRepo.findByUserAndContest(memberId, contestId)).thenReturn(Optional.of(activeEntry));
+        when(contestSeasonSupport.isPastSeason(contest)).thenReturn(false);
+        when(contestSeasonSupport.isFinalSprintUnderway(contest, 5)).thenReturn(false);
         when(entryRepo.hasAnyScore(memberId, contestId)).thenReturn(false);
 
         var result = useCase.execute(contestId, ownerId, memberId, 5);
@@ -108,6 +114,8 @@ class RemoveContestMemberUseCaseTest {
     void targetHasScores_softDeletesEntry_suggestsCodeRegen() {
         when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
         when(entryRepo.findByUserAndContest(memberId, contestId)).thenReturn(Optional.of(activeEntry));
+        when(contestSeasonSupport.isPastSeason(contest)).thenReturn(false);
+        when(contestSeasonSupport.isFinalSprintUnderway(contest, 5)).thenReturn(false);
         when(entryRepo.hasAnyScore(memberId, contestId)).thenReturn(true);
 
         var result = useCase.execute(contestId, ownerId, memberId, 5);
@@ -115,6 +123,35 @@ class RemoveContestMemberUseCaseTest {
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().shouldSuggestCodeRegen()).isTrue();
         verify(entryRepo).softRemove(memberId, contestId, 5);
+        verify(entryRepo, never()).deleteByUserAndContest(any(), any());
+    }
+
+    @Test
+    void pastSeasonContest_returnsPastSeasonContestError() {
+        when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
+        when(entryRepo.findByUserAndContest(memberId, contestId)).thenReturn(Optional.of(activeEntry));
+        when(contestSeasonSupport.isPastSeason(contest)).thenReturn(true);
+
+        var result = useCase.execute(contestId, ownerId, memberId, 5);
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(RemoveContestMemberUseCase.Error.PastSeasonContest.class);
+        verify(entryRepo, never()).softRemove(any(), any(), anyInt());
+        verify(entryRepo, never()).deleteByUserAndContest(any(), any());
+    }
+
+    @Test
+    void finalSprintUnderway_returnsFinalSprintUnderwayError() {
+        when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
+        when(entryRepo.findByUserAndContest(memberId, contestId)).thenReturn(Optional.of(activeEntry));
+        when(contestSeasonSupport.isPastSeason(contest)).thenReturn(false);
+        when(contestSeasonSupport.isFinalSprintUnderway(contest, 5)).thenReturn(true);
+
+        var result = useCase.execute(contestId, ownerId, memberId, 5);
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(RemoveContestMemberUseCase.Error.FinalSprintUnderway.class);
+        verify(entryRepo, never()).softRemove(any(), any(), anyInt());
         verify(entryRepo, never()).deleteByUserAndContest(any(), any());
     }
 

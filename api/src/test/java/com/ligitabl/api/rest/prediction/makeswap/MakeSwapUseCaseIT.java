@@ -90,6 +90,7 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
 
         insertUser(userId, "swap-user@example.com");
         insertCompetitionAndSeason();
+        insertMainContest();
         insertRound(roundId, seasonId, 10, RoundStatus.OPEN);
 
         SeasonPrediction prediction = SeasonPrediction.builder()
@@ -99,7 +100,7 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
                 .currentRankings(RANKINGS)
                 .swaps(List.of())
                 .lastSwapAt(null)
-                .atRoundNumber(0)
+                .atRoundNumber(10)
                 .build();
 
         predictionRepo.save(prediction);
@@ -186,6 +187,7 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
             SeasonPrediction prediction =
                     predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
             prediction.setLastSwapAt(now.minus(Duration.ofHours(23)));
+            prediction.setOpeningCommittedRound(10);
             predictionRepo.save(prediction);
 
             Either<SwapError, SwapResult> result = useCase.execute(userId, new SwapCommand("ARS", "LIV"));
@@ -292,6 +294,21 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
                 false,
                 roundId,
                 10);
+    }
+
+    private void insertMainContest() {
+        UUID contestId = UUID.randomUUID();
+        jdbcTemplate.update(
+                "INSERT INTO t_contest (pk_id, fk_season_id, c_name, c_is_private, c_join_code, c_from_round_position, c_to_round_position, c_max_entries) VALUES (?,?,?,?,?,?,?,?)",
+                contestId,
+                seasonId,
+                "Main League",
+                false,
+                null,
+                1,
+                22,
+                null);
+        jdbcTemplate.update("UPDATE t_season SET fk_main_contest_id = ? WHERE pk_id = ?", contestId, seasonId);
     }
 
     private void insertRound(UUID id, UUID seasonId, int position, RoundStatus status) {

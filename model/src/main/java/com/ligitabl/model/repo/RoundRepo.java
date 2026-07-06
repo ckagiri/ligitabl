@@ -11,6 +11,17 @@ public interface RoundRepo {
 
     Optional<Round> findById(UUID id);
 
+    /** The position of the round with the given id, or {@code fallback} if not found (including a null id). */
+    default int findPosition(UUID roundId, int fallback) {
+        if (roundId == null) return fallback;
+        return findById(roundId).map(Round::getPosition).orElse(fallback);
+    }
+
+    /** The position of the round with the given id, or {@code 0} if not found (including a null id). */
+    default int findPosition(UUID roundId) {
+        return findPosition(roundId, 0);
+    }
+
     List<Round> findBySeasonId(UUID seasonId);
 
     Optional<Round> findBySeasonIdAndPosition(UUID seasonId, int position);

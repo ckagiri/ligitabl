@@ -34,6 +34,8 @@ public class Contest extends AbstractModel<UUID> {
 
     private boolean isOpen;
 
+    private UUID renewedIntoContestId;
+
     public boolean isMain() {
         return !isPrivate && fromRoundPosition == 1;
     }

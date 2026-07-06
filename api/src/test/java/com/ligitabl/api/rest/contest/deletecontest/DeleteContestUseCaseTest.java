@@ -12,6 +12,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.rest.contest.shared.ContestSeasonSupport;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
@@ -29,6 +30,9 @@ class DeleteContestUseCaseTest {
     @Mock
     LeaderboardRepo leaderboardRepo;
 
+    @Mock
+    ContestSeasonSupport contestSeasonSupport;
+
     private DeleteContestUseCase useCase;
 
     private UUID ownerId;
@@ -38,7 +42,7 @@ class DeleteContestUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new DeleteContestUseCase(contestRepo, entryRepo, leaderboardRepo);
+        useCase = new DeleteContestUseCase(contestRepo, entryRepo, leaderboardRepo, contestSeasonSupport);
         ownerId = UUID.randomUUID();
         contestId = UUID.randomUUID();
         seasonId = UUID.randomUUID();
@@ -78,6 +82,7 @@ class DeleteContestUseCaseTest {
     @Test
     void ownerDeletesContestWithOneMember_noScoredRounds_succeeds() {
         when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
+        when(contestSeasonSupport.isPastSeason(contest)).thenReturn(false);
         when(entryRepo.countActiveByContestId(contestId)).thenReturn(1);
 
         var result = useCase.execute(contestId, ownerId);
@@ -90,6 +95,7 @@ class DeleteContestUseCaseTest {
     @Test
     void ownerDeletesContestWithZeroMembers_succeeds() {
         when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
+        when(contestSeasonSupport.isPastSeason(contest)).thenReturn(false);
         when(entryRepo.countActiveByContestId(contestId)).thenReturn(0);
 
         var result = useCase.execute(contestId, ownerId);
@@ -102,6 +108,7 @@ class DeleteContestUseCaseTest {
     @Test
     void twoOrMoreMembersWithScoredRounds_returnsDeleteBlockedError() {
         when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
+        when(contestSeasonSupport.isPastSeason(contest)).thenReturn(false);
         when(entryRepo.countActiveByContestId(contestId)).thenReturn(2);
         when(leaderboardRepo.resolveEffectiveToRound(seasonId, 1, 10)).thenReturn(5);
 
@@ -116,6 +123,7 @@ class DeleteContestUseCaseTest {
     @Test
     void twoMembersButNoScoredRounds_deleteSucceeds() {
         when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
+        when(contestSeasonSupport.isPastSeason(contest)).thenReturn(false);
         when(entryRepo.countActiveByContestId(contestId)).thenReturn(2);
         when(leaderboardRepo.resolveEffectiveToRound(seasonId, 1, 10)).thenReturn(null);
 
@@ -124,5 +132,18 @@ class DeleteContestUseCaseTest {
         assertThat(result.isRight()).isTrue();
         verify(entryRepo).deleteByContestId(contestId);
         verify(contestRepo).delete(contestId);
+    }
+
+    @Test
+    void pastSeasonContest_returnsPastSeasonContestError() {
+        when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
+        when(contestSeasonSupport.isPastSeason(contest)).thenReturn(true);
+
+        var result = useCase.execute(contestId, ownerId);
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(DeleteContestUseCase.Error.PastSeasonContest.class);
+        verify(entryRepo, never()).deleteByContestId(any());
+        verify(contestRepo, never()).delete(any());
     }
 }

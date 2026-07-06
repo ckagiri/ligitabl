@@ -191,6 +191,32 @@ Notes:
 - If you run a full `clean` on `model/` and jOOQ codegen is skipped (default), model compilation may fail if
   something imports `com.ligitabl.model.db.*`.
 
+### Stale installed jars in `~/.m2` (duplicate-class / "incompatible types: X cannot be converted to X")
+
+A related but distinct symptom: `mvn -pl api -am ...` fails across many unrelated test files with
+errors like `incompatible types: com.ligitabl.model.repo.ContestRepo cannot be converted to
+ContestRepo` — the *same* simple class name reported as incompatible with itself. This means two
+copies of the class are on the classpath simultaneously: the reactor's freshly-built
+`model/target/classes` **and** a previously-`mvn install`ed jar in
+`~/.m2/repository/com/ligitabl/ligitabl-model/...` (or `ligitabl-api`). This can happen after
+running any Make target that does `mvn install` (e.g. `make codegen`/`make model-codegen-local`
+install `jooq-codegen`, and some workflows also install `model`/`api`).
+
+Fix — remove the stale installed jars so the reactor build is the only source of those classes:
+
+```bash
+rm -rf ~/.m2/repository/com/ligitabl/ligitabl-model ~/.m2/repository/com/ligitabl/ligitabl-api
+rm -rf api/target/classes api/target/test-classes model/target/classes model/target/test-classes
+mvn -pl api -am -DskipITs test
+```
+
+**Shell gotcha:** if your shell aliases `rm` to `rm -I` (interactive-ish confirmation, common in
+zsh setups), a scripted `rm -rf` can silently print a `recursively remove N dirs?` prompt and
+no-op when run non-interactively (no TTY to answer `y`) — the directories are *not* deleted, and
+the next command runs against the still-stale classes, so the fix appears not to have worked.
+Check `type rm` first; if it's aliased, use `command rm -rf ...` (or `\rm -rf ...`) to bypass the
+alias and guarantee the deletion actually happens.
+
 ### If `clean` is required: regenerate jOOQ sources first
 
 If you *must* clean `model/target/` and you later hit missing `com.ligitabl.model.db.*` types, regenerate via:

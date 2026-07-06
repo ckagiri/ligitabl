@@ -370,6 +370,11 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
 
         @BeforeEach
         void markSeasonAsPreSeason() {
+            // getSeasonState() only classifies PRE_SEASON when the season's own start date is still
+            // in the future (an upcoming, not-yet-started season) — the class-level fixture uses a
+            // fixed historical 2024/25 window for the in-play tests, so push it out here.
+            setSeasonWindow(LocalDate.now().plusDays(1), LocalDate.now().plusMonths(9));
+            setPreSeasonOpensAt(OffsetDateTime.now().minusDays(1));
             setPredictionsOpenAt(OffsetDateTime.now().plusDays(30));
         }
 
@@ -458,6 +463,15 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
 
     private void setPredictionsOpenAt(OffsetDateTime value) {
         jdbcTemplate.update("UPDATE t_season SET c_predictions_open_at = ? WHERE pk_id = ?", value, seasonId);
+    }
+
+    private void setPreSeasonOpensAt(OffsetDateTime value) {
+        jdbcTemplate.update("UPDATE t_season SET c_pre_season_opens_at = ? WHERE pk_id = ?", value, seasonId);
+    }
+
+    private void setSeasonWindow(LocalDate startDate, LocalDate endDate) {
+        jdbcTemplate.update(
+                "UPDATE t_season SET c_start_date = ?, c_end_date = ? WHERE pk_id = ?", startDate, endDate, seasonId);
     }
 
     private int countSeasonPredictionsForUser(UUID userId) {

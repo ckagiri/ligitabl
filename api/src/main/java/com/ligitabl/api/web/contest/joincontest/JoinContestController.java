@@ -127,6 +127,7 @@ public class JoinContestController {
         return switch (error) {
             case JoinPrivateContestError.ContestNotFound ignored -> "NOT_FOUND";
             case JoinPrivateContestError.ContestClosed ignored -> "CLOSED";
+            case JoinPrivateContestError.SeasonNotJoinable ignored -> "CLOSED";
             case JoinPrivateContestError.AlreadyMember ignored -> "ALREADY_MEMBER";
             case JoinPrivateContestError.MemberCapReached ignored -> "CAP_REACHED";
             case JoinPrivateContestError.JoinWindowClosed ignored -> "WINDOW_CLOSED";

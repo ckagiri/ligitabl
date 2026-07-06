@@ -5,6 +5,9 @@ public sealed interface JoinPrivateContestError {
 
     record NoPrediction() implements JoinPrivateContestError {}
 
+    /** The contest's season is neither in play nor in pre-season (e.g. off-season, inactive, or a past season). */
+    record SeasonNotJoinable() implements JoinPrivateContestError {}
+
     record ContestClosed() implements JoinPrivateContestError {}
 
     record MemberCapReached(int cap) implements JoinPrivateContestError {}

@@ -9,7 +9,7 @@ import com.ligitabl.api.contest.ContestCodeGenerator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.Entry;
-import com.ligitabl.model.domain.PhaseType;
+import com.ligitabl.model.domain.PhaseRules;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.domain.RoundStatus;
@@ -91,11 +91,7 @@ public class CreatePrivateContestUseCase {
     private Either<CreatePrivateContestError, RoundSpan> validateFromSprint(
             String fromCode, List<RoundSpan> phases, Round currentRound) {
 
-        RoundSpan sprint = phases.stream()
-                .filter(p -> p.getType() == PhaseType.SPRINT)
-                .filter(s -> s.getCode().equalsIgnoreCase(fromCode))
-                .findFirst()
-                .orElse(null);
+        RoundSpan sprint = PhaseRules.findSprintByCode(phases, fromCode).orElse(null);
 
         if (sprint == null) return Either.left(new CreatePrivateContestError.InvalidFromSprint(fromCode));
 
@@ -119,30 +115,12 @@ public class CreatePrivateContestUseCase {
     private Either<CreatePrivateContestError, RoundSpan> validateToSprint(
             String toCode, RoundSpan fromSprint, List<RoundSpan> phases) {
 
-        RoundSpan toSprint = phases.stream()
-                .filter(p -> p.getType() == PhaseType.SPRINT)
-                .filter(s -> s.getCode().equalsIgnoreCase(toCode))
-                .findFirst()
-                .orElse(null);
+        RoundSpan toSprint = PhaseRules.findSprintByCode(phases, toCode).orElse(null);
 
         if (toSprint == null)
             return Either.left(new CreatePrivateContestError.InvalidToCombination(fromSprint.getCode(), toCode));
 
-        if (fromSprint.getCode().equalsIgnoreCase(toCode)) return Either.right(toSprint);
-
-        // Multi-sprint: FROM must be a quarter-start, TO must be a quarter-end, TO after FROM
-        List<RoundSpan> quarters =
-                phases.stream().filter(p -> p.getType() == PhaseType.QUARTER).toList();
-
-        boolean fromIsQuarterStart =
-                quarters.stream().anyMatch(q -> fromSprint.getFrom() == q.getFrom() && fromSprint.getTo() <= q.getTo());
-
-        boolean toIsQuarterEnd =
-                quarters.stream().anyMatch(q -> toSprint.getTo() == q.getTo() && toSprint.getFrom() >= q.getFrom());
-
-        boolean toIsAfterFrom = toSprint.getFrom() > fromSprint.getTo();
-
-        if (!fromIsQuarterStart || !toIsQuarterEnd || !toIsAfterFrom)
+        if (!PhaseRules.isValidSprintWindow(fromSprint, toSprint, phases))
             return Either.left(new CreatePrivateContestError.InvalidToCombination(fromSprint.getCode(), toCode));
 
         return Either.right(toSprint);

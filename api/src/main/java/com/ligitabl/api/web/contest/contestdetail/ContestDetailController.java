@@ -18,6 +18,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.rest.contest.getprivatecontest.GetPrivateContestQuery;
 import com.ligitabl.api.rest.contest.getprivatecontest.GetPrivateContestUseCase;
+import com.ligitabl.api.rest.contest.renewcontest.GetContestRenewalOptionsResult;
+import com.ligitabl.api.rest.contest.renewcontest.GetContestRenewalOptionsUseCase;
+import com.ligitabl.api.rest.contest.shared.ContestSeasonSupport;
+import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 import com.ligitabl.model.domain.Entry;
 import com.ligitabl.model.domain.LeaderboardResponse;
@@ -35,6 +39,9 @@ public class ContestDetailController {
     private static final int PAGE_SIZE = 10;
 
     private final GetPrivateContestUseCase getPrivateContestUseCase;
+    private final GetContestRenewalOptionsUseCase getContestRenewalOptionsUseCase;
+    private final ContestSeasonSupport contestSeasonSupport;
+    private final ContestSupport contestSupport;
     private final UserRepo userRepo;
     private final ObjectMapper objectMapper;
 
@@ -78,6 +85,32 @@ public class ContestDetailController {
                             model.addAttribute("selectedSegment", detail.selectedSegment());
                             model.addAttribute("leaderboard", lb);
                             model.addAttribute("isOwner", detail.isOwner());
+
+                            boolean isPastSeason = false;
+                            boolean isFinalSprintUnderway = false;
+                            if (hxRequest == null || hxRequest.isBlank()) {
+                                isPastSeason = contestSeasonSupport.isPastSeason(detail.contest());
+                                if (!isPastSeason) {
+                                    int currentRoundPosition = contestSupport.resolveCurrentRoundPosition();
+                                    isFinalSprintUnderway =
+                                            contestSeasonSupport.isFinalSprintUnderway(detail.contest(), currentRoundPosition);
+                                }
+                            }
+                            model.addAttribute("isPastSeason", isPastSeason);
+                            model.addAttribute("isFinalSprintUnderway", isFinalSprintUnderway);
+
+                            GetContestRenewalOptionsResult renewal = GetContestRenewalOptionsResult.hidden();
+                            if (detail.isOwner() && (hxRequest == null || hxRequest.isBlank())) {
+                                renewal = getContestRenewalOptionsUseCase
+                                        .execute(id, user.getUserId())
+                                        .fold(error -> GetContestRenewalOptionsResult.hidden(), r -> r);
+                            }
+                            model.addAttribute("renewal", renewal);
+                            model.addAttribute(
+                                    "renewalSprints", renewal.visible() ? contestSupport.resolveSprintOptions() : List.of());
+                            model.addAttribute(
+                                    "renewalQuarters",
+                                    renewal.visible() ? contestSupport.resolveQuarterOptions() : List.of());
                             String joinCode = detail.joinCode() != null
                                     ? detail.joinCode().toUpperCase()
                                     : null;
