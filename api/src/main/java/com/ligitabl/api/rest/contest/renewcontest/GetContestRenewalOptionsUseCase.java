@@ -21,8 +21,8 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Read-only counterpart to {@link RenewContestUseCase}: resolves the renewal window and valid TO
- * options for the confirmation modal, without mutating anything. Only supports the current-season
- * renewal path — past-season renewal has no UI entry point yet.
+ * options for the confirmation modal, without mutating anything. Mirrors that use case's
+ * current-season / past-season branching.
  */
 @Service
 @RequiredArgsConstructor
@@ -53,24 +53,36 @@ public class GetContestRenewalOptionsUseCase {
         RoundSpan originalTo =
                 PhaseRules.sprintEndingAt(phases, contest.getToRoundPosition()).orElse(null);
 
-        Season activeSeason =
-                seasonRepo.findActiveSeason(competition.getId()).orElse(null);
-        boolean isCurrentSeason = activeSeason != null && activeSeason.getId().equals(season.getId());
-        boolean alreadyRenewed = contest.getRenewedIntoContestId() != null;
-
-        if (originalFrom == null
-                || originalTo == null
-                || !isCurrentSeason
-                || !ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases, true, alreadyRenewed)) {
+        if (originalFrom == null || originalTo == null || contest.getRenewedIntoContestId() != null) {
             return Either.right(GetContestRenewalOptionsResult.notRenewable());
         }
 
-        RoundSpan from =
-                ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases).orElseThrow();
-        RoundSpan defaultTo = ContestRenewalCalculator.resolveDefaultTo(originalFrom, originalTo, from, phases);
-        List<String> toOptionCodes = ContestRenewalCalculator.resolveValidToOptions(from, phases).stream()
-                .map(RoundSpan::getCode)
-                .toList();
+        Season activeSeason =
+                seasonRepo.findActiveSeason(competition.getId()).orElse(null);
+        boolean isCurrentSeason = activeSeason != null && activeSeason.getId().equals(season.getId());
+
+        RoundSpan from;
+        RoundSpan defaultTo;
+        List<String> toOptionCodes;
+
+        if (isCurrentSeason) {
+            if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases, true, false)) {
+                return Either.right(GetContestRenewalOptionsResult.notRenewable());
+            }
+            from = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases).orElseThrow();
+            defaultTo = ContestRenewalCalculator.resolveDefaultTo(originalFrom, originalTo, from, phases);
+            toOptionCodes = ContestRenewalCalculator.resolveValidToOptions(from, phases).stream()
+                    .map(RoundSpan::getCode)
+                    .toList();
+        } else {
+            if (activeSeason == null) return Either.right(GetContestRenewalOptionsResult.notRenewable());
+
+            var window = ContestRenewalCalculator.resolvePastSeasonWindow(originalFrom, originalTo, phases);
+            from = window.from();
+            defaultTo = window.defaultTo();
+            toOptionCodes =
+                    window.validToOptions().stream().map(RoundSpan::getCode).toList();
+        }
 
         int activeMembers = entryRepo.countActiveByContestId(contestId);
 
