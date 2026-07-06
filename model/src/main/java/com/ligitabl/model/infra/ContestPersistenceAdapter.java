@@ -49,6 +49,7 @@ public class ContestPersistenceAdapter implements ContestRepo {
                 .set(T_CONTEST.C_MAX_ENTRIES, contest.getMaxEntries())
                 .set(T_CONTEST.C_OWNER_ID, contest.getOwnerId())
                 .set(T_CONTEST.C_IS_OPEN, contest.isOpen())
+                .set(T_CONTEST.C_RENEWED_INTO_CONTEST_ID, contest.getRenewedIntoContestId())
                 .onConflict(T_CONTEST.PK_ID)
                 .doUpdate()
                 .set(T_CONTEST.FK_SEASON_ID, contest.getSeasonId())
@@ -60,6 +61,7 @@ public class ContestPersistenceAdapter implements ContestRepo {
                 .set(T_CONTEST.C_MAX_ENTRIES, contest.getMaxEntries())
                 .set(T_CONTEST.C_OWNER_ID, contest.getOwnerId())
                 .set(T_CONTEST.C_IS_OPEN, contest.isOpen())
+                .set(T_CONTEST.C_RENEWED_INTO_CONTEST_ID, contest.getRenewedIntoContestId())
                 .execute();
 
         return contest;
@@ -222,6 +224,7 @@ public class ContestPersistenceAdapter implements ContestRepo {
                 .maxEntries(record.getMaxEntries())
                 .ownerId(record.getOwnerId())
                 .isOpen(Boolean.TRUE.equals(record.getIsOpen()))
+                .renewedIntoContestId(record.getRenewedIntoContestId())
                 .build();
     }
 }

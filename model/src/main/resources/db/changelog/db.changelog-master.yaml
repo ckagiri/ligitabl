@@ -51,3 +51,5 @@ databaseChangeLog:
       file: db/changelog/20260701_2_season_prediction_initial_rankings_nullable.yaml
   - include:
       file: db/changelog/20260702_1_match_season_id.yaml
+  - include:
+      file: db/changelog/20260706_1_contest_renewal.yaml
