@@ -153,6 +153,75 @@ class ContestPersistenceAdapterIT extends AbstractPostgresIT {
         assertThat(result).isEmpty();
     }
 
+    // ─── findPrivateByUserId(userId, seasonId) ordering ───────────────────────
+
+    @Test
+    @DisplayName("findPrivateByUserId(userId, seasonId) orders in-progress, then upcoming, then completed")
+    void findPrivateByUserId_withSeasonId_ordersByPhase() {
+        setCurrentRoundPosition(5);
+
+        Contest completed = contestRepo.save(privateContestWindow("Completed", "COMP001", 1, 3));
+        Contest upcoming = contestRepo.save(privateContestWindow("Upcoming", "UPC0001", 8, 10));
+        Contest inProgress = contestRepo.save(privateContestWindow("InProgress", "PROG001", 4, 6));
+
+        joinContest(completed.getId());
+        joinContest(upcoming.getId());
+        joinContest(inProgress.getId());
+
+        List<Contest> result = contestRepo.findPrivateByUserId(userId, seasonId);
+
+        assertThat(result).extracting(Contest::getId)
+                .containsExactly(inProgress.getId(), upcoming.getId(), completed.getId());
+    }
+
+    @Test
+    @DisplayName("findContestsByUserId orders active-tab private contests in-progress before upcoming")
+    void findContestsByUserId_activeTab_ordersByPhase() {
+        setCurrentRoundPosition(5);
+
+        Contest upcoming = contestRepo.save(privateContestWindow("Upcoming", "UPC0002", 8, 10));
+        Contest inProgress = contestRepo.save(privateContestWindow("InProgress", "PROG002", 4, 6));
+
+        joinContest(upcoming.getId());
+        joinContest(inProgress.getId());
+
+        List<ContestRepo.UserContestView> result = contestRepo.findContestsByUserId(userId, seasonId, true, 10, 0);
+
+        assertThat(result).extracting(ContestRepo.UserContestView::contestId)
+                .containsExactly(inProgress.getId(), upcoming.getId());
+    }
+
+    private void setCurrentRoundPosition(int position) {
+        UUID roundId = UUID.randomUUID();
+        jdbc.update(
+                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized) VALUES (?,?,?,?,?,?)",
+                roundId,
+                seasonId,
+                "Round " + position,
+                "round-" + position,
+                position,
+                false);
+        jdbc.update("UPDATE t_season SET fk_current_round_id = ? WHERE pk_id = ?", roundId, seasonId);
+    }
+
+    private Contest privateContestWindow(String name, String joinCode, int fromRound, int toRound) {
+        return Contest.builder()
+                .seasonId(seasonId)
+                .name(name)
+                .isPrivate(true)
+                .isOpen(true)
+                .joinCode(joinCode)
+                .fromRoundPosition(fromRound)
+                .toRoundPosition(toRound)
+                .ownerId(userId)
+                .build();
+    }
+
+    private void joinContest(UUID contestId) {
+        entryRepo.save(
+                Entry.builder().userId(userId).contestId(contestId).joinedAtRound(1).build());
+    }
+
     // ─── save / delete ────────────────────────────────────────────────────────
 
     @Test

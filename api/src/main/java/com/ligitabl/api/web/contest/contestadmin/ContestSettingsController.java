@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
+import com.ligitabl.api.rest.contest.shared.ContestSeasonSupport;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 import com.ligitabl.model.repo.ContestRepo;
 
@@ -23,6 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ContestSettingsController {
 
     private final ContestRepo contestRepo;
+    private final ContestSeasonSupport contestSeasonSupport;
 
     @GetMapping("/{id}/edit")
     public String contestSettings(@PathVariable UUID id, Model model, Principal principal) {
@@ -38,6 +40,7 @@ public class ContestSettingsController {
         }
 
         model.addAttribute("contest", contest);
+        model.addAttribute("isPastSeason", contestSeasonSupport.isPastSeason(contest));
         model.addAttribute("pageTitle", contest.getName() + " — Settings");
         return "contest/edit";
     }

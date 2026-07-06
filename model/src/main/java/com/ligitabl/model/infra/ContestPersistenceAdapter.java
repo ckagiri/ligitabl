@@ -2,6 +2,7 @@ package com.ligitabl.model.infra;
 
 import static com.ligitabl.model.db.tables.TContest.T_CONTEST;
 import static com.ligitabl.model.db.tables.TEntry.T_ENTRY;
+import static com.ligitabl.model.db.tables.TRound.T_ROUND;
 import static com.ligitabl.model.db.tables.TSeason.T_SEASON;
 import static org.jooq.impl.DSL.upper;
 
@@ -10,6 +11,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.jooq.DSLContext;
+import org.jooq.Field;
 import org.jooq.Record;
 import org.jooq.SelectConditionStep;
 import org.jooq.impl.DSL;
@@ -106,15 +108,38 @@ public class ContestPersistenceAdapter implements ContestRepo {
 
     @Override
     public List<Contest> findPrivateByUserId(UUID userId, UUID seasonId) {
-        return dsl.selectFrom(T_CONTEST)
+        // Ordered active (in progress) first, then upcoming (not started), then completed —
+        // computed against this season's own current round.
+        return dsl.select(T_CONTEST.fields())
+                .from(T_CONTEST)
+                .join(T_SEASON)
+                .on(T_SEASON.PK_ID.eq(T_CONTEST.FK_SEASON_ID))
+                .leftJoin(T_ROUND)
+                .on(T_SEASON.FK_CURRENT_ROUND_ID.eq(T_ROUND.PK_ID))
                 .where(T_CONTEST.C_IS_PRIVATE.eq(true))
                 .and(T_CONTEST.FK_SEASON_ID.eq(seasonId))
                 .and(T_CONTEST.PK_ID.in(dsl.select(T_ENTRY.FK_CONTEST_ID)
                         .from(T_ENTRY)
                         .where(T_ENTRY.FK_USER_ID.eq(userId))
                         .and(T_ENTRY.C_REMOVED_AT_ROUND.isNull())))
-                .fetch()
-                .map(ContestPersistenceAdapter::map);
+                .orderBy(phaseOrderField(), T_CONTEST.C_FROM_ROUND_POSITION.asc())
+                .fetch(r -> map(r.into(T_CONTEST)));
+    }
+
+    /**
+     * Contest "phase" relative to its season's current round: 0 = in progress, 1 = upcoming (or
+     * unknown current round), 2 = completed. Used to order contest lists active-first.
+     */
+    private static Field<Integer> phaseOrderField() {
+        return DSL.when(T_ROUND.C_POSITION.isNull(), DSL.inline(1))
+                .when(
+                        T_CONTEST
+                                .C_FROM_ROUND_POSITION
+                                .le(T_ROUND.C_POSITION)
+                                .and(T_CONTEST.C_TO_ROUND_POSITION.ge(T_ROUND.C_POSITION)),
+                        DSL.inline(0))
+                .when(T_CONTEST.C_FROM_ROUND_POSITION.gt(T_ROUND.C_POSITION), DSL.inline(1))
+                .otherwise(DSL.inline(2));
     }
 
     @Override
@@ -131,6 +156,7 @@ public class ContestPersistenceAdapter implements ContestRepo {
         return generals.unionAll(privates)
                 .orderBy(
                         DSL.field("sort_group"),
+                        DSL.field("phase_order"),
                         DSL.field("season_start_date").desc(),
                         DSL.field("joined_at_round").desc())
                 .limit(limit)
@@ -162,6 +188,7 @@ public class ContestPersistenceAdapter implements ContestRepo {
         // the strongly-typed SelectConditionStep<Record11<...>> that the varargs overload produces.
         var fields = List.<org.jooq.Field<?>>of(
                 DSL.inline(isPrivate ? 1 : 0).as("sort_group"),
+                phaseOrderField().as("phase_order"),
                 T_CONTEST.PK_ID.as("contest_id"),
                 T_CONTEST.C_NAME.as("contest_name"),
                 T_SEASON.PK_ID.as("season_id"),
@@ -177,6 +204,8 @@ public class ContestPersistenceAdapter implements ContestRepo {
                 .from(T_CONTEST)
                 .join(T_SEASON)
                 .on(T_SEASON.PK_ID.eq(T_CONTEST.FK_SEASON_ID))
+                .leftJoin(T_ROUND)
+                .on(T_SEASON.FK_CURRENT_ROUND_ID.eq(T_ROUND.PK_ID))
                 .join(T_ENTRY)
                 .on(T_ENTRY.FK_CONTEST_ID.eq(T_CONTEST.PK_ID).and(T_ENTRY.FK_USER_ID.eq(userId)));
 

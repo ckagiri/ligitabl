@@ -4,7 +4,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
@@ -13,11 +12,13 @@ import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.RoundSpan;
+import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.MatchRepo.RoundDateRange;
+import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
 
@@ -29,6 +30,7 @@ public class PreviewContestByCodeUseCase {
 
     private final ContestRepo contestRepo;
     private final EntryRepo entryRepo;
+    private final SeasonRepo seasonRepo;
     private final CompetitionRepo competitionRepo;
     private final MatchRepo matchRepo;
 
@@ -36,11 +38,21 @@ public class PreviewContestByCodeUseCase {
         var contest = contestRepo.findByJoinCode(joinCode).orElse(null);
         if (contest == null) return Either.left(new PreviewContestByCodeError.ContestNotFound(joinCode));
 
-        if (!contest.isOpen()) return Either.left(new PreviewContestByCodeError.ContestClosed());
+        Season season = seasonRepo.findById(contest.getSeasonId()).orElse(null);
+        if (season == null)
+            return Either.left(new PreviewContestByCodeError.CompetitionNotFound(
+                    contest.getSeasonId().toString()));
 
-        var competitionResult = resolveCompetition(contest.getSeasonId());
-        if (competitionResult.isLeft()) return competitionResult.castLeft();
-        Competition competition = competitionResult.get();
+        // A closed contest, or one whose season is neither in play nor in pre-season (off-season,
+        // inactive, or any past season), is treated the same as closed — no live preview to join.
+        if (!contest.isOpen() || (!season.isInPlay() && !season.isPreSeason()))
+            return Either.left(new PreviewContestByCodeError.ContestClosed());
+
+        Competition competition =
+                competitionRepo.findById(season.getCompetitionId()).orElse(null);
+        if (competition == null)
+            return Either.left(new PreviewContestByCodeError.CompetitionNotFound(
+                    contest.getSeasonId().toString()));
 
         List<RoundSpan> phases = competition.getPhases();
         int memberCount = entryRepo.countActiveByContestId(contest.getId());
@@ -58,15 +70,6 @@ public class PreviewContestByCodeUseCase {
                 dateRange,
                 memberCount,
                 contest.isOpen()));
-    }
-
-    private Either<PreviewContestByCodeError, Competition> resolveCompetition(UUID seasonId) {
-        return competitionRepo.findAll().stream()
-                .filter(c ->
-                        c.getActiveSeasonId() != null && c.getActiveSeasonId().equals(seasonId))
-                .findFirst()
-                .<Either<PreviewContestByCodeError, Competition>>map(Either::right)
-                .orElseGet(() -> Either.left(new PreviewContestByCodeError.CompetitionNotFound(seasonId.toString())));
     }
 
     private String resolveScopeCode(Contest contest, List<RoundSpan> phases) {

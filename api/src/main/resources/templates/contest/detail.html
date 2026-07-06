@@ -537,14 +537,29 @@
         </div>
 
         <!-- ── Leave contest (non-owner, private contests only) ── -->
-        <th:block th:if="${isOwner == false and contest.private == true}">
+        <!-- Past-season contests are historical records: no leave control at all, no explanation needed. -->
+        <th:block th:if="${isOwner == false and contest.private == true and isPastSeason == false}">
           <div class="mb-4">
-            <form method="post" th:action="@{/contests/{id}/leave(id=${contest.id})}"
-                  onsubmit="return confirm('Leave this contest? If you\'ve scored rounds, you\'ll appear as Former Member.')">
-              <button type="submit" class="text-sm text-red-600 hover:text-red-800 font-medium transition">
-                Leave contest
-              </button>
-            </form>
+            <th:block th:if="${isFinalSprintUnderway == true}">
+              <p class="text-sm text-gray-500">The final sprint is underway. You can no longer leave this contest.</p>
+            </th:block>
+            <th:block th:if="${isFinalSprintUnderway == false}">
+              <form method="post" th:action="@{/contests/{id}/leave(id=${contest.id})}"
+                    onsubmit="return confirm('Leave this contest? If you\'ve scored rounds, you\'ll appear as Former Member.')">
+                <button type="submit" class="text-sm text-red-600 hover:text-red-800 font-medium transition">
+                  Leave contest
+                </button>
+              </form>
+            </th:block>
+          </div>
+        </th:block>
+
+        <th:block th:if="${param.leaveBlocked != null}">
+          <div class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
+            <svg class="h-5 w-5 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+            </svg>
+            <p class="text-sm text-amber-800">You can no longer leave this contest.</p>
           </div>
         </th:block>
 

@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.contest.ContestCodeGenerator;
+import com.ligitabl.api.rest.contest.shared.ContestSeasonSupport;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.repo.ContestRepo;
 
@@ -19,11 +20,15 @@ public class RegenerateContestCodeUseCase {
 
     private final ContestRepo contestRepo;
     private final ContestCodeGenerator codeGenerator;
+    private final ContestSeasonSupport contestSeasonSupport;
 
     public sealed interface Error {
         record ContestNotFound(UUID contestId) implements Error {}
 
         record NotOwner(UUID userId, UUID contestId) implements Error {}
+
+        /** The contest belongs to a past (no longer active) season — historical, read-only. */
+        record PastSeasonContest(UUID contestId) implements Error {}
     }
 
     public record Result(UUID contestId, String joinCode) {}
@@ -37,6 +42,10 @@ public class RegenerateContestCodeUseCase {
 
         if (!contest.isOwnedBy(userId)) {
             return Either.left(new Error.NotOwner(userId, contestId));
+        }
+
+        if (contestSeasonSupport.isPastSeason(contest)) {
+            return Either.left(new Error.PastSeasonContest(contestId));
         }
 
         String newCode = generateUniqueCode();

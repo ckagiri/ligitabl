@@ -84,16 +84,14 @@ public class ContestAdminController {
         if (user == null) return "redirect:/auth/login";
 
         int currentRound = contestSupport.resolveCurrentRoundPosition();
-        removeContestMemberUseCase
+        return removeContestMemberUseCase
                 .execute(id, user.getUserId(), memberId, currentRound)
                 .fold(
                         error -> {
                             log.warn("Remove member error for {}/{}: {}", id, memberId, error);
-                            return null;
+                            return "redirect:/contests/" + id + "/members?removeBlocked=true";
                         },
-                        result -> null);
-
-        return "redirect:/contests/" + id;
+                        result -> "redirect:/contests/" + id + "/members");
     }
 
     @PostMapping("/{id}/leave")
@@ -102,16 +100,14 @@ public class ContestAdminController {
         if (user == null) return "redirect:/auth/login";
 
         int currentRound = contestSupport.resolveCurrentRoundPosition();
-        leavePrivateContestUseCase
+        return leavePrivateContestUseCase
                 .execute(id, user.getUserId(), currentRound)
                 .fold(
                         error -> {
                             log.warn("Leave contest error for {}: {}", id, error);
-                            return null;
+                            return "redirect:/contests/" + id + "?leaveBlocked=true";
                         },
-                        result -> null);
-
-        return "redirect:/contests";
+                        result -> "redirect:/contests");
     }
 
     @PostMapping("/{id}/renew")
