@@ -9,6 +9,11 @@ public sealed interface RenewContestError {
 
     record AlreadyRenewed(UUID contestId) implements RenewContestError {}
 
+    record NotPrivate(UUID contestId) implements RenewContestError {}
+
+    /** Structurally renewable but the timing gate (spec §12.1b) hasn't been reached yet. */
+    record TooEarly(UUID contestId) implements RenewContestError {}
+
     record SeasonNotFound() implements RenewContestError {}
 
     record CompetitionNotFound() implements RenewContestError {}

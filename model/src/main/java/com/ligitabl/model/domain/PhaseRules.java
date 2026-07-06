@@ -36,6 +36,23 @@ public final class PhaseRules {
                 .findFirst();
     }
 
+    /** The sprint that contains the given round position (from <= roundPosition <= to). */
+    public static Optional<RoundSpan> sprintContaining(List<RoundSpan> phases, int roundPosition) {
+        return sprintsOf(phases).stream()
+                .filter(s -> s.getFrom() <= roundPosition && roundPosition <= s.getTo())
+                .findFirst();
+    }
+
+    /**
+     * True once the current round has reached the start of the sprint containing
+     * {@code toRoundPosition} — e.g. a contest's own final sprint. Per-contest, not season-wide.
+     */
+    public static boolean isFinalSprintUnderway(int toRoundPosition, int currentRoundPosition, List<RoundSpan> phases) {
+        return sprintContaining(phases, toRoundPosition)
+                .map(finalSprint -> currentRoundPosition >= finalSprint.getFrom())
+                .orElse(false);
+    }
+
     public static boolean isQuarterStart(RoundSpan sprint, List<RoundSpan> quarters) {
         return quarters.stream().anyMatch(q -> sprint.getFrom() == q.getFrom() && sprint.getTo() <= q.getTo());
     }

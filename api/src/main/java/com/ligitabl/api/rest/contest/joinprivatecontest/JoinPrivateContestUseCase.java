@@ -6,7 +6,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Entry;
-import com.ligitabl.model.domain.PhaseType;
+import com.ligitabl.model.domain.PhaseRules;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.domain.RoundStatus;
@@ -121,11 +121,8 @@ public class JoinPrivateContestUseCase {
 
         if (competition.getPhases() == null) return false;
 
-        RoundSpan endSprint = competition.getPhases().stream()
-                .filter(p -> p.getType() == PhaseType.SPRINT)
-                .filter(p -> p.getFrom() <= toRoundPosition && toRoundPosition <= p.getTo())
-                .findFirst()
-                .orElse(null);
+        RoundSpan endSprint =
+                PhaseRules.sprintContaining(competition.getPhases(), toRoundPosition).orElse(null);
 
         if (endSprint == null) return false;
 

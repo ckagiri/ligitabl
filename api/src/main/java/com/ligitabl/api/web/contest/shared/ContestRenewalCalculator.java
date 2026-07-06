@@ -45,6 +45,29 @@ public final class ContestRenewalCalculator {
     }
 
     /**
+     * Current-season renewal timing gate: the button only becomes actionable once the season has
+     * progressed far enough into the original contest. A single-sprint original requires the
+     * season to have reached the sprint two positions after the original's own sprint (e.g.
+     * original = S1 → enabled from S3). A multi-sprint original requires the season to have
+     * reached the original's own last sprint (its final leg underway). Does not apply to
+     * past-season renewal — round positions there belong to a different season's timeline.
+     */
+    public static boolean hasReachedRenewalTiming(
+            RoundSpan originalFrom, RoundSpan originalTo, int currentRoundPosition, List<RoundSpan> phases) {
+        List<RoundSpan> sprints = PhaseRules.sprintsOf(phases);
+        int duration = sprints.indexOf(originalTo) - sprints.indexOf(originalFrom) + 1;
+        int currentSprintIndex = PhaseRules.sprintContaining(phases, currentRoundPosition)
+                .map(sprints::indexOf)
+                .orElse(-1);
+        if (currentSprintIndex < 0) return false;
+
+        if (duration == 1) {
+            return currentSprintIndex >= sprints.indexOf(originalFrom) + 2;
+        }
+        return currentSprintIndex >= sprints.indexOf(originalTo);
+    }
+
+    /**
      * Default TO — combined rule. Same duration as original if it fits within the season;
      * otherwise falls back to the end of FROM's own quarter.
      */

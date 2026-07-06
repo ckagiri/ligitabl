@@ -191,6 +191,55 @@ class ContestRenewalCalculatorTest {
         assertThat(ContestRenewalCalculator.isFullSeason(s("S1"), s("S4"), phases)).isFalse();
     }
 
+    // ---- Renewal timing gate (single sprint: original index + 2; multi-sprint: original's own last sprint) ----
+
+    @Test
+    void timingGate_singleSprint_notYetAtOriginalSprint_false() {
+        // original = S1 (single sprint), current round is S1 itself
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S1"), s("S1"), 1, phases))
+                .isFalse();
+    }
+
+    @Test
+    void timingGate_singleSprint_oneSprintLater_false() {
+        // original = S1, current round is S2 — not yet 2 sprints in
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S1"), s("S1"), 2, phases))
+                .isFalse();
+    }
+
+    @Test
+    void timingGate_singleSprint_twoSprintsLater_true() {
+        // original = S1, current round is S3 — exactly 2 sprints later, enabled
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S1"), s("S1"), 3, phases))
+                .isTrue();
+    }
+
+    @Test
+    void timingGate_singleSprint_wellPastThreshold_true() {
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S1"), s("S1"), 6, phases))
+                .isTrue();
+    }
+
+    @Test
+    void timingGate_multiSprint_beforeFinalLeg_false() {
+        // original = S1-S2 (Q1), current round is S1 — final leg (S2) not underway yet
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S1"), s("S2"), 1, phases))
+                .isFalse();
+    }
+
+    @Test
+    void timingGate_multiSprint_finalLegUnderway_true() {
+        // original = S1-S2 (Q1), current round is S2 — its own final sprint has begun
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S1"), s("S2"), 2, phases))
+                .isTrue();
+    }
+
+    @Test
+    void timingGate_multiSprint_afterFinalLeg_true() {
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S1"), s("S2"), 3, phases))
+                .isTrue();
+    }
+
     // ---- Section 7: Past season renewal ----
 
     @Test

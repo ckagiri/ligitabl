@@ -18,6 +18,7 @@ import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
+import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,7 @@ public class RenewContestUseCase {
     private final ContestRepo contestRepo;
     private final EntryRepo entryRepo;
     private final SeasonRepo seasonRepo;
+    private final RoundRepo roundRepo;
     private final CompetitionRepo competitionRepo;
     private final ContestCodeGenerator codeGenerator;
 
@@ -46,6 +48,8 @@ public class RenewContestUseCase {
         if (original == null) return Either.left(new RenewContestError.ContestNotFound(cmd.contestId()));
 
         if (!original.isOwnedBy(cmd.userId())) return Either.left(new RenewContestError.NotOwner(cmd.contestId()));
+
+        if (!original.isPrivate()) return Either.left(new RenewContestError.NotPrivate(cmd.contestId()));
 
         if (original.getRenewedIntoContestId() != null)
             return Either.left(new RenewContestError.AlreadyRenewed(cmd.contestId()));
@@ -77,6 +81,13 @@ public class RenewContestUseCase {
         if (isCurrentSeason) {
             if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases, true, false))
                 return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
+
+            int currentRoundPosition = roundRepo
+                    .findById(season.getCurrentRoundId())
+                    .map(r -> r.getPosition())
+                    .orElse(0);
+            if (!ContestRenewalCalculator.hasReachedRenewalTiming(originalFrom, originalTo, currentRoundPosition, phases))
+                return Either.left(new RenewContestError.TooEarly(cmd.contestId()));
 
             from = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases).orElseThrow();
             to = findByCode(ContestRenewalCalculator.resolveValidToOptions(from, phases), cmd.toSprintCode());

@@ -15,6 +15,7 @@ import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
+import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -22,7 +23,7 @@ import lombok.RequiredArgsConstructor;
 /**
  * Read-only counterpart to {@link RenewContestUseCase}: resolves the renewal window and valid TO
  * options for the confirmation modal, without mutating anything. Mirrors that use case's
- * current-season / past-season branching.
+ * current-season / past-season branching and its private-only / timing-gate rules.
  */
 @Service
 @RequiredArgsConstructor
@@ -30,6 +31,7 @@ public class GetContestRenewalOptionsUseCase {
 
     private final ContestRepo contestRepo;
     private final SeasonRepo seasonRepo;
+    private final RoundRepo roundRepo;
     private final CompetitionRepo competitionRepo;
     private final EntryRepo entryRepo;
 
@@ -38,6 +40,8 @@ public class GetContestRenewalOptionsUseCase {
         if (contest == null) return Either.left(new RenewContestError.ContestNotFound(contestId));
 
         if (!contest.isOwnedBy(userId)) return Either.left(new RenewContestError.NotOwner(contestId));
+
+        if (!contest.isPrivate()) return Either.right(GetContestRenewalOptionsResult.hidden());
 
         Season season = seasonRepo.findById(contest.getSeasonId()).orElse(null);
         if (season == null) return Either.left(new RenewContestError.SeasonNotFound());
@@ -54,7 +58,7 @@ public class GetContestRenewalOptionsUseCase {
                 PhaseRules.sprintEndingAt(phases, contest.getToRoundPosition()).orElse(null);
 
         if (originalFrom == null || originalTo == null || contest.getRenewedIntoContestId() != null) {
-            return Either.right(GetContestRenewalOptionsResult.notRenewable());
+            return Either.right(GetContestRenewalOptionsResult.hidden());
         }
 
         Season activeSeason =
@@ -64,29 +68,38 @@ public class GetContestRenewalOptionsUseCase {
         RoundSpan from;
         RoundSpan defaultTo;
         List<String> toOptionCodes;
+        boolean enabled;
 
         if (isCurrentSeason) {
             if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases, true, false)) {
-                return Either.right(GetContestRenewalOptionsResult.notRenewable());
+                return Either.right(GetContestRenewalOptionsResult.hidden());
             }
             from = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases).orElseThrow();
             defaultTo = ContestRenewalCalculator.resolveDefaultTo(originalFrom, originalTo, from, phases);
             toOptionCodes = ContestRenewalCalculator.resolveValidToOptions(from, phases).stream()
                     .map(RoundSpan::getCode)
                     .toList();
+
+            int currentRoundPosition = roundRepo
+                    .findById(season.getCurrentRoundId())
+                    .map(r -> r.getPosition())
+                    .orElse(0);
+            enabled = ContestRenewalCalculator.hasReachedRenewalTiming(
+                    originalFrom, originalTo, currentRoundPosition, phases);
         } else {
-            if (activeSeason == null) return Either.right(GetContestRenewalOptionsResult.notRenewable());
+            if (activeSeason == null) return Either.right(GetContestRenewalOptionsResult.hidden());
 
             var window = ContestRenewalCalculator.resolvePastSeasonWindow(originalFrom, originalTo, phases);
             from = window.from();
             defaultTo = window.defaultTo();
             toOptionCodes =
                     window.validToOptions().stream().map(RoundSpan::getCode).toList();
+            enabled = true;
         }
 
         int activeMembers = entryRepo.countActiveByContestId(contestId);
 
         return Either.right(new GetContestRenewalOptionsResult(
-                true, contest.getName(), from.getCode(), defaultTo.getCode(), toOptionCodes, activeMembers));
+                true, enabled, contest.getName(), from.getCode(), defaultTo.getCode(), toOptionCodes, activeMembers));
     }
 }

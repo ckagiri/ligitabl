@@ -30,6 +30,9 @@ class GetContestRenewalOptionsUseCaseTest {
     SeasonRepo seasonRepo;
 
     @Mock
+    RoundRepo roundRepo;
+
+    @Mock
     CompetitionRepo competitionRepo;
 
     @Mock
@@ -40,17 +43,19 @@ class GetContestRenewalOptionsUseCaseTest {
     private UUID userId;
     private UUID competitionId;
     private UUID seasonId;
+    private UUID currentRoundId;
     private List<RoundSpan> phases;
     private Competition competition;
     private Season season;
 
     @BeforeEach
     void setUp() {
-        useCase = new GetContestRenewalOptionsUseCase(contestRepo, seasonRepo, competitionRepo, entryRepo);
+        useCase = new GetContestRenewalOptionsUseCase(contestRepo, seasonRepo, roundRepo, competitionRepo, entryRepo);
 
         userId = UUID.randomUUID();
         competitionId = UUID.randomUUID();
         seasonId = UUID.randomUUID();
+        currentRoundId = UUID.randomUUID();
         phases = buildPhases();
 
         competition = Competition.builder()
@@ -68,7 +73,20 @@ class GetContestRenewalOptionsUseCaseTest {
                 .slug(SeasonSlug.of("2025-26"))
                 .clientId(1)
                 .maxRounds(8)
+                .currentRoundId(currentRoundId)
                 .build();
+    }
+
+    /** Stubs the current round position, used to satisfy the current-season renewal timing gate. */
+    private void stubCurrentRoundPosition(int position) {
+        when(roundRepo.findById(currentRoundId))
+                .thenReturn(Optional.of(Round.builder()
+                        .id(currentRoundId)
+                        .seasonId(seasonId)
+                        .position(position)
+                        .name("Round " + position)
+                        .slug("round-" + position)
+                        .build()));
     }
 
     private static List<RoundSpan> buildPhases() {
@@ -110,21 +128,39 @@ class GetContestRenewalOptionsUseCaseTest {
     }
 
     @Test
-    void currentSeason_renewable_returnsFromAndDefaultTo() {
-        Contest contest = contest(1, 2); // S1 -> S2
+    void currentSeason_renewableAndTimingMet_returnsFromAndDefaultTo() {
+        Contest contest = contest(1, 2); // S1 -> S2 (Q1); own last sprint is S2
         when(contestRepo.findById(contest.getId())).thenReturn(Optional.of(contest));
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
+        stubCurrentRoundPosition(2); // S2 — final leg of the original underway, timing gate met
         when(entryRepo.countActiveByContestId(contest.getId())).thenReturn(5);
 
         var result = useCase.execute(contest.getId(), userId).get();
 
-        assertThat(result.isRenewable()).isTrue();
+        assertThat(result.visible()).isTrue();
+        assertThat(result.enabled()).isTrue();
         assertThat(result.fromCode()).isEqualTo("S3");
         assertThat(result.defaultToCode()).isEqualTo("S4");
         assertThat(result.toOptionCodes()).containsExactly("S3", "S4", "S6", "S8");
         assertThat(result.activeMemberCount()).isEqualTo(5);
+    }
+
+    @Test
+    void currentSeason_visibleButTimingNotYetMet_disabled() {
+        Contest contest = contest(1, 2); // S1 -> S2 (Q1); own last sprint is S2
+        when(contestRepo.findById(contest.getId())).thenReturn(Optional.of(contest));
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
+        when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
+        stubCurrentRoundPosition(1); // S1 — final leg (S2) not underway yet
+        when(entryRepo.countActiveByContestId(contest.getId())).thenReturn(5);
+
+        var result = useCase.execute(contest.getId(), userId).get();
+
+        assertThat(result.visible()).isTrue();
+        assertThat(result.enabled()).isFalse();
     }
 
     @Test
@@ -137,7 +173,18 @@ class GetContestRenewalOptionsUseCaseTest {
 
         var result = useCase.execute(contest.getId(), userId).get();
 
-        assertThat(result.isRenewable()).isFalse();
+        assertThat(result.visible()).isFalse();
+    }
+
+    @Test
+    void notPrivate_hidden() {
+        Contest contest = contest(1, 2);
+        contest.setPrivate(false);
+        when(contestRepo.findById(contest.getId())).thenReturn(Optional.of(contest));
+
+        var result = useCase.execute(contest.getId(), userId).get();
+
+        assertThat(result.visible()).isFalse();
     }
 
     @Test
@@ -150,7 +197,7 @@ class GetContestRenewalOptionsUseCaseTest {
 
         var result = useCase.execute(contest.getId(), userId).get();
 
-        assertThat(result.isRenewable()).isFalse();
+        assertThat(result.visible()).isFalse();
     }
 
     @Test
@@ -178,7 +225,7 @@ class GetContestRenewalOptionsUseCaseTest {
 
         var result = useCase.execute(contest.getId(), userId).get();
 
-        assertThat(result.isRenewable()).isTrue();
+        assertThat(result.visible()).isTrue();
         assertThat(result.fromCode()).isEqualTo("S1");
         assertThat(result.defaultToCode()).isEqualTo("S2");
         assertThat(result.toOptionCodes()).containsExactly("S1", "S2", "S4", "S6", "S8");
@@ -198,7 +245,7 @@ class GetContestRenewalOptionsUseCaseTest {
 
         var result = useCase.execute(contest.getId(), userId).get();
 
-        assertThat(result.isRenewable()).isTrue();
+        assertThat(result.visible()).isTrue();
         assertThat(result.fromCode()).isEqualTo("S1");
         assertThat(result.defaultToCode()).isEqualTo("S8");
         assertThat(result.toOptionCodes()).containsExactly("S8");
@@ -214,6 +261,6 @@ class GetContestRenewalOptionsUseCaseTest {
 
         var result = useCase.execute(contest.getId(), userId).get();
 
-        assertThat(result.isRenewable()).isFalse();
+        assertThat(result.visible()).isFalse();
     }
 }

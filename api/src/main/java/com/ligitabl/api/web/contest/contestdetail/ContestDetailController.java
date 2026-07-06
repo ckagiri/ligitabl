@@ -84,18 +84,18 @@ public class ContestDetailController {
                             model.addAttribute("leaderboard", lb);
                             model.addAttribute("isOwner", detail.isOwner());
 
-                            GetContestRenewalOptionsResult renewal = GetContestRenewalOptionsResult.notRenewable();
+                            GetContestRenewalOptionsResult renewal = GetContestRenewalOptionsResult.hidden();
                             if (detail.isOwner() && (hxRequest == null || hxRequest.isBlank())) {
                                 renewal = getContestRenewalOptionsUseCase
                                         .execute(id, user.getUserId())
-                                        .fold(error -> GetContestRenewalOptionsResult.notRenewable(), r -> r);
+                                        .fold(error -> GetContestRenewalOptionsResult.hidden(), r -> r);
                             }
                             model.addAttribute("renewal", renewal);
                             model.addAttribute(
-                                    "renewalSprints", renewal.isRenewable() ? contestSupport.resolveSprintOptions() : List.of());
+                                    "renewalSprints", renewal.visible() ? contestSupport.resolveSprintOptions() : List.of());
                             model.addAttribute(
                                     "renewalQuarters",
-                                    renewal.isRenewable() ? contestSupport.resolveQuarterOptions() : List.of());
+                                    renewal.visible() ? contestSupport.resolveQuarterOptions() : List.of());
                             String joinCode = detail.joinCode() != null
                                     ? detail.joinCode().toUpperCase()
                                     : null;
