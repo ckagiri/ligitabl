@@ -59,8 +59,10 @@ public class RenewContestUseCase {
 
         List<RoundSpan> phases = competition.getPhases() != null ? competition.getPhases() : List.of();
 
-        RoundSpan originalFrom = sprintStartingAt(phases, original.getFromRoundPosition());
-        RoundSpan originalTo = sprintEndingAt(phases, original.getToRoundPosition());
+        RoundSpan originalFrom =
+                PhaseRules.sprintStartingAt(phases, original.getFromRoundPosition()).orElse(null);
+        RoundSpan originalTo =
+                PhaseRules.sprintEndingAt(phases, original.getToRoundPosition()).orElse(null);
         if (originalFrom == null || originalTo == null)
             return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
 
@@ -124,20 +126,6 @@ public class RenewContestUseCase {
     private RoundSpan findByCode(List<RoundSpan> options, String code) {
         return options.stream()
                 .filter(s -> s.getCode().equalsIgnoreCase(code))
-                .findFirst()
-                .orElse(null);
-    }
-
-    private RoundSpan sprintStartingAt(List<RoundSpan> phases, int fromRoundPosition) {
-        return PhaseRules.sprintsOf(phases).stream()
-                .filter(s -> s.getFrom() == fromRoundPosition)
-                .findFirst()
-                .orElse(null);
-    }
-
-    private RoundSpan sprintEndingAt(List<RoundSpan> phases, int toRoundPosition) {
-        return PhaseRules.sprintsOf(phases).stream()
-                .filter(s -> s.getTo() == toRoundPosition)
                 .findFirst()
                 .orElse(null);
     }

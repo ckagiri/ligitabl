@@ -73,10 +73,41 @@
                   </svg>
                   Members
                 </a>
+                <th:block th:if="${renewal.isRenewable == true}">
+                  <button
+                    type="button"
+                    @click="open = false; $dispatch('open-renew-modal')"
+                    class="w-full flex items-center gap-2.5 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 transition text-left"
+                  >
+                    <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Renew contest
+                  </button>
+                </th:block>
               </div>
             </div>
           </th:block>
         </div>
+
+        <!-- Renewal success/error banners -->
+        <th:block th:if="${param.renewed != null}">
+          <div class="flex items-start gap-3 bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <svg class="h-5 w-5 text-green-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <p class="text-sm text-green-800">Contest renewed! This is the new contest — members have been carried over.</p>
+          </div>
+        </th:block>
+        <th:block th:if="${param.renewError != null}">
+          <div class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+            </svg>
+            <p class="text-sm text-red-800">Couldn't renew this contest. It may already have been renewed, or the selected window is no longer valid.</p>
+          </div>
+        </th:block>
 
         <!-- ── Contest header ── -->
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-4">
@@ -521,6 +552,76 @@
           </div>
         </th:block>
 
+        <!-- ── Renewal modal (owner only, when renewable) ── -->
+        <th:block th:if="${renewal.isRenewable == true}">
+          <div
+            x-data="contestRenewal()"
+            @open-renew-modal.window="open = true"
+          >
+            <div x-show="open" x-cloak @click="open = false"
+                 class="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black bg-opacity-40 px-2 pb-2 sm:p-4">
+              <div @click.stop class="w-full sm:max-w-md bg-white rounded-2xl shadow-xl max-h-[85vh] overflow-y-auto">
+                <div class="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
+                  <h2 class="text-base font-semibold text-gray-900">
+                    Renew — <span th:text="${renewal.contestName}">Contest</span>
+                  </h2>
+                  <button type="button" @click="open = false" class="p-1 hover:bg-gray-100 rounded">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                  </button>
+                </div>
+
+                <form method="post" th:action="@{/contests/{id}/renew(id=${contest.id})}" class="p-4 space-y-4">
+                  <div>
+                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Window</p>
+                    <div class="space-y-2">
+                      <div class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                        <span class="text-sm text-gray-700">
+                          From: <span class="font-medium" x-text="fromSprint ? fromSprint.name + ' • ' + fromSprint.startDate : ''"></span>
+                        </span>
+                        <span class="text-xs text-gray-400">🔒 fixed</span>
+                      </div>
+                      <div class="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-2">
+                        <span class="text-sm text-gray-700">To:</span>
+                        <select name="toSprintCode" x-model="selectedTo" class="text-sm font-medium border-0 focus:ring-0">
+                          <template x-for="option in toOptions" :key="option.code">
+                            <option :value="option.code" x-text="option.name + ' • ' + option.endDate"></option>
+                          </template>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
+                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Competition structure</p>
+                    <pre class="text-xs font-mono text-gray-700 whitespace-pre-wrap leading-relaxed" x-text="renderHierarchy()"></pre>
+                  </div>
+
+                  <p class="text-sm text-gray-600">
+                    Members carrying over: <span class="font-medium text-gray-900" x-text="activeMemberCount"></span>
+                  </p>
+                  <p class="text-sm text-gray-600" x-text="scoresResetLabel"></p>
+
+                  <div class="flex gap-3 pt-2">
+                    <button
+                      type="submit"
+                      :disabled="!selectedTo"
+                      class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2.5 px-4 rounded-lg transition text-sm"
+                    >
+                      Confirm
+                    </button>
+                    <button type="button" @click="open = false"
+                            class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+                      Cancel
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </th:block>
+
       </div>
 
       <!-- Modal loading spinner -->
@@ -539,6 +640,16 @@
           contestId:      /*[[${contest.id}]]*/ '',
           segmentTree:    /*[[${segmentTree}]]*/ [],
           currentSegment: /*[[${currentSegment}]]*/ 'overall'
+        };
+        window.__contestRenewalData = {
+          contestId:        /*[[${contest.id}]]*/ '',
+          contestName:      /*[[${renewal.contestName}]]*/ '',
+          sprints:          /*[[${renewalSprints}]]*/ [],
+          quarters:         /*[[${renewalQuarters}]]*/ [],
+          fromCode:         /*[[${renewal.fromCode}]]*/ '',
+          defaultToCode:    /*[[${renewal.defaultToCode}]]*/ '',
+          toOptionCodes:    /*[[${renewal.toOptionCodes}]]*/ [],
+          activeMemberCount: /*[[${renewal.activeMemberCount}]]*/ 0
         };
         /*]]>*/
       </script>

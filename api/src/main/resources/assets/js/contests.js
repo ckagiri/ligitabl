@@ -1,3 +1,43 @@
+function sprintLine(sprint) {
+  return sprint.name + '  •  ' + sprint.startDate + ' – ' + sprint.endDate + '  •  ' + sprint.gwLabel;
+}
+
+function renderStructureHierarchy(sprints, quarters, from, to) {
+  if (!from || !to) return '';
+  const inRange = sprints.filter(s => s.num >= from.num && s.num <= to.num);
+
+  if (from.num === to.num) {
+    return sprintLine(from);
+  }
+
+  const quarterCodes = [...new Set(inRange.map(s => s.quarterCode))];
+
+  if (quarterCodes.length === 1) {
+    const qLabel = (quarters.find(q => q.code === quarterCodes[0]) || {}).name || quarterCodes[0];
+    const lines  = [qLabel];
+    inRange.forEach((sprint, i) => {
+      lines.push((i < inRange.length - 1 ? '├── ' : '└── ') + sprintLine(sprint));
+    });
+    return lines.join('\n');
+  }
+
+  const lines = ['Overall'];
+  quarterCodes.forEach((qCode, qIdx) => {
+    const isLastQ    = qIdx === quarterCodes.length - 1;
+    const qConnector = isLastQ ? '└── ' : '├── ';
+    const childPad   = isLastQ ? '    ' : '│   ';
+    const qLabel     = (quarters.find(q => q.code === qCode) || {}).name || qCode;
+    const qSprints   = inRange.filter(s => s.quarterCode === qCode);
+    lines.push(qConnector + qLabel);
+    qSprints.forEach((sprint, sIdx) => {
+      const isLastS    = sIdx === qSprints.length - 1;
+      const sConnector = isLastS ? '└── ' : '├── ';
+      lines.push(childPad + sConnector + sprintLine(sprint));
+    });
+  });
+  return lines.join('\n');
+}
+
 window.contestCreator = function () {
   const d = window.__contestCreateData || {};
   return {
@@ -71,46 +111,44 @@ window.contestCreator = function () {
       return 'End of ' + (q ? q.name : '');
     },
 
-    sprintLine(sprint) {
-      return sprint.name + '  •  ' + sprint.startDate + ' – ' + sprint.endDate + '  •  ' + sprint.gwLabel;
+    renderHierarchy() {
+      return renderStructureHierarchy(this.sprints, this.quarters, this.selectedFrom, this.selectedTo);
+    }
+  };
+};
+
+window.contestRenewal = function () {
+  const d = window.__contestRenewalData || {};
+  return {
+    contestId:         d.contestId || '',
+    contestName:        d.contestName || '',
+    sprints:            d.sprints || [],
+    quarters:           d.quarters || [],
+    fromCode:           d.fromCode || '',
+    toOptionCodes:      d.toOptionCodes || [],
+    activeMemberCount:  d.activeMemberCount || 0,
+    open:               false,
+    selectedTo:         d.defaultToCode || '',
+
+    get fromSprint() {
+      return this.sprints.find(s => s.code === this.fromCode) || null;
+    },
+
+    get toOptions() {
+      return this.sprints.filter(s => this.toOptionCodes.includes(s.code));
+    },
+
+    get selectedToSprint() {
+      return this.sprints.find(s => s.code === this.selectedTo) || null;
+    },
+
+    get scoresResetLabel() {
+      const from = this.fromSprint;
+      return from ? 'Scores reset at ' + from.name + ' start (' + from.startDate + ')' : '';
     },
 
     renderHierarchy() {
-      if (!this.selectedFrom || !this.selectedTo) return '';
-      const fromNum = this.selectedFrom.num;
-      const toNum   = this.selectedTo.num;
-      const inRange = this.sprints.filter(s => s.num >= fromNum && s.num <= toNum);
-
-      if (fromNum === toNum) {
-        return this.sprintLine(this.selectedFrom);
-      }
-
-      const quarterCodes = [...new Set(inRange.map(s => s.quarterCode))];
-
-      if (quarterCodes.length === 1) {
-        const qLabel = (this.quarters.find(q => q.code === quarterCodes[0]) || {}).name || quarterCodes[0];
-        const lines  = [qLabel];
-        inRange.forEach((sprint, i) => {
-          lines.push((i < inRange.length - 1 ? '├── ' : '└── ') + this.sprintLine(sprint));
-        });
-        return lines.join('\n');
-      }
-
-      const lines = ['Overall'];
-      quarterCodes.forEach((qCode, qIdx) => {
-        const isLastQ    = qIdx === quarterCodes.length - 1;
-        const qConnector = isLastQ ? '└── ' : '├── ';
-        const childPad   = isLastQ ? '    ' : '│   ';
-        const qLabel     = (this.quarters.find(q => q.code === qCode) || {}).name || qCode;
-        const qSprints   = inRange.filter(s => s.quarterCode === qCode);
-        lines.push(qConnector + qLabel);
-        qSprints.forEach((sprint, sIdx) => {
-          const isLastS    = sIdx === qSprints.length - 1;
-          const sConnector = isLastS ? '└── ' : '├── ';
-          lines.push(childPad + sConnector + this.sprintLine(sprint));
-        });
-      });
-      return lines.join('\n');
+      return renderStructureHierarchy(this.sprints, this.quarters, this.fromSprint, this.selectedToSprint);
     }
   };
 };

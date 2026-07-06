@@ -22,6 +22,20 @@ public final class PhaseRules {
                 .findFirst();
     }
 
+    /** The sprint that starts at the given round position, e.g. a contest's fromRoundPosition. */
+    public static Optional<RoundSpan> sprintStartingAt(List<RoundSpan> phases, int roundPosition) {
+        return sprintsOf(phases).stream()
+                .filter(s -> s.getFrom() == roundPosition)
+                .findFirst();
+    }
+
+    /** The sprint that ends at the given round position, e.g. a contest's toRoundPosition. */
+    public static Optional<RoundSpan> sprintEndingAt(List<RoundSpan> phases, int roundPosition) {
+        return sprintsOf(phases).stream()
+                .filter(s -> s.getTo() == roundPosition)
+                .findFirst();
+    }
+
     public static boolean isQuarterStart(RoundSpan sprint, List<RoundSpan> quarters) {
         return quarters.stream().anyMatch(q -> sprint.getFrom() == q.getFrom() && sprint.getTo() <= q.getTo());
     }
