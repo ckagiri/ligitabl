@@ -1,6 +1,7 @@
 package com.ligitabl.api.rest.contest.renewcontest;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,9 +24,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Renews a private contest into the sprint immediately following its own window, within the same
- * active season. Past-season renewal (renewing into a newly started season) is not yet supported
- * by this use case.
+ * Renews a private contest. If the contest belongs to the competition's current active season, it
+ * renews into the sprint immediately following its own window in that same season. If the contest
+ * belongs to a past season, it renews into the start of the new active season instead (fixed at
+ * S1, defaulting to end of Q1, or fixed at the last sprint if the original was a full season).
  */
 @Service
 @RequiredArgsConstructor
@@ -64,25 +66,34 @@ public class RenewContestUseCase {
 
         Season activeSeason =
                 seasonRepo.findActiveSeason(competition.getId()).orElse(null);
-        boolean isLive = activeSeason != null && activeSeason.getId().equals(season.getId());
+        boolean isCurrentSeason = activeSeason != null && activeSeason.getId().equals(season.getId());
 
-        if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases, isLive, false))
-            return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
+        RoundSpan from;
+        RoundSpan to;
+        UUID targetSeasonId;
 
-        RoundSpan from =
-                ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases).orElseThrow();
+        if (isCurrentSeason) {
+            if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases, true, false))
+                return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
 
-        List<RoundSpan> validToOptions = ContestRenewalCalculator.resolveValidToOptions(from, phases);
-        RoundSpan to = validToOptions.stream()
-                .filter(s -> s.getCode().equalsIgnoreCase(cmd.toSprintCode()))
-                .findFirst()
-                .orElse(null);
+            from = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases).orElseThrow();
+            to = findByCode(ContestRenewalCalculator.resolveValidToOptions(from, phases), cmd.toSprintCode());
+            targetSeasonId = season.getId();
+        } else {
+            if (activeSeason == null) return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
+
+            var window = ContestRenewalCalculator.resolvePastSeasonWindow(originalFrom, originalTo, phases);
+            from = window.from();
+            to = findByCode(window.validToOptions(), cmd.toSprintCode());
+            targetSeasonId = activeSeason.getId();
+        }
+
         if (to == null) return Either.left(new RenewContestError.InvalidToCombination(cmd.toSprintCode()));
 
         String joinCode = generateUniqueCode();
 
         Contest renewed = Contest.builder()
-                .seasonId(season.getId())
+                .seasonId(targetSeasonId)
                 .name(original.getName())
                 .isPrivate(true)
                 .isOpen(original.isOpen())
@@ -108,6 +119,13 @@ public class RenewContestUseCase {
 
         log.info("User {} renewed contest {} into {}", cmd.userId(), original.getId(), savedRenewed.getId());
         return Either.right(new RenewContestResult(savedRenewed.getId(), joinCode));
+    }
+
+    private RoundSpan findByCode(List<RoundSpan> options, String code) {
+        return options.stream()
+                .filter(s -> s.getCode().equalsIgnoreCase(code))
+                .findFirst()
+                .orElse(null);
     }
 
     private RoundSpan sprintStartingAt(List<RoundSpan> phases, int fromRoundPosition) {

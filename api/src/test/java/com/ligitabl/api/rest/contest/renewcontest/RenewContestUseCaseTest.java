@@ -218,21 +218,99 @@ class RenewContestUseCaseTest {
     }
 
     @Test
-    void notLive_pastSeasonContest_returnsNotRenewable() {
+    void pastSeason_noActiveSeason_returnsNotRenewable() {
         Contest original = originalContest(1, 2);
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
+        when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.empty());
 
-        Season differentActiveSeason =
-                Season.builder().id(UUID.randomUUID()).competitionId(competitionId).build();
-        when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(differentActiveSeason));
-
-        var cmd = new RenewContestCommand(userId, original.getId(), "S3");
+        var cmd = new RenewContestCommand(userId, original.getId(), "S1");
         var result = useCase.execute(cmd);
 
         assertThat(result.isLeft()).isTrue();
         assertThat(result.getLeft()).isInstanceOf(RenewContestError.NotRenewable.class);
+    }
+
+    @Test
+    void pastSeason_partialOriginal_defaultsToEndOfQ1_savesIntoActiveSeason() {
+        Contest original = originalContest(7, 8); // S7 -> S8 (Q4) in the past season
+        when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
+
+        Season activeSeason =
+                Season.builder().id(UUID.randomUUID()).competitionId(competitionId).build();
+        when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(activeSeason));
+        when(entryRepo.findByContestId(original.getId())).thenReturn(List.of());
+        when(contestRepo.findByJoinCode(any())).thenReturn(Optional.empty());
+        when(codeGenerator.generate()).thenReturn(CODE);
+        when(contestRepo.save(any())).thenAnswer(inv -> {
+            Contest c = inv.getArgument(0);
+            if (c.getId() == null) c.setId(UUID.randomUUID());
+            return c;
+        });
+
+        // Default TO for a past-season renewal is end of Q1 (S2), per spec — used here as the chosen TO.
+        var cmd = new RenewContestCommand(userId, original.getId(), "S2");
+        var result = useCase.execute(cmd);
+
+        assertThat(result.isRight()).isTrue();
+        ArgumentCaptor<Contest> captor = ArgumentCaptor.forClass(Contest.class);
+        verify(contestRepo, times(2)).save(captor.capture());
+        Contest savedRenewed = captor.getAllValues().get(0);
+        assertThat(savedRenewed.getSeasonId()).isEqualTo(activeSeason.getId());
+        assertThat(savedRenewed.getFromRoundPosition()).isEqualTo(1);
+        assertThat(savedRenewed.getToRoundPosition()).isEqualTo(2);
+    }
+
+    @Test
+    void pastSeason_fullSeasonOriginal_onlyS8IsValidTo() {
+        Contest original = originalContest(1, 8); // S1 -> S8 full season in the past season
+        when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
+
+        Season activeSeason =
+                Season.builder().id(UUID.randomUUID()).competitionId(competitionId).build();
+        when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(activeSeason));
+
+        // TO fixed at S8 for a renewed full season — S2 must be rejected.
+        var cmd = new RenewContestCommand(userId, original.getId(), "S2");
+        var result = useCase.execute(cmd);
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(RenewContestError.InvalidToCombination.class);
+    }
+
+    @Test
+    void pastSeason_fullSeasonOriginal_s8IsAccepted() {
+        Contest original = originalContest(1, 8);
+        when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
+
+        Season activeSeason =
+                Season.builder().id(UUID.randomUUID()).competitionId(competitionId).build();
+        when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(activeSeason));
+        when(entryRepo.findByContestId(original.getId())).thenReturn(List.of());
+        when(contestRepo.findByJoinCode(any())).thenReturn(Optional.empty());
+        when(codeGenerator.generate()).thenReturn(CODE);
+        when(contestRepo.save(any())).thenAnswer(inv -> {
+            Contest c = inv.getArgument(0);
+            if (c.getId() == null) c.setId(UUID.randomUUID());
+            return c;
+        });
+
+        var cmd = new RenewContestCommand(userId, original.getId(), "S8");
+        var result = useCase.execute(cmd);
+
+        assertThat(result.isRight()).isTrue();
+        ArgumentCaptor<Contest> captor = ArgumentCaptor.forClass(Contest.class);
+        verify(contestRepo, times(2)).save(captor.capture());
+        Contest savedRenewed = captor.getAllValues().get(0);
+        assertThat(savedRenewed.getFromRoundPosition()).isEqualTo(1);
+        assertThat(savedRenewed.getToRoundPosition()).isEqualTo(8);
     }
 
     @Test
