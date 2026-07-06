@@ -123,8 +123,8 @@ class ContestPersistenceAdapterIT extends AbstractPostgresIT {
     void findPrivateByUserId_excludesRemovedMemberships() {
         insertPrediction(userId, 1);
 
-        Contest c1 = contestRepo.save(privateContest("CODE001"));
-        Contest c2 = contestRepo.save(privateContest("CODE002"));
+        Contest c1 = contestRepo.save(privateContest("Private1", "CODE001"));
+        Contest c2 = contestRepo.save(privateContest("Private2", "CODE002"));
 
         entryRepo.save(Entry.builder()
                 .userId(userId)
@@ -259,9 +259,13 @@ class ContestPersistenceAdapterIT extends AbstractPostgresIT {
     // ─── Helpers ──────────────────────────────────────────────────────────────
 
     private Contest privateContest(String joinCode) {
+        return privateContest("Private", joinCode);
+    }
+
+    private Contest privateContest(String name, String joinCode) {
         return Contest.builder()
                 .seasonId(seasonId)
-                .name("Private")
+                .name(name)
                 .isPrivate(true)
                 .isOpen(true)
                 .joinCode(joinCode)
