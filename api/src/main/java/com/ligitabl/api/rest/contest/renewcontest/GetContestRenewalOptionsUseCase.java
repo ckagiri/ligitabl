@@ -80,10 +80,7 @@ public class GetContestRenewalOptionsUseCase {
                     .map(RoundSpan::getCode)
                     .toList();
 
-            int currentRoundPosition = roundRepo
-                    .findById(season.getCurrentRoundId())
-                    .map(r -> r.getPosition())
-                    .orElse(0);
+            int currentRoundPosition = roundRepo.findPosition(season.getCurrentRoundId());
             enabled = ContestRenewalCalculator.hasReachedRenewalTiming(
                     originalFrom, originalTo, currentRoundPosition, phases);
         } else {

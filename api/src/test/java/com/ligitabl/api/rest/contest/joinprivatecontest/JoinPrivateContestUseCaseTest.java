@@ -185,6 +185,59 @@ class JoinPrivateContestUseCaseTest {
     }
 
     @Test
+    void seasonOffSeason_returnsSeasonNotJoinableError() {
+        Season offSeason = Season.builder()
+                .id(seasonId)
+                .competitionId(competitionId)
+                .currentRoundId(roundId)
+                .name("2024/25")
+                .slug(SeasonSlug.of("2024-25"))
+                .clientId(1)
+                .maxRounds(20)
+                .totalTeams(12)
+                .completed(true)
+                .endDate(java.time.LocalDate.now().minusDays(1))
+                .build();
+        when(contestRepo.findByJoinCode(CODE)).thenReturn(Optional.of(openContest));
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(offSeason));
+
+        var result = useCase.execute(new JoinPrivateContestCommand(userId, CODE));
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(JoinPrivateContestError.SeasonNotJoinable.class);
+    }
+
+    @Test
+    void seasonPreSeason_stillJoinable() {
+        Season preSeason = Season.builder()
+                .id(seasonId)
+                .competitionId(competitionId)
+                .currentRoundId(roundId)
+                .name("2026/27")
+                .slug(SeasonSlug.of("2026-27"))
+                .clientId(1)
+                .maxRounds(20)
+                .totalTeams(12)
+                .completed(false)
+                .startDate(java.time.LocalDate.now().plusDays(30))
+                .preSeasonOpensAt(OffsetDateTime.now().minusDays(1))
+                .predictionsOpenAt(OffsetDateTime.now().plusDays(29))
+                .build();
+        when(contestRepo.findByJoinCode(CODE)).thenReturn(Optional.of(openContest));
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(preSeason));
+        when(predictionRepo.existsByUserAndSeason(userId, seasonId)).thenReturn(true);
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
+        when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
+        when(entryRepo.findByUserAndContest(userId, contestId)).thenReturn(Optional.empty());
+        when(contestRepo.findPrivateByUserId(userId)).thenReturn(List.of());
+        when(entryRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
+
+        var result = useCase.execute(new JoinPrivateContestCommand(userId, CODE));
+
+        assertThat(result.isRight()).isTrue();
+    }
+
+    @Test
     void userHasNoPrediction_returnsNoPredictionError() {
         when(contestRepo.findByJoinCode(CODE)).thenReturn(Optional.of(openContest));
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));

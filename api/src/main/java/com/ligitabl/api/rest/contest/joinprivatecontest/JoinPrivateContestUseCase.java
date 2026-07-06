@@ -47,9 +47,19 @@ public class JoinPrivateContestUseCase {
             return Either.left(new JoinPrivateContestError.ContestClosed());
         }
 
-        // Verify user has made a prediction (is participating in the season)
         var season = seasonRepo.findById(contest.getSeasonId()).orElse(null);
-        if (season == null || !predictionRepo.existsByUserAndSeason(cmd.userId(), contest.getSeasonId())) {
+        if (season == null) {
+            return Either.left(new JoinPrivateContestError.NoPrediction());
+        }
+
+        // Only join a season that's currently in play or in its pre-season window — not
+        // off-season/inactive, and never a past season (which resolves to one of those states).
+        if (!season.isInPlay() && !season.isPreSeason()) {
+            return Either.left(new JoinPrivateContestError.SeasonNotJoinable());
+        }
+
+        // Verify user has made a prediction (is participating in the season)
+        if (!predictionRepo.existsByUserAndSeason(cmd.userId(), contest.getSeasonId())) {
             return Either.left(new JoinPrivateContestError.NoPrediction());
         }
 

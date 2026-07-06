@@ -87,14 +87,7 @@ class RenewContestUseCaseTest {
 
     /** Stubs the current round position, used to satisfy the current-season renewal timing gate. */
     private void stubCurrentRoundPosition(int position) {
-        when(roundRepo.findById(currentRoundId))
-                .thenReturn(Optional.of(Round.builder()
-                        .id(currentRoundId)
-                        .seasonId(seasonId)
-                        .position(position)
-                        .name("Round " + position)
-                        .slug("round-" + position)
-                        .build()));
+        when(roundRepo.findPosition(currentRoundId)).thenReturn(position);
     }
 
     private static List<RoundSpan> buildPhases() {

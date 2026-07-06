@@ -82,10 +82,7 @@ public class RenewContestUseCase {
             if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases, true, false))
                 return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
 
-            int currentRoundPosition = roundRepo
-                    .findById(season.getCurrentRoundId())
-                    .map(r -> r.getPosition())
-                    .orElse(0);
+            int currentRoundPosition = roundRepo.findPosition(season.getCurrentRoundId());
             if (!ContestRenewalCalculator.hasReachedRenewalTiming(originalFrom, originalTo, currentRoundPosition, phases))
                 return Either.left(new RenewContestError.TooEarly(cmd.contestId()));
 
