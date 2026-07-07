@@ -25,4 +25,7 @@ public sealed interface RenewContestError {
 
     /** The auto-generated renewed name collides with another contest this owner already has this season. */
     record NameConflict(String name) implements RenewContestError {}
+
+    /** The contest itself is not open for joining (toggled closed, or its own join window has closed). */
+    record ContestClosed(UUID contestId) implements RenewContestError {}
 }

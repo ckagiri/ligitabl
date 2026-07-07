@@ -14,12 +14,12 @@
 
         <!-- ── Top bar: back link + Actions button ── -->
         <div class="flex items-center justify-between mb-4">
-          <button onclick="history.back()" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition">
+          <a th:href="${backHref}" class="inline-flex items-center gap-1.5 text-sm text-gray-500 hover:text-gray-700 transition">
             <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
             </svg>
             Back
-          </button>
+          </a>
 
           <!-- Actions dropdown (owner only) -->
           <th:block th:if="${isOwner == true}">
@@ -109,11 +109,11 @@
               <div class="flex items-center gap-3 mb-1">
                 <h1 class="text-xl font-bold text-gray-900" th:text="${contest.name}">Contest Name</h1>
                 <span
-                  th:if="${contest.isOpen}"
+                  th:if="${isOpenForJoining}"
                   class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700"
                 >Open</span>
                 <span
-                  th:unless="${contest.isOpen}"
+                  th:unless="${isOpenForJoining}"
                   class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
                 >Closed</span>
               </div>
@@ -122,6 +122,10 @@
                 <th:block th:if="${contestDateLabel != null and not #strings.isEmpty(contestDateLabel)}">
                   <span class="mx-1.5 text-gray-300">·</span>
                   <span th:text="${contestDateLabel}">Aug 16 – May 25</span>
+                </th:block>
+                <th:block th:if="${contestPeriodLabel != null and not #strings.isEmpty(contestPeriodLabel)}">
+                  <span class="mx-1.5 text-gray-300">·</span>
+                  <span th:text="${contestPeriodLabel}">Q1</span>
                 </th:block>
                 <span th:if="${contest.maxEntries != null}">
                   <span class="mx-1.5 text-gray-300">·</span>
@@ -599,20 +603,42 @@
                         </span>
                         <span class="text-xs text-gray-400">🔒 fixed</span>
                       </div>
-                      <div class="flex items-center justify-between bg-white border border-gray-200 rounded-lg px-3 py-2">
-                        <span class="text-sm text-gray-700">To:</span>
-                        <select name="toSprintCode" x-model="selectedTo" class="text-sm font-medium border-0 focus:ring-0">
+                      <div class="flex items-center justify-between gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2">
+                        <span class="text-sm text-gray-700 shrink-0">To:</span>
+                        <select
+                          name="toSprintCode"
+                          x-model="selectedTo"
+                          :class="selectedTo === defaultToCode ? 'text-gray-900' : 'text-indigo-700'"
+                          class="text-sm font-medium border-0 focus:ring-0 bg-indigo-50/50 rounded"
+                        >
                           <template x-for="option in toOptions" :key="option.code">
-                            <option :value="option.code" x-text="option.name + ' • ' + option.endDate"></option>
+                            <option :value="option.code" x-text="toOptionLabel(option)"></option>
                           </template>
                         </select>
+                        <button
+                          type="button"
+                          x-show="selectedTo !== defaultToCode"
+                          @click="selectedTo = defaultToCode"
+                          class="text-xs text-indigo-600 hover:text-indigo-800 shrink-0"
+                        >Reset</button>
                       </div>
                     </div>
                   </div>
 
-                  <div class="bg-gray-50 rounded-lg border border-gray-200 p-4">
-                    <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Competition structure</p>
-                    <pre class="text-xs font-mono text-gray-700 whitespace-pre-wrap leading-relaxed" x-text="renderHierarchy()"></pre>
+                  <div class="bg-gray-50 rounded-lg border border-gray-200">
+                    <button
+                      type="button"
+                      @click="structureOpen = !structureOpen"
+                      class="w-full flex items-center justify-between px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide"
+                    >
+                      Competition structure
+                      <svg :class="structureOpen ? 'rotate-180' : ''" class="h-4 w-4 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    <div x-show="structureOpen" x-cloak class="px-4 pb-4">
+                      <pre class="text-xs font-mono text-gray-700 whitespace-pre-wrap leading-relaxed" x-text="renderHierarchy()"></pre>
+                    </div>
                   </div>
 
                   <p class="text-sm text-gray-600">

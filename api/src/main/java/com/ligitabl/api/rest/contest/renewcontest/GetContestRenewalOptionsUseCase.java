@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.contest.shared.ContestRenewalCalculator;
+import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.PhaseRules;
@@ -34,6 +35,7 @@ public class GetContestRenewalOptionsUseCase {
     private final RoundRepo roundRepo;
     private final CompetitionRepo competitionRepo;
     private final EntryRepo entryRepo;
+    private final ContestSupport contestSupport;
 
     public Either<RenewContestError, GetContestRenewalOptionsResult> execute(UUID contestId, UUID userId) {
         Contest contest = contestRepo.findById(contestId).orElse(null);
@@ -93,6 +95,8 @@ public class GetContestRenewalOptionsUseCase {
                     window.validToOptions().stream().map(RoundSpan::getCode).toList();
             enabled = true;
         }
+
+        enabled = enabled && contestSupport.isOpenForJoining(contest, season, competition);
 
         int activeMembers = entryRepo.countActiveByContestId(contestId);
 

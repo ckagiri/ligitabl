@@ -9,6 +9,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ligitabl.api.contest.ContestCodeGenerator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.contest.shared.ContestRenewalCalculator;
+import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.Entry;
@@ -44,6 +45,7 @@ public class RenewContestUseCase {
     private final RoundRepo roundRepo;
     private final CompetitionRepo competitionRepo;
     private final ContestCodeGenerator codeGenerator;
+    private final ContestSupport contestSupport;
 
     @Transactional
     public Either<RenewContestError, RenewContestResult> execute(RenewContestCommand cmd) {
@@ -63,6 +65,9 @@ public class RenewContestUseCase {
         Competition competition =
                 competitionRepo.findById(season.getCompetitionId()).orElse(null);
         if (competition == null) return Either.left(new RenewContestError.CompetitionNotFound());
+
+        if (!contestSupport.isOpenForJoining(original, season, competition))
+            return Either.left(new RenewContestError.ContestClosed(cmd.contestId()));
 
         List<RoundSpan> phases = competition.getPhases() != null ? competition.getPhases() : List.of();
 
@@ -103,8 +108,7 @@ public class RenewContestUseCase {
 
         if (to == null) return Either.left(new RenewContestError.InvalidToCombination(cmd.toSprintCode()));
 
-        String renewedName =
-                original.getName() + " " + ContestRenewalCalculator.resolveRenewalNameSuffix(from, to, phases);
+        String renewedName = original.getName() + " " + PhaseRules.periodLabel(from, to, phases);
         if (contestRepo.existsByOwnerSeasonAndName(targetSeasonId, original.getOwnerId(), renewedName, null))
             return Either.left(new RenewContestError.NameConflict(renewedName));
 

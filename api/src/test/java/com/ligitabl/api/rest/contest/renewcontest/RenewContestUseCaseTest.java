@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.contest.ContestCodeGenerator;
+import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 
@@ -44,6 +45,9 @@ class RenewContestUseCaseTest {
     @Mock
     ContestCodeGenerator codeGenerator;
 
+    @Mock
+    ContestSupport contestSupport;
+
     private RenewContestUseCase useCase;
 
     private static final String CODE = "AB3K7PQ";
@@ -58,7 +62,9 @@ class RenewContestUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new RenewContestUseCase(contestRepo, entryRepo, seasonRepo, roundRepo, competitionRepo, codeGenerator);
+        useCase = new RenewContestUseCase(
+                contestRepo, entryRepo, seasonRepo, roundRepo, competitionRepo, codeGenerator, contestSupport);
+        lenient().when(contestSupport.isOpenForJoining(any(), any(), any())).thenReturn(true);
 
         userId = UUID.randomUUID();
         competitionId = UUID.randomUUID();

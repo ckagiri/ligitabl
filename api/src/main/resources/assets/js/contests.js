@@ -125,10 +125,29 @@ window.contestRenewal = function () {
     sprints:            d.sprints || [],
     quarters:           d.quarters || [],
     fromCode:           d.fromCode || '',
+    defaultToCode:      d.defaultToCode || '',
     toOptionCodes:      d.toOptionCodes || [],
     activeMemberCount:  d.activeMemberCount || 0,
     open:               false,
+    structureOpen:      false,
     selectedTo:         d.defaultToCode || '',
+
+    init() {
+      // Reset to defaults whenever the modal opens, so a change abandoned by closing
+      // without submitting doesn't linger the next time it's opened.
+      this.$watch('open', (isOpen) => {
+        if (isOpen) {
+          this.selectedTo = this.defaultToCode;
+          this.structureOpen = false;
+        }
+      });
+
+      // Guard against the browser restoring this page (and its Alpine state) from
+      // back/forward cache with the modal still open from before navigating away.
+      window.addEventListener('pageshow', (e) => {
+        if (e.persisted) this.open = false;
+      });
+    },
 
     get fromSprint() {
       return this.sprints.find(s => s.code === this.fromCode) || null;
@@ -145,6 +164,11 @@ window.contestRenewal = function () {
     get scoresResetLabel() {
       const from = this.fromSprint;
       return from ? 'Scores reset at ' + from.name + ' start (' + from.startDate + ')' : '';
+    },
+
+    toOptionLabel(option) {
+      const label = option.name + ' • ' + option.endDate;
+      return option.code === this.defaultToCode ? label + ' (default)' : label;
     },
 
     renderHierarchy() {

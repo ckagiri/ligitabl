@@ -112,38 +112,4 @@ public final class ContestRenewalCalculator {
         List<RoundSpan> validToOptions = resolveValidToOptions(from, newSeasonPhases);
         return new RenewalWindow(from, defaultTo, validToOptions, true);
     }
-
-    /**
-     * A short label for a renewed contest's window, appended to the original name to keep
-     * repeated renewals distinct (e.g. "Homeboyz" renewing into Q3-Q4 → "Homeboyz H2"). A single
-     * sprint uses its own code (e.g. "S3"). A span aligned to exactly one quarter uses that
-     * quarter's code (e.g. "Q2"). A span aligned to exactly one half of the season (first or
-     * second pair of quarters) uses "H1"/"H2". Any other multi-quarter span uses a quarter range
-     * (e.g. "Q1-3").
-     */
-    public static String resolveRenewalNameSuffix(RoundSpan from, RoundSpan to, List<RoundSpan> phases) {
-        if (from.equals(to)) return from.getCode();
-
-        List<RoundSpan> quarters = PhaseRules.quartersOf(phases);
-        int startIdx = indexOfQuarterContaining(quarters, from.getFrom());
-        int endIdx = indexOfQuarterContaining(quarters, to.getTo());
-        if (startIdx < 0 || endIdx < 0) return from.getCode() + "-" + to.getCode();
-
-        if (startIdx == endIdx) return quarters.get(startIdx).getCode();
-
-        int span = endIdx - startIdx + 1;
-        int halfSize = quarters.size() / 2;
-        if (quarters.size() % 2 == 0 && span == halfSize && startIdx % halfSize == 0) {
-            return "H" + (startIdx / halfSize + 1);
-        }
-        return "Q" + (startIdx + 1) + "-" + (endIdx + 1);
-    }
-
-    private static int indexOfQuarterContaining(List<RoundSpan> quarters, int roundPosition) {
-        for (int i = 0; i < quarters.size(); i++) {
-            RoundSpan quarter = quarters.get(i);
-            if (quarter.getFrom() <= roundPosition && roundPosition <= quarter.getTo()) return i;
-        }
-        return -1;
-    }
 }

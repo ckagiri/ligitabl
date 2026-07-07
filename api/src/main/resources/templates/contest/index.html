@@ -177,7 +177,7 @@
                   <tr
                     th:each="row : ${privateContests}"
                     class="group hover:bg-gray-50 transition cursor-pointer"
-                    th:attr="data-href=@{/contests/{id}(id=${row.id})}"
+                    th:attr="data-href=@{/contests/{id}(id=${row.id},from='contests')}"
                     onclick="window.location.href = this.dataset.href"
                   >
                     <td class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-4 py-3">

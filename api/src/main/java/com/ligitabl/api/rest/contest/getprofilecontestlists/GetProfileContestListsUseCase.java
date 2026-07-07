@@ -76,7 +76,7 @@ public class GetProfileContestListsUseCase {
     private ContestSummary toSummary(ContestRepo.UserContestView view, UUID userId, Map<UUID, Integer> memberCounts) {
         int memberCount = memberCounts.getOrDefault(view.contestId(), 0);
         Integer rank = resolveRank(view, userId);
-        String link = "/contests/" + view.contestId() + (view.isPrivate() ? "" : "?segment=overall");
+        String link = "/contests/" + view.contestId() + (view.isPrivate() ? "?from=profile" : "?segment=overall&from=profile");
         return new ContestSummary(view.contestName(), view.seasonName(), memberCount, rank, link);
     }
 

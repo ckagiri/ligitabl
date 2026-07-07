@@ -17,4 +17,6 @@ public record GetPrivateContestResult(
         List<Entry> members,
         String joinCode,
         List<SegmentNodeDto> segmentTree,
-        String contestDateLabel) {}
+        String contestDateLabel,
+        String contestPeriodLabel,
+        boolean isOpenForJoining) {}

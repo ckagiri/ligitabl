@@ -9,10 +9,13 @@ import java.util.stream.IntStream;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.model.domain.Competition;
+import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.domain.RoundStatus;
+import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
@@ -46,6 +49,22 @@ public class ContestSupport {
             boolean isQuarterEnd) {}
 
     public record QuarterOption(String code, String name) {}
+
+    /**
+     * A contest is actually open for new members only if its own {@code isOpen} toggle is on
+     * <em>and</em> its join window hasn't closed (past its end, or past the opening of its own
+     * last sprint). Mirrors the gate {@code JoinPrivateContestUseCase} enforces on an actual join.
+     */
+    public boolean isOpenForJoining(Contest contest, Season season, Competition competition) {
+        if (!contest.isOpen()) return false;
+        if (season.getCurrentRoundId() == null) return true;
+
+        Round currentRound = roundRepo.findById(season.getCurrentRoundId()).orElse(null);
+        if (currentRound == null) return true;
+
+        return !ContestJoinWindow.isJoinWindowClosed(
+                contest.getToRoundPosition(), currentRound, competition, () -> matchRepo.findByRoundId(currentRound.getId()));
+    }
 
     public int resolveCurrentRoundPosition() {
         String slug = competitionDefaults.defaultCompetitionSlug();

@@ -1,6 +1,8 @@
 package com.ligitabl.api.rest.contest.renewcontest;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -13,6 +15,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 
@@ -38,6 +41,9 @@ class GetContestRenewalOptionsUseCaseTest {
     @Mock
     EntryRepo entryRepo;
 
+    @Mock
+    ContestSupport contestSupport;
+
     private GetContestRenewalOptionsUseCase useCase;
 
     private UUID userId;
@@ -50,7 +56,9 @@ class GetContestRenewalOptionsUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new GetContestRenewalOptionsUseCase(contestRepo, seasonRepo, roundRepo, competitionRepo, entryRepo);
+        useCase = new GetContestRenewalOptionsUseCase(
+                contestRepo, seasonRepo, roundRepo, competitionRepo, entryRepo, contestSupport);
+        lenient().when(contestSupport.isOpenForJoining(any(), any(), any())).thenReturn(true);
 
         userId = UUID.randomUUID();
         competitionId = UUID.randomUUID();

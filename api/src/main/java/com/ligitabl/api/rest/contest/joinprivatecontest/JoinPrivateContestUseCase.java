@@ -4,12 +4,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.model.domain.Competition;
+import com.ligitabl.api.web.contest.shared.ContestJoinWindow;
 import com.ligitabl.model.domain.Entry;
-import com.ligitabl.model.domain.PhaseRules;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.RoundSpan;
-import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
@@ -74,7 +70,8 @@ public class JoinPrivateContestUseCase {
         }
 
         // Join window: contest must not have ended or passed the opening of its last sprint
-        if (isJoinWindowClosed(contest.getToRoundPosition(), currentRound, competition)) {
+        if (ContestJoinWindow.isJoinWindowClosed(
+                contest.getToRoundPosition(), currentRound, competition, () -> matchRepo.findByRoundId(currentRound.getId()))) {
             return Either.left(new JoinPrivateContestError.JoinWindowClosed());
         }
 
@@ -113,38 +110,5 @@ public class JoinPrivateContestUseCase {
         log.info("User {} joined contest {} at round {}", cmd.userId(), contest.getId(), currentRound.getPosition());
 
         return Either.right(new JoinPrivateContestResult(contest.getId(), saved.getId()));
-    }
-
-    /**
-     * Rules (contest from=30, to=38; last sprint from=35, to=38):
-     *   pos 29  → open    (before contest starts — early join allowed)
-     *   pos 34  → open    (before last sprint)
-     *   pos 35 + OPEN     → open   (opening round of last sprint, still joinable)
-     *   pos 35 + not OPEN → closed (opening round locked)
-     *   pos 36+           → closed (past opening round of last sprint, regardless of status)
-     *   pos 39+           → closed (past contest end)
-     */
-    private boolean isJoinWindowClosed(int toRoundPosition, Round currentRound, Competition competition) {
-        int pos = currentRound.getPosition();
-
-        if (pos > toRoundPosition) return true;
-
-        if (competition.getPhases() == null) return false;
-
-        RoundSpan endSprint =
-                PhaseRules.sprintContaining(competition.getPhases(), toRoundPosition).orElse(null);
-
-        if (endSprint == null) return false;
-
-        // Before the last sprint starts → still joinable
-        if (pos < endSprint.getFrom()) return false;
-
-        // Past the opening round of the last sprint → always closed
-        if (pos > endSprint.getFrom()) return true;
-
-        // Exactly at the opening round of the last sprint → open only if round is OPEN
-        var matches = matchRepo.findByRoundId(currentRound.getId());
-        RoundStatus status = currentRound.isFinalized() ? RoundStatus.FINALIZED : currentRound.computeStatus(matches);
-        return status != RoundStatus.OPEN;
     }
 }

@@ -87,4 +87,37 @@ public final class PhaseRules {
                 .findFirst()
                 .orElseThrow(() -> new IllegalStateException("Quarter " + quarter.getCode() + " has no closing sprint"));
     }
+
+    /**
+     * A short label for a from/to window: a single sprint uses its own code (e.g. "S3"); a span
+     * aligned to exactly one quarter uses that quarter's code (e.g. "Q2"); a span aligned to
+     * exactly one half of the season (first or second pair of quarters) uses "H1"/"H2"; any other
+     * multi-quarter span uses a quarter range (e.g. "Q1-3"). Used both to distinguish repeated
+     * contest renewals (e.g. "Homeboyz" → "Homeboyz H2") and to label a contest's own window.
+     */
+    public static String periodLabel(RoundSpan from, RoundSpan to, List<RoundSpan> phases) {
+        if (from.equals(to)) return from.getCode();
+
+        List<RoundSpan> quarters = quartersOf(phases);
+        int startIdx = indexOfQuarterContaining(quarters, from.getFrom());
+        int endIdx = indexOfQuarterContaining(quarters, to.getTo());
+        if (startIdx < 0 || endIdx < 0) return from.getCode() + "-" + to.getCode();
+
+        if (startIdx == endIdx) return quarters.get(startIdx).getCode();
+
+        int span = endIdx - startIdx + 1;
+        int halfSize = quarters.size() / 2;
+        if (quarters.size() % 2 == 0 && span == halfSize && startIdx % halfSize == 0) {
+            return "H" + (startIdx / halfSize + 1);
+        }
+        return "Q" + (startIdx + 1) + "-" + (endIdx + 1);
+    }
+
+    private static int indexOfQuarterContaining(List<RoundSpan> quarters, int roundPosition) {
+        for (int i = 0; i < quarters.size(); i++) {
+            RoundSpan quarter = quarters.get(i);
+            if (quarter.getFrom() <= roundPosition && roundPosition <= quarter.getTo()) return i;
+        }
+        return -1;
+    }
 }
