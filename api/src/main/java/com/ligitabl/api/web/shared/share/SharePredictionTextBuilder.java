@@ -23,7 +23,7 @@ public class SharePredictionTextBuilder {
                 rankings.stream().sorted(Comparator.comparingInt(r -> r.getPosition())).toList();
 
         StringBuilder text = new StringBuilder();
-        text.append("🏆 My Premier League GW").append(round).append(" Prediction:\n\n");
+        text.append("🏆 My Premier-League Gameweek ").append(round).append(" Prediction:\n\n");
         appendTeamLines(text, sorted, teamsByCode);
         text.append("\nCheck it out on LigiPredictor!\n").append(displayUrl(shareUrl));
         return text.toString();

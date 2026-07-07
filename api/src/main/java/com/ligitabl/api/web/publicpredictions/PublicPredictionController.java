@@ -89,6 +89,7 @@ public class PublicPredictionController {
             return notFound(model, response, "Season not found: " + season);
         }
         Season resolvedSeason = seasonOpt.get();
+        String competitionName = competitionOpt.get().getName();
 
         var query = new GetPublicPredictionQuery(publicId, resolvedSeason.getId(), position);
 
@@ -96,11 +97,17 @@ public class PublicPredictionController {
                 .execute(query)
                 .fold(
                         error -> handleError(error, model, response),
-                        data -> handleSuccess(publicId, resolvedSeason, position, data, model, hxRequest));
+                        data -> handleSuccess(publicId, resolvedSeason, competitionName, position, data, model, hxRequest));
     }
 
     private String handleSuccess(
-            String publicId, Season season, int requestedPosition, PublicPredictionViewData data, Model model, String hxRequest) {
+            String publicId,
+            Season season,
+            String competitionName,
+            int requestedPosition,
+            PublicPredictionViewData data,
+            Model model,
+            String hxRequest) {
         // The use case clamps out-of-range requests to the target user's valid bounds — redirect
         // to the canonical URL for the clamped round rather than silently rendering a different
         // round at the requested URL.
@@ -108,7 +115,10 @@ public class PublicPredictionController {
             return "redirect:" + canonicalUrl(publicId, season.getSlug(), data.viewingRound());
         }
 
-        model.addAttribute("pageTitle", pageTitle(data));
+        model.addAttribute("pageTitle", pageTitle(data, competitionName));
+        model.addAttribute("competitionName", competitionName);
+        model.addAttribute(
+                "possessiveDisplayName", data.targetDisplayName() != null ? data.targetDisplayName() + "'s" : null);
         model.addAttribute("viewingRound", data.viewingRound());
         model.addAttribute("currentRound", data.currentRound());
         model.addAttribute("minRound", data.minRound());
@@ -147,7 +157,9 @@ public class PublicPredictionController {
         return "/u/" + publicId + "/" + seasonSlug.toShorthand() + "/gw/" + position;
     }
 
-    private String pageTitle(PublicPredictionViewData data) {
-        return data.targetDisplayName() != null ? data.targetDisplayName() + "'s Table" : "LigiPredictor Predictions";
+    private String pageTitle(PublicPredictionViewData data, String competitionName) {
+        return data.targetDisplayName() != null
+                ? data.targetDisplayName() + "'s " + competitionName + " Table"
+                : competitionName + " Table";
     }
 }

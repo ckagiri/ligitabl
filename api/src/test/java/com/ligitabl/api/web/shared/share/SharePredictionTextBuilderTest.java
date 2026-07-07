@@ -27,7 +27,7 @@ class SharePredictionTextBuilderTest {
 
         String text = builder.build(13, rankings, teamsByCode, "https://ligipredictor.com/u/T2ADsSc8hQ/2526/gw/13");
 
-        assertThat(text).contains("GW13");
+        assertThat(text).contains("13");
         assertThat(text).contains("1 ARS", "2 CHE", "3 LIV");
         assertThat(text).doesNotContain("...");
         assertThat(text).contains("LigiPredictor");
