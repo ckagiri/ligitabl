@@ -608,19 +608,13 @@
                         <select
                           name="toSprintCode"
                           x-model="selectedTo"
-                          :class="selectedTo === defaultToCode ? 'text-gray-900' : 'text-indigo-700'"
-                          class="text-sm font-medium border-0 focus:ring-0 bg-indigo-50/50 rounded"
+                          autocomplete="off"
+                          class="text-sm font-medium border-0 focus:ring-0 focus:outline-none bg-indigo-50/50 rounded"
                         >
                           <template x-for="option in toOptions" :key="option.code">
                             <option :value="option.code" x-text="toOptionLabel(option)"></option>
                           </template>
                         </select>
-                        <button
-                          type="button"
-                          x-show="selectedTo !== defaultToCode"
-                          @click="selectedTo = defaultToCode"
-                          class="text-xs text-indigo-600 hover:text-indigo-800 shrink-0"
-                        >Reset</button>
                       </div>
                     </div>
                   </div>

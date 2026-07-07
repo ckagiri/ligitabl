@@ -1,8 +1,6 @@
 package com.ligitabl.api.rest.contest.renewcontest;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -15,7 +13,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 
@@ -41,9 +38,6 @@ class GetContestRenewalOptionsUseCaseTest {
     @Mock
     EntryRepo entryRepo;
 
-    @Mock
-    ContestSupport contestSupport;
-
     private GetContestRenewalOptionsUseCase useCase;
 
     private UUID userId;
@@ -56,9 +50,7 @@ class GetContestRenewalOptionsUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new GetContestRenewalOptionsUseCase(
-                contestRepo, seasonRepo, roundRepo, competitionRepo, entryRepo, contestSupport);
-        lenient().when(contestSupport.isOpenForJoining(any(), any(), any())).thenReturn(true);
+        useCase = new GetContestRenewalOptionsUseCase(contestRepo, seasonRepo, roundRepo, competitionRepo, entryRepo);
 
         userId = UUID.randomUUID();
         competitionId = UUID.randomUUID();
@@ -146,23 +138,6 @@ class GetContestRenewalOptionsUseCaseTest {
         assertThat(result.defaultToCode()).isEqualTo("S4");
         assertThat(result.toOptionCodes()).containsExactly("S3", "S4", "S6", "S8");
         assertThat(result.activeMemberCount()).isEqualTo(5);
-    }
-
-    @Test
-    void currentSeason_timingMetButContestClosed_disabled() {
-        Contest contest = contest(1, 2); // S1 -> S2 (Q1); own last sprint is S2
-        when(contestRepo.findById(contest.getId())).thenReturn(Optional.of(contest));
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
-        when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
-        stubCurrentRoundPosition(2); // timing gate met
-        when(entryRepo.countActiveByContestId(contest.getId())).thenReturn(5);
-        when(contestSupport.isOpenForJoining(contest, season, competition)).thenReturn(false);
-
-        var result = useCase.execute(contest.getId(), userId).get();
-
-        assertThat(result.visible()).isTrue();
-        assertThat(result.enabled()).isFalse();
     }
 
     @Test
@@ -267,27 +242,6 @@ class GetContestRenewalOptionsUseCaseTest {
         assertThat(result.fromCode()).isEqualTo("S1");
         assertThat(result.defaultToCode()).isEqualTo("S8");
         assertThat(result.toOptionCodes()).containsExactly("S8");
-    }
-
-    @Test
-    void pastSeason_ignoresContestOpenState_stillEnabled() {
-        // Past-season renewal doesn't gate on the original contest's own (necessarily closed by
-        // now) join window — only the current-season timing path does.
-        Contest contest = contest(7, 8);
-        when(contestRepo.findById(contest.getId())).thenReturn(Optional.of(contest));
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
-
-        Season activeSeason =
-                Season.builder().id(UUID.randomUUID()).competitionId(competitionId).build();
-        when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(activeSeason));
-        when(entryRepo.countActiveByContestId(contest.getId())).thenReturn(3);
-        lenient().when(contestSupport.isOpenForJoining(any(), any(), any())).thenReturn(false);
-
-        var result = useCase.execute(contest.getId(), userId).get();
-
-        assertThat(result.visible()).isTrue();
-        assertThat(result.enabled()).isTrue();
     }
 
     @Test

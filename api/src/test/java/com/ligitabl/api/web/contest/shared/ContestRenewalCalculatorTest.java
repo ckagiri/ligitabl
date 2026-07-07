@@ -293,6 +293,17 @@ class ContestRenewalCalculatorTest {
                 .isTrue();
     }
 
+    @Test
+    void timingGate_multiSprint_realisticRounds_lastSprintLive_true() {
+        // Contest window S1-S2 (GW1-9, i.e. a full quarter). Current round 7 falls within S2
+        // (GW5-9), the contest's own last sprint, so renewal should already be enabled.
+        List<RoundSpan> realistic = buildRealisticPhases();
+        RoundSpan s1 = realistic.get(0);
+        RoundSpan s2 = realistic.get(1);
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s1, s2, 7, realistic))
+                .isTrue();
+    }
+
     // ---- Section 7: Past season renewal ----
 
     @Test

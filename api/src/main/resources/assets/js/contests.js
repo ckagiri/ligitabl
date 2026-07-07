@@ -129,7 +129,7 @@ window.contestRenewal = function () {
     toOptionCodes:      d.toOptionCodes || [],
     activeMemberCount:  d.activeMemberCount || 0,
     open:               false,
-    structureOpen:      false,
+    structureOpen:      true,
     selectedTo:         d.defaultToCode || '',
 
     init() {
@@ -138,7 +138,7 @@ window.contestRenewal = function () {
       this.$watch('open', (isOpen) => {
         if (isOpen) {
           this.selectedTo = this.defaultToCode;
-          this.structureOpen = false;
+          this.structureOpen = true;
         }
       });
 
@@ -196,7 +196,18 @@ window.contestDetail = function () {
     // selected segment, so the active selection is always visible without an extra click.
     expandRelevantQuarters() {
       const root = this.segmentTree[0];
-      if (!root || !root.children) return;
+      if (!root) return;
+
+      // A contest whose own window is exactly one quarter has that quarter as the root
+      // node itself (not nested under an "Overall" node) — expand the root in that case.
+      if (root.nodeType === 'QUARTER') {
+        const containsActive = root.id === this.activeSegment
+          || (root.children && root.children.some(s => s.id === this.activeSegment));
+        if (root.status === 'LIVE' || containsActive) this.expanded[root.id] = true;
+        return;
+      }
+
+      if (!root.children) return;
       root.children.forEach(child => {
         if (child.status === 'LIVE') this.expanded[child.id] = true;
         if (child.id === this.activeSegment) this.expanded[child.id] = true;

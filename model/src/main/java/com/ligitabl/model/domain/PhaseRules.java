@@ -90,10 +90,11 @@ public final class PhaseRules {
 
     /**
      * A short label for a from/to window: a single sprint uses its own code (e.g. "S3"); a span
-     * aligned to exactly one quarter uses that quarter's code (e.g. "Q2"); a span aligned to
-     * exactly one half of the season (first or second pair of quarters) uses "H1"/"H2"; any other
-     * multi-quarter span uses a quarter range (e.g. "Q1-3"). Used both to distinguish repeated
-     * contest renewals (e.g. "Homeboyz" → "Homeboyz H2") and to label a contest's own window.
+     * aligned to exactly one quarter uses that quarter's code (e.g. "Q2"); a span covering every
+     * quarter uses "FS" (full season); a span aligned to exactly one half of the season (first or
+     * second pair of quarters) uses "H1"/"H2"; any other multi-quarter span uses a quarter range
+     * (e.g. "Q1-3"). Used both to distinguish repeated contest renewals (e.g. "Homeboyz" →
+     * "Homeboyz H2") and to label a contest's own window.
      */
     public static String periodLabel(RoundSpan from, RoundSpan to, List<RoundSpan> phases) {
         if (from.equals(to)) return from.getCode();
@@ -104,6 +105,8 @@ public final class PhaseRules {
         if (startIdx < 0 || endIdx < 0) return from.getCode() + "-" + to.getCode();
 
         if (startIdx == endIdx) return quarters.get(startIdx).getCode();
+
+        if (startIdx == 0 && endIdx == quarters.size() - 1) return "FS";
 
         int span = endIdx - startIdx + 1;
         int halfSize = quarters.size() / 2;

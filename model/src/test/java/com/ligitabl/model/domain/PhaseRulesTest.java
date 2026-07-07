@@ -70,4 +70,9 @@ class PhaseRulesTest {
     void periodLabel_multiQuarterSpanNotAHalf_givesQuarterRange() {
         assertThat(PhaseRules.periodLabel(s("S3"), s("S6"), phases)).isEqualTo("Q2-3");
     }
+
+    @Test
+    void periodLabel_fullSeason_givesFS() {
+        assertThat(PhaseRules.periodLabel(s("S1"), s("S8"), phases)).isEqualTo("FS");
+    }
 }

@@ -9,7 +9,6 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ligitabl.api.contest.ContestCodeGenerator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.contest.shared.ContestRenewalCalculator;
-import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.Entry;
@@ -45,7 +44,6 @@ public class RenewContestUseCase {
     private final RoundRepo roundRepo;
     private final CompetitionRepo competitionRepo;
     private final ContestCodeGenerator codeGenerator;
-    private final ContestSupport contestSupport;
 
     @Transactional
     public Either<RenewContestError, RenewContestResult> execute(RenewContestCommand cmd) {
@@ -86,9 +84,6 @@ public class RenewContestUseCase {
         if (isCurrentSeason) {
             if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases, true, false))
                 return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
-
-            if (!contestSupport.isOpenForJoining(original, season, competition))
-                return Either.left(new RenewContestError.ContestClosed(cmd.contestId()));
 
             int currentRoundPosition = roundRepo.findPosition(season.getCurrentRoundId());
             if (!ContestRenewalCalculator.hasReachedRenewalTiming(originalFrom, originalTo, currentRoundPosition, phases))
