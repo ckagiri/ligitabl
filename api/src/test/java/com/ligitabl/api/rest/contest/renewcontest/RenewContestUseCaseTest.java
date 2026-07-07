@@ -324,6 +324,49 @@ class RenewContestUseCaseTest {
     }
 
     @Test
+    void pastSeason_ignoresContestOpenState_stillRenews() {
+        // Past-season renewal doesn't gate on the original contest's own (necessarily closed by
+        // now) join window — only the current-season timing path does.
+        Contest original = originalContest(7, 8);
+        when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
+
+        Season activeSeason =
+                Season.builder().id(UUID.randomUUID()).competitionId(competitionId).build();
+        when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(activeSeason));
+        when(entryRepo.findByContestId(original.getId())).thenReturn(List.of());
+        when(contestRepo.findByJoinCode(any())).thenReturn(Optional.empty());
+        when(codeGenerator.generate()).thenReturn(CODE);
+        when(contestRepo.save(any())).thenAnswer(inv -> {
+            Contest c = inv.getArgument(0);
+            if (c.getId() == null) c.setId(UUID.randomUUID());
+            return c;
+        });
+        lenient().when(contestSupport.isOpenForJoining(any(), any(), any())).thenReturn(false);
+
+        var cmd = new RenewContestCommand(userId, original.getId(), "S2");
+        var result = useCase.execute(cmd);
+
+        assertThat(result.isRight()).isTrue();
+    }
+
+    @Test
+    void currentSeason_contestClosed_returnsError() {
+        Contest original = originalContest(6, 6); // S6 -> S6, timing gate met at S8
+        when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
+        stubActiveSeasonSameAsContest();
+        when(contestSupport.isOpenForJoining(original, season, competition)).thenReturn(false);
+
+        var cmd = new RenewContestCommand(userId, original.getId(), "S7");
+        var result = useCase.execute(cmd);
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(RenewContestError.ContestClosed.class);
+        verify(contestRepo, never()).save(any());
+    }
+
+    @Test
     void pastSeason_fullSeasonOriginal_onlyS8IsValidTo() {
         Contest original = originalContest(1, 8); // S1 -> S8 full season in the past season
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));

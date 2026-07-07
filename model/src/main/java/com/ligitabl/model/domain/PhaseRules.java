@@ -113,6 +113,17 @@ public final class PhaseRules {
         return "Q" + (startIdx + 1) + "-" + (endIdx + 1);
     }
 
+    /**
+     * {@link #periodLabel(RoundSpan, RoundSpan, List)} resolved directly from round positions
+     * (e.g. a contest's or view's from/to), for callers that don't already have the from/to
+     * sprints resolved. Null if either round position doesn't align to a sprint boundary.
+     */
+    public static String resolvePeriodLabel(List<RoundSpan> phases, int fromRoundPosition, int toRoundPosition) {
+        return sprintStartingAt(phases, fromRoundPosition)
+                .flatMap(from -> sprintEndingAt(phases, toRoundPosition).map(to -> periodLabel(from, to, phases)))
+                .orElse(null);
+    }
+
     private static int indexOfQuarterContaining(List<RoundSpan> quarters, int roundPosition) {
         for (int i = 0; i < quarters.size(); i++) {
             RoundSpan quarter = quarters.get(i);

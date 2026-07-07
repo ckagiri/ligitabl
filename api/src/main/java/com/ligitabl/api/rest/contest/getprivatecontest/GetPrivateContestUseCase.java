@@ -84,11 +84,7 @@ public class GetPrivateContestUseCase {
         String contestDateLabel = segmentTreeBuilder.contestDateLabel(
                 contest.getSeasonId(), contest.getFromRoundPosition(), contest.getToRoundPosition());
 
-        List<RoundSpan> phases = competition.getPhases() != null ? competition.getPhases() : List.of();
-        String contestPeriodLabel = PhaseRules.sprintStartingAt(phases, contest.getFromRoundPosition())
-                .flatMap(from -> PhaseRules.sprintEndingAt(phases, contest.getToRoundPosition())
-                        .map(to -> PhaseRules.periodLabel(from, to, phases)))
-                .orElse(null);
+        String contestPeriodLabel = resolveContestPeriodLabel(contest, competition);
 
         boolean isOpenForJoining = contestSupport.isOpenForJoining(contest, season, competition);
 
@@ -194,5 +190,10 @@ public class GetPrivateContestUseCase {
 
     private boolean isSegmentLive(RoundSpan segment, int currentPosition) {
         return currentPosition >= segment.getFrom() && currentPosition <= segment.getTo();
+    }
+
+    private String resolveContestPeriodLabel(Contest contest, Competition competition) {
+        List<RoundSpan> phases = competition.getPhases() != null ? competition.getPhases() : List.of();
+        return PhaseRules.resolvePeriodLabel(phases, contest.getFromRoundPosition(), contest.getToRoundPosition());
     }
 }

@@ -189,22 +189,25 @@ window.contestDetail = function () {
 
     init() {
       window.leagueApp = this;
-      // auto-expand any LIVE quarter nodes
+      this.expandRelevantQuarters();
+    },
+
+    // Auto-expand any LIVE quarter, plus whichever quarter contains the currently
+    // selected segment, so the active selection is always visible without an extra click.
+    expandRelevantQuarters() {
       const root = this.segmentTree[0];
-      if (root && root.children) {
-        root.children.forEach(child => {
-          if (child.status === 'LIVE') this.expanded[child.id] = true;
-        });
-      }
+      if (!root || !root.children) return;
+      root.children.forEach(child => {
+        if (child.status === 'LIVE') this.expanded[child.id] = true;
+        if (child.id === this.activeSegment) this.expanded[child.id] = true;
+        if (child.children && child.children.some(s => s.id === this.activeSegment)) {
+          this.expanded[child.id] = true;
+        }
+      });
     },
 
     openMenu() {
-      const root = this.segmentTree[0];
-      if (root && root.children) {
-        root.children.forEach(child => {
-          if (child.status === 'LIVE') this.expanded[child.id] = true;
-        });
-      }
+      this.expandRelevantQuarters();
       if (window.innerWidth >= 768) {
         this.dropdownOpen = true;
       } else {

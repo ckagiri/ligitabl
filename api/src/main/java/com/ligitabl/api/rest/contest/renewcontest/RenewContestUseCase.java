@@ -66,9 +66,6 @@ public class RenewContestUseCase {
                 competitionRepo.findById(season.getCompetitionId()).orElse(null);
         if (competition == null) return Either.left(new RenewContestError.CompetitionNotFound());
 
-        if (!contestSupport.isOpenForJoining(original, season, competition))
-            return Either.left(new RenewContestError.ContestClosed(cmd.contestId()));
-
         List<RoundSpan> phases = competition.getPhases() != null ? competition.getPhases() : List.of();
 
         RoundSpan originalFrom =
@@ -89,6 +86,9 @@ public class RenewContestUseCase {
         if (isCurrentSeason) {
             if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases, true, false))
                 return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
+
+            if (!contestSupport.isOpenForJoining(original, season, competition))
+                return Either.left(new RenewContestError.ContestClosed(cmd.contestId()));
 
             int currentRoundPosition = roundRepo.findPosition(season.getCurrentRoundId());
             if (!ContestRenewalCalculator.hasReachedRenewalTiming(originalFrom, originalTo, currentRoundPosition, phases))

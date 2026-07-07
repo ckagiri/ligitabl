@@ -84,7 +84,8 @@ public class GetContestRenewalOptionsUseCase {
 
             int currentRoundPosition = roundRepo.findPosition(season.getCurrentRoundId());
             enabled = ContestRenewalCalculator.hasReachedRenewalTiming(
-                    originalFrom, originalTo, currentRoundPosition, phases);
+                            originalFrom, originalTo, currentRoundPosition, phases)
+                    && contestSupport.isOpenForJoining(contest, season, competition);
         } else {
             if (activeSeason == null) return Either.right(GetContestRenewalOptionsResult.hidden());
 
@@ -95,8 +96,6 @@ public class GetContestRenewalOptionsUseCase {
                     window.validToOptions().stream().map(RoundSpan::getCode).toList();
             enabled = true;
         }
-
-        enabled = enabled && contestSupport.isOpenForJoining(contest, season, competition);
 
         int activeMembers = entryRepo.countActiveByContestId(contestId);
 
