@@ -22,6 +22,9 @@ public class Team extends AbstractModel<UUID> {
     @NotNull
     private String shortName;
 
+    // Compact name for space-constrained UI (share text, mobile table) e.g. "Man Utd", "Spurs"
+    private String shorterName;
+
     // URL-friendly teamIdentifier (e.g., "manchester-united"), unique
     @NotBlank
     private TeamSlug slug;
