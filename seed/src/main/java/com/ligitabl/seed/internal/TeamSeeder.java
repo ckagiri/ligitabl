@@ -33,12 +33,14 @@ public class TeamSeeder extends AbstractSeeder<List<Map<String, Object>>> {
     private void seedTeam(Map<String, Object> team) {
         Object nameRaw = team.get("name");
         Object shortNameRaw = team.get("shortName");
+        Object shorterNameRaw = team.get("shorterName");
         Object slugRaw = team.get("slug");
         Object tlaRaw = team.get("tla");
         Object clientIdRaw = team.get("clientId");
 
         String name = nameRaw == null ? null : nameRaw.toString();
         String shortName = shortNameRaw == null ? null : shortNameRaw.toString();
+        String shorterName = shorterNameRaw == null ? shortName : shorterNameRaw.toString();
         String slug = slugRaw == null ? null : slugRaw.toString();
         String tla = tlaRaw == null ? null : tlaRaw.toString();
         Integer clientId =
@@ -63,14 +65,16 @@ public class TeamSeeder extends AbstractSeeder<List<Map<String, Object>>> {
                 T_TEAM.PK_ID,
                 T_TEAM.C_NAME,
                 T_TEAM.C_SHORT_NAME,
+                T_TEAM.C_SHORTER_NAME,
                 T_TEAM.C_SLUG,
                 T_TEAM.C_TLA,
                 T_TEAM.C_CLIENT_ID)
-            .values(UUID.randomUUID(), name, shortName, slug, tla, clientId)
+            .values(UUID.randomUUID(), name, shortName, shorterName, slug, tla, clientId)
                 .onConflict(T_TEAM.C_SLUG)
                 .doUpdate()
                 .set(T_TEAM.C_NAME, name)
                 .set(T_TEAM.C_SHORT_NAME, shortName)
+                .set(T_TEAM.C_SHORTER_NAME, shorterName)
                 .set(T_TEAM.C_TLA, tla)
                 .set(T_TEAM.C_CLIENT_ID, clientId)
                 .execute();

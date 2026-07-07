@@ -53,3 +53,7 @@ databaseChangeLog:
       file: db/changelog/20260702_1_match_season_id.yaml
   - include:
       file: db/changelog/20260706_1_contest_renewal.yaml
+  - include:
+      file: db/changelog/20260707_1_team_shorter_name.yaml
+  - include:
+      file: db/changelog/20260707_2_team_shorter_name_overrides.yaml

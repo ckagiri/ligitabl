@@ -1,0 +1,28 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260707_1_team_shorter_name
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - and:
+            - tableExists:
+                tableName: t_team
+                schemaName: public
+            - not:
+                - columnExists:
+                    tableName: t_team
+                    schemaName: public
+                    columnName: c_shorter_name
+      changes:
+        - addColumn:
+            tableName: t_team
+            schemaName: public
+            columns:
+              - column:
+                  name: c_shorter_name
+                  type: varchar(100)
+                  constraints:
+                    nullable: true
+        - sql:
+            dbms: postgresql
+            sql: UPDATE public.t_team SET c_shorter_name = c_short_name WHERE c_shorter_name IS NULL

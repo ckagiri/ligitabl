@@ -20,4 +20,17 @@ public record SeasonSlug(String value) {
 
         return new SeasonSlug(normalized);
     }
+
+    public static SeasonSlug fromShorthand(String shorthand) {
+        assertArgumentNotEmpty(shorthand, "Season shorthand is required");
+
+        String trimmed = shorthand.trim();
+        assertArgumentTrue(trimmed.matches("\\d{4}"), "Season shorthand must be 4 digits (e.g., 2526)");
+
+        return SeasonSlug.of("20" + trimmed.substring(0, 2) + "-" + trimmed.substring(2));
+    }
+
+    public String toShorthand() {
+        return value.substring(2, 4) + value.substring(5);
+    }
 }

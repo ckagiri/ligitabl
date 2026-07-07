@@ -152,6 +152,7 @@ public class TeamPersistenceAdapter implements TeamRepo {
                     .id(record.getId())
                     .name(record.getName())
                     .shortName(record.getShortName())
+                    .shorterName(record.getShorterName())
                     .slug(TeamSlug.of(record.getSlug()))
                     .tla(record.getTla())
                     .createDate(record.getCreateDate())
@@ -167,6 +168,7 @@ public class TeamPersistenceAdapter implements TeamRepo {
         rec.setClientId(model.getClientId());
         rec.setName(model.getName());
         rec.setShortName(model.getShortName());
+        rec.setShorterName(model.getShorterName());
         rec.setSlug(model.getSlug().value());
         rec.setTla(model.getTla());
     }

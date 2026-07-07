@@ -21,6 +21,7 @@ team:
     clientId: 65
   - name: Manchester United
     shortName: Man United
+    shorterName: Man Utd
     slug: manchester-united
     tla: MUN
     clientId: 66
@@ -31,6 +32,7 @@ team:
     clientId: 67
   - name: Nottingham Forest
     shortName: Nottm Forest
+    shorterName: Forest
     slug: nottingham-forest
     tla: NFO
     clientId: 351
@@ -40,6 +42,7 @@ team:
     tla: SOU
   - name: Tottenham Hotspur
     shortName: Tottenham
+    shorterName: Spurs
     slug: tottenham
     tla: TOT
     clientId: 73
@@ -55,6 +58,7 @@ team:
     clientId: 76
   - name: Aston Villa
     shortName: Aston Villa
+    shorterName: Villa
     slug: aston-villa
     tla: AVL
     clientId: 58
@@ -75,6 +79,7 @@ team:
     clientId: 397
   - name: Crystal Palace
     shortName: Crystal Palace
+    shorterName: Palace
     slug: crystal-palace
     tla: CRY
     clientId: 354
@@ -90,6 +95,7 @@ team:
     clientId: 63
   - name: Ipswich Town
     shortName: Ipswich Town
+    shorterName: Ipswich
     slug: ipswich-town
     tla: IPS
     clientId: 349
@@ -118,11 +124,13 @@ team:
     tla: WAT
   - name: Coventry City
     shortName: Coventry City
+    shorterName: Coventry
     slug: coventry-city
     tla: COV
     clientId: 1076
   - name: Hull City
     shortName: Hull City
+    shorterName: Hull
     slug: hull-city
     tla: HUL
     clientId: 322

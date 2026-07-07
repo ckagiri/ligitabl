@@ -1,0 +1,22 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260707_2_team_shorter_name_overrides
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: t_team
+            schemaName: public
+            columnName: c_shorter_name
+      changes:
+        - sql:
+            dbms: postgresql
+            sql: |
+              UPDATE public.t_team SET c_shorter_name = 'Man Utd' WHERE c_tla = 'MUN';
+              UPDATE public.t_team SET c_shorter_name = 'Spurs' WHERE c_tla = 'TOT';
+              UPDATE public.t_team SET c_shorter_name = 'Villa' WHERE c_tla = 'AVL';
+              UPDATE public.t_team SET c_shorter_name = 'Palace' WHERE c_tla = 'CRY';
+              UPDATE public.t_team SET c_shorter_name = 'Forest' WHERE c_tla = 'NFO';
+              UPDATE public.t_team SET c_shorter_name = 'Ipswich' WHERE c_tla = 'IPS';
+              UPDATE public.t_team SET c_shorter_name = 'Coventry' WHERE c_tla = 'COV';
+              UPDATE public.t_team SET c_shorter_name = 'Hull' WHERE c_tla = 'HUL';
