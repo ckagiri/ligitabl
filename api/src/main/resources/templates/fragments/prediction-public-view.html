@@ -6,8 +6,8 @@
      totalScore, totalHits, zeroesCount: score summary fields, present when hasRoundResult
 
      Actual/Delta columns read `compareStandings` from an ancestor Alpine x-data scope (declared
-     by the caller, e.g. public-predictions.html) — hidden until the "Compare with current
-     standings" checkbox is ticked.
+     by the caller, e.g. public-predictions.html) — shown by default, hidden if the "Compare with
+     current standings" checkbox is unticked.
 -->
 <div th:fragment="public-view(rows, hasRoundResult, totalScore, totalHits, zeroesCount)">
   <div class="px-6 py-4">
