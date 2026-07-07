@@ -50,13 +50,13 @@ public class PublicPredictionController {
      */
     @GetMapping("/u/{publicId}/gw")
     public String redirectToCurrentRound(@PathVariable String publicId, Model model, HttpServletResponse response) {
-        Optional<Competition> competitionOpt =
-                competitionRepo.findBySlug(competitionDefaults.defaultCompetitionSlug());
+        Optional<Competition> competitionOpt = competitionRepo.findBySlug(competitionDefaults.defaultCompetitionSlug());
         if (competitionOpt.isEmpty()) {
             return notFound(model, response, "Competition not found");
         }
 
-        Optional<Season> seasonOpt = seasonRepo.findActiveSeason(competitionOpt.get().getId());
+        Optional<Season> seasonOpt =
+                seasonRepo.findActiveSeason(competitionOpt.get().getId());
         if (seasonOpt.isEmpty()) {
             return notFound(model, response, "No active season available");
         }
@@ -67,7 +67,8 @@ public class PublicPredictionController {
             return notFound(model, response, "Current round not found");
         }
 
-        return "redirect:" + canonicalUrl(publicId, season.getSlug(), currentRoundOpt.get().getPosition());
+        return "redirect:"
+                + canonicalUrl(publicId, season.getSlug(), currentRoundOpt.get().getPosition());
     }
 
     @GetMapping("/u/{publicId}/{season}/gw/{position}")
@@ -87,13 +88,13 @@ public class PublicPredictionController {
             return notFound(model, response, "Invalid season: " + season);
         }
 
-        Optional<Competition> competitionOpt =
-                competitionRepo.findBySlug(competitionDefaults.defaultCompetitionSlug());
+        Optional<Competition> competitionOpt = competitionRepo.findBySlug(competitionDefaults.defaultCompetitionSlug());
         if (competitionOpt.isEmpty()) {
             return notFound(model, response, "Competition not found");
         }
 
-        Optional<Season> seasonOpt = seasonRepo.findByCompetitionIdAndSlug(competitionOpt.get().getId(), seasonSlug);
+        Optional<Season> seasonOpt =
+                seasonRepo.findByCompetitionIdAndSlug(competitionOpt.get().getId(), seasonSlug);
         if (seasonOpt.isEmpty()) {
             return notFound(model, response, "Season not found: " + season);
         }
@@ -106,7 +107,8 @@ public class PublicPredictionController {
                 .execute(query)
                 .fold(
                         error -> handleError(error, model, response),
-                        data -> handleSuccess(publicId, resolvedSeason, competitionName, position, data, model, hxRequest));
+                        data -> handleSuccess(
+                                publicId, resolvedSeason, competitionName, position, data, model, hxRequest));
     }
 
     private String handleSuccess(
@@ -138,7 +140,8 @@ public class PublicPredictionController {
         model.addAttribute("totalScore", data.totalScore());
         model.addAttribute("totalHits", data.totalHits());
         model.addAttribute("zeroesCount", data.zeroesCount());
-        model.addAttribute("navBaseUrl", "/u/" + publicId + "/" + season.getSlug().toShorthand());
+        model.addAttribute(
+                "navBaseUrl", "/u/" + publicId + "/" + season.getSlug().toShorthand());
 
         // The richer comparison-options view (points/GD/fixtures/form) only applies to the
         // current/live round — historical rounds keep the plain static table, no JSON needed.
@@ -171,8 +174,7 @@ public class PublicPredictionController {
                     "fixturesJson", objectMapper.writeValueAsString(fixtureJsonMapper.buildFixtures(data.matches())));
             model.addAttribute("currentStandingsJson", objectMapper.writeValueAsString(currentStandings));
             model.addAttribute("currentPointsJson", objectMapper.writeValueAsString(data.pointsMap()));
-            model.addAttribute(
-                    "currentGoalDifferenceJson", objectMapper.writeValueAsString(data.goalDifferenceMap()));
+            model.addAttribute("currentGoalDifferenceJson", objectMapper.writeValueAsString(data.goalDifferenceMap()));
             model.addAttribute("formJson", objectMapper.writeValueAsString(formMap));
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize public prediction comparison data", e);
@@ -189,8 +191,8 @@ public class PublicPredictionController {
         String message =
                 switch (error) {
                     case GetPublicPredictionUseCase.Error.SeasonNotFound e -> "Season not found: " + e.seasonId();
-                    case GetPublicPredictionUseCase.Error.CurrentRoundNotFound e ->
-                        "Current round not found for season: " + e.seasonId();
+                    case GetPublicPredictionUseCase.Error.CurrentRoundNotFound
+                    e -> "Current round not found for season: " + e.seasonId();
                 };
         return notFound(model, response, message);
     }

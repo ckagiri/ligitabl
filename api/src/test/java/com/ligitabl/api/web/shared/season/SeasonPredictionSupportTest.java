@@ -53,7 +53,8 @@ class SeasonPredictionSupportTest {
 
     @BeforeEach
     void setUp() {
-        support = new SeasonPredictionSupport(seasonRepo, roundRepo, seasonPredictionRepo, teamRepo, new SharePredictionTextBuilder());
+        support = new SeasonPredictionSupport(
+                seasonRepo, roundRepo, seasonPredictionRepo, teamRepo, new SharePredictionTextBuilder());
         ReflectionTestUtils.setField(support, "frontendUrl", "https://ligipredictor.com");
 
         seasonId = UUID.randomUUID();

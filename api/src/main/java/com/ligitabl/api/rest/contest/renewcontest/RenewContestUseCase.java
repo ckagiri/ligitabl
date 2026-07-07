@@ -66,15 +66,14 @@ public class RenewContestUseCase {
 
         List<RoundSpan> phases = competition.getPhases() != null ? competition.getPhases() : List.of();
 
-        RoundSpan originalFrom =
-                PhaseRules.sprintStartingAt(phases, original.getFromRoundPosition()).orElse(null);
+        RoundSpan originalFrom = PhaseRules.sprintStartingAt(phases, original.getFromRoundPosition())
+                .orElse(null);
         RoundSpan originalTo =
                 PhaseRules.sprintEndingAt(phases, original.getToRoundPosition()).orElse(null);
         if (originalFrom == null || originalTo == null)
             return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
 
-        Season activeSeason =
-                seasonRepo.findActiveSeason(competition.getId()).orElse(null);
+        Season activeSeason = seasonRepo.findActiveSeason(competition.getId()).orElse(null);
         boolean isCurrentSeason = activeSeason != null && activeSeason.getId().equals(season.getId());
 
         RoundSpan from;
@@ -86,10 +85,12 @@ public class RenewContestUseCase {
                 return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
 
             int currentRoundPosition = roundRepo.findPosition(season.getCurrentRoundId());
-            if (!ContestRenewalCalculator.hasReachedRenewalTiming(originalFrom, originalTo, currentRoundPosition, phases))
+            if (!ContestRenewalCalculator.hasReachedRenewalTiming(
+                    originalFrom, originalTo, currentRoundPosition, phases))
                 return Either.left(new RenewContestError.TooEarly(cmd.contestId()));
 
-            from = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases).orElseThrow();
+            from = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases)
+                    .orElseThrow();
             to = findByCode(ContestRenewalCalculator.resolveValidToOptions(from, phases), cmd.toSprintCode());
             targetSeasonId = season.getId();
         } else {

@@ -39,8 +39,8 @@ public class ProfileContestsController {
         UUID userId = userDetails.getUserId();
         model.addAttribute("pageTitle", "My Contests");
 
-        var result = getProfileContestListsUseCase.execute(
-                new GetProfileContestListsQuery(userId, activePage, pastPage));
+        var result =
+                getProfileContestListsUseCase.execute(new GetProfileContestListsQuery(userId, activePage, pastPage));
 
         model.addAttribute("activeContests", result.activeContests());
         model.addAttribute("activeTotal", result.activeTotal());

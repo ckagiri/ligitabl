@@ -63,7 +63,10 @@ public class ContestSupport {
         if (currentRound == null) return true;
 
         return !ContestJoinWindow.isJoinWindowClosed(
-                contest.getToRoundPosition(), currentRound, competition, () -> matchRepo.findByRoundId(currentRound.getId()));
+                contest.getToRoundPosition(),
+                currentRound,
+                competition,
+                () -> matchRepo.findByRoundId(currentRound.getId()));
     }
 
     public int resolveCurrentRoundPosition() {

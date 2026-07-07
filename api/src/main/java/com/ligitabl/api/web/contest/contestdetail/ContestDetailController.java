@@ -95,8 +95,8 @@ public class ContestDetailController {
                                 isPastSeason = contestSeasonSupport.isPastSeason(detail.contest());
                                 if (!isPastSeason) {
                                     int currentRoundPosition = contestSupport.resolveCurrentRoundPosition();
-                                    isFinalSprintUnderway =
-                                            contestSeasonSupport.isFinalSprintUnderway(detail.contest(), currentRoundPosition);
+                                    isFinalSprintUnderway = contestSeasonSupport.isFinalSprintUnderway(
+                                            detail.contest(), currentRoundPosition);
                                 }
                             }
                             model.addAttribute("isPastSeason", isPastSeason);
@@ -110,7 +110,8 @@ public class ContestDetailController {
                             }
                             model.addAttribute("renewal", renewal);
                             model.addAttribute(
-                                    "renewalSprints", renewal.visible() ? contestSupport.resolveSprintOptions() : List.of());
+                                    "renewalSprints",
+                                    renewal.visible() ? contestSupport.resolveSprintOptions() : List.of());
                             model.addAttribute(
                                     "renewalQuarters",
                                     renewal.visible() ? contestSupport.resolveQuarterOptions() : List.of());

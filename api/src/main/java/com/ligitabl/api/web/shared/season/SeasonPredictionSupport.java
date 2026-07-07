@@ -96,12 +96,11 @@ public class SeasonPredictionSupport {
         }
         int round = currentRoundOpt.get().getPosition();
 
-        String shareUrl = frontendUrl + "/u/" + user.getPublicId().value() + "/" + season.getSlug().toShorthand()
-                + "/gw/" + round;
-        Map<String, Team> teamsByCode = teamRepo
-                .findAllByCodes(rankings.stream().map(TeamRank::getCode).collect(Collectors.toSet()))
-                .stream()
-                .collect(Collectors.toMap(Team::getCode, Function.identity()));
+        String shareUrl = frontendUrl + "/u/" + user.getPublicId().value() + "/"
+                + season.getSlug().toShorthand() + "/gw/" + round;
+        Map<String, Team> teamsByCode =
+                teamRepo.findAllByCodes(rankings.stream().map(TeamRank::getCode).collect(Collectors.toSet())).stream()
+                        .collect(Collectors.toMap(Team::getCode, Function.identity()));
 
         String shareText = sharePredictionTextBuilder.build(round, rankings, teamsByCode, shareUrl);
         return new ShareData(true, shareUrl, shareText);

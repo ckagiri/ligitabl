@@ -60,16 +60,18 @@ public class GetProfileContestListsUseCase {
         List<ContestRepo.UserContestView> pastViews =
                 contestRepo.findContestsByUserId(query.userId(), activeSeasonId, false, PAGE_SIZE, pastOffset);
 
-        Map<UUID, Integer> memberCounts = entryRepo.countActiveByContestIds(Stream.concat(
-                        activeViews.stream(), pastViews.stream())
-                .map(ContestRepo.UserContestView::contestId)
-                .toList());
+        Map<UUID, Integer> memberCounts =
+                entryRepo.countActiveByContestIds(Stream.concat(activeViews.stream(), pastViews.stream())
+                        .map(ContestRepo.UserContestView::contestId)
+                        .toList());
 
-        List<ContestSummary> activeContests =
-                activeViews.stream().map(v -> toSummary(v, query.userId(), memberCounts, phases)).toList();
+        List<ContestSummary> activeContests = activeViews.stream()
+                .map(v -> toSummary(v, query.userId(), memberCounts, phases))
+                .toList();
 
-        List<ContestSummary> pastContests =
-                pastViews.stream().map(v -> toSummary(v, query.userId(), memberCounts, phases)).toList();
+        List<ContestSummary> pastContests = pastViews.stream()
+                .map(v -> toSummary(v, query.userId(), memberCounts, phases))
+                .toList();
 
         return new GetProfileContestListsResult(
                 activeContests,
@@ -88,9 +90,11 @@ public class GetProfileContestListsUseCase {
             ContestRepo.UserContestView view, UUID userId, Map<UUID, Integer> memberCounts, List<RoundSpan> phases) {
         int memberCount = memberCounts.getOrDefault(view.contestId(), 0);
         Integer rank = resolveRank(view, userId);
-        String link = "/contests/" + view.contestId() + (view.isPrivate() ? "?from=profile" : "?segment=overall&from=profile");
+        String link = "/contests/" + view.contestId()
+                + (view.isPrivate() ? "?from=profile" : "?segment=overall&from=profile");
         String periodLabel = PhaseRules.resolvePeriodLabel(phases, view.fromRoundPosition(), view.toRoundPosition());
-        return new ContestSummary(view.contestName(), view.seasonName(), periodLabel, memberCount, rank, link, view.isOpen());
+        return new ContestSummary(
+                view.contestName(), view.seasonName(), periodLabel, memberCount, rank, link, view.isOpen());
     }
 
     private Integer resolveRank(ContestRepo.UserContestView view, UUID userId) {

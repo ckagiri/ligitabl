@@ -58,7 +58,9 @@ public class UpdateSeasonDatesUseCase {
         }
 
         if (upcomingSeasonId != null) {
-            Season resolvedUpcoming = sameSeason ? outgoing : seasonRepo.findById(upcomingSeasonId).orElse(null);
+            Season resolvedUpcoming = sameSeason
+                    ? outgoing
+                    : seasonRepo.findById(upcomingSeasonId).orElse(null);
             if (resolvedUpcoming == null) return new Result.UpcomingSeasonNotFound(upcomingSeasonId);
             resolvedUpcoming.setPredictionsOpenAt(predictionsOpenAt);
             upcoming = resolvedUpcoming;

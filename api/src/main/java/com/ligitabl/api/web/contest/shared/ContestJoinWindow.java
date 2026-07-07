@@ -36,8 +36,8 @@ public final class ContestJoinWindow {
 
         if (competition.getPhases() == null) return false;
 
-        RoundSpan endSprint =
-                PhaseRules.sprintContaining(competition.getPhases(), toRoundPosition).orElse(null);
+        RoundSpan endSprint = PhaseRules.sprintContaining(competition.getPhases(), toRoundPosition)
+                .orElse(null);
 
         if (endSprint == null) return false;
 

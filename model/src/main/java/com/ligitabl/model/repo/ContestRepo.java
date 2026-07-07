@@ -55,7 +55,12 @@ public interface ContestRepo {
      * on itself; pass null when checking a brand new contest.
      */
     boolean existsByOwnerSeasonPeriodAndName(
-            UUID seasonId, UUID ownerId, int fromRoundPosition, int toRoundPosition, String name, UUID excludeContestId);
+            UUID seasonId,
+            UUID ownerId,
+            int fromRoundPosition,
+            int toRoundPosition,
+            String name,
+            UUID excludeContestId);
 
     void delete(UUID contestId);
 }

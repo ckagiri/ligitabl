@@ -71,7 +71,10 @@ public class JoinPrivateContestUseCase {
 
         // Join window: contest must not have ended or passed the opening of its last sprint
         if (ContestJoinWindow.isJoinWindowClosed(
-                contest.getToRoundPosition(), currentRound, competition, () -> matchRepo.findByRoundId(currentRound.getId()))) {
+                contest.getToRoundPosition(),
+                currentRound,
+                competition,
+                () -> matchRepo.findByRoundId(currentRound.getId()))) {
             return Either.left(new JoinPrivateContestError.JoinWindowClosed());
         }
 

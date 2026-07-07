@@ -52,8 +52,8 @@ public class GetContestRenewalOptionsUseCase {
 
         List<RoundSpan> phases = competition.getPhases() != null ? competition.getPhases() : List.of();
 
-        RoundSpan originalFrom =
-                PhaseRules.sprintStartingAt(phases, contest.getFromRoundPosition()).orElse(null);
+        RoundSpan originalFrom = PhaseRules.sprintStartingAt(phases, contest.getFromRoundPosition())
+                .orElse(null);
         RoundSpan originalTo =
                 PhaseRules.sprintEndingAt(phases, contest.getToRoundPosition()).orElse(null);
 
@@ -61,8 +61,7 @@ public class GetContestRenewalOptionsUseCase {
             return Either.right(GetContestRenewalOptionsResult.hidden());
         }
 
-        Season activeSeason =
-                seasonRepo.findActiveSeason(competition.getId()).orElse(null);
+        Season activeSeason = seasonRepo.findActiveSeason(competition.getId()).orElse(null);
         boolean isCurrentSeason = activeSeason != null && activeSeason.getId().equals(season.getId());
 
         RoundSpan from;
@@ -74,7 +73,8 @@ public class GetContestRenewalOptionsUseCase {
             if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases, true, false)) {
                 return Either.right(GetContestRenewalOptionsResult.hidden());
             }
-            from = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases).orElseThrow();
+            from = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases)
+                    .orElseThrow();
             defaultTo = ContestRenewalCalculator.resolveDefaultTo(originalFrom, originalTo, from, phases);
             toOptionCodes = ContestRenewalCalculator.resolveValidToOptions(from, phases).stream()
                     .map(RoundSpan::getCode)

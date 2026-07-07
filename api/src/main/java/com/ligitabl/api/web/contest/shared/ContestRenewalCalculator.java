@@ -17,7 +17,8 @@ public final class ContestRenewalCalculator {
 
     private ContestRenewalCalculator() {}
 
-    public record RenewalWindow(RoundSpan from, RoundSpan defaultTo, List<RoundSpan> validToOptions, boolean toEditable) {}
+    public record RenewalWindow(
+            RoundSpan from, RoundSpan defaultTo, List<RoundSpan> validToOptions, boolean toEditable) {}
 
     public static boolean isFullSeason(RoundSpan originalFrom, RoundSpan originalTo, List<RoundSpan> phases) {
         List<RoundSpan> sprints = PhaseRules.sprintsOf(phases);
@@ -38,7 +39,11 @@ public final class ContestRenewalCalculator {
      * after original.to, and the contest has not already been renewed.
      */
     public static boolean isRenewable(
-            RoundSpan originalFrom, RoundSpan originalTo, List<RoundSpan> phases, boolean isLive, boolean alreadyRenewed) {
+            RoundSpan originalFrom,
+            RoundSpan originalTo,
+            List<RoundSpan> phases,
+            boolean isLive,
+            boolean alreadyRenewed) {
         if (!isLive || alreadyRenewed) return false;
         if (isFullSeason(originalFrom, originalTo, phases)) return false;
         return resolveRenewalFrom(originalTo, phases).isPresent();

@@ -170,7 +170,8 @@ class ContestPersistenceAdapterIT extends AbstractPostgresIT {
 
         List<Contest> result = contestRepo.findPrivateByUserId(userId, seasonId);
 
-        assertThat(result).extracting(Contest::getId)
+        assertThat(result)
+                .extracting(Contest::getId)
                 .containsExactly(inProgress.getId(), upcoming.getId(), completed.getId());
     }
 
@@ -187,7 +188,8 @@ class ContestPersistenceAdapterIT extends AbstractPostgresIT {
 
         List<ContestRepo.UserContestView> result = contestRepo.findContestsByUserId(userId, seasonId, true, 10, 0);
 
-        assertThat(result).extracting(ContestRepo.UserContestView::contestId)
+        assertThat(result)
+                .extracting(ContestRepo.UserContestView::contestId)
                 .containsExactly(inProgress.getId(), upcoming.getId());
     }
 
@@ -218,8 +220,11 @@ class ContestPersistenceAdapterIT extends AbstractPostgresIT {
     }
 
     private void joinContest(UUID contestId) {
-        entryRepo.save(
-                Entry.builder().userId(userId).contestId(contestId).joinedAtRound(1).build());
+        entryRepo.save(Entry.builder()
+                .userId(userId)
+                .contestId(contestId)
+                .joinedAtRound(1)
+                .build());
     }
 
     // ─── save / delete ────────────────────────────────────────────────────────

@@ -390,7 +390,8 @@ public class UserPredictionsController {
         // Serialize data for JavaScript
         try {
             var formMap = formService.buildFormMap(season.getId(), data.viewingRound());
-            model.addAttribute("fixturesJson", objectMapper.writeValueAsString(fixtureJsonMapper.buildFixtures(data.matches())));
+            model.addAttribute(
+                    "fixturesJson", objectMapper.writeValueAsString(fixtureJsonMapper.buildFixtures(data.matches())));
             model.addAttribute("predictionsJson", objectMapper.writeValueAsString(predictions));
             model.addAttribute("currentStandingsJson", objectMapper.writeValueAsString(data.standingsMap()));
             model.addAttribute("currentPointsJson", objectMapper.writeValueAsString(data.pointsMap()));
@@ -457,7 +458,6 @@ public class UserPredictionsController {
 
         return ResultTeamRankDto.listOf(sortedRanks, teamsByCode);
     }
-
 
     /**
      * Get page title based on access mode.

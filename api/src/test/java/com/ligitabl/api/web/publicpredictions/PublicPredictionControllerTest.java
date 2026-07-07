@@ -75,7 +75,11 @@ class PublicPredictionControllerTest {
         competitionId = UUID.randomUUID();
         seasonId = UUID.randomUUID();
         roundId = UUID.randomUUID();
-        competition = Competition.builder().id(competitionId).name("Premier League").code("PL").build();
+        competition = Competition.builder()
+                .id(competitionId)
+                .name("Premier League")
+                .code("PL")
+                .build();
         season = Season.builder()
                 .id(seasonId)
                 .competitionId(competitionId)
@@ -96,7 +100,8 @@ class PublicPredictionControllerTest {
         when(roundRepo.findById(roundId))
                 .thenReturn(Optional.of(Round.builder().id(roundId).position(13).build()));
 
-        String view = controller.redirectToCurrentRound("T2ADsSc8hQ", new ExtendedModelMap(), new MockHttpServletResponse());
+        String view =
+                controller.redirectToCurrentRound("T2ADsSc8hQ", new ExtendedModelMap(), new MockHttpServletResponse());
 
         assertThat(view).isEqualTo("redirect:/u/T2ADsSc8hQ/2526/gw/13");
     }
@@ -221,8 +226,8 @@ class PublicPredictionControllerTest {
     void publicPrediction_invalidSeasonShorthand_rendersError() {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        String view = controller.publicPrediction(
-                "T2ADsSc8hQ", "not-a-season", 13, new ExtendedModelMap(), response, null);
+        String view =
+                controller.publicPrediction("T2ADsSc8hQ", "not-a-season", 13, new ExtendedModelMap(), response, null);
 
         assertThat(view).isEqualTo("error");
         assertThat(response.getStatus()).isEqualTo(404);
@@ -235,8 +240,7 @@ class PublicPredictionControllerTest {
                 .thenReturn(Optional.empty());
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        String view =
-                controller.publicPrediction("T2ADsSc8hQ", "2526", 13, new ExtendedModelMap(), response, null);
+        String view = controller.publicPrediction("T2ADsSc8hQ", "2526", 13, new ExtendedModelMap(), response, null);
 
         assertThat(view).isEqualTo("error");
         assertThat(response.getStatus()).isEqualTo(404);
@@ -250,8 +254,7 @@ class PublicPredictionControllerTest {
                 .thenReturn(Either.left(new GetPublicPredictionUseCase.Error.CurrentRoundNotFound(seasonId)));
         MockHttpServletResponse response = new MockHttpServletResponse();
 
-        String view =
-                controller.publicPrediction("T2ADsSc8hQ", "2526", 13, new ExtendedModelMap(), response, null);
+        String view = controller.publicPrediction("T2ADsSc8hQ", "2526", 13, new ExtendedModelMap(), response, null);
 
         assertThat(view).isEqualTo("error");
         assertThat(response.getStatus()).isEqualTo(404);

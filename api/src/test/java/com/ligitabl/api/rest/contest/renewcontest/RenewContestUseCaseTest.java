@@ -58,7 +58,8 @@ class RenewContestUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new RenewContestUseCase(contestRepo, entryRepo, seasonRepo, roundRepo, competitionRepo, codeGenerator);
+        useCase =
+                new RenewContestUseCase(contestRepo, entryRepo, seasonRepo, roundRepo, competitionRepo, codeGenerator);
 
         userId = UUID.randomUUID();
         competitionId = UUID.randomUUID();
@@ -100,17 +101,30 @@ class RenewContestUseCaseTest {
                 sprint("S6", 6, 6),
                 sprint("S7", 7, 7),
                 sprint("S8", 8, 8));
-        List<RoundSpan> quarters = List.of(
-                quarter("Q1", 1, 2), quarter("Q2", 3, 4), quarter("Q3", 5, 6), quarter("Q4", 7, 8));
-        return java.util.stream.Stream.concat(sprints.stream(), quarters.stream()).toList();
+        List<RoundSpan> quarters =
+                List.of(quarter("Q1", 1, 2), quarter("Q2", 3, 4), quarter("Q3", 5, 6), quarter("Q4", 7, 8));
+        return java.util.stream.Stream.concat(sprints.stream(), quarters.stream())
+                .toList();
     }
 
     private static RoundSpan sprint(String code, int from, int to) {
-        return RoundSpan.builder().code(code).name(code).type(PhaseType.SPRINT).from(from).to(to).build();
+        return RoundSpan.builder()
+                .code(code)
+                .name(code)
+                .type(PhaseType.SPRINT)
+                .from(from)
+                .to(to)
+                .build();
     }
 
     private static RoundSpan quarter(String code, int from, int to) {
-        return RoundSpan.builder().code(code).name(code).type(PhaseType.QUARTER).from(from).to(to).build();
+        return RoundSpan.builder()
+                .code(code)
+                .name(code)
+                .type(PhaseType.QUARTER)
+                .from(from)
+                .to(to)
+                .build();
     }
 
     private Contest originalContest(int fromRoundPosition, int toRoundPosition) {
@@ -292,8 +306,10 @@ class RenewContestUseCaseTest {
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
 
-        Season activeSeason =
-                Season.builder().id(UUID.randomUUID()).competitionId(competitionId).build();
+        Season activeSeason = Season.builder()
+                .id(UUID.randomUUID())
+                .competitionId(competitionId)
+                .build();
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(activeSeason));
         when(entryRepo.findByContestId(original.getId())).thenReturn(List.of());
         when(contestRepo.findByJoinCode(any())).thenReturn(Optional.empty());
@@ -317,7 +333,6 @@ class RenewContestUseCaseTest {
         assertThat(savedRenewed.getToRoundPosition()).isEqualTo(2);
     }
 
-
     @Test
     void pastSeason_fullSeasonOriginal_onlyS8IsValidTo() {
         Contest original = originalContest(1, 8); // S1 -> S8 full season in the past season
@@ -325,8 +340,10 @@ class RenewContestUseCaseTest {
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
 
-        Season activeSeason =
-                Season.builder().id(UUID.randomUUID()).competitionId(competitionId).build();
+        Season activeSeason = Season.builder()
+                .id(UUID.randomUUID())
+                .competitionId(competitionId)
+                .build();
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(activeSeason));
 
         // TO fixed at S8 for a renewed full season — S2 must be rejected.
@@ -344,8 +361,10 @@ class RenewContestUseCaseTest {
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
 
-        Season activeSeason =
-                Season.builder().id(UUID.randomUUID()).competitionId(competitionId).build();
+        Season activeSeason = Season.builder()
+                .id(UUID.randomUUID())
+                .competitionId(competitionId)
+                .build();
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(activeSeason));
         when(entryRepo.findByContestId(original.getId())).thenReturn(List.of());
         when(contestRepo.findByJoinCode(any())).thenReturn(Optional.empty());
@@ -415,7 +434,11 @@ class RenewContestUseCaseTest {
         stubCurrentRoundPosition(8);
         when(entryRepo.findByContestId(original.getId())).thenReturn(List.of());
 
-        Contest existing = Contest.builder().id(UUID.randomUUID()).seasonId(seasonId).name("x").build();
+        Contest existing = Contest.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .name("x")
+                .build();
         when(contestRepo.findByJoinCode("FIRST11")).thenReturn(Optional.of(existing));
         when(contestRepo.findByJoinCode("SECOND2")).thenReturn(Optional.empty());
         when(codeGenerator.generate()).thenReturn("FIRST11", "SECOND2");

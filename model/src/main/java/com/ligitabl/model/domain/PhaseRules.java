@@ -80,12 +80,14 @@ public final class PhaseRules {
         RoundSpan quarter = quarters.stream()
                 .filter(q -> q.getFrom() <= sprint.getFrom() && q.getTo() >= sprint.getTo())
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Sprint " + sprint.getCode() + " is not within any quarter"));
+                .orElseThrow(
+                        () -> new IllegalStateException("Sprint " + sprint.getCode() + " is not within any quarter"));
 
         return sprintsOf(phases).stream()
                 .filter(s -> s.getTo() == quarter.getTo())
                 .findFirst()
-                .orElseThrow(() -> new IllegalStateException("Quarter " + quarter.getCode() + " has no closing sprint"));
+                .orElseThrow(
+                        () -> new IllegalStateException("Quarter " + quarter.getCode() + " has no closing sprint"));
     }
 
     /**

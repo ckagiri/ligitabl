@@ -232,7 +232,12 @@ public class ContestPersistenceAdapter implements ContestRepo {
 
     @Override
     public boolean existsByOwnerSeasonPeriodAndName(
-            UUID seasonId, UUID ownerId, int fromRoundPosition, int toRoundPosition, String name, UUID excludeContestId) {
+            UUID seasonId,
+            UUID ownerId,
+            int fromRoundPosition,
+            int toRoundPosition,
+            String name,
+            UUID excludeContestId) {
         var condition = T_CONTEST
                 .FK_SEASON_ID
                 .eq(seasonId)

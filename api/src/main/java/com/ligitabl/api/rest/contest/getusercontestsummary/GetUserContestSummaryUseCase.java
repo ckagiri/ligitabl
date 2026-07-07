@@ -138,8 +138,8 @@ public class GetUserContestSummaryUseCase {
         List<Contest> contests = contestRepo.findPrivateByUserId(userId, seasonId);
         Map<Integer, MatchRepo.RoundDateRange> dateRanges =
                 !contests.isEmpty() ? matchRepo.groupRoundDateRangesBySeason(seasonId) : null;
-        Map<UUID, Integer> memberCounts =
-                entryRepo.countActiveByContestIds(contests.stream().map(Contest::getId).toList());
+        Map<UUID, Integer> memberCounts = entryRepo.countActiveByContestIds(
+                contests.stream().map(Contest::getId).toList());
         List<PrivateContestRowDto> rows = new ArrayList<>();
         for (Contest contest : contests) {
             int memberCount = memberCounts.getOrDefault(contest.getId(), 0);

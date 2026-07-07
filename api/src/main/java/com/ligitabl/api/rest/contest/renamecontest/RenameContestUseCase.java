@@ -34,8 +34,7 @@ public class RenameContestUseCase {
                 contest.getFromRoundPosition(),
                 contest.getToRoundPosition(),
                 trimmed,
-                contest.getId()))
-            return Either.left(new RenameContestError.NameConflict(trimmed));
+                contest.getId())) return Either.left(new RenameContestError.NameConflict(trimmed));
 
         contest.setName(trimmed);
         Contest saved = contestRepo.save(contest);
