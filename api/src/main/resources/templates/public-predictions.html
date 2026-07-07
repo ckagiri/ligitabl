@@ -1,0 +1,57 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <div layout:fragment="content">
+      <div
+        id="public-prediction-page"
+        th:fragment="publicPredictionPage"
+        class="max-w-4xl mx-auto"
+      >
+        <!-- Page Header -->
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <div class="flex flex-col sm:flex-row sm:items-baseline sm:gap-2 mb-4 sm:mb-6">
+              <h1
+                class="text-xl sm:text-2xl font-bold text-gray-900"
+                th:text="${pageTitle}"
+              >
+                Jane Doe's Table
+              </h1>
+              <span class="text-sm sm:text-base text-gray-600">
+                Gameweek <span th:text="${viewingRound}">13</span>
+              </span>
+            </div>
+
+            <!-- User Not Found Banner -->
+            <div
+              th:if="${!userFound}"
+              class="rounded-lg bg-gray-50 border border-gray-200 text-gray-700 text-sm px-4 py-3 mb-4"
+            >
+              This link doesn't match a LigiTabl user — here's the current standings instead.
+            </div>
+
+            <!-- Round Navigation -->
+            <div class="mt-4">
+              <div
+                th:replace="~{fragments/round-navigation :: round-nav(
+                  ${navBaseUrl}, ${viewingRound}, ${currentRound}, ${currentRound},
+                  '#public-prediction-page', 'outerHTML swap:100ms settle:100ms show:window:top',
+                  ${viewingRound != currentRound}, false, 'path', null, ${minRound}, 'gw')}"
+              ></div>
+            </div>
+          </div>
+
+          <!-- Prediction Table (read-only, Pos/Team/Actual/Delta) -->
+          <div
+            th:replace="~{fragments/prediction-public-view :: public-view(
+              ${rows}, ${hasRoundResult}, ${totalScore}, ${totalHits}, ${zeroesCount})}"
+          ></div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

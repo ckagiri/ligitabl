@@ -1,0 +1,117 @@
+<!-- Public Prediction View Fragment -->
+<!-- Parameters:
+     rows: List of PublicRankDto (position, teamCode, teamName, actualPosition, delta)
+     hasRoundResult: Boolean - whether the round has been scored (drives the score summary block)
+     totalScore, totalHits, zeroesCount: score summary fields, present when hasRoundResult
+-->
+<div th:fragment="public-view(rows, hasRoundResult, totalScore, totalHits, zeroesCount)">
+  <div class="px-6 py-4">
+    <div class="overflow-x-auto sm:overflow-hidden">
+      <table class="min-w-full table-fixed">
+        <thead class="bg-gray-50">
+          <tr>
+            <th
+              scope="col"
+              class="sticky left-0 z-20 bg-gray-50 border-r border-gray-200 px-2 sm:static sm:left-auto sm:z-auto sm:bg-gray-50 sm:border-r-0 sm:px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-12 sm:w-16"
+            >
+              Pos
+            </th>
+            <th
+              scope="col"
+              class="px-2 sm:px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Team
+            </th>
+            <th
+              scope="col"
+              class="px-2 sm:px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-14 sm:w-16"
+            >
+              Actual
+            </th>
+            <th
+              scope="col"
+              class="px-2 sm:px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-12 sm:w-14"
+            >
+              Delta
+            </th>
+          </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+          <tr
+            th:each="row : ${rows}"
+            class="hover:bg-gray-50 group"
+          >
+            <td class="sticky left-0 z-10 bg-white border-r border-gray-200 group-hover:bg-gray-50 px-2 sm:static sm:left-auto sm:z-auto sm:bg-transparent sm:border-r-0 sm:group-hover:bg-transparent sm:px-3 py-3 sm:py-4 whitespace-nowrap">
+              <span
+                class="text-xs sm:text-sm font-bold text-gray-900"
+                th:text="${row.position}"
+                >1</span
+              >
+            </td>
+            <td class="px-2 sm:px-3 py-3 sm:py-4 whitespace-nowrap">
+              <div class="flex items-center">
+                <div
+                  class="hidden sm:flex h-6 w-6 sm:h-8 sm:w-8 mr-2 sm:mr-3 bg-gray-200 rounded items-center justify-center text-xs font-bold flex-shrink-0"
+                  th:text="${row.teamTla}"
+                >
+                  MCI
+                </div>
+                <div
+                  class="text-xs sm:text-sm font-medium text-gray-900 truncate"
+                  th:text="${row.teamName}"
+                >
+                  Manchester City
+                </div>
+              </div>
+            </td>
+            <td class="px-2 sm:px-3 py-3 sm:py-4 whitespace-nowrap text-center">
+              <span
+                class="text-xs sm:text-sm text-gray-500"
+                th:text="${row.actualPosition}"
+                >2</span
+              >
+            </td>
+            <td class="px-2 sm:px-3 py-3 sm:py-4 whitespace-nowrap text-center">
+              <span
+                th:classappend="${row.delta == 0} ? 'text-green-600 font-bold' : (${row.delta <= 2} ? 'text-yellow-600' : 'text-red-600')"
+                class="text-xs sm:text-sm font-semibold"
+                th:text="${row.delta}"
+                >0</span
+              >
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Score Summary (only when this round has been scored) -->
+  <div
+    th:if="${hasRoundResult}"
+    class="mt-4 text-center pb-4"
+  >
+    <div
+      class="inline-flex flex-col items-center px-6 py-3 bg-gray-50 rounded-lg border border-gray-200"
+    >
+      <div class="flex items-center text-sm text-gray-600 mb-1">
+        <span class="font-mono">200</span>
+        <span class="mx-2">−</span>
+        <span class="font-mono" th:text="${totalHits}">44</span>
+        <span class="mx-2">=</span>
+        <span
+          class="font-mono font-bold text-gray-900"
+          th:text="${totalScore}"
+          >156</span
+        >
+        <span class="ml-1">points</span>
+        <span class="ml-1">
+          <span th:replace="~{fragments/score-emoji :: emoji(${totalScore})}">
+          </span>
+      </div>
+
+      <div class="text-xs text-green-600 font-semibold">
+        🎯 <span th:text="${zeroesCount}">5</span> perfect predictions!
+      </div>
+    </div>
+  </div>
+</div>
