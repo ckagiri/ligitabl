@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.web.shared.season.SeasonPredictionSupport;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.ResultTeamRank;
 import com.ligitabl.model.domain.Round;
@@ -25,10 +26,7 @@ import com.ligitabl.model.domain.StandingsMetadata;
 import com.ligitabl.model.domain.StandingsTeamRank;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.domain.User;
-import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.RoundResultRepo;
-import com.ligitabl.model.repo.SeasonPredictionRepo;
-import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.StandingsRepo;
 import com.ligitabl.model.repo.TeamRepo;
 import com.ligitabl.model.repo.UserRepo;
@@ -37,19 +35,13 @@ import com.ligitabl.model.repo.UserRepo;
 class GetPublicPredictionUseCaseTest {
 
     @Mock
-    private SeasonRepo seasonRepo;
-
-    @Mock
-    private RoundRepo roundRepo;
+    private SeasonPredictionSupport seasonPredictionSupport;
 
     @Mock
     private RoundResultRepo roundResultRepo;
 
     @Mock
     private StandingsRepo standingsRepo;
-
-    @Mock
-    private SeasonPredictionRepo seasonPredictionRepo;
 
     @Mock
     private UserRepo userRepo;
@@ -67,8 +59,7 @@ class GetPublicPredictionUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new GetPublicPredictionUseCase(
-                seasonRepo, roundRepo, roundResultRepo, standingsRepo, seasonPredictionRepo, userRepo, teamRepo);
+        useCase = new GetPublicPredictionUseCase(seasonPredictionSupport, roundResultRepo, standingsRepo, userRepo, teamRepo);
 
         seasonId = UUID.randomUUID();
         roundId = UUID.randomUUID();
@@ -110,13 +101,18 @@ class GetPublicPredictionUseCaseTest {
                 .build();
     }
 
+    /** Stubs season + current-round resolution — every test needs this. */
+    private void stubSeasonAndRound(Season season, Round round) {
+        when(seasonPredictionSupport.findSeasonById(seasonId)).thenReturn(Optional.of(season));
+        when(seasonPredictionSupport.findCurrentRound(season)).thenReturn(Optional.of(round));
+    }
+
     @Test
     void userNotFound_returnsStandingsOnlyFallback() {
         Season season = createSeason(20);
         Round round = createRound(5, false);
 
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        stubSeasonAndRound(season, round);
         when(userRepo.findByPublicId(PublicId.create(publicId))).thenReturn(Optional.empty());
         when(standingsRepo.findBySeasonAndRoundPosition(seasonId, 5)).thenReturn(Optional.empty());
 
@@ -139,8 +135,7 @@ class GetPublicPredictionUseCaseTest {
         Season season = createSeason(20);
         Round round = createRound(5, false);
 
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        stubSeasonAndRound(season, round);
         when(standingsRepo.findBySeasonAndRoundPosition(seasonId, 5)).thenReturn(Optional.empty());
 
         var query = new GetPublicPredictionQuery("not-a-valid-id!!", seasonId, null);
@@ -164,10 +159,9 @@ class GetPublicPredictionUseCaseTest {
                 .atRoundNumber(0)
                 .build();
 
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        stubSeasonAndRound(season, round);
         when(userRepo.findByPublicId(PublicId.create(publicId))).thenReturn(Optional.of(createUser()));
-        when(seasonPredictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
+        when(seasonPredictionSupport.findPrediction(userId, seasonId)).thenReturn(Optional.of(prediction));
 
         var query = new GetPublicPredictionQuery(publicId, seasonId, null);
         Either<?, PublicPredictionViewData> result = useCase.execute(query);
@@ -202,10 +196,9 @@ class GetPublicPredictionUseCaseTest {
                         new StandingsTeamRank(TeamRank.of("LIV", 2), zeroMetadata())))
                 .build();
 
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        stubSeasonAndRound(season, round);
         when(userRepo.findByPublicId(PublicId.create(publicId))).thenReturn(Optional.of(createUser()));
-        when(seasonPredictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
+        when(seasonPredictionSupport.findPrediction(userId, seasonId)).thenReturn(Optional.of(prediction));
         when(standingsRepo.findBySeasonAndRoundPosition(seasonId, 5)).thenReturn(Optional.of(standings));
 
         var query = new GetPublicPredictionQuery(publicId, seasonId, null);
@@ -244,10 +237,9 @@ class GetPublicPredictionUseCaseTest {
                 .totalScore(197)
                 .build();
 
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        stubSeasonAndRound(season, round);
         when(userRepo.findByPublicId(PublicId.create(publicId))).thenReturn(Optional.of(createUser()));
-        when(seasonPredictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
+        when(seasonPredictionSupport.findPrediction(userId, seasonId)).thenReturn(Optional.of(prediction));
         when(roundResultRepo.findByUserAndRound(userId, 8)).thenReturn(Optional.of(roundResult));
 
         var query = new GetPublicPredictionQuery(publicId, seasonId, 8);
@@ -284,10 +276,9 @@ class GetPublicPredictionUseCaseTest {
                 .totalScore(200)
                 .build();
 
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        stubSeasonAndRound(season, round);
         when(userRepo.findByPublicId(PublicId.create(publicId))).thenReturn(Optional.of(createUser()));
-        when(seasonPredictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
+        when(seasonPredictionSupport.findPrediction(userId, seasonId)).thenReturn(Optional.of(prediction));
         when(roundResultRepo.findByUserAndRound(userId, 6)).thenReturn(Optional.of(roundResult));
 
         // Requested round 2 is before this user's atRoundNumber (6) — clamp up to 6, not down.

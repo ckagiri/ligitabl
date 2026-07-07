@@ -148,6 +148,6 @@ public class PublicPredictionController {
     }
 
     private String pageTitle(PublicPredictionViewData data) {
-        return data.targetDisplayName() != null ? data.targetDisplayName() + "'s Table" : "LigiTabl Predictions";
+        return data.targetDisplayName() != null ? data.targetDisplayName() + "'s Table" : "LigiPredictor Predictions";
     }
 }

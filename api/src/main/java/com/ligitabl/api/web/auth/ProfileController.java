@@ -21,6 +21,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
+import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.web.shared.season.SeasonPredictionSupport;
 import com.ligitabl.model.auth.Password;
 import com.ligitabl.model.auth.Role;
 import com.ligitabl.model.domain.User;
@@ -44,6 +46,8 @@ public class ProfileController {
 
     private final UserRepo userRepo;
     private final PasswordHasher passwordHasher;
+    private final SeasonPredictionSupport seasonPredictionSupport;
+    private final CompetitionDefaults competitionDefaults;
 
     @GetMapping("/settings")
     public String profile(@AuthenticationPrincipal WebUserDetails userDetails, Model model) {
@@ -60,6 +64,7 @@ public class ProfileController {
         model.addAttribute("pageTitle", "Profile Settings");
         model.addAttribute("user", user);
         model.addAttribute("showRoles", hasNonDefaultRoles(user));
+        populateShareModel(user, model);
 
         return "profile/settings";
     }
@@ -88,6 +93,7 @@ public class ProfileController {
             model.addAttribute("pageTitle", "Profile Settings");
             model.addAttribute("user", user);
             model.addAttribute("showRoles", hasNonDefaultRoles(user));
+            populateShareModel(user, model);
             return "profile/settings";
         }
 
@@ -178,6 +184,18 @@ public class ProfileController {
         SecurityContextHolder.getContext().setAuthentication(authentication);
         session.setAttribute(
                 HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
+    }
+
+    /**
+     * Populates the "share your prediction" section — only visible when the user actually has
+     * something to share: pre-season registration (initialRankings) or an in-play prediction
+     * (currentRankings).
+     */
+    private void populateShareModel(User user, Model model) {
+        var shareData = seasonPredictionSupport.buildShareData(user, competitionDefaults.defaultCompetitionSlug());
+        model.addAttribute("showShareSection", shareData.visible());
+        model.addAttribute("shareUrl", shareData.shareUrl());
+        model.addAttribute("shareText", shareData.shareText());
     }
 
     private boolean hasNonDefaultRoles(User user) {

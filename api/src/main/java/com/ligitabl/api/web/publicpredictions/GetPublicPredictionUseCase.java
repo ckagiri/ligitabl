@@ -13,19 +13,16 @@ import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.shared.dto.PublicRankDto;
+import com.ligitabl.api.web.shared.season.SeasonPredictionSupport;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundResult;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonPrediction;
-import com.ligitabl.model.domain.Standings;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.domain.User;
-import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.RoundResultRepo;
-import com.ligitabl.model.repo.SeasonPredictionRepo;
-import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.StandingsRepo;
 import com.ligitabl.model.repo.TeamRepo;
 import com.ligitabl.model.repo.UserRepo;
@@ -41,11 +38,9 @@ import lombok.AllArgsConstructor;
 @Service
 @AllArgsConstructor
 public class GetPublicPredictionUseCase {
-    private final SeasonRepo seasonRepo;
-    private final RoundRepo roundRepo;
+    private final SeasonPredictionSupport seasonPredictionSupport;
     private final RoundResultRepo roundResultRepo;
     private final StandingsRepo standingsRepo;
-    private final SeasonPredictionRepo seasonPredictionRepo;
     private final UserRepo userRepo;
     private final TeamRepo teamRepo;
 
@@ -92,19 +87,19 @@ public class GetPublicPredictionUseCase {
     }
 
     private Either<Error, Season> resolveSeason(UUID seasonId) {
-        return Either.ofOptional(seasonRepo.findById(seasonId), () -> new Error.SeasonNotFound(seasonId));
+        return Either.ofOptional(seasonPredictionSupport.findSeasonById(seasonId), () -> new Error.SeasonNotFound(seasonId));
     }
 
     private Either<Error, Ctx> resolveCurrentRound(Season season) {
         return Either.<Error, Round>ofOptional(
-                        roundRepo.findById(season.getCurrentRoundId()), () -> new Error.CurrentRoundNotFound(season.getId()))
+                        seasonPredictionSupport.findCurrentRound(season), () -> new Error.CurrentRoundNotFound(season.getId()))
                 .map(currentRoundEntity -> new Ctx(season, currentRoundEntity));
     }
 
     private Ctx withUserAndRound(Ctx ctx, GetPublicPredictionQuery query) {
         Optional<User> userOpt = resolveUser(query.publicId());
         Optional<SeasonPrediction> predictionOpt = userOpt.flatMap(
-                user -> seasonPredictionRepo.findByUserAndSeason(user.getId(), ctx.season().getId()));
+                user -> seasonPredictionSupport.findPrediction(user.getId(), ctx.season().getId()));
         int minRound = predictionOpt.map(sp -> Math.max(1, sp.getAtRoundNumber())).orElse(ctx.currentRound());
         int viewingRound = clampRound(query.requestedRound(), minRound, ctx.currentRound());
         String targetDisplayName = userOpt.map(user -> user.getDisplayName()).orElse(null);
