@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.predictions.userpredictions;
+package com.ligitabl.api.web.shared.fixtures;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -7,16 +7,14 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamSlug;
 
-class UserPredictionsControllerTest {
+class FixtureJsonMapperTest {
 
-    private final UserPredictionsController controller =
-            new UserPredictionsController(new ObjectMapper(), null, null, null, null, null, null, null, null, null);
+    private final FixtureJsonMapper mapper = new FixtureJsonMapper();
 
     @Test
     @DisplayName("toFixture maps finished home fixture to win result")
@@ -25,7 +23,7 @@ class UserPredictionsControllerTest {
         var chelsea = team("CHE", "Chelsea");
         var match = match(arsenal, chelsea, MatchStatus.FINISHED, 2, 1);
 
-        var fixture = controller.toFixture("ARS", match);
+        var fixture = mapper.toFixture("ARS", match);
 
         assertThat(fixture.opponent()).isEqualTo("CHE");
         assertThat(fixture.isHome()).isTrue();
@@ -40,7 +38,7 @@ class UserPredictionsControllerTest {
         var chelsea = team("CHE", "Chelsea");
         var match = match(arsenal, chelsea, MatchStatus.FINISHED, 2, 1);
 
-        var fixture = controller.toFixture("CHE", match);
+        var fixture = mapper.toFixture("CHE", match);
 
         assertThat(fixture.opponent()).isEqualTo("ARS");
         assertThat(fixture.isHome()).isFalse();
@@ -55,7 +53,7 @@ class UserPredictionsControllerTest {
         var chelsea = team("CHE", "Chelsea");
         var match = match(arsenal, chelsea, MatchStatus.SUSPENDED, 1, 0);
 
-        var fixture = controller.toFixture("ARS", match);
+        var fixture = mapper.toFixture("ARS", match);
 
         assertThat(fixture.status()).isEqualTo("LIVE");
         assertThat(fixture.result()).isNull();
@@ -68,7 +66,7 @@ class UserPredictionsControllerTest {
         var chelsea = team("CHE", "Chelsea");
         var match = match(arsenal, chelsea, MatchStatus.POSTPONED, null, null);
 
-        var fixture = controller.toFixture("ARS", match);
+        var fixture = mapper.toFixture("ARS", match);
 
         assertThat(fixture.status()).isEqualTo("POSTPONED");
         assertThat(fixture.result()).isNull();

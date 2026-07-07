@@ -4,6 +4,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,6 +27,7 @@ import com.ligitabl.model.domain.StandingsMetadata;
 import com.ligitabl.model.domain.StandingsTeamRank;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.domain.User;
+import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundResultRepo;
 import com.ligitabl.model.repo.StandingsRepo;
 import com.ligitabl.model.repo.TeamRepo;
@@ -44,6 +46,9 @@ class GetPublicPredictionUseCaseTest {
     private StandingsRepo standingsRepo;
 
     @Mock
+    private MatchRepo matchRepo;
+
+    @Mock
     private UserRepo userRepo;
 
     @Mock
@@ -59,7 +64,8 @@ class GetPublicPredictionUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new GetPublicPredictionUseCase(seasonPredictionSupport, roundResultRepo, standingsRepo, userRepo, teamRepo);
+        useCase = new GetPublicPredictionUseCase(
+                seasonPredictionSupport, roundResultRepo, standingsRepo, matchRepo, userRepo, teamRepo);
 
         seasonId = UUID.randomUUID();
         roundId = UUID.randomUUID();
@@ -70,6 +76,9 @@ class GetPublicPredictionUseCaseTest {
         // TeamRepo lookups aren't the focus of these tests — no team rows means DTOs fall back to
         // the raw team code for every display field, which is fine for assertions on position/delta.
         lenient().when(teamRepo.findAllByCodes(any())).thenReturn(List.of());
+        // Only the current-round/fallback branches fetch matches — historical-round tests never
+        // reach this call, so keep it lenient rather than stubbing it everywhere.
+        lenient().when(matchRepo.findBySeasonAndRound(any(), anyInt())).thenReturn(Map.of());
     }
 
     private Season createSeason(int maxRounds) {
@@ -128,6 +137,8 @@ class GetPublicPredictionUseCaseTest {
         // Fallback rows come straight from the baseline — predicted == actual, delta always 0.
         assertEquals(2, data.rows().size());
         assertTrue(data.rows().stream().allMatch(row -> row.getDelta() == 0));
+        // Fallback is still "current round" — matches get fetched even with no prediction.
+        verify(matchRepo).findBySeasonAndRound(seasonId, 5);
     }
 
     @Test
@@ -192,7 +203,7 @@ class GetPublicPredictionUseCaseTest {
                 .seasonId(seasonId)
                 .roundPosition(5)
                 .rankings(List.of(
-                        new StandingsTeamRank(TeamRank.of("ARS", 3), zeroMetadata()),
+                        new StandingsTeamRank(TeamRank.of("ARS", 3), metadata(61, 25)),
                         new StandingsTeamRank(TeamRank.of("LIV", 2), zeroMetadata())))
                 .build();
 
@@ -215,6 +226,9 @@ class GetPublicPredictionUseCaseTest {
         var livRow =
                 data.rows().stream().filter(r -> r.getTeamCode().equals("LIV")).findFirst().orElseThrow();
         assertEquals(0, livRow.getDelta());
+        // Points/GD ride along with the standings fetch for the comparison-options view.
+        assertEquals(61, data.pointsMap().get("ARS"));
+        assertEquals(25, data.goalDifferenceMap().get("ARS"));
     }
 
     @Test
@@ -256,6 +270,11 @@ class GetPublicPredictionUseCaseTest {
                 data.rows().stream().filter(r -> r.getTeamCode().equals("LIV")).findFirst().orElseThrow();
         assertEquals(5, livRow.getActualPosition());
         assertEquals(3, livRow.getDelta());
+        // Historical rounds never need matches/points/GD — not fetched, stay empty.
+        verifyNoInteractions(matchRepo);
+        assertTrue(data.matches().isEmpty());
+        assertTrue(data.pointsMap().isEmpty());
+        assertTrue(data.goalDifferenceMap().isEmpty());
     }
 
     @Test
@@ -290,15 +309,19 @@ class GetPublicPredictionUseCaseTest {
     }
 
     private static StandingsMetadata zeroMetadata() {
+        return metadata(0, 0);
+    }
+
+    private static StandingsMetadata metadata(int points, int gd) {
         return StandingsMetadata.builder()
                 .played(0)
                 .won(0)
                 .drawn(0)
                 .lost(0)
-                .points(0)
-                .gf(0)
-                .ga(0)
-                .gd(0)
+                .points(points)
+                .gf(Math.max(gd, 0))
+                .ga(Math.max(-gd, 0))
+                .gd(gd)
                 .build();
     }
 }

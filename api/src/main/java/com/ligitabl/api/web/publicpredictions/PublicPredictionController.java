@@ -1,6 +1,8 @@
 package com.ligitabl.api.web.publicpredictions;
 
+import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -8,7 +10,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.standings.FormService;
+import com.ligitabl.api.web.shared.fixtures.FixtureJsonMapper;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
@@ -34,6 +40,9 @@ public class PublicPredictionController {
     private final RoundRepo roundRepo;
     private final CompetitionDefaults competitionDefaults;
     private final GetPublicPredictionUseCase getPublicPredictionUseCase;
+    private final FormService formService;
+    private final FixtureJsonMapper fixtureJsonMapper;
+    private final ObjectMapper objectMapper;
 
     /**
      * GET /u/{publicId}/gw — resolves the active season's current round and redirects to the
@@ -131,10 +140,49 @@ public class PublicPredictionController {
         model.addAttribute("zeroesCount", data.zeroesCount());
         model.addAttribute("navBaseUrl", "/u/" + publicId + "/" + season.getSlug().toShorthand());
 
+        // The richer comparison-options view (points/GD/fixtures/form) only applies to the
+        // current/live round — historical rounds keep the plain static table, no JSON needed.
+        if (!data.hasRoundResult()) {
+            populateComparisonOptionsModel(season, data, model);
+        }
+
         if (hxRequest != null && !hxRequest.isBlank()) {
             return "public-predictions :: publicPredictionPage";
         }
         return "public-predictions";
+    }
+
+    /**
+     * JSON blobs + toggle state for the current-round comparison-options view (points/GD/
+     * fixtures/form) — mirrors {@code UserPredictionsController}'s JSON serialization for the
+     * owner's own current-round table.
+     */
+    private void populateComparisonOptionsModel(Season season, PublicPredictionViewData data, Model model) {
+        var formMap = formService.buildFormMap(season.getId(), data.viewingRound());
+        model.addAttribute("hasFormData", !formMap.isEmpty());
+        model.addAttribute("roundId", data.viewingRound());
+
+        Map<String, Integer> currentStandings = data.rows().stream()
+                .collect(Collectors.toMap(row -> row.getTeamCode(), row -> row.getActualPosition()));
+
+        try {
+            model.addAttribute("predictionsJson", objectMapper.writeValueAsString(data.rows()));
+            model.addAttribute(
+                    "fixturesJson", objectMapper.writeValueAsString(fixtureJsonMapper.buildFixtures(data.matches())));
+            model.addAttribute("currentStandingsJson", objectMapper.writeValueAsString(currentStandings));
+            model.addAttribute("currentPointsJson", objectMapper.writeValueAsString(data.pointsMap()));
+            model.addAttribute(
+                    "currentGoalDifferenceJson", objectMapper.writeValueAsString(data.goalDifferenceMap()));
+            model.addAttribute("formJson", objectMapper.writeValueAsString(formMap));
+        } catch (JsonProcessingException e) {
+            log.error("Failed to serialize public prediction comparison data", e);
+            model.addAttribute("predictionsJson", "[]");
+            model.addAttribute("fixturesJson", "{}");
+            model.addAttribute("currentStandingsJson", "{}");
+            model.addAttribute("currentPointsJson", "{}");
+            model.addAttribute("currentGoalDifferenceJson", "{}");
+            model.addAttribute("formJson", "{}");
+        }
     }
 
     private String handleError(GetPublicPredictionUseCase.Error error, Model model, HttpServletResponse response) {

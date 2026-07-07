@@ -49,8 +49,8 @@
           </div>
         </div>
 
-        <!-- Prediction Table (read-only, Pred/Team, plus Actual/Delta once compared) -->
-        <div class="bg-white rounded-lg shadow-sm mb-6" x-data="{ compareStandings: true }">
+        <!-- Historical/scored round: plain static table, only the standings-compare toggle -->
+        <div th:if="${hasRoundResult}" class="bg-white rounded-lg shadow-sm mb-6" x-data="{ compareStandings: true }">
           <div class="px-6 pt-4 flex items-center justify-end">
             <label class="inline-flex items-center gap-2 text-sm text-gray-600 cursor-pointer select-none">
               <input
@@ -65,6 +65,23 @@
             th:replace="~{fragments/prediction-public-view :: public-view(
               ${rows}, ${hasRoundResult}, ${totalScore}, ${totalHits}, ${zeroesCount})}"
           ></div>
+        </div>
+
+        <!-- Current/live round: comparison-options (standings/points/GD/fixtures/form) + rich table -->
+        <div
+          th:unless="${hasRoundResult}"
+          class="bg-white rounded-lg shadow-sm mb-6"
+          x-data="Ligitabl.publicPredictionPage($el)"
+          th:attr="data-predictions=${predictionsJson},
+                  data-current-standings=${currentStandingsJson},
+                  data-fixtures=${fixturesJson},
+                  data-current-points=${currentPointsJson},
+                  data-current-goal-difference=${currentGoalDifferenceJson},
+                  data-form=${formJson},
+                  data-round-id=${roundId}"
+        >
+          <div th:replace="~{fragments/prediction-table :: comparison-options(${hasFormData}, false)}"></div>
+          <div th:replace="~{fragments/prediction-public-view :: public-rich-table}"></div>
         </div>
       </div>
     </div>

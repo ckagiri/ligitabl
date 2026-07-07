@@ -22,6 +22,7 @@ import com.ligitabl.model.domain.SeasonPrediction;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.domain.User;
+import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundResultRepo;
 import com.ligitabl.model.repo.StandingsRepo;
 import com.ligitabl.model.repo.TeamRepo;
@@ -41,6 +42,7 @@ public class GetPublicPredictionUseCase {
     private final SeasonPredictionSupport seasonPredictionSupport;
     private final RoundResultRepo roundResultRepo;
     private final StandingsRepo standingsRepo;
+    private final MatchRepo matchRepo;
     private final UserRepo userRepo;
     private final TeamRepo teamRepo;
 
@@ -144,11 +146,11 @@ public class GetPublicPredictionUseCase {
      * standings only, predicted == actual (delta always 0) since there's nothing to compare.
      */
     private PublicPredictionViewData buildFallbackView(Ctx ctx, boolean userFound) {
-        List<TeamRank> standingsRanks = standingsRankings(ctx.season().getId(), ctx.currentRound())
-                .orElseGet(() -> ctx.season().getInitialRankings());
-        Map<String, Integer> positions = positionsByCode(standingsRanks);
-        List<PublicRankDto> rows =
-                PublicRankDto.listOfPrediction(standingsRanks, positions, teamsByCode(standingsRanks));
+        Season season = ctx.season();
+        StandingsData standingsData = fetchStandingsData(season.getId(), ctx.currentRound())
+                .orElseGet(() -> StandingsData.fromBaseline(season.getInitialRankings()));
+        List<PublicRankDto> rows = PublicRankDto.listOfPrediction(
+                standingsData.rankings(), standingsData.positions(), teamsByCode(standingsData.rankings()));
 
         return PublicPredictionViewData.builder()
                 .rows(rows)
@@ -161,6 +163,9 @@ public class GetPublicPredictionUseCase {
                 .minRound(ctx.minRound())
                 .seasonCompleted(ctx.seasonCompleted())
                 .hasRoundResult(false)
+                .matches(matchRepo.findBySeasonAndRound(season.getId(), ctx.currentRound()))
+                .pointsMap(standingsData.points())
+                .goalDifferenceMap(standingsData.goalDifference())
                 .build();
     }
 
@@ -201,16 +206,15 @@ public class GetPublicPredictionUseCase {
     private PublicPredictionViewData buildCurrentView(Ctx ctx, SeasonPrediction prediction) {
         Season season = ctx.season();
         List<TeamRank> predictedRanks;
-        Map<String, Integer> actualPositions;
+        StandingsData standingsData;
 
         if (prediction.isPreSeasonRegistration()) {
             predictedRanks = prediction.getInitialRankings();
-            actualPositions = positionsByCode(season.getInitialRankings());
+            standingsData = StandingsData.fromBaseline(season.getInitialRankings());
         } else {
             predictedRanks = prediction.getCurrentRankings();
-            actualPositions = standingsRankings(season.getId(), ctx.currentRound())
-                    .map(ranks -> positionsByCode(ranks))
-                    .orElseGet(() -> positionsByCode(season.getInitialRankings()));
+            standingsData = fetchStandingsData(season.getId(), ctx.currentRound())
+                    .orElseGet(() -> StandingsData.fromBaseline(season.getInitialRankings()));
         }
 
         var sortedRanks =
@@ -219,7 +223,7 @@ public class GetPublicPredictionUseCase {
                 teamsByCodeFromCodes(sortedRanks.stream().map(r -> r.getCode()).collect(Collectors.toSet()));
 
         return PublicPredictionViewData.builder()
-                .rows(PublicRankDto.listOfPrediction(sortedRanks, actualPositions, teamsByCode))
+                .rows(PublicRankDto.listOfPrediction(sortedRanks, standingsData.positions(), teamsByCode))
                 .userFound(true)
                 .hasPrediction(true)
                 .targetDisplayName(ctx.targetDisplayName())
@@ -229,22 +233,44 @@ public class GetPublicPredictionUseCase {
                 .minRound(ctx.minRound())
                 .seasonCompleted(ctx.seasonCompleted())
                 .hasRoundResult(false)
+                .matches(matchRepo.findBySeasonAndRound(season.getId(), ctx.currentRound()))
+                .pointsMap(standingsData.points())
+                .goalDifferenceMap(standingsData.goalDifference())
                 .build();
     }
 
-    private Optional<List<TeamRank>> standingsRankings(UUID seasonId, int roundPosition) {
-        return standingsRepo
-                .findBySeasonAndRoundPosition(seasonId, roundPosition)
-                .map(standings -> standings.getRankings())
-                .map(rankings -> rankings.stream().map(str -> str.getRanking()).toList());
+    /** Positions, points, and GD from a single {@code Standings} row, plus its raw rankings. */
+    private record StandingsData(
+            List<TeamRank> rankings,
+            Map<String, Integer> positions,
+            Map<String, Integer> points,
+            Map<String, Integer> goalDifference) {
+        static StandingsData fromBaseline(List<TeamRank> baseline) {
+            Map<String, Integer> positions = new HashMap<>();
+            for (TeamRank rank : baseline) {
+                positions.put(rank.getCode(), rank.getPosition());
+            }
+            return new StandingsData(baseline, positions, Map.of(), Map.of());
+        }
     }
 
-    private Map<String, Integer> positionsByCode(List<TeamRank> ranks) {
-        Map<String, Integer> positions = new HashMap<>();
-        for (TeamRank rank : ranks) {
-            positions.put(rank.getCode(), rank.getPosition());
-        }
-        return positions;
+    private Optional<StandingsData> fetchStandingsData(UUID seasonId, int roundPosition) {
+        return standingsRepo.findBySeasonAndRoundPosition(seasonId, roundPosition).map(standings -> {
+            List<TeamRank> rankings =
+                    standings.getRankings().stream().map(str -> str.getRanking()).toList();
+            Map<String, Integer> positions = new HashMap<>();
+            Map<String, Integer> points = new HashMap<>();
+            Map<String, Integer> goalDifference = new HashMap<>();
+            for (var rank : standings.getRankings()) {
+                String code = rank.getRanking().getCode();
+                positions.put(code, rank.getRanking().getPosition());
+                if (rank.getMetadata() != null) {
+                    points.put(code, rank.getMetadata().getPoints());
+                    goalDifference.put(code, rank.getMetadata().getGd());
+                }
+            }
+            return new StandingsData(rankings, positions, points, goalDifference);
+        });
     }
 
     private Map<String, Team> teamsByCode(List<TeamRank> ranks) {

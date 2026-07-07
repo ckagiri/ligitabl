@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -16,8 +17,11 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.standings.FormService;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.web.shared.fixtures.FixtureJsonMapper;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
@@ -41,7 +45,12 @@ class PublicPredictionControllerTest {
     @Mock
     private GetPublicPredictionUseCase getPublicPredictionUseCase;
 
+    @Mock
+    private FormService formService;
+
     private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
+    private final FixtureJsonMapper fixtureJsonMapper = new FixtureJsonMapper();
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private PublicPredictionController controller;
 
@@ -54,7 +63,14 @@ class PublicPredictionControllerTest {
     @BeforeEach
     void setUp() {
         controller = new PublicPredictionController(
-                competitionRepo, seasonRepo, roundRepo, competitionDefaults, getPublicPredictionUseCase);
+                competitionRepo,
+                seasonRepo,
+                roundRepo,
+                competitionDefaults,
+                getPublicPredictionUseCase,
+                formService,
+                fixtureJsonMapper,
+                objectMapper);
 
         competitionId = UUID.randomUUID();
         seasonId = UUID.randomUUID();
@@ -70,6 +86,8 @@ class PublicPredictionControllerTest {
         // Not needed by the invalid-season-shorthand test, which bails out before resolving the
         // competition at all.
         lenient().when(competitionRepo.findBySlug("premier-league")).thenReturn(Optional.of(competition));
+        // Only reached for the current-round comparison-options branch (hasRoundResult == false).
+        lenient().when(formService.buildFormMap(any(), anyInt())).thenReturn(Map.of());
     }
 
     @Test
@@ -117,6 +135,63 @@ class PublicPredictionControllerTest {
                 "T2ADsSc8hQ", "2526", 13, new ExtendedModelMap(), new MockHttpServletResponse(), null);
 
         assertThat(view).isEqualTo("public-predictions");
+    }
+
+    @Test
+    void publicPrediction_currentRound_populatesComparisonOptionsModel() {
+        when(seasonRepo.findByCompetitionIdAndSlug(competitionId, SeasonSlug.of("2025-26")))
+                .thenReturn(Optional.of(season));
+        var data = PublicPredictionViewData.builder()
+                .rows(List.of())
+                .userFound(true)
+                .hasPrediction(true)
+                .currentRound(13)
+                .lastRound(38)
+                .viewingRound(13)
+                .minRound(1)
+                .seasonCompleted(false)
+                .hasRoundResult(false)
+                .build();
+        when(getPublicPredictionUseCase.execute(any())).thenReturn(Either.right(data));
+        ExtendedModelMap model = new ExtendedModelMap();
+
+        controller.publicPrediction("T2ADsSc8hQ", "2526", 13, model, new MockHttpServletResponse(), null);
+
+        assertThat(model.getAttribute("predictionsJson")).isEqualTo("[]");
+        assertThat(model.getAttribute("fixturesJson")).isEqualTo("{}");
+        assertThat(model.getAttribute("currentStandingsJson")).isEqualTo("{}");
+        assertThat(model.getAttribute("currentPointsJson")).isEqualTo("{}");
+        assertThat(model.getAttribute("currentGoalDifferenceJson")).isEqualTo("{}");
+        assertThat(model.getAttribute("formJson")).isEqualTo("{}");
+        assertThat(model.getAttribute("hasFormData")).isEqualTo(false);
+    }
+
+    @Test
+    void publicPrediction_historicalRound_skipsComparisonOptionsModel() {
+        when(seasonRepo.findByCompetitionIdAndSlug(competitionId, SeasonSlug.of("2025-26")))
+                .thenReturn(Optional.of(season));
+        var data = PublicPredictionViewData.builder()
+                .rows(List.of())
+                .userFound(true)
+                .hasPrediction(true)
+                .currentRound(13)
+                .lastRound(38)
+                .viewingRound(8)
+                .minRound(1)
+                .seasonCompleted(false)
+                .hasRoundResult(true)
+                .totalScore(150)
+                .totalHits(50)
+                .zeroesCount(3)
+                .build();
+        when(getPublicPredictionUseCase.execute(any())).thenReturn(Either.right(data));
+        ExtendedModelMap model = new ExtendedModelMap();
+
+        controller.publicPrediction("T2ADsSc8hQ", "2526", 8, model, new MockHttpServletResponse(), null);
+
+        assertThat(model.getAttribute("predictionsJson")).isNull();
+        assertThat(model.getAttribute("hasFormData")).isNull();
+        verifyNoInteractions(formService);
     }
 
     @Test

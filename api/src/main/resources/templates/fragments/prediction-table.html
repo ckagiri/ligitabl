@@ -1,9 +1,16 @@
 <div xmlns:th="http://www.thymeleaf.org">
   <!-- Comparison Options (Show standings, fixtures, points checkboxes) -->
+  <!-- Parameters (both required — every caller passes explicit booleans):
+       hasFormData: Boolean - hides the "Show form" checkbox + legend when there's no form data
+         yet to compare (e.g. no matches played this season)
+       showMoveHelperText: Boolean - shows the "(move up)/(move down)" legend paragraph, which
+         only makes sense next to the arrow-based Actual/Delta rendering in interactive-table;
+         pass false for callers using a plain-number Actual/Delta rendering instead
+  -->
   <div
     x-cloak
     x-init="$el.previousElementSibling && $el.previousElementSibling.hasAttribute('x-skeleton') && $el.previousElementSibling.remove()"
-    th:fragment="comparison-options"
+    th:fragment="comparison-options(hasFormData, showMoveHelperText)"
     class="px-6 pt-4 pb-2 space-y-2"
   >
     <!-- 2-column grid — all rows share the same gap so spacing is uniform -->
@@ -20,12 +27,16 @@
         <input type="checkbox" x-model="showFixtures" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
         <span>Show fixtures</span>
       </label>
-      <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition">
+      <label
+        th:if="${hasFormData}"
+        class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition"
+      >
         <input type="checkbox" x-model="showForm" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
         <span>Show form</span>
       </label>
       <!-- Form legend — visible when showForm is on -->
       <div
+        th:if="${hasFormData}"
         x-show="showForm"
         class="col-span-2 flex items-center gap-3 pl-1 text-[11px] text-gray-500 select-none"
       >
@@ -90,6 +101,7 @@
     </div>
 
     <p
+      th:if="${showMoveHelperText}"
       x-show="showStandings"
       class="text-[11px] text-gray-500 leading-snug ml-6"
     >

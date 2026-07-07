@@ -7,7 +7,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.function.Function;
@@ -30,16 +29,13 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.standings.FormService;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
-import com.ligitabl.api.web.shared.dto.FixtureDto;
 import com.ligitabl.api.web.shared.dto.ResultTeamRankDto;
 import com.ligitabl.api.web.shared.dto.TeamRankDto;
 import com.ligitabl.api.web.shared.error.ErrorMapper;
 import com.ligitabl.api.web.shared.error.ErrorViewMapper;
+import com.ligitabl.api.web.shared.fixtures.FixtureJsonMapper;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.MatchResult;
-import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.ResultTeamRank;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SwapChange;
@@ -67,6 +63,7 @@ public class UserPredictionsController {
     private final CompetitionDefaults competitionDefaults;
     private final ErrorViewMapper errorMapper;
     private final FormService formService;
+    private final FixtureJsonMapper fixtureJsonMapper;
 
     /**
      * GET /predictions/user/me - View current user's prediction.
@@ -393,7 +390,7 @@ public class UserPredictionsController {
         // Serialize data for JavaScript
         try {
             var formMap = formService.buildFormMap(season.getId(), data.viewingRound());
-            model.addAttribute("fixturesJson", objectMapper.writeValueAsString(buildFixtures(data.matches())));
+            model.addAttribute("fixturesJson", objectMapper.writeValueAsString(fixtureJsonMapper.buildFixtures(data.matches())));
             model.addAttribute("predictionsJson", objectMapper.writeValueAsString(predictions));
             model.addAttribute("currentStandingsJson", objectMapper.writeValueAsString(data.standingsMap()));
             model.addAttribute("currentPointsJson", objectMapper.writeValueAsString(data.pointsMap()));
@@ -461,64 +458,6 @@ public class UserPredictionsController {
         return ResultTeamRankDto.listOf(sortedRanks, teamsByCode);
     }
 
-    private Map<String, List<FixtureDto>> buildFixtures(Map<String, List<Match>> matchesByTeam) {
-        if (matchesByTeam == null || matchesByTeam.isEmpty()) {
-            return Map.of();
-        }
-
-        return matchesByTeam.entrySet().stream()
-                .collect(Collectors.toMap(Map.Entry::getKey, entry -> entry.getValue().stream()
-                        .map(match -> toFixture(entry.getKey(), match))
-                        .filter(Objects::nonNull)
-                        .toList()));
-    }
-
-    FixtureDto toFixture(String teamCode, Match match) {
-        if (match == null || !match.hasTeamsLoaded()) {
-            return null;
-        }
-
-        Team home = match.getHomeTeam();
-        Team away = match.getAwayTeam();
-        if (home == null || away == null) {
-            return null;
-        }
-
-        boolean isHome = teamCode.equals(home.getCode());
-        String opponent = isHome ? away.getCode() : home.getCode();
-        return new FixtureDto(
-                opponent, isHome, normalizeFixtureStatus(match.getStatus()), resolveFixtureResult(match, isHome));
-    }
-
-    static String normalizeFixtureStatus(MatchStatus status) {
-        if (status == null) {
-            return MatchStatus.SCHEDULED.name();
-        }
-
-        return switch (status) {
-            case LIVE, SUSPENDED -> MatchStatus.LIVE.name();
-            case FINISHED -> MatchStatus.FINISHED.name();
-            case POSTPONED -> MatchStatus.POSTPONED.name();
-            case SCHEDULED, CANCELLED -> MatchStatus.SCHEDULED.name();
-        };
-    }
-
-    static String resolveFixtureResult(Match match, boolean isHome) {
-        if (match == null || match.getStatus() != MatchStatus.FINISHED) {
-            return null;
-        }
-
-        return match.result().map(result -> toPerspectiveResult(result, isHome)).orElse(null);
-    }
-
-    private static String toPerspectiveResult(MatchResult result, boolean isHome) {
-        if (result.isDraw()) {
-            return "DRAW";
-        }
-
-        boolean teamWon = isHome ? result.isHomeWin() : result.isAwayWin();
-        return teamWon ? "WIN" : "LOSS";
-    }
 
     /**
      * Get page title based on access mode.

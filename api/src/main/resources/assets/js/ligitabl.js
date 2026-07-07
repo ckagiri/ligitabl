@@ -849,6 +849,37 @@ window.Ligitabl.guestPredictionPage = function (el) {
     });
 };
 
+// Public, no-login prediction sharing view (current/live round only) — read-only, so unlike
+// predictionPage/guestPredictionPage there's no swap/select/localStorage machinery at all; just
+// the shared comparison-options state (showStandings/Fixtures/Points/GD/Form + their getters)
+// from _predictionBase, seeded straight from the server's rows every load.
+window.Ligitabl.publicPredictionPage = function (el) {
+    const parsed = Ligitabl._parseDataAttributes(el);
+    const roundId = el?.dataset?.roundId || 'unknown';
+    const base = Ligitabl._predictionBase(parsed, null, roundId);
+
+    return Object.assign(base, {
+        init() {
+            this.teams = Ligitabl._mapServerPredictions(parsed.predictions);
+            this.originalTeams = Ligitabl._mapServerPredictions(parsed.predictions);
+
+            // Persist display preferences
+            const savePrefs = () => Ligitabl._savePrefs({
+                showStandings: this.showStandings,
+                showFixtures: this.showFixtures,
+                showPoints: this.showPoints,
+                showGD: this.showGD,
+                showForm: this.showForm,
+            }, this._prefsKey);
+            this.$watch("showStandings", savePrefs);
+            this.$watch("showFixtures", savePrefs);
+            this.$watch("showPoints", savePrefs);
+            this.$watch("showGD", savePrefs);
+            this.$watch("showForm", savePrefs);
+        },
+    });
+};
+
 // --- Results Banner Dismissal ---
 
 (function () {
