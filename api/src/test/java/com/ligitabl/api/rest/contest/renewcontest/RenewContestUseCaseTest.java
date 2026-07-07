@@ -177,7 +177,7 @@ class RenewContestUseCaseTest {
         Contest savedRenewed = contestCaptor.getAllValues().get(0);
         assertThat(savedRenewed.getFromRoundPosition()).isEqualTo(7);
         assertThat(savedRenewed.getToRoundPosition()).isEqualTo(7);
-        assertThat(savedRenewed.getName()).isEqualTo("Office Rivals S7");
+        assertThat(savedRenewed.getName()).isEqualTo("Office Rivals");
         assertThat(savedRenewed.isOpen()).isTrue();
         assertThat(savedRenewed.getMaxEntries()).isEqualTo(10);
         assertThat(savedRenewed.getOwnerId()).isEqualTo(userId);
@@ -434,11 +434,12 @@ class RenewContestUseCaseTest {
 
     @Test
     void nameConflict_ownerAlreadyHasContestWithRenewedName_returnsError() {
-        Contest original = originalContest(6, 6); // S6 -> S6, renews to S7 -> suffixed name "Office Rivals S7"
+        // Owner already has another contest named "Office Rivals" occupying S7 in this season.
+        Contest original = originalContest(6, 6); // S6 -> S6, renews to S7
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         stubActiveSeasonSameAsContest();
         stubCurrentRoundPosition(8);
-        when(contestRepo.existsByOwnerSeasonAndName(seasonId, userId, "Office Rivals S7", null))
+        when(contestRepo.existsByOwnerSeasonPeriodAndName(seasonId, userId, 7, 7, "Office Rivals", null))
                 .thenReturn(true);
 
         var cmd = new RenewContestCommand(userId, original.getId(), "S7");

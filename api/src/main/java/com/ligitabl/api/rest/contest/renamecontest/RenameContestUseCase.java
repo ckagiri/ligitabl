@@ -10,7 +10,7 @@ import com.ligitabl.model.repo.ContestRepo;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
-/** Renames a contest. Names are unique per owner per season, enforced here and by a DB constraint. */
+/** Renames a contest. Names are unique per owner per season per round window, enforced here and by a DB constraint. */
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -28,7 +28,13 @@ public class RenameContestUseCase {
         String trimmed = cmd.name() == null ? "" : cmd.name().trim();
         if (trimmed.isEmpty()) return Either.left(new RenameContestError.BlankName());
 
-        if (contestRepo.existsByOwnerSeasonAndName(contest.getSeasonId(), contest.getOwnerId(), trimmed, contest.getId()))
+        if (contestRepo.existsByOwnerSeasonPeriodAndName(
+                contest.getSeasonId(),
+                contest.getOwnerId(),
+                contest.getFromRoundPosition(),
+                contest.getToRoundPosition(),
+                trimmed,
+                contest.getId()))
             return Either.left(new RenameContestError.NameConflict(trimmed));
 
         contest.setName(trimmed);

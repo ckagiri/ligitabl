@@ -229,11 +229,14 @@ public class ContestPersistenceAdapter implements ContestRepo {
     }
 
     @Override
-    public boolean existsByOwnerSeasonAndName(UUID seasonId, UUID ownerId, String name, UUID excludeContestId) {
+    public boolean existsByOwnerSeasonPeriodAndName(
+            UUID seasonId, UUID ownerId, int fromRoundPosition, int toRoundPosition, String name, UUID excludeContestId) {
         var condition = T_CONTEST
                 .FK_SEASON_ID
                 .eq(seasonId)
                 .and(T_CONTEST.C_OWNER_ID.eq(ownerId))
+                .and(T_CONTEST.C_FROM_ROUND_POSITION.eq(fromRoundPosition))
+                .and(T_CONTEST.C_TO_ROUND_POSITION.eq(toRoundPosition))
                 .and(upper(T_CONTEST.C_NAME).eq(upper(name)));
         if (excludeContestId != null) {
             condition = condition.and(T_CONTEST.PK_ID.ne(excludeContestId));

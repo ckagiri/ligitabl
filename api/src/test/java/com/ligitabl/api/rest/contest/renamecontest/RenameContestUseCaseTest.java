@@ -38,13 +38,15 @@ class RenameContestUseCaseTest {
                 .seasonId(seasonId)
                 .name("Old Name")
                 .ownerId(userId)
+                .fromRoundPosition(1)
+                .toRoundPosition(4)
                 .build();
     }
 
     @Test
     void happyPath_renamesAndSaves() {
         when(contestRepo.findById(contest.getId())).thenReturn(Optional.of(contest));
-        when(contestRepo.existsByOwnerSeasonAndName(seasonId, userId, "New Name", contest.getId()))
+        when(contestRepo.existsByOwnerSeasonPeriodAndName(seasonId, userId, 1, 4, "New Name", contest.getId()))
                 .thenReturn(false);
         when(contestRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -57,7 +59,7 @@ class RenameContestUseCaseTest {
     @Test
     void trimsWhitespace() {
         when(contestRepo.findById(contest.getId())).thenReturn(Optional.of(contest));
-        when(contestRepo.existsByOwnerSeasonAndName(seasonId, userId, "New Name", contest.getId()))
+        when(contestRepo.existsByOwnerSeasonPeriodAndName(seasonId, userId, 1, 4, "New Name", contest.getId()))
                 .thenReturn(false);
         when(contestRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -80,7 +82,7 @@ class RenameContestUseCaseTest {
     @Test
     void nameConflict_returnsError() {
         when(contestRepo.findById(contest.getId())).thenReturn(Optional.of(contest));
-        when(contestRepo.existsByOwnerSeasonAndName(seasonId, userId, "Taken", contest.getId()))
+        when(contestRepo.existsByOwnerSeasonPeriodAndName(seasonId, userId, 1, 4, "Taken", contest.getId()))
                 .thenReturn(true);
 
         var result = useCase.execute(new RenameContestCommand(userId, contest.getId(), "Taken"));
