@@ -98,7 +98,7 @@ class GetProfileContestListsUseCaseTest {
 
     private ContestRepo.UserContestView view(int from, int to) {
         return new ContestRepo.UserContestView(
-                UUID.randomUUID(), "Homeboyz", seasonId, "2026/27", false, from, to, true);
+                UUID.randomUUID(), "Homeboyz", seasonId, "2026/27", false, from, to, true, true);
     }
 
     @Test

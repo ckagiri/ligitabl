@@ -186,6 +186,10 @@
                         th:if="${row.isOwner}"
                         class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700"
                       >Owner</span>
+                      <span
+                        th:unless="${row.isOpen}"
+                        class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600"
+                      >Closed</span>
                     </td>
                     <td class="px-4 py-3 text-sm text-gray-500">
                       <th:block th:if="${row.dateLabel != null}">

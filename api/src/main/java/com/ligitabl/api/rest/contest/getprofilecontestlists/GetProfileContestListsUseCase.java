@@ -90,7 +90,7 @@ public class GetProfileContestListsUseCase {
         Integer rank = resolveRank(view, userId);
         String link = "/contests/" + view.contestId() + (view.isPrivate() ? "?from=profile" : "?segment=overall&from=profile");
         String periodLabel = PhaseRules.resolvePeriodLabel(phases, view.fromRoundPosition(), view.toRoundPosition());
-        return new ContestSummary(view.contestName(), view.seasonName(), periodLabel, memberCount, rank, link);
+        return new ContestSummary(view.contestName(), view.seasonName(), periodLabel, memberCount, rank, link, view.isOpen());
     }
 
     private Integer resolveRank(ContestRepo.UserContestView view, UUID userId) {

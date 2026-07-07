@@ -17,7 +17,8 @@ public interface ContestRepo {
             boolean seasonCompleted,
             int fromRoundPosition,
             int toRoundPosition,
-            boolean isPrivate) {}
+            boolean isPrivate,
+            boolean isOpen) {}
 
     Optional<Contest> findById(UUID id);
 

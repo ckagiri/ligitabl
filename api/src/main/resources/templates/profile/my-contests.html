@@ -55,6 +55,10 @@
                   <tr th:each="c : ${activeContests}" class="hover:bg-gray-50 transition">
                     <td class="py-3 pr-4">
                       <a th:href="${c.link()}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800" th:text="${c.contestName()}"></a>
+                      <span
+                        th:unless="${c.isOpen()}"
+                        class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600"
+                      >Closed</span>
                       <div class="text-xs text-gray-500"
                            th:text="${c.periodLabel() != null ? c.seasonName() + ' • ' + c.periodLabel() : c.seasonName()}"></div>
                     </td>

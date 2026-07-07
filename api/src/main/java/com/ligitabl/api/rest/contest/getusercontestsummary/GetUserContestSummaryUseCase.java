@@ -153,7 +153,8 @@ public class GetUserContestSummaryUseCase {
                     contest.getFromRoundPosition(),
                     contest.getToRoundPosition(),
                     memberCount,
-                    contest.isOwnedBy(userId)));
+                    contest.isOwnedBy(userId),
+                    contest.isOpen()));
         }
         return rows;
     }
