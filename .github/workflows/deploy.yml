@@ -210,6 +210,12 @@ jobs:
 
             cd ~/.deploy/ligitabl
 
+            echo "🧼 Pruning unused images before pulling (frees disk for the new image)..."
+            # -a removes all unused images (not just dangling ones), since every
+            # deploy pulls a new immutable api-<sha> tag and old sha-tagged images
+            # are never referenced again but stick around otherwise, filling the disk.
+            docker image prune -af
+
             echo "🔄 Pulling latest images..."
             docker compose -f docker-compose.prod.yml --env-file .env.prod pull
 
@@ -217,7 +223,7 @@ jobs:
             docker compose -f docker-compose.prod.yml --env-file .env.prod down
 
             echo "🧼 Cleaning up old images..."
-            docker image prune -f
+            docker image prune -af
 
             echo "🚀 Starting new stack..."
             # Liquibase migrations run automatically on app startup (SPRING_PROFILES_ACTIVE=liquibase)

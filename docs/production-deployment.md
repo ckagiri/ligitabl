@@ -19,7 +19,8 @@ This document covers everything worked through to get the production deployment 
 11. [Problem: SSL negotiation failure through the tunnel](#problem-ssl-negotiation-failure-through-the-tunnel)
 12. [Problem: AuthController fails to start in batch mode](#problem-authcontroller-fails-to-start-in-batch-mode)
 13. [Cleanup: Remove debug lines from deploy.yml](#cleanup-remove-debug-lines-from-deployyml)
-14. [Files changed summary](#files-changed-summary)
+14. [Problem: No space left on device during image pull](#problem-no-space-left-on-device-during-image-pull)
+15. [Files changed summary](#files-changed-summary)
 
 ---
 
@@ -401,6 +402,29 @@ Both were removed once the credential flow was confirmed working.
 
 ---
 
+## Problem: No space left on device during image pull
+
+**Symptom:** The `deploy` job failed mid-pull with:
+
+```
+write /var/lib/docker/tmp/GetImageBlob2653441039: no space left on device
+Error: Process completed with exit code 1
+```
+
+**Root cause:** Every deploy builds and pushes an immutable tag, `api-<github.sha>`, alongside `api-latest`. Each deploy on the server pulls a brand new sha-tagged image, but the previous deploy's sha-tagged image is never removed — it's still tagged (referenced by name), just no longer used by a running container. The cleanup step ran `docker image prune -f`, which only removes **dangling** images (untagged layers left over from a build), not old tagged images. So every deploy left one more full image on disk, and on the small droplet this eventually exhausted the disk before the *next* pull could even land its blobs.
+
+**Fix:** In `.github/workflows/deploy.yml`'s `deploy` job:
+
+1. Added a prune step **before** `docker compose pull`, so stale images are cleared and there's headroom for the incoming layers:
+   ```bash
+   docker image prune -af
+   ```
+2. Changed the post-deploy cleanup from `docker image prune -f` to `docker image prune -af` as well, so it actually removes old tagged images now that the containers referencing them have been recreated, not just dangling ones.
+
+The `-a` flag is the key change — it prunes all images not used by an existing container, regardless of whether they're tagged, which is what actually reclaims space from the sha-tag accumulation.
+
+---
+
 ## Files changed summary
 
 | File                                                              | What changed                                                                                                                                                |
@@ -411,3 +435,4 @@ Both were removed once the credential flow was confirmed working.
 | `Makefile`                                                        | Fixed `$(error)` TAB at file scope; added `prod-tunnel`, `prod-seed`, `prod-import-pl` targets; added `sslmode=disable` to tunnel JDBC URLs                 |
 | `api/src/main/java/com/ligitabl/api/web/auth/AuthController.java` | Added `@ConditionalOnWebApplication` so the controller is skipped when running in batch/workflow mode                                                       |
 | `.env.prod` (local, gitignored)                                   | Added `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `JWT_SECRET`, `API_FOOTBALL_DATA_KEY` for local tunnel operations                                                |
+| `.github/workflows/deploy.yml`                                    | Added `docker image prune -af` before pulling, changed post-deploy prune from `-f` to `-af` to actually remove old sha-tagged images, not just dangling ones |
