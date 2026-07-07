@@ -240,6 +240,59 @@ class ContestRenewalCalculatorTest {
                 .isTrue();
     }
 
+    // ---- Single-sprint timing gate against realistic multi-round sprints ----
+    //
+    // The fixture above uses one round per sprint, which masks a bug: comparing sprint
+    // *indices* happens to equal comparing round *positions* only when each sprint is exactly
+    // one round long. Real sprints span several rounds (e.g. S1 = GW1-4), so the gate must
+    // compare round positions directly, not jump forward by whole sprints.
+
+    private static List<RoundSpan> buildRealisticPhases() {
+        List<RoundSpan> sprints = List.of(
+                sprint("S1", 1, 4),
+                sprint("S2", 5, 9),
+                sprint("S3", 10, 13));
+        return List.copyOf(sprints);
+    }
+
+    @Test
+    void timingGate_singleSprint_realisticRounds_s1Gw1ToGw2_false() {
+        List<RoundSpan> realistic = buildRealisticPhases();
+        RoundSpan s1 = realistic.get(0);
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s1, s1, 1, realistic))
+                .isFalse();
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s1, s1, 2, realistic))
+                .isFalse();
+    }
+
+    @Test
+    void timingGate_singleSprint_realisticRounds_s1Gw3_true() {
+        // S1 = GW1-4: renewable once the round is 2 rounds after S1's start, i.e. GW3.
+        List<RoundSpan> realistic = buildRealisticPhases();
+        RoundSpan s1 = realistic.get(0);
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s1, s1, 3, realistic))
+                .isTrue();
+    }
+
+    @Test
+    void timingGate_singleSprint_realisticRounds_s2Gw5ToGw6_false() {
+        List<RoundSpan> realistic = buildRealisticPhases();
+        RoundSpan s2 = realistic.get(1);
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s2, s2, 5, realistic))
+                .isFalse();
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s2, s2, 6, realistic))
+                .isFalse();
+    }
+
+    @Test
+    void timingGate_singleSprint_realisticRounds_s2Gw7_true() {
+        // S2 = GW5-9: renewable once the round is 2 rounds after S2's start, i.e. GW7.
+        List<RoundSpan> realistic = buildRealisticPhases();
+        RoundSpan s2 = realistic.get(1);
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s2, s2, 7, realistic))
+                .isTrue();
+    }
+
     // ---- Section 7: Past season renewal ----
 
     @Test
