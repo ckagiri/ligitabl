@@ -21,6 +21,49 @@
           <span th:text="${contest.name}">Contest</span> — Settings
         </h1>
 
+        <!-- Rename success/error banners -->
+        <th:block th:if="${param.renamed != null}">
+          <div class="flex items-start gap-3 bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+            <svg class="h-5 w-5 text-green-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+            </svg>
+            <p class="text-sm text-green-800">Contest renamed.</p>
+          </div>
+        </th:block>
+        <th:block th:if="${param.renameError != null}">
+          <div class="flex items-start gap-3 bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+            <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
+            </svg>
+            <p th:if="${param.renameError[0] == 'conflict'}" class="text-sm text-red-800">
+              You already have another contest with that name this season. Choose a different name.
+            </p>
+            <p th:if="${param.renameError[0] == 'blank'}" class="text-sm text-red-800">Name can't be blank.</p>
+            <p th:unless="${param.renameError[0] == 'conflict' or param.renameError[0] == 'blank'}" class="text-sm text-red-800">
+              Couldn't rename this contest.
+            </p>
+          </div>
+        </th:block>
+
+        <!-- ── Rename ── -->
+        <div class="bg-white rounded-xl border border-gray-200 shadow-sm px-5 py-4 mb-4">
+          <p class="text-sm font-medium text-gray-800 mb-1">Contest name</p>
+          <p class="text-xs text-gray-500 mb-3">Must be unique among your contests this season.</p>
+          <form method="post" th:action="@{/contests/{id}/rename(id=${contest.id})}" class="flex items-center gap-2">
+            <input
+              type="text"
+              name="name"
+              th:value="${contest.name}"
+              required
+              class="flex-1 px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-gray-400"
+            />
+            <button type="submit"
+                    class="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
+              Save
+            </button>
+          </form>
+        </div>
+
         <th:block th:if="${isPastSeason == true}">
           <div class="flex items-start gap-3 bg-gray-50 border border-gray-200 rounded-lg p-4">
             <svg class="h-5 w-5 text-gray-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

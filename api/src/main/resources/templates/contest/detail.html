@@ -92,7 +92,13 @@
             <svg class="h-5 w-5 text-red-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
             </svg>
-            <p class="text-sm text-red-800">Couldn't renew this contest. It may already have been renewed, or the selected window is no longer valid.</p>
+            <p th:if="${param.renewErrorReason != null and param.renewErrorReason[0] == 'nameConflict'}" class="text-sm text-red-800">
+              Couldn't renew this contest — you already have another contest with the same name this season. Rename it from
+              <a th:href="@{/contests/{id}/edit(id=${contest.id})}" class="underline font-medium">Settings</a> and try again.
+            </p>
+            <p th:unless="${param.renewErrorReason != null and param.renewErrorReason[0] == 'nameConflict'}" class="text-sm text-red-800">
+              Couldn't renew this contest. It may already have been renewed, or the selected window is no longer valid.
+            </p>
           </div>
         </th:block>
 

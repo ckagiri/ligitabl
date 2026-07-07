@@ -229,6 +229,20 @@ public class ContestPersistenceAdapter implements ContestRepo {
     }
 
     @Override
+    public boolean existsByOwnerSeasonAndName(UUID seasonId, UUID ownerId, String name, UUID excludeContestId) {
+        var condition = T_CONTEST
+                .FK_SEASON_ID
+                .eq(seasonId)
+                .and(T_CONTEST.C_OWNER_ID.eq(ownerId))
+                .and(upper(T_CONTEST.C_NAME).eq(upper(name)));
+        if (excludeContestId != null) {
+            condition = condition.and(T_CONTEST.PK_ID.ne(excludeContestId));
+        }
+
+        return dsl.fetchExists(dsl.selectOne().from(T_CONTEST).where(condition));
+    }
+
+    @Override
     public Optional<Contest> findByJoinCode(String joinCode) {
         var record = dsl.selectFrom(T_CONTEST)
                 .where(upper(T_CONTEST.C_JOIN_CODE).eq(upper(joinCode)))

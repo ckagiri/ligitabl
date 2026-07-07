@@ -293,6 +293,38 @@ class ContestRenewalCalculatorTest {
                 .isTrue();
     }
 
+    // ---- Renewal name suffix ----
+
+    @Test
+    void nameSuffix_singleSprint_givesSprintCode() {
+        assertThat(ContestRenewalCalculator.resolveRenewalNameSuffix(s("S3"), s("S3"), phases))
+                .isEqualTo("S3");
+    }
+
+    @Test
+    void nameSuffix_singleQuarterSpan_givesQuarterCode() {
+        assertThat(ContestRenewalCalculator.resolveRenewalNameSuffix(s("S3"), s("S4"), phases))
+                .isEqualTo("Q2");
+    }
+
+    @Test
+    void nameSuffix_firstHalf_givesH1() {
+        assertThat(ContestRenewalCalculator.resolveRenewalNameSuffix(s("S1"), s("S4"), phases))
+                .isEqualTo("H1");
+    }
+
+    @Test
+    void nameSuffix_secondHalf_givesH2() {
+        assertThat(ContestRenewalCalculator.resolveRenewalNameSuffix(s("S5"), s("S8"), phases))
+                .isEqualTo("H2");
+    }
+
+    @Test
+    void nameSuffix_multiQuarterSpanNotAHalf_givesQuarterRange() {
+        assertThat(ContestRenewalCalculator.resolveRenewalNameSuffix(s("S3"), s("S6"), phases))
+                .isEqualTo("Q2-3");
+    }
+
     // ---- Section 7: Past season renewal ----
 
     @Test

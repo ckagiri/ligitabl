@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260707_3_contest_owner_scoped_unique_name
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_contest
+            schemaName: public
+      changes:
+        - dropUniqueConstraint:
+            tableName: t_contest
+            schemaName: public
+            constraintName: uq_t_contest_season_name
+        - addUniqueConstraint:
+            tableName: t_contest
+            schemaName: public
+            columnNames: fk_season_id, c_owner_id, c_name
+            constraintName: uq_t_contest_owner_season_name

@@ -28,7 +28,10 @@ import lombok.extern.slf4j.Slf4j;
  * Renews a private contest. If the contest belongs to the competition's current active season, it
  * renews into the sprint immediately following its own window in that same season. If the contest
  * belongs to a past season, it renews into the start of the new active season instead (fixed at
- * S1, defaulting to end of Q1, or fixed at the last sprint if the original was a full season).
+ * S1, defaulting to end of Q1, or fixed at the last sprint if the original was a full season). The
+ * renewed contest's name is the original's name with the new window's period label appended (e.g.
+ * "Homeboyz" → "Homeboyz H2"), keeping repeated renewals distinct — names are unique per owner per
+ * season. Rename the contest afterwards from its settings page if a different name is wanted.
  */
 @Service
 @RequiredArgsConstructor
@@ -100,11 +103,16 @@ public class RenewContestUseCase {
 
         if (to == null) return Either.left(new RenewContestError.InvalidToCombination(cmd.toSprintCode()));
 
+        String renewedName =
+                original.getName() + " " + ContestRenewalCalculator.resolveRenewalNameSuffix(from, to, phases);
+        if (contestRepo.existsByOwnerSeasonAndName(targetSeasonId, original.getOwnerId(), renewedName, null))
+            return Either.left(new RenewContestError.NameConflict(renewedName));
+
         String joinCode = generateUniqueCode();
 
         Contest renewed = Contest.builder()
                 .seasonId(targetSeasonId)
-                .name(original.getName())
+                .name(renewedName)
                 .isPrivate(true)
                 .isOpen(original.isOpen())
                 .joinCode(joinCode)

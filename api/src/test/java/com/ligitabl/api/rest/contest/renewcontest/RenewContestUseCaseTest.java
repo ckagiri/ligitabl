@@ -177,7 +177,7 @@ class RenewContestUseCaseTest {
         Contest savedRenewed = contestCaptor.getAllValues().get(0);
         assertThat(savedRenewed.getFromRoundPosition()).isEqualTo(7);
         assertThat(savedRenewed.getToRoundPosition()).isEqualTo(7);
-        assertThat(savedRenewed.getName()).isEqualTo("Office Rivals");
+        assertThat(savedRenewed.getName()).isEqualTo("Office Rivals S7");
         assertThat(savedRenewed.isOpen()).isTrue();
         assertThat(savedRenewed.getMaxEntries()).isEqualTo(10);
         assertThat(savedRenewed.getOwnerId()).isEqualTo(userId);
@@ -429,5 +429,22 @@ class RenewContestUseCaseTest {
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().joinCode()).isEqualTo("SECOND2");
+    }
+
+    @Test
+    void nameConflict_ownerAlreadyHasContestWithRenewedName_returnsError() {
+        Contest original = originalContest(6, 6); // S6 -> S6, renews to S7 -> suffixed name "Office Rivals S7"
+        when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
+        stubActiveSeasonSameAsContest();
+        stubCurrentRoundPosition(8);
+        when(contestRepo.existsByOwnerSeasonAndName(seasonId, userId, "Office Rivals S7", null))
+                .thenReturn(true);
+
+        var cmd = new RenewContestCommand(userId, original.getId(), "S7");
+        var result = useCase.execute(cmd);
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(RenewContestError.NameConflict.class);
+        verify(contestRepo, never()).save(any());
     }
 }

@@ -22,4 +22,7 @@ public sealed interface RenewContestError {
     record NotRenewable(UUID contestId) implements RenewContestError {}
 
     record InvalidToCombination(String toCode) implements RenewContestError {}
+
+    /** The auto-generated renewed name collides with another contest this owner already has this season. */
+    record NameConflict(String name) implements RenewContestError {}
 }

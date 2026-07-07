@@ -46,5 +46,12 @@ public interface ContestRepo {
 
     Optional<Contest> findByJoinCode(String joinCode);
 
+    /**
+     * True if this owner already has another contest with this exact name in this season.
+     * {@code excludeContestId} lets a rename check against a contest's own current name without
+     * tripping on itself; pass null when checking a brand new contest.
+     */
+    boolean existsByOwnerSeasonAndName(UUID seasonId, UUID ownerId, String name, UUID excludeContestId);
+
     void delete(UUID contestId);
 }
