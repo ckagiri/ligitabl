@@ -140,7 +140,8 @@ class GetUserContestSummaryUseCaseTest {
                 .build();
         when(contestRepo.findPrivateByUserId(userId, seasonId)).thenReturn(List.of(contestA, contestB));
         when(contestSupport.deriveContestStatus(1, 10, currentRound, List.of())).thenReturn("FINISHED");
-        when(contestSupport.deriveContestStatus(11, 20, currentRound, List.of())).thenReturn("LIVE");
+        when(contestSupport.deriveContestStatus(11, 20, currentRound, List.of()))
+                .thenReturn("LIVE");
 
         var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
 

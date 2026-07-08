@@ -75,7 +75,9 @@ public final class PhaseRules {
         List<RoundSpan> sprints = sprintsOf(phases);
         int currentIdx =
                 sprintContaining(phases, currentPosition).map(sprints::indexOf).orElse(-1);
-        if (currentIdx >= 0 && currentIdx + 1 < sprints.size() && sprints.get(currentIdx + 1).getFrom() == from) {
+        if (currentIdx >= 0
+                && currentIdx + 1 < sprints.size()
+                && sprints.get(currentIdx + 1).getFrom() == from) {
             return "NEXT";
         }
         return "FUTURE";
