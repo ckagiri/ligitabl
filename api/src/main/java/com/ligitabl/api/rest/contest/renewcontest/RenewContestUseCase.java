@@ -88,8 +88,9 @@ public class RenewContestUseCase {
                     originalFrom, originalTo, currentRoundPosition, phases))
                 return Either.left(new RenewContestError.TooEarly(cmd.contestId()));
 
-            from = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases)
-                    .orElseThrow();
+            var renewalFrom = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases);
+            if (renewalFrom.isEmpty()) return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
+            from = renewalFrom.get();
             to = findByCode(ContestRenewalCalculator.resolveValidToOptions(from, phases), cmd.toSprintCode());
             targetSeasonId = season.getId();
         } else {
