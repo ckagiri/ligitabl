@@ -119,51 +119,11 @@ class GetUserContestSummaryUseCaseTest {
         when(entryRepo.countActiveByContestIds(any())).thenReturn(Map.of());
     }
 
-    /**
-     * Phases mirror a season's S1-S8 / Q1-Q4 structure, one round per sprint: S1=round1 ...
-     * S8=round8, Q1=S1+S2, Q2=S3+S4, Q3=S5+S6, Q4=S7+S8.
-     */
-    private static List<RoundSpan> buildPhases() {
-        List<RoundSpan> sprints = List.of(
-                sprint("S1", 1, 1),
-                sprint("S2", 2, 2),
-                sprint("S3", 3, 3),
-                sprint("S4", 4, 4),
-                sprint("S5", 5, 5),
-                sprint("S6", 6, 6),
-                sprint("S7", 7, 7),
-                sprint("S8", 8, 8));
-        List<RoundSpan> quarters =
-                List.of(quarter("Q1", 1, 2), quarter("Q2", 3, 4), quarter("Q3", 5, 6), quarter("Q4", 7, 8));
-        return java.util.stream.Stream.concat(sprints.stream(), quarters.stream())
-                .toList();
-    }
-
-    private static RoundSpan sprint(String code, int from, int to) {
-        return RoundSpan.builder()
-                .code(code)
-                .name(code)
-                .type(PhaseType.SPRINT)
-                .from(from)
-                .to(to)
-                .build();
-    }
-
-    private static RoundSpan quarter(String code, int from, int to) {
-        return RoundSpan.builder()
-                .code(code)
-                .name(code)
-                .type(PhaseType.QUARTER)
-                .from(from)
-                .to(to)
-                .build();
-    }
-
     @Test
     void ownedRenewableContest_timingMet_renewalVisibleAndEnabled() {
-        List<RoundSpan> phases = buildPhases();
+        List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
         competition.setPhases(phases);
-        currentRound.setPosition(8); // S8 — timing gate met for S6->S6
+        currentRound.setPosition(35); // S8 — timing gate met for S6->S6
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
@@ -175,12 +135,12 @@ class GetUserContestSummaryUseCaseTest {
                 .name("Office Rivals")
                 .isPrivate(true)
                 .isOpen(true)
-                .fromRoundPosition(6)
-                .toRoundPosition(6)
+                .fromRoundPosition(25)
+                .toRoundPosition(29)
                 .ownerId(userId)
                 .build();
         when(contestRepo.findPrivateByUserId(userId, seasonId)).thenReturn(List.of(contest));
-        when(contestSupport.deriveContestStatus(6, 6, currentRound, phases)).thenReturn("FINISHED");
+        when(contestSupport.deriveContestStatus(25, 29, currentRound, phases)).thenReturn("FINISHED");
 
         var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
 
@@ -194,9 +154,9 @@ class GetUserContestSummaryUseCaseTest {
 
     @Test
     void ownedRenewableContest_timingNotMet_renewalVisibleButDisabled() {
-        List<RoundSpan> phases = buildPhases();
+        List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
         competition.setPhases(phases);
-        currentRound.setPosition(6); // S6 — not yet 2 sprints past S6
+        currentRound.setPosition(26); // within S6 (25-29), before the timing threshold (27)
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
@@ -208,12 +168,12 @@ class GetUserContestSummaryUseCaseTest {
                 .name("Office Rivals")
                 .isPrivate(true)
                 .isOpen(true)
-                .fromRoundPosition(6)
-                .toRoundPosition(6)
+                .fromRoundPosition(25)
+                .toRoundPosition(29)
                 .ownerId(userId)
                 .build();
         when(contestRepo.findPrivateByUserId(userId, seasonId)).thenReturn(List.of(contest));
-        when(contestSupport.deriveContestStatus(6, 6, currentRound, phases)).thenReturn("LIVE");
+        when(contestSupport.deriveContestStatus(25, 29, currentRound, phases)).thenReturn("LIVE");
 
         var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
 
@@ -224,9 +184,9 @@ class GetUserContestSummaryUseCaseTest {
 
     @Test
     void nonOwnedContest_renewalHidden() {
-        List<RoundSpan> phases = buildPhases();
+        List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
         competition.setPhases(phases);
-        currentRound.setPosition(8);
+        currentRound.setPosition(35);
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
@@ -238,12 +198,12 @@ class GetUserContestSummaryUseCaseTest {
                 .name("Office Rivals")
                 .isPrivate(true)
                 .isOpen(true)
-                .fromRoundPosition(6)
-                .toRoundPosition(6)
+                .fromRoundPosition(25)
+                .toRoundPosition(29)
                 .ownerId(UUID.randomUUID())
                 .build();
         when(contestRepo.findPrivateByUserId(userId, seasonId)).thenReturn(List.of(contest));
-        when(contestSupport.deriveContestStatus(6, 6, currentRound, phases)).thenReturn("FINISHED");
+        when(contestSupport.deriveContestStatus(25, 29, currentRound, phases)).thenReturn("FINISHED");
 
         var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
 
@@ -252,9 +212,9 @@ class GetUserContestSummaryUseCaseTest {
 
     @Test
     void alreadyRenewedContest_renewalHidden() {
-        List<RoundSpan> phases = buildPhases();
+        List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
         competition.setPhases(phases);
-        currentRound.setPosition(8);
+        currentRound.setPosition(35);
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
@@ -266,13 +226,13 @@ class GetUserContestSummaryUseCaseTest {
                 .name("Office Rivals")
                 .isPrivate(true)
                 .isOpen(true)
-                .fromRoundPosition(6)
-                .toRoundPosition(6)
+                .fromRoundPosition(25)
+                .toRoundPosition(29)
                 .ownerId(userId)
                 .renewedIntoContestId(UUID.randomUUID())
                 .build();
         when(contestRepo.findPrivateByUserId(userId, seasonId)).thenReturn(List.of(contest));
-        when(contestSupport.deriveContestStatus(6, 6, currentRound, phases)).thenReturn("FINISHED");
+        when(contestSupport.deriveContestStatus(25, 29, currentRound, phases)).thenReturn("FINISHED");
 
         var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
 
