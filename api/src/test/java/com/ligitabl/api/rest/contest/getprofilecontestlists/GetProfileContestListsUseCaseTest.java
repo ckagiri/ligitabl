@@ -2,7 +2,8 @@ package com.ligitabl.api.rest.contest.getprofilecontestlists;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.when;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.*;
 
 import java.util.List;
 import java.util.Map;
@@ -17,10 +18,16 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
+import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.PhaseType;
+import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundSpan;
+import com.ligitabl.model.domain.RoundStatus;
+import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.SeasonSlug;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
@@ -48,6 +55,12 @@ class GetProfileContestListsUseCaseTest {
     @Mock
     ContestRankResolver contestRankResolver;
 
+    @Mock
+    ContestSupport contestSupport;
+
+    @Mock
+    RoundSupport roundSupport;
+
     private GetProfileContestListsUseCase useCase;
     private UUID userId;
     private UUID seasonId;
@@ -56,7 +69,14 @@ class GetProfileContestListsUseCaseTest {
     void setUp() {
         CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
         useCase = new GetProfileContestListsUseCase(
-                competitionDefaults, competitionRepo, seasonRepo, contestRepo, entryRepo, contestRankResolver);
+                competitionDefaults,
+                competitionRepo,
+                seasonRepo,
+                contestRepo,
+                entryRepo,
+                contestRankResolver,
+                contestSupport,
+                roundSupport);
 
         userId = UUID.randomUUID();
         seasonId = UUID.randomUUID();
@@ -138,5 +158,51 @@ class GetProfileContestListsUseCaseTest {
         var result = useCase.execute(new GetProfileContestListsQuery(userId, 1, 1));
 
         assertThat(result.activeContests().get(0).periodLabel()).isEqualTo("S3");
+    }
+
+    @Test
+    void activeTab_multiplePrivateContests_resolveRoundStatusOnce_andOverrideJoinWindowClosed() {
+        Season activeSeason = Season.builder()
+                .id(seasonId)
+                .competitionId(UUID.randomUUID())
+                .currentRoundId(UUID.randomUUID())
+                .name("2026/27")
+                .slug(SeasonSlug.of("2026-27"))
+                .clientId(1)
+                .maxRounds(20)
+                .totalTeams(12)
+                .build();
+        Round currentRound = Round.builder()
+                .id(activeSeason.getCurrentRoundId())
+                .seasonId(seasonId)
+                .position(20)
+                .name("Round 20")
+                .slug("round-20")
+                .build();
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(activeSeason));
+        when(roundSupport.resolveCurrentRound(activeSeason)).thenReturn(currentRound);
+        when(roundSupport.resolveStatus(currentRound)).thenReturn(RoundStatus.LOCKED);
+
+        // Two private, still-toggled-open contests on the active tab: one whose join window has
+        // already closed (isOpenForJoining → false), one still joinable.
+        when(contestRepo.countContestsByUserId(userId, seasonId, true)).thenReturn(2);
+        when(contestRepo.countContestsByUserId(userId, seasonId, false)).thenReturn(0);
+        when(contestRepo.findContestsByUserId(userId, seasonId, true, 10, 0))
+                .thenReturn(List.of(view(3, 3), view(4, 4)));
+        when(contestRepo.findContestsByUserId(userId, seasonId, false, 10, 0)).thenReturn(List.of());
+
+        when(contestSupport.isOpenForJoining(eq(true), eq(3), eq(currentRound), any(), eq(RoundStatus.LOCKED)))
+                .thenReturn(false);
+        when(contestSupport.isOpenForJoining(eq(true), eq(4), eq(currentRound), any(), eq(RoundStatus.LOCKED)))
+                .thenReturn(true);
+
+        var result = useCase.execute(new GetProfileContestListsQuery(userId, 1, 1));
+
+        assertThat(result.activeContests()).hasSize(2);
+        assertThat(result.activeContests().get(0).isOpen()).isFalse();
+        assertThat(result.activeContests().get(1).isOpen()).isTrue();
+
+        // The whole point of resolving round status once per list build: two rows, one fetch.
+        verify(roundSupport, times(1)).resolveStatus(currentRound);
     }
 }

@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.contest.ContestCodeGenerator;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 
@@ -32,7 +33,7 @@ class CreatePrivateContestUseCaseTest {
     RoundRepo roundRepo;
 
     @Mock
-    MatchRepo matchRepo;
+    RoundSupport roundSupport;
 
     @Mock
     ContestRepo contestRepo;
@@ -63,7 +64,7 @@ class CreatePrivateContestUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new CreatePrivateContestUseCase(
-                competitionRepo, seasonRepo, roundRepo, matchRepo, contestRepo, entryRepo, codeGenerator);
+                competitionRepo, seasonRepo, roundRepo, roundSupport, contestRepo, entryRepo, codeGenerator);
 
         userId = UUID.randomUUID();
         competitionId = UUID.randomUUID();
@@ -147,7 +148,7 @@ class CreatePrivateContestUseCaseTest {
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
-        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(scheduledMatch()));
+        when(roundSupport.resolveStatus(currentRound)).thenReturn(RoundStatus.OPEN);
         when(contestRepo.findPrivateByUserId(userId)).thenReturn(List.of());
         when(contestRepo.findByJoinCode(any())).thenReturn(Optional.empty());
         when(codeGenerator.generate()).thenReturn(CODE);
@@ -185,7 +186,7 @@ class CreatePrivateContestUseCaseTest {
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
-        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(scheduledMatch()));
+        when(roundSupport.resolveStatus(currentRound)).thenReturn(RoundStatus.OPEN);
         when(contestRepo.findPrivateByUserId(userId)).thenReturn(List.of());
         when(contestRepo.findByJoinCode(any())).thenReturn(Optional.empty());
         when(codeGenerator.generate()).thenReturn(CODE);
@@ -243,21 +244,10 @@ class CreatePrivateContestUseCaseTest {
     @Test
     void fromSprintCurrentRoundLocked_returnsInvalidFromSprintError() {
         // Current round is round 1 (at sprint start) but round is LOCKED
-        Match lockedMatch = Match.builder()
-                .id(UUID.randomUUID())
-                .clientId(1)
-                .seasonId(seasonId)
-                .roundId(roundId)
-                .homeTeamId(UUID.randomUUID())
-                .awayTeamId(UUID.randomUUID())
-                .slug("h-v-a")
-                .status(MatchStatus.LIVE)
-                .kickOff(java.time.OffsetDateTime.now().minusMinutes(30))
-                .build();
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
-        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(lockedMatch));
+        when(roundSupport.resolveStatus(currentRound)).thenReturn(RoundStatus.LOCKED);
 
         var cmd = new CreatePrivateContestCommand(userId, "Contest", null, "S1", "S1", SLUG);
         var result = useCase.execute(cmd);
@@ -292,7 +282,7 @@ class CreatePrivateContestUseCaseTest {
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
-        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(scheduledMatch()));
+        when(roundSupport.resolveStatus(currentRound)).thenReturn(RoundStatus.OPEN);
 
         // S1 → S3: S3 is not a quarter-end (Q1 ends at S2, Q2 ends at S4)
         var cmd = new CreatePrivateContestCommand(userId, "Contest", null, "S1", "S3", SLUG);
@@ -329,7 +319,7 @@ class CreatePrivateContestUseCaseTest {
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
-        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(scheduledMatch()));
+        when(roundSupport.resolveStatus(currentRound)).thenReturn(RoundStatus.OPEN);
 
         List<Contest> twentyContests = java.util.Collections.nCopies(
                 20, Contest.builder().seasonId(seasonId).name("x").build());
@@ -347,7 +337,7 @@ class CreatePrivateContestUseCaseTest {
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
-        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(scheduledMatch()));
+        when(roundSupport.resolveStatus(currentRound)).thenReturn(RoundStatus.OPEN);
         when(contestRepo.findPrivateByUserId(userId)).thenReturn(List.of());
 
         Contest existing = Contest.builder()
@@ -381,19 +371,5 @@ class CreatePrivateContestUseCaseTest {
 
         assertThat(result.isLeft()).isTrue();
         assertThat(result.getLeft()).isInstanceOf(CreatePrivateContestError.CompetitionNotFound.class);
-    }
-
-    private Match scheduledMatch() {
-        return Match.builder()
-                .id(UUID.randomUUID())
-                .clientId(1)
-                .seasonId(seasonId)
-                .roundId(roundId)
-                .homeTeamId(UUID.randomUUID())
-                .awayTeamId(UUID.randomUUID())
-                .slug("h-v-a")
-                .status(MatchStatus.SCHEDULED)
-                .kickOff(java.time.OffsetDateTime.now().plusHours(1))
-                .build();
     }
 }

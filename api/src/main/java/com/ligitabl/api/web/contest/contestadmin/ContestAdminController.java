@@ -18,7 +18,7 @@ import com.ligitabl.api.rest.contest.renewcontest.RenewContestCommand;
 import com.ligitabl.api.rest.contest.renewcontest.RenewContestError;
 import com.ligitabl.api.rest.contest.renewcontest.RenewContestUseCase;
 import com.ligitabl.api.rest.contest.togglecontestjoining.ToggleContestJoiningUseCase;
-import com.ligitabl.api.web.contest.shared.ContestSupport;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 
 import lombok.RequiredArgsConstructor;
@@ -36,7 +36,7 @@ public class ContestAdminController {
     private final LeavePrivateContestUseCase leavePrivateContestUseCase;
     private final DeleteContestUseCase deleteContestUseCase;
     private final RenewContestUseCase renewContestUseCase;
-    private final ContestSupport contestSupport;
+    private final RoundSupport roundSupport;
 
     @PostMapping("/{id}/toggle-joining")
     public String toggleJoining(@PathVariable UUID id, Principal principal) {
@@ -84,7 +84,7 @@ public class ContestAdminController {
         WebUserDetails user = WebSecurity.resolveUser(principal);
         if (user == null) return "redirect:/auth/login";
 
-        int currentRound = contestSupport.resolveCurrentRoundPosition();
+        int currentRound = roundSupport.resolveCurrentRoundPosition();
         return removeContestMemberUseCase
                 .execute(id, user.getUserId(), memberId, currentRound)
                 .fold(
@@ -100,7 +100,7 @@ public class ContestAdminController {
         WebUserDetails user = WebSecurity.resolveUser(principal);
         if (user == null) return "redirect:/auth/login";
 
-        int currentRound = contestSupport.resolveCurrentRoundPosition();
+        int currentRound = roundSupport.resolveCurrentRoundPosition();
         return leavePrivateContestUseCase
                 .execute(id, user.getUserId(), currentRound)
                 .fold(

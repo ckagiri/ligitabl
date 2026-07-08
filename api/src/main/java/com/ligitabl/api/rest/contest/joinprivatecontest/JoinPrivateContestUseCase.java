@@ -3,13 +3,13 @@ package com.ligitabl.api.rest.contest.joinprivatecontest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.contest.shared.ContestJoinWindow;
 import com.ligitabl.model.domain.Entry;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
-import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -30,7 +30,7 @@ public class JoinPrivateContestUseCase {
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
     private final CompetitionRepo competitionRepo;
-    private final MatchRepo matchRepo;
+    private final RoundSupport roundSupport;
 
     @Transactional
     public Either<JoinPrivateContestError, JoinPrivateContestResult> execute(JoinPrivateContestCommand cmd) {
@@ -74,7 +74,7 @@ public class JoinPrivateContestUseCase {
                 contest.getToRoundPosition(),
                 currentRound,
                 competition,
-                () -> matchRepo.findByRoundId(currentRound.getId()))) {
+                () -> roundSupport.resolveStatus(currentRound))) {
             return Either.left(new JoinPrivateContestError.JoinWindowClosed());
         }
 

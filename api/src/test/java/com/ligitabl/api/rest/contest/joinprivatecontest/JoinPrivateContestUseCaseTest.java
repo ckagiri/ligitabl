@@ -16,6 +16,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 
@@ -41,7 +42,7 @@ class JoinPrivateContestUseCaseTest {
     CompetitionRepo competitionRepo;
 
     @Mock
-    MatchRepo matchRepo;
+    RoundSupport roundSupport;
 
     private JoinPrivateContestUseCase useCase;
 
@@ -64,7 +65,7 @@ class JoinPrivateContestUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new JoinPrivateContestUseCase(
-                contestRepo, entryRepo, predictionRepo, seasonRepo, roundRepo, competitionRepo, matchRepo);
+                contestRepo, entryRepo, predictionRepo, seasonRepo, roundRepo, competitionRepo, roundSupport);
 
         userId = UUID.randomUUID();
         contestId = UUID.randomUUID();
@@ -359,7 +360,7 @@ class JoinPrivateContestUseCaseTest {
         when(predictionRepo.existsByUserAndSeason(userId, seasonId)).thenReturn(true);
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(openingRound));
         when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
-        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(scheduledMatch()));
+        when(roundSupport.resolveStatus(openingRound)).thenReturn(RoundStatus.OPEN);
         when(entryRepo.findByUserAndContest(userId, contestId)).thenReturn(Optional.empty());
         when(contestRepo.findPrivateByUserId(userId)).thenReturn(List.of());
         when(entryRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
@@ -367,19 +368,5 @@ class JoinPrivateContestUseCaseTest {
         var result = useCase.execute(new JoinPrivateContestCommand(userId, CODE));
 
         assertThat(result.isRight()).isTrue();
-    }
-
-    private Match scheduledMatch() {
-        return Match.builder()
-                .id(UUID.randomUUID())
-                .clientId(1)
-                .seasonId(seasonId)
-                .roundId(roundId)
-                .homeTeamId(UUID.randomUUID())
-                .awayTeamId(UUID.randomUUID())
-                .slug("h-v-a")
-                .status(MatchStatus.SCHEDULED)
-                .kickOff(OffsetDateTime.now().plusHours(1))
-                .build();
     }
 }
