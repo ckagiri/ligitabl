@@ -404,6 +404,35 @@ mvn -q -pl seed -am test
 make test-all
 ```
 
+### Sharing test fixtures across modules (model ↔ api)
+
+`model` publishes a `tests` classifier jar (via a `maven-jar-plugin` `test-jar` execution in
+`model/pom.xml`) so `api` tests can reuse test-only fixtures defined in `model/src/test/java`
+instead of duplicating them. `api/pom.xml` depends on it as:
+
+```xml
+<dependency>
+    <groupId>com.ligitabl</groupId>
+    <artifactId>ligitabl-model</artifactId>
+    <version>${project.version}</version>
+    <classifier>tests</classifier>
+    <scope>test</scope>
+</dependency>
+```
+
+Example: `CompetitionPhaseFixtures` (`model/src/test/java/com/ligitabl/model/domain/`) holds the
+Premier League's real phase structure (mirrors `seed/src/main/resources/seeding/competition.yaml`)
+and is reused by both `PhaseRulesTest` in `model` and several contest-renewal tests in `api`.
+
+**Caveat — this needs model to have reached `test-compile` at least once since the last clean.**
+Any reactor build whose requested phase is `test` or later (`mvn -pl api -am test`, `make
+test-api-core`, etc.) satisfies this itself, since `model` runs through its own `test-compile`
+first. But `compile`-only invocations — notably `make run-api-fast` / `run-api-fast-model` — never
+make `model` reach `test-compile`, so on a fresh checkout or right after `mvn clean` they'll fail
+with `Could not find artifact com.ligitabl:ligitabl-model:jar:tests`. If you hit that, run
+`mvn -pl model install` (or any full `test`/`install` build) once, or use `make
+run-api-fast-model`, which already does a full `install` of `model`.
+
 ## Migrations and resets
 
 We use Liquibase in the `model` module.

@@ -40,7 +40,9 @@ public class ContestPersistenceAdapter implements ContestRepo {
             contest.setId(UUID.randomUUID());
         }
 
-        dsl.insertInto(T_CONTEST)
+        // c_create_date/c_update_date are never set explicitly — DB default + BEFORE UPDATE
+        // trigger populate them, and .returning() reads them straight back onto the saved model.
+        var record = dsl.insertInto(T_CONTEST)
                 .set(T_CONTEST.PK_ID, contest.getId())
                 .set(T_CONTEST.FK_SEASON_ID, contest.getSeasonId())
                 .set(T_CONTEST.C_NAME, contest.getName())
@@ -64,7 +66,13 @@ public class ContestPersistenceAdapter implements ContestRepo {
                 .set(T_CONTEST.C_OWNER_ID, contest.getOwnerId())
                 .set(T_CONTEST.C_IS_OPEN, contest.isOpen())
                 .set(T_CONTEST.C_RENEWED_INTO_CONTEST_ID, contest.getRenewedIntoContestId())
-                .execute();
+                .returning(T_CONTEST.C_CREATE_DATE, T_CONTEST.C_UPDATE_DATE)
+                .fetchOne();
+
+        if (record != null) {
+            contest.setCreateDate(record.getCreateDate());
+            contest.setUpdateDate(record.getUpdateDate());
+        }
 
         return contest;
     }
@@ -280,6 +288,8 @@ public class ContestPersistenceAdapter implements ContestRepo {
                 .ownerId(record.getOwnerId())
                 .isOpen(Boolean.TRUE.equals(record.getIsOpen()))
                 .renewedIntoContestId(record.getRenewedIntoContestId())
+                .createDate(record.getCreateDate())
+                .updateDate(record.getUpdateDate())
                 .build();
     }
 }

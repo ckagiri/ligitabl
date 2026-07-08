@@ -2,6 +2,7 @@ package com.ligitabl.api.rest.contest.getusercontestsummary;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
@@ -116,6 +117,126 @@ class GetUserContestSummaryUseCaseTest {
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(matchRepo.groupRoundDateRangesBySeason(seasonId)).thenReturn(Map.of());
         when(entryRepo.countActiveByContestIds(any())).thenReturn(Map.of());
+    }
+
+    @Test
+    void ownedRenewableContest_timingMet_renewalVisibleAndEnabled() {
+        List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
+        competition.setPhases(phases);
+        currentRound.setPosition(35); // S8 — timing gate met for S6->S6
+        when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
+        when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
+                .thenReturn(ContestRankResolver.RankInfo.NONE);
+
+        Contest contest = Contest.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .name("Office Rivals")
+                .isPrivate(true)
+                .isOpen(true)
+                .fromRoundPosition(25)
+                .toRoundPosition(29)
+                .ownerId(userId)
+                .build();
+        when(contestRepo.findPrivateByUserId(userId, seasonId)).thenReturn(List.of(contest));
+        when(contestSupport.deriveContestStatus(25, 29, currentRound, phases)).thenReturn("FINISHED");
+
+        var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
+
+        var row = result.privateContests().get(0);
+        assertThat(row.renewVisible()).isTrue();
+        assertThat(row.renewEnabled()).isTrue();
+        assertThat(row.renewFromCode()).isEqualTo("S7");
+        assertThat(row.renewDefaultToCode()).isEqualTo("S7");
+        assertThat(row.renewToOptionCodes()).contains("S7", "S8");
+    }
+
+    @Test
+    void ownedRenewableContest_timingNotMet_renewalVisibleButDisabled() {
+        List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
+        competition.setPhases(phases);
+        currentRound.setPosition(26); // within S6 (25-29), before the timing threshold (27)
+        when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
+        when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
+                .thenReturn(ContestRankResolver.RankInfo.NONE);
+
+        Contest contest = Contest.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .name("Office Rivals")
+                .isPrivate(true)
+                .isOpen(true)
+                .fromRoundPosition(25)
+                .toRoundPosition(29)
+                .ownerId(userId)
+                .build();
+        when(contestRepo.findPrivateByUserId(userId, seasonId)).thenReturn(List.of(contest));
+        when(contestSupport.deriveContestStatus(25, 29, currentRound, phases)).thenReturn("LIVE");
+
+        var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
+
+        var row = result.privateContests().get(0);
+        assertThat(row.renewVisible()).isTrue();
+        assertThat(row.renewEnabled()).isFalse();
+    }
+
+    @Test
+    void nonOwnedContest_renewalHidden() {
+        List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
+        competition.setPhases(phases);
+        currentRound.setPosition(35);
+        when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
+        when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
+                .thenReturn(ContestRankResolver.RankInfo.NONE);
+
+        Contest contest = Contest.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .name("Office Rivals")
+                .isPrivate(true)
+                .isOpen(true)
+                .fromRoundPosition(25)
+                .toRoundPosition(29)
+                .ownerId(UUID.randomUUID())
+                .build();
+        when(contestRepo.findPrivateByUserId(userId, seasonId)).thenReturn(List.of(contest));
+        when(contestSupport.deriveContestStatus(25, 29, currentRound, phases)).thenReturn("FINISHED");
+
+        var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
+
+        assertThat(result.privateContests().get(0).renewVisible()).isFalse();
+    }
+
+    @Test
+    void alreadyRenewedContest_renewalHidden() {
+        List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
+        competition.setPhases(phases);
+        currentRound.setPosition(35);
+        when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
+        when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
+                .thenReturn(ContestRankResolver.RankInfo.NONE);
+
+        Contest contest = Contest.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .name("Office Rivals")
+                .isPrivate(true)
+                .isOpen(true)
+                .fromRoundPosition(25)
+                .toRoundPosition(29)
+                .ownerId(userId)
+                .renewedIntoContestId(UUID.randomUUID())
+                .build();
+        when(contestRepo.findPrivateByUserId(userId, seasonId)).thenReturn(List.of(contest));
+        when(contestSupport.deriveContestStatus(25, 29, currentRound, phases)).thenReturn("FINISHED");
+
+        var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
+
+        assertThat(result.privateContests().get(0).renewVisible()).isFalse();
     }
 
     @Test

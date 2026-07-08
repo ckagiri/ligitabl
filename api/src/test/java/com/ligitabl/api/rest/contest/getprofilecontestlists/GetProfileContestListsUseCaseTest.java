@@ -20,10 +20,9 @@ import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.Competition;
+import com.ligitabl.model.domain.CompetitionPhaseFixtures;
 import com.ligitabl.model.domain.CompetitionSlug;
-import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
 import com.ligitabl.model.repo.CompetitionRepo;
@@ -31,10 +30,7 @@ import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
-/**
- * Phases mirror a season's S1-S8 / Q1-Q4 structure, one round per sprint: S1=round1 ...
- * S8=round8, Q1=S1+S2, Q2=S3+S4, Q3=S5+S6, Q4=S7+S8.
- */
+/** Uses the real Premier League phase structure (see {@link CompetitionPhaseFixtures}). */
 @ExtendWith(MockitoExtension.class)
 class GetProfileContestListsUseCaseTest {
 
@@ -84,47 +80,11 @@ class GetProfileContestListsUseCaseTest {
                 .name("Premier League")
                 .slug(CompetitionSlug.of("premier-league"))
                 .code("PL")
-                .phases(buildPhases())
+                .phases(CompetitionPhaseFixtures.phases())
                 .build();
         when(competitionRepo.findBySlug("premier-league")).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.empty());
         when(entryRepo.countActiveByContestIds(any())).thenReturn(Map.of());
-    }
-
-    private static List<RoundSpan> buildPhases() {
-        List<RoundSpan> sprints = List.of(
-                sprint("S1", 1, 1),
-                sprint("S2", 2, 2),
-                sprint("S3", 3, 3),
-                sprint("S4", 4, 4),
-                sprint("S5", 5, 5),
-                sprint("S6", 6, 6),
-                sprint("S7", 7, 7),
-                sprint("S8", 8, 8));
-        List<RoundSpan> quarters =
-                List.of(quarter("Q1", 1, 2), quarter("Q2", 3, 4), quarter("Q3", 5, 6), quarter("Q4", 7, 8));
-        return java.util.stream.Stream.concat(sprints.stream(), quarters.stream())
-                .toList();
-    }
-
-    private static RoundSpan sprint(String code, int from, int to) {
-        return RoundSpan.builder()
-                .code(code)
-                .name(code)
-                .type(PhaseType.SPRINT)
-                .from(from)
-                .to(to)
-                .build();
-    }
-
-    private static RoundSpan quarter(String code, int from, int to) {
-        return RoundSpan.builder()
-                .code(code)
-                .name(code)
-                .type(PhaseType.QUARTER)
-                .from(from)
-                .to(to)
-                .build();
     }
 
     private ContestRepo.UserContestView view(int from, int to) {
@@ -136,7 +96,7 @@ class GetProfileContestListsUseCaseTest {
     void periodLabel_multiSprintWindow_appearsInSummary() {
         when(contestRepo.countContestsByUserId(userId, null, true)).thenReturn(1);
         when(contestRepo.countContestsByUserId(userId, null, false)).thenReturn(0);
-        when(contestRepo.findContestsByUserId(userId, null, true, 10, 0)).thenReturn(List.of(view(3, 6))); // Q2-3
+        when(contestRepo.findContestsByUserId(userId, null, true, 10, 0)).thenReturn(List.of(view(10, 29))); // Q2-3
         when(contestRepo.findContestsByUserId(userId, null, false, 10, 0)).thenReturn(List.of());
 
         var result = useCase.execute(new GetProfileContestListsQuery(userId, 1, 1));
@@ -150,7 +110,7 @@ class GetProfileContestListsUseCaseTest {
     void periodLabel_singleSprintWindow_isSprintCode() {
         when(contestRepo.countContestsByUserId(userId, null, true)).thenReturn(1);
         when(contestRepo.countContestsByUserId(userId, null, false)).thenReturn(0);
-        when(contestRepo.findContestsByUserId(userId, null, true, 10, 0)).thenReturn(List.of(view(3, 3))); // S3
+        when(contestRepo.findContestsByUserId(userId, null, true, 10, 0)).thenReturn(List.of(view(10, 14))); // S3
         when(contestRepo.findContestsByUserId(userId, null, false, 10, 0)).thenReturn(List.of());
 
         var result = useCase.execute(new GetProfileContestListsQuery(userId, 1, 1));
@@ -188,9 +148,9 @@ class GetProfileContestListsUseCaseTest {
                 .thenReturn(List.of(view(3, 3), view(15, 20)));
         when(contestRepo.findContestsByUserId(userId, seasonId, false, 10, 0)).thenReturn(List.of());
 
-        when(contestSupport.deriveContestStatus(3, 3, currentRound, buildPhases()))
+        when(contestSupport.deriveContestStatus(3, 3, currentRound, CompetitionPhaseFixtures.phases()))
                 .thenReturn("FINISHED");
-        when(contestSupport.deriveContestStatus(15, 20, currentRound, buildPhases()))
+        when(contestSupport.deriveContestStatus(15, 20, currentRound, CompetitionPhaseFixtures.phases()))
                 .thenReturn("LIVE");
 
         var result = useCase.execute(new GetProfileContestListsQuery(userId, 1, 1));

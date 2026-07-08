@@ -1,64 +1,19 @@
 package com.ligitabl.api.web.contest.shared;
 
+import static com.ligitabl.model.domain.CompetitionPhaseFixtures.s;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
 
 import org.junit.jupiter.api.Test;
 
-import com.ligitabl.model.domain.PhaseType;
+import com.ligitabl.model.domain.CompetitionPhaseFixtures;
 import com.ligitabl.model.domain.RoundSpan;
 
-/**
- * Phases mirror a season's S1-S8 / Q1-Q4 structure, with one round per sprint for compactness:
- * S1=round1 ... S8=round8, Q1=S1+S2, Q2=S3+S4, Q3=S5+S6, Q4=S7+S8.
- */
+/** Uses the real Premier League phase structure (see {@link CompetitionPhaseFixtures}). */
 class ContestRenewalCalculatorTest {
 
-    private final List<RoundSpan> phases = buildPhases();
-    private final Map<String, RoundSpan> byCode = phases.stream().collect(Collectors.toMap(RoundSpan::getCode, s -> s));
-
-    private static List<RoundSpan> buildPhases() {
-        List<RoundSpan> sprints = List.of(
-                sprint("S1", 1, 1),
-                sprint("S2", 2, 2),
-                sprint("S3", 3, 3),
-                sprint("S4", 4, 4),
-                sprint("S5", 5, 5),
-                sprint("S6", 6, 6),
-                sprint("S7", 7, 7),
-                sprint("S8", 8, 8));
-        List<RoundSpan> quarters =
-                List.of(quarter("Q1", 1, 2), quarter("Q2", 3, 4), quarter("Q3", 5, 6), quarter("Q4", 7, 8));
-        return java.util.stream.Stream.concat(sprints.stream(), quarters.stream())
-                .toList();
-    }
-
-    private static RoundSpan sprint(String code, int from, int to) {
-        return RoundSpan.builder()
-                .code(code)
-                .name(code)
-                .type(PhaseType.SPRINT)
-                .from(from)
-                .to(to)
-                .build();
-    }
-
-    private static RoundSpan quarter(String code, int from, int to) {
-        return RoundSpan.builder()
-                .code(code)
-                .name(code)
-                .type(PhaseType.QUARTER)
-                .from(from)
-                .to(to)
-                .build();
-    }
-
-    private RoundSpan s(String code) {
-        return byCode.get(code);
-    }
+    private final List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
 
     // ---- Section 4: Default TO — Combined Rule ----
 
@@ -244,82 +199,67 @@ class ContestRenewalCalculatorTest {
 
     @Test
     void timingGate_multiSprint_beforeFinalLeg_false() {
-        // original = S1-S2 (Q1), current round is S1 — final leg (S2) not underway yet
+        // original = S1-S2 (Q1, GW1-9), current round is GW1 (within S1) — final leg (S2,
+        // GW5-9) not underway yet
         assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S1"), s("S2"), 1, phases))
                 .isFalse();
     }
 
     @Test
     void timingGate_multiSprint_finalLegUnderway_true() {
-        // original = S1-S2 (Q1), current round is S2 — its own final sprint has begun
-        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S1"), s("S2"), 2, phases))
+        // original = S1-S2 (Q1), current round is GW5 — S2 (its own final sprint) has begun
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S1"), s("S2"), 5, phases))
                 .isTrue();
     }
 
     @Test
     void timingGate_multiSprint_afterFinalLeg_true() {
-        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S1"), s("S2"), 3, phases))
+        // current round is GW10, into S3 — well after S2 (the final leg) began
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S1"), s("S2"), 10, phases))
                 .isTrue();
     }
 
-    // ---- Single-sprint timing gate against realistic multi-round sprints ----
+    // ---- Single-sprint timing gate against real multi-round sprints ----
     //
-    // The fixture above uses one round per sprint, which masks a bug: comparing sprint
-    // *indices* happens to equal comparing round *positions* only when each sprint is exactly
-    // one round long. Real sprints span several rounds (e.g. S1 = GW1-4), so the gate must
-    // compare round positions directly, not jump forward by whole sprints.
-
-    private static List<RoundSpan> buildRealisticPhases() {
-        List<RoundSpan> sprints = List.of(sprint("S1", 1, 4), sprint("S2", 5, 9), sprint("S3", 10, 13));
-        return List.copyOf(sprints);
-    }
+    // Comparing sprint *indices* would only equal comparing round *positions* if every sprint
+    // were exactly one round long — real sprints span several rounds (e.g. S1 = GW1-4), so the
+    // gate must compare round positions directly, not jump forward by whole sprints.
 
     @Test
-    void timingGate_singleSprint_realisticRounds_s1Gw1ToGw2_false() {
-        List<RoundSpan> realistic = buildRealisticPhases();
-        RoundSpan s1 = realistic.get(0);
-        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s1, s1, 1, realistic))
+    void timingGate_singleSprint_s1Gw1ToGw2_false() {
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S1"), s("S1"), 1, phases))
                 .isFalse();
-        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s1, s1, 2, realistic))
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S1"), s("S1"), 2, phases))
                 .isFalse();
     }
 
     @Test
-    void timingGate_singleSprint_realisticRounds_s1Gw3_true() {
+    void timingGate_singleSprint_s1Gw3_true() {
         // S1 = GW1-4: renewable once the round is 2 rounds after S1's start, i.e. GW3.
-        List<RoundSpan> realistic = buildRealisticPhases();
-        RoundSpan s1 = realistic.get(0);
-        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s1, s1, 3, realistic))
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S1"), s("S1"), 3, phases))
                 .isTrue();
     }
 
     @Test
-    void timingGate_singleSprint_realisticRounds_s2Gw5ToGw6_false() {
-        List<RoundSpan> realistic = buildRealisticPhases();
-        RoundSpan s2 = realistic.get(1);
-        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s2, s2, 5, realistic))
+    void timingGate_singleSprint_s2Gw5ToGw6_false() {
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S2"), s("S2"), 5, phases))
                 .isFalse();
-        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s2, s2, 6, realistic))
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S2"), s("S2"), 6, phases))
                 .isFalse();
     }
 
     @Test
-    void timingGate_singleSprint_realisticRounds_s2Gw7_true() {
+    void timingGate_singleSprint_s2Gw7_true() {
         // S2 = GW5-9: renewable once the round is 2 rounds after S2's start, i.e. GW7.
-        List<RoundSpan> realistic = buildRealisticPhases();
-        RoundSpan s2 = realistic.get(1);
-        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s2, s2, 7, realistic))
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S2"), s("S2"), 7, phases))
                 .isTrue();
     }
 
     @Test
-    void timingGate_multiSprint_realisticRounds_lastSprintLive_true() {
-        // Contest window S1-S2 (GW1-9, i.e. a full quarter). Current round 7 falls within S2
+    void timingGate_multiSprint_lastSprintLive_true() {
+        // Contest window S1-S2 (GW1-9, i.e. all of Q1). Current round 7 falls within S2
         // (GW5-9), the contest's own last sprint, so renewal should already be enabled.
-        List<RoundSpan> realistic = buildRealisticPhases();
-        RoundSpan s1 = realistic.get(0);
-        RoundSpan s2 = realistic.get(1);
-        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s1, s2, 7, realistic))
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S1"), s("S2"), 7, phases))
                 .isTrue();
     }
 

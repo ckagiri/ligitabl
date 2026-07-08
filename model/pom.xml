@@ -210,6 +210,19 @@
                     <groups>!integration</groups>
                 </configuration>
             </plugin>
+            <plugin>
+                <!-- Publishes a tests-classifier jar so other modules (e.g. api) can reuse
+                     test-only fixtures like CompetitionPhaseFixtures instead of duplicating them. -->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-jar-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>test-jar</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 

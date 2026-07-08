@@ -19,10 +19,7 @@ import com.ligitabl.api.contest.ContestCodeGenerator;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 
-/**
- * Phases mirror a season's S1-S8 / Q1-Q4 structure, one round per sprint: S1=round1 ...
- * S8=round8, Q1=S1+S2, Q2=S3+S4, Q3=S5+S6, Q4=S7+S8.
- */
+/** Uses the real Premier League phase structure (see {@link CompetitionPhaseFixtures}). */
 @ExtendWith(MockitoExtension.class)
 class RenewContestUseCaseTest {
 
@@ -65,7 +62,7 @@ class RenewContestUseCaseTest {
         competitionId = UUID.randomUUID();
         seasonId = UUID.randomUUID();
         currentRoundId = UUID.randomUUID();
-        phases = buildPhases();
+        phases = CompetitionPhaseFixtures.phases();
 
         competition = Competition.builder()
                 .id(competitionId)
@@ -81,7 +78,7 @@ class RenewContestUseCaseTest {
                 .name("2025/26")
                 .slug(SeasonSlug.of("2025-26"))
                 .clientId(1)
-                .maxRounds(8)
+                .maxRounds(38)
                 .currentRoundId(currentRoundId)
                 .build();
     }
@@ -89,42 +86,6 @@ class RenewContestUseCaseTest {
     /** Stubs the current round position, used to satisfy the current-season renewal timing gate. */
     private void stubCurrentRoundPosition(int position) {
         when(roundRepo.findPosition(currentRoundId)).thenReturn(position);
-    }
-
-    private static List<RoundSpan> buildPhases() {
-        List<RoundSpan> sprints = List.of(
-                sprint("S1", 1, 1),
-                sprint("S2", 2, 2),
-                sprint("S3", 3, 3),
-                sprint("S4", 4, 4),
-                sprint("S5", 5, 5),
-                sprint("S6", 6, 6),
-                sprint("S7", 7, 7),
-                sprint("S8", 8, 8));
-        List<RoundSpan> quarters =
-                List.of(quarter("Q1", 1, 2), quarter("Q2", 3, 4), quarter("Q3", 5, 6), quarter("Q4", 7, 8));
-        return java.util.stream.Stream.concat(sprints.stream(), quarters.stream())
-                .toList();
-    }
-
-    private static RoundSpan sprint(String code, int from, int to) {
-        return RoundSpan.builder()
-                .code(code)
-                .name(code)
-                .type(PhaseType.SPRINT)
-                .from(from)
-                .to(to)
-                .build();
-    }
-
-    private static RoundSpan quarter(String code, int from, int to) {
-        return RoundSpan.builder()
-                .code(code)
-                .name(code)
-                .type(PhaseType.QUARTER)
-                .from(from)
-                .to(to)
-                .build();
     }
 
     private Contest originalContest(int fromRoundPosition, int toRoundPosition) {
@@ -150,10 +111,10 @@ class RenewContestUseCaseTest {
 
     @Test
     void happyPath_singleSprint_savesRenewedContestAndCopiesActiveMembers() {
-        Contest original = originalContest(6, 6); // S6 -> S6
+        Contest original = originalContest(25, 29); // S6 -> S6
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         stubActiveSeasonSameAsContest();
-        stubCurrentRoundPosition(8); // S8 — 2 sprints past the original's own sprint (S6), timing gate met
+        stubCurrentRoundPosition(35); // S8 — 2 sprints past the original's own sprint (S6), timing gate met
         when(contestRepo.findByJoinCode(any())).thenReturn(Optional.empty());
         when(codeGenerator.generate()).thenReturn(CODE);
 
@@ -172,8 +133,8 @@ class RenewContestUseCaseTest {
         ArgumentCaptor<Contest> contestCaptor = ArgumentCaptor.forClass(Contest.class);
         verify(contestRepo, times(2)).save(contestCaptor.capture());
         Contest savedRenewed = contestCaptor.getAllValues().get(0);
-        assertThat(savedRenewed.getFromRoundPosition()).isEqualTo(7);
-        assertThat(savedRenewed.getToRoundPosition()).isEqualTo(7);
+        assertThat(savedRenewed.getFromRoundPosition()).isEqualTo(30);
+        assertThat(savedRenewed.getToRoundPosition()).isEqualTo(34);
         assertThat(savedRenewed.getName()).isEqualTo("Office Rivals");
         assertThat(savedRenewed.isOpen()).isTrue();
         assertThat(savedRenewed.getMaxEntries()).isEqualTo(10);
@@ -188,7 +149,7 @@ class RenewContestUseCaseTest {
 
     @Test
     void notOwner_returnsError() {
-        Contest original = originalContest(1, 2);
+        Contest original = originalContest(1, 9);
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
 
         var cmd = new RenewContestCommand(UUID.randomUUID(), original.getId(), "S3");
@@ -200,7 +161,7 @@ class RenewContestUseCaseTest {
 
     @Test
     void notPrivate_returnsError() {
-        Contest original = originalContest(1, 2);
+        Contest original = originalContest(1, 9);
         original.setPrivate(false);
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
 
@@ -213,10 +174,10 @@ class RenewContestUseCaseTest {
 
     @Test
     void tooEarly_currentSeason_singleSprint_returnsError() {
-        Contest original = originalContest(1, 1); // S1 -> S1
+        Contest original = originalContest(1, 4); // S1 -> S1
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         stubActiveSeasonSameAsContest();
-        stubCurrentRoundPosition(2); // S2 — only 1 sprint past the original, timing gate not yet met
+        stubCurrentRoundPosition(2); // GW2 — one round short of the GW3 timing threshold (S1.from + 2)
 
         var cmd = new RenewContestCommand(userId, original.getId(), "S2");
         var result = useCase.execute(cmd);
@@ -227,10 +188,10 @@ class RenewContestUseCaseTest {
 
     @Test
     void tooEarly_currentSeason_multiSprint_returnsError() {
-        Contest original = originalContest(1, 2); // S1 -> S2 (Q1), its own last sprint is S2
+        Contest original = originalContest(1, 9); // S1 -> S2 (Q1), its own last sprint is S2
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         stubActiveSeasonSameAsContest();
-        stubCurrentRoundPosition(1); // S1 — final leg (S2) not underway yet
+        stubCurrentRoundPosition(1); // GW1, within S1 — final leg (S2, GW5-9) not underway yet
 
         var cmd = new RenewContestCommand(userId, original.getId(), "S3");
         var result = useCase.execute(cmd);
@@ -241,7 +202,7 @@ class RenewContestUseCaseTest {
 
     @Test
     void alreadyRenewed_returnsError() {
-        Contest original = originalContest(1, 2);
+        Contest original = originalContest(1, 9);
         original.setRenewedIntoContestId(UUID.randomUUID());
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
 
@@ -254,7 +215,7 @@ class RenewContestUseCaseTest {
 
     @Test
     void fullSeason_returnsNotRenewable() {
-        Contest original = originalContest(1, 8); // S1 -> S8
+        Contest original = originalContest(1, 38); // S1 -> S8
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         stubActiveSeasonSameAsContest();
 
@@ -267,7 +228,7 @@ class RenewContestUseCaseTest {
 
     @Test
     void pastSeason_noActiveSeason_returnsNotRenewable() {
-        Contest original = originalContest(1, 2);
+        Contest original = originalContest(1, 9);
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
@@ -282,7 +243,7 @@ class RenewContestUseCaseTest {
 
     @Test
     void pastSeason_partialOriginal_defaultsToEndOfQ1_savesIntoActiveSeason() {
-        Contest original = originalContest(7, 8); // S7 -> S8 (Q4) in the past season
+        Contest original = originalContest(30, 38); // S7 -> S8 (Q4) in the past season
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
@@ -310,12 +271,12 @@ class RenewContestUseCaseTest {
         Contest savedRenewed = captor.getAllValues().get(0);
         assertThat(savedRenewed.getSeasonId()).isEqualTo(activeSeason.getId());
         assertThat(savedRenewed.getFromRoundPosition()).isEqualTo(1);
-        assertThat(savedRenewed.getToRoundPosition()).isEqualTo(2);
+        assertThat(savedRenewed.getToRoundPosition()).isEqualTo(9);
     }
 
     @Test
     void pastSeason_fullSeasonOriginal_onlyS8IsValidTo() {
-        Contest original = originalContest(1, 8); // S1 -> S8 full season in the past season
+        Contest original = originalContest(1, 38); // S1 -> S8 full season in the past season
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
@@ -336,7 +297,7 @@ class RenewContestUseCaseTest {
 
     @Test
     void pastSeason_fullSeasonOriginal_s8IsAccepted() {
-        Contest original = originalContest(1, 8);
+        Contest original = originalContest(1, 38);
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
@@ -362,12 +323,12 @@ class RenewContestUseCaseTest {
         verify(contestRepo, times(2)).save(captor.capture());
         Contest savedRenewed = captor.getAllValues().get(0);
         assertThat(savedRenewed.getFromRoundPosition()).isEqualTo(1);
-        assertThat(savedRenewed.getToRoundPosition()).isEqualTo(8);
+        assertThat(savedRenewed.getToRoundPosition()).isEqualTo(38);
     }
 
     @Test
     void endOfSeason_noSprintRemains_returnsNotRenewable() {
-        Contest original = originalContest(7, 8); // S7 -> S8, Q4
+        Contest original = originalContest(30, 38); // S7 -> S8, Q4
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         stubActiveSeasonSameAsContest();
 
@@ -380,10 +341,10 @@ class RenewContestUseCaseTest {
 
     @Test
     void invalidToCombination_returnsError() {
-        Contest original = originalContest(1, 1); // S1 -> S1, from = S2
+        Contest original = originalContest(1, 4); // S1 -> S1, from = S2
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         stubActiveSeasonSameAsContest();
-        stubCurrentRoundPosition(3); // S3 — 2 sprints past the original's own sprint (S1), timing gate met
+        stubCurrentRoundPosition(3); // GW3 — meets the GW3 timing threshold (S1.from + 2)
 
         // S3 is not a valid TO for FROM=S2 (not S2 itself and not a quarter-end reachable from S2)
         var cmd = new RenewContestCommand(userId, original.getId(), "S3");
@@ -407,10 +368,10 @@ class RenewContestUseCaseTest {
 
     @Test
     void codeCollisionRetry_secondCodeIsSaved() {
-        Contest original = originalContest(6, 6);
+        Contest original = originalContest(25, 29);
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         stubActiveSeasonSameAsContest();
-        stubCurrentRoundPosition(8);
+        stubCurrentRoundPosition(35);
 
         Contest existing = Contest.builder()
                 .id(UUID.randomUUID())
@@ -436,11 +397,11 @@ class RenewContestUseCaseTest {
     @Test
     void nameConflict_ownerAlreadyHasContestWithRenewedName_returnsError() {
         // Owner already has another contest named "Office Rivals" occupying S7 in this season.
-        Contest original = originalContest(6, 6); // S6 -> S6, renews to S7
+        Contest original = originalContest(25, 29); // S6 -> S6, renews to S7
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         stubActiveSeasonSameAsContest();
-        stubCurrentRoundPosition(8);
-        when(contestRepo.existsByOwnerSeasonPeriodAndName(seasonId, userId, 7, 7, "Office Rivals", null))
+        stubCurrentRoundPosition(35);
+        when(contestRepo.existsByOwnerSeasonPeriodAndName(seasonId, userId, 30, 34, "Office Rivals", null))
                 .thenReturn(true);
 
         var cmd = new RenewContestCommand(userId, original.getId(), "S7");

@@ -117,13 +117,13 @@ window.contestCreator = function () {
   };
 };
 
-window.contestRenewal = function () {
-  const d = window.__contestRenewalData || {};
+window.contestRenewal = function (data) {
+  const d = data || window.__contestRenewalData || {};
   return {
     contestId:         d.contestId || '',
     contestName:        d.contestName || '',
-    sprints:            d.sprints || [],
-    quarters:           d.quarters || [],
+    sprints:            d.sprints || window.__renewalSprints || [],
+    quarters:           d.quarters || window.__renewalQuarters || [],
     fromCode:           d.fromCode || '',
     defaultToCode:      d.defaultToCode || '',
     toOptionCodes:      d.toOptionCodes || [],

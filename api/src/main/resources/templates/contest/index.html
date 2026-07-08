@@ -171,6 +171,7 @@
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GW</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
+                    <th th:if="${showRenewColumn}" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renew</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -203,19 +204,6 @@
                           th:if="${row.status == 'FINISHED'}"
                           class="inline-flex items-center px-1 py-0 rounded text-[10px] leading-4 font-medium bg-gray-100 text-gray-600"
                         >Finished</span>
-                        <!-- Admin's join-toggle, distinct from the status badge above (owner only) -->
-                        <th:block th:if="${row.isOwner}">
-                          <span
-                            th:if="${row.isJoiningOpen}"
-                            title="Your join-toggle setting — separate from whether this contest's scoring window has ended"
-                            class="inline-flex items-center px-1 py-0 rounded text-[10px] leading-4 font-medium bg-blue-100 text-blue-700"
-                          >Joining On</span>
-                          <span
-                            th:unless="${row.isJoiningOpen}"
-                            title="Your join-toggle setting — separate from whether this contest's scoring window has ended"
-                            class="inline-flex items-center px-1 py-0 rounded text-[10px] leading-4 font-medium bg-gray-100 text-gray-500"
-                          >Joining Off</span>
-                        </th:block>
                       </div>
                     </td>
                     <td class="px-4 py-3 text-sm text-gray-500">
@@ -235,7 +223,45 @@
                         <span th:text="${row.gwTo}">38</span>
                       </span>
                     </td>
-                    <td class="px-4 py-3 text-sm text-gray-600" th:text="${row.memberCount}">8</td>
+                    <td class="px-4 py-3 text-sm text-gray-600">
+                      <span th:text="${row.memberCount}">8</span>
+                      <span
+                        th:if="${row.isOpenForJoining}"
+                        title="Open for new members to join"
+                        class="ml-1 inline-flex items-center px-1 py-0 rounded text-[10px] leading-4 font-medium bg-green-100 text-green-700"
+                      >Open</span>
+                    </td>
+                    <td th:if="${showRenewColumn}" class="px-4 py-3">
+                      <!-- Renew button + modal (owner only, when renewable) — scoped to this row -->
+                      <th:block th:if="${row.isOwner and row.renewVisible}">
+                        <div
+                          th:attr="data-contest-id=${row.id},
+                                   data-contest-name=${row.name},
+                                   data-from-code=${row.renewFromCode},
+                                   data-default-to-code=${row.renewDefaultToCode},
+                                   data-to-option-codes=${#strings.listJoin(row.renewToOptionCodes, ',')},
+                                   data-active-member-count=${row.memberCount}"
+                          x-data="contestRenewal({
+                            contestId: $el.dataset.contestId,
+                            contestName: $el.dataset.contestName,
+                            fromCode: $el.dataset.fromCode,
+                            defaultToCode: $el.dataset.defaultToCode,
+                            toOptionCodes: $el.dataset.toOptionCodes.split(','),
+                            activeMemberCount: parseInt($el.dataset.activeMemberCount, 10)
+                          })"
+                        >
+                          <button
+                            type="button"
+                            @click.stop="open = true"
+                            th:disabled="${row.renewEnabled == false}"
+                            class="px-2 py-1 text-xs font-medium border rounded-md transition disabled:opacity-40 disabled:cursor-not-allowed border-indigo-300 bg-indigo-50 text-indigo-700 hover:border-indigo-400 disabled:hover:border-indigo-300"
+                          >Renew</button>
+
+                          <div th:replace="~{fragments/contest-renewal-modal :: modal(${row.id}, ${row.name})}"></div>
+                        </div>
+                      </th:block>
+                      <span th:unless="${row.isOwner and row.renewVisible}" class="text-gray-300">—</span>
+                    </td>
                   </tr>
                 </tbody>
               </table>
@@ -266,6 +292,14 @@
         </section>
 
       </div>
+
+      <script th:inline="javascript">
+        /*<![CDATA[*/
+        window.__renewalSprints = /*[[${renewalSprints}]]*/ [];
+        window.__renewalQuarters = /*[[${renewalQuarters}]]*/ [];
+        /*]]>*/
+      </script>
+
     </div>
   </body>
 </html>

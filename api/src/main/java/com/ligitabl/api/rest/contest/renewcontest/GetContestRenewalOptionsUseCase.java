@@ -73,8 +73,9 @@ public class GetContestRenewalOptionsUseCase {
             if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases)) {
                 return Either.right(GetContestRenewalOptionsResult.hidden());
             }
-            from = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases)
-                    .orElseThrow();
+            var renewalFrom = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases);
+            if (renewalFrom.isEmpty()) return Either.right(GetContestRenewalOptionsResult.hidden());
+            from = renewalFrom.get();
             defaultTo = ContestRenewalCalculator.resolveDefaultTo(originalFrom, originalTo, from, phases);
             toOptionCodes = ContestRenewalCalculator.resolveValidToOptions(from, phases).stream()
                     .map(RoundSpan::getCode)

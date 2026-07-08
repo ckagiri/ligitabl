@@ -1,5 +1,6 @@
 package com.ligitabl.api.rest.contest.getusercontestsummary;
 
+import java.util.List;
 import java.util.UUID;
 
 public record PrivateContestRowDto(
@@ -14,4 +15,9 @@ public record PrivateContestRowDto(
         int memberCount,
         boolean isOwner,
         String status,
-        boolean isJoiningOpen) {}
+        boolean isOpenForJoining,
+        boolean renewVisible,
+        boolean renewEnabled,
+        String renewFromCode,
+        String renewDefaultToCode,
+        List<String> renewToOptionCodes) {}
