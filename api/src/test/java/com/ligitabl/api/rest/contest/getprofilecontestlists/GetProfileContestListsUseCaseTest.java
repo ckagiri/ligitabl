@@ -188,8 +188,8 @@ class GetProfileContestListsUseCaseTest {
                 .thenReturn(List.of(view(3, 3), view(15, 20)));
         when(contestRepo.findContestsByUserId(userId, seasonId, false, 10, 0)).thenReturn(List.of());
 
-        when(contestSupport.deriveContestStatus(3, 3, currentRound)).thenReturn("FINISHED");
-        when(contestSupport.deriveContestStatus(15, 20, currentRound)).thenReturn("LIVE");
+        when(contestSupport.deriveContestStatus(3, 3, currentRound, buildPhases())).thenReturn("FINISHED");
+        when(contestSupport.deriveContestStatus(15, 20, currentRound, buildPhases())).thenReturn("LIVE");
 
         var result = useCase.execute(new GetProfileContestListsQuery(userId, 1, 1));
 

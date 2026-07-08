@@ -110,7 +110,8 @@ public class GetProfileContestListsUseCase {
         String periodLabel = PhaseRules.resolvePeriodLabel(phases, view.fromRoundPosition(), view.toRoundPosition());
 
         String status = isActiveTab
-                ? contestSupport.deriveContestStatus(view.fromRoundPosition(), view.toRoundPosition(), currentRound)
+                ? contestSupport.deriveContestStatus(
+                        view.fromRoundPosition(), view.toRoundPosition(), currentRound, phases)
                 : null;
 
         return new ContestSummary(

@@ -72,16 +72,19 @@ public class ContestSupport {
 
     /**
      * LIVE/FINISHED/NEXT/FUTURE for a contest's own (fromRoundPosition, toRoundPosition) window vs.
-     * the current round — same vocabulary as the segment navigator (see
-     * {@link PhaseRules#deriveStatus(int, int, int)}). FUTURE if there's no current round yet
-     * (nothing has started). List-view badge only; the detail page keeps its own precise
+     * the current round — same vocabulary as the segment navigator, but sprint-aware for NEXT (see
+     * {@link PhaseRules#deriveWindowStatus(int, int, int, List)}: NEXT holds for the current
+     * sprint's *entire* duration when the following sprint is this contest's first sprint, not just
+     * the single round right before it starts). FUTURE if there's no current round yet (nothing has
+     * started). List-view badge only; the detail page keeps its own precise
      * {@link #isOpenForJoining(Contest, Season, Competition)} gate, which additionally accounts for
      * the last-sprint opening-round lock and needs no round-status lookup at all here (no match
      * fetch) since it's pure round-position math.
      */
-    public String deriveContestStatus(int fromRoundPosition, int toRoundPosition, Round currentRound) {
+    public String deriveContestStatus(
+            int fromRoundPosition, int toRoundPosition, Round currentRound, List<RoundSpan> phases) {
         if (currentRound == null) return "FUTURE";
-        return PhaseRules.deriveStatus(fromRoundPosition, toRoundPosition, currentRound.getPosition());
+        return PhaseRules.deriveWindowStatus(fromRoundPosition, toRoundPosition, currentRound.getPosition(), phases);
     }
 
     public List<QuarterOption> resolveQuarterOptions() {
