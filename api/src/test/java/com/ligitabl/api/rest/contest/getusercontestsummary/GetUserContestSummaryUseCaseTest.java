@@ -64,7 +64,13 @@ class GetUserContestSummaryUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new GetUserContestSummaryUseCase(
-                competitionRepo, seasonRepo, contestRepo, entryRepo, roundRepo, matchRepo, contestRankResolver,
+                competitionRepo,
+                seasonRepo,
+                contestRepo,
+                entryRepo,
+                roundRepo,
+                matchRepo,
+                contestRankResolver,
                 contestSupport);
 
         userId = UUID.randomUUID();
@@ -134,8 +140,10 @@ class GetUserContestSummaryUseCaseTest {
                 .ownerId(userId)
                 .build();
         when(contestRepo.findPrivateByUserId(userId, seasonId)).thenReturn(List.of(contestA, contestB));
-        when(contestSupport.isOpenForJoining(eq(true), eq(10), eq(currentRound))).thenReturn(false);
-        when(contestSupport.isOpenForJoining(eq(true), eq(20), eq(currentRound))).thenReturn(true);
+        when(contestSupport.isOpenForJoining(eq(true), eq(10), eq(currentRound)))
+                .thenReturn(false);
+        when(contestSupport.isOpenForJoining(eq(true), eq(20), eq(currentRound)))
+                .thenReturn(true);
 
         var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
 

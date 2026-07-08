@@ -179,22 +179,26 @@ class ContestRenewalCalculatorTest {
 
     @Test
     void isRenewable_notFullSeason_sprintRemains_true() {
-        assertThat(ContestRenewalCalculator.isRenewable(s("S1"), s("S2"), phases)).isTrue();
+        assertThat(ContestRenewalCalculator.isRenewable(s("S1"), s("S2"), phases))
+                .isTrue();
     }
 
     @Test
     void isRenewable_fullSeason_s1ToS8_false() {
-        assertThat(ContestRenewalCalculator.isRenewable(s("S1"), s("S8"), phases)).isFalse();
+        assertThat(ContestRenewalCalculator.isRenewable(s("S1"), s("S8"), phases))
+                .isFalse();
     }
 
     @Test
     void isRenewable_s5ToS8_endOfSeason_noRenewal() {
-        assertThat(ContestRenewalCalculator.isRenewable(s("S5"), s("S8"), phases)).isFalse();
+        assertThat(ContestRenewalCalculator.isRenewable(s("S5"), s("S8"), phases))
+                .isFalse();
     }
 
     @Test
     void isRenewable_s7ToS8_endOfSeason_noRenewal() {
-        assertThat(ContestRenewalCalculator.isRenewable(s("S7"), s("S8"), phases)).isFalse();
+        assertThat(ContestRenewalCalculator.isRenewable(s("S7"), s("S8"), phases))
+                .isFalse();
     }
 
     @Test

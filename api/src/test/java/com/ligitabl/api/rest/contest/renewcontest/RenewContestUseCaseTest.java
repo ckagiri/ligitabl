@@ -182,7 +182,8 @@ class RenewContestUseCaseTest {
         Contest savedOriginal = contestCaptor.getAllValues().get(1);
         assertThat(savedOriginal.getRenewedIntoContestId()).isEqualTo(savedRenewed.getId());
 
-        verify(entryRepo).copyActiveEntries(original.getId(), savedRenewed.getId(), savedRenewed.getFromRoundPosition());
+        verify(entryRepo)
+                .copyActiveEntries(original.getId(), savedRenewed.getId(), savedRenewed.getFromRoundPosition());
     }
 
     @Test

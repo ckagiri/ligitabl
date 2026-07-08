@@ -28,7 +28,8 @@ public final class ContestJoinWindow {
         if (currentRoundPosition > toRoundPosition) return true;
         if (phases == null) return false;
 
-        RoundSpan endSprint = PhaseRules.sprintContaining(phases, toRoundPosition).orElse(null);
+        RoundSpan endSprint =
+                PhaseRules.sprintContaining(phases, toRoundPosition).orElse(null);
         if (endSprint == null) return false;
 
         // Before the last sprint starts → still joinable
@@ -54,7 +55,8 @@ public final class ContestJoinWindow {
         if (pos > toRoundPosition) return true;
         if (phases == null) return false;
 
-        RoundSpan endSprint = PhaseRules.sprintContaining(phases, toRoundPosition).orElse(null);
+        RoundSpan endSprint =
+                PhaseRules.sprintContaining(phases, toRoundPosition).orElse(null);
         if (endSprint == null) return false;
         if (pos < endSprint.getFrom()) return false;
         if (pos > endSprint.getFrom()) return true;
