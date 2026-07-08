@@ -53,6 +53,36 @@ public final class PhaseRules {
                 .orElse(false);
     }
 
+    /** LIVE / FINISHED / NEXT / FUTURE for a (from, to) window vs. the current round position. */
+    public static String deriveStatus(int from, int to, int currentPosition) {
+        if (currentPosition >= from && currentPosition <= to) return "LIVE";
+        if (to < currentPosition) return "FINISHED";
+        if (from == currentPosition + 1) return "NEXT";
+        return "FUTURE";
+    }
+
+    /**
+     * LIVE / FINISHED / NEXT / FUTURE for a (from, to) window vs. the current round, using
+     * sprint-level adjacency for NEXT: "next" means the sprint immediately following the current
+     * round's own sprint is this window's first sprint — true for the window's entire preceding
+     * sprint, not just the single round right before it starts (unlike {@link #deriveStatus}, which
+     * is round-level and only used for the segment navigator's own sibling-segment highlighting).
+     */
+    public static String deriveWindowStatus(int from, int to, int currentPosition, List<RoundSpan> phases) {
+        if (currentPosition >= from && currentPosition <= to) return "LIVE";
+        if (to < currentPosition) return "FINISHED";
+
+        List<RoundSpan> sprints = sprintsOf(phases);
+        int currentIdx =
+                sprintContaining(phases, currentPosition).map(sprints::indexOf).orElse(-1);
+        if (currentIdx >= 0
+                && currentIdx + 1 < sprints.size()
+                && sprints.get(currentIdx + 1).getFrom() == from) {
+            return "NEXT";
+        }
+        return "FUTURE";
+    }
+
     public static boolean isQuarterStart(RoundSpan sprint, List<RoundSpan> quarters) {
         return quarters.stream().anyMatch(q -> sprint.getFrom() == q.getFrom() && sprint.getTo() <= q.getTo());
     }

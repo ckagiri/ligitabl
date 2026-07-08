@@ -2,7 +2,6 @@ package com.ligitabl.api.rest.contest.getprofilecontestlists;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
@@ -130,7 +129,7 @@ class GetProfileContestListsUseCaseTest {
 
     private ContestRepo.UserContestView view(int from, int to) {
         return new ContestRepo.UserContestView(
-                UUID.randomUUID(), "Homeboyz", seasonId, "2026/27", false, from, to, true, true);
+                UUID.randomUUID(), "Homeboyz", seasonId, "2026/27", false, from, to, true, true, false);
     }
 
     @Test
@@ -160,7 +159,7 @@ class GetProfileContestListsUseCaseTest {
     }
 
     @Test
-    void activeTab_multiplePrivateContests_resolveCurrentRoundOnce_andApplyPastToRoundRule() {
+    void activeTab_multiplePrivateContests_resolveCurrentRoundOnce_andDeriveStatusPerRow() {
         Season activeSeason = Season.builder()
                 .id(seasonId)
                 .competitionId(UUID.randomUUID())
@@ -181,22 +180,24 @@ class GetProfileContestListsUseCaseTest {
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(activeSeason));
         when(roundSupport.resolveCurrentRound(activeSeason)).thenReturn(currentRound);
 
-        // Two private, still-toggled-open contests on the active tab: one whose toRound is behind
-        // the current round (isOpenForJoining → false), one still ahead of it.
+        // Two private contests on the active tab: one already past its toRound (FINISHED), one
+        // currently within its window (LIVE).
         when(contestRepo.countContestsByUserId(userId, seasonId, true)).thenReturn(2);
         when(contestRepo.countContestsByUserId(userId, seasonId, false)).thenReturn(0);
         when(contestRepo.findContestsByUserId(userId, seasonId, true, 10, 0))
-                .thenReturn(List.of(view(3, 3), view(4, 4)));
+                .thenReturn(List.of(view(3, 3), view(15, 20)));
         when(contestRepo.findContestsByUserId(userId, seasonId, false, 10, 0)).thenReturn(List.of());
 
-        when(contestSupport.isOpenForJoining(eq(true), eq(3), eq(currentRound))).thenReturn(false);
-        when(contestSupport.isOpenForJoining(eq(true), eq(4), eq(currentRound))).thenReturn(true);
+        when(contestSupport.deriveContestStatus(3, 3, currentRound, buildPhases()))
+                .thenReturn("FINISHED");
+        when(contestSupport.deriveContestStatus(15, 20, currentRound, buildPhases()))
+                .thenReturn("LIVE");
 
         var result = useCase.execute(new GetProfileContestListsQuery(userId, 1, 1));
 
         assertThat(result.activeContests()).hasSize(2);
-        assertThat(result.activeContests().get(0).isOpen()).isFalse();
-        assertThat(result.activeContests().get(1).isOpen()).isTrue();
+        assertThat(result.activeContests().get(0).status()).isEqualTo("FINISHED");
+        assertThat(result.activeContests().get(1).status()).isEqualTo("LIVE");
 
         // The current round is resolved once per list build, not once per row.
         verify(roundSupport, times(1)).resolveCurrentRound(activeSeason);

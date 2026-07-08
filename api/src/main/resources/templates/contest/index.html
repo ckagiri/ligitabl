@@ -181,15 +181,42 @@
                     onclick="window.location.href = this.dataset.href"
                   >
                     <td class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-4 py-3">
-                      <span class="text-sm font-medium text-indigo-600" th:text="${row.name}">OfficeMates</span>
-                      <span
-                        th:if="${row.isOwner}"
-                        class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-indigo-50 text-indigo-700"
-                      >Owner</span>
-                      <span
-                        th:unless="${row.isOpen}"
-                        class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600"
-                      >Closed</span>
+                      <div class="text-sm font-medium text-indigo-600" th:text="${row.name}">OfficeMates</div>
+                      <div class="flex flex-wrap items-center gap-1 mt-1">
+                        <span
+                          th:if="${row.isOwner}"
+                          class="inline-flex items-center px-1 py-0 rounded text-[10px] leading-4 font-medium bg-indigo-50 text-indigo-700"
+                        >Owner</span>
+                        <span
+                          th:if="${row.status == 'LIVE'}"
+                          class="inline-flex items-center px-1 py-0 rounded text-[10px] leading-4 font-medium bg-green-100 text-green-700"
+                        >Live</span>
+                        <span
+                          th:if="${row.status == 'NEXT'}"
+                          class="inline-flex items-center px-1 py-0 rounded text-[10px] leading-4 font-medium bg-blue-100 text-blue-700"
+                        >Next</span>
+                        <span
+                          th:if="${row.status == 'FUTURE'}"
+                          class="inline-flex items-center px-1 py-0 rounded text-[10px] leading-4 font-medium bg-gray-100 text-gray-500"
+                        >Future</span>
+                        <span
+                          th:if="${row.status == 'FINISHED'}"
+                          class="inline-flex items-center px-1 py-0 rounded text-[10px] leading-4 font-medium bg-gray-100 text-gray-600"
+                        >Finished</span>
+                        <!-- Admin's join-toggle, distinct from the status badge above (owner only) -->
+                        <th:block th:if="${row.isOwner}">
+                          <span
+                            th:if="${row.isJoiningOpen}"
+                            title="Your join-toggle setting — separate from whether this contest's scoring window has ended"
+                            class="inline-flex items-center px-1 py-0 rounded text-[10px] leading-4 font-medium bg-blue-100 text-blue-700"
+                          >Joining On</span>
+                          <span
+                            th:unless="${row.isJoiningOpen}"
+                            title="Your join-toggle setting — separate from whether this contest's scoring window has ended"
+                            class="inline-flex items-center px-1 py-0 rounded text-[10px] leading-4 font-medium bg-gray-100 text-gray-500"
+                          >Joining Off</span>
+                        </th:block>
+                      </div>
                     </td>
                     <td class="px-4 py-3 text-sm text-gray-500">
                       <th:block th:if="${row.dateLabel != null}">

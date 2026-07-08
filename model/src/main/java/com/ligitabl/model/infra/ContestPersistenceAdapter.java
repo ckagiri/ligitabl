@@ -170,7 +170,8 @@ public class ContestPersistenceAdapter implements ContestRepo {
                         r.get("from_round", Integer.class),
                         r.get("to_round", Integer.class),
                         Boolean.TRUE.equals(r.get("is_private", Boolean.class)),
-                        Boolean.TRUE.equals(r.get("is_open", Boolean.class))));
+                        Boolean.TRUE.equals(r.get("is_open", Boolean.class)),
+                        Boolean.TRUE.equals(r.get("is_owner", Boolean.class))));
     }
 
     @Override
@@ -199,6 +200,7 @@ public class ContestPersistenceAdapter implements ContestRepo {
                 T_CONTEST.C_TO_ROUND_POSITION.as("to_round"),
                 DSL.inline(isPrivate).as("is_private"),
                 T_CONTEST.C_IS_OPEN.as("is_open"),
+                T_CONTEST.C_OWNER_ID.eq(userId).as("is_owner"),
                 T_SEASON.C_START_DATE.as("season_start_date"),
                 T_ENTRY.C_JOINED_AT_ROUND.as("joined_at_round"));
 

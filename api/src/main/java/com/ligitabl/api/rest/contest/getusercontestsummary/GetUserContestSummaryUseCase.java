@@ -63,7 +63,8 @@ public class GetUserContestSummaryUseCase {
         List<GeneralContestRowDto> generalRows =
                 buildGeneralRows(competition, season, mainContest.getId(), query.userId(), currentRound, dateRanges);
 
-        List<PrivateContestRowDto> privateRows = buildPrivateRows(query.userId(), season, currentRound);
+        List<PrivateContestRowDto> privateRows =
+                buildPrivateRows(query.userId(), season, currentRound, competition.getPhases());
 
         return new GetUserContestSummaryResult(generalRows, privateRows);
     }
@@ -136,7 +137,8 @@ public class GetUserContestSummaryUseCase {
         return from + "–" + to;
     }
 
-    private List<PrivateContestRowDto> buildPrivateRows(UUID userId, Season season, Round currentRound) {
+    private List<PrivateContestRowDto> buildPrivateRows(
+            UUID userId, Season season, Round currentRound, List<RoundSpan> phases) {
         List<Contest> contests = contestRepo.findPrivateByUserId(userId, season.getId());
         Map<Integer, MatchRepo.RoundDateRange> dateRanges =
                 !contests.isEmpty() ? matchRepo.groupRoundDateRangesBySeason(season.getId()) : null;
@@ -145,8 +147,8 @@ public class GetUserContestSummaryUseCase {
         List<PrivateContestRowDto> rows = new ArrayList<>();
         for (Contest contest : contests) {
             int memberCount = memberCounts.getOrDefault(contest.getId(), 0);
-            boolean isOpen =
-                    contestSupport.isOpenForJoining(contest.isOpen(), contest.getToRoundPosition(), currentRound);
+            String status = contestSupport.deriveContestStatus(
+                    contest.getFromRoundPosition(), contest.getToRoundPosition(), currentRound, phases);
             rows.add(new PrivateContestRowDto(
                     contest.getId(),
                     contest.getName(),
@@ -158,7 +160,8 @@ public class GetUserContestSummaryUseCase {
                     contest.getToRoundPosition(),
                     memberCount,
                     contest.isOwnedBy(userId),
-                    isOpen));
+                    status,
+                    contest.isOpen()));
         }
         return rows;
     }
