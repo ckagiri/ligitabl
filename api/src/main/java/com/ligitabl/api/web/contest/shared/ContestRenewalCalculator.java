@@ -35,16 +35,11 @@ public final class ContestRenewalCalculator {
     }
 
     /**
-     * Renew button visibility: contest is LIVE, not full season, at least one sprint remains
-     * after original.to, and the contest has not already been renewed.
+     * Renew button visibility: not full season, and at least one sprint remains after
+     * original.to. Callers are responsible for their own "already renewed" / "is live" gates —
+     * this is pure sprint-geometry.
      */
-    public static boolean isRenewable(
-            RoundSpan originalFrom,
-            RoundSpan originalTo,
-            List<RoundSpan> phases,
-            boolean isLive,
-            boolean alreadyRenewed) {
-        if (!isLive || alreadyRenewed) return false;
+    public static boolean isRenewable(RoundSpan originalFrom, RoundSpan originalTo, List<RoundSpan> phases) {
         if (isFullSeason(originalFrom, originalTo, phases)) return false;
         return resolveRenewalFrom(originalTo, phases).isPresent();
     }

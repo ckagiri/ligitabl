@@ -11,14 +11,12 @@ import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
-import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundSpan;
-import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
@@ -45,7 +43,6 @@ public class GetUserContestSummaryUseCase {
     private final MatchRepo matchRepo;
     private final ContestRankResolver contestRankResolver;
     private final ContestSupport contestSupport;
-    private final RoundSupport roundSupport;
 
     public GetUserContestSummaryResult execute(GetUserContestSummaryQuery query) {
         var competition = competitionRepo.findBySlug(query.competitionSlug()).orElse(null);
@@ -66,9 +63,7 @@ public class GetUserContestSummaryUseCase {
         List<GeneralContestRowDto> generalRows =
                 buildGeneralRows(competition, season, mainContest.getId(), query.userId(), currentRound, dateRanges);
 
-        RoundStatus currentRoundStatus = roundSupport.resolveStatus(currentRound);
-        List<PrivateContestRowDto> privateRows =
-                buildPrivateRows(query.userId(), season, competition, currentRound, currentRoundStatus);
+        List<PrivateContestRowDto> privateRows = buildPrivateRows(query.userId(), season, currentRound);
 
         return new GetUserContestSummaryResult(generalRows, privateRows);
     }
@@ -141,8 +136,7 @@ public class GetUserContestSummaryUseCase {
         return from + "–" + to;
     }
 
-    private List<PrivateContestRowDto> buildPrivateRows(
-            UUID userId, Season season, Competition competition, Round currentRound, RoundStatus currentRoundStatus) {
+    private List<PrivateContestRowDto> buildPrivateRows(UUID userId, Season season, Round currentRound) {
         List<Contest> contests = contestRepo.findPrivateByUserId(userId, season.getId());
         Map<Integer, MatchRepo.RoundDateRange> dateRanges =
                 !contests.isEmpty() ? matchRepo.groupRoundDateRangesBySeason(season.getId()) : null;
@@ -151,8 +145,8 @@ public class GetUserContestSummaryUseCase {
         List<PrivateContestRowDto> rows = new ArrayList<>();
         for (Contest contest : contests) {
             int memberCount = memberCounts.getOrDefault(contest.getId(), 0);
-            boolean isOpen = contestSupport.isOpenForJoining(
-                    contest.isOpen(), contest.getToRoundPosition(), currentRound, competition, currentRoundStatus);
+            boolean isOpen =
+                    contestSupport.isOpenForJoining(contest.isOpen(), contest.getToRoundPosition(), currentRound);
             rows.add(new PrivateContestRowDto(
                     contest.getId(),
                     contest.getName(),

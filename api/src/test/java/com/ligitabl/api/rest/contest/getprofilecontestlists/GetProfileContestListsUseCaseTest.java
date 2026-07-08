@@ -25,7 +25,6 @@ import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundSpan;
-import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
 import com.ligitabl.model.repo.CompetitionRepo;
@@ -161,7 +160,7 @@ class GetProfileContestListsUseCaseTest {
     }
 
     @Test
-    void activeTab_multiplePrivateContests_resolveRoundStatusOnce_andOverrideJoinWindowClosed() {
+    void activeTab_multiplePrivateContests_resolveCurrentRoundOnce_andApplyPastToRoundRule() {
         Season activeSeason = Season.builder()
                 .id(seasonId)
                 .competitionId(UUID.randomUUID())
@@ -181,20 +180,17 @@ class GetProfileContestListsUseCaseTest {
                 .build();
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(activeSeason));
         when(roundSupport.resolveCurrentRound(activeSeason)).thenReturn(currentRound);
-        when(roundSupport.resolveStatus(currentRound)).thenReturn(RoundStatus.LOCKED);
 
-        // Two private, still-toggled-open contests on the active tab: one whose join window has
-        // already closed (isOpenForJoining → false), one still joinable.
+        // Two private, still-toggled-open contests on the active tab: one whose toRound is behind
+        // the current round (isOpenForJoining → false), one still ahead of it.
         when(contestRepo.countContestsByUserId(userId, seasonId, true)).thenReturn(2);
         when(contestRepo.countContestsByUserId(userId, seasonId, false)).thenReturn(0);
         when(contestRepo.findContestsByUserId(userId, seasonId, true, 10, 0))
                 .thenReturn(List.of(view(3, 3), view(4, 4)));
         when(contestRepo.findContestsByUserId(userId, seasonId, false, 10, 0)).thenReturn(List.of());
 
-        when(contestSupport.isOpenForJoining(eq(true), eq(3), eq(currentRound), any(), eq(RoundStatus.LOCKED)))
-                .thenReturn(false);
-        when(contestSupport.isOpenForJoining(eq(true), eq(4), eq(currentRound), any(), eq(RoundStatus.LOCKED)))
-                .thenReturn(true);
+        when(contestSupport.isOpenForJoining(eq(true), eq(3), eq(currentRound))).thenReturn(false);
+        when(contestSupport.isOpenForJoining(eq(true), eq(4), eq(currentRound))).thenReturn(true);
 
         var result = useCase.execute(new GetProfileContestListsQuery(userId, 1, 1));
 
@@ -202,7 +198,7 @@ class GetProfileContestListsUseCaseTest {
         assertThat(result.activeContests().get(0).isOpen()).isFalse();
         assertThat(result.activeContests().get(1).isOpen()).isTrue();
 
-        // The whole point of resolving round status once per list build: two rows, one fetch.
-        verify(roundSupport, times(1)).resolveStatus(currentRound);
+        // The current round is resolved once per list build, not once per row.
+        verify(roundSupport, times(1)).resolveCurrentRound(activeSeason);
     }
 }

@@ -17,7 +17,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
-import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
@@ -49,9 +48,6 @@ class GetUserContestSummaryUseCaseTest {
     @Mock
     ContestSupport contestSupport;
 
-    @Mock
-    RoundSupport roundSupport;
-
     private GetUserContestSummaryUseCase useCase;
 
     private static final String SLUG = "premier-league";
@@ -68,15 +64,8 @@ class GetUserContestSummaryUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new GetUserContestSummaryUseCase(
-                competitionRepo,
-                seasonRepo,
-                contestRepo,
-                entryRepo,
-                roundRepo,
-                matchRepo,
-                contestRankResolver,
-                contestSupport,
-                roundSupport);
+                competitionRepo, seasonRepo, contestRepo, entryRepo, roundRepo, matchRepo, contestRankResolver,
+                contestSupport);
 
         userId = UUID.randomUUID();
         competitionId = UUID.randomUUID();
@@ -125,7 +114,7 @@ class GetUserContestSummaryUseCaseTest {
     }
 
     @Test
-    void multiplePrivateContests_resolveRoundStatusOnce_andPassItToEachRow() {
+    void multiplePrivateContests_eachRowUsesResolvedCurrentRound() {
         Contest contestA = Contest.builder()
                 .id(UUID.randomUUID())
                 .seasonId(seasonId)
@@ -145,13 +134,8 @@ class GetUserContestSummaryUseCaseTest {
                 .ownerId(userId)
                 .build();
         when(contestRepo.findPrivateByUserId(userId, seasonId)).thenReturn(List.of(contestA, contestB));
-        when(roundSupport.resolveStatus(currentRound)).thenReturn(RoundStatus.LOCKED);
-        when(contestSupport.isOpenForJoining(
-                        eq(true), eq(10), eq(currentRound), eq(competition), eq(RoundStatus.LOCKED)))
-                .thenReturn(false);
-        when(contestSupport.isOpenForJoining(
-                        eq(true), eq(20), eq(currentRound), eq(competition), eq(RoundStatus.LOCKED)))
-                .thenReturn(true);
+        when(contestSupport.isOpenForJoining(eq(true), eq(10), eq(currentRound))).thenReturn(false);
+        when(contestSupport.isOpenForJoining(eq(true), eq(20), eq(currentRound))).thenReturn(true);
 
         var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
 
@@ -159,7 +143,7 @@ class GetUserContestSummaryUseCaseTest {
         assertThat(result.privateContests().get(0).isOpen()).isFalse();
         assertThat(result.privateContests().get(1).isOpen()).isTrue();
 
-        // The whole point of resolving round status once per list build: two rows, one fetch.
-        verify(roundSupport, times(1)).resolveStatus(currentRound);
+        // Current round is looked up once per list build, not once per row.
+        verify(roundRepo, times(1)).findById(roundId);
     }
 }

@@ -15,7 +15,6 @@ import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.PhaseRules;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundSpan;
-import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
@@ -57,7 +56,6 @@ public class GetProfileContestListsUseCase {
                 competition != null && competition.getPhases() != null ? competition.getPhases() : List.of();
 
         Round currentRound = activeSeason != null ? roundSupport.resolveCurrentRound(activeSeason) : null;
-        RoundStatus currentRoundStatus = roundSupport.resolveStatus(currentRound);
 
         int activePage = Math.max(1, query.activePage());
         int pastPage = Math.max(1, query.pastPage());
@@ -78,13 +76,11 @@ public class GetProfileContestListsUseCase {
                         .toList());
 
         List<ContestSummary> activeContests = activeViews.stream()
-                .map(v -> toSummary(v, query.userId(), memberCounts, phases, true, currentRound, competition,
-                        currentRoundStatus))
+                .map(v -> toSummary(v, query.userId(), memberCounts, phases, true, currentRound))
                 .toList();
 
         List<ContestSummary> pastContests = pastViews.stream()
-                .map(v -> toSummary(v, query.userId(), memberCounts, phases, false, currentRound, competition,
-                        currentRoundStatus))
+                .map(v -> toSummary(v, query.userId(), memberCounts, phases, false, currentRound))
                 .toList();
 
         return new GetProfileContestListsResult(
@@ -106,9 +102,7 @@ public class GetProfileContestListsUseCase {
             Map<UUID, Integer> memberCounts,
             List<RoundSpan> phases,
             boolean isActiveTab,
-            Round currentRound,
-            Competition competition,
-            RoundStatus currentRoundStatus) {
+            Round currentRound) {
         int memberCount = memberCounts.getOrDefault(view.contestId(), 0);
         Integer rank = resolveRank(view, userId);
         String link = "/contests/" + view.contestId()
@@ -116,9 +110,8 @@ public class GetProfileContestListsUseCase {
         String periodLabel = PhaseRules.resolvePeriodLabel(phases, view.fromRoundPosition(), view.toRoundPosition());
 
         boolean isOpen = view.isOpen();
-        if (isActiveTab && view.isPrivate() && currentRound != null && competition != null) {
-            isOpen = contestSupport.isOpenForJoining(
-                    view.isOpen(), view.toRoundPosition(), currentRound, competition, currentRoundStatus);
+        if (isActiveTab && view.isPrivate()) {
+            isOpen = contestSupport.isOpenForJoining(view.isOpen(), view.toRoundPosition(), currentRound);
         }
 
         return new ContestSummary(view.contestName(), view.seasonName(), periodLabel, memberCount, rank, link, isOpen);

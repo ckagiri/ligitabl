@@ -70,17 +70,17 @@ public class ContestSupport {
     }
 
     /**
-     * Pure/no-repo-call variant for list views: caller resolves the current round and its status
-     * once per list build (they're identical for every row) and passes both in here directly.
+     * Coarser "closed" rule for list views: just whether the current round has passed the
+     * contest's last round. Unlike the full {@link #isOpenForJoining(Contest, Season, Competition)}
+     * gate used on the detail page and actual joins, this intentionally ignores the last-sprint
+     * opening-round lock check — good enough for a table badge, and needs no round-status lookup
+     * at all (no match fetch), so callers don't need to resolve one for every row.
      */
-    public boolean isOpenForJoining(
-            boolean contestIsOpen, int toRoundPosition, Round currentRound, Competition competition,
-            RoundStatus currentRoundStatus) {
+    public boolean isOpenForJoining(boolean contestIsOpen, int toRoundPosition, Round currentRound) {
         if (!contestIsOpen) return false;
         if (currentRound == null) return true;
 
-        return !ContestJoinWindow.isJoinWindowClosed(
-                toRoundPosition, currentRound.getPosition(), competition.getPhases(), currentRoundStatus);
+        return currentRound.getPosition() <= toRoundPosition;
     }
 
     public List<QuarterOption> resolveQuarterOptions() {
