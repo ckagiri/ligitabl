@@ -17,7 +17,8 @@ public interface ContestRepo {
             boolean seasonCompleted,
             int fromRoundPosition,
             int toRoundPosition,
-            boolean isPrivate) {}
+            boolean isPrivate,
+            boolean isOpen) {}
 
     Optional<Contest> findById(UUID id);
 
@@ -45,6 +46,21 @@ public interface ContestRepo {
     int countContestsByUserId(UUID userId, UUID activeSeasonId, boolean activeTab);
 
     Optional<Contest> findByJoinCode(String joinCode);
+
+    /**
+     * True if this owner already has another contest with this exact name, in this season, for
+     * this exact round window. Scoped by window (not just season) so a renewal can reuse the
+     * original's name unchanged — the renewed window never overlaps the original's. {@code
+     * excludeContestId} lets a rename check against a contest's own current name without tripping
+     * on itself; pass null when checking a brand new contest.
+     */
+    boolean existsByOwnerSeasonPeriodAndName(
+            UUID seasonId,
+            UUID ownerId,
+            int fromRoundPosition,
+            int toRoundPosition,
+            String name,
+            UUID excludeContestId);
 
     void delete(UUID contestId);
 }

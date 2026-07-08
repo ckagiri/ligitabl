@@ -98,6 +98,8 @@ public class PublicRankDto {
             return List.of();
         }
 
-        return ranks.stream().map(rank -> fromPrediction(rank, actualPositionByCode, teamsByCode)).toList();
+        return ranks.stream()
+                .map(rank -> fromPrediction(rank, actualPositionByCode, teamsByCode))
+                .toList();
     }
 }

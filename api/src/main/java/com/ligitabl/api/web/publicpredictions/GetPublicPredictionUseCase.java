@@ -89,20 +89,23 @@ public class GetPublicPredictionUseCase {
     }
 
     private Either<Error, Season> resolveSeason(UUID seasonId) {
-        return Either.ofOptional(seasonPredictionSupport.findSeasonById(seasonId), () -> new Error.SeasonNotFound(seasonId));
+        return Either.ofOptional(
+                seasonPredictionSupport.findSeasonById(seasonId), () -> new Error.SeasonNotFound(seasonId));
     }
 
     private Either<Error, Ctx> resolveCurrentRound(Season season) {
         return Either.<Error, Round>ofOptional(
-                        seasonPredictionSupport.findCurrentRound(season), () -> new Error.CurrentRoundNotFound(season.getId()))
+                        seasonPredictionSupport.findCurrentRound(season),
+                        () -> new Error.CurrentRoundNotFound(season.getId()))
                 .map(currentRoundEntity -> new Ctx(season, currentRoundEntity));
     }
 
     private Ctx withUserAndRound(Ctx ctx, GetPublicPredictionQuery query) {
         Optional<User> userOpt = resolveUser(query.publicId());
-        Optional<SeasonPrediction> predictionOpt = userOpt.flatMap(
-                user -> seasonPredictionSupport.findPrediction(user.getId(), ctx.season().getId()));
-        int minRound = predictionOpt.map(sp -> Math.max(1, sp.getAtRoundNumber())).orElse(ctx.currentRound());
+        Optional<SeasonPrediction> predictionOpt = userOpt.flatMap(user -> seasonPredictionSupport.findPrediction(
+                user.getId(), ctx.season().getId()));
+        int minRound =
+                predictionOpt.map(sp -> Math.max(1, sp.getAtRoundNumber())).orElse(ctx.currentRound());
         int viewingRound = clampRound(query.requestedRound(), minRound, ctx.currentRound());
         String targetDisplayName = userOpt.map(user -> user.getDisplayName()).orElse(null);
 
@@ -123,7 +126,9 @@ public class GetPublicPredictionUseCase {
             return buildFallbackView(ctx, ctx.userOpt().isPresent());
         }
 
-        return ctx.showHistorical() ? buildHistoricalView(ctx) : buildCurrentView(ctx, ctx.predictionOpt().get());
+        return ctx.showHistorical()
+                ? buildHistoricalView(ctx)
+                : buildCurrentView(ctx, ctx.predictionOpt().get());
     }
 
     private int clampRound(Integer requested, int minRound, int currentRound) {
@@ -199,7 +204,8 @@ public class GetPublicPredictionUseCase {
                 .hasRoundResult(true)
                 .totalScore(roundResult.getTotalScore())
                 .totalHits(sortedRanks.stream().mapToInt(r -> r.getHit()).sum())
-                .zeroesCount((int) sortedRanks.stream().filter(r -> r.getHit() == 0).count())
+                .zeroesCount(
+                        (int) sortedRanks.stream().filter(r -> r.getHit() == 0).count())
                 .build();
     }
 
@@ -217,8 +223,9 @@ public class GetPublicPredictionUseCase {
                     .orElseGet(() -> StandingsData.fromBaseline(season.getInitialRankings()));
         }
 
-        var sortedRanks =
-                predictedRanks.stream().sorted(Comparator.comparingInt(r -> r.getPosition())).toList();
+        var sortedRanks = predictedRanks.stream()
+                .sorted(Comparator.comparingInt(r -> r.getPosition()))
+                .toList();
         Map<String, Team> teamsByCode =
                 teamsByCodeFromCodes(sortedRanks.stream().map(r -> r.getCode()).collect(Collectors.toSet()));
 
@@ -255,22 +262,25 @@ public class GetPublicPredictionUseCase {
     }
 
     private Optional<StandingsData> fetchStandingsData(UUID seasonId, int roundPosition) {
-        return standingsRepo.findBySeasonAndRoundPosition(seasonId, roundPosition).map(standings -> {
-            List<TeamRank> rankings =
-                    standings.getRankings().stream().map(str -> str.getRanking()).toList();
-            Map<String, Integer> positions = new HashMap<>();
-            Map<String, Integer> points = new HashMap<>();
-            Map<String, Integer> goalDifference = new HashMap<>();
-            for (var rank : standings.getRankings()) {
-                String code = rank.getRanking().getCode();
-                positions.put(code, rank.getRanking().getPosition());
-                if (rank.getMetadata() != null) {
-                    points.put(code, rank.getMetadata().getPoints());
-                    goalDifference.put(code, rank.getMetadata().getGd());
-                }
-            }
-            return new StandingsData(rankings, positions, points, goalDifference);
-        });
+        return standingsRepo
+                .findBySeasonAndRoundPosition(seasonId, roundPosition)
+                .map(standings -> {
+                    List<TeamRank> rankings = standings.getRankings().stream()
+                            .map(str -> str.getRanking())
+                            .toList();
+                    Map<String, Integer> positions = new HashMap<>();
+                    Map<String, Integer> points = new HashMap<>();
+                    Map<String, Integer> goalDifference = new HashMap<>();
+                    for (var rank : standings.getRankings()) {
+                        String code = rank.getRanking().getCode();
+                        positions.put(code, rank.getRanking().getPosition());
+                        if (rank.getMetadata() != null) {
+                            points.put(code, rank.getMetadata().getPoints());
+                            goalDifference.put(code, rank.getMetadata().getGd());
+                        }
+                    }
+                    return new StandingsData(rankings, positions, points, goalDifference);
+                });
     }
 
     private Map<String, Team> teamsByCode(List<TeamRank> ranks) {

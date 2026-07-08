@@ -19,8 +19,9 @@ public class SharePredictionTextBuilder {
     private static final int TAIL_COUNT = 3;
 
     public String build(int round, List<TeamRank> rankings, Map<String, Team> teamsByCode, String shareUrl) {
-        var sorted =
-                rankings.stream().sorted(Comparator.comparingInt(r -> r.getPosition())).toList();
+        var sorted = rankings.stream()
+                .sorted(Comparator.comparingInt(r -> r.getPosition()))
+                .toList();
 
         StringBuilder text = new StringBuilder();
         text.append("🏆 My Premier-League Gameweek ").append(round).append(" Prediction:\n\n");

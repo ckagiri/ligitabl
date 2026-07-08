@@ -169,7 +169,8 @@ public class ContestPersistenceAdapter implements ContestRepo {
                         Boolean.TRUE.equals(r.get("season_completed", Boolean.class)),
                         r.get("from_round", Integer.class),
                         r.get("to_round", Integer.class),
-                        Boolean.TRUE.equals(r.get("is_private", Boolean.class))));
+                        Boolean.TRUE.equals(r.get("is_private", Boolean.class)),
+                        Boolean.TRUE.equals(r.get("is_open", Boolean.class))));
     }
 
     @Override
@@ -197,6 +198,7 @@ public class ContestPersistenceAdapter implements ContestRepo {
                 T_CONTEST.C_FROM_ROUND_POSITION.as("from_round"),
                 T_CONTEST.C_TO_ROUND_POSITION.as("to_round"),
                 DSL.inline(isPrivate).as("is_private"),
+                T_CONTEST.C_IS_OPEN.as("is_open"),
                 T_SEASON.C_START_DATE.as("season_start_date"),
                 T_ENTRY.C_JOINED_AT_ROUND.as("joined_at_round"));
 
@@ -226,6 +228,28 @@ public class ContestPersistenceAdapter implements ContestRepo {
                     .and(T_ENTRY.C_REMOVED_AT_ROUND.isNull())
                     .and(seasonScope);
         }
+    }
+
+    @Override
+    public boolean existsByOwnerSeasonPeriodAndName(
+            UUID seasonId,
+            UUID ownerId,
+            int fromRoundPosition,
+            int toRoundPosition,
+            String name,
+            UUID excludeContestId) {
+        var condition = T_CONTEST
+                .FK_SEASON_ID
+                .eq(seasonId)
+                .and(T_CONTEST.C_OWNER_ID.eq(ownerId))
+                .and(T_CONTEST.C_FROM_ROUND_POSITION.eq(fromRoundPosition))
+                .and(T_CONTEST.C_TO_ROUND_POSITION.eq(toRoundPosition))
+                .and(upper(T_CONTEST.C_NAME).eq(upper(name)));
+        if (excludeContestId != null) {
+            condition = condition.and(T_CONTEST.PK_ID.ne(excludeContestId));
+        }
+
+        return dsl.fetchExists(dsl.selectOne().from(T_CONTEST).where(condition));
     }
 
     @Override

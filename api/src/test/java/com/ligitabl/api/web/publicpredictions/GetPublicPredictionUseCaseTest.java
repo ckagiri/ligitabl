@@ -218,13 +218,17 @@ class GetPublicPredictionUseCaseTest {
         assertTrue(result.isRight());
         PublicPredictionViewData data = result.get();
         assertFalse(data.hasRoundResult());
-        var arsRow =
-                data.rows().stream().filter(r -> r.getTeamCode().equals("ARS")).findFirst().orElseThrow();
+        var arsRow = data.rows().stream()
+                .filter(r -> r.getTeamCode().equals("ARS"))
+                .findFirst()
+                .orElseThrow();
         assertEquals(1, arsRow.getPosition());
         assertEquals(3, arsRow.getActualPosition());
         assertEquals(2, arsRow.getDelta());
-        var livRow =
-                data.rows().stream().filter(r -> r.getTeamCode().equals("LIV")).findFirst().orElseThrow();
+        var livRow = data.rows().stream()
+                .filter(r -> r.getTeamCode().equals("LIV"))
+                .findFirst()
+                .orElseThrow();
         assertEquals(0, livRow.getDelta());
         // Points/GD ride along with the standings fetch for the comparison-options view.
         assertEquals(61, data.pointsMap().get("ARS"));
@@ -266,8 +270,10 @@ class GetPublicPredictionUseCaseTest {
         assertEquals(197, data.totalScore());
         assertEquals(3, data.totalHits());
         assertEquals(1, data.zeroesCount());
-        var livRow =
-                data.rows().stream().filter(r -> r.getTeamCode().equals("LIV")).findFirst().orElseThrow();
+        var livRow = data.rows().stream()
+                .filter(r -> r.getTeamCode().equals("LIV"))
+                .findFirst()
+                .orElseThrow();
         assertEquals(5, livRow.getActualPosition());
         assertEquals(3, livRow.getDelta());
         // Historical rounds never need matches/points/GD — not fetched, stay empty.

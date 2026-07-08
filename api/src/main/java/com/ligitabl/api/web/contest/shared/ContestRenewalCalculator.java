@@ -17,7 +17,8 @@ public final class ContestRenewalCalculator {
 
     private ContestRenewalCalculator() {}
 
-    public record RenewalWindow(RoundSpan from, RoundSpan defaultTo, List<RoundSpan> validToOptions, boolean toEditable) {}
+    public record RenewalWindow(
+            RoundSpan from, RoundSpan defaultTo, List<RoundSpan> validToOptions, boolean toEditable) {}
 
     public static boolean isFullSeason(RoundSpan originalFrom, RoundSpan originalTo, List<RoundSpan> phases) {
         List<RoundSpan> sprints = PhaseRules.sprintsOf(phases);
@@ -38,7 +39,11 @@ public final class ContestRenewalCalculator {
      * after original.to, and the contest has not already been renewed.
      */
     public static boolean isRenewable(
-            RoundSpan originalFrom, RoundSpan originalTo, List<RoundSpan> phases, boolean isLive, boolean alreadyRenewed) {
+            RoundSpan originalFrom,
+            RoundSpan originalTo,
+            List<RoundSpan> phases,
+            boolean isLive,
+            boolean alreadyRenewed) {
         if (!isLive || alreadyRenewed) return false;
         if (isFullSeason(originalFrom, originalTo, phases)) return false;
         return resolveRenewalFrom(originalTo, phases).isPresent();
@@ -47,9 +52,9 @@ public final class ContestRenewalCalculator {
     /**
      * Current-season renewal timing gate: the button only becomes actionable once the season has
      * progressed far enough into the original contest. A single-sprint original requires the
-     * season to have reached the sprint two positions after the original's own sprint (e.g.
-     * original = S1 → enabled from S3). A multi-sprint original requires the season to have
-     * reached the original's own last sprint (its final leg underway). Does not apply to
+     * season to have reached the round two positions after the original sprint's own start round
+     * (e.g. original = S1, GW1-4 → enabled from GW3). A multi-sprint original requires the season
+     * to have reached the original's own last sprint (its final leg underway). Does not apply to
      * past-season renewal — round positions there belong to a different season's timeline.
      */
     public static boolean hasReachedRenewalTiming(
@@ -62,7 +67,7 @@ public final class ContestRenewalCalculator {
         if (currentSprintIndex < 0) return false;
 
         if (duration == 1) {
-            return currentSprintIndex >= sprints.indexOf(originalFrom) + 2;
+            return currentRoundPosition >= originalFrom.getFrom() + 2;
         }
         return currentSprintIndex >= sprints.indexOf(originalTo);
     }

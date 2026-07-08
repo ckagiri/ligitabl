@@ -125,10 +125,29 @@ window.contestRenewal = function () {
     sprints:            d.sprints || [],
     quarters:           d.quarters || [],
     fromCode:           d.fromCode || '',
+    defaultToCode:      d.defaultToCode || '',
     toOptionCodes:      d.toOptionCodes || [],
     activeMemberCount:  d.activeMemberCount || 0,
     open:               false,
+    structureOpen:      true,
     selectedTo:         d.defaultToCode || '',
+
+    init() {
+      // Reset to defaults whenever the modal opens, so a change abandoned by closing
+      // without submitting doesn't linger the next time it's opened.
+      this.$watch('open', (isOpen) => {
+        if (isOpen) {
+          this.selectedTo = this.defaultToCode;
+          this.structureOpen = true;
+        }
+      });
+
+      // Guard against the browser restoring this page (and its Alpine state) from
+      // back/forward cache with the modal still open from before navigating away.
+      window.addEventListener('pageshow', (e) => {
+        if (e.persisted) this.open = false;
+      });
+    },
 
     get fromSprint() {
       return this.sprints.find(s => s.code === this.fromCode) || null;
@@ -145,6 +164,11 @@ window.contestRenewal = function () {
     get scoresResetLabel() {
       const from = this.fromSprint;
       return from ? 'Scores reset at ' + from.name + ' start (' + from.startDate + ')' : '';
+    },
+
+    toOptionLabel(option) {
+      const label = option.name + ' • ' + option.endDate;
+      return option.code === this.defaultToCode ? label + ' (default)' : label;
     },
 
     renderHierarchy() {
@@ -165,22 +189,36 @@ window.contestDetail = function () {
 
     init() {
       window.leagueApp = this;
-      // auto-expand any LIVE quarter nodes
+      this.expandRelevantQuarters();
+    },
+
+    // Auto-expand any LIVE quarter, plus whichever quarter contains the currently
+    // selected segment, so the active selection is always visible without an extra click.
+    expandRelevantQuarters() {
       const root = this.segmentTree[0];
-      if (root && root.children) {
-        root.children.forEach(child => {
-          if (child.status === 'LIVE') this.expanded[child.id] = true;
-        });
+      if (!root) return;
+
+      // A contest whose own window is exactly one quarter has that quarter as the root
+      // node itself (not nested under an "Overall" node) — expand the root in that case.
+      if (root.nodeType === 'QUARTER') {
+        const containsActive = root.id === this.activeSegment
+          || (root.children && root.children.some(s => s.id === this.activeSegment));
+        if (root.status === 'LIVE' || containsActive) this.expanded[root.id] = true;
+        return;
       }
+
+      if (!root.children) return;
+      root.children.forEach(child => {
+        if (child.status === 'LIVE') this.expanded[child.id] = true;
+        if (child.id === this.activeSegment) this.expanded[child.id] = true;
+        if (child.children && child.children.some(s => s.id === this.activeSegment)) {
+          this.expanded[child.id] = true;
+        }
+      });
     },
 
     openMenu() {
-      const root = this.segmentTree[0];
-      if (root && root.children) {
-        root.children.forEach(child => {
-          if (child.status === 'LIVE') this.expanded[child.id] = true;
-        });
-      }
+      this.expandRelevantQuarters();
       if (window.innerWidth >= 768) {
         this.dropdownOpen = true;
       } else {

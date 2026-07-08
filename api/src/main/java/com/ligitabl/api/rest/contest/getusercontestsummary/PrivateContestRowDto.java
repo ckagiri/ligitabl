@@ -12,4 +12,5 @@ public record PrivateContestRowDto(
         int gwFrom,
         int gwTo,
         int memberCount,
-        boolean isOwner) {}
+        boolean isOwner,
+        boolean isOpen) {}

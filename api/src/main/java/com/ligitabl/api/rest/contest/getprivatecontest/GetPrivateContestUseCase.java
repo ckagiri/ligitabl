@@ -10,9 +10,11 @@ import org.springframework.stereotype.Service;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.contest.SegmentNodeDto;
 import com.ligitabl.api.web.contest.SegmentTreeBuilder;
+import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.Entry;
+import com.ligitabl.model.domain.PhaseRules;
 import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
@@ -35,6 +37,7 @@ public class GetPrivateContestUseCase {
     private final LeaderboardRepo leaderboardRepo;
     private final RoundRepo roundRepo;
     private final SegmentTreeBuilder segmentTreeBuilder;
+    private final ContestSupport contestSupport;
 
     public Either<GetPrivateContestError, GetPrivateContestResult> execute(GetPrivateContestQuery query) {
         var contestResult = resolveContest(query.contestId());
@@ -81,6 +84,10 @@ public class GetPrivateContestUseCase {
         String contestDateLabel = segmentTreeBuilder.contestDateLabel(
                 contest.getSeasonId(), contest.getFromRoundPosition(), contest.getToRoundPosition());
 
+        String contestPeriodLabel = resolveContestPeriodLabel(contest, competition);
+
+        boolean isOpenForJoining = contestSupport.isOpenForJoining(contest, season, competition);
+
         return Either.right(new GetPrivateContestResult(
                 contest,
                 selectedSegment,
@@ -90,7 +97,9 @@ public class GetPrivateContestUseCase {
                 members,
                 contest.getJoinCode(),
                 segmentTree,
-                contestDateLabel));
+                contestDateLabel,
+                contestPeriodLabel,
+                isOpenForJoining));
     }
 
     private Either<GetPrivateContestError, Contest> resolveContest(UUID contestId) {
@@ -181,5 +190,10 @@ public class GetPrivateContestUseCase {
 
     private boolean isSegmentLive(RoundSpan segment, int currentPosition) {
         return currentPosition >= segment.getFrom() && currentPosition <= segment.getTo();
+    }
+
+    private String resolveContestPeriodLabel(Contest contest, Competition competition) {
+        List<RoundSpan> phases = competition.getPhases() != null ? competition.getPhases() : List.of();
+        return PhaseRules.resolvePeriodLabel(phases, contest.getFromRoundPosition(), contest.getToRoundPosition());
     }
 }

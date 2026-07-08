@@ -28,7 +28,10 @@ import lombok.extern.slf4j.Slf4j;
  * Renews a private contest. If the contest belongs to the competition's current active season, it
  * renews into the sprint immediately following its own window in that same season. If the contest
  * belongs to a past season, it renews into the start of the new active season instead (fixed at
- * S1, defaulting to end of Q1, or fixed at the last sprint if the original was a full season).
+ * S1, defaulting to end of Q1, or fixed at the last sprint if the original was a full season). The
+ * renewed contest keeps the original's name unchanged — names are unique per owner per season per
+ * round window, and a renewal's window never overlaps the original's, so no collision is possible
+ * unless the owner already has another contest occupying that exact window under that name.
  */
 @Service
 @RequiredArgsConstructor
@@ -63,15 +66,14 @@ public class RenewContestUseCase {
 
         List<RoundSpan> phases = competition.getPhases() != null ? competition.getPhases() : List.of();
 
-        RoundSpan originalFrom =
-                PhaseRules.sprintStartingAt(phases, original.getFromRoundPosition()).orElse(null);
+        RoundSpan originalFrom = PhaseRules.sprintStartingAt(phases, original.getFromRoundPosition())
+                .orElse(null);
         RoundSpan originalTo =
                 PhaseRules.sprintEndingAt(phases, original.getToRoundPosition()).orElse(null);
         if (originalFrom == null || originalTo == null)
             return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
 
-        Season activeSeason =
-                seasonRepo.findActiveSeason(competition.getId()).orElse(null);
+        Season activeSeason = seasonRepo.findActiveSeason(competition.getId()).orElse(null);
         boolean isCurrentSeason = activeSeason != null && activeSeason.getId().equals(season.getId());
 
         RoundSpan from;
@@ -83,10 +85,12 @@ public class RenewContestUseCase {
                 return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
 
             int currentRoundPosition = roundRepo.findPosition(season.getCurrentRoundId());
-            if (!ContestRenewalCalculator.hasReachedRenewalTiming(originalFrom, originalTo, currentRoundPosition, phases))
+            if (!ContestRenewalCalculator.hasReachedRenewalTiming(
+                    originalFrom, originalTo, currentRoundPosition, phases))
                 return Either.left(new RenewContestError.TooEarly(cmd.contestId()));
 
-            from = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases).orElseThrow();
+            from = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases)
+                    .orElseThrow();
             to = findByCode(ContestRenewalCalculator.resolveValidToOptions(from, phases), cmd.toSprintCode());
             targetSeasonId = season.getId();
         } else {
@@ -100,11 +104,16 @@ public class RenewContestUseCase {
 
         if (to == null) return Either.left(new RenewContestError.InvalidToCombination(cmd.toSprintCode()));
 
+        String renewedName = original.getName();
+        if (contestRepo.existsByOwnerSeasonPeriodAndName(
+                targetSeasonId, original.getOwnerId(), from.getFrom(), to.getTo(), renewedName, null))
+            return Either.left(new RenewContestError.NameConflict(renewedName));
+
         String joinCode = generateUniqueCode();
 
         Contest renewed = Contest.builder()
                 .seasonId(targetSeasonId)
-                .name(original.getName())
+                .name(renewedName)
                 .isPrivate(true)
                 .isOpen(original.isOpen())
                 .joinCode(joinCode)

@@ -30,17 +30,30 @@ class ContestRenewalCalculatorTest {
                 sprint("S6", 6, 6),
                 sprint("S7", 7, 7),
                 sprint("S8", 8, 8));
-        List<RoundSpan> quarters = List.of(
-                quarter("Q1", 1, 2), quarter("Q2", 3, 4), quarter("Q3", 5, 6), quarter("Q4", 7, 8));
-        return java.util.stream.Stream.concat(sprints.stream(), quarters.stream()).toList();
+        List<RoundSpan> quarters =
+                List.of(quarter("Q1", 1, 2), quarter("Q2", 3, 4), quarter("Q3", 5, 6), quarter("Q4", 7, 8));
+        return java.util.stream.Stream.concat(sprints.stream(), quarters.stream())
+                .toList();
     }
 
     private static RoundSpan sprint(String code, int from, int to) {
-        return RoundSpan.builder().code(code).name(code).type(PhaseType.SPRINT).from(from).to(to).build();
+        return RoundSpan.builder()
+                .code(code)
+                .name(code)
+                .type(PhaseType.SPRINT)
+                .from(from)
+                .to(to)
+                .build();
     }
 
     private static RoundSpan quarter(String code, int from, int to) {
-        return RoundSpan.builder().code(code).name(code).type(PhaseType.QUARTER).from(from).to(to).build();
+        return RoundSpan.builder()
+                .code(code)
+                .name(code)
+                .type(PhaseType.QUARTER)
+                .from(from)
+                .to(to)
+                .build();
     }
 
     private RoundSpan s(String code) {
@@ -51,65 +64,83 @@ class ContestRenewalCalculatorTest {
 
     @Test
     void defaultTo_s1ToS2_sameDuration_givesS4() {
-        RoundSpan from = ContestRenewalCalculator.resolveRenewalFrom(s("S2"), phases).orElseThrow();
+        RoundSpan from =
+                ContestRenewalCalculator.resolveRenewalFrom(s("S2"), phases).orElseThrow();
         assertThat(from).isEqualTo(s("S3"));
-        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S1"), s("S2"), from, phases)).isEqualTo(s("S4"));
+        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S1"), s("S2"), from, phases))
+                .isEqualTo(s("S4"));
     }
 
     @Test
     void defaultTo_s3ToS4_sameDuration_givesS6() {
-        RoundSpan from = ContestRenewalCalculator.resolveRenewalFrom(s("S4"), phases).orElseThrow();
+        RoundSpan from =
+                ContestRenewalCalculator.resolveRenewalFrom(s("S4"), phases).orElseThrow();
         assertThat(from).isEqualTo(s("S5"));
-        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S3"), s("S4"), from, phases)).isEqualTo(s("S6"));
+        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S3"), s("S4"), from, phases))
+                .isEqualTo(s("S6"));
     }
 
     @Test
     void defaultTo_s5ToS6_sameDuration_givesS8() {
-        RoundSpan from = ContestRenewalCalculator.resolveRenewalFrom(s("S6"), phases).orElseThrow();
+        RoundSpan from =
+                ContestRenewalCalculator.resolveRenewalFrom(s("S6"), phases).orElseThrow();
         assertThat(from).isEqualTo(s("S7"));
-        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S5"), s("S6"), from, phases)).isEqualTo(s("S8"));
+        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S5"), s("S6"), from, phases))
+                .isEqualTo(s("S8"));
     }
 
     @Test
     void defaultTo_s1ToS4_sameDuration_givesS8() {
-        RoundSpan from = ContestRenewalCalculator.resolveRenewalFrom(s("S4"), phases).orElseThrow();
+        RoundSpan from =
+                ContestRenewalCalculator.resolveRenewalFrom(s("S4"), phases).orElseThrow();
         assertThat(from).isEqualTo(s("S5"));
-        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S1"), s("S4"), from, phases)).isEqualTo(s("S8"));
+        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S1"), s("S4"), from, phases))
+                .isEqualTo(s("S8"));
     }
 
     @Test
     void defaultTo_s3ToS6_exceedsSeason_fallsBackToEndOfQ4() {
-        RoundSpan from = ContestRenewalCalculator.resolveRenewalFrom(s("S6"), phases).orElseThrow();
+        RoundSpan from =
+                ContestRenewalCalculator.resolveRenewalFrom(s("S6"), phases).orElseThrow();
         assertThat(from).isEqualTo(s("S7"));
-        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S3"), s("S6"), from, phases)).isEqualTo(s("S8"));
+        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S3"), s("S6"), from, phases))
+                .isEqualTo(s("S8"));
     }
 
     @Test
     void defaultTo_s1ToS6_exceedsSeason_fallsBackToEndOfQ4() {
-        RoundSpan from = ContestRenewalCalculator.resolveRenewalFrom(s("S6"), phases).orElseThrow();
+        RoundSpan from =
+                ContestRenewalCalculator.resolveRenewalFrom(s("S6"), phases).orElseThrow();
         assertThat(from).isEqualTo(s("S7"));
-        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S1"), s("S6"), from, phases)).isEqualTo(s("S8"));
+        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S1"), s("S6"), from, phases))
+                .isEqualTo(s("S8"));
     }
 
     @Test
     void defaultTo_singleSprint_s4ToS4_givesS5() {
-        RoundSpan from = ContestRenewalCalculator.resolveRenewalFrom(s("S4"), phases).orElseThrow();
+        RoundSpan from =
+                ContestRenewalCalculator.resolveRenewalFrom(s("S4"), phases).orElseThrow();
         assertThat(from).isEqualTo(s("S5"));
-        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S4"), s("S4"), from, phases)).isEqualTo(s("S5"));
+        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S4"), s("S4"), from, phases))
+                .isEqualTo(s("S5"));
     }
 
     @Test
     void defaultTo_singleSprint_s6ToS6_givesS7() {
-        RoundSpan from = ContestRenewalCalculator.resolveRenewalFrom(s("S6"), phases).orElseThrow();
+        RoundSpan from =
+                ContestRenewalCalculator.resolveRenewalFrom(s("S6"), phases).orElseThrow();
         assertThat(from).isEqualTo(s("S7"));
-        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S6"), s("S6"), from, phases)).isEqualTo(s("S7"));
+        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S6"), s("S6"), from, phases))
+                .isEqualTo(s("S7"));
     }
 
     @Test
     void defaultTo_singleSprint_s7ToS7_givesS8() {
-        RoundSpan from = ContestRenewalCalculator.resolveRenewalFrom(s("S7"), phases).orElseThrow();
+        RoundSpan from =
+                ContestRenewalCalculator.resolveRenewalFrom(s("S7"), phases).orElseThrow();
         assertThat(from).isEqualTo(s("S8"));
-        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S7"), s("S7"), from, phases)).isEqualTo(s("S8"));
+        assertThat(ContestRenewalCalculator.resolveDefaultTo(s("S7"), s("S7"), from, phases))
+                .isEqualTo(s("S8"));
     }
 
     @Test
@@ -140,7 +171,8 @@ class ContestRenewalCalculatorTest {
     @Test
     void validToOptions_fromS8_onlyS8_noDropdownNeeded() {
         // Edge case: only S8 remains after a single-sprint original — TO fixed, no dropdown.
-        assertThat(ContestRenewalCalculator.resolveValidToOptions(s("S8"), phases)).containsExactly(s("S8"));
+        assertThat(ContestRenewalCalculator.resolveValidToOptions(s("S8"), phases))
+                .containsExactly(s("S8"));
     }
 
     // ---- Section 2 / 10: Renew button visibility ----
@@ -183,12 +215,14 @@ class ContestRenewalCalculatorTest {
 
     @Test
     void isFullSeason_s1ToS8_true() {
-        assertThat(ContestRenewalCalculator.isFullSeason(s("S1"), s("S8"), phases)).isTrue();
+        assertThat(ContestRenewalCalculator.isFullSeason(s("S1"), s("S8"), phases))
+                .isTrue();
     }
 
     @Test
     void isFullSeason_s1ToS4_false() {
-        assertThat(ContestRenewalCalculator.isFullSeason(s("S1"), s("S4"), phases)).isFalse();
+        assertThat(ContestRenewalCalculator.isFullSeason(s("S1"), s("S4"), phases))
+                .isFalse();
     }
 
     // ---- Renewal timing gate (single sprint: original index + 2; multi-sprint: original's own last sprint) ----
@@ -237,6 +271,67 @@ class ContestRenewalCalculatorTest {
     @Test
     void timingGate_multiSprint_afterFinalLeg_true() {
         assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s("S1"), s("S2"), 3, phases))
+                .isTrue();
+    }
+
+    // ---- Single-sprint timing gate against realistic multi-round sprints ----
+    //
+    // The fixture above uses one round per sprint, which masks a bug: comparing sprint
+    // *indices* happens to equal comparing round *positions* only when each sprint is exactly
+    // one round long. Real sprints span several rounds (e.g. S1 = GW1-4), so the gate must
+    // compare round positions directly, not jump forward by whole sprints.
+
+    private static List<RoundSpan> buildRealisticPhases() {
+        List<RoundSpan> sprints = List.of(sprint("S1", 1, 4), sprint("S2", 5, 9), sprint("S3", 10, 13));
+        return List.copyOf(sprints);
+    }
+
+    @Test
+    void timingGate_singleSprint_realisticRounds_s1Gw1ToGw2_false() {
+        List<RoundSpan> realistic = buildRealisticPhases();
+        RoundSpan s1 = realistic.get(0);
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s1, s1, 1, realistic))
+                .isFalse();
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s1, s1, 2, realistic))
+                .isFalse();
+    }
+
+    @Test
+    void timingGate_singleSprint_realisticRounds_s1Gw3_true() {
+        // S1 = GW1-4: renewable once the round is 2 rounds after S1's start, i.e. GW3.
+        List<RoundSpan> realistic = buildRealisticPhases();
+        RoundSpan s1 = realistic.get(0);
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s1, s1, 3, realistic))
+                .isTrue();
+    }
+
+    @Test
+    void timingGate_singleSprint_realisticRounds_s2Gw5ToGw6_false() {
+        List<RoundSpan> realistic = buildRealisticPhases();
+        RoundSpan s2 = realistic.get(1);
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s2, s2, 5, realistic))
+                .isFalse();
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s2, s2, 6, realistic))
+                .isFalse();
+    }
+
+    @Test
+    void timingGate_singleSprint_realisticRounds_s2Gw7_true() {
+        // S2 = GW5-9: renewable once the round is 2 rounds after S2's start, i.e. GW7.
+        List<RoundSpan> realistic = buildRealisticPhases();
+        RoundSpan s2 = realistic.get(1);
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s2, s2, 7, realistic))
+                .isTrue();
+    }
+
+    @Test
+    void timingGate_multiSprint_realisticRounds_lastSprintLive_true() {
+        // Contest window S1-S2 (GW1-9, i.e. a full quarter). Current round 7 falls within S2
+        // (GW5-9), the contest's own last sprint, so renewal should already be enabled.
+        List<RoundSpan> realistic = buildRealisticPhases();
+        RoundSpan s1 = realistic.get(0);
+        RoundSpan s2 = realistic.get(1);
+        assertThat(ContestRenewalCalculator.hasReachedRenewalTiming(s1, s2, 7, realistic))
                 .isTrue();
     }
 

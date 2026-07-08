@@ -21,8 +21,7 @@ class SharePredictionTextBuilderTest {
 
     @Test
     void shortList_includesEveryTeam_noEllipsis() {
-        List<TeamRank> rankings =
-                List.of(TeamRank.of("ARS", 1), TeamRank.of("CHE", 2), TeamRank.of("LIV", 3));
+        List<TeamRank> rankings = List.of(TeamRank.of("ARS", 1), TeamRank.of("CHE", 2), TeamRank.of("LIV", 3));
         Map<String, Team> teamsByCode = teamsByCode(rankings, code -> code);
 
         String text = builder.build(13, rankings, teamsByCode, "https://ligipredictor.com/u/T2ADsSc8hQ/2526/gw/13");
@@ -78,14 +77,12 @@ class SharePredictionTextBuilderTest {
     }
 
     private static Map<String, Team> teamsByCode(List<TeamRank> rankings, Function<String, String> nameFor) {
-        return rankings.stream()
-                .map(TeamRank::getCode)
-                .collect(Collectors.toMap(code -> code, code -> Team.builder()
-                        .id(UUID.randomUUID())
-                        .name(nameFor.apply(code))
-                        .shortName(nameFor.apply(code))
-                        .slug(TeamSlug.of(code.toLowerCase()))
-                        .tla(code.length() >= 3 ? code.substring(0, 3) : (code + "XXX").substring(0, 3))
-                        .build()));
+        return rankings.stream().map(TeamRank::getCode).collect(Collectors.toMap(code -> code, code -> Team.builder()
+                .id(UUID.randomUUID())
+                .name(nameFor.apply(code))
+                .shortName(nameFor.apply(code))
+                .slug(TeamSlug.of(code.toLowerCase()))
+                .tla(code.length() >= 3 ? code.substring(0, 3) : (code + "XXX").substring(0, 3))
+                .build()));
     }
 }

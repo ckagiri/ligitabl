@@ -15,6 +15,7 @@ import com.ligitabl.api.rest.contest.leavecontest.LeavePrivateContestUseCase;
 import com.ligitabl.api.rest.contest.regeneratecontestcode.RegenerateContestCodeUseCase;
 import com.ligitabl.api.rest.contest.removecontestmember.RemoveContestMemberUseCase;
 import com.ligitabl.api.rest.contest.renewcontest.RenewContestCommand;
+import com.ligitabl.api.rest.contest.renewcontest.RenewContestError;
 import com.ligitabl.api.rest.contest.renewcontest.RenewContestUseCase;
 import com.ligitabl.api.rest.contest.togglecontestjoining.ToggleContestJoiningUseCase;
 import com.ligitabl.api.web.contest.shared.ContestSupport;
@@ -111,8 +112,7 @@ public class ContestAdminController {
     }
 
     @PostMapping("/{id}/renew")
-    public String renewContest(
-            @PathVariable UUID id, @RequestParam String toSprintCode, Principal principal) {
+    public String renewContest(@PathVariable UUID id, @RequestParam String toSprintCode, Principal principal) {
         WebUserDetails user = WebSecurity.resolveUser(principal);
         if (user == null) return "redirect:/auth/login";
 
@@ -122,7 +122,10 @@ public class ContestAdminController {
                 .fold(
                         error -> {
                             log.warn("Renew contest error for {}: {}", id, error);
-                            return "redirect:/contests/" + id + "?renewError=true";
+                            String reason = error instanceof RenewContestError.NameConflict
+                                    ? "&renewErrorReason=nameConflict"
+                                    : "";
+                            return "redirect:/contests/" + id + "?renewError=true" + reason;
                         },
                         result -> "redirect:/contests/" + result.renewedContestId() + "?renewed=true");
     }

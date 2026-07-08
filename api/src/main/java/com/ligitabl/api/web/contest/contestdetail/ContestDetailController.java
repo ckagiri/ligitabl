@@ -55,12 +55,15 @@ public class ContestDetailController {
             @PathVariable UUID id,
             @RequestParam(required = false) String segment,
             @RequestParam(defaultValue = "0") int page,
+            @RequestParam(required = false) String from,
             @RequestHeader(value = "HX-Request", required = false) String hxRequest,
             Model model,
             Principal principal) {
 
         WebUserDetails user = WebSecurity.resolveUser(principal);
         if (user == null) return "redirect:/auth/login";
+
+        model.addAttribute("backHref", "profile".equals(from) ? "/profile/my-contests" : "/contests");
 
         String segmentCode = (segment != null && !segment.isBlank()) ? segment : null;
         var query = new GetPrivateContestQuery(id, user.getUserId(), segmentCode, page);
@@ -92,8 +95,8 @@ public class ContestDetailController {
                                 isPastSeason = contestSeasonSupport.isPastSeason(detail.contest());
                                 if (!isPastSeason) {
                                     int currentRoundPosition = contestSupport.resolveCurrentRoundPosition();
-                                    isFinalSprintUnderway =
-                                            contestSeasonSupport.isFinalSprintUnderway(detail.contest(), currentRoundPosition);
+                                    isFinalSprintUnderway = contestSeasonSupport.isFinalSprintUnderway(
+                                            detail.contest(), currentRoundPosition);
                                 }
                             }
                             model.addAttribute("isPastSeason", isPastSeason);
@@ -107,7 +110,8 @@ public class ContestDetailController {
                             }
                             model.addAttribute("renewal", renewal);
                             model.addAttribute(
-                                    "renewalSprints", renewal.visible() ? contestSupport.resolveSprintOptions() : List.of());
+                                    "renewalSprints",
+                                    renewal.visible() ? contestSupport.resolveSprintOptions() : List.of());
                             model.addAttribute(
                                     "renewalQuarters",
                                     renewal.visible() ? contestSupport.resolveQuarterOptions() : List.of());
@@ -124,6 +128,8 @@ public class ContestDetailController {
                                     buildMemberRows(
                                             detail.members(), detail.contest().getOwnerId()));
                             model.addAttribute("contestDateLabel", detail.contestDateLabel());
+                            model.addAttribute("contestPeriodLabel", detail.contestPeriodLabel());
+                            model.addAttribute("isOpenForJoining", detail.isOpenForJoining());
                             model.addAttribute("pageTitle", detail.contest().getName());
                             model.addAttribute("currentSegment", detail.currentSegmentCode());
 
