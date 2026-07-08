@@ -633,7 +633,6 @@ class CreatePredictionUseCaseTest {
                 .fromRoundPosition(1)
                 .toRoundPosition(3)
                 .maxEntries(100)
-                .createdAt(now)
                 .build();
     }
 }

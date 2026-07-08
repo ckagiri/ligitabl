@@ -61,3 +61,5 @@ databaseChangeLog:
       file: db/changelog/20260707_3_contest_owner_scoped_unique_name.yaml
   - include:
       file: db/changelog/20260708_1_contest_unique_owner_season_period_name.yaml
+  - include:
+      file: db/changelog/20260708_2_contest_and_entry_timestamps.yaml

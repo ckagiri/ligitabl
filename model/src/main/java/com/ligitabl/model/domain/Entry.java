@@ -1,5 +1,6 @@
 package com.ligitabl.model.domain;
 
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
@@ -21,4 +22,8 @@ public class Entry extends AbstractModel<UUID> {
     Integer joinedAtRound;
 
     Integer removedAtRound;
+
+    OffsetDateTime joinedAt;
+
+    OffsetDateTime removedAt;
 }

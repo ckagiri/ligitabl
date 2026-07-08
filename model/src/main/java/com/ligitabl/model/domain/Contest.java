@@ -1,6 +1,6 @@
 package com.ligitabl.model.domain;
 
-import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
@@ -28,7 +28,10 @@ public class Contest extends AbstractModel<UUID> {
 
     private Integer maxEntries;
 
-    private Instant createdAt;
+    // Populated by the database (default + trigger); never set explicitly on insert/update.
+    private OffsetDateTime createDate;
+
+    private OffsetDateTime updateDate;
 
     private UUID ownerId;
 
