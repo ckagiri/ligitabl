@@ -11,7 +11,6 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.contest.shared.ContestRenewalCalculator;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
-import com.ligitabl.model.domain.Entry;
 import com.ligitabl.model.domain.PhaseRules;
 import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.domain.Season;
@@ -81,7 +80,7 @@ public class RenewContestUseCase {
         UUID targetSeasonId;
 
         if (isCurrentSeason) {
-            if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases, true, false))
+            if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases))
                 return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
 
             int currentRoundPosition = roundRepo.findPosition(season.getCurrentRoundId());
@@ -125,13 +124,7 @@ public class RenewContestUseCase {
 
         Contest savedRenewed = contestRepo.save(renewed);
 
-        entryRepo.findByContestId(original.getId()).stream()
-                .filter(e -> e.getRemovedAtRound() == null)
-                .forEach(entry -> entryRepo.save(Entry.builder()
-                        .userId(entry.getUserId())
-                        .contestId(savedRenewed.getId())
-                        .joinedAtRound(savedRenewed.getFromRoundPosition())
-                        .build()));
+        entryRepo.copyActiveEntries(original.getId(), savedRenewed.getId(), savedRenewed.getFromRoundPosition());
 
         original.setRenewedIntoContestId(savedRenewed.getId());
         contestRepo.save(original);

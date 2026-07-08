@@ -116,6 +116,19 @@
                   th:unless="${isOpenForJoining}"
                   class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600"
                 >Closed</span>
+                <!-- Raw admin toggle, distinct from the computed "Open"/"Closed" above (owner only) -->
+                <th:block th:if="${isOwner == true}">
+                  <span
+                    th:if="${contest.isOpen}"
+                    title="Your join-toggle setting — separate from whether the contest is actually joinable right now"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700"
+                  >Joining On</span>
+                  <span
+                    th:unless="${contest.isOpen}"
+                    title="Your join-toggle setting — separate from whether the contest is actually joinable right now"
+                    class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-500"
+                  >Joining Off</span>
+                </th:block>
               </div>
               <p class="text-sm text-gray-500">
                 <span th:text="'GW ' + ${contest.fromRoundPosition} + '–' + ${contest.toRoundPosition}">GW 1–10</span>

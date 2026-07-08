@@ -26,6 +26,13 @@ public interface EntryRepo {
 
     void softRemove(UUID userId, UUID contestId, int removedAtRound);
 
+    /**
+     * Copies every active (not removed) entry from {@code fromContestId} into {@code toContestId},
+     * joined at {@code joinedAtRound}. Used by contest renewal to carry members over into the new
+     * contest in one statement.
+     */
+    void copyActiveEntries(UUID fromContestId, UUID toContestId, int joinedAtRound);
+
     boolean hasAnyScore(UUID userId, UUID contestId);
 
     void deleteByUserAndContest(UUID userId, UUID contestId);

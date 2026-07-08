@@ -178,39 +178,23 @@ class ContestRenewalCalculatorTest {
     // ---- Section 2 / 10: Renew button visibility ----
 
     @Test
-    void isRenewable_liveNotFullSeasonNotRenewed_sprintRemains_true() {
-        assertThat(ContestRenewalCalculator.isRenewable(s("S1"), s("S2"), phases, true, false))
-                .isTrue();
-    }
-
-    @Test
-    void isRenewable_notLive_false() {
-        assertThat(ContestRenewalCalculator.isRenewable(s("S1"), s("S2"), phases, false, false))
-                .isFalse();
-    }
-
-    @Test
-    void isRenewable_alreadyRenewed_false() {
-        assertThat(ContestRenewalCalculator.isRenewable(s("S1"), s("S2"), phases, true, true))
-                .isFalse();
+    void isRenewable_notFullSeason_sprintRemains_true() {
+        assertThat(ContestRenewalCalculator.isRenewable(s("S1"), s("S2"), phases)).isTrue();
     }
 
     @Test
     void isRenewable_fullSeason_s1ToS8_false() {
-        assertThat(ContestRenewalCalculator.isRenewable(s("S1"), s("S8"), phases, true, false))
-                .isFalse();
+        assertThat(ContestRenewalCalculator.isRenewable(s("S1"), s("S8"), phases)).isFalse();
     }
 
     @Test
     void isRenewable_s5ToS8_endOfSeason_noRenewal() {
-        assertThat(ContestRenewalCalculator.isRenewable(s("S5"), s("S8"), phases, true, false))
-                .isFalse();
+        assertThat(ContestRenewalCalculator.isRenewable(s("S5"), s("S8"), phases)).isFalse();
     }
 
     @Test
     void isRenewable_s7ToS8_endOfSeason_noRenewal() {
-        assertThat(ContestRenewalCalculator.isRenewable(s("S7"), s("S8"), phases, true, false))
-                .isFalse();
+        assertThat(ContestRenewalCalculator.isRenewable(s("S7"), s("S8"), phases)).isFalse();
     }
 
     @Test
