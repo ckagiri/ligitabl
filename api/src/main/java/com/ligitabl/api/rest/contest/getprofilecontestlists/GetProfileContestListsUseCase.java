@@ -109,12 +109,21 @@ public class GetProfileContestListsUseCase {
                 + (view.isPrivate() ? "?from=profile" : "?segment=overall&from=profile");
         String periodLabel = PhaseRules.resolvePeriodLabel(phases, view.fromRoundPosition(), view.toRoundPosition());
 
-        boolean isOpen = view.isOpen();
-        if (isActiveTab && view.isPrivate()) {
-            isOpen = contestSupport.isOpenForJoining(view.isOpen(), view.toRoundPosition(), currentRound);
-        }
+        String status = isActiveTab
+                ? contestSupport.deriveContestStatus(view.fromRoundPosition(), view.toRoundPosition(), currentRound)
+                : null;
 
-        return new ContestSummary(view.contestName(), view.seasonName(), periodLabel, memberCount, rank, link, isOpen);
+        return new ContestSummary(
+                view.contestName(),
+                view.seasonName(),
+                periodLabel,
+                memberCount,
+                rank,
+                link,
+                status,
+                view.isPrivate(),
+                view.isOwner(),
+                view.isOpen());
     }
 
     private Integer resolveRank(ContestRepo.UserContestView view, UUID userId) {

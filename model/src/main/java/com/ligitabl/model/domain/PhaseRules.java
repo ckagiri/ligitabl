@@ -53,6 +53,14 @@ public final class PhaseRules {
                 .orElse(false);
     }
 
+    /** LIVE / FINISHED / NEXT / FUTURE for a (from, to) window vs. the current round position. */
+    public static String deriveStatus(int from, int to, int currentPosition) {
+        if (currentPosition >= from && currentPosition <= to) return "LIVE";
+        if (to < currentPosition) return "FINISHED";
+        if (from == currentPosition + 1) return "NEXT";
+        return "FUTURE";
+    }
+
     public static boolean isQuarterStart(RoundSpan sprint, List<RoundSpan> quarters) {
         return quarters.stream().anyMatch(q -> sprint.getFrom() == q.getFrom() && sprint.getTo() <= q.getTo());
     }

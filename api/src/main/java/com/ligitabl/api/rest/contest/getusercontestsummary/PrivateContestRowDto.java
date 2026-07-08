@@ -13,4 +13,5 @@ public record PrivateContestRowDto(
         int gwTo,
         int memberCount,
         boolean isOwner,
-        boolean isOpen) {}
+        String status,
+        boolean isJoiningOpen) {}

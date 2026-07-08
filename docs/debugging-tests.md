@@ -231,6 +231,63 @@ mvn -pl model -Pwith-jooq generate-sources
 
 Then re-run your tests.
 
+### "BUILD SUCCESS" can lie: unresolved references get compiled into runtime-throwing stubs
+
+A more insidious variant of the stale-bytecode problem: Maven reports `BUILD SUCCESS` — even
+`[INFO] Nothing to compile - all classes are up to date.` — for a module whose source no longer
+compiles (e.g. you renamed/removed a method and a test still calls the old one; you added a
+constructor param and a test's `new Foo(...)` call is now short one argument). No compiler error,
+no red output, tests appear to run.
+
+**Root cause**: the class file on disk was compiled by something other than this Maven invocation
+— most likely an IDE's background Java compiler (e.g. a JDT/Eclipse-based language server) that
+recompiled the file after your edit and wrote a fresh `.class` to `target/classes` or
+`target/test-classes` directly. That compiler doesn't hard-fail on an unresolved method/constructor
+reference; it embeds the error as a `String` and throws it at runtime only if that specific line
+executes — so `javap` on the file still shows valid bytecode, and Maven's mtime-based staleness
+check sees a `.class` newer than the `.java` and skips recompilation entirely, trusting output it
+never produced. If the offending line/branch happens not to run during your `mvn test` pass (a
+different test method, or the assertion never reached because an earlier one already failed), the
+suite goes green with a broken method silently sitting in the jar.
+
+**Symptom, if you do hit the throwing line**: a runtime exception (not a compile failure) whose
+message starts with `Unresolved compilation problem(s):` (sometimes truncated at `\n\t` line
+breaks in surefire's report), e.g.:
+
+```
+Unresolved compilation problems:
+        The method isOpenForJoining(Contest, Season, Competition) in the type ContestSupport is not applicable for the arguments (boolean, int, Round)
+        The method isOpen() is undefined for the type PrivateContestRowDto
+```
+
+**Detect it directly** (don't trust `BUILD SUCCESS` after any signature/constructor change to a
+class other tests reference) — scan the compiled `.class` files for the embedded stub marker:
+
+```bash
+for f in $(find api/target/test-classes api/target/classes -name "*.class"); do
+  javap -c "$f" 2>/dev/null | grep -q "Unresolved compilation problem" && echo "BROKEN: $f"
+done
+```
+
+Scope this to the specific classes/packages you touched (or that depend on what you touched) —
+scanning an entire module's `target/` this way is slow (can run past a couple of minutes on
+`api`'s full tree).
+
+**Fix**: force an honest recompile, then re-scan.
+
+```bash
+# Module-scoped, keeps model/target/generated-sources/jooq intact (see the clean-vs-model-compile
+# note above — do NOT run `mvn ... -am clean`, it wipes jOOQ generated sources too)
+rm -rf model/target/classes api/target/classes api/target/test-classes
+mvn -q -DskipTests -pl model -am compile
+mvn -DskipTests -pl api -am test-compile   # drop -q here; watch for real [ERROR] lines
+```
+
+If `mvn ... test-compile` still reports success but you're suspicious, re-run the `javap` scan
+above against the freshly produced classes as the definitive check — a real `javac`-driven Maven
+compile never produces the `Unresolved compilation problem` marker; only trust `BUILD SUCCESS`
+once that scan comes back clean.
+
 ## Mockito “unnecessary stubbing” (strict stubs)
 
 This repo keeps Mockito strict by default. If you see “unnecessary stubbing” failures, fix by removing or

@@ -7,4 +7,7 @@ public record ContestSummary(
         int memberCount,
         Integer rank,
         String link,
-        boolean isOpen) {}
+        String status,
+        boolean isPrivate,
+        boolean isOwner,
+        boolean isJoiningOpen) {}

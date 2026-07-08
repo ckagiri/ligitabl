@@ -56,9 +56,34 @@
                     <td class="py-3 pr-4">
                       <a th:href="${c.link()}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800" th:text="${c.contestName()}"></a>
                       <span
-                        th:unless="${c.isOpen()}"
+                        th:if="${c.status() == 'LIVE'}"
+                        class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-green-100 text-green-700"
+                      >Live</span>
+                      <span
+                        th:if="${c.status() == 'NEXT'}"
+                        class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700"
+                      >Next</span>
+                      <span
+                        th:if="${c.status() == 'FUTURE'}"
+                        class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500"
+                      >Future</span>
+                      <span
+                        th:if="${c.status() == 'FINISHED'}"
                         class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600"
-                      >Closed</span>
+                      >Finished</span>
+                      <!-- Admin's join-toggle, distinct from the status badge above (owner of a private contest only) -->
+                      <th:block th:if="${c.isOwner() and c.isPrivate()}">
+                        <span
+                          th:if="${c.isJoiningOpen()}"
+                          title="Your join-toggle setting — separate from whether this contest's scoring window has ended"
+                          class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700"
+                        >Joining On</span>
+                        <span
+                          th:unless="${c.isJoiningOpen()}"
+                          title="Your join-toggle setting — separate from whether this contest's scoring window has ended"
+                          class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-500"
+                        >Joining Off</span>
+                      </th:block>
                       <div class="text-xs text-gray-500"
                            th:text="${c.periodLabel() != null ? c.seasonName() + ' • ' + c.periodLabel() : c.seasonName()}"></div>
                     </td>

@@ -18,7 +18,8 @@ public interface ContestRepo {
             int fromRoundPosition,
             int toRoundPosition,
             boolean isPrivate,
-            boolean isOpen) {}
+            boolean isOpen,
+            boolean isOwner) {}
 
     Optional<Contest> findById(UUID id);
 

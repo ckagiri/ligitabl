@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
+import com.ligitabl.model.domain.PhaseRules;
 import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.repo.LeaderboardRepo;
@@ -190,10 +191,7 @@ public class SegmentTreeBuilder {
     }
 
     private String deriveStatus(RoundSpan span, int currentPosition) {
-        if (currentPosition >= span.getFrom() && currentPosition <= span.getTo()) return "LIVE";
-        if (span.getTo() < currentPosition) return "FINISHED";
-        if (span.getFrom() == currentPosition + 1) return "NEXT";
-        return "FUTURE";
+        return PhaseRules.deriveStatus(span.getFrom(), span.getTo(), currentPosition);
     }
 
     private boolean isLive(RoundSpan span, int currentPosition) {

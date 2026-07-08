@@ -12,6 +12,7 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
+import com.ligitabl.model.domain.PhaseRules;
 import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundSpan;
@@ -70,17 +71,17 @@ public class ContestSupport {
     }
 
     /**
-     * Coarser "closed" rule for list views: just whether the current round has passed the
-     * contest's last round. Unlike the full {@link #isOpenForJoining(Contest, Season, Competition)}
-     * gate used on the detail page and actual joins, this intentionally ignores the last-sprint
-     * opening-round lock check — good enough for a table badge, and needs no round-status lookup
-     * at all (no match fetch), so callers don't need to resolve one for every row.
+     * LIVE/FINISHED/NEXT/FUTURE for a contest's own (fromRoundPosition, toRoundPosition) window vs.
+     * the current round — same vocabulary as the segment navigator (see
+     * {@link PhaseRules#deriveStatus(int, int, int)}). FUTURE if there's no current round yet
+     * (nothing has started). List-view badge only; the detail page keeps its own precise
+     * {@link #isOpenForJoining(Contest, Season, Competition)} gate, which additionally accounts for
+     * the last-sprint opening-round lock and needs no round-status lookup at all here (no match
+     * fetch) since it's pure round-position math.
      */
-    public boolean isOpenForJoining(boolean contestIsOpen, int toRoundPosition, Round currentRound) {
-        if (!contestIsOpen) return false;
-        if (currentRound == null) return true;
-
-        return currentRound.getPosition() <= toRoundPosition;
+    public String deriveContestStatus(int fromRoundPosition, int toRoundPosition, Round currentRound) {
+        if (currentRound == null) return "FUTURE";
+        return PhaseRules.deriveStatus(fromRoundPosition, toRoundPosition, currentRound.getPosition());
     }
 
     public List<QuarterOption> resolveQuarterOptions() {

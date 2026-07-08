@@ -145,8 +145,8 @@ public class GetUserContestSummaryUseCase {
         List<PrivateContestRowDto> rows = new ArrayList<>();
         for (Contest contest : contests) {
             int memberCount = memberCounts.getOrDefault(contest.getId(), 0);
-            boolean isOpen =
-                    contestSupport.isOpenForJoining(contest.isOpen(), contest.getToRoundPosition(), currentRound);
+            String status = contestSupport.deriveContestStatus(
+                    contest.getFromRoundPosition(), contest.getToRoundPosition(), currentRound);
             rows.add(new PrivateContestRowDto(
                     contest.getId(),
                     contest.getName(),
@@ -158,7 +158,8 @@ public class GetUserContestSummaryUseCase {
                     contest.getToRoundPosition(),
                     memberCount,
                     contest.isOwnedBy(userId),
-                    isOpen));
+                    status,
+                    contest.isOpen()));
         }
         return rows;
     }

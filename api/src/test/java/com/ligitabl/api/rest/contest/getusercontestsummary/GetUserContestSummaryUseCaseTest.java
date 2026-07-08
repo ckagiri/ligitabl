@@ -2,7 +2,6 @@ package com.ligitabl.api.rest.contest.getusercontestsummary;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 import java.util.List;
@@ -140,16 +139,14 @@ class GetUserContestSummaryUseCaseTest {
                 .ownerId(userId)
                 .build();
         when(contestRepo.findPrivateByUserId(userId, seasonId)).thenReturn(List.of(contestA, contestB));
-        when(contestSupport.isOpenForJoining(eq(true), eq(10), eq(currentRound)))
-                .thenReturn(false);
-        when(contestSupport.isOpenForJoining(eq(true), eq(20), eq(currentRound)))
-                .thenReturn(true);
+        when(contestSupport.deriveContestStatus(1, 10, currentRound)).thenReturn("FINISHED");
+        when(contestSupport.deriveContestStatus(11, 20, currentRound)).thenReturn("LIVE");
 
         var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
 
         assertThat(result.privateContests()).hasSize(2);
-        assertThat(result.privateContests().get(0).isOpen()).isFalse();
-        assertThat(result.privateContests().get(1).isOpen()).isTrue();
+        assertThat(result.privateContests().get(0).status()).isEqualTo("FINISHED");
+        assertThat(result.privateContests().get(1).status()).isEqualTo("LIVE");
 
         // Current round is looked up once per list build, not once per row.
         verify(roundRepo, times(1)).findById(roundId);
