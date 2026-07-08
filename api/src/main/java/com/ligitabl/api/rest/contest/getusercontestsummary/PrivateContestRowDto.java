@@ -15,7 +15,7 @@ public record PrivateContestRowDto(
         int memberCount,
         boolean isOwner,
         String status,
-        boolean isJoiningOpen,
+        boolean isOpenForJoining,
         boolean renewVisible,
         boolean renewEnabled,
         String renewFromCode,

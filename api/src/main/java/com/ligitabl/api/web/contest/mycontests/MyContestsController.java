@@ -36,14 +36,16 @@ public class MyContestsController {
         var result = getUserContestSummaryUseCase.execute(
                 new GetUserContestSummaryQuery(userId, competitionDefaults.defaultCompetitionSlug()));
 
+        boolean showRenewColumn =
+                result.privateContests().stream().anyMatch(row -> row.isOwner() && row.renewVisible());
+
         model.addAttribute("generalContests", result.generalContests());
         model.addAttribute("privateContests", result.privateContests());
+        model.addAttribute("showRenewColumn", showRenewColumn);
         model.addAttribute(
-                "renewalSprints",
-                result.privateContests().isEmpty() ? List.of() : contestSupport.resolveSprintOptions());
+                "renewalSprints", showRenewColumn ? contestSupport.resolveSprintOptions() : List.of());
         model.addAttribute(
-                "renewalQuarters",
-                result.privateContests().isEmpty() ? List.of() : contestSupport.resolveQuarterOptions());
+                "renewalQuarters", showRenewColumn ? contestSupport.resolveQuarterOptions() : List.of());
         model.addAttribute("pageTitle", "My Contests");
         return "contest/index";
     }

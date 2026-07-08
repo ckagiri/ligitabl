@@ -171,6 +171,7 @@
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GW</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
+                    <th th:if="${showRenewColumn}" class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renew</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -203,21 +204,34 @@
                           th:if="${row.status == 'FINISHED'}"
                           class="inline-flex items-center px-1 py-0 rounded text-[10px] leading-4 font-medium bg-gray-100 text-gray-600"
                         >Finished</span>
-                        <!-- Admin's join-toggle, distinct from the status badge above (owner only) -->
-                        <th:block th:if="${row.isOwner}">
-                          <span
-                            th:if="${row.isJoiningOpen}"
-                            title="Your join-toggle setting — separate from whether this contest's scoring window has ended"
-                            class="inline-flex items-center px-1 py-0 rounded text-[10px] leading-4 font-medium bg-blue-100 text-blue-700"
-                          >Joining On</span>
-                          <span
-                            th:unless="${row.isJoiningOpen}"
-                            title="Your join-toggle setting — separate from whether this contest's scoring window has ended"
-                            class="inline-flex items-center px-1 py-0 rounded text-[10px] leading-4 font-medium bg-gray-100 text-gray-500"
-                          >Joining Off</span>
-                        </th:block>
                       </div>
-
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-500">
+                      <th:block th:if="${row.dateLabel != null}">
+                        <span class="hidden sm:inline" th:text="${row.dateLabel}">Aug 16 – May 25</span>
+                        <span class="sm:hidden flex flex-col text-xs leading-snug">
+                          <span class="whitespace-nowrap" th:text="${row.dateFrom}">Aug 16</span>
+                          <span class="whitespace-nowrap" th:text="${row.dateTo}">May 25</span>
+                        </span>
+                      </th:block>
+                      <span th:if="${row.dateLabel == null}" class="text-gray-400">—</span>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-500">
+                      <span class="hidden sm:inline" th:text="${row.gwLabel}">1–38</span>
+                      <span class="sm:hidden flex flex-col text-xs leading-snug">
+                        <span th:text="${row.gwFrom}">1</span>
+                        <span th:text="${row.gwTo}">38</span>
+                      </span>
+                    </td>
+                    <td class="px-4 py-3 text-sm text-gray-600">
+                      <span th:text="${row.memberCount}">8</span>
+                      <span
+                        th:if="${row.isOpenForJoining}"
+                        title="Open for new members to join"
+                        class="ml-1 inline-flex items-center px-1 py-0 rounded text-[10px] leading-4 font-medium bg-green-100 text-green-700"
+                      >Open</span>
+                    </td>
+                    <td th:if="${showRenewColumn}" class="px-4 py-3">
                       <!-- Renew button + modal (owner only, when renewable) — scoped to this row -->
                       <th:block th:if="${row.isOwner and row.renewVisible}">
                         <div
@@ -240,111 +254,14 @@
                             type="button"
                             @click.stop="open = true"
                             th:disabled="${row.renewEnabled == false}"
-                            class="mt-1 px-1.5 py-0.5 text-[10px] font-medium border rounded transition disabled:opacity-40 disabled:cursor-not-allowed border-indigo-300 bg-indigo-50 text-indigo-700 hover:border-indigo-400 disabled:hover:border-indigo-300"
+                            class="px-2 py-1 text-xs font-medium border rounded-md transition disabled:opacity-40 disabled:cursor-not-allowed border-indigo-300 bg-indigo-50 text-indigo-700 hover:border-indigo-400 disabled:hover:border-indigo-300"
                           >Renew</button>
 
-                          <div
-                            x-show="open"
-                            x-cloak
-                            @click.stop="open = false"
-                            class="fixed inset-0 z-50 flex items-end sm:items-center sm:justify-center bg-black bg-opacity-40 px-2 pb-2 sm:p-4"
-                          >
-                            <div @click.stop class="w-full sm:max-w-md bg-white rounded-2xl shadow-xl max-h-[85vh] overflow-y-auto">
-                              <div class="sticky top-0 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between z-10">
-                                <h2 class="text-base font-semibold text-gray-900">
-                                  Renew — <span th:text="${row.name}">Contest</span>
-                                </h2>
-                                <button type="button" @click="open = false" class="p-1 hover:bg-gray-100 rounded">
-                                  <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
-                                  </svg>
-                                </button>
-                              </div>
-
-                              <form method="post" th:action="@{/contests/{id}/renew(id=${row.id})}" class="p-4 space-y-4">
-                                <div>
-                                  <p class="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">Window</p>
-                                  <div class="space-y-2">
-                                    <div class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
-                                      <span class="text-sm text-gray-700">
-                                        From: <span class="font-medium" x-text="fromSprint ? fromSprint.name + ' • ' + fromSprint.startDate : ''"></span>
-                                      </span>
-                                      <span class="text-xs text-gray-400">🔒 fixed</span>
-                                    </div>
-                                    <div class="flex items-center justify-between gap-2 bg-white border border-gray-200 rounded-lg px-3 py-2">
-                                      <span class="text-sm text-gray-700 shrink-0">To:</span>
-                                      <select
-                                        name="toSprintCode"
-                                        x-model="selectedTo"
-                                        autocomplete="off"
-                                        class="text-sm font-medium border-0 focus:ring-0 focus:outline-none bg-indigo-50/50 rounded"
-                                      >
-                                        <template x-for="option in toOptions" :key="option.code">
-                                          <option :value="option.code" x-text="toOptionLabel(option)"></option>
-                                        </template>
-                                      </select>
-                                    </div>
-                                  </div>
-                                </div>
-
-                                <div class="bg-gray-50 rounded-lg border border-gray-200">
-                                  <button
-                                    type="button"
-                                    @click="structureOpen = !structureOpen"
-                                    class="w-full flex items-center justify-between px-4 py-2.5 text-xs font-medium text-gray-500 uppercase tracking-wide"
-                                  >
-                                    Competition structure
-                                    <svg :class="structureOpen ? 'rotate-180' : ''" class="h-4 w-4 text-gray-400 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-                                    </svg>
-                                  </button>
-                                  <div x-show="structureOpen" x-cloak class="px-4 pb-4">
-                                    <pre class="text-xs font-mono text-gray-700 whitespace-pre-wrap leading-relaxed" x-text="renderHierarchy()"></pre>
-                                  </div>
-                                </div>
-
-                                <p class="text-sm text-gray-600">
-                                  Members carrying over: <span class="font-medium text-gray-900" x-text="activeMemberCount"></span>
-                                </p>
-                                <p class="text-sm text-gray-600" x-text="scoresResetLabel"></p>
-
-                                <div class="flex gap-3 pt-2">
-                                  <button
-                                    type="submit"
-                                    :disabled="!selectedTo"
-                                    class="flex-1 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium py-2.5 px-4 rounded-lg transition text-sm"
-                                  >
-                                    Confirm
-                                  </button>
-                                  <button type="button" @click="open = false"
-                                          class="px-4 py-2.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition">
-                                    Cancel
-                                  </button>
-                                </div>
-                              </form>
-                            </div>
-                          </div>
+                          <div th:replace="~{fragments/contest-renewal-modal :: modal(${row.id}, ${row.name})}"></div>
                         </div>
                       </th:block>
+                      <span th:unless="${row.isOwner and row.renewVisible}" class="text-gray-300">—</span>
                     </td>
-                    <td class="px-4 py-3 text-sm text-gray-500">
-                      <th:block th:if="${row.dateLabel != null}">
-                        <span class="hidden sm:inline" th:text="${row.dateLabel}">Aug 16 – May 25</span>
-                        <span class="sm:hidden flex flex-col text-xs leading-snug">
-                          <span class="whitespace-nowrap" th:text="${row.dateFrom}">Aug 16</span>
-                          <span class="whitespace-nowrap" th:text="${row.dateTo}">May 25</span>
-                        </span>
-                      </th:block>
-                      <span th:if="${row.dateLabel == null}" class="text-gray-400">—</span>
-                    </td>
-                    <td class="px-4 py-3 text-sm text-gray-500">
-                      <span class="hidden sm:inline" th:text="${row.gwLabel}">1–38</span>
-                      <span class="sm:hidden flex flex-col text-xs leading-snug">
-                        <span th:text="${row.gwFrom}">1</span>
-                        <span th:text="${row.gwTo}">38</span>
-                      </span>
-                    </td>
-                    <td class="px-4 py-3 text-sm text-gray-600" th:text="${row.memberCount}">8</td>
                   </tr>
                 </tbody>
               </table>

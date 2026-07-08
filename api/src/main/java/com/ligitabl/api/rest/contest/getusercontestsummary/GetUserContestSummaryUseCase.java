@@ -65,8 +65,7 @@ public class GetUserContestSummaryUseCase {
         List<GeneralContestRowDto> generalRows =
                 buildGeneralRows(competition, season, mainContest.getId(), query.userId(), currentRound, dateRanges);
 
-        List<PrivateContestRowDto> privateRows =
-                buildPrivateRows(query.userId(), season, currentRound, competition.getPhases());
+        List<PrivateContestRowDto> privateRows = buildPrivateRows(query.userId(), season, currentRound, competition);
 
         return new GetUserContestSummaryResult(generalRows, privateRows);
     }
@@ -140,7 +139,8 @@ public class GetUserContestSummaryUseCase {
     }
 
     private List<PrivateContestRowDto> buildPrivateRows(
-            UUID userId, Season season, Round currentRound, List<RoundSpan> phases) {
+            UUID userId, Season season, Round currentRound, Competition competition) {
+        List<RoundSpan> phases = competition.getPhases();
         List<Contest> contests = contestRepo.findPrivateByUserId(userId, season.getId());
         Map<Integer, MatchRepo.RoundDateRange> dateRanges =
                 !contests.isEmpty() ? matchRepo.groupRoundDateRangesBySeason(season.getId()) : null;
@@ -164,7 +164,7 @@ public class GetUserContestSummaryUseCase {
                     memberCount,
                     contest.isOwnedBy(userId),
                     status,
-                    contest.isOpen(),
+                    contestSupport.isOpenForJoining(contest, season, competition),
                     renewal.visible(),
                     renewal.enabled(),
                     renewal.fromCode(),
