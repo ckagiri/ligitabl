@@ -70,7 +70,7 @@ public class GetContestRenewalOptionsUseCase {
         boolean enabled;
 
         if (isCurrentSeason) {
-            if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases, true, false)) {
+            if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases)) {
                 return Either.right(GetContestRenewalOptionsResult.hidden());
             }
             from = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases)

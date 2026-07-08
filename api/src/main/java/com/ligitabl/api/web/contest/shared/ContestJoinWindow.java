@@ -4,7 +4,6 @@ import java.util.List;
 import java.util.function.Supplier;
 
 import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.PhaseRules;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundSpan;
@@ -23,33 +22,45 @@ public final class ContestJoinWindow {
      *   pos 35 + not OPEN → closed (opening round locked)
      *   pos 36+           → closed (past opening round of last sprint, regardless of status)
      *   pos 39+           → closed (past contest end)
-     *
-     * {@code matchesSupplier} is only invoked when the round's OPEN/locked status must be
-     * resolved (exactly at the opening round of the last sprint), so callers can defer fetching
-     * matches until actually needed.
      */
     public static boolean isJoinWindowClosed(
-            int toRoundPosition, Round currentRound, Competition competition, Supplier<List<Match>> matchesSupplier) {
-        int pos = currentRound.getPosition();
+            int toRoundPosition, int currentRoundPosition, List<RoundSpan> phases, RoundStatus roundStatus) {
+        if (currentRoundPosition > toRoundPosition) return true;
+        if (phases == null) return false;
 
-        if (pos > toRoundPosition) return true;
-
-        if (competition.getPhases() == null) return false;
-
-        RoundSpan endSprint = PhaseRules.sprintContaining(competition.getPhases(), toRoundPosition)
-                .orElse(null);
-
+        RoundSpan endSprint =
+                PhaseRules.sprintContaining(phases, toRoundPosition).orElse(null);
         if (endSprint == null) return false;
 
         // Before the last sprint starts → still joinable
-        if (pos < endSprint.getFrom()) return false;
+        if (currentRoundPosition < endSprint.getFrom()) return false;
 
         // Past the opening round of the last sprint → always closed
-        if (pos > endSprint.getFrom()) return true;
+        if (currentRoundPosition > endSprint.getFrom()) return true;
 
         // Exactly at the opening round of the last sprint → open only if round is OPEN
-        RoundStatus status =
-                currentRound.isFinalized() ? RoundStatus.FINALIZED : currentRound.computeStatus(matchesSupplier.get());
-        return status != RoundStatus.OPEN;
+        return roundStatus != RoundStatus.OPEN;
+    }
+
+    /**
+     * {@code statusSupplier} is only invoked when the round's OPEN/locked status must be resolved
+     * (exactly at the opening round of the last sprint), so callers can defer resolving it until
+     * actually needed.
+     */
+    public static boolean isJoinWindowClosed(
+            int toRoundPosition, Round currentRound, Competition competition, Supplier<RoundStatus> statusSupplier) {
+        int pos = currentRound.getPosition();
+        List<RoundSpan> phases = competition.getPhases();
+
+        if (pos > toRoundPosition) return true;
+        if (phases == null) return false;
+
+        RoundSpan endSprint =
+                PhaseRules.sprintContaining(phases, toRoundPosition).orElse(null);
+        if (endSprint == null) return false;
+        if (pos < endSprint.getFrom()) return false;
+        if (pos > endSprint.getFrom()) return true;
+
+        return isJoinWindowClosed(toRoundPosition, pos, phases, statusSupplier.get());
     }
 }

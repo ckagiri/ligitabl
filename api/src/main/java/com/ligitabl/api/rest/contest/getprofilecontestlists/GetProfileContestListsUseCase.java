@@ -9,7 +9,11 @@ import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
+import com.ligitabl.api.web.contest.shared.ContestSupport;
+import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.PhaseRules;
+import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
@@ -33,19 +37,25 @@ public class GetProfileContestListsUseCase {
     private final ContestRepo contestRepo;
     private final EntryRepo entryRepo;
     private final ContestRankResolver contestRankResolver;
+    private final ContestSupport contestSupport;
+    private final RoundSupport roundSupport;
 
     public GetProfileContestListsResult execute(GetProfileContestListsQuery query) {
-        UUID activeSeasonId = seasonRepo
+        Season activeSeason = seasonRepo
                 .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
-                .map(Season::getId)
+                .orElse(null);
+        UUID activeSeasonId = activeSeason != null ? activeSeason.getId() : null;
+
+        Competition competition = competitionRepo
+                .findBySlug(competitionDefaults.defaultCompetitionSlug())
                 .orElse(null);
 
         // Phase structure (sprints/quarters) is fixed per competition, not per season, so one
         // fetch covers every row below regardless of which season each contest belongs to.
-        List<RoundSpan> phases = competitionRepo
-                .findBySlug(competitionDefaults.defaultCompetitionSlug())
-                .map(c -> c.getPhases() != null ? c.getPhases() : List.<RoundSpan>of())
-                .orElse(List.of());
+        List<RoundSpan> phases =
+                competition != null && competition.getPhases() != null ? competition.getPhases() : List.of();
+
+        Round currentRound = activeSeason != null ? roundSupport.resolveCurrentRound(activeSeason) : null;
 
         int activePage = Math.max(1, query.activePage());
         int pastPage = Math.max(1, query.pastPage());
@@ -66,11 +76,11 @@ public class GetProfileContestListsUseCase {
                         .toList());
 
         List<ContestSummary> activeContests = activeViews.stream()
-                .map(v -> toSummary(v, query.userId(), memberCounts, phases))
+                .map(v -> toSummary(v, query.userId(), memberCounts, phases, true, currentRound))
                 .toList();
 
         List<ContestSummary> pastContests = pastViews.stream()
-                .map(v -> toSummary(v, query.userId(), memberCounts, phases))
+                .map(v -> toSummary(v, query.userId(), memberCounts, phases, false, currentRound))
                 .toList();
 
         return new GetProfileContestListsResult(
@@ -87,14 +97,24 @@ public class GetProfileContestListsUseCase {
     }
 
     private ContestSummary toSummary(
-            ContestRepo.UserContestView view, UUID userId, Map<UUID, Integer> memberCounts, List<RoundSpan> phases) {
+            ContestRepo.UserContestView view,
+            UUID userId,
+            Map<UUID, Integer> memberCounts,
+            List<RoundSpan> phases,
+            boolean isActiveTab,
+            Round currentRound) {
         int memberCount = memberCounts.getOrDefault(view.contestId(), 0);
         Integer rank = resolveRank(view, userId);
         String link = "/contests/" + view.contestId()
                 + (view.isPrivate() ? "?from=profile" : "?segment=overall&from=profile");
         String periodLabel = PhaseRules.resolvePeriodLabel(phases, view.fromRoundPosition(), view.toRoundPosition());
-        return new ContestSummary(
-                view.contestName(), view.seasonName(), periodLabel, memberCount, rank, link, view.isOpen());
+
+        boolean isOpen = view.isOpen();
+        if (isActiveTab && view.isPrivate()) {
+            isOpen = contestSupport.isOpenForJoining(view.isOpen(), view.toRoundPosition(), currentRound);
+        }
+
+        return new ContestSummary(view.contestName(), view.seasonName(), periodLabel, memberCount, rank, link, isOpen);
     }
 
     private Integer resolveRank(ContestRepo.UserContestView view, UUID userId) {

@@ -13,8 +13,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.rest.contest.shared.ContestSeasonSupport;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.web.contest.contestdetail.ContestDetailController.MemberRow;
-import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 import com.ligitabl.model.domain.Entry;
 import com.ligitabl.model.repo.ContestRepo;
@@ -36,7 +36,7 @@ public class ContestMembersController {
     private final EntryRepo entryRepo;
     private final UserRepo userRepo;
     private final ContestSeasonSupport contestSeasonSupport;
-    private final ContestSupport contestSupport;
+    private final RoundSupport roundSupport;
 
     @GetMapping("/{id}/members")
     public String contestMembers(
@@ -76,7 +76,7 @@ public class ContestMembersController {
 
         boolean isPastSeason = contestSeasonSupport.isPastSeason(contest);
         boolean isFinalSprintUnderway = !isPastSeason
-                && contestSeasonSupport.isFinalSprintUnderway(contest, contestSupport.resolveCurrentRoundPosition());
+                && contestSeasonSupport.isFinalSprintUnderway(contest, roundSupport.resolveCurrentRoundPosition());
 
         model.addAttribute("contest", contest);
         model.addAttribute("isPastSeason", isPastSeason);

@@ -107,6 +107,16 @@ public class EntryPersistenceAdapter implements EntryRepo {
     }
 
     @Override
+    public void copyActiveEntries(UUID fromContestId, UUID toContestId, int joinedAtRound) {
+        dsl.insertInto(T_ENTRY, T_ENTRY.FK_USER_ID, T_ENTRY.FK_CONTEST_ID, T_ENTRY.C_JOINED_AT_ROUND)
+                .select(dsl.select(T_ENTRY.FK_USER_ID, DSL.val(toContestId), DSL.val(joinedAtRound))
+                        .from(T_ENTRY)
+                        .where(T_ENTRY.FK_CONTEST_ID.eq(fromContestId))
+                        .and(T_ENTRY.C_REMOVED_AT_ROUND.isNull()))
+                .execute();
+    }
+
+    @Override
     public void deleteByUserAndContest(UUID userId, UUID contestId) {
         dsl.deleteFrom(T_ENTRY)
                 .where(T_ENTRY.FK_USER_ID.eq(userId))

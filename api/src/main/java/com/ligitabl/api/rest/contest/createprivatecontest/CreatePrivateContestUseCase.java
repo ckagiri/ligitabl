@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.contest.ContestCodeGenerator;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.Entry;
@@ -16,7 +17,6 @@ import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
-import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
@@ -33,7 +33,7 @@ public class CreatePrivateContestUseCase {
     private final CompetitionRepo competitionRepo;
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
-    private final MatchRepo matchRepo;
+    private final RoundSupport roundSupport;
     private final ContestRepo contestRepo;
     private final EntryRepo entryRepo;
     private final ContestCodeGenerator codeGenerator;
@@ -102,9 +102,7 @@ public class CreatePrivateContestUseCase {
         // Mid-sprint (pos > sprint.from) would immediately close the join window for others.
         if (sprint.getFrom() <= pos && pos <= sprint.getTo()) {
             if (pos > sprint.getFrom()) return Either.left(new CreatePrivateContestError.InvalidFromSprint(fromCode));
-            var matches = matchRepo.findByRoundId(currentRound.getId());
-            RoundStatus status =
-                    currentRound.isFinalized() ? RoundStatus.FINALIZED : currentRound.computeStatus(matches);
+            RoundStatus status = roundSupport.resolveStatus(currentRound);
             if (status != RoundStatus.OPEN)
                 return Either.left(new CreatePrivateContestError.InvalidFromSprint(fromCode));
         }

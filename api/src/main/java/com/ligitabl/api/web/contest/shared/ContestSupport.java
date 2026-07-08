@@ -9,6 +9,7 @@ import java.util.stream.IntStream;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.PhaseType;
@@ -18,7 +19,6 @@ import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.MatchRepo;
-import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -32,8 +32,8 @@ public class ContestSupport {
     private final CompetitionDefaults competitionDefaults;
     private final CompetitionRepo competitionRepo;
     private final SeasonRepo seasonRepo;
-    private final RoundRepo roundRepo;
     private final MatchRepo matchRepo;
+    private final RoundSupport roundSupport;
 
     public record SprintOption(
             String code,
@@ -59,37 +59,28 @@ public class ContestSupport {
         if (!contest.isOpen()) return false;
         if (season.getCurrentRoundId() == null) return true;
 
-        Round currentRound = roundRepo.findById(season.getCurrentRoundId()).orElse(null);
+        Round currentRound = roundSupport.resolveCurrentRound(season);
         if (currentRound == null) return true;
 
         return !ContestJoinWindow.isJoinWindowClosed(
                 contest.getToRoundPosition(),
                 currentRound,
                 competition,
-                () -> matchRepo.findByRoundId(currentRound.getId()));
+                () -> roundSupport.resolveStatus(currentRound));
     }
 
-    public int resolveCurrentRoundPosition() {
-        String slug = competitionDefaults.defaultCompetitionSlug();
-        var competition = competitionRepo.findBySlug(slug).orElse(null);
-        if (competition == null) return 1;
+    /**
+     * Coarser "closed" rule for list views: just whether the current round has passed the
+     * contest's last round. Unlike the full {@link #isOpenForJoining(Contest, Season, Competition)}
+     * gate used on the detail page and actual joins, this intentionally ignores the last-sprint
+     * opening-round lock check — good enough for a table badge, and needs no round-status lookup
+     * at all (no match fetch), so callers don't need to resolve one for every row.
+     */
+    public boolean isOpenForJoining(boolean contestIsOpen, int toRoundPosition, Round currentRound) {
+        if (!contestIsOpen) return false;
+        if (currentRound == null) return true;
 
-        var season = seasonRepo.findActiveSeason(competition.getId()).orElse(null);
-        if (season == null || season.getCurrentRoundId() == null) return 1;
-
-        return roundRepo
-                .findById(season.getCurrentRoundId())
-                .map(r -> r.getPosition())
-                .orElse(1);
-    }
-
-    private Round resolveCurrentRound() {
-        String slug = competitionDefaults.defaultCompetitionSlug();
-        var competition = competitionRepo.findBySlug(slug).orElse(null);
-        if (competition == null) return null;
-        var season = seasonRepo.findActiveSeason(competition.getId()).orElse(null);
-        if (season == null || season.getCurrentRoundId() == null) return null;
-        return roundRepo.findById(season.getCurrentRoundId()).orElse(null);
+        return currentRound.getPosition() <= toRoundPosition;
     }
 
     public List<QuarterOption> resolveQuarterOptions() {
@@ -112,8 +103,8 @@ public class ContestSupport {
         Map<Integer, MatchRepo.RoundDateRange> dateRanges =
                 season != null ? matchRepo.groupRoundDateRangesBySeason(season.getId()) : Map.of();
 
-        int currentPos = resolveCurrentRoundPosition();
-        Round currentRound = resolveCurrentRound();
+        int currentPos = roundSupport.resolveCurrentRoundPosition();
+        Round currentRound = roundSupport.resolveCurrentRound();
         List<RoundSpan> phases = competition.getPhases();
         List<RoundSpan> quarters =
                 phases.stream().filter(p -> p.getType() == PhaseType.QUARTER).toList();
@@ -130,10 +121,7 @@ public class ContestSupport {
                     } else if (sprint.getFrom() > currentPos) {
                         status = "FUTURE";
                     } else if (currentRound != null) {
-                        var matches = matchRepo.findByRoundId(currentRound.getId());
-                        RoundStatus rs = currentRound.isFinalized()
-                                ? RoundStatus.FINALIZED
-                                : currentRound.computeStatus(matches);
+                        RoundStatus rs = roundSupport.resolveStatus(currentRound);
                         // Only mark OPEN when we're exactly at the sprint's first round.
                         // Mid-sprint (pos > sprint.from) means the join window is already closed
                         // for any single-sprint contest starting here.

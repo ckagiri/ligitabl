@@ -11,6 +11,7 @@ import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
+import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.PhaseType;
@@ -41,6 +42,7 @@ public class GetUserContestSummaryUseCase {
     private final RoundRepo roundRepo;
     private final MatchRepo matchRepo;
     private final ContestRankResolver contestRankResolver;
+    private final ContestSupport contestSupport;
 
     public GetUserContestSummaryResult execute(GetUserContestSummaryQuery query) {
         var competition = competitionRepo.findBySlug(query.competitionSlug()).orElse(null);
@@ -61,7 +63,7 @@ public class GetUserContestSummaryUseCase {
         List<GeneralContestRowDto> generalRows =
                 buildGeneralRows(competition, season, mainContest.getId(), query.userId(), currentRound, dateRanges);
 
-        List<PrivateContestRowDto> privateRows = buildPrivateRows(query.userId(), season.getId());
+        List<PrivateContestRowDto> privateRows = buildPrivateRows(query.userId(), season, currentRound);
 
         return new GetUserContestSummaryResult(generalRows, privateRows);
     }
@@ -134,15 +136,17 @@ public class GetUserContestSummaryUseCase {
         return from + "–" + to;
     }
 
-    private List<PrivateContestRowDto> buildPrivateRows(UUID userId, UUID seasonId) {
-        List<Contest> contests = contestRepo.findPrivateByUserId(userId, seasonId);
+    private List<PrivateContestRowDto> buildPrivateRows(UUID userId, Season season, Round currentRound) {
+        List<Contest> contests = contestRepo.findPrivateByUserId(userId, season.getId());
         Map<Integer, MatchRepo.RoundDateRange> dateRanges =
-                !contests.isEmpty() ? matchRepo.groupRoundDateRangesBySeason(seasonId) : null;
+                !contests.isEmpty() ? matchRepo.groupRoundDateRangesBySeason(season.getId()) : null;
         Map<UUID, Integer> memberCounts = entryRepo.countActiveByContestIds(
                 contests.stream().map(Contest::getId).toList());
         List<PrivateContestRowDto> rows = new ArrayList<>();
         for (Contest contest : contests) {
             int memberCount = memberCounts.getOrDefault(contest.getId(), 0);
+            boolean isOpen =
+                    contestSupport.isOpenForJoining(contest.isOpen(), contest.getToRoundPosition(), currentRound);
             rows.add(new PrivateContestRowDto(
                     contest.getId(),
                     contest.getName(),
@@ -154,7 +158,7 @@ public class GetUserContestSummaryUseCase {
                     contest.getToRoundPosition(),
                     memberCount,
                     contest.isOwnedBy(userId),
-                    contest.isOpen()));
+                    isOpen));
         }
         return rows;
     }

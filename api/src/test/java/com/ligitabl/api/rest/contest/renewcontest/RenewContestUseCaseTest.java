@@ -149,7 +149,7 @@ class RenewContestUseCaseTest {
     }
 
     @Test
-    void happyPath_singleSprint_savesRenewedContestAndCarriesOverActiveMembers() {
+    void happyPath_singleSprint_savesRenewedContestAndCopiesActiveMembers() {
         Contest original = originalContest(6, 6); // S6 -> S6
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         stubActiveSeasonSameAsContest();
@@ -157,28 +157,11 @@ class RenewContestUseCaseTest {
         when(contestRepo.findByJoinCode(any())).thenReturn(Optional.empty());
         when(codeGenerator.generate()).thenReturn(CODE);
 
-        UUID activeUser = UUID.randomUUID();
-        UUID leftUser = UUID.randomUUID();
-        when(entryRepo.findByContestId(original.getId()))
-                .thenReturn(List.of(
-                        Entry.builder()
-                                .userId(activeUser)
-                                .contestId(original.getId())
-                                .joinedAtRound(1)
-                                .build(),
-                        Entry.builder()
-                                .userId(leftUser)
-                                .contestId(original.getId())
-                                .joinedAtRound(1)
-                                .removedAtRound(3)
-                                .build()));
-
         when(contestRepo.save(any())).thenAnswer(inv -> {
             Contest c = inv.getArgument(0);
             if (c.getId() == null) c.setId(UUID.randomUUID());
             return c;
         });
-        when(entryRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         var cmd = new RenewContestCommand(userId, original.getId(), "S7");
         var result = useCase.execute(cmd);
@@ -199,10 +182,8 @@ class RenewContestUseCaseTest {
         Contest savedOriginal = contestCaptor.getAllValues().get(1);
         assertThat(savedOriginal.getRenewedIntoContestId()).isEqualTo(savedRenewed.getId());
 
-        ArgumentCaptor<Entry> entryCaptor = ArgumentCaptor.forClass(Entry.class);
-        verify(entryRepo, times(1)).save(entryCaptor.capture());
-        assertThat(entryCaptor.getValue().getUserId()).isEqualTo(activeUser);
-        assertThat(entryCaptor.getValue().getContestId()).isEqualTo(savedRenewed.getId());
+        verify(entryRepo)
+                .copyActiveEntries(original.getId(), savedRenewed.getId(), savedRenewed.getFromRoundPosition());
     }
 
     @Test
@@ -311,7 +292,6 @@ class RenewContestUseCaseTest {
                 .competitionId(competitionId)
                 .build();
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(activeSeason));
-        when(entryRepo.findByContestId(original.getId())).thenReturn(List.of());
         when(contestRepo.findByJoinCode(any())).thenReturn(Optional.empty());
         when(codeGenerator.generate()).thenReturn(CODE);
         when(contestRepo.save(any())).thenAnswer(inv -> {
@@ -366,7 +346,6 @@ class RenewContestUseCaseTest {
                 .competitionId(competitionId)
                 .build();
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(activeSeason));
-        when(entryRepo.findByContestId(original.getId())).thenReturn(List.of());
         when(contestRepo.findByJoinCode(any())).thenReturn(Optional.empty());
         when(codeGenerator.generate()).thenReturn(CODE);
         when(contestRepo.save(any())).thenAnswer(inv -> {
@@ -432,7 +411,6 @@ class RenewContestUseCaseTest {
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         stubActiveSeasonSameAsContest();
         stubCurrentRoundPosition(8);
-        when(entryRepo.findByContestId(original.getId())).thenReturn(List.of());
 
         Contest existing = Contest.builder()
                 .id(UUID.randomUUID())
