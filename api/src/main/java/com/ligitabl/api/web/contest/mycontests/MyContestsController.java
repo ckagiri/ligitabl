@@ -1,6 +1,7 @@
 package com.ligitabl.api.web.contest.mycontests;
 
 import java.security.Principal;
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.stereotype.Controller;
@@ -12,6 +13,7 @@ import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.contest.getusercontestsummary.GetUserContestSummaryQuery;
 import com.ligitabl.api.rest.contest.getusercontestsummary.GetUserContestSummaryUseCase;
+import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 
 import lombok.RequiredArgsConstructor;
@@ -23,6 +25,7 @@ public class MyContestsController {
 
     private final GetUserContestSummaryUseCase getUserContestSummaryUseCase;
     private final CompetitionDefaults competitionDefaults;
+    private final ContestSupport contestSupport;
 
     @GetMapping
     public String myContests(Model model, Principal principal) {
@@ -35,6 +38,12 @@ public class MyContestsController {
 
         model.addAttribute("generalContests", result.generalContests());
         model.addAttribute("privateContests", result.privateContests());
+        model.addAttribute(
+                "renewalSprints",
+                result.privateContests().isEmpty() ? List.of() : contestSupport.resolveSprintOptions());
+        model.addAttribute(
+                "renewalQuarters",
+                result.privateContests().isEmpty() ? List.of() : contestSupport.resolveQuarterOptions());
         model.addAttribute("pageTitle", "My Contests");
         return "contest/index";
     }

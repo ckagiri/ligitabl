@@ -99,18 +99,31 @@ window.contestCreator = function() {
     }
   };
 };
-window.contestRenewal = function() {
-  const d = window.__contestRenewalData || {};
+window.contestRenewal = function(data) {
+  const d = data || window.__contestRenewalData || {};
   return {
     contestId: d.contestId || "",
     contestName: d.contestName || "",
-    sprints: d.sprints || [],
-    quarters: d.quarters || [],
+    sprints: d.sprints || window.__renewalSprints || [],
+    quarters: d.quarters || window.__renewalQuarters || [],
     fromCode: d.fromCode || "",
+    defaultToCode: d.defaultToCode || "",
     toOptionCodes: d.toOptionCodes || [],
     activeMemberCount: d.activeMemberCount || 0,
     open: false,
+    structureOpen: true,
     selectedTo: d.defaultToCode || "",
+    init() {
+      this.$watch("open", (isOpen) => {
+        if (isOpen) {
+          this.selectedTo = this.defaultToCode;
+          this.structureOpen = true;
+        }
+      });
+      window.addEventListener("pageshow", (e) => {
+        if (e.persisted) this.open = false;
+      });
+    },
     get fromSprint() {
       return this.sprints.find((s) => s.code === this.fromCode) || null;
     },
@@ -123,6 +136,10 @@ window.contestRenewal = function() {
     get scoresResetLabel() {
       const from = this.fromSprint;
       return from ? "Scores reset at " + from.name + " start (" + from.startDate + ")" : "";
+    },
+    toOptionLabel(option) {
+      const label = option.name + " • " + option.endDate;
+      return option.code === this.defaultToCode ? label + " (default)" : label;
     },
     renderHierarchy() {
       return renderStructureHierarchy(this.sprints, this.quarters, this.fromSprint, this.selectedToSprint);
@@ -140,20 +157,29 @@ window.contestDetail = function() {
     expanded: {},
     init() {
       window.leagueApp = this;
+      this.expandRelevantQuarters();
+    },
+    // Auto-expand any LIVE quarter, plus whichever quarter contains the currently
+    // selected segment, so the active selection is always visible without an extra click.
+    expandRelevantQuarters() {
       const root = this.segmentTree[0];
-      if (root && root.children) {
-        root.children.forEach((child) => {
-          if (child.status === "LIVE") this.expanded[child.id] = true;
-        });
+      if (!root) return;
+      if (root.nodeType === "QUARTER") {
+        const containsActive = root.id === this.activeSegment || root.children && root.children.some((s) => s.id === this.activeSegment);
+        if (root.status === "LIVE" || containsActive) this.expanded[root.id] = true;
+        return;
       }
+      if (!root.children) return;
+      root.children.forEach((child) => {
+        if (child.status === "LIVE") this.expanded[child.id] = true;
+        if (child.id === this.activeSegment) this.expanded[child.id] = true;
+        if (child.children && child.children.some((s) => s.id === this.activeSegment)) {
+          this.expanded[child.id] = true;
+        }
+      });
     },
     openMenu() {
-      const root = this.segmentTree[0];
-      if (root && root.children) {
-        root.children.forEach((child) => {
-          if (child.status === "LIVE") this.expanded[child.id] = true;
-        });
-      }
+      this.expandRelevantQuarters();
       if (window.innerWidth >= 768) {
         this.dropdownOpen = true;
       } else {
