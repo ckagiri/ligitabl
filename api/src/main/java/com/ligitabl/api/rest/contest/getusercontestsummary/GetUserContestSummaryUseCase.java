@@ -11,9 +11,11 @@ import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
+import com.ligitabl.api.web.contest.shared.ContestRenewalCalculator;
 import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
+import com.ligitabl.model.domain.PhaseRules;
 import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundSpan;
@@ -149,6 +151,7 @@ public class GetUserContestSummaryUseCase {
             int memberCount = memberCounts.getOrDefault(contest.getId(), 0);
             String status = contestSupport.deriveContestStatus(
                     contest.getFromRoundPosition(), contest.getToRoundPosition(), currentRound, phases);
+            RenewalInfo renewal = resolveRenewalInfo(contest, userId, currentRound, phases);
             rows.add(new PrivateContestRowDto(
                     contest.getId(),
                     contest.getName(),
@@ -161,9 +164,54 @@ public class GetUserContestSummaryUseCase {
                     memberCount,
                     contest.isOwnedBy(userId),
                     status,
-                    contest.isOpen()));
+                    contest.isOpen(),
+                    renewal.visible(),
+                    renewal.enabled(),
+                    renewal.fromCode(),
+                    renewal.defaultToCode(),
+                    renewal.toOptionCodes()));
         }
         return rows;
+    }
+
+    private record RenewalInfo(
+            boolean visible, boolean enabled, String fromCode, String defaultToCode, List<String> toOptionCodes) {
+        static RenewalInfo hidden() {
+            return new RenewalInfo(false, false, null, null, List.of());
+        }
+    }
+
+    /**
+     * Mirrors GetContestRenewalOptionsUseCase's current-season branch using the pure
+     * ContestRenewalCalculator directly — every row here already belongs to the active season
+     * (findPrivateByUserId is scoped to it), so the past-season branch never applies.
+     */
+    private RenewalInfo resolveRenewalInfo(Contest contest, UUID userId, Round currentRound, List<RoundSpan> phases) {
+        if (!contest.isOwnedBy(userId) || contest.getRenewedIntoContestId() != null) {
+            return RenewalInfo.hidden();
+        }
+
+        RoundSpan originalFrom = PhaseRules.sprintStartingAt(phases, contest.getFromRoundPosition())
+                .orElse(null);
+        RoundSpan originalTo =
+                PhaseRules.sprintEndingAt(phases, contest.getToRoundPosition()).orElse(null);
+        if (originalFrom == null || originalTo == null) return RenewalInfo.hidden();
+
+        if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases)) return RenewalInfo.hidden();
+
+        var renewalFrom = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases);
+        if (renewalFrom.isEmpty()) return RenewalInfo.hidden();
+
+        RoundSpan from = renewalFrom.get();
+        RoundSpan defaultTo = ContestRenewalCalculator.resolveDefaultTo(originalFrom, originalTo, from, phases);
+        List<String> toOptionCodes = ContestRenewalCalculator.resolveValidToOptions(from, phases).stream()
+                .map(RoundSpan::getCode)
+                .toList();
+        boolean enabled = currentRound != null
+                && ContestRenewalCalculator.hasReachedRenewalTiming(
+                        originalFrom, originalTo, currentRound.getPosition(), phases);
+
+        return new RenewalInfo(true, enabled, from.getCode(), defaultTo.getCode(), toOptionCodes);
     }
 
     private RoundSpan findContainingPhase(List<RoundSpan> phases, int roundPosition, PhaseType type) {
