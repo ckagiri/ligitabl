@@ -28,6 +28,11 @@ DOCKER_COMPOSE ?= docker compose
 DEVTOOLS_RESTART ?= false
 SPRING_BOOT_RUN_ARGS := -Dspring-boot.run.mainClass=com.ligitabl.api.LigitablApplication -Dspring-boot.run.jvmArguments="-Dspring.devtools.restart.enabled=$(DEVTOOLS_RESTART)"
 
+# Batch/workflow-mode runs (--spring.main.web-application-type=none) never serve login, so they
+# don't need Google OAuth2 client credentials configured locally — only the real running web
+# server does. Exclude OAuth2 client autoconfig so these jobs boot without GOOGLE_CLIENT_ID/SECRET.
+WORKFLOW_NO_OAUTH := --spring.autoconfigure.exclude=org.springframework.boot.autoconfigure.security.oauth2.client.servlet.OAuth2ClientAutoConfiguration,org.springframework.boot.autoconfigure.security.oauth2.client.reactive.ReactiveOAuth2ClientAutoConfiguration
+
 # ------------------------------------------------------------------------------
 # Environment Configuration (SAFETY-FIRST)
 # ------------------------------------------------------------------------------
@@ -366,7 +371,7 @@ db-seed-demo: ## Seed demo league data (ENV=$(ENV))
 db-seed-season: ## Seed season extras (ENV=$(ENV))
 	$(MAKE) compose-up-db
 	$(MAKE) api-build
-	java -jar $(JAR) --spring.main.web-application-type=none --seed-season \
+	java -jar $(JAR) --spring.main.web-application-type=none $(WORKFLOW_NO_OAUTH) --seed-season \
 		--seeding.config=$(SEEDING_CONFIG)
 
 .PHONY: db-seed-users
@@ -408,6 +413,7 @@ import-competition: ## Import matches for a competition (COMP=XX, ENV=$(ENV))
 	$(MAKE) api-build; \
 	java -jar $(JAR) \
 		--spring.main.web-application-type=none \
+		$(WORKFLOW_NO_OAUTH) \
 		--workflow.run=true \
 		--workflow.competition=$(COMP) \
 		--workflow.exit-after=true
@@ -432,6 +438,7 @@ import-competition-with-seed: ## Seed reference data, then import matches (COMP=
 	$(MAKE) api-build; \
 	java -jar $(JAR) \
 		--spring.main.web-application-type=none \
+		$(WORKFLOW_NO_OAUTH) \
 		--workflow.run=true \
 		--workflow.competition=$(COMP) \
 		--workflow.exit-after=true
@@ -519,6 +526,7 @@ prod-import-pl: ## Import PL matches to production DB from local machine via tun
 	SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:$(PROD_TUNNEL_PORT)/$(DB_NAME)?sslmode=disable" \
 	java -jar $(JAR) \
 		--spring.main.web-application-type=none \
+		$(WORKFLOW_NO_OAUTH) \
 		--workflow.run=true \
 		--workflow.competition=PL \
 		--workflow.exit-after=true
@@ -534,6 +542,7 @@ prod-calc-standings: ## Calculate standings against production DB from local mac
 	SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:$(PROD_TUNNEL_PORT)/$(DB_NAME)?sslmode=disable" \
 	java -jar $(JAR) \
 		--spring.main.web-application-type=none \
+		$(WORKFLOW_NO_OAUTH) \
 		--workflow.run-calc-standings=true \
 		--workflow.exit-after=true
 
@@ -547,6 +556,7 @@ calc-standings: ## Calculate standings for all rounds (ENV=$(ENV))
 	$(MAKE) api-build
 	java -jar $(JAR) \
 		--spring.main.web-application-type=none \
+		$(WORKFLOW_NO_OAUTH) \
 		--workflow.run-calc-standings=true \
 		--workflow.exit-after=true
 
