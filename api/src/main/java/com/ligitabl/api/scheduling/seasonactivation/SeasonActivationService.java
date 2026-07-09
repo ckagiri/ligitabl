@@ -48,7 +48,7 @@ public class SeasonActivationService {
             return;
         }
 
-        if (!activeSeason.isPreSeasonOpen()) {
+        if (!activeSeason.isPreSeason() || !activeSeason.isOffSeason()) {
             return;
         }
 

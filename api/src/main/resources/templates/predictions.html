@@ -30,7 +30,7 @@
                   </span>
                   <!-- State indicators (shown only while the season is in play — pre-season/off-season have their own banners below) -->
                   <span
-                    th:if="${isCurrentRound && isInPlay}"
+                    th:if="${isCurrentRound && !isInactive}"
                     class="inline-flex items-center gap-1 text-xs sm:text-sm font-medium"
                   >
                     <span th:if="${roundState == 'open'}" class="text-green-600"
@@ -92,7 +92,7 @@
             </th:block>
 
             <!-- Access Mode Banners (shown only while the season is in play) -->
-            <th:block th:if="${isInPlay}">
+            <th:block th:unless="${isInactive}">
               <div
                 th:replace="~{fragments/access-banners :: banners(
                   ${isGuest}, ${canCreateEntry},

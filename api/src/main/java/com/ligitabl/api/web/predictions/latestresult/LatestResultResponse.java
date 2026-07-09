@@ -10,4 +10,6 @@ public record LatestResultResponse(
         int sprintFrom,
         int sprintTo,
         int sprintBest,
-        boolean isNewSprintBest) {}
+        boolean isNewSprintBest,
+        int currentRound,
+        int lastRound) {}

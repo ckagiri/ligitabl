@@ -255,7 +255,7 @@
             Bring Your Crew
           </h2>
           <p class="text-gray-600">
-            Create your own table alongside the main competition. Give it a name, set the window, and invite friends, family, or coworkers with a simple invite code. Then find out who really knows the Premier League.
+            Create your own table alongside the main competition. Give it a name, set the window, and invite friends, family, or coworkers with a link or simple code. Then find out who really knows the Premier League.
           </p>
         </div>
       </div>
@@ -538,7 +538,7 @@
       </div>
 
       <!-- Logged-in CTA -->
-      <div th:if="${isLoggedIn}" class="text-center py-12">
+      <div th:if="${isLoggedIn && showLoggedInCta}" class="text-center py-12">
         <div class="text-4xl mb-4">🎯</div>
         <h2 class="text-2xl font-bold mb-3 text-gray-900">
           You're in — go make your swaps.

@@ -10,13 +10,13 @@ import java.util.List;
  * thresholds in templates.
  */
 public enum ScoreTier {
-    PINNACLE(200, "🤯", "S+", "Pinnacle", Group.OUTSTANDING),
-    LEGEND(195, "🤩", "S", "Legend", Group.OUTSTANDING),
-    ELITE(190, "😎", "A+", "Elite", Group.OUTSTANDING),
-    MASTER(185, "😁", "A", "Master", Group.OUTSTANDING),
+    PINNACLE(200, "🤯", "S", "Pinnacle", Group.OUTSTANDING),
+    LEGEND(195, "🤩", "A+", "Legend", Group.OUTSTANDING),
+    ELITE(190, "😎", "A", "Elite", Group.OUTSTANDING),
+    MASTER(185, "😁", "A-", "Master", Group.OUTSTANDING),
     EXPERT(180, "😃", "B+", "Expert", Group.STRONG),
-    ADVANCED(170, "😊", "B", "Advanced", Group.STRONG),
-    COMPETENT(160, "🙂", "C+", "Competent", Group.STRONG),
+    ADVANCED(170, "🙂", "B", "Advanced", Group.STRONG),
+    COMPETENT(160, "😌", "C+", "Competent", Group.STRONG),
     NOVICE(145, "😬", "C", "Novice", Group.FAIR),
     ASPIRANT(0, "😩", "D", "Aspirant", Group.FAIR);
 

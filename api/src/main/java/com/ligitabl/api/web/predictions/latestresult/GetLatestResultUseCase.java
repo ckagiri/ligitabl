@@ -74,10 +74,11 @@ public class GetLatestResultUseCase {
             return Optional.empty();
         }
 
-        return Optional.of(buildResponse(result, resultRound, userId, season));
+        return Optional.of(buildResponse(result, resultRound, userId, season, currentRound));
     }
 
-    private LatestResultResponse buildResponse(RoundResult result, int round, UUID userId, Season season) {
+    private LatestResultResponse buildResponse(
+            RoundResult result, int round, UUID userId, Season season, int currentRound) {
         HitDistribution distribution = calculateHitDistribution(result);
 
         // Calculate position and movement from leaderboard
@@ -131,7 +132,9 @@ public class GetLatestResultUseCase {
                 sprintPhase.getFrom(),
                 sprintPhase.getTo(),
                 sprintBest,
-                isNewSprintBest);
+                isNewSprintBest,
+                currentRound,
+                season.getMaxRounds());
     }
 
     private HitDistribution calculateHitDistribution(RoundResult result) {
