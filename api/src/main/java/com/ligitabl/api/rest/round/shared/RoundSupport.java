@@ -23,10 +23,16 @@ public class RoundSupport {
 
     /**
      * The round's live status (OPEN/LOCKED/COMPLETED/FINALIZED/ADVANCED), computed from its own
-     * lifecycle flags and its current matches. RoundStatus.UNKNOWN if round is null.
+     * lifecycle flags and its current matches. RoundStatus.UNKNOWN if round is null. A round with
+     * no matches loaded yet (not synced) reads as OPEN rather than {@link Round#computeStatus}'s
+     * own empty-round default of COMPLETED — matches aren't in place to judge by yet.
      */
     public RoundStatus resolveStatus(Round round) {
-        return round == null ? RoundStatus.UNKNOWN : round.computeStatus(matchRepo.findByRoundId(round.getId()));
+        if (round == null) {
+            return RoundStatus.UNKNOWN;
+        }
+        var matches = matchRepo.findByRoundId(round.getId());
+        return (matches == null || matches.isEmpty()) ? RoundStatus.OPEN : round.computeStatus(matches);
     }
 
     /** The default competition's current round status. */
