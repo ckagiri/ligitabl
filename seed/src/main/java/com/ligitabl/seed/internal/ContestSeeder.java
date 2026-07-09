@@ -10,7 +10,7 @@ import java.util.UUID;
 import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 
-public class ContestSeeder extends AbstractSeeder<DefaultsConfig> {
+public class ContestSeeder extends AbstractSeeder<CurrentSeason> {
 
     private final ReferenceResolver referenceResolver;
 
@@ -20,19 +20,17 @@ public class ContestSeeder extends AbstractSeeder<DefaultsConfig> {
     }
 
     @Override
-    protected boolean isValidConfig(DefaultsConfig config) {
+    protected boolean isValidConfig(CurrentSeason config) {
         return config != null;
     }
 
     @Override
-    protected void performSeed(DefaultsConfig defaults) {
-        defaults.validateRequired();
-
-        UUID seasonId = referenceResolver.resolveSeasonId(defaults.competitionSlug(), defaults.seasonSlug());
+    protected void performSeed(CurrentSeason currentSeason) {
+        UUID seasonId = referenceResolver.resolveSeasonId(currentSeason.competitionSlug(), currentSeason.seasonSlug());
 
         String competitionName = dsl.select(T_COMPETITION.C_NAME)
                 .from(T_COMPETITION)
-                .where(T_COMPETITION.C_SLUG.eq(defaults.competitionSlug()))
+                .where(T_COMPETITION.C_SLUG.eq(currentSeason.competitionSlug()))
                 .fetchOne(T_COMPETITION.C_NAME);
 
         String seasonName = dsl.select(T_SEASON.C_NAME)
@@ -80,8 +78,7 @@ public class ContestSeeder extends AbstractSeeder<DefaultsConfig> {
                             1,
                             toRoundPosition,
                             null)
-                    .onConflict(T_CONTEST.FK_SEASON_ID, T_CONTEST.C_NAME)
-                    .doNothing()
+                    .onConflictDoNothing()
                     .execute();
         }
 

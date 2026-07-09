@@ -71,25 +71,25 @@ EXPORT_FOOTBALL_DATA_API_TOKEN = FOOTBALL_DATA_API_TOKEN="$${FOOTBALL_DATA_API_T
 # Production Safety Checks
 # ------------------------------------------------------------------------------
 ifeq ($(ENV),prod)
-	# Verify PROD_CONFIRMED is set to prevent accidental prod operations
-	ifndef PROD_CONFIRMED
-		$(error ❌ PRODUCTION ENVIRONMENT BLOCKED!\
-		\n\
-		\n⚠️⚠️⚠️  YOU ARE TARGETING PRODUCTION  ⚠️⚠️⚠️\
-		\n\
-		\nTo confirm, run:\
-		\n  make <target> ENV=prod PROD_CONFIRMED=yes\
-		\n\
-		\nBe ABSOLUTELY CERTAIN this is what you want!)
-	endif
+# Verify PROD_CONFIRMED is set to prevent accidental prod operations
+ifndef PROD_CONFIRMED
+$(error ❌ PRODUCTION ENVIRONMENT BLOCKED!\
+\n\
+\n⚠️⚠️⚠️  YOU ARE TARGETING PRODUCTION  ⚠️⚠️⚠️\
+\n\
+\nTo confirm, run:\
+\n  make <target> ENV=prod PROD_CONFIRMED=yes\
+\n\
+\nBe ABSOLUTELY CERTAIN this is what you want!)
+endif
 
-	ifneq ($(PROD_CONFIRMED),yes)
-		$(error ❌ PROD_CONFIRMED must be 'yes' (you provided: '$(PROD_CONFIRMED)')\
-		\nRun: make <target> ENV=prod PROD_CONFIRMED=yes)
-	endif
+ifneq ($(PROD_CONFIRMED),yes)
+$(error ❌ PROD_CONFIRMED must be 'yes' (you provided: '$(PROD_CONFIRMED)')\
+\nRun: make <target> ENV=prod PROD_CONFIRMED=yes)
+endif
 
-	# Extra warning for destructive operations
-	PROD_WARNING := 🔥🔥🔥 PRODUCTION DATABASE 🔥🔥🔥
+# Extra warning for destructive operations
+PROD_WARNING := 🔥🔥🔥 PRODUCTION DATABASE 🔥🔥🔥
 endif
 
 # ------------------------------------------------------------------------------
@@ -97,31 +97,31 @@ endif
 # ------------------------------------------------------------------------------
 # Prevent common production-like database names in test/dev environments
 ifeq ($(ENV),test)
-	# Test environment should have 'test' in the name
-	ifeq (,$(findstring test,$(DB_NAME)))
-		$(warning ⚠️  WARNING: DB_NAME='$(DB_NAME)' doesn't contain 'test')
-		$(warning ⚠️  Expected something like: ligitabl_test)
-		$(warning ⚠️  Double-check your .env.test file!)
-	endif
+# Test environment should have 'test' in the name
+ifeq (,$(findstring test,$(DB_NAME)))
+$(warning ⚠️  WARNING: DB_NAME='$(DB_NAME)' doesn't contain 'test')
+$(warning ⚠️  Expected something like: ligitabl_test)
+$(warning ⚠️  Double-check your .env.test file!)
+endif
 endif
 
 ifeq ($(ENV),dev)
-	# Dev environment should have 'dev' in the name
-	ifeq (,$(findstring dev,$(DB_NAME)))
-		$(warning ⚠️  WARNING: DB_NAME='$(DB_NAME)' doesn't contain 'dev')
-		$(warning ⚠️  Expected something like: ligitabl_dev)
-		$(warning ⚠️  Double-check your .env.dev file!)
-	endif
+# Dev environment should have 'dev' in the name
+ifeq (,$(findstring dev,$(DB_NAME)))
+$(warning ⚠️  WARNING: DB_NAME='$(DB_NAME)' doesn't contain 'dev')
+$(warning ⚠️  Expected something like: ligitabl_dev)
+$(warning ⚠️  Double-check your .env.dev file!)
+endif
 endif
 
 # Block obvious production database names in test/dev
 FORBIDDEN_NAMES := ligitabl_prod production prod_db db_prod
 ifneq ($(ENV),prod)
-	ifneq (,$(filter $(DB_NAME),$(FORBIDDEN_NAMES)))
-		$(error ❌ BLOCKED: DB_NAME='$(DB_NAME)' looks like production!\
-		\nYou're using ENV=$(ENV) but targeting a prod-like database.\
-		\nCheck your $(ENV_FILE) file.)
-	endif
+ifneq (,$(filter $(DB_NAME),$(FORBIDDEN_NAMES)))
+$(error ❌ BLOCKED: DB_NAME='$(DB_NAME)' looks like production!\
+\nYou're using ENV=$(ENV) but targeting a prod-like database.\
+\nCheck your $(ENV_FILE) file.)
+endif
 endif
 
 # ------------------------------------------------------------------------------

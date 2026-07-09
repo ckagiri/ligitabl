@@ -14,7 +14,7 @@ import java.util.UUID;
 import org.jooq.DSLContext;
 import org.jooq.JSONB;
 
-public class StandingsSeeder extends AbstractSeeder<DefaultsConfig> {
+public class StandingsSeeder extends AbstractSeeder<CurrentSeason> {
 
     private final ObjectMapper objectMapper;
     private final ReferenceResolver referenceResolver;
@@ -26,15 +26,13 @@ public class StandingsSeeder extends AbstractSeeder<DefaultsConfig> {
     }
 
     @Override
-    protected boolean isValidConfig(DefaultsConfig config) {
+    protected boolean isValidConfig(CurrentSeason config) {
         return config != null;
     }
 
     @Override
-    protected void performSeed(DefaultsConfig defaults) {
-        defaults.validateRequired();
-
-        UUID seasonId = referenceResolver.resolveSeasonId(defaults.competitionSlug(), defaults.seasonSlug());
+    protected void performSeed(CurrentSeason currentSeason) {
+        UUID seasonId = referenceResolver.resolveSeasonId(currentSeason.competitionSlug(), currentSeason.seasonSlug());
 
         JSONB initialRankingsJson = dsl.select(T_SEASON.C_INITIAL_RANKINGS)
                 .from(T_SEASON)

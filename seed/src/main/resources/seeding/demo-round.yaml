@@ -1,7 +1,8 @@
 round:
-  competitionSlug: super-premier-league
-  seasonSlug: 2024-25
-  count: 22
   namePrefix: Gameweek
   slugPrefix: gw-
   startPosition: 1
+  seasons:
+    - competitionSlug: super-premier-league
+      seasonSlug: 2024-25
+      count: 22

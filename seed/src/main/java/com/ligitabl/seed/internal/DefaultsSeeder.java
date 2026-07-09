@@ -14,29 +14,27 @@ public class DefaultsSeeder {
         this.dsl = dsl;
     }
 
-    public void applyDefaults(DefaultsConfig defaults) {
-        defaults.validateRequired();
-
+    public void applyDefaults(CurrentSeason currentSeason) {
         var competitionId = dsl.select(T_COMPETITION.PK_ID)
                 .from(T_COMPETITION)
-                .where(T_COMPETITION.C_SLUG.eq(defaults.competitionSlug()))
+                .where(T_COMPETITION.C_SLUG.eq(currentSeason.competitionSlug()))
                 .fetchOne(T_COMPETITION.PK_ID);
 
         if (competitionId == null) {
             throw new IllegalStateException(
-                    "Defaults competition not found with slug: '" + defaults.competitionSlug() + "'");
+                    "Defaults competition not found with slug: '" + currentSeason.competitionSlug() + "'");
         }
 
         var seasonId = dsl.select(T_SEASON.PK_ID)
                 .from(T_SEASON)
                 .where(T_SEASON.FK_COMPETITION_ID.eq(competitionId)
-                        .and(T_SEASON.C_SLUG.eq(defaults.seasonSlug())))
+                        .and(T_SEASON.C_SLUG.eq(currentSeason.seasonSlug())))
                 .fetchOne(T_SEASON.PK_ID);
 
         if (seasonId == null) {
             throw new IllegalStateException(
-                    "Defaults season not found with competitionSlug='" + defaults.competitionSlug()
-                            + "', seasonSlug='" + defaults.seasonSlug() + "'");
+                    "Defaults season not found with competitionSlug='" + currentSeason.competitionSlug()
+                            + "', seasonSlug='" + currentSeason.seasonSlug() + "'");
         }
 
         var roundId = dsl.select(T_ROUND.PK_ID)

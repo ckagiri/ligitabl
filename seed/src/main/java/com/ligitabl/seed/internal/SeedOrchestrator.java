@@ -3,6 +3,7 @@ package com.ligitabl.seed.internal;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.seed.internal.config.RoundSeedConfig;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.jooq.DSLContext;
@@ -27,19 +28,35 @@ public class SeedOrchestrator {
     public SeedExecutionReport executeSeed(Map<String, Object> sections, String mainResource) {
         resultCollector.clear();
 
-        DefaultsConfig defaults = parseDefaultsIfPresent(sections);
-        requireDefaultsForProduction(defaults, mainResource);
+        DefaultsConfig configuredDefaults = parseDefaultsIfPresent(sections);
+        requireDefaultsForProduction(configuredDefaults, mainResource);
 
         seedUsers(sections);
         seedTeams(sections);
         seedCompetitions(sections);
         seedSeasons(sections);
         seedRounds(sections);
-        applyDefaults(defaults);
-        seedMainContest(defaults);
-        seedInitialStandings(defaults);
+
+        CurrentSeason currentSeason = resolveCurrentSeason(configuredDefaults);
+        applyDefaults(currentSeason);
+        seedMainContest(currentSeason);
+        seedInitialStandings(currentSeason);
 
         return resultCollector.generateReport();
+    }
+
+    /**
+     * Resolves the season whose date range covers "now" (or the soonest upcoming / most
+     * recently ended one), so seeding config never needs editing when a new season starts.
+     */
+    private CurrentSeason resolveCurrentSeason(DefaultsConfig defaults) {
+        if (defaults == null) {
+            return null;
+        }
+
+        CurrentSeasonResolver resolver = new CurrentSeasonResolver(dsl);
+        String resolvedSlug = resolver.resolveCurrentSeasonSlug(defaults.competitionSlug());
+        return new CurrentSeason(defaults.competitionSlug(), resolvedSlug);
     }
 
     @SuppressWarnings("unchecked")
@@ -111,37 +128,60 @@ public class SeedOrchestrator {
     @SuppressWarnings("unchecked")
     private void seedRounds(Map<String, Object> sections) {
         Object roundConfig = sections.get("round");
-        if (roundConfig instanceof Map<?, ?> map) {
-            RoundSeedConfig config = RoundSeedConfig.fromMap((Map<String, Object>) map);
+        if (!(roundConfig instanceof Map<?, ?> roundMap)) {
+            return;
+        }
+
+        Map<String, Object> sharedDefaults = new HashMap<>();
+        for (String key : List.of("namePrefix", "slugPrefix", "startPosition")) {
+            if (roundMap.containsKey(key)) {
+                sharedDefaults.put(key, roundMap.get(key));
+            }
+        }
+
+        Object seasonsObj = roundMap.get("seasons");
+        if (!(seasonsObj instanceof List<?> seasonEntries)) {
+            return;
+        }
+
+        for (Object entryObj : seasonEntries) {
+            if (!(entryObj instanceof Map<?, ?> entryMap)) {
+                continue;
+            }
+
+            Map<String, Object> merged = new HashMap<>(sharedDefaults);
+            merged.putAll((Map<String, Object>) entryMap);
+
+            RoundSeedConfig config = RoundSeedConfig.fromMap(merged);
             RoundSeeder seeder = new RoundSeeder(dsl);
             SeedResult result = seeder.seed(config);
             resultCollector.add(result);
         }
     }
 
-    private void applyDefaults(DefaultsConfig defaults) {
-        if (defaults == null) {
+    private void applyDefaults(CurrentSeason currentSeason) {
+        if (currentSeason == null) {
             return;
         }
         DefaultsSeeder defaultsSeeder = new DefaultsSeeder(dsl);
-        defaultsSeeder.applyDefaults(defaults);
+        defaultsSeeder.applyDefaults(currentSeason);
     }
 
-    private void seedMainContest(DefaultsConfig defaults) {
-        if (defaults == null) {
+    private void seedMainContest(CurrentSeason currentSeason) {
+        if (currentSeason == null) {
             return;
         }
         ContestSeeder seeder = new ContestSeeder(dsl);
-        SeedResult result = seeder.seed(defaults);
+        SeedResult result = seeder.seed(currentSeason);
         resultCollector.add(result);
     }
 
-    private void seedInitialStandings(DefaultsConfig defaults) {
-        if (defaults == null) {
+    private void seedInitialStandings(CurrentSeason currentSeason) {
+        if (currentSeason == null) {
             return;
         }
         StandingsSeeder seeder = new StandingsSeeder(dsl, objectMapper);
-        SeedResult result = seeder.seed(defaults);
+        SeedResult result = seeder.seed(currentSeason);
         resultCollector.add(result);
     }
 
