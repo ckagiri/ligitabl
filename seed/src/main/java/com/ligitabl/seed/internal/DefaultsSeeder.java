@@ -4,6 +4,7 @@ import static com.ligitabl.model.db.tables.TCompetition.T_COMPETITION;
 import static com.ligitabl.model.db.tables.TSeason.T_SEASON;
 import static com.ligitabl.model.db.tables.TRound.T_ROUND;
 
+import java.util.UUID;
 import org.jooq.DSLContext;
 
 public class DefaultsSeeder {
@@ -14,29 +15,33 @@ public class DefaultsSeeder {
         this.dsl = dsl;
     }
 
-    public void applyDefaults(DefaultsConfig defaults) {
-        defaults.validateRequired();
-
+    /**
+     * Sets fk_active_season_id / fk_current_round_id only if they're currently null.
+     * Once a competition/season has these wired, further round progression and season
+     * activation are the application's job (match-day workflows, admin actions) — seeding
+     * must never clobber that live state on a re-run.
+     */
+    public DefaultsApplyResult applyDefaults(CurrentSeason currentSeason) {
         var competitionId = dsl.select(T_COMPETITION.PK_ID)
                 .from(T_COMPETITION)
-                .where(T_COMPETITION.C_SLUG.eq(defaults.competitionSlug()))
+                .where(T_COMPETITION.C_SLUG.eq(currentSeason.competitionSlug()))
                 .fetchOne(T_COMPETITION.PK_ID);
 
         if (competitionId == null) {
             throw new IllegalStateException(
-                    "Defaults competition not found with slug: '" + defaults.competitionSlug() + "'");
+                    "Defaults competition not found with slug: '" + currentSeason.competitionSlug() + "'");
         }
 
         var seasonId = dsl.select(T_SEASON.PK_ID)
                 .from(T_SEASON)
                 .where(T_SEASON.FK_COMPETITION_ID.eq(competitionId)
-                        .and(T_SEASON.C_SLUG.eq(defaults.seasonSlug())))
+                        .and(T_SEASON.C_SLUG.eq(currentSeason.seasonSlug())))
                 .fetchOne(T_SEASON.PK_ID);
 
         if (seasonId == null) {
             throw new IllegalStateException(
-                    "Defaults season not found with competitionSlug='" + defaults.competitionSlug()
-                            + "', seasonSlug='" + defaults.seasonSlug() + "'");
+                    "Defaults season not found with competitionSlug='" + currentSeason.competitionSlug()
+                            + "', seasonSlug='" + currentSeason.seasonSlug() + "'");
         }
 
         var roundId = dsl.select(T_ROUND.PK_ID)
@@ -49,16 +54,34 @@ public class DefaultsSeeder {
                     "Defaults current round not found for seasonId=" + seasonId + " (expected position=1)");
         }
 
-        // Resolve competition + season by slug and set active season deterministically.
-        dsl.update(T_COMPETITION)
-                .set(T_COMPETITION.FK_ACTIVE_SEASON_ID, seasonId)
+        UUID existingActiveSeasonId = dsl.select(T_COMPETITION.FK_ACTIVE_SEASON_ID)
+                .from(T_COMPETITION)
                 .where(T_COMPETITION.PK_ID.eq(competitionId))
-                .execute();
+                .fetchOne(T_COMPETITION.FK_ACTIVE_SEASON_ID);
 
-        // Set fk_current_round_id = round position 1 for the configured active season.
-        dsl.update(T_SEASON)
-                .set(T_SEASON.FK_CURRENT_ROUND_ID, roundId)
+        boolean activeSeasonSet = existingActiveSeasonId == null;
+        if (activeSeasonSet) {
+            dsl.update(T_COMPETITION)
+                    .set(T_COMPETITION.FK_ACTIVE_SEASON_ID, seasonId)
+                    .where(T_COMPETITION.PK_ID.eq(competitionId))
+                    .execute();
+        }
+
+        UUID existingCurrentRoundId = dsl.select(T_SEASON.FK_CURRENT_ROUND_ID)
+                .from(T_SEASON)
                 .where(T_SEASON.PK_ID.eq(seasonId))
-                .execute();
+                .fetchOne(T_SEASON.FK_CURRENT_ROUND_ID);
+
+        boolean currentRoundSet = existingCurrentRoundId == null;
+        if (currentRoundSet) {
+            dsl.update(T_SEASON)
+                    .set(T_SEASON.FK_CURRENT_ROUND_ID, roundId)
+                    .where(T_SEASON.PK_ID.eq(seasonId))
+                    .execute();
+        }
+
+        return new DefaultsApplyResult(activeSeasonSet, currentRoundSet);
     }
+
+    public record DefaultsApplyResult(boolean activeSeasonSet, boolean currentRoundSet) {}
 }

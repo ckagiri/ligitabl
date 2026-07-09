@@ -1,7 +1,11 @@
 round:
-  competitionSlug: premier-league
-  seasonSlug: 2026-27
-  count: 38
   namePrefix: Gameweek
   slugPrefix: gw-
   startPosition: 1
+  seasons:
+    - competitionSlug: premier-league
+      seasonSlug: 2025-26
+      count: 38
+    - competitionSlug: premier-league
+      seasonSlug: 2026-27
+      count: 38
