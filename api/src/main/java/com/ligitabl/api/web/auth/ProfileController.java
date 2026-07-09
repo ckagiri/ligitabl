@@ -1,5 +1,6 @@
 package com.ligitabl.api.web.auth;
 
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
@@ -22,9 +23,11 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.web.predictions.latestresult.LatestResultSupport;
 import com.ligitabl.api.web.shared.season.SeasonPredictionSupport;
 import com.ligitabl.model.auth.Password;
 import com.ligitabl.model.auth.Role;
+import com.ligitabl.model.domain.RoundResult;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.domain.service.PasswordHasher;
 import com.ligitabl.model.repo.UserRepo;
@@ -48,6 +51,7 @@ public class ProfileController {
     private final PasswordHasher passwordHasher;
     private final SeasonPredictionSupport seasonPredictionSupport;
     private final CompetitionDefaults competitionDefaults;
+    private final LatestResultSupport latestResultSupport;
 
     @GetMapping("/settings")
     public String profile(@AuthenticationPrincipal WebUserDetails userDetails, Model model) {
@@ -59,6 +63,7 @@ public class ProfileController {
         ProfileForm form = new ProfileForm();
         form.setDisplayName(user.getDisplayName());
         form.setEmail(user.getEmail().value());
+        form.setShowLatestResultBanner(populateLatestResultModel(model, user.getId()));
         model.addAttribute("profileForm", form);
 
         model.addAttribute("pageTitle", "Profile Settings");
@@ -93,6 +98,7 @@ public class ProfileController {
             model.addAttribute("pageTitle", "Profile Settings");
             model.addAttribute("user", user);
             model.addAttribute("showRoles", hasNonDefaultRoles(user));
+            populateLatestResultModel(model, user.getId());
             populateShareModel(user, model);
             return "profile/settings";
         }
@@ -100,6 +106,15 @@ public class ProfileController {
         User updatedUser = user.withDisplayName(form.getDisplayName());
         userRepo.update(updatedUser);
         refreshSessionAuthentication(updatedUser, session);
+
+        // A disabled checkbox never submits, so a submitted `true` only happens when the user
+        // re-enabled it (their latest result was already dismissed) — bring the banner back.
+        if (form.isShowLatestResultBanner()) {
+            latestResultSupport
+                    .getLatestResult(updatedUser.getId())
+                    .filter(RoundResult::isUserViewed)
+                    .ifPresent(r -> latestResultSupport.setUserViewed(r, false));
+        }
 
         log.info("[PROFILE_UPDATED] userId={} newDisplayName={}", updatedUser.getId(), updatedUser.getDisplayName());
         redirectAttributes.addFlashAttribute("message", "Profile updated successfully");
@@ -198,6 +213,18 @@ public class ProfileController {
         model.addAttribute("shareText", shareData.shareText());
     }
 
+    /**
+     * Populates "latest result banner" checkbox visibility state. Returns whether the result is
+     * still pending (undismissed) — used as the checkbox's initial checked value on GET.
+     */
+    private boolean populateLatestResultModel(Model model, UUID userId) {
+        Optional<RoundResult> latestResult = latestResultSupport.getLatestResult(userId);
+        boolean pending = latestResult.map(r -> !r.isUserViewed()).orElse(false);
+        model.addAttribute("latestResultPresent", latestResult.isPresent());
+        model.addAttribute("latestResultPending", pending);
+        return pending;
+    }
+
     private boolean hasNonDefaultRoles(User user) {
         return !(user.getRoles().size() == 1 && user.getRoles().contains(Role.PLAYER));
     }
@@ -218,6 +245,8 @@ public class ProfileController {
         private String displayName;
 
         private String email;
+
+        private boolean showLatestResultBanner;
     }
 
     @Data

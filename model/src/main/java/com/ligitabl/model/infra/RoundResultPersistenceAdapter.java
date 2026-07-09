@@ -114,6 +114,20 @@ public class RoundResultPersistenceAdapter implements RoundResultRepo {
         return Optional.ofNullable(MAPPER.map(record));
     }
 
+    @Override
+    public Optional<RoundResult> findLatestByUserAndSeason(UUID userId, UUID seasonId) {
+        var record = dsl.select(T_ROUND_RESULT.fields())
+                .from(T_ROUND_RESULT)
+                .join(T_ROUND_SUBMISSION)
+                .on(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.eq(T_ROUND_SUBMISSION.PK_ID))
+                .where(T_ROUND_SUBMISSION.FK_USER_ID.eq(userId).and(T_ROUND_SUBMISSION.FK_SEASON_ID.eq(seasonId)))
+                .orderBy(T_ROUND_SUBMISSION.C_ROUND_POSITION.desc())
+                .limit(1)
+                .fetchOneInto(RoundResultRecord.class);
+
+        return Optional.ofNullable(MAPPER.map(record));
+    }
+
     private static List<ResultTeamRank> readRankings(JSONB jsonb) {
         if (jsonb == null) {
             return List.of();
