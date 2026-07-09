@@ -1,9 +1,11 @@
 package com.ligitabl.api.web.contest.shared;
 
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.IntStream;
 
 import org.springframework.stereotype.Component;
@@ -85,6 +87,30 @@ public class ContestSupport {
             int fromRoundPosition, int toRoundPosition, Round currentRound, List<RoundSpan> phases) {
         if (currentRound == null) return "FUTURE";
         return PhaseRules.deriveWindowStatus(fromRoundPosition, toRoundPosition, currentRound.getPosition(), phases);
+    }
+
+    /**
+     * The contest's current sprint: the sprint containing {@code currentPos}, or the nearest
+     * upcoming/most recent one if the contest hasn't started or has finished.
+     */
+    public RoundSpan findCurrentSprint(Contest contest, Competition competition, int currentPos) {
+        List<RoundSpan> contestSprints = (competition != null && competition.getPhases() != null
+                        ? competition.getPhases()
+                        : List.<RoundSpan>of())
+                .stream()
+                        .filter(p -> p.getType() == PhaseType.SPRINT)
+                        .filter(p -> p.getFrom() >= contest.getFromRoundPosition()
+                                && p.getTo() <= contest.getToRoundPosition())
+                        .sorted(Comparator.comparingInt(RoundSpan::getFrom))
+                        .toList();
+
+        return contestSprints.stream()
+                .filter(s -> currentPos >= s.getFrom() && currentPos <= s.getTo())
+                .findFirst()
+                .or(() -> currentPos < contest.getFromRoundPosition()
+                        ? contestSprints.stream().findFirst()
+                        : Optional.empty())
+                .orElse(contestSprints.getLast());
     }
 
     public List<QuarterOption> resolveQuarterOptions() {

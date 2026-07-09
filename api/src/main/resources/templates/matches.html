@@ -136,6 +136,11 @@
 
                   <!-- Admin: sync button (hidden for FINISHED/POSTPONED) -->
                   <th:block sec:authorize="hasRole('ADMIN')">
+                    <span
+                      th:if="${match.matchday != viewingRound}"
+                      th:title="'Matchday ' + ${match.matchday} + ' (round ' + ${viewingRound} + ')'"
+                      class="text-sm leading-none"
+                    >ℹ️</span>
                     <button
                       th:if="${match.status != 'FINISHED' and match.status != 'POSTPONED'}"
                       th:attr="hx-post=@{/matches/{clientId}/sync-from-api(clientId=${match.clientId})}"
