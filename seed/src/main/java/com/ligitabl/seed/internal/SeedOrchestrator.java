@@ -164,7 +164,10 @@ public class SeedOrchestrator {
             return;
         }
         DefaultsSeeder defaultsSeeder = new DefaultsSeeder(dsl);
-        defaultsSeeder.applyDefaults(currentSeason);
+        DefaultsSeeder.DefaultsApplyResult result = defaultsSeeder.applyDefaults(currentSeason);
+
+        resultCollector.add(asSetOrSkipped("active-season", result.activeSeasonSet()));
+        resultCollector.add(asSetOrSkipped("current-round", result.currentRoundSet()));
     }
 
     private void seedMainContest(CurrentSeason currentSeason) {
@@ -174,6 +177,15 @@ public class SeedOrchestrator {
         ContestSeeder seeder = new ContestSeeder(dsl);
         SeedResult result = seeder.seed(currentSeason);
         resultCollector.add(result);
+        resultCollector.add(asSetOrSkipped("contest-fk", seeder.wasMainContestFkSet()));
+    }
+
+    /**
+     * Reuses the inserted/skipped report shape for a single boolean fact: "set" (inserted=1)
+     * vs. "already set, left alone" (skipped=1).
+     */
+    private static SeedResult asSetOrSkipped(String section, boolean set) {
+        return set ? new SeedResult(section, 1, 0) : new SeedResult(section, 0, 1);
     }
 
     private void seedInitialStandings(CurrentSeason currentSeason) {

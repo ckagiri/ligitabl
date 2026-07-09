@@ -13,10 +13,19 @@ import org.jooq.impl.DSL;
 public class ContestSeeder extends AbstractSeeder<CurrentSeason> {
 
     private final ReferenceResolver referenceResolver;
+    private boolean mainContestFkSet;
 
     public ContestSeeder(DSLContext dsl) {
         super(dsl);
         this.referenceResolver = new ReferenceResolver(dsl);
+    }
+
+    /**
+     * Whether this run actually wired season.fk_main_contest_id (i.e. it was null or pointed
+     * at a different contest). False when it already correctly pointed at this contest.
+     */
+    public boolean wasMainContestFkSet() {
+        return mainContestFkSet;
     }
 
     @Override
@@ -92,10 +101,18 @@ public class ContestSeeder extends AbstractSeeder<CurrentSeason> {
                     "Failed to resolve main contest after insert for season=" + seasonId + ", name='" + contestName + "'");
         }
 
-        dsl.update(T_SEASON)
-                .set(T_SEASON.FK_MAIN_CONTEST_ID, contestId)
+        UUID existingMainContestId = dsl.select(T_SEASON.FK_MAIN_CONTEST_ID)
+                .from(T_SEASON)
                 .where(T_SEASON.PK_ID.eq(seasonId))
-                .execute();
+                .fetchOne(T_SEASON.FK_MAIN_CONTEST_ID);
+
+        mainContestFkSet = !contestId.equals(existingMainContestId);
+        if (mainContestFkSet) {
+            dsl.update(T_SEASON)
+                    .set(T_SEASON.FK_MAIN_CONTEST_ID, contestId)
+                    .where(T_SEASON.PK_ID.eq(seasonId))
+                    .execute();
+        }
 
                 if (alreadyExists) {
                         recordSkip();
