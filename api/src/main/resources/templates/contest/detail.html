@@ -10,6 +10,8 @@
         class="max-w-4xl mx-auto px-4 py-6 pb-64"
         x-data="contestDetail()"
         x-init="init()"
+        @htmx:after-swap.window="if ($event.detail.target && $event.detail.target.id === 'leaderboard-content') loading = false"
+        @htmx:response-error.window="if ($event.detail.target && $event.detail.target.id === 'leaderboard-content') loading = false"
       >
 
         <!-- ── Top bar: back link + Actions button ── -->
@@ -318,6 +320,40 @@
             </div>
           </div>
 
+          <!-- Loading spinner — shown while htmx.ajax is in flight -->
+          <div
+            x-show="loading"
+            x-cloak
+            class="flex items-center justify-center py-16 gap-2 text-sm text-gray-400"
+          >
+            <svg
+              class="animate-spin h-5 w-5 text-indigo-400"
+              fill="none"
+              viewBox="0 0 24 24"
+            >
+              <circle
+                class="opacity-25"
+                cx="12"
+                cy="12"
+                r="10"
+                stroke="currentColor"
+                stroke-width="4"
+              ></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8v8H4z"
+              ></path>
+            </svg>
+            Loading...
+          </div>
+
+          <!--
+            Stable wrapper — stays in the DOM, never swapped.
+            x-show toggles visibility while loading.
+            #leaderboard-content inside is the HTMX swap target.
+          -->
+          <div x-show="!loading">
           <!-- ── Leaderboard content (HTMX swap target) ── -->
           <div id="leaderboard-content" th:fragment="leaderboard-content">
 
@@ -556,6 +592,7 @@
               </div>
 
             </th:block>
+          </div>
           </div>
         </div>
 

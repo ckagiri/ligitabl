@@ -164,6 +164,7 @@ window.contestDetail = function() {
     activeSegment: d.currentSegment || "overall",
     dropdownOpen: false,
     sheetOpen: false,
+    loading: false,
     expanded: {},
     init() {
       window.leagueApp = this;
@@ -204,6 +205,7 @@ window.contestDetail = function() {
       this.sheetOpen = false;
       if (this.activeSegment === id) return;
       this.activeSegment = id;
+      this.loading = true;
       const params = new URLSearchParams(window.location.search);
       params.set("segment", id);
       params.delete("page");

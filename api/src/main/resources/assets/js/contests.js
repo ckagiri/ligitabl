@@ -199,6 +199,7 @@ window.contestDetail = function () {
     activeSegment: d.currentSegment || 'overall',
     dropdownOpen: false,
     sheetOpen:    false,
+    loading:      false,
     expanded:     {},
 
     init() {
@@ -249,6 +250,7 @@ window.contestDetail = function () {
       this.sheetOpen    = false;
       if (this.activeSegment === id) return;
       this.activeSegment = id;
+      this.loading = true;
 
       // Preserve other query params (e.g. `from`, used for back-nav) while
       // switching segment; a segment change resets pagination, so drop `page`.
