@@ -203,6 +203,11 @@ public class GetUserContestSummaryUseCase {
         if (renewalFrom.isEmpty()) return RenewalInfo.hidden();
 
         RoundSpan from = renewalFrom.get();
+        if (currentRound != null
+                && ContestRenewalCalculator.hasRenewalWindowElapsed(from, currentRound.getPosition())) {
+            return RenewalInfo.hidden();
+        }
+
         RoundSpan defaultTo = ContestRenewalCalculator.resolveDefaultTo(originalFrom, originalTo, from, phases);
         List<String> toOptionCodes = ContestRenewalCalculator.resolveValidToOptions(from, phases).stream()
                 .map(RoundSpan::getCode)
