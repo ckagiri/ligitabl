@@ -50,6 +50,9 @@ public class ContestDetailController {
     @Value("${ligitabl.frontend.url:http://localhost:8080}")
     private String frontendUrl;
 
+    @Value("${ligitabl.frontend.share-url:${ligitabl.frontend.url:http://localhost:8080}}")
+    private String frontendShareUrl;
+
     public record MemberRow(UUID userId, String displayName, boolean isActive, boolean isOwner) {}
 
     @GetMapping("/{id}")
@@ -121,9 +124,11 @@ public class ContestDetailController {
                                     ? detail.joinCode().toUpperCase()
                                     : null;
                             model.addAttribute("joinCode", joinCode);
-                            model.addAttribute("inviteUrl", joinCode != null ? frontendUrl + "/i/" + joinCode : null);
                             model.addAttribute(
-                                    "joinUrl", joinCode != null ? frontendUrl + "/join?code=" + joinCode : null);
+                                    "inviteUrl", joinCode != null ? frontendShareUrl + "/join/" + joinCode : null);
+                            model.addAttribute(
+                                    "joinUrl",
+                                    joinCode != null ? frontendShareUrl + "/join?code=" + joinCode : null);
                             model.addAttribute("segmentTree", detail.segmentTree());
                             model.addAttribute(
                                     "members",

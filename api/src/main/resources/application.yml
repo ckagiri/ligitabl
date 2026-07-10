@@ -79,6 +79,7 @@ ligitabl:
   default-competition-slug: ${DEFAULT_COMPETITION_SLUG:premier-league}
   frontend:
     url: ${FRONTEND_URL:http://localhost:8080}
+    share-url: ${FRONTEND_SHARE_URL:${ligitabl.frontend.url}}
 
   scheduling:
     enabled: true

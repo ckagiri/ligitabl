@@ -59,6 +59,7 @@ services:
       MAILGUN_DOMAIN: ${MAILGUN_DOMAIN:-ligipredictor.com}
       MAILGUN_API_BASE_URL: ${MAILGUN_API_BASE_URL:-https://api.mailgun.net/v3}
       FRONTEND_URL: ${FRONTEND_URL}
+      FRONTEND_SHARE_URL: ${FRONTEND_SHARE_URL}
       LOGTAIL_TOKEN: ${LOGTAIL_TOKEN}
 
       # JVM options (tuned for 1 vCPU / 2 GB droplet)

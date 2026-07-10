@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -56,17 +57,19 @@ public class GetUserDetailUseCase {
 
     public record PredictionTeam(String teamName, Integer hit) {}
 
-    public Either<Exception, UserPredictions> execute(String publicId, Integer effectiveToRound) {
+    public Either<Exception, UserPredictions> execute(String publicId, Integer effectiveToRound, UUID seasonId) {
         return Either.catching(() -> {
             // Resolve competition
             Competition competition = competitionRepo
                     .findBySlug(competitionDefaults.defaultCompetitionSlug())
                     .orElseThrow(() -> new NotFoundException("Default competition not found"));
 
-            // Resolve season
-            Season season = seasonRepo
-                    .findActiveSeason(competition.getId())
-                    .orElseThrow(() -> new NotFoundException("Active season not found"));
+            // Resolve season: prefer the contest's own season when provided, otherwise
+            // fall back to the globally active season (e.g. when opened from /leaderboard).
+            Season season = (seasonId != null
+                            ? seasonRepo.findById(seasonId)
+                            : seasonRepo.findActiveSeason(competition.getId()))
+                    .orElseThrow(() -> new NotFoundException("Season not found"));
 
             // Resolve current round
             Round currentRound = roundRepo
