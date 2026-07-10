@@ -26,8 +26,8 @@
       </svg>
       <span class="text-sm text-gray-600">
         <span th:if="${isGuest}"
-          >Click a team to select it, then click another to swap. Make up to 5
-          swaps, then sign up to save.</span
+          >Click a team to select it, then click another team to swap their
+          positions.</span
         >
         <span th:if="${!isGuest}" x-show="canSwap || isInitialPrediction"
           >Click a team to select it, then click another team to swap their

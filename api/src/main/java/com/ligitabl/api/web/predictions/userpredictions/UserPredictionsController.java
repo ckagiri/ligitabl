@@ -278,8 +278,6 @@ public class UserPredictionsController {
         boolean notLastRoundClosed = !isLastRound || isLastRoundOpen;
         // Games have started (locked), finished (completed), or just been finalized — but not yet advanced.
         boolean isRoundLockedOrBeyond = isLockedRoundState || isCompletedRoundState || isFinalizedRoundState;
-        boolean isRegisteredAwaitingPredictionsOpen =
-                !data.canCreateEntry() && data.atRoundNumber() != null && data.atRoundNumber() == 0;
         model.addAttribute("isFutureRoundPrediction", isFutureRoundPrediction);
         model.addAttribute("isRoundOpenForPrediction", isRoundOpenForPrediction);
         model.addAttribute("isLastRound", isLastRound);
@@ -288,7 +286,6 @@ public class UserPredictionsController {
         model.addAttribute("isLastRoundOpen", isLastRoundOpen);
         model.addAttribute("isHistoricalView", isHistoricalView);
         model.addAttribute("isRoundLockedOrBeyond", isRoundLockedOrBeyond);
-        model.addAttribute("isRegisteredAwaitingPredictionsOpen", isRegisteredAwaitingPredictionsOpen);
 
         // Access mode attributes
         model.addAttribute("accessMode", data.accessMode().name());
