@@ -19,6 +19,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.shared.SwapHelper;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
+import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.Match;
@@ -48,6 +50,9 @@ class CreatePredictionUseCaseTest {
 
     @Mock
     private MatchRepo matchRepo;
+
+    @Mock
+    private HierarchyValidator hierarchyValidator;
 
     @Mock
     private ContestRepo contestRepo;
@@ -89,16 +94,18 @@ class CreatePredictionUseCaseTest {
         round = createRound(1, false);
         defaultContest = createDefaultContest();
 
+        RoundSupport roundSupport = new RoundSupport(roundRepo, matchRepo, hierarchyValidator, competitionDefaults);
+
         useCase = new CreatePredictionUseCase(
                 competitionDefaults,
                 seasonRepo,
                 roundRepo,
-                matchRepo,
+                roundSupport,
                 contestRepo,
                 predictionRepo,
                 entryRepo,
                 standingsRepo,
-                new SwapHelper(competitionDefaults, seasonRepo, roundRepo, predictionRepo, matchRepo),
+                new SwapHelper(competitionDefaults, seasonRepo, roundRepo, predictionRepo, roundSupport),
                 clock);
     }
 

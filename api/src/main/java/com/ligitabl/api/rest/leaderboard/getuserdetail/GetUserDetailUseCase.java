@@ -12,10 +12,10 @@ import org.springframework.stereotype.Service;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardError;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.LeaderboardEntry;
-import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.domain.RoundStatus;
@@ -24,7 +24,6 @@ import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.LeaderboardRepo;
-import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.RoundSubmissionRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
@@ -44,7 +43,7 @@ public class GetUserDetailUseCase {
     private final SeasonRepo seasonRepo;
     private final ContestRepo contestRepo;
     private final RoundRepo roundRepo;
-    private final MatchRepo matchRepo;
+    private final RoundSupport roundSupport;
     private final RoundSubmissionRepo roundSubmissionRepo;
     private final SeasonPredictionRepo seasonPredictionRepo;
     private final TeamRepo teamRepo;
@@ -112,9 +111,7 @@ public class GetUserDetailUseCase {
         }
 
         List<TeamRank> rankings;
-        List<Match> matches = matchRepo.findByRoundId(currentRound.getId());
-        RoundStatus currentRoundStatus =
-                matches == null || matches.isEmpty() ? RoundStatus.OPEN : currentRound.computeStatus(matches);
+        RoundStatus currentRoundStatus = roundSupport.resolveStatus(currentRound);
 
         if (currentRoundStatus == RoundStatus.LOCKED) {
             var submission = roundSubmissionRepo
