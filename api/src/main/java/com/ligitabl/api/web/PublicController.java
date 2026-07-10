@@ -53,8 +53,9 @@ public class PublicController {
      * current round must not have been finalized already (no more swaps possible either way).
      */
     private void populateLoggedInCtaModel(Model model) {
-        Season season =
-                seasonRepo.findActiveSeason(competitionDefaults.defaultCompetitionSlug()).orElse(null);
+        Season season = seasonRepo
+                .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
+                .orElse(null);
         if (season == null) {
             model.addAttribute("showLoggedInCta", false);
             return;
