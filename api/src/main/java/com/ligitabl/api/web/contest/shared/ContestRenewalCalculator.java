@@ -22,7 +22,9 @@ public final class ContestRenewalCalculator {
 
     public static boolean isFullSeason(RoundSpan originalFrom, RoundSpan originalTo, List<RoundSpan> phases) {
         List<RoundSpan> sprints = PhaseRules.sprintsOf(phases);
-        if (sprints.isEmpty()) return false;
+        if (sprints.isEmpty()) {
+            return false;
+        }
         return originalFrom.equals(sprints.get(0)) && originalTo.equals(sprints.get(sprints.size() - 1));
     }
 
@@ -30,7 +32,9 @@ public final class ContestRenewalCalculator {
     public static Optional<RoundSpan> resolveRenewalFrom(RoundSpan originalTo, List<RoundSpan> phases) {
         List<RoundSpan> sprints = PhaseRules.sprintsOf(phases);
         int idx = sprints.indexOf(originalTo);
-        if (idx < 0 || idx + 1 >= sprints.size()) return Optional.empty();
+        if (idx < 0 || idx + 1 >= sprints.size()) {
+            return Optional.empty();
+        }
         return Optional.of(sprints.get(idx + 1));
     }
 
@@ -40,7 +44,9 @@ public final class ContestRenewalCalculator {
      * this is pure sprint-geometry.
      */
     public static boolean isRenewable(RoundSpan originalFrom, RoundSpan originalTo, List<RoundSpan> phases) {
-        if (isFullSeason(originalFrom, originalTo, phases)) return false;
+        if (isFullSeason(originalFrom, originalTo, phases)) {
+            return false;
+        }
         return resolveRenewalFrom(originalTo, phases).isPresent();
     }
 
@@ -59,12 +65,23 @@ public final class ContestRenewalCalculator {
         int currentSprintIndex = PhaseRules.sprintContaining(phases, currentRoundPosition)
                 .map(sprints::indexOf)
                 .orElse(-1);
-        if (currentSprintIndex < 0) return false;
+        if (currentSprintIndex < 0) {
+            return false;
+        }
 
         if (duration == 1) {
             return currentRoundPosition >= originalFrom.getFrom() + 2;
         }
         return currentSprintIndex >= sprints.indexOf(originalTo);
+    }
+
+    /**
+     * True once the current round has already reached (or passed) the target renewal sprint's own
+     * start round — renewing at this point would create a contest whose window is already partly
+     * or fully in the past. Inclusive: currentRoundPosition == from.getFrom() counts as elapsed.
+     */
+    public static boolean hasRenewalWindowElapsed(RoundSpan from, int currentRoundPosition) {
+        return currentRoundPosition >= from.getFrom();
     }
 
     /**

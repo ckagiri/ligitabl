@@ -47,21 +47,32 @@ public class RenewContestUseCase {
     @Transactional
     public Either<RenewContestError, RenewContestResult> execute(RenewContestCommand cmd) {
         Contest original = contestRepo.findById(cmd.contestId()).orElse(null);
-        if (original == null) return Either.left(new RenewContestError.ContestNotFound(cmd.contestId()));
+        if (original == null) {
+            return Either.left(new RenewContestError.ContestNotFound(cmd.contestId()));
+        }
 
-        if (!original.isOwnedBy(cmd.userId())) return Either.left(new RenewContestError.NotOwner(cmd.contestId()));
+        if (!original.isOwnedBy(cmd.userId())) {
+            return Either.left(new RenewContestError.NotOwner(cmd.contestId()));
+        }
 
-        if (!original.isPrivate()) return Either.left(new RenewContestError.NotPrivate(cmd.contestId()));
+        if (!original.isPrivate()) {
+            return Either.left(new RenewContestError.NotPrivate(cmd.contestId()));
+        }
 
-        if (original.getRenewedIntoContestId() != null)
+        if (original.getRenewedIntoContestId() != null) {
             return Either.left(new RenewContestError.AlreadyRenewed(cmd.contestId()));
+        }
 
         Season season = seasonRepo.findById(original.getSeasonId()).orElse(null);
-        if (season == null) return Either.left(new RenewContestError.SeasonNotFound());
+        if (season == null) {
+            return Either.left(new RenewContestError.SeasonNotFound());
+        }
 
         Competition competition =
                 competitionRepo.findById(season.getCompetitionId()).orElse(null);
-        if (competition == null) return Either.left(new RenewContestError.CompetitionNotFound());
+        if (competition == null) {
+            return Either.left(new RenewContestError.CompetitionNotFound());
+        }
 
         List<RoundSpan> phases = competition.getPhases() != null ? competition.getPhases() : List.of();
 
@@ -69,8 +80,9 @@ public class RenewContestUseCase {
                 .orElse(null);
         RoundSpan originalTo =
                 PhaseRules.sprintEndingAt(phases, original.getToRoundPosition()).orElse(null);
-        if (originalFrom == null || originalTo == null)
+        if (originalFrom == null || originalTo == null) {
             return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
+        }
 
         Season activeSeason = seasonRepo.findActiveSeason(competition.getId()).orElse(null);
         boolean isCurrentSeason = activeSeason != null && activeSeason.getId().equals(season.getId());
@@ -80,21 +92,30 @@ public class RenewContestUseCase {
         UUID targetSeasonId;
 
         if (isCurrentSeason) {
-            if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases))
+            if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases)) {
                 return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
+            }
 
             int currentRoundPosition = roundRepo.findPosition(season.getCurrentRoundId());
             if (!ContestRenewalCalculator.hasReachedRenewalTiming(
-                    originalFrom, originalTo, currentRoundPosition, phases))
+                    originalFrom, originalTo, currentRoundPosition, phases)) {
                 return Either.left(new RenewContestError.TooEarly(cmd.contestId()));
+            }
 
             var renewalFrom = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases);
-            if (renewalFrom.isEmpty()) return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
+            if (renewalFrom.isEmpty()) {
+                return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
+            }
             from = renewalFrom.get();
+            if (ContestRenewalCalculator.hasRenewalWindowElapsed(from, currentRoundPosition)) {
+                return Either.left(new RenewContestError.RenewalWindowElapsed(cmd.contestId()));
+            }
             to = findByCode(ContestRenewalCalculator.resolveValidToOptions(from, phases), cmd.toSprintCode());
             targetSeasonId = season.getId();
         } else {
-            if (activeSeason == null) return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
+            if (activeSeason == null) {
+                return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
+            }
 
             var window = ContestRenewalCalculator.resolvePastSeasonWindow(originalFrom, originalTo, phases);
             from = window.from();
@@ -102,12 +123,15 @@ public class RenewContestUseCase {
             targetSeasonId = activeSeason.getId();
         }
 
-        if (to == null) return Either.left(new RenewContestError.InvalidToCombination(cmd.toSprintCode()));
+        if (to == null) {
+            return Either.left(new RenewContestError.InvalidToCombination(cmd.toSprintCode()));
+        }
 
         String renewedName = original.getName();
         if (contestRepo.existsByOwnerSeasonPeriodAndName(
-                targetSeasonId, original.getOwnerId(), from.getFrom(), to.getTo(), renewedName, null))
+                targetSeasonId, original.getOwnerId(), from.getFrom(), to.getTo(), renewedName, null)) {
             return Either.left(new RenewContestError.NameConflict(renewedName));
+        }
 
         String joinCode = generateUniqueCode();
 

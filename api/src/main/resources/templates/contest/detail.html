@@ -606,8 +606,11 @@
             <th:block th:if="${isFinalSprintUnderway == false}">
               <form method="post" th:action="@{/contests/{id}/leave(id=${contest.id})}"
                     onsubmit="return confirm('Leave this contest? If you\'ve scored rounds, you\'ll appear as Former Member.')">
-                <button type="submit" class="text-sm text-red-600 hover:text-red-800 font-medium transition">
-                  Leave contest
+                <button type="submit" class="inline-flex items-center gap-1.5 text-sm font-medium text-red-600 border border-red-300 rounded-lg px-3 py-1.5 hover:bg-red-50 transition">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                  </svg>
+                  Give up
                 </button>
               </form>
             </th:block>

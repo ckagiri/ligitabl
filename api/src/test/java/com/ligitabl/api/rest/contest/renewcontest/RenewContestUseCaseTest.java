@@ -114,13 +114,15 @@ class RenewContestUseCaseTest {
         Contest original = originalContest(25, 29); // S6 -> S6
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         stubActiveSeasonSameAsContest();
-        stubCurrentRoundPosition(35); // S8 — 2 sprints past the original's own sprint (S6), timing gate met
+        stubCurrentRoundPosition(29); // still within S6, timing gate met, and before S7 (30-34) starts
         when(contestRepo.findByJoinCode(any())).thenReturn(Optional.empty());
         when(codeGenerator.generate()).thenReturn(CODE);
 
         when(contestRepo.save(any())).thenAnswer(inv -> {
             Contest c = inv.getArgument(0);
-            if (c.getId() == null) c.setId(UUID.randomUUID());
+            if (c.getId() == null) {
+                c.setId(UUID.randomUUID());
+            }
             return c;
         });
 
@@ -201,6 +203,34 @@ class RenewContestUseCaseTest {
     }
 
     @Test
+    void renewalWindowElapsed_currentSeason_returnsError() {
+        Contest original = originalContest(1, 4); // S1 -> S1, renewal target is S2 (rounds 5-9)
+        when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
+        stubActiveSeasonSameAsContest();
+        stubCurrentRoundPosition(7); // already 3 rounds into S2 — its start has long passed
+
+        var cmd = new RenewContestCommand(userId, original.getId(), "S2");
+        var result = useCase.execute(cmd);
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(RenewContestError.RenewalWindowElapsed.class);
+    }
+
+    @Test
+    void renewalWindowElapsed_exactlyAtTargetStart_returnsError() {
+        Contest original = originalContest(1, 4); // S1 -> S1, renewal target is S2 (rounds 5-9)
+        when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
+        stubActiveSeasonSameAsContest();
+        stubCurrentRoundPosition(5); // exactly S2's start round — inclusive boundary, already too late
+
+        var cmd = new RenewContestCommand(userId, original.getId(), "S2");
+        var result = useCase.execute(cmd);
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(RenewContestError.RenewalWindowElapsed.class);
+    }
+
+    @Test
     void alreadyRenewed_returnsError() {
         Contest original = originalContest(1, 9);
         original.setRenewedIntoContestId(UUID.randomUUID());
@@ -257,7 +287,9 @@ class RenewContestUseCaseTest {
         when(codeGenerator.generate()).thenReturn(CODE);
         when(contestRepo.save(any())).thenAnswer(inv -> {
             Contest c = inv.getArgument(0);
-            if (c.getId() == null) c.setId(UUID.randomUUID());
+            if (c.getId() == null) {
+                c.setId(UUID.randomUUID());
+            }
             return c;
         });
 
@@ -311,7 +343,9 @@ class RenewContestUseCaseTest {
         when(codeGenerator.generate()).thenReturn(CODE);
         when(contestRepo.save(any())).thenAnswer(inv -> {
             Contest c = inv.getArgument(0);
-            if (c.getId() == null) c.setId(UUID.randomUUID());
+            if (c.getId() == null) {
+                c.setId(UUID.randomUUID());
+            }
             return c;
         });
 
@@ -371,7 +405,7 @@ class RenewContestUseCaseTest {
         Contest original = originalContest(25, 29);
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         stubActiveSeasonSameAsContest();
-        stubCurrentRoundPosition(35);
+        stubCurrentRoundPosition(29); // still within S6, before S7 (30-34) starts
 
         Contest existing = Contest.builder()
                 .id(UUID.randomUUID())
@@ -383,7 +417,9 @@ class RenewContestUseCaseTest {
         when(codeGenerator.generate()).thenReturn("FIRST11", "SECOND2");
         when(contestRepo.save(any())).thenAnswer(inv -> {
             Contest c = inv.getArgument(0);
-            if (c.getId() == null) c.setId(UUID.randomUUID());
+            if (c.getId() == null) {
+                c.setId(UUID.randomUUID());
+            }
             return c;
         });
 
@@ -400,7 +436,7 @@ class RenewContestUseCaseTest {
         Contest original = originalContest(25, 29); // S6 -> S6, renews to S7
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
         stubActiveSeasonSameAsContest();
-        stubCurrentRoundPosition(35);
+        stubCurrentRoundPosition(29); // still within S6, before S7 (30-34) starts
         when(contestRepo.existsByOwnerSeasonPeriodAndName(seasonId, userId, 30, 34, "Office Rivals", null))
                 .thenReturn(true);
 

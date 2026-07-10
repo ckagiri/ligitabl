@@ -48,7 +48,7 @@
                   class="text-sm font-medium border-0 focus:ring-0 focus:outline-none bg-indigo-50/50 rounded"
                 >
                   <template x-for="option in toOptions" :key="option.code">
-                    <option :value="option.code" x-text="toOptionLabel(option)"></option>
+                    <option :value="option.code" :selected="option.code === selectedTo" x-text="toOptionLabel(option)"></option>
                   </template>
                 </select>
               </div>

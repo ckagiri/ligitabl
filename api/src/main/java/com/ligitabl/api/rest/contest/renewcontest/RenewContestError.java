@@ -14,6 +14,9 @@ public sealed interface RenewContestError {
     /** Structurally renewable but the timing gate hasn't been reached yet. */
     record TooEarly(UUID contestId) implements RenewContestError {}
 
+    /** The resolved renewal window (the sprint after the original) has already started or passed. */
+    record RenewalWindowElapsed(UUID contestId) implements RenewContestError {}
+
     record SeasonNotFound() implements RenewContestError {}
 
     record CompetitionNotFound() implements RenewContestError {}
