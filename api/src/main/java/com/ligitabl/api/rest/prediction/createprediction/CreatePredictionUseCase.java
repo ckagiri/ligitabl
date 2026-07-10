@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.shared.SwapHelper;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
@@ -40,7 +41,7 @@ public class CreatePredictionUseCase {
     private final CompetitionDefaults competitionDefaults;
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
-    private final MatchRepo matchRepo;
+    private final RoundSupport roundSupport;
     private final ContestRepo contestRepo;
     private final SeasonPredictionRepo predictionRepo;
     private final EntryRepo entryRepo;
@@ -174,14 +175,8 @@ public class CreatePredictionUseCase {
         }
         Round currentRound = currentRoundOpt.get();
 
-        RoundStatus roundStatus;
-        if (currentRound.isFinalized()) {
-            roundStatus = RoundStatus.FINALIZED;
-        } else {
-            var matches = matchRepo.findByRoundId(currentRound.getId());
-            roundStatus =
-                    (matches == null || matches.isEmpty()) ? RoundStatus.OPEN : currentRound.computeStatus(matches);
-        }
+        RoundStatus roundStatus =
+                currentRound.isFinalized() ? RoundStatus.FINALIZED : roundSupport.resolveStatus(currentRound);
 
         int atRoundNumber;
         if (roundStatus == RoundStatus.OPEN) {

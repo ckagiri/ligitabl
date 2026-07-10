@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.shared.RankingSource;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundStatus;
@@ -18,7 +19,6 @@ import com.ligitabl.model.domain.SeasonPrediction;
 import com.ligitabl.model.domain.Standings;
 import com.ligitabl.model.domain.StandingsTeamRank;
 import com.ligitabl.model.domain.TeamRank;
-import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -35,7 +35,7 @@ public class GetPredictionUseCase {
     private final CompetitionDefaults competitionDefaults;
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
-    private final MatchRepo matchRepo;
+    private final RoundSupport roundSupport;
     private final SeasonPredictionRepo predictionRepo;
     private final StandingsRepo standingsRepo;
     private final PredictionRankEnricher rankEnricher;
@@ -97,8 +97,7 @@ public class GetPredictionUseCase {
             return RoundStatus.COMPLETED;
         }
 
-        var matches = matchRepo.findByRoundId(currentRound.getId());
-        return (matches == null || matches.isEmpty()) ? RoundStatus.OPEN : currentRound.computeStatus(matches);
+        return roundSupport.resolveStatus(currentRound);
     }
 
     private GetPredictionResult.SwapStatus resolveSwapStatus(

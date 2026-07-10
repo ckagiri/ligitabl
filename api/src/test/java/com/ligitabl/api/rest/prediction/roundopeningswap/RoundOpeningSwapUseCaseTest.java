@@ -22,6 +22,8 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.makeswap.SwapCommand;
 import com.ligitabl.api.rest.prediction.makeswap.SwapError;
 import com.ligitabl.api.rest.prediction.shared.SwapHelper;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
+import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -49,6 +51,9 @@ class RoundOpeningSwapUseCaseTest {
 
     @Mock
     private MatchRepo matchRepo;
+
+    @Mock
+    private HierarchyValidator hierarchyValidator;
 
     @Mock
     private Clock clock;
@@ -79,7 +84,12 @@ class RoundOpeningSwapUseCaseTest {
         useCase = new RoundOpeningSwapUseCase(
                 predictionRepo,
                 clock,
-                new SwapHelper(competitionDefaults, seasonRepo, roundRepo, predictionRepo, matchRepo));
+                new SwapHelper(
+                        competitionDefaults,
+                        seasonRepo,
+                        roundRepo,
+                        predictionRepo,
+                        new RoundSupport(roundRepo, matchRepo, hierarchyValidator, competitionDefaults)));
     }
 
     // ── Happy path ────────────────────────────────────────────────────────────

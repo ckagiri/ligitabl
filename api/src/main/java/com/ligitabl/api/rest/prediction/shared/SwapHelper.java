@@ -12,6 +12,7 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.makeswap.SwapCommand;
 import com.ligitabl.api.rest.prediction.makeswap.SwapError;
 import com.ligitabl.api.rest.prediction.makeswap.TeamPair;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundStatus;
@@ -19,7 +20,6 @@ import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonPrediction;
 import com.ligitabl.model.domain.SwapChange;
 import com.ligitabl.model.domain.TeamRank;
-import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -36,7 +36,7 @@ public class SwapHelper {
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
     private final SeasonPredictionRepo predictionRepo;
-    private final MatchRepo matchRepo;
+    private final RoundSupport roundSupport;
 
     public Either<SwapError, Season> getActiveSeason() {
         return seasonRepo
@@ -93,8 +93,7 @@ public class SwapHelper {
         if (round.isFinalized()) {
             return Either.left(new SwapError.RoundNotOpen(RoundStatus.COMPLETED.name()));
         }
-        var matches = matchRepo.findByRoundId(round.getId());
-        RoundStatus status = (matches == null || matches.isEmpty()) ? RoundStatus.OPEN : round.computeStatus(matches);
+        RoundStatus status = roundSupport.resolveStatus(round);
         return status == RoundStatus.OPEN ? Either.right(null) : Either.left(new SwapError.RoundNotOpen(status.name()));
     }
 

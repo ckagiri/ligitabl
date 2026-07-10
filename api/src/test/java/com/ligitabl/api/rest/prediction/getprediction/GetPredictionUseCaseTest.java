@@ -18,6 +18,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.shared.RankingSource;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
+import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
@@ -45,6 +47,9 @@ class GetPredictionUseCaseTest {
 
     @Mock
     private MatchRepo matchRepo;
+
+    @Mock
+    private HierarchyValidator hierarchyValidator;
 
     @Mock
     private SeasonPredictionRepo predictionRepo;
@@ -93,7 +98,7 @@ class GetPredictionUseCaseTest {
                 competitionDefaults,
                 seasonRepo,
                 roundRepo,
-                matchRepo,
+                new RoundSupport(roundRepo, matchRepo, hierarchyValidator, competitionDefaults),
                 predictionRepo,
                 standingsRepo,
                 rankEnricher,
