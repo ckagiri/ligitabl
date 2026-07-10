@@ -15,6 +15,7 @@ import com.ligitabl.api.rest.contest.getusercontestsummary.GetUserContestSummary
 import com.ligitabl.api.rest.contest.getusercontestsummary.GetUserContestSummaryUseCase;
 import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.api.web.shared.security.WebSecurity;
+import com.ligitabl.api.web.shared.season.SeasonPredictionSupport;
 
 import lombok.RequiredArgsConstructor;
 
@@ -26,6 +27,7 @@ public class MyContestsController {
     private final GetUserContestSummaryUseCase getUserContestSummaryUseCase;
     private final CompetitionDefaults competitionDefaults;
     private final ContestSupport contestSupport;
+    private final SeasonPredictionSupport seasonPredictionSupport;
 
     @GetMapping
     public String myContests(Model model, Principal principal) {
@@ -39,6 +41,9 @@ public class MyContestsController {
         boolean showRenewColumn =
                 result.privateContests().stream().anyMatch(row -> row.isOwner() && row.renewVisible());
 
+        boolean hasSeasonPrediction =
+                seasonPredictionSupport.hasSeasonPrediction(userId, competitionDefaults.defaultCompetitionSlug());
+
         model.addAttribute("generalContests", result.generalContests());
         model.addAttribute("privateContests", result.privateContests());
         model.addAttribute("showRenewColumn", showRenewColumn);
@@ -47,6 +52,7 @@ public class MyContestsController {
         model.addAttribute(
                 "renewalQuarters", showRenewColumn ? contestSupport.resolveQuarterOptions() : List.of());
         model.addAttribute("pageTitle", "My Contests");
+        model.addAttribute("hasSeasonPrediction", hasSeasonPrediction);
         return "contest/index";
     }
 }

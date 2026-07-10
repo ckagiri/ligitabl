@@ -18,6 +18,7 @@ import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.RoundRepo;
+import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -36,6 +37,7 @@ public class CreatePrivateContestUseCase {
     private final RoundSupport roundSupport;
     private final ContestRepo contestRepo;
     private final EntryRepo entryRepo;
+    private final SeasonPredictionRepo predictionRepo;
     private final ContestCodeGenerator codeGenerator;
 
     @Transactional
@@ -46,6 +48,9 @@ public class CreatePrivateContestUseCase {
 
         var season = seasonRepo.findActiveSeason(competition.getId()).orElse(null);
         if (season == null) return Either.left(new CreatePrivateContestError.SeasonNotFound());
+
+        if (!predictionRepo.existsByUserAndSeason(cmd.userId(), season.getId()))
+            return Either.left(new CreatePrivateContestError.NoPrediction());
 
         var currentRound = roundRepo.findById(season.getCurrentRoundId()).orElse(null);
         if (currentRound == null) return Either.left(new CreatePrivateContestError.CurrentRoundNotFound());

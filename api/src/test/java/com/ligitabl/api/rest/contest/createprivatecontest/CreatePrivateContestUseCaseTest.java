@@ -42,6 +42,9 @@ class CreatePrivateContestUseCaseTest {
     EntryRepo entryRepo;
 
     @Mock
+    SeasonPredictionRepo predictionRepo;
+
+    @Mock
     ContestCodeGenerator codeGenerator;
 
     private CreatePrivateContestUseCase useCase;
@@ -64,7 +67,14 @@ class CreatePrivateContestUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new CreatePrivateContestUseCase(
-                competitionRepo, seasonRepo, roundRepo, roundSupport, contestRepo, entryRepo, codeGenerator);
+                competitionRepo,
+                seasonRepo,
+                roundRepo,
+                roundSupport,
+                contestRepo,
+                entryRepo,
+                predictionRepo,
+                codeGenerator);
 
         userId = UUID.randomUUID();
         competitionId = UUID.randomUUID();
@@ -147,6 +157,7 @@ class CreatePrivateContestUseCaseTest {
     void happyPath_singleSprint_savesContestAndEntry() {
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
+        when(predictionRepo.existsByUserAndSeason(userId, seasonId)).thenReturn(true);
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(roundSupport.resolveStatus(currentRound)).thenReturn(RoundStatus.OPEN);
         when(contestRepo.findPrivateByUserId(userId)).thenReturn(List.of());
@@ -185,6 +196,7 @@ class CreatePrivateContestUseCaseTest {
     void happyPath_multiSprint_fullQuarter_savesContest() {
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
+        when(predictionRepo.existsByUserAndSeason(userId, seasonId)).thenReturn(true);
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(roundSupport.resolveStatus(currentRound)).thenReturn(RoundStatus.OPEN);
         when(contestRepo.findPrivateByUserId(userId)).thenReturn(List.of());
@@ -211,6 +223,7 @@ class CreatePrivateContestUseCaseTest {
     void fromSprintNotFound_returnsInvalidFromSprintError() {
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
+        when(predictionRepo.existsByUserAndSeason(userId, seasonId)).thenReturn(true);
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
 
         var cmd = new CreatePrivateContestCommand(userId, "Contest", null, "S99", "S99", SLUG);
@@ -231,6 +244,7 @@ class CreatePrivateContestUseCaseTest {
                 .build();
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
+        when(predictionRepo.existsByUserAndSeason(userId, seasonId)).thenReturn(true);
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(roundAtPosition6));
 
         // S1 ends at round 5; current round is 6 → sprint has passed
@@ -246,6 +260,7 @@ class CreatePrivateContestUseCaseTest {
         // Current round is round 1 (at sprint start) but round is LOCKED
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
+        when(predictionRepo.existsByUserAndSeason(userId, seasonId)).thenReturn(true);
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(roundSupport.resolveStatus(currentRound)).thenReturn(RoundStatus.LOCKED);
 
@@ -268,6 +283,7 @@ class CreatePrivateContestUseCaseTest {
                 .build();
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
+        when(predictionRepo.existsByUserAndSeason(userId, seasonId)).thenReturn(true);
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(midSprint));
 
         var cmd = new CreatePrivateContestCommand(userId, "Contest", null, "S1", "S1", SLUG);
@@ -281,6 +297,7 @@ class CreatePrivateContestUseCaseTest {
     void toSprintNotQuarterEnd_multiSprint_returnsInvalidToCombinationError() {
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
+        when(predictionRepo.existsByUserAndSeason(userId, seasonId)).thenReturn(true);
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(roundSupport.resolveStatus(currentRound)).thenReturn(RoundStatus.OPEN);
 
@@ -304,6 +321,7 @@ class CreatePrivateContestUseCaseTest {
                 .build();
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
+        when(predictionRepo.existsByUserAndSeason(userId, seasonId)).thenReturn(true);
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(roundAtS3));
 
         // S2 → S4: S2 is not a quarter-start (Q1 starts at S1, Q2 starts at S3) → InvalidFromSprint
@@ -318,6 +336,7 @@ class CreatePrivateContestUseCaseTest {
     void maxContestsReached_returnsError() {
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
+        when(predictionRepo.existsByUserAndSeason(userId, seasonId)).thenReturn(true);
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(roundSupport.resolveStatus(currentRound)).thenReturn(RoundStatus.OPEN);
 
@@ -336,6 +355,7 @@ class CreatePrivateContestUseCaseTest {
     void codeCollisionRetry_secondCodeIsSaved() {
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
+        when(predictionRepo.existsByUserAndSeason(userId, seasonId)).thenReturn(true);
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(roundSupport.resolveStatus(currentRound)).thenReturn(RoundStatus.OPEN);
         when(contestRepo.findPrivateByUserId(userId)).thenReturn(List.of());
@@ -360,6 +380,19 @@ class CreatePrivateContestUseCaseTest {
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().joinCode()).isEqualTo("SECOND2");
+    }
+
+    @Test
+    void noSeasonPrediction_returnsNoPredictionError() {
+        when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
+        when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
+        when(predictionRepo.existsByUserAndSeason(userId, seasonId)).thenReturn(false);
+
+        var cmd = new CreatePrivateContestCommand(userId, "Contest", null, "S1", "S1", SLUG);
+        var result = useCase.execute(cmd);
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(CreatePrivateContestError.NoPrediction.class);
     }
 
     @Test

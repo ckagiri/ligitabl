@@ -7,6 +7,8 @@ public sealed interface CreatePrivateContestError {
 
     record CurrentRoundNotFound() implements CreatePrivateContestError {}
 
+    record NoPrediction() implements CreatePrivateContestError {}
+
     record InvalidFromSprint(String sprintCode) implements CreatePrivateContestError {}
 
     record InvalidToCombination(String fromCode, String toCode) implements CreatePrivateContestError {}
