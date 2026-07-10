@@ -15,8 +15,9 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Watches the outgoing season's preSeasonOpensAt date and auto-promotes
- * Competition.upcomingSeasonId to activeSeasonId when that date passes.
+ * Watches the outgoing (active) season and auto-promotes Competition.upcomingSeasonId to
+ * activeSeasonId once the outgoing season goes off-season (isOffSeason() — past its end/pre-season
+ * window, see {@link Season#getSeasonState()}).
  *
  * Requires an upcoming season to already be assigned to the competition (via admin) —
  * does not derive one. Runs every 15 minutes. Idempotent — safe to call multiple times.
@@ -48,7 +49,7 @@ public class SeasonActivationService {
             return;
         }
 
-        if (!activeSeason.isPreSeason() || !activeSeason.isOffSeason()) {
+        if (!activeSeason.isOffSeason()) {
             return;
         }
 

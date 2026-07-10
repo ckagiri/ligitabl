@@ -3,7 +3,6 @@ package com.ligitabl.api.scheduling.seasonactivation;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -44,9 +43,9 @@ class SeasonActivationServiceTest {
     }
 
     @Test
-    void preSeasonNotOpen_noSwitch() {
+    void activeSeasonInPlay_noSwitch() {
         Competition competition = buildCompetition(null);
-        Season activeSeason = buildSeason(activeSeasonId, OffsetDateTime.now().plusDays(1));
+        Season activeSeason = buildInPlaySeason(activeSeasonId);
 
         when(competitionRepo.findBySlug("premier-league")).thenReturn(Optional.of(competition));
         when(seasonRepo.findById(activeSeasonId)).thenReturn(Optional.of(activeSeason));
@@ -57,9 +56,9 @@ class SeasonActivationServiceTest {
     }
 
     @Test
-    void preSeasonOpenButNoUpcomingSeasonAssigned_noSwitch() {
+    void activeSeasonOffSeasonButNoUpcomingSeasonAssigned_noSwitch() {
         Competition competition = buildCompetition(null);
-        Season activeSeason = buildSeason(activeSeasonId, OffsetDateTime.now().minusDays(1));
+        Season activeSeason = buildOffSeasonSeason(activeSeasonId);
 
         when(competitionRepo.findBySlug("premier-league")).thenReturn(Optional.of(competition));
         when(seasonRepo.findById(activeSeasonId)).thenReturn(Optional.of(activeSeason));
@@ -70,10 +69,10 @@ class SeasonActivationServiceTest {
     }
 
     @Test
-    void preSeasonOpenAndUpcomingAssigned_promotes() {
+    void activeSeasonOffSeasonAndUpcomingAssigned_promotes() {
         UUID upcomingId = UUID.randomUUID();
         Competition competition = buildCompetition(upcomingId);
-        Season activeSeason = buildSeason(activeSeasonId, OffsetDateTime.now().minusDays(1));
+        Season activeSeason = buildOffSeasonSeason(activeSeasonId);
 
         when(competitionRepo.findBySlug("premier-league")).thenReturn(Optional.of(competition));
         when(seasonRepo.findById(activeSeasonId)).thenReturn(Optional.of(activeSeason));
@@ -85,8 +84,8 @@ class SeasonActivationServiceTest {
 
     @Test
     void alreadySwitched_idempotent() {
-        // If active season is the upcoming one (already switched), isPreSeasonOpen() is false
-        // because the upcoming season has no preSeasonOpensAt set
+        // If active season is the upcoming one (already switched), it reads IN_PLAY — not yet
+        // completed and predictionsOpenAt defaults to open — so isOffSeason() is false.
         Competition competition = buildCompetition(null);
         Season alreadySwitchedSeason = Season.builder()
                 .id(activeSeasonId)
@@ -120,7 +119,8 @@ class SeasonActivationServiceTest {
                 .build();
     }
 
-    private Season buildSeason(UUID id, OffsetDateTime preSeasonOpensAt) {
+    /** Not completed, still within its start/end window — Season.getSeasonState() reads IN_PLAY. */
+    private Season buildInPlaySeason(UUID id) {
         return Season.builder()
                 .id(id)
                 .clientId(1)
@@ -128,9 +128,23 @@ class SeasonActivationServiceTest {
                 .name("2025/26")
                 .slug(SeasonSlug.of("2025-26"))
                 .startDate(LocalDate.now().minusMonths(9))
-                .endDate(LocalDate.now())
+                .endDate(LocalDate.now().plusMonths(1))
                 .completed(false)
-                .preSeasonOpensAt(preSeasonOpensAt)
+                .initialRankings(java.util.List.of())
+                .build();
+    }
+
+    /** Completed and past its own end date, pre-season not (yet) open — reads OFF_SEASON. */
+    private Season buildOffSeasonSeason(UUID id) {
+        return Season.builder()
+                .id(id)
+                .clientId(1)
+                .competitionId(competitionId)
+                .name("2025/26")
+                .slug(SeasonSlug.of("2025-26"))
+                .startDate(LocalDate.now().minusMonths(9))
+                .endDate(LocalDate.now().minusDays(1))
+                .completed(true)
                 .initialRankings(java.util.List.of())
                 .build();
     }

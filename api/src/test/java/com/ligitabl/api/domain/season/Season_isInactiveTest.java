@@ -53,7 +53,10 @@ class Season_isInactiveTest {
                 // getSeasonState() claims these as INACTIVE directly.
                 Arguments.of(true, PAST, NULL, true),
                 Arguments.of(true, PAST, PAST, true),
-                Arguments.of(true, PAST, FUTURE, false));
+                // completed + preSeasonOpen + predictions NOT yet open: PRE_SEASON only applies to
+                // an upcoming (not-yet-started) season, so a completed season here falls through to
+                // INACTIVE instead.
+                Arguments.of(true, PAST, FUTURE, true));
     }
 
     /**
