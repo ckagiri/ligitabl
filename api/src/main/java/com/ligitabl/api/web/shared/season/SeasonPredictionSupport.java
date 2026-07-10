@@ -4,8 +4,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -104,9 +102,7 @@ public class SeasonPredictionSupport {
 
         String shareUrl = frontendUrl + "/u/" + user.getPublicId().value() + "/"
                 + season.getSlug().toShorthand() + "/gw/" + round;
-        Map<String, Team> teamsByCode =
-                teamRepo.findAllByCodes(rankings.stream().map(TeamRank::getCode).collect(Collectors.toSet())).stream()
-                        .collect(Collectors.toMap(Team::getCode, Function.identity()));
+        Map<String, Team> teamsByCode = teamRepo.findAllTeamsByCode(rankings);
 
         String shareText = sharePredictionTextBuilder.build(round, rankings, teamsByCode, shareUrl);
         return new ShareData(true, shareUrl, shareText);
