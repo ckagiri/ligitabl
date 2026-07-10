@@ -1,13 +1,20 @@
-function sprintLine(sprint) {
-  return sprint.name + '  •  ' + sprint.startDate + ' – ' + sprint.endDate + '  •  ' + sprint.gwLabel;
+function abbreviateSprintName(name) {
+  return name.replace(/^Sprint\s*/i, 'S');
 }
 
-function renderStructureHierarchy(sprints, quarters, from, to) {
+function sprintLine(sprint, abbreviate) {
+  const name = abbreviate ? abbreviateSprintName(sprint.name) : sprint.name;
+  const dates = name + '  •  ' + sprint.startDate + ' – ' + sprint.endDate;
+  // Drop the GW range on mobile (abbreviate=true) so the line fits the narrower width.
+  return abbreviate ? dates : dates + '  •  ' + sprint.gwLabel;
+}
+
+function renderStructureHierarchy(sprints, quarters, from, to, abbreviate) {
   if (!from || !to) return '';
   const inRange = sprints.filter(s => s.num >= from.num && s.num <= to.num);
 
   if (from.num === to.num) {
-    return sprintLine(from);
+    return sprintLine(from, abbreviate);
   }
 
   const quarterCodes = [...new Set(inRange.map(s => s.quarterCode))];
@@ -16,7 +23,7 @@ function renderStructureHierarchy(sprints, quarters, from, to) {
     const qLabel = (quarters.find(q => q.code === quarterCodes[0]) || {}).name || quarterCodes[0];
     const lines  = [qLabel];
     inRange.forEach((sprint, i) => {
-      lines.push((i < inRange.length - 1 ? '├── ' : '└── ') + sprintLine(sprint));
+      lines.push((i < inRange.length - 1 ? '├── ' : '└── ') + sprintLine(sprint, abbreviate));
     });
     return lines.join('\n');
   }
@@ -32,7 +39,7 @@ function renderStructureHierarchy(sprints, quarters, from, to) {
     qSprints.forEach((sprint, sIdx) => {
       const isLastS    = sIdx === qSprints.length - 1;
       const sConnector = isLastS ? '└── ' : '├── ';
-      lines.push(childPad + sConnector + sprintLine(sprint));
+      lines.push(childPad + sConnector + sprintLine(sprint, abbreviate));
     });
   });
   return lines.join('\n');
@@ -43,9 +50,8 @@ window.contestCreator = function () {
   return {
     fromOpen: false,
     toOpen: false,
-    fromMaxH: '18rem',
-    toMaxH: '18rem',
     windowHelpOpen: false,
+    structureOpen: true,
     selectedFrom: null,
     selectedTo: null,
     sprints: d.sprints || [],
@@ -111,8 +117,12 @@ window.contestCreator = function () {
       return 'End of ' + (q ? q.name : '');
     },
 
-    renderHierarchy() {
-      return renderStructureHierarchy(this.sprints, this.quarters, this.selectedFrom, this.selectedTo);
+    renderHierarchy(abbreviate) {
+      return renderStructureHierarchy(this.sprints, this.quarters, this.selectedFrom, this.selectedTo, abbreviate);
+    },
+
+    sprintAbbrev(name) {
+      return abbreviateSprintName(name);
     }
   };
 };
@@ -171,8 +181,12 @@ window.contestRenewal = function (data) {
       return option.code === this.defaultToCode ? label + ' (default)' : label;
     },
 
-    renderHierarchy() {
-      return renderStructureHierarchy(this.sprints, this.quarters, this.fromSprint, this.selectedToSprint);
+    renderHierarchy(abbreviate) {
+      return renderStructureHierarchy(this.sprints, this.quarters, this.fromSprint, this.selectedToSprint, abbreviate);
+    },
+
+    sprintAbbrev(name) {
+      return abbreviateSprintName(name);
     }
   };
 };
