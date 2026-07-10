@@ -108,7 +108,7 @@
             <!-- Pre-season / Off-season countdowns -->
             <th:block th:if="${isPreSeason}">
               <!-- Registered: predictions not yet open -->
-              <th:block th:unless="${canCreateEntry}">
+              <th:block th:if="${!isGuest && !canCreateEntry}">
                 <div class="mt-3 rounded-lg bg-green-50 border border-green-200 px-4 py-4">
                   <div class="flex items-start">
                     <svg class="h-6 w-6 text-green-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -138,9 +138,11 @@
                   </div>
                 </div>
               </th:block>
-              <!-- Not yet registered: call-to-action -->
-              <th:block th:if="${canCreateEntry}">
-                <div class="mt-3 rounded-lg bg-indigo-50 border border-indigo-200 px-4 py-4">
+              <!-- Not yet registered: call-to-action (also covers guests previewing pre-season) -->
+              <th:block th:if="${isGuest || canCreateEntry}">
+                <div class="mt-3 rounded-lg bg-indigo-50 border border-indigo-200 px-4 py-4" x-data="{ imported: false }"
+                  x-init="imported = localStorage.getItem('ligitabl.guestPrediction') !== null"
+                  @guest-storage-cleared.window="imported = false">
                   <div class="flex items-start">
                     <svg class="h-6 w-6 text-indigo-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                       <path fill-rule="evenodd"
@@ -150,7 +152,17 @@
                     <div>
                       <p class="text-sm font-semibold text-indigo-800">🚀 Pre-Season</p>
                       <p class="text-sm text-indigo-700 mt-1">
-                        Set your predicted order and join below — up to 5 swaps, no rush.
+                        <th:block th:if="${isGuest}">
+                          Tap teams to swap and build your prediction — up to 5 swaps.
+                          <a th:href="@{/auth/register}" class="underline font-medium hover:text-indigo-900">Sign up</a>
+                          to save and join the competition.
+                        </th:block>
+                        <th:block th:if="${!isGuest}">
+                          <span x-show="imported">We've loaded your prediction - review it and
+                            submit<th:block th:if="${!isPreSeasonRegistration}">&nbsp;to join the competition</th:block>.</span>
+                          <span x-show="!imported">Set your predicted order and submit. Take your time —
+                            no swaps needed, but up to 5 to fine-tune.</span>
+                        </th:block>
                         <th:block th:if="${daysToPredictions != null}">
                           <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full bg-indigo-100 text-xs font-medium text-indigo-800">
                             Competition starts in&nbsp;<span th:text="${daysToPredictions}"></span>&nbsp;day<th:block th:if="${daysToPredictions != 1}">s</th:block>
