@@ -237,7 +237,7 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
             <!-- Round Navigation (only for authenticated users, non-error states) -->
             <div
               th:if="${!isGuest}"
-              th:with="minRoundForNav=${canCreateEntry ? currentRound : (atRoundNumber != null && atRoundNumber <= currentRound ? atRoundNumber : currentRound)}"
+              th:with="minRoundForNav=${canCreateEntry ? currentRound : (atRoundNumber != null && atRoundNumber > 0 && atRoundNumber <= currentRound ? atRoundNumber : currentRound)}"
               class="mt-4"
             >
               <div

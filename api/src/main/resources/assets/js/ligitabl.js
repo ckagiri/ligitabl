@@ -1014,4 +1014,9 @@ window.Ligitabl.publicPredictionPage = function (el) {
     document.body.addEventListener('htmx:responseError', function () {
         finish();
     });
+
+    // Exposed so plain (non-htmx) full-page navigations — e.g. clicking a contest
+    // name link — can flash the bar on click. No matching finish() call is needed:
+    // the page unload naturally clears it, and the new page starts with a fresh bar.
+    window.flashNavLoadingBar = start;
 })();

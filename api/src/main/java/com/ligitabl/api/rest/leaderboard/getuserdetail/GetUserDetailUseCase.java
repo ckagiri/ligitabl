@@ -11,8 +11,8 @@ import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardError;
-import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.LeaderboardEntry;

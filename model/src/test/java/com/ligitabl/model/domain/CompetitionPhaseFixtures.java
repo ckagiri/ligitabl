@@ -46,6 +46,12 @@ public final class CompetitionPhaseFixtures {
     }
 
     private static RoundSpan span(String code, PhaseType type, int from, int to, String name) {
-        return RoundSpan.builder().code(code).name(name).type(type).from(from).to(to).build();
+        return RoundSpan.builder()
+                .code(code)
+                .name(name)
+                .type(type)
+                .from(from)
+                .to(to)
+                .build();
     }
 }

@@ -33,7 +33,9 @@
             <div class="space-y-2">
               <div class="flex items-center justify-between bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
                 <span class="text-sm text-gray-700">
-                  From: <span class="font-medium" x-text="fromSprint ? fromSprint.name + ' • ' + fromSprint.startDate : ''"></span>
+                  From:
+                  <span class="sm:hidden font-medium" x-text="fromSprint ? sprintAbbrev(fromSprint.name) + ' • ' + fromSprint.startDate : ''"></span>
+                  <span class="hidden sm:inline font-medium" x-text="fromSprint ? fromSprint.name + ' • ' + fromSprint.startDate : ''"></span>
                 </span>
                 <span class="text-xs text-gray-400">🔒 fixed</span>
               </div>
@@ -65,7 +67,8 @@
               </svg>
             </button>
             <div x-show="structureOpen" x-cloak class="px-4 pb-4">
-              <pre class="text-xs font-mono text-gray-700 whitespace-pre-wrap leading-relaxed" x-text="renderHierarchy()"></pre>
+              <pre class="sm:hidden text-xs font-mono text-gray-700 whitespace-pre-wrap leading-relaxed" x-text="renderHierarchy(true)"></pre>
+              <pre class="hidden sm:block text-xs font-mono text-gray-700 whitespace-pre-wrap leading-relaxed" x-text="renderHierarchy(false)"></pre>
             </div>
           </div>
 

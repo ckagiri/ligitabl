@@ -207,7 +207,7 @@
                     th:each="row : ${privateContests}"
                     class="group hover:bg-gray-50 transition cursor-pointer"
                     th:attr="data-href=@{/contests/{id}(id=${row.id},from='contests')}"
-                    onclick="window.location.href = this.dataset.href"
+                    onclick="window.flashNavLoadingBar(); window.location.href = this.dataset.href"
                   >
                     <td class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-4 py-3">
                       <div class="text-sm font-medium text-indigo-600" th:text="${row.name}">OfficeMates</div>

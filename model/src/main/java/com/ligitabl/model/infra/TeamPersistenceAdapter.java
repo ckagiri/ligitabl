@@ -3,10 +3,13 @@ package com.ligitabl.model.infra;
 import static com.ligitabl.model.db.tables.TTeam.T_TEAM;
 
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import org.jooq.DSLContext;
 import org.jooq.RecordMapper;
@@ -14,6 +17,7 @@ import org.jooq.impl.DSL;
 
 import com.ligitabl.model.db.tables.records.TeamRecord;
 import com.ligitabl.model.domain.Team;
+import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.domain.TeamSlug;
 import com.ligitabl.model.repo.TeamRepo;
 
@@ -103,6 +107,16 @@ public class TeamPersistenceAdapter implements TeamRepo {
         }
 
         return dsl.selectFrom(T_TEAM).where(T_TEAM.C_TLA.in(codes)).fetch().map(MAPPER);
+    }
+
+    @Override
+    public Map<String, Team> findAllTeamsByCode(List<TeamRank> rankings) {
+        if (rankings == null || rankings.isEmpty()) {
+            return Map.of();
+        }
+
+        Set<String> codes = rankings.stream().map(TeamRank::getCode).collect(Collectors.toSet());
+        return findAllByCodes(codes).stream().collect(Collectors.toMap(Team::getCode, Function.identity()));
     }
 
     @Override

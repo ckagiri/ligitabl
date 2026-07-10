@@ -127,8 +127,7 @@ public class ContestDetailController {
                             model.addAttribute(
                                     "inviteUrl", joinCode != null ? frontendShareUrl + "/join/" + joinCode : null);
                             model.addAttribute(
-                                    "joinUrl",
-                                    joinCode != null ? frontendShareUrl + "/join?code=" + joinCode : null);
+                                    "joinUrl", joinCode != null ? frontendShareUrl + "/join?code=" + joinCode : null);
                             model.addAttribute("segmentTree", detail.segmentTree());
                             model.addAttribute(
                                     "members",

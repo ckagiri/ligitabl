@@ -16,8 +16,8 @@ import com.ligitabl.api.rest.contest.createprivatecontest.CreatePrivateContestCo
 import com.ligitabl.api.rest.contest.createprivatecontest.CreatePrivateContestError;
 import com.ligitabl.api.rest.contest.createprivatecontest.CreatePrivateContestUseCase;
 import com.ligitabl.api.web.contest.shared.ContestSupport;
-import com.ligitabl.api.web.shared.security.WebSecurity;
 import com.ligitabl.api.web.shared.season.SeasonPredictionSupport;
+import com.ligitabl.api.web.shared.security.WebSecurity;
 
 import lombok.RequiredArgsConstructor;
 
@@ -84,8 +84,8 @@ public class CreateContestController {
             case CreatePrivateContestError.CompetitionNotFound e -> "Competition not found: " + e.slug();
             case CreatePrivateContestError.SeasonNotFound ignored -> "No active season found.";
             case CreatePrivateContestError.CurrentRoundNotFound ignored -> "Could not determine current round.";
-            case CreatePrivateContestError.NoPrediction ignored ->
-                "Submit your initial round prediction before creating a contest.";
+            case CreatePrivateContestError.NoPrediction
+            ignored -> "Submit your initial round prediction before creating a contest.";
             case CreatePrivateContestError.InvalidFromSprint e -> "The selected start sprint (" + e.sprintCode()
                     + ") has already ended or is locked.";
             case CreatePrivateContestError.InvalidToCombination e -> "Invalid contest window: " + e.fromCode() + " → "
