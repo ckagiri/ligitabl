@@ -64,7 +64,7 @@
                 class="mt-2 text-sm text-red-600"
               ></p>
               <p class="mt-2 text-xs sm:text-sm text-gray-500">
-                This name appears on leaderboards and standings.
+                This name appears on leaderboards and standings. Please keep it appropriate and respectful.
               </p>
             </div>
 
@@ -211,6 +211,32 @@
                     th:text="${role.value}"
                     class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-50 text-indigo-700 border border-indigo-100"
                   ></span>
+                </div>
+              </div>
+            </th:block>
+
+            <!-- Show Latest Result Banner -->
+            <th:block th:if="${latestResultPresent}">
+              <div class="border-t border-gray-200"></div>
+              <div class="pt-4 sm:pt-6 flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  id="showLatestResultBanner"
+                  th:field="*{showLatestResultBanner}"
+                  th:disabled="${latestResultPending}"
+                  class="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 disabled:opacity-50"
+                />
+                <div>
+                  <label
+                    for="showLatestResultBanner"
+                    class="text-sm font-medium text-gray-700"
+                  >
+                    Show latest result banner
+                  </label>
+                  <p class="mt-1 text-xs sm:text-sm text-gray-500">
+                    <span th:if="${latestResultPending}">Currently showing — dismiss it from the predictions page to re-enable this.</span>
+                    <span th:unless="${latestResultPending}">Bring back the banner for your last graded round.</span>
+                  </p>
                 </div>
               </div>
             </th:block>

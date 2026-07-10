@@ -1,8 +1,6 @@
 package com.ligitabl.api.rest.contest.getprivatecontest;
 
-import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -142,7 +140,7 @@ public class GetPrivateContestUseCase {
             Contest contest, Competition competition, String segmentCode, int currentPosition) {
 
         if (segmentCode == null) {
-            return Either.right(findCurrentSprint(contest, competition, currentPosition));
+            return Either.right(contestSupport.findCurrentSprint(contest, competition, currentPosition));
         }
 
         if ("overall".equalsIgnoreCase(segmentCode)) {
@@ -166,26 +164,6 @@ public class GetPrivateContestUseCase {
         if (segment == null) return Either.left(new GetPrivateContestError.SegmentNotFound(segmentCode));
 
         return Either.right(segment);
-    }
-
-    private RoundSpan findCurrentSprint(Contest contest, Competition competition, int currentPos) {
-        List<RoundSpan> contestSprints = (competition != null && competition.getPhases() != null
-                        ? competition.getPhases()
-                        : List.<RoundSpan>of())
-                .stream()
-                        .filter(p -> p.getType() == com.ligitabl.model.domain.PhaseType.SPRINT)
-                        .filter(p -> p.getFrom() >= contest.getFromRoundPosition()
-                                && p.getTo() <= contest.getToRoundPosition())
-                        .sorted(Comparator.comparingInt(RoundSpan::getFrom))
-                        .toList();
-
-        return contestSprints.stream()
-                .filter(s -> currentPos >= s.getFrom() && currentPos <= s.getTo())
-                .findFirst()
-                .or(() -> currentPos < contest.getFromRoundPosition()
-                        ? contestSprints.stream().findFirst()
-                        : Optional.empty())
-                .orElse(contestSprints.getLast());
     }
 
     private boolean isSegmentLive(RoundSpan segment, int currentPosition) {

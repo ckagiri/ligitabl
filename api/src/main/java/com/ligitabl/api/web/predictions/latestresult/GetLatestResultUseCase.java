@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.web.shared.error.ErrorMapper;
@@ -13,7 +14,6 @@ import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.LeaderboardRepo;
-import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.RoundResultRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -27,7 +27,7 @@ public class GetLatestResultUseCase {
     private final SeasonRepo seasonRepo;
     private final RoundRepo roundRepo;
     private final RoundResultRepo roundResultRepo;
-    private final MatchRepo matchRepo;
+    private final RoundSupport roundSupport;
     private final LeaderboardRepo leaderboardRepo;
     private final ContestRepo contestRepo;
     private final CompetitionRepo competitionRepo;
@@ -43,16 +43,23 @@ public class GetLatestResultUseCase {
 
         Round currentRoundEntity = getCurrentRoundEntity(season);
         int currentRound = currentRoundEntity.getPosition();
-        String roundState = resolveRoundState(currentRoundEntity);
+        RoundStatus currentRoundStatus = roundSupport.resolveStatus(currentRoundEntity);
 
-        // Only show banner when round is open, locked, or completed
-        if (!roundState.equals(RoundStatus.OPEN.name())
-                && !roundState.equals(RoundStatus.LOCKED.name())
-                && !roundState.equals(RoundStatus.COMPLETED.name())) {
+        int lastRound = season.getMaxRounds();
+        boolean seasonCompleted = currentRoundStatus == RoundStatus.ADVANCED && currentRound == lastRound;
+
+        // Only show banner when round is open, locked, completed, or the season has just completed.
+        if (currentRoundStatus != RoundStatus.OPEN
+                && currentRoundStatus != RoundStatus.LOCKED
+                && currentRoundStatus != RoundStatus.COMPLETED
+                && !seasonCompleted) {
             return Optional.empty();
         }
 
-        int resultRound = currentRound - 1;
+        // Once the season is ADVANCED past the last round there's no "next" round for currentRound
+        // to have moved to, so it stays pinned at lastRound itself — the final round's own result,
+        // not its predecessor's.
+        int resultRound = seasonCompleted ? currentRound : currentRound - 1;
         if (resultRound < 1) {
             return Optional.empty();
         }
@@ -67,10 +74,11 @@ public class GetLatestResultUseCase {
             return Optional.empty();
         }
 
-        return Optional.of(buildResponse(result, resultRound, userId, season));
+        return Optional.of(buildResponse(result, resultRound, userId, season, currentRound));
     }
 
-    private LatestResultResponse buildResponse(RoundResult result, int round, UUID userId, Season season) {
+    private LatestResultResponse buildResponse(
+            RoundResult result, int round, UUID userId, Season season, int currentRound) {
         HitDistribution distribution = calculateHitDistribution(result);
 
         // Calculate position and movement from leaderboard
@@ -124,7 +132,9 @@ public class GetLatestResultUseCase {
                 sprintPhase.getFrom(),
                 sprintPhase.getTo(),
                 sprintBest,
-                isNewSprintBest);
+                isNewSprintBest,
+                currentRound,
+                season.getMaxRounds());
     }
 
     private HitDistribution calculateHitDistribution(RoundResult result) {
@@ -157,19 +167,5 @@ public class GetLatestResultUseCase {
         return roundRepo
                 .findById(currentRoundId)
                 .orElseThrow(() -> new IllegalStateException("Current round not found"));
-    }
-
-    private String resolveRoundState(Round round) {
-        if (round == null) {
-            return RoundStatus.UNKNOWN.name();
-        }
-        if (round.isFinalized()) {
-            return RoundStatus.FINALIZED.name();
-        }
-        var matches = matchRepo.findByRoundId(round.getId());
-        if (matches == null || matches.isEmpty()) {
-            return RoundStatus.OPEN.name();
-        }
-        return round.computeStatus(matches).name();
     }
 }

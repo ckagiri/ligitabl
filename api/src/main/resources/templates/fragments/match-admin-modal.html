@@ -50,6 +50,9 @@
             <h3 class="text-base font-bold text-gray-900" th:text="${matchLabel}">Chelsea · Arsenal</h3>
             <p class="text-xs text-gray-500 mt-0.5">
               GW <span th:text="${round}">29</span>
+              <th:block th:if="${matchday != null and matchday != round}">
+                &nbsp;·&nbsp;MD <span th:text="${matchday}">28</span>
+              </th:block>
               &nbsp;·&nbsp;
               <span class="font-medium" th:text="${currentStatus}">POSTPONED</span>
             </p>

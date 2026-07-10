@@ -41,7 +41,7 @@ public final class CompetitionPhaseFixtures {
         return BY_CODE.get(code);
     }
 
-    public static RoundSpan span(String code, int from, int to) {
+    public static RoundSpan sprint(String code, int from, int to) {
         return span(code, PhaseType.SPRINT, from, to, code);
     }
 

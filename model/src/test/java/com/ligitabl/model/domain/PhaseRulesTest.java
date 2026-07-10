@@ -1,7 +1,7 @@
 package com.ligitabl.model.domain;
 
 import static com.ligitabl.model.domain.CompetitionPhaseFixtures.s;
-import static com.ligitabl.model.domain.CompetitionPhaseFixtures.span;
+import static com.ligitabl.model.domain.CompetitionPhaseFixtures.sprint;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
@@ -60,7 +60,7 @@ class PhaseRulesTest {
     @Test
     void deriveWindowStatus_next_holdsForEntireCurrentSprint_notJustItsLastRound() {
         // Multi-round sprints: S1=1-4, S2=5-8. Window starts at S2.
-        List<RoundSpan> multiRoundPhases = List.of(span("S1", 1, 4), span("S2", 5, 8));
+        List<RoundSpan> multiRoundPhases = List.of(sprint("S1", 1, 4), sprint("S2", 5, 8));
 
         // Every round within S1 — not just round 4, the one immediately before S2 — reads NEXT.
         assertThat(PhaseRules.deriveWindowStatus(5, 8, 1, multiRoundPhases)).isEqualTo("NEXT");
@@ -70,7 +70,7 @@ class PhaseRulesTest {
 
     @Test
     void deriveWindowStatus_future_whenWindowIsNotTheImmediatelyNextSprint() {
-        List<RoundSpan> multiRoundPhases = List.of(span("S1", 1, 4), span("S2", 5, 8), span("S3", 9, 12));
+        List<RoundSpan> multiRoundPhases = List.of(sprint("S1", 1, 4), sprint("S2", 5, 8), sprint("S3", 9, 12));
 
         // Window starts at S3; the sprint after current (S1) is S2, not S3 — FUTURE, not NEXT.
         assertThat(PhaseRules.deriveWindowStatus(9, 12, 2, multiRoundPhases)).isEqualTo("FUTURE");

@@ -51,7 +51,10 @@ class Season_getSeasonStateTest {
                 // already opened too, regardless of how preSeasonOpensAt/predictionsOpenAt compare.
                 Arguments.of(true, PAST, NULL, SeasonState.INACTIVE),
                 Arguments.of(true, PAST, PAST, SeasonState.INACTIVE),
-                Arguments.of(true, PAST, FUTURE, SeasonState.PRE_SEASON));
+                // completed + preSeasonOpen + predictions NOT yet open: PRE_SEASON only applies to
+                // an upcoming (not-yet-started) season (beforeActualStart), which a completed season
+                // can never be — falls through to INACTIVE instead.
+                Arguments.of(true, PAST, FUTURE, SeasonState.INACTIVE));
     }
 
     /** See Season_isInactiveTest for why most rows of the truth table above can never reach INACTIVE. */

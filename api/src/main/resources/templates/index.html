@@ -34,7 +34,7 @@
               th:unless="${isLoggedIn}"
               th:href="${predictionsNavLink} ?: '/my-table/guest'"
               class="w-full sm:w-auto bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-indigo-600 transition transform hover:scale-105 shadow-lg text-center"
-              >Try the Table First →</a
+              >Try the Table →</a
             >
             <a
               th:if="${isLoggedIn}"
@@ -247,6 +247,19 @@
         </div>
       </div>
 
+      <!-- Contests -->
+      <div class="bg-white rounded-lg shadow-md p-8 mb-12">
+        <div class="max-w-2xl mx-auto text-center">
+          <div class="text-4xl mb-4">🤝</div>
+          <h2 class="text-2xl font-bold text-gray-900 mb-3">
+            Bring Your Crew
+          </h2>
+          <p class="text-gray-600">
+            Create your own table alongside the main competition. Give it a name, set the window, and invite friends, family, or coworkers with a link or simple code. Then find out who really knows the Premier League.
+          </p>
+        </div>
+      </div>
+
       <!-- Scoring + Tiers + Tiebreakers (combined) -->
       <div
         class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-8 mb-12"
@@ -311,37 +324,16 @@
               <div
                 class="bg-white rounded-lg border border-indigo-100 divide-y divide-gray-100"
               >
-                <div class="flex items-center justify-between px-4 py-2.5">
+                <div
+                  th:each="tier : ${T(com.ligitabl.model.domain.ScoreTier).byGroup(T(com.ligitabl.model.domain.ScoreTier.Group).OUTSTANDING)}"
+                  class="flex items-center justify-between px-4 py-2.5"
+                >
                   <div class="flex items-center gap-3">
-                    <span class="text-xl">🤯</span>
-                    <span class="text-xs font-bold text-indigo-500 w-6">S</span>
-                    <span class="text-sm font-semibold text-gray-900">Pinnacle</span>
+                    <span class="text-xl" th:text="${tier.emoji}">🤯</span>
+                    <span class="text-xs font-bold text-indigo-500 w-6" th:text="${tier.letter}">S+</span>
+                    <span class="text-sm font-semibold text-gray-900" th:text="${tier.tierName}">Pinnacle</span>
                   </div>
-                  <span class="text-xs text-gray-400 font-medium">200</span>
-                </div>
-                <div class="flex items-center justify-between px-4 py-2.5">
-                  <div class="flex items-center gap-3">
-                    <span class="text-xl">🤩</span>
-                    <span class="text-xs font-bold text-indigo-500 w-6">A+</span>
-                    <span class="text-sm font-semibold text-gray-900">Legend</span>
-                  </div>
-                  <span class="text-xs text-gray-400 font-medium">195–199</span>
-                </div>
-                <div class="flex items-center justify-between px-4 py-2.5">
-                  <div class="flex items-center gap-3">
-                    <span class="text-xl">🥳</span>
-                    <span class="text-xs font-bold text-indigo-500 w-6">A</span>
-                    <span class="text-sm font-semibold text-gray-900">Elite</span>
-                  </div>
-                  <span class="text-xs text-gray-400 font-medium">190–194</span>
-                </div>
-                <div class="flex items-center justify-between px-4 py-2.5">
-                  <div class="flex items-center gap-3">
-                    <span class="text-xl">😎</span>
-                    <span class="text-xs font-bold text-indigo-500 w-6">A-</span>
-                    <span class="text-sm font-semibold text-gray-900">Master</span>
-                  </div>
-                  <span class="text-xs text-gray-400 font-medium">185–189</span>
+                  <span class="text-xs text-gray-400 font-medium" th:text="${tier.rangeLabel}">200</span>
                 </div>
               </div>
             </div>
@@ -356,37 +348,16 @@
               <div
                 class="bg-white rounded-lg border border-green-100 divide-y divide-gray-100"
               >
-                <div class="flex items-center justify-between px-4 py-2.5">
+                <div
+                  th:each="tier : ${T(com.ligitabl.model.domain.ScoreTier).byGroup(T(com.ligitabl.model.domain.ScoreTier.Group).STRONG)}"
+                  class="flex items-center justify-between px-4 py-2.5"
+                >
                   <div class="flex items-center gap-3">
-                    <span class="text-xl">😁</span>
-                    <span class="text-xs font-bold text-green-600 w-6">B+</span>
-                    <span class="text-sm font-semibold text-gray-900">Expert</span>
+                    <span class="text-xl" th:text="${tier.emoji}">😃</span>
+                    <span class="text-xs font-bold text-green-600 w-6" th:text="${tier.letter}">B+</span>
+                    <span class="text-sm font-semibold text-gray-900" th:text="${tier.tierName}">Expert</span>
                   </div>
-                  <span class="text-xs text-gray-400 font-medium">180–184</span>
-                </div>
-                <div class="flex items-center justify-between px-4 py-2.5">
-                  <div class="flex items-center gap-3">
-                    <span class="text-xl">😃</span>
-                    <span class="text-xs font-bold text-green-600 w-6">B</span>
-                    <span class="text-sm font-semibold text-gray-900">Advanced</span>
-                  </div>
-                  <span class="text-xs text-gray-400 font-medium">175–179</span>
-                </div>
-                <div class="flex items-center justify-between px-4 py-2.5">
-                  <div class="flex items-center gap-3">
-                    <span class="text-xl">😊</span>
-                    <span class="text-xs font-bold text-green-600 w-6">B-</span>
-                    <span class="text-sm font-semibold text-gray-900">Skilled</span>
-                  </div>
-                  <span class="text-xs text-gray-400 font-medium">170–174</span>
-                </div>
-                <div class="flex items-center justify-between px-4 py-2.5">
-                  <div class="flex items-center gap-3">
-                    <span class="text-xl">🙂</span>
-                    <span class="text-xs font-bold text-green-600 w-6">C+</span>
-                    <span class="text-sm font-semibold text-gray-900">Competent</span>
-                  </div>
-                  <span class="text-xs text-gray-400 font-medium">160–169</span>
+                  <span class="text-xs text-gray-400 font-medium" th:text="${tier.rangeLabel}">180–184</span>
                 </div>
               </div>
             </div>
@@ -401,29 +372,16 @@
               <div
                 class="bg-white rounded-lg border border-orange-100 divide-y divide-gray-100"
               >
-                <div class="flex items-center justify-between px-4 py-2.5">
+                <div
+                  th:each="tier : ${T(com.ligitabl.model.domain.ScoreTier).byGroup(T(com.ligitabl.model.domain.ScoreTier.Group).FAIR)}"
+                  class="flex items-center justify-between px-4 py-2.5"
+                >
                   <div class="flex items-center gap-3">
-                    <span class="text-xl">😌</span>
-                    <span class="text-xs font-bold text-orange-500 w-6">C</span>
-                    <span class="text-sm font-semibold text-gray-900">Capable</span>
+                    <span class="text-xl" th:text="${tier.emoji}">😬</span>
+                    <span class="text-xs font-bold text-orange-500 w-6" th:text="${tier.letter}">C</span>
+                    <span class="text-sm font-semibold text-gray-900" th:text="${tier.tierName}">Novice</span>
                   </div>
-                  <span class="text-xs text-gray-400 font-medium">145–159</span>
-                </div>
-                <div class="flex items-center justify-between px-4 py-2.5">
-                  <div class="flex items-center gap-3">
-                    <span class="text-xl">😬</span>
-                    <span class="text-xs font-bold text-orange-500 w-6">C-</span>
-                    <span class="text-sm font-semibold text-gray-900">Novice</span>
-                  </div>
-                  <span class="text-xs text-gray-400 font-medium">130–144</span>
-                </div>
-                <div class="flex items-center justify-between px-4 py-2.5">
-                  <div class="flex items-center gap-3">
-                    <span class="text-xl">😩</span>
-                    <span class="text-xs font-bold text-orange-500 w-6">D</span>
-                    <span class="text-sm font-semibold text-gray-900">Aspirant</span>
-                  </div>
-                  <span class="text-xs text-gray-400 font-medium">&lt; 130</span>
+                  <span class="text-xs text-gray-400 font-medium" th:text="${tier.rangeLabel}">145–159</span>
                 </div>
               </div>
             </div>
@@ -580,7 +538,7 @@
       </div>
 
       <!-- Logged-in CTA -->
-      <div th:if="${isLoggedIn}" class="text-center py-12">
+      <div th:if="${isLoggedIn && showLoggedInCta}" class="text-center py-12">
         <div class="text-4xl mb-4">🎯</div>
         <h2 class="text-2xl font-bold mb-3 text-gray-900">
           You're in — go make your swaps.

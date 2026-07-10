@@ -134,8 +134,8 @@
       </div>
     </div>
 
-    <!-- Action Button -->
-    <div class="flex justify-center">
+    <!-- Action Button (not shown once the season's last round is current — nothing further to view) -->
+    <div th:if="${result.currentRound != result.lastRound}" class="flex justify-center">
       <a
         th:href="@{${baseUrl}(round=${result.round})}"
         th:attr="hx-get=@{${baseUrl}(round=${result.round})}"

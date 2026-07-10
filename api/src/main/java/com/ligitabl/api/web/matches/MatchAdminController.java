@@ -90,6 +90,7 @@ public class MatchAdminController {
         model.addAttribute("canReschedule", canReschedule);
         model.addAttribute("canEditKickoff", canEditKickoff);
         model.addAttribute("round", round);
+        model.addAttribute("matchday", match.getMatchday());
 
         if (canEditKickoff && match.getKickOff() != null) {
             model.addAttribute(
