@@ -28,9 +28,9 @@
                   <span class="text-sm sm:text-base text-gray-600">
                     Gameweek <span th:text="${viewingRound}">19</span>
                   </span>
-                  <!-- State indicators (shown only while the season is in play — pre-season/off-season have their own banners below) -->
+                  <!-- State indicators (shown only while the season is in play or off-season — pre-season has its own banner below) -->
                   <span
-                    th:if="${isCurrentRound && !isInactive}"
+                    th:if="${isCurrentRound && (isInPlay || isOffSeason)}"
                     class="inline-flex items-center gap-1 text-xs sm:text-sm font-medium"
                   >
                     <span th:if="${roundState == 'open'}" class="text-green-600"
@@ -91,8 +91,8 @@
               </div>
             </th:block>
 
-            <!-- Access Mode Banners (shown only while the season is in play) -->
-            <th:block th:unless="${isInactive}">
+            <!-- Access Mode Banners (shown only while the season is in play or off-season) -->
+            <th:block th:if="${isInPlay || isOffSeason}">
               <div
                 th:replace="~{fragments/access-banners :: banners(
                   ${isGuest}, ${canCreateEntry},
@@ -108,7 +108,7 @@
             <!-- Pre-season / Off-season countdowns -->
             <th:block th:if="${isPreSeason}">
               <!-- Registered: predictions not yet open -->
-              <th:block th:if="${isRegisteredAwaitingPredictionsOpen}">
+              <th:block th:unless="${canCreateEntry}">
                 <div class="mt-3 rounded-lg bg-green-50 border border-green-200 px-4 py-4">
                   <div class="flex items-start">
                     <svg class="h-6 w-6 text-green-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
@@ -150,10 +150,10 @@
                     <div>
                       <p class="text-sm font-semibold text-indigo-800">🚀 Pre-Season</p>
                       <p class="text-sm text-indigo-700 mt-1">
-                        Set your predicted order and register below — up to 5 swaps, no rush.
+                        Set your predicted order and join below — up to 5 swaps, no rush.
                         <th:block th:if="${daysToPredictions != null}">
                           <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full bg-indigo-100 text-xs font-medium text-indigo-800">
-                            Competition starts in <span th:text="${daysToPredictions}"></span> day<th:block th:if="${daysToPredictions != 1}">s</th:block>
+                            Competition starts in&nbsp;<span th:text="${daysToPredictions}"></span>&nbsp;day<th:block th:if="${daysToPredictions != 1}">s</th:block>
                           </span>
                         </th:block>
                         <th:block th:if="${predictionsAboutToStart == true}">
@@ -217,7 +217,7 @@ firstSwap.lockedMsg=[[${roundState == 'locked' && isFutureRoundPrediction}]]
 isPreSeason=[[${isPreSeason}]] isOffSeason=[[${isOffSeason}]] isInPlay=[[${isInPlay}]] isInactive=[[${isInactive}]] seasonAllowsUpdate=[[${seasonAllowsUpdate}]] daysToPredictions=[[${daysToPredictions}]] daysToPreSeason=[[${daysToPreSeason}]] predictionsAboutToStart=[[${predictionsAboutToStart}]] preSeasonAboutToStart=[[${preSeasonAboutToStart}]]
 isRoundOpenForPrediction=[[${isRoundOpenForPrediction}]] isFutureRoundPrediction=[[${isFutureRoundPrediction}]] isLastRound=[[${isLastRound}]] isLastRoundOpen=[[${isLastRoundOpen}]] isHistoricalView=[[${isHistoricalView}]]
 seasonEditingAllowed=[[${seasonEditingAllowed}]] canInteractEffective=[[${canInteractEffective}]] canSwapEditable=[[${canSwapEditable}]] isInitialPredictionEditable=[[${isInitialPredictionEditable}]]
-isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound}]] isCurrentRoundLast=[[${isCurrentRoundLast}]] isRegisteredAwaitingPredictionsOpen=[[${isRegisteredAwaitingPredictionsOpen}]] isPreSeasonRegistration=[[${isPreSeasonRegistration}]]</pre
+isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound}]] isCurrentRoundLast=[[${isCurrentRoundLast}]] isPreSeasonRegistration=[[${isPreSeasonRegistration}]]</pre
                 >
               </div>
             </div>
