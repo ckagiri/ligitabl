@@ -1,6 +1,7 @@
 package com.ligitabl.api.web.leaderboard;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -31,13 +32,14 @@ public class GetUserDetailController {
             @RequestParam(required = false) Integer phaseFrom,
             @RequestParam(required = false) Integer maxRound,
             @RequestParam(required = false, defaultValue = "true") boolean scored,
+            @RequestParam(required = false) UUID seasonId,
             Model model,
             HttpServletResponse response) {
 
         log.info("POST /leaderboard/user/modal - publicId: {}", publicId);
 
         return getUserDetailUseCase
-                .execute(publicId, effectiveToRound)
+                .execute(publicId, effectiveToRound, seasonId)
                 .fold(
                         error -> handleError(error, model, response),
                         result -> handleSuccess(
@@ -51,6 +53,7 @@ public class GetUserDetailController {
                                 phaseFrom,
                                 maxRound,
                                 scored,
+                                seasonId,
                                 model));
     }
 
@@ -65,6 +68,7 @@ public class GetUserDetailController {
             Integer phaseFrom,
             Integer maxRoundParam,
             boolean scored,
+            UUID seasonId,
             Model model) {
 
         int roundScore = result.roundScore() != null
@@ -87,6 +91,7 @@ public class GetUserDetailController {
         model.addAttribute("minRound", minRound);
         model.addAttribute("maxRound", maxRound);
         model.addAttribute("scored", scored);
+        model.addAttribute("seasonId", seasonId);
 
         return "fragments/user-detail :: user-details";
     }

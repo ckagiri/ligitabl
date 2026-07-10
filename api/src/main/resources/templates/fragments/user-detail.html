@@ -53,6 +53,7 @@
       <input type="hidden" class="modal-param" name="phaseFrom" th:value="${minRound}">
       <input type="hidden" class="modal-param" name="maxRound" th:value="${maxRound}">
       <input type="hidden" class="modal-param" name="scored" th:value="${scored != null ? scored : true}">
+      <input type="hidden" class="modal-param" name="seasonId" th:if="${seasonId != null}" th:value="${seasonId}">
 
       <!-- Round nav bar -->
       <div class="flex items-center justify-between mb-3">

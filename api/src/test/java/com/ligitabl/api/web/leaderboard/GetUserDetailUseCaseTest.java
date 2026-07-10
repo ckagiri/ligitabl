@@ -144,7 +144,7 @@ class GetUserDetailUseCaseTest {
                 .willReturn(Optional.of(submission));
         given(roundResultRepo.findByRoundSubmissionId(submissionId)).willReturn(Optional.empty());
 
-        var result = useCase.execute("23456789AB", effectiveToRound);
+        var result = useCase.execute("23456789AB", effectiveToRound, null);
 
         assertThat(result.isRight()).isTrue();
         var payload = result.get();
@@ -200,7 +200,7 @@ class GetUserDetailUseCaseTest {
         given(roundSubmissionRepo.findByUserAndSeasonAndRound(userId, seasonId, effectiveToRound))
                 .willReturn(Optional.empty());
 
-        var result = useCase.execute("23456789AE", effectiveToRound);
+        var result = useCase.execute("23456789AE", effectiveToRound, null);
 
         assertThat(result.isRight()).isTrue();
         var payload = result.get();
@@ -297,7 +297,7 @@ class GetUserDetailUseCaseTest {
         given(roundResultRepo.findByRoundSubmissionId(submissionId)).willReturn(Optional.of(roundResult));
         given(teamRepo.findAllByCodes(eq(Set.of("ARS", "MCI")))).willReturn(List.of(arsenal, manCity));
 
-        var result = useCase.execute("23456789AC", effectiveToRound);
+        var result = useCase.execute("23456789AC", effectiveToRound, null);
 
         assertThat(result.isRight()).isTrue();
         var payload = result.get();
@@ -377,7 +377,7 @@ class GetUserDetailUseCaseTest {
         given(seasonPredictionRepo.findByUserAndSeason(userId, seasonId)).willReturn(Optional.of(seasonPrediction));
         given(teamRepo.findAllByCodes(eq(Set.of("ARS", "MCI")))).willReturn(List.of(arsenal, manCity));
 
-        var result = useCase.execute("23456789AD", null);
+        var result = useCase.execute("23456789AD", null, null);
 
         assertThat(result.isRight()).isTrue();
         var payload = result.get();

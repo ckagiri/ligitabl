@@ -235,10 +235,19 @@ window.contestDetail = function () {
       this.sheetOpen    = false;
       if (this.activeSegment === id) return;
       this.activeSegment = id;
-      htmx.ajax('GET', '/contests/' + this.contestId + '?segment=' + id, {
+
+      // Preserve other query params (e.g. `from`, used for back-nav) while
+      // switching segment; a segment change resets pagination, so drop `page`.
+      const params = new URLSearchParams(window.location.search);
+      params.set('segment', id);
+      params.delete('page');
+      const url = '/contests/' + this.contestId + '?' + params.toString();
+
+      htmx.ajax('GET', url, {
         target: '#leaderboard-content',
         swap:   'outerHTML'
       });
+      history.pushState({}, '', url);
     },
 
     get currentNode() {
