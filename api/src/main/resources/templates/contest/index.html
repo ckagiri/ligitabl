@@ -41,15 +41,43 @@
               </svg>
               Join a Contest
             </button>
-            <a
-              th:href="@{/contests/create}"
-              class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-lg transition"
-            >
-              <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-              </svg>
-              Create a Contest
-            </a>
+            <th:block th:if="${hasSeasonPrediction}">
+              <a
+                th:href="@{/contests/create}"
+                class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-white hover:bg-gray-50 text-gray-700 border border-gray-300 rounded-lg transition"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Create a Contest
+              </a>
+            </th:block>
+            <th:block th:unless="${hasSeasonPrediction}">
+              <span
+                title="Submit your initial round prediction to create a contest"
+                class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-medium bg-white text-gray-400 border border-gray-200 rounded-lg cursor-not-allowed opacity-60"
+              >
+                <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                Create a Contest
+              </span>
+            </th:block>
+          </div>
+        </div>
+
+        <!-- ── Season prediction required banner ── -->
+        <div th:if="${!hasSeasonPrediction}" class="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div class="flex items-start">
+            <svg class="h-5 w-5 text-blue-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fill-rule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clip-rule="evenodd" />
+            </svg>
+            <p class="text-sm text-blue-800">
+              Submit your initial round prediction to create a contest.
+              <a th:href="@{/predictions/user}" class="underline font-medium hover:text-blue-900">Make your prediction</a>.
+            </p>
           </div>
         </div>
 
@@ -283,8 +311,15 @@
                     @click="openJoinForm()"
                     class="text-sm text-indigo-600 hover:text-indigo-800 font-medium"
                   >Join with a code</button>
-                  <span class="text-gray-300">·</span>
-                  <a th:href="@{/contests/create}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Create a contest</a>
+                  <th:block th:if="${hasSeasonPrediction}">
+                    <span class="text-gray-300">·</span>
+                    <a th:href="@{/contests/create}" class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">Create a contest</a>
+                  </th:block>
+                  <th:block th:unless="${hasSeasonPrediction}">
+                    <span class="text-gray-300">·</span>
+                    <span title="Submit your initial round prediction to create a contest"
+                      class="text-sm text-gray-400 font-medium cursor-not-allowed">Create a contest</span>
+                  </th:block>
                 </div>
               </div>
             </th:block>

@@ -57,6 +57,12 @@ public class SeasonPredictionSupport {
         return seasonPredictionRepo.findByUserAndSeason(userId, seasonId);
     }
 
+    public boolean hasSeasonPrediction(UUID userId, String competitionSlug) {
+        return findActiveSeason(competitionSlug)
+                .map(season -> findPrediction(userId, season.getId()).isPresent())
+                .orElse(false);
+    }
+
     /**
      * Prediction sharing data for the profile settings widget — visible only when the user has
      * something to share: pre-season registration (initialRankings) or an in-play prediction
