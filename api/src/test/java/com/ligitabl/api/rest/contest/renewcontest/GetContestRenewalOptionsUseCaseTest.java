@@ -131,6 +131,20 @@ class GetContestRenewalOptionsUseCaseTest {
     }
 
     @Test
+    void currentSeason_renewalWindowElapsed_hidden() {
+        Contest contest = contest(1, 4); // S1 -> S1, renewal target is S2 (rounds 5-9)
+        when(contestRepo.findById(contest.getId())).thenReturn(Optional.of(contest));
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
+        when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
+        stubCurrentRoundPosition(7); // already 3 rounds into S2 — its start has long passed
+
+        var result = useCase.execute(contest.getId(), userId).get();
+
+        assertThat(result.visible()).isFalse();
+    }
+
+    @Test
     void currentSeason_fullSeason_notRenewable() {
         Contest contest = contest(1, 38);
         when(contestRepo.findById(contest.getId())).thenReturn(Optional.of(contest));

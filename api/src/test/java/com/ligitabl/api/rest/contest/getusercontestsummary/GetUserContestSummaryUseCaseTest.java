@@ -123,7 +123,7 @@ class GetUserContestSummaryUseCaseTest {
     void ownedRenewableContest_timingMet_renewalVisibleAndEnabled() {
         List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
         competition.setPhases(phases);
-        currentRound.setPosition(35); // S8 — timing gate met for S6->S6
+        currentRound.setPosition(29); // still within S6, timing gate met, and before S7 (30-34) starts
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
@@ -150,6 +150,34 @@ class GetUserContestSummaryUseCaseTest {
         assertThat(row.renewFromCode()).isEqualTo("S7");
         assertThat(row.renewDefaultToCode()).isEqualTo("S7");
         assertThat(row.renewToOptionCodes()).contains("S7", "S8");
+    }
+
+    @Test
+    void ownedRenewableContest_renewalWindowElapsed_renewalHidden() {
+        List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
+        competition.setPhases(phases);
+        currentRound.setPosition(35); // already in S8 — S7 (30-34), the renewal target, has fully elapsed
+        when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
+        when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
+                .thenReturn(ContestRankResolver.RankInfo.NONE);
+
+        Contest contest = Contest.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .name("Office Rivals")
+                .isPrivate(true)
+                .isOpen(true)
+                .fromRoundPosition(25)
+                .toRoundPosition(29)
+                .ownerId(userId)
+                .build();
+        when(contestRepo.findPrivateByUserId(userId, seasonId)).thenReturn(List.of(contest));
+        when(contestSupport.deriveContestStatus(25, 29, currentRound, phases)).thenReturn("FINISHED");
+
+        var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
+
+        assertThat(result.privateContests().get(0).renewVisible()).isFalse();
     }
 
     @Test
