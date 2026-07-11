@@ -36,8 +36,8 @@ public class SeasonPredictionSupport {
     private final TeamRepo teamRepo;
     private final SharePredictionTextBuilder sharePredictionTextBuilder;
 
-    @Value("${ligitabl.frontend.url:http://localhost:8080}")
-    private String frontendUrl;
+    @Value("${ligitabl.frontend.share-url:${ligitabl.frontend.url:http://localhost:8080}}")
+    private String frontendShareUrl;
 
     public Optional<Season> findActiveSeason(String competitionSlug) {
         return seasonRepo.findActiveSeason(competitionSlug);
@@ -100,11 +100,12 @@ public class SeasonPredictionSupport {
         }
         int round = currentRoundOpt.get().getPosition();
 
-        String shareUrl = frontendUrl + "/u/" + user.getPublicId().value() + "/"
+        String shareUrl = frontendShareUrl + "/u/" + user.getPublicId().value() + "/"
                 + season.getSlug().toShorthand() + "/gw/" + round;
         Map<String, Team> teamsByCode = teamRepo.findAllTeamsByCode(rankings);
 
-        String shareText = sharePredictionTextBuilder.build(round, rankings, teamsByCode, shareUrl);
+        String shareText =
+                sharePredictionTextBuilder.build(round, rankings, teamsByCode, shareUrl, season.isPreSeason());
         return new ShareData(true, shareUrl, shareText);
     }
 }

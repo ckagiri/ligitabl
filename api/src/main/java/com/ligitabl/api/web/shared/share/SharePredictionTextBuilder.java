@@ -19,12 +19,25 @@ public class SharePredictionTextBuilder {
     private static final int TAIL_COUNT = 3;
 
     public String build(int round, List<TeamRank> rankings, Map<String, Team> teamsByCode, String shareUrl) {
+        return build(round, rankings, teamsByCode, shareUrl, false);
+    }
+
+    public String build(
+            int round,
+            List<TeamRank> rankings,
+            Map<String, Team> teamsByCode,
+            String shareUrl,
+            boolean preSeason) {
         var sorted = rankings.stream()
                 .sorted(Comparator.comparingInt(r -> r.getPosition()))
                 .toList();
 
         StringBuilder text = new StringBuilder();
-        text.append("🏆 My Premier-League Gameweek ").append(round).append(" Prediction:\n\n");
+        text.append("🏆 My ")
+                .append(preSeason ? "early " : "")
+                .append("Premier-League Gameweek ")
+                .append(round)
+                .append(" Prediction:\n\n");
         appendTeamLines(text, sorted, teamsByCode);
         text.append("\nCheck it out on LigiPredictor!\n").append(displayUrl(shareUrl));
         return text.toString();
