@@ -55,7 +55,7 @@ class SeasonPredictionSupportTest {
     void setUp() {
         support = new SeasonPredictionSupport(
                 seasonRepo, roundRepo, seasonPredictionRepo, teamRepo, new SharePredictionTextBuilder());
-        ReflectionTestUtils.setField(support, "frontendUrl", "https://ligipredictor.com");
+        ReflectionTestUtils.setField(support, "frontendShareUrl", "https://ligipredictor.com");
 
         seasonId = UUID.randomUUID();
         roundId = UUID.randomUUID();

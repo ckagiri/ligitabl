@@ -3,6 +3,7 @@ package com.ligitabl.api.scheduling.seasonactivation;
 import static org.mockito.Mockito.*;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -84,8 +85,8 @@ class SeasonActivationServiceTest {
 
     @Test
     void alreadySwitched_idempotent() {
-        // If active season is the upcoming one (already switched), it reads IN_PLAY — not yet
-        // completed and predictionsOpenAt defaults to open — so isOffSeason() is false.
+        // If active season is the upcoming one (already switched), it is not completed and its
+        // pre-season window hasn't opened — guard's completed && preSeasonOpen fails.
         Competition competition = buildCompetition(null);
         Season alreadySwitchedSeason = Season.builder()
                 .id(activeSeasonId)
@@ -134,7 +135,7 @@ class SeasonActivationServiceTest {
                 .build();
     }
 
-    /** Completed and past its own end date, pre-season not (yet) open — reads OFF_SEASON. */
+    /** Completed and its pre-season window has opened — eligible for promotion. */
     private Season buildOffSeasonSeason(UUID id) {
         return Season.builder()
                 .id(id)
@@ -145,6 +146,7 @@ class SeasonActivationServiceTest {
                 .startDate(LocalDate.now().minusMonths(9))
                 .endDate(LocalDate.now().minusDays(1))
                 .completed(true)
+                .preSeasonOpensAt(OffsetDateTime.now().minusDays(1))
                 .initialRankings(java.util.List.of())
                 .build();
     }
