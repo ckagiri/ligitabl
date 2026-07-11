@@ -92,40 +92,10 @@ public class Season extends AbstractModel<UUID> {
         this.detachedContestId = null;
     }
 
-    /**
-     * On the outgoing season: has the pre-season window opened? Standalone raw date check — used
-     * directly by admin/prediction visibility against the outgoing (still-in-play) season, so it
-     * deliberately does NOT factor in isInPlay()/getSeasonState().
-     */
     public boolean isPreSeasonOpen() {
         return preSeasonOpensAt != null && OffsetDateTime.now().isAfter(preSeasonOpensAt);
     }
 
-    /**
-     * Coarse-grained season phase, in priority order: OFF_SEASON, then IN_PLAY, then PRE_SEASON,
-     * with INACTIVE as the fallback when none of the three apply. Single source of truth for
-     * phase precedence — isOffSeason()/isInPlay()/isPreSeason()/isInactive() all just compare
-     * against this.
-     *
-     * <p>OFF_SEASON additionally requires being outside the season's own start/end window (past
-     * endDate for a completed season, or before startDate for an upcoming one) — guards against
-     * reporting it purely off the completed/predictionsOpenAt/preSeasonOpensAt flags if they're out
-     * of sync with the season's actual dates. For a not-yet-completed season, this only
-     * reclassifies what would otherwise fall into INACTIVE (predictions not yet open AND pre-season
-     * not yet open) as OFF_SEASON — it never preempts a genuine IN_PLAY reading, since it's gated on
-     * predictionsOpenAt NOT being open, checked before the beforeActualStart branch is considered.
-     *
-     * <p>PRE_SEASON only applies to an upcoming (not yet completed, not yet started) season whose
-     * pre-season window has opened early — a completed season past its own end date with
-     * preSeasonOpen still true is INACTIVE instead (see below), not PRE_SEASON: that combination
-     * isn't realistic in practice (a completed season should already have been promoted/reverted by
-     * the time anyone re-checks its state).
-     *
-     * <p>A completed season whose preSeasonOpensAt and predictionsOpenAt have both already passed
-     * is explicitly INACTIVE rather than PRE_SEASON — once predictions are open, staying
-     * "completed" is a data inconsistency (the season should have been promoted/reverted), not a
-     * genuine pre-season window.
-     */
     public SeasonState getSeasonState() {
         boolean pastActualEnd = completed && endDate != null && LocalDate.now().isAfter(endDate);
         boolean beforeActualStart =
@@ -149,26 +119,14 @@ public class Season extends AbstractModel<UUID> {
         return SeasonState.INACTIVE;
     }
 
-    /**
-     * True once the season has finished but the pre-season window for the next season has not
-     * (yet) opened. A null preSeasonOpensAt still counts as off-season — a completed legacy
-     * season with no pre-season config was never "pre-season open".
-     */
     public boolean isOffSeason() {
         return getSeasonState() == SeasonState.OFF_SEASON;
     }
 
-    /**
-     * On the upcoming (active) season: are predictions and swaps open for in-season play?
-     * Null predictionsOpenAt defaults to open — covers seasons created before this field existed.
-     * A completed season is never "in play" — this makes isOffSeason() and isInPlay() mutually
-     * exclusive.
-     */
     public boolean isInPlay() {
         return getSeasonState() == SeasonState.IN_PLAY;
     }
 
-    /** On the active season (post-switch): true during the pre-season registration window. */
     public boolean isPreSeason() {
         return getSeasonState() == SeasonState.PRE_SEASON;
     }
