@@ -85,13 +85,15 @@ public class GetUserContestSummaryUseCase {
                 .findFirst()
                 .orElse(null);
 
-        RoundSpan currentQuarter = currentRound != null
-                ? PhaseRules.phaseOfTypeContaining(phases, PhaseType.QUARTER, currentRound.getPosition())
+        Integer effectivePosition = currentRound != null ? PhaseRules.effectivePosition(currentRound) : null;
+
+        RoundSpan currentQuarter = effectivePosition != null
+                ? PhaseRules.phaseOfTypeContaining(phases, PhaseType.QUARTER, effectivePosition)
                         .orElse(null)
                 : null;
 
-        RoundSpan currentSprint = currentRound != null
-                ? PhaseRules.phaseOfTypeContaining(phases, PhaseType.SPRINT, currentRound.getPosition())
+        RoundSpan currentSprint = effectivePosition != null
+                ? PhaseRules.phaseOfTypeContaining(phases, PhaseType.SPRINT, effectivePosition)
                         .orElse(null)
                 : null;
 

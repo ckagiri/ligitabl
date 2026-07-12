@@ -301,4 +301,40 @@ class GetUserContestSummaryUseCaseTest {
         // Current round is looked up once per list build, not once per row.
         verify(roundRepo, times(1)).findById(roundId);
     }
+
+    @Test
+    void buildGeneralRows_currentRoundFinalized_currentSprintUsesRawPosition() {
+        List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
+        competition.setPhases(phases);
+        currentRound.setPosition(12); // inside S3 (10-14)
+        currentRound.setFinalized(true);
+        when(contestRepo.findPrivateByUserId(userId, seasonId)).thenReturn(List.of());
+        when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
+                .thenReturn(ContestRankResolver.RankInfo.NONE);
+
+        var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
+
+        assertThat(result.generalContests())
+                .extracting(GeneralContestRowDto::phaseCode)
+                .contains("S3");
+    }
+
+    @Test
+    void buildGeneralRows_currentRoundNotFinalized_currentSprintStepsBackOnePosition() {
+        List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
+        competition.setPhases(phases);
+        currentRound.setPosition(10); // opening round of S3 (10-14), not yet finalized
+        currentRound.setFinalized(false);
+        when(contestRepo.findPrivateByUserId(userId, seasonId)).thenReturn(List.of());
+        when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
+                .thenReturn(ContestRankResolver.RankInfo.NONE);
+
+        var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
+
+        // Effective position steps back to 9 (still inside S2, 5-9), not the raw position's S3.
+        assertThat(result.generalContests())
+                .extracting(GeneralContestRowDto::phaseCode)
+                .contains("S2")
+                .doesNotContain("S3");
+    }
 }
