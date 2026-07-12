@@ -1,13 +1,7 @@
-package com.ligitabl.api.web.contest.shared;
+package com.ligitabl.model.domain;
 
 import java.util.List;
 import java.util.function.Supplier;
-
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.PhaseRules;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.RoundSpan;
-import com.ligitabl.model.domain.RoundStatus;
 
 /** Whether a private contest's join window has closed, independent of its own {@code isOpen} toggle. */
 public final class ContestJoinWindow {

@@ -11,10 +11,10 @@ import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
-import com.ligitabl.api.web.contest.shared.ContestRenewalCalculator;
 import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
+import com.ligitabl.model.domain.ContestRenewalCalculator;
 import com.ligitabl.model.domain.PhaseRules;
 import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.Round;
@@ -86,11 +86,14 @@ public class GetUserContestSummaryUseCase {
                 .orElse(null);
 
         RoundSpan currentQuarter = currentRound != null
-                ? findContainingPhase(phases, currentRound.getPosition(), PhaseType.QUARTER)
+                ? PhaseRules.phaseOfTypeContaining(phases, PhaseType.QUARTER, currentRound.getPosition())
+                        .orElse(null)
                 : null;
 
-        RoundSpan currentSprint =
-                currentRound != null ? findContainingPhase(phases, currentRound.getPosition(), PhaseType.SPRINT) : null;
+        RoundSpan currentSprint = currentRound != null
+                ? PhaseRules.phaseOfTypeContaining(phases, PhaseType.SPRINT, currentRound.getPosition())
+                        .orElse(null)
+                : null;
 
         List<GeneralContestRowDto> rows = new ArrayList<>();
         Stream.of(fullSeason, currentQuarter, currentSprint)
@@ -217,13 +220,5 @@ public class GetUserContestSummaryUseCase {
                         originalFrom, originalTo, currentRound.getPosition(), phases);
 
         return new RenewalInfo(true, enabled, from.getCode(), defaultTo.getCode(), toOptionCodes);
-    }
-
-    private RoundSpan findContainingPhase(List<RoundSpan> phases, int roundPosition, PhaseType type) {
-        return phases.stream()
-                .filter(p -> p.getType() == type)
-                .filter(p -> roundPosition >= p.getFrom() && roundPosition <= p.getTo())
-                .findFirst()
-                .orElse(null);
     }
 }

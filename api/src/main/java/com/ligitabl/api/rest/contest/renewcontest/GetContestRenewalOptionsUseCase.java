@@ -6,9 +6,9 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.web.contest.shared.ContestRenewalCalculator;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
+import com.ligitabl.model.domain.ContestRenewalCalculator;
 import com.ligitabl.model.domain.PhaseRules;
 import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.domain.Season;
