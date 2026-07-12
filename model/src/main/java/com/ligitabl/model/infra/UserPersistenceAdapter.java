@@ -3,9 +3,11 @@ package com.ligitabl.model.infra;
 import static com.ligitabl.model.db.tables.TUser.T_USER;
 import static com.ligitabl.model.db.tables.TUserRole.T_USER_ROLE;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -163,6 +165,39 @@ public class UserPersistenceAdapter implements UserRepo {
             result.put(id, map(rec, rolesByUserId.getOrDefault(id, Set.of())));
         }
         return result;
+    }
+
+    @Override
+    public List<User> findAllPaged(int offset, int limit) {
+        var records = dsl.selectFrom(T_USER)
+                .orderBy(T_USER.C_CREATE_DATE.desc())
+                .limit(limit)
+                .offset(offset)
+                .fetch();
+
+        if (records.isEmpty()) return List.of();
+
+        Set<UUID> ids = new HashSet<>();
+        records.forEach(r -> ids.add(r.getId()));
+
+        Map<UUID, Set<Role>> rolesByUserId = new LinkedHashMap<>();
+        dsl.select(T_USER_ROLE.FK_USER_ID, T_USER_ROLE.C_ROLE)
+                .from(T_USER_ROLE)
+                .where(T_USER_ROLE.FK_USER_ID.in(ids))
+                .forEach(r -> rolesByUserId
+                        .computeIfAbsent(r.get(T_USER_ROLE.FK_USER_ID), k -> new HashSet<>())
+                        .add(Role.fromString(r.get(T_USER_ROLE.C_ROLE))));
+
+        List<User> result = new ArrayList<>();
+        for (var rec : records) {
+            result.add(map(rec, rolesByUserId.getOrDefault(rec.getId(), Set.of())));
+        }
+        return result;
+    }
+
+    @Override
+    public long countAll() {
+        return dsl.fetchCount(T_USER);
     }
 
     @Override

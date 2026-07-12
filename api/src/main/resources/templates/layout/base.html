@@ -311,6 +311,12 @@
                       @click="adminMenuOpen = false"
                       >Season Management</a
                     >
+                    <a
+                      th:href="@{/admin/users}"
+                      class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
+                      @click="adminMenuOpen = false"
+                      >Users</a
+                    >
                   </div>
                 </div>
               </div>
@@ -575,6 +581,12 @@
               th:href="@{/admin/seasons}"
               class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
               >Admin: Season Management</a
+            >
+            <a
+              th:if="${isAdmin}"
+              th:href="@{/admin/users}"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+              >Admin: Users</a
             >
 
             <div class="border-t border-gray-200 pt-2 mt-2">
