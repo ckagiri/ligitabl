@@ -95,10 +95,9 @@ public class ContestDetailController {
                             boolean isPastSeason = false;
                             boolean isJoinWindowClosed = false;
                             if (hxRequest == null || hxRequest.isBlank()) {
-                                isPastSeason = contestSeasonSupport.isPastSeason(detail.contest());
-                                if (!isPastSeason) {
-                                    isJoinWindowClosed = contestSeasonSupport.isJoinWindowClosed(detail.contest());
-                                }
+                                var seasonGate = contestSeasonSupport.resolveSeasonGateStatus(detail.contest());
+                                isPastSeason = seasonGate.isPastSeason();
+                                isJoinWindowClosed = seasonGate.isJoinWindowClosed();
                             }
                             model.addAttribute("isPastSeason", isPastSeason);
                             model.addAttribute("isJoinWindowClosed", isJoinWindowClosed);

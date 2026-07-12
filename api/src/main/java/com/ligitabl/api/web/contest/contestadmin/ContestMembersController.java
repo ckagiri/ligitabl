@@ -72,12 +72,11 @@ public class ContestMembersController {
         int toIdx = Math.min(fromIdx + PAGE_SIZE, total);
         List<MemberRow> pageMembers = allMembers.subList(fromIdx, toIdx);
 
-        boolean isPastSeason = contestSeasonSupport.isPastSeason(contest);
-        boolean isJoinWindowClosed = !isPastSeason && contestSeasonSupport.isJoinWindowClosed(contest);
+        var seasonGate = contestSeasonSupport.resolveSeasonGateStatus(contest);
 
         model.addAttribute("contest", contest);
-        model.addAttribute("isPastSeason", isPastSeason);
-        model.addAttribute("isJoinWindowClosed", isJoinWindowClosed);
+        model.addAttribute("isPastSeason", seasonGate.isPastSeason());
+        model.addAttribute("isJoinWindowClosed", seasonGate.isJoinWindowClosed());
         model.addAttribute("members", pageMembers);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", totalPages);

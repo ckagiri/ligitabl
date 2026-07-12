@@ -62,11 +62,12 @@ public class RemoveContestMemberUseCase {
             return Either.left(new Error.NotAMember(targetUserId, contestId));
         }
 
-        if (contestSeasonSupport.isPastSeason(contest)) {
+        var seasonGate = contestSeasonSupport.resolveSeasonGateStatus(contest);
+        if (seasonGate.isPastSeason()) {
             return Either.left(new Error.PastSeasonContest(contestId));
         }
 
-        if (contestSeasonSupport.isJoinWindowClosed(contest)) {
+        if (seasonGate.isJoinWindowClosed()) {
             return Either.left(new Error.JoinWindowClosed(contestId));
         }
 

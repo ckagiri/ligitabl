@@ -98,8 +98,8 @@ class RemoveContestMemberUseCaseTest {
     void targetHasNoScores_hardDeletesEntry_suggestsCodeRegen() {
         when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
         when(entryRepo.findByUserAndContest(memberId, contestId)).thenReturn(Optional.of(activeEntry));
-        when(contestSeasonSupport.isPastSeason(contest)).thenReturn(false);
-        when(contestSeasonSupport.isJoinWindowClosed(contest)).thenReturn(false);
+        when(contestSeasonSupport.resolveSeasonGateStatus(contest))
+                .thenReturn(new ContestSeasonSupport.SeasonGateStatus(false, false));
         when(entryRepo.hasAnyScore(memberId, contestId)).thenReturn(false);
 
         var result = useCase.execute(contestId, ownerId, memberId, 5);
@@ -114,8 +114,8 @@ class RemoveContestMemberUseCaseTest {
     void targetHasScores_softDeletesEntry_suggestsCodeRegen() {
         when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
         when(entryRepo.findByUserAndContest(memberId, contestId)).thenReturn(Optional.of(activeEntry));
-        when(contestSeasonSupport.isPastSeason(contest)).thenReturn(false);
-        when(contestSeasonSupport.isJoinWindowClosed(contest)).thenReturn(false);
+        when(contestSeasonSupport.resolveSeasonGateStatus(contest))
+                .thenReturn(new ContestSeasonSupport.SeasonGateStatus(false, false));
         when(entryRepo.hasAnyScore(memberId, contestId)).thenReturn(true);
 
         var result = useCase.execute(contestId, ownerId, memberId, 5);
@@ -130,7 +130,8 @@ class RemoveContestMemberUseCaseTest {
     void pastSeasonContest_returnsPastSeasonContestError() {
         when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
         when(entryRepo.findByUserAndContest(memberId, contestId)).thenReturn(Optional.of(activeEntry));
-        when(contestSeasonSupport.isPastSeason(contest)).thenReturn(true);
+        when(contestSeasonSupport.resolveSeasonGateStatus(contest))
+                .thenReturn(new ContestSeasonSupport.SeasonGateStatus(true, false));
 
         var result = useCase.execute(contestId, ownerId, memberId, 5);
 
@@ -144,8 +145,8 @@ class RemoveContestMemberUseCaseTest {
     void joinWindowClosed_returnsJoinWindowClosedError() {
         when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
         when(entryRepo.findByUserAndContest(memberId, contestId)).thenReturn(Optional.of(activeEntry));
-        when(contestSeasonSupport.isPastSeason(contest)).thenReturn(false);
-        when(contestSeasonSupport.isJoinWindowClosed(contest)).thenReturn(true);
+        when(contestSeasonSupport.resolveSeasonGateStatus(contest))
+                .thenReturn(new ContestSeasonSupport.SeasonGateStatus(false, true));
 
         var result = useCase.execute(contestId, ownerId, memberId, 5);
 

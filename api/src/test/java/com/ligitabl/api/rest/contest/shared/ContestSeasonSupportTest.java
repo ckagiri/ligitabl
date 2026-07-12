@@ -1,6 +1,7 @@
 package com.ligitabl.api.rest.contest.shared;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import java.util.List;
@@ -176,5 +177,39 @@ class ContestSeasonSupportTest {
         when(roundSupport.resolveStatus(openingRound)).thenReturn(RoundStatus.LOCKED);
 
         assertThat(support.isJoinWindowClosed(singleSprintContest)).isTrue();
+    }
+
+    // ---- resolveSeasonGateStatus (combines both checks from a single season lookup) ----
+
+    @Test
+    void resolveSeasonGateStatus_pastSeason_shortCircuitsJoinWindowCheck() {
+        Season activeSeason = Season.builder()
+                .id(UUID.randomUUID())
+                .competitionId(competitionId)
+                .build();
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(activeSeason));
+
+        var status = support.resolveSeasonGateStatus(contest);
+
+        assertThat(status.isPastSeason()).isTrue();
+        assertThat(status.isJoinWindowClosed()).isFalse();
+        // Past-season short-circuit: no need to resolve competition/round at all.
+        verifyNoInteractions(competitionRepo, roundSupport);
+    }
+
+    @Test
+    void resolveSeasonGateStatus_currentSeason_reflectsJoinWindowState() {
+        Competition competition =
+                Competition.builder().id(competitionId).phases(phases).build();
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(season));
+        when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
+        when(roundSupport.resolveCurrentRound(season)).thenReturn(round(1));
+
+        var status = support.resolveSeasonGateStatus(contest);
+
+        assertThat(status.isPastSeason()).isFalse();
+        assertThat(status.isJoinWindowClosed()).isFalse();
     }
 }
