@@ -272,6 +272,26 @@ class RenewContestUseCaseTest {
     }
 
     @Test
+    void pastSeason_singleSprintOriginal_returnsNotRenewable() {
+        Contest original = originalContest(30, 34); // S7 only — a single sprint in the past season
+        when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
+
+        Season activeSeason = Season.builder()
+                .id(UUID.randomUUID())
+                .competitionId(competitionId)
+                .build();
+        when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(activeSeason));
+
+        var cmd = new RenewContestCommand(userId, original.getId(), "S1");
+        var result = useCase.execute(cmd);
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(RenewContestError.NotRenewable.class);
+    }
+
+    @Test
     void pastSeason_partialOriginal_defaultsToEndOfQ1_savesIntoActiveSeason() {
         Contest original = originalContest(30, 38); // S7 -> S8 (Q4) in the past season
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));

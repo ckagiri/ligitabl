@@ -237,6 +237,24 @@ class GetContestRenewalOptionsUseCaseTest {
     }
 
     @Test
+    void pastSeason_singleSprintOriginal_hidden() {
+        Contest contest = contest(30, 34); // S7 only — a single sprint in the past season
+        when(contestRepo.findById(contest.getId())).thenReturn(Optional.of(contest));
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
+
+        Season activeSeason = Season.builder()
+                .id(UUID.randomUUID())
+                .competitionId(competitionId)
+                .build();
+        when(seasonRepo.findActiveSeason(competitionId)).thenReturn(Optional.of(activeSeason));
+
+        var result = useCase.execute(contest.getId(), userId).get();
+
+        assertThat(result.visible()).isFalse();
+    }
+
+    @Test
     void pastSeason_noActiveSeason_notRenewable() {
         Contest contest = contest(1, 9);
         when(contestRepo.findById(contest.getId())).thenReturn(Optional.of(contest));

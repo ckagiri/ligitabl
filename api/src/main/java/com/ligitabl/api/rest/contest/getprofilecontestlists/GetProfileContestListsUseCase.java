@@ -8,6 +8,8 @@ import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.contest.renewcontest.GetContestRenewalOptionsResult;
+import com.ligitabl.api.rest.contest.renewcontest.GetContestRenewalOptionsUseCase;
 import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.web.contest.shared.ContestSupport;
@@ -39,6 +41,7 @@ public class GetProfileContestListsUseCase {
     private final ContestRankResolver contestRankResolver;
     private final ContestSupport contestSupport;
     private final RoundSupport roundSupport;
+    private final GetContestRenewalOptionsUseCase getContestRenewalOptionsUseCase;
 
     public GetProfileContestListsResult execute(GetProfileContestListsQuery query) {
         Season activeSeason = seasonRepo
@@ -114,7 +117,16 @@ public class GetProfileContestListsUseCase {
                         view.fromRoundPosition(), view.toRoundPosition(), currentRound, phases)
                 : null;
 
+        // Renewal is only offered from the Past tab, for contests the caller owns and are private
+        // — the Active tab's own renewal flow already lives on the separate /contests page.
+        GetContestRenewalOptionsResult renewal = (!isActiveTab && view.isOwner() && view.isPrivate())
+                ? getContestRenewalOptionsUseCase
+                        .execute(view.contestId(), userId)
+                        .fold(error -> GetContestRenewalOptionsResult.hidden(), r -> r)
+                : GetContestRenewalOptionsResult.hidden();
+
         return new ContestSummary(
+                view.contestId(),
                 view.contestName(),
                 view.seasonName(),
                 periodLabel,
@@ -124,7 +136,12 @@ public class GetProfileContestListsUseCase {
                 status,
                 view.isPrivate(),
                 view.isOwner(),
-                view.isOpen());
+                view.isOpen(),
+                renewal.visible(),
+                renewal.enabled(),
+                renewal.fromCode(),
+                renewal.defaultToCode(),
+                renewal.toOptionCodes());
     }
 
     private Integer resolveRank(ContestRepo.UserContestView view, UUID userId) {

@@ -13,7 +13,6 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.rest.contest.shared.ContestSeasonSupport;
-import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.web.contest.contestdetail.ContestDetailController.MemberRow;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 import com.ligitabl.model.domain.Entry;
@@ -36,7 +35,6 @@ public class ContestMembersController {
     private final EntryRepo entryRepo;
     private final UserRepo userRepo;
     private final ContestSeasonSupport contestSeasonSupport;
-    private final RoundSupport roundSupport;
 
     @GetMapping("/{id}/members")
     public String contestMembers(
@@ -74,13 +72,11 @@ public class ContestMembersController {
         int toIdx = Math.min(fromIdx + PAGE_SIZE, total);
         List<MemberRow> pageMembers = allMembers.subList(fromIdx, toIdx);
 
-        boolean isPastSeason = contestSeasonSupport.isPastSeason(contest);
-        boolean isFinalSprintUnderway = !isPastSeason
-                && contestSeasonSupport.isFinalSprintUnderway(contest, roundSupport.resolveCurrentRoundPosition());
+        var seasonGate = contestSeasonSupport.resolveSeasonGateStatus(contest);
 
         model.addAttribute("contest", contest);
-        model.addAttribute("isPastSeason", isPastSeason);
-        model.addAttribute("isFinalSprintUnderway", isFinalSprintUnderway);
+        model.addAttribute("isPastSeason", seasonGate.isPastSeason());
+        model.addAttribute("isJoinWindowClosed", seasonGate.isJoinWindowClosed());
         model.addAttribute("members", pageMembers);
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", totalPages);

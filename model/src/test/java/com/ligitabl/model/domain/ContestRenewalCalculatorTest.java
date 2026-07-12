@@ -165,6 +165,16 @@ class ContestRenewalCalculatorTest {
                 .isFalse();
     }
 
+    @Test
+    void isSingleSprint_sameFromAndTo_true() {
+        assertThat(ContestRenewalCalculator.isSingleSprint(s("S3"), s("S3"))).isTrue();
+    }
+
+    @Test
+    void isSingleSprint_multiSprintWindow_false() {
+        assertThat(ContestRenewalCalculator.isSingleSprint(s("S1"), s("S4"))).isFalse();
+    }
+
     // ---- Renewal timing gate (single sprint: original index + 2; multi-sprint: original's own last sprint) ----
 
     @Test

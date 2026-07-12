@@ -21,7 +21,6 @@ import com.ligitabl.api.rest.contest.getprivatecontest.GetPrivateContestUseCase;
 import com.ligitabl.api.rest.contest.renewcontest.GetContestRenewalOptionsResult;
 import com.ligitabl.api.rest.contest.renewcontest.GetContestRenewalOptionsUseCase;
 import com.ligitabl.api.rest.contest.shared.ContestSeasonSupport;
-import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 import com.ligitabl.model.domain.Entry;
@@ -43,7 +42,6 @@ public class ContestDetailController {
     private final GetContestRenewalOptionsUseCase getContestRenewalOptionsUseCase;
     private final ContestSeasonSupport contestSeasonSupport;
     private final ContestSupport contestSupport;
-    private final RoundSupport roundSupport;
     private final UserRepo userRepo;
     private final ObjectMapper objectMapper;
 
@@ -95,17 +93,14 @@ public class ContestDetailController {
                             model.addAttribute("isOwner", detail.isOwner());
 
                             boolean isPastSeason = false;
-                            boolean isFinalSprintUnderway = false;
+                            boolean isJoinWindowClosed = false;
                             if (hxRequest == null || hxRequest.isBlank()) {
-                                isPastSeason = contestSeasonSupport.isPastSeason(detail.contest());
-                                if (!isPastSeason) {
-                                    int currentRoundPosition = roundSupport.resolveCurrentRoundPosition();
-                                    isFinalSprintUnderway = contestSeasonSupport.isFinalSprintUnderway(
-                                            detail.contest(), currentRoundPosition);
-                                }
+                                var seasonGate = contestSeasonSupport.resolveSeasonGateStatus(detail.contest());
+                                isPastSeason = seasonGate.isPastSeason();
+                                isJoinWindowClosed = seasonGate.isJoinWindowClosed();
                             }
                             model.addAttribute("isPastSeason", isPastSeason);
-                            model.addAttribute("isFinalSprintUnderway", isFinalSprintUnderway);
+                            model.addAttribute("isJoinWindowClosed", isJoinWindowClosed);
 
                             GetContestRenewalOptionsResult renewal = GetContestRenewalOptionsResult.hidden();
                             if (detail.isOwner() && (hxRequest == null || hxRequest.isBlank())) {

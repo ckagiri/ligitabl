@@ -117,6 +117,10 @@ public class RenewContestUseCase {
                 return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
             }
 
+            if (ContestRenewalCalculator.isSingleSprint(originalFrom, originalTo)) {
+                return Either.left(new RenewContestError.NotRenewable(cmd.contestId()));
+            }
+
             var window = ContestRenewalCalculator.resolvePastSeasonWindow(originalFrom, originalTo, phases);
             from = window.from();
             to = findByCode(window.validToOptions(), cmd.toSprintCode());

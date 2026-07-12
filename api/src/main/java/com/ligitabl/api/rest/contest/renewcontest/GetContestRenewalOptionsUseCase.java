@@ -106,6 +106,10 @@ public class GetContestRenewalOptionsUseCase {
                 return Either.right(GetContestRenewalOptionsResult.hidden());
             }
 
+            if (ContestRenewalCalculator.isSingleSprint(originalFrom, originalTo)) {
+                return Either.right(GetContestRenewalOptionsResult.hidden());
+            }
+
             var window = ContestRenewalCalculator.resolvePastSeasonWindow(originalFrom, originalTo, phases);
             from = window.from();
             defaultTo = window.defaultTo();

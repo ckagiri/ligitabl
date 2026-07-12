@@ -16,8 +16,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.contest.renewcontest.GetContestRenewalOptionsResult;
+import com.ligitabl.api.rest.contest.renewcontest.GetContestRenewalOptionsUseCase;
 import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionPhaseFixtures;
@@ -55,6 +58,9 @@ class GetProfileContestListsUseCaseTest {
     @Mock
     RoundSupport roundSupport;
 
+    @Mock
+    GetContestRenewalOptionsUseCase getContestRenewalOptionsUseCase;
+
     private GetProfileContestListsUseCase useCase;
     private UUID userId;
     private UUID seasonId;
@@ -70,7 +76,8 @@ class GetProfileContestListsUseCaseTest {
                 entryRepo,
                 contestRankResolver,
                 contestSupport,
-                roundSupport);
+                roundSupport,
+                getContestRenewalOptionsUseCase);
 
         userId = UUID.randomUUID();
         seasonId = UUID.randomUUID();
@@ -90,6 +97,11 @@ class GetProfileContestListsUseCaseTest {
     private ContestRepo.UserContestView view(int from, int to) {
         return new ContestRepo.UserContestView(
                 UUID.randomUUID(), "Homeboyz", seasonId, "2026/27", false, from, to, true, true, false);
+    }
+
+    private ContestRepo.UserContestView view(int from, int to, boolean isPrivate, boolean isOwner) {
+        return new ContestRepo.UserContestView(
+                UUID.randomUUID(), "Homeboyz", seasonId, "2026/27", false, from, to, isPrivate, true, isOwner);
     }
 
     @Test
@@ -161,5 +173,57 @@ class GetProfileContestListsUseCaseTest {
 
         // The current round is resolved once per list build, not once per row.
         verify(roundSupport, times(1)).resolveCurrentRound(activeSeason);
+    }
+
+    @Test
+    void pastTab_ownedPrivateContest_populatesRenewalFieldsFromRenewalOptionsUseCase() {
+        var pastView = view(1, 4, true, true);
+        when(contestRepo.countContestsByUserId(userId, null, true)).thenReturn(0);
+        when(contestRepo.countContestsByUserId(userId, null, false)).thenReturn(1);
+        when(contestRepo.findContestsByUserId(userId, null, true, 10, 0)).thenReturn(List.of());
+        when(contestRepo.findContestsByUserId(userId, null, false, 10, 0)).thenReturn(List.of(pastView));
+
+        when(getContestRenewalOptionsUseCase.execute(pastView.contestId(), userId))
+                .thenReturn(Either.right(new GetContestRenewalOptionsResult(
+                        true, true, "Homeboyz", "S1", "S4", List.of("S1", "S4"), 5)));
+
+        var result = useCase.execute(new GetProfileContestListsQuery(userId, 1, 1));
+
+        var row = result.pastContests().get(0);
+        assertThat(row.renewVisible()).isTrue();
+        assertThat(row.renewEnabled()).isTrue();
+        assertThat(row.renewFromCode()).isEqualTo("S1");
+        assertThat(row.renewDefaultToCode()).isEqualTo("S4");
+        assertThat(row.renewToOptionCodes()).containsExactly("S1", "S4");
+    }
+
+    @Test
+    void pastTab_notOwnedContest_neverConsultsRenewalOptionsUseCase() {
+        var pastView = view(1, 4, true, false);
+        when(contestRepo.countContestsByUserId(userId, null, true)).thenReturn(0);
+        when(contestRepo.countContestsByUserId(userId, null, false)).thenReturn(1);
+        when(contestRepo.findContestsByUserId(userId, null, true, 10, 0)).thenReturn(List.of());
+        when(contestRepo.findContestsByUserId(userId, null, false, 10, 0)).thenReturn(List.of(pastView));
+
+        var result = useCase.execute(new GetProfileContestListsQuery(userId, 1, 1));
+
+        var row = result.pastContests().get(0);
+        assertThat(row.renewVisible()).isFalse();
+        assertThat(row.renewToOptionCodes()).isEmpty();
+        verify(getContestRenewalOptionsUseCase, never()).execute(any(), any());
+    }
+
+    @Test
+    void activeTab_ownedPrivateContest_neverConsultsRenewalOptionsUseCase() {
+        var activeView = view(1, 4, true, true);
+        when(contestRepo.countContestsByUserId(userId, null, true)).thenReturn(1);
+        when(contestRepo.countContestsByUserId(userId, null, false)).thenReturn(0);
+        when(contestRepo.findContestsByUserId(userId, null, true, 10, 0)).thenReturn(List.of(activeView));
+        when(contestRepo.findContestsByUserId(userId, null, false, 10, 0)).thenReturn(List.of());
+
+        var result = useCase.execute(new GetProfileContestListsQuery(userId, 1, 1));
+
+        assertThat(result.activeContests().get(0).renewVisible()).isFalse();
+        verify(getContestRenewalOptionsUseCase, never()).execute(any(), any());
     }
 }

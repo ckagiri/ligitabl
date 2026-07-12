@@ -1,5 +1,6 @@
 package com.ligitabl.api.web.auth;
 
+import java.util.List;
 import java.util.UUID;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -13,6 +14,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.rest.contest.getprofilecontestlists.GetProfileContestListsQuery;
 import com.ligitabl.api.rest.contest.getprofilecontestlists.GetProfileContestListsUseCase;
+import com.ligitabl.api.web.contest.shared.ContestSupport;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ProfileContestsController {
 
     private final GetProfileContestListsUseCase getProfileContestListsUseCase;
+    private final ContestSupport contestSupport;
 
     @GetMapping("/my-contests")
     public String myContests(
@@ -55,6 +58,11 @@ public class ProfileContestsController {
         model.addAttribute("pastPages", result.pastPages());
         model.addAttribute("pastFrom", result.pastFrom());
         model.addAttribute("pastTo", result.pastTo());
+
+        boolean showRenewColumn = result.pastContests().stream().anyMatch(c -> c.isOwner() && c.renewVisible());
+        model.addAttribute("showRenewColumn", showRenewColumn);
+        model.addAttribute("renewalSprints", showRenewColumn ? contestSupport.resolveSprintOptions() : List.of());
+        model.addAttribute("renewalQuarters", showRenewColumn ? contestSupport.resolveQuarterOptions() : List.of());
 
         return "profile/my-contests";
     }

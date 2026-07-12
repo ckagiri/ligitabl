@@ -29,12 +29,12 @@
             <p class="text-sm text-gray-600">This contest belongs to a past season. Membership is read-only.</p>
           </div>
         </th:block>
-        <th:block th:if="${isPastSeason == false and isFinalSprintUnderway == true}">
+        <th:block th:if="${isPastSeason == false and isJoinWindowClosed == true}">
           <div class="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-lg p-4 mb-4">
             <svg class="h-5 w-5 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01M12 3a9 9 0 100 18A9 9 0 0012 3z" />
             </svg>
-            <p class="text-sm text-amber-800">The final sprint is underway. Members cannot be removed at this stage.</p>
+            <p class="text-sm text-amber-800">The join window has closed. Members cannot be removed at this stage.</p>
           </div>
         </th:block>
         <th:block th:if="${param.removeBlocked != null}">
@@ -86,7 +86,7 @@
 
                     <!-- Remove button -->
                     <td class="px-4 py-3 text-center">
-                      <th:block th:if="${member.isActive == true and member.isOwner == false and isPastSeason == false and isFinalSprintUnderway == false}">
+                      <th:block th:if="${member.isActive == true and member.isOwner == false and isPastSeason == false and isJoinWindowClosed == false}">
                         <form method="post"
                               th:action="@{/contests/{id}/members/{memberId}/remove(id=${contest.id},memberId=${member.userId})}"
                               th:attr="data-name=${member.displayName}"

@@ -34,8 +34,8 @@ public class LeavePrivateContestUseCase {
         /** The contest belongs to a past (no longer active) season — historical, read-only. */
         record PastSeasonContest(UUID contestId) implements Error {}
 
-        /** The contest's own final sprint is underway — membership is locked until it ends. */
-        record FinalSprintUnderway(UUID contestId) implements Error {}
+        /** The contest's own join window has closed — membership is locked. */
+        record JoinWindowClosed(UUID contestId) implements Error {}
     }
 
     @Transactional
@@ -54,12 +54,13 @@ public class LeavePrivateContestUseCase {
             return Either.left(new Error.NotAMember(userId, contestId));
         }
 
-        if (contestSeasonSupport.isPastSeason(contest)) {
+        var seasonGate = contestSeasonSupport.resolveSeasonGateStatus(contest);
+        if (seasonGate.isPastSeason()) {
             return Either.left(new Error.PastSeasonContest(contestId));
         }
 
-        if (contestSeasonSupport.isFinalSprintUnderway(contest, currentRoundPosition)) {
-            return Either.left(new Error.FinalSprintUnderway(contestId));
+        if (seasonGate.isJoinWindowClosed()) {
+            return Either.left(new Error.JoinWindowClosed(contestId));
         }
 
         if (entryRepo.hasAnyScore(userId, contestId)) {
