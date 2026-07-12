@@ -600,10 +600,10 @@
         <!-- Past-season contests are historical records: no leave control at all, no explanation needed. -->
         <th:block th:if="${isOwner == false and contest.private == true and isPastSeason == false}">
           <div class="mb-4">
-            <th:block th:if="${isFinalSprintUnderway == true}">
-              <p class="text-sm text-gray-500">The final sprint is underway. You can no longer leave this contest.</p>
+            <th:block th:if="${isJoinWindowClosed == true}">
+              <p class="text-sm text-gray-500">The join window has closed. You can no longer leave this contest.</p>
             </th:block>
-            <th:block th:if="${isFinalSprintUnderway == false}">
+            <th:block th:if="${isJoinWindowClosed == false}">
               <form method="post" th:action="@{/contests/{id}/leave(id=${contest.id})}"
                     onsubmit="return confirm('Leave this contest? If you\'ve scored rounds, you\'ll appear as Former Member.')">
                 <button type="submit" class="inline-flex items-center gap-1.5 text-sm font-medium text-red-600 border border-red-300 rounded-lg px-3 py-1.5 hover:bg-red-50 transition">

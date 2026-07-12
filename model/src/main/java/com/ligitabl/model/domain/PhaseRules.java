@@ -54,16 +54,6 @@ public final class PhaseRules {
                 .findFirst();
     }
 
-    /**
-     * True once the current round has reached the start of the sprint containing
-     * {@code toRoundPosition} — e.g. a contest's own final sprint. Per-contest, not season-wide.
-     */
-    public static boolean isFinalSprintUnderway(int toRoundPosition, int currentRoundPosition, List<RoundSpan> phases) {
-        return sprintContaining(phases, toRoundPosition)
-                .map(finalSprint -> currentRoundPosition >= finalSprint.getFrom())
-                .orElse(false);
-    }
-
     /** LIVE / FINISHED / NEXT / FUTURE for a (from, to) window vs. the current round position. */
     public static String deriveStatus(int from, int to, int currentPosition) {
         if (currentPosition >= from && currentPosition <= to) return "LIVE";

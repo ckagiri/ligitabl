@@ -107,7 +107,7 @@ class LeavePrivateContestUseCaseTest {
         when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
         when(entryRepo.findByUserAndContest(memberId, contestId)).thenReturn(Optional.of(activeEntry));
         when(contestSeasonSupport.isPastSeason(contest)).thenReturn(false);
-        when(contestSeasonSupport.isFinalSprintUnderway(contest, 5)).thenReturn(false);
+        when(contestSeasonSupport.isJoinWindowClosed(contest)).thenReturn(false);
         when(entryRepo.hasAnyScore(memberId, contestId)).thenReturn(false);
 
         var result = useCase.execute(contestId, memberId, 5);
@@ -122,7 +122,7 @@ class LeavePrivateContestUseCaseTest {
         when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
         when(entryRepo.findByUserAndContest(memberId, contestId)).thenReturn(Optional.of(activeEntry));
         when(contestSeasonSupport.isPastSeason(contest)).thenReturn(false);
-        when(contestSeasonSupport.isFinalSprintUnderway(contest, 5)).thenReturn(false);
+        when(contestSeasonSupport.isJoinWindowClosed(contest)).thenReturn(false);
         when(entryRepo.hasAnyScore(memberId, contestId)).thenReturn(true);
 
         var result = useCase.execute(contestId, memberId, 5);
@@ -147,16 +147,16 @@ class LeavePrivateContestUseCaseTest {
     }
 
     @Test
-    void finalSprintUnderway_returnsFinalSprintUnderwayError() {
+    void joinWindowClosed_returnsJoinWindowClosedError() {
         when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
         when(entryRepo.findByUserAndContest(memberId, contestId)).thenReturn(Optional.of(activeEntry));
         when(contestSeasonSupport.isPastSeason(contest)).thenReturn(false);
-        when(contestSeasonSupport.isFinalSprintUnderway(contest, 5)).thenReturn(true);
+        when(contestSeasonSupport.isJoinWindowClosed(contest)).thenReturn(true);
 
         var result = useCase.execute(contestId, memberId, 5);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(LeavePrivateContestUseCase.Error.FinalSprintUnderway.class);
+        assertThat(result.getLeft()).isInstanceOf(LeavePrivateContestUseCase.Error.JoinWindowClosed.class);
         verify(entryRepo, never()).softRemove(any(), any(), anyInt());
         verify(entryRepo, never()).deleteByUserAndContest(any(), any());
     }

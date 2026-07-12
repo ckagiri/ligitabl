@@ -13,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -27,6 +28,9 @@ class ContestSeasonSupportTest {
     @Mock
     CompetitionRepo competitionRepo;
 
+    @Mock
+    RoundSupport roundSupport;
+
     private ContestSeasonSupport support;
 
     private UUID seasonId;
@@ -37,7 +41,7 @@ class ContestSeasonSupportTest {
 
     @BeforeEach
     void setUp() {
-        support = new ContestSeasonSupport(seasonRepo, competitionRepo);
+        support = new ContestSeasonSupport(seasonRepo, competitionRepo, roundSupport);
 
         seasonId = UUID.randomUUID();
         competitionId = UUID.randomUUID();
@@ -91,16 +95,86 @@ class ContestSeasonSupportTest {
         assertThat(support.isPastSeason(contest)).isTrue();
     }
 
+    private Round round(int position) {
+        return Round.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .position(position)
+                .build();
+    }
+
     @Test
-    void isFinalSprintUnderway_multiSprintContest_trueOnceInOwnLastSprint() {
+    void isJoinWindowClosed_multiSprintContest_falseBeforeOwnLastSprintStarts() {
+        Competition competition =
+                Competition.builder().id(competitionId).phases(phases).build();
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
+        when(roundSupport.resolveCurrentRound(season)).thenReturn(round(1));
+
+        // contest spans S1-S2 (toRoundPosition=9); its own final sprint is S2 (GW5-9)
+        assertThat(support.isJoinWindowClosed(contest)).isFalse();
+    }
+
+    @Test
+    void isJoinWindowClosed_multiSprintContest_trueOncePastOwnLastSprintOpeningRound() {
+        Competition competition =
+                Competition.builder().id(competitionId).phases(phases).build();
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
+        when(roundSupport.resolveCurrentRound(season)).thenReturn(round(9));
+
+        // Past S2's own opening round (5) — closed regardless of that round's status.
+        assertThat(support.isJoinWindowClosed(contest)).isTrue();
+    }
+
+    @Test
+    void isJoinWindowClosed_singleSprintContest_staysOpenWhileOpeningRoundIsOpen() {
+        // Regression: a contest whose entire window is one sprint (its final sprint IS its own
+        // opening round) must not be locked out from round 1 — only once that round stops being
+        // OPEN, matching the same boundary joining itself uses (ContestJoinWindow).
+        Contest singleSprintContest = Contest.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .name("One Shot")
+                .isPrivate(true)
+                .isOpen(true)
+                .fromRoundPosition(10)
+                .toRoundPosition(14) // S3 only
+                .build();
+
         Competition competition =
                 Competition.builder().id(competitionId).phases(phases).build();
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
 
-        // contest spans S1-S2 (toRoundPosition=9); its own final sprint is S2 (GW5-9)
-        assertThat(support.isFinalSprintUnderway(contest, 1)).isFalse();
-        assertThat(support.isFinalSprintUnderway(contest, 5)).isTrue();
-        assertThat(support.isFinalSprintUnderway(contest, 9)).isTrue();
+        Round openingRound = round(10);
+        when(roundSupport.resolveCurrentRound(season)).thenReturn(openingRound);
+        when(roundSupport.resolveStatus(openingRound)).thenReturn(RoundStatus.OPEN);
+
+        assertThat(support.isJoinWindowClosed(singleSprintContest)).isFalse();
+    }
+
+    @Test
+    void isJoinWindowClosed_singleSprintContest_closesOnceOpeningRoundLocks() {
+        Contest singleSprintContest = Contest.builder()
+                .id(UUID.randomUUID())
+                .seasonId(seasonId)
+                .name("One Shot")
+                .isPrivate(true)
+                .isOpen(true)
+                .fromRoundPosition(10)
+                .toRoundPosition(14)
+                .build();
+
+        Competition competition =
+                Competition.builder().id(competitionId).phases(phases).build();
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
+
+        Round openingRound = round(10);
+        when(roundSupport.resolveCurrentRound(season)).thenReturn(openingRound);
+        when(roundSupport.resolveStatus(openingRound)).thenReturn(RoundStatus.LOCKED);
+
+        assertThat(support.isJoinWindowClosed(singleSprintContest)).isTrue();
     }
 }
