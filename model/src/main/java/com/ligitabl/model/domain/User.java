@@ -59,6 +59,9 @@ public class User {
     @With
     OffsetDateTime updateDate;
 
+    @With
+    OffsetDateTime lastLoginAt;
+
     public boolean hasRole(Role role) {
         return roles.contains(role);
     }

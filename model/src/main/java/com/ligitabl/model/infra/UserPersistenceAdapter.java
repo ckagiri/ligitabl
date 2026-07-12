@@ -3,6 +3,7 @@ package com.ligitabl.model.infra;
 import static com.ligitabl.model.db.tables.TUser.T_USER;
 import static com.ligitabl.model.db.tables.TUserRole.T_USER_ROLE;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -113,6 +114,7 @@ public class UserPersistenceAdapter implements UserRepo {
                 .googleId(rec.getGoogleSubject())
                 .createDate(rec.getCreateDate())
                 .updateDate(rec.getUpdateDate())
+                .lastLoginAt(rec.getLastLoginAt())
                 .roles(model.getRoles())
                 .build();
     }
@@ -170,7 +172,7 @@ public class UserPersistenceAdapter implements UserRepo {
     @Override
     public List<User> findAllPaged(int offset, int limit) {
         var records = dsl.selectFrom(T_USER)
-                .orderBy(T_USER.C_CREATE_DATE.desc())
+                .orderBy(T_USER.C_LAST_LOGIN_AT.desc().nullsLast())
                 .limit(limit)
                 .offset(offset)
                 .fetch();
@@ -198,6 +200,14 @@ public class UserPersistenceAdapter implements UserRepo {
     @Override
     public long countAll() {
         return dsl.fetchCount(T_USER);
+    }
+
+    @Override
+    public void updateLastLoginAt(UUID userId, OffsetDateTime at) {
+        dsl.update(T_USER)
+                .set(T_USER.C_LAST_LOGIN_AT, at)
+                .where(T_USER.PK_ID.eq(userId))
+                .execute();
     }
 
     @Override
@@ -238,6 +248,7 @@ public class UserPersistenceAdapter implements UserRepo {
                 .googleId(record.getGoogleSubject())
                 .createDate(record.getCreateDate())
                 .updateDate(record.getUpdateDate())
+                .lastLoginAt(record.getLastLoginAt())
                 .build();
     }
 }

@@ -1,6 +1,10 @@
 package com.ligitabl.api.web.admin;
 
+import java.time.OffsetDateTime;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -43,8 +47,15 @@ public class AdminUserController {
         long totalEntries = userRepo.countAll();
         int totalPages = Math.max(1, (int) Math.ceil((double) totalEntries / pageSize));
 
+        OffsetDateTime now = OffsetDateTime.now();
+        Map<UUID, String> lastLoginDisplay = new LinkedHashMap<>();
+        for (User u : users) {
+            lastLoginDisplay.put(u.getId(), RelativeTimeFormatter.format(u.getLastLoginAt(), now));
+        }
+
         model.addAttribute("pageTitle", "Users");
         model.addAttribute("users", users);
+        model.addAttribute("lastLoginDisplay", lastLoginDisplay);
         model.addAttribute("currentPage", safePage);
         model.addAttribute("totalPages", totalPages);
         model.addAttribute("totalEntries", totalEntries);

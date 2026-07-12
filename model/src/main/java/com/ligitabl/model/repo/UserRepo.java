@@ -1,5 +1,6 @@
 package com.ligitabl.model.repo;
 
+import java.time.OffsetDateTime;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -35,4 +36,6 @@ public interface UserRepo {
     List<User> findAllPaged(int offset, int limit);
 
     long countAll();
+
+    void updateLastLoginAt(UUID userId, OffsetDateTime at);
 }

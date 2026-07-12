@@ -133,6 +133,7 @@ class OAuth2DuplicateLinkIntegrationTest {
                 true,
                 googleId,
                 null,
+                null,
                 null);
     }
 
