@@ -14,8 +14,12 @@
   </appender>
 
   <!-- Logtail: prod profile only. WARN+ globally; INFO+ for scheduling package. -->
+  <!-- Uses Jsr310LogtailAppender, not the vanilla LogtailAppender: the vanilla appender's
+       internal ObjectMapper lacks the JSR-310 module, so any log argument of type
+       Instant/OffsetDateTime throws while serializing the batch to JSON, silently dropping
+       every event bundled in that batch (not just the offending one). -->
   <springProfile name="prod">
-    <appender name="Logtail" class="com.logtail.logback.LogtailAppender">
+    <appender name="Logtail" class="com.ligitabl.api.logging.Jsr310LogtailAppender">
       <appName>ligitabl</appName>
       <sourceToken>${LOGTAIL_TOKEN}</sourceToken>
       <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
@@ -24,7 +28,7 @@
     </appender>
 
     <!-- Separate appender for scheduling: INFO+ without the WARN threshold -->
-    <appender name="LogtailScheduling" class="com.logtail.logback.LogtailAppender">
+    <appender name="LogtailScheduling" class="com.ligitabl.api.logging.Jsr310LogtailAppender">
       <appName>ligitabl</appName>
       <sourceToken>${LOGTAIL_TOKEN}</sourceToken>
       <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
