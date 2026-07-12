@@ -13,6 +13,7 @@ import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.Entry;
 import com.ligitabl.model.domain.PhaseRules;
+import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
@@ -53,10 +54,12 @@ public class GetPrivateContestUseCase {
         if (competitionResult.isLeft()) return competitionResult.castLeft();
         Competition competition = competitionResult.get();
 
-        int currentPosition = resolveCurrentPosition(season);
+        Round currentRound = resolveCurrentRound(season);
+        int currentPosition = currentRound != null ? currentRound.getPosition() : 1;
+        int effectivePosition = currentRound != null ? PhaseRules.effectivePosition(currentRound) : 1;
 
         String segmentCode = query.selectedSegmentCode();
-        var segmentResult = resolveSelectedSegment(contest, competition, segmentCode, currentPosition);
+        var segmentResult = resolveSelectedSegment(contest, competition, segmentCode, effectivePosition);
         if (segmentResult.isLeft()) return segmentResult.castLeft();
         RoundSpan selectedSegment = segmentResult.get();
 
@@ -128,19 +131,16 @@ public class GetPrivateContestUseCase {
                 .orElseGet(() -> Either.left(new GetPrivateContestError.CompetitionNotFound(season.getId())));
     }
 
-    private int resolveCurrentPosition(Season season) {
-        if (season.getCurrentRoundId() == null) return 1;
-        return roundRepo
-                .findById(season.getCurrentRoundId())
-                .map(r -> r.getPosition())
-                .orElse(1);
+    private Round resolveCurrentRound(Season season) {
+        if (season.getCurrentRoundId() == null) return null;
+        return roundRepo.findById(season.getCurrentRoundId()).orElse(null);
     }
 
     private Either<GetPrivateContestError, RoundSpan> resolveSelectedSegment(
-            Contest contest, Competition competition, String segmentCode, int currentPosition) {
+            Contest contest, Competition competition, String segmentCode, int effectivePosition) {
 
         if (segmentCode == null) {
-            return Either.right(contestSupport.findCurrentSprint(contest, competition, currentPosition));
+            return Either.right(contestSupport.findCurrentSprint(contest, competition, effectivePosition));
         }
 
         if ("overall".equalsIgnoreCase(segmentCode)) {
