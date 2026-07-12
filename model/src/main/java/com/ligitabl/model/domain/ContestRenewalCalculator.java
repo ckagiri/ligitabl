@@ -25,6 +25,10 @@ public final class ContestRenewalCalculator {
         return originalFrom.equals(sprints.get(0)) && originalTo.equals(sprints.get(sprints.size() - 1));
     }
 
+    public static boolean isSingleSprint(RoundSpan originalFrom, RoundSpan originalTo) {
+        return originalFrom.equals(originalTo);
+    }
+
     /** original.to + 1: the sprint immediately after the original contest's window. Empty if none remains. */
     public static Optional<RoundSpan> resolveRenewalFrom(RoundSpan originalTo, List<RoundSpan> phases) {
         List<RoundSpan> sprints = PhaseRules.sprintsOf(phases);
