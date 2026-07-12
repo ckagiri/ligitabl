@@ -75,7 +75,8 @@ public class SegmentTreeBuilder {
                 .toList();
 
         // Compute current-sprint rank (used by both single-quarter and multi-quarter paths)
-        RoundSpan currentSprintPhase = findContaining(phases, currentPosition, PhaseType.SPRINT);
+        RoundSpan currentSprintPhase = PhaseRules.phaseOfTypeContaining(phases, PhaseType.SPRINT, currentPosition)
+                .orElse(null);
         Map<String, Integer> sprintRanks = new HashMap<>();
         if (currentSprintPhase != null && currentSprintPhase.getFrom() >= from && currentSprintPhase.getTo() <= to) {
             Integer rank = computeRank(contest, currentSprintPhase.getFrom(), currentSprintPhase.getTo(), userId);
@@ -117,7 +118,8 @@ public class SegmentTreeBuilder {
                 .build();
         Integer rootRank = isLive(contestWindow, currentPosition) ? computeRank(contest, from, to, userId) : null;
 
-        RoundSpan currentQuarterPhase = findContaining(phases, currentPosition, PhaseType.QUARTER);
+        RoundSpan currentQuarterPhase = PhaseRules.phaseOfTypeContaining(phases, PhaseType.QUARTER, currentPosition)
+                .orElse(null);
         Map<String, Integer> quarterRanks = new HashMap<>();
         if (currentQuarterPhase != null && currentQuarterPhase.getFrom() >= from && currentQuarterPhase.getTo() <= to) {
             Integer rank = computeRank(contest, currentQuarterPhase.getFrom(), currentQuarterPhase.getTo(), userId);
@@ -212,13 +214,5 @@ public class SegmentTreeBuilder {
 
     private String format(OffsetDateTime dt) {
         return dt.format(DATE_FMT);
-    }
-
-    private RoundSpan findContaining(List<RoundSpan> phases, int position, PhaseType type) {
-        return phases.stream()
-                .filter(p -> p.getType() == type)
-                .filter(p -> position >= p.getFrom() && position <= p.getTo())
-                .findFirst()
-                .orElse(null);
     }
 }

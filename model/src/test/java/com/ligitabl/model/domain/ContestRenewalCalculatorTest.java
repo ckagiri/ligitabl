@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.contest.shared;
+package com.ligitabl.model.domain;
 
 import static com.ligitabl.model.domain.CompetitionPhaseFixtures.s;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -6,9 +6,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
 
 import org.junit.jupiter.api.Test;
-
-import com.ligitabl.model.domain.CompetitionPhaseFixtures;
-import com.ligitabl.model.domain.RoundSpan;
 
 /** Uses the real Premier League phase structure (see {@link CompetitionPhaseFixtures}). */
 class ContestRenewalCalculatorTest {

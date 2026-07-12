@@ -151,7 +151,9 @@ class GetUserDetailUseCaseIntegrationTest extends AbstractPostgresIT {
     }
 
     private void insertCompetitionSeasonAndContest() {
-        String phasesJson = "[{\"code\":\"FS\",\"name\":\"Full Season\",\"from\":1,\"to\":2}]";
+        // "type" must be set — phase resolution matches the full-season fallback by PhaseType, not
+        // by code, mirroring how phases are actually seeded (see seed/.../competition.yaml).
+        String phasesJson = "[{\"code\":\"FS\",\"name\":\"Full Season\",\"from\":1,\"to\":2,\"type\":\"FULL_SEASON\"}]";
 
         jdbc.update(
                 "INSERT INTO t_competition (pk_id, c_name, c_slug, c_code, c_phases, fk_active_season_id) VALUES (?,?,?,?, ?::jsonb, ?)",

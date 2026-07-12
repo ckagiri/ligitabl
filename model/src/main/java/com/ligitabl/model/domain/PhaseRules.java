@@ -22,6 +22,11 @@ public final class PhaseRules {
                 .findFirst();
     }
 
+    /** The phase of the given code, across all phase types (sprint, quarter, or full season). */
+    public static Optional<RoundSpan> findByCode(List<RoundSpan> phases, String code) {
+        return phases.stream().filter(p -> p.getCode().equalsIgnoreCase(code)).findFirst();
+    }
+
     /** The sprint that starts at the given round position, e.g. a contest's fromRoundPosition. */
     public static Optional<RoundSpan> sprintStartingAt(List<RoundSpan> phases, int roundPosition) {
         return sprintsOf(phases).stream()
@@ -38,8 +43,14 @@ public final class PhaseRules {
 
     /** The sprint that contains the given round position (from <= roundPosition <= to). */
     public static Optional<RoundSpan> sprintContaining(List<RoundSpan> phases, int roundPosition) {
-        return sprintsOf(phases).stream()
-                .filter(s -> s.getFrom() <= roundPosition && roundPosition <= s.getTo())
+        return phaseOfTypeContaining(phases, PhaseType.SPRINT, roundPosition);
+    }
+
+    /** The phase of the given type that contains the given round position (from <= roundPosition <= to). */
+    public static Optional<RoundSpan> phaseOfTypeContaining(List<RoundSpan> phases, PhaseType type, int roundPosition) {
+        return phases.stream()
+                .filter(p -> p.getType() == type)
+                .filter(p -> p.getFrom() <= roundPosition && roundPosition <= p.getTo())
                 .findFirst();
     }
 
@@ -156,6 +167,45 @@ public final class PhaseRules {
     public static String resolvePeriodLabel(List<RoundSpan> phases, int fromRoundPosition, int toRoundPosition) {
         return sprintStartingAt(phases, fromRoundPosition)
                 .flatMap(from -> sprintEndingAt(phases, toRoundPosition).map(to -> periodLabel(from, to, phases)))
+                .orElse(null);
+    }
+
+    /**
+     * The round position to use for "current phase" resolution: while the current round is still
+     * underway (not yet finalized), the round in progress hasn't contributed results yet, so the
+     * previous round is used instead — unless it's round 1, which has nothing before it.
+     */
+    public static int effectivePosition(Round round) {
+        int pos = round.getPosition();
+        return (!round.isFinalized() && pos > 1) ? pos - 1 : pos;
+    }
+
+    /**
+     * Resolves the phase to show: an explicit {@code phaseCode} always wins; otherwise defaults to
+     * the current sprint, falling back to the current quarter, then to the full-season phase.
+     * {@code effectiveRoundPosition} may be null (e.g. no current round yet), in which case the
+     * sprint/quarter lookups are skipped and only the full-season fallback applies.
+     */
+    public static RoundSpan resolvePhase(List<RoundSpan> phases, String phaseCode, Integer effectiveRoundPosition) {
+        if (phaseCode != null) {
+            return findByCode(phases, phaseCode).orElse(null);
+        }
+
+        if (effectiveRoundPosition != null) {
+            RoundSpan resolved = phaseOfTypeContaining(phases, PhaseType.SPRINT, effectiveRoundPosition)
+                    .orElse(null);
+            if (resolved == null) {
+                resolved = phaseOfTypeContaining(phases, PhaseType.QUARTER, effectiveRoundPosition)
+                        .orElse(null);
+            }
+            if (resolved != null) {
+                return resolved;
+            }
+        }
+
+        return phases.stream()
+                .filter(p -> p.getType() == PhaseType.FULL_SEASON)
+                .findFirst()
                 .orElse(null);
     }
 

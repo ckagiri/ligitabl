@@ -5,7 +5,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.web.contest.shared.ContestJoinWindow;
+import com.ligitabl.model.domain.ContestJoinWindow;
 import com.ligitabl.model.domain.Entry;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;

@@ -1,10 +1,7 @@
-package com.ligitabl.api.web.contest.shared;
+package com.ligitabl.model.domain;
 
 import java.util.List;
 import java.util.Optional;
-
-import com.ligitabl.model.domain.PhaseRules;
-import com.ligitabl.model.domain.RoundSpan;
 
 /**
  * Pure calculation of contest renewal windows: a renewed contest always starts the sprint
