@@ -27,7 +27,7 @@ public final class RelativeTimeFormatter {
             return "just now";
         }
         if (minutes < 60) {
-            return minutes + (minutes == 1 ? " minute ago" : " minutes ago");
+            return minutes + (minutes == 1 ? " min ago" : " mins ago");
         }
         if (hours < 24) {
             return hours + (hours == 1 ? " hour ago" : " hours ago");
