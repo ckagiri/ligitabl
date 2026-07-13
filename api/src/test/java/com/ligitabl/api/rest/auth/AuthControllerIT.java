@@ -223,8 +223,17 @@ class AuthControllerIT extends AbstractPostgresIT {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<Map<String, String>> request =
-                new HttpEntity<>(Map.of("email", email, "displayName", displayName, "password", password), headers);
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(
+                Map.of(
+                        "email",
+                        email,
+                        "displayName",
+                        displayName,
+                        "password",
+                        password,
+                        "turnstileToken",
+                        "test-turnstile-token"),
+                headers);
 
         return restTemplate.exchange(url, HttpMethod.POST, request, new ParameterizedTypeReference<>() {});
     }
@@ -236,8 +245,17 @@ class AuthControllerIT extends AbstractPostgresIT {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<Map<String, String>> request =
-                new HttpEntity<>(Map.of("email", email, "displayName", displayName, "password", password), headers);
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(
+                Map.of(
+                        "email",
+                        email,
+                        "displayName",
+                        displayName,
+                        "password",
+                        password,
+                        "turnstileToken",
+                        "test-turnstile-token"),
+                headers);
 
         return restTemplate.exchange(url, HttpMethod.POST, request, AuthDto.ErrorResponse.class);
     }
