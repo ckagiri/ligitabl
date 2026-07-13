@@ -15,7 +15,8 @@ public class AuthDto {
     public record RegisterRequest(
             @NotBlank @Email String email,
             @NotBlank @Size(min = 2, max = 100) String displayName,
-            @NotBlank @Size(min = 8, max = 100) String password) {}
+            @NotBlank @Size(min = 8, max = 100) String password,
+            @NotBlank String turnstileToken) {}
 
     public record RegisterResponse(String publicId, String email, String displayName, Set<String> roles) {}
 

@@ -13,7 +13,7 @@ Base URL (local dev): `http://localhost:8081`
 ### Auth
 
 - `POST /api/auth/login` — login (returns access token)
-- `POST /api/auth/register` — register a user (returns `{ publicId, email, displayName, roles }`)
+- `POST /api/auth/register` — register a user (requires `turnstileToken`, a Cloudflare Turnstile token obtained by the caller's own client — this API has no widget of its own; returns `{ publicId, email, displayName, roles }`)
 
 ## Authenticated endpoints
 

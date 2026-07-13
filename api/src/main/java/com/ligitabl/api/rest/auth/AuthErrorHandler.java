@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import com.ligitabl.api.shared.errors.AuthorizationError;
 import com.ligitabl.api.shared.errors.ConflictError;
+import com.ligitabl.api.shared.errors.UnprocessableEntityError;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.ValidationError;
 import com.ligitabl.api.shared.exceptions.UseCaseException;
@@ -46,6 +47,11 @@ public class AuthErrorHandler {
         if (error instanceof ConflictError ce) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(new AuthDto.ErrorResponse("ALREADY_EXISTS", ce.getMessage()));
+        }
+
+        if (error instanceof UnprocessableEntityError ue) {
+            return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
+                    .body(new AuthDto.ErrorResponse("VERIFICATION_FAILED", ue.getMessage()));
         }
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

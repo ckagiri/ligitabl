@@ -2,7 +2,10 @@ package com.ligitabl.api.rest.auth;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -11,6 +14,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.boot.test.web.client.TestRestTemplate;
 import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.core.ParameterizedTypeReference;
@@ -20,6 +24,10 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
+import com.ligitabl.api.client.TurnstileClient;
+import com.ligitabl.api.client.TurnstileError;
+import com.ligitabl.api.client.turnstile.TurnstileVerifyResponse;
+import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.Password;
@@ -47,6 +55,13 @@ class AuthControllerIT extends AbstractPostgresIT {
     @Autowired
     PublicIdGenerator publicIdGenerator;
 
+    // Mocked so these tests never make a real network call to Cloudflare — TurnstileClient's own
+    // HTTP behavior is covered by TurnstileClientTest (WireMock). Defaults to "verification
+    // passes" so every existing test keeps working; individual tests override this to simulate a
+    // rejected/failed verification.
+    @MockBean
+    TurnstileClient turnstileClient;
+
     String email;
     String password;
 
@@ -67,6 +82,10 @@ class AuthControllerIT extends AbstractPostgresIT {
                 .build();
 
         userRepo.create(user);
+
+        given(turnstileClient.isEnabled()).willReturn(true);
+        given(turnstileClient.verify(any(), any()))
+                .willReturn(Either.right(new TurnstileVerifyResponse(true, List.of(), null, null, null, null)));
     }
 
     @Test
@@ -178,6 +197,55 @@ class AuthControllerIT extends AbstractPostgresIT {
     }
 
     @Test
+    void shouldReturn400WhenTurnstileTokenMissingInRegistration() {
+        String newEmail = "no-token-" + UUID.randomUUID() + "@example.com";
+
+        ResponseEntity<AuthDto.ErrorResponse> response =
+                postRegisterMissingTurnstileToken(newEmail, "No Token User", "password123");
+
+        assertThat(response.getStatusCode().value()).isEqualTo(400);
+        AuthDto.ErrorResponse body = response.getBody();
+        assertNotNull(body);
+        assertThat(body.code()).isEqualTo("VALIDATION_ERROR");
+        assertThat(userRepo.findByEmail(Email.create(newEmail))).isEmpty();
+    }
+
+    @Test
+    void shouldReturn422WhenTurnstileVerificationFailsInRegistration() {
+        given(turnstileClient.verify(any(), any()))
+                .willReturn(Either.left(new TurnstileError.VerificationFailed(List.of("invalid-input-response"))));
+
+        String newEmail = "failed-verify-" + UUID.randomUUID() + "@example.com";
+
+        ResponseEntity<AuthDto.ErrorResponse> response =
+                postRegisterForError(newEmail, "Failed Verify User", "password123");
+
+        assertThat(response.getStatusCode().value()).isEqualTo(422);
+        AuthDto.ErrorResponse body = response.getBody();
+        assertNotNull(body);
+        assertThat(body.code()).isEqualTo("VERIFICATION_FAILED");
+        assertThat(userRepo.findByEmail(Email.create(newEmail))).isEmpty();
+    }
+
+    @Test
+    void shouldRegisterSuccessfullyWhenTurnstileDisabledEvenWithAnUnverifiedToken() {
+        // The kill-switch skips the *verify* call entirely — it doesn't change the DTO's @NotBlank
+        // requirement, so some non-blank string must still be sent, but its content is never
+        // checked against Cloudflare in this state.
+        given(turnstileClient.isEnabled()).willReturn(false);
+        given(turnstileClient.verify(any(), any()))
+                .willReturn(Either.left(new TurnstileError.VerificationFailed(List.of("would-have-failed"))));
+
+        String newEmail = "turnstile-disabled-" + UUID.randomUUID() + "@example.com";
+
+        ResponseEntity<Map<String, Object>> response =
+                postRegisterForMap(newEmail, "Disabled Turnstile User", "password123");
+
+        assertThat(response.getStatusCode().value()).isEqualTo(201);
+        assertThat(userRepo.findByEmail(Email.create(newEmail))).isPresent();
+    }
+
+    @Test
     void shouldLoginAfterRegistration() {
         String newEmail = "register-then-login-" + UUID.randomUUID() + "@example.com";
         String newPassword = "testPassword123";
@@ -223,13 +291,44 @@ class AuthControllerIT extends AbstractPostgresIT {
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_JSON);
 
-        HttpEntity<Map<String, String>> request =
-                new HttpEntity<>(Map.of("email", email, "displayName", displayName, "password", password), headers);
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(
+                Map.of(
+                        "email",
+                        email,
+                        "displayName",
+                        displayName,
+                        "password",
+                        password,
+                        "turnstileToken",
+                        "test-turnstile-token"),
+                headers);
 
         return restTemplate.exchange(url, HttpMethod.POST, request, new ParameterizedTypeReference<>() {});
     }
 
     private ResponseEntity<AuthDto.ErrorResponse> postRegisterForError(
+            String email, String displayName, String password) {
+        String url = "http://localhost:" + port + "/api/auth/register";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+
+        HttpEntity<Map<String, String>> request = new HttpEntity<>(
+                Map.of(
+                        "email",
+                        email,
+                        "displayName",
+                        displayName,
+                        "password",
+                        password,
+                        "turnstileToken",
+                        "test-turnstile-token"),
+                headers);
+
+        return restTemplate.exchange(url, HttpMethod.POST, request, AuthDto.ErrorResponse.class);
+    }
+
+    private ResponseEntity<AuthDto.ErrorResponse> postRegisterMissingTurnstileToken(
             String email, String displayName, String password) {
         String url = "http://localhost:" + port + "/api/auth/register";
 

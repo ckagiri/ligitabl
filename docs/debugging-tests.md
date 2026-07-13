@@ -629,6 +629,27 @@ Typical fixes:
 
 - If it’s a `model`/jOOQ related failure, regenerate first (see the codegen section above).
 
+**This can silently produce a false "BUILD SUCCESS", not just a runtime error** — concrete case
+from task 66 (Turnstile CAPTCHA): a line referenced `HttpServletResponse.SC_UNPROCESSABLE_ENTITY`,
+which doesn't exist (the Jakarta Servlet API only defines classic HTTP/1.1 status constants, not
+WebDAV's 422). `mvn -q -pl api compile` reported success with **zero output**, and a subsequent
+`mvn -pl api test` run of the affected controller's tests also passed — because Maven's
+incremental compiler decided nothing had changed and reused a stale `.class` file from before the
+bad edit, so the broken source was never actually compiled in either run. The bug only surfaced as
+a real `500 Internal Server Error` (`java.lang.Error: Unresolved compilation problem`) when hitting
+the running app directly. **Lesson: a green `mvn compile`/`mvn test` is not proof the current
+source compiles** — if you've just changed a file and the build looks suspiciously fast or quiet,
+force a real recompile before trusting it:
+
+```bash
+rm -rf api/target/classes api/target/test-classes
+mvn -pl api compile   # now watch for "Recompiling the module because of changed source code"
+```
+
+That log line — `Recompiling the module because of changed source code` — is the actual signal
+that javac ran against your current source. Its absence (`Nothing to compile - all classes are up
+to date`) after a real edit is the tell that you're looking at stale output.
+
 Where to look:
 
 - `*/target/surefire-reports/*.dumpstream` can contain the most direct signal if the test JVM died mid-run.

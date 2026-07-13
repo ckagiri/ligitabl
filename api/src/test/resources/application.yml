@@ -19,6 +19,13 @@ jwt:
 ligitabl:
   scheduling:
     enabled: false
+  turnstile:
+    # Cloudflare's publicly documented "always passes" test keypair — never a real secret.
+    site-key: 1x00000000000000000000AA
+    secret-key: 1x0000000000000000000000000000000AA
+    verify-url: https://challenges.cloudflare.com/turnstile/v0/siteverify
+    timeout-seconds: 1
+    enabled: true
 
 football-data:
   api:
