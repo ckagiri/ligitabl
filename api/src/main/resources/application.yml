@@ -114,7 +114,7 @@ ligitabl:
     timeout-seconds: ${TURNSTILE_TIMEOUT_SECONDS:5}
     # Operational kill-switch: flip to false via env var to stop blocking registrations during a
     # prolonged Cloudflare outage, without a deploy. Fail-closed (true) is the default/recommended
-    # state per captcha-requirements.md FH-1.
+    # state.
     enabled: ${TURNSTILE_ENABLED:true}
 
 football-data:

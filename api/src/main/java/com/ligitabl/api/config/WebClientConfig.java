@@ -51,8 +51,7 @@ public class WebClientConfig {
     @Value("${football-data.api.max-in-memory-bytes:5242880}")
     private int maxInMemoryBytes;
 
-    // Primary so FootballDataClient's unqualified WebClient injection keeps resolving unambiguously
-    // now that a second WebClient bean (turnstileWebClient, see TurnstileConfig) exists.
+    // Primary so FootballDataClient's unqualified WebClient injection keeps resolving unambiguously.
     @Bean
     @Primary
     public WebClient footballDataWebClient() {

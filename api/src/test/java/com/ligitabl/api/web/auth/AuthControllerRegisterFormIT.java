@@ -32,9 +32,8 @@ import com.ligitabl.model.repo.UserRepo;
 
 /**
  * Covers the web MVC registration form (POST /auth/register), as distinct from the JSON REST API
- * at POST /api/auth/register (see AuthControllerIT/AuthControllerIntegrationTest in
- * com.ligitabl.api.rest.auth) — the two endpoints share RegisterUseCase but have separate Turnstile
- * wiring (decision 3 vs decision 4 in .art/task_66.md) and separate error-response shapes.
+ * at POST /api/auth/register — the two endpoints share RegisterUseCase but have separate Turnstile
+ * wiring and separate error-response shapes.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class AuthControllerRegisterFormIT extends AbstractPostgresIT {

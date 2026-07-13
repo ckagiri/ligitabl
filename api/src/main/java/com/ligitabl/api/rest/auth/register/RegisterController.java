@@ -48,7 +48,7 @@ public class RegisterController {
     }
 
     /**
-     * Never logs the token itself (FH-2, BE-6) — only the failure reason.
+     * Never logs the token itself — only the failure reason.
      */
     private Either<UseCaseError, Boolean> verifyTurnstile(
             AuthDto.RegisterRequest request, HttpServletRequest httpRequest) {

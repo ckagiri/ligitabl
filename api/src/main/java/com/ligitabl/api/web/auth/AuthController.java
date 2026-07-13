@@ -161,7 +161,7 @@ public class AuthController {
 
     /**
      * Returns null if Turnstile verification passed, or a user-facing error message if it didn't.
-     * Never logs the token itself (FH-2, BE-6) — only the failure reason.
+     * Never logs the token itself — only the failure reason.
      */
     private String verifyTurnstile(String turnstileToken, HttpServletRequest request) {
         if (turnstileToken == null || turnstileToken.isBlank()) {
