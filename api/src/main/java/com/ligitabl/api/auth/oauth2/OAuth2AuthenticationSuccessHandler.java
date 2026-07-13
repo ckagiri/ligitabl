@@ -1,6 +1,7 @@
 package com.ligitabl.api.auth.oauth2;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -111,6 +112,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         User user = authentication.getPrincipal() instanceof LigitablOAuth2User oauth2User
                 ? oauth2User.getUser()
                 : customOAuth2UserService.findOrCreateUser(oauth2Attributes(authentication));
+
+        userRepo.updateLastLoginAt(user.getId(), OffsetDateTime.now());
 
         establishSessionAuthentication(user, request.getSession(true));
         log.info(

@@ -1,5 +1,6 @@
 package com.ligitabl.api.web.auth;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -191,6 +192,8 @@ public class AuthController {
                 model.addAttribute("loginForm", form);
                 return "auth/login";
             }
+
+            userRepo.updateLastLoginAt(user.getId(), OffsetDateTime.now());
 
             var authentication = authenticateUser(
                     user.getId(),

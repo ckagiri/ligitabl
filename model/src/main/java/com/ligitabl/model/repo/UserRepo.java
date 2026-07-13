@@ -1,6 +1,8 @@
 package com.ligitabl.model.repo;
 
+import java.time.OffsetDateTime;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -30,4 +32,12 @@ public interface UserRepo {
     boolean existsByEmail(Email email);
 
     void updatePassword(UUID userId, Password.Hashed password);
+
+    List<User> findAllPaged(int offset, int limit);
+
+    long countAll();
+
+    void updateLastLoginAt(UUID userId, OffsetDateTime at);
+
+    void delete(UUID userId);
 }

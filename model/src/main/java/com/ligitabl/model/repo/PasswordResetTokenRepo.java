@@ -15,4 +15,6 @@ public interface PasswordResetTokenRepo {
     void update(PasswordResetToken token);
 
     int deleteExpired();
+
+    void deleteAllForUser(UUID userId);
 }

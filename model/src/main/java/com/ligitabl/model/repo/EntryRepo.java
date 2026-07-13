@@ -38,4 +38,6 @@ public interface EntryRepo {
     void deleteByUserAndContest(UUID userId, UUID contestId);
 
     void deleteByContestId(UUID contestId);
+
+    void deleteByUserId(UUID userId);
 }

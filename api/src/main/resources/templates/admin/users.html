@@ -1,0 +1,196 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <div layout:fragment="content">
+      <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div class="mb-8">
+          <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Users</h1>
+          <p class="mt-2 text-sm text-gray-600">All registered users, most recent login first.</p>
+        </div>
+
+        <div id="admin-users-content" th:fragment="usersContent" class="bg-white shadow rounded-lg">
+          <!-- Batch-delete form: empty shell, referenced remotely by each eligible row's checkbox via form="batch-delete-form" -->
+          <form id="batch-delete-form" method="post" th:action="@{/admin/users/batch-delete}"
+                onsubmit="return confirmBatchDelete()">
+            <input type="hidden" name="page" th:value="${currentPage}" />
+            <input type="hidden" name="size" th:value="${pageSize}" />
+          </form>
+          <script th:inline="none">
+            function confirmBatchDelete() {
+              var selected = document.querySelectorAll('.row-checkbox:checked').length;
+              if (selected === 0) return false;
+              return confirm('Delete ' + selected + ' selected account(s)? This cannot be undone.');
+            }
+
+            // Client-side only: reorders the current page's rows by suspicion score. Scoring is
+            // computed on read (not persisted, not indexed), so a true cross-page sort would mean
+            // scoring every user in the table on every request — this sorts what's already on screen.
+            var suspicionSortAsc = false;
+            function sortBySuspicionScore() {
+              var tbody = document.querySelector('#admin-users-content tbody');
+              var rows = Array.prototype.slice.call(tbody.querySelectorAll('tr[data-score]'));
+              suspicionSortAsc = !suspicionSortAsc;
+              rows.sort(function (a, b) {
+                var diff = Number(a.dataset.score) - Number(b.dataset.score);
+                return suspicionSortAsc ? diff : -diff;
+              });
+              rows.forEach(function (row) { tbody.appendChild(row); });
+            }
+          </script>
+
+          <div class="px-6 py-3 flex items-center justify-between border-b border-gray-200" th:if="${!#lists.isEmpty(users)}">
+            <span class="text-xs text-gray-500">Check eligible (🚩) rows to batch-delete.</span>
+            <button type="submit" form="batch-delete-form"
+                    class="px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100">
+              Delete selected
+            </button>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead>
+                <tr class="bg-gray-50">
+                  <th class="px-4 py-3 text-left">
+                    <input type="checkbox" onchange="document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = this.checked)" />
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Display Name</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Auth</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      title="total-predictions:total-swaps current-season-prediction(1/0):current-season-swaps">Preds</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <button type="button" onclick="sortBySuspicionScore()" class="uppercase tracking-wider hover:text-gray-700"
+                            title="Sort this page by suspicion score (client-side; score isn't persisted or indexed)">
+                      Susp ↕
+                    </button>
+                  </th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-gray-100" th:with="failed=${failedDeleteIds != null ? failedDeleteIds : {}}">
+                <tr th:each="u : ${users}" th:with="eng=${engagement.get(u.id)},susp=${suspicion.get(u.id)}"
+                    th:attr="data-score=${susp.score()}">
+                  <td class="px-4 py-3">
+                    <input th:if="${eng.eligibleForDelete()}" type="checkbox" name="ids" th:value="${u.id}"
+                           form="batch-delete-form" class="row-checkbox" />
+                  </td>
+                  <td class="px-6 py-3 text-sm text-gray-900" th:text="${u.email.value()}"></td>
+                  <td class="px-6 py-3 text-sm text-gray-700">
+                    <span th:if="${u.displayName != null}" th:text="${u.displayName}"></span>
+                    <span th:if="${u.displayName == null}" class="text-gray-400">—</span>
+                  </td>
+                  <td class="px-6 py-3 text-sm">
+                    <span th:if="${u.googleId != null}"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-700">Google</span>
+                    <span th:if="${u.googleId == null}"
+                          class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-700">Password</span>
+                  </td>
+                  <td class="px-6 py-3 text-sm text-gray-600">
+                    <span th:if="${u.createDate != null}" th:text="${#temporals.format(u.createDate, 'dd MMM yyyy')}"></span>
+                    <span th:if="${u.createDate == null}" class="text-gray-400">—</span>
+                  </td>
+                  <td class="px-6 py-3 text-sm text-gray-600" th:text="${lastLoginDisplay.get(u.id)}"></td>
+                  <td class="px-6 py-3 text-sm">
+                    <span class="text-gray-700" th:text="${eng.totalPredictions()} + ':' + ${eng.totalSwaps()}"></span>
+                    <span class="text-indigo-600 ml-1" th:text="${eng.hasCurrentSeasonPrediction() ? 1 : 0} + ':' + ${eng.currentSeasonSwaps()}"></span>
+                    <span th:if="${!#strings.isEmpty(eng.indicator())}" th:text="${eng.indicator()}" class="ml-1"></span>
+                  </td>
+                  <td class="px-6 py-3 text-sm text-gray-600" th:title="${susp.reasonsTooltip()}">
+                    <span th:text="${susp.score()}"></span>
+                    <span th:if="${!#strings.isEmpty(susp.icon())}" th:text="${susp.icon()}" class="ml-1"></span>
+                  </td>
+                  <td class="px-6 py-3 text-sm">
+                    <form th:if="${eng.eligibleForDelete()}" method="post"
+                          th:action="@{/admin/users/{id}/delete(id=${u.id})}"
+                          th:attr="data-swaps=${eng.currentSeasonSwaps()}"
+                          onsubmit="return confirm(this.dataset.swaps > 0
+                            ? ('This user has ' + this.dataset.swaps + ' swap(s) in the current season but no history from prior seasons — delete?')
+                            : 'Delete this user? This cannot be undone.')">
+                      <input type="hidden" name="page" th:value="${currentPage}" />
+                      <input type="hidden" name="size" th:value="${pageSize}" />
+                      <button type="submit"
+                              class="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded hover:bg-red-100">
+                        Delete
+                      </button>
+                    </form>
+                    <span th:if="${failed.contains(u.id)}"
+                          class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800"
+                          title="Delete failed — see server logs">
+                      ⚠️ Delete failed
+                    </span>
+                  </td>
+                </tr>
+                <tr th:if="${#lists.isEmpty(users)}">
+                  <td colspan="9" class="px-6 py-8 text-center text-sm text-gray-500">No users found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-t border-gray-200">
+            <div class="flex items-center gap-3 text-sm text-gray-500">
+              <span>
+                Showing <span th:text="${showingFrom}">1</span>–<span th:text="${showingTo}">10</span>
+                of <span th:text="${totalEntries}">0</span> users
+              </span>
+              <label class="flex items-center gap-1">
+                <span class="text-gray-500">Per page</span>
+                <select
+                  name="size"
+                  class="border border-gray-300 rounded-md text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  hx-get="/admin/users"
+                  hx-vals='{"page": "1"}'
+                  hx-target="#admin-users-content"
+                  hx-swap="outerHTML"
+                >
+                  <option th:each="opt : ${pageSizeOptions}" th:value="${opt}" th:text="${opt}" th:selected="${opt == pageSize}"></option>
+                </select>
+              </label>
+            </div>
+            <div class="flex space-x-2">
+              <button
+                th:if="${hasPreviousPage == true}"
+                th:attr="hx-get=@{/admin/users(page=${currentPage - 1}, size=${pageSize})}"
+                hx-target="#admin-users-content"
+                hx-swap="outerHTML"
+                class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Previous
+              </button>
+              <button
+                th:if="${hasPreviousPage == false}"
+                disabled
+                class="px-3 py-2 text-sm border border-gray-300 rounded-md disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                th:if="${hasNextPage == true}"
+                th:attr="hx-get=@{/admin/users(page=${currentPage + 1}, size=${pageSize})}"
+                hx-target="#admin-users-content"
+                hx-swap="outerHTML"
+                class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Next
+              </button>
+              <button
+                th:if="${hasNextPage == false}"
+                disabled
+                class="px-3 py-2 text-sm border border-gray-300 rounded-md disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>

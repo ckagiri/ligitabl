@@ -18,4 +18,7 @@ public interface RoundResultRepo {
     Optional<RoundResult> findByUserAndRound(UUID uuid, int roundPosition);
 
     Optional<RoundResult> findLatestByUserAndSeason(UUID userId, UUID seasonId);
+
+    /** Deletes every round result reachable via this user's round submissions (no direct fk_user_id on t_round_result). */
+    void deleteByUserId(UUID userId);
 }

@@ -64,4 +64,7 @@ public interface ContestRepo {
             UUID excludeContestId);
 
     void delete(UUID contestId);
+
+    /** Used to block user deletion when the account owns any contest — too broad a blast radius to cascade automatically. */
+    boolean existsByOwnerId(UUID ownerId);
 }

@@ -1,0 +1,19 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260713_1_user_last_login
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_user
+            schemaName: public
+      changes:
+        - addColumn:
+            tableName: t_user
+            schemaName: public
+            columns:
+              - column:
+                  name: c_last_login_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: true

@@ -3,9 +3,12 @@ package com.ligitabl.model.infra;
 import static com.ligitabl.model.db.tables.TUser.T_USER;
 import static com.ligitabl.model.db.tables.TUserRole.T_USER_ROLE;
 
+import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -111,6 +114,7 @@ public class UserPersistenceAdapter implements UserRepo {
                 .googleId(rec.getGoogleSubject())
                 .createDate(rec.getCreateDate())
                 .updateDate(rec.getUpdateDate())
+                .lastLoginAt(rec.getLastLoginAt())
                 .roles(model.getRoles())
                 .build();
     }
@@ -166,6 +170,52 @@ public class UserPersistenceAdapter implements UserRepo {
     }
 
     @Override
+    public List<User> findAllPaged(int offset, int limit) {
+        var records = dsl.selectFrom(T_USER)
+                .orderBy(T_USER.C_LAST_LOGIN_AT.desc().nullsLast())
+                .limit(limit)
+                .offset(offset)
+                .fetch();
+
+        if (records.isEmpty()) return List.of();
+
+        Set<UUID> ids = new HashSet<>();
+        records.forEach(r -> ids.add(r.getId()));
+
+        Map<UUID, Set<Role>> rolesByUserId = new LinkedHashMap<>();
+        dsl.select(T_USER_ROLE.FK_USER_ID, T_USER_ROLE.C_ROLE)
+                .from(T_USER_ROLE)
+                .where(T_USER_ROLE.FK_USER_ID.in(ids))
+                .forEach(r -> rolesByUserId
+                        .computeIfAbsent(r.get(T_USER_ROLE.FK_USER_ID), k -> new HashSet<>())
+                        .add(Role.fromString(r.get(T_USER_ROLE.C_ROLE))));
+
+        List<User> result = new ArrayList<>();
+        for (var rec : records) {
+            result.add(map(rec, rolesByUserId.getOrDefault(rec.getId(), Set.of())));
+        }
+        return result;
+    }
+
+    @Override
+    public long countAll() {
+        return dsl.fetchCount(T_USER);
+    }
+
+    @Override
+    public void updateLastLoginAt(UUID userId, OffsetDateTime at) {
+        dsl.update(T_USER)
+                .set(T_USER.C_LAST_LOGIN_AT, at)
+                .where(T_USER.PK_ID.eq(userId))
+                .execute();
+    }
+
+    @Override
+    public void delete(UUID userId) {
+        dsl.deleteFrom(T_USER).where(T_USER.PK_ID.eq(userId)).execute();
+    }
+
+    @Override
     public Map<UUID, String> findDisplayNamesByIds(Collection<UUID> ids) {
         if (ids == null || ids.isEmpty()) return Map.of();
         return dsl.select(T_USER.PK_ID, T_USER.C_DISPLAY_NAME)
@@ -203,6 +253,7 @@ public class UserPersistenceAdapter implements UserRepo {
                 .googleId(record.getGoogleSubject())
                 .createDate(record.getCreateDate())
                 .updateDate(record.getUpdateDate())
+                .lastLoginAt(record.getLastLoginAt())
                 .build();
     }
 }

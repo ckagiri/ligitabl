@@ -5,12 +5,17 @@ import static com.ligitabl.model.db.tables.TSeasonPrediction.T_SEASON_PREDICTION
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.jooq.DSLContext;
 import org.jooq.JSONB;
+import org.jooq.Result;
+import org.jooq.impl.DSL;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
@@ -58,6 +63,58 @@ public class SeasonPredictionPersistenceAdapter implements SeasonPredictionRepo 
                         .and(T_SEASON_PREDICTION.C_AT_ROUND_NUMBER.le(roundNumber)))
                 .fetch()
                 .map(this::map);
+    }
+
+    @Override
+    public Map<UUID, Integer> countByUserIds(Collection<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) return Map.of();
+
+        var countField = DSL.count();
+        return dsl.select(T_SEASON_PREDICTION.FK_USER_ID, countField)
+                .from(T_SEASON_PREDICTION)
+                .where(T_SEASON_PREDICTION.FK_USER_ID.in(userIds))
+                .groupBy(T_SEASON_PREDICTION.FK_USER_ID)
+                .fetchMap(T_SEASON_PREDICTION.FK_USER_ID, countField);
+    }
+
+    @Override
+    public Map<UUID, Integer> sumSwapCountsByUserIdsAndSeason(Collection<UUID> userIds, UUID seasonId) {
+        if (userIds == null || userIds.isEmpty() || seasonId == null) return Map.of();
+
+        var records = dsl.selectFrom(T_SEASON_PREDICTION)
+                .where(T_SEASON_PREDICTION.FK_USER_ID.in(userIds))
+                .and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId))
+                .fetch();
+
+        return sumSwapsPerUser(records);
+    }
+
+    @Override
+    public Map<UUID, Integer> sumSwapCountsByUserIds(Collection<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) return Map.of();
+
+        var records = dsl.selectFrom(T_SEASON_PREDICTION)
+                .where(T_SEASON_PREDICTION.FK_USER_ID.in(userIds))
+                .fetch();
+
+        return sumSwapsPerUser(records);
+    }
+
+    /** Sums swap counts per user across a set of rows, adding across seasons if a user has more than one row. */
+    private Map<UUID, Integer> sumSwapsPerUser(Result<SeasonPredictionRecord> records) {
+        Map<UUID, Integer> result = new LinkedHashMap<>();
+        for (var rec : records) {
+            SeasonPrediction sp = map(rec);
+            int swapCount =
+                    sp.getSwaps().stream().mapToInt(rs -> rs.getChanges().size()).sum();
+            result.merge(sp.getUserId(), swapCount, Integer::sum);
+        }
+        return result;
+    }
+
+    @Override
+    public void deleteByUserId(UUID userId) {
+        dsl.deleteFrom(T_SEASON_PREDICTION).where(T_SEASON_PREDICTION.FK_USER_ID.eq(userId)).execute();
     }
 
     @Override
