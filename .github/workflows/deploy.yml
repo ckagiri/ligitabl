@@ -165,6 +165,8 @@ jobs:
           FOOTBALL_DATA_API_TOKEN=${{ secrets.FOOTBALL_DATA_API_TOKEN }}
           GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID }}
           GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET }}
+          TURNSTILE_SITE_KEY=${{ secrets.TURNSTILE_SITE_KEY }}
+          TURNSTILE_SECRET_KEY=${{ secrets.TURNSTILE_SECRET_KEY }}
           EMAIL_PROVIDER=mailgun
           EMAIL_FROM=${{ secrets.EMAIL_FROM }}
           EMAIL_FROM_NAME=${{ secrets.EMAIL_FROM_NAME }}
