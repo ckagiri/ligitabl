@@ -63,6 +63,13 @@ public class PasswordResetTokenPersistenceAdapter implements PasswordResetTokenR
                 .execute();
     }
 
+    @Override
+    public void deleteAllForUser(java.util.UUID userId) {
+        dsl.deleteFrom(T_PASSWORD_RESET_TOKEN)
+                .where(T_PASSWORD_RESET_TOKEN.FK_USER_ID.eq(userId))
+                .execute();
+    }
+
     private PasswordResetToken map(PasswordResetTokenRecord record) {
         OffsetDateTime expiresAt = record.getExpiresAt();
         OffsetDateTime usedAt = record.getUsedAt();

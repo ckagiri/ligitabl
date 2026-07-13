@@ -211,6 +211,11 @@ public class UserPersistenceAdapter implements UserRepo {
     }
 
     @Override
+    public void delete(UUID userId) {
+        dsl.deleteFrom(T_USER).where(T_USER.PK_ID.eq(userId)).execute();
+    }
+
+    @Override
     public Map<UUID, String> findDisplayNamesByIds(Collection<UUID> ids) {
         if (ids == null || ids.isEmpty()) return Map.of();
         return dsl.select(T_USER.PK_ID, T_USER.C_DISPLAY_NAME)

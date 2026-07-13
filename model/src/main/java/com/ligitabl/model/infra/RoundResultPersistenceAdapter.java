@@ -128,6 +128,15 @@ public class RoundResultPersistenceAdapter implements RoundResultRepo {
         return Optional.ofNullable(MAPPER.map(record));
     }
 
+    @Override
+    public void deleteByUserId(UUID userId) {
+        dsl.deleteFrom(T_ROUND_RESULT)
+                .where(T_ROUND_RESULT.FK_ROUND_SUBMISSION_ID.in(dsl.select(T_ROUND_SUBMISSION.PK_ID)
+                        .from(T_ROUND_SUBMISSION)
+                        .where(T_ROUND_SUBMISSION.FK_USER_ID.eq(userId))))
+                .execute();
+    }
+
     private static List<ResultTeamRank> readRankings(JSONB jsonb) {
         if (jsonb == null) {
             return List.of();

@@ -38,4 +38,6 @@ public interface UserRepo {
     long countAll();
 
     void updateLastLoginAt(UUID userId, OffsetDateTime at);
+
+    void delete(UUID userId);
 }

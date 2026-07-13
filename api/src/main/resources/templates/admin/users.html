@@ -13,19 +13,51 @@
         </div>
 
         <div id="admin-users-content" th:fragment="usersContent" class="bg-white shadow rounded-lg">
+          <!-- Batch-delete form: empty shell, referenced remotely by each eligible row's checkbox via form="batch-delete-form" -->
+          <form id="batch-delete-form" method="post" th:action="@{/admin/users/batch-delete}"
+                onsubmit="return confirmBatchDelete()">
+            <input type="hidden" name="page" th:value="${currentPage}" />
+            <input type="hidden" name="size" th:value="${pageSize}" />
+          </form>
+          <script th:inline="none">
+            function confirmBatchDelete() {
+              var selected = document.querySelectorAll('.row-checkbox:checked').length;
+              if (selected === 0) return false;
+              return confirm('Delete ' + selected + ' selected account(s)? This cannot be undone.');
+            }
+          </script>
+
+          <div class="px-6 py-3 flex items-center justify-between border-b border-gray-200" th:if="${!#lists.isEmpty(users)}">
+            <span class="text-xs text-gray-500">Check eligible (🚩) rows to batch-delete.</span>
+            <button type="submit" form="batch-delete-form"
+                    class="px-3 py-1.5 text-sm font-medium text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100">
+              Delete selected
+            </button>
+          </div>
+
           <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-gray-200">
               <thead>
                 <tr class="bg-gray-50">
+                  <th class="px-4 py-3 text-left">
+                    <input type="checkbox" onchange="document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = this.checked)" />
+                  </th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Display Name</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Auth Method</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
                   <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                      title="Total predictions : current-season prediction (1/0) : current-season swaps">P:C:S</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
                 </tr>
               </thead>
-              <tbody class="divide-y divide-gray-100">
-                <tr th:each="u : ${users}">
+              <tbody class="divide-y divide-gray-100" th:with="failed=${failedDeleteIds != null ? failedDeleteIds : {}}">
+                <tr th:each="u : ${users}" th:with="eng=${engagement.get(u.id)}">
+                  <td class="px-4 py-3">
+                    <input th:if="${eng.eligibleForDelete()}" type="checkbox" name="ids" th:value="${u.id}"
+                           form="batch-delete-form" class="row-checkbox" />
+                  </td>
                   <td class="px-6 py-3 text-sm text-gray-900" th:text="${u.email.value()}"></td>
                   <td class="px-6 py-3 text-sm text-gray-700">
                     <span th:if="${u.displayName != null}" th:text="${u.displayName}"></span>
@@ -42,9 +74,33 @@
                     <span th:if="${u.createDate == null}" class="text-gray-400">—</span>
                   </td>
                   <td class="px-6 py-3 text-sm text-gray-600" th:text="${lastLoginDisplay.get(u.id)}"></td>
+                  <td class="px-6 py-3 text-sm text-gray-600">
+                    <span th:text="${eng.totalPredictions()} + ':' + ${eng.hasCurrentSeasonPrediction() ? 1 : 0} + ':' + ${eng.swaps()}"></span>
+                    <span th:if="${!#strings.isEmpty(eng.indicator())}" th:text="${eng.indicator()}" class="ml-1"></span>
+                  </td>
+                  <td class="px-6 py-3 text-sm">
+                    <form th:if="${eng.eligibleForDelete()}" method="post"
+                          th:action="@{/admin/users/{id}/delete(id=${u.id})}"
+                          th:attr="data-swaps=${eng.swaps()}"
+                          onsubmit="return confirm(this.dataset.swaps > 0
+                            ? ('This user has ' + this.dataset.swaps + ' swap(s) in the current season but no history from prior seasons — delete?')
+                            : 'Delete this user? This cannot be undone.')">
+                      <input type="hidden" name="page" th:value="${currentPage}" />
+                      <input type="hidden" name="size" th:value="${pageSize}" />
+                      <button type="submit"
+                              class="px-2 py-1 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded hover:bg-red-100">
+                        Delete
+                      </button>
+                    </form>
+                    <span th:if="${failed.contains(u.id)}"
+                          class="ml-1 inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-red-100 text-red-800"
+                          title="Delete failed — see server logs">
+                      ⚠️ Delete failed
+                    </span>
+                  </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(users)}">
-                  <td colspan="5" class="px-6 py-8 text-center text-sm text-gray-500">No users found.</td>
+                  <td colspan="8" class="px-6 py-8 text-center text-sm text-gray-500">No users found.</td>
                 </tr>
               </tbody>
             </table>

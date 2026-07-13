@@ -2,19 +2,29 @@ package com.ligitabl.api.web.admin;
 
 import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.admin.deleteuser.DeleteUserUseCase;
+import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.User;
+import com.ligitabl.model.repo.CompetitionRepo;
+import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.UserRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -31,6 +41,10 @@ public class AdminUserController {
     private static final List<Integer> PAGE_SIZE_OPTIONS = List.of(10, 25, 50, 100);
 
     private final UserRepo userRepo;
+    private final SeasonPredictionRepo seasonPredictionRepo;
+    private final CompetitionRepo competitionRepo;
+    private final CompetitionDefaults competitionDefaults;
+    private final DeleteUserUseCase deleteUserUseCase;
 
     @GetMapping("/users")
     public String usersPage(
@@ -56,6 +70,7 @@ public class AdminUserController {
         model.addAttribute("pageTitle", "Users");
         model.addAttribute("users", users);
         model.addAttribute("lastLoginDisplay", lastLoginDisplay);
+        model.addAttribute("engagement", engagementByUser(users));
         model.addAttribute("currentPage", safePage);
         model.addAttribute("totalPages", totalPages);
         model.addAttribute("totalEntries", totalEntries);
@@ -70,5 +85,80 @@ public class AdminUserController {
             return "admin/users :: usersContent";
         }
         return "admin/users";
+    }
+
+    @PostMapping("/users/{id}/delete")
+    public String deleteUser(
+            @PathVariable UUID id,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "" + DEFAULT_PAGE_SIZE) int size,
+            RedirectAttributes redirectAttributes) {
+
+        var result = deleteUserUseCase.execute(id);
+        if (result instanceof DeleteUserUseCase.Result.Ok) {
+            log.info("[ADMIN_DELETE_USER_OK] userId={}", id);
+        } else {
+            log.warn("[ADMIN_DELETE_USER_FAILED] userId={} result={}", id, result);
+            redirectAttributes.addFlashAttribute("failedDeleteIds", Set.of(id));
+        }
+
+        return "redirect:/admin/users?page=" + page + "&size=" + size;
+    }
+
+    @PostMapping("/users/batch-delete")
+    public String batchDeleteUsers(
+            @RequestParam(required = false) List<UUID> ids,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "" + DEFAULT_PAGE_SIZE) int size,
+            RedirectAttributes redirectAttributes) {
+
+        Set<UUID> failed = new LinkedHashSet<>();
+        if (ids != null) {
+            for (UUID id : ids) {
+                var result = deleteUserUseCase.execute(id);
+                if (result instanceof DeleteUserUseCase.Result.Ok) {
+                    log.info("[ADMIN_BATCH_DELETE_USER_OK] userId={}", id);
+                } else {
+                    log.warn("[ADMIN_BATCH_DELETE_USER_FAILED] userId={} result={}", id, result);
+                    failed.add(id);
+                }
+            }
+        }
+
+        if (!failed.isEmpty()) {
+            redirectAttributes.addFlashAttribute("failedDeleteIds", failed);
+        }
+
+        return "redirect:/admin/users?page=" + page + "&size=" + size;
+    }
+
+    private Map<UUID, EngagementInfo> engagementByUser(List<User> users) {
+        if (users.isEmpty()) {
+            return Map.of();
+        }
+
+        List<UUID> userIds = users.stream().map(User::getId).toList();
+        UUID currentSeasonId = resolveActiveSeasonId();
+
+        Map<UUID, Integer> totalPredictions = seasonPredictionRepo.countByUserIds(userIds);
+        Map<UUID, Integer> currentSeasonSwaps = seasonPredictionRepo.sumSwapCountsByUserIdsAndSeason(userIds, currentSeasonId);
+
+        Map<UUID, EngagementInfo> result = new LinkedHashMap<>();
+        for (UUID id : userIds) {
+            result.put(
+                    id,
+                    new EngagementInfo(
+                            totalPredictions.getOrDefault(id, 0),
+                            currentSeasonSwaps.containsKey(id),
+                            currentSeasonSwaps.getOrDefault(id, 0)));
+        }
+        return result;
+    }
+
+    private UUID resolveActiveSeasonId() {
+        Competition competition = competitionRepo
+                .findBySlug(competitionDefaults.defaultCompetitionSlug())
+                .orElse(null);
+        return competition != null ? competition.getActiveSeasonId() : null;
     }
 }

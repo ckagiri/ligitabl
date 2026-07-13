@@ -156,6 +156,11 @@ public class ContestPersistenceAdapter implements ContestRepo {
     }
 
     @Override
+    public boolean existsByOwnerId(UUID ownerId) {
+        return dsl.fetchExists(dsl.selectOne().from(T_CONTEST).where(T_CONTEST.C_OWNER_ID.eq(ownerId)));
+    }
+
+    @Override
     public List<ContestRepo.UserContestView> findContestsByUserId(
             UUID userId, UUID activeSeasonId, boolean activeTab, int limit, int offset) {
         var generals = unionBranchForContests(userId, activeSeasonId, activeTab, false);

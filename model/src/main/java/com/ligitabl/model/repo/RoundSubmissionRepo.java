@@ -18,4 +18,6 @@ public interface RoundSubmissionRepo {
     boolean existsByRound(UUID seasonId, int roundPosition);
 
     boolean existsBySeasonId(UUID seasonId);
+
+    void deleteByUserId(UUID userId);
 }
