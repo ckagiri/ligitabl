@@ -22,6 +22,8 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.admin.deleteuser.DeleteUserUseCase;
 import com.ligitabl.model.domain.Competition;
+import com.ligitabl.model.domain.SuspicionTier;
+import com.ligitabl.model.domain.SuspiciousEmailDetector;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
@@ -67,10 +69,13 @@ public class AdminUserController {
             lastLoginDisplay.put(u.getId(), RelativeTimeFormatter.format(u.getLastLoginAt(), now));
         }
 
+        Map<UUID, EngagementInfo> engagement = engagementByUser(users);
+
         model.addAttribute("pageTitle", "Users");
         model.addAttribute("users", users);
         model.addAttribute("lastLoginDisplay", lastLoginDisplay);
-        model.addAttribute("engagement", engagementByUser(users));
+        model.addAttribute("engagement", engagement);
+        model.addAttribute("suspicion", suspicionByUser(users, engagement));
         model.addAttribute("currentPage", safePage);
         model.addAttribute("totalPages", totalPages);
         model.addAttribute("totalEntries", totalEntries);
@@ -151,6 +156,17 @@ public class AdminUserController {
                             totalPredictions.getOrDefault(id, 0),
                             currentSeasonSwaps.containsKey(id),
                             currentSeasonSwaps.getOrDefault(id, 0)));
+        }
+        return result;
+    }
+
+    private Map<UUID, SuspicionInfo> suspicionByUser(List<User> users, Map<UUID, EngagementInfo> engagement) {
+        Map<UUID, SuspicionInfo> result = new LinkedHashMap<>();
+        for (User u : users) {
+            SuspiciousEmailDetector.Result detected = SuspiciousEmailDetector.analyze(u.getEmail().value());
+            boolean eligibleForDelete = engagement.get(u.getId()).eligibleForDelete();
+            SuspicionTier tier = SuspicionTier.of(detected, eligibleForDelete);
+            result.put(u.getId(), new SuspicionInfo(detected.score(), tier, detected.reasons()));
         }
         return result;
     }
