@@ -32,12 +32,24 @@ public class TurnstileClient {
 
     private final WebClient webClient;
     private final String secretKey;
+    private final boolean enabled;
 
     public TurnstileClient(
             @Qualifier("turnstileWebClient") WebClient webClient,
-            @Value("${ligitabl.turnstile.secret-key}") String secretKey) {
+            @Value("${ligitabl.turnstile.secret-key}") String secretKey,
+            @Value("${ligitabl.turnstile.enabled:true}") boolean enabled) {
         this.webClient = webClient;
         this.secretKey = secretKey;
+        this.enabled = enabled;
+    }
+
+    /**
+     * Operational kill-switch (ligitabl.turnstile.enabled) so a prolonged Cloudflare outage can be
+     * worked around via one env var, without a deploy. Callers should skip both the token-presence
+     * check and {@link #verify} entirely when this is false, not just tolerate a bypassed verify.
+     */
+    public boolean isEnabled() {
+        return enabled;
     }
 
     public Either<TurnstileError, TurnstileVerifyResponse> verify(String token, String remoteIp) {

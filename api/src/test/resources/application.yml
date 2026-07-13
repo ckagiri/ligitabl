@@ -25,6 +25,7 @@ ligitabl:
     secret-key: 1x0000000000000000000000000000000AA
     verify-url: https://challenges.cloudflare.com/turnstile/v0/siteverify
     timeout-seconds: 1
+    enabled: true
 
 football-data:
   api:

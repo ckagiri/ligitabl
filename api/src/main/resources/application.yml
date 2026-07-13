@@ -112,6 +112,10 @@ ligitabl:
     secret-key: ${TURNSTILE_SECRET_KEY:1x0000000000000000000000000000000AA}
     verify-url: ${TURNSTILE_VERIFY_URL:https://challenges.cloudflare.com/turnstile/v0/siteverify}
     timeout-seconds: ${TURNSTILE_TIMEOUT_SECONDS:5}
+    # Operational kill-switch: flip to false via env var to stop blocking registrations during a
+    # prolonged Cloudflare outage, without a deploy. Fail-closed (true) is the default/recommended
+    # state per captcha-requirements.md FH-1.
+    enabled: ${TURNSTILE_ENABLED:true}
 
 football-data:
   api:

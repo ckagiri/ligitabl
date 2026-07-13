@@ -7,6 +7,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -29,6 +30,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
+import com.ligitabl.api.client.TurnstileClient;
+import com.ligitabl.api.client.TurnstileError;
+import com.ligitabl.api.client.turnstile.TurnstileVerifyResponse;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.auth.register.RegisterCommand;
 import com.ligitabl.api.rest.auth.register.RegisterResult;
@@ -71,6 +75,7 @@ public class AuthController {
     private final RememberMeServices rememberMeServices;
     private final RequestPasswordResetUseCase requestPasswordResetUseCase;
     private final ResetPasswordUseCase resetPasswordUseCase;
+    private final TurnstileClient turnstileClient;
 
     @GetMapping("/register")
     public String showRegisterForm(Model model, HttpServletRequest request) {
@@ -84,6 +89,7 @@ public class AuthController {
     public String register(
             @Valid @ModelAttribute RegisterForm form,
             BindingResult bindingResult,
+            @RequestParam(name = "cf-turnstile-response", required = false) String turnstileToken,
             RedirectAttributes redirectAttributes,
             Model model,
             HttpServletRequest request,
@@ -97,6 +103,17 @@ public class AuthController {
             bindingResult.rejectValue("confirmPassword", "password.mismatch", "Passwords do not match");
             model.addAttribute("pageTitle", "Register");
             return "auth/register";
+        }
+
+        if (turnstileClient.isEnabled()) {
+            String turnstileFailure = verifyTurnstile(turnstileToken, request);
+            if (turnstileFailure != null) {
+                response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
+                model.addAttribute("error", turnstileFailure);
+                model.addAttribute("email", form.getEmail());
+                model.addAttribute("displayName", form.getDisplayName());
+                return "auth/register";
+            }
         }
 
         try {
@@ -138,6 +155,27 @@ public class AuthController {
             model.addAttribute("displayName", form.getDisplayName());
             return "auth/register";
         }
+    }
+
+    /**
+     * Returns null if Turnstile verification passed, or a user-facing error message if it didn't.
+     * Never logs the token itself (FH-2, BE-6) — only the failure reason.
+     */
+    private String verifyTurnstile(String turnstileToken, HttpServletRequest request) {
+        if (turnstileToken == null || turnstileToken.isBlank()) {
+            log.warn("[TURNSTILE_VERIFY_FAILED] reason=missing-token");
+            return "Verification failed, please try again";
+        }
+
+        Either<TurnstileError, TurnstileVerifyResponse> result =
+                turnstileClient.verify(turnstileToken, request.getRemoteAddr());
+
+        if (result.isLeft()) {
+            log.warn("[TURNSTILE_VERIFY_FAILED] reason={}", result.getLeft());
+            return "Verification failed, please try again";
+        }
+
+        return null;
     }
 
     @GetMapping("/login")
