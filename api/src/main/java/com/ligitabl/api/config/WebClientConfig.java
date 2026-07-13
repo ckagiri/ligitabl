@@ -8,6 +8,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.lang.NonNull;
 import org.springframework.web.reactive.function.client.ExchangeFilterFunction;
@@ -50,7 +51,10 @@ public class WebClientConfig {
     @Value("${football-data.api.max-in-memory-bytes:5242880}")
     private int maxInMemoryBytes;
 
+    // Primary so FootballDataClient's unqualified WebClient injection keeps resolving unambiguously
+    // now that a second WebClient bean (turnstileWebClient, see TurnstileConfig) exists.
     @Bean
+    @Primary
     public WebClient footballDataWebClient() {
         // Configure HTTP client with timeouts
         HttpClient httpClient = HttpClient.create()
