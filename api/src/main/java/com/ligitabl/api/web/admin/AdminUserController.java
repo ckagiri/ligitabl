@@ -99,7 +99,7 @@ public class AdminUserController {
             @RequestParam(defaultValue = "" + DEFAULT_PAGE_SIZE) int size,
             RedirectAttributes redirectAttributes) {
 
-        var result = deleteUserUseCase.execute(id);
+        var result = deleteUserUseCase.execute(id, resolveActiveSeasonId());
         if (result instanceof DeleteUserUseCase.Result.Ok) {
             log.info("[ADMIN_DELETE_USER_OK] userId={}", id);
         } else {
@@ -119,8 +119,9 @@ public class AdminUserController {
 
         Set<UUID> failed = new LinkedHashSet<>();
         if (ids != null) {
+            UUID currentSeasonId = resolveActiveSeasonId();
             for (UUID id : ids) {
-                var result = deleteUserUseCase.execute(id);
+                var result = deleteUserUseCase.execute(id, currentSeasonId);
                 if (result instanceof DeleteUserUseCase.Result.Ok) {
                     log.info("[ADMIN_BATCH_DELETE_USER_OK] userId={}", id);
                 } else {

@@ -6,10 +6,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.User;
-import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.PasswordResetTokenRepo;
@@ -33,8 +30,6 @@ public class DeleteUserUseCase {
     private final RoundSubmissionRepo roundSubmissionRepo;
     private final PasswordResetTokenRepo passwordResetTokenRepo;
     private final ContestRepo contestRepo;
-    private final CompetitionRepo competitionRepo;
-    private final CompetitionDefaults competitionDefaults;
 
     public sealed interface Result permits Result.Ok, Result.UserNotFound, Result.NotEligible, Result.OwnsContest {
         record Ok(UUID userId) implements Result {}
@@ -47,13 +42,11 @@ public class DeleteUserUseCase {
     }
 
     @Transactional
-    public Result execute(UUID userId) {
+    public Result execute(UUID userId, UUID currentSeasonId) {
         User user = userRepo.findById(userId).orElse(null);
         if (user == null) {
             return new Result.UserNotFound(userId);
         }
-
-        UUID currentSeasonId = resolveActiveSeasonId();
 
         int totalPredictions =
                 seasonPredictionRepo.countByUserIds(List.of(userId)).getOrDefault(userId, 0);
@@ -82,12 +75,5 @@ public class DeleteUserUseCase {
         log.info("[ADMIN_DELETE_USER] userId={} email={}", userId, user.getEmail().value());
 
         return new Result.Ok(userId);
-    }
-
-    private UUID resolveActiveSeasonId() {
-        Competition competition = competitionRepo
-                .findBySlug(competitionDefaults.defaultCompetitionSlug())
-                .orElse(null);
-        return competition != null ? competition.getActiveSeasonId() : null;
     }
 }

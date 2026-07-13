@@ -5,12 +5,6 @@ import java.time.OffsetDateTime;
 import java.text.NumberFormat;
 import java.util.Locale;
 
-/**
- * Formats a past timestamp as "N days/hours/minutes ago" or "just now". Deliberately stops at
- * days (no weeks/months/years bucketing) — the two examples this was specified against ("1 day
- * ago", "1,200 days ago") only ever needed a day count, and going further introduces calendar-math
- * edge cases (variable month lengths, leap years) this admin-only display doesn't need.
- */
 public final class RelativeTimeFormatter {
 
     private RelativeTimeFormatter() {}
