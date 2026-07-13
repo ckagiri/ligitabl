@@ -147,6 +147,7 @@ public class AdminUserController {
         UUID currentSeasonId = resolveActiveSeasonId();
 
         Map<UUID, Integer> totalPredictions = seasonPredictionRepo.countByUserIds(userIds);
+        Map<UUID, Integer> totalSwaps = seasonPredictionRepo.sumSwapCountsByUserIds(userIds);
         Map<UUID, Integer> currentSeasonSwaps = seasonPredictionRepo.sumSwapCountsByUserIdsAndSeason(userIds, currentSeasonId);
 
         Map<UUID, EngagementInfo> result = new LinkedHashMap<>();
@@ -156,6 +157,7 @@ public class AdminUserController {
                     new EngagementInfo(
                             totalPredictions.getOrDefault(id, 0),
                             currentSeasonSwaps.containsKey(id),
+                            totalSwaps.getOrDefault(id, 0),
                             currentSeasonSwaps.getOrDefault(id, 0)));
         }
         return result;

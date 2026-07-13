@@ -23,5 +23,8 @@ public interface SeasonPredictionRepo {
     /** Total swap count per user, scoped to a single season. */
     Map<UUID, Integer> sumSwapCountsByUserIdsAndSeason(Collection<UUID> userIds, UUID seasonId);
 
+    /** All-time total swap count per user, across every season. */
+    Map<UUID, Integer> sumSwapCountsByUserIds(Collection<UUID> userIds);
+
     void deleteByUserId(UUID userId);
 }

@@ -14,6 +14,7 @@ import java.util.UUID;
 
 import org.jooq.DSLContext;
 import org.jooq.JSONB;
+import org.jooq.Result;
 import org.jooq.impl.DSL;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -85,12 +86,28 @@ public class SeasonPredictionPersistenceAdapter implements SeasonPredictionRepo 
                 .and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId))
                 .fetch();
 
+        return sumSwapsPerUser(records);
+    }
+
+    @Override
+    public Map<UUID, Integer> sumSwapCountsByUserIds(Collection<UUID> userIds) {
+        if (userIds == null || userIds.isEmpty()) return Map.of();
+
+        var records = dsl.selectFrom(T_SEASON_PREDICTION)
+                .where(T_SEASON_PREDICTION.FK_USER_ID.in(userIds))
+                .fetch();
+
+        return sumSwapsPerUser(records);
+    }
+
+    /** Sums swap counts per user across a set of rows, adding across seasons if a user has more than one row. */
+    private Map<UUID, Integer> sumSwapsPerUser(Result<SeasonPredictionRecord> records) {
         Map<UUID, Integer> result = new LinkedHashMap<>();
         for (var rec : records) {
             SeasonPrediction sp = map(rec);
             int swapCount =
                     sp.getSwaps().stream().mapToInt(rs -> rs.getChanges().size()).sum();
-            result.put(sp.getUserId(), swapCount);
+            result.merge(sp.getUserId(), swapCount, Integer::sum);
         }
         return result;
     }
