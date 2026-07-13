@@ -805,6 +805,144 @@ target, so the event was observed close to where it fired. That is safer than de
 See `api/src/main/resources/static/js/ligitabl.js` for the pure JavaScript approach used after prediction-page
 round navigation proved unreliable with Alpine `.window` listeners.
 
+## Manually driving a running instance (curl + psql) — end-to-end verification without a browser
+
+When you can't drive a real browser (headless/CI environment, no `chromium-cli`/Playwright available) but still
+need to prove a feature works — not just that it compiles or passes unit tests — this is the pattern: a real
+`spring-boot:run` instance, authenticated via `curl` with a cookie jar, with test data set up and verified
+directly against Postgres via `psql`. This is how the admin users list (`/admin/users`) and its delete/batch-
+delete/last-login-tracking features were verified (see `.art/task_65.md`).
+
+### Run on an alternate port if a dev server is already up
+
+`make run-api-fast-model` (the right one-liner for normal iteration — see "Typical dev/test flow" above) hardcodes
+the port from `.env.test`'s `PORT`. If you already have a dev server bound to it, don't kill it — someone (maybe
+you, in another terminal) may be relying on it. Instead run a second instance on a different port, loading the
+same env files by hand since you're bypassing `make`:
+
+```bash
+set -a
+source .env.test
+[ -f .env.test.local ] && source .env.test.local   # secrets (e.g. GOOGLE_CLIENT_ID) live here, gitignored
+set +a
+
+mvn -q -f api/pom.xml -Dspring-boot.run.mainClass=com.ligitabl.api.LigitablApplication \
+  -Dspring-boot.run.jvmArguments="-Dspring.devtools.restart.enabled=false" \
+  -Dspring-boot.run.arguments="--server.port=8082" \
+  -DDB_HOST=localhost -DDB_PORT=$DB_PORT -DDB_NAME=$DB_NAME -DDB_USER=$DB_USER -DDB_PASSWORD=$DB_PASSWORD \
+  org.springframework.boot:spring-boot-maven-plugin:run > /tmp/app.log 2>&1 &
+```
+
+Wait for real readiness instead of a fixed `sleep`:
+
+```bash
+until grep -qE "Tomcat started on port|APPLICATION FAILED TO START" /tmp/app.log 2>/dev/null; do sleep 2; done
+```
+
+**Gotcha:** after any change to a `model` module class (new repo method, new domain type), `mvn compile` is not
+enough — `spring-boot:run` run this way resolves `model` as a packaged `~/.m2` dependency, not a reactor sibling,
+so a stale jar is invisible to it. Run `mvn -DskipTests -pl model,api -am install` (not `compile`) first. This is
+exactly what `make run-api-fast-model` already does for you under normal `make`-driven iteration — the manual
+recipe above only exists for the "don't disturb an already-running dev server" case.
+
+### Log in with a cookie jar and the real CSRF token
+
+Spring Security CSRF protection means a raw `curl -d ...` POST to `/auth/login` will 403 without a valid token.
+Fetch the login page first (capturing cookies), scrape the hidden `_csrf` field out of the form, then POST with
+both:
+
+```bash
+CSRF=$(curl -s -c cookies.txt http://localhost:8082/auth/login \
+  | grep -oE 'name="_csrf" value="[^"]*"' | sed -E 's/.*value="([^"]*)"/\1/')
+
+curl -s -i -c cookies.txt -b cookies.txt \
+  -d "email=someone@example.com" -d "password=..." -d "_csrf=$CSRF" \
+  http://localhost:8082/auth/login
+```
+
+A successful login is a `302` redirect (e.g. to `/my-table`); a failed one re-renders the login page as `200`
+with the form again — check for that, not just the HTTP status, since a wrong field name (the login form's email
+field is literally named `email`, not `username`) silently "succeeds" with a 200 that's actually the login page.
+
+Once logged in, every subsequent authenticated request just needs `-b cookies.txt`. For POST endpoints past this
+point, pull a fresh CSRF token out of the already-fetched page's `<meta name="_csrf" content="...">` tag instead
+of re-fetching the login page:
+
+```bash
+CSRF=$(grep -oE 'name="_csrf" content="[^"]*"' some_page.html | sed -E 's/.*content="([^"]*)"/\1/')
+```
+
+### Test htmx fragment endpoints directly
+
+Controllers that branch on the `HX-Request` header (see `GetLeaderboardController`, `AdminUserController`) can be
+hit directly with `curl -H "HX-Request: true"` to get back just the fragment, without needing an actual htmx
+client:
+
+```bash
+curl -s -b cookies.txt -H "HX-Request: true" "http://localhost:8082/admin/users?page=2&size=10"
+```
+
+### Set up test accounts/roles/data via `docker exec ... psql`, and always plan the revert
+
+The test Postgres container is reachable directly — this is the fastest way to grant a role, set a known
+password, or seed rows that would otherwise require walking through unrelated UI flows:
+
+```bash
+# Grant a role (idempotent)
+docker exec ligitabl-db psql -U ligitabl -d ligitabl_test -c \
+  "INSERT INTO t_user_role (fk_user_id, c_role) VALUES ('<uuid>', 'ADMIN') ON CONFLICT DO NOTHING;"
+
+# Set a known bcrypt password on an existing test user, so you can log in as them
+htpasswd -bnBC 10 "" 'TestPass123!' | tr -d ':\n'   # prints a $2y$ bcrypt hash — Spring's
+                                                      # BCryptPasswordEncoder accepts $2a/$2b/$2y alike
+docker exec ligitabl-db psql -U ligitabl -d ligitabl_test -c \
+  "UPDATE t_user SET c_password_hash = '<hash>' WHERE pk_id = '<uuid>';"
+
+# Verify state directly, before and after an action under test
+docker exec ligitabl-db psql -U ligitabl -d ligitabl_test -c \
+  "SELECT count(*) FROM t_entry WHERE fk_user_id = '<uuid>';"
+```
+
+**Before mutating anything this way, capture what you're about to overwrite** (a `SELECT` first) so you can
+revert it — or explicitly disclose that you can't. Overwriting `c_password_hash` on a real seed user without
+reading the original value first means you can't put it back; that's fine for throwaway `ENV=test` data, but say
+so rather than silently leaving it changed. Always revert role grants (`DELETE FROM t_user_role WHERE ...`) and
+any other test-only mutation once verification is done — this is `ENV=test`, not a sandbox that resets itself.
+
+This is also how to prove a live bug that static analysis wouldn't catch: a batch-delete cascade was verified
+this way and caught a real `DataIntegrityViolationException` from a second-level FK (`t_round_result` →
+`t_round_submission` → `t_user`) that a straightforward `information_schema` query scoped to direct `t_user`
+foreign keys had missed. Query the *full* dependency graph, not just one hop, when verifying a cascade delete:
+
+```sql
+SELECT tc.table_name AS referencing_table, kcu.column_name, ccu.table_name AS referenced_table, rc.delete_rule
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu ON tc.constraint_name = kcu.constraint_name
+JOIN information_schema.constraint_column_usage ccu ON tc.constraint_name = ccu.constraint_name
+JOIN information_schema.referential_constraints rc ON tc.constraint_name = rc.constraint_name
+WHERE tc.constraint_type = 'FOREIGN KEY'
+  AND ccu.table_name IN ('t_user', 't_entry', 't_round_submission', /* ...every table you delete from... */);
+```
+
+### Testing remember-me / cookie-only auto-login
+
+To prove an `InteractiveAuthenticationSuccessEvent`-driven code path (remember-me auto-login) actually fires, and
+not just the easy explicit-login path: log in once with `remember-me=true` to obtain the `remember-me` cookie,
+then make a **second** request with the `JSESSIONID` stripped from the cookie jar (but the `remember-me` cookie
+kept) — this forces `RememberMeAuthenticationFilter` to reconstitute the session from the cookie alone, with no
+active session to fall back on:
+
+```bash
+grep -v "JSESSIONID" cookies.txt > cookies_remember_me_only.txt
+curl -s -i -b cookies_remember_me_only.txt http://localhost:8082/my-table
+```
+
+### Stop the alternate-port instance when done
+
+```bash
+lsof -ti tcp:8082 | xargs -r kill
+```
+
 ## Notes
 
 - Spring Boot 3.5.3 (Java 21)
