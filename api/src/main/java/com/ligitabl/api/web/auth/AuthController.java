@@ -82,6 +82,8 @@ public class AuthController {
         request.getSession(true);
         model.addAttribute("pageTitle", "Register");
         model.addAttribute("registerForm", new RegisterForm());
+        model.addAttribute("turnstileEnabled", turnstileClient.isEnabled());
+        model.addAttribute("turnstileSiteKey", turnstileClient.getSiteKey());
         return "auth/register";
     }
 

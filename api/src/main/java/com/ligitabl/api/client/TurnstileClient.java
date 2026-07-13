@@ -33,14 +33,17 @@ public class TurnstileClient {
     private final WebClient webClient;
     private final String secretKey;
     private final boolean enabled;
+    private final String siteKey;
 
     public TurnstileClient(
             @Qualifier("turnstileWebClient") WebClient webClient,
             @Value("${ligitabl.turnstile.secret-key}") String secretKey,
-            @Value("${ligitabl.turnstile.enabled:true}") boolean enabled) {
+            @Value("${ligitabl.turnstile.enabled:true}") boolean enabled,
+            @Value("${ligitabl.turnstile.site-key}") String siteKey) {
         this.webClient = webClient;
         this.secretKey = secretKey;
         this.enabled = enabled;
+        this.siteKey = siteKey;
     }
 
     /**
@@ -50,6 +53,16 @@ public class TurnstileClient {
      */
     public boolean isEnabled() {
         return enabled;
+    }
+
+    /**
+     * Public site key, safe to render into HTML for the widget's data-sitekey attribute. Exposed
+     * here (not a raw @Value field on the calling controller) because AuthController uses
+     * @RequiredArgsConstructor, and this codebase's convention is that @Value injection always
+     * goes through an explicit constructor — same reasoning as {@link #isEnabled()}.
+     */
+    public String getSiteKey() {
+        return siteKey;
     }
 
     public Either<TurnstileError, TurnstileVerifyResponse> verify(String token, String remoteIp) {

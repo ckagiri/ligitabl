@@ -49,16 +49,47 @@
             </div>
           </div>
 
+          <script th:if="${turnstileEnabled}" src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer onerror="onTurnstileError()"></script>
+          <script th:inline="javascript">
+            const turnstileEnabled = /*[[${turnstileEnabled}]]*/ true;
+            // Set as soon as the callback fires, independent of whether Alpine has finished
+            // initializing yet — the widget script's onerror can fire before Alpine attaches its
+            // window-event listeners, so a fire-and-forget CustomEvent alone can be missed. The
+            // form's x-init reads this on mount to catch anything that already happened.
+            let turnstileErrorOccurred = false;
+            function onTurnstileSuccess(token) {
+              window.dispatchEvent(new CustomEvent('turnstile-success', { detail: token }));
+            }
+            function onTurnstileError() {
+              turnstileErrorOccurred = true;
+              window.dispatchEvent(new CustomEvent('turnstile-error'));
+            }
+            function onTurnstileExpired() {
+              window.dispatchEvent(new CustomEvent('turnstile-expired'));
+            }
+          </script>
+
           <form
             class="mt-8 space-y-6"
             th:action="@{/auth/register}"
             method="post"
             th:object="${registerForm}"
+            x-on:turnstile-success.window="turnstileToken = $event.detail"
+            x-on:turnstile-error.window="turnstileError = true"
+            x-on:turnstile-expired.window="turnstileToken = ''"
             x-data="{
               email: '',
               displayName: '',
               password: '',
               confirmPassword: '',
+              turnstileToken: '',
+              turnstileError: false,
+              init() {
+                if (turnstileErrorOccurred) this.turnstileError = true;
+              },
+              turnstileOk() {
+                return !turnstileEnabled || (this.turnstileToken.length > 0 && !this.turnstileError);
+              },
               emailOk() {
                 return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(this.email);
               },
@@ -87,7 +118,7 @@
                 return this.password !== this.confirmPassword && this.confirmPassword.length > 0;
               },
               formValid() {
-                return this.emailOk() && this.displayNameOk() && this.passwordLengthOk() && this.passwordsMatch();
+                return this.emailOk() && this.displayNameOk() && this.passwordLengthOk() && this.passwordsMatch() && this.turnstileOk();
               }
             }"
           >
@@ -358,6 +389,19 @@
                   Passwords don't match
                 </div>
               </div>
+            </div>
+
+            <div th:if="${turnstileEnabled}">
+              <div
+                class="cf-turnstile"
+                th:attr="data-sitekey=${turnstileSiteKey}"
+                data-callback="onTurnstileSuccess"
+                data-error-callback="onTurnstileError"
+                data-expired-callback="onTurnstileExpired"
+              ></div>
+              <p x-cloak x-show="turnstileError" class="mt-1 text-sm text-red-600" role="alert">
+                Verification failed to load. Please refresh the page and try again.
+              </p>
             </div>
 
             <div>

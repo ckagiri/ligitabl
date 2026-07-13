@@ -54,3 +54,40 @@ appearing, run a fresh build — it means the CSS hasn't been regenerated yet.
 All Alpine component data factories live in `assets/js/ligitabl.js` under the `Ligitabl`
 namespace, e.g. `Ligitabl.predictionPage($el)`. They are referenced in templates via
 `x-data="Ligitabl.predictionPage($el)"`.
+
+## Manual browser verification (Playwright)
+
+`curl`/HTML inspection can't confirm real interactive behavior — button-disabled states, JS
+callback races, third-party widget rendering, or "what happens when a script is blocked." For
+that, drive a real headless browser with Playwright via `npx` (no need to add it as a project
+dependency — it's not in `api/package.json`, just pulled ad hoc for a verification session):
+
+```bash
+npx --yes playwright install chromium              # full browser (renders pages)
+npx --yes playwright install chromium-headless-shell # separate download, needed too — see below
+```
+
+Then run a small script with `node your-script.mjs` (ESM: `import { chromium } from 'playwright'`
+after `npm install playwright --no-save` in whatever scratch directory you're working from).
+
+**Gotchas hit in practice (task 66 / Turnstile widget verification):**
+
+- **`chromium.launch()` needs `chromium-headless-shell`, not just `chromium`.** Installing only
+  `chromium` produces `Executable doesn't exist at .../chromium_headless_shell-.../chrome-headless-shell`
+  on the first `launch()` call. Install both — they're separate downloads (~170MB and ~95MB).
+- **Both downloads can be slow and get killed by a `timeout` wrapper mid-download**, restarting
+  from 0% on the next attempt rather than resuming. Give each install its own generous timeout
+  (150s+) and don't chain them behind other slow commands in the same timeout budget.
+- **Alpine.js v3 has no `el.__x`** (that was Alpine v2). To read a component's live state from
+  outside the page (e.g. to assert on `x-data` fields in a test), use the official API:
+  ```js
+  await page.evaluate(() => window.Alpine.$data(document.querySelector('form')).someField);
+  ```
+- Route interception (`page.route('**/some-domain.com/**', route => route.abort())`) is the way
+  to simulate a blocked/failed third-party script and check fail-closed behavior. This is how a
+  real race condition was caught in the Turnstile registration widget (`templates/auth/register.html`):
+  a `<script>` tag's `onerror` handler could fire before Alpine had finished initializing and
+  attached its window-event listener, silently dropping a user-facing error message even though
+  the underlying fail-closed behavior (submit staying disabled) was unaffected. Fixed by setting a
+  plain top-level flag synchronously inside the `onerror` handler, independent of Alpine's
+  readiness, and having the component's `init()` lifecycle hook read it on mount.
