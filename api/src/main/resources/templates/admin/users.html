@@ -86,9 +86,46 @@
                            form="batch-delete-form" class="row-checkbox" />
                   </td>
                   <td class="px-6 py-3 text-sm text-gray-900" th:text="${u.email.value()}"></td>
-                  <td class="px-6 py-3 text-sm text-gray-700">
-                    <span th:if="${u.displayName != null}" th:text="${u.displayName}"></span>
-                    <span th:if="${u.displayName == null}" class="text-gray-400">—</span>
+                  <td class="px-6 py-3 text-sm text-gray-700" x-data="{ editing: false }">
+                    <div x-show="!editing">
+                      <span th:if="${u.displayName != null}" th:text="${u.displayName}"></span>
+                      <span th:if="${u.displayName == null}" class="text-gray-400">—</span>
+                      <div class="flex items-center gap-1">
+                        <span th:if="${u.username != null}" class="text-xs text-gray-400" th:text="'@' + ${u.username}"></span>
+                        <button type="button" @click="editing = true" title="Edit username"
+                                class="p-0.5 text-gray-300 hover:text-indigo-600">
+                          <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          <span class="sr-only">Edit username</span>
+                        </button>
+                      </div>
+                    </div>
+                    <form x-cloak x-show="editing" method="post"
+                          th:action="@{/admin/users/{id}/username(id=${u.id})}"
+                          class="flex items-center gap-1">
+                      <input type="hidden" name="page" th:value="${currentPage}" />
+                      <input type="hidden" name="size" th:value="${pageSize}" />
+                      <input type="text" name="username" th:value="${u.username}"
+                             pattern="[a-z0-9_]{3,30}" maxlength="30" placeholder="username"
+                             title="a-z, 0-9, _ (3-30 chars) — leave empty to clear"
+                             class="w-28 border border-gray-300 rounded px-1.5 py-0.5 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-500" />
+                      <button type="submit" title="Save"
+                              class="p-1 text-green-700 hover:bg-green-50 rounded">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        <span class="sr-only">Save</span>
+                      </button>
+                      <button type="button" @click="editing = false" title="Cancel"
+                              class="p-1 text-gray-500 hover:bg-gray-100 rounded">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                        <span class="sr-only">Cancel</span>
+                      </button>
+                    </form>
                   </td>
                   <td class="px-6 py-3 text-sm">
                     <svg th:if="${u.googleId != null}" class="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
@@ -168,7 +205,7 @@
                   hx-get="/admin/users"
                   hx-vals='{"page": "1"}'
                   hx-target="#admin-users-content"
-                  hx-swap="outerHTML"
+                  hx-swap="outerHTML show:window:top"
                 >
                   <option th:each="opt : ${pageSizeOptions}" th:value="${opt}" th:text="${opt}" th:selected="${opt == pageSize}"></option>
                 </select>
@@ -179,7 +216,7 @@
                 th:if="${hasPreviousPage == true}"
                 th:attr="hx-get=@{/admin/users(page=${currentPage - 1}, size=${pageSize})}"
                 hx-target="#admin-users-content"
-                hx-swap="outerHTML"
+                hx-swap="outerHTML show:window:top"
                 class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Previous
@@ -195,7 +232,7 @@
                 th:if="${hasNextPage == true}"
                 th:attr="hx-get=@{/admin/users(page=${currentPage + 1}, size=${pageSize})}"
                 hx-target="#admin-users-content"
-                hx-swap="outerHTML"
+                hx-swap="outerHTML show:window:top"
                 class="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 Next
