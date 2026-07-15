@@ -42,6 +42,8 @@ public interface UserRepo {
 
     void updatePassword(UUID userId, Password.Hashed password);
 
+    void markEmailVerified(UUID userId, OffsetDateTime verifiedAt);
+
     List<User> findAllPaged(int offset, int limit);
 
     long countAll();

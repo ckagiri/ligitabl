@@ -32,6 +32,7 @@
         <!-- Default: skip jOOQ codegen to allow fast builds; use -Pwith-jooq to enable -->
         <jooq.codegen.skip>true</jooq.codegen.skip>
         <jackson.version>2.17.2</jackson.version>
+        <model.test.groups>!integration</model.test.groups>
     </properties>
 
     <dependencies>
@@ -212,8 +213,9 @@
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.2.5</version>
                 <configuration>
-                    <!-- By default, exclude integration tests tagged with @Tag("integration") -->
-                    <groups>!integration</groups>
+                    <!-- By default, exclude integration tests tagged with @Tag("integration");
+                         override with -Dmodel.test.groups=integration to run them (needs the test DB up) -->
+                    <groups>${model.test.groups}</groups>
                 </configuration>
             </plugin>
             <plugin>

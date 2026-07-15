@@ -1,0 +1,124 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260715_1_email_verification_token
+      author: ligitabl
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: t_email_verification_token
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: t_email_verification_token
+            schemaName: public
+            columns:
+              - column:
+                  name: pk_token
+                  type: varchar(120)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: fk_user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_expires_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_used
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_used_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_created_at
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: t_email_verification_token
+            baseColumnNames: fk_user_id
+            baseTableSchemaName: public
+            constraintName: fk_email_verification_token_user_id
+            referencedTableName: t_user
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+        - sql:
+            sql: |
+              ALTER TABLE public.t_email_verification_token
+              ADD CONSTRAINT ck_email_verification_token_expiry
+              CHECK (c_expires_at > c_created_at)
+
+        - createIndex:
+            tableName: t_email_verification_token
+            schemaName: public
+            indexName: idx_email_verification_token_user
+            columns:
+              - column:
+                  name: fk_user_id
+
+        - createIndex:
+            tableName: t_email_verification_token
+            schemaName: public
+            indexName: idx_email_verification_token_expires
+            columns:
+              - column:
+                  name: c_expires_at
+
+        - createIndex:
+            tableName: t_email_verification_token
+            schemaName: public
+            indexName: idx_email_verification_token_used
+            columns:
+              - column:
+                  name: c_used
+
+  - changeSet:
+      id: 20260715_2_user_email_verified_at
+      author: ligitabl
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - columnExists:
+                tableName: t_user
+                columnName: c_email_verified_at
+                schemaName: public
+      changes:
+        - addColumn:
+            tableName: t_user
+            schemaName: public
+            columns:
+              - column:
+                  name: c_email_verified_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 20260715_3_user_email_verified_default_false
+      author: ligitabl
+      preConditions:
+        - onFail: MARK_RAN
+        - columnExists:
+            tableName: t_user
+            columnName: c_email_verified
+            schemaName: public
+      changes:
+        - addDefaultValue:
+            tableName: t_user
+            columnName: c_email_verified
+            schemaName: public
+            defaultValueBoolean: false

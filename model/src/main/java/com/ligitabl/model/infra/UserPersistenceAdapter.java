@@ -118,6 +118,7 @@ public class UserPersistenceAdapter implements UserRepo {
             rec.setUsername(model.getUsername());
             rec.setDisplayName(model.getDisplayName());
             rec.setEmailVerified(model.isEmailVerified());
+            rec.setEmailVerifiedAt(model.getEmailVerifiedAt());
             rec.setGoogleSubject(model.getGoogleId());
             rec.store();
             rec.refresh();
@@ -141,6 +142,7 @@ public class UserPersistenceAdapter implements UserRepo {
                 .username(rec.getUsername())
                 .displayName(rec.getDisplayName())
                 .emailVerified(Boolean.TRUE.equals(rec.getEmailVerified()))
+                .emailVerifiedAt(rec.getEmailVerifiedAt())
                 .googleId(rec.getGoogleSubject())
                 .createDate(rec.getCreateDate())
                 .updateDate(rec.getUpdateDate())
@@ -154,6 +156,7 @@ public class UserPersistenceAdapter implements UserRepo {
         dsl.update(T_USER)
                 .set(T_USER.C_DISPLAY_NAME, user.getDisplayName())
                 .set(T_USER.C_EMAIL_VERIFIED, user.isEmailVerified())
+                .set(T_USER.C_EMAIL_VERIFIED_AT, user.getEmailVerifiedAt())
                 .set(T_USER.C_GOOGLE_SUBJECT, user.getGoogleId())
                 .where(T_USER.PK_ID.eq(user.getId()))
                 .execute();
@@ -168,6 +171,15 @@ public class UserPersistenceAdapter implements UserRepo {
     public void updatePassword(UUID userId, Password.Hashed password) {
         dsl.update(T_USER)
                 .set(T_USER.C_PASSWORD_HASH, password.value())
+                .where(T_USER.PK_ID.eq(userId))
+                .execute();
+    }
+
+    @Override
+    public void markEmailVerified(UUID userId, OffsetDateTime verifiedAt) {
+        dsl.update(T_USER)
+                .set(T_USER.C_EMAIL_VERIFIED, true)
+                .set(T_USER.C_EMAIL_VERIFIED_AT, verifiedAt)
                 .where(T_USER.PK_ID.eq(userId))
                 .execute();
     }
@@ -283,6 +295,7 @@ public class UserPersistenceAdapter implements UserRepo {
                 .displayName(record.getDisplayName())
                 .roles(roles)
                 .emailVerified(Boolean.TRUE.equals(record.getEmailVerified()))
+                .emailVerifiedAt(record.getEmailVerifiedAt())
                 .googleId(record.getGoogleSubject())
                 .createDate(record.getCreateDate())
                 .updateDate(record.getUpdateDate())
