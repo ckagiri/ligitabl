@@ -169,7 +169,8 @@ public class UserPredictionsController {
     private UUID resolveAuthenticatedUserId(Principal principal, Model model, HttpServletResponse response) {
         // Data flows follow the effective user while an admin is impersonating
         if (currentUserFacade.isImpersonating()) {
-            UUID effectiveId = currentUserFacade.getEffectiveUser().map(UserSummary::id).orElse(null);
+            UUID effectiveId =
+                    currentUserFacade.getEffectiveUser().map(UserSummary::id).orElse(null);
             if (effectiveId != null) {
                 return effectiveId;
             }

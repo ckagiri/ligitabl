@@ -1,8 +1,8 @@
 package com.ligitabl.api.web.admin;
 
+import java.text.NumberFormat;
 import java.time.Duration;
 import java.time.OffsetDateTime;
-import java.text.NumberFormat;
 import java.util.Locale;
 
 public final class RelativeTimeFormatter {

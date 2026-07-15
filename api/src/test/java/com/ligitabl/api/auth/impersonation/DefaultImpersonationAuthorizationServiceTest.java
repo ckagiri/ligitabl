@@ -100,8 +100,7 @@ class DefaultImpersonationAuthorizationServiceTest {
 
     @Test
     void nullOriginalIsRejected() {
-        assertThat(service.assertCanImpersonate(null, "someone@example.com"))
-                .isEqualTo(new Result.NotAdmin());
+        assertThat(service.assertCanImpersonate(null, "someone@example.com")).isEqualTo(new Result.NotAdmin());
     }
 
     @Test

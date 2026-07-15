@@ -72,7 +72,10 @@ public class DeleteUserUseCase {
         seasonPredictionRepo.deleteByUserId(userId);
         userRepo.delete(userId);
 
-        log.info("[ADMIN_DELETE_USER] userId={} email={}", userId, user.getEmail().value());
+        log.info(
+                "[ADMIN_DELETE_USER] userId={} email={}",
+                userId,
+                user.getEmail().value());
 
         return new Result.Ok(userId);
     }

@@ -24,8 +24,7 @@ public class ImpersonationCommandService {
      * @param originalUserId the real (admin) principal's user id
      * @param identifier email or username of the impersonation target
      */
-    public ImpersonationAuthorizationService.Result start(
-            UUID originalUserId, String identifier, HttpSession session) {
+    public ImpersonationAuthorizationService.Result start(UUID originalUserId, String identifier, HttpSession session) {
         User original = userRepo.findById(originalUserId).orElse(null);
 
         var result = authorizationService.assertCanImpersonate(original, identifier);
@@ -33,16 +32,18 @@ public class ImpersonationCommandService {
             User target = ok.target();
             session.setAttribute(
                     ImpersonationSession.SESSION_ATTRIBUTE,
-                    new ImpersonationSession(
-                            target.getId(), target.getEmail().value(), Instant.now(), originalUserId));
+                    new ImpersonationSession(target.getId(), target.getEmail().value(), Instant.now(), originalUserId));
             log.warn(
                     "[IMPERSONATION_START] admin={} target={} targetEmail={}",
                     originalUserId,
                     target.getId(),
                     target.getEmail().value());
         } else {
-            log.warn("[IMPERSONATION_START_REJECTED] admin={} identifier={} result={}",
-                    originalUserId, identifier, result.getClass().getSimpleName());
+            log.warn(
+                    "[IMPERSONATION_START_REJECTED] admin={} identifier={} result={}",
+                    originalUserId,
+                    identifier,
+                    result.getClass().getSimpleName());
         }
         return result;
     }

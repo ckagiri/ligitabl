@@ -11,7 +11,10 @@ public interface ImpersonationAuthorizationService {
     Result assertCanImpersonate(User original, String identifier);
 
     sealed interface Result
-            permits Result.Ok, Result.NotAdmin, Result.TargetNotFound, Result.SelfImpersonation,
+            permits Result.Ok,
+                    Result.NotAdmin,
+                    Result.TargetNotFound,
+                    Result.SelfImpersonation,
                     Result.TargetPrivileged {
 
         record Ok(User target) implements Result {}

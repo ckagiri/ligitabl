@@ -3,7 +3,6 @@ package com.ligitabl.api.web.admin;
 import java.util.List;
 
 import com.ligitabl.model.domain.SuspicionTier;
-import com.ligitabl.model.domain.SuspiciousEmailDetector;
 
 public record SuspicionInfo(int score, SuspicionTier tier, List<String> reasons) {
 

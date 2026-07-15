@@ -248,10 +248,7 @@ public class ProfileController {
 
         // Profile pages show the effective user while an admin is impersonating
         UUID userId = currentUserFacade.isImpersonating()
-                ? currentUserFacade
-                        .getEffectiveUser()
-                        .map(UserSummary::id)
-                        .orElse(userDetails.getUserId())
+                ? currentUserFacade.getEffectiveUser().map(UserSummary::id).orElse(userDetails.getUserId())
                 : userDetails.getUserId();
         return userRepo.findById(userId).orElse(null);
     }
