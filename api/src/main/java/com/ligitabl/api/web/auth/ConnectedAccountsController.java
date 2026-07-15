@@ -9,7 +9,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.ligitabl.api.auth.impersonation.CurrentUserFacade;
 import com.ligitabl.api.auth.impersonation.ImpersonationGuard;
+import com.ligitabl.api.auth.impersonation.UserSummary;
 import com.ligitabl.api.auth.oauth2.OAuth2AuthenticationSuccessHandler;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.model.domain.User;
@@ -28,6 +30,7 @@ public class ConnectedAccountsController {
 
     private final UserRepo userRepo;
     private final ImpersonationGuard impersonationGuard;
+    private final CurrentUserFacade currentUserFacade;
 
     @GetMapping("/connected-accounts")
     public String connectedAccounts(
@@ -118,6 +121,13 @@ public class ConnectedAccountsController {
             return null;
         }
 
-        return userRepo.findById(userDetails.getUserId()).orElse(null);
+        // Shows the effective user's account state while an admin is impersonating
+        var userId = currentUserFacade.isImpersonating()
+                ? currentUserFacade
+                        .getEffectiveUser()
+                        .map(UserSummary::id)
+                        .orElse(userDetails.getUserId())
+                : userDetails.getUserId();
+        return userRepo.findById(userId).orElse(null);
     }
 }

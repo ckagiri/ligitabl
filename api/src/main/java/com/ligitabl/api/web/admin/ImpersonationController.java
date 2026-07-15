@@ -7,7 +7,6 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.auth.impersonation.ImpersonationAuthorizationService;
@@ -36,16 +35,14 @@ public class ImpersonationController {
     public Object start(
             @AuthenticationPrincipal WebUserDetails userDetails,
             @RequestParam String identifier,
-            @RequestHeader(value = "Referer", required = false) String referer,
             HttpSession session,
             Model model) {
 
         var result = impersonationCommandService.start(userDetails.getUserId(), identifier, session);
 
         if (result instanceof ImpersonationAuthorizationService.Result.Ok) {
-            return ResponseEntity.noContent()
-                    .header("HX-Redirect", referer != null && !referer.isBlank() ? referer : "/")
-                    .build();
+            // Land on the impersonated user's table — the page support sessions start from
+            return ResponseEntity.noContent().header("HX-Redirect", "/my-table").build();
         }
 
         // Re-render the modal with an inline error; htmx swaps it back into the modal root
