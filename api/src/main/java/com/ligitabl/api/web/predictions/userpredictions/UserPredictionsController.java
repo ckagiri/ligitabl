@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.*;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.auth.CurrentUserPublicId;
+import com.ligitabl.api.auth.impersonation.CurrentUserFacade;
+import com.ligitabl.api.auth.impersonation.UserSummary;
 import com.ligitabl.api.auth.oauth2.LigitablOAuth2User;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
@@ -55,6 +57,7 @@ import lombok.extern.slf4j.Slf4j;
 public class UserPredictionsController {
     private final ObjectMapper objectMapper;
     private final CurrentUserPublicId currentUserPublicId;
+    private final CurrentUserFacade currentUserFacade;
     private final GetUserPredictionUseCase getUserPredictionUseCase;
     private final SeasonRepo seasonRepo;
     private final ContestRepo contestRepo;
@@ -164,6 +167,14 @@ public class UserPredictionsController {
     }
 
     private UUID resolveAuthenticatedUserId(Principal principal, Model model, HttpServletResponse response) {
+        // Data flows follow the effective user while an admin is impersonating
+        if (currentUserFacade.isImpersonating()) {
+            UUID effectiveId = currentUserFacade.getEffectiveUser().map(UserSummary::id).orElse(null);
+            if (effectiveId != null) {
+                return effectiveId;
+            }
+        }
+
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null) {
             Object authPrincipal = authentication.getPrincipal();

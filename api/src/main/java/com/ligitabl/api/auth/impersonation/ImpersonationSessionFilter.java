@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -35,7 +36,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class ImpersonationSessionFilter extends OncePerRequestFilter {
 
-    private final UserRepo userRepo;
+    // Lazy: keeps this filter bootable in MVC slice tests, where no UserRepo bean exists;
+    // the repo is only needed once an impersonation session is actually present.
+    private final ObjectProvider<UserRepo> userRepoProvider;
 
     @Override
     protected void doFilterInternal(
@@ -67,6 +70,11 @@ public class ImpersonationSessionFilter extends OncePerRequestFilter {
             return ImpersonationContext.notImpersonating(original);
         }
 
+        UserRepo userRepo = userRepoProvider.getIfAvailable();
+        if (userRepo == null) {
+            return ImpersonationContext.notImpersonating(original);
+        }
+
         return userRepo.findById(impersonation.targetUserId())
                 .map(target -> ImpersonationContext.impersonating(original, UserSummary.from(target)))
                 .orElseGet(() -> {
@@ -83,7 +91,8 @@ public class ImpersonationSessionFilter extends OncePerRequestFilter {
                 .map(name -> parseRole(name.substring("ROLE_".length())))
                 .filter(role -> role != null)
                 .collect(Collectors.toSet());
-        return new UserSummary(details.getUserId(), details.getEmail(), details.getDisplayName(), roles);
+        return new UserSummary(
+                details.getUserId(), details.getPublicId(), details.getEmail(), details.getDisplayName(), roles);
     }
 
     private static Role parseRole(String value) {

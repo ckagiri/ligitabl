@@ -167,6 +167,16 @@ public class NavbarControllerAdvice {
         if (!isAuthenticatedUser(authentication)) {
             return null;
         }
+
+        // Navbar chips (e.g. hasContestEntry) follow the effective user while impersonating
+        if (currentUserFacade.isImpersonating()) {
+            UUID effectiveId =
+                    currentUserFacade.getEffectiveUser().map(UserSummary::id).orElse(null);
+            if (effectiveId != null) {
+                return effectiveId;
+            }
+        }
+
         if (authentication != null && authentication.getPrincipal() instanceof WebUserDetails details) {
             return details.getUserId();
         }
