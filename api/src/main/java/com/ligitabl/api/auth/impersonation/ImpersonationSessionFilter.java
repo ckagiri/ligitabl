@@ -4,11 +4,9 @@ import java.io.IOException;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.core.annotation.Order;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
@@ -30,15 +28,15 @@ import lombok.RequiredArgsConstructor;
  * Spring Security), this must run AFTER the security filter chain (registered at
  * {@code SecurityProperties.DEFAULT_FILTER_ORDER} = -100) so the authenticated principal is
  * available — hence {@code @Order(0)}.
+ *
+ * <p>Registered via {@code ImpersonationConfig} (not {@code @Component}) so MVC slice tests,
+ * which instantiate component-scanned filters but have no {@code UserRepo} bean, never load it.
  */
-@Component
 @Order(0)
 @RequiredArgsConstructor
 public class ImpersonationSessionFilter extends OncePerRequestFilter {
 
-    // Lazy: keeps this filter bootable in MVC slice tests, where no UserRepo bean exists;
-    // the repo is only needed once an impersonation session is actually present.
-    private final ObjectProvider<UserRepo> userRepoProvider;
+    private final UserRepo userRepo;
 
     @Override
     protected void doFilterInternal(
@@ -67,11 +65,6 @@ public class ImpersonationSessionFilter extends OncePerRequestFilter {
         // Defensive: a stale session written by a different principal is ignored
         if (!original.id().equals(impersonation.originalUserId())) {
             session.removeAttribute(ImpersonationSession.SESSION_ATTRIBUTE);
-            return ImpersonationContext.notImpersonating(original);
-        }
-
-        UserRepo userRepo = userRepoProvider.getIfAvailable();
-        if (userRepo == null) {
             return ImpersonationContext.notImpersonating(original);
         }
 
