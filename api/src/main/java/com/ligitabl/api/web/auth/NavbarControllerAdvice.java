@@ -147,6 +147,26 @@ public class NavbarControllerAdvice {
         return resolveUser(principal).map(u -> u.getEmail().value()).orElse(null);
     }
 
+    @ModelAttribute("emailUnverified")
+    public boolean emailUnverified(Principal principal) {
+        if (!isAuthenticatedUser(currentAuthentication()) || principal == null) {
+            return false;
+        }
+
+        // While impersonating, resend is guard-blocked and the impersonation banner
+        // already occupies the slot — don't show a nudge the admin can't act on.
+        if (currentUserFacade.isImpersonating()) {
+            return false;
+        }
+
+        UUID userId = resolveUserId(principal);
+        if (userId == null) {
+            return false;
+        }
+
+        return userRepo.findById(userId).map(u -> !u.isEmailVerified()).orElse(false);
+    }
+
     @ModelAttribute("isImpersonating")
     public boolean isImpersonating() {
         return currentUserFacade.isImpersonating();

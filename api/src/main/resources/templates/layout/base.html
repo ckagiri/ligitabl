@@ -718,6 +718,11 @@
       </div>
     </nav>
 
+    <!-- Verify-email nudge (dismissable, returns after 7 days) -->
+    <th:block th:if="${emailUnverified == true}">
+      <div th:replace="~{fragments/verify-email-banner :: banner}"></div>
+    </th:block>
+
     <!-- Main Content -->
     <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <!-- Flash Messages -->
