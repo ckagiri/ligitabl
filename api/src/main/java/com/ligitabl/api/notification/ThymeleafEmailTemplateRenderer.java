@@ -36,6 +36,7 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
         return switch (emailType) {
             case PASSWORD_RESET -> "email/password-reset";
             case PASSWORD_RESET_CONFIRMATION -> "email/password-reset-confirmation";
+            case EMAIL_VERIFICATION -> "email/email-verification";
         };
     }
 
@@ -43,6 +44,7 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
         return switch (emailType) {
             case PASSWORD_RESET -> "Reset your LigiPredictor password";
             case PASSWORD_RESET_CONFIRMATION -> "Your LigiPredictor password has been changed";
+            case EMAIL_VERIFICATION -> "Verify your LigiPredictor email";
         };
     }
 }
