@@ -317,6 +317,16 @@
                       @click="adminMenuOpen = false"
                       >Users</a
                     >
+                    <button
+                      type="button"
+                      hx-get="/admin/impersonation/modal"
+                      hx-target="#impersonation-modal-root"
+                      hx-swap="innerHTML"
+                      class="block w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
+                      @click="adminMenuOpen = false"
+                    >
+                      Impersonate
+                    </button>
                   </div>
                 </div>
               </div>
@@ -815,5 +825,15 @@
         </div>
       </div>
     </footer>
+
+    <!-- Impersonation: modal mount point + self-hiding banner (mirrors #results-banner pattern) -->
+    <div id="impersonation-modal-root"></div>
+    <div
+      th:if="${isLoggedIn}"
+      id="impersonation-banner-root"
+      hx-get="/fragments/impersonation-banner"
+      hx-trigger="load"
+      hx-swap="innerHTML"
+    ></div>
   </body>
 </html>

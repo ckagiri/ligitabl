@@ -12,6 +12,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
+import com.ligitabl.api.auth.impersonation.CurrentUserFacade;
+import com.ligitabl.api.auth.impersonation.UserSummary;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.model.auth.Email;
@@ -47,6 +49,7 @@ public class NavbarControllerAdvice {
     private final SeasonRepo seasonRepo;
     private final CompetitionDefaults competitionDefaults;
     private final UserRepo userRepo;
+    private final CurrentUserFacade currentUserFacade;
 
     @Value("${umami.website-id:}")
     private String umamiWebsiteId;
@@ -109,6 +112,15 @@ public class NavbarControllerAdvice {
             return null;
         }
 
+        // Navbar identity is data, not a permission gate — show the effective user's name
+        // while impersonating (isAdmin above intentionally stays on the real principal).
+        if (currentUserFacade.isImpersonating()) {
+            return currentUserFacade
+                    .getEffectiveUser()
+                    .map(u -> u.displayName() != null && !u.displayName().isBlank() ? u.displayName() : u.email())
+                    .orElse("User");
+        }
+
         Authentication authentication = currentAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof WebUserDetails details) {
             return details.getDisplayName();
@@ -123,12 +135,31 @@ public class NavbarControllerAdvice {
             return null;
         }
 
+        if (currentUserFacade.isImpersonating()) {
+            return currentUserFacade.getEffectiveUser().map(UserSummary::email).orElse(null);
+        }
+
         Authentication authentication = currentAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof WebUserDetails details) {
             return details.getEmail();
         }
 
         return resolveUser(principal).map(u -> u.getEmail().value()).orElse(null);
+    }
+
+    @ModelAttribute("isImpersonating")
+    public boolean isImpersonating() {
+        return currentUserFacade.isImpersonating();
+    }
+
+    @ModelAttribute("effectiveUserEmail")
+    public String effectiveUserEmail() {
+        return currentUserFacade.getEffectiveUser().map(UserSummary::email).orElse(null);
+    }
+
+    @ModelAttribute("originalUserEmail")
+    public String originalUserEmail() {
+        return currentUserFacade.getOriginalUser().map(UserSummary::email).orElse(null);
     }
 
     private UUID resolveUserId(Principal principal) {

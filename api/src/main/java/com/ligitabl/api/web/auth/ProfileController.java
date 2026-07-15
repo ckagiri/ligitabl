@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.ligitabl.api.auth.impersonation.ImpersonationGuard;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.web.predictions.latestresult.LatestResultSupport;
@@ -52,6 +53,7 @@ public class ProfileController {
     private final SeasonPredictionSupport seasonPredictionSupport;
     private final CompetitionDefaults competitionDefaults;
     private final LatestResultSupport latestResultSupport;
+    private final ImpersonationGuard impersonationGuard;
 
     @GetMapping("/settings")
     public String profile(@AuthenticationPrincipal WebUserDetails userDetails, Model model) {
@@ -87,6 +89,7 @@ public class ProfileController {
             HttpSession session,
             RedirectAttributes redirectAttributes,
             Model model) {
+        impersonationGuard.assertNotBlocked();
         User user = currentUser(userDetails);
         if (user == null) {
             return "redirect:/auth/login";
@@ -145,6 +148,7 @@ public class ProfileController {
             HttpSession session,
             RedirectAttributes redirectAttributes,
             Model model) {
+        impersonationGuard.assertNotBlocked();
         User user = currentUser(userDetails);
         if (user == null) {
             return "redirect:/auth/login";

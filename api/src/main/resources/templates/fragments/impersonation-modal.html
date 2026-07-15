@@ -1,0 +1,66 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <div th:fragment="modal">
+      <div
+        class="fixed inset-0 z-50 flex items-center justify-center"
+        x-data
+        @keydown.escape.window="document.getElementById('impersonation-modal-root').innerHTML = ''"
+      >
+        <div
+          class="absolute inset-0 bg-gray-900 bg-opacity-50"
+          @click="document.getElementById('impersonation-modal-root').innerHTML = ''"
+        ></div>
+        <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md mx-4 p-6">
+          <h2 class="text-lg font-semibold text-gray-900">Impersonate user</h2>
+          <p class="mt-1 text-sm text-gray-500">
+            Act as another player for support/testing. Only non-privileged accounts can be
+            impersonated; sensitive actions stay blocked while impersonating.
+          </p>
+
+          <form
+            hx-post="/admin/impersonation/start"
+            hx-target="#impersonation-modal-root"
+            hx-swap="innerHTML"
+            class="mt-4 space-y-4"
+          >
+            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+            <div>
+              <label for="impersonation-identifier" class="block text-sm font-medium text-gray-700">
+                Email or username
+              </label>
+              <input
+                id="impersonation-identifier"
+                name="identifier"
+                type="text"
+                required
+                autofocus
+                th:value="${identifier}"
+                placeholder="player@example.com or @handle"
+                class="mt-1 block w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              />
+            </div>
+
+            <p th:if="${error}" th:text="${error}" class="text-sm text-red-600"></p>
+
+            <div class="flex justify-end gap-2">
+              <button
+                type="button"
+                @click="document.getElementById('impersonation-modal-root').innerHTML = ''"
+                class="px-4 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+              >
+                Impersonate
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

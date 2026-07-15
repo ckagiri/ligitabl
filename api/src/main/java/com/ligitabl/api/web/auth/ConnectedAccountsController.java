@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.ligitabl.api.auth.impersonation.ImpersonationGuard;
 import com.ligitabl.api.auth.oauth2.OAuth2AuthenticationSuccessHandler;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.model.domain.User;
@@ -26,6 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ConnectedAccountsController {
 
     private final UserRepo userRepo;
+    private final ImpersonationGuard impersonationGuard;
 
     @GetMapping("/connected-accounts")
     public String connectedAccounts(
@@ -81,6 +83,7 @@ public class ConnectedAccountsController {
     @PostMapping("/unlink-google")
     public String unlinkGoogle(
             @AuthenticationPrincipal WebUserDetails userDetails, RedirectAttributes redirectAttributes) {
+        impersonationGuard.assertNotBlocked();
         User user = currentUser(userDetails);
         if (user == null) {
             return "redirect:/auth/login";
