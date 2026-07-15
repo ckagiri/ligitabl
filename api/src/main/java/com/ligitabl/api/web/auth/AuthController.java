@@ -75,6 +75,7 @@ public class AuthController {
     private final RememberMeServices rememberMeServices;
     private final RequestPasswordResetUseCase requestPasswordResetUseCase;
     private final ResetPasswordUseCase resetPasswordUseCase;
+    private final VerifyEmailUseCase verifyEmailUseCase;
     private final TurnstileClient turnstileClient;
 
     @GetMapping("/register")
@@ -344,6 +345,30 @@ public class AuthController {
         form.setToken(token);
         model.addAttribute("resetPasswordForm", form);
         return "auth/reset-password";
+    }
+
+    @GetMapping("/verify-email")
+    public String verifyEmail(@RequestParam(required = false) String token, Model model, HttpServletRequest request) {
+        request.getSession(true);
+        model.addAttribute("pageTitle", "Verify Email");
+
+        var result = verifyEmailUseCase.execute(token);
+
+        String state = result.fold(
+                error -> switch (error) {
+                    case VerifyEmailUseCase.VerifyError.TokenAlreadyUsed __ -> "already-used";
+                    case VerifyEmailUseCase.VerifyError.TokenExpired __ -> "expired";
+                    case VerifyEmailUseCase.VerifyError.InvalidToken __ -> "invalid";
+                },
+                success -> switch (success) {
+                    case VerifyEmailUseCase.VerifyResult.Success verified -> {
+                        model.addAttribute("verifiedEmail", verified.email());
+                        yield "success";
+                    }
+                });
+
+        model.addAttribute("state", state);
+        return "auth/verify-email";
     }
 
     @PostMapping("/reset-password")

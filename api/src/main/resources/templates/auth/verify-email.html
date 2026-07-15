@@ -1,0 +1,182 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <div layout:fragment="content">
+      <div
+        class="flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8"
+      >
+        <div class="max-w-md w-full space-y-8">
+          <!-- Success -->
+          <th:block th:if="${state == 'success'}">
+            <div class="text-center">
+              <div
+                class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-green-100"
+              >
+                <svg
+                  class="h-8 w-8 text-green-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M5 13l4 4L19 7"
+                  />
+                </svg>
+              </div>
+              <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+                Email verified!
+              </h2>
+              <p class="mt-2 text-sm text-gray-600">
+                <span
+                  class="font-medium text-gray-900"
+                  th:text="${verifiedEmail}"
+                  >user@example.com</span
+                >
+                is now verified. Thanks for confirming your email.
+              </p>
+              <div class="mt-6">
+                <a
+                  th:if="${isLoggedIn == true}"
+                  th:href="@{/my-table}"
+                  class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                >
+                  Go to My Table
+                </a>
+                <a
+                  th:if="${isLoggedIn == false || isLoggedIn == null}"
+                  th:href="@{/auth/login}"
+                  class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                >
+                  Log in
+                </a>
+              </div>
+            </div>
+          </th:block>
+
+          <!-- Already used -->
+          <th:block th:if="${state == 'already-used'}">
+            <div class="text-center">
+              <div
+                class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-amber-100"
+              >
+                <svg
+                  class="h-8 w-8 text-amber-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+                Link already used
+              </h2>
+              <p class="mt-2 text-sm text-gray-600">
+                This verification link has already been used — if it was you,
+                your email is verified and you're all set. You can check your
+                verification status in your profile settings.
+              </p>
+              <div class="mt-6">
+                <a
+                  th:href="@{/profile/settings}"
+                  class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                >
+                  Go to Profile Settings
+                </a>
+              </div>
+            </div>
+          </th:block>
+
+          <!-- Expired -->
+          <th:block th:if="${state == 'expired'}">
+            <div class="text-center">
+              <div
+                class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100"
+              >
+                <svg
+                  class="h-8 w-8 text-red-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              </div>
+              <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+                Link expired
+              </h2>
+              <p class="mt-2 text-sm text-gray-600">
+                This verification link has expired. Log in and request a new
+                one from your profile settings.
+              </p>
+              <div class="mt-6">
+                <a
+                  th:href="@{/profile/settings}"
+                  class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                >
+                  Go to Profile Settings
+                </a>
+              </div>
+            </div>
+          </th:block>
+
+          <!-- Invalid -->
+          <th:block th:if="${state == 'invalid'}">
+            <div class="text-center">
+              <div
+                class="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100"
+              >
+                <svg
+                  class="h-8 w-8 text-red-600"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </div>
+              <h2 class="mt-6 text-3xl font-extrabold text-gray-900">
+                Invalid link
+              </h2>
+              <p class="mt-2 text-sm text-gray-600">
+                This verification link is not valid. If you still need to
+                verify your email, request a new link from your profile
+                settings.
+              </p>
+              <div class="mt-6">
+                <a
+                  th:href="@{/profile/settings}"
+                  class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700"
+                >
+                  Go to Profile Settings
+                </a>
+              </div>
+            </div>
+          </th:block>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
