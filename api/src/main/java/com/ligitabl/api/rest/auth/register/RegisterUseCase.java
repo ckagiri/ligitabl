@@ -12,6 +12,7 @@ import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
+import com.ligitabl.api.web.auth.RequestEmailVerificationUseCase;
 import com.ligitabl.model.auth.Password;
 import com.ligitabl.model.auth.Role;
 import com.ligitabl.model.domain.User;
@@ -32,6 +33,7 @@ public class RegisterUseCase implements UseCase<RegisterCommand, Either<UseCaseE
     private final PasswordHasher passwordHasher;
     private final PublicIdGenerator publicIdGenerator;
     private final RequestValidator requestValidator;
+    private final RequestEmailVerificationUseCase requestEmailVerificationUseCase;
 
     @Override
     public Either<UseCaseError, RegisterResult> execute(RegisterCommand command) {
@@ -60,11 +62,27 @@ public class RegisterUseCase implements UseCase<RegisterCommand, Either<UseCaseE
                     .map(saved -> {
                         // Registration counts as the first login
                         userRepo.updateLastLoginAt(saved.getId(), OffsetDateTime.now());
+                        sendVerificationEmail(saved.getId());
                         log.info("User registered successfully: {}", saved.getPublicId());
                         return new RegisterResult(
                                 saved.getPublicId(), saved.getEmail(), saved.getDisplayName(), saved.getRoles());
                     });
         });
+    }
+
+    /**
+     * Verification email must never fail registration — the user can always
+     * resend from the profile page.
+     */
+    private void sendVerificationEmail(UUID userId) {
+        try {
+            requestEmailVerificationUseCase
+                    .execute(userId)
+                    .peekLeft(error -> log.warn(
+                            "[EMAIL_VERIFICATION] Post-registration send failed userId={} error={}", userId, error));
+        } catch (Exception e) {
+            log.warn("[EMAIL_VERIFICATION] Post-registration send failed userId={}", userId, e);
+        }
     }
 
     private static RegisterCommand normalize(RegisterCommand command) {
