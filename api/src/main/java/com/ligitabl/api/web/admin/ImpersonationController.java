@@ -50,12 +50,12 @@ public class ImpersonationController {
         model.addAttribute(
                 "error",
                 switch (result) {
-                    case ImpersonationAuthorizationService.Result.TargetNotFound e ->
-                        "No user found for '" + e.identifier() + "'.";
-                    case ImpersonationAuthorizationService.Result.SelfImpersonation e ->
-                        "You cannot impersonate yourself.";
-                    case ImpersonationAuthorizationService.Result.TargetPrivileged e ->
-                        "Privileged accounts cannot be impersonated.";
+                    case ImpersonationAuthorizationService.Result.TargetNotFound e -> "No user found for '"
+                            + e.identifier() + "'.";
+                    case ImpersonationAuthorizationService.Result.SelfImpersonation
+                    e -> "You cannot impersonate yourself.";
+                    case ImpersonationAuthorizationService.Result.TargetPrivileged
+                    e -> "Privileged accounts cannot be impersonated.";
                     default -> "Impersonation is not allowed.";
                 });
         return "fragments/impersonation-modal :: modal";

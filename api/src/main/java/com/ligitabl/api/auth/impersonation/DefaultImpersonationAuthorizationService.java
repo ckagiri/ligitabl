@@ -41,8 +41,8 @@ public class DefaultImpersonationAuthorizationService implements ImpersonationAu
         }
 
         // Only plain players (or role-less accounts) may be impersonated
-        boolean privileged = target.getRoles() != null
-                && target.getRoles().stream().anyMatch(role -> role != Role.PLAYER);
+        boolean privileged =
+                target.getRoles() != null && target.getRoles().stream().anyMatch(role -> role != Role.PLAYER);
         if (privileged) {
             return new Result.TargetPrivileged(trimmed);
         }

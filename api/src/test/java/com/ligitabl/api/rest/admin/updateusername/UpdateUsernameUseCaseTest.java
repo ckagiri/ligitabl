@@ -126,9 +126,7 @@ class UpdateUsernameUseCaseTest {
     void shouldMapUniqueConstraintRaceToTaken() {
         when(userRepo.findById(userId)).thenReturn(Optional.of(user));
         when(userRepo.existsByUsername("foobar")).thenReturn(false);
-        doThrow(new DuplicateKeyException("uq_t_user_username"))
-                .when(userRepo)
-                .updateUsername(userId, "foobar");
+        doThrow(new DuplicateKeyException("uq_t_user_username")).when(userRepo).updateUsername(userId, "foobar");
 
         var result = useCase.execute(userId, "foobar");
 

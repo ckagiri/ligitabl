@@ -72,9 +72,8 @@ public class UserPersistenceAdapter implements UserRepo {
             return Optional.empty();
         }
 
-        var record = dsl.selectFrom(T_USER)
-                .where(T_USER.C_USERNAME.eq(username))
-                .fetchOne();
+        var record =
+                dsl.selectFrom(T_USER).where(T_USER.C_USERNAME.eq(username)).fetchOne();
 
         return Optional.ofNullable(map(record));
     }

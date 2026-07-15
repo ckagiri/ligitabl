@@ -137,7 +137,9 @@ public class RoundSubmissionPersistenceAdapter implements RoundSubmissionRepo {
 
     @Override
     public void deleteByUserId(UUID userId) {
-        dsl.deleteFrom(T_ROUND_SUBMISSION).where(T_ROUND_SUBMISSION.FK_USER_ID.eq(userId)).execute();
+        dsl.deleteFrom(T_ROUND_SUBMISSION)
+                .where(T_ROUND_SUBMISSION.FK_USER_ID.eq(userId))
+                .execute();
     }
 
     private static List<TeamRank> readRankings(JSONB jsonb) {

@@ -105,8 +105,9 @@ public class SeasonPredictionPersistenceAdapter implements SeasonPredictionRepo 
         Map<UUID, Integer> result = new LinkedHashMap<>();
         for (var rec : records) {
             SeasonPrediction sp = map(rec);
-            int swapCount =
-                    sp.getSwaps().stream().mapToInt(rs -> rs.getChanges().size()).sum();
+            int swapCount = sp.getSwaps().stream()
+                    .mapToInt(rs -> rs.getChanges().size())
+                    .sum();
             result.merge(sp.getUserId(), swapCount, Integer::sum);
         }
         return result;
@@ -114,7 +115,9 @@ public class SeasonPredictionPersistenceAdapter implements SeasonPredictionRepo 
 
     @Override
     public void deleteByUserId(UUID userId) {
-        dsl.deleteFrom(T_SEASON_PREDICTION).where(T_SEASON_PREDICTION.FK_USER_ID.eq(userId)).execute();
+        dsl.deleteFrom(T_SEASON_PREDICTION)
+                .where(T_SEASON_PREDICTION.FK_USER_ID.eq(userId))
+                .execute();
     }
 
     @Override

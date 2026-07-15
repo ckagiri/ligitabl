@@ -61,16 +61,14 @@ public final class SuspiciousEmailDetector {
         List<String> segments =
                 Arrays.stream(local.split("\\.")).filter(s -> !s.isEmpty()).toList();
         if (segments.size() >= 4) {
-            double avgLen =
-                    segments.stream().mapToInt(String::length).average().orElse(0);
+            double avgLen = segments.stream().mapToInt(String::length).average().orElse(0);
             if (avgLen <= 2.5) {
                 score += Weights.FRAGMENTATION_HIGH;
                 reasons.add("Highly fragmented local part (%d segments, avg %.1f chars)"
                         .formatted(segments.size(), avgLen));
             } else if (avgLen <= 3.5) {
                 score += Weights.FRAGMENTATION_MEDIUM;
-                reasons.add(
-                        "Fragmented local part (%d segments, avg %.1f chars)".formatted(segments.size(), avgLen));
+                reasons.add("Fragmented local part (%d segments, avg %.1f chars)".formatted(segments.size(), avgLen));
             }
         }
 

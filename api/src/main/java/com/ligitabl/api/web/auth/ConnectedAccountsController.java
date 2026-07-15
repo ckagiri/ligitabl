@@ -123,10 +123,7 @@ public class ConnectedAccountsController {
 
         // Shows the effective user's account state while an admin is impersonating
         var userId = currentUserFacade.isImpersonating()
-                ? currentUserFacade
-                        .getEffectiveUser()
-                        .map(UserSummary::id)
-                        .orElse(userDetails.getUserId())
+                ? currentUserFacade.getEffectiveUser().map(UserSummary::id).orElse(userDetails.getUserId())
                 : userDetails.getUserId();
         return userRepo.findById(userId).orElse(null);
     }

@@ -39,15 +39,13 @@ public class ImpersonationSessionFilter extends OncePerRequestFilter {
     private final UserRepo userRepo;
 
     @Override
-    protected void doFilterInternal(
-            HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null && authentication.getPrincipal() instanceof WebUserDetails details) {
             UserSummary original = toSummary(details, authentication);
-            request.setAttribute(
-                    ImpersonationContext.REQUEST_ATTRIBUTE, resolveContext(request, original));
+            request.setAttribute(ImpersonationContext.REQUEST_ATTRIBUTE, resolveContext(request, original));
         }
 
         filterChain.doFilter(request, response);
@@ -55,8 +53,7 @@ public class ImpersonationSessionFilter extends OncePerRequestFilter {
 
     private ImpersonationContext resolveContext(HttpServletRequest request, UserSummary original) {
         HttpSession session = request.getSession(false);
-        Object attribute =
-                session == null ? null : session.getAttribute(ImpersonationSession.SESSION_ATTRIBUTE);
+        Object attribute = session == null ? null : session.getAttribute(ImpersonationSession.SESSION_ATTRIBUTE);
 
         if (!(attribute instanceof ImpersonationSession impersonation)) {
             return ImpersonationContext.notImpersonating(original);
