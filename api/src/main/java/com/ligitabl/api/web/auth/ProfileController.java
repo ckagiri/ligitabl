@@ -21,6 +21,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.ligitabl.api.auth.impersonation.CurrentUserFacade;
+import com.ligitabl.api.auth.impersonation.ImpersonationGuard;
+import com.ligitabl.api.auth.impersonation.UserSummary;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.web.predictions.latestresult.LatestResultSupport;
@@ -52,6 +55,8 @@ public class ProfileController {
     private final SeasonPredictionSupport seasonPredictionSupport;
     private final CompetitionDefaults competitionDefaults;
     private final LatestResultSupport latestResultSupport;
+    private final ImpersonationGuard impersonationGuard;
+    private final CurrentUserFacade currentUserFacade;
 
     @GetMapping("/settings")
     public String profile(@AuthenticationPrincipal WebUserDetails userDetails, Model model) {
@@ -87,6 +92,8 @@ public class ProfileController {
             HttpSession session,
             RedirectAttributes redirectAttributes,
             Model model) {
+        // Allowed while impersonating: display name / banner toggle are support-adjustable
+        // settings, not login credentials (those stay guarded below).
         User user = currentUser(userDetails);
         if (user == null) {
             return "redirect:/auth/login";
@@ -105,7 +112,11 @@ public class ProfileController {
 
         User updatedUser = user.withDisplayName(form.getDisplayName());
         userRepo.update(updatedUser);
-        refreshSessionAuthentication(updatedUser, session);
+        // While impersonating, the update targets the effective user — rewriting the session's
+        // SecurityContext from them would re-authenticate the admin AS that user. Skip it.
+        if (!currentUserFacade.isImpersonating()) {
+            refreshSessionAuthentication(updatedUser, session);
+        }
 
         // A disabled checkbox never submits, so a submitted `true` only happens when the user
         // re-enabled it (their latest result was already dismissed) — bring the banner back.
@@ -145,6 +156,7 @@ public class ProfileController {
             HttpSession session,
             RedirectAttributes redirectAttributes,
             Model model) {
+        impersonationGuard.assertNotBlocked();
         User user = currentUser(userDetails);
         if (user == null) {
             return "redirect:/auth/login";
@@ -234,7 +246,13 @@ public class ProfileController {
             return null;
         }
 
-        UUID userId = userDetails.getUserId();
+        // Profile pages show the effective user while an admin is impersonating
+        UUID userId = currentUserFacade.isImpersonating()
+                ? currentUserFacade
+                        .getEffectiveUser()
+                        .map(UserSummary::id)
+                        .orElse(userDetails.getUserId())
+                : userDetails.getUserId();
         return userRepo.findById(userId).orElse(null);
     }
 

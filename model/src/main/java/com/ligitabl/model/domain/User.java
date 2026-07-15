@@ -37,6 +37,12 @@ public class User {
 
     Email email;
 
+    /**
+     * Optional unique handle (lowercase a-z, 0-9, _). Null when unset.
+     */
+    @With
+    String username;
+
     @With
     String displayName;
 

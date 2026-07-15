@@ -26,6 +26,7 @@ import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
 
+import com.ligitabl.api.auth.impersonation.ClearImpersonationLogoutHandler;
 import com.ligitabl.api.auth.oauth2.CustomOAuth2UserService;
 import com.ligitabl.api.auth.oauth2.OAuth2AuthenticationSuccessHandler;
 import com.ligitabl.api.auth.security.JwtAuthenticationFilter;
@@ -131,7 +132,8 @@ public class SecurityConfig {
             @Qualifier("webUserDetailsService") UserDetailsService userDetailsService,
             RememberMeServices rememberMeServices,
             CustomOAuth2UserService customOAuth2UserService,
-            OAuth2AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler)
+            OAuth2AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler,
+            ClearImpersonationLogoutHandler clearImpersonationLogoutHandler)
             throws Exception {
         http.csrf(csrf -> csrf.ignoringRequestMatchers(
                         "/seasonprediction",
@@ -191,6 +193,7 @@ public class SecurityConfig {
                         .successHandler(oauth2AuthenticationSuccessHandler))
                 .rememberMe(remember -> remember.rememberMeServices(rememberMeServices))
                 .logout(logout -> logout.logoutUrl("/auth/logout")
+                        .addLogoutHandler(clearImpersonationLogoutHandler)
                         .logoutSuccessUrl("/")
                         .invalidateHttpSession(true)
                         .deleteCookies("JSESSIONID", "remember-me")

@@ -123,18 +123,15 @@ class OAuth2DuplicateLinkIntegrationTest {
     // ---- helpers ----
 
     private User makeUser(UUID id, String email, String displayName, String googleId) {
-        return new User(
-                id,
-                PublicId.create("ABCDE23456"),
-                Email.create(email),
-                displayName,
-                null,
-                Set.of(Role.PLAYER),
-                true,
-                googleId,
-                null,
-                null,
-                null);
+        return User.builder()
+                .id(id)
+                .publicId(PublicId.create("ABCDE23456"))
+                .email(Email.create(email))
+                .displayName(displayName)
+                .roles(Set.of(Role.PLAYER))
+                .emailVerified(true)
+                .googleId(googleId)
+                .build();
     }
 
     private OAuth2AuthenticationToken makeOAuth2Token(String googleSubject, String email) {

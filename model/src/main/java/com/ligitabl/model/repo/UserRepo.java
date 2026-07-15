@@ -25,6 +25,15 @@ public interface UserRepo {
 
     Optional<User> findByGoogleId(String googleId);
 
+    Optional<User> findByUsername(String username);
+
+    boolean existsByUsername(String username);
+
+    /**
+     * Set or clear (null) a user's username.
+     */
+    void updateUsername(UUID userId, String username);
+
     User create(User model);
 
     void update(User user);

@@ -1,5 +1,6 @@
 package com.ligitabl.api.rest.auth.register;
 
+import java.time.OffsetDateTime;
 import java.util.Set;
 import java.util.UUID;
 
@@ -57,6 +58,8 @@ public class RegisterUseCase implements UseCase<RegisterCommand, Either<UseCaseE
 
             return Either.catching(() -> userRepo.create(user), UseCaseErrors::fromException)
                     .map(saved -> {
+                        // Registration counts as the first login
+                        userRepo.updateLastLoginAt(saved.getId(), OffsetDateTime.now());
                         log.info("User registered successfully: {}", saved.getPublicId());
                         return new RegisterResult(
                                 saved.getPublicId(), saved.getEmail(), saved.getDisplayName(), saved.getRoles());

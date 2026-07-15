@@ -1,0 +1,25 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260714_1_user_username
+      author: ligitabl
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_user
+            schemaName: public
+      changes:
+        - addColumn:
+            tableName: t_user
+            schemaName: public
+            columns:
+              - column:
+                  name: c_username
+                  type: varchar(50)
+                  constraints:
+                    nullable: true
+
+        - addUniqueConstraint:
+            tableName: t_user
+            schemaName: public
+            columnNames: c_username
+            constraintName: uq_t_user_username

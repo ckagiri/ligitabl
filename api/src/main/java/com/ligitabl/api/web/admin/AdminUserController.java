@@ -21,6 +21,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.admin.deleteuser.DeleteUserUseCase;
+import com.ligitabl.api.rest.admin.updateusername.UpdateUsernameUseCase;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.SuspicionTier;
 import com.ligitabl.model.domain.SuspiciousEmailDetector;
@@ -47,6 +48,7 @@ public class AdminUserController {
     private final CompetitionRepo competitionRepo;
     private final CompetitionDefaults competitionDefaults;
     private final DeleteUserUseCase deleteUserUseCase;
+    private final UpdateUsernameUseCase updateUsernameUseCase;
 
     @GetMapping("/users")
     public String usersPage(
@@ -92,6 +94,33 @@ public class AdminUserController {
         return "admin/users";
     }
 
+    @PostMapping("/users/{id}/username")
+    public String updateUsername(
+            @PathVariable UUID id,
+            @RequestParam(required = false) String username,
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "" + DEFAULT_PAGE_SIZE) int size,
+            RedirectAttributes redirectAttributes) {
+
+        var result = updateUsernameUseCase.execute(id, username);
+        switch (result) {
+            case UpdateUsernameUseCase.Result.Ok ok -> flash(
+                    redirectAttributes,
+                    ok.username() != null ? "Username updated to @" + ok.username() + "." : "Username cleared.",
+                    "success");
+            case UpdateUsernameUseCase.Result.InvalidFormat ignored -> flash(
+                    redirectAttributes,
+                    "Invalid username — use 3-30 characters: lowercase letters, digits, underscore.",
+                    "error");
+            case UpdateUsernameUseCase.Result.UsernameTaken taken -> flash(
+                    redirectAttributes, "Username @" + taken.username() + " is already taken.", "error");
+            case UpdateUsernameUseCase.Result.UserNotFound ignored -> flash(
+                    redirectAttributes, "User not found.", "error");
+        }
+
+        return "redirect:/admin/users?page=" + page + "&size=" + size;
+    }
+
     @PostMapping("/users/{id}/delete")
     public String deleteUser(
             @PathVariable UUID id,
@@ -102,9 +131,11 @@ public class AdminUserController {
         var result = deleteUserUseCase.execute(id, resolveActiveSeasonId());
         if (result instanceof DeleteUserUseCase.Result.Ok) {
             log.info("[ADMIN_DELETE_USER_OK] userId={}", id);
+            flash(redirectAttributes, "User deleted.", "success");
         } else {
             log.warn("[ADMIN_DELETE_USER_FAILED] userId={} result={}", id, result);
             redirectAttributes.addFlashAttribute("failedDeleteIds", Set.of(id));
+            flash(redirectAttributes, "Delete failed — see server logs.", "error");
         }
 
         return "redirect:/admin/users?page=" + page + "&size=" + size;
@@ -131,11 +162,25 @@ public class AdminUserController {
             }
         }
 
+        int requested = ids == null ? 0 : ids.size();
+        int deleted = requested - failed.size();
         if (!failed.isEmpty()) {
             redirectAttributes.addFlashAttribute("failedDeleteIds", failed);
+            flash(
+                    redirectAttributes,
+                    "Deleted " + deleted + " of " + requested + " account(s) — " + failed.size()
+                            + " failed, see server logs.",
+                    "error");
+        } else if (deleted > 0) {
+            flash(redirectAttributes, "Deleted " + deleted + " account(s).", "success");
         }
 
         return "redirect:/admin/users?page=" + page + "&size=" + size;
+    }
+
+    private void flash(RedirectAttributes redirectAttributes, String message, String messageType) {
+        redirectAttributes.addFlashAttribute("message", message);
+        redirectAttributes.addFlashAttribute("messageType", messageType);
     }
 
     private Map<UUID, EngagementInfo> engagementByUser(List<User> users) {

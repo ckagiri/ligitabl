@@ -67,6 +67,35 @@ public class UserPersistenceAdapter implements UserRepo {
     }
 
     @Override
+    public Optional<User> findByUsername(String username) {
+        if (username == null || username.isBlank()) {
+            return Optional.empty();
+        }
+
+        var record = dsl.selectFrom(T_USER)
+                .where(T_USER.C_USERNAME.eq(username))
+                .fetchOne();
+
+        return Optional.ofNullable(map(record));
+    }
+
+    @Override
+    public boolean existsByUsername(String username) {
+        if (username == null || username.isBlank()) {
+            return false;
+        }
+        return dsl.fetchExists(dsl.selectOne().from(T_USER).where(T_USER.C_USERNAME.eq(username)));
+    }
+
+    @Override
+    public void updateUsername(UUID userId, String username) {
+        dsl.update(T_USER)
+                .set(T_USER.C_USERNAME, username)
+                .where(T_USER.PK_ID.eq(userId))
+                .execute();
+    }
+
+    @Override
     public User create(User model) {
         if (model.getId() == null) {
             throw new IllegalArgumentException("User.id must not be null on create");
@@ -87,6 +116,7 @@ public class UserPersistenceAdapter implements UserRepo {
             rec.setEmail(model.getEmail().value());
             rec.setPasswordHash(
                     model.getPassword() == null ? null : model.getPassword().value());
+            rec.setUsername(model.getUsername());
             rec.setDisplayName(model.getDisplayName());
             rec.setEmailVerified(model.isEmailVerified());
             rec.setGoogleSubject(model.getGoogleId());
@@ -109,6 +139,7 @@ public class UserPersistenceAdapter implements UserRepo {
                 .publicId(rec.getPublicId() == null ? null : PublicId.create(rec.getPublicId()))
                 .email(rec.getEmail() == null ? null : Email.create(rec.getEmail()))
                 .password(rec.getPasswordHash() == null ? null : Password.Hashed.of(rec.getPasswordHash()))
+                .username(rec.getUsername())
                 .displayName(rec.getDisplayName())
                 .emailVerified(Boolean.TRUE.equals(rec.getEmailVerified()))
                 .googleId(rec.getGoogleSubject())
@@ -172,7 +203,9 @@ public class UserPersistenceAdapter implements UserRepo {
     @Override
     public List<User> findAllPaged(int offset, int limit) {
         var records = dsl.selectFrom(T_USER)
-                .orderBy(T_USER.C_LAST_LOGIN_AT.desc().nullsLast())
+                .orderBy(
+                        T_USER.C_LAST_LOGIN_AT.desc().nullsLast(),
+                        T_USER.C_UPDATE_DATE.desc().nullsLast())
                 .limit(limit)
                 .offset(offset)
                 .fetch();
@@ -247,6 +280,7 @@ public class UserPersistenceAdapter implements UserRepo {
                 .publicId(record.getPublicId() == null ? null : PublicId.create(record.getPublicId()))
                 .email(record.getEmail() == null ? null : Email.create(record.getEmail()))
                 .password(record.getPasswordHash() == null ? null : Password.Hashed.of(record.getPasswordHash()))
+                .username(record.getUsername())
                 .displayName(record.getDisplayName())
                 .roles(roles)
                 .emailVerified(Boolean.TRUE.equals(record.getEmailVerified()))
