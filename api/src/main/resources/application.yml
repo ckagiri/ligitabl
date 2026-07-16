@@ -91,6 +91,8 @@ ligitabl:
 
   security:
     password-reset-token-validity-minutes: ${PASSWORD_RESET_TOKEN_VALIDITY:30}
+    email-verification-token-validity-hours: ${EMAIL_VERIFICATION_TOKEN_VALIDITY_HOURS:48}
+    email-verification-resend-cooldown-minutes: ${EMAIL_VERIFICATION_RESEND_COOLDOWN_MINUTES:2}
     remember-me:
       key: ${REMEMBER_ME_KEY:dev-remember-me-key}
       token-validity-seconds: ${REMEMBER_ME_TOKEN_VALIDITY_SECONDS:1209600}

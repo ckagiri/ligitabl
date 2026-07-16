@@ -55,6 +55,12 @@ public class User {
     @With
     boolean emailVerified;
 
+    /**
+     * When verification was recorded. Null for unverified accounts.
+     */
+    @With
+    OffsetDateTime emailVerifiedAt;
+
     @With
     String googleId;
 

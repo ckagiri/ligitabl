@@ -20,6 +20,7 @@ import com.ligitabl.api.shared.errors.UnexpectedError;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.ValidationError;
 import com.ligitabl.api.shared.validation.RequestValidator;
+import com.ligitabl.api.web.auth.RequestEmailVerificationUseCase;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.Password;
 import com.ligitabl.model.auth.PublicId;
@@ -44,6 +45,9 @@ class RegisterUseCaseTest {
     @Mock
     PublicIdGenerator publicIdGenerator;
 
+    @Mock
+    RequestEmailVerificationUseCase requestEmailVerificationUseCase;
+
     RequestValidator requestValidator;
 
     RegisterUseCase useCase;
@@ -57,12 +61,19 @@ class RegisterUseCaseTest {
     void setUp() {
         requestValidator =
                 new RequestValidator(Validation.buildDefaultValidatorFactory().getValidator());
-        useCase = new RegisterUseCase(userRepo, passwordHasher, publicIdGenerator, requestValidator);
+        useCase = new RegisterUseCase(
+                userRepo, passwordHasher, publicIdGenerator, requestValidator, requestEmailVerificationUseCase);
 
         email = Email.create("newuser@example.com");
         password = Password.Plaintext.create("password123");
         hashed = Password.Hashed.of("$2a$10$hashedPassword");
         publicId = PublicId.create("AbCd3fGh9J");
+    }
+
+    /** Only for tests that reach the post-create hook — keeps stubbing strict everywhere else. */
+    private void stubVerificationEmailSuccess() {
+        when(requestEmailVerificationUseCase.execute(any(UUID.class)))
+                .thenReturn(Either.right(new RequestEmailVerificationUseCase.RequestResult.EmailSent(email.value())));
     }
 
     @Test
@@ -72,6 +83,7 @@ class RegisterUseCaseTest {
         when(passwordHasher.hash(password)).thenReturn(hashed);
         when(publicIdGenerator.generate(any(UUID.class))).thenReturn(publicId);
         when(userRepo.create(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        stubVerificationEmailSuccess();
 
         var cmd = new RegisterCommand(email, "New User", password);
 
@@ -114,6 +126,7 @@ class RegisterUseCaseTest {
         when(passwordHasher.hash(password)).thenReturn(hashed);
         when(publicIdGenerator.generate(any(UUID.class))).thenReturn(publicId);
         when(userRepo.create(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        stubVerificationEmailSuccess();
 
         var cmd = new RegisterCommand(email, "Test User", password);
 
@@ -133,6 +146,7 @@ class RegisterUseCaseTest {
         when(passwordHasher.hash(password)).thenReturn(hashed);
         when(publicIdGenerator.generate(any(UUID.class))).thenReturn(publicId);
         when(userRepo.create(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        stubVerificationEmailSuccess();
 
         var cmd = new RegisterCommand(email, "Test User", password);
 
@@ -153,6 +167,7 @@ class RegisterUseCaseTest {
         when(passwordHasher.hash(password)).thenReturn(hashed);
         when(publicIdGenerator.generate(any(UUID.class))).thenReturn(publicId);
         when(userRepo.create(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        stubVerificationEmailSuccess();
 
         var cmd = new RegisterCommand(email, "Test User", password);
 
@@ -170,6 +185,7 @@ class RegisterUseCaseTest {
         when(passwordHasher.hash(password)).thenReturn(hashed);
         when(publicIdGenerator.generate(any(UUID.class))).thenReturn(publicId);
         when(userRepo.create(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        stubVerificationEmailSuccess();
 
         var cmd = new RegisterCommand(email, "  Test User  ", password);
 
@@ -227,5 +243,68 @@ class RegisterUseCaseTest {
 
         assertThat(result.isLeft()).isTrue();
         assertThat(result.getLeft()).isInstanceOf(UnexpectedError.class);
+    }
+
+    @Test
+    @DisplayName("Should send verification email after successful registration")
+    void shouldSendVerificationEmailAfterRegistration() {
+        when(userRepo.existsByEmail(email)).thenReturn(false);
+        when(passwordHasher.hash(password)).thenReturn(hashed);
+        when(publicIdGenerator.generate(any(UUID.class))).thenReturn(publicId);
+        when(userRepo.create(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        stubVerificationEmailSuccess();
+
+        var cmd = new RegisterCommand(email, "Test User", password);
+
+        useCase.execute(cmd);
+
+        ArgumentCaptor<User> userCaptor = ArgumentCaptor.forClass(User.class);
+        verify(userRepo).create(userCaptor.capture());
+        verify(requestEmailVerificationUseCase).execute(userCaptor.getValue().getId());
+    }
+
+    @Test
+    @DisplayName("Should register successfully even when verification email fails")
+    void shouldRegisterWhenVerificationEmailFails() {
+        when(userRepo.existsByEmail(email)).thenReturn(false);
+        when(passwordHasher.hash(password)).thenReturn(hashed);
+        when(publicIdGenerator.generate(any(UUID.class))).thenReturn(publicId);
+        when(userRepo.create(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requestEmailVerificationUseCase.execute(any(UUID.class)))
+                .thenReturn(Either.left(new RequestEmailVerificationUseCase.RequestError.UnexpectedError()));
+
+        var cmd = new RegisterCommand(email, "Test User", password);
+
+        Either<UseCaseError, RegisterResult> result = useCase.execute(cmd);
+
+        assertThat(result.isRight()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should register successfully even when verification email throws")
+    void shouldRegisterWhenVerificationEmailThrows() {
+        when(userRepo.existsByEmail(email)).thenReturn(false);
+        when(passwordHasher.hash(password)).thenReturn(hashed);
+        when(publicIdGenerator.generate(any(UUID.class))).thenReturn(publicId);
+        when(userRepo.create(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(requestEmailVerificationUseCase.execute(any(UUID.class))).thenThrow(new RuntimeException("boom"));
+
+        var cmd = new RegisterCommand(email, "Test User", password);
+
+        Either<UseCaseError, RegisterResult> result = useCase.execute(cmd);
+
+        assertThat(result.isRight()).isTrue();
+    }
+
+    @Test
+    @DisplayName("Should not send verification email when registration fails")
+    void shouldNotSendVerificationEmailWhenCreateFails() {
+        when(userRepo.existsByEmail(email)).thenReturn(true);
+
+        var cmd = new RegisterCommand(email, "Test User", password);
+
+        useCase.execute(cmd);
+
+        verify(requestEmailVerificationUseCase, never()).execute(any(UUID.class));
     }
 }

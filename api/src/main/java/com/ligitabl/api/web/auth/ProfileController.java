@@ -57,6 +57,7 @@ public class ProfileController {
     private final LatestResultSupport latestResultSupport;
     private final ImpersonationGuard impersonationGuard;
     private final CurrentUserFacade currentUserFacade;
+    private final RequestEmailVerificationUseCase requestEmailVerificationUseCase;
 
     @GetMapping("/settings")
     public String profile(@AuthenticationPrincipal WebUserDetails userDetails, Model model) {
@@ -134,6 +135,46 @@ public class ProfileController {
         return "redirect:/profile/settings";
     }
 
+    @PostMapping("/resend-verification")
+    public String resendVerification(
+            @AuthenticationPrincipal WebUserDetails userDetails, RedirectAttributes redirectAttributes) {
+        // An admin impersonating a user must not trigger emails to that user.
+        impersonationGuard.assertNotBlocked();
+        User user = currentUser(userDetails);
+        if (user == null) {
+            return "redirect:/auth/login";
+        }
+
+        var result = requestEmailVerificationUseCase.execute(user.getId());
+
+        result.fold(
+                error -> {
+                    switch (error) {
+                        case RequestEmailVerificationUseCase.RequestError.AlreadyVerified __ -> flash(
+                                redirectAttributes, "Your email is already verified.", "info");
+                        case RequestEmailVerificationUseCase.RequestError.ResendTooSoon __ -> flash(
+                                redirectAttributes,
+                                "A verification email was sent recently — check your inbox,"
+                                        + " or try again in a couple of minutes.",
+                                "info");
+                        case RequestEmailVerificationUseCase.RequestError.UserNotFound __ -> flash(
+                                redirectAttributes, "Something went wrong. Please try again later.", "error");
+                        case RequestEmailVerificationUseCase.RequestError.UnexpectedError __ -> flash(
+                                redirectAttributes, "Something went wrong. Please try again later.", "error");
+                    }
+                    return null;
+                },
+                success -> {
+                    flash(
+                            redirectAttributes,
+                            "Verification email sent to " + user.getEmail().value() + ". Check your inbox.",
+                            "success");
+                    return null;
+                });
+
+        return "redirect:/profile/settings";
+    }
+
     @GetMapping("/set-password")
     public String showSetPasswordForm(@AuthenticationPrincipal WebUserDetails userDetails, Model model) {
         User user = currentUser(userDetails);
@@ -192,6 +233,11 @@ public class ProfileController {
             model.addAttribute("pageTitle", "Set Password");
             return "profile/set-password";
         }
+    }
+
+    private static void flash(RedirectAttributes redirectAttributes, String message, String messageType) {
+        redirectAttributes.addFlashAttribute("message", message);
+        redirectAttributes.addFlashAttribute("messageType", messageType);
     }
 
     private void refreshSessionAuthentication(User user, HttpSession session) {

@@ -10,6 +10,7 @@ import org.springframework.context.annotation.Configuration;
 import com.ligitabl.model.domain.service.ScoringEngine;
 import com.ligitabl.model.infra.CompetitionPersistenceAdapter;
 import com.ligitabl.model.infra.ContestPersistenceAdapter;
+import com.ligitabl.model.infra.EmailVerificationTokenPersistenceAdapter;
 import com.ligitabl.model.infra.EntryPersistenceAdapter;
 import com.ligitabl.model.infra.LeaderboardPersistenceAdapter;
 import com.ligitabl.model.infra.MatchPersistenceAdapter;
@@ -24,6 +25,7 @@ import com.ligitabl.model.infra.TeamPersistenceAdapter;
 import com.ligitabl.model.infra.UserPersistenceAdapter;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
+import com.ligitabl.model.repo.EmailVerificationTokenRepo;
 import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.LeaderboardRepo;
 import com.ligitabl.model.repo.MatchRepo;
@@ -123,5 +125,10 @@ public class RepositoryConfig {
     @Bean
     public PasswordResetTokenRepo passwordResetTokenRepo(DSLContext dsl) {
         return new PasswordResetTokenPersistenceAdapter(dsl);
+    }
+
+    @Bean
+    public EmailVerificationTokenRepo emailVerificationTokenRepo(DSLContext dsl) {
+        return new EmailVerificationTokenPersistenceAdapter(dsl);
     }
 }

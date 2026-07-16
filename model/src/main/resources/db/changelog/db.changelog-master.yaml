@@ -67,3 +67,5 @@ databaseChangeLog:
       file: db/changelog/20260713_1_user_last_login.yaml
   - include:
       file: db/changelog/20260714_1_user_username.yaml
+  - include:
+      file: db/changelog/20260715_1_email_verification.yaml

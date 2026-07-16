@@ -70,11 +70,51 @@
 
             <!-- Email Address -->
             <div>
-              <label
-                for="email"
-                class="block text-sm font-medium text-gray-700 mb-2"
-                >Email Address</label
-              >
+              <div class="flex items-center justify-between mb-2">
+                <label
+                  for="email"
+                  class="block text-sm font-medium text-gray-700"
+                  >Email Address</label
+                >
+                <span
+                  th:if="${user.emailVerified == true}"
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-50 text-green-700 border border-green-100"
+                >
+                  <svg
+                    class="h-3.5 w-3.5 mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                  Verified
+                </span>
+                <span
+                  th:if="${user.emailVerified == false}"
+                  class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100"
+                >
+                  <svg
+                    class="h-3.5 w-3.5 mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                    />
+                  </svg>
+                  Unverified
+                </span>
+              </div>
               <input
                 type="email"
                 id="email"
@@ -85,6 +125,17 @@
               <p class="mt-2 text-xs sm:text-sm text-gray-500">
                 Email cannot be changed from profile settings.
               </p>
+              <!-- Nested forms are invalid HTML — the button targets a form
+                   declared outside the profile form via the form attribute. -->
+              <div th:if="${user.emailVerified == false}" class="mt-2">
+                <button
+                  type="submit"
+                  form="resend-verification-form"
+                  class="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                >
+                  Resend verification email
+                </button>
+              </div>
             </div>
 
             <!-- Divider -->
@@ -261,6 +312,21 @@
                 Save Changes
               </button>
             </div>
+          </form>
+
+          <!-- Resend-verification form target for the button next to the email
+               field (kept outside the profile form — forms cannot nest). -->
+          <form
+            th:if="${user.emailVerified == false}"
+            id="resend-verification-form"
+            th:action="@{/profile/resend-verification}"
+            method="post"
+          >
+            <input
+              type="hidden"
+              th:name="${_csrf.parameterName}"
+              th:value="${_csrf.token}"
+            />
           </form>
         </div>
 

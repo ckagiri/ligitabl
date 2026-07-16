@@ -1,0 +1,85 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <!--
+      Dismissable "verify your email" nudge shown to unverified logged-in users.
+      Dismissal is client-side only (localStorage timestamp) and expires after
+      7 days — permanent dismissal would hide it from exactly the users who
+      still need it. Server-side gating (logged-in + unverified + not
+      impersonating) happens via the emailUnverified model attribute in
+      NavbarControllerAdvice.
+    -->
+    <div
+      th:fragment="banner"
+      x-cloak
+      x-data="{
+        show: false,
+        dismissKey: 'ligitabl.verifyEmailBannerDismissedAt',
+        init() {
+          const dismissedAt = parseInt(localStorage.getItem(this.dismissKey) || '0', 10);
+          const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
+          this.show = !dismissedAt || (Date.now() - dismissedAt) > sevenDaysMs;
+        },
+        dismiss() {
+          localStorage.setItem(this.dismissKey, Date.now().toString());
+          this.show = false;
+        }
+      }"
+      x-show="show"
+      class="bg-amber-50 border-b border-amber-200"
+    >
+      <div
+        class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-2.5 flex items-center justify-between gap-3"
+      >
+        <div class="flex items-center gap-2 text-sm text-amber-800 min-w-0">
+          <svg
+            class="h-4 w-4 flex-shrink-0 text-amber-500"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+            />
+          </svg>
+          <span class="truncate">
+            Please verify your email address — it's how you recover your
+            account if you forget your password.
+          </span>
+        </div>
+        <div class="flex items-center gap-3 flex-shrink-0">
+          <form th:action="@{/profile/resend-verification}" method="post">
+            <input
+              type="hidden"
+              th:name="${_csrf.parameterName}"
+              th:value="${_csrf.token}"
+            />
+            <button
+              type="submit"
+              class="text-sm font-medium text-amber-900 underline hover:text-amber-700"
+            >
+              Resend email
+            </button>
+          </form>
+          <button
+            type="button"
+            @click="dismiss()"
+            title="Dismiss for a week"
+            class="text-amber-400 hover:text-amber-600 transition"
+          >
+            <svg class="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                clip-rule="evenodd"
+              />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

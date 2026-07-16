@@ -1,5 +1,6 @@
 package com.ligitabl.api.auth.oauth2;
 
+import java.time.OffsetDateTime;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
@@ -87,6 +88,9 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
         if (existing.getGoogleId() == null) {
             User linkedUser = existing.withEmailVerified(true).withGoogleId(googleId);
+            if (linkedUser.getEmailVerifiedAt() == null) {
+                linkedUser = linkedUser.withEmailVerifiedAt(OffsetDateTime.now());
+            }
             userRepo.update(linkedUser);
             log.info(
                     "[OAUTH_GOOGLE_LINKED] userId={} email={}",
@@ -112,6 +116,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 .password(null)
                 .roles(Set.of(Role.PLAYER))
                 .emailVerified(true)
+                .emailVerifiedAt(OffsetDateTime.now())
                 .googleId(userInfo.id())
                 .build();
 
