@@ -12,6 +12,7 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.RoundRepo;
@@ -36,7 +37,8 @@ import lombok.extern.slf4j.Slf4j;
  * - advance-now: calls advanceManually(), bypasses the delay
  * - cancel-advancement: clears advanceAt, scheduled task is a no-op when it fires
  *
- * TODO: email notifications (pre-advancement warning, post-advancement confirmation, failure alert)
+ * Admin notifications: pre-advancement warning (the cancel window), post-advancement
+ * confirmation, and a failure alert — via {@link AdminNotificationService}.
  */
 @Service
 @RequiredArgsConstructor
@@ -47,6 +49,7 @@ public class RoundAdvancementService {
     private final RoundRepo roundRepo;
     private final SeasonRepo seasonRepo;
     private final Clock clock;
+    private final AdminNotificationService adminNotificationService;
 
     @Value("${ligitabl.round-advancement.delay-minutes:3}")
     private int delayMinutes;
@@ -90,7 +93,8 @@ public class RoundAdvancementService {
         taskScheduler.schedule(() -> attemptAutoAdvancement(finalizedRoundId, seasonId), advanceTime);
 
         log.info("Scheduled advancement for round={} at {} ({} minutes)", finalizedRoundId, advanceAt, delayMinutes);
-        // TODO: send pre-advancement email to admin
+        adminNotificationService.notifyAdvancementScheduled(
+                finalizedRoundId, round.getPosition(), advanceAt, delayMinutes);
     }
 
     /**
@@ -129,12 +133,13 @@ public class RoundAdvancementService {
             advanceToNextRound(season, round);
 
             log.info("Auto-advanced from round position={} (seasonId={})", round.getPosition(), seasonId);
-            // TODO: send post-advancement confirmation email to admin
+            adminNotificationService.notifyRoundAdvanced(
+                    round.getPosition(), seasonId, round.getPosition() >= season.getMaxRounds());
 
         } catch (Exception e) {
             log.error("Failed to auto-advance round={}", roundId, e);
             Sentry.captureException(e);
-            // TODO: send advancement failure email to admin
+            adminNotificationService.notifyAdvancementFailed(roundId, e.getMessage());
         }
     }
 
@@ -166,6 +171,8 @@ public class RoundAdvancementService {
         advanceToNextRound(season, round);
 
         log.info("Manually advanced round={} (position={})", roundId, round.getPosition());
+        adminNotificationService.notifyRoundAdvanced(
+                round.getPosition(), round.getSeasonId(), round.getPosition() >= season.getMaxRounds());
         return true;
     }
 
