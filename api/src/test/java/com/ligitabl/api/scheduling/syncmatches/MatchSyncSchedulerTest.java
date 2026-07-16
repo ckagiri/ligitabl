@@ -24,7 +24,9 @@ import org.springframework.scheduling.TaskScheduler;
 
 import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.api.scheduling.advanceround.RoundAdvancementService;
+import com.ligitabl.api.scheduling.resilience.MatchSyncCircuitBreaker;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.SeasonRepo;
 
@@ -51,6 +53,9 @@ class MatchSyncSchedulerTest {
     private SeasonRepo seasonRepo;
 
     @Mock
+    private MatchSyncCircuitBreaker circuitBreaker;
+
+    @Mock
     private ScheduledFuture<Object> scheduledFuture;
 
     private MatchSyncScheduler scheduler;
@@ -69,11 +74,13 @@ class MatchSyncSchedulerTest {
                 triggerFinalizationUseCase,
                 adminNotificationService,
                 roundAdvancementService,
-                seasonRepo);
+                seasonRepo,
+                circuitBreaker);
 
         setField(scheduler, "competitionCode", "PL");
         setField(scheduler, "retryOnFailureMinutes", 5L);
-        setField(scheduler, "maxConsecutiveFailures", 3);
+
+        when(circuitBreaker.allowRequest()).thenReturn(true);
 
         doReturn(scheduledFuture).when(taskScheduler).schedule(any(Runnable.class), any(Instant.class));
     }
@@ -117,6 +124,51 @@ class MatchSyncSchedulerTest {
         scheduler.triggerManualSync();
 
         verify(triggerFinalizationUseCase).execute(any());
+    }
+
+    @Test
+    void skipsSyncAndReschedules_whenCircuitBreakerOpen() {
+        when(circuitBreaker.allowRequest()).thenReturn(false);
+        when(circuitBreaker.getRemainingRecoveryTime()).thenReturn(Duration.ofMinutes(30));
+
+        scheduler.triggerManualSync();
+
+        verify(syncMatchesUseCase, never()).execute(any());
+
+        ArgumentCaptor<Instant> instantCaptor = ArgumentCaptor.forClass(Instant.class);
+        verify(taskScheduler).schedule(any(Runnable.class), instantCaptor.capture());
+        Duration delay = Duration.between(Instant.now(), instantCaptor.getValue());
+        assertTrue(delay.toMinutes() >= 30 && delay.toMinutes() <= 31, "expected ~31 minute defer, got " + delay);
+    }
+
+    @Test
+    void recordsFailure_whenSyncFails() {
+        when(syncMatchesUseCase.execute(any()))
+                .thenReturn(Either.left(new SyncMatchesUseCase.SyncMatchesError.HierarchyError(
+                        UseCaseErrors.validation("Competition has no active season"))));
+
+        scheduler.triggerManualSync();
+
+        verify(circuitBreaker).recordFailure();
+        verify(circuitBreaker, never()).recordSuccess();
+    }
+
+    @Test
+    void recordsSuccess_whenSyncSucceeds() {
+        Season season = Season.builder()
+                .id(seasonId)
+                .mainContestId(UUID.randomUUID()) // not in setup mode
+                .build();
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(syncMatchesUseCase.execute(any())).thenReturn(Either.right(completeResult()));
+        when(triggerFinalizationUseCase.execute(any()))
+                .thenReturn(Either.left(
+                        new TriggerRoundFinalizationUseCase.TriggerFinalizationError.RoundNotFound(roundId)));
+
+        scheduler.triggerManualSync();
+
+        verify(circuitBreaker).recordSuccess();
+        verify(circuitBreaker, never()).recordFailure();
     }
 
     private MatchSyncResult completeResult() {

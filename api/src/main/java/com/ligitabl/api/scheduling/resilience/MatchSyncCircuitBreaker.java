@@ -1,14 +1,16 @@
 package com.ligitabl.api.scheduling.resilience;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.notification.AdminNotificationService;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Circuit Breaker for Match Sync
@@ -22,19 +24,25 @@ import com.ligitabl.api.notification.AdminNotificationService;
  * - HALF_OPEN: Testing if service recovered
  */
 @Component
+@Slf4j
 public class MatchSyncCircuitBreaker {
 
-    private static final Logger log = LoggerFactory.getLogger(MatchSyncCircuitBreaker.class);
-
     private static final int FAILURE_THRESHOLD = 10;
-    private static final Duration RECOVERY_WAIT = Duration.ofHours(1);
+    private static final Duration RECOVERY_WAIT = Duration.ofMinutes(30);
 
     private final AdminNotificationService notificationService;
+    private final Clock clock;
     private final AtomicInteger consecutiveFailures = new AtomicInteger(0);
     private volatile Instant openedAt = null;
 
+    @Autowired
     public MatchSyncCircuitBreaker(AdminNotificationService notificationService) {
+        this(notificationService, Clock.systemUTC());
+    }
+
+    public MatchSyncCircuitBreaker(AdminNotificationService notificationService, Clock clock) {
         this.notificationService = notificationService;
+        this.clock = clock;
     }
 
     public enum State {
@@ -52,7 +60,7 @@ public class MatchSyncCircuitBreaker {
         }
 
         // Check if recovery period has passed
-        if (Instant.now().isAfter(openedAt.plus(RECOVERY_WAIT))) {
+        if (Instant.now(clock).isAfter(openedAt.plus(RECOVERY_WAIT))) {
             log.info("Circuit breaker recovery period elapsed, entering HALF_OPEN state");
             return State.HALF_OPEN; // Try again
         }
@@ -105,16 +113,30 @@ public class MatchSyncCircuitBreaker {
 
         log.warn("Match sync failure recorded: {}/{}", failures, FAILURE_THRESHOLD);
 
+        // HALF_OPEN test request failed - re-open for another recovery period
+        if (openedAt != null) {
+            if (getState() == State.HALF_OPEN) {
+                openedAt = Instant.now(clock);
+
+                log.error(
+                        "Circuit breaker RE-OPENED after failed test request ({} consecutive failures). "
+                                + "Will retry after {} minute(s)",
+                        failures,
+                        RECOVERY_WAIT.toMinutes());
+            }
+            return;
+        }
+
         // Open circuit breaker if threshold reached
-        if (failures >= FAILURE_THRESHOLD && openedAt == null) {
-            openedAt = Instant.now();
+        if (failures >= FAILURE_THRESHOLD) {
+            openedAt = Instant.now(clock);
 
             log.error(
-                    "Circuit breaker OPENED after {} consecutive failures. " + "Will retry after {} hour(s)",
+                    "Circuit breaker OPENED after {} consecutive failures. " + "Will retry after {} minute(s)",
                     failures,
-                    RECOVERY_WAIT.toHours());
+                    RECOVERY_WAIT.toMinutes());
 
-            notificationService.notifyCircuitBreakerOpened(failures, RECOVERY_WAIT.toHours());
+            notificationService.notifyCircuitBreakerOpened(failures, RECOVERY_WAIT.toMinutes());
         }
     }
 
@@ -130,6 +152,20 @@ public class MatchSyncCircuitBreaker {
      */
     public Instant getOpenedAt() {
         return openedAt;
+    }
+
+    /**
+     * Time remaining until the breaker will allow a test request.
+     * Duration.ZERO if the breaker is closed or already half-open.
+     */
+    public Duration getRemainingRecoveryTime() {
+        Instant opened = openedAt;
+        if (opened == null) {
+            return Duration.ZERO;
+        }
+
+        Duration remaining = Duration.between(Instant.now(clock), opened.plus(RECOVERY_WAIT));
+        return remaining.isNegative() ? Duration.ZERO : remaining;
     }
 
     /**

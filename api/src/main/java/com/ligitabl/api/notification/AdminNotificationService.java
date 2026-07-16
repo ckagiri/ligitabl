@@ -14,10 +14,10 @@ import lombok.extern.slf4j.Slf4j;
 public class AdminNotificationService {
     private final EmailService emailService;
 
-    public void notifyCircuitBreakerOpened(int consecutiveFailures, long recoveryWaitHours) {
+    public void notifyCircuitBreakerOpened(int consecutiveFailures, long recoveryWaitMinutes) {
         String subject = "Match sync circuit breaker OPEN";
         String body = "Circuit breaker opened after " + consecutiveFailures + " consecutive failures.\n"
-                + "Will retry after " + recoveryWaitHours + " hour(s).";
+                + "Will retry after " + recoveryWaitMinutes + " minute(s).";
 
         log.warn("{}: {}", subject, body);
         emailService.sendAdminAlert(subject, body);
