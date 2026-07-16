@@ -183,7 +183,7 @@ public class MatchAdminController {
                             return "fragments/match-admin-modal :: error-message";
                         },
                         result -> {
-                            setMatchSyncTrigger(response, matchRepo.findById(result.getMatchId()));
+                            setMatchUpdatedTrigger(response, matchRepo.findById(result.getMatchId()));
                             return "fragments/match-admin-modal :: done";
                         });
     }
@@ -216,7 +216,7 @@ public class MatchAdminController {
                             return "fragments/match-admin-modal :: error-message";
                         },
                         result -> {
-                            setMatchSyncTrigger(response, matchRepo.findById(result.getMatchId()));
+                            setMatchUpdatedTrigger(response, matchRepo.findById(result.getMatchId()));
                             return "fragments/match-admin-modal :: done";
                         });
     }
@@ -269,37 +269,29 @@ public class MatchAdminController {
                             model.addAttribute("error", err.getMessage());
                             return "fragments/match-admin-modal :: error-message";
                         },
-                        __ -> {
-                            setMatchSyncTrigger(response, findBySlugAndRoundPosition(matchSlug, round));
+                        result -> {
+                            setMatchUpdatedTrigger(response, matchRepo.findById(result.matchId()));
                             return "fragments/match-admin-modal :: done";
                         });
     }
 
     /**
-     * Signals a successful mutation. When the mutated match can be loaded, it rides along as
-     * JSON event detail so listeners (the admin matches page) can patch their in-memory copy
-     * without refetching; listeners without that need (the round matches page) just see the
-     * event name as before. Falls back to the bare event on any serialization hiccup.
+     * Signals a successful admin mutation. When the mutated match can be loaded, it rides along as JSON event
+     * detail so listeners (the admin matches page) can patch their in-memory copy without
+     * refetching; listeners without that need (the round matches page) just see the event
+     * name. Falls back to the bare event on any serialization hiccup.
      */
-    private void setMatchSyncTrigger(HttpServletResponse response, Optional<Match> match) {
-        String header = "matchSyncComplete";
+    private void setMatchUpdatedTrigger(HttpServletResponse response, Optional<Match> match) {
+        String header = "matchUpdated";
         if (match.isPresent()) {
             try {
                 header = objectMapper.writeValueAsString(
-                        Map.of("matchSyncComplete", Map.of("match", AdminMatchesData.MatchEntry.from(match.get()))));
+                        Map.of("matchUpdated", Map.of("match", AdminMatchesData.MatchEntry.from(match.get()))));
             } catch (JsonProcessingException e) {
                 log.warn("Could not serialize match for HX-Trigger; sending bare event", e);
             }
         }
         response.setHeader("HX-Trigger", header);
-    }
-
-    private Optional<Match> findBySlugAndRoundPosition(String matchSlug, Integer roundPosition) {
-        return hierarchyValidator
-                .resolveHierarchy(competitionDefaults.defaultCompetitionSlug(), roundPosition)
-                .fold(
-                        __ -> Optional.empty(),
-                        ctx -> matchRepo.findByRoundIdAndSlug(ctx.round().getId(), matchSlug));
     }
 
     private static String buildLabel(String home, String away) {
