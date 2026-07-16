@@ -6,8 +6,6 @@ import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -17,10 +15,12 @@ import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.api.scheduling.advanceround.RoundAdvancementService;
+import com.ligitabl.api.scheduling.resilience.MatchSyncCircuitBreaker;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import io.sentry.Sentry;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Match Sync Scheduler
@@ -38,12 +38,16 @@ import io.sentry.Sentry;
  * - Kickoff <= 60 min: Every 10 minutes
  * - Kickoff < 6 hours: Every 1 hour
  * - Default: Every 6 hours
+ * - Suspended match present: at most every 10 minutes
+ * - Cancelled match present: at most every 30 minutes
+ *
+ * Repeated sync failures trip {@link com.ligitabl.api.scheduling.resilience.MatchSyncCircuitBreaker},
+ * which blocks further attempts until its recovery period elapses.
  */
 @Component
 @ConditionalOnProperty(name = "ligitabl.scheduling.enabled", havingValue = "true", matchIfMissing = true)
+@Slf4j
 public class MatchSyncScheduler {
-
-    private static final Logger log = LoggerFactory.getLogger(MatchSyncScheduler.class);
 
     private final TaskScheduler taskScheduler;
     private final SyncMatchesUseCase syncMatchesUseCase;
@@ -51,6 +55,7 @@ public class MatchSyncScheduler {
     private final AdminNotificationService adminNotificationService;
     private final RoundAdvancementService roundAdvancementService;
     private final SeasonRepo seasonRepo;
+    private final MatchSyncCircuitBreaker circuitBreaker;
 
     private static final Duration SETUP_MODE_DEFER_DELAY = Duration.ofMinutes(30);
 
@@ -60,12 +65,8 @@ public class MatchSyncScheduler {
     @Value("${football-data.sync.retry-on-failure-minutes:5}")
     private long retryOnFailureMinutes;
 
-    @Value("${football-data.sync.max-consecutive-failures:3}")
-    private int maxConsecutiveFailures;
-
     private ScheduledFuture<?> currentTask;
     private volatile boolean running = false;
-    private int consecutiveFailures = 0;
 
     public MatchSyncScheduler(
             TaskScheduler taskScheduler,
@@ -73,13 +74,15 @@ public class MatchSyncScheduler {
             TriggerRoundFinalizationUseCase triggerFinalizationUseCase,
             AdminNotificationService adminNotificationService,
             RoundAdvancementService roundAdvancementService,
-            SeasonRepo seasonRepo) {
+            SeasonRepo seasonRepo,
+            MatchSyncCircuitBreaker circuitBreaker) {
         this.taskScheduler = taskScheduler;
         this.syncMatchesUseCase = syncMatchesUseCase;
         this.triggerFinalizationUseCase = triggerFinalizationUseCase;
         this.adminNotificationService = adminNotificationService;
         this.roundAdvancementService = roundAdvancementService;
         this.seasonRepo = seasonRepo;
+        this.circuitBreaker = circuitBreaker;
     }
 
     /**
@@ -100,6 +103,14 @@ public class MatchSyncScheduler {
             return;
         }
 
+        if (!circuitBreaker.allowRequest()) {
+            // Re-check shortly after the recovery window opens
+            var delay = circuitBreaker.getRemainingRecoveryTime().plusMinutes(1);
+            log.warn("Circuit breaker open - deferring sync by {}", formatDuration(delay));
+            scheduleNextSync(delay);
+            return;
+        }
+
         running = true;
 
         try {
@@ -111,19 +122,13 @@ public class MatchSyncScheduler {
                     error -> {
                         log.error("Match sync failed: {}", error);
 
-                        consecutiveFailures++;
-                        if (consecutiveFailures >= maxConsecutiveFailures) {
-                            log.error(
-                                    "Match sync has failed {} times consecutively (threshold: {}).",
-                                    consecutiveFailures,
-                                    maxConsecutiveFailures);
-                        }
+                        circuitBreaker.recordFailure();
 
                         scheduleNextSync(Duration.ofMinutes(retryOnFailureMinutes));
                         return null;
                     },
                     success -> {
-                        consecutiveFailures = 0;
+                        circuitBreaker.recordSuccess();
 
                         log.info(
                                 "Match sync completed: processed={}, updated={}, newlyFinished={}",
@@ -178,13 +183,7 @@ public class MatchSyncScheduler {
             log.error("Unexpected error during match sync", e);
             Sentry.captureException(e);
 
-            consecutiveFailures++;
-            if (consecutiveFailures >= maxConsecutiveFailures) {
-                log.error(
-                        "Match sync has failed {} times consecutively (threshold: {}).",
-                        consecutiveFailures,
-                        maxConsecutiveFailures);
-            }
+            circuitBreaker.recordFailure();
 
             scheduleNextSync(Duration.ofMinutes(retryOnFailureMinutes));
         } finally {

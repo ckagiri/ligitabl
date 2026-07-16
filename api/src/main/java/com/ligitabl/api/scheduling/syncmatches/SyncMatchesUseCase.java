@@ -325,6 +325,10 @@ public class SyncMatchesUseCase {
 
         boolean hasScheduled = matches.stream().anyMatch(m -> m.getStatus() == MatchStatus.SCHEDULED);
 
+        boolean hasSuspended = matches.stream().anyMatch(m -> m.getStatus() == MatchStatus.SUSPENDED);
+
+        boolean hasCancelled = matches.stream().anyMatch(m -> m.getStatus() == MatchStatus.CANCELLED);
+
         var nextKickoff = matches.stream()
                 .filter(m -> m.getStatus() == MatchStatus.SCHEDULED)
                 .map(Match::getKickOff)
@@ -333,7 +337,7 @@ public class SyncMatchesUseCase {
                 .orElse(null);
 
         var nextSchedule = SyncFrequencyCalculator.calculateNextSync(
-                hasLive, hasScheduled, nextKickoff, allComplete, roundObstructed);
+                hasLive, hasScheduled, hasSuspended, hasCancelled, nextKickoff, allComplete, roundObstructed);
 
         return new MatchSyncResult(
                 context.season().getId(),

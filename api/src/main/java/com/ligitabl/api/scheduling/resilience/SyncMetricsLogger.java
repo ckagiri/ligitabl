@@ -23,7 +23,6 @@ import com.ligitabl.api.scheduling.syncmatches.MatchSyncResult;
 public class SyncMetricsLogger {
 
     private static final Logger metricsLog = LoggerFactory.getLogger("METRICS");
-    private static final Logger log = LoggerFactory.getLogger(SyncMetricsLogger.class);
 
     /**
      * Log successful sync metrics

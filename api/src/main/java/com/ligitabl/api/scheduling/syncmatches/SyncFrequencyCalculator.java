@@ -16,6 +16,10 @@ import java.time.OffsetDateTime;
  * - Kickoff ≤ 60 min → Every 10 minutes
  * - Kickoff < 6 hours → Every 1 hour
  * - Default → Every 6 hours
+ *
+ * Delay caps (applied on top of the kickoff-based schedule; faster polling still wins):
+ * - Suspended match present → at most every 10 minutes (may resume any time)
+ * - Cancelled match present → at most every 30 minutes
  */
 public class SyncFrequencyCalculator {
 
@@ -24,6 +28,8 @@ public class SyncFrequencyCalculator {
      *
      * @param hasLiveMatches True if any matches are currently live
      * @param hasScheduledMatches True if any matches are scheduled (not yet started)
+     * @param hasSuspendedMatches True if any matches are suspended (may resume any time)
+     * @param hasCancelledMatches True if any matches are cancelled
      * @param nextKickoff Time of next scheduled kickoff (can be null)
      * @param allMatchesComplete True if all matches are in terminal state
      * @param matchCount Total number of matches (0 = no upcoming matches)
@@ -33,6 +39,8 @@ public class SyncFrequencyCalculator {
     public static NextSyncSchedule calculateNextSync(
             boolean hasLiveMatches,
             boolean hasScheduledMatches,
+            boolean hasSuspendedMatches,
+            boolean hasCancelledMatches,
             OffsetDateTime nextKickoff,
             boolean allMatchesComplete,
             boolean roundObstructed,
@@ -58,6 +66,13 @@ public class SyncFrequencyCalculator {
         if (matchCount == 0) {
             return NextSyncSchedule.hours(12, "No upcoming matches - checking twice daily");
         }
+
+        var schedule = matchDaySchedule(hasLiveMatches, hasScheduledMatches, nextKickoff);
+        return applyBlockingMatchCap(schedule, hasSuspendedMatches, hasCancelledMatches);
+    }
+
+    private static NextSyncSchedule matchDaySchedule(
+            boolean hasLiveMatches, boolean hasScheduledMatches, OffsetDateTime nextKickoff) {
 
         // PRIORITY 4: Live matches - sync frequently
         if (hasLiveMatches) {
@@ -107,6 +122,25 @@ public class SyncFrequencyCalculator {
         return NextSyncSchedule.hours(6, String.format("Kickoff in %d hours (default check)", hoursUntilKickoff));
     }
 
+    /**
+     * Cap the delay when suspended/cancelled matches are present.
+     * Faster kickoff- or live-driven polling still wins; the sync just never
+     * waits longer than the cap while such matches exist.
+     */
+    private static NextSyncSchedule applyBlockingMatchCap(
+            NextSyncSchedule schedule, boolean hasSuspendedMatches, boolean hasCancelledMatches) {
+
+        if (hasSuspendedMatches && schedule.delay().compareTo(Duration.ofMinutes(10)) > 0) {
+            return NextSyncSchedule.minutes(10, "Suspended match present - polling for resumption");
+        }
+
+        if (hasCancelledMatches && schedule.delay().compareTo(Duration.ofMinutes(30)) > 0) {
+            return NextSyncSchedule.minutes(30, "Cancelled match present - polling for updates");
+        }
+
+        return schedule;
+    }
+
     private static long ceilDiv(long numerator, long denominator) {
         if (denominator <= 0) {
             throw new IllegalArgumentException("denominator must be positive");
@@ -115,6 +149,30 @@ public class SyncFrequencyCalculator {
             return 0;
         }
         return (numerator + denominator - 1) / denominator;
+    }
+
+    /**
+     * Assumes no suspended/cancelled matches
+     */
+    public static NextSyncSchedule calculateNextSync(
+            boolean hasLiveMatches,
+            boolean hasScheduledMatches,
+            OffsetDateTime nextKickoff,
+            boolean allMatchesComplete,
+            boolean roundObstructed,
+            int matchCount,
+            boolean seasonComplete) {
+
+        return calculateNextSync(
+                hasLiveMatches,
+                hasScheduledMatches,
+                false,
+                false,
+                nextKickoff,
+                allMatchesComplete,
+                roundObstructed,
+                matchCount,
+                seasonComplete);
     }
 
     /**
@@ -164,11 +222,21 @@ public class SyncFrequencyCalculator {
     public static NextSyncSchedule calculateNextSync(
             boolean hasLiveMatches,
             boolean hasScheduledMatches,
+            boolean hasSuspendedMatches,
+            boolean hasCancelledMatches,
             OffsetDateTime nextKickoff,
             boolean allMatchesComplete,
             boolean roundObstructed) {
 
         return calculateNextSync(
-                hasLiveMatches, hasScheduledMatches, nextKickoff, allMatchesComplete, roundObstructed, 1, false);
+                hasLiveMatches,
+                hasScheduledMatches,
+                hasSuspendedMatches,
+                hasCancelledMatches,
+                nextKickoff,
+                allMatchesComplete,
+                roundObstructed,
+                1,
+                false);
     }
 }
