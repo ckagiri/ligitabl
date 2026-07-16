@@ -9,8 +9,7 @@ import com.ligitabl.model.domain.Score;
 import com.ligitabl.model.domain.Team;
 
 /**
- * Normalized bootstrap payload for the admin matches page. Matches reference teams and
- * rounds by id; the client composes the lookup graph and does all filtering, sorting,
+ * Normalized bootstrap payload for the admin matches page. The client composes the lookup graph and does all filtering, sorting,
  * and pagination in the browser.
  */
 public record AdminMatchesData(
