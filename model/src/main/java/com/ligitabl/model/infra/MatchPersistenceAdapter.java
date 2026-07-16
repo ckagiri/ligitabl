@@ -44,6 +44,15 @@ public class MatchPersistenceAdapter implements MatchRepo {
     }
 
     @Override
+    public List<Match> findBySeasonId(UUID seasonId) {
+        return dsl.selectFrom(T_MATCH)
+                .where(T_MATCH.FK_SEASON_ID.eq(seasonId))
+                .orderBy(T_MATCH.C_KICK_OFF.asc().nullsLast(), T_MATCH.PK_ID.asc())
+                .fetch()
+                .map(MAPPER::map);
+    }
+
+    @Override
     public Optional<Match> findByClientId(Integer clientId) {
         var record =
                 dsl.selectFrom(T_MATCH).where(T_MATCH.C_CLIENT_ID.eq(clientId)).fetchOne();

@@ -18,6 +18,11 @@ public interface MatchRepo {
 
     List<Match> findByRoundId(UUID roundId);
 
+    /**
+     * All matches of a season across all rounds, ordered by kickoff (nulls last), then id.
+     */
+    List<Match> findBySeasonId(UUID seasonId);
+
     Optional<Match> findByClientId(Integer clientId);
 
     /**

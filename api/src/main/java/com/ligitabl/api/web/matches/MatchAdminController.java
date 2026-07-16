@@ -5,6 +5,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.Comparator;
+import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
@@ -15,6 +17,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.matchadmin.reschedulematch.RescheduleMatchCommand;
 import com.ligitabl.api.rest.matchadmin.reschedulematch.RescheduleMatchUseCase;
@@ -22,6 +26,7 @@ import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionMatchCom
 import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionMatchStatusUseCase;
 import com.ligitabl.api.rest.matchadmin.updatekickoff.UpdateMatchKickoffUseCase;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
+import com.ligitabl.api.web.admin.AdminMatchesData;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -45,6 +50,7 @@ public class MatchAdminController {
     private final RescheduleMatchUseCase rescheduleUseCase;
     private final UpdateMatchKickoffUseCase updateKickoffUseCase;
     private final CompetitionDefaults competitionDefaults;
+    private final ObjectMapper objectMapper;
 
     public record RoundOption(int position, String label) {}
 
@@ -176,8 +182,8 @@ public class MatchAdminController {
                             model.addAttribute("error", err.getMessage());
                             return "fragments/match-admin-modal :: error-message";
                         },
-                        __ -> {
-                            response.setHeader("HX-Trigger", "matchSyncComplete");
+                        result -> {
+                            setMatchUpdatedTrigger(response, matchRepo.findById(result.getMatchId()));
                             return "fragments/match-admin-modal :: done";
                         });
     }
@@ -209,8 +215,8 @@ public class MatchAdminController {
                             model.addAttribute("error", err.getMessage());
                             return "fragments/match-admin-modal :: error-message";
                         },
-                        __ -> {
-                            response.setHeader("HX-Trigger", "matchSyncComplete");
+                        result -> {
+                            setMatchUpdatedTrigger(response, matchRepo.findById(result.getMatchId()));
                             return "fragments/match-admin-modal :: done";
                         });
     }
@@ -263,10 +269,29 @@ public class MatchAdminController {
                             model.addAttribute("error", err.getMessage());
                             return "fragments/match-admin-modal :: error-message";
                         },
-                        __ -> {
-                            response.setHeader("HX-Trigger", "matchSyncComplete");
+                        result -> {
+                            setMatchUpdatedTrigger(response, matchRepo.findById(result.matchId()));
                             return "fragments/match-admin-modal :: done";
                         });
+    }
+
+    /**
+     * Signals a successful admin mutation. When the mutated match can be loaded, it rides along as JSON event
+     * detail so listeners (the admin matches page) can patch their in-memory copy without
+     * refetching; listeners without that need (the round matches page) just see the event
+     * name. Falls back to the bare event on any serialization hiccup.
+     */
+    private void setMatchUpdatedTrigger(HttpServletResponse response, Optional<Match> match) {
+        String header = "matchUpdated";
+        if (match.isPresent()) {
+            try {
+                header = objectMapper.writeValueAsString(
+                        Map.of("matchUpdated", Map.of("match", AdminMatchesData.MatchEntry.from(match.get()))));
+            } catch (JsonProcessingException e) {
+                log.warn("Could not serialize match for HX-Trigger; sending bare event", e);
+            }
+        }
+        response.setHeader("HX-Trigger", header);
     }
 
     private static String buildLabel(String home, String away) {

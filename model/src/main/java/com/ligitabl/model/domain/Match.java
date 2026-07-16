@@ -103,6 +103,10 @@ public class Match extends AbstractModel<UUID> {
         }
 
         this.status = newStatus;
+        if (from == MatchStatus.FINISHED) {
+            // Un-finishing is a setup-mode correction (to SCHEDULED/POSTPONED).
+            this.score = null;
+        }
         if (newStatus == MatchStatus.POSTPONED) {
             this.wasPostponed = true;
         }

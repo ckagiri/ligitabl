@@ -56,6 +56,19 @@ class MatchTest {
     }
 
     @Test
+    void unfinishingInSetupMode_clearsTheRecordedScore() {
+        for (MatchStatus target : new MatchStatus[] {MatchStatus.SCHEDULED, MatchStatus.POSTPONED}) {
+            Match match = matchWithStatus(MatchStatus.FINISHED);
+            match.setScore(2, 1);
+
+            match.transitionTo(target, "setup mode correction", true);
+
+            assertEquals(target, match.getStatus());
+            assertNull(match.getScore(), "score must be cleared when un-finishing to " + target);
+        }
+    }
+
+    @Test
     void transitionMatrix_shouldMatchExpectedAllowedTransitions() {
         Map<MatchStatus, EnumSet<MatchStatus>> allowed = new EnumMap<>(MatchStatus.class);
         allowed.put(
