@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
@@ -30,6 +31,7 @@ public class SeasonActivationService {
     private final CompetitionDefaults competitionDefaults;
     private final CompetitionRepo competitionRepo;
     private final SeasonRepo seasonRepo;
+    private final AdminNotificationService adminNotificationService;
 
     @Scheduled(fixedDelay = 15 * 60 * 1000)
     @Transactional
@@ -66,5 +68,7 @@ public class SeasonActivationService {
                 activeSeason.getId());
         competitionRepo.promoteUpcomingSeason(
                 competition.getId(), competition.getUpcomingSeasonId(), activeSeason.getId());
+        adminNotificationService.notifySeasonActivated(
+                competition.getSlug().value(), competition.getUpcomingSeasonId(), activeSeason.getId());
     }
 }

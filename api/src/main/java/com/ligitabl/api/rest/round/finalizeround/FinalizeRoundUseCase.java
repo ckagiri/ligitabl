@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.domain.StandingsCalculatorService;
+import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.*;
@@ -38,6 +39,7 @@ public class FinalizeRoundUseCase {
     private final StandingsCalculatorService standingsCalculator;
     private final ScoringEngine scoringEngine;
     private final Clock clock;
+    private final AdminNotificationService adminNotificationService;
 
     @Transactional
     public Either<FinalizeRoundError, FinalizeRoundResult> execute(UUID seasonId) {
@@ -177,7 +179,9 @@ public class FinalizeRoundUseCase {
                 markDownstreamOutOfSync(ctx);
             }
 
-            // STEP 6: Send Notifications (TODO: implement async)
+            // STEP 6: Send notifications (fire-and-forget; Slack call never blocks or throws)
+            adminNotificationService.notifyRoundFinalized(
+                    ctx.round().getId(), ctx.round().getPosition(), submissions.size(), results.size(), isLastRound);
 
             Instant completedAt = clock.instant();
             log.info(

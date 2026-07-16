@@ -173,6 +173,8 @@ jobs:
           MAILGUN_API_KEY=${{ secrets.MAILGUN_API_KEY }}
           MAILGUN_DOMAIN=${{ secrets.MAILGUN_DOMAIN }}
           MAILGUN_API_BASE_URL=${{ secrets.MAILGUN_API_BASE_URL }}
+          SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_NOTIFICATIONS_ENABLED=true
           FRONTEND_URL=${{ secrets.FRONTEND_URL }}
           FRONTEND_SHARE_URL=${{ secrets.FRONTEND_SHARE_URL }}
           LOGTAIL_TOKEN=${{ secrets.LOGTAIL_TOKEN }}

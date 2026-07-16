@@ -8,6 +8,8 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.ligitabl.api.notification.AdminNotificationService;
+
 import io.sentry.Sentry;
 
 /**
@@ -27,9 +29,12 @@ public class MatchdayAdvancementScheduler {
     private static final Logger log = LoggerFactory.getLogger(MatchdayAdvancementScheduler.class);
 
     private final AdvanceMatchdayUseCase advanceMatchdayUseCase;
+    private final AdminNotificationService adminNotificationService;
 
-    public MatchdayAdvancementScheduler(AdvanceMatchdayUseCase advanceMatchdayUseCase) {
+    public MatchdayAdvancementScheduler(
+            AdvanceMatchdayUseCase advanceMatchdayUseCase, AdminNotificationService adminNotificationService) {
         this.advanceMatchdayUseCase = advanceMatchdayUseCase;
+        this.adminNotificationService = adminNotificationService;
     }
 
     /**
@@ -66,6 +71,8 @@ public class MatchdayAdvancementScheduler {
                                     success.previousMatchday(),
                                     success.newMatchday(),
                                     success.seasonId());
+                            adminNotificationService.notifyMatchdayAdvanced(
+                                    success.previousMatchday(), success.newMatchday(), success.seasonId());
                         } else {
                             log.info(
                                     "No round advancement needed: {} (matchday: {})",
