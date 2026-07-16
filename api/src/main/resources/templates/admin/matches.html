@@ -298,7 +298,7 @@
 
             init() {
               this.filters.round = String(this.currentRound);
-              document.body.addEventListener('matchSyncComplete', (e) => {
+              document.body.addEventListener('matchUpdated', (e) => {
                 if (e.detail && e.detail.match) {
                   this.patchMatch(e.detail.match);
                 } else {

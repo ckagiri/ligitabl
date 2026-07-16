@@ -3,6 +3,8 @@ package com.ligitabl.api.web.matches;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -184,7 +186,7 @@ class MatchAdminControllerTest {
 
         assertThat(view).isEqualTo("fragments/match-admin-modal :: done");
         JsonNode trigger = objectMapper.readTree(response.getHeader("HX-Trigger"));
-        JsonNode match = trigger.path("matchSyncComplete").path("match");
+        JsonNode match = trigger.path("matchUpdated").path("match");
         assertThat(match.path("id").asText()).isEqualTo(matchId.toString());
         assertThat(match.path("status").asText()).isEqualTo("LIVE");
         assertThat(match.path("roundId").asText()).isEqualTo(roundId.toString());
@@ -207,7 +209,38 @@ class MatchAdminControllerTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
         controller.transition("home-vs-away", 5, "LIVE", null, null, new ExtendedModelMap(), response);
 
-        assertThat(response.getHeader("HX-Trigger")).isEqualTo("matchSyncComplete");
+        assertThat(response.getHeader("HX-Trigger")).isEqualTo("matchUpdated");
+    }
+
+    @Test
+    void kickoffUpdateSuccess_carriesUpdatedMatchAsJsonInHxTrigger() throws Exception {
+        UUID matchId = UUID.randomUUID();
+        OffsetDateTime newKickOff = OffsetDateTime.of(2026, 8, 15, 14, 30, 0, 0, ZoneOffset.UTC);
+        Match updated = Match.builder()
+                .id(matchId)
+                .clientId(1)
+                .roundId(roundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("home-vs-away")
+                .status(MatchStatus.SCHEDULED)
+                .kickOff(newKickOff)
+                .matchday(5)
+                .build();
+        when(updateKickoffUseCase.execute(any()))
+                .thenReturn(Either.right(
+                        new UpdateMatchKickoffUseCase.Result(matchId, "home-vs-away", newKickOff)));
+        when(matchRepo.findById(matchId)).thenReturn(Optional.of(updated));
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        String view = controller.updateKickoff(
+                "home-vs-away", 5, "2026-08-15", "14:30", 0, new ExtendedModelMap(), response);
+
+        assertThat(view).isEqualTo("fragments/match-admin-modal :: done");
+        JsonNode match =
+                objectMapper.readTree(response.getHeader("HX-Trigger")).path("matchUpdated").path("match");
+        assertThat(match.path("id").asText()).isEqualTo(matchId.toString());
+        assertThat(match.path("kickOff").asText()).isEqualTo(newKickOff.toInstant().toString());
     }
 
     @Test
