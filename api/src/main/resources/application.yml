@@ -106,6 +106,13 @@ ligitabl:
       domain: ${MAILGUN_DOMAIN:ligipredictor.com}
       api-base-url: ${MAILGUN_API_BASE_URL:https://api.mailgun.net/v3}
 
+  slack:
+    # Incoming-webhook URL is a secret — env var only, never committed. Default disabled so
+    # local/dev/CI run silently without a webhook configured.
+    webhook-url: ${SLACK_WEBHOOK_URL:}
+    enabled: ${SLACK_NOTIFICATIONS_ENABLED:false}
+    timeout-seconds: ${SLACK_TIMEOUT_SECONDS:5}
+
   turnstile:
     # Defaults are Cloudflare's publicly documented "always passes" test keypair, so local dev
     # and CI never call the real siteverify API and are never blocked by it. Real keys are
