@@ -131,7 +131,6 @@ football-data:
     # Match sync runs dynamically based on match status
     # Frequencies are calculated at runtime
     retry-on-failure-minutes: 5
-    max-consecutive-failures: 3 # Alert admin after this many failures
 
 # Round Advancement Configuration
 round-advancement:

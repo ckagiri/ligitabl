@@ -229,4 +229,65 @@ class SyncFrequencyCalculatorTest {
         assertThat(schedule.delay()).isEqualTo(Duration.ofSeconds(90));
         assertThat(schedule.reason()).contains("Live matches");
     }
+
+    @Test
+    void shouldCapAt10MinutesWhenSuspendedMatchPresent() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(
+                false, true, true, false, OffsetDateTime.now().plusHours(8), false, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(10));
+        assertThat(schedule.reason()).contains("Suspended match present");
+    }
+
+    @Test
+    void shouldCapAt30MinutesWhenCancelledMatchPresent() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(
+                false, true, false, true, OffsetDateTime.now().plusHours(8), false, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(30));
+        assertThat(schedule.reason()).contains("Cancelled match present");
+    }
+
+    @Test
+    void suspendedCapWinsOverCancelledCap() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(
+                false, true, true, true, OffsetDateTime.now().plusHours(8), false, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(10));
+        assertThat(schedule.reason()).contains("Suspended match present");
+    }
+
+    @Test
+    void imminentKickoffPollingBeatsSuspendedCap() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(
+                false, true, true, false, OffsetDateTime.now().plusMinutes(8), false, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(1));
+        assertThat(schedule.reason()).contains("imminent");
+    }
+
+    @Test
+    void livePollingBeatsSuspendedCap() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(
+                true, true, true, false, OffsetDateTime.now().plusHours(2), false, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofSeconds(90));
+        assertThat(schedule.reason()).contains("Live matches");
+    }
+
+    @Test
+    void shouldCapAt10MinutesWhenSuspendedAndNoScheduledMatches() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, false, true, false, null, false, false);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(10));
+        assertThat(schedule.reason()).contains("Suspended match present");
+    }
+
+    @Test
+    void obstructedRoundStillImmediateWithSuspendedMatch() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(false, false, true, false, null, false, true);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ZERO);
+        assertThat(schedule.reason()).containsIgnoringCase("obstructed");
+    }
 }
