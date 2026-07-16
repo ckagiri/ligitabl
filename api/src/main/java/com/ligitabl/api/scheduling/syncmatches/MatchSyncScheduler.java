@@ -68,6 +68,10 @@ public class MatchSyncScheduler {
     private ScheduledFuture<?> currentTask;
     private volatile boolean running = false;
 
+    // Dedupe key for Slack cadence messages — during live matches the loop reschedules every
+    // 90s, so only a change in NextSyncSchedule.reason() is worth posting.
+    private volatile String lastNotifiedScheduleReason;
+
     public MatchSyncScheduler(
             TaskScheduler taskScheduler,
             SyncMatchesUseCase syncMatchesUseCase,
@@ -91,6 +95,7 @@ public class MatchSyncScheduler {
     @EventListener(ApplicationReadyEvent.class)
     public void onStartup() {
         log.info("MatchSyncScheduler: Starting initial sync on application startup");
+        adminNotificationService.notifyStartup(competitionCode);
         scheduleNextSync(Duration.ZERO);
     }
 
@@ -174,6 +179,16 @@ public class MatchSyncScheduler {
                                 "Next sync scheduled in: {} ({})",
                                 formatDuration(success.nextSchedule().delay()),
                                 success.nextSchedule().reason());
+
+                        String reason = success.nextSchedule().reason();
+                        if (!reason.equals(lastNotifiedScheduleReason)) {
+                            adminNotificationService.notifySyncScheduleChanged(
+                                    success.roundId(),
+                                    success.roundPosition(),
+                                    success.nextSchedule().delay(),
+                                    reason);
+                            lastNotifiedScheduleReason = reason;
+                        }
 
                         scheduleNextSync(success.nextSchedule().delay());
                         return null;

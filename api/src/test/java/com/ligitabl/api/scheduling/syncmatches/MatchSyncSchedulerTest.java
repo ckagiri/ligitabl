@@ -171,6 +171,58 @@ class MatchSyncSchedulerTest {
         verify(circuitBreaker, never()).recordFailure();
     }
 
+    @Test
+    void onStartup_notifiesStartupAndSchedulesInitialSync() {
+        scheduler.onStartup();
+
+        verify(adminNotificationService).notifyStartup("PL");
+        verify(taskScheduler).schedule(any(Runnable.class), any(Instant.class));
+    }
+
+    @Test
+    void notifiesScheduleChange_onlyWhenReasonChanges() {
+        when(syncMatchesUseCase.execute(any()))
+                .thenReturn(Either.right(resultWithReason("Live matches in progress")))
+                .thenReturn(Either.right(resultWithReason("Live matches in progress")))
+                .thenReturn(Either.right(resultWithReason("No matches in next 6 hours")));
+
+        scheduler.triggerManualSync();
+        scheduler.triggerManualSync();
+        scheduler.triggerManualSync();
+
+        verify(adminNotificationService, times(1))
+                .notifySyncScheduleChanged(any(), anyInt(), any(), eq("Live matches in progress"));
+        verify(adminNotificationService, times(1))
+                .notifySyncScheduleChanged(any(), anyInt(), any(), eq("No matches in next 6 hours"));
+    }
+
+    @Test
+    void failedSync_doesNotNotifyScheduleChange() {
+        when(syncMatchesUseCase.execute(any()))
+                .thenReturn(Either.left(new SyncMatchesUseCase.SyncMatchesError.HierarchyError(
+                        UseCaseErrors.validation("Competition has no active season"))));
+
+        scheduler.triggerManualSync();
+
+        verify(adminNotificationService, never()).notifySyncScheduleChanged(any(), anyInt(), any(), any());
+    }
+
+    private MatchSyncResult resultWithReason(String reason) {
+        return new MatchSyncResult(
+                seasonId,
+                roundId,
+                5,
+                10,
+                10,
+                0,
+                List.of(),
+                false, // allMatchesComplete
+                false,
+                false,
+                List.of(),
+                NextSyncSchedule.seconds(90, reason));
+    }
+
     private MatchSyncResult completeResult() {
         return new MatchSyncResult(
                 seasonId,

@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Season;
@@ -32,13 +33,16 @@ class SeasonActivationServiceTest {
     @Mock
     SeasonRepo seasonRepo;
 
+    @Mock
+    AdminNotificationService adminNotificationService;
+
     private SeasonActivationService service;
     private UUID competitionId;
     private UUID activeSeasonId;
 
     @BeforeEach
     void setUp() {
-        service = new SeasonActivationService(DEFAULTS, competitionRepo, seasonRepo);
+        service = new SeasonActivationService(DEFAULTS, competitionRepo, seasonRepo, adminNotificationService);
         competitionId = UUID.randomUUID();
         activeSeasonId = UUID.randomUUID();
     }
@@ -81,6 +85,7 @@ class SeasonActivationServiceTest {
         service.checkAndActivateUpcomingSeason();
 
         verify(competitionRepo).promoteUpcomingSeason(competitionId, upcomingId, activeSeasonId);
+        verify(adminNotificationService).notifySeasonActivated("premier-league", upcomingId, activeSeasonId);
     }
 
     @Test
