@@ -18,12 +18,16 @@ import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.matchadmin.reschedulematch.RescheduleMatchUseCase;
 import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionMatchStatusUseCase;
+import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionResult;
 import com.ligitabl.api.rest.matchadmin.updatekickoff.UpdateMatchKickoffUseCase;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -54,6 +58,7 @@ class MatchAdminControllerTest {
     private UpdateMatchKickoffUseCase updateKickoffUseCase;
 
     private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     private MatchAdminController controller;
 
@@ -70,7 +75,8 @@ class MatchAdminControllerTest {
                 transitionUseCase,
                 rescheduleUseCase,
                 updateKickoffUseCase,
-                competitionDefaults);
+                competitionDefaults,
+                objectMapper);
 
         seasonId = UUID.randomUUID();
         roundId = UUID.randomUUID();
@@ -148,5 +154,71 @@ class MatchAdminControllerTest {
         assertThat(availableRounds)
                 .extracting(MatchAdminController.RoundOption::position)
                 .contains(2);
+    }
+
+    @Test
+    void transitionSuccess_carriesUpdatedMatchAsJsonInHxTrigger() throws Exception {
+        UUID matchId = UUID.randomUUID();
+        Match updated = Match.builder()
+                .id(matchId)
+                .clientId(1)
+                .roundId(roundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("home-vs-away")
+                .status(MatchStatus.LIVE)
+                .matchday(5)
+                .build();
+        when(transitionUseCase.execute(any()))
+                .thenReturn(Either.right(TransitionResult.builder()
+                        .matchId(matchId)
+                        .matchSlug("home-vs-away")
+                        .oldStatus(MatchStatus.SCHEDULED)
+                        .newStatus(MatchStatus.LIVE)
+                        .roundPosition(5)
+                        .build()));
+        when(matchRepo.findById(matchId)).thenReturn(Optional.of(updated));
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        String view = controller.transition("home-vs-away", 5, "LIVE", null, null, new ExtendedModelMap(), response);
+
+        assertThat(view).isEqualTo("fragments/match-admin-modal :: done");
+        JsonNode trigger = objectMapper.readTree(response.getHeader("HX-Trigger"));
+        JsonNode match = trigger.path("matchSyncComplete").path("match");
+        assertThat(match.path("id").asText()).isEqualTo(matchId.toString());
+        assertThat(match.path("status").asText()).isEqualTo("LIVE");
+        assertThat(match.path("roundId").asText()).isEqualTo(roundId.toString());
+        assertThat(match.path("score").isNull()).isTrue();
+    }
+
+    @Test
+    void transitionSuccess_fallsBackToBareEventWhenMatchNotFound() {
+        UUID matchId = UUID.randomUUID();
+        when(transitionUseCase.execute(any()))
+                .thenReturn(Either.right(TransitionResult.builder()
+                        .matchId(matchId)
+                        .matchSlug("home-vs-away")
+                        .oldStatus(MatchStatus.SCHEDULED)
+                        .newStatus(MatchStatus.LIVE)
+                        .roundPosition(5)
+                        .build()));
+        when(matchRepo.findById(matchId)).thenReturn(Optional.empty());
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        controller.transition("home-vs-away", 5, "LIVE", null, null, new ExtendedModelMap(), response);
+
+        assertThat(response.getHeader("HX-Trigger")).isEqualTo("matchSyncComplete");
+    }
+
+    @Test
+    void transitionFailure_setsNoTriggerHeader() {
+        when(transitionUseCase.execute(any())).thenReturn(Either.left(UseCaseErrors.validation("nope")));
+
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        String view = controller.transition("home-vs-away", 5, "LIVE", null, null, new ExtendedModelMap(), response);
+
+        assertThat(view).isEqualTo("fragments/match-admin-modal :: error-message");
+        assertThat(response.getStatus()).isEqualTo(422);
+        assertThat(response.getHeader("HX-Trigger")).isNull();
     }
 }

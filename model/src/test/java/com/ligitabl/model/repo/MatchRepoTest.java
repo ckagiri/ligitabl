@@ -124,6 +124,7 @@ class MatchRepoTest {
         dsl.insertInto(TMatch.T_MATCH)
                 .set(TMatch.T_MATCH.PK_ID, match2Id)
                 .set(TMatch.T_MATCH.C_CLIENT_ID, 1)
+                .set(TMatch.T_MATCH.FK_SEASON_ID, seasonId)
                 .set(TMatch.T_MATCH.FK_ROUND_ID, roundId)
                 .set(TMatch.T_MATCH.FK_HOME_TEAM_ID, homeTeamId)
                 .set(TMatch.T_MATCH.FK_AWAY_TEAM_ID, awayTeamId)
@@ -138,6 +139,7 @@ class MatchRepoTest {
         dsl.insertInto(TMatch.T_MATCH)
                 .set(TMatch.T_MATCH.PK_ID, match1Id)
                 .set(TMatch.T_MATCH.C_CLIENT_ID, 1)
+                .set(TMatch.T_MATCH.FK_SEASON_ID, seasonId)
                 .set(TMatch.T_MATCH.FK_ROUND_ID, roundId)
                 .set(TMatch.T_MATCH.FK_HOME_TEAM_ID, homeTeamId)
                 .set(TMatch.T_MATCH.FK_AWAY_TEAM_ID, awayTeamId)
@@ -157,5 +159,115 @@ class MatchRepoTest {
         assertThat(matches.getFirst().getScore()).isNotNull();
         assertThat(matches.getFirst().getScore().getHomeGoals()).isEqualTo(2);
         assertThat(matches.getFirst().getScore().getAwayGoals()).isEqualTo(1);
+    }
+
+    @Test
+    void findBySeasonId_returns_all_season_matches_ordered_by_kickoff_nulls_last() {
+        UUID competitionId = UUID.randomUUID();
+        UUID seasonId = UUID.randomUUID();
+        UUID otherSeasonId = UUID.randomUUID();
+        UUID round1Id = UUID.randomUUID();
+        UUID round2Id = UUID.randomUUID();
+        UUID otherRoundId = UUID.randomUUID();
+        UUID homeTeamId = UUID.randomUUID();
+        UUID awayTeamId = UUID.randomUUID();
+
+        dsl.insertInto(TCompetition.T_COMPETITION)
+                .set(TCompetition.T_COMPETITION.PK_ID, competitionId)
+                .set(TCompetition.T_COMPETITION.C_NAME, "Season Query League")
+                .set(TCompetition.T_COMPETITION.C_SLUG, "season-query-league")
+                .set(TCompetition.T_COMPETITION.C_CODE, "SQL")
+                .execute();
+
+        insertSeason(seasonId, competitionId, 100, "2025/26", "sq-2025-26");
+        insertSeason(otherSeasonId, competitionId, 101, "2026/27", "sq-2026-27");
+
+        dsl.insertInto(TTeam.T_TEAM)
+                .set(TTeam.T_TEAM.PK_ID, homeTeamId)
+                .set(TTeam.T_TEAM.C_NAME, "Season Home")
+                .set(TTeam.T_TEAM.C_SLUG, "season-home")
+                .set(TTeam.T_TEAM.C_SHORT_NAME, "SHOME")
+                .set(TTeam.T_TEAM.C_TLA, "SHO")
+                .execute();
+        dsl.insertInto(TTeam.T_TEAM)
+                .set(TTeam.T_TEAM.PK_ID, awayTeamId)
+                .set(TTeam.T_TEAM.C_NAME, "Season Away")
+                .set(TTeam.T_TEAM.C_SLUG, "season-away")
+                .set(TTeam.T_TEAM.C_SHORT_NAME, "SAWAY")
+                .set(TTeam.T_TEAM.C_TLA, "SAW")
+                .execute();
+
+        insertRound(round1Id, seasonId, 1, "sq-md-1");
+        insertRound(round2Id, seasonId, 2, "sq-md-2");
+        insertRound(otherRoundId, otherSeasonId, 1, "sq-other-md-1");
+
+        UUID laterMatch = UUID.randomUUID();
+        UUID earlierMatch = UUID.randomUUID();
+        UUID unscheduledMatch = UUID.randomUUID();
+        UUID otherSeasonMatch = UUID.randomUUID();
+
+        OffsetDateTime earlier = OffsetDateTime.of(2025, 8, 16, 15, 0, 0, 0, ZoneOffset.UTC);
+        OffsetDateTime later = OffsetDateTime.of(2025, 8, 23, 15, 0, 0, 0, ZoneOffset.UTC);
+
+        insertMatch(laterMatch, 201, seasonId, round2Id, homeTeamId, awayTeamId, "sq-match-later", later);
+        insertMatch(earlierMatch, 202, seasonId, round1Id, homeTeamId, awayTeamId, "sq-match-earlier", earlier);
+        insertMatch(unscheduledMatch, 203, seasonId, round2Id, homeTeamId, awayTeamId, "sq-match-tbd", null);
+        insertMatch(
+                otherSeasonMatch, 204, otherSeasonId, otherRoundId, homeTeamId, awayTeamId, "sq-match-other", earlier);
+
+        List<Match> matches = repo.findBySeasonId(seasonId);
+
+        assertThat(matches).hasSize(3);
+        assertThat(matches.get(0).getId()).isEqualTo(earlierMatch);
+        assertThat(matches.get(1).getId()).isEqualTo(laterMatch);
+        assertThat(matches.get(2).getId()).isEqualTo(unscheduledMatch);
+        assertThat(matches).extracting(Match::getSeasonId).containsOnly(seasonId);
+    }
+
+    private static void insertSeason(UUID seasonId, UUID competitionId, int clientId, String name, String slug) {
+        dsl.insertInto(TSeason.T_SEASON)
+                .set(TSeason.T_SEASON.PK_ID, seasonId)
+                .set(TSeason.T_SEASON.C_CLIENT_ID, clientId)
+                .set(TSeason.T_SEASON.FK_COMPETITION_ID, competitionId)
+                .set(TSeason.T_SEASON.C_NAME, name)
+                .set(TSeason.T_SEASON.C_SLUG, slug)
+                .set(TSeason.T_SEASON.C_START_DATE, LocalDate.of(2025, 8, 1))
+                .set(TSeason.T_SEASON.C_END_DATE, LocalDate.of(2026, 5, 31))
+                .set(TSeason.T_SEASON.C_MAX_ROUNDS, 38)
+                .set(TSeason.T_SEASON.C_CURRENT_MATCH_DAY, 1)
+                .execute();
+    }
+
+    private static void insertRound(UUID roundId, UUID seasonId, int position, String slug) {
+        dsl.insertInto(TRound.T_ROUND)
+                .set(TRound.T_ROUND.PK_ID, roundId)
+                .set(TRound.T_ROUND.FK_SEASON_ID, seasonId)
+                .set(TRound.T_ROUND.C_NAME, "Matchday " + position)
+                .set(TRound.T_ROUND.C_SLUG, slug)
+                .set(TRound.T_ROUND.C_POSITION, position)
+                .execute();
+    }
+
+    private static void insertMatch(
+            UUID matchId,
+            int clientId,
+            UUID seasonId,
+            UUID roundId,
+            UUID homeTeamId,
+            UUID awayTeamId,
+            String slug,
+            OffsetDateTime kickOff) {
+        dsl.insertInto(TMatch.T_MATCH)
+                .set(TMatch.T_MATCH.PK_ID, matchId)
+                .set(TMatch.T_MATCH.C_CLIENT_ID, clientId)
+                .set(TMatch.T_MATCH.FK_SEASON_ID, seasonId)
+                .set(TMatch.T_MATCH.FK_ROUND_ID, roundId)
+                .set(TMatch.T_MATCH.FK_HOME_TEAM_ID, homeTeamId)
+                .set(TMatch.T_MATCH.FK_AWAY_TEAM_ID, awayTeamId)
+                .set(TMatch.T_MATCH.C_SLUG, slug)
+                .set(TMatch.T_MATCH.C_STATUS, "SCHEDULED")
+                .set(TMatch.T_MATCH.C_KICK_OFF, kickOff)
+                .set(TMatch.T_MATCH.C_MATCHDAY, 1)
+                .execute();
     }
 }
