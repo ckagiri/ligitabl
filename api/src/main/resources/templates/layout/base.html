@@ -317,6 +317,12 @@
                       @click="adminMenuOpen = false"
                       >Users</a
                     >
+                    <a
+                      th:href="@{/admin/matches}"
+                      class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
+                      @click="adminMenuOpen = false"
+                      >Matches</a
+                    >
                     <button
                       type="button"
                       hx-get="/admin/impersonation/modal"
@@ -597,6 +603,12 @@
               th:href="@{/admin/users}"
               class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
               >Admin: Users</a
+            >
+            <a
+              th:if="${isAdmin}"
+              th:href="@{/admin/matches}"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+              >Admin: Matches</a
             >
 
             <div class="border-t border-gray-200 pt-2 mt-2">
