@@ -948,12 +948,13 @@ window.Ligitabl.publicPredictionPage = function (el) {
         if (!bar) {
             bar = document.createElement('div');
             bar.id = BAR_ID;
+            const isMobile = window.matchMedia('(max-width: 767px)').matches;
             bar.style.cssText = [
                 'position:fixed',
                 'top:0',
                 'left:0',
                 'width:0%',
-                'height:3px',
+                'height:' + (isMobile ? '5px' : '3px'),
                 'background:#6366f1',
                 'z-index:9999',
                 'transition:width 0.3s ease,opacity 0.4s ease',

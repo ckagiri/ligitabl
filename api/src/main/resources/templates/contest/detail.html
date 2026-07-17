@@ -570,12 +570,12 @@
                     hx-target="#leaderboard-content"
                     hx-swap="outerHTML swap:100ms settle:100ms"
                     class="px-3 py-1.5 text-sm border border-gray-300 rounded-md hover:bg-gray-50"
-                  >Previous</button>
+                  >Prev</button>
                   <button
                     th:if="${hasPreviousPage == false or hasPreviousPage == null}"
                     disabled
                     class="px-3 py-1.5 text-sm border border-gray-200 rounded-md text-gray-300 cursor-not-allowed"
-                  >Previous</button>
+                  >Prev</button>
                   <button
                     th:if="${hasNextPage == true}"
                     th:attr="hx-get=@{/contests/{id}(id=${contest.id}, segment=${currentSegment}, page=${currentPage + 1})}"

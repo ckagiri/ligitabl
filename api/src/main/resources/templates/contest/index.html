@@ -195,7 +195,7 @@
               <table class="min-w-full divide-y divide-gray-100">
                 <thead>
                   <tr class="bg-gray-50">
-                    <th class="sticky left-0 z-20 bg-gray-50 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[7rem]">Contest</th>
+                    <th class="sticky left-0 z-20 bg-gray-50 px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[10rem] sm:min-w-[7rem]">Contest</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GW</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
@@ -209,7 +209,7 @@
                     th:attr="data-href=@{/contests/{id}(id=${row.id},from='contests')}"
                     onclick="window.flashNavLoadingBar(); window.location.href = this.dataset.href"
                   >
-                    <td class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-4 py-3">
+                    <td class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-4 py-3 min-w-[10rem] sm:min-w-[7rem]">
                       <div class="text-sm font-medium text-indigo-600" th:text="${row.name}">OfficeMates</div>
                       <div class="flex flex-wrap items-center gap-1 mt-1">
                         <span
