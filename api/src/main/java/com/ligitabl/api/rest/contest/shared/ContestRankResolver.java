@@ -23,6 +23,8 @@ public class ContestRankResolver {
     public RankInfo resolve(UUID contestId, UUID seasonId, int fromRound, int toRound, UUID userId) {
         var response = leaderboardRepo.computeLeaderboard(contestId, seasonId, fromRound, toRound, userId, 0, 1, true);
         LeaderboardEntry userEntry = response.userEntry();
-        return userEntry != null ? new RankInfo(userEntry.position(), userEntry.movement()) : RankInfo.NONE;
+        return userEntry != null
+                ? new RankInfo(userEntry.scored() ? userEntry.position() : null, userEntry.movement())
+                : RankInfo.NONE;
     }
 }
