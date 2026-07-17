@@ -89,8 +89,8 @@ ligitabl:
     enabled: true
 
   rate-limit:
-    # Global bucket shared across all clients (not per-IP) — see TODO in RateLimitFilter for the
-    # long-term per-client fix. 120/min is a stopgap so normal multi-user traffic doesn't trip it.
+    # Per-client (per-IP) budget — each client gets its own bucket in RateLimitFilter.
+    # In prod the real client IP comes from X-Forwarded-For via forward-headers-strategy=native.
     requests-per-minute: ${RATE_LIMIT_REQUESTS_PER_MINUTE:120}
 
   security:
