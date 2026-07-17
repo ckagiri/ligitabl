@@ -82,6 +82,34 @@ class RateLimitFilterTest {
     }
 
     @Test
+    @DisplayName("Exhausting one client's bucket does not throttle another IP")
+    void differentIps_haveIndependentBuckets() throws Exception {
+        // exhaust the bucket for the first client
+        for (int i = 0; i < 20; i++) {
+            var request = new MockHttpServletRequest("GET", "/api/status");
+            request.setRemoteAddr("10.0.0.1");
+            filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
+        }
+        var throttledRequest = new MockHttpServletRequest("GET", "/api/status");
+        throttledRequest.setRemoteAddr("10.0.0.1");
+        var throttledResponse = new MockHttpServletResponse();
+        filter.doFilter(throttledRequest, throttledResponse, new MockFilterChain());
+        assertThat(throttledResponse.getStatus()).isEqualTo(429);
+
+        // a different client still has a full bucket
+        var otherRequest = new MockHttpServletRequest("GET", "/api/status");
+        otherRequest.setRemoteAddr("10.0.0.2");
+        var otherResponse = new MockHttpServletResponse();
+        var otherChain = new MockFilterChain();
+        filter.doFilter(otherRequest, otherResponse, otherChain);
+
+        assertThat(otherResponse.getStatus()).isNotEqualTo(429);
+        assertThat(otherChain.getRequest())
+                .as("other client's request should pass through")
+                .isNotNull();
+    }
+
+    @Test
     @DisplayName("Actuator health check is exempt from rate limiting")
     void actuatorHealth_isExempt() throws Exception {
         // exhaust the bucket first

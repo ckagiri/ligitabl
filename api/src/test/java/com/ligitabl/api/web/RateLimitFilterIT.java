@@ -28,7 +28,8 @@ import com.ligitabl.api.testsupport.AbstractPostgresIT;
  * slow or flaky otherwise).
  *
  * NOTE: Spring caches the test application context, so all test methods share
- * the same {@link RateLimitFilter} bean and therefore the same bucket. Tests
+ * the same {@link RateLimitFilter} bean — and since every request originates
+ * from the same loopback address, the same per-IP bucket. Tests
  * that exhaust the bucket must run in isolation — see {@link DirtiesContext} if
  * that becomes necessary. Currently the two tests here are ordered so that the
  * within-limit check runs first.

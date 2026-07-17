@@ -119,6 +119,11 @@
             <artifactId>bucket4j-core</artifactId>
             <version>${bucket4j.version}</version>
         </dependency>
+        <!-- Bounded per-client bucket store for RateLimitFilter (version from Boot BOM) -->
+        <dependency>
+            <groupId>com.github.ben-manes.caffeine</groupId>
+            <artifactId>caffeine</artifactId>
+        </dependency>
         <!-- Logtail (Better Stack) log shipping -->
         <dependency>
             <groupId>com.logtail</groupId>
