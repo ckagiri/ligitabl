@@ -77,6 +77,14 @@ public class TeamSeeder extends AbstractSeeder<List<Map<String, Object>>> {
                 .set(T_TEAM.C_SHORTER_NAME, shorterName)
                 .set(T_TEAM.C_TLA, tla)
                 .set(T_TEAM.C_CLIENT_ID, clientId)
+                // Only write on conflict when a value actually changed, so unchanged
+                // teams report rowsAffected=0 (skipped) and c_update_date stays put.
+                .where(
+                    T_TEAM.C_NAME.isDistinctFrom(name)
+                        .or(T_TEAM.C_SHORT_NAME.isDistinctFrom(shortName))
+                        .or(T_TEAM.C_SHORTER_NAME.isDistinctFrom(shorterName))
+                        .or(T_TEAM.C_TLA.isDistinctFrom(tla))
+                        .or(T_TEAM.C_CLIENT_ID.isDistinctFrom(clientId)))
                 .execute();
 
         if (rowsAffected > 0) {

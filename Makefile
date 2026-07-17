@@ -319,6 +319,15 @@ reset-db: ## ⚠️  Drop and recreate the database (ENV=$(ENV))
 BACKUP_DIR := .db-backups
 BACKUP_FILE ?= $(BACKUP_DIR)/$(DB_NAME)-latest.dump
 
+# Restore source env (defaults to ENV). Cross-env restore:
+#   make db-backup ENV=test && make db-restore ENV=dev FROM=test
+FROM ?= $(ENV)
+ifeq (,$(filter $(FROM),$(VALID_ENVS)))
+$(error ❌ Invalid FROM='$(FROM)'. Valid options: test, dev, prod)
+endif
+FROM_DB_NAME := $(shell cat .env.$(FROM).local .env.$(FROM) 2>/dev/null | sed -n 's/^DB_NAME=//p' | head -n1)
+RESTORE_FILE ?= $(BACKUP_DIR)/$(FROM_DB_NAME)-latest.dump
+
 .PHONY: db-backup
 db-backup: ## Snapshot the current DB to .db-backups/ (ENV=$(ENV))
 	@if ! docker ps --format '{{.Names}}' | grep -q '^ligitabl-db$$'; then \
@@ -330,23 +339,28 @@ db-backup: ## Snapshot the current DB to .db-backups/ (ENV=$(ENV))
 	@echo "✓ Snapshot saved to $(BACKUP_FILE)"
 
 .PHONY: db-restore
-db-restore: ## Restore DB from .db-backups/ snapshot (ENV=$(ENV))
+db-restore: ## Restore DB from .db-backups/ snapshot (ENV=$(ENV), FROM=<env> to restore another env's snapshot)
 	@if ! docker ps --format '{{.Names}}' | grep -q '^ligitabl-db$$'; then \
 		echo "❌ Postgres container 'ligitabl-db' not running."; \
 		exit 1; \
 	fi
-	@if [ ! -f $(BACKUP_FILE) ]; then \
-		echo "❌ No snapshot found at $(BACKUP_FILE). Run: make db-backup"; \
+	@if [ -z "$(FROM_DB_NAME)" ]; then \
+		echo "❌ Could not resolve DB_NAME from .env.$(FROM)"; \
 		exit 1; \
 	fi
+	@if [ ! -f $(RESTORE_FILE) ]; then \
+		echo "❌ No snapshot found at $(RESTORE_FILE). Run: make db-backup ENV=$(FROM)"; \
+		exit 1; \
+	fi
+	@echo "Restoring $(RESTORE_FILE) (ENV=$(FROM)) into $(DB_NAME) (ENV=$(ENV))"
 	docker exec -i ligitabl-db psql -U $(DB_USER) -d postgres -v ON_ERROR_STOP=1 \
 		-c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname='$(DB_NAME)';" || true
 	docker exec -i ligitabl-db psql -U $(DB_USER) -d postgres -v ON_ERROR_STOP=1 \
 		-c "DROP DATABASE IF EXISTS $(DB_NAME) WITH (FORCE);"
 	docker exec -i ligitabl-db psql -U $(DB_USER) -d postgres -v ON_ERROR_STOP=1 \
 		-c "CREATE DATABASE $(DB_NAME) OWNER $(DB_USER);"
-	docker exec -i ligitabl-db pg_restore -U $(DB_USER) -d $(DB_NAME) < $(BACKUP_FILE)
-	@echo "✓ $(DB_NAME) restored from $(BACKUP_FILE)"
+	docker exec -i ligitabl-db pg_restore -U $(DB_USER) -d $(DB_NAME) < $(RESTORE_FILE)
+	@echo "✓ $(DB_NAME) restored from $(RESTORE_FILE)"
 
 # ==============================================================================
 # SEEDING TARGETS

@@ -9,7 +9,11 @@ services:
       POSTGRES_USER: ${DB_USER:-ligitabl}
       POSTGRES_PASSWORD: ${DB_PASSWORD:-ligitabl}
     ports:
-      - "${DB_PORT:-5432}:5432"
+      # One postgres instance holds both envs' databases (ligitabl_test, ligitabl_dev).
+      # Publish both host ports so .env.test (55433) and .env.dev (55432) connections
+      # work simultaneously, regardless of which ENV started the container.
+      - "${DB_PORT_TEST:-55433}:5432"
+      - "${DB_PORT_DEV:-55432}:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-ligitabl} -d ${DB_NAME:-ligitabl}"]
       interval: 5s
