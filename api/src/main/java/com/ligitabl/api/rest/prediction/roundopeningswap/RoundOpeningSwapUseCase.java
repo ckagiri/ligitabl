@@ -73,6 +73,7 @@ public class RoundOpeningSwapUseCase {
         prediction.setCurrentRankings(currentRankings);
         prediction.setOpeningCommittedRound(round.getPosition());
         prediction.setLastSwapAt(now);
+        prediction.setAtRoundNumber(round.getPosition());
 
         SeasonPrediction saved = predictionRepo.save(prediction);
 

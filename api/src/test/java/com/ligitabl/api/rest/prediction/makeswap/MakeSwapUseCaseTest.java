@@ -207,6 +207,24 @@ class MakeSwapUseCaseTest {
     }
 
     @Test
+    void shouldUpdateAtRoundNumber_whenSwapApplied() {
+        prediction.setAtRoundNumber(5); // stale from an earlier round, distinct from the target round
+        SwapCommand command = new SwapCommand("ARS", "LIV");
+
+        when(clock.instant()).thenReturn(now);
+
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
+        when(predictionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        Either<SwapError, SwapResult> result = useCase.execute(userId, command);
+
+        assertTrue(result.isRight());
+        verify(predictionRepo).save(argThat(p -> p.getAtRoundNumber() == round.getPosition()));
+    }
+
+    @Test
     void shouldValidateNextRound_whenPredictionAlreadyOnNextRound() {
         SwapCommand command = new SwapCommand("ARS", "LIV");
         Round nextRound = Round.builder()
