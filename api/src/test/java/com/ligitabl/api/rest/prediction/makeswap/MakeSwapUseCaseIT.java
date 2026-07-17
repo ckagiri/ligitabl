@@ -156,6 +156,23 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
         }
 
         @Test
+        @DisplayName("should update atRoundNumber to the target round when it was stale")
+        void shouldUpdateAtRoundNumberToTargetRound() {
+            SeasonPrediction prediction =
+                    predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            prediction.setAtRoundNumber(5); // stale from an earlier round, distinct from the target round (10)
+            predictionRepo.save(prediction);
+
+            Either<SwapError, SwapResult> result = useCase.execute(userId, new SwapCommand("ARS", "LIV"));
+
+            assertThat(result.isRight()).isTrue();
+
+            SeasonPrediction persisted =
+                    predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
+            assertThat(persisted.getAtRoundNumber()).isEqualTo(10);
+        }
+
+        @Test
         @DisplayName("should allow swap after cooldown expires")
         void shouldAllowSwapAfterCooldownExpires() {
             Either<SwapError, SwapResult> first = useCase.execute(userId, new SwapCommand("ARS", "LIV"));

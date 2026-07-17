@@ -118,6 +118,20 @@ class RoundOpeningSwapUseCaseTest {
     }
 
     @Test
+    void shouldUpdateAtRoundNumber_toRoundPosition() {
+        prediction.setAtRoundNumber(round.getPosition() - 1); // stale, distinct from the round being opened
+        var command = new RoundOpeningSwapCommand(List.of(new SwapCommand("ARS", "LIV")));
+
+        stubHappyPath();
+        when(predictionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        var result = useCase.execute(userId, command);
+
+        assertTrue(result.isRight());
+        verify(predictionRepo).save(argThat(p -> p.getAtRoundNumber() == round.getPosition()));
+    }
+
+    @Test
     void shouldApplyMultipleSwaps_upToTwo() {
         var command =
                 new RoundOpeningSwapCommand(List.of(new SwapCommand("ARS", "LIV"), new SwapCommand("MCI", "CHE")));

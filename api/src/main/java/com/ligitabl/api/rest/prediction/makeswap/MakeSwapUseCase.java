@@ -106,6 +106,7 @@ public class MakeSwapUseCase {
         if (prediction.getOpeningCommittedRound() != targetRound.getPosition()) {
             prediction.setOpeningCommittedRound(targetRound.getPosition());
         }
+        prediction.setAtRoundNumber(targetRound.getPosition());
 
         SeasonPrediction saved = predictionRepo.save(prediction);
 
