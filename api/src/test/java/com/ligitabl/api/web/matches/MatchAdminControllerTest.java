@@ -228,19 +228,21 @@ class MatchAdminControllerTest {
                 .matchday(5)
                 .build();
         when(updateKickoffUseCase.execute(any()))
-                .thenReturn(Either.right(
-                        new UpdateMatchKickoffUseCase.Result(matchId, "home-vs-away", newKickOff)));
+                .thenReturn(Either.right(new UpdateMatchKickoffUseCase.Result(matchId, "home-vs-away", newKickOff)));
         when(matchRepo.findById(matchId)).thenReturn(Optional.of(updated));
 
         MockHttpServletResponse response = new MockHttpServletResponse();
-        String view = controller.updateKickoff(
-                "home-vs-away", 5, "2026-08-15", "14:30", 0, new ExtendedModelMap(), response);
+        String view =
+                controller.updateKickoff("home-vs-away", 5, "2026-08-15", "14:30", 0, new ExtendedModelMap(), response);
 
         assertThat(view).isEqualTo("fragments/match-admin-modal :: done");
-        JsonNode match =
-                objectMapper.readTree(response.getHeader("HX-Trigger")).path("matchUpdated").path("match");
+        JsonNode match = objectMapper
+                .readTree(response.getHeader("HX-Trigger"))
+                .path("matchUpdated")
+                .path("match");
         assertThat(match.path("id").asText()).isEqualTo(matchId.toString());
-        assertThat(match.path("kickOff").asText()).isEqualTo(newKickOff.toInstant().toString());
+        assertThat(match.path("kickOff").asText())
+                .isEqualTo(newKickOff.toInstant().toString());
     }
 
     @Test

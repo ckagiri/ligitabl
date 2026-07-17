@@ -30,9 +30,15 @@ public class ClientIpDiagnosticController {
         String xForwardedFor = request.getHeader("X-Forwarded-For");
 
         StringBuilder body = new StringBuilder()
-                .append("clientIp=").append(clientIp).append('\n')
-                .append("xForwardedFor=").append(xForwardedFor).append('\n')
-                .append("scheme=").append(request.getScheme()).append('\n');
+                .append("clientIp=")
+                .append(clientIp)
+                .append('\n')
+                .append("xForwardedFor=")
+                .append(xForwardedFor)
+                .append('\n')
+                .append("scheme=")
+                .append(request.getScheme())
+                .append('\n');
 
         if (isPrivateAddress(clientIp)) {
             body.append("verdict=WARNING: clientIp is a private/proxy address — forwarded headers are NOT "
