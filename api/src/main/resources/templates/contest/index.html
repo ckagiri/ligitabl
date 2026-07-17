@@ -132,14 +132,17 @@
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GW</th>
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
-                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Change</th>
+                    <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <span class="hidden sm:inline">Change</span>
+                      <span class="sm:hidden" title="Change">⇅</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
                   <tr
                     th:each="row : ${generalContests}"
                     class="group hover:bg-gray-50 transition cursor-pointer"
-                    onclick="window.location.href='/leaderboard?phase='+this.dataset.phase"
+                    onclick="window.flashNavLoadingBar(); window.location.href='/leaderboard?phase='+this.dataset.phase"
                     th:attr="data-phase=${row.phaseCode}"
                   >
                     <td class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-4 py-3 text-sm font-medium text-indigo-600" th:text="${row.label}">Overall Season</td>
