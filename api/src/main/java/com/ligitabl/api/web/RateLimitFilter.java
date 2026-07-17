@@ -91,7 +91,8 @@ public class RateLimitFilter extends OncePerRequestFilter {
         }
 
         String clientIp = request.getRemoteAddr();
-        Bucket bucket = buckets.get(clientIp, ip -> Bucket.builder().addLimit(limit).build());
+        Bucket bucket =
+                buckets.get(clientIp, ip -> Bucket.builder().addLimit(limit).build());
         if (bucket.tryConsume(1)) {
             filterChain.doFilter(request, response);
         } else {
