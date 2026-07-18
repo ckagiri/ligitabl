@@ -1,4 +1,4 @@
-package com.ligitabl.api.notification;
+package com.ligitabl.api.notification.email;
 
 public sealed interface EmailError {
     record NoValidRecipients() implements EmailError {}

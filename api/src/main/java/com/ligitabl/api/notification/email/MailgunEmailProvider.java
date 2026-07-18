@@ -1,4 +1,4 @@
-package com.ligitabl.api.notification;
+package com.ligitabl.api.notification.email;
 
 import java.net.URI;
 import java.util.Base64;

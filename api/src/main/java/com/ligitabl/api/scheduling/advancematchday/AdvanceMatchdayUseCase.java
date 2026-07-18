@@ -85,7 +85,7 @@ public class AdvanceMatchdayUseCase {
         if (apiMatchday < currentMatchday) {
             log.warn(
                     "API matchday ({}) is behind current matchday ({}). "
-                            + "This shouldn't happen in most cases - possible API issue or season rollover",
+                            + "This shouldn't happen in most cases - possible API issue or scheduling rollover",
                     apiMatchday,
                     currentMatchday);
             return Either.right(MatchdayAdvancementResult.noChange(

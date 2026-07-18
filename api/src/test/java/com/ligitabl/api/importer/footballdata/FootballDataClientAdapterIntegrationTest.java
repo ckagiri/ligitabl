@@ -26,9 +26,9 @@ import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
 import com.ligitabl.api.client.FootballDataClient;
+import com.ligitabl.api.client.footballdata.CompetitionResponse;
+import com.ligitabl.api.client.footballdata.MatchDto;
 import com.ligitabl.api.runners.importer.footballdata.FootballDataClientAdapter;
-import com.ligitabl.api.runners.importer.model.entities.ExternalCompetition;
-import com.ligitabl.api.runners.importer.model.entities.ExternalMatch;
 import com.ligitabl.api.runners.importer.model.errors.ApiError;
 import com.ligitabl.api.runners.importer.model.errors.ImportError;
 import com.ligitabl.api.runners.importer.model.valueobjects.CompetitionCode;
@@ -117,11 +117,11 @@ class FootballDataClientAdapterIntegrationTest {
             Either<ImportError, ?> result = adapter.fetchCompetition(code);
 
             assertThat(result.isRight()).isTrue();
-            var competition = (ExternalCompetition) result.get();
-            assertThat(competition.getId().getValue()).isEqualTo(2021);
-            assertThat(competition.getName()).isEqualTo("Premier League");
-            assertThat(competition.getCode().getValue()).isEqualTo("PL");
-            assertThat(competition.getCurrentSeason().getId().getValue()).isEqualTo(2024);
+            var competition = (CompetitionResponse) result.get();
+            assertThat(competition.id()).isEqualTo(2021);
+            assertThat(competition.name()).isEqualTo("Premier League");
+            assertThat(competition.code()).isEqualTo("PL");
+            assertThat(competition.currentSeason().id()).isEqualTo(2024);
 
             wireMock.verify(
                     getRequestedFor(urlEqualTo("/competitions/PL")).withHeader("X-Auth-Token", equalTo("test-token")));
@@ -226,13 +226,13 @@ class FootballDataClientAdapterIntegrationTest {
             assertThat(result.isRight()).isTrue();
             var matches = result.get();
             assertThat(matches).hasSize(1);
-            ExternalMatch match = matches.get(0);
-            assertThat(match.getId().getValue()).isEqualTo(12345);
-            assertThat(match.getHomeTeam().getId().getValue()).isEqualTo(57);
-            assertThat(match.getAwayTeam().getId().getValue()).isEqualTo(61);
-            assertThat(match.getScore()).isPresent();
-            assertThat(match.getScore().get().homeGoals()).isEqualTo(1);
-            assertThat(match.getScore().get().awayGoals()).isEqualTo(2);
+            MatchDto match = matches.get(0);
+            assertThat(match.id()).isEqualTo(12345);
+            assertThat(match.homeTeam().id()).isEqualTo(57);
+            assertThat(match.awayTeam().id()).isEqualTo(61);
+            assertThat(match.score()).isNotNull();
+            assertThat(match.score().fullTime().home()).isEqualTo(1);
+            assertThat(match.score().fullTime().away()).isEqualTo(2);
 
             wireMock.verify(getRequestedFor(urlEqualTo("/competitions/PL/matches"))
                     .withHeader("X-Auth-Token", equalTo("test-token")));
@@ -254,7 +254,7 @@ class FootballDataClientAdapterIntegrationTest {
 
             var code = CompetitionCode.of("PL").get();
 
-            Either<ImportError, List<ExternalMatch>> result = adapter.fetchMatchesForCompetition(code);
+            Either<ImportError, List<MatchDto>> result = adapter.fetchMatchesForCompetition(code);
 
             assertThat(result.isRight()).isTrue();
             assertThat(result.get()).isEmpty();
@@ -295,7 +295,7 @@ class FootballDataClientAdapterIntegrationTest {
 
             var code = CompetitionCode.of("PL").get();
 
-            Either<ImportError, List<ExternalMatch>> result = adapter.fetchMatchesForCompetition(code);
+            Either<ImportError, List<MatchDto>> result = adapter.fetchMatchesForCompetition(code);
 
             assertThat(result.isRight()).isTrue();
             assertThat(result.get()).hasSize(2);

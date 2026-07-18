@@ -22,13 +22,15 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.client.footballdata.AwayTeam;
+import com.ligitabl.api.client.footballdata.CompetitionResponse;
+import com.ligitabl.api.client.footballdata.CurrentSeason;
+import com.ligitabl.api.client.footballdata.FullTime;
+import com.ligitabl.api.client.footballdata.HomeTeam;
+import com.ligitabl.api.client.footballdata.MatchDto;
 import com.ligitabl.api.runners.importer.ImportMatchesUseCase;
 import com.ligitabl.api.runners.importer.event.ImportEventPublisher;
 import com.ligitabl.api.runners.importer.footballdata.FootballDataGateway;
-import com.ligitabl.api.runners.importer.model.entities.ExternalCompetition;
-import com.ligitabl.api.runners.importer.model.entities.ExternalMatch;
-import com.ligitabl.api.runners.importer.model.entities.ExternalSeason;
-import com.ligitabl.api.runners.importer.model.entities.ExternalTeam;
 import com.ligitabl.api.runners.importer.model.entities.ImportSummary;
 import com.ligitabl.api.runners.importer.model.errors.ApiError;
 import com.ligitabl.api.runners.importer.model.errors.DatabaseError;
@@ -36,7 +38,6 @@ import com.ligitabl.api.runners.importer.model.errors.ImportError;
 import com.ligitabl.api.runners.importer.model.errors.ValidationError;
 import com.ligitabl.api.runners.importer.model.valueobjects.CompetitionCode;
 import com.ligitabl.api.runners.importer.model.valueobjects.ExternalId;
-import com.ligitabl.api.runners.importer.model.valueobjects.TeamTla;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
@@ -85,20 +86,17 @@ class ImportMatchesUseCaseTest {
         return CompetitionCode.of(code).get();
     }
 
-    private static ExternalCompetition competition(String code, int seasonClientId) {
-        var season = ExternalSeason.builder()
-                .id(ExternalId.of(seasonClientId).get())
-                .startDate("2024-08-01")
-                .endDate("2025-05-31")
-                .currentMatchday(1)
-                .build();
+    private static CompetitionResponse competition(String code, int seasonClientId) {
+        return competition(code, seasonClientId, 1);
+    }
 
-        return ExternalCompetition.builder()
-                .id(ExternalId.of(2021).get())
-                .name("Premier League")
-                .code(comp(code))
-                .currentSeason(season)
-                .build();
+    private static CompetitionResponse competition(String code, int seasonClientId, int currentMatchday) {
+        var season = new CurrentSeason(
+                (long) seasonClientId,
+                OffsetDateTime.parse("2024-08-01T00:00:00Z"),
+                OffsetDateTime.parse("2025-05-31T00:00:00Z"),
+                currentMatchday);
+        return new CompetitionResponse(2021L, "Premier League", code, "LEAGUE", null, season);
     }
 
     private static Season season(UUID seasonId, int clientId) {
@@ -134,56 +132,29 @@ class ImportMatchesUseCaseTest {
                 .build();
     }
 
-    private static ExternalMatch externalMatch(int matchClientId, int matchday, int homeClientId, int awayClientId) {
-        var home = ExternalTeam.builder()
-                .id(ExternalId.of(homeClientId).get())
-                .name("Arsenal FC")
-                .tla(TeamTla.of("ARS").get())
-                .build();
-
-        var away = ExternalTeam.builder()
-                .id(ExternalId.of(awayClientId).get())
-                .name("Chelsea FC")
-                .tla(TeamTla.of("CHE").get())
-                .build();
-
-        return ExternalMatch.create(
-                        matchClientId,
-                        OffsetDateTime.now().withNano(0),
-                        MatchStatus.SCHEDULED.name(),
-                        matchday,
-                        home,
-                        away,
-                        null,
-                        null)
-                .get();
+    private static MatchDto externalMatch(int matchClientId, int matchday, int homeClientId, int awayClientId) {
+        return new MatchDto(
+                (long) matchClientId,
+                OffsetDateTime.now().withNano(0),
+                MatchStatus.SCHEDULED.name(),
+                matchday,
+                "REGULAR_SEASON",
+                new HomeTeam((long) homeClientId, "Arsenal FC", "Arsenal", "ARS", null),
+                new AwayTeam((long) awayClientId, "Chelsea FC", "Chelsea", "CHE", null),
+                null);
     }
 
-    private static ExternalMatch externalMatchWithScore(
+    private static MatchDto externalMatchWithScore(
             int matchClientId, int matchday, int homeClientId, int awayClientId, int homeGoals, int awayGoals) {
-
-        var home = ExternalTeam.builder()
-                .id(ExternalId.of(homeClientId).get())
-                .name("Arsenal FC")
-                .tla(TeamTla.of("ARS").get())
-                .build();
-
-        var away = ExternalTeam.builder()
-                .id(ExternalId.of(awayClientId).get())
-                .name("Chelsea FC")
-                .tla(TeamTla.of("CHE").get())
-                .build();
-
-        return ExternalMatch.create(
-                        matchClientId,
-                        OffsetDateTime.now().withNano(0),
-                        MatchStatus.FINISHED.name(),
-                        matchday,
-                        home,
-                        away,
-                        homeGoals,
-                        awayGoals)
-                .get();
+        return new MatchDto(
+                (long) matchClientId,
+                OffsetDateTime.now().withNano(0),
+                MatchStatus.FINISHED.name(),
+                matchday,
+                "REGULAR_SEASON",
+                new HomeTeam((long) homeClientId, "Arsenal FC", "Arsenal", "ARS", null),
+                new AwayTeam((long) awayClientId, "Chelsea FC", "Chelsea", "CHE", null),
+                new com.ligitabl.api.client.footballdata.Score(null, "REGULAR", new FullTime(homeGoals, awayGoals), null));
     }
 
     @Test
@@ -235,19 +206,7 @@ class ImportMatchesUseCaseTest {
         var nextRoundId = UUID.randomUUID();
         var code = comp("PL");
 
-        var extSeason = ExternalSeason.builder()
-                .id(ExternalId.of(2024).get())
-                .startDate("2024-08-01")
-                .endDate("2025-05-31")
-                .currentMatchday(3)
-                .build();
-
-        var extCompetition = ExternalCompetition.builder()
-                .id(ExternalId.of(2021).get())
-                .name("Premier League")
-                .code(code)
-                .currentSeason(extSeason)
-                .build();
+        var extCompetition = competition("PL", 2024, 3);
 
         var dbSeason = season(seasonId, 2024);
         dbSeason.setCurrentRoundId(currentRoundId);
@@ -284,19 +243,7 @@ class ImportMatchesUseCaseTest {
         var currentRoundId = UUID.randomUUID();
         var code = comp("PL");
 
-        var extSeason = ExternalSeason.builder()
-                .id(ExternalId.of(2024).get())
-                .startDate("2024-08-01")
-                .endDate("2025-05-31")
-                .currentMatchday(5)
-                .build();
-
-        var extCompetition = ExternalCompetition.builder()
-                .id(ExternalId.of(2021).get())
-                .name("Premier League")
-                .code(code)
-                .currentSeason(extSeason)
-                .build();
+        var extCompetition = competition("PL", 2024, 5);
 
         var dbSeason = season(seasonId, 2024);
         dbSeason.setCurrentRoundId(currentRoundId);
@@ -332,19 +279,7 @@ class ImportMatchesUseCaseTest {
         var currentRoundId = UUID.randomUUID();
         var code = comp("PL");
 
-        var extSeason = ExternalSeason.builder()
-                .id(ExternalId.of(2024).get())
-                .startDate("2024-08-01")
-                .endDate("2025-05-31")
-                .currentMatchday(3)
-                .build();
-
-        var extCompetition = ExternalCompetition.builder()
-                .id(ExternalId.of(2021).get())
-                .name("Premier League")
-                .code(code)
-                .currentSeason(extSeason)
-                .build();
+        var extCompetition = competition("PL", 2024, 3);
 
         var dbSeason = season(seasonId, 2024);
         dbSeason.setCurrentRoundId(currentRoundId);
@@ -427,7 +362,7 @@ class ImportMatchesUseCaseTest {
     }
 
     @Test
-    @DisplayName("should handle multiple matches")
+    @DisplayName("should handle multiple matches and resolve each team once")
     void shouldHandleMultipleMatches() {
         var code = comp("PL");
         var extCompetition = competition("PL", 2024);
@@ -448,8 +383,8 @@ class ImportMatchesUseCaseTest {
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
         when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch1, extMatch2)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
-        when(teamRepo.findByClientId(any()))
-                .thenReturn(Optional.of(dbHome), Optional.of(dbAway), Optional.of(dbAway), Optional.of(dbHome));
+        when(teamRepo.findByClientId(57)).thenReturn(Optional.of(dbHome));
+        when(teamRepo.findByClientId(61)).thenReturn(Optional.of(dbAway));
         when(matchRepo.findByClientId(any())).thenReturn(Optional.empty());
         when(matchRepo.create(any(Match.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -464,6 +399,10 @@ class ImportMatchesUseCaseTest {
 
         verify(matchRepo, times(2)).create(any(Match.class));
         verify(matchRepo, never()).update(any(Match.class));
+
+        // Team resolution is cached per import run
+        verify(teamRepo, times(1)).findByClientId(57);
+        verify(teamRepo, times(1)).findByClientId(61);
     }
 
     @Test
@@ -478,6 +417,20 @@ class ImportMatchesUseCaseTest {
         assertThat(result.isLeft()).isTrue();
         verify(matchRepo, never()).create(any());
         verify(matchRepo, never()).update(any());
+    }
+
+    @Test
+    @DisplayName("should return Left when competition has no current season")
+    void shouldFailWhenNoCurrentSeason() {
+        var code = comp("PL");
+        var extCompetition = new CompetitionResponse(2021L, "Premier League", "PL", "LEAGUE", null, null);
+
+        when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
+
+        var result = useCase.execute(code);
+
+        assertThat(result.isLeft()).isTrue();
+        assertThat(result.getLeft()).isInstanceOf(ApiError.class);
     }
 
     @Test
@@ -534,6 +487,49 @@ class ImportMatchesUseCaseTest {
         assertThat(summary.getFailed()).isEqualTo(1);
         assertThat(summary.isPartialSuccess()).isTrue();
         assertThat(summary.getErrors()).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("should record failure for invalid match data and import the rest")
+    void shouldRecordFailureForInvalidMatchData() {
+        var code = comp("PL");
+        var extCompetition = competition("PL", 2024);
+        var validMatch = externalMatch(100, 1, 57, 61);
+        var invalidMatch = new MatchDto(
+                101L,
+                OffsetDateTime.now().withNano(0),
+                "SCHEDULED",
+                null, // missing matchday
+                "REGULAR_SEASON",
+                new HomeTeam(57L, "Arsenal FC", "Arsenal", "ARS", null),
+                new AwayTeam(61L, "Chelsea FC", "Chelsea", "CHE", null),
+                null);
+
+        UUID seasonId = UUID.randomUUID();
+        UUID roundId = UUID.randomUUID();
+
+        var dbSeason = season(seasonId, 2024);
+        var dbRound = round(roundId, seasonId, 1);
+        var dbHome = team(UUID.randomUUID(), 57, "Arsenal FC", "ARS");
+        var dbAway = team(UUID.randomUUID(), 61, "Chelsea FC", "CHE");
+
+        when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
+        when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
+        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(validMatch, invalidMatch)));
+        when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
+        when(teamRepo.findByClientId(57)).thenReturn(Optional.of(dbHome));
+        when(teamRepo.findByClientId(61)).thenReturn(Optional.of(dbAway));
+        when(matchRepo.findByClientId(100)).thenReturn(Optional.empty());
+        when(matchRepo.create(any(Match.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        var result = useCase.execute(code);
+
+        assertThat(result.isRight()).isTrue();
+        var summary = result.get();
+        assertThat(summary.getCreated()).isEqualTo(1);
+        assertThat(summary.getFailed()).isEqualTo(1);
+        assertThat(summary.getErrors()).hasSize(1);
+        assertThat(summary.getErrors().get(0)).isInstanceOf(ValidationError.class);
     }
 
     @Test
