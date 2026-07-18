@@ -2,6 +2,7 @@ package com.ligitabl.api.notification;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -119,6 +120,23 @@ class AdminNotificationServiceTest {
 
         verify(slackNotificationService).send(anyString());
         verify(emailService, never()).sendAdminAlert(anyString(), anyString());
+    }
+
+    // --- new-user signup: NEW_USERS channel, Slack only ---
+
+    @Test
+    void newUserSignup_sendsToNewUsersChannel_noEmail() {
+        service.notifyNewUserSignup("AbCd3fGh9J", "Jane Doe", "jane@example.com", "email registration");
+
+        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+        verify(slackNotificationService).send(eq(SlackNotificationService.Channel.NEW_USERS), captor.capture());
+        verify(emailService, never()).sendAdminAlert(anyString(), anyString());
+        assertThat(captor.getValue())
+                .startsWith("🎉")
+                .contains("Jane Doe")
+                .contains("jane@example.com")
+                .contains("email registration")
+                .contains("AbCd3fGh9J");
     }
 
     // --- message content spot checks ---

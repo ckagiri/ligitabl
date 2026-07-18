@@ -1,4 +1,4 @@
-package com.ligitabl.api.contest;
+package com.ligitabl.model.domain.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -13,9 +13,9 @@ class ContestCodeGeneratorTest {
     private final ContestCodeGenerator generator = new ContestCodeGenerator();
 
     @Test
-    void generatedCodeIsExactlySevenCharacters() {
+    void generatedCodeIsExactlySixCharacters() {
         String code = generator.generate();
-        assertThat(code).hasSize(7);
+        assertThat(code).hasSize(6);
     }
 
     @Test

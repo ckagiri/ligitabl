@@ -170,8 +170,8 @@ class RequestEmailVerificationUseCaseTest {
         when(userRepo.findById(userId)).thenReturn(Optional.of(user));
         when(tokenRepo.findLatestForUser(userId)).thenReturn(Optional.empty());
         when(emailService.sendVerificationEmail(anyString(), anyString(), anyInt()))
-                .thenReturn(
-                        Either.left(new com.ligitabl.api.notification.email.EmailError.EmailProviderError("provider down")));
+                .thenReturn(Either.left(
+                        new com.ligitabl.api.notification.email.EmailError.EmailProviderError("provider down")));
 
         var result = useCase.execute(userId);
 

@@ -15,8 +15,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.api.contest.ContestCodeGenerator;
 import com.ligitabl.model.domain.*;
+import com.ligitabl.model.domain.service.ContestCodeGenerator;
 import com.ligitabl.model.repo.*;
 
 /** Uses the real Premier League phase structure (see {@link CompetitionPhaseFixtures}). */

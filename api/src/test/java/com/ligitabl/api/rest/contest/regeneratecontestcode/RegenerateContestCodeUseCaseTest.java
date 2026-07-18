@@ -13,9 +13,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.api.contest.ContestCodeGenerator;
 import com.ligitabl.api.rest.contest.shared.ContestSeasonSupport;
 import com.ligitabl.model.domain.Contest;
+import com.ligitabl.model.domain.service.ContestCodeGenerator;
 import com.ligitabl.model.repo.ContestRepo;
 
 @ExtendWith(MockitoExtension.class)

@@ -70,7 +70,8 @@ public class ImportMatchesUseCase {
      */
     private Either<ImportError, ImportContext> fetchAndResolveSeason(CompetitionCode code) {
         return footballDataGateway.fetchCompetition(code).flatMap(competition -> {
-            if (competition.currentSeason() == null || competition.currentSeason().id() == null) {
+            if (competition.currentSeason() == null
+                    || competition.currentSeason().id() == null) {
                 return left(ApiError.of("Competition has no current season", 200));
             }
             Integer seasonClientId = competition.currentSeason().id().intValue();
@@ -273,9 +274,8 @@ public class ImportMatchesUseCase {
         Integer homeClientId = match.homeTeam().id().intValue();
         Integer awayClientId = match.awayTeam().id().intValue();
 
-        return resolveTeam(homeClientId, context)
-                .flatMap(homeTeam ->
-                        resolveTeam(awayClientId, context).map(awayTeam -> new TeamPair(homeTeam, awayTeam)));
+        return resolveTeam(homeClientId, context).flatMap(homeTeam -> resolveTeam(awayClientId, context)
+                .map(awayTeam -> new TeamPair(homeTeam, awayTeam)));
     }
 
     private Either<ImportError, Team> resolveTeam(Integer clientId, ImportContext context) {

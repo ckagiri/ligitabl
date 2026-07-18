@@ -1,0 +1,15 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260718_1_contest_join_code_unique
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_contest
+            schemaName: public
+      changes:
+        - addUniqueConstraint:
+            tableName: t_contest
+            schemaName: public
+            columnNames: c_join_code
+            constraintName: uq_t_contest_join_code

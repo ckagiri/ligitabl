@@ -2,7 +2,7 @@ package com.ligitabl.api.rest.prediction.shared;
 
 public enum RankingSource {
     USER_PREDICTION("Your Prediction"),
-    PREVIOUS_ROUND_STANDINGS("Pre-Previous Gameweek Baseline"),
+    PREVIOUS_ROUND_STANDINGS("Previous Gameweek Baseline"),
     CURRENT_ROUND_STANDINGS("Current Round Standings"),
     SEASON_BASELINE("Season Baseline");
 

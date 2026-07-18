@@ -7,6 +7,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
@@ -34,6 +35,7 @@ public class RegisterUseCase implements UseCase<RegisterCommand, Either<UseCaseE
     private final PublicIdGenerator publicIdGenerator;
     private final RequestValidator requestValidator;
     private final RequestEmailVerificationUseCase requestEmailVerificationUseCase;
+    private final AdminNotificationService adminNotificationService;
 
     @Override
     public Either<UseCaseError, RegisterResult> execute(RegisterCommand command) {
@@ -64,6 +66,11 @@ public class RegisterUseCase implements UseCase<RegisterCommand, Either<UseCaseE
                         userRepo.updateLastLoginAt(saved.getId(), OffsetDateTime.now());
                         sendVerificationEmail(saved.getId());
                         log.info("User registered successfully: {}", saved.getPublicId());
+                        adminNotificationService.notifyNewUserSignup(
+                                saved.getPublicId().value(),
+                                saved.getDisplayName(),
+                                saved.getEmail().value(),
+                                "email registration");
                         return new RegisterResult(
                                 saved.getPublicId(), saved.getEmail(), saved.getDisplayName(), saved.getRoles());
                     });

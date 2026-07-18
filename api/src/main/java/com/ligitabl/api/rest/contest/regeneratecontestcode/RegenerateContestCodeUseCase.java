@@ -5,9 +5,9 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.api.contest.ContestCodeGenerator;
 import com.ligitabl.api.rest.contest.shared.ContestSeasonSupport;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.model.domain.service.ContestCodeGenerator;
 import com.ligitabl.model.repo.ContestRepo;
 
 import lombok.RequiredArgsConstructor;

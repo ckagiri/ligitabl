@@ -485,7 +485,7 @@ public class UserPredictionsController {
         return switch (data.source()) {
             case USER_PREDICTION -> "Your Table";
             case CURRENT_ROUND_STANDINGS -> "Current Gameweek Standings";
-            case PREVIOUS_ROUND_STANDINGS -> "Pre-Previous Gameweek Baseline";
+            case PREVIOUS_ROUND_STANDINGS -> "Previous Gameweek Baseline";
             case SEASON_BASELINE -> "Last Season Baseline";
         };
     }
