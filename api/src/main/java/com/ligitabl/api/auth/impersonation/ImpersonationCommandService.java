@@ -1,6 +1,7 @@
 package com.ligitabl.api.auth.impersonation;
 
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -33,6 +34,7 @@ public class ImpersonationCommandService {
             session.setAttribute(
                     ImpersonationSession.SESSION_ATTRIBUTE,
                     new ImpersonationSession(target.getId(), target.getEmail().value(), Instant.now(), originalUserId));
+            userRepo.updateLastLoginAt(target.getId(), OffsetDateTime.now());
             log.warn(
                     "[IMPERSONATION_START] admin={} target={} targetEmail={}",
                     originalUserId,
