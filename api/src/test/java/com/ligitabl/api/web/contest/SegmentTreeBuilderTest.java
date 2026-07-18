@@ -16,6 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
+import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.LeaderboardRepo;
 import com.ligitabl.model.repo.MatchRepo;
@@ -42,7 +43,7 @@ class SegmentTreeBuilderTest {
 
     @BeforeEach
     void setUp() {
-        builder = new SegmentTreeBuilder(matchRepo, leaderboardRepo);
+        builder = new SegmentTreeBuilder(matchRepo, new ContestRankResolver(leaderboardRepo));
         seasonId = UUID.randomUUID();
         contestId = UUID.randomUUID();
         userId = UUID.randomUUID();
@@ -272,6 +273,17 @@ class SegmentTreeBuilderTest {
         assertThat(tree.get(0).isTopTen()).isFalse();
     }
 
+    @Test
+    void unscoredEntry_rankIsNull() {
+        Contest contest = contest(16, 20);
+        stubUnscoredEntry(3);
+
+        List<SegmentNodeDto> tree = builder.build(contest, competition, userId, 18);
+
+        assertThat(tree.get(0).rank()).isNull();
+        assertThat(tree.get(0).isTopTen()).isFalse();
+    }
+
     // ─── Edge cases ───────────────────────────────────────────────────────────
 
     @Test
@@ -311,11 +323,21 @@ class SegmentTreeBuilderTest {
     }
 
     private void stubNoRanks() {
-        // Don't configure leaderboardRepo — verify it's never called where needed
-        // or let it return null by default (Mockito returns null for unstubbed calls)
+        LeaderboardResponse response = new LeaderboardResponse(List.of(), null, false, 0, 0, false, false, null);
+        when(leaderboardRepo.computeLeaderboard(
+                        any(), any(), anyInt(), anyInt(), any(), anyInt(), anyInt(), anyBoolean()))
+                .thenReturn(response);
     }
 
     private void stubRank(int rank) {
+        LeaderboardEntry entry = new LeaderboardEntry(rank, "pub", "User", 0, 0, 0, 0, 0, null, 0, true, false);
+        LeaderboardResponse response = new LeaderboardResponse(List.of(), entry, false, 0, 0, false, false, null);
+        when(leaderboardRepo.computeLeaderboard(
+                        any(), any(), anyInt(), anyInt(), any(), anyInt(), anyInt(), anyBoolean()))
+                .thenReturn(response);
+    }
+
+    private void stubUnscoredEntry(int rank) {
         LeaderboardEntry entry = new LeaderboardEntry(rank, "pub", "User", 0, 0, 0, 0, 0, null, 0, false, false);
         LeaderboardResponse response = new LeaderboardResponse(List.of(), entry, false, 0, 0, false, false, null);
         when(leaderboardRepo.computeLeaderboard(

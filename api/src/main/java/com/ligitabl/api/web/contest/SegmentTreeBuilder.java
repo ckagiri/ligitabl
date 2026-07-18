@@ -11,12 +11,12 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
+import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.PhaseRules;
 import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.RoundSpan;
-import com.ligitabl.model.repo.LeaderboardRepo;
 import com.ligitabl.model.repo.MatchRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -26,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 public class SegmentTreeBuilder {
 
     private final MatchRepo matchRepo;
-    private final LeaderboardRepo leaderboardRepo;
+    private final ContestRankResolver contestRankResolver;
 
     private static final DateTimeFormatter DATE_FMT = DateTimeFormatter.ofPattern("MMM d", Locale.ENGLISH);
 
@@ -185,11 +185,9 @@ public class SegmentTreeBuilder {
     }
 
     private Integer computeRank(Contest contest, int from, int to, UUID userId) {
-        var response = leaderboardRepo.computeLeaderboard(
-                contest.getId(), contest.getSeasonId(), from, to, userId, 0, 1, true);
-        if (response == null) return null;
-        var entry = response.userEntry();
-        return entry != null ? entry.position() : null;
+        return contestRankResolver
+                .resolve(contest.getId(), contest.getSeasonId(), from, to, userId)
+                .position();
     }
 
     private String deriveStatus(RoundSpan span, int currentPosition) {
