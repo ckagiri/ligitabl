@@ -215,13 +215,22 @@ public class ImportMatchesUseCase {
     /**
      * Map external match to domain match
      */
-    private Either<ImportError, Match> mapToMatch(MatchDto externalMatch, ImportContext context) {
+    private Either<ImportError, Match> mapToMatch(MatchDto dto, ImportContext context) {
         Season season = context.season;
-        return validate(externalMatch)
-                .flatMap(dto -> resolveRound(context, season.getId(), dto.matchday())
-                        .flatMap(round -> resolveTeams(dto, context)
-                                .flatMap(teams -> toModelStatus(dto.status())
-                                        .map(status -> buildMatch(dto, season, round, teams, status)))));
+
+        Either<ImportError, MatchDto> validated = validate(dto);
+        if (validated.isLeft()) return validated.castLeft();
+
+        Either<ImportError, Round> round = resolveRound(context, season.getId(), dto.matchday());
+        if (round.isLeft()) return round.castLeft();
+
+        Either<ImportError, TeamPair> teams = resolveTeams(dto, context);
+        if (teams.isLeft()) return teams.castLeft();
+
+        Either<ImportError, MatchStatus> status = toModelStatus(dto.status());
+        if (status.isLeft()) return status.castLeft();
+
+        return right(buildMatch(dto, season, round.get(), teams.get(), status.get()));
     }
 
     /**
