@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import com.ligitabl.model.domain.service.ContestCodeGenerator;
 import com.ligitabl.model.domain.service.ScoringEngine;
 import com.ligitabl.model.infra.CompetitionPersistenceAdapter;
 import com.ligitabl.model.infra.ContestPersistenceAdapter;
@@ -55,6 +56,11 @@ public class RepositoryConfig {
     @Bean
     public ScoringEngine scoringEngine() {
         return new ScoringEngine();
+    }
+
+    @Bean
+    public ContestCodeGenerator contestCodeGenerator() {
+        return new ContestCodeGenerator();
     }
 
     @Bean

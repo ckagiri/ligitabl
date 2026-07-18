@@ -128,7 +128,10 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 user.getId(),
                 user.getEmail().value());
         adminNotificationService.notifyNewUserSignup(
-                user.getPublicId().value(), user.getDisplayName(), user.getEmail().value(), "Google sign-in");
+                user.getPublicId().value(),
+                user.getDisplayName(),
+                user.getEmail().value(),
+                "Google sign-in");
         return user;
     }
 

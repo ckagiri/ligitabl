@@ -1,4 +1,4 @@
-package com.ligitabl.api.contest;
+package com.ligitabl.model.domain.service;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

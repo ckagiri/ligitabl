@@ -5,7 +5,6 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.api.contest.ContestCodeGenerator;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Contest;
@@ -14,6 +13,7 @@ import com.ligitabl.model.domain.PhaseRules;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.domain.RoundStatus;
+import com.ligitabl.model.domain.service.ContestCodeGenerator;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;

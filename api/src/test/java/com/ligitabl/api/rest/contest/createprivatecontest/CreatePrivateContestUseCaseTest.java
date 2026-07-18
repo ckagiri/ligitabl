@@ -15,9 +15,9 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.api.contest.ContestCodeGenerator;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.model.domain.*;
+import com.ligitabl.model.domain.service.ContestCodeGenerator;
 import com.ligitabl.model.repo.*;
 
 @ExtendWith(MockitoExtension.class)

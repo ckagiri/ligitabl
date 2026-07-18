@@ -154,7 +154,8 @@ class ImportMatchesUseCaseTest {
                 "REGULAR_SEASON",
                 new HomeTeam((long) homeClientId, "Arsenal FC", "Arsenal", "ARS", null),
                 new AwayTeam((long) awayClientId, "Chelsea FC", "Chelsea", "CHE", null),
-                new com.ligitabl.api.client.footballdata.Score(null, "REGULAR", new FullTime(homeGoals, awayGoals), null));
+                new com.ligitabl.api.client.footballdata.Score(
+                        null, "REGULAR", new FullTime(homeGoals, awayGoals), null));
     }
 
     @Test

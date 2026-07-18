@@ -51,7 +51,8 @@ class SlackNotificationServiceTest {
     void resetStubs() {
         wireMock.resetAll();
         wireMock.stubFor(post(urlEqualTo(WEBHOOK_PATH)).willReturn(aResponse().withStatus(200)));
-        wireMock.stubFor(post(urlEqualTo(NEW_USER_WEBHOOK_PATH)).willReturn(aResponse().withStatus(200)));
+        wireMock.stubFor(
+                post(urlEqualTo(NEW_USER_WEBHOOK_PATH)).willReturn(aResponse().withStatus(200)));
     }
 
     private static SlackNotificationService createService(String webhookUrl, boolean enabled) {

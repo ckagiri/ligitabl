@@ -1,10 +1,7 @@
-package com.ligitabl.api.contest;
+package com.ligitabl.model.domain.service;
 
 import java.security.SecureRandom;
 
-import org.springframework.stereotype.Component;
-
-@Component
 public class ContestCodeGenerator {
     private static final String ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
     private static final int LENGTH = 7;
