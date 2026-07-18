@@ -128,11 +128,11 @@
               <table class="min-w-full divide-y divide-gray-100">
                 <thead>
                   <tr class="bg-gray-50">
-                    <th class="sticky left-0 z-20 bg-gray-50 px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[7rem]">Contest</th>
-                    <th class="hidden sm:table-cell px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th class="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GW</th>
-                    <th class="px-2 sm:px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
-                    <th class="px-2 sm:px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <th class="sticky left-0 z-20 bg-gray-50 px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[7rem]">Contest</th>
+                    <th class="hidden sm:table-cell px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GW</th>
+                    <th class="px-3 sm:px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Rank</th>
+                    <th class="px-3 sm:px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                       <span class="hidden sm:inline">Change</span>
                       <span class="sm:hidden" title="Change">⇅</span>
                     </th>
@@ -145,17 +145,17 @@
                     onclick="window.flashNavLoadingBar(); window.location.href='/leaderboard?phase='+this.dataset.phase"
                     th:attr="data-phase=${row.phaseCode}"
                   >
-                    <td class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-2 sm:px-4 py-3 text-sm font-medium text-indigo-600" th:text="${row.label}">Overall Season</td>
-                    <td class="hidden sm:table-cell px-2 sm:px-4 py-3 text-sm text-gray-500">
+                    <td class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-3 sm:px-4 py-3 text-sm font-medium text-indigo-600" th:text="${row.label}">Overall Season</td>
+                    <td class="hidden sm:table-cell px-3 sm:px-4 py-3 text-sm text-gray-500">
                       <span th:if="${row.dateLabel != null}" th:text="${row.dateLabel}">Aug 16 – May 25</span>
                       <span th:if="${row.dateLabel == null}" class="text-gray-400">—</span>
                     </td>
-                    <td class="px-2 sm:px-4 py-3 text-sm text-gray-500" th:text="${row.gwLabel}">1–38</td>
-                    <td class="px-2 sm:px-4 py-3 text-sm text-right font-medium text-gray-900">
+                    <td class="px-3 sm:px-4 py-3 text-sm text-gray-500" th:text="${row.gwLabel}">1–38</td>
+                    <td class="px-3 sm:px-4 py-3 text-sm text-right font-medium text-gray-900">
                       <span th:if="${row.rank != null}" th:text="${row.rank}">245</span>
                       <span th:if="${row.rank == null}" class="text-gray-400">—</span>
                     </td>
-                    <td class="px-2 sm:px-4 py-3 text-sm text-right">
+                    <td class="px-3 sm:px-4 py-3 text-sm text-right">
                       <span th:if="${row.movement > 0}" class="text-green-600 font-medium">
                         ↑ <span th:text="${row.movement}">3</span>
                       </span>
@@ -186,11 +186,11 @@
               <table class="min-w-full divide-y divide-gray-100">
                 <thead>
                   <tr class="bg-gray-50">
-                    <th class="sticky left-0 z-20 bg-gray-50 px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[10rem] sm:min-w-[7rem]">Contest</th>
-                    <th class="hidden sm:table-cell px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                    <th class="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GW</th>
-                    <th class="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
-                    <th th:if="${showRenewColumn}" class="px-2 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renew</th>
+                    <th class="sticky left-0 z-20 bg-gray-50 px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider min-w-[10rem] sm:min-w-[7rem]">Contest</th>
+                    <th class="hidden sm:table-cell px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">GW</th>
+                    <th class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Members</th>
+                    <th th:if="${showRenewColumn}" class="px-3 sm:px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Renew</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100">
@@ -200,7 +200,7 @@
                     th:attr="data-href=@{/contests/{id}(id=${row.id},from='contests')}"
                     onclick="window.flashNavLoadingBar(); window.location.href = this.dataset.href"
                   >
-                    <td class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-2 sm:px-4 py-3 min-w-[10rem] sm:min-w-[7rem]">
+                    <td class="sticky left-0 z-10 bg-white group-hover:bg-gray-50 px-3 sm:px-4 py-3 min-w-[10rem] sm:min-w-[7rem]">
                       <div class="text-sm font-medium text-indigo-600" th:text="${row.name}">OfficeMates</div>
                       <div class="flex flex-wrap items-center gap-1 mt-1">
                         <span
@@ -225,12 +225,12 @@
                         >Finished</span>
                       </div>
                     </td>
-                    <td class="hidden sm:table-cell px-2 sm:px-4 py-3 text-sm text-gray-500">
+                    <td class="hidden sm:table-cell px-3 sm:px-4 py-3 text-sm text-gray-500">
                       <span th:if="${row.dateLabel != null}" th:text="${row.dateLabel}">Aug 16 – May 25</span>
                       <span th:if="${row.dateLabel == null}" class="text-gray-400">—</span>
                     </td>
-                    <td class="px-2 sm:px-4 py-3 text-sm text-gray-500" th:text="${row.gwLabel}">1–38</td>
-                    <td class="px-2 sm:px-4 py-3 text-sm text-gray-600">
+                    <td class="px-3 sm:px-4 py-3 text-sm text-gray-500" th:text="${row.gwLabel}">1–38</td>
+                    <td class="px-3 sm:px-4 py-3 text-sm text-gray-600">
                       <span th:text="${row.memberCount}">8</span>
                       <span
                         th:if="${row.isOpenForJoining}"
@@ -238,7 +238,7 @@
                         class="ml-1 inline-flex items-center px-1 py-0 rounded text-[10px] leading-4 font-medium bg-green-100 text-green-700"
                       >Open</span>
                     </td>
-                    <td th:if="${showRenewColumn}" class="px-2 sm:px-4 py-3">
+                    <td th:if="${showRenewColumn}" class="px-3 sm:px-4 py-3">
                       <!-- Renew button + modal (owner only, when renewable) — scoped to this row -->
                       <th:block th:if="${row.isOwner and row.renewVisible}">
                         <div
