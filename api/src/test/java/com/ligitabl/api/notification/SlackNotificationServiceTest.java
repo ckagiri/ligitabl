@@ -31,6 +31,7 @@ import reactor.netty.http.client.HttpClient;
 class SlackNotificationServiceTest {
 
     private static final String WEBHOOK_PATH = "/services/T000/B000/secret";
+    private static final String NEW_USER_WEBHOOK_PATH = "/services/T000/B111/secret";
 
     private static WireMockServer wireMock;
 
@@ -50,9 +51,15 @@ class SlackNotificationServiceTest {
     void resetStubs() {
         wireMock.resetAll();
         wireMock.stubFor(post(urlEqualTo(WEBHOOK_PATH)).willReturn(aResponse().withStatus(200)));
+        wireMock.stubFor(post(urlEqualTo(NEW_USER_WEBHOOK_PATH)).willReturn(aResponse().withStatus(200)));
     }
 
     private static SlackNotificationService createService(String webhookUrl, boolean enabled) {
+        return createService(webhookUrl, "", enabled);
+    }
+
+    private static SlackNotificationService createService(
+            String webhookUrl, String newUserWebhookUrl, boolean enabled) {
         HttpClient httpClient = HttpClient.create()
                 .responseTimeout(Duration.ofSeconds(5))
                 .doOnConnected(conn -> conn.addHandlerLast(new ReadTimeoutHandler(5, TimeUnit.SECONDS))
@@ -62,7 +69,28 @@ class SlackNotificationServiceTest {
                 .clientConnector(new ReactorClientHttpConnector(httpClient))
                 .build();
 
-        return new SlackNotificationService(webClient, webhookUrl, enabled, 5);
+        return new SlackNotificationService(webClient, webhookUrl, newUserWebhookUrl, enabled, 5);
+    }
+
+    @Test
+    void newUsersChannel_postsToNewUserWebhook_notDefault() throws Exception {
+        createService(wireMock.baseUrl() + WEBHOOK_PATH, wireMock.baseUrl() + NEW_USER_WEBHOOK_PATH, true)
+                .send(SlackNotificationService.Channel.NEW_USERS, "New user signup");
+
+        await().atMost(5, TimeUnit.SECONDS)
+                .untilAsserted(() -> wireMock.verify(postRequestedFor(urlEqualTo(NEW_USER_WEBHOOK_PATH))
+                        .withRequestBody(equalToJson("{\"text\":\"New user signup\"}"))));
+        wireMock.verify(0, postRequestedFor(urlEqualTo(WEBHOOK_PATH)));
+    }
+
+    @Test
+    void newUsersChannel_blankNewUserUrl_dropsWithoutFallingBackToDefault() throws Exception {
+        createService(wireMock.baseUrl() + WEBHOOK_PATH, "", true)
+                .send(SlackNotificationService.Channel.NEW_USERS, "dropped");
+
+        Thread.sleep(200);
+        wireMock.verify(0, postRequestedFor(urlEqualTo(WEBHOOK_PATH)));
+        wireMock.verify(0, postRequestedFor(urlEqualTo(NEW_USER_WEBHOOK_PATH)));
     }
 
     @Test

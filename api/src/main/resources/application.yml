@@ -114,6 +114,7 @@ ligitabl:
     # Incoming-webhook URL is a secret — env var only, never committed. Default disabled so
     # local/dev/CI run silently without a webhook configured.
     webhook-url: ${SLACK_WEBHOOK_URL:}
+    new-user-webhook-url: ${SLACK_NEW_USER_WEBHOOK_URL:}
     enabled: ${SLACK_NOTIFICATIONS_ENABLED:false}
     timeout-seconds: ${SLACK_TIMEOUT_SECONDS:5}
 

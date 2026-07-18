@@ -116,6 +116,15 @@ public class AdminNotificationService {
                         + promotedSeasonId + "\n" + "Previous season ID: " + previousSeasonId);
     }
 
+    // --- User lifecycle ---
+
+    public void notifyNewUserSignup(String publicId, String displayName, String email, String signupMethod) {
+        String title = "New user signup";
+        String body = displayName + " (" + email + ") signed up via " + signupMethod + ".\n" + "User: " + publicId;
+        log.info("{}: {}", title, body);
+        slackNotificationService.send(SlackNotificationService.Channel.NEW_USERS, "🎉 *" + title + "*\n" + body);
+    }
+
     // --- Tiers ---
 
     private void info(String title, String body) {

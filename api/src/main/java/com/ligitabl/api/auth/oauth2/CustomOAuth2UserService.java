@@ -13,6 +13,7 @@ import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
+import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.Role;
 import com.ligitabl.model.domain.User;
@@ -29,6 +30,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
     private final UserRepo userRepo;
     private final PublicIdGenerator publicIdGenerator;
+    private final AdminNotificationService adminNotificationService;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -125,6 +127,8 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
                 "[OAUTH_GOOGLE_CREATED] userId={} email={}",
                 user.getId(),
                 user.getEmail().value());
+        adminNotificationService.notifyNewUserSignup(
+                user.getPublicId().value(), user.getDisplayName(), user.getEmail().value(), "Google sign-in");
         return user;
     }
 
