@@ -19,6 +19,8 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.notification.email.EmailService;
+
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AdminNotificationService")
 class AdminNotificationServiceTest {

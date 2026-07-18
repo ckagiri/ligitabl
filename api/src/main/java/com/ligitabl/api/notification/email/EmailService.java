@@ -1,4 +1,4 @@
-package com.ligitabl.api.notification;
+package com.ligitabl.api.notification.email;
 
 import org.springframework.stereotype.Service;
 
