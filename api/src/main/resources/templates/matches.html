@@ -17,9 +17,23 @@
           <!-- Header -->
           <div class="px-4 sm:px-6 py-4 border-b border-gray-200">
             <div class="flex flex-col gap-3">
-              <h1 class="text-xl sm:text-2xl font-bold text-gray-900">
-                Fixtures &amp; Results
-              </h1>
+              <div class="flex items-center justify-between">
+                <h1 class="text-xl sm:text-2xl font-bold text-gray-900">
+                  Fixtures &amp; Results
+                </h1>
+                <button
+                  th:attr="hx-get=@{/rounds/{pos}/matches(pos=${viewingRound})}"
+                  hx-target="#matches-page"
+                  hx-swap="outerHTML"
+                  hx-disabled-elt="this"
+                  class="text-gray-400 hover:text-blue-500 transition-colors p-1.5 rounded htmx-indicator:animate-spin"
+                  title="Refresh"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                  </svg>
+                </button>
+              </div>
 
               <!-- Out-of-sync banner (admin-only) -->
               <th:block sec:authorize="hasRole('ADMIN')">
@@ -108,8 +122,8 @@
                     <span
                       th:if="${match.minute != null}"
                       th:text="${match.injuryTime != null and match.injuryTime > 0
-                                 ? match.minute + '+' + match.injuryTime + '&#39;'
-                                 : match.minute + '&#39;'}"
+                                 ? match.minute + '+' + match.injuryTime + ''''
+                                 : match.minute + ''''}"
                     >90'</span>
                   </span>
 
