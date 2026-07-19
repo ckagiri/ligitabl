@@ -4,16 +4,6 @@ import java.time.Duration;
 
 /**
  * Next sync schedule based on match status
- *
- * @param shouldNotify Whether this schedule is worth an admin Slack notification unconditionally —
- *     no reason-text deduping — since {@code false} is already used for the high-frequency
- *     live/imminent/soon polling branches that would otherwise spam on every minute-by-minute
- *     reason change.
- * @param phase Coarse polling phase for schedules that repeat rapidly (LIVE/IMMINENT/SOON) and
- *     therefore don't set {@code shouldNotify}. Callers should still notify once when this phase
- *     differs from the previously observed one — i.e. on entry into the phase — then stay silent
- *     for repeats. {@link Phase#NONE} for every other schedule, which is already covered by
- *     {@code shouldNotify}.
  */
 public record NextSyncSchedule(Duration delay, String reason, boolean shouldNotify, Phase phase) {
 
