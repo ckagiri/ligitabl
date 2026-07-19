@@ -125,8 +125,19 @@ class PlayerImpersonationAuthorizationServiceTest {
     }
 
     @Test
-    void roleLessTargetIsAllowed() {
+    void roleLessTargetIsRejected() {
+        // Only plain players may be impersonated — a role-less account isn't one.
         User target = user("target@example.com", Set.of());
+        when(userRepo.findByEmail(Email.create("target@example.com"))).thenReturn(Optional.of(target));
+
+        var result = service.assertCanImpersonate(admin, "target@example.com");
+
+        assertThat(result).isEqualTo(new Result.TargetPrivileged("target@example.com"));
+    }
+
+    @Test
+    void plainPlayerTargetIsAllowed() {
+        User target = user("target@example.com", Set.of(Role.PLAYER));
         when(userRepo.findByEmail(Email.create("target@example.com"))).thenReturn(Optional.of(target));
 
         var result = service.assertCanImpersonate(admin, "target@example.com");

@@ -85,9 +85,8 @@ class AdminMatchesControllerTest {
                 .slug("round-22")
                 .build();
 
-        when(hierarchyValidator.validateCompetition("premier-league")).thenReturn(Either.right(competition));
-        when(hierarchyValidator.validateActiveSeason(competition)).thenReturn(Either.right(season));
-        when(hierarchyValidator.validateCurrentRound(season)).thenReturn(Either.right(currentRound));
+        when(hierarchyValidator.resolveHierarchy("premier-league"))
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(competition, season, currentRound)));
     }
 
     @Test
@@ -105,7 +104,7 @@ class AdminMatchesControllerTest {
 
     @Test
     void matchesPage_hierarchyError_rendersErrorView() {
-        when(hierarchyValidator.validateCompetition("premier-league"))
+        when(hierarchyValidator.resolveHierarchy("premier-league"))
                 .thenReturn(Either.left(UseCaseErrors.notFound("Competition", "premier-league")));
 
         Model model = new ExtendedModelMap();
@@ -196,7 +195,7 @@ class AdminMatchesControllerTest {
 
     @Test
     void matchesData_hierarchyError_returnsMappedStatus() {
-        when(hierarchyValidator.validateCompetition("premier-league"))
+        when(hierarchyValidator.resolveHierarchy("premier-league"))
                 .thenReturn(Either.left(UseCaseErrors.validation("Competition has no active season")));
 
         ResponseEntity<AdminMatchesData> response = controller.matchesData();
