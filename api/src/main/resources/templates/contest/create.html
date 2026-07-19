@@ -99,7 +99,7 @@
                   <label class="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">From</label>
                   <div class="relative">
                     <button type="button"
-                            @click="fromOpen = !fromOpen; toOpen = false"
+                            @click="toggleFrom($el)"
                             class="w-full flex items-center justify-between px-4 py-2.5 bg-white border border-gray-300 rounded-lg text-sm hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                       <span :class="selectedFrom ? 'text-gray-900' : 'text-gray-400'" class="truncate">
                         <span class="sm:hidden" x-text="selectedFrom ? sprintAbbrev(selectedFrom.name) + ' • ' + selectedFrom.startDate : 'Select sprint…'"></span>
@@ -111,9 +111,10 @@
                       </svg>
                     </button>
 
-                    <!-- Desktop: anchored dropdown -->
+                    <!-- Desktop: anchored dropdown (flips above the trigger when short on room below) -->
                     <div x-show="fromOpen" @click.away="fromOpen = false" x-cloak x-transition
-                         class="hidden md:block absolute z-50 w-64 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                         :class="fromDropUp ? 'bottom-full mb-1' : 'mt-1'"
+                         class="hidden md:block absolute z-50 w-64 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
                       <div class="overflow-y-auto pb-2 max-h-80">
 
                         <!-- Available sprints grouped by quarter -->
@@ -251,7 +252,7 @@
                   <label class="block text-xs font-medium text-gray-500 mb-1 uppercase tracking-wide">To</label>
                   <div class="relative">
                     <button type="button"
-                            @click="if (selectedFrom) { toOpen = !toOpen; fromOpen = false; }"
+                            @click="toggleTo($el)"
                             :class="selectedFrom ? 'hover:border-gray-400 bg-white' : 'opacity-50 cursor-not-allowed bg-gray-50'"
                             class="w-full flex items-center justify-between px-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500">
                       <span :class="selectedTo ? 'text-gray-900' : 'text-gray-400'" class="truncate">
@@ -264,9 +265,10 @@
                       </svg>
                     </button>
 
-                    <!-- Desktop: anchored dropdown -->
+                    <!-- Desktop: anchored dropdown (flips above the trigger when short on room below) -->
                     <div x-show="toOpen" @click.away="toOpen = false" x-cloak x-transition
-                         class="hidden md:block absolute z-50 w-64 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
+                         :class="toDropUp ? 'bottom-full mb-1' : 'mt-1'"
+                         class="hidden md:block absolute z-50 w-64 bg-white border border-gray-200 rounded-lg shadow-lg overflow-hidden">
                       <div class="overflow-y-auto max-h-80">
                         <template x-for="quarter in quarters" :key="quarter.code">
                           <div x-show="hasValidToInQuarter(quarter.code)">
