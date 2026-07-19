@@ -30,6 +30,7 @@ import com.ligitabl.api.rest.matchadmin.updatekickoff.UpdateMatchKickoffUseCase;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -109,7 +110,7 @@ class MatchAdminControllerTest {
         Season season =
                 Season.builder().id(seasonId).mainContestId(UUID.randomUUID()).build();
         when(hierarchyValidator.resolveHierarchy("premier-league", 5))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         Match match = finishedMatch();
         when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
 
@@ -125,7 +126,7 @@ class MatchAdminControllerTest {
     void finishedMatch_inSetupMode_offersWhitelistedTransitionsAndCanReschedule() {
         Season season = Season.builder().id(seasonId).mainContestId(null).build(); // in setup mode
         when(hierarchyValidator.resolveHierarchy("premier-league", 5))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(hierarchyValidator.validateCurrentRound(season)).thenReturn(Either.right(round));
         Match match = finishedMatch();
         when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));

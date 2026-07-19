@@ -106,7 +106,7 @@ class TransitionMatchStatusUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(competition, season, round)));
 
         useCase = new TransitionMatchStatusUseCase(
                 matchRepo, roundRepo, standingsRepo, hierarchyValidator, competitionDefaults, clock);

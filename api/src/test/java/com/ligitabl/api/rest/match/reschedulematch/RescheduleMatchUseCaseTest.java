@@ -158,7 +158,7 @@ class RescheduleMatchUseCaseTest {
         Instant now = Instant.parse("2026-01-13T10:00:00Z");
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonLive, currentRound)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(competition, seasonLive, currentRound)));
         when(hierarchyValidator.validateCurrentRound(seasonLive)).thenReturn(Either.right(currentRound));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 20)).thenReturn(Either.right(targetRound));
@@ -212,7 +212,7 @@ class RescheduleMatchUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonSetup, currentRound)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(competition, seasonSetup, currentRound)));
         when(hierarchyValidator.validateCurrentRound(seasonSetup)).thenReturn(Either.right(currentRound));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 5)).thenReturn(Either.right(pastRound));
@@ -248,7 +248,7 @@ class RescheduleMatchUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonSetup, currentRound)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(competition, seasonSetup, currentRound)));
         when(hierarchyValidator.validateCurrentRound(seasonSetup)).thenReturn(Either.right(currentRound));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 20)).thenReturn(Either.right(targetRound));
@@ -281,7 +281,7 @@ class RescheduleMatchUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonSetup, currentRound)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(competition, seasonSetup, currentRound)));
         when(hierarchyValidator.validateCurrentRound(seasonSetup)).thenReturn(Either.right(currentRound));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 20)).thenReturn(Either.right(targetRound));
@@ -324,7 +324,7 @@ class RescheduleMatchUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonSetup, currentRound)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(competition, seasonSetup, currentRound)));
         when(hierarchyValidator.validateCurrentRound(seasonSetup)).thenReturn(Either.right(currentRound));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 5)).thenReturn(Either.right(pastRound));
@@ -358,7 +358,7 @@ class RescheduleMatchUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonSetup, currentRound)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(competition, seasonSetup, currentRound)));
         when(hierarchyValidator.validateCurrentRound(seasonSetup)).thenReturn(Either.right(currentRound));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 20)).thenReturn(Either.right(targetRound));
@@ -403,7 +403,7 @@ class RescheduleMatchUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonSetup, currentRound)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(competition, seasonSetup, currentRound)));
         when(hierarchyValidator.validateCurrentRound(seasonSetup)).thenReturn(Either.right(currentRound));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 3)).thenReturn(Either.right(pastRound));
@@ -440,7 +440,7 @@ class RescheduleMatchUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonLive, currentRound)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(competition, seasonLive, currentRound)));
         when(hierarchyValidator.validateCurrentRound(seasonLive)).thenReturn(Either.right(currentRound));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 20)).thenReturn(Either.right(targetRound));
@@ -472,7 +472,7 @@ class RescheduleMatchUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonLive, currentRound)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(competition, seasonLive, currentRound)));
         when(hierarchyValidator.validateCurrentRound(seasonLive)).thenReturn(Either.right(currentRound));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 20)).thenReturn(Either.right(targetRound));
@@ -523,7 +523,7 @@ class RescheduleMatchUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonLive, futureRound)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(competition, seasonLive, futureRound)));
         when(hierarchyValidator.validateCurrentRound(seasonLive)).thenReturn(Either.right(currentRound));
         when(matchRepo.findByRoundIdAndSlug(futureRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 10)).thenReturn(Either.right(targetCurrentRound));
@@ -566,7 +566,7 @@ class RescheduleMatchUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonLive, currentRound)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(competition, seasonLive, currentRound)));
         when(hierarchyValidator.validateCurrentRound(seasonLive)).thenReturn(Either.right(currentRound));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 9)).thenReturn(Either.right(pastRound));
@@ -599,7 +599,7 @@ class RescheduleMatchUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy(anyString(), any()))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(seasonLive, currentRound)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(competition, seasonLive, currentRound)));
         when(matchRepo.findByRoundIdAndSlug(currentRoundId, match.getSlug())).thenReturn(Optional.of(match));
         when(hierarchyValidator.validateRound(seasonId, 99))
                 .thenReturn(

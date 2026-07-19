@@ -17,6 +17,7 @@ import com.ligitabl.api.rest.match.MatchEnricher;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -74,7 +75,7 @@ class GetDefaultRoundMatchesUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy("premier-league", null))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(roundRepo.findById(roundId)).thenReturn(java.util.Optional.of(round));
         when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(match));
         when(standingsRepo.findBySeasonAndRoundPosition(season.getId(), 1)).thenReturn(java.util.Optional.empty());
@@ -130,7 +131,7 @@ class GetDefaultRoundMatchesUseCaseTest {
         var matches = List.of(finished, postponed);
 
         when(hierarchyValidator.resolveHierarchy("premier-league", null))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(roundRepo.findById(roundId)).thenReturn(java.util.Optional.of(round));
         when(matchRepo.findByRoundId(roundId)).thenReturn(matches);
         when(standingsRepo.findBySeasonAndRoundPosition(season.getId(), 1)).thenReturn(java.util.Optional.empty());
@@ -170,7 +171,7 @@ class GetDefaultRoundMatchesUseCaseTest {
         var matches = List.of(finished, cancelled);
 
         when(hierarchyValidator.resolveHierarchy("premier-league", null))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(roundRepo.findById(roundId)).thenReturn(java.util.Optional.of(round));
         when(matchRepo.findByRoundId(roundId)).thenReturn(matches);
         when(standingsRepo.findBySeasonAndRoundPosition(season.getId(), 1)).thenReturn(java.util.Optional.empty());
