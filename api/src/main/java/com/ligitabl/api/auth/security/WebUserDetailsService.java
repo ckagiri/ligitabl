@@ -27,11 +27,11 @@ public class WebUserDetailsService implements UserDetailsService {
     private final UserRepo userRepo;
 
     @Override
-    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String emailStr) throws UsernameNotFoundException {
         try {
-            Email emailObj = Email.create(email);
+            Email email = Email.create(emailStr);
 
-            User user = userRepo.findByEmail(emailObj)
+            User user = userRepo.findByEmail(email)
                     .orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
 
             // Convert domain roles to Spring Security authorities
@@ -48,7 +48,7 @@ public class WebUserDetailsService implements UserDetailsService {
                     authorities);
         } catch (IllegalArgumentException e) {
             // Email.create throws IllegalArgumentException for invalid emails
-            throw new UsernameNotFoundException("Invalid email format: " + email);
+            throw new UsernameNotFoundException("Invalid email format: " + emailStr, e);
         }
     }
 }

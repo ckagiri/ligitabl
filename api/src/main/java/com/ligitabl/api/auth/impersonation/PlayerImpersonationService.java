@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class ImpersonationCommandService {
+public class PlayerImpersonationService {
 
     private final UserRepo userRepo;
     private final ImpersonationAuthorizationService authorizationService;

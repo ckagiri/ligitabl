@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
-public class DefaultImpersonationAuthorizationService implements ImpersonationAuthorizationService {
+public class PlayerImpersonationAuthorizationService implements ImpersonationAuthorizationService {
 
     private final UserRepo userRepo;
 
@@ -40,10 +40,11 @@ public class DefaultImpersonationAuthorizationService implements ImpersonationAu
             return new Result.SelfImpersonation();
         }
 
-        // Only plain players (or role-less accounts) may be impersonated
-        boolean privileged =
-                target.getRoles() != null && target.getRoles().stream().anyMatch(role -> role != Role.PLAYER);
-        if (privileged) {
+        // Only plain players may be impersonated
+        boolean isPlainPlayer = target.getRoles() != null
+                && !target.getRoles().isEmpty()
+                && target.getRoles().stream().allMatch(role -> role == Role.PLAYER);
+        if (!isPlainPlayer) {
             return new Result.TargetPrivileged(trimmed);
         }
 

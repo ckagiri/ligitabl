@@ -30,27 +30,27 @@ public class AdvanceMatchdayUseCase {
 
     public record AdvanceMatchdayCommand() {}
 
-    public sealed interface AdvanceRoundError {
-        record CompetitionNotFound(String code) implements AdvanceRoundError {}
+    public sealed interface AdvanceMatchdayError {
+        record CompetitionNotFound(String code) implements AdvanceMatchdayError {}
 
-        record SeasonNotFound(String competitionCode) implements AdvanceRoundError {}
+        record SeasonNotFound(String competitionCode) implements AdvanceMatchdayError {}
 
-        record ApiError(FootballDataApiError error) implements AdvanceRoundError {}
+        record ApiError(FootballDataApiError error) implements AdvanceMatchdayError {}
     }
 
     @Transactional
-    public Either<AdvanceRoundError, MatchdayAdvancementResult> execute(AdvanceMatchdayCommand command) {
+    public Either<AdvanceMatchdayError, MatchdayAdvancementResult> execute(AdvanceMatchdayCommand command) {
         log.info("Checking round advancement for competition: {}", competitionCode);
 
         return fetchCurrentMatchdayFromApi().flatMap(this::getActiveSeason).flatMap(this::advanceIfNeeded);
     }
 
-    private Either<AdvanceRoundError, Integer> fetchCurrentMatchdayFromApi() {
+    private Either<AdvanceMatchdayError, Integer> fetchCurrentMatchdayFromApi() {
         log.debug("Fetching current matchday from API");
 
         return apiClient
                 .getCompetition(competitionCode)
-                .mapLeft(error -> (AdvanceRoundError) new AdvanceRoundError.ApiError(error))
+                .mapLeft(error -> (AdvanceMatchdayError) new AdvanceMatchdayError.ApiError(error))
                 .map(competition -> {
                     var currentMatchday = competition.currentSeason().currentMatchday();
                     log.debug("API reports current matchday: {}", currentMatchday);
@@ -58,20 +58,20 @@ public class AdvanceMatchdayUseCase {
                 });
     }
 
-    private Either<AdvanceRoundError, SeasonContext> getActiveSeason(Integer apiMatchday) {
+    private Either<AdvanceMatchdayError, SeasonContext> getActiveSeason(Integer apiMatchday) {
         var competitionSlug = competitionDefaults.defaultCompetitionSlug();
 
         if (competitionRepo.findBySlug(competitionSlug).isEmpty()) {
-            return Either.left(new AdvanceRoundError.CompetitionNotFound(competitionCode));
+            return Either.left(new AdvanceMatchdayError.CompetitionNotFound(competitionCode));
         }
 
         return seasonRepo
                 .findActiveSeason(competitionSlug)
-                .map(season -> Either.<AdvanceRoundError, SeasonContext>right(new SeasonContext(season, apiMatchday)))
-                .orElseGet(() -> Either.left(new AdvanceRoundError.SeasonNotFound(competitionCode)));
+                .map(season -> Either.<AdvanceMatchdayError, SeasonContext>right(new SeasonContext(season, apiMatchday)))
+                .orElseGet(() -> Either.left(new AdvanceMatchdayError.SeasonNotFound(competitionCode)));
     }
 
-    private Either<AdvanceRoundError, MatchdayAdvancementResult> advanceIfNeeded(SeasonContext context) {
+    private Either<AdvanceMatchdayError, MatchdayAdvancementResult> advanceIfNeeded(SeasonContext context) {
 
         var currentMatchday = context.season().getCurrentMatchDay();
         var apiMatchday = context.apiMatchday();

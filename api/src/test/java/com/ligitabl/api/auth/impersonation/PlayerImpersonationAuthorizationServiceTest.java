@@ -21,19 +21,19 @@ import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.UserRepo;
 
 @ExtendWith(MockitoExtension.class)
-class DefaultImpersonationAuthorizationServiceTest {
+class PlayerImpersonationAuthorizationServiceTest {
 
     @Mock
     UserRepo userRepo;
 
-    DefaultImpersonationAuthorizationService service;
+    PlayerImpersonationAuthorizationService service;
 
     User admin;
     User player;
 
     @BeforeEach
     void setUp() {
-        service = new DefaultImpersonationAuthorizationService(userRepo);
+        service = new PlayerImpersonationAuthorizationService(userRepo);
         admin = user("admin@example.com", Set.of(Role.ADMIN));
         player = user("player@example.com", Set.of(Role.PLAYER));
     }
