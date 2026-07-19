@@ -42,6 +42,8 @@ window.contestCreator = function() {
   return {
     fromOpen: false,
     toOpen: false,
+    fromDropUp: false,
+    toDropUp: false,
     windowHelpOpen: false,
     structureOpen: true,
     selectedFrom: null,
@@ -51,6 +53,35 @@ window.contestCreator = function() {
     init() {
       if (d.fromSprintCode) this.selectedFrom = this.sprints.find((s) => s.code === d.fromSprintCode) || null;
       if (d.toSprintCode) this.selectedTo = this.sprints.find((s) => s.code === d.toSprintCode) || null;
+    },
+    // Desktop dropdown height is capped at max-h-80 (20rem = 320px); flip it above the
+    // trigger when there isn't enough room below but there is above, so it doesn't spill
+    // past the fold and overlap the submit buttons/footer.
+    shouldDropUp(triggerEl) {
+      const rect = triggerEl.getBoundingClientRect();
+      const dropdownHeight = 320;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      return spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
+    },
+    toggleFrom(triggerEl) {
+      this.toOpen = false;
+      if (this.fromOpen) {
+        this.fromOpen = false;
+        return;
+      }
+      this.fromDropUp = this.shouldDropUp(triggerEl);
+      this.fromOpen = true;
+    },
+    toggleTo(triggerEl) {
+      if (!this.selectedFrom) return;
+      this.fromOpen = false;
+      if (this.toOpen) {
+        this.toOpen = false;
+        return;
+      }
+      this.toDropUp = this.shouldDropUp(triggerEl);
+      this.toOpen = true;
     },
     isUnavailable(s) {
       return s.status === "PAST" || s.status === "LOCKED";
@@ -500,6 +531,17 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
     },
     hasFixtures(teamCode) {
       return this.getFixtures(teamCode).length > 0;
+    },
+    // WIN/LOSS are inverted relative to the fixture chip (chip green/WIN -> badge red,
+    // chip red/LOSS -> badge green); LIVE/DRAW/POSTPONED stay the same on both.
+    teamBadgeClasses(teamCode) {
+      const fixtures = this.getFixtures(teamCode);
+      if (fixtures.some((f) => f.status === "LIVE")) return "bg-blue-50 text-blue-700";
+      if (fixtures.some((f) => f.result === "WIN")) return "bg-red-50 text-red-700";
+      if (fixtures.some((f) => f.result === "LOSS")) return "bg-green-50 text-green-700";
+      if (fixtures.some((f) => f.result === "DRAW")) return "bg-yellow-100 text-yellow-700";
+      if (fixtures.some((f) => f.status === "POSTPONED")) return "bg-violet-50 text-violet-700";
+      return "bg-gray-200 text-gray-700";
     },
     getForm(teamCode) {
       return this.formData[teamCode] || [];
@@ -1167,12 +1209,13 @@ window.Ligitabl.publicPredictionPage = function(el) {
     if (!bar) {
       bar = document.createElement("div");
       bar.id = BAR_ID;
+      const isMobile = window.matchMedia("(max-width: 767px)").matches;
       bar.style.cssText = [
         "position:fixed",
         "top:0",
         "left:0",
         "width:0%",
-        "height:3px",
+        "height:" + (isMobile ? "5px" : "3px"),
         "background:#6366f1",
         "z-index:9999",
         "transition:width 0.3s ease,opacity 0.4s ease",

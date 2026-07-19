@@ -230,7 +230,8 @@
               <td class="px-2 sm:px-3 py-4">
                 <div class="flex items-center min-w-0">
                   <div
-                    class="h-7 w-7 sm:h-8 sm:w-8 mr-2 sm:mr-3 bg-gray-200 rounded flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    class="h-7 w-7 sm:h-8 sm:w-8 mr-2 sm:mr-3 rounded flex items-center justify-center text-xs font-bold flex-shrink-0"
+                    :class="teamBadgeClasses(team.code)"
                     x-text="team.code"
                   ></div>
                   <div class="min-w-0 flex-1">
@@ -263,7 +264,7 @@
                               :class="{
                                 'bg-green-50 text-green-700': fixture.result === 'WIN',
                                 'bg-red-50 text-red-700': fixture.result === 'LOSS',
-                                'bg-amber-100 text-amber-700': fixture.result === 'DRAW',
+                                'bg-yellow-100 text-yellow-700': fixture.result === 'DRAW',
                                 'bg-blue-50 text-blue-700': fixture.status === 'LIVE',
                                 'bg-violet-50 text-violet-700': fixture.status === 'POSTPONED',
                                 'bg-gray-100 text-gray-600': fixture.status === 'SCHEDULED' || (!fixture.result && fixture.status !== 'LIVE' && fixture.status !== 'POSTPONED')
@@ -398,12 +399,12 @@
                           <span
                             class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium"
                             :class="{
-                              'bg-green-50 border border-green-400 text-green-700': fixture.result === 'WIN',
-                              'bg-red-50 border border-red-400 text-red-700': fixture.result === 'LOSS',
-                              'bg-yellow-100 border border-yellow-500 text-yellow-700': fixture.result === 'DRAW',
-                              'bg-blue-50 border border-blue-400 text-blue-700': fixture.status === 'LIVE',
-                              'bg-violet-50 border border-violet-400 text-violet-700': fixture.status === 'POSTPONED',
-                              'bg-gray-100 border border-gray-200 text-gray-600': fixture.status === 'SCHEDULED' || (!fixture.result && fixture.status !== 'LIVE' && fixture.status !== 'POSTPONED')
+                              'bg-green-50 text-green-700': fixture.result === 'WIN',
+                              'bg-red-50 text-red-700': fixture.result === 'LOSS',
+                              'bg-yellow-100 text-yellow-700': fixture.result === 'DRAW',
+                              'bg-blue-50 text-blue-700': fixture.status === 'LIVE',
+                              'bg-violet-50 text-violet-700': fixture.status === 'POSTPONED',
+                              'bg-gray-100 text-gray-600': fixture.status === 'SCHEDULED' || (!fixture.result && fixture.status !== 'LIVE' && fixture.status !== 'POSTPONED')
                             }"
                           >
                             <template x-if="fixture.status === 'LIVE'">
