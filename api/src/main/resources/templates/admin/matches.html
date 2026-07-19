@@ -18,12 +18,12 @@
 
         <div x-data="adminMatchesPage" class="bg-white shadow rounded-lg">
 
-          <!-- Filter bar -->
-          <div class="px-4 sm:px-6 py-4 border-b border-gray-200 flex flex-wrap items-end gap-3">
+          <!-- Filter bar: 3-col grid on mobile, inline flex row on sm+ -->
+          <div class="px-4 sm:px-6 py-4 border-b border-gray-200 grid grid-cols-3 gap-3 sm:flex sm:flex-wrap sm:items-end">
             <label class="flex flex-col gap-1 text-xs text-gray-500">
               Ground
               <select x-model="filters.ground" @change="page = 1"
-                      class="border border-gray-300 rounded-md text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                      class="w-full sm:w-auto border border-gray-300 rounded-md text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="HA">H/A</option>
                 <option value="HOME">Home</option>
                 <option value="AWAY">Away</option>
@@ -33,7 +33,7 @@
             <label class="flex flex-col gap-1 text-xs text-gray-500">
               Team
               <select x-model="filters.teamId" @change="page = 1"
-                      class="border border-gray-300 rounded-md text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                      class="w-full sm:w-auto border border-gray-300 rounded-md text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="">All</option>
                 <template x-for="t in teamsList" :key="t.id">
                   <option :value="t.id" x-text="t.shorterName"></option>
@@ -44,7 +44,7 @@
             <label class="flex flex-col gap-1 text-xs text-gray-500">
               Status
               <select x-model="filters.status" @change="page = 1"
-                      class="border border-gray-300 rounded-md text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                      class="w-full sm:w-auto border border-gray-300 rounded-md text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="">All</option>
                 <option value="SCHEDULED">Scheduled</option>
                 <option value="LIVE">Live</option>
@@ -58,7 +58,7 @@
             <label class="flex flex-col gap-1 text-xs text-gray-500">
               Month
               <select x-model="filters.month" @change="page = 1"
-                      class="border border-gray-300 rounded-md text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                      class="w-full sm:w-auto border border-gray-300 rounded-md text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="">All</option>
                 <template x-for="mo in months" :key="mo">
                   <option :value="mo" x-text="monthLabel(mo)"></option>
@@ -69,7 +69,7 @@
             <label class="flex flex-col gap-1 text-xs text-gray-500">
               Matchday
               <select :value="filters.matchday" @change="setMatchday($event.target.value)"
-                      class="border border-gray-300 rounded-md text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                      class="w-full sm:w-auto border border-gray-300 rounded-md text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="">--</option>
                 <template x-for="n in roundNumbers" :key="'md' + n">
                   <option :value="n" x-text="n"></option>
@@ -80,7 +80,7 @@
             <label class="flex flex-col gap-1 text-xs text-gray-500">
               Round
               <select :value="filters.round" @change="setRound($event.target.value)"
-                      class="border border-gray-300 rounded-md text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                      class="w-full sm:w-auto border border-gray-300 rounded-md text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                 <option value="">--</option>
                 <template x-for="n in roundNumbers" :key="'gw' + n">
                   <!-- :selected (not just the select's value) because these options render after
@@ -91,7 +91,7 @@
             </label>
 
             <button @click="resetFilters()"
-                    class="ml-auto text-sm text-indigo-600 hover:text-indigo-800 pb-1.5">
+                    class="col-span-3 justify-self-end sm:col-span-1 sm:justify-self-auto sm:ml-auto text-sm text-indigo-600 hover:text-indigo-800 pb-1.5">
               Reset filters
             </button>
           </div>
@@ -138,10 +138,10 @@
             <table class="min-w-full divide-y divide-gray-200">
               <thead class="bg-gray-50">
                 <tr>
-                  <th class="px-3 py-3 text-right">
+                  <th class="hidden sm:table-cell px-3 py-3 text-right">
                     <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">#</span>
                   </th>
-                  <th class="px-4 py-3 text-right">
+                  <th class="px-2 sm:px-4 py-3 text-right">
                     <button @click="setSort('home')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700">
                       Home <span x-text="sortIndicator('home')"></span>
                     </button>
@@ -152,12 +152,12 @@
                       Score <span x-text="sortIndicator('score')"></span>
                     </button>
                   </th>
-                  <th class="px-4 py-3 text-left">
+                  <th class="px-2 sm:px-4 py-3 text-left">
                     <button @click="setSort('away')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700">
                       Away <span x-text="sortIndicator('away')"></span>
                     </button>
                   </th>
-                  <th class="px-2 py-3 text-center">
+                  <th class="hidden sm:table-cell px-2 py-3 text-center">
                     <button @click="setSort('md')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700"
                             title="Original matchday">
                       MD <span x-text="sortIndicator('md')"></span>
@@ -169,12 +169,12 @@
                       GW <span x-text="sortIndicator('gw')"></span>
                     </button>
                   </th>
-                  <th class="px-4 py-3 text-left">
+                  <th class="px-2 sm:px-4 py-3 text-left">
                     <button @click="setSort('kickoff')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700">
                       Kickoff <span x-text="sortIndicator('kickoff')"></span>
                     </button>
                   </th>
-                  <th class="px-4 py-3 text-left">
+                  <th class="px-2 sm:px-4 py-3 text-left">
                     <button @click="setSort('status')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700">
                       Status <span x-text="sortIndicator('status')"></span>
                     </button>
@@ -200,11 +200,11 @@
                 </tr>
                 <template x-for="(m, idx) in pageRows" :key="m.id">
                   <tr class="hover:bg-gray-50 transition">
-                    <td class="px-3 py-3 text-right text-sm text-gray-400 tabular-nums"
+                    <td class="hidden sm:table-cell px-3 py-3 text-right text-sm text-gray-400 tabular-nums"
                         x-text="(page - 1) * pageSize + idx + 1"></td>
-                    <td class="px-4 py-3 text-right">
+                    <td class="px-2 sm:px-4 py-3 text-right">
                       <span class="inline-flex items-center gap-2 justify-end">
-                        <span class="text-sm font-medium text-gray-900" x-text="teamName(m.homeTeamId)"></span>
+                        <span class="hidden sm:inline text-sm font-medium text-gray-900" x-text="teamName(m.homeTeamId)"></span>
                         <span :class="tlaClass(m, 'home')" x-text="teamCode(m.homeTeamId)"></span>
                       </span>
                     </td>
@@ -212,13 +212,13 @@
                       <span class="font-mono tabular-nums font-bold text-sm text-gray-900"
                             x-text="m.score ? m.score.homeGoals + ' – ' + m.score.awayGoals : '–'"></span>
                     </td>
-                    <td class="px-4 py-3 text-left">
+                    <td class="px-2 sm:px-4 py-3 text-left">
                       <span class="inline-flex items-center gap-2">
                         <span :class="tlaClass(m, 'away')" x-text="teamCode(m.awayTeamId)"></span>
-                        <span class="text-sm font-medium text-gray-900" x-text="teamName(m.awayTeamId)"></span>
+                        <span class="hidden sm:inline text-sm font-medium text-gray-900" x-text="teamName(m.awayTeamId)"></span>
                       </span>
                     </td>
-                    <td class="px-2 py-3 text-center text-sm text-gray-600" x-text="m.matchday"></td>
+                    <td class="hidden sm:table-cell px-2 py-3 text-center text-sm text-gray-600" x-text="m.matchday"></td>
                     <td class="px-2 py-3 text-center text-sm">
                       <span :class="m.roundPosition !== m.matchday
                                       ? 'text-amber-700 bg-amber-50 rounded px-1.5 py-0.5 font-semibold'
@@ -226,8 +226,11 @@
                             :title="m.roundPosition !== m.matchday ? 'Moved — originally matchday ' + m.matchday : null"
                             x-text="m.roundPosition"></span>
                     </td>
-                    <td class="px-4 py-3 text-sm text-gray-600 whitespace-nowrap" x-text="formatKickoff(m.kickOff)"></td>
-                    <td class="px-4 py-3">
+                    <td class="px-2 sm:px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                      <span class="sm:hidden" x-text="formatKickoffShort(m.kickOff)"></span>
+                      <span class="hidden sm:inline" x-text="formatKickoff(m.kickOff)"></span>
+                    </td>
+                    <td class="px-2 sm:px-4 py-3">
                       <!-- Pill classes mirror templates/matches.html (status badges); keep in sync -->
                       <span :class="statusPill[m.status]?.cls">
                         <span x-show="m.status === 'LIVE'"
@@ -485,6 +488,13 @@
               if (!iso) return '—';
               const d = new Date(iso);
               return isNaN(d) ? iso : d.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
+            },
+            formatKickoffShort(iso) {
+              if (!iso) return '—';
+              const d = new Date(iso);
+              if (isNaN(d)) return iso;
+              const pad = (n) => String(n).padStart(2, '0');
+              return pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
             },
 
             openManage(m) {
