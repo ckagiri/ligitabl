@@ -75,12 +75,8 @@ public class AdminMatchesController {
 
     private Either<UseCaseError, PageContext> resolveContext() {
         return hierarchyValidator
-                .validateCompetition(competitionDefaults.defaultCompetitionSlug())
-                .flatMap(competition -> hierarchyValidator
-                        .validateActiveSeason(competition)
-                        .flatMap(season -> hierarchyValidator
-                                .validateCurrentRound(season)
-                                .map(round -> new PageContext(competition, season, round))));
+                .resolveHierarchy(competitionDefaults.defaultCompetitionSlug())
+                .map(ctx -> new PageContext(ctx.competition(), ctx.season(), ctx.round()));
     }
 
     private AdminMatchesData buildData(PageContext ctx) {

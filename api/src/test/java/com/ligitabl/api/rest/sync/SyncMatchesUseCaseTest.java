@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -33,6 +34,7 @@ import com.ligitabl.api.scheduling.syncmatches.LiveMatchTracker;
 import com.ligitabl.api.scheduling.syncmatches.SyncMatchesUseCase;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -124,7 +126,7 @@ class SyncMatchesUseCaseTest {
                 createMatch(1, MatchStatus.SCHEDULED, OffsetDateTime.now().plusHours(10)));
 
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(liveMatchTracker.updateTracking(any()))
                 .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches);
@@ -148,7 +150,7 @@ class SyncMatchesUseCaseTest {
         var existingMatches = List.of(m1, m2);
 
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(liveMatchTracker.updateTracking(any()))
                 .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
 
@@ -181,7 +183,7 @@ class SyncMatchesUseCaseTest {
         var existingMatches = List.of(m1, m2);
 
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(liveMatchTracker.updateTracking(any()))
                 .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
 
@@ -220,7 +222,7 @@ class SyncMatchesUseCaseTest {
                 .thenReturn(new LiveMatchTracker.TrackingResult(true, Set.of(), Set.of(live.getId())));
 
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches).thenReturn(existingMatches);
 
         var apiMatches =
@@ -245,7 +247,7 @@ class SyncMatchesUseCaseTest {
                 createMatch(1, MatchStatus.SCHEDULED, OffsetDateTime.now().plusHours(10)));
 
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(liveMatchTracker.updateTracking(any()))
                 .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches).thenReturn(existingMatches);

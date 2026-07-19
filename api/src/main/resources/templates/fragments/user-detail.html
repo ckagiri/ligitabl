@@ -21,10 +21,10 @@
         <p class="text-sm text-gray-600 mt-1">
           Position
           <span class="font-semibold text-indigo-600"
-            >#<span th:text="${user.position}">1</span></span
+            >#<span th:text="${scored != false ? user.position : '—'}">1</span></span
           >
           • Total:
-          <span class="font-semibold" th:text="${user.totalScore}">1850</span>
+          <span class="font-semibold" th:text="${scored != false ? user.totalScore : '—'}">1850</span>
           pts
         </p>
       </div>

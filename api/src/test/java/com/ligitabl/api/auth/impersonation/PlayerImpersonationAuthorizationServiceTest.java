@@ -21,19 +21,19 @@ import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.UserRepo;
 
 @ExtendWith(MockitoExtension.class)
-class DefaultImpersonationAuthorizationServiceTest {
+class PlayerImpersonationAuthorizationServiceTest {
 
     @Mock
     UserRepo userRepo;
 
-    DefaultImpersonationAuthorizationService service;
+    PlayerImpersonationAuthorizationService service;
 
     User admin;
     User player;
 
     @BeforeEach
     void setUp() {
-        service = new DefaultImpersonationAuthorizationService(userRepo);
+        service = new PlayerImpersonationAuthorizationService(userRepo);
         admin = user("admin@example.com", Set.of(Role.ADMIN));
         player = user("player@example.com", Set.of(Role.PLAYER));
     }
@@ -125,8 +125,19 @@ class DefaultImpersonationAuthorizationServiceTest {
     }
 
     @Test
-    void roleLessTargetIsAllowed() {
+    void roleLessTargetIsRejected() {
+        // Only plain players may be impersonated — a role-less account isn't one.
         User target = user("target@example.com", Set.of());
+        when(userRepo.findByEmail(Email.create("target@example.com"))).thenReturn(Optional.of(target));
+
+        var result = service.assertCanImpersonate(admin, "target@example.com");
+
+        assertThat(result).isEqualTo(new Result.TargetPrivileged("target@example.com"));
+    }
+
+    @Test
+    void plainPlayerTargetIsAllowed() {
+        User target = user("target@example.com", Set.of(Role.PLAYER));
         when(userRepo.findByEmail(Email.create("target@example.com"))).thenReturn(Optional.of(target));
 
         var result = service.assertCanImpersonate(admin, "target@example.com");

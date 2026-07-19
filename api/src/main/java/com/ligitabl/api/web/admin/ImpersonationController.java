@@ -10,7 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.auth.impersonation.ImpersonationAuthorizationService;
-import com.ligitabl.api.auth.impersonation.ImpersonationCommandService;
+import com.ligitabl.api.auth.impersonation.PlayerImpersonationService;
 import com.ligitabl.api.auth.security.WebUserDetails;
 
 import jakarta.servlet.http.HttpSession;
@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ImpersonationController {
 
-    private final ImpersonationCommandService impersonationCommandService;
+    private final PlayerImpersonationService playerImpersonationService;
 
     @GetMapping("/admin/impersonation/modal")
     @PreAuthorize("hasRole('ADMIN')")
@@ -38,7 +38,7 @@ public class ImpersonationController {
             HttpSession session,
             Model model) {
 
-        var result = impersonationCommandService.start(userDetails.getUserId(), identifier, session);
+        var result = playerImpersonationService.start(userDetails.getUserId(), identifier, session);
 
         if (result instanceof ImpersonationAuthorizationService.Result.Ok) {
             // Land on the impersonated user's table — the page support sessions start from
@@ -64,7 +64,7 @@ public class ImpersonationController {
     @PostMapping("/admin/impersonation/stop")
     public ResponseEntity<Void> stop(HttpSession session) {
         // Deliberately not ADMIN-gated: any impersonating session may stop itself
-        impersonationCommandService.stop(session);
+        playerImpersonationService.stop(session);
         return ResponseEntity.noContent().header("HX-Redirect", "/").build();
     }
 

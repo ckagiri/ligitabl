@@ -318,7 +318,7 @@ public class SyncMatchesUseCase {
                     false,
                     false,
                     List.of(),
-                    NextSyncSchedule.hours(12, "No upcoming matches - checking twice daily"));
+                    NextSyncSchedule.hours(12, "No upcoming matches - checking twice daily", true));
         }
 
         boolean hasLive = matches.stream().anyMatch(m -> m.getStatus() == MatchStatus.LIVE);

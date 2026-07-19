@@ -41,6 +41,11 @@ import lombok.extern.slf4j.Slf4j;
  * - Suspended match present: at most every 10 minutes
  * - Cancelled match present: at most every 30 minutes
  *
+ * Admin Slack notifications are posted whenever {@link NextSyncSchedule#shouldNotify()} is true —
+ * every schedule above except the high-frequency live/imminent/soon polling branches, which are
+ * deliberately silent on repeats (they'd otherwise post on every minute-by-minute reason change)
+ * but still notify once on entry into a new {@link NextSyncSchedule.Phase}.
+ *
  * Repeated sync failures trip {@link com.ligitabl.api.scheduling.resilience.MatchSyncCircuitBreaker},
  * which blocks further attempts until its recovery period elapses.
  */
@@ -68,9 +73,9 @@ public class MatchSyncScheduler {
     private ScheduledFuture<?> currentTask;
     private volatile boolean running = false;
 
-    // Dedupe key for Slack cadence messages — during live matches the loop reschedules every
-    // 90s, so only a change in NextSyncSchedule.reason() is worth posting.
-    private volatile String lastNotifiedScheduleReason;
+    // Tracks the last observed LIVE/IMMINENT/SOON phase so we can notify once on entry into a
+    // new phase without spamming on every repeat within it (those schedules never set shouldNotify).
+    private volatile NextSyncSchedule.Phase lastPhase = NextSyncSchedule.Phase.NONE;
 
     public MatchSyncScheduler(
             TaskScheduler taskScheduler,
@@ -180,14 +185,16 @@ public class MatchSyncScheduler {
                                 formatDuration(success.nextSchedule().delay()),
                                 success.nextSchedule().reason());
 
-                        String reason = success.nextSchedule().reason();
-                        if (!reason.equals(lastNotifiedScheduleReason)) {
+                        var phase = success.nextSchedule().phase();
+                        boolean enteringPhase = phase != NextSyncSchedule.Phase.NONE && phase != lastPhase;
+                        lastPhase = phase;
+
+                        if (success.nextSchedule().shouldNotify() || enteringPhase) {
                             adminNotificationService.notifySyncScheduleChanged(
                                     success.roundId(),
                                     success.roundPosition(),
                                     success.nextSchedule().delay(),
-                                    reason);
-                            lastNotifiedScheduleReason = reason;
+                                    success.nextSchedule().reason());
                         }
 
                         scheduleNextSync(success.nextSchedule().delay());

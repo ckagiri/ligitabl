@@ -50,6 +50,8 @@ window.contestCreator = function () {
   return {
     fromOpen: false,
     toOpen: false,
+    fromDropUp: false,
+    toDropUp: false,
     windowHelpOpen: false,
     structureOpen: true,
     selectedFrom: null,
@@ -60,6 +62,32 @@ window.contestCreator = function () {
     init() {
       if (d.fromSprintCode) this.selectedFrom = this.sprints.find(s => s.code === d.fromSprintCode) || null;
       if (d.toSprintCode)   this.selectedTo   = this.sprints.find(s => s.code === d.toSprintCode)   || null;
+    },
+
+    // Desktop dropdown height is capped at max-h-80 (20rem = 320px); flip it above the
+    // trigger when there isn't enough room below but there is above, so it doesn't spill
+    // past the fold and overlap the submit buttons/footer.
+    shouldDropUp(triggerEl) {
+      const rect = triggerEl.getBoundingClientRect();
+      const dropdownHeight = 320;
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      return spaceBelow < dropdownHeight && spaceAbove > spaceBelow;
+    },
+
+    toggleFrom(triggerEl) {
+      this.toOpen = false;
+      if (this.fromOpen) { this.fromOpen = false; return; }
+      this.fromDropUp = this.shouldDropUp(triggerEl);
+      this.fromOpen = true;
+    },
+
+    toggleTo(triggerEl) {
+      if (!this.selectedFrom) return;
+      this.fromOpen = false;
+      if (this.toOpen) { this.toOpen = false; return; }
+      this.toDropUp = this.shouldDropUp(triggerEl);
+      this.toOpen = true;
     },
 
     isUnavailable(s) { return s.status === 'PAST' || s.status === 'LOCKED'; },

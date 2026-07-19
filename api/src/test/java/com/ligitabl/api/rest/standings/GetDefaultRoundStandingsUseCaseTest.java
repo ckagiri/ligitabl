@@ -18,6 +18,7 @@ import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.Standings;
@@ -93,7 +94,7 @@ class GetDefaultRoundStandingsUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy("premier-league", null))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(standingsRepo.findBySeasonAndRoundPosition(seasonId, 1)).thenReturn(Optional.of(standings));
 
@@ -166,7 +167,7 @@ class GetDefaultRoundStandingsUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy("premier-league", null))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(season, round)));
+                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(standingsRepo.findBySeasonAndRoundPosition(seasonId, 1)).thenReturn(Optional.empty());
 
