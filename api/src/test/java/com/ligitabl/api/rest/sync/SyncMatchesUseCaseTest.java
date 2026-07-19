@@ -155,8 +155,8 @@ class SyncMatchesUseCaseTest {
                 .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
 
         var apiMatches = List.of(
-                new MatchDto(1L, OffsetDateTime.now(), "FINISHED", 1, "REGULAR_SEASON", null, null, null),
-                new MatchDto(2L, OffsetDateTime.now(), "FINISHED", 1, "REGULAR_SEASON", null, null, null));
+                new MatchDto(1L, OffsetDateTime.now(), "FINISHED", 1, "REGULAR_SEASON", null, null, null, null, null),
+                new MatchDto(2L, OffsetDateTime.now(), "FINISHED", 1, "REGULAR_SEASON", null, null, null, null, null));
 
         when(footballDataClient.getMatchesInDateRange(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(Either.right(new MatchesResponse(apiMatches, null)));
@@ -188,8 +188,8 @@ class SyncMatchesUseCaseTest {
                 .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
 
         var apiMatches = List.of(
-                new MatchDto(1L, OffsetDateTime.now(), "FINISHED", 1, "REGULAR_SEASON", null, null, null),
-                new MatchDto(2L, OffsetDateTime.now(), "CANCELLED", 1, "REGULAR_SEASON", null, null, null));
+                new MatchDto(1L, OffsetDateTime.now(), "FINISHED", 1, "REGULAR_SEASON", null, null, null, null, null),
+                new MatchDto(2L, OffsetDateTime.now(), "CANCELLED", 1, "REGULAR_SEASON", null, null, null, null, null));
 
         when(footballDataClient.getMatchesInDateRange(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(Either.right(new MatchesResponse(apiMatches, null)));
@@ -226,7 +226,7 @@ class SyncMatchesUseCaseTest {
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches).thenReturn(existingMatches);
 
         var apiMatches =
-                List.of(new MatchDto(1L, OffsetDateTime.now(), "IN_PLAY", 1, "REGULAR_SEASON", null, null, null));
+                List.of(new MatchDto(1L, OffsetDateTime.now(), "IN_PLAY", 1, "REGULAR_SEASON", null, null, null, null, null));
         when(footballDataClient.getLiveMatches(COMPETITION_CODE))
                 .thenReturn(Either.right(new MatchesResponse(apiMatches, null)));
 

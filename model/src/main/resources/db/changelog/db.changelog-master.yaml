@@ -71,3 +71,5 @@ databaseChangeLog:
       file: db/changelog/20260715_1_email_verification.yaml
   - include:
       file: db/changelog/20260718_1_contest_join_code_unique.yaml
+  - include:
+      file: db/changelog/20260719_1_match_minute.yaml

@@ -35,6 +35,8 @@ public class MatchDto {
     OffsetDateTime kickOff;
     String venue;
     int matchday;
+    Integer minute;
+    Integer injuryTime;
     Score score;
     Integer homeScore;
     Integer awayScore;
@@ -76,6 +78,8 @@ public class MatchDto {
                 .kickOff(match.getKickOff())
                 .venue(match.getVenue())
                 .matchday(match.getMatchday())
+                .minute(match.getMinute())
+                .injuryTime(match.getInjuryTime())
                 .score(match.getScore())
                 .homeScore(homeScore)
                 .awayScore(awayScore)

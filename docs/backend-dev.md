@@ -751,6 +751,39 @@ This avoids SpEL's implicit truthiness evaluation and ensures only one section o
 - Template example: `api/src/main/resources/templates/predictions.html`
 - Controller setting booleans: `UserPredictionsController.java` (line 270)
 
+## SpEL string literals: don't use HTML entities for quotes
+
+**Issue**: Using an HTML entity like `&#39;` inside a `th:text`/`th:attr` SpEL expression to embed a literal
+apostrophe throws `org.springframework.expression.spel.SpelParseException: ... EL1044E: Unexpectedly ran out of
+input` at template-parse time.
+
+**Root cause**: The attribute value is parsed as XML/HTML first, which decodes `&#39;` to a literal `'` character
+*before* Thymeleaf hands the string to the SpEL parser. That literal `'` is then read by SpEL as closing the
+string literal early, leaving the rest of the expression dangling.
+
+```html
+<!-- WRONG: &#39; decodes to ' before SpEL sees it, breaking the string literal -->
+<span th:text="${match.minute + '&#39;'}">90'</span>
+```
+
+**Fix**: use SpEL's own escaping for a quote inside a single-quoted string literal — two apostrophes (`''`)
+represent one literal apostrophe. Write the raw characters directly (no HTML entity):
+
+```html
+<!-- CORRECT: '''' = open quote + escaped quote ('') + close quote = one literal apostrophe -->
+<span th:text="${match.minute + ''''}">90'</span>
+```
+
+This only surfaces once the branch guarding the expression actually evaluates to true (e.g. an `th:if` gating a
+`th:text` on the same or a child element) — a template can pass every existing test and still throw this in
+production the first time real data hits that branch. If you need to sanity-check a SpEL expression in isolation
+without spinning up the app, `org.springframework.expression.spel.standard.SpelExpressionParser` can evaluate it
+directly against a plain object.
+
+### Related Files
+
+- Example: `api/src/main/resources/templates/matches.html` (LIVE badge minute/injury-time rendering)
+
 ## HTMX + Alpine event listener reliability
 
 When wiring loading indicators or other request-lifecycle UI around HTMX swaps, do not assume Alpine's `.window`

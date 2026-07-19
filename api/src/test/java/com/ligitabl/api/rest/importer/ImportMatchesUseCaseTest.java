@@ -141,6 +141,8 @@ class ImportMatchesUseCaseTest {
                 "REGULAR_SEASON",
                 new HomeTeam((long) homeClientId, "Arsenal FC", "Arsenal", "ARS", null),
                 new AwayTeam((long) awayClientId, "Chelsea FC", "Chelsea", "CHE", null),
+                null,
+                null,
                 null);
     }
 
@@ -155,7 +157,9 @@ class ImportMatchesUseCaseTest {
                 new HomeTeam((long) homeClientId, "Arsenal FC", "Arsenal", "ARS", null),
                 new AwayTeam((long) awayClientId, "Chelsea FC", "Chelsea", "CHE", null),
                 new com.ligitabl.api.client.footballdata.Score(
-                        null, "REGULAR", new FullTime(homeGoals, awayGoals), null));
+                        null, "REGULAR", new FullTime(homeGoals, awayGoals), null),
+                null,
+                null);
     }
 
     @Test
@@ -504,6 +508,8 @@ class ImportMatchesUseCaseTest {
                 "REGULAR_SEASON",
                 new HomeTeam(57L, "Arsenal FC", "Arsenal", "ARS", null),
                 new AwayTeam(61L, "Chelsea FC", "Chelsea", "CHE", null),
+                null,
+                null,
                 null);
 
         UUID seasonId = UUID.randomUUID();

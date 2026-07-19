@@ -236,6 +236,7 @@
                         <span x-show="m.status === 'LIVE'"
                               class="live-indicator inline-block w-1.5 h-1.5 bg-red-500 rounded-full"></span>
                         <span x-text="statusPill[m.status]?.label ?? m.status"></span>
+                        <span x-show="m.status === 'LIVE' && m.minute != null" x-text="liveClock(m)"></span>
                       </span>
                     </td>
                     <td class="px-2 py-3 text-center">
@@ -483,6 +484,10 @@
             monthLabel(yyyyMm) {
               const d = new Date(yyyyMm + '-01T00:00:00Z');
               return d.toLocaleDateString(undefined, { month: 'short', year: 'numeric', timeZone: 'UTC' });
+            },
+            liveClock(m) {
+              if (m.minute == null) return '';
+              return m.injuryTime > 0 ? `${m.minute}+${m.injuryTime}'` : `${m.minute}'`;
             },
             formatKickoff(iso) {
               if (!iso) return '—';

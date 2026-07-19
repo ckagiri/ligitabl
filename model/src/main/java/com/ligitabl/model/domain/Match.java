@@ -47,6 +47,10 @@ public class Match extends AbstractModel<UUID> {
 
     private int matchday;
 
+    private Integer minute;
+
+    private Integer injuryTime;
+
     @Builder.Default
     private boolean wasPostponed = false;
 

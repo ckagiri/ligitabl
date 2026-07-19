@@ -14,4 +14,6 @@ public record MatchDto(
         String stage,
         HomeTeam homeTeam,
         AwayTeam awayTeam,
-        Score score) {}
+        Score score,
+        Integer minute,
+        Integer injuryTime) {}

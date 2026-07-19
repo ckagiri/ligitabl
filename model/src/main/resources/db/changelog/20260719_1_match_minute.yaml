@@ -1,0 +1,48 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260719_1_match_minute
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_match
+            schemaName: public
+        - not:
+            - columnExists:
+                tableName: t_match
+                schemaName: public
+                columnName: c_minute
+      changes:
+        - addColumn:
+            tableName: t_match
+            schemaName: public
+            columns:
+              - column:
+                  name: c_minute
+                  type: int
+                  constraints:
+                    nullable: true
+
+  - changeSet:
+      id: 20260719_2_match_injury_time
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_match
+            schemaName: public
+        - not:
+            - columnExists:
+                tableName: t_match
+                schemaName: public
+                columnName: c_injury_time
+      changes:
+        - addColumn:
+            tableName: t_match
+            schemaName: public
+            columns:
+              - column:
+                  name: c_injury_time
+                  type: int
+                  constraints:
+                    nullable: true

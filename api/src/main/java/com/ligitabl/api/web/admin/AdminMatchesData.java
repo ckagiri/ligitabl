@@ -51,6 +51,8 @@ public record AdminMatchesData(
             String status,
             String kickOff,
             String venue,
+            Integer minute,
+            Integer injuryTime,
             ScoreEntry score) {
 
         public static MatchEntry from(Match match) {
@@ -64,6 +66,8 @@ public record AdminMatchesData(
                     match.getStatus() != null ? match.getStatus().name() : null,
                     match.getKickOff() != null ? match.getKickOff().toInstant().toString() : null,
                     match.getVenue(),
+                    match.getMinute(),
+                    match.getInjuryTime(),
                     ScoreEntry.from(match.getScore()));
         }
     }
