@@ -1,6 +1,7 @@
 package com.ligitabl.api.rest.match;
 
 import java.time.OffsetDateTime;
+import java.util.Objects;
 
 import org.springframework.stereotype.Component;
 
@@ -24,8 +25,10 @@ public class MatchUpdateHelper {
         boolean statusChanged = existing.getStatus() != newStatus;
         boolean scoreChanged = hasScoreChanged(existing, apiMatch.score());
         boolean kickoffChanged = hasKickoffChanged(existing, apiMatch.utcDate());
+        boolean minuteChanged = !Objects.equals(existing.getMinute(), apiMatch.minute());
+        boolean injuryTimeChanged = !Objects.equals(existing.getInjuryTime(), apiMatch.injuryTime());
 
-        if (!statusChanged && !scoreChanged && !kickoffChanged) {
+        if (!statusChanged && !scoreChanged && !kickoffChanged && !minuteChanged && !injuryTimeChanged) {
             return false;
         }
 
@@ -36,6 +39,8 @@ public class MatchUpdateHelper {
         if (apiMatch.matchday() != null) {
             existing.setMatchday(apiMatch.matchday());
         }
+        existing.setMinute(apiMatch.minute());
+        existing.setInjuryTime(apiMatch.injuryTime());
         applyScore(existing, apiMatch.score());
 
         return true;

@@ -294,6 +294,8 @@ public class MatchPersistenceAdapter implements MatchRepo {
                     .kickOff(record.getKickOff())
                     .venue(record.getVenue())
                     .matchday(record.getMatchday())
+                    .minute(record.getMinute())
+                    .injuryTime(record.getInjuryTime())
                     .score(readScore(record.getScore()))
                     .wasPostponed(Boolean.TRUE.equals(record.getWasPostponed()))
                     .wasSuspended(Boolean.TRUE.equals(record.getWasSuspended()))
@@ -335,6 +337,8 @@ public class MatchPersistenceAdapter implements MatchRepo {
         rec.setKickOff(model.getKickOff());
         rec.setVenue(model.getVenue());
         rec.setMatchday(model.getMatchday());
+        rec.setMinute(model.getMinute());
+        rec.setInjuryTime(model.getInjuryTime());
 
         rec.setWasPostponed(model.wasPostponed());
         rec.setWasSuspended(model.isWasSuspended());

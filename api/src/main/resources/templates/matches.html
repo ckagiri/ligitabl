@@ -105,6 +105,12 @@
                   >
                     <span class="live-indicator inline-block w-1.5 h-1.5 bg-red-500 rounded-full"></span>
                     LIVE
+                    <span
+                      th:if="${match.minute != null}"
+                      th:text="${match.injuryTime != null and match.injuryTime > 0
+                                 ? match.minute + '+' + match.injuryTime + '&#39;'
+                                 : match.minute + '&#39;'}"
+                    >90'</span>
                   </span>
 
                   <span
