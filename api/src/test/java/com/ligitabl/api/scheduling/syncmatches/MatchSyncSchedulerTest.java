@@ -180,20 +180,60 @@ class MatchSyncSchedulerTest {
     }
 
     @Test
-    void notifiesScheduleChange_onlyWhenReasonChanges() {
+    void notifiesEveryTime_whenScheduleIsFlaggedForNotification() {
+        // Repeated identical reason (e.g. "No upcoming matches" polled every 12h) must still
+        // notify each time — the old reason-text dedup silently swallowed these after the first.
         when(syncMatchesUseCase.execute(any()))
-                .thenReturn(Either.right(resultWithReason("Live matches in progress")))
-                .thenReturn(Either.right(resultWithReason("Live matches in progress")))
-                .thenReturn(Either.right(resultWithReason("No matches in next 6 hours")));
+                .thenReturn(Either.right(resultWithReason("No upcoming matches - checking twice daily", true)))
+                .thenReturn(Either.right(resultWithReason("No upcoming matches - checking twice daily", true)));
+
+        scheduler.triggerManualSync();
+        scheduler.triggerManualSync();
+
+        verify(adminNotificationService, times(2))
+                .notifySyncScheduleChanged(
+                        any(), anyInt(), any(), eq("No upcoming matches - checking twice daily"));
+    }
+
+    @Test
+    void neverNotifies_forRepeatsWithinTheSamePhase() {
+        // Live polling reasons are static text every 90s; these are deliberately silent on repeat.
+        when(syncMatchesUseCase.execute(any()))
+                .thenReturn(
+                        Either.right(resultWithPhase("Live matches in progress", NextSyncSchedule.Phase.LIVE)))
+                .thenReturn(
+                        Either.right(resultWithPhase("Live matches in progress", NextSyncSchedule.Phase.LIVE)))
+                .thenReturn(
+                        Either.right(resultWithPhase("Live matches in progress", NextSyncSchedule.Phase.LIVE)));
+
+        scheduler.triggerManualSync();
+        scheduler.triggerManualSync();
+        scheduler.triggerManualSync();
+
+        // Only the entry into LIVE (first call) notifies; the two repeats stay silent.
+        verify(adminNotificationService, times(1)).notifySyncScheduleChanged(any(), anyInt(), any(), any());
+    }
+
+    @Test
+    void notifiesOnce_whenEnteringANewPollingPhase() {
+        when(syncMatchesUseCase.execute(any()))
+                .thenReturn(Either.right(
+                        resultWithPhase("Kickoff in 45 minutes (soon)", NextSyncSchedule.Phase.SOON)))
+                .thenReturn(Either.right(
+                        resultWithPhase("Kickoff in 40 minutes (soon)", NextSyncSchedule.Phase.SOON)))
+                .thenReturn(Either.right(
+                        resultWithPhase("Kickoff in 9 minutes (imminent)", NextSyncSchedule.Phase.IMMINENT)));
 
         scheduler.triggerManualSync();
         scheduler.triggerManualSync();
         scheduler.triggerManualSync();
 
         verify(adminNotificationService, times(1))
-                .notifySyncScheduleChanged(any(), anyInt(), any(), eq("Live matches in progress"));
+                .notifySyncScheduleChanged(any(), anyInt(), any(), eq("Kickoff in 45 minutes (soon)"));
         verify(adminNotificationService, times(1))
-                .notifySyncScheduleChanged(any(), anyInt(), any(), eq("No matches in next 6 hours"));
+                .notifySyncScheduleChanged(any(), anyInt(), any(), eq("Kickoff in 9 minutes (imminent)"));
+        verify(adminNotificationService, never())
+                .notifySyncScheduleChanged(any(), anyInt(), any(), eq("Kickoff in 40 minutes (soon)"));
     }
 
     @Test
@@ -207,7 +247,7 @@ class MatchSyncSchedulerTest {
         verify(adminNotificationService, never()).notifySyncScheduleChanged(any(), anyInt(), any(), any());
     }
 
-    private MatchSyncResult resultWithReason(String reason) {
+    private MatchSyncResult resultWithReason(String reason, boolean shouldNotify) {
         return new MatchSyncResult(
                 seasonId,
                 roundId,
@@ -220,7 +260,23 @@ class MatchSyncSchedulerTest {
                 false,
                 false,
                 List.of(),
-                NextSyncSchedule.seconds(90, reason));
+                NextSyncSchedule.seconds(90, reason, shouldNotify));
+    }
+
+    private MatchSyncResult resultWithPhase(String reason, NextSyncSchedule.Phase phase) {
+        return new MatchSyncResult(
+                seasonId,
+                roundId,
+                5,
+                10,
+                10,
+                0,
+                List.of(),
+                false, // allMatchesComplete
+                false,
+                false,
+                List.of(),
+                NextSyncSchedule.seconds(90, reason).withPhase(phase));
     }
 
     private MatchSyncResult completeResult() {

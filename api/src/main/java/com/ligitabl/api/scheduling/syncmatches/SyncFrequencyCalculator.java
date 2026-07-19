@@ -49,22 +49,22 @@ public class SyncFrequencyCalculator {
 
         // PRIORITY 1: All matches complete - trigger finalization immediately
         if (allMatchesComplete) {
-            return NextSyncSchedule.immediate("All matches complete - trigger finalization");
+            return NextSyncSchedule.immediate("All matches complete - trigger finalization", true);
         }
 
         // PRIORITY 1b: Round obstructed - trigger admin notification immediately
         if (roundObstructed) {
-            return NextSyncSchedule.immediate("Round obstructed - requires admin resolution");
+            return NextSyncSchedule.immediate("Round obstructed - requires admin resolution", true);
         }
 
         // PRIORITY 2: Season complete - check daily for new season
         if (seasonComplete) {
-            return NextSyncSchedule.hours(24, "Season complete - checking daily for new season");
+            return NextSyncSchedule.hours(24, "Season complete - checking daily for new season", true);
         }
 
         // PRIORITY 3: No upcoming matches (international break, off-week)
         if (matchCount == 0) {
-            return NextSyncSchedule.hours(12, "No upcoming matches - checking twice daily");
+            return NextSyncSchedule.hours(12, "No upcoming matches - checking twice daily", true);
         }
 
         var schedule = matchDaySchedule(hasLiveMatches, hasScheduledMatches, nextKickoff);
@@ -76,12 +76,12 @@ public class SyncFrequencyCalculator {
 
         // PRIORITY 4: Live matches - sync frequently
         if (hasLiveMatches) {
-            return NextSyncSchedule.seconds(90, "Live matches in progress");
+            return NextSyncSchedule.seconds(90, "Live matches in progress").withPhase(NextSyncSchedule.Phase.LIVE);
         }
 
         // PRIORITY 5: No scheduled matches remaining (all postponed/cancelled)
         if (!hasScheduledMatches || nextKickoff == null) {
-            return NextSyncSchedule.hours(6, "No scheduled matches");
+            return NextSyncSchedule.hours(6, "No scheduled matches", true);
         }
 
         // PRIORITY 6: Calculate time until next kickoff
@@ -94,17 +94,19 @@ public class SyncFrequencyCalculator {
 
         // Handle negative values (kickoff in past - shouldn't happen but be defensive)
         if (minutesUntilKickoff < 0) {
-            return NextSyncSchedule.minutes(1, "Kickoff time passed - checking immediately");
+            return NextSyncSchedule.minutes(1, "Kickoff time passed - checking immediately", true);
         }
 
         // Imminent kickoff (≤ 10 minutes)
         if (minutesUntilKickoff <= 10) {
-            return NextSyncSchedule.minutes(1, String.format("Kickoff in %d minutes (imminent)", minutesUntilKickoff));
+            return NextSyncSchedule.minutes(1, String.format("Kickoff in %d minutes (imminent)", minutesUntilKickoff))
+                    .withPhase(NextSyncSchedule.Phase.IMMINENT);
         }
 
         // Soon kickoff (≤ 60 minutes)
         if (minutesUntilKickoff <= 60) {
-            return NextSyncSchedule.minutes(10, String.format("Kickoff in %d minutes (soon)", minutesUntilKickoff));
+            return NextSyncSchedule.minutes(10, String.format("Kickoff in %d minutes (soon)", minutesUntilKickoff))
+                    .withPhase(NextSyncSchedule.Phase.SOON);
         }
 
         // Later today (< 6 hours)
@@ -114,12 +116,14 @@ public class SyncFrequencyCalculator {
                     1,
                     String.format(
                             "Kickoff in %d hour%s (later today)",
-                            hoursUntilKickoff, hoursUntilKickoff == 1 ? "" : "s"));
+                            hoursUntilKickoff, hoursUntilKickoff == 1 ? "" : "s"),
+                    true);
         }
 
         // Default: Later Today, Tomorrow or beyond (≥ 6 hours away)
         long hoursUntilKickoff = ceilDiv(minutesUntilKickoff, 60);
-        return NextSyncSchedule.hours(6, String.format("Kickoff in %d hours (default check)", hoursUntilKickoff));
+        return NextSyncSchedule.hours(
+                6, String.format("Kickoff in %d hours (default check)", hoursUntilKickoff), true);
     }
 
     /**
@@ -131,11 +135,11 @@ public class SyncFrequencyCalculator {
             NextSyncSchedule schedule, boolean hasSuspendedMatches, boolean hasCancelledMatches) {
 
         if (hasSuspendedMatches && schedule.delay().compareTo(Duration.ofMinutes(10)) > 0) {
-            return NextSyncSchedule.minutes(10, "Suspended match present - polling for resumption");
+            return NextSyncSchedule.minutes(10, "Suspended match present - polling for resumption", true);
         }
 
         if (hasCancelledMatches && schedule.delay().compareTo(Duration.ofMinutes(30)) > 0) {
-            return NextSyncSchedule.minutes(30, "Cancelled match present - polling for updates");
+            return NextSyncSchedule.minutes(30, "Cancelled match present - polling for updates", true);
         }
 
         return schedule;
