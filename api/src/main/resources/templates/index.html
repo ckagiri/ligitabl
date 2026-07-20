@@ -15,8 +15,14 @@
             ⚽ LigiPredictor
           </h1>
           <div class="mb-8">
-            <p class="text-xs uppercase tracking-widest text-white/80 font-medium">English Premier League</p>
-            <p class="text-lg sm:text-xl font-semibold text-white italic">Rank 'Em Right</p>
+            <p
+              class="text-xs uppercase tracking-widest text-white/80 font-medium"
+            >
+              English Premier League
+            </p>
+            <p class="text-lg sm:text-xl font-semibold text-white italic">
+              Rank 'Em Right
+            </p>
           </div>
           <p class="text-base sm:text-lg mb-8 text-indigo-200">
             Predict the Premier League table, gameweek by gameweek.
@@ -34,7 +40,7 @@
               th:unless="${isLoggedIn}"
               th:href="${predictionsNavLink} ?: '/my-table/guest'"
               class="w-full sm:w-auto bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-indigo-600 transition transform hover:scale-105 shadow-lg text-center"
-              >Try the Table →</a
+              >Live Preview →</a
             >
             <a
               th:if="${isLoggedIn}"
@@ -73,10 +79,12 @@
             </div>
             <div>
               <h4 class="font-semibold text-gray-900 mb-1">
-                🎯 Predict the Table — No Account Needed to Try
+                🎯 Predict the Table — Beat your friends
               </h4>
               <p class="text-gray-600">
-                Tap teams to swap them and set your predicted table for the gameweek. Feel free to try it as a guest first! When you're ready, sign up to save your prediction and join the competition.
+                Rank all 20 Premier League teams where you think they'll sit
+                before the gameweek's kickoff. Tap two teams to swap them,
+                then watch your table play out gameweek by gameweek.
               </p>
             </div>
           </div>
@@ -88,10 +96,28 @@
             </div>
             <div>
               <h4 class="font-semibold text-gray-900 mb-1">
+                🏗️ Build Your Table
+              </h4>
+              <p class="text-gray-600">
+                New here? Start from last season's finish or the previous
+                gameweek's finish, then use up to 5 free swaps to arrange it
+                your way — or leave it as-is.
+              </p>
+            </div>
+          </div>
+          <div class="flex items-start space-x-4">
+            <div
+              class="flex-shrink-0 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold"
+            >
+              3
+            </div>
+            <div>
+              <h4 class="font-semibold text-gray-900 mb-1">
                 🔄 Swap Smart Every Round
               </h4>
               <p class="text-gray-600">
-                You get 1 swap to adjust your table every 24 hours, plus an extra swap (2 total) to reposition things when a new round opens. Note that swaps are only available while the round is open. Every swap is a chance to gain an edge, every swap counts!
+                Get 1 swap every 24h, plus a bonus one each new gameweek, right
+                up until kickoff. Using 0 swaps is fine.
               </p>
             </div>
           </div>
@@ -108,20 +134,31 @@
                 stroke="currentColor"
                 viewBox="0 0 24 24"
               >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
               </svg>
               ⚖️ The Swap Dilemma
             </button>
-            <div x-show="open" x-transition x-cloak class="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800">
-              The leaderboard ranks by Total Points → Total Perfect Positions → Fewest Swaps Used.
-              Using many swaps helps you climb — but it might cost you a tie-break later.
+            <div
+              x-show="open"
+              x-transition
+              x-cloak
+              class="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-sm text-amber-800"
+            >
+              The leaderboard ranks by Total Points → Total Perfect Positions →
+              Fewest Swaps Used. Using many swaps helps you climb — but it might
+              cost you a tie-break later.
             </div>
           </div>
           <div class="flex items-start space-x-4">
             <div
               class="flex-shrink-0 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold"
             >
-              3
+              4
             </div>
             <div>
               <h4 class="font-semibold text-gray-900 mb-1">
@@ -138,7 +175,7 @@
             <div
               class="flex-shrink-0 w-8 h-8 bg-indigo-600 text-white rounded-full flex items-center justify-center font-bold"
             >
-              4
+              5
             </div>
             <div>
               <h4 class="font-semibold text-gray-900 mb-1">
@@ -179,9 +216,8 @@
               Q1 · Q2 · Q3 · Q4 — ~9 GWs each
             </p>
             <p class="text-sm text-gray-600">
-              Four distinct competitions across the season. Form over a
-              sustained stretch separates the contenders from the rest.
-            </p>
+              Four distinct competitions across the season. Sustained good
+              performance is what separates the contenders from the rest.            </p>
           </div>
           <div class="rounded-lg border-2 border-green-200 bg-green-50 p-6">
             <div class="text-3xl mb-3">⚡</div>
@@ -191,7 +227,8 @@
             </p>
             <p class="text-sm text-gray-600">
               Eight short, sharp bursts throughout the season. A single great
-              gameweek can swing it — the most winnable trophy for anyone on a hot streak.
+              gameweek can swing it — the most winnable trophy for anyone on a
+              hot streak.
             </p>
           </div>
         </div>
@@ -223,7 +260,8 @@
               <span class="text-green-500 font-bold text-lg mt-0.5">✓</span>
               <p class="text-sm text-gray-700">
                 <strong>Each round opens with a fresh batch.</strong> Study the
-                table, pick your moves, and be ready before the first fixture kicks off.
+                table, pick your moves, and be ready before the first fixture
+                kicks off.
               </p>
             </div>
             <div class="flex items-start gap-3">
@@ -250,11 +288,12 @@
       <div class="bg-white rounded-lg shadow-md p-8 mb-12">
         <div class="max-w-2xl mx-auto text-center">
           <div class="text-4xl mb-4">🤝</div>
-          <h2 class="text-2xl font-bold text-gray-900 mb-3">
-            Bring Your Crew
-          </h2>
+          <h2 class="text-2xl font-bold text-gray-900 mb-3">Bring Your Crew</h2>
           <p class="text-gray-600">
-            Create your own mini-league alongside the main competition. Give it a name, set the window, and invite friends, family, or coworkers with a link or simple code. Then find out who really knows the Premier League.
+            Create your own mini-league alongside the main competition. Give it
+            a name, set the window, and invite friends, family, or coworkers
+            with a link or simple code. Then find out who really knows the
+            Premier League.
           </p>
         </div>
       </div>
@@ -282,20 +321,40 @@
             </p>
             <div class="space-y-2 text-sm">
               <div class="flex items-center gap-3 p-2 bg-green-50 rounded">
-                <span class="flex-1 text-gray-700">Perfect <span class="text-gray-500 font-medium">(0 off)</span></span>
-                <span class="flex-shrink-0 font-semibold text-green-600">No loss 🎯</span>
+                <span class="flex-1 text-gray-700"
+                  >Perfect
+                  <span class="text-gray-500 font-medium">(0 off)</span></span
+                >
+                <span class="flex-shrink-0 font-semibold text-green-600"
+                  >No loss 🎯</span
+                >
               </div>
               <div class="flex items-center gap-3 p-2 bg-yellow-50 rounded">
-                <span class="flex-1 text-gray-700">Close call <span class="text-gray-500 font-medium">(1 off)</span></span>
-                <span class="flex-shrink-0 font-semibold text-yellow-600">-1 point</span>
+                <span class="flex-1 text-gray-700"
+                  >Close call
+                  <span class="text-gray-500 font-medium">(1 off)</span></span
+                >
+                <span class="flex-shrink-0 font-semibold text-yellow-600"
+                  >-1 point</span
+                >
               </div>
               <div class="flex items-center gap-3 p-2 bg-orange-50 rounded">
-                <span class="flex-1 text-gray-700">Near miss <span class="text-gray-500 font-medium">(3 off)</span></span>
-                <span class="flex-shrink-0 font-semibold text-orange-600">-3 points</span>
+                <span class="flex-1 text-gray-700"
+                  >Near miss
+                  <span class="text-gray-500 font-medium">(3 off)</span></span
+                >
+                <span class="flex-shrink-0 font-semibold text-orange-600"
+                  >-3 points</span
+                >
               </div>
               <div class="flex items-center gap-3 p-2 bg-red-50 rounded">
-                <span class="flex-1 text-gray-700">Big miss <span class="text-gray-500 font-medium">(6 off)</span></span>
-                <span class="flex-shrink-0 font-semibold text-red-600">-6 points</span>
+                <span class="flex-1 text-gray-700"
+                  >Big miss
+                  <span class="text-gray-500 font-medium">(6 off)</span></span
+                >
+                <span class="flex-shrink-0 font-semibold text-red-600"
+                  >-6 points</span
+                >
               </div>
             </div>
             <p class="text-center text-sm text-gray-400 mt-4">
@@ -329,10 +388,22 @@
                 >
                   <div class="flex items-center gap-3">
                     <span class="text-xl" th:text="${tier.emoji}">🤯</span>
-                    <span class="text-xs font-bold text-indigo-500 w-6" th:text="${tier.letter}">S+</span>
-                    <span class="text-sm font-semibold text-gray-900" th:text="${tier.tierName}">Pinnacle</span>
+                    <span
+                      class="text-xs font-bold text-indigo-500 w-6"
+                      th:text="${tier.letter}"
+                      >S+</span
+                    >
+                    <span
+                      class="text-sm font-semibold text-gray-900"
+                      th:text="${tier.tierName}"
+                      >Pinnacle</span
+                    >
                   </div>
-                  <span class="text-xs text-gray-400 font-medium" th:text="${tier.rangeLabel}">200</span>
+                  <span
+                    class="text-xs text-gray-400 font-medium"
+                    th:text="${tier.rangeLabel}"
+                    >200</span
+                  >
                 </div>
               </div>
             </div>
@@ -353,10 +424,22 @@
                 >
                   <div class="flex items-center gap-3">
                     <span class="text-xl" th:text="${tier.emoji}">😃</span>
-                    <span class="text-xs font-bold text-green-600 w-6" th:text="${tier.letter}">B+</span>
-                    <span class="text-sm font-semibold text-gray-900" th:text="${tier.tierName}">Expert</span>
+                    <span
+                      class="text-xs font-bold text-green-600 w-6"
+                      th:text="${tier.letter}"
+                      >B+</span
+                    >
+                    <span
+                      class="text-sm font-semibold text-gray-900"
+                      th:text="${tier.tierName}"
+                      >Expert</span
+                    >
                   </div>
-                  <span class="text-xs text-gray-400 font-medium" th:text="${tier.rangeLabel}">180–184</span>
+                  <span
+                    class="text-xs text-gray-400 font-medium"
+                    th:text="${tier.rangeLabel}"
+                    >180–184</span
+                  >
                 </div>
               </div>
             </div>
@@ -377,10 +460,22 @@
                 >
                   <div class="flex items-center gap-3">
                     <span class="text-xl" th:text="${tier.emoji}">😬</span>
-                    <span class="text-xs font-bold text-orange-500 w-6" th:text="${tier.letter}">C</span>
-                    <span class="text-sm font-semibold text-gray-900" th:text="${tier.tierName}">Novice</span>
+                    <span
+                      class="text-xs font-bold text-orange-500 w-6"
+                      th:text="${tier.letter}"
+                      >C</span
+                    >
+                    <span
+                      class="text-sm font-semibold text-gray-900"
+                      th:text="${tier.tierName}"
+                      >Novice</span
+                    >
                   </div>
-                  <span class="text-xs text-gray-400 font-medium" th:text="${tier.rangeLabel}">145–159</span>
+                  <span
+                    class="text-xs text-gray-400 font-medium"
+                    th:text="${tier.rangeLabel}"
+                    >145–159</span
+                  >
                 </div>
               </div>
             </div>
@@ -486,7 +581,8 @@
                   Fewest Swaps Used
                 </h4>
                 <p class="text-xs text-gray-600 mt-0.5">
-                  Total swaps used during the phase. Fewer swaps for the same score signals higher efficiency and wins the tiebreaker.
+                  Total swaps used during the phase. Fewer swaps for the same
+                  score signals higher efficiency and wins the tiebreaker.
                 </p>
               </div>
             </div>
@@ -529,7 +625,9 @@
             </div>
             <p class="text-center text-xs text-gray-400 pt-1">
               The goal is simple:
-              <strong class="text-gray-600">more points and more zeroes.</strong>
+              <strong class="text-gray-600"
+                >more points and more zeroes.</strong
+              >
               Everything else is a footnote.
             </p>
           </div>
