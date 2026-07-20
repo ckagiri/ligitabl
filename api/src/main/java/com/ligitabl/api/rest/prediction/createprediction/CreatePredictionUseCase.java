@@ -241,7 +241,7 @@ public class CreatePredictionUseCase {
                     .seasonId(season.getId())
                     .currentRankings(swapResult.rankings())
                     .swaps(new ArrayList<>(List.of(new RoundSwap(atRoundNumber, swapResult.changes()))))
-                    .lastSwapAt(null) // NOT set — next real swap is free immediately
+                    .lastSwapAt(request.swaps().isEmpty() ? null : now) // bonus only if no swaps used at signup
                     .atRoundNumber(atRoundNumber)
                     .build();
 
@@ -347,13 +347,18 @@ public class CreatePredictionUseCase {
             List<TeamRank> baseline = existing.getInitialRankings();
             SwapResult swapResult = applySwaps(baseline, request.swaps(), now);
 
+            // bonus applies only if no swaps were made yet at all — neither during pre-season
+            // registration nor in this merge submission
+            boolean preSeasonHadSwaps =
+                    existing.getSwaps().stream().anyMatch(s -> !s.getChanges().isEmpty());
+            boolean usedSwapsNow = !request.swaps().isEmpty();
+
             existing.setAtRoundNumber(atRoundNumber);
             existing.setCurrentRankings(swapResult.rankings());
             for (SwapChange change : swapResult.changes()) {
                 existing.addSwap(atRoundNumber, change);
             }
-            // pre-season "easter egg" was their bonus, so no First Swap Bonus afterward
-            existing.setLastSwapAt(now);
+            existing.setLastSwapAt(preSeasonHadSwaps || usedSwapsNow ? now : null);
             existing.setOpeningCommittedRound(atRoundNumber);
 
             SeasonPrediction saved = predictionRepo.save(existing);

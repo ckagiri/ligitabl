@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -23,11 +24,14 @@ import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.Contest;
+import com.ligitabl.model.domain.Entry;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.domain.RoundSwap;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonPrediction;
+import com.ligitabl.model.domain.SwapChange;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
@@ -128,7 +132,7 @@ class CreatePredictionUseCaseTest {
         });
 
         when(entryRepo.save(any())).thenAnswer(i -> {
-            var e = i.getArgument(0, com.ligitabl.model.domain.Entry.class);
+            var e = i.getArgument(0, Entry.class);
             e.setId(entryId);
             return e;
         });
@@ -174,15 +178,15 @@ class CreatePredictionUseCaseTest {
             // initialRankings should be null for a normal (non pre-season) join
             boolean initialNull = p.getInitialRankings() == null;
 
-            // lastSwapAt should be null (not a real swap cooldown)
-            boolean lastSwapNull = p.getLastSwapAt() == null;
+            // a swap was used at signup, so the first-swap bonus is already consumed
+            boolean lastSwapAtNow = now.equals(p.getLastSwapAt());
 
             // swaps should have one entry for atRoundNumber with one SwapChange
             boolean swapRecorded = p.getSwaps().size() == 1
                     && p.getSwaps().get(0).getRound() == round.getPosition()
                     && p.getSwaps().get(0).getChanges().size() == 1;
 
-            return rankingsCorrect && initialNull && lastSwapNull && swapRecorded;
+            return rankingsCorrect && initialNull && lastSwapAtNow && swapRecorded;
         }));
     }
 
@@ -227,9 +231,10 @@ class CreatePredictionUseCaseTest {
                     && p.getSwaps().get(0).getRound() == round.getPosition()
                     && p.getSwaps().get(0).getChanges().size() == 2;
 
-            boolean lastSwapNull = p.getLastSwapAt() == null;
+            // swaps were used at signup, so the first-swap bonus is already consumed
+            boolean lastSwapAtNow = now.equals(p.getLastSwapAt());
 
-            return rankingsCorrect && swapsRecorded && lastSwapNull;
+            return rankingsCorrect && swapsRecorded && lastSwapAtNow;
         }));
     }
 
@@ -304,6 +309,8 @@ class CreatePredictionUseCaseTest {
         Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, multiSwap(List.of()));
 
         assertTrue(result.isRight());
+        // no swaps used at signup, so the first-swap bonus is preserved
+        verify(predictionRepo).save(argThat(p -> p.getLastSwapAt() == null));
     }
 
     @Test
@@ -434,7 +441,7 @@ class CreatePredictionUseCaseTest {
             return p;
         });
         when(entryRepo.save(any())).thenAnswer(i -> {
-            var e = i.getArgument(0, com.ligitabl.model.domain.Entry.class);
+            var e = i.getArgument(0, Entry.class);
             e.setId(entryId);
             return e;
         });
@@ -493,12 +500,12 @@ class CreatePredictionUseCaseTest {
                 .seasonId(season.getId())
                 .initialRankings(preSeasonRankings)
                 .currentRankings(preSeasonRankings)
-                .swaps(new java.util.ArrayList<>(
-                        List.of(new com.ligitabl.model.domain.RoundSwap(0, new java.util.ArrayList<>()))))
+                .swaps(new ArrayList<>(
+                        List.of(new RoundSwap(0, new ArrayList<>()))))
                 .atRoundNumber(0)
                 .build();
 
-        com.ligitabl.model.domain.Entry existingEntry = com.ligitabl.model.domain.Entry.builder()
+        Entry existingEntry = Entry.builder()
                 .id(existingEntryId)
                 .userId(userId)
                 .contestId(contestId)
@@ -527,8 +534,97 @@ class CreatePredictionUseCaseTest {
                         && p.getAtRoundNumber() == round.getPosition()
                         && p.getInitialRankings() != null
                         && p.getInitialRankings().equals(preSeasonRankings)
-                        && now.equals(p.getLastSwapAt())
+                        // no swaps used at merge, so the first-swap bonus is preserved
+                        && p.getLastSwapAt() == null
                         && p.getOpeningCommittedRound() == round.getPosition()));
+    }
+
+    @Test
+    void shouldMergePreSeasonRegistration_withSwapsUsed_consumesFirstSwapBonus() {
+        UUID existingId = UUID.randomUUID();
+        UUID existingEntryId = UUID.randomUUID();
+        List<TeamRank> preSeasonRankings = List.of(TeamRank.of("LIV", 1), TeamRank.of("ARS", 2), TeamRank.of("MCI", 3));
+        SeasonPrediction existing = SeasonPrediction.builder()
+                .id(existingId)
+                .userId(userId)
+                .seasonId(season.getId())
+                .initialRankings(preSeasonRankings)
+                .currentRankings(preSeasonRankings)
+                .swaps(new ArrayList<>(
+                        List.of(new RoundSwap(0, new ArrayList<>()))))
+                .atRoundNumber(0)
+                .build();
+
+        Entry existingEntry = Entry.builder()
+                .id(existingEntryId)
+                .userId(userId)
+                .contestId(contestId)
+                .joinedAtRound(0)
+                .build();
+
+        when(clock.instant()).thenReturn(now);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(existing));
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
+        when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
+        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
+        when(entryRepo.findByUserAndContest(userId, contestId)).thenReturn(Optional.of(existingEntry));
+        when(predictionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        Either<CreatePredictionError, CreatePredictionResult> result =
+                useCase.execute(userId, singleSwap("LIV", "ARS"));
+
+        assertTrue(result.isRight());
+        verify(predictionRepo)
+                .save(argThat(p -> p.getId().equals(existingId)
+                        // a swap was used at merge, so the first-swap bonus is consumed
+                        && now.equals(p.getLastSwapAt())));
+    }
+
+    @Test
+    void shouldMergePreSeasonRegistration_withPreSeasonSwapsUsed_consumesFirstSwapBonusEvenWithNoNewSwaps() {
+        UUID existingId = UUID.randomUUID();
+        UUID existingEntryId = UUID.randomUUID();
+        List<TeamRank> preSeasonRankings = List.of(TeamRank.of("LIV", 1), TeamRank.of("ARS", 2), TeamRank.of("MCI", 3));
+        // pre-season registration already used a swap (non-empty changes on the round-0 RoundSwap)
+        SwapChange preSeasonChange =
+                new SwapChange(now, "LIV:2→1", "ARS:1→2");
+        SeasonPrediction existing = SeasonPrediction.builder()
+                .id(existingId)
+                .userId(userId)
+                .seasonId(season.getId())
+                .initialRankings(preSeasonRankings)
+                .currentRankings(preSeasonRankings)
+                .swaps(new ArrayList<>(
+                        List.of(new RoundSwap(0, List.of(preSeasonChange)))))
+                .atRoundNumber(0)
+                .build();
+
+        Entry existingEntry = Entry.builder()
+                .id(existingEntryId)
+                .userId(userId)
+                .contestId(contestId)
+                .joinedAtRound(0)
+                .build();
+
+        when(clock.instant()).thenReturn(now);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(existing));
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
+        when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
+        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
+        when(entryRepo.findByUserAndContest(userId, contestId)).thenReturn(Optional.of(existingEntry));
+        when(predictionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        // merge submission itself has no swaps — but the bonus is already spent from pre-season
+        Either<CreatePredictionError, CreatePredictionResult> result =
+                useCase.execute(userId, multiSwap(List.of()));
+
+        assertTrue(result.isRight());
+        verify(predictionRepo)
+                .save(argThat(p -> p.getId().equals(existingId)
+                        // bonus already consumed during pre-season registration
+                        && now.equals(p.getLastSwapAt())));
     }
 
     @Test
@@ -548,7 +644,7 @@ class CreatePredictionUseCaseTest {
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(corrupt));
         when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
         when(entryRepo.findByUserAndContest(userId, contestId))
-                .thenReturn(Optional.of(com.ligitabl.model.domain.Entry.builder()
+                .thenReturn(Optional.of(Entry.builder()
                         .id(UUID.randomUUID())
                         .userId(userId)
                         .contestId(contestId)
@@ -581,7 +677,7 @@ class CreatePredictionUseCaseTest {
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(corrupt));
         when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
         when(entryRepo.findByUserAndContest(userId, contestId))
-                .thenReturn(Optional.of(com.ligitabl.model.domain.Entry.builder()
+                .thenReturn(Optional.of(Entry.builder()
                         .id(UUID.randomUUID())
                         .userId(userId)
                         .contestId(contestId)
