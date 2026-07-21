@@ -67,7 +67,8 @@ public class AdvanceMatchdayUseCase {
 
         return seasonRepo
                 .findActiveSeason(competitionSlug)
-                .map(season -> Either.<AdvanceMatchdayError, SeasonContext>right(new SeasonContext(season, apiMatchday)))
+                .map(season ->
+                        Either.<AdvanceMatchdayError, SeasonContext>right(new SeasonContext(season, apiMatchday)))
                 .orElseGet(() -> Either.left(new AdvanceMatchdayError.SeasonNotFound(competitionCode)));
     }
 

@@ -94,7 +94,8 @@ class GetDefaultRoundStandingsUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy("premier-league", null))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
+                .thenReturn(
+                        Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(standingsRepo.findBySeasonAndRoundPosition(seasonId, 1)).thenReturn(Optional.of(standings));
 
@@ -167,7 +168,8 @@ class GetDefaultRoundStandingsUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy("premier-league", null))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
+                .thenReturn(
+                        Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
         when(standingsRepo.findBySeasonAndRoundPosition(seasonId, 1)).thenReturn(Optional.empty());
 

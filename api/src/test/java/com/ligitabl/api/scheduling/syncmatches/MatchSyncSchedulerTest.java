@@ -191,20 +191,16 @@ class MatchSyncSchedulerTest {
         scheduler.triggerManualSync();
 
         verify(adminNotificationService, times(2))
-                .notifySyncScheduleChanged(
-                        any(), anyInt(), any(), eq("No upcoming matches - checking twice daily"));
+                .notifySyncScheduleChanged(any(), anyInt(), any(), eq("No upcoming matches - checking twice daily"));
     }
 
     @Test
     void neverNotifies_forRepeatsWithinTheSamePhase() {
         // Live polling reasons are static text every 90s; these are deliberately silent on repeat.
         when(syncMatchesUseCase.execute(any()))
-                .thenReturn(
-                        Either.right(resultWithPhase("Live matches in progress", NextSyncSchedule.Phase.LIVE)))
-                .thenReturn(
-                        Either.right(resultWithPhase("Live matches in progress", NextSyncSchedule.Phase.LIVE)))
-                .thenReturn(
-                        Either.right(resultWithPhase("Live matches in progress", NextSyncSchedule.Phase.LIVE)));
+                .thenReturn(Either.right(resultWithPhase("Live matches in progress", NextSyncSchedule.Phase.LIVE)))
+                .thenReturn(Either.right(resultWithPhase("Live matches in progress", NextSyncSchedule.Phase.LIVE)))
+                .thenReturn(Either.right(resultWithPhase("Live matches in progress", NextSyncSchedule.Phase.LIVE)));
 
         scheduler.triggerManualSync();
         scheduler.triggerManualSync();
@@ -217,10 +213,8 @@ class MatchSyncSchedulerTest {
     @Test
     void notifiesOnce_whenEnteringANewPollingPhase() {
         when(syncMatchesUseCase.execute(any()))
-                .thenReturn(Either.right(
-                        resultWithPhase("Kickoff in 45 minutes (soon)", NextSyncSchedule.Phase.SOON)))
-                .thenReturn(Either.right(
-                        resultWithPhase("Kickoff in 40 minutes (soon)", NextSyncSchedule.Phase.SOON)))
+                .thenReturn(Either.right(resultWithPhase("Kickoff in 45 minutes (soon)", NextSyncSchedule.Phase.SOON)))
+                .thenReturn(Either.right(resultWithPhase("Kickoff in 40 minutes (soon)", NextSyncSchedule.Phase.SOON)))
                 .thenReturn(Either.right(
                         resultWithPhase("Kickoff in 9 minutes (imminent)", NextSyncSchedule.Phase.IMMINENT)));
 
