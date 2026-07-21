@@ -115,15 +115,13 @@ public class SyncFrequencyCalculator {
             return NextSyncSchedule.hours(
                     1,
                     String.format(
-                            "Kickoff in %d hour%s (later today)",
-                            hoursUntilKickoff, hoursUntilKickoff == 1 ? "" : "s"),
+                            "Kickoff in %d hour%s (later today)", hoursUntilKickoff, hoursUntilKickoff == 1 ? "" : "s"),
                     true);
         }
 
         // Default: Later Today, Tomorrow or beyond (≥ 6 hours away)
         long hoursUntilKickoff = ceilDiv(minutesUntilKickoff, 60);
-        return NextSyncSchedule.hours(
-                6, String.format("Kickoff in %d hours (default check)", hoursUntilKickoff), true);
+        return NextSyncSchedule.hours(6, String.format("Kickoff in %d hours (default check)", hoursUntilKickoff), true);
     }
 
     /**

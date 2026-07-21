@@ -33,20 +33,19 @@ public class HierarchyValidator {
     public Either<UseCaseError, HierarchyContext> resolveHierarchy(
             String competitionIdentifier, Integer roundPosition) {
         return validateCompetition(competitionIdentifier)
-                .flatMap(competition -> validateActiveSeason(competition)
-                        .flatMap(season -> {
-                            if (roundPosition == null) {
-                                return validateCurrentRound(season)
-                                        .map(round -> new HierarchyContext(competition, season, round));
-                            }
+                .flatMap(competition -> validateActiveSeason(competition).flatMap(season -> {
+                    if (roundPosition == null) {
+                        return validateCurrentRound(season)
+                                .map(round -> new HierarchyContext(competition, season, round));
+                    }
 
-                            if (roundPosition < 1) {
-                                return Either.left(UseCaseErrors.validation("Round position must be at least 1"));
-                            }
+                    if (roundPosition < 1) {
+                        return Either.left(UseCaseErrors.validation("Round position must be at least 1"));
+                    }
 
-                            return validateRound(season.getId(), roundPosition)
-                                    .map(round -> new HierarchyContext(competition, season, round));
-                        }));
+                    return validateRound(season.getId(), roundPosition)
+                            .map(round -> new HierarchyContext(competition, season, round));
+                }));
     }
 
     public Either<UseCaseError, Competition> validateCompetition(String slugOrCode) {

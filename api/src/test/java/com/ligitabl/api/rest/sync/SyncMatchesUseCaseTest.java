@@ -126,7 +126,8 @@ class SyncMatchesUseCaseTest {
                 createMatch(1, MatchStatus.SCHEDULED, OffsetDateTime.now().plusHours(10)));
 
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
+                .thenReturn(
+                        Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(liveMatchTracker.updateTracking(any()))
                 .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches);
@@ -150,7 +151,8 @@ class SyncMatchesUseCaseTest {
         var existingMatches = List.of(m1, m2);
 
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
+                .thenReturn(
+                        Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(liveMatchTracker.updateTracking(any()))
                 .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
 
@@ -183,7 +185,8 @@ class SyncMatchesUseCaseTest {
         var existingMatches = List.of(m1, m2);
 
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
+                .thenReturn(
+                        Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(liveMatchTracker.updateTracking(any()))
                 .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
 
@@ -222,11 +225,12 @@ class SyncMatchesUseCaseTest {
                 .thenReturn(new LiveMatchTracker.TrackingResult(true, Set.of(), Set.of(live.getId())));
 
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
+                .thenReturn(
+                        Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches).thenReturn(existingMatches);
 
-        var apiMatches =
-                List.of(new MatchDto(1L, OffsetDateTime.now(), "IN_PLAY", 1, "REGULAR_SEASON", null, null, null, null, null));
+        var apiMatches = List.of(
+                new MatchDto(1L, OffsetDateTime.now(), "IN_PLAY", 1, "REGULAR_SEASON", null, null, null, null, null));
         when(footballDataClient.getLiveMatches(COMPETITION_CODE))
                 .thenReturn(Either.right(new MatchesResponse(apiMatches, null)));
 
@@ -247,7 +251,8 @@ class SyncMatchesUseCaseTest {
                 createMatch(1, MatchStatus.SCHEDULED, OffsetDateTime.now().plusHours(10)));
 
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
+                .thenReturn(
+                        Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(liveMatchTracker.updateTracking(any()))
                 .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches).thenReturn(existingMatches);

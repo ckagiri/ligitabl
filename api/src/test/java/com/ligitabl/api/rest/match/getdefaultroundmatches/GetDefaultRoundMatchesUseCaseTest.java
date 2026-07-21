@@ -75,7 +75,8 @@ class GetDefaultRoundMatchesUseCaseTest {
                 .build();
 
         when(hierarchyValidator.resolveHierarchy("premier-league", null))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
+                .thenReturn(
+                        Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(roundRepo.findById(roundId)).thenReturn(java.util.Optional.of(round));
         when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(match));
         when(standingsRepo.findBySeasonAndRoundPosition(season.getId(), 1)).thenReturn(java.util.Optional.empty());
@@ -131,7 +132,8 @@ class GetDefaultRoundMatchesUseCaseTest {
         var matches = List.of(finished, postponed);
 
         when(hierarchyValidator.resolveHierarchy("premier-league", null))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
+                .thenReturn(
+                        Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(roundRepo.findById(roundId)).thenReturn(java.util.Optional.of(round));
         when(matchRepo.findByRoundId(roundId)).thenReturn(matches);
         when(standingsRepo.findBySeasonAndRoundPosition(season.getId(), 1)).thenReturn(java.util.Optional.empty());
@@ -171,7 +173,8 @@ class GetDefaultRoundMatchesUseCaseTest {
         var matches = List.of(finished, cancelled);
 
         when(hierarchyValidator.resolveHierarchy("premier-league", null))
-                .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
+                .thenReturn(
+                        Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(roundRepo.findById(roundId)).thenReturn(java.util.Optional.of(round));
         when(matchRepo.findByRoundId(roundId)).thenReturn(matches);
         when(standingsRepo.findBySeasonAndRoundPosition(season.getId(), 1)).thenReturn(java.util.Optional.empty());

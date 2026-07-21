@@ -500,8 +500,7 @@ class CreatePredictionUseCaseTest {
                 .seasonId(season.getId())
                 .initialRankings(preSeasonRankings)
                 .currentRankings(preSeasonRankings)
-                .swaps(new ArrayList<>(
-                        List.of(new RoundSwap(0, new ArrayList<>()))))
+                .swaps(new ArrayList<>(List.of(new RoundSwap(0, new ArrayList<>()))))
                 .atRoundNumber(0)
                 .build();
 
@@ -550,8 +549,7 @@ class CreatePredictionUseCaseTest {
                 .seasonId(season.getId())
                 .initialRankings(preSeasonRankings)
                 .currentRankings(preSeasonRankings)
-                .swaps(new ArrayList<>(
-                        List.of(new RoundSwap(0, new ArrayList<>()))))
+                .swaps(new ArrayList<>(List.of(new RoundSwap(0, new ArrayList<>()))))
                 .atRoundNumber(0)
                 .build();
 
@@ -587,16 +585,14 @@ class CreatePredictionUseCaseTest {
         UUID existingEntryId = UUID.randomUUID();
         List<TeamRank> preSeasonRankings = List.of(TeamRank.of("LIV", 1), TeamRank.of("ARS", 2), TeamRank.of("MCI", 3));
         // pre-season registration already used a swap (non-empty changes on the round-0 RoundSwap)
-        SwapChange preSeasonChange =
-                new SwapChange(now, "LIV:2→1", "ARS:1→2");
+        SwapChange preSeasonChange = new SwapChange(now, "LIV:2→1", "ARS:1→2");
         SeasonPrediction existing = SeasonPrediction.builder()
                 .id(existingId)
                 .userId(userId)
                 .seasonId(season.getId())
                 .initialRankings(preSeasonRankings)
                 .currentRankings(preSeasonRankings)
-                .swaps(new ArrayList<>(
-                        List.of(new RoundSwap(0, List.of(preSeasonChange)))))
+                .swaps(new ArrayList<>(List.of(new RoundSwap(0, List.of(preSeasonChange)))))
                 .atRoundNumber(0)
                 .build();
 
@@ -617,8 +613,7 @@ class CreatePredictionUseCaseTest {
         when(predictionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
 
         // merge submission itself has no swaps — but the bonus is already spent from pre-season
-        Either<CreatePredictionError, CreatePredictionResult> result =
-                useCase.execute(userId, multiSwap(List.of()));
+        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, multiSwap(List.of()));
 
         assertTrue(result.isRight());
         verify(predictionRepo)
