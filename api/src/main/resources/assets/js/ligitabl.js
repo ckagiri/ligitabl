@@ -800,6 +800,8 @@ window.Ligitabl.guestPredictionPage = function (el) {
     return Object.assign(base, {
         alwaysHoverable: true,
         isInitialPrediction: true,
+        isOpeningRound: false,
+        isPreSeasonRegistration: false,
 
         init() {
             const saved = loadSavedPrediction();
