@@ -14,17 +14,15 @@
         <!-- Page Header -->
         <div class="bg-white rounded-lg shadow-sm mb-6">
           <div class="px-6 py-4 border-b border-gray-200">
-            <div
-              class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-4 sm:mb-6"
-            >
-              <div class="flex flex-col sm:flex-row sm:items-baseline sm:gap-2">
-                <h1
-                  class="text-xl sm:text-2xl font-bold text-gray-900"
-                  th:text="${pageTitle}"
-                >
-                  Predictions
-                </h1>
-                <div class="flex items-center gap-2 mt-1 sm:mt-0">
+            <div class="mb-4 sm:mb-6">
+              <h1
+                class="text-xl sm:text-2xl font-bold text-gray-900"
+                th:text="${pageTitle}"
+              >
+                Predictions
+              </h1>
+              <div class="flex flex-wrap sm:flex-nowrap items-center justify-start sm:justify-between gap-2 mt-1">
+                <div class="flex flex-wrap items-center gap-2">
                   <span class="text-sm sm:text-base text-gray-600">
                     Gameweek <span th:text="${viewingRound}">19</span>
                   </span>
@@ -53,41 +51,41 @@
                     >
                   </span>
                 </div>
-              </div>
 
-              <!-- Source indicator + refresh, grouped and right-aligned -->
-              <div class="flex items-center gap-2 ml-auto">
-                <div
-                  th:if="${source != 'USER_PREDICTION'}"
-                  class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full"
-                >
-                  <svg
-                    class="h-3.5 w-3.5 text-blue-500 flex-shrink-0"
-                    fill="currentColor"
-                    viewBox="0 0 20 20"
+                <div class="flex items-center gap-2">
+                  <!-- Source indicator -->
+                  <div
+                    th:if="${source != 'USER_PREDICTION'}"
+                    class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full"
                   >
-                    <path
-                      fill-rule="evenodd"
-                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                      clip-rule="evenodd"
-                    />
-                  </svg>
-                  <span class="text-xs font-medium text-blue-700" th:text="${sourceLabel}">Last Season Baseline</span>
-                </div>
+                    <svg
+                      class="h-3.5 w-3.5 text-blue-500 flex-shrink-0"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
+                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                    <span class="text-xs font-medium text-blue-700" th:text="${sourceLabel}">Last Season Baseline</span>
+                  </div>
 
-                <!-- Refresh (reloads this page's fragment from our DB; no admin gate) -->
-                <button
-                  th:attr="hx-get=@{/my-table(round=${viewingRound})}"
-                  hx-target="#prediction-page"
-                  hx-swap="outerHTML swap:100ms settle:100ms"
-                  hx-disabled-elt="this"
-                  class="shrink-0 text-gray-400 hover:text-blue-500 transition-colors p-1.5 rounded htmx-indicator:animate-spin"
-                  title="Refresh"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
-                  </svg>
-                </button>
+                  <!-- Refresh (reloads this page's fragment from our DB; no admin gate) -->
+                  <button
+                    th:attr="hx-get=@{/my-table(round=${viewingRound})}"
+                    hx-target="#prediction-page"
+                    hx-swap="outerHTML swap:100ms settle:100ms"
+                    hx-disabled-elt="this"
+                    class="shrink-0 text-gray-400 hover:text-blue-500 transition-colors p-1.5 rounded htmx-indicator:animate-spin"
+                    title="Refresh"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                      <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                    </svg>
+                  </button>
+                </div>
               </div>
             </div>
 
