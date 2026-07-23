@@ -34,6 +34,7 @@ public record UserPredictionViewData(
         int lastRound,
         int viewingRound,
         Integer atRoundNumber,
+        Integer joinedAtRound, // Main-contest Entry.joinedAtRound — stable join marker for round navigation
         boolean seasonCompleted,
         String roundState,
         RoundResult roundResult, // Present for historical views with scored results

@@ -40,6 +40,7 @@ public class GetUserPredictionUseCase {
     private final RoundResultRepo roundResultRepo;
     private final StandingsRepo standingsRepo;
     private final MatchRepo matchRepo;
+    private final EntryRepo entryRepo;
 
     /**
      * Execute the use case with user context resolution.
@@ -59,7 +60,8 @@ public class GetUserPredictionUseCase {
             String roundState,
             boolean seasonCompleted,
             RoundStatus currentRoundStatus,
-            Map<String, List<Match>> currentRoundMatches) {}
+            Map<String, List<Match>> currentRoundMatches,
+            UUID mainContestId) {}
 
     /**
      * Build complete prediction view data based on user context.
@@ -92,7 +94,8 @@ public class GetUserPredictionUseCase {
                 roundState,
                 seasonCompleted,
                 currentRoundStatus,
-                currentRoundMatches);
+                currentRoundMatches,
+                season.getMainContestId());
 
         return switch (ctx.userType()) {
             case GUEST -> buildGuestView(query, rc);
@@ -145,14 +148,24 @@ public class GetUserPredictionUseCase {
                 .findByUserAndSeason(ctx.userId(), qry.seasonId())
                 .orElseThrow(() -> new IllegalStateException("User context indicates prediction exists but not found"));
 
+        // SeasonPrediction.atRoundNumber moves with swaps (it marks the round currentRankings
+        // belong to), so the stable "when did this user join" marker for round navigation is the
+        // main-contest Entry's joinedAtRound instead.
+        Integer joinedAtRound = rc.mainContestId() == null
+                ? null
+                : entryRepo
+                        .findByUserAndContest(ctx.userId(), rc.mainContestId())
+                        .map(entry -> Math.max(1, entry.getJoinedAtRound()))
+                        .orElse(null);
+
         // Once the season's last round has advanced, it stays "current" (currentRoundId never
         // moves further), but must be rendered like a historical/scored round, not a live one.
         boolean showAsHistorical = !rc.isCurrentRound()
                 || (rc.currentRound() == rc.lastRound() && rc.currentRoundStatus() == RoundStatus.ADVANCED);
 
         return showAsHistorical
-                ? buildHistoricalResultView(qry, rc, ctx, seasonPrediction)
-                : buildCurrentEditableView(qry, rc, seasonPrediction);
+                ? buildHistoricalResultView(qry, rc, ctx, seasonPrediction, joinedAtRound)
+                : buildCurrentEditableView(qry, rc, seasonPrediction, joinedAtRound);
     }
 
     /**
@@ -160,7 +173,11 @@ public class GetUserPredictionUseCase {
      * season's last round and has advanced.
      */
     private UserPredictionViewData buildHistoricalResultView(
-            GetUserPredictionQuery qry, RequestContext rc, UserContext ctx, SeasonPrediction seasonPrediction) {
+            GetUserPredictionQuery qry,
+            RequestContext rc,
+            UserContext ctx,
+            SeasonPrediction seasonPrediction,
+            Integer joinedAtRound) {
         RoundResult roundResult = roundResultRepo
                 .findByUserAndRound(ctx.userId(), rc.viewingRound())
                 .orElseThrow(() -> new IllegalStateException("Expected RoundResult for user " + ctx.userId()
@@ -201,6 +218,7 @@ public class GetUserPredictionUseCase {
                 .lastRound(rc.lastRound())
                 .viewingRound(rc.viewingRound())
                 .atRoundNumber(seasonPrediction.getAtRoundNumber())
+                .joinedAtRound(joinedAtRound)
                 .seasonCompleted(rc.seasonCompleted())
                 .roundState(rc.roundState())
                 .roundResult(roundResult)
@@ -216,7 +234,7 @@ public class GetUserPredictionUseCase {
      * Build view for the current, still-editable round — the user's live prediction.
      */
     private UserPredictionViewData buildCurrentEditableView(
-            GetUserPredictionQuery qry, RequestContext rc, SeasonPrediction seasonPrediction) {
+            GetUserPredictionQuery qry, RequestContext rc, SeasonPrediction seasonPrediction, Integer joinedAtRound) {
         // A still-unmerged pre-season "easter egg" registration (atRoundNumber == 0) must behave
         // exactly like a brand-new predictor once the season starts — any swap made while it was
         // just a pre-season row must not count toward the real opening-round bonus or first-swap-bonus messaging.
@@ -246,6 +264,7 @@ public class GetUserPredictionUseCase {
                 .lastRound(rc.lastRound())
                 .viewingRound(rc.viewingRound())
                 .atRoundNumber(seasonPrediction.getAtRoundNumber())
+                .joinedAtRound(joinedAtRound)
                 .seasonCompleted(rc.seasonCompleted())
                 .roundState(rc.roundState())
                 .roundSwapHistory(swapsForRound(seasonPrediction, rc.viewingRound()))

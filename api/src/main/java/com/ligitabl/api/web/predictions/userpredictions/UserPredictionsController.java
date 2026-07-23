@@ -268,6 +268,7 @@ public class UserPredictionsController {
         model.addAttribute("lastRound", data.lastRound());
         model.addAttribute("viewingRound", data.viewingRound());
         model.addAttribute("atRoundNumber", data.atRoundNumber());
+        model.addAttribute("joinedAtRound", data.joinedAtRound());
         model.addAttribute("isCurrentRound", data.isCurrentRound());
         String roundStateValue = data.roundState().toLowerCase();
         model.addAttribute("roundState", roundStateValue);

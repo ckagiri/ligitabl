@@ -89,41 +89,63 @@ This app has **two security flows**:
 
 ### Remember-me
 
-The login form has a “Remember me” checkbox wired to Spring Security’s `TokenBasedRememberMeServices`.
+Remember-me uses Spring Security’s `PersistentTokenBasedRememberMeServices`: tokens live server-side in the `persistent_logins` table (via `JdbcTokenRepositoryImpl`) and the cookie only carries a series/token pair. It covers **three entry points**: form login, registration, and Google OAuth.
+
+**Why persistent tokens instead of the hash-based cookie** (`TokenBasedRememberMeServices`, used previously):
+
+- The hash-based cookie is signed with the user’s **password hash** — Google-only accounts have no password, so it couldn’t safely cover OAuth logins at all.
+- DB tokens are per-device revocable, rotate on every use, and detect stolen-cookie reuse (series match + token mismatch ⇒ all tokens for the user are purged).
+- A leaked signing key no longer allows forging cookies for arbitrary users.
+
+The `persistent_logins` table deliberately **breaks the `t_*`/`c_*` naming convention** — `JdbcTokenRepositoryImpl`’s SQL hardcodes the standard Spring Security table/column names (migration: `20260723_1_persistent_logins.yaml`).
 
 #### Why custom wiring was needed
 
-Login is handled by a **custom controller** (`AuthController.@PostMapping(“/auth/login”)`) rather than Spring Security’s native form login processing URL (`/auth/login/process`). This means the remember-me cookie is **not** set automatically after login — the filter chain never sees a successful form login event.
+Login and registration are handled by a **custom controller** (`AuthController`) rather than Spring Security’s native form login processing URL (`/auth/login/process`). This means the remember-me cookie is **not** set automatically — the filter chain never sees a successful form login event.
 
-To make it work, `RememberMeServices` is exposed as a shared `@Bean` in `SecurityConfig` and injected into `AuthController`. After `authenticateUser()` sets the session, the controller explicitly calls:
+To make it work, `RememberMeServices` is exposed as a shared `@Bean` in `SecurityConfig` and injected into `AuthController`. After `authenticateUser()` sets the session, both the login and register handlers explicitly call:
 
 ```java
 rememberMeServices.loginSuccess(request, response, authentication);
 ```
 
-`TokenBasedRememberMeServices` reads the `remember-me` request parameter internally and only sets the cookie if the checkbox was checked.
+`loginSuccess` reads the `rememberMe` request parameter internally and only sets the cookie if the checkbox was checked.
+
+#### The checkbox (login + register forms)
+
+The “Remember me” checkbox is a **form-bound field** (`rememberMe` on `LoginForm`/`RegisterForm`, default `true`), rendered with `th:field="*{rememberMe}"`. Two reasons it is not a raw `<input checked>`:
+
+- A raw input resets to its static default when validation fails and the form re-renders; binding it makes the submitted state round-trip like every other field.
+- `th:field` emits the hidden `_rememberMe` companion field, so an explicit “unchecked” survives the round-trip too.
+
+The services’ parameter is set to `rememberMe` (not the Spring default `remember-me`) to match what `th:field` emits. The **cookie** is still named `remember-me` — parameter name and cookie name are independent, which is why logout’s `deleteCookies("JSESSIONID", "remember-me")` is unchanged.
+
+#### OAuth (Google) remembrance
+
+The Google redirect flow has **no checkbox to carry a choice**, so OAuth logins are treated as always-remember — the common industry pattern, since “Sign in with Google” implies “this site keeps knowing me.” A second bean, `oauth2RememberMeServices` (`alwaysRemember = true`, same key and token store as the form-login bean), is called from `OAuth2AuthenticationSuccessHandler.handleNormalLogin`. Sharing the key/store means the single remember-me filter validates cookies from either source.
+
+This means **there is no session-only option for Google sign-in** — the checkbox on the login/register forms only governs form-based auth. A Google user who wants to end the trust logs out, which deletes the DB token and cookie. If an opt-out were ever wanted, the choice would have to be captured *before* the redirect (e.g. a “keep me signed in” checkbox next to the Google button, stashed in the HTTP session or as a query param on `/oauth2/authorization/google`) and read back in the success handler to decide whether to call `loginSuccess`.
+
+Details that matter here:
+
+- `loginSuccess` is called with the **web authentication** built by `establishSessionAuthentication` (name = email), not the raw `OAuth2AuthenticationToken` (name = Google subject id) — auto-login later resolves the cookie’s username via `WebUserDetailsService.loadUserByUsername`, which looks up by email.
+- `WebUserDetailsService` guards against `null` passwords (Google-only accounts) — without the guard, remember-me auto-login for those users would NPE.
+- The account-**linking** flow does not touch remember-me: the user is already logged in there.
+- Auto-logins bypass the controllers entirely (`RememberMeAuthenticationFilter`), so last-login tracking for them lives in `RememberMeLoginListener`.
 
 #### Configuration (see `application.yml`)
 
-- `ligitabl.security.remember-me.key` — signing key for the remember-me cookie (SHA256)
-- `ligitabl.security.remember-me.token-validity-seconds` — cookie lifespan (default 14 days)
+- `ligitabl.security.remember-me.key` — key for the `RememberMeAuthenticationToken` (no longer signs cookie contents)
+- `ligitabl.security.remember-me.token-validity-seconds` — token lifespan (default 14 days)
 
 Defaults are **dev-safe** and must be overridden in production using env vars:
 
 - `REMEMBER_ME_KEY`
 - `REMEMBER_ME_TOKEN_VALIDITY_SECONDS`
 
-**Cookie-based remember-me (current):**
+#### Migration from the hash-based scheme
 
-- No database storage; simple and fast.
-- If the key leaks, cookies can be forged until rotated.
-- Cannot revoke a single device.
-
-**Persistent token store (optional alternative):**
-
-- Stores remember-me tokens in DB.
-- Allows per-device revocation and detects token theft (series mismatch).
-- Slightly more complexity and DB reads.
+Cookies issued by the old `TokenBasedRememberMeServices` fail to decode against the persistent store, get cancelled, and the user simply logs in once more — no cleanup or backfill needed.
 
 ### Navbar context
 
@@ -131,7 +153,9 @@ Navbar labels/links are computed in `NavbarControllerAdvice`, using the custom p
 
 ### Logout
 
-Logout clears the security context, invalidates the session, and removes the remember-me cookie.
+The UI logs out via a plain **GET** link to `/auth/logout`, which hits the custom `AuthController.logout` — not Spring’s `LogoutFilter` (that only matches POST while CSRF is enabled). The controller calls `request.logout()`, which runs the same configured logout handlers the filter would: clearing the security context, invalidating the session, cancelling the remember-me cookie, and **revoking the remember-me token in the DB**.
+
+**Ordering constraint**: `request.logout()` must run *before* the controller clears the security context. The logout handlers read the `Authentication` from the context, and `PersistentTokenBasedRememberMeServices` silently skips DB-token revocation when it gets `null` — the cookie would still be cancelled, so logout *looks* fine, but a stolen copy of the cookie would stay valid until expiry.
 
 ## Full local run with Postgres
 

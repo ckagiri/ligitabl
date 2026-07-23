@@ -24,7 +24,9 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
-import org.springframework.security.web.authentication.rememberme.TokenBasedRememberMeServices;
+import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
+import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 
 import com.ligitabl.api.auth.impersonation.ClearImpersonationLogoutHandler;
 import com.ligitabl.api.auth.oauth2.CustomOAuth2UserService;
@@ -112,15 +114,46 @@ public class SecurityConfig {
     }
 
     /**
-     * Security filter chain for web UI endpoints
-     * Uses session-based form login authentication
+     * Server-side store for remember-me tokens ({@code persistent_logins} table).
+     * Tokens don't involve the user's password, are individually revocable, and
+     * stolen-cookie reuse is detected — which also makes them safe for
+     * password-less Google-only accounts.
+     */
+    @Bean
+    public PersistentTokenRepository persistentTokenRepository(javax.sql.DataSource dataSource) {
+        var repository = new JdbcTokenRepositoryImpl();
+        repository.setDataSource(dataSource);
+        return repository;
+    }
+
+    /**
+     * Remember-me for form login and registration: opt-in via the {@code rememberMe}
+     * checkbox bound on {@code LoginForm}/{@code RegisterForm}.
      */
     @Bean
     public RememberMeServices rememberMeServices(
-            @Qualifier("webUserDetailsService") UserDetailsService userDetailsService) {
-        var services = new TokenBasedRememberMeServices(
-                rememberMeKey, userDetailsService, TokenBasedRememberMeServices.RememberMeTokenAlgorithm.SHA256);
-        services.setParameter("remember-me");
+            @Qualifier("webUserDetailsService") UserDetailsService userDetailsService,
+            PersistentTokenRepository persistentTokenRepository) {
+        var services = new PersistentTokenBasedRememberMeServices(
+                rememberMeKey, userDetailsService, persistentTokenRepository);
+        services.setParameter("rememberMe");
+        services.setTokenValiditySeconds(rememberMeTokenValiditySeconds);
+        return services;
+    }
+
+    /**
+     * Remember-me for OAuth2 logins: always-on, because the redirect flow has no
+     * checkbox to carry the user's choice. Shares the key and token store with
+     * {@link #rememberMeServices}, so the same filter validates both cookies.
+     * Injected by bean name into {@code OAuth2AuthenticationSuccessHandler}.
+     */
+    @Bean
+    public RememberMeServices oauth2RememberMeServices(
+            @Qualifier("webUserDetailsService") UserDetailsService userDetailsService,
+            PersistentTokenRepository persistentTokenRepository) {
+        var services = new PersistentTokenBasedRememberMeServices(
+                rememberMeKey, userDetailsService, persistentTokenRepository);
+        services.setAlwaysRemember(true);
         services.setTokenValiditySeconds(rememberMeTokenValiditySeconds);
         return services;
     }

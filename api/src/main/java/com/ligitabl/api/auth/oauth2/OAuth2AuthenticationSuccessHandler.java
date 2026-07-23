@@ -8,6 +8,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.user.OAuth2User;
+import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
@@ -36,6 +37,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
     private final UserRepo userRepo;
     private final CustomOAuth2UserService customOAuth2UserService;
+    // Always-remember variant (no checkbox exists in the redirect flow); resolved by bean name.
+    private final RememberMeServices oauth2RememberMeServices;
 
     @Override
     public void onAuthenticationSuccess(
@@ -115,7 +118,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
 
         userRepo.updateLastLoginAt(user.getId(), OffsetDateTime.now());
 
-        establishSessionAuthentication(user, request.getSession(true));
+        Authentication webAuthentication = establishSessionAuthentication(user, request.getSession(true));
+        oauth2RememberMeServices.loginSuccess(request, response, webAuthentication);
         log.info(
                 "[OAUTH2_LOGIN_SUCCESS] userId={} email={}",
                 user.getId(),
@@ -128,7 +132,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         getRedirectStrategy().sendRedirect(request, response, target);
     }
 
-    private void establishSessionAuthentication(User user, HttpSession session) {
+    private Authentication establishSessionAuthentication(User user, HttpSession session) {
         var authorities = user.getRoles().stream()
                 .map(role ->
                         new org.springframework.security.core.authority.SimpleGrantedAuthority("ROLE_" + role.name()))
@@ -148,6 +152,8 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
         SecurityContextHolder.getContext().setAuthentication(webAuthentication);
         session.setAttribute(
                 HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, SecurityContextHolder.getContext());
+
+        return webAuthentication;
     }
 
     private OAuth2UserInfo oauth2UserInfo(Authentication authentication) {

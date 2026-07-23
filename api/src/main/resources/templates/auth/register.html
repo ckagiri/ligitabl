@@ -391,6 +391,22 @@
               </div>
             </div>
 
+            <div class="flex items-center">
+              <div class="flex items-center">
+                <input
+                  type="checkbox"
+                  th:field="*{rememberMe}"
+                  class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                />
+                <label
+                  th:for="${#ids.prev('rememberMe')}"
+                  class="ml-2 block text-sm text-gray-900"
+                >
+                  Remember me
+                </label>
+              </div>
+            </div>
+
             <div th:if="${turnstileEnabled}">
               <div
                 class="cf-turnstile"
