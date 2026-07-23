@@ -153,7 +153,8 @@ public class GetUserPredictionUseCase {
         // main-contest Entry's joinedAtRound instead.
         Integer joinedAtRound = rc.mainContestId() == null
                 ? null
-                : entryRepo.findByUserAndContest(ctx.userId(), rc.mainContestId())
+                : entryRepo
+                        .findByUserAndContest(ctx.userId(), rc.mainContestId())
                         .map(entry -> Math.max(1, entry.getJoinedAtRound()))
                         .orElse(null);
 
