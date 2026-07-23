@@ -277,17 +277,21 @@ public class AuthController {
     }
 
     @GetMapping("/logout")
-    public String logout(HttpSession session, RedirectAttributes redirectAttributes, HttpServletRequest request) {
-        SecurityContextHolder.clearContext();
-
-        if (session != null) {
-            session.invalidate();
-        }
-
+    public String logout(RedirectAttributes redirectAttributes, HttpServletRequest request) {
         try {
+            // Must run while the authentication is still in the security context:
+            // the logout handlers include PersistentTokenBasedRememberMeServices, which
+            // needs the Authentication to revoke the DB token (not just cancel the cookie).
             request.logout();
         } catch (Exception e) {
             log.warn("Failed to perform servlet logout", e);
+        }
+
+        SecurityContextHolder.clearContext();
+
+        HttpSession session = request.getSession(false);
+        if (session != null) {
+            session.invalidate();
         }
 
         // Signal frontend to clear localStorage on logout
@@ -434,6 +438,8 @@ public class AuthController {
 
         @NotBlank(message = "Confirm password is required")
         private String confirmPassword;
+
+        private boolean rememberMe = true;
     }
 
     @Data
@@ -444,6 +450,8 @@ public class AuthController {
 
         @NotBlank(message = "Password is required")
         private String password;
+
+        private boolean rememberMe = true;
     }
 
     @Data

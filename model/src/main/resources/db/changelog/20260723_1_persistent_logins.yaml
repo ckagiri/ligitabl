@@ -1,0 +1,46 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260723_1_persistent_logins
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: persistent_logins
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: persistent_logins
+            schemaName: public
+            remarks: >-
+              Spring Security remember-me tokens. Table and column names must stay exactly
+              as JdbcTokenRepositoryImpl's hardcoded SQL expects (no t_/c_ prefixes).
+            columns:
+              - column:
+                  name: username
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: series
+                  type: varchar(64)
+                  constraints:
+                    primaryKey: true
+                    nullable: false
+              - column:
+                  name: token
+                  type: varchar(64)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_used
+                  type: timestamp
+                  constraints:
+                    nullable: false
+        - createIndex:
+            tableName: persistent_logins
+            schemaName: public
+            indexName: idx_persistent_logins_username
+            columns:
+              - column:
+                  name: username

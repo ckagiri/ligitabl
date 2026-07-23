@@ -39,12 +39,13 @@ public class WebUserDetailsService implements UserDetailsService {
                     .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
                     .collect(Collectors.toList());
 
+            // Google-only accounts have no password; remember-me auto-login still loads them here.
             return new WebUserDetails(
                     user.getId(),
                     user.getPublicId().value(),
                     user.getEmail().value(),
                     user.getDisplayName(),
-                    user.getPassword().value(),
+                    user.getPassword() == null ? "" : user.getPassword().value(),
                     authorities);
         } catch (IllegalArgumentException e) {
             // Email.create throws IllegalArgumentException for invalid emails
