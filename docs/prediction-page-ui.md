@@ -351,7 +351,7 @@ minRoundForNav = ${canCreateEntry ? currentRound
 
 1. **No prediction yet** (`canCreateEntry`) → only the current round.
 2. **Has a prediction** → can page back to `joinedAtRound`, capped at `currentRound`.
-3. Pre-season registrations carry `Entry.joinedAtRound = 0` permanently (the merge flow never updates it), but round-0 rows are scored from round 1 — the clamp maps 0 → 1 so their full history is navigable.
+3. Pre-season registrations carry `Entry.joinedAtRound = 0` permanently (the merge flow never updates it), but round-0 rows are scored from round 1 — the clamp maps 0 → 1.
 4. The `<= currentRound` cap means future join rounds (prediction made during a locked round for the next round) never appear.
 
 ### MaxRound

@@ -150,9 +150,7 @@ public class GetUserPredictionUseCase {
 
         // SeasonPrediction.atRoundNumber moves with swaps (it marks the round currentRankings
         // belong to), so the stable "when did this user join" marker for round navigation is the
-        // main-contest Entry's joinedAtRound instead. Pre-season registrations carry
-        // joinedAtRound = 0 permanently (the merge flow never updates it), yet round-0 rows are
-        // scored from round 1 — clamp to 1 so their history is navigable.
+        // main-contest Entry's joinedAtRound instead.
         Integer joinedAtRound = rc.mainContestId() == null
                 ? null
                 : entryRepo.findByUserAndContest(ctx.userId(), rc.mainContestId())
