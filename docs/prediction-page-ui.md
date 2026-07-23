@@ -343,14 +343,16 @@ Round navigation (Previous/Next + dropdown, `fragments/round-navigation.html`) i
 
 ```html
 minRoundForNav = ${canCreateEntry ? currentRound
-    : (atRoundNumber != null && atRoundNumber > 0 && atRoundNumber <= currentRound
-        ? atRoundNumber : currentRound)}
+    : (joinedAtRound != null && joinedAtRound <= currentRound
+        ? joinedAtRound : currentRound)}
 ```
 
+`joinedAtRound` is the main-contest `Entry.joinedAtRound` — the round the user joined at, clamped to ≥ 1 in `GetUserPredictionUseCase`. It is **not** `SeasonPrediction.atRoundNumber`: since swaps update `atRoundNumber` (it marks the round `currentRankings` belong to), `atRoundNumber` is no longer a stable join marker and must not drive navigation.
+
 1. **No prediction yet** (`canCreateEntry`) → only the current round.
-2. **Has a prediction** → can page back to `atRoundNumber` (their join round), capped at `currentRound`.
-3. The `atRoundNumber > 0` guard excludes pre-season registrations (round 0) — round 0 is never navigable.
-4. A future-round prediction (`atRoundNumber > currentRound`, made during a locked round) is capped to `currentRound`, so future rounds never appear.
+2. **Has a prediction** → can page back to `joinedAtRound`, capped at `currentRound`.
+3. Pre-season registrations carry `Entry.joinedAtRound = 0` permanently (the merge flow never updates it), but round-0 rows are scored from round 1 — the clamp maps 0 → 1 so their full history is navigable.
+4. The `<= currentRound` cap means future join rounds (prediction made during a locked round for the next round) never appear.
 
 ### MaxRound
 

@@ -234,7 +234,7 @@
                 >
 roundState=[[${roundState}]]
 isCurrentRound=[[${isCurrentRound}]] viewingRound=[[${viewingRound}]] currentRound=[[${currentRound}]] lastRound=[[${lastRound}]]
-atRoundNumber=[[${atRoundNumber}]] seasonCompleted=[[${seasonCompleted}]] hasRoundResult=[[${hasRoundResult}]]
+atRoundNumber=[[${atRoundNumber}]] joinedAtRound=[[${joinedAtRound}]] seasonCompleted=[[${seasonCompleted}]] hasRoundResult=[[${hasRoundResult}]]
 accessMode=[[${accessMode}]] canCreateEntry=[[${canCreateEntry}]] canSwap=[[${canSwap}]]
 isGuest=[[${isGuest}]]
 swapStatus.firstSwapBonus=[[${swapStatus.firstSwapBonus}]]
@@ -251,7 +251,7 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
             <!-- Round Navigation (only for authenticated users, non-error states) -->
             <div
               th:if="${!isGuest}"
-              th:with="minRoundForNav=${canCreateEntry ? currentRound : (atRoundNumber != null && atRoundNumber > 0 && atRoundNumber <= currentRound ? atRoundNumber : currentRound)}"
+              th:with="minRoundForNav=${canCreateEntry ? currentRound : (joinedAtRound != null && joinedAtRound <= currentRound ? joinedAtRound : currentRound)}"
               class="mt-4"
             >
               <div

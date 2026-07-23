@@ -30,6 +30,7 @@ import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonPrediction;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.repo.CompetitionRepo;
+import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.RoundResultRepo;
@@ -63,6 +64,9 @@ class GetUserPredictionUseCaseTest {
     @Mock
     private MatchRepo matchRepo;
 
+    @Mock
+    private EntryRepo entryRepo;
+
     private GetUserPredictionUseCase useCase;
 
     private UUID seasonId;
@@ -80,7 +84,8 @@ class GetUserPredictionUseCaseTest {
                 roundRepo,
                 roundResultRepo,
                 standingsRepo,
-                matchRepo);
+                matchRepo,
+                entryRepo);
 
         seasonId = UUID.randomUUID();
         roundId = UUID.randomUUID();

@@ -510,6 +510,10 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
         Integer previousPosition = previousPositions.get(ranking.userId());
         int movement = previousPosition == null ? 0 : previousPosition - ranking.position();
 
+        // Pre-season registrations carry joined_at_round = 0 but are scored from round 1 —
+        // clamp so consumers never render "gw0".
+        Integer joinedAtGw = ranking.joinedAtGw() != null ? Math.max(1, ranking.joinedAtGw()) : null;
+
         return new LeaderboardEntry(
                 ranking.position(),
                 ranking.publicId(),
@@ -519,7 +523,7 @@ public class LeaderboardPersistenceAdapter implements LeaderboardRepo {
                 ranking.maxScore(),
                 ranking.totalZeroes(),
                 ranking.totalSwaps(),
-                ranking.joinedAtGw(),
+                joinedAtGw,
                 movement,
                 ranking.scored(),
                 ranking.isFormerMember());
