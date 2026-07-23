@@ -138,13 +138,15 @@ public class AuthController {
                         User user = userRepo.findByEmail(result.email())
                                 .orElseThrow(() -> new IllegalStateException("Registered user not found"));
 
-                        authenticateUser(
+                        var authentication = authenticateUser(
                                 user.getId(),
                                 user.getPublicId().value(),
                                 user.getEmail().value(),
                                 user.getDisplayName(),
                                 user.getRoles(),
                                 request);
+
+                        rememberMeServices.loginSuccess(request, response, authentication);
 
                         redirectAttributes.addFlashAttribute(
                                 "message", "Welcome, " + result.displayName() + "! You're now logged in.");
