@@ -274,8 +274,10 @@ public class CreatePredictionUseCase {
         }
     }
 
-    // Step 6b: Pre-season registration — the "easter egg". One-time 0-5 swap shot,
-    // stored at atRoundNumber=0, excluded from leaderboard scoring (round > 0 filter).
+    // Step 6b: Pre-season registration — the "easter egg". One-time 0-5 swap shot stored at
+    // atRoundNumber=0. The prediction itself is fully scored once rounds finalize; only the swap
+    // cost is excluded — swaps are recorded under round 0, which countSwapsInRound (matching
+    // round == roundPosition, always >= 1) never counts into any RoundResult.swapCount.
     private Either<CreatePredictionError, CreatePredictionResult> registerPreSeason(
             UUID userId, Season season, Contest mainContest, CreatePredictionCommand request) {
         try {
