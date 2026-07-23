@@ -4,7 +4,7 @@ A football league prediction game where players predict league standings each ro
 accuracy. Players can adjust predictions periodically via team swaps. Scores are calculated when rounds are
 finalized by comparing predictions to computed league standings.
 
-Live demo: https://ligipredictor.com/
+Live demo: https://beta.ligipredictor.com/
 
 ## Tech stack
 
@@ -43,7 +43,7 @@ cp env.test.template .env.test
 make run-api
 
 # 3. Verify
-curl http://localhost:8081/api/status
+curl http://localhost:8080/api/status
 ```
 
 For faster iteration (skips migration + jOOQ codegen):
@@ -60,6 +60,8 @@ model/        Database model (Liquibase changelogs, jOOQ-generated types, domain
 seed/         Seeding CLI for loading reference/demo data into the database
 jooq-codegen/ Helper module for jOOQ code generation against the current schema
 scripts/      End-to-end and smoke scripts (auth checks, seeding checks)
+config/       Shared tooling config (code formatter)
+nginx/        nginx config for the production reverse proxy (conf.d, vhost.d)
 docs/         Developer documentation
 ```
 
@@ -83,6 +85,7 @@ Matches are synced from Football-Data.org on a dynamic schedule:
 | Kickoff <= 10 min   | Every 1 minute   |
 | Kickoff <= 60 min   | Every 10 minutes |
 | Kickoff < 6 hours   | Every 1 hour     |
+| Kickoff >= 6 hours  | Every 6 hours    |
 | No upcoming matches | Every 12 hours   |
 | Season complete     | Every 24 hours   |
 
@@ -103,12 +106,12 @@ CSS and JavaScript assets are built through Vite. All frontend tooling lives in 
 
 ### How it works
 
-- **CSS entry point**: `api/src/main/resources/static/css/main.css` — contains Tailwind directives
-- **JS entry point**: `api/src/main/resources/static/js/ligitabl.js` — app JavaScript source bundled by Vite
-- **Generated CSS**: `api/src/main/resources/static/dist/css/main.css`
-- **Generated JS**: `api/src/main/resources/static/dist/js/app.js`
+- **CSS entry point**: `api/src/main/resources/assets/css/main.css` — contains Tailwind directives
+- **JS entry point**: `api/src/main/resources/assets/js/ligitabl.js` — app JavaScript source bundled by Vite
+- **Generated CSS**: `api/src/main/resources/static/dist/css/main.css` (dev builds emit unhashed files into `static/css/`)
+- **Generated JS**: `api/src/main/resources/static/dist/js/app.js` (dev builds emit into `static/js/`)
 - **Template usage**: `base.html` loads assets from `/dist/css/main.css` and `/dist/js/app.js`
-- **Content scanning**: Tailwind scans all Thymeleaf templates (`templates/**/*.html`) and JS files (`static/js/**/*.js`) for class names; unused utilities are purged in production
+- **Content scanning**: Tailwind scans all Thymeleaf templates (`templates/**/*.html`) and JS sources (`assets/js/**/*.js`, `static/js/**/*.js`) for class names; unused utilities are purged in production
 - **Minification**: Terser runs only in production mode; `drop_console` and `drop_debugger` are on by default, and the JS bundle is mangled in production
 
 ### npm scripts
@@ -125,7 +128,7 @@ Run `build:prod` before packaging a JAR or building the Docker image so the comp
 
 ### Adding new utilities or JS changes
 
-Tailwind only emits classes it finds in the scanned files. If you add a new utility class directly in a template, or change code in `static/js/ligitabl.js`, rerun `npm run build:dev` (or keep the `dev` watcher running) so the generated files in `static/dist/` stay in sync.
+Tailwind only emits classes it finds in the scanned files. If you add a new utility class directly in a template, or change code in `assets/js/ligitabl.js`, rerun `npm run build:dev` (or keep the `dev` watcher running) so the generated files in `static/dist/` stay in sync.
 
 ## Key Make targets
 
@@ -147,6 +150,8 @@ make migrate              # Run Liquibase migrations
 make codegen              # Regenerate jOOQ sources
 make db-seed              # Seed reference data (competitions, teams, rounds)
 make db-seed-demo         # Seed demo league data
+make db-backup            # Back up the current environment's database
+make db-restore           # Restore from a backup
 
 # Data import
 make import-pl            # Import Premier League matches
@@ -195,6 +200,12 @@ The pipeline is defined in [`.github/workflows/deploy.yml`](.github/workflows/de
 | `DOCKER_USERNAME` / `DOCKER_PASSWORD` | Docker Hub login |
 | `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` | Production DB credentials |
 | `JWT_SECRET`, `FOOTBALL_DATA_API_TOKEN` | App runtime secrets |
+| `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` | Google OAuth login |
+| `TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY` | Cloudflare Turnstile bot protection |
+| `EMAIL_FROM`, `EMAIL_FROM_NAME`, `MAILGUN_API_KEY`, `MAILGUN_DOMAIN`, `MAILGUN_API_BASE_URL` | Transactional email (Mailgun) |
+| `SLACK_WEBHOOK_URL`, `SLACK_NEW_USER_WEBHOOK_URL` | Slack notifications |
+| `FRONTEND_URL`, `FRONTEND_SHARE_URL` | Absolute URLs in emails/share links |
+| `LOGTAIL_TOKEN`, `SENTRY_AUTH_TOKEN` | Log shipping + error tracking |
 | `DEPLOY_HOST`, `DEPLOY_USERNAME`, `DEPLOY_KEY` | SSH access to Digital Ocean droplet |
 | `HOST_DOMAIN`, `LETSENCRYPT_EMAIL` | nginx-proxy virtual host + TLS cert |
 
@@ -250,6 +261,8 @@ The app itself runs on `beta.ligipredictor.com` and is wired into the same `ngin
 ## Documentation
 
 - [Backend development guide](docs/backend-dev.md) -- running, testing, formatting, DevTools, Thymeleaf patterns
+- [Frontend development guide](docs/frontend-dev.md) -- Vite asset pipeline, Tailwind, Alpine.js
+- [Production deployment](docs/production-deployment.md) -- CI/CD workflow, droplet setup, troubleshooting
 - [API endpoints](docs/api-endpoints.md) -- REST API reference
 - [Debugging tests](docs/debugging-tests.md) -- test troubleshooting
 - [Prediction page UI](docs/prediction-page-ui.md) -- prediction page design and navigation logic
