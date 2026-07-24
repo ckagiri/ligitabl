@@ -4,7 +4,6 @@ import static com.ligitabl.model.db.tables.TOutboxEvent.T_OUTBOX_EVENT;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -31,7 +30,7 @@ class OutboxRepoTest {
 
     @BeforeAll
     static void setup() throws Exception {
-        jdbc = openConnection();
+        jdbc = TestDbConnections.open();
         dsl = DSL.using(jdbc, SQLDialect.POSTGRES);
         repo = new OutboxPersistenceAdapter(dsl);
     }
@@ -46,16 +45,6 @@ class OutboxRepoTest {
     @BeforeEach
     void cleanTable() {
         dsl.deleteFrom(T_OUTBOX_EVENT).execute();
-    }
-
-    private static Connection openConnection() throws Exception {
-        String host = System.getenv().getOrDefault("DB_HOST", "localhost");
-        String port = System.getenv().getOrDefault("DB_PORT", "55433");
-        String db = System.getenv().getOrDefault("DB_NAME", "ligitabl_test");
-        String user = System.getenv().getOrDefault("DB_USER", "ligitabl");
-        String password = System.getenv().getOrDefault("DB_PASSWORD", "ligitabl");
-        String url = String.format("jdbc:postgresql://%s:%s/%s", host, port, db);
-        return DriverManager.getConnection(url, user, password);
     }
 
     private static OutboxEvent newEvent(String key) {
@@ -119,7 +108,7 @@ class OutboxRepoTest {
             repo.save(newEvent("k" + i));
         }
 
-        try (Connection jdbc2 = openConnection()) {
+        try (Connection jdbc2 = TestDbConnections.open()) {
             jdbc.setAutoCommit(false);
             try {
                 List<OutboxEvent> firstBatch = repo.claimBatchForProcessing(2); // locks held until commit
