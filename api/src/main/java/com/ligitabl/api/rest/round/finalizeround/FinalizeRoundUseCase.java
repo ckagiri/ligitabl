@@ -40,6 +40,7 @@ public class FinalizeRoundUseCase {
     private final ScoringEngine scoringEngine;
     private final Clock clock;
     private final AdminNotificationService adminNotificationService;
+    private final RoundResultsEmailEnqueuer roundResultsEmailEnqueuer;
 
     @Transactional
     public Either<FinalizeRoundError, FinalizeRoundResult> execute(UUID seasonId) {
@@ -177,6 +178,21 @@ public class FinalizeRoundUseCase {
             // admin walks forward refinalizing each in turn.
             if (ctx.recompute()) {
                 markDownstreamOutOfSync(ctx);
+            }
+
+            // Step 5.75: Enqueue round-results emails into the outbox (same transaction, so the
+            // "must email these users" facts commit atomically with the finalization). Failures
+            // log loudly but never abort finalization; re-finalization is a no-op via the
+            // outbox idempotency keys, so a round never re-emails.
+            try {
+                roundResultsEmailEnqueuer.enqueue(
+                        ctx.season(), ctx.round(), ctx.currentRound().getPosition(), submissions, results);
+            } catch (Exception e) {
+                log.error(
+                        "[ROUND_RESULTS_ENQUEUE_FAILED] round={}: {}",
+                        ctx.round().getPosition(),
+                        e.getMessage(),
+                        e);
             }
 
             // STEP 6: Send notifications (fire-and-forget; Slack call never blocks or throws)

@@ -34,4 +34,26 @@ public class RoundResult extends AbstractModel<UUID> {
     public int getTotalHits() {
         return rankings.stream().mapToInt(ResultTeamRank::getHit).sum();
     }
+
+    public HitDistribution hitDistribution() {
+        int perfect = 0;
+        int closeCalls = 0;
+        int nearMisses = 0;
+        int bigMisses = 0;
+
+        for (ResultTeamRank ranking : rankings) {
+            int hit = ranking.getHit();
+            if (hit == 0) {
+                perfect++;
+            } else if (hit <= 2) {
+                closeCalls++;
+            } else if (hit <= 4) {
+                nearMisses++;
+            } else {
+                bigMisses++;
+            }
+        }
+
+        return new HitDistribution(perfect, closeCalls, nearMisses, bigMisses);
+    }
 }

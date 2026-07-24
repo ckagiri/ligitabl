@@ -109,6 +109,12 @@ ligitabl:
       api-key: ${MAILGUN_API_KEY:}
       domain: ${MAILGUN_DOMAIN:ligipredictor.com}
       api-base-url: ${MAILGUN_API_BASE_URL:https://api.mailgun.net/v3}
+    round-results:
+      # Recipient cap per round (sprint-leaderboard order).
+      top-n: ${ROUND_RESULTS_EMAIL_TOP_N:50}
+      # live: exclude ignore-list/unverified/opted-out users.
+      # test: send ONLY to ignore-list accounts (local testing against test users).
+      mode: ${ROUND_RESULTS_EMAIL_MODE:live}
 
   slack:
     # Incoming-webhook URL is a secret — env var only, never committed. Default disabled so
