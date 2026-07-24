@@ -17,6 +17,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ligitabl.api.notification.outbox.RoundFinalizedPayload;
+import com.ligitabl.api.notification.outbox.RoundResultsEmailEnqueuer;
 import com.ligitabl.api.scheduling.advanceround.RoundAdvancementService;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
@@ -774,7 +776,7 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
     }
 
     @Test
-    @DisplayName("Should enqueue round-results outbox events for main-contest members, idempotently")
+    @DisplayName("Should record ROUND_FINALIZED in the outbox and fan out ROUND_RESULTS events idempotently")
     void shouldEnqueueRoundResultsOutboxEvents() throws Exception {
         insertSeason(2, 4);
         configureMainContestWithPhases();
@@ -792,6 +794,21 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         var result = finalizeRoundUseCase.execute(seasonId);
         assertThat(result.isRight()).isTrue();
 
+        // Finalization writes exactly one thin ROUND_FINALIZED fact
+        var roundFinalized = outboxRepo.findByIdempotencyKey("round-finalized:%s:1".formatted(seasonId));
+        assertThat(roundFinalized).isPresent();
+        assertThat(roundFinalized.get().getStatus()).isEqualTo(OutboxEvent.Status.PENDING);
+        assertThat(roundFinalized.get().getEventType()).isEqualTo("ROUND_FINALIZED");
+        Integer total = jdbc.queryForObject("SELECT count(*) FROM t_outbox_event", Integer.class);
+        assertThat(total).isEqualTo(1);
+
+        // Fan-out (normally run by the relay post-commit) expands it into per-user events
+        RoundFinalizedPayload payload =
+                objectMapper.readValue(roundFinalized.get().getPayload(), RoundFinalizedPayload.class);
+        assertThat(payload.seasonId()).isEqualTo(seasonId);
+        assertThat(payload.roundPosition()).isEqualTo(1);
+        roundResultsEmailEnqueuer.enqueue(payload);
+
         var aliceEvent = outboxRepo.findByIdempotencyKey("round-results:%s:1:%s".formatted(seasonId, aliceId));
         var bobEvent = outboxRepo.findByIdempotencyKey("round-results:%s:1:%s".formatted(seasonId, bobId));
         assertThat(aliceEvent).isPresent();
@@ -801,25 +818,19 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         assertThat(aliceEvent.get().getPayload()).contains("alice@example.com");
         assertThat(aliceEvent.get().getPayload()).contains("\"sprint\"");
 
-        Integer total = jdbc.queryForObject("SELECT count(*) FROM t_outbox_event", Integer.class);
-        assertThat(total).isEqualTo(2);
-
-        // Re-running the enqueue (as a refinalization would) is a no-op via idempotency keys
-        var season = seasonRepo.findById(seasonId).orElseThrow();
-        var submissions = roundSubmissionRepo.findBySeasonAndRound(seasonId, 1);
-        var results = submissions.stream()
-                .map(s -> roundResultRepo.findByRoundSubmissionId(s.getId()).orElseThrow())
-                .toList();
-        roundResultsEmailEnqueuer.enqueue(season, round1, 1, submissions, results);
-
         total = jdbc.queryForObject("SELECT count(*) FROM t_outbox_event", Integer.class);
-        assertThat(total).isEqualTo(2);
+        assertThat(total).isEqualTo(3);
+
+        // Re-running the fan-out (relay retry / refinalization) is a no-op via idempotency keys
+        roundResultsEmailEnqueuer.enqueue(payload);
+        total = jdbc.queryForObject("SELECT count(*) FROM t_outbox_event", Integer.class);
+        assertThat(total).isEqualTo(3);
     }
 
     @Test
-    @DisplayName("Finalization should still succeed when no main contest or phases are configured")
+    @DisplayName("Fan-out should no-op (not fail) when no main contest or phases are configured")
     void shouldFinalizeWithoutOutboxWhenNoMainContest() throws Exception {
-        // Deliberately no contest / phases seeded — the enqueuer must no-op, not abort
+        // Deliberately no contest / phases seeded — the fan-out must no-op, not abort
         insertSeason(2, 4);
 
         Round round1 = createRound(1, false);
@@ -831,10 +842,17 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
         createPrediction(aliceId, 1);
 
         var result = finalizeRoundUseCase.execute(seasonId);
-
         assertThat(result.isRight()).isTrue();
+
+        // The thin fact is still recorded, but fanning it out yields no per-user events
+        var roundFinalized = outboxRepo.findByIdempotencyKey("round-finalized:%s:1".formatted(seasonId));
+        assertThat(roundFinalized).isPresent();
+
+        roundResultsEmailEnqueuer.enqueue(
+                objectMapper.readValue(roundFinalized.get().getPayload(), RoundFinalizedPayload.class));
+
         Integer total = jdbc.queryForObject("SELECT count(*) FROM t_outbox_event", Integer.class);
-        assertThat(total).isZero();
+        assertThat(total).isEqualTo(1);
     }
 
     private void configureMainContestWithPhases() {

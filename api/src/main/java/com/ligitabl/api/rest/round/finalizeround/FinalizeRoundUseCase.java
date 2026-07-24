@@ -10,8 +10,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.domain.StandingsCalculatorService;
 import com.ligitabl.api.notification.AdminNotificationService;
+import com.ligitabl.api.notification.outbox.OutboxEventTypes;
+import com.ligitabl.api.notification.outbox.RoundFinalizedPayload;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.*;
@@ -40,7 +43,8 @@ public class FinalizeRoundUseCase {
     private final ScoringEngine scoringEngine;
     private final Clock clock;
     private final AdminNotificationService adminNotificationService;
-    private final RoundResultsEmailEnqueuer roundResultsEmailEnqueuer;
+    private final OutboxRepo outboxRepo;
+    private final ObjectMapper objectMapper;
 
     @Transactional
     public Either<FinalizeRoundError, FinalizeRoundResult> execute(UUID seasonId) {
@@ -180,16 +184,25 @@ public class FinalizeRoundUseCase {
                 markDownstreamOutOfSync(ctx);
             }
 
-            // Step 5.75: Enqueue round-results emails into the outbox (same transaction, so the
-            // "must email these users" facts commit atomically with the finalization). Failures
-            // log loudly but never abort finalization; re-finalization is a no-op via the
-            // outbox idempotency keys, so a round never re-emails.
+            // Step 5.75: Record the round-finalized fact in the outbox (same transaction, so it
+            // commits atomically with the finalization). The relay expands it post-commit into
+            // per-user ROUND_RESULTS email events — heavy recipient/placement queries stay off
+            // this transaction. The idempotency key makes refinalization a no-op, so a round
+            // never re-triggers emails; any failure here logs loudly but never aborts.
             try {
-                roundResultsEmailEnqueuer.enqueue(
-                        ctx.season(), ctx.round(), ctx.currentRound().getPosition(), submissions, results);
+                RoundFinalizedPayload payload = new RoundFinalizedPayload(
+                        ctx.season().getId(),
+                        ctx.round().getPosition(),
+                        ctx.currentRound().getPosition());
+                outboxRepo.save(OutboxEvent.create(
+                        "round-finalized:%s:%d".formatted(ctx.season().getId(), ctx.round().getPosition()),
+                        OutboxEventTypes.ROUND_FINALIZED,
+                        "round",
+                        String.valueOf(ctx.round().getPosition()),
+                        objectMapper.writeValueAsString(payload)));
             } catch (Exception e) {
                 log.error(
-                        "[ROUND_RESULTS_ENQUEUE_FAILED] round={}: {}",
+                        "[ROUND_FINALIZED_OUTBOX_FAILED] round={}: {}",
                         ctx.round().getPosition(),
                         e.getMessage(),
                         e);

@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.round.finalizeround;
+package com.ligitabl.api.notification.outbox;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -7,16 +7,11 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ligitabl.api.notification.outbox.OutboxEventTypes;
-import com.ligitabl.api.notification.outbox.RoundResultsEmailProperties;
-import com.ligitabl.api.notification.outbox.RoundResultsPayload;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
@@ -25,10 +20,8 @@ import com.ligitabl.model.domain.LeaderboardResponse;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.PhaseRules;
 import com.ligitabl.model.domain.PhaseType;
-import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundResult;
 import com.ligitabl.model.domain.RoundSpan;
-import com.ligitabl.model.domain.RoundSubmission;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.AppSettingRepo;
@@ -36,25 +29,31 @@ import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.LeaderboardRepo;
 import com.ligitabl.model.repo.OutboxRepo;
+import com.ligitabl.model.repo.RoundResultRepo;
+import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.UserRepo;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Writes one ROUND_RESULTS outbox event per email recipient when a round is
- * finalized, inside the finalization transaction.
+ * Fan-out handler for ROUND_FINALIZED outbox events: expands the thin
+ * round-finalized fact into one ROUND_RESULTS outbox event per email
+ * recipient. Runs post-commit (invoked by the outbox relay), so the heavy
+ * leaderboard/placement queries stay off the finalization transaction; a
+ * failure here is retried by the relay's normal backoff.
  *
  * <p>Recipients are the top {@code topN} of the main contest's sprint
  * leaderboard for the sprint containing the finalized round. Ignore-list
  * accounts (test users), unverified emails and opted-out users are skipped —
  * the next-ranked user takes the freed slot. In {@code test} mode the rule
  * inverts: only ignore-list accounts receive, so the pipeline can run locally
- * against test users.
+ * against test users. Both modes scan the same {@code topN + ignoreList.size()}
+ * window — a test account outside it simply gets no email.
  *
- * <p>Duplicate enqueues (e.g. refinalization) are no-ops via the outbox
- * idempotency key. Every early return here is deliberate: missing contest or
- * phase configuration must never fail round finalization.
+ * <p>Duplicate fan-outs (relay retry, refinalization) are no-ops via the
+ * per-user idempotency keys. Missing contest or phase configuration logs and
+ * no-ops rather than failing the event.
  */
 @Component
 @RequiredArgsConstructor
@@ -75,19 +74,21 @@ public class RoundResultsEmailEnqueuer {
     private final LeaderboardRepo leaderboardRepo;
     private final ContestRepo contestRepo;
     private final CompetitionRepo competitionRepo;
+    private final SeasonRepo seasonRepo;
+    private final RoundResultRepo roundResultRepo;
     private final ObjectMapper objectMapper;
     private final RoundResultsEmailProperties properties;
 
     private record Recipient(User user, LeaderboardEntry sprintEntry, RoundResult result) {}
 
-    public void enqueue(
-            Season season,
-            Round round,
-            int currentRoundPosition,
-            List<RoundSubmission> submissions,
-            List<RoundResult> results) {
-        int roundPosition = round.getPosition();
+    public void enqueue(RoundFinalizedPayload event) {
+        int roundPosition = event.roundPosition();
 
+        Season season = seasonRepo.findById(event.seasonId()).orElse(null);
+        if (season == null) {
+            log.warn("[ROUND_RESULTS_ENQUEUE_SKIPPED] round={}: season {} not found", roundPosition, event.seasonId());
+            return;
+        }
         if (season.getMainContestId() == null) {
             log.warn("[ROUND_RESULTS_ENQUEUE_SKIPPED] round={}: season has no main contest", roundPosition);
             return;
@@ -112,7 +113,6 @@ public class RoundResultsEmailEnqueuer {
             return;
         }
 
-        Map<UUID, RoundResult> resultsByUserId = resultsByUserId(submissions, results);
         Set<String> ignoreList = loadIgnoreList();
         boolean testMode = properties.isTestMode();
         int topN = properties.getTopN();
@@ -122,8 +122,7 @@ public class RoundResultsEmailEnqueuer {
         int maxEntries = topN + ignoreList.size();
         Board sprintBoard = fetchBoard(contest, season, sprint.getFrom(), roundPosition, maxEntries);
 
-        List<Recipient> recipients =
-                selectRecipients(sprintBoard.entries(), resultsByUserId, ignoreList, testMode, topN);
+        List<Recipient> recipients = selectRecipients(sprintBoard.entries(), roundPosition, ignoreList, testMode, topN);
         if (recipients.isEmpty()) {
             log.info("[ROUND_RESULTS_ENQUEUED] round={}, recipients=0, mode={}", roundPosition, properties.getMode());
             return;
@@ -149,7 +148,7 @@ public class RoundResultsEmailEnqueuer {
                 RoundResultsPayload payload = buildPayload(
                         recipient,
                         roundPosition,
-                        currentRoundPosition,
+                        event.currentRoundPosition(),
                         season.getMaxRounds(),
                         sprint,
                         sprintBoard.totalParticipants(),
@@ -158,18 +157,17 @@ public class RoundResultsEmailEnqueuer {
                 String json = objectMapper.writeValueAsString(payload);
                 String idempotencyKey = "round-results:%s:%d:%s"
                         .formatted(season.getId(), roundPosition, recipient.user().getId());
-                OutboxEvent event = OutboxEvent.create(
+                OutboxEvent outboxEvent = OutboxEvent.create(
                         idempotencyKey,
                         OutboxEventTypes.ROUND_RESULTS,
                         "round",
                         String.valueOf(roundPosition),
                         json);
-                if (outboxRepo.save(event)) {
+                if (outboxRepo.save(outboxEvent)) {
                     inserted++;
                 }
             } catch (Exception e) {
-                // One bad payload must not cost the other recipients their email,
-                // and never the finalization itself.
+                // One bad payload must not cost the other recipients their email.
                 log.error(
                         "[ROUND_RESULTS_ENQUEUE_USER_FAILED] round={}, userId={}: {}",
                         roundPosition,
@@ -189,7 +187,7 @@ public class RoundResultsEmailEnqueuer {
 
     private List<Recipient> selectRecipients(
             List<LeaderboardEntry> sprintEntries,
-            Map<UUID, RoundResult> resultsByUserId,
+            int roundPosition,
             Set<String> ignoreList,
             boolean testMode,
             int topN) {
@@ -211,7 +209,9 @@ public class RoundResultsEmailEnqueuer {
             } else if (ignored || !user.isEmailVerified() || user.isResultsEmailOptOut()) {
                 continue;
             }
-            RoundResult result = resultsByUserId.get(user.getId());
+            RoundResult result = roundResultRepo
+                    .findByUserAndRound(user.getId(), roundPosition)
+                    .orElse(null);
             if (result == null) {
                 continue;
             }
@@ -290,15 +290,6 @@ public class RoundResultsEmailEnqueuer {
             offset += PAGE_SIZE;
         }
         return new Board(entries, totalParticipants);
-    }
-
-    private Map<UUID, RoundResult> resultsByUserId(List<RoundSubmission> submissions, List<RoundResult> results) {
-        Map<UUID, UUID> userBySubmissionId =
-                submissions.stream().collect(Collectors.toMap(RoundSubmission::getId, RoundSubmission::getUserId));
-        return results.stream()
-                .filter(r -> userBySubmissionId.containsKey(r.getRoundSubmissionId()))
-                .collect(Collectors.toMap(
-                        r -> userBySubmissionId.get(r.getRoundSubmissionId()), Function.identity(), (a, b) -> a));
     }
 
     private Set<String> loadIgnoreList() {
