@@ -428,6 +428,31 @@ mvn -q -pl seed -am test
 make test-all
 ```
 
+### DB-test conventions: api uses naming, model uses tags
+
+The two modules mark DB-touching tests differently — both are intentional; don't mix them up:
+
+- **api** signals via **file naming**: `*IT` / `*IntegrationTest` (e.g.
+  `FinalizeRoundUseCaseIntegrationTest`). `make test-api-core` skips them
+  (`-DskipITs`); `make test-api-it` runs them by passing
+  `-Dtest='**/*IT,**/*IntegrationTest'` explicitly.
+- **model** signals via **JUnit tag**: DB-backed repo tests are named `*RepoTest`
+  (e.g. `MatchRepoTest`, `OutboxRepoTest`) and carry `@Tag("integration")`.
+  `model/pom.xml` surefire filters with `<groups>${model.test.groups}</groups>`,
+  default `!integration` — so a plain `mvn test` already excludes them. Opt in
+  with the compose DB up:
+
+```bash
+mvn -pl model -Pwith-jooq -Djooq.codegen.skip=true -Dmodel.test.groups=integration test
+```
+
+**Do not name model tests `*IT.java`.** Surefire's default include patterns
+(`*Test`, `Test*`, `*Tests`, `*TestCase`) won't match `*IT`, and the model module
+has no failsafe plugin or explicit `-Dtest` pattern to pick them up — the test
+would be silently skipped everywhere. In model, the `@Tag("integration")` +
+groups filter is what provides the "don't run DB tests by accident" isolation
+that `*IT` naming provides in api.
+
 ### Sharing test fixtures across modules (model ↔ api)
 
 `model` publishes a `tests` classifier jar (via a `maven-jar-plugin` `test-jar` execution in
