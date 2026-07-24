@@ -1,0 +1,114 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260724_1_outbox_event
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: t_outbox_event
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: t_outbox_event
+            schemaName: public
+            remarks: >-
+              Transactional outbox. Rows are written in the same transaction as the
+              domain change that requires a notification (e.g. round finalization)
+              and drained asynchronously by the outbox relay job.
+            columns:
+              - column:
+                  name: pk_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: c_idempotency_key
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+                    unique: true
+                    uniqueConstraintName: uq_outbox_event_idempotency_key
+              - column:
+                  name: c_event_type
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_aggregate_type
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_aggregate_id
+                  type: varchar(255)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_payload
+                  type: jsonb
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_status
+                  type: varchar(20)
+                  defaultValue: PENDING
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_attempts
+                  type: int
+                  defaultValueNumeric: 0
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_max_attempts
+                  type: int
+                  defaultValueNumeric: 5
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_last_error
+                  type: text
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_available_at
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_created_at
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_processed_at
+                  type: timestamp with time zone
+                  constraints:
+                    nullable: true
+
+        - sql:
+            sql: |
+              ALTER TABLE public.t_outbox_event
+              ADD CONSTRAINT ck_outbox_event_status
+              CHECK (c_status IN ('PENDING', 'PROCESSING', 'SENT', 'FAILED', 'DEAD_LETTER'))
+
+        - sql:
+            sql: |
+              CREATE INDEX idx_outbox_event_status_available
+              ON public.t_outbox_event (c_status, c_available_at)
+              WHERE c_status IN ('PENDING', 'FAILED')
+
+        - createIndex:
+            tableName: t_outbox_event
+            schemaName: public
+            indexName: idx_outbox_event_aggregate
+            columns:
+              - column:
+                  name: c_aggregate_type
+              - column:
+                  name: c_aggregate_id

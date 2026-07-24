@@ -1,0 +1,25 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260724_3_user_results_email_opt_out
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_user
+            schemaName: public
+        - not:
+            - columnExists:
+                tableName: t_user
+                schemaName: public
+                columnName: c_results_email_opt_out
+      changes:
+        - addColumn:
+            tableName: t_user
+            schemaName: public
+            columns:
+              - column:
+                  name: c_results_email_opt_out
+                  type: boolean
+                  defaultValueBoolean: false
+                  constraints:
+                    nullable: false
