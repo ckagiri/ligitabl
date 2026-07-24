@@ -292,6 +292,28 @@
               </div>
             </th:block>
 
+            <!-- Email me my round results -->
+            <div class="border-t border-gray-200"></div>
+            <div class="pt-4 sm:pt-6 flex items-start gap-2">
+              <input
+                type="checkbox"
+                id="receiveResultsEmail"
+                th:field="*{receiveResultsEmail}"
+                class="mt-1 h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
+              />
+              <div>
+                <label
+                  for="receiveResultsEmail"
+                  class="text-sm font-medium text-gray-700"
+                >
+                  Email me my round results
+                </label>
+                <p class="mt-1 text-xs sm:text-sm text-gray-500">
+                  Get an email with your score and standings when a gameweek is finalized.
+                </p>
+              </div>
+            </div>
+
             <!-- Divider -->
             <div class="border-t border-gray-200"></div>
 
