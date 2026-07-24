@@ -88,6 +88,16 @@ ligitabl:
   scheduling:
     enabled: true
 
+  outbox:
+    # Kill-switch for the relay only (other schedulers unaffected). While false,
+    # events accumulate as PENDING and are delivered once re-enabled.
+    enabled: ${OUTBOX_ENABLED:true}
+    # Relay cadence and rows claimed per tick; stuck PROCESSING rows (crashed
+    # mid-send) are swept back to FAILED every stuck-sweep interval.
+    poll-interval-ms: ${OUTBOX_POLL_INTERVAL_MS:15000}
+    batch-size: ${OUTBOX_BATCH_SIZE:25}
+    stuck-sweep-interval-ms: ${OUTBOX_STUCK_SWEEP_INTERVAL_MS:300000}
+
   rate-limit:
     # Per-client (per-IP) budget — each client gets its own bucket in RateLimitFilter.
     # In prod the real client IP comes from X-Forwarded-For via forward-headers-strategy=native.

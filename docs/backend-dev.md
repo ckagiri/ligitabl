@@ -833,6 +833,40 @@ directly against a plain object.
 
 - Example: `api/src/main/resources/templates/matches.html` (LIVE badge minute/injury-time rendering)
 
+## Unit-testing Thymeleaf templates: use `SpringTemplateEngine`, not bare `TemplateEngine`
+
+**Issue**: A template using SpEL's `T(...)` static-access operator (e.g. `T(com.ligitabl.model.domain.ScoreTier).forScore(score)`
+in `fragments/score-emoji.html`, `fragments/results-banner.html`, `email/round-results.html`) renders fine in the
+running app but throws `OGNL` evaluation errors when exercised from a hand-rolled unit test that constructs its own
+`TemplateEngine`.
+
+**Root cause**: `T(...)` is a **SpringEL** operator, only available under Thymeleaf's `SpringStandardDialect`. The
+running app gets this for free — Spring Boot autoconfigures a `SpringTemplateEngine` (which registers
+`SpringStandardDialect`) for the `TemplateEngine` bean injected into `ThymeleafEmailTemplateRenderer` and friends. A
+test that does `new TemplateEngine()` (plain `org.thymeleaf.TemplateEngine`, no Spring involved) gets Thymeleaf's
+default **`StandardDialect`** instead, which is OGNL-based — OGNL has no `T(...)` operator, so the expression fails
+to parse at evaluation time. The test silently diverges from what production actually runs, so a template regression
+in `T(...)` usage can slip through such a test undetected.
+
+```java
+// WRONG: bare TemplateEngine → StandardDialect (OGNL) → T(...) throws
+TemplateEngine engine = new TemplateEngine();
+engine.setTemplateResolver(resolver);
+
+// CORRECT: SpringTemplateEngine → SpringStandardDialect (SpringEL) → T(...) works,
+// matching what Spring Boot autoconfigures in the running app
+SpringTemplateEngine engine = new SpringTemplateEngine();
+engine.setTemplateResolver(resolver);
+```
+
+**Fix**: any test that constructs its own `TemplateEngine` to render a real app template must use
+`org.thymeleaf.spring6.SpringTemplateEngine` (already on the classpath via `spring-boot-starter-thymeleaf`), not the
+bare `org.thymeleaf.TemplateEngine`.
+
+### Related Files
+
+- `api/src/test/java/com/ligitabl/api/notification/email/ThymeleafEmailTemplateRendererTest.java`
+
 ## HTMX + Alpine event listener reliability
 
 When wiring loading indicators or other request-lifecycle UI around HTMX swaps, do not assume Alpine's `.window`
