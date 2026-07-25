@@ -32,6 +32,7 @@ import com.ligitabl.api.auth.impersonation.ClearImpersonationLogoutHandler;
 import com.ligitabl.api.auth.oauth2.CustomOAuth2UserService;
 import com.ligitabl.api.auth.oauth2.OAuth2AuthenticationSuccessHandler;
 import com.ligitabl.api.auth.security.JwtAuthenticationFilter;
+import com.ligitabl.api.auth.security.QuietRememberMeServices;
 import com.ligitabl.api.auth.security.TokenGenerator;
 
 @Configuration
@@ -128,7 +129,11 @@ public class SecurityConfig {
 
     /**
      * Remember-me for form login and registration: opt-in via the {@code rememberMe}
-     * checkbox bound on {@code LoginForm}/{@code RegisterForm}.
+     * checkbox bound on {@code LoginForm}/{@code RegisterForm}. Wrapped in
+     * {@link QuietRememberMeServices} — this is the instance wired into
+     * {@code RememberMeAuthenticationFilter} below, i.e. the one whose
+     * {@code autoLogin} runs on every request, so it's the one that needs
+     * protection against a stale cookie surfacing as an uncaught exception.
      */
     @Bean
     public RememberMeServices rememberMeServices(
@@ -138,7 +143,7 @@ public class SecurityConfig {
                 rememberMeKey, userDetailsService, persistentTokenRepository);
         services.setParameter("rememberMe");
         services.setTokenValiditySeconds(rememberMeTokenValiditySeconds);
-        return services;
+        return new QuietRememberMeServices(services);
     }
 
     /**
