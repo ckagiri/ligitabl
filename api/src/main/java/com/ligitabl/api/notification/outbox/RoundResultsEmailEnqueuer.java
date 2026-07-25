@@ -156,6 +156,7 @@ public class RoundResultsEmailEnqueuer {
             try {
                 RoundResultsPayload payload = buildPayload(
                         recipient,
+                        season.getSlug().toShorthand(),
                         roundPosition,
                         event.currentRoundPosition(),
                         season.getMaxRounds(),
@@ -233,6 +234,7 @@ public class RoundResultsEmailEnqueuer {
 
     private RoundResultsPayload buildPayload(
             Recipient recipient,
+            String seasonSlug,
             int roundPosition,
             int currentRoundPosition,
             int lastRound,
@@ -285,6 +287,8 @@ public class RoundResultsEmailEnqueuer {
                 user.getId(),
                 user.getEmail().value(),
                 user.getDisplayName(),
+                user.getPublicId().value(),
+                seasonSlug,
                 roundPosition,
                 score,
                 currentRoundPosition,

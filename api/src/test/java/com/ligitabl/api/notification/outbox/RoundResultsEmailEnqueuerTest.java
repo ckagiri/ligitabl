@@ -36,6 +36,7 @@ import com.ligitabl.model.domain.ResultTeamRank;
 import com.ligitabl.model.domain.RoundResult;
 import com.ligitabl.model.domain.RoundSpan;
 import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.SeasonSlug;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.AppSettingRepo;
@@ -156,6 +157,7 @@ class RoundResultsEmailEnqueuerTest {
                 .competitionId(competitionId)
                 .mainContestId(contestId)
                 .maxRounds(38)
+                .slug(SeasonSlug.of("2025-26"))
                 .build();
 
         Competition competition = Competition.builder()
@@ -305,6 +307,8 @@ class RoundResultsEmailEnqueuerTest {
         assertThat(alicePayload.currentRound()).isEqualTo(ROUND);
         assertThat(alicePayload.lastRound()).isEqualTo(38);
         assertThat(alicePayload.userDisplayName()).isEqualTo("Alice");
+        assertThat(alicePayload.userPublicId()).isEqualTo(alice.publicId);
+        assertThat(alicePayload.seasonSlug()).isEqualTo("2526");
 
         assertThat(alicePayload.hitDistribution().perfect()).isEqualTo(1);
         assertThat(alicePayload.hitDistribution().closeCalls()).isEqualTo(1);

@@ -115,8 +115,10 @@ public class OutboxEventProcessor {
         data.put("quarter", payload.quarter());
         data.put("season", payload.season());
         data.put("frontendUrl", frontendUrl);
-        data.put("showDetailedResultsLink", payload.currentRound() != payload.lastRound());
-        data.put("detailedResultsUrl", frontendUrl + "/my-table?round=" + payload.round());
+        data.put("showDetailedResultsLink", payload.round() != payload.lastRound());
+        data.put(
+                "detailedResultsUrl",
+                frontendUrl + "/u/" + payload.userPublicId() + "/" + payload.seasonSlug() + "/gw/" + payload.round());
         return data;
     }
 

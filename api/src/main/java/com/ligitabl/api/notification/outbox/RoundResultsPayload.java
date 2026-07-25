@@ -12,6 +12,8 @@ public record RoundResultsPayload(
         UUID userId,
         String userEmail,
         String userDisplayName,
+        String userPublicId,
+        String seasonSlug,
         int round,
         int score,
         int currentRound,

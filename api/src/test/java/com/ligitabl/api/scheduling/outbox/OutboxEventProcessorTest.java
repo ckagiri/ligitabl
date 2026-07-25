@@ -83,14 +83,20 @@ class OutboxEventProcessorTest {
     }
 
     private String roundResultsJson() throws Exception {
+        return roundResultsJson(22, 22, 38);
+    }
+
+    private String roundResultsJson(int round, int currentRound, int lastRound) throws Exception {
         RoundResultsPayload payload = new RoundResultsPayload(
                 userId,
                 "alice@x.com",
                 "Alice",
-                22,
+                "aaaaaaaabc",
+                "s1",
+                round,
                 175,
-                22,
-                38,
+                currentRound,
+                lastRound,
                 new HitDistribution(1, 1, 1, 1),
                 new RoundResultsPayload.SprintPlacement("S8", 21, 23, 2, 120, 1, 175, true),
                 new RoundResultsPayload.SeasonPlacement("Season", 1, 38, 18, 140, 1, 1800, false),
@@ -123,12 +129,39 @@ class OutboxEventProcessorTest {
                 .containsEntry("score", 175)
                 .containsEntry("userDisplayName", "Alice")
                 .containsEntry("showDetailedResultsLink", true)
-                .containsEntry("detailedResultsUrl", "http://localhost:8080/my-table?round=22")
+                .containsEntry("detailedResultsUrl", "http://localhost:8080/u/aaaaaaaabc/s1/gw/22")
                 .containsKeys("hitDistribution", "sprint", "quarter", "season");
 
         verify(emailProvider)
                 .sendSingle(eq("alice@x.com"), eq("subject"), eq("<html/>"), eq(EmailCommand.Priority.NORMAL));
         verify(outboxRepo).markSent(event.getId());
+    }
+
+    @Test
+    void showsDetailedResultsLinkForSecondToLastRoundEvenThoughSeasonNowSitsOnTheLastRound() throws Exception {
+        // Round 37 (of 38) just finalized, so the season's currentRound has already advanced to
+        // 38 (the last round) — but this email is about round 37, which isn't the season finale,
+        // so the CTA must still show.
+        OutboxEvent event = claimedEvent(OutboxEventTypes.ROUND_RESULTS, roundResultsJson(37, 38, 38), 1);
+
+        processor.processOne(event);
+
+        ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.captor();
+        verify(renderer).render(eq(EmailCommand.EmailType.ROUND_RESULTS), dataCaptor.capture());
+        org.assertj.core.api.Assertions.assertThat(dataCaptor.getValue()).containsEntry("showDetailedResultsLink", true);
+    }
+
+    @Test
+    void hidesDetailedResultsLinkWhenTheReportedRoundIsTheSeasonFinale() throws Exception {
+        // Round 38 (the last round) finalized — season is fully complete, no next round to link
+        // to, so currentRound stays pinned at 38 too.
+        OutboxEvent event = claimedEvent(OutboxEventTypes.ROUND_RESULTS, roundResultsJson(38, 38, 38), 1);
+
+        processor.processOne(event);
+
+        ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.captor();
+        verify(renderer).render(eq(EmailCommand.EmailType.ROUND_RESULTS), dataCaptor.capture());
+        org.assertj.core.api.Assertions.assertThat(dataCaptor.getValue()).containsEntry("showDetailedResultsLink", false);
     }
 
     @Test

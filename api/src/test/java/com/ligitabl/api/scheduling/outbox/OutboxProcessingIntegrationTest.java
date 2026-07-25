@@ -52,6 +52,8 @@ class OutboxProcessingIntegrationTest extends AbstractPostgresIT {
                 UUID.randomUUID(),
                 "alice@example.com",
                 "Alice",
+                "aaaaaaaabc",
+                "s1",
                 22,
                 175,
                 22,
