@@ -85,10 +85,10 @@ class ThymeleafEmailTemplateRendererTest {
                 .as("zero score")
                 .isTrue();
 
-        // Negative movement on both sprint and quarter.
+        // Negative movement on both sprint and season.
         var negativeMovement = new java.util.HashMap<>(roundResultsData());
         negativeMovement.put("sprint", new RoundResultsPayload.SprintPlacement("S8", 21, 23, 6, 120, -2, 190, false));
-        negativeMovement.put("quarter", new RoundResultsPayload.QuarterPlacement("Q3", 20, 28, 6, 130, -2, 190, false));
+        negativeMovement.put("season", new RoundResultsPayload.SeasonPlacement("Season", 1, 38, 6, 140, -2, 1900, false));
         assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, negativeMovement)
                         .isRight())
                 .as("negative movement")
@@ -98,20 +98,20 @@ class ThymeleafEmailTemplateRendererTest {
         var phaseOpener = new java.util.HashMap<>(roundResultsData());
         phaseOpener.put("round", 20);
         phaseOpener.put("sprint", new RoundResultsPayload.SprintPlacement("S8", 20, 22, 2, 120, null, 175, false));
-        phaseOpener.put("quarter", new RoundResultsPayload.QuarterPlacement("Q3", 20, 28, 5, 130, null, 175, false));
+        phaseOpener.put("season", new RoundResultsPayload.SeasonPlacement("Season", 20, 38, 5, 140, null, 175, false));
         assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, phaseOpener)
                         .isRight())
                 .as("round == fromRound")
                 .isTrue();
 
-        // No quarter phase configured — its best-callout block and standings row must both be
-        // skipped gracefully, not throw. Sprint's block still renders.
-        var noQuarter = new java.util.HashMap<>(roundResultsData());
-        noQuarter.put("quarter", null);
-        var noQuarterResult = renderer.render(EmailCommand.EmailType.ROUND_RESULTS, noQuarter);
-        assertThat(noQuarterResult.isRight()).as("null quarter").isTrue();
-        assertThat(noQuarterResult.get().htmlBody()).doesNotContain("quarter best");
-        assertThat(noQuarterResult.get().htmlBody()).contains("sprint best");
+        // No season best-callout (suppressed, or no data) — its block and standings row must
+        // both be skipped gracefully, not throw. Sprint's block still renders.
+        var noSeason = new java.util.HashMap<>(roundResultsData());
+        noSeason.put("season", null);
+        var noSeasonResult = renderer.render(EmailCommand.EmailType.ROUND_RESULTS, noSeason);
+        assertThat(noSeasonResult.isRight()).as("null season").isTrue();
+        assertThat(noSeasonResult.get().htmlBody()).doesNotContain("season best");
+        assertThat(noSeasonResult.get().htmlBody()).contains("sprint best");
 
         // No sprint phase configured — same, but for the sprint block/row.
         var noSprint = new java.util.HashMap<>(roundResultsData());
@@ -119,14 +119,14 @@ class ThymeleafEmailTemplateRendererTest {
         var noSprintResult = renderer.render(EmailCommand.EmailType.ROUND_RESULTS, noSprint);
         assertThat(noSprintResult.isRight()).as("null sprint").isTrue();
         assertThat(noSprintResult.get().htmlBody()).doesNotContain("sprint best");
-        assertThat(noSprintResult.get().htmlBody()).contains("quarter best");
+        assertThat(noSprintResult.get().htmlBody()).contains("season best");
 
-        // No full-season phase configured (season is the only plain secondary standing).
-        var noSeason = new java.util.HashMap<>(roundResultsData());
-        noSeason.put("season", null);
-        assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, noSeason)
+        // No quarter phase configured (quarter is the only plain secondary standing).
+        var noQuarter = new java.util.HashMap<>(roundResultsData());
+        noQuarter.put("quarter", null);
+        assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, noQuarter)
                         .isRight())
-                .as("null season")
+                .as("null quarter")
                 .isTrue();
 
         // Season's final round: CTA button must not render (and must not throw).
@@ -148,8 +148,8 @@ class ThymeleafEmailTemplateRendererTest {
         data.put("lastRound", 38);
         data.put("hitDistribution", new HitDistribution(5, 8, 5, 2));
         data.put("sprint", new RoundResultsPayload.SprintPlacement("S8", 21, 23, 2, 120, 1, 175, true));
-        data.put("quarter", new RoundResultsPayload.QuarterPlacement("Q3", 20, 28, 5, 130, 1, 175, true));
-        data.put("season", new RoundResultsPayload.Placement("FS", 18, 140));
+        data.put("season", new RoundResultsPayload.SeasonPlacement("Season", 1, 38, 18, 140, 1, 175, true));
+        data.put("quarter", new RoundResultsPayload.Placement("Q3", 5, 130));
         data.put("frontendUrl", "http://localhost:8080");
         data.put("showDetailedResultsLink", true);
         data.put("detailedResultsUrl", "http://localhost:8080/my-table?round=22");

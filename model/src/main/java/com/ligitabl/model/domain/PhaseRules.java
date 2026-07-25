@@ -199,20 +199,6 @@ public final class PhaseRules {
                 .orElse(null);
     }
 
-    /**
-     * True when {@code a} and {@code b} start at the same round — a symmetric check, not a
-     * containment/nesting one (it says nothing about either span's {@code to}, or which one
-     * is wider). Callers use it on a genuinely nested pair (e.g. sprint S1 gw1-4 inside
-     * quarter Q1 gw1-9) to tell whether the wider span's standings-so-far are, as of the
-     * current round, computed from that same starting round as the narrower one — and
-     * therefore identical to it right now, making the wider span redundant to show
-     * separately. That stops being true once the current round moves into a later
-     * sub-window (S2 gw5-9, or Q2 gw10-19) whose own start differs from the wider span's.
-     */
-    public static boolean sameStart(RoundSpan a, RoundSpan b) {
-        return a != null && b != null && a.getFrom() == b.getFrom();
-    }
-
     private static int indexOfQuarterContaining(List<RoundSpan> quarters, int roundPosition) {
         for (int i = 0; i < quarters.size(); i++) {
             RoundSpan quarter = quarters.get(i);

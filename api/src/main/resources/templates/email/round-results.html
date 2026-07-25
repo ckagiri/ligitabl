@@ -105,10 +105,7 @@
                       <p th:if="${round == sprint.fromRound}" style="margin:2px 0 0 0; font-size:13px; color:#6b7280;">
                         🏁 Your sprint best: <span style="font-weight:600;" th:text="${sprint.sprintBest}">180</span> pts
                       </p>
-                      <!-- When both new-bests fire the same round, the points are literally identical
-                           (score == sprintBest == quarterBest) — quarter's line below covers it, so
-                           skip the sprint repeat. -->
-                      <p th:if="${sprint.isNewSprintBest && !(quarter != null && quarter.isNewQuarterBest)}" style="margin:2px 0 0 0; font-size:14px; color:#b45309; font-weight:600;">
+                      <p th:if="${sprint.isNewSprintBest}" style="margin:2px 0 0 0; font-size:14px; color:#b45309; font-weight:600;">
                         🎉 New sprint best — <span th:text="${sprint.sprintBest}">180</span> pts!
                       </p>
                       <p th:if="${round != sprint.fromRound && !sprint.isNewSprintBest}" style="margin:2px 0 0 0; font-size:13px; color:#9ca3af;">
@@ -125,28 +122,28 @@
                       </p>
                     </th:block>
 
-                    <!-- Quarter best / new-best / movement -->
-                    <th:block th:if="${quarter != null && quarter.quarterBest > 0}">
+                    <!-- Season best / new-best / movement -->
+                    <th:block th:if="${season != null && season.seasonBest > 0}">
                       <p style="margin:16px 0 2px 0; font-size:11px; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:0.05em; border-top:1px solid #e5e7eb; padding-top:12px;">
-                        📅 Quarter &bull; <span th:text="${quarter.label.substring(1)}">1</span>
+                        🏆 Season
                       </p>
-                      <p th:if="${round == quarter.fromRound}" style="margin:2px 0 0 0; font-size:13px; color:#6b7280;">
-                        🏁 Your quarter best: <span style="font-weight:600;" th:text="${quarter.quarterBest}">180</span> pts
+                      <p th:if="${round == season.fromRound}" style="margin:2px 0 0 0; font-size:13px; color:#6b7280;">
+                        🏁 Your season best: <span style="font-weight:600;" th:text="${season.seasonBest}">180</span> pts
                       </p>
-                      <p th:if="${quarter.isNewQuarterBest}" style="margin:2px 0 0 0; font-size:14px; color:#b45309; font-weight:600;">
-                        🎉 New quarter best — <span th:text="${quarter.quarterBest}">180</span> pts!
+                      <p th:if="${season.isNewSeasonBest}" style="margin:2px 0 0 0; font-size:14px; color:#b45309; font-weight:600;">
+                        🎉 New season best — <span th:text="${season.seasonBest}">180</span> pts!
                       </p>
-                      <p th:if="${round != quarter.fromRound && !quarter.isNewQuarterBest}" style="margin:2px 0 0 0; font-size:13px; color:#9ca3af;">
-                        📉 Your quarter best: <span style="font-weight:600;" th:text="${quarter.quarterBest}">180</span> pts
+                      <p th:if="${round != season.fromRound && !season.isNewSeasonBest}" style="margin:2px 0 0 0; font-size:13px; color:#9ca3af;">
+                        📉 Your season best: <span style="font-weight:600;" th:text="${season.seasonBest}">180</span> pts
                       </p>
-                      <p th:if="${quarter.movement != null && quarter.movement != 0}" style="margin:2px 0 0 0; font-size:13px;">
-                        <span th:if="${quarter.movement > 0}" style="color:#059669; font-weight:600;">
-                          ↑ <span th:text="${quarter.movement}">3</span> <span th:text="${quarter.movement == 1 ? 'place' : 'places'}">places</span>
+                      <p th:if="${season.movement != null && season.movement != 0}" style="margin:2px 0 0 0; font-size:13px;">
+                        <span th:if="${season.movement > 0}" style="color:#059669; font-weight:600;">
+                          ↑ <span th:text="${season.movement}">3</span> <span th:text="${season.movement == 1 ? 'place' : 'places'}">places</span>
                         </span>
-                        <span th:if="${quarter.movement < 0}" style="color:#dc2626; font-weight:600;">
-                          ↓ <span th:text="${T(java.lang.Math).abs(quarter.movement)}">2</span> <span th:text="${T(java.lang.Math).abs(quarter.movement) == 1 ? 'place' : 'places'}">places</span>
+                        <span th:if="${season.movement < 0}" style="color:#dc2626; font-weight:600;">
+                          ↓ <span th:text="${T(java.lang.Math).abs(season.movement)}">2</span> <span th:text="${T(java.lang.Math).abs(season.movement) == 1 ? 'place' : 'places'}">places</span>
                         </span>
-                        <span style="color:#9ca3af;">in <span th:text="${quarter.label}">Q3</span></span>
+                        <span style="color:#9ca3af;">in <span th:text="${season.label}">Season</span></span>
                       </p>
                     </th:block>
 
@@ -174,7 +171,6 @@
                 <tr th:if="${quarter != null}">
                   <td style="padding: 6px 0; font-size:14px; color:#374151;">
                     📅 <span style="font-weight:600;" th:text="${quarter.label}">Q3</span>
-                    <span style="color:#9ca3af; font-size:12px;">GW <span th:text="${quarter.fromRound}">20</span>–<span th:text="${quarter.toRound}">29</span></span>
                   </td>
                   <td align="right" style="padding: 6px 0; font-size:14px; font-weight:600; color:#111827; white-space:nowrap;">
                     #<span th:text="${quarter.rank}">5</span>

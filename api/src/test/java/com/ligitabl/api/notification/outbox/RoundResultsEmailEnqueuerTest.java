@@ -208,6 +208,29 @@ class RoundResultsEmailEnqueuerTest {
                 entry(4, testAccount, 2000, 0),
                 entry(18, alice, 1800, 0),
                 entry(25, bob, 1500, 0));
+
+        // "Previous" boards (fromRound..ROUND-1) drive the isNew*Best flags — the max achieved
+        // strictly before this round. Alice's previous sprint best (150) is below her round
+        // score (175), so round 22 is still a genuine new sprint best. Bob's previous sprint
+        // best (160) already exceeds his round score (150). Season previous bests are left
+        // unchanged from the inclusive board since neither user's round score threatens them.
+        stubBoard(
+                SPRINT.getFrom(),
+                ROUND - 1,
+                120,
+                entry(1, testAccount, 180, 2),
+                entry(2, alice, 150, 1),
+                entry(3, unverified, 170, 0),
+                entry(4, optedOut, 165, 0),
+                entry(5, bob, 160, -1),
+                entry(6, carol, 140, 0));
+        stubBoard(
+                FULL_SEASON.getFrom(),
+                ROUND - 1,
+                140,
+                entry(4, testAccount, 2000, 0),
+                entry(18, alice, 1800, 0),
+                entry(25, bob, 1500, 0));
     }
 
     private static RoundSpan span(String code, int from, int to, PhaseType type) {
@@ -226,10 +249,14 @@ class RoundResultsEmailEnqueuerTest {
     }
 
     private void stubBoard(int fromRound, int totalParticipants, LeaderboardEntry... entries) {
+        stubBoard(fromRound, ROUND, totalParticipants, entries);
+    }
+
+    private void stubBoard(int fromRound, int toRound, int totalParticipants, LeaderboardEntry... entries) {
         when(leaderboardRepo.computeLeaderboard(
-                        eq(contestId), eq(seasonId), eq(fromRound), eq(ROUND), isNull(), eq(0), anyInt(), eq(true)))
+                        eq(contestId), eq(seasonId), eq(fromRound), eq(toRound), isNull(), eq(0), anyInt(), eq(true)))
                 .thenReturn(new LeaderboardResponse(
-                        List.of(entries), null, false, 0, totalParticipants, false, false, ROUND));
+                        List.of(entries), null, false, 0, totalParticipants, false, false, toRound));
     }
 
     private void enqueue() {
@@ -296,88 +323,101 @@ class RoundResultsEmailEnqueuerTest {
         // score == sprint best and round is past the sprint's first round
         assertThat(sprint.isNewSprintBest()).isTrue();
 
-        // Quarter also carries rank, movement and best.
-        var quarter = alicePayload.quarter();
-        assertThat(quarter.label()).isEqualTo("Q3");
-        assertThat(quarter.fromRound()).isEqualTo(20);
-        assertThat(quarter.toRound()).isEqualTo(28);
-        assertThat(quarter.rank()).isEqualTo(5);
-        assertThat(quarter.totalParticipants()).isEqualTo(130);
-        assertThat(quarter.movement()).isEqualTo(1);
-        assertThat(quarter.quarterBest()).isEqualTo(175);
-        // score == quarter best and round is past the quarter's first round
-        assertThat(quarter.isNewQuarterBest()).isTrue();
+        // Quarter is secondary — rank/total only, no best/movement.
+        assertThat(alicePayload.quarter().label()).isEqualTo("Q3");
+        assertThat(alicePayload.quarter().rank()).isEqualTo(5);
+        assertThat(alicePayload.quarter().totalParticipants()).isEqualTo(130);
 
-        // Season is secondary — rank/total only, no best/movement.
-        assertThat(alicePayload.season().label()).isEqualTo("FS");
-        assertThat(alicePayload.season().rank()).isEqualTo(18);
-        assertThat(alicePayload.season().totalParticipants()).isEqualTo(140);
+        // Season also carries rank, movement and best.
+        var seasonPlacement = alicePayload.season();
+        assertThat(seasonPlacement.label()).isEqualTo("Season");
+        assertThat(seasonPlacement.fromRound()).isEqualTo(1);
+        assertThat(seasonPlacement.toRound()).isEqualTo(38);
+        assertThat(seasonPlacement.rank()).isEqualTo(18);
+        assertThat(seasonPlacement.totalParticipants()).isEqualTo(140);
+        assertThat(seasonPlacement.movement()).isEqualTo(0);
+        assertThat(seasonPlacement.seasonBest()).isEqualTo(1800);
+        // score (175) != seasonBest (1800): not a new season best
+        assertThat(seasonPlacement.isNewSeasonBest()).isFalse();
 
         RoundResultsPayload bobPayload = payloadOf(savedEvents().get(1));
-        // Bob's round score (150) is below both his sprint best (160) and quarter best (400)
+        // Bob's round score (150) is below his sprint best (160)
         assertThat(bobPayload.sprint().isNewSprintBest()).isFalse();
         assertThat(bobPayload.sprint().movement()).isEqualTo(-1);
-        assertThat(bobPayload.quarter().isNewQuarterBest()).isFalse();
-        assertThat(bobPayload.quarter().movement()).isEqualTo(-1);
     }
 
     @Test
-    void quarterStartingAtRoundOneSuppressesSeasonNotQuarter() throws Exception {
-        // Q1 (gw1-25, containing ROUND=22) starts the same round as the season — even though
-        // Q1's own range is shorter than the full 38-round season, only `from` matters for
-        // redundancy: while still within Q1, season's cumulative data-so-far is identical to Q1's.
-        RoundSpan q1 = span("Q1", 1, 25, PhaseType.QUARTER);
+    void tyingAnEarlierSprintBestIsNotFlaggedAsNew() throws Exception {
+        // Alice already hit 175 earlier in the sprint (round 21) and scores 175 again in
+        // round 22 — the inclusive board's maxScore (175) still equals her round score, but
+        // it isn't a *new* best since she already achieved it before this round.
+        stubBoard(
+                SPRINT.getFrom(),
+                120,
+                entry(1, testAccount, 180, 2),
+                entry(2, alice, 175, 1),
+                entry(3, unverified, 170, 0),
+                entry(4, optedOut, 165, 0),
+                entry(5, bob, 160, -1),
+                entry(6, carol, 140, 0));
+        stubBoard(
+                SPRINT.getFrom(),
+                ROUND - 1,
+                120,
+                entry(1, testAccount, 180, 2),
+                entry(2, alice, 175, 1),
+                entry(3, unverified, 170, 0),
+                entry(4, optedOut, 165, 0),
+                entry(5, bob, 160, -1),
+                entry(6, carol, 140, 0));
+
+        enqueue();
+
+        RoundResultsPayload alicePayload = payloadOf(savedEvents().get(0));
+        assertThat(alicePayload.sprint().sprintBest()).isEqualTo(175);
+        assertThat(alicePayload.sprint().isNewSprintBest()).isFalse();
+    }
+
+    @Test
+    void tyingAnEarlierSeasonBestIsNotFlaggedAsNew() throws Exception {
+        // Alice's season-to-date best already reached 175 (an earlier round), same as this
+        // round's score — not a new season best even though it equals the inclusive max.
+        stubBoard(
+                FULL_SEASON.getFrom(),
+                140,
+                entry(4, testAccount, 2000, 0),
+                entry(18, alice, 175, 0),
+                entry(25, bob, 1500, 0));
+        stubBoard(
+                FULL_SEASON.getFrom(),
+                ROUND - 1,
+                140,
+                entry(4, testAccount, 2000, 0),
+                entry(18, alice, 175, 0),
+                entry(25, bob, 1500, 0));
+
+        enqueue();
+
+        RoundResultsPayload alicePayload = payloadOf(savedEvents().get(0));
+        assertThat(alicePayload.season().seasonBest()).isEqualTo(175);
+        assertThat(alicePayload.season().isNewSeasonBest()).isFalse();
+    }
+
+    @Test
+    void sprintStartingAtRoundOneSuppressesSeasonBestCallout() throws Exception {
+        // Sprint S1 (gw1-3, containing round 1) starts the same round as the season —
+        // season-best would be numerically identical to sprint-best (same round range,
+        // 1..currentRound), so season's best-callout is dropped. Quarter is unaffected —
+        // it's a plain standings row, not part of this redundancy check.
+        RoundSpan s1 = span("S1", 1, 25, PhaseType.SPRINT);
         when(competitionRepo.findById(competitionId))
                 .thenReturn(Optional.of(Competition.builder()
                         .id(competitionId)
-                        .phases(List.of(FULL_SEASON, q1, SPRINT))
+                        .phases(List.of(FULL_SEASON, QUARTER, s1))
                         .build()));
-        // Quarter board now queried from round 1 (the quarter's own fromRound), not round 20.
+        // Recipient selection + sprint's own placement now read from round 1.
         when(leaderboardRepo.computeLeaderboard(
                         eq(contestId), eq(seasonId), eq(1), eq(ROUND), isNull(), eq(0), anyInt(), eq(true)))
-                .thenReturn(new LeaderboardResponse(
-                        List.of(entry(3, testAccount, 500, 0), entry(5, alice, 175, 1), entry(12, bob, 400, -1)),
-                        null,
-                        false,
-                        0,
-                        130,
-                        false,
-                        false,
-                        ROUND));
-
-        enqueue();
-
-        RoundResultsPayload alicePayload = payloadOf(savedEvents().get(0));
-        assertThat(alicePayload.quarter()).isNotNull();
-        assertThat(alicePayload.quarter().label()).isEqualTo("Q1");
-        assertThat(alicePayload.season()).isNull();
-    }
-
-    @Test
-    void quarterStartingAfterRoundOneKeepsBothQuarterAndSeason() throws Exception {
-        // Default fixture QUARTER (Q3, gw20-28) starts well after the season's round 1 —
-        // no longer redundant with season, so both should be present.
-        enqueue();
-
-        RoundResultsPayload alicePayload = payloadOf(savedEvents().get(0));
-        assertThat(alicePayload.quarter()).isNotNull();
-        assertThat(alicePayload.season()).isNotNull();
-    }
-
-    @Test
-    void sprintStartingAtQuarterStartSuppressesQuarterOnly() throws Exception {
-        // Sprint starts the same round as the quarter (both gw20) — quarter would just
-        // repeat this sprint's numbers, so it's dropped. Season stays: the quarter itself
-        // (gw20-28) doesn't start at the season's round 1, so it's not redundant with season.
-        RoundSpan sprintAtQuarterStart = span("S1", 20, 22, PhaseType.SPRINT);
-        when(competitionRepo.findById(competitionId))
-                .thenReturn(Optional.of(Competition.builder()
-                        .id(competitionId)
-                        .phases(List.of(FULL_SEASON, QUARTER, sprintAtQuarterStart))
-                        .build()));
-        // Recipient selection + sprint's own placement now read from round 20.
-        when(leaderboardRepo.computeLeaderboard(
-                        eq(contestId), eq(seasonId), eq(20), eq(ROUND), isNull(), eq(0), anyInt(), eq(true)))
                 .thenReturn(new LeaderboardResponse(
                         List.of(
                                 entry(1, testAccount, 180, 2),
@@ -393,13 +433,65 @@ class RoundResultsEmailEnqueuerTest {
                         false,
                         false,
                         ROUND));
+        stubBoard(
+                1,
+                ROUND - 1,
+                120,
+                entry(1, testAccount, 180, 2),
+                entry(2, alice, 150, 1),
+                entry(3, unverified, 170, 0),
+                entry(4, optedOut, 165, 0),
+                entry(5, bob, 160, -1),
+                entry(6, carol, 140, 0));
 
         enqueue();
 
         RoundResultsPayload alicePayload = payloadOf(savedEvents().get(0));
         assertThat(alicePayload.sprint()).isNotNull();
-        assertThat(alicePayload.quarter()).isNull();
+        assertThat(alicePayload.season()).isNull();
+        assertThat(alicePayload.quarter()).isNotNull();
+    }
+
+    @Test
+    void sprintStartingAfterRoundOneKeepsSeasonBestCallout() throws Exception {
+        // Default fixture SPRINT (S8, gw21-23) starts well after round 1 — season is not
+        // redundant with sprint, so both are present.
+        enqueue();
+
+        RoundResultsPayload alicePayload = payloadOf(savedEvents().get(0));
+        assertThat(alicePayload.sprint()).isNotNull();
         assertThat(alicePayload.season()).isNotNull();
+    }
+
+    @Test
+    void quarterAlwaysAppearsAsPlainStandingsRowRegardlessOfSprintOrSeason() throws Exception {
+        // Quarter is a plain rank-only row with no redundancy handling — it shows whenever a
+        // quarter phase is configured, even in scenarios that would suppress season.
+        RoundSpan s1 = span("S1", 1, 25, PhaseType.SPRINT);
+        when(competitionRepo.findById(competitionId))
+                .thenReturn(Optional.of(Competition.builder()
+                        .id(competitionId)
+                        .phases(List.of(FULL_SEASON, QUARTER, s1))
+                        .build()));
+        when(leaderboardRepo.computeLeaderboard(
+                        eq(contestId), eq(seasonId), eq(1), eq(ROUND), isNull(), eq(0), anyInt(), eq(true)))
+                .thenReturn(new LeaderboardResponse(
+                        List.of(entry(1, testAccount, 180, 2), entry(2, alice, 175, 1)),
+                        null,
+                        false,
+                        0,
+                        120,
+                        false,
+                        false,
+                        ROUND));
+        stubBoard(1, ROUND - 1, 120, entry(1, testAccount, 180, 2), entry(2, alice, 150, 1));
+
+        enqueue();
+
+        RoundResultsPayload alicePayload = payloadOf(savedEvents().get(0));
+        assertThat(alicePayload.season()).isNull(); // suppressed (sprint starts at round 1)
+        assertThat(alicePayload.quarter()).isNotNull(); // still shown regardless
+        assertThat(alicePayload.quarter().label()).isEqualTo("Q3");
     }
 
     @Test
