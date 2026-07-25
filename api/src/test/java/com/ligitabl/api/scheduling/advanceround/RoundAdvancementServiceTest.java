@@ -86,9 +86,7 @@ class RoundAdvancementServiceTest {
     private record RoundFinalizedOutboxAssertion(OutboxEvent event) {
         void hasPayload(int roundPosition, int currentRoundPosition) throws Exception {
             var payload = new ObjectMapper()
-                    .readValue(
-                            event.getPayload(),
-                            com.ligitabl.api.notification.outbox.RoundAdvancedPayload.class);
+                    .readValue(event.getPayload(), com.ligitabl.api.notification.outbox.RoundAdvancedPayload.class);
             assertThat(payload.roundPosition()).isEqualTo(roundPosition);
             assertThat(payload.currentRoundPosition()).isEqualTo(currentRoundPosition);
         }

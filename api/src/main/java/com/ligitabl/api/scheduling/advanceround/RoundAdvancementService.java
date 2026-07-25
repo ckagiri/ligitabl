@@ -231,8 +231,8 @@ public class RoundAdvancementService {
         } else {
             var nextRound = roundRepo
                     .findBySeasonIdAndPosition(season.getId(), currentPosition + 1)
-                    .orElseThrow(() -> new IllegalStateException("Next round not found: seasonId=" + season.getId()
-                            + " position=" + (currentPosition + 1)));
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Next round not found: seasonId=" + season.getId() + " position=" + (currentPosition + 1)));
 
             season.setCurrentRoundId(nextRound.getId());
             seasonRepo.save(season);

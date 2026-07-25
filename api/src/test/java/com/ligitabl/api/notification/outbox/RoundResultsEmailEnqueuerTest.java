@@ -162,11 +162,8 @@ class RoundResultsEmailEnqueuerTest {
                 .id(competitionId)
                 .phases(List.of(FULL_SEASON, QUARTER, SPRINT))
                 .build();
-        Contest contest = Contest.builder()
-                .id(contestId)
-                .seasonId(seasonId)
-                .name("Main")
-                .build();
+        Contest contest =
+                Contest.builder().id(contestId).seasonId(seasonId).name("Main").build();
 
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
@@ -189,14 +186,38 @@ class RoundResultsEmailEnqueuerTest {
 
         // Sprint board (fromRound = sprint start): governs recipient selection/order, and its
         // movement/maxScore feed the sprint best-callout directly (no extra query needed).
-        stubBoard(SPRINT.getFrom(), 120, entry(1, testAccount, 180, 2), entry(2, alice, 175, 1), entry(3, unverified, 170, 0), entry(4, optedOut, 165, 0), entry(5, bob, 160, -1), entry(6, carol, 140, 0));
+        stubBoard(
+                SPRINT.getFrom(),
+                120,
+                entry(1, testAccount, 180, 2),
+                entry(2, alice, 175, 1),
+                entry(3, unverified, 170, 0),
+                entry(4, optedOut, 165, 0),
+                entry(5, bob, 160, -1),
+                entry(6, carol, 140, 0));
         // Quarter board (its own best-callout, looked up separately) and full-season board.
-        stubBoard(QUARTER.getFrom(), 130, entry(3, testAccount, 500, 0), entry(5, alice, 175, 1), entry(12, bob, 400, -1));
-        stubBoard(FULL_SEASON.getFrom(), 140, entry(4, testAccount, 2000, 0), entry(18, alice, 1800, 0), entry(25, bob, 1500, 0));
+        stubBoard(
+                QUARTER.getFrom(),
+                130,
+                entry(3, testAccount, 500, 0),
+                entry(5, alice, 175, 1),
+                entry(12, bob, 400, -1));
+        stubBoard(
+                FULL_SEASON.getFrom(),
+                140,
+                entry(4, testAccount, 2000, 0),
+                entry(18, alice, 1800, 0),
+                entry(25, bob, 1500, 0));
     }
 
     private static RoundSpan span(String code, int from, int to, PhaseType type) {
-        return RoundSpan.builder().code(code).name(code).from(from).to(to).type(type).build();
+        return RoundSpan.builder()
+                .code(code)
+                .name(code)
+                .from(from)
+                .to(to)
+                .type(type)
+                .build();
     }
 
     private LeaderboardEntry entry(int position, TestUser user, int maxScore, int movement) {
@@ -415,8 +436,10 @@ class RoundResultsEmailEnqueuerTest {
     @Test
     void skipsEntirelyWhenNoPhasesConfigured() {
         when(competitionRepo.findById(competitionId))
-                .thenReturn(Optional.of(
-                        Competition.builder().id(competitionId).phases(List.of()).build()));
+                .thenReturn(Optional.of(Competition.builder()
+                        .id(competitionId)
+                        .phases(List.of())
+                        .build()));
 
         enqueue();
 

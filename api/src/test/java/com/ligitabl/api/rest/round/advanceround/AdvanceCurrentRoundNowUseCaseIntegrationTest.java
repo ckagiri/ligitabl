@@ -107,8 +107,7 @@ class AdvanceCurrentRoundNowUseCaseIntegrationTest extends AbstractPostgresIT {
         assertThat(event.get().getEventType()).isEqualTo("ROUND_ADVANCED");
         assertThat(event.get().getStatus()).isEqualTo(OutboxEvent.Status.PENDING);
 
-        RoundAdvancedPayload payload =
-                objectMapper.readValue(event.get().getPayload(), RoundAdvancedPayload.class);
+        RoundAdvancedPayload payload = objectMapper.readValue(event.get().getPayload(), RoundAdvancedPayload.class);
         assertThat(payload.seasonId()).isEqualTo(seasonId);
         assertThat(payload.roundPosition()).isEqualTo(1);
         assertThat(payload.currentRoundPosition()).isEqualTo(2);
@@ -175,8 +174,7 @@ class AdvanceCurrentRoundNowUseCaseIntegrationTest extends AbstractPostgresIT {
         // No next round to open — currentRoundPosition stays pinned at the final round itself.
         var event = outboxRepo.findByIdempotencyKey("round-advanced:%s:1".formatted(seasonId));
         assertThat(event).isPresent();
-        RoundAdvancedPayload payload =
-                objectMapper.readValue(event.get().getPayload(), RoundAdvancedPayload.class);
+        RoundAdvancedPayload payload = objectMapper.readValue(event.get().getPayload(), RoundAdvancedPayload.class);
         assertThat(payload.roundPosition()).isEqualTo(1);
         assertThat(payload.currentRoundPosition()).isEqualTo(1);
     }

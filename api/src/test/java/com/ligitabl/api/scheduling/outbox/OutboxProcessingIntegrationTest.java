@@ -74,7 +74,8 @@ class OutboxProcessingIntegrationTest extends AbstractPostgresIT {
 
         processor.processOne(claimed.get(0));
 
-        OutboxEvent stored = outboxRepo.findByIdempotencyKey("round-results:it:22:alice").orElseThrow();
+        OutboxEvent stored =
+                outboxRepo.findByIdempotencyKey("round-results:it:22:alice").orElseThrow();
         assertThat(stored.getStatus()).isEqualTo(OutboxEvent.Status.SENT);
         assertThat(stored.getProcessedAt()).isNotNull();
         assertThat(outboxRepo.claimBatchForProcessing(10)).isEmpty();
@@ -95,7 +96,8 @@ class OutboxProcessingIntegrationTest extends AbstractPostgresIT {
         List<OutboxEvent> claimed = outboxRepo.claimBatchForProcessing(10);
         processor.processOne(claimed.get(0));
 
-        OutboxEvent stored = outboxRepo.findByIdempotencyKey("round-results:it:22:bad").orElseThrow();
+        OutboxEvent stored =
+                outboxRepo.findByIdempotencyKey("round-results:it:22:bad").orElseThrow();
         assertThat(stored.getStatus()).isEqualTo(OutboxEvent.Status.FAILED);
         assertThat(stored.getAttempts()).isEqualTo(1);
         assertThat(stored.getLastError()).isNotBlank();

@@ -80,16 +80,15 @@ class ThymeleafEmailTemplateRendererTest {
         // Zero score: no ScoreTier badge should render, and the block must not throw.
         var zeroScore = new java.util.HashMap<>(roundResultsData());
         zeroScore.put("score", 0);
-        assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, zeroScore).isRight())
+        assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, zeroScore)
+                        .isRight())
                 .as("zero score")
                 .isTrue();
 
         // Negative movement on both sprint and quarter.
         var negativeMovement = new java.util.HashMap<>(roundResultsData());
-        negativeMovement.put(
-                "sprint", new RoundResultsPayload.SprintPlacement("S8", 21, 23, 6, 120, -2, 190, false));
-        negativeMovement.put(
-                "quarter", new RoundResultsPayload.QuarterPlacement("Q3", 20, 28, 6, 130, -2, 190, false));
+        negativeMovement.put("sprint", new RoundResultsPayload.SprintPlacement("S8", 21, 23, 6, 120, -2, 190, false));
+        negativeMovement.put("quarter", new RoundResultsPayload.QuarterPlacement("Q3", 20, 28, 6, 130, -2, 190, false));
         assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, negativeMovement)
                         .isRight())
                 .as("negative movement")
@@ -99,8 +98,7 @@ class ThymeleafEmailTemplateRendererTest {
         var phaseOpener = new java.util.HashMap<>(roundResultsData());
         phaseOpener.put("round", 20);
         phaseOpener.put("sprint", new RoundResultsPayload.SprintPlacement("S8", 20, 22, 2, 120, null, 175, false));
-        phaseOpener.put(
-                "quarter", new RoundResultsPayload.QuarterPlacement("Q3", 20, 28, 5, 130, null, 175, false));
+        phaseOpener.put("quarter", new RoundResultsPayload.QuarterPlacement("Q3", 20, 28, 5, 130, null, 175, false));
         assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, phaseOpener)
                         .isRight())
                 .as("round == fromRound")
@@ -126,7 +124,8 @@ class ThymeleafEmailTemplateRendererTest {
         // No full-season phase configured (season is the only plain secondary standing).
         var noSeason = new java.util.HashMap<>(roundResultsData());
         noSeason.put("season", null);
-        assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, noSeason).isRight())
+        assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, noSeason)
+                        .isRight())
                 .as("null season")
                 .isTrue();
 

@@ -9,6 +9,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
+
 import org.jooq.DSLContext;
 import org.jooq.SQLDialect;
 import org.jooq.impl.DSL;
@@ -92,7 +93,9 @@ class OutboxRepoTest {
         OutboxEvent future = newEvent("future");
         repo.save(future);
         dsl.update(T_OUTBOX_EVENT)
-                .set(T_OUTBOX_EVENT.C_AVAILABLE_AT, OffsetDateTime.now(ZoneOffset.UTC).plusHours(1))
+                .set(
+                        T_OUTBOX_EVENT.C_AVAILABLE_AT,
+                        OffsetDateTime.now(ZoneOffset.UTC).plusHours(1))
                 .where(T_OUTBOX_EVENT.C_IDEMPOTENCY_KEY.eq("future"))
                 .execute();
 

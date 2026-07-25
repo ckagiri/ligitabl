@@ -112,8 +112,8 @@ public class ProfileController {
             return "profile/settings";
         }
 
-        User updatedUser = user.withDisplayName(form.getDisplayName())
-                .withResultsEmailOptOut(!form.isReceiveResultsEmail());
+        User updatedUser =
+                user.withDisplayName(form.getDisplayName()).withResultsEmailOptOut(!form.isReceiveResultsEmail());
         userRepo.update(updatedUser);
         // While impersonating, the update targets the effective user — rewriting the session's
         // SecurityContext from them would re-authenticate the admin AS that user. Skip it.

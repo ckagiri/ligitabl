@@ -135,8 +135,7 @@ public class RoundResultsEmailEnqueuer {
             return;
         }
 
-        RoundSpan quarter = PhaseRules.phaseOfTypeContaining(
-                        competition.getPhases(), PhaseType.QUARTER, roundPosition)
+        RoundSpan quarter = PhaseRules.phaseOfTypeContaining(competition.getPhases(), PhaseType.QUARTER, roundPosition)
                 .orElse(null);
         RoundSpan fullSeason = PhaseRules.phaseOfTypeContaining(
                         competition.getPhases(), PhaseType.FULL_SEASON, roundPosition)
@@ -160,7 +159,8 @@ public class RoundResultsEmailEnqueuer {
         Board quarterBoard = effectiveQuarter == null
                 ? null
                 : fetchBoard(contest, season, effectiveQuarter.getFrom(), roundPosition, SCAN_CAP);
-        Map<String, LeaderboardEntry> quarterByPublicId = quarterBoard == null ? Map.of() : entryByPublicId(quarterBoard);
+        Map<String, LeaderboardEntry> quarterByPublicId =
+                quarterBoard == null ? Map.of() : entryByPublicId(quarterBoard);
         int quarterTotalParticipants = quarterBoard == null ? 0 : quarterBoard.totalParticipants();
 
         PlacementBoard seasonBoard = seasonRedundantWithQuarter
@@ -185,13 +185,10 @@ public class RoundResultsEmailEnqueuer {
                         seasonBoard);
                 String json = objectMapper.writeValueAsString(payload);
                 String idempotencyKey = "round-results:%s:%d:%s"
-                        .formatted(season.getId(), roundPosition, recipient.user().getId());
+                        .formatted(
+                                season.getId(), roundPosition, recipient.user().getId());
                 OutboxEvent outboxEvent = OutboxEvent.create(
-                        idempotencyKey,
-                        OutboxEventTypes.ROUND_RESULTS,
-                        "round",
-                        String.valueOf(roundPosition),
-                        json);
+                        idempotencyKey, OutboxEventTypes.ROUND_RESULTS, "round", String.valueOf(roundPosition), json);
                 if (outboxRepo.save(outboxEvent)) {
                     inserted++;
                 }
@@ -225,7 +222,8 @@ public class RoundResultsEmailEnqueuer {
             if (recipients.size() >= topN) {
                 break;
             }
-            User user = userRepo.findByPublicId(PublicId.create(entry.publicId())).orElse(null);
+            User user =
+                    userRepo.findByPublicId(PublicId.create(entry.publicId())).orElse(null);
             if (user == null || user.getEmail() == null) {
                 continue;
             }
@@ -345,7 +343,6 @@ public class RoundResultsEmailEnqueuer {
         }
         return new Board(entries, totalParticipants);
     }
-
 
     private Set<String> loadIgnoreList() {
         return appSettingRepo

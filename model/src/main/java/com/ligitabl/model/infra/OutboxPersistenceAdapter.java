@@ -62,8 +62,7 @@ public class OutboxPersistenceAdapter implements OutboxRepo {
                 .where(T_OUTBOX_EVENT.PK_ID.in(dsl.select(T_OUTBOX_EVENT.PK_ID)
                         .from(T_OUTBOX_EVENT)
                         .where(T_OUTBOX_EVENT.C_STATUS.in(
-                                OutboxEvent.Status.PENDING.name(),
-                                OutboxEvent.Status.FAILED.name()))
+                                OutboxEvent.Status.PENDING.name(), OutboxEvent.Status.FAILED.name()))
                         .and(T_OUTBOX_EVENT.C_AVAILABLE_AT.le(DSL.currentOffsetDateTime()))
                         .orderBy(T_OUTBOX_EVENT.C_AVAILABLE_AT.asc())
                         .limit(batchSize)
@@ -120,7 +119,8 @@ public class OutboxPersistenceAdapter implements OutboxRepo {
                 .eventType(record.getEventType())
                 .aggregateType(record.getAggregateType())
                 .aggregateId(record.getAggregateId())
-                .payload(record.getPayload() == null ? null : record.getPayload().data())
+                .payload(
+                        record.getPayload() == null ? null : record.getPayload().data())
                 .status(OutboxEvent.Status.valueOf(record.getStatus()))
                 .attempts(record.getAttempts())
                 .maxAttempts(record.getMaxAttempts())

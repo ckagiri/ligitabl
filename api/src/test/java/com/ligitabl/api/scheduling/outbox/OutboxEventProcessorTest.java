@@ -101,8 +101,7 @@ class OutboxEventProcessorTest {
     @Test
     void roundFinalizedFansOutThenMarksSent() throws Exception {
         RoundAdvancedPayload payload = new RoundAdvancedPayload(seasonId, 22, 22);
-        OutboxEvent event = claimedEvent(
-                OutboxEventTypes.ROUND_ADVANCED, objectMapper.writeValueAsString(payload), 1);
+        OutboxEvent event = claimedEvent(OutboxEventTypes.ROUND_ADVANCED, objectMapper.writeValueAsString(payload), 1);
 
         processor.processOne(event);
 
@@ -141,7 +140,8 @@ class OutboxEventProcessorTest {
         processor.processOne(event);
 
         // attempts=1 → next retry in 1 minute
-        verify(outboxRepo).markFailed(eq(event.getId()), contains("Template render failed"), eq(NOW.plus(Duration.ofMinutes(1))));
+        verify(outboxRepo)
+                .markFailed(eq(event.getId()), contains("Template render failed"), eq(NOW.plus(Duration.ofMinutes(1))));
         verify(outboxRepo, never()).markSent(any());
         verify(emailProvider, never()).sendSingle(any(), any(), any(), any());
     }
@@ -155,7 +155,8 @@ class OutboxEventProcessorTest {
         processor.processOne(event);
 
         // attempts=2 → next retry in 5 minutes
-        verify(outboxRepo).markFailed(eq(event.getId()), contains("Email send failed"), eq(NOW.plus(Duration.ofMinutes(5))));
+        verify(outboxRepo)
+                .markFailed(eq(event.getId()), contains("Email send failed"), eq(NOW.plus(Duration.ofMinutes(5))));
         verify(outboxRepo, never()).markSent(any());
     }
 
