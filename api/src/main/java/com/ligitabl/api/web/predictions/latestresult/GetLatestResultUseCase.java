@@ -79,7 +79,7 @@ public class GetLatestResultUseCase {
 
     private LatestResultResponse buildResponse(
             RoundResult result, int round, UUID userId, Season season, int currentRound) {
-        HitDistribution distribution = calculateHitDistribution(result);
+        HitDistribution distribution = result.hitDistribution();
 
         // Calculate position and movement from leaderboard
         Integer position = null;
@@ -117,7 +117,21 @@ public class GetLatestResultUseCase {
                     position = userEntry.position();
                     movement = userEntry.movement();
                     sprintBest = userEntry.maxScore();
-                    isNewSprintBest = result.getTotalScore() == sprintBest && round > sprintPhase.getFrom();
+
+                    if (round > sprintPhase.getFrom()) {
+                        var previousResponse = leaderboardRepo.computeLeaderboard(
+                                contest.getId(),
+                                season.getId(),
+                                sprintPhase.getFrom(),
+                                round - 1,
+                                userId,
+                                0,
+                                1,
+                                true);
+                        LeaderboardEntry previousEntry = previousResponse.userEntry();
+                        int previousSprintBest = previousEntry != null ? previousEntry.maxScore() : 0;
+                        isNewSprintBest = result.getTotalScore() > previousSprintBest;
+                    }
                 }
             }
         }
@@ -135,28 +149,6 @@ public class GetLatestResultUseCase {
                 isNewSprintBest,
                 currentRound,
                 season.getMaxRounds());
-    }
-
-    private HitDistribution calculateHitDistribution(RoundResult result) {
-        int perfect = 0;
-        int closeCalls = 0;
-        int nearMisses = 0;
-        int bigMisses = 0;
-
-        for (ResultTeamRank ranking : result.getRankings()) {
-            int hit = ranking.getHit();
-            if (hit == 0) {
-                perfect++;
-            } else if (hit <= 2) {
-                closeCalls++;
-            } else if (hit <= 4) {
-                nearMisses++;
-            } else {
-                bigMisses++;
-            }
-        }
-
-        return new HitDistribution(perfect, closeCalls, nearMisses, bigMisses);
     }
 
     private Round getCurrentRoundEntity(Season season) {

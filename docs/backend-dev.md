@@ -428,6 +428,31 @@ mvn -q -pl seed -am test
 make test-all
 ```
 
+### DB-test conventions: api uses naming, model uses tags
+
+The two modules mark DB-touching tests differently — both are intentional; don't mix them up:
+
+- **api** signals via **file naming**: `*IT` / `*IntegrationTest` (e.g.
+  `FinalizeRoundUseCaseIntegrationTest`). `make test-api-core` skips them
+  (`-DskipITs`); `make test-api-it` runs them by passing
+  `-Dtest='**/*IT,**/*IntegrationTest'` explicitly.
+- **model** signals via **JUnit tag**: DB-backed repo tests are named `*RepoTest`
+  (e.g. `MatchRepoTest`, `OutboxRepoTest`) and carry `@Tag("integration")`.
+  `model/pom.xml` surefire filters with `<groups>${model.test.groups}</groups>`,
+  default `!integration` — so a plain `mvn test` already excludes them. Opt in
+  with the compose DB up:
+
+```bash
+mvn -pl model -Pwith-jooq -Djooq.codegen.skip=true -Dmodel.test.groups=integration test
+```
+
+**Do not name model tests `*IT.java`.** Surefire's default include patterns
+(`*Test`, `Test*`, `*Tests`, `*TestCase`) won't match `*IT`, and the model module
+has no failsafe plugin or explicit `-Dtest` pattern to pick them up — the test
+would be silently skipped everywhere. In model, the `@Tag("integration")` +
+groups filter is what provides the "don't run DB tests by accident" isolation
+that `*IT` naming provides in api.
+
 ### Sharing test fixtures across modules (model ↔ api)
 
 `model` publishes a `tests` classifier jar (via a `maven-jar-plugin` `test-jar` execution in
@@ -807,6 +832,40 @@ directly against a plain object.
 ### Related Files
 
 - Example: `api/src/main/resources/templates/matches.html` (LIVE badge minute/injury-time rendering)
+
+## Unit-testing Thymeleaf templates: use `SpringTemplateEngine`, not bare `TemplateEngine`
+
+**Issue**: A template using SpEL's `T(...)` static-access operator (e.g. `T(com.ligitabl.model.domain.ScoreTier).forScore(score)`
+in `fragments/score-emoji.html`, `fragments/results-banner.html`, `email/round-results.html`) renders fine in the
+running app but throws `OGNL` evaluation errors when exercised from a hand-rolled unit test that constructs its own
+`TemplateEngine`.
+
+**Root cause**: `T(...)` is a **SpringEL** operator, only available under Thymeleaf's `SpringStandardDialect`. The
+running app gets this for free — Spring Boot autoconfigures a `SpringTemplateEngine` (which registers
+`SpringStandardDialect`) for the `TemplateEngine` bean injected into `ThymeleafEmailTemplateRenderer` and friends. A
+test that does `new TemplateEngine()` (plain `org.thymeleaf.TemplateEngine`, no Spring involved) gets Thymeleaf's
+default **`StandardDialect`** instead, which is OGNL-based — OGNL has no `T(...)` operator, so the expression fails
+to parse at evaluation time. The test silently diverges from what production actually runs, so a template regression
+in `T(...)` usage can slip through such a test undetected.
+
+```java
+// WRONG: bare TemplateEngine → StandardDialect (OGNL) → T(...) throws
+TemplateEngine engine = new TemplateEngine();
+engine.setTemplateResolver(resolver);
+
+// CORRECT: SpringTemplateEngine → SpringStandardDialect (SpringEL) → T(...) works,
+// matching what Spring Boot autoconfigures in the running app
+SpringTemplateEngine engine = new SpringTemplateEngine();
+engine.setTemplateResolver(resolver);
+```
+
+**Fix**: any test that constructs its own `TemplateEngine` to render a real app template must use
+`org.thymeleaf.spring6.SpringTemplateEngine` (already on the classpath via `spring-boot-starter-thymeleaf`), not the
+bare `org.thymeleaf.TemplateEngine`.
+
+### Related Files
+
+- `api/src/test/java/com/ligitabl/api/notification/email/ThymeleafEmailTemplateRendererTest.java`
 
 ## HTMX + Alpine event listener reliability
 

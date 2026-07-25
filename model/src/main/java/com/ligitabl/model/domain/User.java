@@ -64,6 +64,13 @@ public class User {
     @With
     String googleId;
 
+    /**
+     * When true the user has opted out of round-results emails (profile
+     * checkbox). Default is opted-in (false).
+     */
+    @With
+    boolean resultsEmailOptOut;
+
     // Populated by the database (defaults/triggers)
     @With
     OffsetDateTime createDate;

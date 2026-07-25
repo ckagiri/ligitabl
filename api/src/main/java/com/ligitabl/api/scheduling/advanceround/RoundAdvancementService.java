@@ -12,9 +12,14 @@ import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.notification.AdminNotificationService;
+import com.ligitabl.api.notification.outbox.OutboxEventTypes;
+import com.ligitabl.api.notification.outbox.RoundAdvancedPayload;
+import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.repo.OutboxRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
@@ -50,6 +55,8 @@ public class RoundAdvancementService {
     private final SeasonRepo seasonRepo;
     private final Clock clock;
     private final AdminNotificationService adminNotificationService;
+    private final OutboxRepo outboxRepo;
+    private final ObjectMapper objectMapper;
 
     @Value("${ligitabl.round-advancement.delay-minutes:3}")
     private int delayMinutes;
@@ -213,21 +220,46 @@ public class RoundAdvancementService {
         currentRound.setAdvancedAt(now());
         roundRepo.save(currentRound);
 
-        if (currentPosition >= season.getMaxRounds()) {
+        boolean isLastRound = currentPosition >= season.getMaxRounds();
+        int newCurrentRoundPosition = currentPosition;
+
+        if (isLastRound) {
             log.info(
                     "Last round advanced: seasonId={}, roundPosition={}. Season completion is a separate admin action.",
                     season.getId(),
                     currentPosition);
-            return;
+        } else {
+            var nextRound = roundRepo
+                    .findBySeasonIdAndPosition(season.getId(), currentPosition + 1)
+                    .orElseThrow(() -> new IllegalStateException(
+                            "Next round not found: seasonId=" + season.getId() + " position=" + (currentPosition + 1)));
+
+            season.setCurrentRoundId(nextRound.getId());
+            seasonRepo.save(season);
+            newCurrentRoundPosition = nextRound.getPosition();
         }
 
-        var nextRound = roundRepo
-                .findBySeasonIdAndPosition(season.getId(), currentPosition + 1)
-                .orElseThrow(() -> new IllegalStateException(
-                        "Next round not found: seasonId=" + season.getId() + " position=" + (currentPosition + 1)));
+        enqueueRoundResultsEmail(season, currentPosition, newCurrentRoundPosition);
+    }
 
-        season.setCurrentRoundId(nextRound.getId());
-        seasonRepo.save(season);
+    /**
+     * Records the round-advanced fact in the outbox (same transaction as the
+     * advancement, so it commits atomically). The relay expands this into per-user
+     * ROUND_RESULTS events post-commit; any failure here logs loudly but never blocks advancement.
+     */
+    private void enqueueRoundResultsEmail(Season season, int roundPosition, int currentRoundPosition) {
+        try {
+            RoundAdvancedPayload payload =
+                    new RoundAdvancedPayload(season.getId(), roundPosition, currentRoundPosition);
+            outboxRepo.save(OutboxEvent.create(
+                    "round-advanced:%s:%d".formatted(season.getId(), roundPosition),
+                    OutboxEventTypes.ROUND_ADVANCED,
+                    "round",
+                    String.valueOf(roundPosition),
+                    objectMapper.writeValueAsString(payload)));
+        } catch (Exception e) {
+            log.error("[ROUND_ADVANCED_OUTBOX_FAILED] round={}: {}", roundPosition, e.getMessage(), e);
+        }
     }
 
     private OffsetDateTime now() {

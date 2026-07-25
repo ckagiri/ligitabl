@@ -88,6 +88,16 @@ ligitabl:
   scheduling:
     enabled: true
 
+  outbox:
+    # Kill-switch for the relay only (other schedulers unaffected). While false,
+    # events accumulate as PENDING and are delivered once re-enabled.
+    enabled: ${OUTBOX_ENABLED:true}
+    # Relay cadence and rows claimed per tick; stuck PROCESSING rows (crashed
+    # mid-send) are swept back to FAILED every stuck-sweep interval.
+    poll-interval-ms: ${OUTBOX_POLL_INTERVAL_MS:15000}
+    batch-size: ${OUTBOX_BATCH_SIZE:25}
+    stuck-sweep-interval-ms: ${OUTBOX_STUCK_SWEEP_INTERVAL_MS:300000}
+
   rate-limit:
     # Per-client (per-IP) budget — each client gets its own bucket in RateLimitFilter.
     # In prod the real client IP comes from X-Forwarded-For via forward-headers-strategy=native.
@@ -109,6 +119,12 @@ ligitabl:
       api-key: ${MAILGUN_API_KEY:}
       domain: ${MAILGUN_DOMAIN:ligipredictor.com}
       api-base-url: ${MAILGUN_API_BASE_URL:https://api.mailgun.net/v3}
+    round-results:
+      # Recipient cap per round (sprint-leaderboard order).
+      top-n: ${ROUND_RESULTS_EMAIL_TOP_N:50}
+      # live: exclude ignore-list/unverified/opted-out users.
+      # test: send ONLY to ignore-list accounts (local testing against test users).
+      mode: ${ROUND_RESULTS_EMAIL_MODE:live}
 
   slack:
     # Incoming-webhook URL is a secret — env var only, never committed. Default disabled so

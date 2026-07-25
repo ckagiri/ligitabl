@@ -22,7 +22,7 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
             context.setVariables(templateData);
 
             String templateName = templateNameFor(emailType);
-            String subject = subjectFor(emailType);
+            String subject = subjectFor(emailType, templateData);
             String htmlBody = templateEngine.process(templateName, context);
             String textBody = htmlBody.replaceAll("<[^>]*>", "").trim();
 
@@ -37,14 +37,17 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
             case PASSWORD_RESET -> "email/password-reset";
             case PASSWORD_RESET_CONFIRMATION -> "email/password-reset-confirmation";
             case EMAIL_VERIFICATION -> "email/email-verification";
+            case ROUND_RESULTS -> "email/round-results";
         };
     }
 
-    private String subjectFor(EmailCommand.EmailType emailType) {
+    private String subjectFor(EmailCommand.EmailType emailType, Map<String, Object> templateData) {
         return switch (emailType) {
             case PASSWORD_RESET -> "Reset your LigiPredictor password";
             case PASSWORD_RESET_CONFIRMATION -> "Your LigiPredictor password has been changed";
             case EMAIL_VERIFICATION -> "Verify your LigiPredictor email";
+            case ROUND_RESULTS -> "Your Gameweek %s Results — %s points!"
+                    .formatted(templateData.get("round"), templateData.get("score"));
         };
     }
 }

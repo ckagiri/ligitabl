@@ -1,0 +1,56 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260724_2_app_setting
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: t_app_setting
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: t_app_setting
+            schemaName: public
+            remarks: >-
+              Simple key-value application settings editable via SQL (no admin UI yet).
+            columns:
+              - column:
+                  name: pk_key
+                  type: varchar(100)
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: c_value
+                  type: text
+                  constraints:
+                    nullable: true
+              - column:
+                  name: c_updated_at
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+  - changeSet:
+      id: 20260724_2_app_setting_seed_ignore_list
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - sqlCheck:
+            expectedResult: "0"
+            sql: >-
+              SELECT count(*) FROM public.t_app_setting
+              WHERE pk_key = 'round_results_email_ignore_list'
+      changes:
+        - insert:
+            tableName: t_app_setting
+            schemaName: public
+            columns:
+              - column:
+                  name: pk_key
+                  value: round_results_email_ignore_list
+              - column:
+                  name: c_value
+                  value: ""

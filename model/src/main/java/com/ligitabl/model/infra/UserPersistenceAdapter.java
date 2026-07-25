@@ -120,6 +120,7 @@ public class UserPersistenceAdapter implements UserRepo {
             rec.setEmailVerified(model.isEmailVerified());
             rec.setEmailVerifiedAt(model.getEmailVerifiedAt());
             rec.setGoogleSubject(model.getGoogleId());
+            rec.setResultsEmailOptOut(model.isResultsEmailOptOut());
             rec.store();
             rec.refresh();
             refreshed[0] = rec;
@@ -144,6 +145,7 @@ public class UserPersistenceAdapter implements UserRepo {
                 .emailVerified(Boolean.TRUE.equals(rec.getEmailVerified()))
                 .emailVerifiedAt(rec.getEmailVerifiedAt())
                 .googleId(rec.getGoogleSubject())
+                .resultsEmailOptOut(Boolean.TRUE.equals(rec.getResultsEmailOptOut()))
                 .createDate(rec.getCreateDate())
                 .updateDate(rec.getUpdateDate())
                 .lastLoginAt(rec.getLastLoginAt())
@@ -158,6 +160,7 @@ public class UserPersistenceAdapter implements UserRepo {
                 .set(T_USER.C_EMAIL_VERIFIED, user.isEmailVerified())
                 .set(T_USER.C_EMAIL_VERIFIED_AT, user.getEmailVerifiedAt())
                 .set(T_USER.C_GOOGLE_SUBJECT, user.getGoogleId())
+                .set(T_USER.C_RESULTS_EMAIL_OPT_OUT, user.isResultsEmailOptOut())
                 .where(T_USER.PK_ID.eq(user.getId()))
                 .execute();
     }
@@ -297,6 +300,7 @@ public class UserPersistenceAdapter implements UserRepo {
                 .emailVerified(Boolean.TRUE.equals(record.getEmailVerified()))
                 .emailVerifiedAt(record.getEmailVerifiedAt())
                 .googleId(record.getGoogleSubject())
+                .resultsEmailOptOut(Boolean.TRUE.equals(record.getResultsEmailOptOut()))
                 .createDate(record.getCreateDate())
                 .updateDate(record.getUpdateDate())
                 .lastLoginAt(record.getLastLoginAt())

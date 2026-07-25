@@ -1,0 +1,224 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Your Gameweek Results</title>
+  <!--[if mso]>
+  <noscript>
+    <xml>
+      <o:OfficeDocumentSettings>
+        <o:PixelsPerInch>96</o:PixelsPerInch>
+      </o:OfficeDocumentSettings>
+    </xml>
+  </noscript>
+  <![endif]-->
+</head>
+<body style="margin:0; padding:0; background-color:#f3f4f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+
+  <!-- Preheader (hidden preview text) -->
+  <div style="display:none; max-height:0; overflow:hidden;">
+    You scored <span th:text="${score}">156</span> points in Gameweek <span th:text="${round}">18</span>! See how you did.
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f3f4f6; padding: 24px 0;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px; width:100%; background-color:#ffffff; border-radius:12px; overflow:hidden; box-shadow: 0 1px 3px rgba(0,0,0,0.1);">
+
+          <!-- Header bar -->
+          <tr>
+            <td style="background-color:#4f46e5; padding: 20px 32px;">
+              <span style="color:#ffffff; font-size:20px; font-weight:700;">⚽ LigiPredictor</span>
+            </td>
+          </tr>
+
+          <!-- Results Card (mirrors the in-app banner) -->
+          <tr>
+            <td style="padding: 32px;">
+
+              <!-- Gradient-style card using a solid fallback (email clients don't support gradients reliably) -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0"
+                     style="background-color:#f0fdf4; border: 2px solid #bbf7d0; border-radius: 12px;">
+                <tr>
+                  <td style="padding: 20px;">
+
+                    <!-- Title -->
+                    <p style="margin:0 0 12px 0; font-size:18px; font-weight:700; color:#111827;">
+                      🎉 Gameweek <span th:text="${round}">18</span> Results Available!
+                    </p>
+
+                    <!-- Greeting -->
+                    <p style="margin:0 0 8px 0; font-size:15px; color:#374151;">
+                      Hi <span th:text="${userDisplayName}">there</span>,
+                    </p>
+
+                    <!-- Score line, with tier emoji + letter (single source of truth: ScoreTier) -->
+                    <p style="margin:0 0 4px 0; font-size:16px; color:#374151;">
+                      You scored
+                      <span style="font-weight:700; color:#4f46e5; font-size:18px;" th:text="${score}">156</span>
+                      points
+                      <span th:if="${score > 0}" th:with="tier=${T(com.ligitabl.model.domain.ScoreTier).forScore(score)}">
+                        <span th:text="${tier.emoji}">😃</span>
+                        <span th:if="${tier.group.name() == 'OUTSTANDING'}" style="font-size:12px; font-weight:700; color:#6366f1;" th:text="${tier.letter}">B+</span>
+                        <span th:if="${tier.group.name() == 'STRONG'}" style="font-size:12px; font-weight:700; color:#059669;" th:text="${tier.letter}">B+</span>
+                        <span th:if="${tier.group.name() == 'FAIR'}" style="font-size:12px; font-weight:700; color:#f97316;" th:text="${tier.letter}">B+</span>
+                      </span>
+                    </p>
+
+                    <!-- Hit Distribution: 2x2 grid using table for email compatibility -->
+                    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;">
+                      <tr>
+                        <td width="50%" style="padding: 6px 6px 6px 0; font-size:14px; color:#374151;">
+                          <span style="font-size:18px;">🎯</span>
+                          <span style="font-weight:700; color:#059669; font-size:16px;" th:text="${hitDistribution.perfect}">5</span>
+                          <span style="font-weight:600;">perfect!</span>
+                        </td>
+                        <td width="50%" style="padding: 6px 0 6px 6px; font-size:14px; color:#374151;">
+                          <span style="font-size:16px;">🤏</span>
+                          <span style="font-weight:600;" th:text="${hitDistribution.closeCalls}">8</span>
+                          <span th:text="${hitDistribution.closeCalls == 1 ? 'close call' : 'close calls'}">close calls</span>
+                          <span style="color:#9ca3af; font-size:12px;">(±1-2)</span>
+                        </td>
+                      </tr>
+                      <tr>
+                        <td width="50%" style="padding: 6px 6px 6px 0; font-size:14px; color:#374151;">
+                          <span style="font-size:16px;">🤷</span>
+                          <span style="font-weight:600;" th:text="${hitDistribution.nearMisses}">5</span>
+                          <span th:text="${hitDistribution.nearMisses == 1 ? 'near miss' : 'near misses'}">near misses</span>
+                          <span style="color:#9ca3af; font-size:12px;">(±3-4)</span>
+                        </td>
+                        <td width="50%" style="padding: 6px 0 6px 6px; font-size:14px; color:#374151;">
+                          <span style="font-size:16px;">😅</span>
+                          <span style="font-weight:600;" th:text="${hitDistribution.bigMisses}">2</span>
+                          <span th:text="${hitDistribution.bigMisses == 1 ? 'big miss' : 'big misses'}">big misses</span>
+                          <span style="color:#9ca3af; font-size:12px;">(±5+)</span>
+                        </td>
+                      </tr>
+                    </table>
+
+                    <!-- Sprint best / new-best / movement -->
+                    <th:block th:if="${sprint != null && sprint.sprintBest > 0}">
+                      <p style="margin:16px 0 2px 0; font-size:11px; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:0.05em; border-top:1px solid #e5e7eb; padding-top:12px;">
+                        🏃 Sprint &bull; <span th:text="${sprint.label.substring(1)}">8</span>
+                      </p>
+                      <p th:if="${round == sprint.fromRound}" style="margin:2px 0 0 0; font-size:13px; color:#6b7280;">
+                        🏁 Your sprint best: <span style="font-weight:600;" th:text="${sprint.sprintBest}">180</span> pts
+                      </p>
+                      <p th:if="${sprint.isNewSprintBest}" style="margin:2px 0 0 0; font-size:14px; color:#b45309; font-weight:600;">
+                        🎉 New sprint best — <span th:text="${sprint.sprintBest}">180</span> pts!
+                      </p>
+                      <p th:if="${round != sprint.fromRound && !sprint.isNewSprintBest}" style="margin:2px 0 0 0; font-size:13px; color:#9ca3af;">
+                        📉 Your sprint best: <span style="font-weight:600;" th:text="${sprint.sprintBest}">180</span> pts
+                      </p>
+                      <p th:if="${sprint.movement != null && sprint.movement != 0}" style="margin:2px 0 0 0; font-size:13px;">
+                        <span th:if="${sprint.movement > 0}" style="color:#059669; font-weight:600;">
+                          ↑ <span th:text="${sprint.movement}">3</span> <span th:text="${sprint.movement == 1 ? 'place' : 'places'}">places</span>
+                        </span>
+                        <span th:if="${sprint.movement < 0}" style="color:#dc2626; font-weight:600;">
+                          ↓ <span th:text="${T(java.lang.Math).abs(sprint.movement)}">2</span> <span th:text="${T(java.lang.Math).abs(sprint.movement) == 1 ? 'place' : 'places'}">places</span>
+                        </span>
+                        <span style="color:#9ca3af;">in <span th:text="${sprint.label}">S8</span></span>
+                      </p>
+                    </th:block>
+
+                    <!-- Season best / new-best / movement -->
+                    <th:block th:if="${season != null && season.seasonBest > 0}">
+                      <p style="margin:16px 0 2px 0; font-size:11px; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:0.05em; border-top:1px solid #e5e7eb; padding-top:12px;">
+                        🏆 Season
+                      </p>
+                      <p th:if="${round == season.fromRound}" style="margin:2px 0 0 0; font-size:13px; color:#6b7280;">
+                        🏁 Your season best: <span style="font-weight:600;" th:text="${season.seasonBest}">180</span> pts
+                      </p>
+                      <p th:if="${season.isNewSeasonBest}" style="margin:2px 0 0 0; font-size:14px; color:#b45309; font-weight:600;">
+                        🎉 New season best — <span th:text="${season.seasonBest}">180</span> pts!
+                      </p>
+                      <p th:if="${round != season.fromRound && !season.isNewSeasonBest}" style="margin:2px 0 0 0; font-size:13px; color:#9ca3af;">
+                        📉 Your season best: <span style="font-weight:600;" th:text="${season.seasonBest}">180</span> pts
+                      </p>
+                      <p th:if="${season.movement != null && season.movement != 0}" style="margin:2px 0 0 0; font-size:13px;">
+                        <span th:if="${season.movement > 0}" style="color:#059669; font-weight:600;">
+                          ↑ <span th:text="${season.movement}">3</span> <span th:text="${season.movement == 1 ? 'place' : 'places'}">places</span>
+                        </span>
+                        <span th:if="${season.movement < 0}" style="color:#dc2626; font-weight:600;">
+                          ↓ <span th:text="${T(java.lang.Math).abs(season.movement)}">2</span> <span th:text="${T(java.lang.Math).abs(season.movement) == 1 ? 'place' : 'places'}">places</span>
+                        </span>
+                        <span style="color:#9ca3af;">in <span th:text="${season.label}">Season</span></span>
+                      </p>
+                    </th:block>
+
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Standings: sprint, then quarter, then season -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px; border-top:1px solid #e5e7eb;">
+                <tr>
+                  <td colspan="2" style="padding:12px 0 6px 0; font-size:11px; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:0.05em;">
+                    Your Standings
+                  </td>
+                </tr>
+                <tr th:if="${sprint != null}">
+                  <td style="padding: 6px 0; font-size:14px; color:#374151;">
+                    🏃 <span style="font-weight:600;" th:text="${sprint.label}">S8</span>
+                    <span style="color:#9ca3af; font-size:12px;">GW <span th:text="${sprint.fromRound}">21</span>–<span th:text="${sprint.toRound}">23</span></span>
+                  </td>
+                  <td align="right" style="padding: 6px 0; font-size:14px; font-weight:600; color:#111827; white-space:nowrap;">
+                    #<span th:text="${sprint.rank}">2</span>
+                    <span style="font-weight:400; color:#9ca3af; font-size:12px;">of <span th:text="${sprint.totalParticipants}">120</span></span>
+                  </td>
+                </tr>
+                <tr th:if="${quarter != null}">
+                  <td style="padding: 6px 0; font-size:14px; color:#374151;">
+                    📅 <span style="font-weight:600;" th:text="${quarter.label}">Q3</span>
+                  </td>
+                  <td align="right" style="padding: 6px 0; font-size:14px; font-weight:600; color:#111827; white-space:nowrap;">
+                    #<span th:text="${quarter.rank}">5</span>
+                    <span style="font-weight:400; color:#9ca3af; font-size:12px;">of <span th:text="${quarter.totalParticipants}">130</span></span>
+                  </td>
+                </tr>
+                <tr th:if="${season != null}">
+                  <td style="padding: 6px 0 8px 0; font-size:14px; color:#374151;">🏆 <span style="font-weight:600;">Season</span></td>
+                  <td align="right" style="padding: 6px 0 8px 0; font-size:14px; font-weight:600; color:#111827; white-space:nowrap;">
+                    #<span th:text="${season.rank}">18</span>
+                    <span style="font-weight:400; color:#9ca3af; font-size:12px;">of <span th:text="${season.totalParticipants}">140</span></span>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- CTA Button -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" th:if="${showDetailedResultsLink}">
+                <tr>
+                  <td align="center" style="padding-top: 24px;">
+                    <a th:href="${detailedResultsUrl}"
+                       style="display:inline-block; background-color:#4f46e5; color:#ffffff; text-decoration:none; font-size:14px; font-weight:600; padding: 12px 24px; border-radius:8px;">
+                      View Detailed Results →
+                    </a>
+                  </td>
+                </tr>
+              </table>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 20px 32px; background-color:#f9fafb; border-top:1px solid #e5e7eb;">
+              <p style="margin:0; font-size:12px; color:#9ca3af; text-align:center;">
+                You're receiving this because you have an active LigiPredictor account.
+              </p>
+              <p style="margin:8px 0 0 0; font-size:12px; color:#9ca3af; text-align:center;">
+                <a th:href="${frontendUrl + '/settings'}" style="color:#9ca3af; text-decoration:underline;">Manage email preferences</a>
+                ·
+                &copy; <span th:text="${T(java.time.Year).now()}">2026</span> LigiPredictor
+              </p>
+            </td>
+          </tr>
+
+        </table>
+      </td>
+    </tr>
+  </table>
+
+</body>
+</html>

@@ -1,5 +1,7 @@
 package com.ligitabl.api.web.predictions.latestresult;
 
+import com.ligitabl.model.domain.HitDistribution;
+
 public record LatestResultResponse(
         int round,
         int score,

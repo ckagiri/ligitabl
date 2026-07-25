@@ -70,6 +70,7 @@ public class ProfileController {
         form.setDisplayName(user.getDisplayName());
         form.setEmail(user.getEmail().value());
         form.setShowLatestResultBanner(populateLatestResultModel(model, user.getId()));
+        form.setReceiveResultsEmail(!user.isResultsEmailOptOut());
         model.addAttribute("profileForm", form);
 
         model.addAttribute("pageTitle", "Profile Settings");
@@ -111,7 +112,8 @@ public class ProfileController {
             return "profile/settings";
         }
 
-        User updatedUser = user.withDisplayName(form.getDisplayName());
+        User updatedUser =
+                user.withDisplayName(form.getDisplayName()).withResultsEmailOptOut(!form.isReceiveResultsEmail());
         userRepo.update(updatedUser);
         // While impersonating, the update targets the effective user — rewriting the session's
         // SecurityContext from them would re-authenticate the admin AS that user. Skip it.
@@ -308,6 +310,9 @@ public class ProfileController {
         private String email;
 
         private boolean showLatestResultBanner;
+
+        /** Email opt-out is stored inverted (User.resultsEmailOptOut); default checked = opt-in. */
+        private boolean receiveResultsEmail;
     }
 
     @Data

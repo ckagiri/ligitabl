@@ -3,7 +3,6 @@ package com.ligitabl.model.repo;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -31,14 +30,7 @@ class CompetitionRepoTest {
 
     @BeforeAll
     static void setup() throws Exception {
-        String host = System.getenv().getOrDefault("DB_HOST", "localhost");
-        String port = System.getenv().getOrDefault("DB_PORT", "55433");
-        String db = System.getenv().getOrDefault("DB_NAME", "ligitabl_test");
-        String user = System.getenv().getOrDefault("DB_USER", "ligitabl");
-        String password = System.getenv().getOrDefault("DB_PASSWORD", "ligitabl");
-
-        String url = String.format("jdbc:postgresql://%s:%s/%s", host, port, db);
-        jdbc = DriverManager.getConnection(url, user, password);
+        jdbc = TestDbConnections.open();
         dsl = DSL.using(jdbc, SQLDialect.POSTGRES);
         repo = new CompetitionPersistenceAdapter(dsl);
 

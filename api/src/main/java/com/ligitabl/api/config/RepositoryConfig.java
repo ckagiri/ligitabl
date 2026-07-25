@@ -9,12 +9,14 @@ import org.springframework.context.annotation.Configuration;
 
 import com.ligitabl.model.domain.service.ContestCodeGenerator;
 import com.ligitabl.model.domain.service.ScoringEngine;
+import com.ligitabl.model.infra.AppSettingPersistenceAdapter;
 import com.ligitabl.model.infra.CompetitionPersistenceAdapter;
 import com.ligitabl.model.infra.ContestPersistenceAdapter;
 import com.ligitabl.model.infra.EmailVerificationTokenPersistenceAdapter;
 import com.ligitabl.model.infra.EntryPersistenceAdapter;
 import com.ligitabl.model.infra.LeaderboardPersistenceAdapter;
 import com.ligitabl.model.infra.MatchPersistenceAdapter;
+import com.ligitabl.model.infra.OutboxPersistenceAdapter;
 import com.ligitabl.model.infra.PasswordResetTokenPersistenceAdapter;
 import com.ligitabl.model.infra.RoundPersistenceAdapter;
 import com.ligitabl.model.infra.RoundResultPersistenceAdapter;
@@ -24,12 +26,14 @@ import com.ligitabl.model.infra.SeasonPredictionPersistenceAdapter;
 import com.ligitabl.model.infra.StandingsPersistenceAdapter;
 import com.ligitabl.model.infra.TeamPersistenceAdapter;
 import com.ligitabl.model.infra.UserPersistenceAdapter;
+import com.ligitabl.model.repo.AppSettingRepo;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EmailVerificationTokenRepo;
 import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.LeaderboardRepo;
 import com.ligitabl.model.repo.MatchRepo;
+import com.ligitabl.model.repo.OutboxRepo;
 import com.ligitabl.model.repo.PasswordResetTokenRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.RoundResultRepo;
@@ -136,5 +140,15 @@ public class RepositoryConfig {
     @Bean
     public EmailVerificationTokenRepo emailVerificationTokenRepo(DSLContext dsl) {
         return new EmailVerificationTokenPersistenceAdapter(dsl);
+    }
+
+    @Bean
+    public OutboxRepo outboxRepo(DSLContext dsl) {
+        return new OutboxPersistenceAdapter(dsl);
+    }
+
+    @Bean
+    public AppSettingRepo appSettingRepo(DSLContext dsl) {
+        return new AppSettingPersistenceAdapter(dsl);
     }
 }
