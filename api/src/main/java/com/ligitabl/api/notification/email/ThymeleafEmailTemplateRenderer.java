@@ -38,6 +38,7 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
             case PASSWORD_RESET_CONFIRMATION -> "email/password-reset-confirmation";
             case EMAIL_VERIFICATION -> "email/email-verification";
             case ROUND_RESULTS -> "email/round-results";
+            case JOIN_REMINDER -> "email/join-reminder";
         };
     }
 
@@ -48,6 +49,7 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
             case EMAIL_VERIFICATION -> "Verify your LigiPredictor email";
             case ROUND_RESULTS -> "Your Gameweek %s Results — %s points!"
                     .formatted(templateData.get("round"), templateData.get("score"));
+            case JOIN_REMINDER -> "Set your table for the season!";
         };
     }
 }

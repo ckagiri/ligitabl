@@ -13,10 +13,16 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.notification.AdminNotificationService;
+import com.ligitabl.api.notification.outbox.OutboxEventTypes;
+import com.ligitabl.api.notification.outbox.RoundLockedPayload;
 import com.ligitabl.api.scheduling.advanceround.RoundAdvancementService;
 import com.ligitabl.api.scheduling.resilience.MatchSyncCircuitBreaker;
+import com.ligitabl.model.domain.OutboxEvent;
+import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.repo.OutboxRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import io.sentry.Sentry;
@@ -60,6 +66,8 @@ public class MatchSyncScheduler {
     private final AdminNotificationService adminNotificationService;
     private final RoundAdvancementService roundAdvancementService;
     private final SeasonRepo seasonRepo;
+    private final OutboxRepo outboxRepo;
+    private final ObjectMapper objectMapper;
     private final MatchSyncCircuitBreaker circuitBreaker;
 
     private static final Duration SETUP_MODE_DEFER_DELAY = Duration.ofMinutes(30);
@@ -84,12 +92,16 @@ public class MatchSyncScheduler {
             AdminNotificationService adminNotificationService,
             RoundAdvancementService roundAdvancementService,
             SeasonRepo seasonRepo,
+            OutboxRepo outboxRepo,
+            ObjectMapper objectMapper,
             MatchSyncCircuitBreaker circuitBreaker) {
         this.taskScheduler = taskScheduler;
         this.syncMatchesUseCase = syncMatchesUseCase;
         this.triggerFinalizationUseCase = triggerFinalizationUseCase;
         this.adminNotificationService = adminNotificationService;
         this.roundAdvancementService = roundAdvancementService;
+        this.outboxRepo = outboxRepo;
+        this.objectMapper = objectMapper;
         this.seasonRepo = seasonRepo;
         this.circuitBreaker = circuitBreaker;
     }
@@ -145,6 +157,8 @@ public class MatchSyncScheduler {
                                 success.matchesProcessed(),
                                 success.matchesUpdated(),
                                 success.newlyFinishedMatches());
+
+                        maybeWriteRoundLockedEvent(success);
 
                         if (success.roundObstructed()) {
                             log.warn(
@@ -210,6 +224,33 @@ public class MatchSyncScheduler {
             scheduleNextSync(Duration.ofMinutes(retryOnFailureMinutes));
         } finally {
             running = false;
+        }
+    }
+
+    /**
+     * Writes a ROUND_LOCKED outbox event whenever the round currently reads as
+     * LOCKED. The idempotency key ("round-locked:{roundId}") means only the
+     * first write per round actually inserts (ON CONFLICT DO NOTHING) — every
+     * later sync tick while the round stays LOCKED is a harmless no-op, so no
+     * in-memory "did we already see LOCKED" tracking is needed, and this
+     * survives app restarts cleanly.
+     */
+    private void maybeWriteRoundLockedEvent(MatchSyncResult result) {
+        if (result.roundId() == null || result.roundStatus() != RoundStatus.LOCKED) {
+            return;
+        }
+        try {
+            var payload = new RoundLockedPayload(result.seasonId(), result.roundId(), result.roundPosition());
+            var event = OutboxEvent.create(
+                    "round-locked:" + result.roundId(),
+                    OutboxEventTypes.ROUND_LOCKED,
+                    "round",
+                    result.roundId().toString(),
+                    objectMapper.writeValueAsString(payload));
+            outboxRepo.save(event);
+        } catch (Exception e) {
+            log.error("Failed to write ROUND_LOCKED outbox event for round {}", result.roundId(), e);
+            Sentry.captureException(e);
         }
     }
 

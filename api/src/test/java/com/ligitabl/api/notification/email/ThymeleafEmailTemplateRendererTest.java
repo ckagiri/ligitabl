@@ -56,7 +56,9 @@ class ThymeleafEmailTemplateRendererTest {
                 EmailCommand.EmailType.PASSWORD_RESET_CONFIRMATION, Map.of("recipientEmail", "a@b.c"),
                 EmailCommand.EmailType.EMAIL_VERIFICATION,
                         Map.of("verificationUrl", "http://x", "expiryHours", 48, "recipientEmail", "a@b.c"),
-                EmailCommand.EmailType.ROUND_RESULTS, roundResultsData());
+                EmailCommand.EmailType.ROUND_RESULTS, roundResultsData(),
+                EmailCommand.EmailType.JOIN_REMINDER,
+                        Map.of("myTableUrl", "http://x/my-table", "leaderboardUrl", "http://x/leaderboard"));
 
         for (EmailCommand.EmailType type : EmailCommand.EmailType.values()) {
             var result = renderer.render(type, dataByType.get(type));

@@ -31,14 +31,18 @@ import com.ligitabl.api.notification.email.EmailContent;
 import com.ligitabl.api.notification.email.EmailError;
 import com.ligitabl.api.notification.email.EmailProvider;
 import com.ligitabl.api.notification.email.EmailTemplateRenderer;
+import com.ligitabl.api.notification.outbox.JoinReminderPayload;
 import com.ligitabl.api.notification.outbox.OutboxEventTypes;
 import com.ligitabl.api.notification.outbox.RoundAdvancedPayload;
 import com.ligitabl.api.notification.outbox.RoundResultsEmailEnqueuer;
 import com.ligitabl.api.notification.outbox.RoundResultsPayload;
+import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionUseCase;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.HitDistribution;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
+import com.ligitabl.model.repo.SeasonRepo;
+import com.ligitabl.model.repo.UserRepo;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -58,6 +62,15 @@ class OutboxEventProcessorTest {
     @Mock
     EmailProvider emailProvider;
 
+    @Mock
+    SeasonRepo seasonRepo;
+
+    @Mock
+    UserRepo userRepo;
+
+    @Mock
+    CreatePredictionUseCase createPredictionUseCase;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
     private OutboxEventProcessor processor;
 
@@ -67,11 +80,21 @@ class OutboxEventProcessorTest {
     @BeforeEach
     void setup() {
         processor = new OutboxEventProcessor(
-                outboxRepo, enqueuer, renderer, emailProvider, objectMapper, Clock.fixed(NOW, ZoneOffset.UTC));
+                outboxRepo,
+                enqueuer,
+                renderer,
+                emailProvider,
+                objectMapper,
+                Clock.fixed(NOW, ZoneOffset.UTC),
+                seasonRepo,
+                userRepo,
+                createPredictionUseCase);
         ReflectionTestUtils.setField(processor, "frontendUrl", "http://localhost:8080");
 
         when(renderer.render(eq(EmailCommand.EmailType.ROUND_RESULTS), any()))
                 .thenReturn(Either.right(new EmailContent("subject", "<html/>", "text")));
+        when(renderer.render(eq(EmailCommand.EmailType.JOIN_REMINDER), any()))
+                .thenReturn(Either.right(new EmailContent("join subject", "<html/>", "text")));
         when(emailProvider.sendSingle(anyString(), anyString(), anyString(), any()))
                 .thenReturn(Either.right(null));
     }
@@ -225,6 +248,23 @@ class OutboxEventProcessorTest {
 
         verify(outboxRepo).markFailed(eq(event.getId()), anyString(), eq(NOW.plus(Duration.ofMinutes(1))));
         verify(outboxRepo, never()).markSent(any());
+    }
+
+    @Test
+    void joinReminderRendersAndSendsThenMarksSent() throws Exception {
+        JoinReminderPayload payload = new JoinReminderPayload(userId, "bob@x.com");
+        OutboxEvent event = claimedEvent(OutboxEventTypes.JOIN_REMINDER, objectMapper.writeValueAsString(payload), 1);
+
+        processor.processOne(event);
+
+        ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.captor();
+        verify(renderer).render(eq(EmailCommand.EmailType.JOIN_REMINDER), dataCaptor.capture());
+        org.assertj.core.api.Assertions.assertThat(dataCaptor.getValue())
+                .containsEntry("myTableUrl", "http://localhost:8080/my-table")
+                .containsEntry("leaderboardUrl", "http://localhost:8080/leaderboard");
+
+        verify(emailProvider).sendSingle(eq("bob@x.com"), eq("join subject"), eq("<html/>"), eq(EmailCommand.Priority.NORMAL));
+        verify(outboxRepo).markSent(event.getId());
     }
 
     @Test

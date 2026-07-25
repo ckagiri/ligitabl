@@ -125,6 +125,13 @@ ligitabl:
       # live: exclude ignore-list/unverified/opted-out users.
       # test: send ONLY to ignore-list accounts (local testing against test users).
       mode: ${ROUND_RESULTS_EMAIL_MODE:live}
+    join-reminder:
+      # Off by default; enable per environment once rollout is ready.
+      enabled: ${JOIN_REMINDER_ENABLED:false}
+      # Backoff schedule (days since signup); a user is emailed once per stage, at the latest
+      # stage reached, never more than one per run, and never again after the last stage.
+      stage-days: ${JOIN_REMINDER_STAGE_DAYS:1,4,11}
+      cron: ${JOIN_REMINDER_CRON:0 0 9 * * *}
 
   slack:
     # Incoming-webhook URL is a secret — env var only, never committed. Default disabled so

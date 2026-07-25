@@ -264,7 +264,7 @@ public class UserPersistenceAdapter implements UserRepo {
     }
 
     @Override
-    public List<UUID> findUnjoinedUserIds(UUID seasonId, OffsetDateTime registeredAfter) {
+    public List<UUID> findUnjoinedUserIdsRegisteredAfter(UUID seasonId, OffsetDateTime registeredAfter) {
         return dsl.select(T_USER.PK_ID)
                 .from(T_USER)
                 .where(T_USER.C_CREATE_DATE.gt(registeredAfter))
@@ -273,6 +273,20 @@ public class UserPersistenceAdapter implements UserRepo {
                         .where(T_SEASON_PREDICTION.FK_USER_ID.eq(T_USER.PK_ID))
                         .and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId)))
                 .fetch(T_USER.PK_ID);
+    }
+
+    @Override
+    public List<User> findUnjoinedUsersRegisteredBefore(UUID seasonId, OffsetDateTime registeredBefore) {
+        var records = dsl.selectFrom(T_USER)
+                .where(T_USER.C_CREATE_DATE.le(registeredBefore))
+                .and(T_USER.C_EMAIL_VERIFIED.isTrue())
+                .and(T_USER.C_RESULTS_EMAIL_OPT_OUT.isFalse())
+                .andNotExists(dsl.selectOne()
+                        .from(T_SEASON_PREDICTION)
+                        .where(T_SEASON_PREDICTION.FK_USER_ID.eq(T_USER.PK_ID))
+                        .and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId)))
+                .fetch();
+        return records.stream().map(this::map).toList();
     }
 
     @Override

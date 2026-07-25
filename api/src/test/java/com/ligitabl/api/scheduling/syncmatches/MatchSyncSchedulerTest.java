@@ -22,12 +22,15 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.scheduling.TaskScheduler;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.api.scheduling.advanceround.RoundAdvancementService;
 import com.ligitabl.api.scheduling.resilience.MatchSyncCircuitBreaker;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.repo.OutboxRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,6 +56,11 @@ class MatchSyncSchedulerTest {
     private SeasonRepo seasonRepo;
 
     @Mock
+    private OutboxRepo outboxRepo;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Mock
     private MatchSyncCircuitBreaker circuitBreaker;
 
     @Mock
@@ -75,6 +83,8 @@ class MatchSyncSchedulerTest {
                 adminNotificationService,
                 roundAdvancementService,
                 seasonRepo,
+                outboxRepo,
+                objectMapper,
                 circuitBreaker);
 
         setField(scheduler, "competitionCode", "PL");
@@ -246,6 +256,7 @@ class MatchSyncSchedulerTest {
                 seasonId,
                 roundId,
                 5,
+                RoundStatus.LOCKED,
                 10,
                 10,
                 0,
@@ -262,6 +273,7 @@ class MatchSyncSchedulerTest {
                 seasonId,
                 roundId,
                 5,
+                RoundStatus.LOCKED,
                 10,
                 10,
                 0,
@@ -278,6 +290,7 @@ class MatchSyncSchedulerTest {
                 seasonId,
                 roundId,
                 5,
+                RoundStatus.COMPLETED,
                 10,
                 10,
                 10,

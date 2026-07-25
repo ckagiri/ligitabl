@@ -2,7 +2,9 @@ package com.ligitabl.api.scheduling.outbox;
 
 import java.time.Clock;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -13,12 +15,19 @@ import com.ligitabl.api.notification.email.EmailCommand;
 import com.ligitabl.api.notification.email.EmailContent;
 import com.ligitabl.api.notification.email.EmailProvider;
 import com.ligitabl.api.notification.email.EmailTemplateRenderer;
+import com.ligitabl.api.notification.outbox.JoinReminderPayload;
 import com.ligitabl.api.notification.outbox.OutboxEventTypes;
 import com.ligitabl.api.notification.outbox.RoundAdvancedPayload;
+import com.ligitabl.api.notification.outbox.RoundLockedPayload;
 import com.ligitabl.api.notification.outbox.RoundResultsEmailEnqueuer;
 import com.ligitabl.api.notification.outbox.RoundResultsPayload;
+import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionCommand;
+import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionUseCase;
 import com.ligitabl.model.domain.OutboxEvent;
+import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.OutboxRepo;
+import com.ligitabl.model.repo.SeasonRepo;
+import com.ligitabl.model.repo.UserRepo;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +57,9 @@ public class OutboxEventProcessor {
     private final EmailProvider emailProvider;
     private final ObjectMapper objectMapper;
     private final Clock clock;
+    private final SeasonRepo seasonRepo;
+    private final UserRepo userRepo;
+    private final CreatePredictionUseCase createPredictionUseCase;
 
     @Value("${ligitabl.frontend.url:http://localhost:8080}")
     private String frontendUrl;
@@ -58,6 +70,8 @@ public class OutboxEventProcessor {
             switch (event.getEventType()) {
                 case OutboxEventTypes.ROUND_ADVANCED -> processRoundAdvanced(event);
                 case OutboxEventTypes.ROUND_RESULTS -> processRoundResults(event);
+                case OutboxEventTypes.ROUND_LOCKED -> processRoundLocked(event);
+                case OutboxEventTypes.JOIN_REMINDER -> processJoinReminder(event);
                 default -> {
                     log.warn(
                             "[OUTBOX_DEAD_LETTER] id={}, type={}: unknown event type",
@@ -83,6 +97,71 @@ public class OutboxEventProcessor {
     private void processRoundAdvanced(OutboxEvent event) throws Exception {
         RoundAdvancedPayload payload = objectMapper.readValue(event.getPayload(), RoundAdvancedPayload.class);
         roundResultsEmailEnqueuer.enqueue(payload);
+    }
+
+    /**
+     * Auto-joins users who registered after the season's pre-season window opened and never
+     * created a SeasonPrediction — evaluated fresh at processing time, not from the event's
+     * payload, so it reflects whichever round/rankings are current when this actually runs.
+     * Each user's join is still isolated in its own try/catch — one bad user must not cost
+     * the rest of the batch, nor fail this outbox event for users who already succeeded.
+     */
+    private void processRoundLocked(OutboxEvent event) throws Exception {
+        RoundLockedPayload payload = objectMapper.readValue(event.getPayload(), RoundLockedPayload.class);
+
+        Season season = seasonRepo
+                .findById(payload.seasonId())
+                .orElseThrow(() -> new IllegalStateException("Season not found: " + payload.seasonId()));
+
+        List<UUID> unjoinedUserIds = userRepo.findUnjoinedUserIdsRegisteredAfter(season.getId(), season.getPreSeasonOpensAt());
+        if (unjoinedUserIds.isEmpty()) {
+            return;
+        }
+
+        createPredictionUseCase.resolveJoinContext(season).fold(
+                error -> {
+                    log.warn(
+                            "[ROUND_LOCKED] Skipping auto-join batch for season {}: {}", season.getId(), error);
+                    return null;
+                },
+                ctx -> {
+                    for (UUID userId : unjoinedUserIds) {
+                        try {
+                            createPredictionUseCase
+                                    .executeWithContext(userId, ctx, new CreatePredictionCommand(List.of()))
+                                    .peekLeft(error -> log.warn(
+                                            "[ROUND_LOCKED] Auto-join skipped for user {}: {}", userId, error));
+                        } catch (Exception e) {
+                            log.error("[ROUND_LOCKED] Auto-join failed for user {}", userId, e);
+                        }
+                    }
+                    return null;
+                });
+    }
+
+    private void processJoinReminder(OutboxEvent event) throws Exception {
+        JoinReminderPayload payload = objectMapper.readValue(event.getPayload(), JoinReminderPayload.class);
+
+        EmailContent content = emailTemplateRenderer
+                .render(EmailCommand.EmailType.JOIN_REMINDER, joinReminderTemplateData())
+                .fold(
+                        error -> {
+                            throw new IllegalStateException("Template render failed: " + error);
+                        },
+                        c -> c);
+
+        emailProvider
+                .sendSingle(payload.userEmail(), content.subject(), content.htmlBody(), EmailCommand.Priority.NORMAL)
+                .peekLeft(error -> {
+                    throw new IllegalStateException("Email send failed: " + error);
+                });
+    }
+
+    private Map<String, Object> joinReminderTemplateData() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("myTableUrl", frontendUrl + "/my-table");
+        data.put("leaderboardUrl", frontendUrl + "/leaderboard");
+        return data;
     }
 
     private void processRoundResults(OutboxEvent event) throws Exception {
@@ -118,7 +197,7 @@ public class OutboxEventProcessor {
         data.put("showDetailedResultsLink", payload.round() != payload.lastRound());
         data.put(
                 "detailedResultsUrl",
-                frontendUrl + "/u/" + payload.userPublicId() + "/" + payload.seasonSlug() + "/gw/" + payload.round());
+                frontendUrl + "/u/" + payload.userPublicId() + "/" + payload.seasonSlug() + "/gw/f" + payload.round());
         return data;
     }
 
