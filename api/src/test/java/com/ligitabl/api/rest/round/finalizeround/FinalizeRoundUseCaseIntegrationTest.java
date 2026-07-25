@@ -17,15 +17,11 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ligitabl.api.notification.outbox.RoundFinalizedPayload;
-import com.ligitabl.api.notification.outbox.RoundResultsEmailEnqueuer;
 import com.ligitabl.api.scheduling.advanceround.RoundAdvancementService;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
-import com.ligitabl.model.domain.Entry;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
-import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Score;
 import com.ligitabl.model.domain.SeasonPrediction;
@@ -33,9 +29,7 @@ import com.ligitabl.model.domain.Standings;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.domain.TeamSlug;
-import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.MatchRepo;
-import com.ligitabl.model.repo.OutboxRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.RoundResultRepo;
 import com.ligitabl.model.repo.RoundSubmissionRepo;
@@ -80,15 +74,6 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
 
     @Autowired
     RoundResultRepo roundResultRepo;
-
-    @Autowired
-    OutboxRepo outboxRepo;
-
-    @Autowired
-    EntryRepo entryRepo;
-
-    @Autowired
-    RoundResultsEmailEnqueuer roundResultsEmailEnqueuer;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -772,118 +757,6 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
                 .initialRankings(List.of())
                 .currentRankings(currentRankings)
                 .atRoundNumber(atRoundNumber)
-                .build());
-    }
-
-    @Test
-    @DisplayName("Should record ROUND_FINALIZED in the outbox and fan out ROUND_RESULTS events idempotently")
-    void shouldEnqueueRoundResultsOutboxEvents() throws Exception {
-        insertSeason(2, 4);
-        configureMainContestWithPhases();
-
-        Round round1 = createRound(1, false);
-        createRound(2, false);
-        setCurrentRound(round1.getId());
-
-        createFinishedMatch(round1, arsenal, chelsea, 2, 1);
-        createFinishedMatch(round1, liverpool, manCity, 1, 1);
-
-        createPrediction(aliceId, 1);
-        createPrediction(bobId, 1);
-
-        var result = finalizeRoundUseCase.execute(seasonId);
-        assertThat(result.isRight()).isTrue();
-
-        // Finalization writes exactly one thin ROUND_FINALIZED fact
-        var roundFinalized = outboxRepo.findByIdempotencyKey("round-finalized:%s:1".formatted(seasonId));
-        assertThat(roundFinalized).isPresent();
-        assertThat(roundFinalized.get().getStatus()).isEqualTo(OutboxEvent.Status.PENDING);
-        assertThat(roundFinalized.get().getEventType()).isEqualTo("ROUND_FINALIZED");
-        Integer total = jdbc.queryForObject("SELECT count(*) FROM t_outbox_event", Integer.class);
-        assertThat(total).isEqualTo(1);
-
-        // Fan-out (normally run by the relay post-commit) expands it into per-user events
-        RoundFinalizedPayload payload =
-                objectMapper.readValue(roundFinalized.get().getPayload(), RoundFinalizedPayload.class);
-        assertThat(payload.seasonId()).isEqualTo(seasonId);
-        assertThat(payload.roundPosition()).isEqualTo(1);
-        roundResultsEmailEnqueuer.enqueue(payload);
-
-        var aliceEvent = outboxRepo.findByIdempotencyKey("round-results:%s:1:%s".formatted(seasonId, aliceId));
-        var bobEvent = outboxRepo.findByIdempotencyKey("round-results:%s:1:%s".formatted(seasonId, bobId));
-        assertThat(aliceEvent).isPresent();
-        assertThat(bobEvent).isPresent();
-        assertThat(aliceEvent.get().getStatus()).isEqualTo(OutboxEvent.Status.PENDING);
-        assertThat(aliceEvent.get().getEventType()).isEqualTo("ROUND_RESULTS");
-        assertThat(aliceEvent.get().getPayload()).contains("alice@example.com");
-        assertThat(aliceEvent.get().getPayload()).contains("\"sprint\"");
-
-        total = jdbc.queryForObject("SELECT count(*) FROM t_outbox_event", Integer.class);
-        assertThat(total).isEqualTo(3);
-
-        // Re-running the fan-out (relay retry / refinalization) is a no-op via idempotency keys
-        roundResultsEmailEnqueuer.enqueue(payload);
-        total = jdbc.queryForObject("SELECT count(*) FROM t_outbox_event", Integer.class);
-        assertThat(total).isEqualTo(3);
-    }
-
-    @Test
-    @DisplayName("Fan-out should no-op (not fail) when no main contest or phases are configured")
-    void shouldFinalizeWithoutOutboxWhenNoMainContest() throws Exception {
-        // Deliberately no contest / phases seeded — the fan-out must no-op, not abort
-        insertSeason(2, 4);
-
-        Round round1 = createRound(1, false);
-        createRound(2, false);
-        setCurrentRound(round1.getId());
-
-        createFinishedMatch(round1, arsenal, chelsea, 2, 1);
-        createFinishedMatch(round1, liverpool, manCity, 1, 1);
-        createPrediction(aliceId, 1);
-
-        var result = finalizeRoundUseCase.execute(seasonId);
-        assertThat(result.isRight()).isTrue();
-
-        // The thin fact is still recorded, but fanning it out yields no per-user events
-        var roundFinalized = outboxRepo.findByIdempotencyKey("round-finalized:%s:1".formatted(seasonId));
-        assertThat(roundFinalized).isPresent();
-
-        roundResultsEmailEnqueuer.enqueue(
-                objectMapper.readValue(roundFinalized.get().getPayload(), RoundFinalizedPayload.class));
-
-        Integer total = jdbc.queryForObject("SELECT count(*) FROM t_outbox_event", Integer.class);
-        assertThat(total).isEqualTo(1);
-    }
-
-    private void configureMainContestWithPhases() {
-        String phasesJson = "["
-                + "{\"code\":\"FS\",\"name\":\"Full Season\",\"from\":1,\"to\":2,\"type\":\"FULL_SEASON\"},"
-                + "{\"code\":\"Q1\",\"name\":\"Quarter 1\",\"from\":1,\"to\":2,\"type\":\"QUARTER\"},"
-                + "{\"code\":\"S1\",\"name\":\"Sprint 1\",\"from\":1,\"to\":2,\"type\":\"SPRINT\"}]";
-        jdbc.update("UPDATE t_competition SET c_phases = ?::jsonb WHERE pk_id = ?", phasesJson, competitionId);
-
-        UUID contestId = UUID.randomUUID();
-        jdbc.update(
-                "INSERT INTO t_contest (pk_id, fk_season_id, c_name, c_is_private, c_join_code, c_from_round_position, c_to_round_position, c_max_entries) VALUES (?,?,?,?,?,?,?,?)",
-                contestId,
-                seasonId,
-                "Main League",
-                false,
-                null,
-                1,
-                2,
-                null);
-        jdbc.update("UPDATE t_season SET fk_main_contest_id = ? WHERE pk_id = ?", contestId, seasonId);
-
-        entryRepo.save(Entry.builder()
-                .userId(aliceId)
-                .contestId(contestId)
-                .joinedAtRound(1)
-                .build());
-        entryRepo.save(Entry.builder()
-                .userId(bobId)
-                .contestId(contestId)
-                .joinedAtRound(1)
                 .build());
     }
 

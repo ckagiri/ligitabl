@@ -17,11 +17,15 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ligitabl.api.notification.outbox.RoundAdvancedPayload;
 import com.ligitabl.api.shared.errors.ConflictError;
 import com.ligitabl.api.shared.errors.NotFoundError;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
+import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.repo.OutboxRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
@@ -40,6 +44,11 @@ class AdvanceCurrentRoundNowUseCaseIntegrationTest extends AbstractPostgresIT {
 
     @Autowired
     SeasonRepo seasonRepo;
+
+    @Autowired
+    OutboxRepo outboxRepo;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @MockitoBean
     Clock clock;
@@ -78,6 +87,31 @@ class AdvanceCurrentRoundNowUseCaseIntegrationTest extends AbstractPostgresIT {
 
         var season = seasonRepo.findById(seasonId).orElseThrow();
         assertThat(season.getCurrentRoundId()).isEqualTo(round2.getId());
+    }
+
+    @Test
+    @DisplayName("Should enqueue a ROUND_ADVANCED outbox event with the newly-opened round as currentRoundPosition")
+    void shouldEnqueueRoundFinalizedOutboxEventOnAdvance() throws Exception {
+        Round round1 = setupSeasonWithRounds(2);
+        createRound(2, false);
+        setCurrentRound(round1.getId());
+
+        var result = useCase.execute();
+        assertThat(result.isRight()).isTrue();
+
+        // Written inside the advancement transaction — not by FinalizeRoundUseCase — because
+        // leaderboard queries only count rounds with c_advanced = true, so this round's own
+        // results wouldn't yet count toward its placements if enqueued at finalize time instead.
+        var event = outboxRepo.findByIdempotencyKey("round-advanced:%s:1".formatted(seasonId));
+        assertThat(event).isPresent();
+        assertThat(event.get().getEventType()).isEqualTo("ROUND_ADVANCED");
+        assertThat(event.get().getStatus()).isEqualTo(OutboxEvent.Status.PENDING);
+
+        RoundAdvancedPayload payload =
+                objectMapper.readValue(event.get().getPayload(), RoundAdvancedPayload.class);
+        assertThat(payload.seasonId()).isEqualTo(seasonId);
+        assertThat(payload.roundPosition()).isEqualTo(1);
+        assertThat(payload.currentRoundPosition()).isEqualTo(2);
     }
 
     @Test
@@ -123,7 +157,7 @@ class AdvanceCurrentRoundNowUseCaseIntegrationTest extends AbstractPostgresIT {
 
     @Test
     @DisplayName("Should mark last round advanced, not the season completed, when advancing the last round")
-    void shouldMarkSeasonCompletedOnLastRound() {
+    void shouldMarkSeasonCompletedOnLastRound() throws Exception {
         Round lastRound = setupSeasonWithRounds(1); // maxRounds = 1
         setCurrentRound(lastRound.getId());
 
@@ -137,6 +171,14 @@ class AdvanceCurrentRoundNowUseCaseIntegrationTest extends AbstractPostgresIT {
                 .isTrue();
         var season = seasonRepo.findById(seasonId).orElseThrow();
         assertThat(season.isCompleted()).isFalse();
+
+        // No next round to open — currentRoundPosition stays pinned at the final round itself.
+        var event = outboxRepo.findByIdempotencyKey("round-advanced:%s:1".formatted(seasonId));
+        assertThat(event).isPresent();
+        RoundAdvancedPayload payload =
+                objectMapper.readValue(event.get().getPayload(), RoundAdvancedPayload.class);
+        assertThat(payload.roundPosition()).isEqualTo(1);
+        assertThat(payload.currentRoundPosition()).isEqualTo(1);
     }
 
     // ─── Helpers ────────────────────────────────────────────────────────────────

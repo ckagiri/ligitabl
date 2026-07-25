@@ -14,7 +14,7 @@ import com.ligitabl.api.notification.email.EmailContent;
 import com.ligitabl.api.notification.email.EmailProvider;
 import com.ligitabl.api.notification.email.EmailTemplateRenderer;
 import com.ligitabl.api.notification.outbox.OutboxEventTypes;
-import com.ligitabl.api.notification.outbox.RoundFinalizedPayload;
+import com.ligitabl.api.notification.outbox.RoundAdvancedPayload;
 import com.ligitabl.api.notification.outbox.RoundResultsEmailEnqueuer;
 import com.ligitabl.api.notification.outbox.RoundResultsPayload;
 import com.ligitabl.model.domain.OutboxEvent;
@@ -56,7 +56,7 @@ public class OutboxEventProcessor {
     public void processOne(OutboxEvent event) {
         try {
             switch (event.getEventType()) {
-                case OutboxEventTypes.ROUND_FINALIZED -> processRoundFinalized(event);
+                case OutboxEventTypes.ROUND_ADVANCED -> processRoundAdvanced(event);
                 case OutboxEventTypes.ROUND_RESULTS -> processRoundResults(event);
                 default -> {
                     log.warn(
@@ -75,13 +75,13 @@ public class OutboxEventProcessor {
     }
 
     /**
-     * Fan-out: expands the thin round-finalized fact into per-user
+     * Fan-out: expands the thin round-advanced fact into per-user
      * ROUND_RESULTS events. Runs in this event's transaction together with the
      * parent's markSent, so a crash mid-fan-out retries the whole expansion —
      * duplicate-free via the per-user idempotency keys.
      */
-    private void processRoundFinalized(OutboxEvent event) throws Exception {
-        RoundFinalizedPayload payload = objectMapper.readValue(event.getPayload(), RoundFinalizedPayload.class);
+    private void processRoundAdvanced(OutboxEvent event) throws Exception {
+        RoundAdvancedPayload payload = objectMapper.readValue(event.getPayload(), RoundAdvancedPayload.class);
         roundResultsEmailEnqueuer.enqueue(payload);
     }
 

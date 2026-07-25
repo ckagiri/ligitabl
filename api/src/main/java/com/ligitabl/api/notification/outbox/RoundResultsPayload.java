@@ -8,10 +8,12 @@ import com.ligitabl.model.domain.HitDistribution;
  * JSON payload of a ROUND_RESULTS outbox event: everything the relay needs to
  * render and send one user's round-results email without further queries.
  *
- * <p>Mirrors the in-app results banner (score, hit distribution, sprint
- * progress) plus the user's placement on the sprint, quarter and full-season
- * leaderboards. Placements are the real in-app leaderboard positions —
- * ignore-list users keep their ranks, they just don't receive email.
+ * <p>The email shows a "best"/movement callout for both sprint and quarter —
+ * recipients are selected from the sprint leaderboard (top-N per round), and
+ * the content covers both phases the recipient is scored in. Full-season is
+ * shown as a plain secondary standing (rank only, no "season best" concept).
+ * Placements are the real in-app leaderboard positions — ignore-list users
+ * keep their ranks, they just don't receive email.
  */
 public record RoundResultsPayload(
         UUID userId,
@@ -23,10 +25,10 @@ public record RoundResultsPayload(
         int lastRound,
         HitDistribution hitDistribution,
         SprintPlacement sprint,
-        Placement quarter,
+        QuarterPlacement quarter,
         Placement season) {
 
-    /** Sprint standing — the email's main focus. */
+    /** Sprint standing, with best/movement. */
     public record SprintPlacement(
             String label,
             int fromRound,
@@ -37,6 +39,17 @@ public record RoundResultsPayload(
             int sprintBest,
             boolean isNewSprintBest) {}
 
-    /** Secondary standing (quarter / full season). Null when the phase isn't configured. */
+    /** Quarter standing, with best/movement. Null when no quarter phase contains this round. */
+    public record QuarterPlacement(
+            String label,
+            int fromRound,
+            int toRound,
+            int rank,
+            int totalParticipants,
+            Integer movement,
+            int quarterBest,
+            boolean isNewQuarterBest) {}
+
+    /** Secondary standing (full season) — rank only, no best/movement. */
     public record Placement(String label, int rank, int totalParticipants) {}
 }

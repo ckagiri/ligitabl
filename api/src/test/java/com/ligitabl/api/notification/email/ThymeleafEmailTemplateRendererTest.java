@@ -84,30 +84,50 @@ class ThymeleafEmailTemplateRendererTest {
                 .as("zero score")
                 .isTrue();
 
-        // Negative movement.
+        // Negative movement on both sprint and quarter.
         var negativeMovement = new java.util.HashMap<>(roundResultsData());
-        negativeMovement.put("sprint", new RoundResultsPayload.SprintPlacement("S8", 21, 23, 6, 120, -2, 190, false));
+        negativeMovement.put(
+                "sprint", new RoundResultsPayload.SprintPlacement("S8", 21, 23, 6, 120, -2, 190, false));
+        negativeMovement.put(
+                "quarter", new RoundResultsPayload.QuarterPlacement("Q3", 20, 28, 6, 130, -2, 190, false));
         assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, negativeMovement)
                         .isRight())
                 .as("negative movement")
                 .isTrue();
 
-        // round == sprint.fromRound: the 🏁 sprint-best variant.
-        var sprintOpener = new java.util.HashMap<>(roundResultsData());
-        sprintOpener.put("round", 21);
-        sprintOpener.put("sprint", new RoundResultsPayload.SprintPlacement("S8", 21, 23, 2, 120, null, 175, false));
-        assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, sprintOpener)
+        // round == fromRound for both phases: the 🏁 "your best" variant.
+        var phaseOpener = new java.util.HashMap<>(roundResultsData());
+        phaseOpener.put("round", 20);
+        phaseOpener.put("sprint", new RoundResultsPayload.SprintPlacement("S8", 20, 22, 2, 120, null, 175, false));
+        phaseOpener.put(
+                "quarter", new RoundResultsPayload.QuarterPlacement("Q3", 20, 28, 5, 130, null, 175, false));
+        assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, phaseOpener)
                         .isRight())
-                .as("round == sprintFrom")
+                .as("round == fromRound")
                 .isTrue();
 
-        // No quarter/season phase configured for this round.
-        var noSecondaryPlacements = new java.util.HashMap<>(roundResultsData());
-        noSecondaryPlacements.put("quarter", null);
-        noSecondaryPlacements.put("season", null);
-        assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, noSecondaryPlacements)
-                        .isRight())
-                .as("null quarter/season")
+        // No quarter phase configured — its best-callout block and standings row must both be
+        // skipped gracefully, not throw. Sprint's block still renders.
+        var noQuarter = new java.util.HashMap<>(roundResultsData());
+        noQuarter.put("quarter", null);
+        var noQuarterResult = renderer.render(EmailCommand.EmailType.ROUND_RESULTS, noQuarter);
+        assertThat(noQuarterResult.isRight()).as("null quarter").isTrue();
+        assertThat(noQuarterResult.get().htmlBody()).doesNotContain("quarter best");
+        assertThat(noQuarterResult.get().htmlBody()).contains("sprint best");
+
+        // No sprint phase configured — same, but for the sprint block/row.
+        var noSprint = new java.util.HashMap<>(roundResultsData());
+        noSprint.put("sprint", null);
+        var noSprintResult = renderer.render(EmailCommand.EmailType.ROUND_RESULTS, noSprint);
+        assertThat(noSprintResult.isRight()).as("null sprint").isTrue();
+        assertThat(noSprintResult.get().htmlBody()).doesNotContain("sprint best");
+        assertThat(noSprintResult.get().htmlBody()).contains("quarter best");
+
+        // No full-season phase configured (season is the only plain secondary standing).
+        var noSeason = new java.util.HashMap<>(roundResultsData());
+        noSeason.put("season", null);
+        assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, noSeason).isRight())
+                .as("null season")
                 .isTrue();
 
         // Season's final round: CTA button must not render (and must not throw).
@@ -129,7 +149,7 @@ class ThymeleafEmailTemplateRendererTest {
         data.put("lastRound", 38);
         data.put("hitDistribution", new HitDistribution(5, 8, 5, 2));
         data.put("sprint", new RoundResultsPayload.SprintPlacement("S8", 21, 23, 2, 120, 1, 175, true));
-        data.put("quarter", new RoundResultsPayload.Placement("Q3", 5, 130));
+        data.put("quarter", new RoundResultsPayload.QuarterPlacement("Q3", 20, 28, 5, 130, 1, 175, true));
         data.put("season", new RoundResultsPayload.Placement("FS", 18, 140));
         data.put("frontendUrl", "http://localhost:8080");
         data.put("showDetailedResultsLink", true);

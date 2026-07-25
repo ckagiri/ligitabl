@@ -66,28 +66,6 @@
                       </span>
                     </p>
 
-                    <!-- Sprint best / new-best / movement (mirrors fragments/results-banner.html) -->
-                    <th:block th:if="${sprint.sprintBest > 0}">
-                      <p th:if="${round == sprint.fromRound}" style="margin:4px 0 0 0; font-size:13px; color:#6b7280;">
-                        🏁 Your sprint best: <span style="font-weight:600;" th:text="${sprint.sprintBest}">180</span> pts
-                      </p>
-                      <p th:if="${sprint.isNewSprintBest}" style="margin:4px 0 0 0; font-size:14px; color:#b45309; font-weight:600;">
-                        🎉 New sprint best — <span th:text="${sprint.sprintBest}">180</span> pts!
-                      </p>
-                      <p th:if="${round != sprint.fromRound && !sprint.isNewSprintBest}" style="margin:4px 0 0 0; font-size:13px; color:#9ca3af;">
-                        📉 Your sprint best: <span style="font-weight:600;" th:text="${sprint.sprintBest}">180</span> pts
-                      </p>
-                      <p th:if="${sprint.movement != null && sprint.movement != 0}" style="margin:4px 0 0 0; font-size:13px;">
-                        <span th:if="${sprint.movement > 0}" style="color:#059669; font-weight:600;">
-                          ↑ <span th:text="${sprint.movement}">3</span> <span th:text="${sprint.movement == 1 ? 'place' : 'places'}">places</span>
-                        </span>
-                        <span th:if="${sprint.movement < 0}" style="color:#dc2626; font-weight:600;">
-                          ↓ <span th:text="${T(java.lang.Math).abs(sprint.movement)}">2</span> <span th:text="${T(java.lang.Math).abs(sprint.movement) == 1 ? 'place' : 'places'}">places</span>
-                        </span>
-                        <span style="color:#9ca3af;">in <span th:text="${sprint.label}">S3</span></span>
-                      </p>
-                    </th:block>
-
                     <!-- Hit Distribution: 2x2 grid using table for email compatibility -->
                     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:16px;">
                       <tr>
@@ -119,37 +97,92 @@
                       </tr>
                     </table>
 
+                    <!-- Sprint best / new-best / movement -->
+                    <th:block th:if="${sprint != null && sprint.sprintBest > 0}">
+                      <p style="margin:16px 0 2px 0; font-size:11px; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:0.05em; border-top:1px solid #e5e7eb; padding-top:12px;">
+                        🏃 Sprint
+                      </p>
+                      <p th:if="${round == sprint.fromRound}" style="margin:2px 0 0 0; font-size:13px; color:#6b7280;">
+                        🏁 Your sprint best: <span style="font-weight:600;" th:text="${sprint.sprintBest}">180</span> pts
+                      </p>
+                      <p th:if="${sprint.isNewSprintBest}" style="margin:2px 0 0 0; font-size:14px; color:#b45309; font-weight:600;">
+                        🎉 New sprint best — <span th:text="${sprint.sprintBest}">180</span> pts!
+                      </p>
+                      <p th:if="${round != sprint.fromRound && !sprint.isNewSprintBest}" style="margin:2px 0 0 0; font-size:13px; color:#9ca3af;">
+                        📉 Your sprint best: <span style="font-weight:600;" th:text="${sprint.sprintBest}">180</span> pts
+                      </p>
+                      <p th:if="${sprint.movement != null && sprint.movement != 0}" style="margin:2px 0 0 0; font-size:13px;">
+                        <span th:if="${sprint.movement > 0}" style="color:#059669; font-weight:600;">
+                          ↑ <span th:text="${sprint.movement}">3</span> <span th:text="${sprint.movement == 1 ? 'place' : 'places'}">places</span>
+                        </span>
+                        <span th:if="${sprint.movement < 0}" style="color:#dc2626; font-weight:600;">
+                          ↓ <span th:text="${T(java.lang.Math).abs(sprint.movement)}">2</span> <span th:text="${T(java.lang.Math).abs(sprint.movement) == 1 ? 'place' : 'places'}">places</span>
+                        </span>
+                        <span style="color:#9ca3af;">in <span th:text="${sprint.label}">S8</span></span>
+                      </p>
+                    </th:block>
+
+                    <!-- Quarter best / new-best / movement -->
+                    <th:block th:if="${quarter != null && quarter.quarterBest > 0}">
+                      <p style="margin:16px 0 2px 0; font-size:11px; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:0.05em; border-top:1px solid #e5e7eb; padding-top:12px;">
+                        📅 Quarter
+                      </p>
+                      <p th:if="${round == quarter.fromRound}" style="margin:2px 0 0 0; font-size:13px; color:#6b7280;">
+                        🏁 Your quarter best: <span style="font-weight:600;" th:text="${quarter.quarterBest}">180</span> pts
+                      </p>
+                      <p th:if="${quarter.isNewQuarterBest}" style="margin:2px 0 0 0; font-size:14px; color:#b45309; font-weight:600;">
+                        🎉 New quarter best — <span th:text="${quarter.quarterBest}">180</span> pts!
+                      </p>
+                      <p th:if="${round != quarter.fromRound && !quarter.isNewQuarterBest}" style="margin:2px 0 0 0; font-size:13px; color:#9ca3af;">
+                        📉 Your quarter best: <span style="font-weight:600;" th:text="${quarter.quarterBest}">180</span> pts
+                      </p>
+                      <p th:if="${quarter.movement != null && quarter.movement != 0}" style="margin:2px 0 0 0; font-size:13px;">
+                        <span th:if="${quarter.movement > 0}" style="color:#059669; font-weight:600;">
+                          ↑ <span th:text="${quarter.movement}">3</span> <span th:text="${quarter.movement == 1 ? 'place' : 'places'}">places</span>
+                        </span>
+                        <span th:if="${quarter.movement < 0}" style="color:#dc2626; font-weight:600;">
+                          ↓ <span th:text="${T(java.lang.Math).abs(quarter.movement)}">2</span> <span th:text="${T(java.lang.Math).abs(quarter.movement) == 1 ? 'place' : 'places'}">places</span>
+                        </span>
+                        <span style="color:#9ca3af;">in <span th:text="${quarter.label}">Q3</span></span>
+                      </p>
+                    </th:block>
+
                   </td>
                 </tr>
               </table>
 
-              <!-- Standings: sprint (primary), quarter + season (secondary) -->
+              <!-- Standings: sprint, then quarter, then season -->
               <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin-top:20px; border-top:1px solid #e5e7eb;">
                 <tr>
                   <td colspan="2" style="padding:12px 0 6px 0; font-size:11px; font-weight:600; color:#9ca3af; text-transform:uppercase; letter-spacing:0.05em;">
                     Your Standings
                   </td>
                 </tr>
-                <tr>
-                  <td style="padding: 6px 0; font-size:15px; font-weight:700; color:#111827;">
-                    🏃 <span th:text="${sprint.label}">S3</span>
-                    <span style="font-weight:400; color:#9ca3af; font-size:12px;">GW <span th:text="${sprint.fromRound}">28</span>–<span th:text="${sprint.toRound}">30</span></span>
+                <tr th:if="${sprint != null}">
+                  <td style="padding: 6px 0; font-size:14px; color:#374151;">
+                    🏃 <span style="font-weight:600;" th:text="${sprint.label}">S8</span>
+                    <span style="color:#9ca3af; font-size:12px;">GW <span th:text="${sprint.fromRound}">21</span>–<span th:text="${sprint.toRound}">23</span></span>
                   </td>
-                  <td align="right" style="padding: 6px 0; font-size:15px; font-weight:700; color:#4f46e5; white-space:nowrap;">
-                    #<span th:text="${sprint.rank}">4</span>
+                  <td align="right" style="padding: 6px 0; font-size:14px; font-weight:600; color:#111827; white-space:nowrap;">
+                    #<span th:text="${sprint.rank}">2</span>
                     <span style="font-weight:400; color:#9ca3af; font-size:12px;">of <span th:text="${sprint.totalParticipants}">120</span></span>
                   </td>
                 </tr>
                 <tr th:if="${quarter != null}">
-                  <td style="padding: 4px 0; font-size:13px; color:#6b7280;">📅 <span th:text="${quarter.label}">Q3</span></td>
-                  <td align="right" style="padding: 4px 0; font-size:13px; color:#6b7280; white-space:nowrap;">
-                    #<span th:text="${quarter.rank}">12</span> <span style="color:#9ca3af;">of <span th:text="${quarter.totalParticipants}">130</span></span>
+                  <td style="padding: 6px 0; font-size:14px; color:#374151;">
+                    📅 <span style="font-weight:600;" th:text="${quarter.label}">Q3</span>
+                    <span style="color:#9ca3af; font-size:12px;">GW <span th:text="${quarter.fromRound}">20</span>–<span th:text="${quarter.toRound}">29</span></span>
+                  </td>
+                  <td align="right" style="padding: 6px 0; font-size:14px; font-weight:600; color:#111827; white-space:nowrap;">
+                    #<span th:text="${quarter.rank}">5</span>
+                    <span style="font-weight:400; color:#9ca3af; font-size:12px;">of <span th:text="${quarter.totalParticipants}">130</span></span>
                   </td>
                 </tr>
                 <tr th:if="${season != null}">
-                  <td style="padding: 4px 0 8px 0; font-size:13px; color:#6b7280;">🏆 Season</td>
-                  <td align="right" style="padding: 4px 0 8px 0; font-size:13px; color:#6b7280; white-space:nowrap;">
-                    #<span th:text="${season.rank}">18</span> <span style="color:#9ca3af;">of <span th:text="${season.totalParticipants}">140</span></span>
+                  <td style="padding: 6px 0 8px 0; font-size:14px; color:#374151;">🏆 <span style="font-weight:600;">Season</span></td>
+                  <td align="right" style="padding: 6px 0 8px 0; font-size:14px; font-weight:600; color:#111827; white-space:nowrap;">
+                    #<span th:text="${season.rank}">18</span>
+                    <span style="font-weight:400; color:#9ca3af; font-size:12px;">of <span th:text="${season.totalParticipants}">140</span></span>
                   </td>
                 </tr>
               </table>

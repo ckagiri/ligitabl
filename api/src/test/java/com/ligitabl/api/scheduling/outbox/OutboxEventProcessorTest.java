@@ -32,7 +32,7 @@ import com.ligitabl.api.notification.email.EmailError;
 import com.ligitabl.api.notification.email.EmailProvider;
 import com.ligitabl.api.notification.email.EmailTemplateRenderer;
 import com.ligitabl.api.notification.outbox.OutboxEventTypes;
-import com.ligitabl.api.notification.outbox.RoundFinalizedPayload;
+import com.ligitabl.api.notification.outbox.RoundAdvancedPayload;
 import com.ligitabl.api.notification.outbox.RoundResultsEmailEnqueuer;
 import com.ligitabl.api.notification.outbox.RoundResultsPayload;
 import com.ligitabl.api.shared.Either;
@@ -93,16 +93,16 @@ class OutboxEventProcessorTest {
                 38,
                 new HitDistribution(1, 1, 1, 1),
                 new RoundResultsPayload.SprintPlacement("S8", 21, 23, 2, 120, 1, 175, true),
-                new RoundResultsPayload.Placement("Q3", 5, 130),
+                new RoundResultsPayload.QuarterPlacement("Q3", 20, 28, 5, 130, 1, 175, true),
                 new RoundResultsPayload.Placement("FS", 18, 140));
         return objectMapper.writeValueAsString(payload);
     }
 
     @Test
     void roundFinalizedFansOutThenMarksSent() throws Exception {
-        RoundFinalizedPayload payload = new RoundFinalizedPayload(seasonId, 22, 22);
+        RoundAdvancedPayload payload = new RoundAdvancedPayload(seasonId, 22, 22);
         OutboxEvent event = claimedEvent(
-                OutboxEventTypes.ROUND_FINALIZED, objectMapper.writeValueAsString(payload), 1);
+                OutboxEventTypes.ROUND_ADVANCED, objectMapper.writeValueAsString(payload), 1);
 
         processor.processOne(event);
 
@@ -199,8 +199,8 @@ class OutboxEventProcessorTest {
                 .when(enqueuer)
                 .enqueue(any());
         OutboxEvent event = claimedEvent(
-                OutboxEventTypes.ROUND_FINALIZED,
-                objectMapper.writeValueAsString(new RoundFinalizedPayload(seasonId, 22, 22)),
+                OutboxEventTypes.ROUND_ADVANCED,
+                objectMapper.writeValueAsString(new RoundAdvancedPayload(seasonId, 22, 22)),
                 1);
 
         processor.processOne(event);

@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
@@ -37,19 +38,25 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Fan-out handler for ROUND_FINALIZED outbox events: expands the thin
- * round-finalized fact into one ROUND_RESULTS outbox event per email
+ * Fan-out handler for ROUND_ADVANCED outbox events: expands the thin
+ * round-advanced fact into one ROUND_RESULTS outbox event per email
  * recipient. Runs post-commit (invoked by the outbox relay), so the heavy
  * leaderboard/placement queries stay off the finalization transaction; a
  * failure here is retried by the relay's normal backoff.
  *
  * <p>Recipients are the top {@code topN} of the main contest's sprint
- * leaderboard for the sprint containing the finalized round. Ignore-list
- * accounts (test users), unverified emails and opted-out users are skipped —
- * the next-ranked user takes the freed slot. In {@code test} mode the rule
- * inverts: only ignore-list accounts receive, so the pipeline can run locally
- * against test users. Both modes scan the same {@code topN + ignoreList.size()}
- * window — a test account outside it simply gets no email.
+ * leaderboard for the sprint containing the finalized round — recipient
+ * selection stays sprint-scoped. Ignore-list accounts (test users),
+ * unverified emails and opted-out users are skipped — the next-ranked user
+ * takes the freed slot. In {@code test} mode the rule inverts: only
+ * ignore-list accounts receive, so the pipeline can run locally against test
+ * users. Both modes scan the same {@code topN + ignoreList.size()} window —
+ * a test account outside it simply gets no email.
+ *
+ * <p>The email shows a "best"/movement callout for both sprint and quarter
+ * (rank, movement, best-of-phase) — unlike the in-app results banner, which
+ * shows sprint only. Full-season appears as a plain secondary standing (rank
+ * only, no "season best" concept).
  *
  * <p>Duplicate fan-outs (relay retry, refinalization) are no-ops via the
  * per-user idempotency keys. Missing contest or phase configuration logs and
@@ -81,7 +88,7 @@ public class RoundResultsEmailEnqueuer {
 
     private record Recipient(User user, LeaderboardEntry sprintEntry, RoundResult result) {}
 
-    public void enqueue(RoundFinalizedPayload event) {
+    public void enqueue(RoundAdvancedPayload event) {
         int roundPosition = event.roundPosition();
 
         Season season = seasonRepo.findById(event.seasonId()).orElse(null);
@@ -135,12 +142,32 @@ public class RoundResultsEmailEnqueuer {
                         competition.getPhases(), PhaseType.FULL_SEASON, roundPosition)
                 .orElse(null);
 
-        PlacementBoard quarterBoard = quarter == null
+        // Each level is suppressed independently, against the level directly above it, when
+        // that wider span started at the same round as the narrower one — meaning its
+        // standings-so-far would just repeat the narrower one's:
+        //   - quarter is dropped while we're in its first sprint (quarter == this sprint's start)
+        //   - season is dropped while we're in its first quarter (season == this quarter's start),
+        //     regardless of which sprint within that quarter we're currently in.
+        // No FULL_SEASON phase configured ⇒ season implicitly starts at round 1.
+        boolean quarterRedundantWithSprint = quarter != null && PhaseRules.sameStart(sprint, quarter);
+        RoundSpan effectiveQuarter = quarterRedundantWithSprint ? null : quarter;
+
+        boolean seasonRedundantWithQuarter = quarter != null
+                && (fullSeason != null ? PhaseRules.sameStart(quarter, fullSeason) : quarter.getFrom() == 1);
+
+        // Quarter needs a full per-recipient lookup (unlike season, which only needs rank)
+        // to source quarter-best/movement for the email's quarter callout.
+        Board quarterBoard = effectiveQuarter == null
                 ? null
-                : placementBoard(contest, season, quarter.getCode(), quarter.getFrom(), roundPosition);
-        PlacementBoard seasonBoard = fullSeason == null
-                ? placementBoard(contest, season, "Season", 1, roundPosition)
-                : placementBoard(contest, season, fullSeason.getCode(), fullSeason.getFrom(), roundPosition);
+                : fetchBoard(contest, season, effectiveQuarter.getFrom(), roundPosition, SCAN_CAP);
+        Map<String, LeaderboardEntry> quarterByPublicId = quarterBoard == null ? Map.of() : entryByPublicId(quarterBoard);
+        int quarterTotalParticipants = quarterBoard == null ? 0 : quarterBoard.totalParticipants();
+
+        PlacementBoard seasonBoard = seasonRedundantWithQuarter
+                ? null
+                : fullSeason == null
+                        ? placementBoard(contest, season, "Season", 1, roundPosition)
+                        : placementBoard(contest, season, fullSeason.getCode(), fullSeason.getFrom(), roundPosition);
 
         int inserted = 0;
         for (Recipient recipient : recipients) {
@@ -152,7 +179,9 @@ public class RoundResultsEmailEnqueuer {
                         season.getMaxRounds(),
                         sprint,
                         sprintBoard.totalParticipants(),
-                        quarterBoard,
+                        effectiveQuarter,
+                        quarterByPublicId,
+                        quarterTotalParticipants,
                         seasonBoard);
                 String json = objectMapper.writeValueAsString(payload);
                 String idempotencyKey = "round-results:%s:%d:%s"
@@ -227,22 +256,42 @@ public class RoundResultsEmailEnqueuer {
             int lastRound,
             RoundSpan sprint,
             int sprintTotalParticipants,
-            PlacementBoard quarterBoard,
+            RoundSpan quarter,
+            Map<String, LeaderboardEntry> quarterByPublicId,
+            int quarterTotalParticipants,
             PlacementBoard seasonBoard) {
         User user = recipient.user();
-        LeaderboardEntry entry = recipient.sprintEntry();
+        LeaderboardEntry sprintEntry = recipient.sprintEntry();
         int score = recipient.result().getTotalScore();
 
-        boolean isNewSprintBest = score == entry.maxScore() && roundPosition > sprint.getFrom();
+        // Already fetched for recipient selection — no extra query needed.
+        boolean isNewSprintBest = score == sprintEntry.maxScore() && roundPosition > sprint.getFrom();
         RoundResultsPayload.SprintPlacement sprintPlacement = new RoundResultsPayload.SprintPlacement(
                 sprint.getCode(),
                 sprint.getFrom(),
                 sprint.getTo(),
-                entry.position(),
+                sprintEntry.position(),
                 sprintTotalParticipants,
-                entry.movement(),
-                entry.maxScore(),
+                sprintEntry.movement(),
+                sprintEntry.maxScore(),
                 isNewSprintBest);
+
+        RoundResultsPayload.QuarterPlacement quarterPlacement = null;
+        if (quarter != null) {
+            LeaderboardEntry quarterEntry = quarterByPublicId.get(sprintEntry.publicId());
+            if (quarterEntry != null) {
+                boolean isNewQuarterBest = score == quarterEntry.maxScore() && roundPosition > quarter.getFrom();
+                quarterPlacement = new RoundResultsPayload.QuarterPlacement(
+                        quarter.getCode(),
+                        quarter.getFrom(),
+                        quarter.getTo(),
+                        quarterEntry.position(),
+                        quarterTotalParticipants,
+                        quarterEntry.movement(),
+                        quarterEntry.maxScore(),
+                        isNewQuarterBest);
+            }
+        }
 
         return new RoundResultsPayload(
                 user.getId(),
@@ -254,8 +303,8 @@ public class RoundResultsEmailEnqueuer {
                 lastRound,
                 recipient.result().hitDistribution(),
                 sprintPlacement,
-                quarterBoard == null ? null : quarterBoard.placementOf(entry.publicId()),
-                seasonBoard == null ? null : seasonBoard.placementOf(entry.publicId()));
+                quarterPlacement,
+                seasonBoard == null ? null : seasonBoard.placementOf(sprintEntry.publicId()));
     }
 
     private record PlacementBoard(String label, Map<String, Integer> rankByPublicId, int totalParticipants) {
@@ -275,6 +324,11 @@ public class RoundResultsEmailEnqueuer {
 
     private record Board(List<LeaderboardEntry> entries, int totalParticipants) {}
 
+    private Map<String, LeaderboardEntry> entryByPublicId(Board board) {
+        return board.entries().stream()
+                .collect(Collectors.toMap(LeaderboardEntry::publicId, Function.identity(), (a, b) -> a, HashMap::new));
+    }
+
     private Board fetchBoard(Contest contest, Season season, int fromRound, int toRound, int maxEntries) {
         List<LeaderboardEntry> entries = new ArrayList<>();
         int totalParticipants = 0;
@@ -291,6 +345,7 @@ public class RoundResultsEmailEnqueuer {
         }
         return new Board(entries, totalParticipants);
     }
+
 
     private Set<String> loadIgnoreList() {
         return appSettingRepo

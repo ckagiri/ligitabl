@@ -110,6 +110,35 @@ class PhaseRulesTest {
         assertThat(PhaseRules.findByCode(phases, "NOPE")).isEmpty();
     }
 
+    // ---- sameStart ----
+
+    @Test
+    void sameStart_sameStartingRound_isTrue() {
+        // Q1 (gw1-9) starts the same round as the season (FS, gw1-38) — while still within
+        // Q1, the season row/callout would just repeat Q1's own numbers.
+        assertThat(PhaseRules.sameStart(s("Q1"), s("FS"))).isTrue();
+    }
+
+    @Test
+    void sameStart_ignoresToValues() {
+        // Sprint S1 (gw1-4) starts with Q1 (gw1-9) even though their `to` values differ
+        // substantially — only `from` matters.
+        assertThat(PhaseRules.sameStart(s("S1"), s("Q1"))).isTrue();
+    }
+
+    @Test
+    void sameStart_laterStartingRound_isFalse() {
+        // Q2 (gw10-19) starts later than the season (gw1) — no longer redundant, Q2's own
+        // cumulative data has diverged from the season's.
+        assertThat(PhaseRules.sameStart(s("Q2"), s("FS"))).isFalse();
+    }
+
+    @Test
+    void sameStart_eitherNull_isFalse() {
+        assertThat(PhaseRules.sameStart(null, s("FS"))).isFalse();
+        assertThat(PhaseRules.sameStart(s("FS"), null)).isFalse();
+    }
+
     // ---- effectivePosition ----
 
     @Test

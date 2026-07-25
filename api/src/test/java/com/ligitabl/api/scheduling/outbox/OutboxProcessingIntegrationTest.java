@@ -58,7 +58,7 @@ class OutboxProcessingIntegrationTest extends AbstractPostgresIT {
                 38,
                 new HitDistribution(5, 8, 5, 2),
                 new RoundResultsPayload.SprintPlacement("S8", 21, 23, 2, 120, 1, 175, true),
-                new RoundResultsPayload.Placement("Q3", 5, 130),
+                new RoundResultsPayload.QuarterPlacement("Q3", 20, 28, 5, 130, 1, 175, true),
                 new RoundResultsPayload.Placement("FS", 18, 140));
         return objectMapper.writeValueAsString(payload);
     }
