@@ -38,12 +38,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Fan-out handler for ROUND_ADVANCED outbox events: expands the thin
- * round-advanced fact into one ROUND_RESULTS outbox event per email
- * recipient. Runs post-commit (invoked by the outbox relay), so the heavy
- * leaderboard/placement queries stay off the finalization transaction; a
- * failure here is retried by the relay's normal backoff.
- *
  * <p>Recipients are the top {@code topN} of the main contest's sprint
  * leaderboard for the sprint containing the finalized round — recipient
  * selection stays sprint-scoped. Ignore-list accounts (test users),
@@ -154,8 +148,6 @@ public class RoundResultsEmailEnqueuer {
         boolean seasonRedundantWithQuarter = quarter != null
                 && (fullSeason != null ? PhaseRules.sameStart(quarter, fullSeason) : quarter.getFrom() == 1);
 
-        // Quarter needs a full per-recipient lookup (unlike season, which only needs rank)
-        // to source quarter-best/movement for the email's quarter callout.
         Board quarterBoard = effectiveQuarter == null
                 ? null
                 : fetchBoard(contest, season, effectiveQuarter.getFrom(), roundPosition, SCAN_CAP);

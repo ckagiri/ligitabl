@@ -12,8 +12,6 @@ import com.ligitabl.model.domain.HitDistribution;
  * recipients are selected from the sprint leaderboard (top-N per round), and
  * the content covers both phases the recipient is scored in. Full-season is
  * shown as a plain secondary standing (rank only, no "season best" concept).
- * Placements are the real in-app leaderboard positions — ignore-list users
- * keep their ranks, they just don't receive email.
  */
 public record RoundResultsPayload(
         UUID userId,
