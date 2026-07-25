@@ -52,4 +52,10 @@ public interface OutboxRepo {
      * @return number of rows reset
      */
     int resetStuckProcessing(Instant olderThan);
+
+    /**
+     * True if any event of {@code eventType} reached SENT status at or after
+     * {@code since}.
+     */
+    boolean existsSentEventsOfTypeSince(String eventType, Instant since);
 }

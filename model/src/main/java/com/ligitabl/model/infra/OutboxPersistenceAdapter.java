@@ -112,6 +112,15 @@ public class OutboxPersistenceAdapter implements OutboxRepo {
                 .execute();
     }
 
+    @Override
+    public boolean existsSentEventsOfTypeSince(String eventType, Instant since) {
+        return dsl.fetchExists(dsl.selectOne()
+                .from(T_OUTBOX_EVENT)
+                .where(T_OUTBOX_EVENT.C_EVENT_TYPE.eq(eventType))
+                .and(T_OUTBOX_EVENT.C_STATUS.eq(OutboxEvent.Status.SENT.name()))
+                .and(T_OUTBOX_EVENT.C_PROCESSED_AT.ge(toOffset(since))));
+    }
+
     private OutboxEvent map(OutboxEventRecord record) {
         return OutboxEvent.builder()
                 .id(record.getId())
