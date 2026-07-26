@@ -117,8 +117,7 @@ class JoinReminderEnqueuerTest {
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(outboxRepo).save(captor.capture());
         OutboxEvent event = captor.getValue();
-        Assertions.assertThat(event.getIdempotencyKey())
-                .isEqualTo("join-reminder:%s:1".formatted(user.getId()));
+        Assertions.assertThat(event.getIdempotencyKey()).isEqualTo("join-reminder:%s:1".formatted(user.getId()));
         Assertions.assertThat(event.getEventType()).isEqualTo(OutboxEventTypes.JOIN_REMINDER);
     }
 

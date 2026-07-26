@@ -178,8 +178,7 @@ class OutboxEventProcessorTest {
 
         ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.captor();
         verify(renderer).render(eq(EmailCommand.EmailType.ROUND_RESULTS), dataCaptor.capture());
-        Assertions.assertThat(dataCaptor.getValue())
-                .containsEntry("showDetailedResultsLink", true);
+        Assertions.assertThat(dataCaptor.getValue()).containsEntry("showDetailedResultsLink", true);
     }
 
     @Test
@@ -192,8 +191,7 @@ class OutboxEventProcessorTest {
 
         ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.captor();
         verify(renderer).render(eq(EmailCommand.EmailType.ROUND_RESULTS), dataCaptor.capture());
-        Assertions.assertThat(dataCaptor.getValue())
-                .containsEntry("showDetailedResultsLink", false);
+        Assertions.assertThat(dataCaptor.getValue()).containsEntry("showDetailedResultsLink", false);
     }
 
     @Test
