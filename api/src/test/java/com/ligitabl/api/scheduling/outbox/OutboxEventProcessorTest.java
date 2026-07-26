@@ -293,7 +293,7 @@ class OutboxEventProcessorTest {
                 season, Contest.builder().id(UUID.randomUUID()).build(), 1, 1);
 
         when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsRegisteredAfter(eq(seasonId), any()))
+        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any()))
                 .thenReturn(java.util.List.of(user1, user2));
         when(createPredictionUseCase.resolveJoinContext(season)).thenReturn(Either.right(ctx));
         when(createPredictionUseCase.executeWithContext(any(), eq(ctx), any()))
@@ -316,7 +316,7 @@ class OutboxEventProcessorTest {
     void roundLockedWithNoUnjoinedUsers_skipsContextResolutionButStillMarksSent() throws Exception {
         Season season = activeSeason(seasonId);
         when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsRegisteredAfter(eq(seasonId), any())).thenReturn(java.util.List.of());
+        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(java.util.List.of());
 
         OutboxEvent event = claimedEvent(
                 OutboxEventTypes.ROUND_LOCKED,
@@ -338,7 +338,7 @@ class OutboxEventProcessorTest {
                 season, Contest.builder().id(UUID.randomUUID()).build(), 1, 1);
 
         when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsRegisteredAfter(eq(seasonId), any()))
+        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any()))
                 .thenReturn(java.util.List.of(badUser, goodUser));
         when(createPredictionUseCase.resolveJoinContext(season)).thenReturn(Either.right(ctx));
         when(createPredictionUseCase.executeWithContext(eq(badUser), eq(ctx), any()))
@@ -362,7 +362,7 @@ class OutboxEventProcessorTest {
     void roundLockedContextResolutionFails_skipsBatchButStillMarksSent() throws Exception {
         Season season = activeSeason(seasonId);
         when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsRegisteredAfter(eq(seasonId), any()))
+        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any()))
                 .thenReturn(java.util.List.of(UUID.randomUUID()));
         when(createPredictionUseCase.resolveJoinContext(season))
                 .thenReturn(Either.left(new CreatePredictionError.CurrentRoundNotFound(seasonId)));

@@ -264,7 +264,7 @@ public class UserPersistenceAdapter implements UserRepo {
     }
 
     @Override
-    public List<UUID> findUnjoinedUserIdsRegisteredAfter(UUID seasonId, OffsetDateTime registeredAfter) {
+    public List<UUID> findUnjoinedUserIdsAfter(UUID seasonId, OffsetDateTime registeredAfter) {
         return dsl.select(T_USER.PK_ID)
                 .from(T_USER)
                 .where(T_USER.C_CREATE_DATE.gt(registeredAfter))

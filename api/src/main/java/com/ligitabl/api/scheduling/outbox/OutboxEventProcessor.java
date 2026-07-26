@@ -112,7 +112,7 @@ public class OutboxEventProcessor {
                 .orElseThrow(() -> new IllegalStateException("Season not found: " + payload.seasonId()));
 
         List<UUID> unjoinedUserIds =
-                userRepo.findUnjoinedUserIdsRegisteredAfter(season.getId(), season.getPreSeasonOpensAt());
+                userRepo.findUnjoinedUserIdsAfter(season.getId(), season.getPreSeasonOpensAt());
         if (unjoinedUserIds.isEmpty()) {
             return;
         }
