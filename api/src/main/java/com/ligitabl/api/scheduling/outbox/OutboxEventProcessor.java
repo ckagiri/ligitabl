@@ -103,8 +103,6 @@ public class OutboxEventProcessor {
      * Auto-joins users who registered after the season's pre-season window opened and never
      * created a SeasonPrediction — evaluated fresh at processing time, not from the event's
      * payload, so it reflects whichever round/rankings are current when this actually runs.
-     * Each user's join is still isolated in its own try/catch — one bad user must not cost
-     * the rest of the batch, nor fail this outbox event for users who already succeeded.
      */
     private void processRoundLocked(OutboxEvent event) throws Exception {
         RoundLockedPayload payload = objectMapper.readValue(event.getPayload(), RoundLockedPayload.class);

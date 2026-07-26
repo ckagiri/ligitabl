@@ -15,6 +15,7 @@ import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.UUID;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -153,7 +154,7 @@ class OutboxEventProcessorTest {
 
         ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.captor();
         verify(renderer).render(eq(EmailCommand.EmailType.ROUND_RESULTS), dataCaptor.capture());
-        org.assertj.core.api.Assertions.assertThat(dataCaptor.getValue())
+        Assertions.assertThat(dataCaptor.getValue())
                 .containsEntry("round", 22)
                 .containsEntry("score", 175)
                 .containsEntry("userDisplayName", "Alice")
@@ -177,7 +178,7 @@ class OutboxEventProcessorTest {
 
         ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.captor();
         verify(renderer).render(eq(EmailCommand.EmailType.ROUND_RESULTS), dataCaptor.capture());
-        org.assertj.core.api.Assertions.assertThat(dataCaptor.getValue())
+        Assertions.assertThat(dataCaptor.getValue())
                 .containsEntry("showDetailedResultsLink", true);
     }
 
@@ -191,7 +192,7 @@ class OutboxEventProcessorTest {
 
         ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.captor();
         verify(renderer).render(eq(EmailCommand.EmailType.ROUND_RESULTS), dataCaptor.capture());
-        org.assertj.core.api.Assertions.assertThat(dataCaptor.getValue())
+        Assertions.assertThat(dataCaptor.getValue())
                 .containsEntry("showDetailedResultsLink", false);
     }
 
@@ -267,7 +268,7 @@ class OutboxEventProcessorTest {
 
         ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.captor();
         verify(renderer).render(eq(EmailCommand.EmailType.JOIN_REMINDER), dataCaptor.capture());
-        org.assertj.core.api.Assertions.assertThat(dataCaptor.getValue())
+        Assertions.assertThat(dataCaptor.getValue())
                 .containsEntry("stage", 4)
                 .containsEntry("myTableUrl", "http://localhost:8080/my-table")
                 .containsEntry("leaderboardUrl", "http://localhost:8080/leaderboard");

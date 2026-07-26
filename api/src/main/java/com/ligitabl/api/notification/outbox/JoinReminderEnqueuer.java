@@ -21,18 +21,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Enqueues one JOIN_REMINDER event per user due for a reminder — evaluated fresh on each run, not
- * a fixed schedule per user.
- *
  * <p>Each user gets at most one email per run, at the <em>latest</em> stage their signup age has
- * reached (e.g. a user 15 days old only ever gets the day-11 email, never a backlog of day-1 +
- * day-4 + day-11 at once). Idempotency keys are per user+stage
- * ({@code "join-reminder:<userId>:<stage>"}), so once a stage has been sent, later runs are
- * no-ops for that user until they reach the next configured stage — and once past the last
- * stage, no-ops forever (matching the "stop after the last stage" requirement).
+ * reached.
  *
  * <p>Gated by a global daily throttle: if a ROUND_RESULTS batch already went out today, this
- * run is skipped entirely, to keep combined daily send volume under the Mailgun free-tier cap.
+ * run is skipped entirely, to keep combined daily send volume under the free-tier cap.
  */
 @Component
 @RequiredArgsConstructor

@@ -231,9 +231,7 @@ public class MatchSyncScheduler {
      * Writes a ROUND_LOCKED outbox event whenever the round currently reads as
      * LOCKED. The idempotency key ("round-locked:{roundId}") means only the
      * first write per round actually inserts (ON CONFLICT DO NOTHING) — every
-     * later sync tick while the round stays LOCKED is a harmless no-op, so no
-     * in-memory "did we already see LOCKED" tracking is needed, and this
-     * survives app restarts cleanly.
+     * later sync tick while the round stays LOCKED is a harmless no-op.
      */
     private void maybeWriteRoundLockedEvent(MatchSyncResult result) {
         if (result.roundId() == null || result.roundStatus() != RoundStatus.LOCKED) {

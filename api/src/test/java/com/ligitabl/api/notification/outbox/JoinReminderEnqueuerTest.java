@@ -17,6 +17,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -116,9 +117,9 @@ class JoinReminderEnqueuerTest {
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(outboxRepo).save(captor.capture());
         OutboxEvent event = captor.getValue();
-        org.assertj.core.api.Assertions.assertThat(event.getIdempotencyKey())
+        Assertions.assertThat(event.getIdempotencyKey())
                 .isEqualTo("join-reminder:%s:1".formatted(user.getId()));
-        org.assertj.core.api.Assertions.assertThat(event.getEventType()).isEqualTo(OutboxEventTypes.JOIN_REMINDER);
+        Assertions.assertThat(event.getEventType()).isEqualTo(OutboxEventTypes.JOIN_REMINDER);
     }
 
     @Test
@@ -133,7 +134,7 @@ class JoinReminderEnqueuerTest {
         verify(outboxRepo, times(1)).save(any());
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(outboxRepo).save(captor.capture());
-        org.assertj.core.api.Assertions.assertThat(captor.getValue().getIdempotencyKey())
+        Assertions.assertThat(captor.getValue().getIdempotencyKey())
                 .isEqualTo("join-reminder:%s:11".formatted(user.getId()));
     }
 
