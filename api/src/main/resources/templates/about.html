@@ -1,0 +1,115 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <div layout:fragment="content">
+      <!-- Hero -->
+      <div
+        class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 sm:p-12 mb-12 text-white text-center"
+      >
+        <h1 class="text-3xl sm:text-4xl font-extrabold mb-4">
+          Why LigiPredictor Exists
+        </h1>
+        <p class="text-base sm:text-lg text-indigo-200 max-w-2xl mx-auto">
+          "Ligi" means league in Swahili. This is a table-prediction game to see
+          if you really know the Premier League—and prove you're better than the
+          rest.
+        </p>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-8 mb-12">
+        <div class="max-w-2xl mx-auto">
+          <p class="text-gray-600 mb-6">
+            Most prediction games ask you to pick match winners, one game at a
+            time. That's fine, but it doesn't test what football fans actually
+            argue about — where a team belongs, over a whole season.
+          </p>
+
+          <p class="text-gray-600 mb-6">
+            LigiPredictor asks a bigger question: can you call the entire
+            table, top to bottom, before that gameweek's matches kick off?
+          </p>
+
+          <p
+            class="border-l-4 border-indigo-600 pl-5 py-1 my-8 text-xl sm:text-2xl font-semibold text-gray-900 leading-snug"
+          >
+            We built the game we wanted to play — one that respects your time as
+            much as your opinions.
+          </p>
+
+          <p class="text-gray-600 mb-8">
+            That means no daily grind, no punishing you for missing a week, and
+            no subscription. Just a table, a countdown, and the chance to prove
+            you called it before anyone else did.
+          </p>
+
+          <div class="grid sm:grid-cols-3 gap-5">
+            <div class="rounded-lg border border-gray-100 p-5">
+              <span
+                class="block text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
+                >Free, always</span
+              >
+              <h3 class="font-semibold text-gray-900 mb-1">
+                No payments, ever
+              </h3>
+              <p class="text-sm text-gray-600">
+                LigiPredictor is free to play. There's nothing to buy and
+                nothing to unlock — the only prize is bragging rights.
+              </p>
+            </div>
+            <div class="rounded-lg border border-gray-100 p-5">
+              <span
+                class="block text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
+                >Built for real life</span
+              >
+              <h3 class="font-semibold text-gray-900 mb-1">No daily grind</h3>
+              <p class="text-sm text-gray-600">
+                Every gameweek gives you a fresh window to adjust your table, so
+                a busy week doesn't sink your season.
+              </p>
+            </div>
+            <div class="rounded-lg border border-gray-100 p-5">
+              <span
+                class="block text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
+                >For your crew</span
+              >
+              <h3 class="font-semibold text-gray-900 mb-1">Mini-leagues</h3>
+              <p class="text-sm text-gray-600">
+                Start a private league with friends and settle, once and for
+                all, who actually knows the table.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div
+        class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-xl p-8 sm:p-10 text-white text-center"
+      >
+        <h2 class="text-2xl font-bold mb-2">
+          Got a question we haven't answered?
+        </h2>
+        <p class="text-indigo-200 mb-6">Check the FAQ, or reach us on X.</p>
+        <div class="flex flex-col sm:flex-row justify-center gap-3">
+          <a
+            th:href="@{/faq}"
+            class="w-full sm:w-auto bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition text-center"
+            >Read the FAQ</a
+          >
+          <a
+            href="https://x.com/charleskagiri"
+            target="_blank"
+            rel="noopener"
+            title="@charleskagiri"
+            class="w-full sm:w-auto bg-transparent border-2 border-white text-white px-6 py-3 rounded-lg font-semibold hover:bg-white hover:text-indigo-600 transition text-center"
+            >X</a
+          >
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

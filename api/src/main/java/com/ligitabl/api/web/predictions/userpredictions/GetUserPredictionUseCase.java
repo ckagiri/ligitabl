@@ -50,6 +50,15 @@ public class GetUserPredictionUseCase {
     }
 
     /**
+     * Default/starting rankings for a season and round — the same baseline shown to guests and
+     * users without a prediction yet. Exposed for lightweight previews (e.g. the homepage) that
+     * need default rankings without the full guest/authenticated view-building machinery.
+     */
+    public List<TeamRank> getPreviewRankings(UUID seasonId, int currentRound) {
+        return getPreviousRoundRankings(seasonId, currentRound).rankings();
+    }
+
+    /**
      * Request-scoped values shared by every view-builder branch, resolved once per request.
      */
     private record RequestContext(
