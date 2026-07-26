@@ -36,29 +36,29 @@
               Predict the Premier League table, gameweek by gameweek.
             </p>
             <div
-              class="flex flex-wrap justify-center md:justify-start gap-3 mb-6"
+              class="flex flex-col sm:flex-row sm:flex-wrap justify-center md:justify-start gap-3 mb-6"
             >
               <a
                 th:unless="${isLoggedIn}"
                 th:href="@{/auth/register}"
-                class="bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition transform hover:scale-105 shadow-lg text-center"
+                class="w-full sm:w-auto bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition transform hover:scale-105 shadow-lg text-center"
                 >Sign Up</a
               >
               <a
                 th:unless="${isLoggedIn}"
                 th:href="${predictionsNavLink} ?: '/my-table/guest'"
-                class="bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-indigo-600 transition transform hover:scale-105 shadow-lg text-center"
+                class="w-full sm:w-auto bg-transparent border-2 border-white text-white px-8 py-3 rounded-lg font-semibold hover:bg-white hover:text-indigo-600 transition transform hover:scale-105 shadow-lg text-center"
                 >Try the Table →</a
               >
               <a
                 th:if="${isLoggedIn}"
                 th:href="${predictionsNavLink}"
-                class="bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition transform hover:scale-105 shadow-lg text-center"
+                class="w-full sm:w-auto bg-white text-indigo-600 px-8 py-3 rounded-lg font-semibold hover:bg-gray-100 transition transform hover:scale-105 shadow-lg text-center"
                 >Go to My Table →</a
               >
               <a
                 th:href="@{/leaderboard}"
-                class="bg-indigo-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-indigo-400 transition transform hover:scale-105 shadow-lg text-center"
+                class="w-full sm:w-auto bg-indigo-500 text-white px-8 py-3 rounded-lg font-semibold hover:bg-indigo-400 transition transform hover:scale-105 shadow-lg text-center"
                 >View Leaderboard</a
               >
             </div>
@@ -112,12 +112,16 @@
             x-cloak
             class="bg-indigo-950/60 border border-white/10 rounded-xl p-5"
           >
-            <div class="flex items-center justify-between mb-3">
+            <div class="flex items-start justify-between gap-3 mb-3">
               <span
                 class="text-[11px] uppercase tracking-widest text-indigo-200 font-medium"
                 >Top of the table</span
               >
-              <div class="flex items-center gap-2">
+              <div class="flex flex-col items-end gap-1 flex-shrink-0">
+                <span
+                  class="text-[11px] uppercase tracking-widest text-indigo-200 font-medium"
+                  >Live preview</span
+                >
                 <button
                   type="button"
                   @click="reset()"
@@ -127,10 +131,6 @@
                 >
                   Reset
                 </button>
-                <span
-                  class="text-[11px] uppercase tracking-widest text-indigo-200 font-medium"
-                  >Live preview</span
-                >
               </div>
             </div>
             <template x-for="(team, i) in teams" :key="team.code">
