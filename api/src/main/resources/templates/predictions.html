@@ -434,14 +434,32 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
               ></div>
             </th:block>
 
-            <!-- Actions Footer (editable + cooldown-interactive states; also used for pre-season registration) -->
+            <!-- Actions Footer (editable + cooldown-interactive states; also used for pre-season registration).
+                 footerVisible is shared between the inline "actions" button and the floating pill so exactly
+                 one of them is ever showing: the pill while scrolling, the inline one once the footer is near. -->
             <th:block
               th:if="${canInteractEffective}"
             >
               <div
-                x-show="canInteract || isInitialPrediction"
-                th:replace="~{fragments/prediction-actions :: actions}"
-              ></div>
+                x-data="{ footerVisible: false }"
+                x-init="
+                  const footer = document.querySelector('footer');
+                  if (footer) {
+                    new IntersectionObserver(
+                      (entries) => { footerVisible = entries[0].isIntersecting; }
+                    ).observe(footer);
+                  }
+                "
+              >
+                <div
+                  x-show="canInteract || isInitialPrediction"
+                  th:replace="~{fragments/prediction-actions :: actions}"
+                ></div>
+                <div
+                  x-show="canInteract || isInitialPrediction"
+                  th:replace="~{fragments/prediction-actions :: floating-submit}"
+                ></div>
+              </div>
             </th:block>
           </div>
 

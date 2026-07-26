@@ -1,4 +1,74 @@
-<!-- Prediction Actions Footer Fragment -->
+<!-- Submit Button (shared markup — reused inline, below, and in the floating pill, so the
+     two never drift apart). `shapeClasses` lets each call site style its own container
+     shape (inline rounded-lg card button vs. floating rounded-full pill). -->
+<button
+  th:fragment="submit-button(shapeClasses)"
+  @click="submitChanges()"
+  :disabled="!canUpdate() || isSaving"
+  :class="canUpdate() && !isSaving ? 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer' : 'bg-gray-300 cursor-not-allowed'"
+  th:class="${'inline-flex items-center px-6 py-3 border border-transparent text-base font-medium text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ' + shapeClasses}"
+>
+  <svg
+    x-show="isSaving"
+    class="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
+    fill="none"
+    viewBox="0 0 24 24"
+  >
+    <circle
+      class="opacity-25"
+      cx="12"
+      cy="12"
+      r="10"
+      stroke="currentColor"
+      stroke-width="4"
+    ></circle>
+    <path
+      class="opacity-75"
+      fill="currentColor"
+      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+    ></path>
+  </svg>
+  <svg
+    x-show="!isSaving"
+    class="h-5 w-5 mr-2"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      d="M5 13l4 4L19 7"
+    ></path>
+  </svg>
+  <span x-show="!isSaving">
+    <span x-show="isPreSeasonRegistration && getSwapCount() === 0"
+      >Submit Prediction</span
+    >
+    <span x-show="isPreSeasonRegistration && getSwapCount() > 0">
+      Submit Prediction (<span x-text="getSwapCount()"></span>)
+    </span>
+    <span x-show="isInitialPrediction && getSwapCount() === 0"
+      >Submit Prediction &amp; Join</span
+    >
+    <span x-show="isInitialPrediction && getSwapCount() > 0">
+      Submit Prediction &amp; Join (<span x-text="getSwapCount()"></span>)
+    </span>
+    <span x-show="!isInitialPrediction && !isPreSeasonRegistration && getSwapCount() === 0"
+      >Update Prediction</span
+    >
+    <span x-show="!isInitialPrediction && !isPreSeasonRegistration && getSwapCount() > 0">
+      Update Prediction (<span x-text="getSwapCount()"></span>)
+    </span>
+  </span>
+  <span x-show="isSaving">Saving...</span>
+</button>
+
+<!-- Prediction Actions Footer Fragment. The submit button here only shows once the
+     floating pill (fragment "floating-submit" below) hides near the footer — see
+     `footerVisible`, shared via the wrapping x-data in predictions.html — so submit
+     stays reachable even when the floating pill steps aside for the footer. -->
 <div
   x-cloak
   th:fragment="actions"
@@ -41,60 +111,6 @@
       </div>
     </div>
 
-    <!-- Submit Button -->
-    <button
-      @click="submitChanges()"
-      :disabled="!canUpdate() || isSaving"
-      :class="canUpdate() && !isSaving ? 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer' : 'bg-gray-300 cursor-not-allowed'"
-      class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-    >
-      <svg
-        x-show="isSaving"
-        class="animate-spin -ml-1 mr-2 h-5 w-5 text-white"
-        fill="none"
-        viewBox="0 0 24 24"
-      >
-        <circle
-          class="opacity-25"
-          cx="12"
-          cy="12"
-          r="10"
-          stroke="currentColor"
-          stroke-width="4"
-        ></circle>
-        <path
-          class="opacity-75"
-          fill="currentColor"
-          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-        ></path>
-      </svg>
-      <svg
-        x-show="!isSaving"
-        class="h-5 w-5 mr-2"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M5 13l4 4L19 7"
-        ></path>
-      </svg>
-      <span x-show="!isSaving">
-        <span x-show="isPreSeasonRegistration">Submit Prediction</span>
-        <span x-show="isInitialPrediction">Submit Prediction &amp; Join</span>
-        <span x-show="!isInitialPrediction && !isPreSeasonRegistration && getSwapCount() === 0"
-          >Update Prediction</span
-        >
-        <span x-show="!isInitialPrediction && !isPreSeasonRegistration && getSwapCount() > 0">
-          Update Prediction (<span x-text="getSwapCount()"></span>)
-        </span>
-      </span>
-      <span x-show="isSaving">Saving...</span>
-    </button>
-
     <!-- Cooldown notices -->
     <p
       x-show="canInteract && !canSwap && !isInitialPrediction && isRoundOpen"
@@ -111,8 +127,39 @@
 
     <!-- Changes Summary -->
     <div th:replace="~{fragments/prediction-actions :: changes-summary}"></div>
+
+    <!-- Submit Button — takes over once the floating pill hides near the footer.
+         Uses `invisible` (not x-show) so this slot always reserves its height: toggling
+         it via display:none would shift the footer's position, re-triggering the
+         IntersectionObserver that drives footerVisible and causing a scroll-position
+         feedback loop (the footer becoming "visible" pushes it back out of view). -->
+    <div :class="footerVisible ? '' : 'invisible'" th:insert="~{fragments/prediction-actions :: submit-button('rounded-full shadow-lg')}"></div>
   </div>
 </div>
+
+<!-- Floating Submit Button Fragment: pinned to the bottom of the screen so it stays
+     reachable while scrolling through the team table, instead of only appearing after
+     the actions panel above (which most users never scroll far enough to see).
+
+     Teleported to body — #prediction-page has `will-change: opacity, transform` (for the
+     HTMX page-transition animation, see layout/base.html's inline <style>), and a
+     `will-change: transform` ancestor creates a containing block for `position: fixed`
+     descendants. Without teleporting, this button would end up fixed relative to
+     #prediction-page's own box (bottom of all page content) instead of the viewport —
+     the same class of bug documented on the mobile form popup teleport below.
+
+     `footerVisible` (declared on the wrapping x-data in predictions.html, shared with
+     the inline button above) hides this pill once the page footer scrolls into view,
+     so it never covers the footer links — the inline button takes over at that point. -->
+<template th:fragment="floating-submit" x-teleport="body">
+<div
+  x-cloak
+  x-show="!footerVisible"
+  x-transition.opacity
+  class="fixed bottom-5 inset-x-0 z-40 flex justify-center px-4 pointer-events-none"
+  th:insert="~{fragments/prediction-actions :: submit-button('pointer-events-auto rounded-full shadow-lg')}"
+></div>
+</template>
 
 <!-- Changes Summary Fragment (reused in guest and non-guest views) -->
 <div
