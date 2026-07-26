@@ -330,44 +330,33 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
               </div>
             </div>
 
-            <!-- Guest CTA Footer -->
-            <div x-cloak x-init="$el.previousElementSibling.remove()" class="px-6 py-6 bg-gray-50 border-t border-gray-200">
-              <div class="flex flex-col items-center space-y-3">
-                <a
-                  th:href="@{/auth/register}"
-                  class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-                >
-                  <svg
-                    class="h-5 w-5 mr-2"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                  >
-                    <path
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="2"
-                      d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
-                    />
-                  </svg>
-                  Sign Up to Save Prediction
-                </a>
-                <p class="text-sm text-gray-500">
-                  Already have an account?
-                  <a
-                    th:href="@{/auth/login}"
-                    class="text-indigo-600 hover:text-indigo-700 font-medium"
-                    >Log in</a
-                  >
-                </p>
-              </div>
-            </div>
-
-            <!-- Changes Summary -->
-            <div x-cloak x-show="getDirtyCount() > 0" class="px-6 py-6">
+            <!-- Changes Summary (also the first real Alpine-rendered element, so it takes
+                 over removing the skeleton above once Alpine initialises) -->
+            <div
+              x-cloak
+              x-init="$el.previousElementSibling.remove()"
+              x-show="getDirtyCount() > 0"
+              class="px-6 py-6"
+            >
               <div class="flex justify-center">
                 <div th:replace="~{fragments/prediction-actions :: changes-summary}"></div>
               </div>
+            </div>
+
+            <!-- Guest CTA: floating while scrolling, inline once the footer is near (see fragments/guest-cta.html) -->
+            <div
+              x-data="{ footerVisible: false }"
+              x-init="
+                const footer = document.querySelector('footer');
+                if (footer) {
+                  new IntersectionObserver(
+                    (entries) => { footerVisible = entries[0].isIntersecting; }
+                  ).observe(footer);
+                }
+              "
+            >
+              <div th:replace="~{fragments/guest-cta :: cta}"></div>
+              <div th:replace="~{fragments/guest-cta :: floating-cta}"></div>
             </div>
           </div>
 
