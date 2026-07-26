@@ -26,6 +26,8 @@
           </div>
 
           <div class="space-y-4">
+            <div th:replace="~{fragments/in-app-browser-banner :: banner(${inAppBrowser})}"></div>
+
             <a
               th:href="@{/oauth2/authorization/google}"
               class="w-full inline-flex items-center justify-center gap-3 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition"

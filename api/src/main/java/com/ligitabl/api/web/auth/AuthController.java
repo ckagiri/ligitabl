@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -54,7 +55,6 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
@@ -78,6 +78,15 @@ public class AuthController {
     private final VerifyEmailUseCase verifyEmailUseCase;
     private final TurnstileClient turnstileClient;
 
+    private static final Pattern IN_APP_BROWSER_USER_AGENT = Pattern.compile(
+            "FBAN|FBAV|FB_IAB|FBIOS|Instagram|Line/|MicroMessenger|TikTok|Snapchat|Pinterest|LinkedInApp|WhatsApp|GSA/|KAKAOTALK|NAVER",
+            Pattern.CASE_INSENSITIVE);
+
+    private boolean isInAppBrowser(HttpServletRequest request) {
+        String userAgent = request.getHeader("User-Agent");
+        return userAgent != null && IN_APP_BROWSER_USER_AGENT.matcher(userAgent).find();
+    }
+
     @GetMapping("/register")
     public String showRegisterForm(Model model, HttpServletRequest request) {
         request.getSession(true);
@@ -85,6 +94,7 @@ public class AuthController {
         model.addAttribute("registerForm", new RegisterForm());
         model.addAttribute("turnstileEnabled", turnstileClient.isEnabled());
         model.addAttribute("turnstileSiteKey", turnstileClient.getSiteKey());
+        model.addAttribute("inAppBrowser", isInAppBrowser(request));
         return "auth/register";
     }
 
@@ -429,7 +439,8 @@ public class AuthController {
 
         @NotBlank(message = "Display name is required")
         @Size(min = 3, max = 30, message = "Display name must be between 3 and 30 characters")
-        @Pattern(regexp = "^[a-zA-Z0-9 ]+$", message = "Display name may only contain letters, numbers and spaces")
+        @jakarta.validation.constraints.Pattern(
+                regexp = "^[a-zA-Z0-9 ]+$", message = "Display name may only contain letters, numbers and spaces")
         private String displayName;
 
         @NotBlank(message = "Password is required")
