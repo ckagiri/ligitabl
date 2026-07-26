@@ -120,14 +120,7 @@ public class GetLatestResultUseCase {
 
                     if (round > sprintPhase.getFrom()) {
                         var previousResponse = leaderboardRepo.computeLeaderboard(
-                                contest.getId(),
-                                season.getId(),
-                                sprintPhase.getFrom(),
-                                round - 1,
-                                userId,
-                                0,
-                                1,
-                                true);
+                                contest.getId(), season.getId(), sprintPhase.getFrom(), round - 1, userId, 0, 1, true);
                         LeaderboardEntry previousEntry = previousResponse.userEntry();
                         int previousSprintBest = previousEntry != null ? previousEntry.maxScore() : 0;
                         isNewSprintBest = result.getTotalScore() > previousSprintBest;

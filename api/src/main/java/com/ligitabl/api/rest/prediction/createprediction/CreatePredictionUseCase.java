@@ -58,9 +58,8 @@ public class CreatePredictionUseCase {
     public record JoinCtx(Season season, Contest mainContest, int atRoundNumber, int currentRoundPosition) {}
 
     public Either<CreatePredictionError, JoinCtx> resolveJoinContext(Season season) {
-        return findMainContest(season)
-                .flatMap(contest -> determineAtRoundNumber(season)
-                        .map(info -> new JoinCtx(season, contest, info.atRoundNumber(), info.currentRoundPosition())));
+        return findMainContest(season).flatMap(contest -> determineAtRoundNumber(season)
+                .map(info -> new JoinCtx(season, contest, info.atRoundNumber(), info.currentRoundPosition())));
     }
 
     public Either<CreatePredictionError, CreatePredictionResult> executeWithContext(
@@ -69,9 +68,14 @@ public class CreatePredictionUseCase {
                 .flatMap(__ -> resolveJoinPlan(userId, ctx.season()))
                 .flatMap(plan -> switch (plan) {
                     case JoinPlan.NewJoin ignored -> createPredictionAndEntry(
-                            userId, ctx.season(), ctx.mainContest(), request, ctx.atRoundNumber(), ctx.currentRoundPosition());
-                    case JoinPlan.NewPreSeasonRegistration ignored ->
-                        registerPreSeason(userId, ctx.season(), ctx.mainContest(), request);
+                            userId,
+                            ctx.season(),
+                            ctx.mainContest(),
+                            request,
+                            ctx.atRoundNumber(),
+                            ctx.currentRoundPosition());
+                    case JoinPlan.NewPreSeasonRegistration ignored -> registerPreSeason(
+                            userId, ctx.season(), ctx.mainContest(), request);
                     case JoinPlan.MergePreSeasonRegistration merge -> mergePreSeasonRegistration(
                             userId, ctx.mainContest(), request, merge.existing(), ctx.atRoundNumber());
                 });

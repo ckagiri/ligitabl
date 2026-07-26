@@ -48,7 +48,10 @@ public class JoinReminderEnqueuer {
     private final Clock clock;
 
     public void enqueueDueReminders() {
-        OffsetDateTime todayStart = OffsetDateTime.now(clock).toLocalDate().atStartOfDay(ZoneOffset.UTC).toOffsetDateTime();
+        OffsetDateTime todayStart = OffsetDateTime.now(clock)
+                .toLocalDate()
+                .atStartOfDay(ZoneOffset.UTC)
+                .toOffsetDateTime();
         if (outboxRepo.existsSentEventsOfTypeSince(OutboxEventTypes.ROUND_RESULTS, todayStart.toInstant())) {
             log.info("[JOIN_REMINDER_SKIPPED] a ROUND_RESULTS batch already sent today; skipping this run");
             return;
@@ -74,18 +77,23 @@ public class JoinReminderEnqueuer {
         int inserted = 0;
         for (User user : candidates) {
             try {
-                long daysSinceSignup = Duration.between(user.getCreateDate(), now).toDays();
+                long daysSinceSignup =
+                        Duration.between(user.getCreateDate(), now).toDays();
                 int stage = latestDueStage(stages, daysSinceSignup);
                 if (stage == -1) {
                     continue; // defensive: shouldn't happen given earliestCutoff
                 }
 
-                JoinReminderPayload payload = new JoinReminderPayload(
-                        user.getId(), user.getEmail().value(), stage);
+                JoinReminderPayload payload =
+                        new JoinReminderPayload(user.getId(), user.getEmail().value(), stage);
                 String json = objectMapper.writeValueAsString(payload);
                 String idempotencyKey = "join-reminder:%s:%d".formatted(user.getId(), stage);
                 OutboxEvent event = OutboxEvent.create(
-                        idempotencyKey, OutboxEventTypes.JOIN_REMINDER, "user", user.getId().toString(), json);
+                        idempotencyKey,
+                        OutboxEventTypes.JOIN_REMINDER,
+                        "user",
+                        user.getId().toString(),
+                        json);
                 if (outboxRepo.save(event)) {
                     inserted++;
                 }

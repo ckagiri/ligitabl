@@ -62,7 +62,8 @@ class JoinReminderEnqueuerTest {
 
     @BeforeEach
     void setup() {
-        enqueuer = new JoinReminderEnqueuer(outboxRepo, userRepo, seasonRepo, competitionDefaults, objectMapper, properties, clock);
+        enqueuer = new JoinReminderEnqueuer(
+                outboxRepo, userRepo, seasonRepo, competitionDefaults, objectMapper, properties, clock);
 
         Season season = Season.builder().id(SEASON_ID).build();
         when(seasonRepo.findActiveSeason("pl")).thenReturn(Optional.of(season));
@@ -151,9 +152,7 @@ class JoinReminderEnqueuerTest {
         User bad = userAgedDays(4);
         User good = userAgedDays(4);
         when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any())).thenReturn(List.of(bad, good));
-        when(outboxRepo.save(any()))
-                .thenThrow(new RuntimeException("boom"))
-                .thenReturn(true);
+        when(outboxRepo.save(any())).thenThrow(new RuntimeException("boom")).thenReturn(true);
 
         enqueuer.enqueueDueReminders();
 

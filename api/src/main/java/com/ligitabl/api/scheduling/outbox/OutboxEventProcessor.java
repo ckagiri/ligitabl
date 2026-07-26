@@ -113,30 +113,33 @@ public class OutboxEventProcessor {
                 .findById(payload.seasonId())
                 .orElseThrow(() -> new IllegalStateException("Season not found: " + payload.seasonId()));
 
-        List<UUID> unjoinedUserIds = userRepo.findUnjoinedUserIdsRegisteredAfter(season.getId(), season.getPreSeasonOpensAt());
+        List<UUID> unjoinedUserIds =
+                userRepo.findUnjoinedUserIdsRegisteredAfter(season.getId(), season.getPreSeasonOpensAt());
         if (unjoinedUserIds.isEmpty()) {
             return;
         }
 
-        createPredictionUseCase.resolveJoinContext(season).fold(
-                error -> {
-                    log.warn(
-                            "[ROUND_LOCKED] Skipping auto-join batch for season {}: {}", season.getId(), error);
-                    return null;
-                },
-                ctx -> {
-                    for (UUID userId : unjoinedUserIds) {
-                        try {
-                            createPredictionUseCase
-                                    .executeWithContext(userId, ctx, new CreatePredictionCommand(List.of()))
-                                    .peekLeft(error -> log.warn(
-                                            "[ROUND_LOCKED] Auto-join skipped for user {}: {}", userId, error));
-                        } catch (Exception e) {
-                            log.error("[ROUND_LOCKED] Auto-join failed for user {}", userId, e);
-                        }
-                    }
-                    return null;
-                });
+        createPredictionUseCase
+                .resolveJoinContext(season)
+                .fold(
+                        error -> {
+                            log.warn(
+                                    "[ROUND_LOCKED] Skipping auto-join batch for season {}: {}", season.getId(), error);
+                            return null;
+                        },
+                        ctx -> {
+                            for (UUID userId : unjoinedUserIds) {
+                                try {
+                                    createPredictionUseCase
+                                            .executeWithContext(userId, ctx, new CreatePredictionCommand(List.of()))
+                                            .peekLeft(error -> log.warn(
+                                                    "[ROUND_LOCKED] Auto-join skipped for user {}: {}", userId, error));
+                                } catch (Exception e) {
+                                    log.error("[ROUND_LOCKED] Auto-join failed for user {}", userId, e);
+                                }
+                            }
+                            return null;
+                        });
     }
 
     private void processJoinReminder(OutboxEvent event) throws Exception {

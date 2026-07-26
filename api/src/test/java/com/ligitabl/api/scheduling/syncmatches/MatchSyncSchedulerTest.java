@@ -259,10 +259,8 @@ class MatchSyncSchedulerTest {
 
     @Test
     void doesNotWriteRoundLockedEvent_whenRoundIsNotLocked() {
-        Season season = Season.builder()
-                .id(seasonId)
-                .mainContestId(UUID.randomUUID())
-                .build();
+        Season season =
+                Season.builder().id(seasonId).mainContestId(UUID.randomUUID()).build();
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(syncMatchesUseCase.execute(any())).thenReturn(Either.right(completeResult()));
         when(triggerFinalizationUseCase.execute(any()))

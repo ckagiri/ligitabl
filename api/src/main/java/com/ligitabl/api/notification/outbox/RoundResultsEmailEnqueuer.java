@@ -137,7 +137,8 @@ public class RoundResultsEmailEnqueuer {
         int seasonFrom = 1;
         boolean seasonRedundantWithSprint = sprint.getFrom() == seasonFrom;
 
-        Board seasonBoard = seasonRedundantWithSprint ? null : fetchBoard(contest, season, seasonFrom, roundPosition, SCAN_CAP);
+        Board seasonBoard =
+                seasonRedundantWithSprint ? null : fetchBoard(contest, season, seasonFrom, roundPosition, SCAN_CAP);
         Map<String, LeaderboardEntry> seasonByPublicId = seasonBoard == null ? Map.of() : entryByPublicId(seasonBoard);
         int seasonTotalParticipants = seasonBoard == null ? 0 : seasonBoard.totalParticipants();
 
@@ -148,8 +149,9 @@ public class RoundResultsEmailEnqueuer {
                 seasonBoardPrevious == null ? Map.of() : entryByPublicId(seasonBoardPrevious);
 
         // Quarter is always a plain secondary standing (rank only)
-        PlacementBoard quarterPlacementBoard =
-                quarter == null ? null : placementBoard(contest, season, quarter.getCode(), quarter.getFrom(), roundPosition);
+        PlacementBoard quarterPlacementBoard = quarter == null
+                ? null
+                : placementBoard(contest, season, quarter.getCode(), quarter.getFrom(), roundPosition);
 
         int inserted = 0;
         for (Recipient recipient : recipients) {
