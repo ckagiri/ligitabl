@@ -198,7 +198,7 @@ public class OutboxEventProcessor {
         data.put("showDetailedResultsLink", payload.round() != payload.lastRound());
         data.put(
                 "detailedResultsUrl",
-                frontendUrl + "/u/" + payload.userPublicId() + "/" + payload.seasonSlug() + "/gw/f" + payload.round());
+                frontendUrl + "/u/" + payload.userPublicId() + "/" + payload.seasonSlug() + "/gw/" + payload.round());
         return data;
     }
 
