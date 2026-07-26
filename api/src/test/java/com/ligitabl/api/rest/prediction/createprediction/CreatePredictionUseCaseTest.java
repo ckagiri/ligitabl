@@ -687,6 +687,91 @@ class CreatePredictionUseCaseTest {
         assertInstanceOf(CreatePredictionError.CorruptPreSeasonRegistration.class, result.getLeft());
     }
 
+    @Test
+    void resolveJoinContext_resolvesMainContestAndEffectiveRound() {
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
+        when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
+        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
+
+        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result = useCase.resolveJoinContext(season);
+
+        assertTrue(result.isRight());
+        CreatePredictionUseCase.JoinCtx ctx = result.get();
+        assertEquals(season, ctx.season());
+        assertEquals(defaultContest, ctx.mainContest());
+        assertEquals(round.getPosition(), ctx.atRoundNumber());
+        assertEquals(round.getPosition(), ctx.currentRoundPosition());
+    }
+
+    @Test
+    void resolveJoinContext_rejects_whenMainContestNotFound() {
+        // findMainContest is checked first — determineAtRoundNumber (round/match lookups) is
+        // never reached, since the flatMap chain short-circuits on the first Left.
+        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.empty());
+
+        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result = useCase.resolveJoinContext(season);
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(CreatePredictionError.MainContestNotFound.class, result.getLeft());
+    }
+
+    @Test
+    void executeWithContext_joinsNewUser_usingPreResolvedContext() {
+        UUID predictionId = UUID.randomUUID();
+        UUID entryId = UUID.randomUUID();
+        var ctx = new CreatePredictionUseCase.JoinCtx(season, defaultContest, round.getPosition(), round.getPosition());
+
+        when(clock.instant()).thenReturn(now);
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
+        when(predictionRepo.save(any())).thenAnswer(i -> {
+            SeasonPrediction p = i.getArgument(0);
+            p.setId(predictionId);
+            return p;
+        });
+        when(entryRepo.save(any())).thenAnswer(i -> {
+            var e = i.getArgument(0, Entry.class);
+            e.setId(entryId);
+            return e;
+        });
+
+        Either<CreatePredictionError, CreatePredictionResult> result =
+                useCase.executeWithContext(userId, ctx, multiSwap(List.of()));
+
+        assertTrue(result.isRight());
+        assertEquals(predictionId, result.get().predictionId());
+        assertEquals(entryId, result.get().entryId());
+        assertEquals(round.getPosition(), result.get().atRoundNumber());
+
+        // Round/season/contest resolution is skipped entirely — the whole point of passing a
+        // pre-resolved JoinCtx — only resolveJoinPlan's race-safety lookup runs per call.
+        verify(roundRepo, never()).findById(any());
+        verify(matchRepo, never()).findByRoundId(any());
+        verify(contestRepo, never()).findById(any());
+        verify(seasonRepo, never()).findActiveSeason(anyString());
+    }
+
+    @Test
+    void executeWithContext_rejectsAlreadyJoinedUser() {
+        SeasonPrediction existingPrediction = SeasonPrediction.builder()
+                .id(UUID.randomUUID())
+                .userId(userId)
+                .seasonId(season.getId())
+                .currentRankings(season.getInitialRankings())
+                .atRoundNumber(1)
+                .build();
+        var ctx = new CreatePredictionUseCase.JoinCtx(season, defaultContest, round.getPosition(), round.getPosition());
+
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(existingPrediction));
+
+        Either<CreatePredictionError, CreatePredictionResult> result =
+                useCase.executeWithContext(userId, ctx, multiSwap(List.of()));
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(CreatePredictionError.AlreadyJoined.class, result.getLeft());
+        verify(predictionRepo, never()).save(any());
+        verify(entryRepo, never()).save(any());
+    }
+
     // --- Helpers ---
 
     private static CreatePredictionCommand singleSwap(String teamACode, String teamBCode) {

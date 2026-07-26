@@ -155,11 +155,12 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             // initialRankings stays null for a normal (non pre-season) join
             assertThat(prediction.get().getInitialRankings()).isNull();
 
-            // initial swap is recorded; lastSwapAt stays null
+            // initial swap is recorded; a swap was used at signup, so the first-swap bonus is
+            // already consumed (lastSwapAt is set), matching CreatePredictionUseCaseTest
             assertThat(prediction.get().getSwaps()).hasSize(1);
             assertThat(prediction.get().getSwaps().get(0).getRound()).isEqualTo(1);
             assertThat(prediction.get().getSwaps().get(0).getChanges()).hasSize(1);
-            assertThat(prediction.get().getLastSwapAt()).isNull();
+            assertThat(prediction.get().getLastSwapAt()).isEqualTo(now);
 
             assertThat(prediction.get().getAtRoundNumber()).isEqualTo(1);
 
@@ -202,10 +203,11 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             assertThat(liv.getPosition()).isEqualTo(2);
             assertThat(mci.getPosition()).isEqualTo(3);
 
-            // Both swap changes recorded under one RoundSwap
+            // Both swap changes recorded under one RoundSwap; swaps were used at signup, so the
+            // first-swap bonus is already consumed (lastSwapAt is set)
             assertThat(prediction.get().getSwaps()).hasSize(1);
             assertThat(prediction.get().getSwaps().get(0).getChanges()).hasSize(2);
-            assertThat(prediction.get().getLastSwapAt()).isNull();
+            assertThat(prediction.get().getLastSwapAt()).isEqualTo(now);
         }
 
         @Test

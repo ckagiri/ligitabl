@@ -147,6 +147,14 @@ Defaults are **dev-safe** and must be overridden in production using env vars:
 
 Cookies issued by the old `TokenBasedRememberMeServices` fail to decode against the persistent store, get cancelled, and the user simply logs in once more — no cleanup or backfill needed.
 
+### Web-only beans must match their dependencies' web condition
+
+`SecurityConfig` (and its `RememberMeServices` beans) is gated with `@ConditionalOnWebApplication(type = Type.SERVLET)`, so it doesn't load in headless contexts — e.g. the workflow-runner integration tests, which boot with `spring.main.web-application-type=none`. Any `@Component`/`@Service` that depends on one of those beans must carry the **same** conditional, or its constructor injection fails with `NoSuchBeanDefinitionException` the moment such a headless context tries to instantiate it, even though the component itself has nothing to do with the test at hand.
+
+This bit us with `OAuth2AuthenticationSuccessHandler`: it's a plain `@Component` injecting `RememberMeServices oauth2RememberMeServices` (from `SecurityConfig`), and had no web-application condition of its own. Any `@SpringBootTest`-backed IT with `spring.main.web-application-type=none` (e.g. `CalcStandingsRunnerIT`) failed to load its `ApplicationContext` — not because of anything the test touched, but because Spring eagerly instantiates all singletons and this one had an unsatisfiable dependency. Fixed by adding `@ConditionalOnWebApplication(type = Type.SERVLET)` to the handler itself, matching `SecurityConfig`.
+
+**Rule of thumb**: when a bean's only reason to exist is wiring into `SecurityConfig`'s `SecurityFilterChain` (auth handlers, logout handlers, OAuth2 callbacks, etc.), give it the same `@ConditionalOnWebApplication` as `SecurityConfig` — don't rely on it only ever being requested from a web context.
+
 ### Navbar context
 
 Navbar labels/links are computed in `NavbarControllerAdvice`, using the custom principal when present to avoid extra DB lookups.

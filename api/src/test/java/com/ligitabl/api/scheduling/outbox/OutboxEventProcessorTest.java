@@ -15,6 +15,7 @@ import java.time.ZoneOffset;
 import java.util.Map;
 import java.util.UUID;
 
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -31,14 +32,24 @@ import com.ligitabl.api.notification.email.EmailContent;
 import com.ligitabl.api.notification.email.EmailError;
 import com.ligitabl.api.notification.email.EmailProvider;
 import com.ligitabl.api.notification.email.EmailTemplateRenderer;
+import com.ligitabl.api.notification.outbox.JoinReminderPayload;
 import com.ligitabl.api.notification.outbox.OutboxEventTypes;
 import com.ligitabl.api.notification.outbox.RoundAdvancedPayload;
+import com.ligitabl.api.notification.outbox.RoundLockedPayload;
 import com.ligitabl.api.notification.outbox.RoundResultsEmailEnqueuer;
 import com.ligitabl.api.notification.outbox.RoundResultsPayload;
+import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionCommand;
+import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionError;
+import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionResult;
+import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionUseCase;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.HitDistribution;
 import com.ligitabl.model.domain.OutboxEvent;
+import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.OutboxRepo;
+import com.ligitabl.model.repo.SeasonRepo;
+import com.ligitabl.model.repo.UserRepo;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -58,6 +69,15 @@ class OutboxEventProcessorTest {
     @Mock
     EmailProvider emailProvider;
 
+    @Mock
+    SeasonRepo seasonRepo;
+
+    @Mock
+    UserRepo userRepo;
+
+    @Mock
+    CreatePredictionUseCase createPredictionUseCase;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
     private OutboxEventProcessor processor;
 
@@ -67,11 +87,21 @@ class OutboxEventProcessorTest {
     @BeforeEach
     void setup() {
         processor = new OutboxEventProcessor(
-                outboxRepo, enqueuer, renderer, emailProvider, objectMapper, Clock.fixed(NOW, ZoneOffset.UTC));
+                outboxRepo,
+                enqueuer,
+                renderer,
+                emailProvider,
+                objectMapper,
+                Clock.fixed(NOW, ZoneOffset.UTC),
+                seasonRepo,
+                userRepo,
+                createPredictionUseCase);
         ReflectionTestUtils.setField(processor, "frontendUrl", "http://localhost:8080");
 
         when(renderer.render(eq(EmailCommand.EmailType.ROUND_RESULTS), any()))
                 .thenReturn(Either.right(new EmailContent("subject", "<html/>", "text")));
+        when(renderer.render(eq(EmailCommand.EmailType.JOIN_REMINDER), any()))
+                .thenReturn(Either.right(new EmailContent("join subject", "<html/>", "text")));
         when(emailProvider.sendSingle(anyString(), anyString(), anyString(), any()))
                 .thenReturn(Either.right(null));
     }
@@ -124,7 +154,7 @@ class OutboxEventProcessorTest {
 
         ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.captor();
         verify(renderer).render(eq(EmailCommand.EmailType.ROUND_RESULTS), dataCaptor.capture());
-        org.assertj.core.api.Assertions.assertThat(dataCaptor.getValue())
+        Assertions.assertThat(dataCaptor.getValue())
                 .containsEntry("round", 22)
                 .containsEntry("score", 175)
                 .containsEntry("userDisplayName", "Alice")
@@ -148,7 +178,7 @@ class OutboxEventProcessorTest {
 
         ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.captor();
         verify(renderer).render(eq(EmailCommand.EmailType.ROUND_RESULTS), dataCaptor.capture());
-        org.assertj.core.api.Assertions.assertThat(dataCaptor.getValue()).containsEntry("showDetailedResultsLink", true);
+        Assertions.assertThat(dataCaptor.getValue()).containsEntry("showDetailedResultsLink", true);
     }
 
     @Test
@@ -161,7 +191,7 @@ class OutboxEventProcessorTest {
 
         ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.captor();
         verify(renderer).render(eq(EmailCommand.EmailType.ROUND_RESULTS), dataCaptor.capture());
-        org.assertj.core.api.Assertions.assertThat(dataCaptor.getValue()).containsEntry("showDetailedResultsLink", false);
+        Assertions.assertThat(dataCaptor.getValue()).containsEntry("showDetailedResultsLink", false);
     }
 
     @Test
@@ -224,6 +254,142 @@ class OutboxEventProcessorTest {
         processor.processOne(event);
 
         verify(outboxRepo).markFailed(eq(event.getId()), anyString(), eq(NOW.plus(Duration.ofMinutes(1))));
+        verify(outboxRepo, never()).markSent(any());
+    }
+
+    @Test
+    void joinReminderRendersAndSendsThenMarksSent() throws Exception {
+        JoinReminderPayload payload = new JoinReminderPayload(userId, "bob@x.com", 4);
+        OutboxEvent event = claimedEvent(OutboxEventTypes.JOIN_REMINDER, objectMapper.writeValueAsString(payload), 1);
+
+        processor.processOne(event);
+
+        ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.captor();
+        verify(renderer).render(eq(EmailCommand.EmailType.JOIN_REMINDER), dataCaptor.capture());
+        Assertions.assertThat(dataCaptor.getValue())
+                .containsEntry("stage", 4)
+                .containsEntry("myTableUrl", "http://localhost:8080/my-table")
+                .containsEntry("leaderboardUrl", "http://localhost:8080/leaderboard");
+
+        verify(emailProvider)
+                .sendSingle(eq("bob@x.com"), eq("join subject"), eq("<html/>"), eq(EmailCommand.Priority.NORMAL));
+        verify(outboxRepo).markSent(event.getId());
+    }
+
+    private Season activeSeason(UUID preSeasonOpensAtOffsetSeasonId) {
+        return Season.builder()
+                .id(preSeasonOpensAtOffsetSeasonId)
+                .mainContestId(UUID.randomUUID())
+                .preSeasonOpensAt(NOW.minusSeconds(86400).atOffset(ZoneOffset.UTC))
+                .build();
+    }
+
+    @Test
+    void roundLockedAutoJoinsEligibleUsersThenMarksSent() throws Exception {
+        Season season = activeSeason(seasonId);
+        UUID user1 = UUID.randomUUID();
+        UUID user2 = UUID.randomUUID();
+        var ctx = new CreatePredictionUseCase.JoinCtx(
+                season, Contest.builder().id(UUID.randomUUID()).build(), 1, 1);
+
+        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
+        when(userRepo.findUnjoinedUserIdsRegisteredAfter(eq(seasonId), any()))
+                .thenReturn(java.util.List.of(user1, user2));
+        when(createPredictionUseCase.resolveJoinContext(season)).thenReturn(Either.right(ctx));
+        when(createPredictionUseCase.executeWithContext(any(), eq(ctx), any()))
+                .thenReturn(Either.right(new CreatePredictionResult(UUID.randomUUID(), UUID.randomUUID(), 1, "ok")));
+
+        OutboxEvent event = claimedEvent(
+                OutboxEventTypes.ROUND_LOCKED,
+                objectMapper.writeValueAsString(new RoundLockedPayload(seasonId, UUID.randomUUID(), 1)),
+                1);
+
+        processor.processOne(event);
+
+        verify(createPredictionUseCase).executeWithContext(eq(user1), eq(ctx), any(CreatePredictionCommand.class));
+        verify(createPredictionUseCase).executeWithContext(eq(user2), eq(ctx), any(CreatePredictionCommand.class));
+        verify(outboxRepo).markSent(event.getId());
+        verify(outboxRepo, never()).markFailed(any(), any(), any());
+    }
+
+    @Test
+    void roundLockedWithNoUnjoinedUsers_skipsContextResolutionButStillMarksSent() throws Exception {
+        Season season = activeSeason(seasonId);
+        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
+        when(userRepo.findUnjoinedUserIdsRegisteredAfter(eq(seasonId), any())).thenReturn(java.util.List.of());
+
+        OutboxEvent event = claimedEvent(
+                OutboxEventTypes.ROUND_LOCKED,
+                objectMapper.writeValueAsString(new RoundLockedPayload(seasonId, UUID.randomUUID(), 1)),
+                1);
+
+        processor.processOne(event);
+
+        verify(createPredictionUseCase, never()).resolveJoinContext(any());
+        verify(outboxRepo).markSent(event.getId());
+    }
+
+    @Test
+    void roundLockedOneUserFailure_doesNotBlockOthersOrFailTheEvent() throws Exception {
+        Season season = activeSeason(seasonId);
+        UUID badUser = UUID.randomUUID();
+        UUID goodUser = UUID.randomUUID();
+        var ctx = new CreatePredictionUseCase.JoinCtx(
+                season, Contest.builder().id(UUID.randomUUID()).build(), 1, 1);
+
+        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
+        when(userRepo.findUnjoinedUserIdsRegisteredAfter(eq(seasonId), any()))
+                .thenReturn(java.util.List.of(badUser, goodUser));
+        when(createPredictionUseCase.resolveJoinContext(season)).thenReturn(Either.right(ctx));
+        when(createPredictionUseCase.executeWithContext(eq(badUser), eq(ctx), any()))
+                .thenThrow(new RuntimeException("boom"));
+        when(createPredictionUseCase.executeWithContext(eq(goodUser), eq(ctx), any()))
+                .thenReturn(Either.right(new CreatePredictionResult(UUID.randomUUID(), UUID.randomUUID(), 1, "ok")));
+
+        OutboxEvent event = claimedEvent(
+                OutboxEventTypes.ROUND_LOCKED,
+                objectMapper.writeValueAsString(new RoundLockedPayload(seasonId, UUID.randomUUID(), 1)),
+                1);
+
+        processor.processOne(event);
+
+        verify(createPredictionUseCase).executeWithContext(eq(goodUser), eq(ctx), any());
+        verify(outboxRepo).markSent(event.getId());
+        verify(outboxRepo, never()).markFailed(any(), any(), any());
+    }
+
+    @Test
+    void roundLockedContextResolutionFails_skipsBatchButStillMarksSent() throws Exception {
+        Season season = activeSeason(seasonId);
+        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
+        when(userRepo.findUnjoinedUserIdsRegisteredAfter(eq(seasonId), any()))
+                .thenReturn(java.util.List.of(UUID.randomUUID()));
+        when(createPredictionUseCase.resolveJoinContext(season))
+                .thenReturn(Either.left(new CreatePredictionError.CurrentRoundNotFound(seasonId)));
+
+        OutboxEvent event = claimedEvent(
+                OutboxEventTypes.ROUND_LOCKED,
+                objectMapper.writeValueAsString(new RoundLockedPayload(seasonId, UUID.randomUUID(), 1)),
+                1);
+
+        processor.processOne(event);
+
+        verify(createPredictionUseCase, never()).executeWithContext(any(), any(), any());
+        verify(outboxRepo).markSent(event.getId());
+    }
+
+    @Test
+    void roundLockedSeasonNotFound_marksFailed() throws Exception {
+        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.empty());
+
+        OutboxEvent event = claimedEvent(
+                OutboxEventTypes.ROUND_LOCKED,
+                objectMapper.writeValueAsString(new RoundLockedPayload(seasonId, UUID.randomUUID(), 1)),
+                1);
+
+        processor.processOne(event);
+
+        verify(outboxRepo).markFailed(eq(event.getId()), contains("Season not found"), any());
         verify(outboxRepo, never()).markSent(any());
     }
 

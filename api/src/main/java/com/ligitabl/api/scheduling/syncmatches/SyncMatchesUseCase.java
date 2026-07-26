@@ -289,6 +289,7 @@ public class SyncMatchesUseCase {
 
     private MatchSyncResult calculateNextSync(SyncContext context) {
         var matches = context.updatedMatches();
+        var roundStatus = context.round().computeStatus(matches);
 
         boolean allComplete = matches.stream().allMatch(m -> m.isComplete());
 
@@ -310,6 +311,7 @@ public class SyncMatchesUseCase {
                     context.season().getId(),
                     context.round().getId(),
                     context.round().getPosition(),
+                    roundStatus,
                     0,
                     0,
                     0,
@@ -343,6 +345,7 @@ public class SyncMatchesUseCase {
                 context.season().getId(),
                 context.round().getId(),
                 context.round().getPosition(),
+                roundStatus,
                 context.matchesProcessed(),
                 context.matchesUpdated(),
                 context.finishedMatchIds().size(),

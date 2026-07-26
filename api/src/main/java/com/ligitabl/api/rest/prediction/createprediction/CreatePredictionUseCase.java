@@ -55,6 +55,32 @@ public class CreatePredictionUseCase {
         }
     }
 
+    public record JoinCtx(Season season, Contest mainContest, int atRoundNumber, int currentRoundPosition) {}
+
+    public Either<CreatePredictionError, JoinCtx> resolveJoinContext(Season season) {
+        return findMainContest(season).flatMap(contest -> determineAtRoundNumber(season)
+                .map(info -> new JoinCtx(season, contest, info.atRoundNumber(), info.currentRoundPosition())));
+    }
+
+    public Either<CreatePredictionError, CreatePredictionResult> executeWithContext(
+            UUID userId, JoinCtx ctx, CreatePredictionCommand request) {
+        return validateSwapTeams(request, ctx.season())
+                .flatMap(__ -> resolveJoinPlan(userId, ctx.season()))
+                .flatMap(plan -> switch (plan) {
+                    case JoinPlan.NewJoin ignored -> createPredictionAndEntry(
+                            userId,
+                            ctx.season(),
+                            ctx.mainContest(),
+                            request,
+                            ctx.atRoundNumber(),
+                            ctx.currentRoundPosition());
+                    case JoinPlan.NewPreSeasonRegistration ignored -> registerPreSeason(
+                            userId, ctx.season(), ctx.mainContest(), request);
+                    case JoinPlan.MergePreSeasonRegistration merge -> mergePreSeasonRegistration(
+                            userId, ctx.mainContest(), request, merge.existing(), ctx.atRoundNumber());
+                });
+    }
+
     @Transactional
     public Either<CreatePredictionError, CreatePredictionResult> execute(UUID userId, CreatePredictionCommand request) {
         log.info("User {} attempting to join contest", userId);
@@ -119,6 +145,10 @@ public class CreatePredictionUseCase {
     // Step 3: Validate the swap team codes (0-5 pairs allowed)
     private Either<CreatePredictionError, Void> validateSwapTeams(CreatePredictionCommand cmd, Season season) {
         List<CreatePredictionCommand.SwapPair> swaps = cmd.swaps();
+
+        if (swaps.isEmpty()) {
+            return Either.right(null);
+        }
 
         if (swaps.size() > MAX_INITIAL_SWAPS) {
             return Either.left(new CreatePredictionError.TooManySwaps(swaps.size(), MAX_INITIAL_SWAPS));

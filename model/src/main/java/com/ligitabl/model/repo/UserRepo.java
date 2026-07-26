@@ -51,4 +51,8 @@ public interface UserRepo {
     void updateLastLoginAt(UUID userId, OffsetDateTime at);
 
     void delete(UUID userId);
+
+    List<UUID> findUnjoinedUserIdsRegisteredAfter(UUID seasonId, OffsetDateTime registeredAfter);
+
+    List<User> findUnjoinedUsersRegisteredBefore(UUID seasonId, OffsetDateTime registeredBefore);
 }

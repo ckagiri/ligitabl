@@ -22,12 +22,15 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 import org.springframework.scheduling.TaskScheduler;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.api.scheduling.advanceround.RoundAdvancementService;
 import com.ligitabl.api.scheduling.resilience.MatchSyncCircuitBreaker;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.repo.OutboxRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 @ExtendWith(MockitoExtension.class)
@@ -53,6 +56,11 @@ class MatchSyncSchedulerTest {
     private SeasonRepo seasonRepo;
 
     @Mock
+    private OutboxRepo outboxRepo;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
+    @Mock
     private MatchSyncCircuitBreaker circuitBreaker;
 
     @Mock
@@ -75,6 +83,8 @@ class MatchSyncSchedulerTest {
                 adminNotificationService,
                 roundAdvancementService,
                 seasonRepo,
+                outboxRepo,
+                objectMapper,
                 circuitBreaker);
 
         setField(scheduler, "competitionCode", "PL");
@@ -231,6 +241,68 @@ class MatchSyncSchedulerTest {
     }
 
     @Test
+    void writesRoundLockedEvent_whenRoundStatusIsLocked() {
+        when(syncMatchesUseCase.execute(any()))
+                .thenReturn(Either.right(resultWithReason("Kickoff in 45 minutes (soon)", false)));
+
+        scheduler.triggerManualSync();
+
+        ArgumentCaptor<com.ligitabl.model.domain.OutboxEvent> captor =
+                ArgumentCaptor.forClass(com.ligitabl.model.domain.OutboxEvent.class);
+        verify(outboxRepo).save(captor.capture());
+        com.ligitabl.model.domain.OutboxEvent event = captor.getValue();
+        assertEquals("ROUND_LOCKED", event.getEventType());
+        assertEquals("round-locked:" + roundId, event.getIdempotencyKey());
+        assertEquals("round", event.getAggregateType());
+        assertEquals(roundId.toString(), event.getAggregateId());
+    }
+
+    @Test
+    void doesNotWriteRoundLockedEvent_whenRoundIsNotLocked() {
+        Season season =
+                Season.builder().id(seasonId).mainContestId(UUID.randomUUID()).build();
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(syncMatchesUseCase.execute(any())).thenReturn(Either.right(completeResult()));
+        when(triggerFinalizationUseCase.execute(any()))
+                .thenReturn(Either.left(
+                        new TriggerRoundFinalizationUseCase.TriggerFinalizationError.RoundNotFound(roundId)));
+
+        scheduler.triggerManualSync();
+
+        verify(outboxRepo, never()).save(any());
+    }
+
+    @Test
+    void repeatedLockedTicks_writeIdempotentEventEveryTime_relyingOnRepoToDedupe() {
+        // MatchSyncScheduler itself has no in-memory "already saw LOCKED" tracking — it attempts
+        // the write every tick while LOCKED, and relies entirely on OutboxRepo's ON CONFLICT DO
+        // NOTHING (simulated here by the mock always accepting the call) for idempotency.
+        when(syncMatchesUseCase.execute(any()))
+                .thenReturn(Either.right(resultWithReason("Kickoff in 45 minutes (soon)", false)))
+                .thenReturn(Either.right(resultWithReason("Kickoff in 40 minutes (soon)", false)));
+
+        scheduler.triggerManualSync();
+        scheduler.triggerManualSync();
+
+        verify(outboxRepo, times(2)).save(any());
+    }
+
+    @Test
+    void outboxWriteFailure_doesNotBreakSync() {
+        when(syncMatchesUseCase.execute(any()))
+                .thenReturn(Either.right(resultWithReason("Kickoff in 45 minutes (soon)", false)));
+        when(outboxRepo.save(any())).thenThrow(new RuntimeException("db down"));
+
+        scheduler.triggerManualSync();
+
+        // Sync still completes normally (circuit breaker success, next tick scheduled) despite
+        // the outbox write failing — the failure is caught and logged, never propagated.
+        verify(circuitBreaker).recordSuccess();
+        verify(circuitBreaker, never()).recordFailure();
+        verify(taskScheduler).schedule(any(Runnable.class), any(Instant.class));
+    }
+
+    @Test
     void failedSync_doesNotNotifyScheduleChange() {
         when(syncMatchesUseCase.execute(any()))
                 .thenReturn(Either.left(new SyncMatchesUseCase.SyncMatchesError.HierarchyError(
@@ -246,6 +318,7 @@ class MatchSyncSchedulerTest {
                 seasonId,
                 roundId,
                 5,
+                RoundStatus.LOCKED,
                 10,
                 10,
                 0,
@@ -262,6 +335,7 @@ class MatchSyncSchedulerTest {
                 seasonId,
                 roundId,
                 5,
+                RoundStatus.LOCKED,
                 10,
                 10,
                 0,
@@ -278,6 +352,7 @@ class MatchSyncSchedulerTest {
                 seasonId,
                 roundId,
                 5,
+                RoundStatus.COMPLETED,
                 10,
                 10,
                 10,

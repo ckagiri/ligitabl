@@ -4,6 +4,8 @@ import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
+import com.ligitabl.model.domain.RoundStatus;
+
 /**
  * Result of a match synchronization operation
  */
@@ -11,6 +13,7 @@ public record MatchSyncResult(
         UUID seasonId,
         UUID roundId,
         int roundPosition,
+        RoundStatus roundStatus,
         int matchesProcessed,
         int matchesUpdated,
         int newlyFinishedMatches,
@@ -25,6 +28,7 @@ public record MatchSyncResult(
                 null,
                 null,
                 0,
+                RoundStatus.UNKNOWN,
                 0,
                 0,
                 0,

@@ -1,5 +1,6 @@
 package com.ligitabl.model.infra;
 
+import static com.ligitabl.model.db.tables.TSeasonPrediction.T_SEASON_PREDICTION;
 import static com.ligitabl.model.db.tables.TUser.T_USER;
 import static com.ligitabl.model.db.tables.TUserRole.T_USER_ROLE;
 
@@ -260,6 +261,32 @@ public class UserPersistenceAdapter implements UserRepo {
     @Override
     public void delete(UUID userId) {
         dsl.deleteFrom(T_USER).where(T_USER.PK_ID.eq(userId)).execute();
+    }
+
+    @Override
+    public List<UUID> findUnjoinedUserIdsRegisteredAfter(UUID seasonId, OffsetDateTime registeredAfter) {
+        return dsl.select(T_USER.PK_ID)
+                .from(T_USER)
+                .where(T_USER.C_CREATE_DATE.gt(registeredAfter))
+                .andNotExists(dsl.selectOne()
+                        .from(T_SEASON_PREDICTION)
+                        .where(T_SEASON_PREDICTION.FK_USER_ID.eq(T_USER.PK_ID))
+                        .and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId)))
+                .fetch(T_USER.PK_ID);
+    }
+
+    @Override
+    public List<User> findUnjoinedUsersRegisteredBefore(UUID seasonId, OffsetDateTime registeredBefore) {
+        var records = dsl.selectFrom(T_USER)
+                .where(T_USER.C_CREATE_DATE.le(registeredBefore))
+                .and(T_USER.C_EMAIL_VERIFIED.isTrue())
+                .and(T_USER.C_RESULTS_EMAIL_OPT_OUT.isFalse())
+                .andNotExists(dsl.selectOne()
+                        .from(T_SEASON_PREDICTION)
+                        .where(T_SEASON_PREDICTION.FK_USER_ID.eq(T_USER.PK_ID))
+                        .and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId)))
+                .fetch();
+        return records.stream().map(this::map).toList();
     }
 
     @Override

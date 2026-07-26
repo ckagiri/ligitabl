@@ -56,7 +56,15 @@ class ThymeleafEmailTemplateRendererTest {
                 EmailCommand.EmailType.PASSWORD_RESET_CONFIRMATION, Map.of("recipientEmail", "a@b.c"),
                 EmailCommand.EmailType.EMAIL_VERIFICATION,
                         Map.of("verificationUrl", "http://x", "expiryHours", 48, "recipientEmail", "a@b.c"),
-                EmailCommand.EmailType.ROUND_RESULTS, roundResultsData());
+                EmailCommand.EmailType.ROUND_RESULTS, roundResultsData(),
+                EmailCommand.EmailType.JOIN_REMINDER,
+                        Map.of(
+                                "stage",
+                                1,
+                                "myTableUrl",
+                                "http://x/my-table",
+                                "leaderboardUrl",
+                                "http://x/leaderboard"));
 
         for (EmailCommand.EmailType type : EmailCommand.EmailType.values()) {
             var result = renderer.render(type, dataByType.get(type));
@@ -64,6 +72,23 @@ class ThymeleafEmailTemplateRendererTest {
             assertThat(result.get().subject()).isNotBlank();
             assertThat(result.get().htmlBody()).isNotBlank();
         }
+    }
+
+    @Test
+    void joinReminderSubjectEscalatesWithStage() {
+        var earlyStage = renderer.render(
+                EmailCommand.EmailType.JOIN_REMINDER,
+                Map.of("stage", 1, "myTableUrl", "http://x", "leaderboardUrl", "http://x"));
+        var midStage = renderer.render(
+                EmailCommand.EmailType.JOIN_REMINDER,
+                Map.of("stage", 4, "myTableUrl", "http://x", "leaderboardUrl", "http://x"));
+        var lateStage = renderer.render(
+                EmailCommand.EmailType.JOIN_REMINDER,
+                Map.of("stage", 11, "myTableUrl", "http://x", "leaderboardUrl", "http://x"));
+
+        assertThat(earlyStage.get().subject()).isEqualTo("Set your table for the season!");
+        assertThat(midStage.get().subject()).isEqualTo("Still haven't set your table?");
+        assertThat(lateStage.get().subject()).isEqualTo("Last chance to set your table before reminders stop");
     }
 
     @Test
@@ -88,7 +113,8 @@ class ThymeleafEmailTemplateRendererTest {
         // Negative movement on both sprint and season.
         var negativeMovement = new java.util.HashMap<>(roundResultsData());
         negativeMovement.put("sprint", new RoundResultsPayload.SprintPlacement("S8", 21, 23, 6, 120, -2, 190, false));
-        negativeMovement.put("season", new RoundResultsPayload.SeasonPlacement("Season", 1, 38, 6, 140, -2, 1900, false));
+        negativeMovement.put(
+                "season", new RoundResultsPayload.SeasonPlacement("Season", 1, 38, 6, 140, -2, 1900, false));
         assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, negativeMovement)
                         .isRight())
                 .as("negative movement")

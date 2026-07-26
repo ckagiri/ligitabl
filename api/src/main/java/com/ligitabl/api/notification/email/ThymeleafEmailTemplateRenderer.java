@@ -38,6 +38,7 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
             case PASSWORD_RESET_CONFIRMATION -> "email/password-reset-confirmation";
             case EMAIL_VERIFICATION -> "email/email-verification";
             case ROUND_RESULTS -> "email/round-results";
+            case JOIN_REMINDER -> "email/join-reminder";
         };
     }
 
@@ -48,6 +49,22 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
             case EMAIL_VERIFICATION -> "Verify your LigiPredictor email";
             case ROUND_RESULTS -> "Your Gameweek %s Results — %s points!"
                     .formatted(templateData.get("round"), templateData.get("score"));
+            case JOIN_REMINDER -> joinReminderSubject((Integer) templateData.get("stage"));
         };
+    }
+
+    /**
+     * Escalating urgency as the reminder stage climbs — the exact stage-day thresholds are
+     * config (see {@code ligitabl.email.join-reminder.stage-days}), so this buckets by range
+     * rather than matching specific day counts, and stays sensible if that config changes.
+     */
+    private String joinReminderSubject(Integer stage) {
+        if (stage == null || stage <= 1) {
+            return "Set your table for the season!";
+        }
+        if (stage < 10) {
+            return "Still haven't set your table?";
+        }
+        return "Last chance to set your table before reminders stop";
     }
 }

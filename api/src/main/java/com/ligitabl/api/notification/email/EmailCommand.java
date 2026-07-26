@@ -5,7 +5,8 @@ public interface EmailCommand {
         PASSWORD_RESET,
         PASSWORD_RESET_CONFIRMATION,
         EMAIL_VERIFICATION,
-        ROUND_RESULTS
+        ROUND_RESULTS,
+        JOIN_REMINDER
     }
 
     enum Priority {
