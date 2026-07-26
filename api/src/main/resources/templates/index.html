@@ -182,7 +182,7 @@
               🏗️ Build Your Table
             </h3>
             <p class="text-sm text-gray-600">
-              Start from the previous gameweek finish and use up to 5
+              Start from the previous gameweek's finish and use up to 5
               swaps to reorder it your way — or leave it as-is.
             </p>
           </div>
@@ -348,43 +348,16 @@
             Join Anytime. Always Something to Chase.
           </h2>
           <p class="text-gray-600 mb-6">
-            Joined mid-season? Mid-quarter? Even mid-sprint? No problem. You're
-            always competing from your first gameweek — and the next sprint is
-            always just around the corner.
+            Joined mid-season? Mid-quarter? Even mid-sprint? No problem. Your
+            scores count from day one, and sprint resets every ~5 gameweeks
+            mean late joiners are always fully competitive in the next one.
           </p>
-          <div class="bg-white rounded-lg p-5 shadow-sm text-left space-y-3">
-            <div class="flex items-start gap-3">
-              <span class="text-green-500 font-bold text-lg mt-0.5">✓</span>
-              <p class="text-sm text-gray-700">
-                <strong>Your scores count from day one.</strong> Every gameweek
-                you play adds to your current sprint and quarter totals.
-              </p>
-            </div>
-            <div class="flex items-start gap-3">
-              <span class="text-green-500 font-bold text-lg mt-0.5">✓</span>
-              <p class="text-sm text-gray-700">
-                <strong>Each round opens with a fresh batch.</strong> Study the
-                table, pick your moves, and be ready before the first fixture
-                kicks off.
-              </p>
-            </div>
-            <div class="flex items-start gap-3">
-              <span class="text-green-500 font-bold text-lg mt-0.5">✓</span>
-              <p class="text-sm text-gray-700">
-                <strong>Sprint resets level the field.</strong> Every ~5
-                gameweeks is a fresh start — late joiners can be fully
-                competitive in the very next sprint.
-              </p>
-            </div>
-          </div>
-          <div class="mt-6">
-            <a
-              th:unless="${isLoggedIn}"
-              th:href="${predictionsNavLink} ?: '/my-table/guest'"
-              class="inline-block bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition shadow-md"
-              >Try the Table →</a
-            >
-          </div>
+          <a
+            th:unless="${isLoggedIn}"
+            th:href="${predictionsNavLink} ?: '/my-table/guest'"
+            class="inline-block bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition shadow-md"
+            >Try the Table →</a
+          >
         </div>
       </div>
 
@@ -402,7 +375,7 @@
         </div>
       </div>
 
-      <!-- Scoring + Tiers + Tiebreakers (combined) -->
+      <!-- Scoring & Rankings (short teaser — full breakdown lives in the FAQ) -->
       <div
         class="bg-gradient-to-br from-purple-50 to-indigo-50 rounded-lg p-8 mb-12"
       >
@@ -410,181 +383,10 @@
           Scoring &amp; Rankings
         </h2>
         <p class="text-center text-gray-500 mb-8">
-          How points work, what they mean, and how ties are broken.
+          Every gameweek earns you a grade — from A+ Legend down
+          to D Aspirant. The leaderboard ranks by points, then zeroes, then
+          swap efficiency.
         </p>
-
-        <!-- Mechanics -->
-        <div class="max-w-2xl mx-auto mb-8">
-          <div class="bg-white rounded-lg p-6 shadow-sm">
-            <h4 class="font-semibold text-lg mb-2 text-gray-900">
-              How Points Are Calculated
-            </h4>
-            <p class="text-gray-600 mb-3">
-              You start with 200 points each gameweek. For each team, you lose
-              points equal to the position difference. Examples:
-            </p>
-            <div class="space-y-2 text-sm">
-              <div class="flex items-center gap-3 p-2 bg-green-50 rounded">
-                <span class="flex-1 text-gray-700"
-                  >Perfect
-                  <span class="text-gray-500 font-medium">(0 off)</span></span
-                >
-                <span class="flex-shrink-0 font-semibold text-green-600"
-                  >No loss 🎯</span
-                >
-              </div>
-              <div class="flex items-center gap-3 p-2 bg-yellow-50 rounded">
-                <span class="flex-1 text-gray-700"
-                  >Close call
-                  <span class="text-gray-500 font-medium">(1 off)</span></span
-                >
-                <span class="flex-shrink-0 font-semibold text-yellow-600"
-                  >-1 point</span
-                >
-              </div>
-              <div class="flex items-center gap-3 p-2 bg-orange-50 rounded">
-                <span class="flex-1 text-gray-700"
-                  >Near miss
-                  <span class="text-gray-500 font-medium">(3 off)</span></span
-                >
-                <span class="flex-shrink-0 font-semibold text-orange-600"
-                  >-3 points</span
-                >
-              </div>
-              <div class="flex items-center gap-3 p-2 bg-red-50 rounded">
-                <span class="flex-1 text-gray-700"
-                  >Big miss
-                  <span class="text-gray-500 font-medium">(6 off)</span></span
-                >
-                <span class="flex-shrink-0 font-semibold text-red-600"
-                  >-6 points</span
-                >
-              </div>
-            </div>
-            <p class="text-center text-sm text-gray-400 mt-4">
-              <strong>Formula:</strong> Your Score = 200 - Total Position Errors
-            </p>
-          </div>
-        </div>
-
-        <!-- Score Tiers -->
-        <div class="max-w-2xl mx-auto mb-8">
-          <h3 class="text-lg font-bold text-center text-gray-900 mb-2">
-            How Good Is Your Score?
-          </h3>
-          <p class="text-center text-sm text-gray-500 mb-5">
-            Each gameweek earns a grade. Chase the grade.
-          </p>
-          <div class="space-y-4">
-            <!-- Outstanding -->
-            <div>
-              <p
-                class="text-xs font-semibold text-indigo-500 uppercase tracking-wider mb-2 px-1"
-              >
-                Outstanding
-              </p>
-              <div
-                class="bg-white rounded-lg border border-indigo-100 divide-y divide-gray-100"
-              >
-                <div
-                  th:each="tier : ${T(com.ligitabl.model.domain.ScoreTier).byGroup(T(com.ligitabl.model.domain.ScoreTier.Group).OUTSTANDING)}"
-                  class="flex items-center justify-between px-4 py-2.5"
-                >
-                  <div class="flex items-center gap-3">
-                    <span class="text-xl" th:text="${tier.emoji}">🤯</span>
-                    <span
-                      class="text-xs font-bold text-indigo-500 w-6"
-                      th:text="${tier.letter}"
-                      >S+</span
-                    >
-                    <span
-                      class="text-sm font-semibold text-gray-900"
-                      th:text="${tier.tierName}"
-                      >Pinnacle</span
-                    >
-                  </div>
-                  <span
-                    class="text-xs text-gray-400 font-medium"
-                    th:text="${tier.rangeLabel}"
-                    >200</span
-                  >
-                </div>
-              </div>
-            </div>
-
-            <!-- Strong -->
-            <div>
-              <p
-                class="text-xs font-semibold text-green-500 uppercase tracking-wider mb-2 px-1"
-              >
-                Strong
-              </p>
-              <div
-                class="bg-white rounded-lg border border-green-100 divide-y divide-gray-100"
-              >
-                <div
-                  th:each="tier : ${T(com.ligitabl.model.domain.ScoreTier).byGroup(T(com.ligitabl.model.domain.ScoreTier.Group).STRONG)}"
-                  class="flex items-center justify-between px-4 py-2.5"
-                >
-                  <div class="flex items-center gap-3">
-                    <span class="text-xl" th:text="${tier.emoji}">😃</span>
-                    <span
-                      class="text-xs font-bold text-green-600 w-6"
-                      th:text="${tier.letter}"
-                      >B+</span
-                    >
-                    <span
-                      class="text-sm font-semibold text-gray-900"
-                      th:text="${tier.tierName}"
-                      >Proficient</span
-                    >
-                  </div>
-                  <span
-                    class="text-xs text-gray-400 font-medium"
-                    th:text="${tier.rangeLabel}"
-                    >180–184</span
-                  >
-                </div>
-              </div>
-            </div>
-
-            <!-- Fair -->
-            <div>
-              <p
-                class="text-xs font-semibold text-orange-400 uppercase tracking-wider mb-2 px-1"
-              >
-                Fair
-              </p>
-              <div
-                class="bg-white rounded-lg border border-orange-100 divide-y divide-gray-100"
-              >
-                <div
-                  th:each="tier : ${T(com.ligitabl.model.domain.ScoreTier).byGroup(T(com.ligitabl.model.domain.ScoreTier.Group).FAIR)}"
-                  class="flex items-center justify-between px-4 py-2.5"
-                >
-                  <div class="flex items-center gap-3">
-                    <span class="text-xl" th:text="${tier.emoji}">😬</span>
-                    <span
-                      class="text-xs font-bold text-orange-500 w-6"
-                      th:text="${tier.letter}"
-                      >C</span
-                    >
-                    <span
-                      class="text-sm font-semibold text-gray-900"
-                      th:text="${tier.tierName}"
-                      >Novice</span
-                    >
-                  </div>
-                  <span
-                    class="text-xs text-gray-400 font-medium"
-                    th:text="${tier.rangeLabel}"
-                    >145–159</span
-                  >
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
 
         <!-- Two motivation loops -->
         <div class="max-w-2xl mx-auto grid sm:grid-cols-2 gap-4 mb-8">
@@ -606,135 +408,12 @@
           </div>
         </div>
 
-        <!-- Tiebreakers — collapsible -->
-        <div class="max-w-2xl mx-auto" x-data="{ open: false }">
-          <button
-            type="button"
-            @click="open = !open"
-            class="w-full flex items-center justify-between px-5 py-3 bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition text-left"
+        <div class="text-center">
+          <a
+            th:href="@{/faq}"
+            class="inline-block text-sm font-semibold text-indigo-600 hover:text-indigo-700 transition"
+            >See the full scoring &amp; tiebreaker rules in the FAQ →</a
           >
-            <span class="ml-1 text-sm font-semibold text-gray-700"
-              >Leaderboard Tiebreakers</span
-            >
-            <svg
-              class="mr-1 h-4 w-4 text-gray-400 transition-transform duration-200"
-              :class="open ? 'rotate-180' : ''"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M19 9l-7 7-7-7"
-              />
-            </svg>
-          </button>
-
-          <div x-show="open" x-transition x-cloak class="mt-3 space-y-3">
-            <div
-              class="flex items-start gap-4 p-4 bg-indigo-50 rounded-lg border border-indigo-100"
-            >
-              <div
-                class="flex-shrink-0 w-7 h-7 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold"
-              >
-                1
-              </div>
-              <div>
-                <h4 class="font-semibold text-sm text-gray-900">
-                  Total Points
-                </h4>
-                <p class="text-xs text-gray-600 mt-0.5">
-                  Your cumulative score for the competition period — sprint,
-                  quarter, or full season. Highest wins.
-                </p>
-              </div>
-            </div>
-            <div
-              class="flex items-start gap-4 p-4 bg-green-50 rounded-lg border border-green-100"
-            >
-              <div
-                class="flex-shrink-0 w-7 h-7 bg-green-600 text-white rounded-full flex items-center justify-center text-xs font-bold"
-              >
-                2
-              </div>
-              <div>
-                <h4 class="font-semibold text-sm text-gray-900">
-                  Zeroes
-                  <span class="text-xs font-normal text-green-700 ml-1"
-                    >— worth their weight in gold</span
-                  >
-                </h4>
-                <p class="text-xs text-gray-600 mt-0.5">
-                  Count of perfect predictions — position matched exactly (0
-                  positions off). The more the better.
-                </p>
-              </div>
-            </div>
-            <div
-              class="flex items-start gap-4 p-4 bg-yellow-50 rounded-lg border border-yellow-100"
-            >
-              <div
-                class="flex-shrink-0 w-7 h-7 bg-yellow-500 text-white rounded-full flex items-center justify-center text-xs font-bold"
-              >
-                3
-              </div>
-              <div>
-                <h4 class="font-semibold text-sm text-gray-900">
-                  Fewest Swaps Used
-                </h4>
-                <p class="text-xs text-gray-600 mt-0.5">
-                  Total swaps used during the phase. Fewer swaps for the same
-                  score signals higher efficiency and wins the tiebreaker.
-                </p>
-              </div>
-            </div>
-            <div
-              class="flex items-start gap-4 p-4 bg-orange-50 rounded-lg border border-orange-100"
-            >
-              <div
-                class="flex-shrink-0 w-7 h-7 bg-orange-500 text-white rounded-full flex items-center justify-center text-xs font-bold"
-              >
-                4
-              </div>
-              <div>
-                <h4 class="font-semibold text-sm text-gray-900">
-                  Best Single Gameweek Score
-                </h4>
-                <p class="text-xs text-gray-600 mt-0.5">
-                  Your highest scoring gameweek within the phase. Peak
-                  performance counts.
-                </p>
-              </div>
-            </div>
-            <div
-              class="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100"
-            >
-              <div
-                class="flex-shrink-0 w-7 h-7 bg-gray-400 text-white rounded-full flex items-center justify-center text-xs font-bold"
-              >
-                5
-              </div>
-              <div>
-                <h4 class="font-semibold text-sm text-gray-700">
-                  Internal Tiebreak
-                </h4>
-                <p class="text-xs text-gray-500 mt-0.5">
-                  In the extremely rare case of a perfect tie across all
-                  criteria, an internal identifier is used. Focus on points and
-                  zeroes long before worrying about this.
-                </p>
-              </div>
-            </div>
-            <p class="text-center text-xs text-gray-400 pt-1">
-              The goal is simple:
-              <strong class="text-gray-600"
-                >more points and more zeroes.</strong
-              >
-              Everything else is a footnote.
-            </p>
-          </div>
         </div>
       </div>
 

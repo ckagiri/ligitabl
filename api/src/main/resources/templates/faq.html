@@ -14,7 +14,7 @@
           Frequently Asked
         </h1>
         <p class="text-base sm:text-lg text-indigo-200 max-w-2xl mx-auto">
-          Everything about swaps, entering the competition, and how the season
+          Everything about swaps, entering the competition, and how scoring
           works.
         </p>
       </div>
@@ -57,51 +57,24 @@
                 class="text-sm text-gray-600 pb-3"
               >
                 <p class="mb-3">
-                  Everyone who enters the competition builds a Premier
-                  League table prediction — the order they think the 20
-                  teams will appear after the upcoming gameweek has been
-                  played. They do this by tapping two teams to swap them,
-                  and submitting their prediction.
+                  Everyone starts by building a Premier League table
+                  prediction — the order you think the 20 teams will finish
+                  after the upcoming gameweek — much like building a squad in
+                  Fantasy Premier League. You do this by tapping two teams to
+                  swap them, then <strong class="text-gray-900"
+                    >submitting</strong
+                  >.
                 </p>
                 <p>
-                  The real league table is then used to assign points to
-                  every player's prediction for that gameweek. A gameweek
-                  is a round of fixtures — the same idea as "Gameweek" in
-                  Fantasy Premier League.
+                  From there, you manage that prediction across the entire
+                  season, repositioning your table with swaps as results come
+                  in and a new gameweek opens. The real league table decides
+                  your points each gameweek — a gameweek is a round of
+                  fixtures, the same idea as "Gameweek" in Fantasy Premier
+                  League — and you can compete on the main leaderboard or in
+                  private leagues with friends, family and colleagues.
                 </p>
               </div>
-            </div>
-            <div class="py-1" x-data="{ open: false }">
-              <button
-                type="button"
-                @click="open = !open"
-                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
-              >
-                <span>Is LigiPredictor free?</span>
-                <svg
-                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
-                  :class="open ? 'rotate-180' : ''"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-              <p
-                x-show="open"
-                x-transition
-                x-cloak
-                class="text-sm text-gray-600 pb-3"
-              >
-                Yes. It's free to play, no payments ever — just bragging rights
-                and a mini-league to prove you called it.
-              </p>
             </div>
             <div class="py-1" x-data="{ open: false }">
               <button
@@ -171,6 +144,38 @@
                 They're use-it-or-lose-it. Whatever you don't use before you
                 enter simply doesn't carry forward — there's no penalty, and 0
                 of 5 used is a completely fine way to enter.
+              </p>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>Is LigiPredictor free?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                Yes. It's free to play, no payments ever — just bragging rights
+                and a mini-league to prove you called it.
               </p>
             </div>
           </div>
@@ -440,18 +445,127 @@
                   />
                 </svg>
               </button>
-              <p
-                x-show="open"
-                x-transition
-                x-cloak
-                class="text-sm text-gray-600 pb-3"
-              >
-                Every gameweek score earns a grade — S Pinnacle at a perfect
-                200, then A+ Legend (195–199), A Elite (190–194), A- Expert
-                (185–189), B+ Proficient (180–184), B Advanced (170–179), C+
-                Competent (160–169), C Novice (145–159), and D Aspirant below
-                145. Even an off week still earns a grade to chase.
-              </p>
+              <div x-show="open" x-transition x-cloak class="pb-3">
+                <p class="text-sm text-gray-600 mb-4">
+                  Every gameweek score earns a grade — chase it, even on a tough
+                  week.
+                </p>
+                <div class="space-y-4">
+                  <!-- Outstanding -->
+                  <div>
+                    <p
+                      class="text-xs font-semibold text-indigo-500 uppercase tracking-wider mb-2 px-1"
+                    >
+                      Outstanding
+                    </p>
+                    <div
+                      class="bg-white rounded-lg border border-indigo-100 divide-y divide-gray-100"
+                    >
+                      <div
+                        th:each="tier : ${T(com.ligitabl.model.domain.ScoreTier).byGroup(T(com.ligitabl.model.domain.ScoreTier.Group).OUTSTANDING)}"
+                        class="flex items-center justify-between px-4 py-2.5"
+                      >
+                        <div class="flex items-center gap-3">
+                          <span class="text-xl" th:text="${tier.emoji}"
+                            >🤯</span
+                          >
+                          <span
+                            class="text-xs font-bold text-indigo-500 w-6"
+                            th:text="${tier.letter}"
+                            >S+</span
+                          >
+                          <span
+                            class="text-sm font-semibold text-gray-900"
+                            th:text="${tier.tierName}"
+                            >Pinnacle</span
+                          >
+                        </div>
+                        <span
+                          class="text-xs text-gray-400 font-medium"
+                          th:text="${tier.rangeLabel}"
+                          >200</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Strong -->
+                  <div>
+                    <p
+                      class="text-xs font-semibold text-green-500 uppercase tracking-wider mb-2 px-1"
+                    >
+                      Strong
+                    </p>
+                    <div
+                      class="bg-white rounded-lg border border-green-100 divide-y divide-gray-100"
+                    >
+                      <div
+                        th:each="tier : ${T(com.ligitabl.model.domain.ScoreTier).byGroup(T(com.ligitabl.model.domain.ScoreTier.Group).STRONG)}"
+                        class="flex items-center justify-between px-4 py-2.5"
+                      >
+                        <div class="flex items-center gap-3">
+                          <span class="text-xl" th:text="${tier.emoji}"
+                            >😃</span
+                          >
+                          <span
+                            class="text-xs font-bold text-green-600 w-6"
+                            th:text="${tier.letter}"
+                            >B+</span
+                          >
+                          <span
+                            class="text-sm font-semibold text-gray-900"
+                            th:text="${tier.tierName}"
+                            >Proficient</span
+                          >
+                        </div>
+                        <span
+                          class="text-xs text-gray-400 font-medium"
+                          th:text="${tier.rangeLabel}"
+                          >180–184</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Fair -->
+                  <div>
+                    <p
+                      class="text-xs font-semibold text-orange-400 uppercase tracking-wider mb-2 px-1"
+                    >
+                      Fair
+                    </p>
+                    <div
+                      class="bg-white rounded-lg border border-orange-100 divide-y divide-gray-100"
+                    >
+                      <div
+                        th:each="tier : ${T(com.ligitabl.model.domain.ScoreTier).byGroup(T(com.ligitabl.model.domain.ScoreTier.Group).FAIR)}"
+                        class="flex items-center justify-between px-4 py-2.5"
+                      >
+                        <div class="flex items-center gap-3">
+                          <span class="text-xl" th:text="${tier.emoji}"
+                            >😬</span
+                          >
+                          <span
+                            class="text-xs font-bold text-orange-500 w-6"
+                            th:text="${tier.letter}"
+                            >C</span
+                          >
+                          <span
+                            class="text-sm font-semibold text-gray-900"
+                            th:text="${tier.tierName}"
+                            >Novice</span
+                          >
+                        </div>
+                        <span
+                          class="text-xs text-gray-400 font-medium"
+                          th:text="${tier.rangeLabel}"
+                          >145–159</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
             <div class="py-1" x-data="{ open: false }">
               <button
