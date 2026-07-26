@@ -143,7 +143,7 @@ public class OutboxEventProcessor {
         JoinReminderPayload payload = objectMapper.readValue(event.getPayload(), JoinReminderPayload.class);
 
         EmailContent content = emailTemplateRenderer
-                .render(EmailCommand.EmailType.JOIN_REMINDER, joinReminderTemplateData())
+                .render(EmailCommand.EmailType.JOIN_REMINDER, joinReminderTemplateData(payload.stage()))
                 .fold(
                         error -> {
                             throw new IllegalStateException("Template render failed: " + error);
@@ -157,8 +157,9 @@ public class OutboxEventProcessor {
                 });
     }
 
-    private Map<String, Object> joinReminderTemplateData() {
+    private Map<String, Object> joinReminderTemplateData(int stage) {
         Map<String, Object> data = new HashMap<>();
+        data.put("stage", stage);
         data.put("myTableUrl", frontendUrl + "/my-table");
         data.put("leaderboardUrl", frontendUrl + "/leaderboard");
         return data;

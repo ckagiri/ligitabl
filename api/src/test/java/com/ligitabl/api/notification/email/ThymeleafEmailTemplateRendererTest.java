@@ -58,7 +58,7 @@ class ThymeleafEmailTemplateRendererTest {
                         Map.of("verificationUrl", "http://x", "expiryHours", 48, "recipientEmail", "a@b.c"),
                 EmailCommand.EmailType.ROUND_RESULTS, roundResultsData(),
                 EmailCommand.EmailType.JOIN_REMINDER,
-                        Map.of("myTableUrl", "http://x/my-table", "leaderboardUrl", "http://x/leaderboard"));
+                        Map.of("stage", 1, "myTableUrl", "http://x/my-table", "leaderboardUrl", "http://x/leaderboard"));
 
         for (EmailCommand.EmailType type : EmailCommand.EmailType.values()) {
             var result = renderer.render(type, dataByType.get(type));
@@ -66,6 +66,20 @@ class ThymeleafEmailTemplateRendererTest {
             assertThat(result.get().subject()).isNotBlank();
             assertThat(result.get().htmlBody()).isNotBlank();
         }
+    }
+
+    @Test
+    void joinReminderSubjectEscalatesWithStage() {
+        var earlyStage = renderer.render(
+                EmailCommand.EmailType.JOIN_REMINDER, Map.of("stage", 1, "myTableUrl", "http://x", "leaderboardUrl", "http://x"));
+        var midStage = renderer.render(
+                EmailCommand.EmailType.JOIN_REMINDER, Map.of("stage", 4, "myTableUrl", "http://x", "leaderboardUrl", "http://x"));
+        var lateStage = renderer.render(
+                EmailCommand.EmailType.JOIN_REMINDER, Map.of("stage", 11, "myTableUrl", "http://x", "leaderboardUrl", "http://x"));
+
+        assertThat(earlyStage.get().subject()).isEqualTo("Set your table for the season!");
+        assertThat(midStage.get().subject()).isEqualTo("Still haven't set your table?");
+        assertThat(lateStage.get().subject()).isEqualTo("Last chance to set your table before reminders stop");
     }
 
     @Test

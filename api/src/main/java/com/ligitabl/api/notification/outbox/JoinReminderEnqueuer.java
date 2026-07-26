@@ -81,7 +81,7 @@ public class JoinReminderEnqueuer {
                 }
 
                 JoinReminderPayload payload = new JoinReminderPayload(
-                        user.getId(), user.getEmail().value());
+                        user.getId(), user.getEmail().value(), stage);
                 String json = objectMapper.writeValueAsString(payload);
                 String idempotencyKey = "join-reminder:%s:%d".formatted(user.getId(), stage);
                 OutboxEvent event = OutboxEvent.create(
