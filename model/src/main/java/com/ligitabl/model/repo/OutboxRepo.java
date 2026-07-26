@@ -58,4 +58,12 @@ public interface OutboxRepo {
      * {@code since}.
      */
     boolean existsSentEventsOfTypeSince(String eventType, Instant since);
+
+    /**
+     * True if any event of {@code eventType} was created at or after {@code since},
+     * regardless of its current status. Used to detect that a batch job already ran
+     * in a given window (e.g. today), independent of whether any of its rows have
+     * been sent yet.
+     */
+    boolean existsEventsOfTypeCreatedSince(String eventType, Instant since);
 }

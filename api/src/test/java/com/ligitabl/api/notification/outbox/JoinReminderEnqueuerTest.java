@@ -98,6 +98,17 @@ class JoinReminderEnqueuerTest {
     }
 
     @Test
+    void skipsEntirely_whenJoinReminderAlreadyEnqueuedToday() {
+        when(outboxRepo.existsEventsOfTypeCreatedSince(eq(OutboxEventTypes.JOIN_REMINDER), any()))
+                .thenReturn(true);
+
+        enqueuer.enqueueDueReminders();
+
+        verifyNoInteractions(seasonRepo, userRepo);
+        verify(outboxRepo, never()).save(any());
+    }
+
+    @Test
     void skipsEntirely_whenNoActiveSeason() {
         when(seasonRepo.findActiveSeason("pl")).thenReturn(Optional.empty());
 

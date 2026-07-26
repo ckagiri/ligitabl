@@ -163,6 +163,7 @@ public class OutboxEventProcessor {
         data.put("stage", stage);
         data.put("myTableUrl", frontendUrl + "/my-table");
         data.put("leaderboardUrl", frontendUrl + "/leaderboard");
+        data.put("faqUrl", frontendUrl + "/faq");
         return data;
     }
 
