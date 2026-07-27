@@ -8,7 +8,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="_csrf" th:content="${_csrf?.token}" />
     <meta name="_csrf_header" th:content="${_csrf?.headerName}" />
-    <title th:text="${pageTitle != null ? pageTitle + ' | LigiPredictor' : 'LigiPredictor'}">LigiPredictor</title>
+    <title
+      th:text="${pageTitle != null ? pageTitle + ' | LigiPredictor' : 'LigiPredictor'}"
+    >
+      LigiPredictor
+    </title>
 
     <!-- Favicon -->
     <link rel="icon" type="image/svg+xml" th:href="@{/favicon.svg}" />
@@ -187,30 +191,61 @@
       }
 
       @keyframes popupBackdropIn {
-        from { opacity: 0; }
-        to   { opacity: 1; }
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
       }
       @keyframes popupBackdropOut {
-        from { opacity: 1; }
-        to   { opacity: 0; }
+        from {
+          opacity: 1;
+        }
+        to {
+          opacity: 0;
+        }
       }
       @keyframes popupCardIn {
-        from { opacity: 0; transform: translateY(24px); }
-        to   { opacity: 1; transform: translateY(0); }
+        from {
+          opacity: 0;
+          transform: translateY(24px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
       }
       @keyframes popupCardOut {
-        from { opacity: 1; transform: translateY(0); }
-        to   { opacity: 0; transform: translateY(40px); }
+        from {
+          opacity: 1;
+          transform: translateY(0);
+        }
+        to {
+          opacity: 0;
+          transform: translateY(40px);
+        }
       }
 
-      .popup-backdrop-enter { animation: popupBackdropIn 200ms ease-out forwards; }
-      .popup-backdrop-leave { animation: popupBackdropOut 300ms ease-in-out forwards; }
-      .popup-card-enter     { animation: popupCardIn 220ms ease-out forwards; }
-      .popup-card-leave     { animation: popupCardOut 300ms ease-in-out forwards; }
+      .popup-backdrop-enter {
+        animation: popupBackdropIn 200ms ease-out forwards;
+      }
+      .popup-backdrop-leave {
+        animation: popupBackdropOut 300ms ease-in-out forwards;
+      }
+      .popup-card-enter {
+        animation: popupCardIn 220ms ease-out forwards;
+      }
+      .popup-card-leave {
+        animation: popupCardOut 300ms ease-in-out forwards;
+      }
     </style>
-    <script th:if="${not #strings.isEmpty(umamiWebsiteId)}"
-            defer src="https://cloud.umami.is/script.js"
-            th:attr="data-website-id=${umamiWebsiteId}"></script>
+    <script
+      th:if="${not #strings.isEmpty(umamiWebsiteId)}"
+      defer
+      src="https://cloud.umami.is/script.js"
+      th:attr="data-website-id=${umamiWebsiteId}"
+    ></script>
   </head>
   <body class="bg-gray-50 min-h-screen" x-data="{ mobileMenuOpen: false }">
     <!-- Loading Toast (Fixed Position - Responsive) -->
@@ -275,8 +310,26 @@
                 class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
                 >Contests</a
               >
-              <!-- More dropdown: About/FAQ (desktop) -->
-              <div class="relative" x-data="{ moreMenuOpen: false }">
+              <!-- Guests: About/FAQ shown directly (desktop) -->
+              <a
+                th:unless="${isLoggedIn}"
+                th:href="@{/about}"
+                class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+                >About</a
+              >
+              <a
+                th:unless="${isLoggedIn}"
+                th:href="@{/faq}"
+                class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+                >FAQ</a
+              >
+
+              <!-- Logged in: About/FAQ tucked under More dropdown (desktop) -->
+              <div
+                th:if="${isLoggedIn}"
+                class="relative"
+                x-data="{ moreMenuOpen: false }"
+              >
                 <button
                   @click="moreMenuOpen = !moreMenuOpen"
                   @click.away="moreMenuOpen = false"
@@ -329,7 +382,11 @@
               </div>
 
               <!-- Admin dropdown (desktop) -->
-              <div th:if="${isAdmin}" class="relative" x-data="{ adminMenuOpen: false }">
+              <div
+                th:if="${isAdmin}"
+                class="relative"
+                x-data="{ adminMenuOpen: false }"
+              >
                 <button
                   @click="adminMenuOpen = !adminMenuOpen"
                   @click.away="adminMenuOpen = false"
@@ -580,7 +637,8 @@
               class="inline-flex items-center justify-center h-7 w-7 rounded-full bg-indigo-600 text-white text-xs font-semibold select-none"
               th:with="parts=${#strings.arraySplit(userDisplayName, ' ')}"
               th:text="${#strings.toUpperCase(#arrays.length(parts) > 1 ? #strings.substring(parts[0], 0, 1) + #strings.substring(parts[1], 0, 1) : (#strings.length(userDisplayName) >= 2 ? #strings.substring(userDisplayName, 0, 2) : userDisplayName))}"
-            >AB</span>
+              >AB</span
+            >
           </div>
 
           <!-- Mobile menu button -->
@@ -652,16 +710,57 @@
               class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
               >Contests</a
             >
+            <!-- Guests: About/FAQ shown directly (mobile) -->
             <a
+              th:unless="${isLoggedIn}"
               th:href="@{/about}"
               class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
               >About</a
             >
             <a
+              th:unless="${isLoggedIn}"
               th:href="@{/faq}"
               class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
               >FAQ</a
             >
+
+            <!-- Logged in: About/FAQ tucked under a collapsible More section (mobile) -->
+            <div th:if="${isLoggedIn}" x-data="{ mobileMoreOpen: false }">
+              <button
+                type="button"
+                @click="mobileMoreOpen = !mobileMoreOpen"
+                class="w-full flex items-center justify-between text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+              >
+                <span>More</span>
+                <svg
+                  class="h-4 w-4"
+                  :class="{ 'rotate-180': mobileMoreOpen }"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  style="transition: transform 200ms"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <div x-show="mobileMoreOpen" x-cloak class="pl-3">
+                <a
+                  th:href="@{/about}"
+                  class="block text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                  >About</a
+                >
+                <a
+                  th:href="@{/faq}"
+                  class="block text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                  >FAQ</a
+                >
+              </div>
+            </div>
             <a
               th:if="${isAdmin}"
               th:href="@{/admin/seasons}"
@@ -914,9 +1013,8 @@
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="text-center text-gray-500 text-sm">
           <p>
-            LigiPredictor
-            &copy; <span
-              th:text="${#calendars.format(#calendars.createNow(), 'yyyy')}"
+            LigiPredictor &copy;
+            <span th:text="${#calendars.format(#calendars.createNow(), 'yyyy')}"
               >2026</span
             >
             All rights reserved.

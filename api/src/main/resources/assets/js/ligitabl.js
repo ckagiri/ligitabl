@@ -481,7 +481,8 @@ window.Ligitabl.predictionPage = function (el) {
                     this._clearStorage(GUEST_STORAGE_KEY);
                 }
 
-                // 2. No auth data — fall back to guest localStorage (initial prediction only, not opening round)
+                // 2. No auth data — fall back to guest localStorage (initial prediction or
+                // pre-season registration; never for the opening round)
                 if (this.teams.length === 0 && !isOpeningRound) {
                     const guestPrediction = loadGuestPrediction();
                     if (guestPrediction) {
@@ -497,6 +498,14 @@ window.Ligitabl.predictionPage = function (el) {
                         });
                         this.swapStack = _extractSwapStack(guestPrediction);
                         this.importedFromGuest = true;
+                        // Consume the guest copy immediately: persist it under this user's own
+                        // auth key and drop the guest key. Without this, a still-unedited
+                        // pre-season registration keeps re-reading whatever guest localStorage
+                        // happens to be in the browser on every visit (e.g. stale data from an
+                        // unrelated guest session), instead of importing once and then sticking
+                        // to the user's own saved state.
+                        this._saveToStorage(AUTH_STORAGE_KEY);
+                        this._clearStorage(GUEST_STORAGE_KEY);
                     }
                 }
             } else {
