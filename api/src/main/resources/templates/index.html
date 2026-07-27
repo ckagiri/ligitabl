@@ -13,6 +13,25 @@
         /*]]>*/
       </script>
 
+      <!-- Pre-Season Banner -->
+      <div
+        th:if="${isPreSeason}"
+        class="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3 mb-6 text-center"
+      >
+        <p class="text-sm text-indigo-800">
+          <span class="font-semibold">🚀 Pre-season is open</span> — sign up
+          now to lock in your spot before Gameweek 1.
+          <th:block th:if="${daysToPredictions != null}">
+            Predictions open in
+            <strong th:text="${daysToPredictions}">3</strong>
+            day<th:block th:if="${daysToPredictions != 1}">s</th:block>.
+          </th:block>
+          <th:block th:if="${predictionsAboutToStart == true}">
+            Predictions are about to open.
+          </th:block>
+        </p>
+      </div>
+
       <!-- Hero -->
       <div
         class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 sm:p-12 mb-12 text-white"
@@ -59,12 +78,20 @@
                 >View Leaderboard</a
               >
             </div>
-            <p th:unless="${isLoggedIn}" class="text-sm text-indigo-200 mb-6">
+            <p th:unless="${isLoggedIn}" class="text-sm text-indigo-200 mb-2">
               Already have an account?
               <a
                 th:href="@{/auth/login}"
                 class="text-white font-semibold underline underline-offset-2 hover:text-indigo-100 transition"
                 >Sign in</a
+              >
+            </p>
+            <p class="text-sm text-indigo-200 mb-6">
+              Have questions?
+              <a
+                th:href="@{/faq}"
+                class="text-white font-semibold underline underline-offset-2 hover:text-indigo-100 transition"
+                >See the FAQ →</a
               >
             </p>
           </div>
