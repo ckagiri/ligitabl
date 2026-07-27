@@ -481,9 +481,10 @@ window.Ligitabl.predictionPage = function (el) {
                     this._clearStorage(GUEST_STORAGE_KEY);
                 }
 
-                // 2. No auth data — fall back to guest localStorage (initial prediction or
-                // pre-season registration; never for the opening round)
-                if (this.teams.length === 0 && !isOpeningRound) {
+                // 2. No auth data — fall back to guest localStorage. Only for a genuine
+                // initial-prediction signup, never for pre-season registration or the
+                // opening round.
+                if (this.teams.length === 0 && isInitialPrediction && !isOpeningRound) {
                     const guestPrediction = loadGuestPrediction();
                     if (guestPrediction) {
                         this.teams = _extractTeams(guestPrediction).map((t, idx) => {
