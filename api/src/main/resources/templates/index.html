@@ -20,14 +20,17 @@
       >
         <p class="text-sm text-indigo-800">
           <span class="font-semibold">🚀 Pre-season is open</span> — sign up now
-          to lock in your spot before Gameweek 1.
+          and be ready
           <th:block th:if="${daysToPredictions != null}">
-            Predictions open in
+            — predictions open in
             <strong th:text="${daysToPredictions}">3</strong>
             day<th:block th:if="${daysToPredictions != 1}">s</th:block>.
           </th:block>
           <th:block th:if="${predictionsAboutToStart == true}">
-            Predictions are about to open.
+            — predictions are about to open.
+          </th:block>
+          <th:block th:if="${daysToPredictions == null and predictionsAboutToStart != true}">
+            for kickoff.
           </th:block>
         </p>
       </div>
