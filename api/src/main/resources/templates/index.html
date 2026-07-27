@@ -19,8 +19,8 @@
         class="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3 mb-6 text-center"
       >
         <p class="text-sm text-indigo-800">
-          <span class="font-semibold">🚀 Pre-season is open</span> — sign up
-          now to lock in your spot before Gameweek 1.
+          <span class="font-semibold">🚀 Pre-season is open</span> — sign up now
+          to lock in your spot before Gameweek 1.
           <th:block th:if="${daysToPredictions != null}">
             Predictions open in
             <strong th:text="${daysToPredictions}">3</strong>
@@ -241,8 +241,8 @@
             </h3>
             <p class="text-sm text-gray-600">
               No daily grind required — get 1 swap every 24 hours until the
-              gameweek's first match kicks off. Earn points once all the matches
-              finish, and chase trophies all season long.
+              gameweek's first match kicks off. Earn points every gameweek once
+              all its matches finish, and chase trophies all season long.
             </p>
             <div class="mt-3" x-data="{ open: false }">
               <button
@@ -336,8 +336,9 @@
           </h2>
           <p class="text-gray-600 mb-6">
             Joined mid-season? Mid-quarter? Even mid-sprint? No problem. Your
-            scores count from day one, and the sprint-resets that occur every ~5 gameweeks mean
-            late joiners are always fully competitive in the next one.
+            points count from day one, and the sprint-resets that occur every ~5
+            gameweeks mean late joiners are always fully competitive in the next
+            one.
           </p>
           <a
             th:unless="${isLoggedIn}"

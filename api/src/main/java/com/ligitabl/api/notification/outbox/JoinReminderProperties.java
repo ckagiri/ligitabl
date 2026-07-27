@@ -24,5 +24,5 @@ import lombok.Data;
 public class JoinReminderProperties {
     private boolean enabled = false;
     private List<Integer> stageDays = List.of(1, 4, 11);
-    private int maxStaleDays = 45;
+    private int maxStaleDays = 60;
 }

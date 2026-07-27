@@ -132,7 +132,7 @@ ligitabl:
       # stage reached, never more than one per run, and never again after the last stage.
       stage-days: ${JOIN_REMINDER_STAGE_DAYS:1,4,11}
       # Hard-exclude users not seen (login, or last profile update) in this many days.
-      max-stale-days: ${JOIN_REMINDER_MAX_STALE_DAYS:45}
+      max-stale-days: ${JOIN_REMINDER_MAX_STALE_DAYS:60}
       cron: ${JOIN_REMINDER_CRON:0 0 9 * * *}
 
   slack:
