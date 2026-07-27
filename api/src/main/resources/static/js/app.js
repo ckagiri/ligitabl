@@ -811,7 +811,6 @@ window.Ligitabl.predictionPage = function(el) {
         if (authPrediction) {
           this.teams = _extractTeams(authPrediction).map((t, idx) => ({ ...t, position: idx + 1 }));
           this.swapStack = _extractSwapStack(authPrediction);
-          this._clearStorage(GUEST_STORAGE_KEY);
         }
         if (this.teams.length === 0 && isInitialPrediction && !isOpeningRound) {
           const guestPrediction = loadGuestPrediction();
@@ -829,7 +828,6 @@ window.Ligitabl.predictionPage = function(el) {
             this.swapStack = _extractSwapStack(guestPrediction);
             this.importedFromGuest = true;
             this._saveToStorage(AUTH_STORAGE_KEY);
-            this._clearStorage(GUEST_STORAGE_KEY);
           }
         }
       } else {
@@ -842,6 +840,7 @@ window.Ligitabl.predictionPage = function(el) {
       if (this.teams.length === 0) {
         this.teams = Ligitabl._mapServerPredictions(predictions);
       }
+      this._clearStorage(GUEST_STORAGE_KEY);
       this.originalTeams = Ligitabl._mapServerPredictions(predictions);
       const savePrefs = () => Ligitabl._savePrefs({
         showStandings: this.showStandings,

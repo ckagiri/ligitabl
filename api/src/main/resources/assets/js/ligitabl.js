@@ -477,8 +477,6 @@ window.Ligitabl.predictionPage = function (el) {
                 if (authPrediction) {
                     this.teams = _extractTeams(authPrediction).map((t, idx) => ({...t, position: idx + 1}));
                     this.swapStack = _extractSwapStack(authPrediction);
-                    // Clear stale guest storage since auth has taken over
-                    this._clearStorage(GUEST_STORAGE_KEY);
                 }
 
                 // 2. No auth data — fall back to guest localStorage. Only for a genuine
@@ -500,13 +498,11 @@ window.Ligitabl.predictionPage = function (el) {
                         this.swapStack = _extractSwapStack(guestPrediction);
                         this.importedFromGuest = true;
                         // Consume the guest copy immediately: persist it under this user's own
-                        // auth key and drop the guest key. Without this, a still-unedited
-                        // pre-season registration keeps re-reading whatever guest localStorage
-                        // happens to be in the browser on every visit (e.g. stale data from an
-                        // unrelated guest session), instead of importing once and then sticking
-                        // to the user's own saved state.
+                        // auth key. Without this, a still-unedited pre-season registration
+                        // would keep re-reading whatever guest localStorage happens to be in
+                        // the browser on every visit, instead of importing once and then
+                        // sticking to the user's own saved state.
                         this._saveToStorage(AUTH_STORAGE_KEY);
-                        this._clearStorage(GUEST_STORAGE_KEY);
                     }
                 }
             } else {
@@ -522,6 +518,11 @@ window.Ligitabl.predictionPage = function (el) {
             if (this.teams.length === 0) {
                 this.teams = Ligitabl._mapServerPredictions(predictions);
             }
+
+            // This is the authenticated prediction page — guest storage is never the source
+            // of truth here past the one-time import above, so it's always stale from this
+            // point on regardless of which branch populated this.teams.
+            this._clearStorage(GUEST_STORAGE_KEY);
 
             // originalTeams always reflects server state — diffs are against what was last submitted
             this.originalTeams = Ligitabl._mapServerPredictions(predictions);
