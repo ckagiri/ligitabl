@@ -41,21 +41,13 @@ public class GetUserPredictionUseCase {
     private final StandingsRepo standingsRepo;
     private final MatchRepo matchRepo;
     private final EntryRepo entryRepo;
+    private final PreviewRankingsSupport previewRankingsSupport;
 
     /**
      * Execute the use case with user context resolution.
      */
     public Either<UseCaseError, UserPredictionViewData> execute(GetUserPredictionQuery query) {
         return Either.catching(() -> buildViewData(query), ErrorMapper::toUseCaseError);
-    }
-
-    /**
-     * Default/starting rankings for a season and round — the same baseline shown to guests and
-     * users without a prediction yet. Exposed for lightweight previews (e.g. the homepage) that
-     * need default rankings without the full guest/authenticated view-building machinery.
-     */
-    public List<TeamRank> getPreviewRankings(UUID seasonId, int currentRound) {
-        return getPreviousRoundRankings(seasonId, currentRound).rankings();
     }
 
     /**
@@ -117,7 +109,8 @@ public class GetUserPredictionUseCase {
      * Always returns fallback rankings with READONLY access mode.
      */
     private UserPredictionViewData buildGuestView(GetUserPredictionQuery qry, RequestContext rc) {
-        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), rc.currentRound());
+        PreviewRankingsSupport.RankingsWithSource rankingsWithSource =
+                previewRankingsSupport.getPreviousRoundRankings(qry.seasonId(), rc.currentRound());
 
         int standingsRound = rc.isCurrentRound() ? rc.currentRound() : rc.viewingRound();
         StandingsMaps standingsMaps = getStandingsMaps(qry.seasonId(), standingsRound);
@@ -304,7 +297,8 @@ public class GetUserPredictionUseCase {
             atRoundNumber = rc.currentRoundStatus() == RoundStatus.OPEN ? rc.currentRound() : rc.currentRound() + 1;
         }
 
-        RankingsWithSource rankingsWithSource = getPreviousRoundRankings(qry.seasonId(), rc.currentRound());
+        PreviewRankingsSupport.RankingsWithSource rankingsWithSource =
+                previewRankingsSupport.getPreviousRoundRankings(qry.seasonId(), rc.currentRound());
 
         return UserPredictionViewData.builder()
                 .rankings(rankingsWithSource.rankings())
@@ -382,47 +376,6 @@ public class GetUserPredictionUseCase {
     }
 
     /**
-     * Get previous round standings as fallback for users without a prediction.
-     *
-     * Always uses currentRound - 2, giving users contrast to help decide where to move teams.
-     * Falls back to season baseline when currentRound < 3 (GW1/GW2) or standings unavailable.
-     *
-     * GW5 → GW3, GW3 → GW1, GW2/GW1 → season baseline.
-     */
-    private RankingsWithSource getPreviousRoundRankings(UUID seasonId, int currentRound) {
-        if (currentRound < 3) {
-            return getSeasonBaselineRankings(seasonId);
-        }
-
-        var roundStandings = standingsRepo.findBySeasonAndRoundPosition(seasonId, currentRound - 2);
-        if (roundStandings.isEmpty()) {
-            return getSeasonBaselineRankings(seasonId);
-        }
-
-        return new RankingsWithSource(
-                RankingSource.PREVIOUS_ROUND_STANDINGS, convertStandingsRankingsToTeamRankings(roundStandings.get()));
-    }
-
-    private List<TeamRank> convertStandingsRankingsToTeamRankings(Standings standings) {
-        return standings.getRankings().stream()
-                .map(StandingsTeamRank::getRanking)
-                .toList();
-    }
-
-    /**
-     * Get season baseline rankings — the shared starting point for all users.
-     */
-    private RankingsWithSource getSeasonBaselineRankings(UUID seasonId) {
-        var baseline = seasonRepo
-                .findById(seasonId)
-                .map(Season::getInitialRankings)
-                .orElseThrow(
-                        () -> new IllegalStateException("Season baseline rankings not found for season: " + seasonId));
-
-        return new RankingsWithSource(RankingSource.SEASON_BASELINE, baseline);
-    }
-
-    /**
      * Extract swap changes for a specific round from the prediction's swap history.
      */
     private List<SwapChange> swapsForRound(SeasonPrediction prediction, int round) {
@@ -439,11 +392,6 @@ public class GetUserPredictionUseCase {
     private Map<String, List<Match>> getMatches(UUID seasonId, int round) {
         return matchRepo.findBySeasonAndRound(seasonId, round);
     }
-
-    /**
-     * Internal record for rankings with source.
-     */
-    private record RankingsWithSource(RankingSource source, List<TeamRank> rankings) {}
 
     private Season getActiveSeason() {
         return seasonRepo

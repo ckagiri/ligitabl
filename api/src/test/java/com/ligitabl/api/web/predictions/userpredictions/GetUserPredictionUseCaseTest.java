@@ -85,7 +85,8 @@ class GetUserPredictionUseCaseTest {
                 roundResultRepo,
                 standingsRepo,
                 matchRepo,
-                entryRepo);
+                entryRepo,
+                new PreviewRankingsSupport(seasonRepo, standingsRepo));
 
         seasonId = UUID.randomUUID();
         roundId = UUID.randomUUID();

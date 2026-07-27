@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
-import com.ligitabl.api.web.predictions.userpredictions.GetUserPredictionUseCase;
+import com.ligitabl.api.web.predictions.userpredictions.PreviewRankingsSupport;
 import com.ligitabl.api.web.shared.dto.TeamRankDto;
 import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
@@ -34,7 +34,7 @@ public class PublicController {
     private final SeasonRepo seasonRepo;
     private final CompetitionDefaults competitionDefaults;
     private final RoundSupport roundSupport;
-    private final GetUserPredictionUseCase getUserPredictionUseCase;
+    private final PreviewRankingsSupport previewRankingsSupport;
     private final TeamRepo teamRepo;
 
     @GetMapping("/")
@@ -71,16 +71,6 @@ public class PublicController {
         return "redirect:/favicon.svg";
     }
 
-    /**
-     * Populates the "Logged-in CTA" visibility flag and the hero's interactive preview rankings —
-     * both need the active season and current round, resolved once here.
-     *
-     * The CTA only makes sense while there's an active round left to swap in: the season must be
-     * in play, the current round must not be the season's last round, and the current round must
-     * not have been finalized already (no more swaps possible either way). The preview rankings
-     * are the same "previous round or season baseline" fallback shown to guests, trimmed to a
-     * short list for display.
-     */
     private void populateHomeModel(Model model) {
         Season season = seasonRepo
                 .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
@@ -99,7 +89,7 @@ public class PublicController {
                 && currentRoundStatus != RoundStatus.FINALIZED;
         model.addAttribute("showLoggedInCta", showLoggedInCta);
 
-        List<TeamRank> rankings = getUserPredictionUseCase.getPreviewRankings(season.getId(), currentRound);
+        List<TeamRank> rankings = previewRankingsSupport.getPreviewRankings(season.getId(), currentRound);
         List<TeamRank> topRankings = rankings.stream()
                 .sorted(Comparator.comparingInt(TeamRank::getPosition))
                 .limit(PREVIEW_TEAM_COUNT)
