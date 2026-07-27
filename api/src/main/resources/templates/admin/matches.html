@@ -12,7 +12,10 @@
           <p class="mt-2 text-sm text-gray-600">
             <span th:text="${competitionName}">Premier League</span>
             · <span th:text="${seasonName}">2025/26</span>
-            · Current round: <span class="font-semibold text-gray-900" th:text="'GW ' + ${currentRound}">GW 22</span>
+            <span class="block sm:inline sm:before:content-['·'] sm:before:mr-1">
+              Current round:
+              <span class="font-semibold text-gray-900 whitespace-nowrap" th:text="'GW ' + ${currentRound}">GW 22</span>
+            </span>
           </p>
         </div>
 
@@ -111,7 +114,7 @@
             </span>
             <div class="flex items-center gap-3">
               <label class="flex items-center gap-1">
-                <span>Per page</span>
+                <span class="hidden sm:inline">Per page</span>
                 <select :value="pageSize" @change="setPageSize($event.target.value)"
                         class="border border-gray-300 rounded-md text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500">
                   <template x-for="opt in pageSizeOptions" :key="opt">
@@ -124,7 +127,7 @@
                         class="px-2 py-1 border border-gray-300 rounded-md disabled:opacity-40 disabled:cursor-default hover:bg-gray-50">«</button>
                 <button @click="if (page > 1) page--" :disabled="page <= 1"
                         class="px-2 py-1 border border-gray-300 rounded-md disabled:opacity-40 disabled:cursor-default hover:bg-gray-50">‹</button>
-                <span class="px-2 whitespace-nowrap">Page <span x-text="page">1</span> of <span x-text="totalPages">1</span></span>
+                <span class="px-2 whitespace-nowrap"><span class="hidden sm:inline">Page </span><span x-text="page">1</span> of <span x-text="totalPages">1</span></span>
                 <button @click="if (page < totalPages) page++" :disabled="page >= totalPages"
                         class="px-2 py-1 border border-gray-300 rounded-md disabled:opacity-40 disabled:cursor-default hover:bg-gray-50">›</button>
                 <button @click="page = totalPages" :disabled="page >= totalPages"
@@ -142,40 +145,40 @@
                     <span class="text-xs font-medium text-gray-500 uppercase tracking-wider">#</span>
                   </th>
                   <th class="px-2 sm:px-4 py-3 text-right">
-                    <button @click="setSort('home')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700">
+                    <button @click="setSort('home')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700 whitespace-nowrap">
                       Home <span x-text="sortIndicator('home')"></span>
                     </button>
                   </th>
                   <th class="px-2 py-3 text-center">
-                    <button @click="setSort('score')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700"
+                    <button @click="setSort('score')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700 whitespace-nowrap"
                             :title="'Sorts by ' + (filters.ground === 'HOME' ? 'home goals' : filters.ground === 'AWAY' ? 'away goals' : 'total goals')">
                       Score <span x-text="sortIndicator('score')"></span>
                     </button>
                   </th>
                   <th class="px-2 sm:px-4 py-3 text-left">
-                    <button @click="setSort('away')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700">
+                    <button @click="setSort('away')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700 whitespace-nowrap">
                       Away <span x-text="sortIndicator('away')"></span>
                     </button>
                   </th>
                   <th class="hidden sm:table-cell px-2 py-3 text-center">
-                    <button @click="setSort('md')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700"
+                    <button @click="setSort('md')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700 whitespace-nowrap"
                             title="Original matchday">
                       MD <span x-text="sortIndicator('md')"></span>
                     </button>
                   </th>
                   <th class="px-2 py-3 text-center">
-                    <button @click="setSort('gw')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700"
+                    <button @click="setSort('gw')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700 whitespace-nowrap"
                             title="Current round (gameweek)">
                       GW <span x-text="sortIndicator('gw')"></span>
                     </button>
                   </th>
                   <th class="px-2 sm:px-4 py-3 text-left">
-                    <button @click="setSort('kickoff')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700">
+                    <button @click="setSort('kickoff')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700 whitespace-nowrap">
                       Kickoff <span x-text="sortIndicator('kickoff')"></span>
                     </button>
                   </th>
                   <th class="px-2 sm:px-4 py-3 text-left">
-                    <button @click="setSort('status')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700">
+                    <button @click="setSort('status')" class="text-xs font-medium text-gray-500 uppercase tracking-wider hover:text-gray-700 whitespace-nowrap">
                       Status <span x-text="sortIndicator('status')"></span>
                     </button>
                   </th>
