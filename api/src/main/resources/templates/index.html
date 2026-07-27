@@ -252,42 +252,6 @@
         </div>
       </div>
 
-      <!-- Why people stick around -->
-      <div class="bg-gray-50 rounded-lg p-8 mb-12">
-        <h2 class="text-3xl font-bold mb-2 text-center text-gray-900">
-          Built for the Long Season
-        </h2>
-        <p class="text-center text-gray-500 mb-8">
-          A prediction game that doesn't punish you for having a life.
-        </p>
-        <div class="grid sm:grid-cols-2 gap-6">
-          <div class="bg-white rounded-lg border border-gray-100 p-6 flex gap-4">
-            <div class="text-2xl flex-shrink-0">🎓</div>
-            <div>
-              <h3 class="font-semibold text-gray-900 mb-1">
-                Grading, not just ranking
-              </h3>
-              <p class="text-sm text-gray-600">
-                Every round earns you a grade — from A+ Legend downwards — so
-                even an off week feels like progress, not failure.
-              </p>
-            </div>
-          </div>
-          <div class="bg-white rounded-lg border border-gray-100 p-6 flex gap-4">
-            <div class="text-2xl flex-shrink-0">⏳</div>
-            <div>
-              <h3 class="font-semibold text-gray-900 mb-1">
-                No pressure to log in daily
-              </h3>
-              <p class="text-sm text-gray-600">
-                Every gameweek gives you a fresh swap window to reposition,
-                so missing a few days won't cost you much.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Leaderboard Phases -->
       <div class="bg-white rounded-lg shadow-md p-8 mb-12">
         <h2 class="text-3xl font-bold mb-2 text-center text-gray-900">
@@ -347,9 +311,9 @@
           </p>
           <a
             th:unless="${isLoggedIn}"
-            th:href="${predictionsNavLink} ?: '/my-table/guest'"
+            th:href="@{/auth/register}"
             class="inline-block bg-green-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-green-700 transition shadow-md"
-            >Try the Table →</a
+            >Join Now →</a
           >
         </div>
       </div>
