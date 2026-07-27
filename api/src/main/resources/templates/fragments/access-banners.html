@@ -74,7 +74,9 @@
   </div>
 
   <!-- Can Create Entry Banner (pre-season registration is an easter egg) -->
-  <div th:if="${(canCreateEntry || isPreSeasonRegistration) && roundState != 'locked' && seasonEditingAllowed}" x-data="{ imported: false }"
+  <div th:if="${(canCreateEntry || isPreSeasonRegistration) && roundState != 'locked' && seasonEditingAllowed}"
+    th:with="verb=${isPreSeasonRegistration ? 'update' : 'submit'}"
+    x-data="{ imported: false }"
     x-init="imported = localStorage.getItem('ligitabl.guestPrediction') !== null"
     @guest-storage-cleared.window="imported = false" class="bg-green-50 border border-green-200 rounded-lg p-4">
     <div class="flex items-start">
@@ -90,8 +92,8 @@
         </p>
         <span class="text-sm text-green-700 mt-1">
           <span x-show="imported">We've loaded your prediction - review it and
-            submit<th:block th:if="${!isPreSeasonRegistration}">&nbsp;to join the competition</th:block>.</span>
-          <span x-show="!imported">Set your predicted order and submit. Take your time —
+            <th:block th:text="${verb}">submit</th:block><th:block th:if="${!isPreSeasonRegistration}">&nbsp;to join the competition</th:block>.</span>
+          <span x-show="!imported">Set your predicted order and <th:block th:text="${verb}">submit</th:block>. Take your time —
             no swaps needed, but up to 5 to fine-tune.</span>
           </p>
       </div>
