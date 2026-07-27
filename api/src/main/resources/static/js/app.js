@@ -828,6 +828,8 @@ window.Ligitabl.predictionPage = function(el) {
             });
             this.swapStack = _extractSwapStack(guestPrediction);
             this.importedFromGuest = true;
+            this._saveToStorage(AUTH_STORAGE_KEY);
+            this._clearStorage(GUEST_STORAGE_KEY);
           }
         }
       } else {
@@ -1085,6 +1087,8 @@ window.Ligitabl.guestPredictionPage = function(el) {
   return Object.assign(base, {
     alwaysHoverable: true,
     isInitialPrediction: true,
+    isOpeningRound: false,
+    isPreSeasonRegistration: false,
     init() {
       const saved = loadSavedPrediction();
       if (saved) {
