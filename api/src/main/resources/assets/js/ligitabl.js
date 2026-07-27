@@ -472,9 +472,13 @@ window.Ligitabl.predictionPage = function (el) {
 
         init() {
             if (isInitialPrediction || isOpeningRound || isPreSeasonRegistration) {
-                // 1. Auth localStorage takes priority — user has already made swaps after signing up
+                // 1. Auth localStorage takes priority — user has already made swaps after signing up.
+                // Defensive: a pre-season registration is never supposed to have auth storage of its
+                // own (it's a fresh, still-unedited round-0 row).
                 const authPrediction = loadAuthPrediction();
-                if (authPrediction) {
+                if (isPreSeasonRegistration && authPrediction) {
+                    this._clearStorage(AUTH_STORAGE_KEY);
+                } else if (authPrediction) {
                     this.teams = _extractTeams(authPrediction).map((t, idx) => ({...t, position: idx + 1}));
                     this.swapStack = _extractSwapStack(authPrediction);
                 }
@@ -497,12 +501,6 @@ window.Ligitabl.predictionPage = function (el) {
                         });
                         this.swapStack = _extractSwapStack(guestPrediction);
                         this.importedFromGuest = true;
-                        // Consume the guest copy immediately: persist it under this user's own
-                        // auth key. Without this, a still-unedited pre-season registration
-                        // would keep re-reading whatever guest localStorage happens to be in
-                        // the browser on every visit, instead of importing once and then
-                        // sticking to the user's own saved state.
-                        this._saveToStorage(AUTH_STORAGE_KEY);
                     }
                 }
             } else {

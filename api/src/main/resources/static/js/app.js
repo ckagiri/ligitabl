@@ -808,7 +808,9 @@ window.Ligitabl.predictionPage = function(el) {
     init() {
       if (isInitialPrediction || isOpeningRound || isPreSeasonRegistration) {
         const authPrediction = loadAuthPrediction();
-        if (authPrediction) {
+        if (isPreSeasonRegistration && authPrediction) {
+          this._clearStorage(AUTH_STORAGE_KEY);
+        } else if (authPrediction) {
           this.teams = _extractTeams(authPrediction).map((t, idx) => ({ ...t, position: idx + 1 }));
           this.swapStack = _extractSwapStack(authPrediction);
         }
@@ -827,7 +829,6 @@ window.Ligitabl.predictionPage = function(el) {
             });
             this.swapStack = _extractSwapStack(guestPrediction);
             this.importedFromGuest = true;
-            this._saveToStorage(AUTH_STORAGE_KEY);
           }
         }
       } else {
