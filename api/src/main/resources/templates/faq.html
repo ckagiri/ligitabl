@@ -1,0 +1,783 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <div layout:fragment="content">
+      <!-- Hero -->
+      <div
+        class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 sm:p-12 mb-12 text-white text-center"
+      >
+        <h1 class="text-3xl sm:text-4xl font-extrabold mb-4">
+          Frequently Asked
+        </h1>
+        <p class="text-base sm:text-lg text-indigo-200 max-w-2xl mx-auto">
+          Everything about swaps, entering the competition, and how scoring
+          works.
+        </p>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-8 mb-12">
+        <div class="max-w-2xl mx-auto">
+          <!-- Getting started -->
+          <p
+            class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
+          >
+            Getting started
+          </p>
+          <div class="divide-y divide-gray-100 mb-8">
+            <div class="py-1" x-data="{ open: true }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>How does it work?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <div
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                <p class="mb-3">
+                  Everyone starts by building a Premier League table prediction
+                  — ordering all the teams where you think they'll stand after
+                  the
+                  <strong class="text-gray-900">current gameweek</strong> plays
+                  out — much like building a squad in Fantasy Premier League.
+                  You do this by tapping two teams to swap them, then when
+                  happy, <strong class="text-gray-900">submitting</strong>.
+                </p>
+                <p class="mb-3">
+                  From there, you manage your table all season long—making swaps
+                  as standings shift and new gameweeks open. Earn points after
+                  every gameweek based on how close your prediction is to
+                  reality. A gameweek is a round of fixtures, the same idea as
+                  "Gameweek" in Fantasy Premier League.
+                </p>
+                <p>
+                  You can compete on the main leaderboard or in private leagues
+                  with friends, family and colleagues.
+                </p>
+              </div>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>How do I enter the competition?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                Build your table — up to 5 swaps to reorder last season's (or
+                previous gameweek's) finish however you like — then submit.
+                <strong class="text-gray-900"
+                  >Submitting is what enters you</strong
+                >, even if you don't change anything.
+              </p>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>What if I don't use all 5 setup swaps?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                They're use-it-or-lose-it. Whatever you don't use before you
+                submit simply doesn't carry forward — there's no penalty, and 0
+                of 5 used is a completely fine way to enter.
+              </p>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>Is LigiPredictor free?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                Yes. It's free to play, no payments ever — just bragging rights
+                and a mini-league to prove you called it.
+              </p>
+            </div>
+          </div>
+
+          <!-- Swaps during the season -->
+          <p
+            class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
+          >
+            Swaps during the season
+          </p>
+          <div class="divide-y divide-gray-100 mb-8">
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>How many swaps do I get once the season's live?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                One swap every 24 hours. The clock is rolling, not fixed to a
+                time of day — it starts counting down the moment you use a swap,
+                and resets once that 24 hours is up.
+              </p>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span
+                  >What's the extra 2-swap allowance when a gameweek
+                  opens?</span
+                >
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                Each time a new gameweek opens, you get an additional swap on
+                top of your regular allowance — useful if you need to reposition
+                more of your table than a single swap allows.
+              </p>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>Do I need to update my table every gameweek?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                Nope! If you don't touch your table during a gameweek, it just
+                carries forward unchanged into the next round — no update
+                needed. You're more than welcome to submit your initial
+                prediction and ride it out for the whole season if you like
+                living dangerously... not recommended, but a perfectly valid way
+                to play.
+              </p>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>When can't I swap?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                Once a single gameweek's match kicks off, swapping locks
+                completely for that round — regardless of how many swaps you had
+                left. It reopens when the next gameweek opens.
+              </p>
+            </div>
+          </div>
+
+          <!-- Scoring & grades -->
+          <p
+            class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
+          >
+            Scoring &amp; grades
+          </p>
+          <div class="divide-y divide-gray-100 mb-8">
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>How are points calculated?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <div
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                <p class="mb-3">
+                  You start each gameweek with 200 points. For every team, you
+                  lose 1 point for each position your prediction was off by:
+                </p>
+                <div class="overflow-x-auto mb-3">
+                  <table
+                    class="w-full text-sm border border-gray-200 rounded-lg overflow-hidden"
+                  >
+                    <thead>
+                      <tr class="bg-gray-50 text-gray-700">
+                        <th class="text-left font-semibold px-3 py-2">
+                          Prediction
+                        </th>
+                        <th class="text-left font-semibold px-3 py-2">
+                          Actual
+                        </th>
+                        <th class="text-right font-semibold px-3 py-2">
+                          Points Hit
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                      <tr>
+                        <td class="px-3 py-2">Team A in 1st</td>
+                        <td class="px-3 py-2">Team A in 3rd</td>
+                        <td
+                          class="px-3 py-2 text-right font-semibold text-red-600"
+                        >
+                          -2
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="px-3 py-2">Team B in 20th</td>
+                        <td class="px-3 py-2">Team B in 15th</td>
+                        <td
+                          class="px-3 py-2 text-right font-semibold text-red-600"
+                        >
+                          -5
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="px-3 py-2">Team C in 10th</td>
+                        <td class="px-3 py-2">Team C in 10th</td>
+                        <td
+                          class="px-3 py-2 text-right font-semibold text-green-600"
+                        >
+                          -0
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p>
+                  Your score is 200 minus your total position errors across all
+                  20 teams. Once a new gameweek starts, the previous gameweek's
+                  score is frozen and the next one begins fresh at 200 — your
+                  cumulative score across all gameweeks is what the leaderboard
+                  ranks.
+                </p>
+              </div>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>What are the grades?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <div x-show="open" x-transition x-cloak class="pb-3">
+                <p class="text-sm text-gray-600 mb-4">
+                  Every gameweek score earns a grade — chase it, even on a tough
+                  week.
+                </p>
+                <div class="space-y-4">
+                  <!-- Outstanding -->
+                  <div>
+                    <p
+                      class="text-xs font-semibold text-indigo-500 uppercase tracking-wider mb-2 px-1"
+                    >
+                      Outstanding
+                    </p>
+                    <div
+                      class="bg-white rounded-lg border border-indigo-100 divide-y divide-gray-100"
+                    >
+                      <div
+                        th:each="tier : ${T(com.ligitabl.model.domain.ScoreTier).byGroup(T(com.ligitabl.model.domain.ScoreTier.Group).OUTSTANDING)}"
+                        class="flex items-center justify-between px-4 py-2.5"
+                      >
+                        <div class="flex items-center gap-3">
+                          <span class="text-xl" th:text="${tier.emoji}"
+                            >🤯</span
+                          >
+                          <span
+                            class="text-xs font-bold text-indigo-500 w-6"
+                            th:text="${tier.letter}"
+                            >S+</span
+                          >
+                          <span
+                            class="text-sm font-semibold text-gray-900"
+                            th:text="${tier.tierName}"
+                            >Pinnacle</span
+                          >
+                        </div>
+                        <span
+                          class="text-xs text-gray-400 font-medium"
+                          th:text="${tier.rangeLabel}"
+                          >200</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Strong -->
+                  <div>
+                    <p
+                      class="text-xs font-semibold text-green-500 uppercase tracking-wider mb-2 px-1"
+                    >
+                      Strong
+                    </p>
+                    <div
+                      class="bg-white rounded-lg border border-green-100 divide-y divide-gray-100"
+                    >
+                      <div
+                        th:each="tier : ${T(com.ligitabl.model.domain.ScoreTier).byGroup(T(com.ligitabl.model.domain.ScoreTier.Group).STRONG)}"
+                        class="flex items-center justify-between px-4 py-2.5"
+                      >
+                        <div class="flex items-center gap-3">
+                          <span class="text-xl" th:text="${tier.emoji}"
+                            >😃</span
+                          >
+                          <span
+                            class="text-xs font-bold text-green-600 w-6"
+                            th:text="${tier.letter}"
+                            >B+</span
+                          >
+                          <span
+                            class="text-sm font-semibold text-gray-900"
+                            th:text="${tier.tierName}"
+                            >Proficient</span
+                          >
+                        </div>
+                        <span
+                          class="text-xs text-gray-400 font-medium"
+                          th:text="${tier.rangeLabel}"
+                          >180–184</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Fair -->
+                  <div>
+                    <p
+                      class="text-xs font-semibold text-orange-400 uppercase tracking-wider mb-2 px-1"
+                    >
+                      Fair
+                    </p>
+                    <div
+                      class="bg-white rounded-lg border border-orange-100 divide-y divide-gray-100"
+                    >
+                      <div
+                        th:each="tier : ${T(com.ligitabl.model.domain.ScoreTier).byGroup(T(com.ligitabl.model.domain.ScoreTier.Group).FAIR)}"
+                        class="flex items-center justify-between px-4 py-2.5"
+                      >
+                        <div class="flex items-center gap-3">
+                          <span class="text-xl" th:text="${tier.emoji}"
+                            >😬</span
+                          >
+                          <span
+                            class="text-xs font-bold text-orange-500 w-6"
+                            th:text="${tier.letter}"
+                            >C</span
+                          >
+                          <span
+                            class="text-sm font-semibold text-gray-900"
+                            th:text="${tier.tierName}"
+                            >Novice</span
+                          >
+                        </div>
+                        <span
+                          class="text-xs text-gray-400 font-medium"
+                          th:text="${tier.rangeLabel}"
+                          >145–159</span
+                        >
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>What's a "zero"?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                A zero is a perfect prediction — a team you placed in its exact
+                final position, 0 positions off. Zeroes matter beyond the points
+                they save you: they're also the first tiebreaker after total
+                points.
+              </p>
+            </div>
+          </div>
+
+          <!-- Tiebreakers -->
+          <p
+            class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
+          >
+            Tiebreakers
+          </p>
+          <div class="divide-y divide-gray-100 mb-8">
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>How does the leaderboard break ties?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                In order: (1) total points for the competition period, (2) most
+                zeroes — exact position matches, (3) fewest swaps used for the
+                same score, (4) best single gameweek score, and (5) an internal
+                identifier in the rare case everything above is tied. In
+                practice, points and zeroes decide almost everything — the rest
+                are footnotes.
+              </p>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>Does using more swaps hurt me?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                Only as a tiebreaker, and only if you're tied with someone on
+                points and zeroes. Swapping more gives you more chances to
+                improve your table, but if two players end up dead even, the one
+                who used fewer swaps to get there wins the tie — using swaps
+                efficiently is its own small edge.
+              </p>
+            </div>
+          </div>
+
+          <!-- Competition formats -->
+          <p
+            class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
+          >
+            Competition formats
+          </p>
+          <div class="divide-y divide-gray-100">
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>What are sprints and quarters?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                Shorter competition windows that run alongside the full season,
+                so you're never stuck waiting for a fresh start if you join
+                partway through the year.
+              </p>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>Can I play with friends?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                Yes — create a private contest and invite your own crew. Share
+                the invitation to bring people in, manage the contest anytime to
+                add or remove members. You can also share your prediction
+                straight from your profile settings, so friends can see your
+                gameweek prediction - they don't even have to be LigiPredictor
+                members.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CTA -->
+      <div
+        class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-xl p-8 sm:p-10 text-white text-center"
+      >
+        <h2 class="text-2xl font-bold mb-2">Still stuck?</h2>
+        <p class="text-indigo-200 mb-6">Ask us directly.</p>
+        <a
+          href="https://x.com/charleskagiri"
+          target="_blank"
+          rel="noopener"
+          title="@charleskagiri"
+          class="inline-block bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition"
+          >X</a
+        >
+      </div>
+    </div>
+  </body>
+</html>

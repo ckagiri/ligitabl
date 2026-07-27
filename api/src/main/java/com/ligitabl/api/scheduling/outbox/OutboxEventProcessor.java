@@ -111,8 +111,7 @@ public class OutboxEventProcessor {
                 .findById(payload.seasonId())
                 .orElseThrow(() -> new IllegalStateException("Season not found: " + payload.seasonId()));
 
-        List<UUID> unjoinedUserIds =
-                userRepo.findUnjoinedUserIdsRegisteredAfter(season.getId(), season.getPreSeasonOpensAt());
+        List<UUID> unjoinedUserIds = userRepo.findUnjoinedUserIdsAfter(season.getId(), season.getPreSeasonOpensAt());
         if (unjoinedUserIds.isEmpty()) {
             return;
         }
@@ -163,6 +162,7 @@ public class OutboxEventProcessor {
         data.put("stage", stage);
         data.put("myTableUrl", frontendUrl + "/my-table");
         data.put("leaderboardUrl", frontendUrl + "/leaderboard");
+        data.put("faqUrl", frontendUrl + "/faq");
         return data;
     }
 

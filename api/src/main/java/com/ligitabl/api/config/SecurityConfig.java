@@ -185,6 +185,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth.requestMatchers(
                                 "/",
                                 "/home",
+                                "/about",
+                                "/faq",
                                 "/my-table",
                                 "/my-table/**",
                                 "/my-table/guest",

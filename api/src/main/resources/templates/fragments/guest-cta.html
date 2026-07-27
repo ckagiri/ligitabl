@@ -1,0 +1,62 @@
+<!-- Guest Sign-Up CTA. Mirrors the authenticated Submit button pattern in
+     fragments/prediction-actions.html: a floating pill follows the guest while scrolling,
+     and swaps for an inline pill (same shape) once the footer scrolls into view — see
+     `cta` / `floating-cta` below, which share a `footerVisible` flag from the caller. -->
+
+<!-- Sign Up Button (shared markup — reused inline and in the floating pill) -->
+<a
+  th:fragment="signup-button(shapeClasses)"
+  th:href="@{/auth/register}"
+  th:class="${'inline-flex items-center px-6 py-3 border border-transparent text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ' + shapeClasses}"
+>
+  <svg
+    class="h-5 w-5 mr-2"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      stroke-linecap="round"
+      stroke-linejoin="round"
+      stroke-width="2"
+      d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"
+    />
+  </svg>
+  <span x-show="getSwapCount() === 0">Sign Up to Save Prediction</span>
+  <span x-show="getSwapCount() > 0">
+    Sign Up to Save Prediction (<span x-text="getSwapCount()"></span>)
+  </span>
+</a>
+
+<!-- Inline CTA: takes over once the floating pill hides near the footer. Uses `invisible`
+     (not x-show) so this slot always reserves its height — see the analogous comment on
+     the authenticated Submit button for why (avoids a scroll-position feedback loop). -->
+<div x-cloak th:fragment="cta" class="px-6 py-6 bg-gray-50 border-t border-gray-200">
+  <div class="flex flex-col items-center space-y-3">
+    <div
+      :class="footerVisible ? '' : 'invisible'"
+      th:insert="~{fragments/guest-cta :: signup-button('rounded-full shadow-lg')}"
+    ></div>
+    <p class="text-sm text-gray-500">
+      Already have an account?
+      <a
+        th:href="@{/auth/login}"
+        class="text-indigo-600 hover:text-indigo-700 font-medium"
+        >Log in</a
+      >
+    </p>
+  </div>
+</div>
+
+<!-- Floating CTA: teleported to body for the same reason as the authenticated Submit
+     button — #prediction-page's `will-change: opacity, transform` would otherwise make
+     `position: fixed` relative to that container instead of the viewport. -->
+<template th:fragment="floating-cta" x-teleport="body">
+<div
+  x-cloak
+  x-show="!footerVisible"
+  x-transition.opacity
+  class="fixed bottom-5 inset-x-0 z-40 flex justify-center px-4 pointer-events-none"
+  th:insert="~{fragments/guest-cta :: signup-button('pointer-events-auto rounded-full shadow-lg')}"
+></div>
+</template>

@@ -15,6 +15,14 @@
     <link rel="alternate icon" th:href="@{/favicon.ico}" />
     <link rel="apple-touch-icon" th:href="@{/apple-touch-icon.png}" />
 
+    <!-- Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+
     <!-- App CSS (served from src/main/resources/static/css/main.css) -->
     <!-- <link rel="stylesheet" th:href="@{/css/main.css}"> -->
 
@@ -267,6 +275,58 @@
                 class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
                 >Contests</a
               >
+              <!-- More dropdown: About/FAQ (desktop) -->
+              <div class="relative" x-data="{ moreMenuOpen: false }">
+                <button
+                  @click="moreMenuOpen = !moreMenuOpen"
+                  @click.away="moreMenuOpen = false"
+                  type="button"
+                  class="flex items-center space-x-1 text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+                >
+                  <span>More</span>
+                  <svg
+                    class="h-4 w-4"
+                    :class="{ 'rotate-180': moreMenuOpen }"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    style="transition: transform 200ms"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+                <div
+                  x-show="moreMenuOpen"
+                  x-cloak
+                  x-transition:enter="transition ease-out duration-100"
+                  x-transition:enter-start="transform opacity-0 scale-95"
+                  x-transition:enter-end="transform opacity-100 scale-100"
+                  x-transition:leave="transition ease-in duration-75"
+                  x-transition:leave-start="transform opacity-100 scale-100"
+                  x-transition:leave-end="transform opacity-0 scale-95"
+                  class="absolute left-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                >
+                  <div class="py-1">
+                    <a
+                      th:href="@{/about}"
+                      class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
+                      @click="moreMenuOpen = false"
+                      >About</a
+                    >
+                    <a
+                      th:href="@{/faq}"
+                      class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
+                      @click="moreMenuOpen = false"
+                      >FAQ</a
+                    >
+                  </div>
+                </div>
+              </div>
 
               <!-- Admin dropdown (desktop) -->
               <div th:if="${isAdmin}" class="relative" x-data="{ adminMenuOpen: false }">
@@ -593,6 +653,16 @@
               >Contests</a
             >
             <a
+              th:href="@{/about}"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+              >About</a
+            >
+            <a
+              th:href="@{/faq}"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+              >FAQ</a
+            >
+            <a
               th:if="${isAdmin}"
               th:href="@{/admin/seasons}"
               class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
@@ -852,13 +922,23 @@
             All rights reserved.
           </p>
           <p class="mt-1">
-            Reach out on X:
+            <a th:href="@{/about}" class="hover:text-gray-700 hover:underline"
+              >About</a
+            >
+            &nbsp;&middot;&nbsp;
+            <a th:href="@{/faq}" class="hover:text-gray-700 hover:underline"
+              >FAQ</a
+            >
+          </p>
+          <p class="mt-1">
+            Reach out on
             <a
               href="https://x.com/charleskagiri"
               target="_blank"
               rel="noopener"
+              title="@charleskagiri"
               class="text-blue-600 hover:text-blue-700 hover:underline"
-              >@charleskagiri</a
+              >X</a
             >
           </p>
         </div>

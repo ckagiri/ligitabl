@@ -74,6 +74,7 @@ class JoinReminderEnqueuerTest {
     }
 
     private User userAgedDays(long days) {
+        OffsetDateTime lastSeen = OffsetDateTime.ofInstant(NOW.minusSeconds(days * 86400), ZoneOffset.UTC);
         return User.builder()
                 .id(UUID.randomUUID())
                 .publicId(PublicId.create("abcdefghij"))
@@ -82,13 +83,26 @@ class JoinReminderEnqueuerTest {
                 .emailVerified(true)
                 .resultsEmailOptOut(false)
                 .roles(Set.of())
-                .createDate(OffsetDateTime.ofInstant(NOW.minusSeconds(days * 86400), ZoneOffset.UTC))
+                .createDate(lastSeen)
+                .updateDate(lastSeen)
+                .lastLoginAt(lastSeen)
                 .build();
     }
 
     @Test
     void skipsEntirely_whenRoundResultsAlreadySentToday() {
         when(outboxRepo.existsSentEventsOfTypeSince(eq(OutboxEventTypes.ROUND_RESULTS), any()))
+                .thenReturn(true);
+
+        enqueuer.enqueueDueReminders();
+
+        verifyNoInteractions(seasonRepo, userRepo);
+        verify(outboxRepo, never()).save(any());
+    }
+
+    @Test
+    void skipsEntirely_whenJoinReminderAlreadyEnqueuedToday() {
+        when(outboxRepo.existsEventsOfTypeCreatedSince(eq(OutboxEventTypes.JOIN_REMINDER), any()))
                 .thenReturn(true);
 
         enqueuer.enqueueDueReminders();
@@ -110,7 +124,8 @@ class JoinReminderEnqueuerTest {
     @Test
     void enqueuesEarliestStage_forUserJustPastFirstThreshold() {
         User user = userAgedDays(1);
-        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any())).thenReturn(List.of(user));
+        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
+                .thenReturn(List.of(user));
 
         enqueuer.enqueueDueReminders();
 
@@ -122,11 +137,26 @@ class JoinReminderEnqueuerTest {
     }
 
     @Test
+    void passesConfiguredMaxStaleDays_asStaleCutoff() {
+        properties.setMaxStaleDays(45);
+        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
+                .thenReturn(List.of());
+
+        enqueuer.enqueueDueReminders();
+
+        ArgumentCaptor<OffsetDateTime> staleCutoffCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
+        verify(userRepo).findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), staleCutoffCaptor.capture());
+        Assertions.assertThat(staleCutoffCaptor.getValue())
+                .isEqualTo(OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(45));
+    }
+
+    @Test
     void enqueuesOnlyTheLatestDueStage_forAnOldBacklogUser() {
         // 15 days old: eligible for stages 1, 4, and 11 simultaneously — must only get the
         // latest (11), never a backlog of all three in one run.
         User user = userAgedDays(15);
-        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any())).thenReturn(List.of(user));
+        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
+                .thenReturn(List.of(user));
 
         enqueuer.enqueueDueReminders();
 
@@ -140,7 +170,8 @@ class JoinReminderEnqueuerTest {
     @Test
     void skipsUser_notYetDueForAnyStage() {
         User user = userAgedDays(0);
-        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any())).thenReturn(List.of(user));
+        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
+                .thenReturn(List.of(user));
 
         enqueuer.enqueueDueReminders();
 
@@ -151,7 +182,8 @@ class JoinReminderEnqueuerTest {
     void onePoisonedUser_doesNotBlockOthers() {
         User bad = userAgedDays(4);
         User good = userAgedDays(4);
-        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any())).thenReturn(List.of(bad, good));
+        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
+                .thenReturn(List.of(bad, good));
         when(outboxRepo.save(any())).thenThrow(new RuntimeException("boom")).thenReturn(true);
 
         enqueuer.enqueueDueReminders();

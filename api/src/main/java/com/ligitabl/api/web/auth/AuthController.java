@@ -440,7 +440,8 @@ public class AuthController {
         @NotBlank(message = "Display name is required")
         @Size(min = 3, max = 30, message = "Display name must be between 3 and 30 characters")
         @jakarta.validation.constraints.Pattern(
-                regexp = "^[a-zA-Z0-9 ]+$", message = "Display name may only contain letters, numbers and spaces")
+                regexp = "^[a-zA-Z0-9 ]+$",
+                message = "Display name may only contain letters, numbers and spaces")
         private String displayName;
 
         @NotBlank(message = "Password is required")

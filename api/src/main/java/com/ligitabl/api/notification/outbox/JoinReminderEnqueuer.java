@@ -21,11 +21,18 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * <p>Each user gets at most one email per run, at the <em>latest</em> stage their signup age has
- * reached.
+ * <p>Each user gets at most one email per run, at the <em>latest</em> stage their time since last
+ * seen.
  *
- * <p>Gated by a global daily throttle: if a ROUND_RESULTS batch already went out today, this
- * run is skipped entirely, to keep combined daily send volume under the free-tier cap.
+ * <p>Gated by two daily throttles, both evaluated against UTC-midnight "today":
+ * <ul>
+ *   <li>if a ROUND_RESULTS batch already went out today, this run is skipped entirely, to keep
+ *       combined daily send volume under the free-tier cap;
+ *   <li>if a JOIN_REMINDER batch has already been enqueued today, this run is skipped — this is
+ *       what makes it safe to also invoke this method from a startup recovery hook (see
+ *       {@code JoinReminderStartupRecovery}) without risking a duplicate same-day run alongside
+ *       the 9am cron.
+ * </ul>
  */
 @Component
 @RequiredArgsConstructor
@@ -49,6 +56,10 @@ public class JoinReminderEnqueuer {
             log.info("[JOIN_REMINDER_SKIPPED] a ROUND_RESULTS batch already sent today; skipping this run");
             return;
         }
+        if (outboxRepo.existsEventsOfTypeCreatedSince(OutboxEventTypes.JOIN_REMINDER, todayStart.toInstant())) {
+            log.info("[JOIN_REMINDER_SKIPPED] a JOIN_REMINDER batch was already enqueued today; skipping this run");
+            return;
+        }
 
         Season season = seasonRepo
                 .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
@@ -64,15 +75,17 @@ public class JoinReminderEnqueuer {
         }
 
         OffsetDateTime now = OffsetDateTime.now(clock);
+        // "Registered before" here really means "not seen since".
         OffsetDateTime earliestCutoff = now.minusDays(stages.get(0));
-        List<User> candidates = userRepo.findUnjoinedUsersRegisteredBefore(season.getId(), earliestCutoff);
+        OffsetDateTime staleCutoff = now.minusDays(properties.getMaxStaleDays());
+        List<User> candidates = userRepo.findUnjoinedUsersRegisteredBefore(season.getId(), earliestCutoff, staleCutoff);
 
         int inserted = 0;
         for (User user : candidates) {
             try {
-                long daysSinceSignup =
-                        Duration.between(user.getCreateDate(), now).toDays();
-                int stage = latestDueStage(stages, daysSinceSignup);
+                OffsetDateTime lastSeen = user.getLastLoginAt() != null ? user.getLastLoginAt() : user.getUpdateDate();
+                long daysSinceLastSeen = Duration.between(lastSeen, now).toDays();
+                int stage = latestDueStage(stages, daysSinceLastSeen);
                 if (stage == -1) {
                     continue; // defensive: shouldn't happen given earliestCutoff
                 }
@@ -99,11 +112,11 @@ public class JoinReminderEnqueuer {
         log.info("[JOIN_REMINDER_ENQUEUED] candidates={}, inserted={}", candidates.size(), inserted);
     }
 
-    /** The largest configured stage the user's signup age has reached, or -1 if none. */
-    private int latestDueStage(List<Integer> sortedStages, long daysSinceSignup) {
+    /** The largest configured stage the user's time-since-last-seen has reached, or -1 if none. */
+    private int latestDueStage(List<Integer> sortedStages, long daysSinceLastSeen) {
         int due = -1;
         for (int stage : sortedStages) {
-            if (daysSinceSignup >= stage) {
+            if (daysSinceLastSeen >= stage) {
                 due = stage;
             } else {
                 break;

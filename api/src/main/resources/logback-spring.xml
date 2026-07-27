@@ -42,6 +42,13 @@
       <appender-ref ref="LogtailScheduling"/>
     </logger>
 
+    <!-- JoinReminderEnqueuer does its logging from notification.outbox, not scheduling, even
+         though it's only ever invoked by scheduled/startup jobs -->
+    <logger name="com.ligitabl.api.notification.outbox" level="INFO" additivity="false">
+      <appender-ref ref="Console"/>
+      <appender-ref ref="LogtailScheduling"/>
+    </logger>
+
     <root level="INFO">
       <appender-ref ref="Console"/>
       <appender-ref ref="Logtail"/>

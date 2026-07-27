@@ -128,9 +128,11 @@ ligitabl:
     join-reminder:
       # Off by default; enable per environment once rollout is ready.
       enabled: ${JOIN_REMINDER_ENABLED:false}
-      # Backoff schedule (days since signup); a user is emailed once per stage, at the latest
+      # Backoff schedule (days since last seen); a user is emailed once per stage, at the latest
       # stage reached, never more than one per run, and never again after the last stage.
       stage-days: ${JOIN_REMINDER_STAGE_DAYS:1,4,11}
+      # Hard-exclude users not seen (login, or last profile update) in this many days.
+      max-stale-days: ${JOIN_REMINDER_MAX_STALE_DAYS:45}
       cron: ${JOIN_REMINDER_CRON:0 0 9 * * *}
 
   slack:
