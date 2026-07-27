@@ -9,7 +9,7 @@
   -->
   <div
     x-cloak
-    x-data="{ compareOptionsOpen: true }"
+    x-data="{ compareOptionsOpen: window.matchMedia('(min-width: 640px)').matches }"
     x-init="$el.previousElementSibling && $el.previousElementSibling.hasAttribute('x-skeleton') && $el.previousElementSibling.remove()"
     th:fragment="comparison-options(hasFormData, showMoveHelperText)"
     class="px-6 pt-4 pb-2"
