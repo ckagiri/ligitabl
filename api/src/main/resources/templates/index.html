@@ -29,8 +29,8 @@
               Predict the Premier League table.
             </p>
             <p class="text-sm sm:text-base mb-8 text-indigo-200">
-              Tap two teams to swap them, then watch your table play out
-              week by week.
+              Tap two teams to swap them, then watch your table play out week by
+              week.
             </p>
             <div
               class="flex flex-col sm:flex-row sm:flex-wrap justify-center md:justify-start gap-3 mb-6"
@@ -114,7 +114,9 @@
                 class="text-[11px] uppercase tracking-widest text-indigo-200 font-medium"
                 >Top of the table</span
               >
-              <div class="flex flex-col sm:flex-row-reverse items-end sm:items-center gap-1 sm:gap-2 flex-shrink-0">
+              <div
+                class="flex flex-col sm:flex-row-reverse items-end sm:items-center gap-1 sm:gap-2 flex-shrink-0"
+              >
                 <span
                   class="text-[11px] uppercase tracking-widest text-indigo-200 font-medium"
                   >Live preview</span
@@ -175,8 +177,8 @@
               🏗️ Build Your Table
             </h3>
             <p class="text-sm text-gray-600">
-              Start from the previous gameweek's finish and use up to 5
-              swaps to reorder it your way — or leave it as-is.
+              Start from the previous gameweek's finish and use up to 5 swaps to
+              reorder it your way — or leave it as-is.
             </p>
           </div>
           <div class="rounded-lg border border-gray-100 p-6">
@@ -189,8 +191,8 @@
               🎯 Enter the Competition
             </h3>
             <p class="text-sm text-gray-600 mb-3">
-              Submit your table — even with zero changes — and you're
-              officially in for the season.
+              Submit your table — even with zero changes — and you're officially
+              in for the season.
             </p>
             <div
               class="flex items-start gap-2 p-2.5 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800"
@@ -211,11 +213,11 @@
               🔄 Adjust As You Go
             </h3>
             <p class="text-sm text-gray-600">
-              No daily grind required — get 1 swap every 24h, right up
-              until that round's matches kick off, then earn a score and
-              chase trophies all season.
+              No daily grind required — get 1 swap every 24 hours until the
+              gameweek's first match kicks off. Earn points once all the matches
+              finish, and chase trophies all season long.
             </p>
-                        <div class="mt-3" x-data="{ open: false }">
+            <div class="mt-3" x-data="{ open: false }">
               <button
                 type="button"
                 @click="open = !open"
@@ -243,9 +245,9 @@
                 x-cloak
                 class="mt-2 p-3 bg-amber-50 border border-amber-200 rounded-lg text-xs text-amber-800"
               >
-                The leaderboard ranks by Total Points → Total Perfect
-                Positions → Fewest Swaps Used. Using many swaps helps you
-                climb — but it might cost you a tie-break later.
+                The leaderboard ranks by Total Points → Total Perfect Positions
+                → Fewest Swaps Used. Using many swaps helps you climb — but it
+                might cost you a tie-break later.
               </div>
             </div>
           </div>
@@ -278,7 +280,8 @@
             </p>
             <p class="text-sm text-gray-600">
               Four distinct competitions across the season. Sustained good
-              performance is what separates the contenders from the rest.            </p>
+              performance is what separates the contenders from the rest.
+            </p>
           </div>
           <div class="rounded-lg border-2 border-green-200 bg-green-50 p-6">
             <div class="text-3xl mb-3">⚡</div>
@@ -306,8 +309,8 @@
           </h2>
           <p class="text-gray-600 mb-6">
             Joined mid-season? Mid-quarter? Even mid-sprint? No problem. Your
-            scores count from day one, and sprint-resets every ~5 gameweeks
-            mean late joiners are always fully competitive in the next one.
+            scores count from day one, and sprint-resets every ~5 gameweeks mean
+            late joiners are always fully competitive in the next one.
           </p>
           <a
             th:unless="${isLoggedIn}"
@@ -340,9 +343,8 @@
           Scoring &amp; Rankings
         </h2>
         <p class="text-center text-gray-500 mb-8">
-          Every gameweek earns you a grade — from A+ Legend down
-          to D Aspirant. The leaderboard ranks by points, then zeroes, then
-          swap efficiency.
+          Every gameweek earns you a grade — from A+ Legend down to D Aspirant.
+          The leaderboard ranks by points, then zeroes, then swap efficiency.
         </p>
 
         <!-- Two motivation loops -->
