@@ -276,9 +276,15 @@ public class UserPersistenceAdapter implements UserRepo {
     }
 
     @Override
-    public List<User> findUnjoinedUsersRegisteredBefore(UUID seasonId, OffsetDateTime registeredBefore) {
+    public List<User> findUnjoinedUsersRegisteredBefore(
+            UUID seasonId, OffsetDateTime dueCutoff, OffsetDateTime staleCutoff) {
+        // Last-seen basis, not signup basis: create_date persists from a user's original signup
+        // (possibly a prior season), so a long-dormant account would otherwise look "overdue" the
+        // moment it resurfaces. COALESCE(last_login_at, update_date) reflects recent activity.
+        var lastSeen = DSL.coalesce(T_USER.C_LAST_LOGIN_AT, T_USER.C_UPDATE_DATE);
         var records = dsl.selectFrom(T_USER)
-                .where(T_USER.C_CREATE_DATE.le(registeredBefore))
+                .where(lastSeen.le(dueCutoff))
+                .and(lastSeen.gt(staleCutoff))
                 .and(T_USER.C_EMAIL_VERIFIED.isTrue())
                 .and(T_USER.C_RESULTS_EMAIL_OPT_OUT.isFalse())
                 .andNotExists(dsl.selectOne()

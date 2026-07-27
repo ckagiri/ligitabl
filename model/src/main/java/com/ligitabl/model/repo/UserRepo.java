@@ -54,5 +54,10 @@ public interface UserRepo {
 
     List<UUID> findUnjoinedUserIdsAfter(UUID seasonId, OffsetDateTime registeredAfter);
 
-    List<User> findUnjoinedUsersRegisteredBefore(UUID seasonId, OffsetDateTime registeredBefore);
+    /**
+     * @param dueCutoff old enough to be due for the earliest reminder stage
+     * @param staleCutoff exclusive lower bound; users not seen since before this are excluded as
+     *     too dormant to bother reminding
+     */
+    List<User> findUnjoinedUsersRegisteredBefore(UUID seasonId, OffsetDateTime dueCutoff, OffsetDateTime staleCutoff);
 }
