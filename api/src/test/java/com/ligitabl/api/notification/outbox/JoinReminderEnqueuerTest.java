@@ -124,7 +124,8 @@ class JoinReminderEnqueuerTest {
     @Test
     void enqueuesEarliestStage_forUserJustPastFirstThreshold() {
         User user = userAgedDays(1);
-        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any())).thenReturn(List.of(user));
+        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
+                .thenReturn(List.of(user));
 
         enqueuer.enqueueDueReminders();
 
@@ -138,7 +139,8 @@ class JoinReminderEnqueuerTest {
     @Test
     void passesConfiguredMaxStaleDays_asStaleCutoff() {
         properties.setMaxStaleDays(45);
-        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any())).thenReturn(List.of());
+        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
+                .thenReturn(List.of());
 
         enqueuer.enqueueDueReminders();
 
@@ -153,7 +155,8 @@ class JoinReminderEnqueuerTest {
         // 15 days old: eligible for stages 1, 4, and 11 simultaneously — must only get the
         // latest (11), never a backlog of all three in one run.
         User user = userAgedDays(15);
-        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any())).thenReturn(List.of(user));
+        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
+                .thenReturn(List.of(user));
 
         enqueuer.enqueueDueReminders();
 
@@ -167,7 +170,8 @@ class JoinReminderEnqueuerTest {
     @Test
     void skipsUser_notYetDueForAnyStage() {
         User user = userAgedDays(0);
-        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any())).thenReturn(List.of(user));
+        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
+                .thenReturn(List.of(user));
 
         enqueuer.enqueueDueReminders();
 
@@ -178,7 +182,8 @@ class JoinReminderEnqueuerTest {
     void onePoisonedUser_doesNotBlockOthers() {
         User bad = userAgedDays(4);
         User good = userAgedDays(4);
-        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any())).thenReturn(List.of(bad, good));
+        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
+                .thenReturn(List.of(bad, good));
         when(outboxRepo.save(any())).thenThrow(new RuntimeException("boom")).thenReturn(true);
 
         enqueuer.enqueueDueReminders();

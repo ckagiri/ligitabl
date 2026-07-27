@@ -22,8 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * <p>Each user gets at most one email per run, at the <em>latest</em> stage their time since last
- * seen (last login, or last profile update if they've never logged in) has reached — not their
- * original signup age, since a returning user's {@code create_date} may be from a prior season.
+ * seen.
  *
  * <p>Gated by two daily throttles, both evaluated against UTC-midnight "today":
  * <ul>
@@ -79,8 +78,7 @@ public class JoinReminderEnqueuer {
         // "Registered before" here really means "not seen since".
         OffsetDateTime earliestCutoff = now.minusDays(stages.get(0));
         OffsetDateTime staleCutoff = now.minusDays(properties.getMaxStaleDays());
-        List<User> candidates =
-                userRepo.findUnjoinedUsersRegisteredBefore(season.getId(), earliestCutoff, staleCutoff);
+        List<User> candidates = userRepo.findUnjoinedUsersRegisteredBefore(season.getId(), earliestCutoff, staleCutoff);
 
         int inserted = 0;
         for (User user : candidates) {

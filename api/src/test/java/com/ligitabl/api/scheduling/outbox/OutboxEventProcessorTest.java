@@ -293,8 +293,7 @@ class OutboxEventProcessorTest {
                 season, Contest.builder().id(UUID.randomUUID()).build(), 1, 1);
 
         when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any()))
-                .thenReturn(java.util.List.of(user1, user2));
+        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(java.util.List.of(user1, user2));
         when(createPredictionUseCase.resolveJoinContext(season)).thenReturn(Either.right(ctx));
         when(createPredictionUseCase.executeWithContext(any(), eq(ctx), any()))
                 .thenReturn(Either.right(new CreatePredictionResult(UUID.randomUUID(), UUID.randomUUID(), 1, "ok")));
@@ -338,8 +337,7 @@ class OutboxEventProcessorTest {
                 season, Contest.builder().id(UUID.randomUUID()).build(), 1, 1);
 
         when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any()))
-                .thenReturn(java.util.List.of(badUser, goodUser));
+        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(java.util.List.of(badUser, goodUser));
         when(createPredictionUseCase.resolveJoinContext(season)).thenReturn(Either.right(ctx));
         when(createPredictionUseCase.executeWithContext(eq(badUser), eq(ctx), any()))
                 .thenThrow(new RuntimeException("boom"));
@@ -362,8 +360,7 @@ class OutboxEventProcessorTest {
     void roundLockedContextResolutionFails_skipsBatchButStillMarksSent() throws Exception {
         Season season = activeSeason(seasonId);
         when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any()))
-                .thenReturn(java.util.List.of(UUID.randomUUID()));
+        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(java.util.List.of(UUID.randomUUID()));
         when(createPredictionUseCase.resolveJoinContext(season))
                 .thenReturn(Either.left(new CreatePredictionError.CurrentRoundNotFound(seasonId)));
 
