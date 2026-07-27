@@ -2,8 +2,6 @@ package com.ligitabl.api.web.predictions.userpredictions;
 
 import java.security.Principal;
 import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.temporal.ChronoUnit;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -36,6 +34,7 @@ import com.ligitabl.api.web.shared.dto.TeamRankDto;
 import com.ligitabl.api.web.shared.error.ErrorMapper;
 import com.ligitabl.api.web.shared.error.ErrorViewMapper;
 import com.ligitabl.api.web.shared.fixtures.FixtureJsonMapper;
+import com.ligitabl.api.web.shared.season.SeasonPhase;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.ResultTeamRank;
@@ -351,11 +350,12 @@ public class UserPredictionsController {
         model.addAttribute("hasRoundResult", data.hasRoundResult());
 
         // Season phase state — used for off-season/pre-season UI branches
-        model.addAttribute("isPreSeason", season.isPreSeason());
-        model.addAttribute("isOffSeason", season.isOffSeason());
-        model.addAttribute("isInPlay", season.isInPlay());
-        model.addAttribute("isInactive", season.isInactive());
-        boolean seasonAllowsUpdate = season.isInPlay() || (season.isPreSeason() && !data.hasPreSeasonRegistration());
+        SeasonPhase phase = SeasonPhase.resolve(season);
+        model.addAttribute("isPreSeason", phase.isPreSeason());
+        model.addAttribute("isOffSeason", phase.isOffSeason());
+        model.addAttribute("isInPlay", phase.isInPlay());
+        model.addAttribute("isInactive", phase.isInactive());
+        boolean seasonAllowsUpdate = phase.isInPlay() || (phase.isPreSeason() && !data.hasPreSeasonRegistration());
         model.addAttribute("seasonAllowsUpdate", seasonAllowsUpdate);
 
         // Combined editing gates, computed once rather than re-derived per template/fragment.
@@ -375,22 +375,20 @@ public class UserPredictionsController {
         // initial prediction (5-swap allowance, no cooldown) everywhere isInitialPrediction is checked,
         // without changing accessMode itself.
         model.addAttribute("isPreSeasonRegistration", data.hasPreSeasonRegistration());
-        if (season.getPreSeasonOpensAt() != null && !season.isPreSeasonOpen()) {
-            long days = ChronoUnit.DAYS.between(OffsetDateTime.now(), season.getPreSeasonOpensAt());
-            if (days >= 1) {
-                model.addAttribute("daysToPreSeason", days);
-            } else {
-                model.addAttribute("preSeasonAboutToStart", true);
-            }
+        if (phase.daysToPreSeason() != null) {
+            model.addAttribute("daysToPreSeason", phase.daysToPreSeason());
         }
-        if (season.isPreSeason() && season.getPredictionsOpenAt() != null) {
-            long days = ChronoUnit.DAYS.between(OffsetDateTime.now(), season.getPredictionsOpenAt());
-            if (days >= 1) {
-                model.addAttribute("daysToPredictions", days);
-            } else {
-                model.addAttribute("predictionsAboutToStart", true);
-            }
-            model.addAttribute("predictionsOpenAt", season.getPredictionsOpenAt());
+        if (phase.preSeasonAboutToStart()) {
+            model.addAttribute("preSeasonAboutToStart", true);
+        }
+        if (phase.daysToPredictions() != null) {
+            model.addAttribute("daysToPredictions", phase.daysToPredictions());
+        }
+        if (phase.predictionsAboutToStart()) {
+            model.addAttribute("predictionsAboutToStart", true);
+        }
+        if (phase.predictionsOpenAt() != null) {
+            model.addAttribute("predictionsOpenAt", phase.predictionsOpenAt());
         }
 
         // Source information

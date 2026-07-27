@@ -13,6 +13,7 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.web.predictions.userpredictions.PreviewRankingsSupport;
 import com.ligitabl.api.web.shared.dto.TeamRankDto;
+import com.ligitabl.api.web.shared.season.SeasonPhase;
 import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.Team;
@@ -88,6 +89,20 @@ public class PublicController {
                 && currentRound != season.getMaxRounds()
                 && currentRoundStatus != RoundStatus.FINALIZED;
         model.addAttribute("showLoggedInCta", showLoggedInCta);
+
+        // Pre-season banner — lets a guest landing during pre-season know registration is
+        // open early, or when predictions open.
+        SeasonPhase phase = SeasonPhase.resolve(season);
+        model.addAttribute("isPreSeason", phase.isPreSeason());
+        if (phase.daysToPredictions() != null) {
+            model.addAttribute("daysToPredictions", phase.daysToPredictions());
+        }
+        if (phase.predictionsAboutToStart()) {
+            model.addAttribute("predictionsAboutToStart", true);
+        }
+        if (phase.predictionsOpenAt() != null) {
+            model.addAttribute("predictionsOpenAt", phase.predictionsOpenAt());
+        }
 
         List<TeamRank> rankings = previewRankingsSupport.getPreviewRankings(season.getId(), currentRound);
         List<TeamRank> topRankings = rankings.stream()

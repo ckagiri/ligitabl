@@ -813,7 +813,7 @@ window.Ligitabl.predictionPage = function(el) {
           this.swapStack = _extractSwapStack(authPrediction);
           this._clearStorage(GUEST_STORAGE_KEY);
         }
-        if (this.teams.length === 0 && !isOpeningRound) {
+        if (this.teams.length === 0 && isInitialPrediction && !isOpeningRound) {
           const guestPrediction = loadGuestPrediction();
           if (guestPrediction) {
             this.teams = _extractTeams(guestPrediction).map((t, idx) => {
