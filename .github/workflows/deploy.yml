@@ -176,6 +176,7 @@ jobs:
           SLACK_WEBHOOK_URL=${{ secrets.SLACK_WEBHOOK_URL }}
           SLACK_NEW_USER_WEBHOOK_URL=${{ secrets.SLACK_NEW_USER_WEBHOOK_URL }}
           SLACK_NOTIFICATIONS_ENABLED=true
+          JOIN_REMINDER_ENABLED=true
           FRONTEND_URL=${{ secrets.FRONTEND_URL }}
           FRONTEND_SHARE_URL=${{ secrets.FRONTEND_SHARE_URL }}
           LOGTAIL_TOKEN=${{ secrets.LOGTAIL_TOKEN }}
