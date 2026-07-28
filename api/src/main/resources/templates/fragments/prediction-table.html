@@ -12,12 +12,13 @@
     x-data="{ compareOptionsOpen: window.matchMedia('(min-width: 640px)').matches }"
     x-init="$el.previousElementSibling && $el.previousElementSibling.hasAttribute('x-skeleton') && $el.previousElementSibling.remove()"
     th:fragment="comparison-options(hasFormData, showMoveHelperText)"
-    class="px-6 pt-4 pb-2"
+    class="px-6 pt-4 pb-2 max-sm:mx-6 max-sm:mt-4 max-sm:overflow-hidden max-sm:rounded-lg max-sm:border max-sm:border-gray-200 max-sm:px-0 max-sm:pt-0 max-sm:pb-0"
   >
+    <!-- Desktop: original plain text+chevron toggle (unchanged) -->
     <button
       type="button"
       @click="compareOptionsOpen = !compareOptionsOpen"
-      class="flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition"
+      class="hidden sm:flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition"
     >
       <svg
         class="h-4 w-4 transition-transform duration-200"
@@ -36,26 +37,65 @@
       Compare options
     </button>
 
-    <div x-show="compareOptionsOpen" x-transition x-cloak class="space-y-2 mt-2">
-      <!-- 2-column grid — all rows share the same gap so spacing is uniform -->
-      <div class="grid grid-cols-2 gap-x-6 gap-y-2 w-fit">
-        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition">
-          <input type="checkbox" x-model="showPoints" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+    <!-- Mobile: tappable header card with a live summary of what's active, so the
+         collapsed state still tells you what's currently showing on the table. -->
+    <button
+      type="button"
+      @click="compareOptionsOpen = !compareOptionsOpen"
+      :aria-expanded="compareOptionsOpen.toString()"
+      aria-controls="compare-options-panel"
+      class="flex sm:hidden w-full items-center justify-between gap-3 bg-gray-50 px-4 py-3 text-left transition-colors hover:bg-gray-100 active:bg-gray-200"
+    >
+      <span class="min-w-0">
+        <span class="block text-sm font-medium text-gray-900">Show on table</span>
+        <span
+          class="mt-0.5 block text-xs text-gray-500"
+          x-text="[showPoints && 'Points', showGD && 'GD', showFixtures && 'Fixtures', showForm && 'Form', showStandings && 'Actual positions'].filter(Boolean).join(', ') || 'Nothing selected'"
+        ></span>
+      </span>
+      <svg
+        class="h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200"
+        :class="compareOptionsOpen ? 'rotate-180' : ''"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M19 9l-7 7-7-7"
+        />
+      </svg>
+    </button>
+
+    <div
+      id="compare-options-panel"
+      x-show="compareOptionsOpen"
+      x-transition
+      x-cloak
+      class="space-y-3 mt-3 max-sm:space-y-1 max-sm:mt-0 max-sm:border-t max-sm:border-gray-200 max-sm:px-4 max-sm:py-4"
+    >
+      <!-- 2-column grid — all rows share the same gap so spacing is uniform. max-sm:min-h-[44px]
+           rows give each checkbox a properly-sized mobile tap target; desktop sizing is unchanged. -->
+      <div class="grid grid-cols-2 gap-x-6 gap-y-3 w-fit max-sm:w-full max-sm:gap-x-3 max-sm:gap-y-1">
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition max-sm:min-h-[44px] max-sm:gap-2.5">
+          <input type="checkbox" x-model="showPoints" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5" />
           <span>Show points</span>
         </label>
-        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition">
-          <input type="checkbox" x-model="showGD" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition max-sm:min-h-[44px] max-sm:gap-2.5">
+          <input type="checkbox" x-model="showGD" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5" />
           <span>Show GD</span>
         </label>
-        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition">
-          <input type="checkbox" x-model="showFixtures" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition max-sm:min-h-[44px] max-sm:gap-2.5">
+          <input type="checkbox" x-model="showFixtures" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5" />
           <span>Show fixtures</span>
         </label>
         <label
           th:if="${hasFormData}"
-          class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition"
+          class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition max-sm:min-h-[44px] max-sm:gap-2.5"
         >
-          <input type="checkbox" x-model="showForm" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+          <input type="checkbox" x-model="showForm" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5" />
           <span>Show form</span>
         </label>
         <!-- Form legend — visible when showForm is on -->
@@ -117,8 +157,8 @@
           </span>
         </div>
 
-        <label class="col-span-2 flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition">
-          <input type="checkbox" x-model="showStandings" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500" />
+        <label class="col-span-2 flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition max-sm:min-h-[44px] max-sm:gap-2.5">
+          <input type="checkbox" x-model="showStandings" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5" />
           <span class="hidden sm:inline">Compare with current standings</span>
           <span class="sm:hidden">Show actual positions</span>
         </label>
@@ -127,7 +167,7 @@
       <p
         th:if="${showMoveHelperText}"
         x-show="showStandings"
-        class="text-[11px] text-gray-500 leading-snug ml-6"
+        class="text-[11px] text-gray-500 leading-snug pl-6 max-sm:pl-7"
       >
         <span class="sm:hidden">
           <span class="block"
