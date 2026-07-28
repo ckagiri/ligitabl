@@ -214,6 +214,8 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers("/predictions/user/me")
                         .authenticated()
+                        .requestMatchers("/predictions/user/what-if", "/predictions/user/what-if/**")
+                        .authenticated()
                         .requestMatchers("/predictions/user/guest", "/predictions/user/guest/*")
                         .permitAll()
                         .requestMatchers("/seasonprediction/**")
