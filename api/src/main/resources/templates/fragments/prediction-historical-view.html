@@ -78,11 +78,9 @@
                 >
                   MCI
                 </div>
-                <div
-                  class="text-xs sm:text-sm font-medium text-gray-900 truncate"
-                  th:text="${rank.teamName}"
-                >
-                  Manchester City
+                <div class="min-w-0 flex-1 text-xs sm:text-sm font-medium text-gray-900 truncate">
+                  <span class="lg:hidden" th:text="${rank.teamShortName}">Man City</span>
+                  <span class="hidden lg:inline" th:text="${rank.teamName}">Manchester City</span>
                 </div>
               </div>
             </td>
@@ -128,11 +126,9 @@
                 >
                   MCI
                 </div>
-                <div
-                  class="text-xs sm:text-sm font-medium text-gray-900 truncate"
-                  th:text="${pred.teamName}"
-                >
-                  Manchester City
+                <div class="min-w-0 flex-1 text-xs sm:text-sm font-medium text-gray-900 truncate">
+                  <span class="lg:hidden" th:text="${pred.teamShortName}">Man City</span>
+                  <span class="hidden lg:inline" th:text="${pred.teamName}">Manchester City</span>
                 </div>
               </div>
             </td>
