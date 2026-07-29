@@ -980,7 +980,6 @@ window.Ligitabl.whatIfPage = function (el) {
                     currentStandings: this.currentStandings,
                     currentPoints: this.currentPoints,
                     currentGoalDifference: this.currentGoalDifference,
-                    formData: this.formData,
                     appliedScores: this.appliedScores,
                 }));
             } catch (e) {
@@ -1016,7 +1015,6 @@ window.Ligitabl.whatIfPage = function (el) {
             this.currentStandings = saved.currentStandings || this.currentStandings;
             this.currentPoints = saved.currentPoints || this.currentPoints;
             this.currentGoalDifference = saved.currentGoalDifference || this.currentGoalDifference;
-            this.formData = saved.formData || this.formData;
             this.appliedScores = saved.appliedScores || null;
             this.hasEdited = Object.values(this.scores).some((s) => s.home !== null || s.away !== null);
             if (this.hasComputed) this.activeTab = "result";
@@ -1209,11 +1207,9 @@ window.Ligitabl.whatIfPage = function (el) {
                     return {
                         teamCode: code,
                         teamShortName: team ? team.shortName || team.name : code,
-                        teamShorterName: team ? team.shorterName || team.shortName || team.name : code,
                         position: this.currentStandings[code],
                         points: this.currentPoints[code],
                         gd: this.currentGoalDifference[code],
-                        form: this.getForm(code),
                     };
                 })
                 .sort((a, b) => a.position - b.position);
@@ -1227,37 +1223,6 @@ window.Ligitabl.whatIfPage = function (el) {
         },
         totalScore() {
             return Math.max(0, this.maxHitPoints - this.totalHit());
-        },
-        // Mirrors FormService.buildFormMap's rule (W/D/L per team from goal comparison,
-        // capped at the last 5 entries) applied to the hypothetical scores instead of
-        // DB-fetched finished matches — projects form forward without a backend round-trip.
-        // Always starts from the server-seeded parsed.formData (not this.formData), which after
-        // one apply() already holds a *projected* form — re-projecting from that on a second
-        // apply() would stack this round's result on top of itself instead of replacing it.
-        _projectFormForward() {
-            const projected = {};
-            Object.keys(parsed.formData).forEach((code) => {
-                projected[code] = (parsed.formData[code] || []).slice();
-            });
-            this.matches
-                .filter((m) => m.status === "SCHEDULED")
-                .forEach((m) => {
-                    const s = this.scores[m.matchId];
-                    if (!s) return;
-                    const homeResult = s.home > s.away ? "W" : s.home === s.away ? "D" : "L";
-                    const awayResult = s.away > s.home ? "W" : s.home === s.away ? "D" : "L";
-                    const homeList = projected[m.homeTeamCode] || [];
-                    const awayList = projected[m.awayTeamCode] || [];
-                    projected[m.homeTeamCode] = [
-                        ...homeList,
-                        { result: homeResult, wasHome: true, opponentCode: m.awayTeamCode, goalsFor: s.home, goalsAgainst: s.away }
-                    ].slice(-5);
-                    projected[m.awayTeamCode] = [
-                        ...awayList,
-                        { result: awayResult, wasHome: false, opponentCode: m.homeTeamCode, goalsFor: s.away, goalsAgainst: s.home }
-                    ].slice(-5);
-                });
-            return projected;
         },
         // The only network call this page makes — every swap afterward recomputes purely
         // client-side via the reactive getters above (standingsRows/totalHit/totalScore).
@@ -1295,7 +1260,6 @@ window.Ligitabl.whatIfPage = function (el) {
                     this.currentStandings = data.standingsMap;
                     this.currentPoints = data.pointsMap;
                     this.currentGoalDifference = data.goalDifferenceMap;
-                    this.formData = this._projectFormForward();
                     this.hasComputed = true;
                     this.appliedScores = JSON.parse(JSON.stringify(this.scores));
                     this.activeTab = "result";
@@ -1307,10 +1271,10 @@ window.Ligitabl.whatIfPage = function (el) {
                 });
         },
         // Clears everything back to how the page loaded — scores, the sandbox team order and its
-        // swap log, and both cards (currentStandings/currentPoints/currentGoalDifference/formData
-        // revert to `parsed`'s original server-seeded values, which apply() never mutates directly
-        // since it reassigns `this.x`, not `parsed.x`) — and drops the persisted session so a
-        // refresh afterward starts fresh instead of restoring what was just cleared.
+        // swap log, and both cards (currentStandings/currentPoints/currentGoalDifference) revert
+        // to `parsed`'s original server-seeded values, which apply() never mutates directly since
+        // it reassigns `this.x`, not `parsed.x`) — and drops the persisted session so a refresh
+        // afterward starts fresh instead of restoring what was just cleared.
         resetWhatIf() {
             this.matches.forEach((m) => {
                 this.scores[m.matchId] = { home: null, away: null };
@@ -1326,7 +1290,6 @@ window.Ligitabl.whatIfPage = function (el) {
             this.currentStandings = parsed.currentStandings;
             this.currentPoints = parsed.currentPoints;
             this.currentGoalDifference = parsed.currentGoalDifference;
-            this.formData = parsed.formData;
             this.hasComputed = false;
             this.appliedScores = null;
             this.activeTab = "standings";

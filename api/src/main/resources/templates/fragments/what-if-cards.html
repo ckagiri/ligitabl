@@ -1,6 +1,8 @@
 <!-- What-If tables section: two cards. Card 1 flips between "Current Standings" (real,
      server-seeded) and "Projected Standings" (post-Apply) purely by reassigning currentStandings/
-     currentPoints/currentGoalDifference/formData on the Alpine component — see app.js apply().
+     currentPoints/currentGoalDifference on the Alpine component — see app.js apply(). No form
+     column here: the user just typed the hypothetical score, so a projected W/D/L would only
+     echo it back, and nothing in the sandbox's hit/delta math consults form anyway.
      Card 2 (Round Result) stays a placeholder until hasComputed is true; once computed, its rows
      are click-to-swap (same teamClick/_performSwap the old standalone "Round Prediction" card
      used) and Actual/Hit + the swap log recompute live from the existing reactive getters with
@@ -20,33 +22,18 @@
         <th class="pb-2 font-medium">Team</th>
         <th class="pb-2 font-medium text-right">Pts</th>
         <th class="pb-2 font-medium text-right">GD</th>
-        <th class="pb-2 font-medium text-right">Form</th>
       </tr>
     </thead>
     <tbody>
       <template x-for="row in standingsRows()" :key="row.teamCode">
         <tr class="border-t border-gray-100">
           <td class="py-1.5 text-gray-500" x-text="row.position"></td>
-          <td class="py-1.5 font-medium text-gray-900"><span class="sm:hidden" x-text="row.teamShorterName"></span><span class="hidden sm:inline" x-text="row.teamShortName"></span></td>
+          <td class="py-1.5 font-medium text-gray-900" x-text="row.teamShortName"></td>
           <td class="py-1.5 text-right text-gray-700" x-text="row.points"></td>
           <td
             class="py-1.5 text-right text-gray-700"
             x-text="row.gd > 0 ? '+' + row.gd : row.gd"
           ></td>
-          <td class="py-1.5 text-right">
-            <span class="inline-flex gap-0.5 justify-end">
-              <template x-for="(entry, idx) in row.form" :key="idx">
-                <span
-                  class="inline-block w-3.5 h-3.5 text-[9px] leading-[14px] text-center font-bold text-white"
-                  :class="[
-                    entry.result === 'W' ? 'bg-green-500' : (entry.result === 'D' ? 'bg-gray-400' : 'bg-red-500'),
-                    entry.wasHome ? 'rounded-full' : 'rounded-sm'
-                  ]"
-                  x-text="entry.result"
-                ></span>
-              </template>
-            </span>
-          </td>
         </tr>
       </template>
     </tbody>

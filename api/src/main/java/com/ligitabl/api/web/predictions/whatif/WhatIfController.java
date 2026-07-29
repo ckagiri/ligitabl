@@ -28,7 +28,6 @@ import com.ligitabl.api.rest.prediction.whatif.WhatIfCommand;
 import com.ligitabl.api.rest.prediction.whatif.WhatIfError;
 import com.ligitabl.api.rest.prediction.whatif.WhatIfResult;
 import com.ligitabl.api.rest.prediction.whatif.WhatIfScore;
-import com.ligitabl.api.rest.standings.FormService;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.web.predictions.userpredictions.GetUserPredictionQuery;
@@ -69,7 +68,6 @@ public class WhatIfController {
     private final TeamRepo teamRepo;
     private final CompetitionDefaults competitionDefaults;
     private final ObjectMapper objectMapper;
-    private final FormService formService;
     private final CurrentUserPublicId currentUserPublicId;
 
     @GetMapping
@@ -115,7 +113,6 @@ public class WhatIfController {
         List<WhatIfMatchDto> matches =
                 roundMatches.stream().map(WhatIfMatchDto::from).toList();
         List<TeamRankDto> predictions = enrichRankings(data.rankings());
-        var formMap = formService.buildFormMap(season.getId(), data.currentRound());
 
         model.addAttribute("pageTitle", "What-If");
         model.addAttribute("currentRound", data.currentRound());
@@ -130,7 +127,6 @@ public class WhatIfController {
             model.addAttribute("currentStandingsJson", objectMapper.writeValueAsString(data.standingsMap()));
             model.addAttribute("currentPointsJson", objectMapper.writeValueAsString(data.pointsMap()));
             model.addAttribute("currentGoalDifferenceJson", objectMapper.writeValueAsString(data.goalDifferenceMap()));
-            model.addAttribute("formJson", objectMapper.writeValueAsString(formMap));
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize what-if page data", e);
             model.addAttribute("whatIfMatchesJson", "[]");
@@ -138,7 +134,6 @@ public class WhatIfController {
             model.addAttribute("currentStandingsJson", "{}");
             model.addAttribute("currentPointsJson", "{}");
             model.addAttribute("currentGoalDifferenceJson", "{}");
-            model.addAttribute("formJson", "{}");
         }
 
         if (hxRequest != null && !hxRequest.isBlank()) {
