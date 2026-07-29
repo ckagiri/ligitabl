@@ -1248,6 +1248,69 @@ window.Ligitabl.whatIfPage = function(el) {
     },
     get totalScore() {
       return Math.max(0, this.maxHitPoints - this.totalHit);
+    },
+    // Mirrors FormService.buildFormMap's rule (W/D/L per team from goal comparison,
+    // capped at the last 5 entries) applied to the hypothetical scores instead of
+    // DB-fetched finished matches — projects form forward without a backend round-trip.
+    _projectFormForward() {
+      const projected = {};
+      Object.keys(this.formData).forEach((code) => {
+        projected[code] = (this.formData[code] || []).slice();
+      });
+      this.matches.filter((m) => m.status === "SCHEDULED").forEach((m) => {
+        const s = this.scores[m.matchId];
+        if (!s) return;
+        const homeResult = s.home > s.away ? "W" : s.home === s.away ? "D" : "L";
+        const awayResult = s.away > s.home ? "W" : s.home === s.away ? "D" : "L";
+        const homeList = projected[m.homeTeamCode] || [];
+        const awayList = projected[m.awayTeamCode] || [];
+        projected[m.homeTeamCode] = [
+          ...homeList,
+          { result: homeResult, wasHome: true, opponentCode: m.awayTeamCode, goalsFor: s.home, goalsAgainst: s.away }
+        ].slice(-5);
+        projected[m.awayTeamCode] = [
+          ...awayList,
+          { result: awayResult, wasHome: false, opponentCode: m.homeTeamCode, goalsFor: s.away, goalsAgainst: s.home }
+        ].slice(-5);
+      });
+      return projected;
+    },
+    // The only network call this page makes — every swap afterward recomputes purely
+    // client-side via the reactive getters above (standingsRows/totalHit/totalScore).
+    apply() {
+      if (!this.allScoresEntered || this.isComputing) return;
+      this.isComputing = true;
+      this.errorMessage = null;
+      const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+      const headers = { "Content-Type": "application/json" };
+      if (csrfToken) headers["X-CSRF-TOKEN"] = csrfToken;
+      const body = {
+        scores: this.matches.filter((m) => m.status === "SCHEDULED").map((m) => ({
+          matchId: m.matchId,
+          homeGoals: this.scores[m.matchId].home,
+          awayGoals: this.scores[m.matchId].away
+        }))
+      };
+      fetch("/predictions/user/what-if/compute", {
+        method: "POST",
+        headers,
+        body: JSON.stringify(body)
+      }).then((r) => r.json().then((data) => ({ ok: r.ok, data }))).then(({ ok, data }) => {
+        this.isComputing = false;
+        if (!ok || !data.success) {
+          this.errorMessage = data && data.message || "Something went wrong";
+          return;
+        }
+        this.currentStandings = data.standingsMap;
+        this.currentPoints = data.pointsMap;
+        this.currentGoalDifference = data.goalDifferenceMap;
+        this.formData = this._projectFormForward();
+        this.hasComputed = true;
+        this.activeTab = "result";
+      }).catch(() => {
+        this.isComputing = false;
+        this.errorMessage = "Failed to compute. Check your connection.";
+      });
     }
   });
 };
