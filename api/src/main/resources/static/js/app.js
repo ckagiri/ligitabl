@@ -1218,7 +1218,13 @@ window.Ligitabl.whatIfPage = function(el) {
         });
       }
     },
-    get allScoresEntered() {
+    // Plain methods, not `get x()` accessors — Object.assign(base, {...}) invokes ES6
+    // getters immediately (with `this` bound to this literal, not the final component)
+    // while copying properties, which throws here since e.g. this.currentStandings only
+    // exists on `base`. That silently aborts the whole Object.assign, so the component
+    // never gets created at all. _predictionBase avoids this for the same reason — it
+    // uses getDelta()/getActualPosition() etc., never `get x()`.
+    allScoresEntered() {
       return this.matches.filter((m) => m.status === "SCHEDULED").every((m) => {
         const s = this.scores[m.matchId];
         return s && Number.isInteger(s.home) && s.home >= 0 && Number.isInteger(s.away) && s.away >= 0;
@@ -1226,7 +1232,7 @@ window.Ligitabl.whatIfPage = function(el) {
     },
     // Card 1 rows — sorted by whatever currentStandings currently holds (real before Apply,
     // what-if after apply() reassigns it).
-    get standingsRows() {
+    standingsRows() {
       return Object.keys(this.currentStandings).map((code) => {
         const team = this.teams.find((t) => t.code === code);
         return {
@@ -1240,14 +1246,14 @@ window.Ligitabl.whatIfPage = function(el) {
       }).sort((a, b) => a.position - b.position);
     },
     // Card 3's per-team "hit" is the inherited getDelta(teamCode); these sum it for the banner.
-    get totalHit() {
+    totalHit() {
       return this.teams.reduce((sum, t) => {
         const d = this.getDelta(t.code);
         return sum + (typeof d === "number" ? d : 0);
       }, 0);
     },
-    get totalScore() {
-      return Math.max(0, this.maxHitPoints - this.totalHit);
+    totalScore() {
+      return Math.max(0, this.maxHitPoints - this.totalHit());
     },
     // Mirrors FormService.buildFormMap's rule (W/D/L per team from goal comparison,
     // capped at the last 5 entries) applied to the hypothetical scores instead of
@@ -1278,7 +1284,7 @@ window.Ligitabl.whatIfPage = function(el) {
     // The only network call this page makes — every swap afterward recomputes purely
     // client-side via the reactive getters above (standingsRows/totalHit/totalScore).
     apply() {
-      if (!this.allScoresEntered || this.isComputing) return;
+      if (!this.allScoresEntered() || this.isComputing) return;
       this.isComputing = true;
       this.errorMessage = null;
       const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;

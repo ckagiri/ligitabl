@@ -1,8 +1,10 @@
-<!-- What-If tables section: three cards. Card 1 flips between "Current Standings" (real,
+<!-- What-If tables section: two cards. Card 1 flips between "Current Standings" (real,
      server-seeded) and "Projected Standings" (post-Apply) purely by reassigning currentStandings/
      currentPoints/currentGoalDifference/formData on the Alpine component — see app.js apply().
-     Card 2 is a sandbox copy of the live prediction (unlimited swaps). Card 3 stays in its
-     placeholder state until hasComputed is true. -->
+     Card 2 (Round Result) stays a placeholder until hasComputed is true; once computed, its rows
+     are click-to-swap (same teamClick/_performSwap the old standalone "Round Prediction" card
+     used) and everything — Actual/Hit columns, the score banner, the swap log — recomputes live
+     from the existing reactive getters with no further network calls. -->
 
 <div th:fragment="standings-card" class="bg-gray-50 rounded-lg p-4">
   <h3
@@ -20,7 +22,7 @@
       </tr>
     </thead>
     <tbody>
-      <template x-for="row in standingsRows" :key="row.teamCode">
+      <template x-for="row in standingsRows()" :key="row.teamCode">
         <tr class="border-t border-gray-100">
           <td class="py-1.5 text-gray-500" x-text="row.position"></td>
           <td class="py-1.5 font-medium text-gray-900" x-text="row.teamShortName"></td>
@@ -46,39 +48,6 @@
   </table>
 </div>
 
-<div th:fragment="round-prediction-card" class="bg-gray-50 rounded-lg p-4">
-  <h3 class="text-sm font-semibold text-gray-700 mb-3">
-    Round Prediction<span
-      x-show="getDirtyCount() > 0"
-      class="text-indigo-500"
-      >*</span
-    >
-  </h3>
-  <p class="text-xs text-gray-400 mb-2" x-show="!selectedTeam">
-    Tap two teams to swap them
-  </p>
-  <p class="text-xs text-indigo-500 mb-2" x-show="selectedTeam" x-cloak>
-    <span x-text="getSelectedTeamShortName()"></span> selected — tap another
-    team to swap
-  </p>
-  <ul class="space-y-1">
-    <template x-for="team in teams" :key="team.code">
-      <li
-        class="flex items-center gap-3 py-1.5 px-2 rounded-md cursor-pointer transition-colors"
-        :class="isSelected(team.code) ? 'bg-indigo-100' : 'hover:bg-gray-100'"
-        @click="teamClick(team.code)"
-      >
-        <span class="text-xs text-gray-400 w-5" x-text="team.position"></span>
-        <span
-          class="text-sm font-medium text-gray-900"
-          x-text="team.shortName || team.name"
-        ></span>
-      </li>
-    </template>
-  </ul>
-  <div th:replace="~{fragments/what-if-swap-log :: swap-log}"></div>
-</div>
-
 <div th:fragment="round-result-card" class="bg-gray-50 rounded-lg p-4">
   <h3 class="text-sm font-semibold text-gray-700 mb-3">
     Round Result<span
@@ -98,10 +67,17 @@
       <div
         class="mb-3 px-3 py-2 bg-white rounded-md border border-gray-200 text-sm font-medium text-gray-900"
       >
-        Score: <span x-text="totalScore"></span> (Max:
+        Score: <span x-text="totalScore()"></span> (Max:
         <span x-text="maxHitPoints"></span> Lost:
-        <span x-text="totalHit"></span>)
+        <span x-text="totalHit()"></span>)
       </div>
+      <p class="text-xs text-gray-400 mb-2" x-show="!selectedTeam">
+        Tap two teams to swap them
+      </p>
+      <p class="text-xs text-indigo-500 mb-2" x-show="selectedTeam" x-cloak>
+        <span x-text="getSelectedTeamShortName()"></span> selected — tap
+        another team to swap
+      </p>
       <table class="w-full text-sm">
         <thead>
           <tr class="text-xs text-gray-400 text-left">
@@ -113,7 +89,11 @@
         </thead>
         <tbody>
           <template x-for="team in teams" :key="team.code">
-            <tr class="border-t border-gray-100">
+            <tr
+              class="border-t border-gray-100 cursor-pointer transition-colors"
+              :class="isSelected(team.code) ? 'bg-indigo-100' : 'hover:bg-gray-100'"
+              @click="teamClick(team.code)"
+            >
               <td class="py-1.5 text-gray-500" x-text="team.position"></td>
               <td
                 class="py-1.5 font-medium text-gray-900"
@@ -132,6 +112,7 @@
           </template>
         </tbody>
       </table>
+      <div th:replace="~{fragments/what-if-swap-log :: swap-log}"></div>
     </div>
   </template>
 </div>

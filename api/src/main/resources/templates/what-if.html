@@ -118,8 +118,8 @@
               <button
                 type="button"
                 @click="apply()"
-                :disabled="!allScoresEntered || isComputing"
-                :class="allScoresEntered && !isComputing ? 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer' : 'bg-gray-300 cursor-not-allowed'"
+                :disabled="!allScoresEntered() || isComputing"
+                :class="allScoresEntered() && !isComputing ? 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer' : 'bg-gray-300 cursor-not-allowed'"
                 class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors"
               >
                 <svg
@@ -153,7 +153,8 @@
             </div>
           </div>
 
-          <!-- Tables section: tabs on mobile, three cards side by side on desktop -->
+          <!-- Tables section: tabs on mobile, two cards side by side on desktop. Swapping
+               (previously its own "Round Prediction" card) now lives inside Round Result. -->
           <div class="px-6 pb-6">
             <div class="md:hidden flex gap-2 mb-3">
               <button
@@ -166,14 +167,6 @@
               </button>
               <button
                 type="button"
-                @click="activeTab = 'prediction'"
-                :class="activeTab === 'prediction' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'"
-                class="flex-1 text-xs font-medium py-1.5 rounded-md transition-colors"
-              >
-                Prediction
-              </button>
-              <button
-                type="button"
                 @click="activeTab = 'result'"
                 :class="activeTab === 'result' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'"
                 class="flex-1 text-xs font-medium py-1.5 rounded-md transition-colors"
@@ -182,12 +175,9 @@
               </button>
             </div>
 
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div x-show="activeTab === 'standings'" class="md:!block">
                 <div th:replace="~{fragments/what-if-cards :: standings-card}"></div>
-              </div>
-              <div x-show="activeTab === 'prediction'" class="md:!block">
-                <div th:replace="~{fragments/what-if-cards :: round-prediction-card}"></div>
               </div>
               <div x-show="activeTab === 'result'" class="md:!block">
                 <div th:replace="~{fragments/what-if-cards :: round-result-card}"></div>
