@@ -956,6 +956,71 @@ window.Ligitabl.whatIfPage = function (el) {
         init() {
             this.teams = Ligitabl._mapServerPredictions(parsed.predictions);
             this.originalTeams = Ligitabl._mapServerPredictions(parsed.predictions);
+            this._restoreWhatIfSession();
+        },
+        // Session persists across refresh/navigation, scoped per user+round. Keyed off the
+        // matches' own statuses so a match going POSTPONED after the session was saved is
+        // detected: `_restoreWhatIfSession` discards the whole cached session on any mismatch
+        // rather than trying to patch just the affected match.
+        _whatIfStorageKey() {
+            return `ligitabl.whatif.${userId}.${roundId}`;
+        },
+        _matchStatusSnapshot() {
+            return this.matches.map((m) => `${m.matchId}:${m.status}`).sort().join(",");
+        },
+        _saveWhatIfSession() {
+            try {
+                localStorage.setItem(this._whatIfStorageKey(), JSON.stringify({
+                    matchStatusSnapshot: this._matchStatusSnapshot(),
+                    scores: this.scores,
+                    teams: this.teams,
+                    swapStack: this.swapStack,
+                    swapLog: this.swapLog,
+                    hasComputed: this.hasComputed,
+                    currentStandings: this.currentStandings,
+                    currentPoints: this.currentPoints,
+                    currentGoalDifference: this.currentGoalDifference,
+                    formData: this.formData,
+                    appliedScores: this.appliedScores,
+                }));
+            } catch (e) {
+                console.warn("Failed to save what-if session:", e);
+            }
+        },
+        _clearWhatIfSession() {
+            try {
+                localStorage.removeItem(this._whatIfStorageKey());
+            } catch (e) {
+                console.warn("Failed to clear what-if session:", e);
+            }
+        },
+        _restoreWhatIfSession() {
+            let saved;
+            try {
+                const raw = localStorage.getItem(this._whatIfStorageKey());
+                if (!raw) return false;
+                saved = JSON.parse(raw);
+            } catch (e) {
+                console.warn("Failed to read what-if session:", e);
+                return false;
+            }
+            if (!saved || saved.matchStatusSnapshot !== this._matchStatusSnapshot()) {
+                this._clearWhatIfSession();
+                return false;
+            }
+            this.scores = saved.scores || this.scores;
+            this.teams = saved.teams || this.teams;
+            this.swapStack = saved.swapStack || [];
+            this.swapLog = saved.swapLog || [];
+            this.hasComputed = !!saved.hasComputed;
+            this.currentStandings = saved.currentStandings || this.currentStandings;
+            this.currentPoints = saved.currentPoints || this.currentPoints;
+            this.currentGoalDifference = saved.currentGoalDifference || this.currentGoalDifference;
+            this.formData = saved.formData || this.formData;
+            this.appliedScores = saved.appliedScores || null;
+            this.hasEdited = Object.values(this.scores).some((s) => s.home !== null || s.away !== null);
+            if (this.hasComputed) this.activeTab = "result";
+            return true;
         },
         scoreOutcome(matchId) {
             const s = this.scores[matchId];
@@ -1005,6 +1070,7 @@ window.Ligitabl.whatIfPage = function (el) {
         setMatchScore(matchId, home, away) {
             this.scores[matchId] = { home, away };
             this.hasEdited = true;
+            this._saveWhatIfSession();
         },
         pickScore(matchId, home, away) {
             this.setMatchScore(matchId, home, away);
@@ -1043,6 +1109,7 @@ window.Ligitabl.whatIfPage = function (el) {
             if (s.home === null) s.home = 0;
             if (s.away === null) s.away = 0;
             this.hasEdited = true;
+            this._saveWhatIfSession();
         },
         remainingCount() {
             return this.matches.filter((m) => m.status === "SCHEDULED" && !this.scoreAnswered(m.matchId)).length;
@@ -1093,11 +1160,12 @@ window.Ligitabl.whatIfPage = function (el) {
                     teamBTo: teamAFrom,
                 });
             }
+            this._saveWhatIfSession();
         },
         // _predictionBase provides canUndo()/swapStack/_swapTeamsDirect/undoing, but
         // undoLastSwap() itself is only defined on predictionPage/guestPredictionPage (like
-        // teamClick was) — ported here without their storage-persistence callback, and popping
-        // our own swapLog in step so the log doesn't show a swap that's just been undone.
+        // teamClick was) — ported here with our own storage persistence instead of theirs, and
+        // popping our own swapLog in step so the log doesn't show a swap that's just been undone.
         undoLastSwap() {
             if (!this.canUndo() || this.undoing) return;
             this.undoing = true;
@@ -1105,6 +1173,7 @@ window.Ligitabl.whatIfPage = function (el) {
             this.swapLog.pop();
             setTimeout(() => {
                 this._swapTeamsDirect(last.b, last.a);
+                this._saveWhatIfSession();
                 setTimeout(() => {
                     this.undoing = false;
                 }, 200);
@@ -1115,6 +1184,7 @@ window.Ligitabl.whatIfPage = function (el) {
         resetSwaps() {
             this.reset();
             this.swapLog = [];
+            this._saveWhatIfSession();
         },
         // Plain methods, not `get x()` accessors — Object.assign(base, {...}) invokes ES6
         // getters immediately (with `this` bound to this literal, not the final component)
@@ -1229,6 +1299,7 @@ window.Ligitabl.whatIfPage = function (el) {
                     this.hasComputed = true;
                     this.appliedScores = JSON.parse(JSON.stringify(this.scores));
                     this.activeTab = "result";
+                    this._saveWhatIfSession();
                 })
                 .catch(() => {
                     this.isComputing = false;
@@ -1238,7 +1309,8 @@ window.Ligitabl.whatIfPage = function (el) {
         // Clears everything back to how the page loaded — scores, the sandbox team order and its
         // swap log, and both cards (currentStandings/currentPoints/currentGoalDifference/formData
         // revert to `parsed`'s original server-seeded values, which apply() never mutates directly
-        // since it reassigns `this.x`, not `parsed.x`).
+        // since it reassigns `this.x`, not `parsed.x`) — and drops the persisted session so a
+        // refresh afterward starts fresh instead of restoring what was just cleared.
         resetWhatIf() {
             this.matches.forEach((m) => {
                 this.scores[m.matchId] = { home: null, away: null };
@@ -1259,6 +1331,7 @@ window.Ligitabl.whatIfPage = function (el) {
             this.appliedScores = null;
             this.activeTab = "standings";
             this.errorMessage = null;
+            this._clearWhatIfSession();
         }
     });
 };
