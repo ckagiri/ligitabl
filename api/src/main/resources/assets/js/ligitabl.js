@@ -903,27 +903,102 @@ window.Ligitabl.publicPredictionPage = function (el) {
     });
 };
 
-// --- What-If page (Phase 2: score-input skeleton only, no sandbox/cards yet) ---
+// --- What-If page ---
+// Reuses the same swap sandbox (_predictionBase) that drives the real /my-table interactive
+// table, but nothing here ever writes to the real prediction: exceedsLimit() is overridden so
+// the sandbox never enforces the real swap-quota, and Round Result stays a placeholder until
+// apply() (Phase 4) fetches a what-if standings snapshot.
 
 window.Ligitabl.whatIfPage = function (el) {
+    const parsed = Ligitabl._parseDataAttributes(el);
     const matches = Ligitabl._parseJSON(el?.dataset?.whatIfMatches, []);
+    const roundId = el?.dataset?.roundId || "unknown";
+    const userId = el?.dataset?.userId || "guest";
+    const maxHitPoints = Number(el?.dataset?.maxHitPoints || 0);
+    const base = Ligitabl._predictionBase(parsed, userId, roundId);
+    const originalPerformSwap = base._performSwap;
+
     const scores = {};
     matches.forEach((m) => {
         scores[m.matchId] = { home: null, away: null };
     });
 
-    return {
+    return Object.assign(base, {
         matches,
         scores,
+        maxHitPoints,
+        swapLog: [],
+        activeTab: "standings",
+        hasComputed: false,
+        isComputing: false,
+        errorMessage: null,
+        init() {
+            this.teams = Ligitabl._mapServerPredictions(parsed.predictions);
+            this.originalTeams = Ligitabl._mapServerPredictions(parsed.predictions);
+        },
+        // Sandbox swaps are unlimited — there's no real swap quota to enforce here.
+        exceedsLimit() {
+            return false;
+        },
+        // Wraps the inherited swap mechanics to also log the swap in the same
+        // {teamACode, teamAFrom, teamATo, ...} shape predictions.html's "Swap History" uses.
+        _performSwap(teamCode) {
+            const teamACode = this.selectedTeam;
+            const teamBCode = teamCode;
+            const teamA = this.teams.find((t) => t.code === teamACode);
+            const teamB = this.teams.find((t) => t.code === teamBCode);
+            const teamAFrom = teamA ? teamA.position : null;
+            const teamBFrom = teamB ? teamB.position : null;
+
+            originalPerformSwap.call(this, teamCode);
+
+            if (teamAFrom !== null && teamBFrom !== null) {
+                this.swapLog.push({
+                    teamACode,
+                    teamAFrom,
+                    teamATo: teamBFrom,
+                    teamBCode,
+                    teamBFrom,
+                    teamBTo: teamAFrom,
+                });
+            }
+        },
         get allScoresEntered() {
-            return matches
+            return this.matches
                 .filter((m) => m.status === "SCHEDULED")
                 .every((m) => {
                     const s = this.scores[m.matchId];
                     return s && Number.isInteger(s.home) && s.home >= 0 && Number.isInteger(s.away) && s.away >= 0;
                 });
         },
-    };
+        // Card 1 rows — sorted by whatever currentStandings currently holds (real before Apply,
+        // what-if after apply() reassigns it).
+        get standingsRows() {
+            return Object.keys(this.currentStandings)
+                .map((code) => {
+                    const team = this.teams.find((t) => t.code === code);
+                    return {
+                        teamCode: code,
+                        teamShortName: team ? team.shortName || team.name : code,
+                        position: this.currentStandings[code],
+                        points: this.currentPoints[code],
+                        gd: this.currentGoalDifference[code],
+                        form: this.getForm(code),
+                    };
+                })
+                .sort((a, b) => a.position - b.position);
+        },
+        // Card 3's per-team "hit" is the inherited getDelta(teamCode); these sum it for the banner.
+        get totalHit() {
+            return this.teams.reduce((sum, t) => {
+                const d = this.getDelta(t.code);
+                return sum + (typeof d === "number" ? d : 0);
+            }, 0);
+        },
+        get totalScore() {
+            return Math.max(0, this.maxHitPoints - this.totalHit);
+        },
+    });
 };
 
 // --- Results Banner Dismissal ---

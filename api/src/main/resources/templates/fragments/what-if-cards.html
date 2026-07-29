@@ -1,0 +1,137 @@
+<!-- What-If tables section: three cards. Card 1 flips between "Current Standings" (real,
+     server-seeded) and "Projected Standings" (post-Apply) purely by reassigning currentStandings/
+     currentPoints/currentGoalDifference/formData on the Alpine component — see app.js apply().
+     Card 2 is a sandbox copy of the live prediction (unlimited swaps). Card 3 stays in its
+     placeholder state until hasComputed is true. -->
+
+<div th:fragment="standings-card" class="bg-gray-50 rounded-lg p-4">
+  <h3
+    class="text-sm font-semibold text-gray-700 mb-3"
+    x-text="hasComputed ? 'Projected Standings' : 'Current Standings'"
+  ></h3>
+  <table class="w-full text-sm">
+    <thead>
+      <tr class="text-xs text-gray-400 text-left">
+        <th class="pb-2 font-medium w-8">#</th>
+        <th class="pb-2 font-medium">Team</th>
+        <th class="pb-2 font-medium text-right">Pts</th>
+        <th class="pb-2 font-medium text-right">GD</th>
+        <th class="pb-2 font-medium text-right">Form</th>
+      </tr>
+    </thead>
+    <tbody>
+      <template x-for="row in standingsRows" :key="row.teamCode">
+        <tr class="border-t border-gray-100">
+          <td class="py-1.5 text-gray-500" x-text="row.position"></td>
+          <td class="py-1.5 font-medium text-gray-900" x-text="row.teamShortName"></td>
+          <td class="py-1.5 text-right text-gray-700" x-text="row.points"></td>
+          <td
+            class="py-1.5 text-right text-gray-700"
+            x-text="row.gd > 0 ? '+' + row.gd : row.gd"
+          ></td>
+          <td class="py-1.5 text-right">
+            <span class="inline-flex gap-0.5 justify-end">
+              <template x-for="(entry, idx) in row.form" :key="idx">
+                <span
+                  class="inline-block w-3.5 h-3.5 rounded-full text-[9px] leading-[14px] text-center font-bold text-white"
+                  :class="entry.result === 'W' ? 'bg-green-500' : (entry.result === 'D' ? 'bg-gray-400' : 'bg-red-500')"
+                  x-text="entry.result"
+                ></span>
+              </template>
+            </span>
+          </td>
+        </tr>
+      </template>
+    </tbody>
+  </table>
+</div>
+
+<div th:fragment="round-prediction-card" class="bg-gray-50 rounded-lg p-4">
+  <h3 class="text-sm font-semibold text-gray-700 mb-3">
+    Round Prediction<span
+      x-show="getDirtyCount() > 0"
+      class="text-indigo-500"
+      >*</span
+    >
+  </h3>
+  <p class="text-xs text-gray-400 mb-2" x-show="!selectedTeam">
+    Tap two teams to swap them
+  </p>
+  <p class="text-xs text-indigo-500 mb-2" x-show="selectedTeam" x-cloak>
+    <span x-text="getSelectedTeamShortName()"></span> selected — tap another
+    team to swap
+  </p>
+  <ul class="space-y-1">
+    <template x-for="team in teams" :key="team.code">
+      <li
+        class="flex items-center gap-3 py-1.5 px-2 rounded-md cursor-pointer transition-colors"
+        :class="isSelected(team.code) ? 'bg-indigo-100' : 'hover:bg-gray-100'"
+        @click="teamClick(team.code)"
+      >
+        <span class="text-xs text-gray-400 w-5" x-text="team.position"></span>
+        <span
+          class="text-sm font-medium text-gray-900"
+          x-text="team.shortName || team.name"
+        ></span>
+      </li>
+    </template>
+  </ul>
+  <div th:replace="~{fragments/what-if-swap-log :: swap-log}"></div>
+</div>
+
+<div th:fragment="round-result-card" class="bg-gray-50 rounded-lg p-4">
+  <h3 class="text-sm font-semibold text-gray-700 mb-3">
+    Round Result<span
+      x-show="getDirtyCount() > 0"
+      class="text-indigo-500"
+      >*</span
+    >
+  </h3>
+  <template x-if="!hasComputed">
+    <p class="text-sm text-gray-500 py-6 text-center">
+      Enter all hypothetical scores above, then hit Apply to see your
+      projected result.
+    </p>
+  </template>
+  <template x-if="hasComputed">
+    <div>
+      <div
+        class="mb-3 px-3 py-2 bg-white rounded-md border border-gray-200 text-sm font-medium text-gray-900"
+      >
+        Score: <span x-text="totalScore"></span> (Max:
+        <span x-text="maxHitPoints"></span> Lost:
+        <span x-text="totalHit"></span>)
+      </div>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-xs text-gray-400 text-left">
+            <th class="pb-2 font-medium w-8">Pred</th>
+            <th class="pb-2 font-medium">Team</th>
+            <th class="pb-2 font-medium text-right">Actual</th>
+            <th class="pb-2 font-medium text-right">Hit</th>
+          </tr>
+        </thead>
+        <tbody>
+          <template x-for="team in teams" :key="team.code">
+            <tr class="border-t border-gray-100">
+              <td class="py-1.5 text-gray-500" x-text="team.position"></td>
+              <td
+                class="py-1.5 font-medium text-gray-900"
+                x-text="team.shortName || team.name"
+              ></td>
+              <td
+                class="py-1.5 text-right text-gray-700"
+                x-text="getActualPosition(team.code)"
+              ></td>
+              <td
+                class="py-1.5 text-right"
+                :class="getDelta(team.code) === 0 ? 'text-green-600 font-semibold' : 'text-gray-700'"
+                x-text="getDelta(team.code)"
+              ></td>
+            </tr>
+          </template>
+        </tbody>
+      </table>
+    </div>
+  </template>
+</div>

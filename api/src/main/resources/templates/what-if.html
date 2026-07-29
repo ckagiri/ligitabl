@@ -59,7 +59,10 @@
                   data-current-standings=${currentStandingsJson},
                   data-current-points=${currentPointsJson},
                   data-current-goal-difference=${currentGoalDifferenceJson},
-                  data-max-hit-points=${maxHitPoints}"
+                  data-form=${formJson},
+                  data-max-hit-points=${maxHitPoints},
+                  data-round-id=${currentRoundId},
+                  data-user-id=${userId}"
         >
           <!-- Match score input section -->
           <div class="px-6 py-4">
@@ -109,6 +112,48 @@
                   No matches found for this round.
                 </p>
               </template>
+            </div>
+          </div>
+
+          <!-- Tables section: tabs on mobile, three cards side by side on desktop -->
+          <div class="px-6 pb-6">
+            <div class="md:hidden flex gap-2 mb-3">
+              <button
+                type="button"
+                @click="activeTab = 'standings'"
+                :class="activeTab === 'standings' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'"
+                class="flex-1 text-xs font-medium py-1.5 rounded-md transition-colors"
+              >
+                Standings
+              </button>
+              <button
+                type="button"
+                @click="activeTab = 'prediction'"
+                :class="activeTab === 'prediction' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'"
+                class="flex-1 text-xs font-medium py-1.5 rounded-md transition-colors"
+              >
+                Prediction
+              </button>
+              <button
+                type="button"
+                @click="activeTab = 'result'"
+                :class="activeTab === 'result' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'"
+                class="flex-1 text-xs font-medium py-1.5 rounded-md transition-colors"
+              >
+                Result
+              </button>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div x-show="activeTab === 'standings'" class="md:!block">
+                <div th:replace="~{fragments/what-if-cards :: standings-card}"></div>
+              </div>
+              <div x-show="activeTab === 'prediction'" class="md:!block">
+                <div th:replace="~{fragments/what-if-cards :: round-prediction-card}"></div>
+              </div>
+              <div x-show="activeTab === 'result'" class="md:!block">
+                <div th:replace="~{fragments/what-if-cards :: round-result-card}"></div>
+              </div>
             </div>
           </div>
         </div>
