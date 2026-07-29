@@ -21,6 +21,9 @@ public class TeamRankDto {
     UUID teamId;
     String teamName;
     String teamShortName;
+    // Compact name for space-constrained UI (Team.shorterName); falls back to teamShortName
+    // when a team hasn't had one seeded yet.
+    String teamShorterName;
     String teamSlug;
     String teamTla;
 
@@ -34,6 +37,7 @@ public class TeamRankDto {
                     .teamId(null)
                     .teamName(rank.getCode())
                     .teamShortName(rank.getCode())
+                    .teamShorterName(rank.getCode())
                     .teamSlug(rank.getCode())
                     .teamTla(rank.getCode())
                     .build();
@@ -45,6 +49,7 @@ public class TeamRankDto {
                 .teamId(team.getId())
                 .teamName(team.getName())
                 .teamShortName(team.getShortName())
+                .teamShorterName(team.getShorterName() != null ? team.getShorterName() : team.getShortName())
                 .teamSlug(team.getSlug().value())
                 .teamTla(team.getTla())
                 .build();

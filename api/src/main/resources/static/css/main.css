@@ -1108,6 +1108,9 @@ video {
 .items-center {
   align-items: center;
 }
+.items-baseline {
+  align-items: baseline;
+}
 .justify-start {
   justify-content: flex-start;
 }
@@ -1315,6 +1318,9 @@ video {
 }
 .border-b-2 {
   border-bottom-width: 2px;
+}
+.border-l {
+  border-left-width: 1px;
 }
 .border-l-2 {
   border-left-width: 2px;
@@ -1927,6 +1933,9 @@ video {
 .text-\[11px\] {
   font-size: 11px;
 }
+.text-\[13px\] {
+  font-size: 13px;
+}
 .text-\[9px\] {
   font-size: 9px;
 }
@@ -2459,6 +2468,17 @@ video {
   }
 }
 
+/* What-if score picker's reroll-dice flourish */
+@keyframes whatIfDiceRoll {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.what-if-dice-rolling {
+  animation: whatIfDiceRoll 300ms ease-out;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -2549,6 +2569,9 @@ video {
     -moz-column-break-inside: avoid;
          break-inside: avoid;
   }
+}
+.first\:border-l-0:first-child {
+  border-left-width: 0px;
 }
 .last\:mb-0:last-child {
   margin-bottom: 0px;

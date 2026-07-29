@@ -1168,6 +1168,11 @@ window.Ligitabl.publicPredictionPage = function(el) {
     }
   });
 };
+const WHAT_IF_CHIPS = {
+  H: [[1, 0], [2, 0], [2, 1]],
+  D: [[1, 1], [0, 0], [2, 2]],
+  A: [[0, 1], [1, 2], [0, 2]]
+};
 window.Ligitabl.whatIfPage = function(el) {
   const parsed = Ligitabl._parseDataAttributes(el);
   const matches = Ligitabl._parseJSON(el?.dataset?.whatIfMatches, []);
@@ -1189,13 +1194,121 @@ window.Ligitabl.whatIfPage = function(el) {
     hasComputed: false,
     isComputing: false,
     errorMessage: null,
+    // Score-picker state (gameweek-v5.html interaction: tap a score box or 1/X/2 to open a
+    // chip strip of plausible scores for that outcome, plus a reroll die and +/- steppers).
+    openId: null,
+    openSeg: null,
+    focusSide: "home",
+    hasEdited: false,
+    rollingId: null,
     init() {
       this.teams = Ligitabl._mapServerPredictions(parsed.predictions);
       this.originalTeams = Ligitabl._mapServerPredictions(parsed.predictions);
     },
+    scoreOutcome(matchId) {
+      const s = this.scores[matchId];
+      if (!s || s.home === null || s.away === null) return null;
+      if (s.home > s.away) return "H";
+      if (s.home === s.away) return "D";
+      return "A";
+    },
+    scoreAnswered(matchId) {
+      const s = this.scores[matchId];
+      return !!s && s.home !== null && s.away !== null;
+    },
+    isScorePickerOpen(matchId) {
+      return this.openId === matchId;
+    },
+    scoreChips() {
+      return this.openSeg ? WHAT_IF_CHIPS[this.openSeg] : [];
+    },
+    isChipSelected(matchId, home, away) {
+      const s = this.scores[matchId];
+      return !!s && s.home === home && s.away === away;
+    },
+    openScorePicker(matchId, seg, side) {
+      this.openId = matchId;
+      this.openSeg = seg;
+      this.focusSide = side ?? "home";
+    },
+    closeScorePicker() {
+      this.openId = null;
+      this.openSeg = null;
+    },
+    // Clicking an empty score box opens the picker on a random 1/X/2 outcome instead of
+    // always defaulting to "H" — the boxes stay "–" and the segment shows its normal light
+    // "open" style (scoreOutcome is still null, nothing's been picked yet); only which chip
+    // strip greets you is randomized. Re-clicking the other side of the same still-unanswered
+    // match keeps the same segment rather than re-rolling it.
+    focusScoreBox(matchId, side) {
+      if (!this.scoreAnswered(matchId)) {
+        const seg = this.isScorePickerOpen(matchId) && this.openSeg ? this.openSeg : ["H", "D", "A"][Math.floor(Math.random() * 3)];
+        this.openScorePicker(matchId, seg, side);
+        return;
+      }
+      this.openScorePicker(matchId, this.scoreOutcome(matchId) ?? this.openSeg ?? "H", side);
+    },
+    setMatchScore(matchId, home, away) {
+      this.scores[matchId] = { home, away };
+      this.hasEdited = true;
+    },
+    pickScore(matchId, home, away) {
+      this.setMatchScore(matchId, home, away);
+    },
+    // Excludes the current score so a roll always visibly changes something.
+    rollChip(matchId, seg) {
+      const s = this.scores[matchId];
+      const options = WHAT_IF_CHIPS[seg].filter(([h, a]) => !(s && h === s.home && a === s.away));
+      return options[Math.floor(Math.random() * options.length)];
+    },
+    toggleSeg(matchId, seg) {
+      if (this.openId === matchId && this.openSeg === seg) {
+        this.closeScorePicker();
+        return;
+      }
+      this.openScorePicker(matchId, seg);
+      if (this.scoreOutcome(matchId) !== seg) {
+        const [h, a] = this.rollChip(matchId, seg);
+        this.setMatchScore(matchId, h, a);
+      }
+    },
+    rerollScore(matchId) {
+      if (!this.openSeg) return;
+      const [h, a] = this.rollChip(matchId, this.openSeg);
+      this.setMatchScore(matchId, h, a);
+      this.rollingId = matchId;
+      setTimeout(() => {
+        this.rollingId = null;
+      }, 300);
+    },
+    bumpScore(matchId, delta) {
+      const s = this.scores[matchId];
+      const current = s[this.focusSide];
+      s[this.focusSide] = Math.min(9, Math.max(0, (current ?? 0) + delta));
+      if (s.home === null) s.home = 0;
+      if (s.away === null) s.away = 0;
+      this.hasEdited = true;
+    },
+    remainingCount() {
+      return this.matches.filter((m) => m.status === "SCHEDULED" && !this.scoreAnswered(m.matchId)).length;
+    },
     // Sandbox swaps are unlimited — there's no real swap quota to enforce here.
     exceedsLimit() {
       return false;
+    },
+    // _predictionBase only provides the low-level _selectTeam/_performSwap primitives —
+    // predictionPage/guestPredictionPage each define their own teamClick(teamCode) select-or-
+    // swap wrapper (with a canInteract guard that doesn't apply to this sandbox, so omitted).
+    teamClick(teamCode) {
+      if (this.selectedTeam === null) {
+        this._selectTeam(teamCode);
+        return;
+      }
+      if (this.selectedTeam === teamCode) {
+        this.selectedTeam = null;
+        return;
+      }
+      this._performSwap(teamCode);
     },
     // Wraps the inherited swap mechanics to also log the swap in the same
     // {teamACode, teamAFrom, teamATo, ...} shape predictions.html's "Swap History" uses.
@@ -1217,6 +1330,28 @@ window.Ligitabl.whatIfPage = function(el) {
           teamBTo: teamAFrom
         });
       }
+    },
+    // _predictionBase provides canUndo()/swapStack/_swapTeamsDirect/undoing, but
+    // undoLastSwap() itself is only defined on predictionPage/guestPredictionPage (like
+    // teamClick was) — ported here without their storage-persistence callback, and popping
+    // our own swapLog in step so the log doesn't show a swap that's just been undone.
+    undoLastSwap() {
+      if (!this.canUndo() || this.undoing) return;
+      this.undoing = true;
+      const last = this.swapStack.pop();
+      this.swapLog.pop();
+      setTimeout(() => {
+        this._swapTeamsDirect(last.b, last.a);
+        setTimeout(() => {
+          this.undoing = false;
+        }, 200);
+      }, 200);
+    },
+    // Resets just the sandbox team order/swaps (inherited reset()), not scores or the
+    // computed standings — distinct from resetWhatIf(), which starts the whole page over.
+    resetSwaps() {
+      this.reset();
+      this.swapLog = [];
     },
     // Plain methods, not `get x()` accessors — Object.assign(base, {...}) invokes ES6
     // getters immediately (with `this` bound to this literal, not the final component)
@@ -1317,6 +1452,28 @@ window.Ligitabl.whatIfPage = function(el) {
         this.isComputing = false;
         this.errorMessage = "Failed to compute. Check your connection.";
       });
+    },
+    // Clears everything back to how the page loaded — scores, the sandbox team order and its
+    // swap log, and both cards (currentStandings/currentPoints/currentGoalDifference/formData
+    // revert to `parsed`'s original server-seeded values, which apply() never mutates directly
+    // since it reassigns `this.x`, not `parsed.x`).
+    resetWhatIf() {
+      this.matches.forEach((m) => {
+        this.scores[m.matchId] = { home: null, away: null };
+      });
+      this.hasEdited = false;
+      this.openId = null;
+      this.openSeg = null;
+      this.rollingId = null;
+      this.reset();
+      this.swapLog = [];
+      this.currentStandings = parsed.currentStandings;
+      this.currentPoints = parsed.currentPoints;
+      this.currentGoalDifference = parsed.currentGoalDifference;
+      this.formData = parsed.formData;
+      this.hasComputed = false;
+      this.activeTab = "standings";
+      this.errorMessage = null;
     }
   });
 };

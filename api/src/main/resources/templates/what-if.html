@@ -64,51 +64,140 @@
                   data-round-id=${currentRoundId},
                   data-user-id=${userId}"
         >
-          <!-- Match score input section -->
+          <!-- Match score input section (design: .art/gameweek-v5.html) -->
           <div class="px-6 py-4">
-            <h2 class="text-sm font-semibold text-gray-700 mb-3">
-              Enter hypothetical scores
-            </h2>
-            <div class="divide-y divide-gray-100">
+            <p x-show="!hasEdited" x-cloak class="text-[11px] text-gray-400 mb-1 px-1">
+              Tap a score or 1/X/2 to change a pick.
+            </p>
+            <div class="flex justify-between items-baseline mb-3">
+              <h2 class="text-sm font-semibold text-gray-700">
+                Enter hypothetical scores
+              </h2>
+              <span
+                class="text-xs text-gray-500"
+                x-text="remainingCount() === 0 ? 'All in' : remainingCount() + ' left'"
+              ></span>
+            </div>
+            <div
+              class="bg-white border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100"
+            >
               <template x-for="match in matches" :key="match.matchId">
-                <div class="flex items-center gap-3 py-2.5">
-                  <span
-                    class="text-sm font-medium text-gray-900 w-28 truncate"
-                    x-text="match.homeTeamShortName"
-                  ></span>
-                  <template x-if="match.status === 'SCHEDULED'">
-                    <div class="flex items-center gap-1.5">
-                      <input
-                        type="number"
-                        min="0"
-                        inputmode="numeric"
-                        x-model.number="scores[match.matchId].home"
-                        class="w-12 text-center border border-gray-300 rounded-md py-1 text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                      />
-                      <span class="text-gray-400">–</span>
-                      <input
-                        type="number"
-                        min="0"
-                        inputmode="numeric"
-                        x-model.number="scores[match.matchId].away"
-                        class="w-12 text-center border border-gray-300 rounded-md py-1 text-sm focus:ring-indigo-500 focus:border-indigo-500"
-                      />
-                    </div>
-                  </template>
-                  <template x-if="match.status !== 'SCHEDULED'">
+                <div :class="isScorePickerOpen(match.matchId) ? 'bg-gray-50' : ''">
+                  <div class="flex items-center gap-1.5 px-2.5 py-1.5">
                     <span
-                      class="text-xs font-medium text-gray-400 px-2 py-1 bg-gray-50 rounded-full whitespace-nowrap"
-                      x-text="match.status === 'POSTPONED' ? 'Postponed' : match.status"
-                    ></span>
-                  </template>
-                  <span
-                    class="text-sm font-medium text-gray-900 flex-1 truncate"
-                    x-text="match.awayTeamShortName"
-                  ></span>
+                      class="flex-1 min-w-0 text-right text-[13px] truncate"
+                      :class="scoreAnswered(match.matchId) ? 'text-gray-900' : 'text-gray-500'"
+                    ><span class="sm:hidden" x-text="match.homeTeamCode"></span><span class="hidden sm:inline" x-text="match.homeTeamShortName"></span></span>
+
+                    <template x-if="match.status === 'SCHEDULED'">
+                      <template x-for="side in ['home', 'away']" :key="side">
+                        <button
+                          type="button"
+                          @click="focusScoreBox(match.matchId, side)"
+                          class="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-md border bg-white font-mono text-sm"
+                          :class="[
+                            isScorePickerOpen(match.matchId) && focusSide === side ? 'border-2 border-indigo-600' : 'border-gray-200',
+                            scores[match.matchId][side] === null ? 'text-gray-300' : 'text-gray-900'
+                          ]"
+                          x-text="scores[match.matchId][side] ?? '–'"
+                        ></button>
+                      </template>
+                    </template>
+                    <template x-if="match.status !== 'SCHEDULED'">
+                      <span
+                        class="text-xs font-medium text-gray-400 px-2 py-1 bg-gray-50 rounded-full whitespace-nowrap"
+                        x-text="match.status === 'POSTPONED' ? 'Postponed' : match.status"
+                      ></span>
+                    </template>
+
+                    <span
+                      class="flex-1 min-w-0 text-[13px] truncate"
+                      :class="scoreAnswered(match.matchId) ? 'text-gray-900' : 'text-gray-500'"
+                    ><span class="sm:hidden" x-text="match.awayTeamCode"></span><span class="hidden sm:inline" x-text="match.awayTeamShortName"></span></span>
+
+                    <template x-if="match.status === 'SCHEDULED'">
+                      <div
+                        class="flex rounded-lg border overflow-hidden shrink-0"
+                        :class="scoreAnswered(match.matchId) ? 'border-indigo-600' : 'border-gray-200'"
+                      >
+                        <template x-for="seg in ['H', 'D', 'A']" :key="seg">
+                          <button
+                            type="button"
+                            @click="toggleSeg(match.matchId, seg)"
+                            class="w-9 h-9 text-xs border-l first:border-l-0 border-gray-200"
+                            :class="scoreOutcome(match.matchId) === seg
+                              ? 'bg-indigo-600 text-white'
+                              : (isScorePickerOpen(match.matchId) && openSeg === seg ? 'bg-indigo-50 text-indigo-800' : 'text-gray-400')"
+                            x-text="{ H: '1', D: 'X', A: '2' }[seg]"
+                          ></button>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+
+                  <div
+                    x-show="isScorePickerOpen(match.matchId) && openSeg"
+                    x-cloak
+                    class="flex items-center gap-1.5 px-2.5 pb-2"
+                  >
+                    <div class="flex-1 flex gap-1.5 min-w-0">
+                      <template x-for="[h, a] in scoreChips()" :key="h + '-' + a">
+                        <button
+                          type="button"
+                          @click="pickScore(match.matchId, h, a)"
+                          class="flex-1 h-9 rounded-full font-mono text-xs border bg-white"
+                          :class="isChipSelected(match.matchId, h, a) ? 'border-2 border-indigo-600 bg-indigo-50 text-indigo-800' : 'border-gray-200 text-gray-600'"
+                          x-text="h + '-' + a"
+                        ></button>
+                      </template>
+                    </div>
+
+                    <button
+                      type="button"
+                      @click="rerollScore(match.matchId)"
+                      :disabled="!scoreAnswered(match.matchId)"
+                      class="hidden sm:flex w-9 h-9 shrink-0 rounded-md border border-gray-200 bg-white text-gray-600 items-center justify-center disabled:opacity-40"
+                      aria-label="Roll another score"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.6"
+                        stroke-linecap="round"
+                        class="w-4 h-4"
+                        :class="rollingId === match.matchId ? 'what-if-dice-rolling' : ''"
+                      >
+                        <rect x="3.5" y="3.5" width="17" height="17" rx="3.5" />
+                        <circle cx="8.5" cy="8.5" r=".9" fill="currentColor" stroke="none" />
+                        <circle cx="15.5" cy="8.5" r=".9" fill="currentColor" stroke="none" />
+                        <circle cx="12" cy="12" r=".9" fill="currentColor" stroke="none" />
+                        <circle cx="8.5" cy="15.5" r=".9" fill="currentColor" stroke="none" />
+                        <circle cx="15.5" cy="15.5" r=".9" fill="currentColor" stroke="none" />
+                      </svg>
+                    </button>
+
+                    <button
+                      type="button"
+                      @click="bumpScore(match.matchId, -1)"
+                      class="w-9 h-9 shrink-0 rounded-md border border-gray-200 bg-white text-gray-600"
+                      aria-label="Lower the focused score"
+                    >
+                      &minus;
+                    </button>
+                    <button
+                      type="button"
+                      @click="bumpScore(match.matchId, 1)"
+                      class="w-9 h-9 shrink-0 rounded-md border border-gray-200 bg-white text-gray-600"
+                      aria-label="Raise the focused score"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               </template>
               <template x-if="matches.length === 0">
-                <p class="text-sm text-gray-500 py-4">
+                <p class="text-sm text-gray-500 py-4 px-2.5">
                   No matches found for this round.
                 </p>
               </template>
@@ -142,7 +231,16 @@
                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                   ></path>
                 </svg>
-                <span x-text="isComputing ? 'Applying…' : 'Apply'"></span>
+                <span x-text="isComputing ? 'Applying…' : (scoresDirty() ? '*Apply' : 'Apply')"></span>
+              </button>
+              <button
+                type="button"
+                @click="resetWhatIf()"
+                x-show="hasEdited || hasComputed"
+                x-cloak
+                class="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors"
+              >
+                Reset
               </button>
               <p
                 x-show="errorMessage"
@@ -154,7 +252,9 @@
           </div>
 
           <!-- Tables section: tabs on mobile, two cards side by side on desktop. Swapping
-               (previously its own "Round Prediction" card) now lives inside Round Result. -->
+               (previously its own "Round Prediction" card) now lives inside Round Result. Score
+               banner + swap hint live here (once, above both cards) rather than inside Round
+               Result, so each card's table starts at the same height and rows line up. -->
           <div class="px-6 pb-6">
             <div class="md:hidden flex gap-2 mb-3">
               <button
@@ -173,6 +273,42 @@
               >
                 Result
               </button>
+            </div>
+
+            <div x-show="hasComputed" x-cloak class="mb-3">
+              <div
+                class="px-2.5 py-1.5 bg-white rounded-md border border-gray-200 text-xs font-medium text-gray-900 mb-1.5"
+              >
+                Score: <span x-text="totalScore()"></span> (Max:
+                <span x-text="maxHitPoints"></span> Lost:
+                <span x-text="totalHit()"></span>)
+              </div>
+              <div class="flex items-center justify-between gap-2">
+                <p class="text-xs text-gray-400" x-show="!selectedTeam">
+                  Tap two teams to swap them
+                </p>
+                <p class="text-xs text-indigo-500" x-show="selectedTeam" x-cloak>
+                  <span x-text="getSelectedTeamShortName()"></span> selected —
+                  tap another team to swap
+                </p>
+                <div class="flex items-center gap-2" x-show="getSwapCount() > 0" x-cloak>
+                  <button
+                    type="button"
+                    @click="undoLastSwap()"
+                    x-show="canUndo()"
+                    class="text-xs font-medium text-amber-600 hover:text-amber-700 underline"
+                  >
+                    Undo
+                  </button>
+                  <button
+                    type="button"
+                    @click="resetSwaps()"
+                    class="text-xs font-medium text-red-600 hover:text-red-700 underline"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
