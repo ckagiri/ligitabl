@@ -903,6 +903,29 @@ window.Ligitabl.publicPredictionPage = function (el) {
     });
 };
 
+// --- What-If page (Phase 2: score-input skeleton only, no sandbox/cards yet) ---
+
+window.Ligitabl.whatIfPage = function (el) {
+    const matches = Ligitabl._parseJSON(el?.dataset?.whatIfMatches, []);
+    const scores = {};
+    matches.forEach((m) => {
+        scores[m.matchId] = { home: null, away: null };
+    });
+
+    return {
+        matches,
+        scores,
+        get allScoresEntered() {
+            return matches
+                .filter((m) => m.status === "SCHEDULED")
+                .every((m) => {
+                    const s = this.scores[m.matchId];
+                    return s && Number.isInteger(s.home) && s.home >= 0 && Number.isInteger(s.away) && s.away >= 0;
+                });
+        },
+    };
+};
+
 // --- Results Banner Dismissal ---
 
 (function () {

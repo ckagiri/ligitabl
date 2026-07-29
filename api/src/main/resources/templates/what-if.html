@@ -1,0 +1,118 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <div layout:fragment="content">
+      <div
+        id="prediction-page"
+        th:fragment="whatIfPage"
+        class="max-w-4xl mx-auto"
+      >
+        <!-- Page Header -->
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-2">
+            <div>
+              <h1
+                class="text-xl sm:text-2xl font-bold text-gray-900"
+                th:text="${pageTitle}"
+              >
+                What-If
+              </h1>
+              <p class="text-sm text-gray-600 mt-1">
+                Gameweek <span th:text="${currentRound}">19</span> — explore hypothetical results
+              </p>
+            </div>
+            <button
+              th:attr="hx-get=@{/my-table}"
+              hx-target="#prediction-page"
+              hx-swap="outerHTML swap:100ms settle:100ms"
+              hx-disabled-elt="this"
+              class="shrink-0 inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-indigo-600 transition-colors px-3 py-1.5 rounded-md border border-gray-200 hover:border-indigo-300"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+              Back to My Table
+            </button>
+          </div>
+        </div>
+
+        <!-- What-If Panel -->
+        <div
+          id="what-if-content"
+          class="bg-white rounded-lg shadow-sm mb-6"
+          x-data="Ligitabl.whatIfPage($el)"
+          th:attr="data-what-if-matches=${whatIfMatchesJson},
+                  data-predictions=${predictionsJson},
+                  data-current-standings=${currentStandingsJson},
+                  data-current-points=${currentPointsJson},
+                  data-current-goal-difference=${currentGoalDifferenceJson},
+                  data-max-hit-points=${maxHitPoints}"
+        >
+          <!-- Match score input section -->
+          <div class="px-6 py-4">
+            <h2 class="text-sm font-semibold text-gray-700 mb-3">
+              Enter hypothetical scores
+            </h2>
+            <div class="divide-y divide-gray-100">
+              <template x-for="match in matches" :key="match.matchId">
+                <div class="flex items-center gap-3 py-2.5">
+                  <span
+                    class="text-sm font-medium text-gray-900 w-28 truncate"
+                    x-text="match.homeTeamShortName"
+                  ></span>
+                  <template x-if="match.status === 'SCHEDULED'">
+                    <div class="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        min="0"
+                        inputmode="numeric"
+                        x-model.number="scores[match.matchId].home"
+                        class="w-12 text-center border border-gray-300 rounded-md py-1 text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                      <span class="text-gray-400">–</span>
+                      <input
+                        type="number"
+                        min="0"
+                        inputmode="numeric"
+                        x-model.number="scores[match.matchId].away"
+                        class="w-12 text-center border border-gray-300 rounded-md py-1 text-sm focus:ring-indigo-500 focus:border-indigo-500"
+                      />
+                    </div>
+                  </template>
+                  <template x-if="match.status !== 'SCHEDULED'">
+                    <span
+                      class="text-xs font-medium text-gray-400 px-2 py-1 bg-gray-50 rounded-full whitespace-nowrap"
+                      x-text="match.status === 'POSTPONED' ? 'Postponed' : match.status"
+                    ></span>
+                  </template>
+                  <span
+                    class="text-sm font-medium text-gray-900 flex-1 truncate"
+                    x-text="match.awayTeamShortName"
+                  ></span>
+                </div>
+              </template>
+              <template x-if="matches.length === 0">
+                <p class="text-sm text-gray-500 py-4">
+                  No matches found for this round.
+                </p>
+              </template>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

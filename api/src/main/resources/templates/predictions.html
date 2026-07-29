@@ -53,6 +53,29 @@
                 </div>
 
                 <div class="flex items-center gap-2">
+                  <!-- What-If (own predictions only, current open round only) -->
+                  <button
+                    th:if="${!isGuest && isCurrentRound && roundState == 'open' && !canCreateEntry}"
+                    th:attr="hx-get=@{/predictions/user/what-if}"
+                    hx-target="#prediction-page"
+                    hx-swap="outerHTML swap:100ms settle:100ms"
+                    hx-disabled-elt="this"
+                    class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors px-2.5 py-1 rounded-full border border-indigo-200 hover:border-indigo-300 bg-indigo-50"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="w-3.5 h-3.5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 1 1 4.243 0M9.5 21h5" />
+                    </svg>
+                    What-If
+                  </button>
                   <!-- Source indicator -->
                   <div
                     th:if="${source != 'USER_PREDICTION'}"

@@ -1168,6 +1168,23 @@ window.Ligitabl.publicPredictionPage = function(el) {
     }
   });
 };
+window.Ligitabl.whatIfPage = function(el) {
+  const matches = Ligitabl._parseJSON(el?.dataset?.whatIfMatches, []);
+  const scores = {};
+  matches.forEach((m) => {
+    scores[m.matchId] = { home: null, away: null };
+  });
+  return {
+    matches,
+    scores,
+    get allScoresEntered() {
+      return matches.filter((m) => m.status === "SCHEDULED").every((m) => {
+        const s = this.scores[m.matchId];
+        return s && Number.isInteger(s.home) && s.home >= 0 && Number.isInteger(s.away) && s.away >= 0;
+      });
+    }
+  };
+};
 (function() {
   function dismissResultsBanner(roundNumber) {
     var csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
