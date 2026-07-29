@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.auth.CurrentUserPublicId;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.standings.FormService;
 import com.ligitabl.api.rest.prediction.shared.PredictionAccessMode;
 import com.ligitabl.api.rest.prediction.shared.RankingSource;
 import com.ligitabl.api.rest.prediction.whatif.ComputeWhatIfUseCase;
@@ -69,9 +68,6 @@ class WhatIfControllerTest {
     private TeamRepo teamRepo;
 
     @Mock
-    private FormService formService;
-
-    @Mock
     private CurrentUserPublicId currentUserPublicId;
 
     @Mock
@@ -93,7 +89,6 @@ class WhatIfControllerTest {
                 teamRepo,
                 competitionDefaults,
                 new ObjectMapper(),
-                formService,
                 currentUserPublicId);
     }
 
