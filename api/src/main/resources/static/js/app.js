@@ -719,6 +719,7 @@ window.Ligitabl._mapServerPredictions = function(predictions) {
     code: p.teamCode,
     name: p.teamName,
     shortName: p.teamShortName,
+    shorterName: p.teamShorterName || p.teamShortName,
     crestUrl: p.crestUrl,
     originalPosition: p.position
   }));
@@ -1194,6 +1195,11 @@ window.Ligitabl.whatIfPage = function(el) {
     hasComputed: false,
     isComputing: false,
     errorMessage: null,
+    // Snapshot of `scores` as of the last successful apply() — compared against the live
+    // `scores` to tell whether the computed result is stale (scoresDirty()), so the Apply
+    // button can flag it ('*Apply') instead of silently showing a result that no longer
+    // matches what's entered.
+    appliedScores: null,
     // Score-picker state (gameweek-v5.html interaction: tap a score box or 1/X/2 to open a
     // chip strip of plausible scores for that outcome, plus a reroll die and +/- steppers).
     openId: null,
@@ -1204,6 +1210,69 @@ window.Ligitabl.whatIfPage = function(el) {
     init() {
       this.teams = Ligitabl._mapServerPredictions(parsed.predictions);
       this.originalTeams = Ligitabl._mapServerPredictions(parsed.predictions);
+      this._restoreWhatIfSession();
+    },
+    // Session persists across refresh/navigation, scoped per user+round. Keyed off the
+    // matches' own statuses so a match going POSTPONED after the session was saved is
+    // detected: `_restoreWhatIfSession` discards the whole cached session on any mismatch
+    // rather than trying to patch just the affected match.
+    _whatIfStorageKey() {
+      return `ligitabl.whatif.${userId}.${roundId}`;
+    },
+    _matchStatusSnapshot() {
+      return this.matches.map((m) => `${m.matchId}:${m.status}`).sort().join(",");
+    },
+    _saveWhatIfSession() {
+      try {
+        localStorage.setItem(this._whatIfStorageKey(), JSON.stringify({
+          matchStatusSnapshot: this._matchStatusSnapshot(),
+          scores: this.scores,
+          teams: this.teams,
+          swapStack: this.swapStack,
+          swapLog: this.swapLog,
+          hasComputed: this.hasComputed,
+          currentStandings: this.currentStandings,
+          currentPoints: this.currentPoints,
+          currentGoalDifference: this.currentGoalDifference,
+          appliedScores: this.appliedScores
+        }));
+      } catch (e) {
+        console.warn("Failed to save what-if session:", e);
+      }
+    },
+    _clearWhatIfSession() {
+      try {
+        localStorage.removeItem(this._whatIfStorageKey());
+      } catch (e) {
+        console.warn("Failed to clear what-if session:", e);
+      }
+    },
+    _restoreWhatIfSession() {
+      let saved;
+      try {
+        const raw = localStorage.getItem(this._whatIfStorageKey());
+        if (!raw) return false;
+        saved = JSON.parse(raw);
+      } catch (e) {
+        console.warn("Failed to read what-if session:", e);
+        return false;
+      }
+      if (!saved || saved.matchStatusSnapshot !== this._matchStatusSnapshot()) {
+        this._clearWhatIfSession();
+        return false;
+      }
+      this.scores = saved.scores || this.scores;
+      this.teams = saved.teams || this.teams;
+      this.swapStack = saved.swapStack || [];
+      this.swapLog = saved.swapLog || [];
+      this.hasComputed = !!saved.hasComputed;
+      this.currentStandings = saved.currentStandings || this.currentStandings;
+      this.currentPoints = saved.currentPoints || this.currentPoints;
+      this.currentGoalDifference = saved.currentGoalDifference || this.currentGoalDifference;
+      this.appliedScores = saved.appliedScores || null;
+      this.hasEdited = Object.values(this.scores).some((s) => s.home !== null || s.away !== null);
+      if (this.hasComputed) this.activeTab = "result";
+      return true;
     },
     scoreOutcome(matchId) {
       const s = this.scores[matchId];
@@ -1251,6 +1320,7 @@ window.Ligitabl.whatIfPage = function(el) {
     setMatchScore(matchId, home, away) {
       this.scores[matchId] = { home, away };
       this.hasEdited = true;
+      this._saveWhatIfSession();
     },
     pickScore(matchId, home, away) {
       this.setMatchScore(matchId, home, away);
@@ -1288,9 +1358,16 @@ window.Ligitabl.whatIfPage = function(el) {
       if (s.home === null) s.home = 0;
       if (s.away === null) s.away = 0;
       this.hasEdited = true;
+      this._saveWhatIfSession();
     },
     remainingCount() {
       return this.matches.filter((m) => m.status === "SCHEDULED" && !this.scoreAnswered(m.matchId)).length;
+    },
+    // True once scores have been edited since the last successful apply() — the computed
+    // result on screen no longer matches what's entered.
+    scoresDirty() {
+      if (!this.hasComputed || !this.appliedScores) return false;
+      return JSON.stringify(this.scores) !== JSON.stringify(this.appliedScores);
     },
     // Sandbox swaps are unlimited — there's no real swap quota to enforce here.
     exceedsLimit() {
@@ -1330,11 +1407,12 @@ window.Ligitabl.whatIfPage = function(el) {
           teamBTo: teamAFrom
         });
       }
+      this._saveWhatIfSession();
     },
     // _predictionBase provides canUndo()/swapStack/_swapTeamsDirect/undoing, but
     // undoLastSwap() itself is only defined on predictionPage/guestPredictionPage (like
-    // teamClick was) — ported here without their storage-persistence callback, and popping
-    // our own swapLog in step so the log doesn't show a swap that's just been undone.
+    // teamClick was) — ported here with our own storage persistence instead of theirs, and
+    // popping our own swapLog in step so the log doesn't show a swap that's just been undone.
     undoLastSwap() {
       if (!this.canUndo() || this.undoing) return;
       this.undoing = true;
@@ -1342,6 +1420,7 @@ window.Ligitabl.whatIfPage = function(el) {
       this.swapLog.pop();
       setTimeout(() => {
         this._swapTeamsDirect(last.b, last.a);
+        this._saveWhatIfSession();
         setTimeout(() => {
           this.undoing = false;
         }, 200);
@@ -1352,13 +1431,8 @@ window.Ligitabl.whatIfPage = function(el) {
     resetSwaps() {
       this.reset();
       this.swapLog = [];
+      this._saveWhatIfSession();
     },
-    // Plain methods, not `get x()` accessors — Object.assign(base, {...}) invokes ES6
-    // getters immediately (with `this` bound to this literal, not the final component)
-    // while copying properties, which throws here since e.g. this.currentStandings only
-    // exists on `base`. That silently aborts the whole Object.assign, so the component
-    // never gets created at all. _predictionBase avoids this for the same reason — it
-    // uses getDelta()/getActualPosition() etc., never `get x()`.
     allScoresEntered() {
       return this.matches.filter((m) => m.status === "SCHEDULED").every((m) => {
         const s = this.scores[m.matchId];
@@ -1375,8 +1449,7 @@ window.Ligitabl.whatIfPage = function(el) {
           teamShortName: team ? team.shortName || team.name : code,
           position: this.currentStandings[code],
           points: this.currentPoints[code],
-          gd: this.currentGoalDifference[code],
-          form: this.getForm(code)
+          gd: this.currentGoalDifference[code]
         };
       }).sort((a, b) => a.position - b.position);
     },
@@ -1389,32 +1462,6 @@ window.Ligitabl.whatIfPage = function(el) {
     },
     totalScore() {
       return Math.max(0, this.maxHitPoints - this.totalHit());
-    },
-    // Mirrors FormService.buildFormMap's rule (W/D/L per team from goal comparison,
-    // capped at the last 5 entries) applied to the hypothetical scores instead of
-    // DB-fetched finished matches — projects form forward without a backend round-trip.
-    _projectFormForward() {
-      const projected = {};
-      Object.keys(this.formData).forEach((code) => {
-        projected[code] = (this.formData[code] || []).slice();
-      });
-      this.matches.filter((m) => m.status === "SCHEDULED").forEach((m) => {
-        const s = this.scores[m.matchId];
-        if (!s) return;
-        const homeResult = s.home > s.away ? "W" : s.home === s.away ? "D" : "L";
-        const awayResult = s.away > s.home ? "W" : s.home === s.away ? "D" : "L";
-        const homeList = projected[m.homeTeamCode] || [];
-        const awayList = projected[m.awayTeamCode] || [];
-        projected[m.homeTeamCode] = [
-          ...homeList,
-          { result: homeResult, wasHome: true, opponentCode: m.awayTeamCode, goalsFor: s.home, goalsAgainst: s.away }
-        ].slice(-5);
-        projected[m.awayTeamCode] = [
-          ...awayList,
-          { result: awayResult, wasHome: false, opponentCode: m.homeTeamCode, goalsFor: s.away, goalsAgainst: s.home }
-        ].slice(-5);
-      });
-      return projected;
     },
     // The only network call this page makes — every swap afterward recomputes purely
     // client-side via the reactive getters above (standingsRows/totalHit/totalScore).
@@ -1445,18 +1492,20 @@ window.Ligitabl.whatIfPage = function(el) {
         this.currentStandings = data.standingsMap;
         this.currentPoints = data.pointsMap;
         this.currentGoalDifference = data.goalDifferenceMap;
-        this.formData = this._projectFormForward();
         this.hasComputed = true;
+        this.appliedScores = JSON.parse(JSON.stringify(this.scores));
         this.activeTab = "result";
+        this._saveWhatIfSession();
       }).catch(() => {
         this.isComputing = false;
         this.errorMessage = "Failed to compute. Check your connection.";
       });
     },
     // Clears everything back to how the page loaded — scores, the sandbox team order and its
-    // swap log, and both cards (currentStandings/currentPoints/currentGoalDifference/formData
-    // revert to `parsed`'s original server-seeded values, which apply() never mutates directly
-    // since it reassigns `this.x`, not `parsed.x`).
+    // swap log, and both cards (currentStandings/currentPoints/currentGoalDifference) revert
+    // to `parsed`'s original server-seeded values, which apply() never mutates directly since
+    // it reassigns `this.x`, not `parsed.x`) — and drops the persisted session so a refresh
+    // afterward starts fresh instead of restoring what was just cleared.
     resetWhatIf() {
       this.matches.forEach((m) => {
         this.scores[m.matchId] = { home: null, away: null };
@@ -1470,10 +1519,11 @@ window.Ligitabl.whatIfPage = function(el) {
       this.currentStandings = parsed.currentStandings;
       this.currentPoints = parsed.currentPoints;
       this.currentGoalDifference = parsed.currentGoalDifference;
-      this.formData = parsed.formData;
       this.hasComputed = false;
+      this.appliedScores = null;
       this.activeTab = "standings";
       this.errorMessage = null;
+      this._clearWhatIfSession();
     }
   });
 };

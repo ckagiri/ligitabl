@@ -1936,9 +1936,6 @@ video {
 .text-\[13px\] {
   font-size: 13px;
 }
-.text-\[9px\] {
-  font-size: 9px;
-}
 .text-base {
   font-size: 1rem;
   line-height: 1.5rem;
@@ -1989,9 +1986,6 @@ video {
 }
 .leading-4 {
   line-height: 1rem;
-}
-.leading-\[14px\] {
-  line-height: 14px;
 }
 .leading-none {
   line-height: 1;
@@ -3015,6 +3009,9 @@ video {
   .sm\:h-8 {
     height: 2rem;
   }
+  .sm\:h-9 {
+    height: 2.25rem;
+  }
   .sm\:w-14 {
     width: 3.5rem;
   }
@@ -3026,6 +3023,9 @@ video {
   }
   .sm\:w-8 {
     width: 2rem;
+  }
+  .sm\:w-9 {
+    width: 2.25rem;
   }
   .sm\:w-auto {
     width: auto;

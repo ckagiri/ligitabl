@@ -1184,12 +1184,6 @@ window.Ligitabl.whatIfPage = function (el) {
             this.swapLog = [];
             this._saveWhatIfSession();
         },
-        // Plain methods, not `get x()` accessors — Object.assign(base, {...}) invokes ES6
-        // getters immediately (with `this` bound to this literal, not the final component)
-        // while copying properties, which throws here since e.g. this.currentStandings only
-        // exists on `base`. That silently aborts the whole Object.assign, so the component
-        // never gets created at all. _predictionBase avoids this for the same reason — it
-        // uses getDelta()/getActualPosition() etc., never `get x()`.
         allScoresEntered() {
             return this.matches
                 .filter((m) => m.status === "SCHEDULED")
