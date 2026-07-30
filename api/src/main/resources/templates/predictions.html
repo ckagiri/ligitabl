@@ -53,9 +53,10 @@
                 </div>
 
                 <div class="flex items-center gap-2">
-                  <!-- What-If (own predictions only, current open round only) -->
+                  <!-- What-If (own predictions only, current round — renders read-only/locked
+                       once the round closes rather than requiring roundState == 'open') -->
                   <button
-                    th:if="${!isGuest && isCurrentRound && roundState == 'open' && !canCreateEntry}"
+                    th:if="${!isGuest && isCurrentRound && !canCreateEntry}"
                     th:attr="hx-get=@{/predictions/user/what-if}"
                     hx-target="#prediction-page"
                     hx-swap="outerHTML swap:100ms settle:100ms"

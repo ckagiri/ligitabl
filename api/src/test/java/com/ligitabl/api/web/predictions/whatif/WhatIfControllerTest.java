@@ -179,7 +179,7 @@ class WhatIfControllerTest {
     }
 
     @Test
-    void page_shouldRedirectToMyTable_whenRoundNotOpen() {
+    void page_shouldRenderLockedWhatIfPage_whenRoundNotOpen() {
         authenticate();
         Model model = new ExtendedModelMap();
         Season season = Season.builder()
@@ -192,11 +192,15 @@ class WhatIfControllerTest {
                 .thenReturn(true);
         when(getUserPredictionUseCase.execute(any()))
                 .thenReturn(Either.right(liveViewData(season, "LOCKED", PredictionAccessMode.EDITABLE)));
+        when(matchRepo.findByRoundIdWithTeams(season.getCurrentRoundId())).thenReturn(List.of());
 
         String view = controller.page(principal, model, response, null);
 
-        assertEquals("redirect:/my-table", view);
-        verifyNoInteractions(matchRepo);
+        // A locked round still renders the page (read-only) instead of bouncing away, so a user
+        // can revisit what they'd entered until the round advances — only isCurrentRound and
+        // hasLivePrediction still gate access (see the two tests below).
+        assertEquals("what-if", view);
+        assertEquals(false, model.asMap().get("roundOpen"));
     }
 
     @Test

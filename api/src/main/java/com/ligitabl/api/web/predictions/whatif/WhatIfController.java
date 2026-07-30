@@ -105,7 +105,7 @@ public class WhatIfController {
         boolean roundOpen = "open".equalsIgnoreCase(data.roundState());
         boolean hasLivePrediction = !data.canCreateEntry();
 
-        if (!data.isCurrentRound() || !roundOpen || !hasLivePrediction) {
+        if (!data.isCurrentRound() || !hasLivePrediction) {
             return bounceToMyTable(response, hxRequest);
         }
 
@@ -118,6 +118,7 @@ public class WhatIfController {
         model.addAttribute("currentRound", data.currentRound());
         model.addAttribute("maxHitPoints", season.getMaxHitPoints());
         model.addAttribute("currentRoundId", season.getCurrentRoundId());
+        model.addAttribute("roundOpen", roundOpen);
         model.addAttribute(
                 "userId", currentUserPublicId.resolve().map(PublicId::value).orElse("guest"));
 
