@@ -50,7 +50,9 @@ public class ComputeWhatIfUseCase {
                 .flatMap(season -> getCurrentRound(season).map(round -> new Ctx(season, round, List.of())))
                 .flatMap(ctx -> validateRoundOpen(ctx.round()).map(__ -> ctx))
                 .map(ctx -> new Ctx(
-                        ctx.season(), ctx.round(), matchRepo.findByRoundIdWithTeams(ctx.round().getId())))
+                        ctx.season(),
+                        ctx.round(),
+                        matchRepo.findByRoundIdWithTeams(ctx.round().getId())))
                 .flatMap(ctx -> validateScores(ctx.roundMatches(), command).map(scores -> new ScoredCtx(ctx, scores)))
                 .flatMap(scoredCtx -> calculateWhatIfStandings(scoredCtx.ctx(), scoredCtx.scoresByMatchId()));
     }
@@ -97,7 +99,8 @@ public class ComputeWhatIfUseCase {
      * nothing to a real result either, so they're excluded from both the "every match needs a score"
      * requirement and the synthetic match list built afterward.
      */
-    private Either<WhatIfError, Map<UUID, WhatIfScore>> validateScores(List<Match> roundMatches, WhatIfCommand command) {
+    private Either<WhatIfError, Map<UUID, WhatIfScore>> validateScores(
+            List<Match> roundMatches, WhatIfCommand command) {
         Set<UUID> scoreableIds = roundMatches.stream()
                 .filter(m -> m.getStatus() == MatchStatus.SCHEDULED)
                 .map(Match::getId)
@@ -108,8 +111,9 @@ public class ComputeWhatIfUseCase {
             byMatchId.put(score.matchId(), score);
         }
 
-        List<UUID> unknown =
-                byMatchId.keySet().stream().filter(id -> !scoreableIds.contains(id)).toList();
+        List<UUID> unknown = byMatchId.keySet().stream()
+                .filter(id -> !scoreableIds.contains(id))
+                .toList();
         if (!unknown.isEmpty()) {
             return Either.left(new WhatIfError.UnknownMatch(unknown));
         }
@@ -131,14 +135,15 @@ public class ComputeWhatIfUseCase {
 
     private Either<WhatIfError, WhatIfResult> calculateWhatIfStandings(
             Ctx ctx, Map<UUID, WhatIfScore> scoresByMatchId) {
-        List<Match> priorFinished = matchRepo
-                .findFinishedMatchesUpToRoundWithTeams(ctx.season().getId(), ctx.round().getPosition())
-                .stream()
-                .filter(m -> !m.getRoundId().equals(ctx.round().getId()))
-                .toList();
+        List<Match> priorFinished =
+                matchRepo
+                        .findFinishedMatchesUpToRoundWithTeams(
+                                ctx.season().getId(), ctx.round().getPosition())
+                        .stream()
+                        .filter(m -> !m.getRoundId().equals(ctx.round().getId()))
+                        .toList();
 
-        Map<UUID, Match> roundMatchesById =
-                ctx.roundMatches().stream().collect(Collectors.toMap(Match::getId, m -> m));
+        Map<UUID, Match> roundMatchesById = ctx.roundMatches().stream().collect(Collectors.toMap(Match::getId, m -> m));
 
         List<Match> hypothetical = scoresByMatchId.values().stream()
                 .map(score -> buildSyntheticMatch(roundMatchesById.get(score.matchId()), score))
@@ -155,7 +160,9 @@ public class ComputeWhatIfUseCase {
         return standingsCalculatorService
                 .calculateStandings(synthetic, teams)
                 .mapLeft(this::mapStandingsError)
-                .map(standings -> new WhatIfResult(StandingsConverter.convert(standings, teams)));
+                .map(standings -> new WhatIfResult(
+                        StandingsConverter.convert(standings, teams),
+                        ctx.round().getId()));
     }
 
     private Match buildSyntheticMatch(Match original, WhatIfScore score) {
@@ -173,8 +180,8 @@ public class ComputeWhatIfUseCase {
 
     private WhatIfError mapStandingsError(StandingsCalculatorService.StandingsError error) {
         return switch (error) {
-            case StandingsCalculatorService.StandingsError.CalculationFailed e ->
-                new WhatIfError.CalculationFailed(e.message());
+            case StandingsCalculatorService.StandingsError.CalculationFailed e -> new WhatIfError.CalculationFailed(
+                    e.message());
             default -> new WhatIfError.CalculationFailed("Standings calculation failed");
         };
     }

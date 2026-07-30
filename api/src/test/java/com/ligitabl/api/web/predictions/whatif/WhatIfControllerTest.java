@@ -18,6 +18,8 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.ui.ExtendedModelMap;
+import org.springframework.ui.Model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.auth.CurrentUserPublicId;
@@ -26,6 +28,7 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.shared.PredictionAccessMode;
 import com.ligitabl.api.rest.prediction.shared.RankingSource;
 import com.ligitabl.api.rest.prediction.whatif.ComputeWhatIfUseCase;
+import com.ligitabl.api.rest.prediction.whatif.SaveWhatIfPredictionUseCase;
 import com.ligitabl.api.rest.prediction.whatif.WhatIfError;
 import com.ligitabl.api.rest.prediction.whatif.WhatIfResult;
 import com.ligitabl.api.shared.Either;
@@ -41,8 +44,6 @@ import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.TeamRepo;
 
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.ui.ExtendedModelMap;
-import org.springframework.ui.Model;
 
 @ExtendWith(MockitoExtension.class)
 class WhatIfControllerTest {
@@ -54,6 +55,9 @@ class WhatIfControllerTest {
 
     @Mock
     private ComputeWhatIfUseCase computeWhatIfUseCase;
+
+    @Mock
+    private SaveWhatIfPredictionUseCase saveWhatIfPredictionUseCase;
 
     @Mock
     private SeasonRepo seasonRepo;
@@ -83,6 +87,7 @@ class WhatIfControllerTest {
         controller = new WhatIfController(
                 getUserPredictionUseCase,
                 computeWhatIfUseCase,
+                saveWhatIfPredictionUseCase,
                 seasonRepo,
                 contestRepo,
                 matchRepo,
@@ -151,11 +156,12 @@ class WhatIfControllerTest {
         WhatIfComputeRequest request =
                 new WhatIfComputeRequest(List.of(new WhatIfScoreInput(matchId.toString(), 2, 0)));
 
+        UUID roundId = UUID.randomUUID();
         StandingsTeamRank arsRank = StandingsTeamRank.builder()
                 .ranking(TeamRank.of("ARS", 1))
                 .metadata(new StandingsMetadata(2, 2, 0, 0, 6, 5, 1, 4))
                 .build();
-        when(computeWhatIfUseCase.execute(any())).thenReturn(Either.right(new WhatIfResult(List.of(arsRank))));
+        when(computeWhatIfUseCase.execute(any())).thenReturn(Either.right(new WhatIfResult(List.of(arsRank), roundId)));
 
         Map<String, Object> body = controller.compute(request, principal, response);
 
@@ -163,6 +169,30 @@ class WhatIfControllerTest {
         @SuppressWarnings("unchecked")
         Map<String, Integer> standingsMap = (Map<String, Integer>) body.get("standingsMap");
         assertEquals(1, standingsMap.get("ARS"));
+        verify(response, never()).setStatus(anyInt());
+        verify(saveWhatIfPredictionUseCase).execute(eq(userId), eq(roundId), anyList());
+    }
+
+    @Test
+    void compute_shouldStillSucceed_whenPersistingScoresFails() {
+        authenticate();
+        UUID matchId = UUID.randomUUID();
+        UUID roundId = UUID.randomUUID();
+        WhatIfComputeRequest request =
+                new WhatIfComputeRequest(List.of(new WhatIfScoreInput(matchId.toString(), 2, 0)));
+
+        StandingsTeamRank arsRank = StandingsTeamRank.builder()
+                .ranking(TeamRank.of("ARS", 1))
+                .metadata(new StandingsMetadata(2, 2, 0, 0, 6, 5, 1, 4))
+                .build();
+        when(computeWhatIfUseCase.execute(any())).thenReturn(Either.right(new WhatIfResult(List.of(arsRank), roundId)));
+        doThrow(new IllegalStateException("db down"))
+                .when(saveWhatIfPredictionUseCase)
+                .execute(any(), any(), anyList());
+
+        Map<String, Object> body = controller.compute(request, principal, response);
+
+        assertEquals(true, body.get("success"));
         verify(response, never()).setStatus(anyInt());
     }
 

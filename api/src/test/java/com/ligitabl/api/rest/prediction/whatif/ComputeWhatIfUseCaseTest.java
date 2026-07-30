@@ -179,8 +179,8 @@ class ComputeWhatIfUseCaseTest {
         stubSuccessfulCalculation(List.of(currentArsMci, currentLivChe, postponed));
 
         // Only the two scheduled matches are scored — the postponed one is not required.
-        WhatIfCommand command = new WhatIfCommand(List.of(
-                new WhatIfScore(currentArsMci.getId(), 2, 0), new WhatIfScore(currentLivChe.getId(), 1, 0)));
+        WhatIfCommand command = new WhatIfCommand(
+                List.of(new WhatIfScore(currentArsMci.getId(), 2, 0), new WhatIfScore(currentLivChe.getId(), 1, 0)));
 
         Either<WhatIfError, WhatIfResult> result = useCase.execute(command);
 
@@ -193,10 +193,8 @@ class ComputeWhatIfUseCaseTest {
         Match postponed = scheduledMatch(round2Id, teamMciId, teamCheId);
         postponed.setStatus(MatchStatus.POSTPONED);
 
-        when(matchRepo.findByRoundId(round2Id))
-                .thenReturn(List.of(currentArsMci, currentLivChe, postponed));
-        when(matchRepo.findByRoundIdWithTeams(round2Id))
-                .thenReturn(List.of(currentArsMci, currentLivChe, postponed));
+        when(matchRepo.findByRoundId(round2Id)).thenReturn(List.of(currentArsMci, currentLivChe, postponed));
+        when(matchRepo.findByRoundIdWithTeams(round2Id)).thenReturn(List.of(currentArsMci, currentLivChe, postponed));
 
         WhatIfCommand command = new WhatIfCommand(List.of(
                 new WhatIfScore(currentArsMci.getId(), 2, 0),
@@ -260,8 +258,8 @@ class ComputeWhatIfUseCaseTest {
         when(matchRepo.findByRoundId(round2Id)).thenReturn(List.of(currentArsMci, currentLivChe));
         when(matchRepo.findByRoundIdWithTeams(round2Id)).thenReturn(List.of(currentArsMci, currentLivChe));
 
-        WhatIfCommand command = new WhatIfCommand(List.of(
-                new WhatIfScore(currentArsMci.getId(), -1, 0), new WhatIfScore(currentLivChe.getId(), 1, 0)));
+        WhatIfCommand command = new WhatIfCommand(
+                List.of(new WhatIfScore(currentArsMci.getId(), -1, 0), new WhatIfScore(currentLivChe.getId(), 1, 0)));
 
         Either<WhatIfError, WhatIfResult> result = useCase.execute(command);
 
@@ -270,7 +268,11 @@ class ComputeWhatIfUseCaseTest {
     }
 
     private void assertPosition(
-            List<StandingsTeamRank> standings, String teamCode, int expectedPosition, int expectedPoints, int expectedGd) {
+            List<StandingsTeamRank> standings,
+            String teamCode,
+            int expectedPosition,
+            int expectedPoints,
+            int expectedGd) {
         StandingsTeamRank rank = standings.stream()
                 .filter(s -> s.getRanking().getCode().equals(teamCode))
                 .findFirst()

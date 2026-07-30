@@ -24,6 +24,7 @@ import com.ligitabl.api.auth.CurrentUserPublicId;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.whatif.ComputeWhatIfUseCase;
+import com.ligitabl.api.rest.prediction.whatif.SaveWhatIfPredictionUseCase;
 import com.ligitabl.api.rest.prediction.whatif.WhatIfCommand;
 import com.ligitabl.api.rest.prediction.whatif.WhatIfError;
 import com.ligitabl.api.rest.prediction.whatif.WhatIfResult;
@@ -62,6 +63,7 @@ public class WhatIfController {
 
     private final GetUserPredictionUseCase getUserPredictionUseCase;
     private final ComputeWhatIfUseCase computeWhatIfUseCase;
+    private final SaveWhatIfPredictionUseCase saveWhatIfPredictionUseCase;
     private final SeasonRepo seasonRepo;
     private final ContestRepo contestRepo;
     private final MatchRepo matchRepo;
@@ -97,7 +99,8 @@ public class WhatIfController {
         Either<UseCaseError, UserPredictionViewData> result = getUserPredictionUseCase.execute(query);
 
         return result.fold(
-                error -> bounceToMyTable(response, hxRequest), data -> renderPage(data, season, model, hxRequest, response));
+                error -> bounceToMyTable(response, hxRequest),
+                data -> renderPage(data, season, model, hxRequest, response));
     }
 
     private String renderPage(
@@ -155,12 +158,12 @@ public class WhatIfController {
         if (ranks == null || ranks.isEmpty()) {
             return List.of();
         }
-        List<TeamRank> sorted =
-                ranks.stream().sorted(Comparator.comparingInt(TeamRank::getPosition)).toList();
-        Map<String, Team> teamsByCode = teamRepo
-                .findAllByCodes(sorted.stream().map(TeamRank::getCode).collect(Collectors.toSet()))
-                .stream()
-                .collect(Collectors.toMap(Team::getCode, Function.identity()));
+        List<TeamRank> sorted = ranks.stream()
+                .sorted(Comparator.comparingInt(TeamRank::getPosition))
+                .toList();
+        Map<String, Team> teamsByCode =
+                teamRepo.findAllByCodes(sorted.stream().map(TeamRank::getCode).collect(Collectors.toSet())).stream()
+                        .collect(Collectors.toMap(Team::getCode, Function.identity()));
         return TeamRankDto.listOf(sorted, teamsByCode);
     }
 
@@ -191,6 +194,7 @@ public class WhatIfController {
                     return Map.of("success", false, "message", errorMessage(error));
                 },
                 whatIfResult -> {
+                    persistScores(userDetails.getUserId(), whatIfResult.roundId(), command.scores());
                     WhatIfComputeResponse body = WhatIfComputeResponse.from(whatIfResult);
                     return Map.of(
                             "success", body.success(),
@@ -198,6 +202,18 @@ public class WhatIfController {
                             "pointsMap", body.pointsMap(),
                             "goalDifferenceMap", body.goalDifferenceMap());
                 });
+    }
+
+    /**
+     * Best-effort side-effect: the standings the user is about to see don't depend on the save, so a
+     * persistence failure is logged and swallowed rather than failing the compute response.
+     */
+    private void persistScores(UUID userId, UUID roundId, List<WhatIfScore> scores) {
+        try {
+            saveWhatIfPredictionUseCase.execute(userId, roundId, scores);
+        } catch (RuntimeException e) {
+            log.error("Failed to persist what-if scores for user {} round {}", userId, roundId, e);
+        }
     }
 
     private WhatIfCommand toCommand(WhatIfComputeRequest request) {
@@ -235,7 +251,8 @@ public class WhatIfController {
             case WhatIfError.RoundNotFound __ -> "Current round not found";
             case WhatIfError.RoundNotOpen e -> "Cannot compute what-if when round is " + e.roundStatus();
             case WhatIfError.UnknownMatch __ -> "Unknown or non-scoreable match id(s) submitted";
-            case WhatIfError.MissingScores e -> "Missing scores for " + e.matchIds().size() + " match(es)";
+            case WhatIfError.MissingScores e -> "Missing scores for "
+                    + e.matchIds().size() + " match(es)";
             case WhatIfError.InvalidScore e -> "Invalid score for match " + e.matchId() + ": " + e.reason();
             case WhatIfError.CalculationFailed e -> e.message();
         };
