@@ -1439,7 +1439,7 @@ window.Ligitabl.whatIfPage = function(el) {
         return s && Number.isInteger(s.home) && s.home >= 0 && Number.isInteger(s.away) && s.away >= 0;
       });
     },
-    // Card 1 rows — sorted by whatever currentStandings currently holds (real before Apply,
+    // Sorted by whatever currentStandings currently holds (real before Apply,
     // what-if after apply() reassigns it).
     standingsRows() {
       return Object.keys(this.currentStandings).map((code) => {
@@ -1453,7 +1453,7 @@ window.Ligitabl.whatIfPage = function(el) {
         };
       }).sort((a, b) => a.position - b.position);
     },
-    // Card 3's per-team "hit" is the inherited getDelta(teamCode); these sum it for the banner.
+    // Per-team "hit" is the inherited getDelta(teamCode); these sum it for the banner.
     totalHit() {
       return this.teams.reduce((sum, t) => {
         const d = this.getDelta(t.code);
@@ -1502,7 +1502,7 @@ window.Ligitabl.whatIfPage = function(el) {
       });
     },
     // Clears everything back to how the page loaded — scores, the sandbox team order and its
-    // swap log, and both cards (currentStandings/currentPoints/currentGoalDifference) revert
+    // swap log, and tables (currentStandings/currentPoints/currentGoalDifference) revert
     // to `parsed`'s original server-seeded values, which apply() never mutates directly since
     // it reassigns `this.x`, not `parsed.x`) — and drops the persisted session so a refresh
     // afterward starts fresh instead of restoring what was just cleared.
