@@ -915,6 +915,7 @@ window.Ligitabl.whatIfPage = function (el) {
     const userId = el?.dataset?.userId || "guest";
     const maxHitPoints = Number(el?.dataset?.maxHitPoints || 0);
     const roundOpen = el?.dataset?.roundOpen === "true";
+    const currentRound = el?.dataset?.currentRound || "";
     const base = Ligitabl._predictionBase(parsed, userId, roundId);
     const originalPerformSwap = base._performSwap;
 
@@ -933,6 +934,7 @@ window.Ligitabl.whatIfPage = function (el) {
         scores,
         maxHitPoints,
         roundOpen,
+        currentRound,
         swapLog: [],
         activeTab: "standings",
         hasComputed: false,
@@ -1021,6 +1023,15 @@ window.Ligitabl.whatIfPage = function (el) {
         // and this getter) rather than shown blanked out.
         visibleMatches() {
             return this.matches.filter((m) => m.status !== "POSTPONED");
+        },
+        buildShareText() {
+            const outcomeMap = { H: "1", D: "X", A: "2" };
+            const visible = this.visibleMatches();
+            const width = String(visible.length).length;
+            const lines = visible.map(
+                (m, i) => `${String(i + 1).padStart(width, "0")}. ${m.homeTeamCode} – ${m.awayTeamCode}  ${outcomeMap[this.scoreOutcome(m.matchId)] ?? "?"}`
+            );
+            return `My GW${this.currentRound} Predictions ⚽\n${lines.join("\n")}\n\nPredict the table — LigiPredictor.com`;
         },
         scoreOutcome(matchId) {
             const s = this.scores[matchId];
