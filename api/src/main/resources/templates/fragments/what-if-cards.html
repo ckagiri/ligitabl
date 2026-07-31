@@ -50,42 +50,31 @@
             <th class="pb-2 font-medium w-8">Pred</th>
             <th class="pb-2 font-medium">Team</th>
             <th class="pb-2 font-medium text-right">Actual</th>
-            <th class="pb-2 font-medium text-right">
-              <span class="inline-flex items-center gap-1">
-                Hit
-                <span
-                  class="relative"
-                  x-data="{ tip: false }"
-                  @mouseenter="tip = true"
-                  @mouseleave="tip = false"
-                >
-                  <span class="text-gray-400 cursor-help leading-none">ⓘ</span>
-                  <span
-                    x-show="tip"
-                    x-transition.opacity.duration.100ms
-                    class="absolute top-full right-0 mt-1.5 z-50
-                           bg-white border border-gray-200 shadow-md rounded px-2 py-1
-                           text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none normal-case tracking-normal"
-                  >
-                    <span class="text-green-600 font-semibold">&uarr;</span> move up,
-                    <span class="text-red-600 font-semibold">&darr;</span> move down
-                    <span class="absolute bottom-full right-1 border-4 border-transparent border-b-gray-200"></span>
-                  </span>
-                </span>
-              </span>
-            </th>
+            <th class="pb-2 font-medium text-right">Hit</th>
           </tr>
         </thead>
         <tbody>
           <template x-for="team in teams" :key="team.code">
             <tr
-              class="prediction-row no-hover border-t border-gray-100 cursor-pointer"
-              :class="isSelected(team.code) ? 'bg-indigo-100' : 'hover:bg-gray-100'"
+              class="prediction-row no-hover border-t border-gray-100 cursor-pointer hover:bg-gray-100"
               :data-team-code="team.code"
               @click="teamClick(team.code)"
             >
               <td class="py-1.5 text-gray-500" x-text="team.position"></td>
-              <td class="py-1.5 font-medium text-gray-900"><span class="sm:hidden" x-text="team.shorterName || team.name"></span><span class="hidden sm:inline" x-text="team.shortName || team.name"></span></td>
+              <!-- Selection reads as a dot beside the name, same as the my-table row: washing the
+                   whole row in colour fights the amber .swapping highlight the swap animation
+                   applies to that same row moments later. -->
+              <td class="py-1.5 font-medium text-gray-900">
+                <span class="inline-flex items-center gap-1">
+                  <span
+                    x-show="isSelected(team.code)"
+                    class="text-blue-600 text-xs font-medium flex-shrink-0"
+                    >●</span
+                  >
+                  <span class="sm:hidden" x-text="team.shorterName || team.name"></span
+                  ><span class="hidden sm:inline" x-text="team.shortName || team.name"></span>
+                </span>
+              </td>
               <td
                 class="py-1.5 text-right text-gray-700"
                 x-text="getActualPosition(team.code)"

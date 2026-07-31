@@ -939,6 +939,7 @@ window.Ligitabl.whatIfPage = function (el) {
         activeTab: "standings",
         hasComputed: false,
         isComputing: false,
+        isReverting: false,
         isRefreshing: false,
         // Transient "Already up to date" / "Updated from your last apply" note next to Refresh.
         refreshMessage: null,
@@ -1192,6 +1193,10 @@ window.Ligitabl.whatIfPage = function (el) {
             this._saveWhatIfSession();
         },
         pickScore(matchId, home, away) {
+            if (this.isChipSelected(matchId, home, away)) {
+                this.closeScorePicker();
+                return;
+            }
             this.setMatchScore(matchId, home, away);
         },
         // Excludes the current score so a roll always visibly changes something.
@@ -1239,14 +1244,23 @@ window.Ligitabl.whatIfPage = function (el) {
             if (!this.hasComputed || !this.appliedScores) return false;
             return JSON.stringify(this.scores) !== JSON.stringify(this.appliedScores);
         },
+        // Deliberately paced like undoLastSwap(): reverting rewrites every score at once, and doing
+        // that on the same tick reads as the page glitching. The 200ms lead-in gives "Reverting…"
+        // time to register as the cause of the change.
         revertScores() {
-            if (!this.appliedScores) return;
-            this.scores = JSON.parse(JSON.stringify(this.appliedScores));
-            this.hasEdited = true;
-            this.openId = null;
-            this.openSeg = null;
-            this.rollingId = null;
-            this._saveWhatIfSession();
+            if (!this.appliedScores || this.isReverting) return;
+            this.isReverting = true;
+            setTimeout(() => {
+                this.scores = JSON.parse(JSON.stringify(this.appliedScores));
+                this.hasEdited = true;
+                this.openId = null;
+                this.openSeg = null;
+                this.rollingId = null;
+                this._saveWhatIfSession();
+                setTimeout(() => {
+                    this.isReverting = false;
+                }, 200);
+            }, 200);
         },
         confirmReset() {
             if (window.confirm("Reset your what-if? This clears all entered scores and swaps.")) {
@@ -1308,6 +1322,20 @@ window.Ligitabl.whatIfPage = function (el) {
                     this.undoing = false;
                 }, 200);
             }, 200);
+        },
+        // One line that covers all four states rather than two x-show'd paragraphs: before any swap
+        // the instruction has to teach the interaction, afterwards it can be terse, and either way a
+        // selected team needs naming so it's obvious what the next tap acts on.
+        swapHint() {
+            const hasSwaps = this.getSwapCount() > 0;
+            if (this.selectedTeam) {
+                return hasSwaps
+                    ? `${this.selectedTeam} selected — tap another team to swap`
+                    : `Tap another team to swap, or tap ${this.selectedTeam} again to deselect`;
+            }
+            return hasSwaps
+                ? "Tap two teams to swap them"
+                : "Tap a team to select it, then tap another to swap them.";
         },
         resetSwaps() {
             this.reset();

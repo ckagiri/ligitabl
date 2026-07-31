@@ -1180,28 +1180,36 @@ window.Ligitabl.whatIfPage = function(el) {
   const roundId = el?.dataset?.roundId || "unknown";
   const userId = el?.dataset?.userId || "guest";
   const maxHitPoints = Number(el?.dataset?.maxHitPoints || 0);
+  const roundOpen = el?.dataset?.roundOpen === "true";
+  const currentRound = el?.dataset?.currentRound || "";
   const base = Ligitabl._predictionBase(parsed, userId, roundId);
   const originalPerformSwap = base._performSwap;
   const scores = {};
   matches.forEach((m) => {
+    if (m.status === "POSTPONED") return;
     scores[m.matchId] = { home: null, away: null };
   });
   return Object.assign(base, {
     matches,
     scores,
     maxHitPoints,
+    roundOpen,
+    currentRound,
     swapLog: [],
     activeTab: "standings",
     hasComputed: false,
     isComputing: false,
+    isReverting: false,
+    isRefreshing: false,
+    // Transient "Already up to date" / "Updated from your last apply" note next to Refresh.
+    refreshMessage: null,
     errorMessage: null,
     // Snapshot of `scores` as of the last successful apply() — compared against the live
     // `scores` to tell whether the computed result is stale (scoresDirty()), so the Apply
     // button can flag it ('*Apply') instead of silently showing a result that no longer
     // matches what's entered.
     appliedScores: null,
-    // Score-picker state (gameweek-v5.html interaction: tap a score box or 1/X/2 to open a
-    // chip strip of plausible scores for that outcome, plus a reroll die and +/- steppers).
+    // Score-picker state
     openId: null,
     openSeg: null,
     focusSide: "home",
@@ -1211,21 +1219,114 @@ window.Ligitabl.whatIfPage = function(el) {
       this.teams = Ligitabl._mapServerPredictions(parsed.predictions);
       this.originalTeams = Ligitabl._mapServerPredictions(parsed.predictions);
       this._restoreWhatIfSession();
+      this._reconcileWithServer();
     },
-    // Session persists across refresh/navigation, scoped per user+round. Keyed off the
-    // matches' own statuses so a match going POSTPONED after the session was saved is
-    // detected: `_restoreWhatIfSession` discards the whole cached session on any mismatch
-    // rather than trying to patch just the affected match.
+    // Cross-device sync at page load, from the scores the server rendered into the page. Silent
+    // by design — a confirm dialog on page load would be intolerable, and there's nothing on
+    // screen yet for the user to weigh it against. The Refresh button does ask (see below).
+    _reconcileWithServer() {
+      const serverScores = this._normalizeServerScores(
+        Ligitabl._parseJSON(el?.dataset?.savedWhatIfScores, null)
+      );
+      if (!serverScores || this._scoresMatchServer(serverScores)) return;
+      this._adoptServerScores(serverScores);
+    },
+    // Server list -> the `{matchId: {home, away}}` shape `scores` uses. Null when there's
+    // nothing usable to reconcile against.
+    _normalizeServerScores(savedScores) {
+      if (!Array.isArray(savedScores) || savedScores.length === 0) return null;
+      const serverScores = {};
+      savedScores.forEach((s) => {
+        if (!this.scores[s.matchId]) return;
+        serverScores[s.matchId] = { home: s.homeGoals, away: s.awayGoals };
+      });
+      return Object.keys(serverScores).length > 0 ? serverScores : null;
+    },
+    // The server wins: scores are populated from it (not blanked) and the sandbox is reset.
+    // Deliberately no auto re-Apply — the user clicks Apply themselves to project standings for
+    // the now-current scores.
+    _adoptServerScores(serverScores) {
+      Object.keys(this.scores).forEach((matchId) => {
+        this.scores[matchId] = serverScores[matchId] || { home: null, away: null };
+      });
+      this.hasEdited = true;
+      this.reset();
+      this.swapLog = [];
+      this.currentStandings = parsed.currentStandings;
+      this.currentPoints = parsed.currentPoints;
+      this.currentGoalDifference = parsed.currentGoalDifference;
+      this.hasComputed = false;
+      this.appliedScores = null;
+      this.activeTab = "standings";
+      this.openId = null;
+      this.openSeg = null;
+      this.rollingId = null;
+      this._saveWhatIfSession();
+    },
+    // Refresh: same server-wins reconciliation as page load, but against a live fetch rather
+    // than the scores baked into the page when it was rendered — and it asks first when there's
+    // local work to lose, since the user pressed a button rather than just opening the page.
+    refreshFromServer() {
+      if (this.isRefreshing || this.isComputing) return;
+      this.isRefreshing = true;
+      this.refreshMessage = null;
+      this.errorMessage = null;
+      fetch("/predictions/user/what-if/saved", { headers: { Accept: "application/json" } }).then((r) => r.json().then((data) => ({ ok: r.ok, data }))).then(({ ok, data }) => {
+        this.isRefreshing = false;
+        if (!ok || !data.success) {
+          this.errorMessage = data && data.message || "Couldn't refresh";
+          return;
+        }
+        const serverScores = this._normalizeServerScores(data.scores);
+        if (!serverScores) {
+          this._flashRefreshMessage("Nothing saved yet");
+          return;
+        }
+        if (this._scoresMatchServer(serverScores)) {
+          this._flashRefreshMessage("Already up to date");
+          return;
+        }
+        if (this._hasLocalWork() && !window.confirm(
+          "Load your last applied scores? This replaces the scores and swaps you have here."
+        )) {
+          this._flashRefreshMessage("Kept what you have");
+          return;
+        }
+        this._adoptServerScores(serverScores);
+        this._flashRefreshMessage("Updated from your last apply");
+      }).catch(() => {
+        this.isRefreshing = false;
+        this.errorMessage = "Couldn't refresh. Check your connection.";
+      });
+    },
+    // Anything the user would actually lose to a server-wins overwrite. An untouched page (no
+    // scores entered, no swaps) has nothing at stake, so it syncs without asking.
+    _hasLocalWork() {
+      return this.hasEdited || this.swapLog.length > 0;
+    },
+    _flashRefreshMessage(message) {
+      this.refreshMessage = message;
+      setTimeout(() => {
+        if (this.refreshMessage === message) this.refreshMessage = null;
+      }, 2500);
+    },
+    // Compared match-by-match rather than by JSON.stringify: `scores` is keyed in round order,
+    // the server's list carries no such guarantee, and key order would make identical scores
+    // look different.
+    _scoresMatchServer(serverScores) {
+      const localIds = Object.keys(this.scores);
+      if (localIds.length !== Object.keys(serverScores).length) return false;
+      return localIds.every((id) => {
+        const server = serverScores[id];
+        return server && this.scores[id].home === server.home && this.scores[id].away === server.away;
+      });
+    },
     _whatIfStorageKey() {
       return `ligitabl.whatif.${userId}.${roundId}`;
-    },
-    _matchStatusSnapshot() {
-      return this.matches.map((m) => `${m.matchId}:${m.status}`).sort().join(",");
     },
     _saveWhatIfSession() {
       try {
         localStorage.setItem(this._whatIfStorageKey(), JSON.stringify({
-          matchStatusSnapshot: this._matchStatusSnapshot(),
           scores: this.scores,
           teams: this.teams,
           swapStack: this.swapStack,
@@ -1257,10 +1358,7 @@ window.Ligitabl.whatIfPage = function(el) {
         console.warn("Failed to read what-if session:", e);
         return false;
       }
-      if (!saved || saved.matchStatusSnapshot !== this._matchStatusSnapshot()) {
-        this._clearWhatIfSession();
-        return false;
-      }
+      if (!saved) return false;
       this.scores = saved.scores || this.scores;
       this.teams = saved.teams || this.teams;
       this.swapStack = saved.swapStack || [];
@@ -1270,9 +1368,34 @@ window.Ligitabl.whatIfPage = function(el) {
       this.currentPoints = saved.currentPoints || this.currentPoints;
       this.currentGoalDifference = saved.currentGoalDifference || this.currentGoalDifference;
       this.appliedScores = saved.appliedScores || null;
+      this._reconcileMatches();
+      this._saveWhatIfSession();
       this.hasEdited = Object.values(this.scores).some((s) => s.home !== null || s.away !== null);
       if (this.hasComputed) this.activeTab = "result";
       return true;
+    },
+    _reconcileMatches() {
+      this.matches.filter((m) => m.status === "POSTPONED").forEach((m) => delete this.scores[m.matchId]);
+      this.matches.filter((m) => m.status === "SCHEDULED").forEach((m) => {
+        if (!this.scores[m.matchId]) this.scores[m.matchId] = { home: null, away: null };
+      });
+    },
+    // Postponed matches are excluded from the rendered list entirely (see scores init above
+    // and this getter) rather than shown blanked out.
+    visibleMatches() {
+      return this.matches.filter((m) => m.status !== "POSTPONED");
+    },
+    buildShareText() {
+      const outcomeMap = { H: "1", D: "X", A: "2" };
+      const visible = this.visibleMatches();
+      const width = String(visible.length).length;
+      const lines = visible.map(
+        (m, i) => `${String(i + 1).padStart(width, "0")}. ${m.homeTeamCode} – ${m.awayTeamCode}  ${outcomeMap[this.scoreOutcome(m.matchId)] ?? "?"}`
+      );
+      return `My GW${this.currentRound} Predictions ⚽
+${lines.join("\n")}
+
+Predict the table — LigiPredictor.com`;
     },
     scoreOutcome(matchId) {
       const s = this.scores[matchId];
@@ -1304,12 +1427,8 @@ window.Ligitabl.whatIfPage = function(el) {
       this.openId = null;
       this.openSeg = null;
     },
-    // Clicking an empty score box opens the picker on a random 1/X/2 outcome instead of
-    // always defaulting to "H" — the boxes stay "–" and the segment shows its normal light
-    // "open" style (scoreOutcome is still null, nothing's been picked yet); only which chip
-    // strip greets you is randomized. Re-clicking the other side of the same still-unanswered
-    // match keeps the same segment rather than re-rolling it.
     focusScoreBox(matchId, side) {
+      if (!this.roundOpen) return;
       if (!this.scoreAnswered(matchId)) {
         const seg = this.isScorePickerOpen(matchId) && this.openSeg ? this.openSeg : ["H", "D", "A"][Math.floor(Math.random() * 3)];
         this.openScorePicker(matchId, seg, side);
@@ -1323,6 +1442,10 @@ window.Ligitabl.whatIfPage = function(el) {
       this._saveWhatIfSession();
     },
     pickScore(matchId, home, away) {
+      if (this.isChipSelected(matchId, home, away)) {
+        this.closeScorePicker();
+        return;
+      }
       this.setMatchScore(matchId, home, away);
     },
     // Excludes the current score so a roll always visibly changes something.
@@ -1332,11 +1455,12 @@ window.Ligitabl.whatIfPage = function(el) {
       return options[Math.floor(Math.random() * options.length)];
     },
     toggleSeg(matchId, seg) {
+      if (!this.roundOpen) return;
       if (this.openId === matchId && this.openSeg === seg) {
         this.closeScorePicker();
         return;
       }
-      this.openScorePicker(matchId, seg);
+      this.openScorePicker(matchId, seg, seg === "A" ? "away" : "home");
       if (this.scoreOutcome(matchId) !== seg) {
         const [h, a] = this.rollChip(matchId, seg);
         this.setMatchScore(matchId, h, a);
@@ -1352,6 +1476,7 @@ window.Ligitabl.whatIfPage = function(el) {
       }, 300);
     },
     bumpScore(matchId, delta) {
+      if (!this.roundOpen) return;
       const s = this.scores[matchId];
       const current = s[this.focusSide];
       s[this.focusSide] = Math.min(9, Math.max(0, (current ?? 0) + delta));
@@ -1363,19 +1488,37 @@ window.Ligitabl.whatIfPage = function(el) {
     remainingCount() {
       return this.matches.filter((m) => m.status === "SCHEDULED" && !this.scoreAnswered(m.matchId)).length;
     },
-    // True once scores have been edited since the last successful apply() — the computed
-    // result on screen no longer matches what's entered.
     scoresDirty() {
       if (!this.hasComputed || !this.appliedScores) return false;
       return JSON.stringify(this.scores) !== JSON.stringify(this.appliedScores);
+    },
+    // Deliberately paced like undoLastSwap(): reverting rewrites every score at once, and doing
+    // that on the same tick reads as the page glitching. The 200ms lead-in gives "Reverting…"
+    // time to register as the cause of the change.
+    revertScores() {
+      if (!this.appliedScores || this.isReverting) return;
+      this.isReverting = true;
+      setTimeout(() => {
+        this.scores = JSON.parse(JSON.stringify(this.appliedScores));
+        this.hasEdited = true;
+        this.openId = null;
+        this.openSeg = null;
+        this.rollingId = null;
+        this._saveWhatIfSession();
+        setTimeout(() => {
+          this.isReverting = false;
+        }, 200);
+      }, 200);
+    },
+    confirmReset() {
+      if (window.confirm("Reset your what-if? This clears all entered scores and swaps.")) {
+        this.resetWhatIf();
+      }
     },
     // Sandbox swaps are unlimited — there's no real swap quota to enforce here.
     exceedsLimit() {
       return false;
     },
-    // _predictionBase only provides the low-level _selectTeam/_performSwap primitives —
-    // predictionPage/guestPredictionPage each define their own teamClick(teamCode) select-or-
-    // swap wrapper (with a canInteract guard that doesn't apply to this sandbox, so omitted).
     teamClick(teamCode) {
       if (this.selectedTeam === null) {
         this._selectTeam(teamCode);
@@ -1426,8 +1569,16 @@ window.Ligitabl.whatIfPage = function(el) {
         }, 200);
       }, 200);
     },
-    // Resets just the sandbox team order/swaps (inherited reset()), not scores or the
-    // computed standings — distinct from resetWhatIf(), which starts the whole page over.
+    // One line that covers all four states rather than two x-show'd paragraphs: before any swap
+    // the instruction has to teach the interaction, afterwards it can be terse, and either way a
+    // selected team needs naming so it's obvious what the next tap acts on.
+    swapHint() {
+      const hasSwaps = this.getSwapCount() > 0;
+      if (this.selectedTeam) {
+        return hasSwaps ? `${this.selectedTeam} selected — tap another team to swap` : `Tap another team to swap, or tap ${this.selectedTeam} again to deselect`;
+      }
+      return hasSwaps ? "Tap two teams to swap them" : "Tap a team to select it, then tap another to swap them.";
+    },
     resetSwaps() {
       this.reset();
       this.swapLog = [];
@@ -1453,7 +1604,6 @@ window.Ligitabl.whatIfPage = function(el) {
         };
       }).sort((a, b) => a.position - b.position);
     },
-    // Per-team "hit" is the inherited getDelta(teamCode); these sum it for the banner.
     totalHit() {
       return this.teams.reduce((sum, t) => {
         const d = this.getDelta(t.code);
@@ -1501,11 +1651,6 @@ window.Ligitabl.whatIfPage = function(el) {
         this.errorMessage = "Failed to compute. Check your connection.";
       });
     },
-    // Clears everything back to how the page loaded — scores, the sandbox team order and its
-    // swap log, and tables (currentStandings/currentPoints/currentGoalDifference) revert
-    // to `parsed`'s original server-seeded values, which apply() never mutates directly since
-    // it reassigns `this.x`, not `parsed.x`) — and drops the persisted session so a refresh
-    // afterward starts fresh instead of restoring what was just cleared.
     resetWhatIf() {
       this.matches.forEach((m) => {
         this.scores[m.matchId] = { home: null, away: null };
@@ -1526,6 +1671,76 @@ window.Ligitabl.whatIfPage = function(el) {
       this._clearWhatIfSession();
     }
   });
+};
+window.Ligitabl.whatIfRecapCard = function(el) {
+  return {
+    open: false,
+    whatIfRecapData: { round: null, played: 0, all: [], wins: [], draws: [], losses: [] },
+    whatIfRecapPopup: null,
+    whatIfRecapPopupClosing: false,
+    whatIfRecapCopied: false,
+    init() {
+      this.whatIfRecapData = Ligitabl._parseJSON(el?.dataset?.whatIfRecap, this.whatIfRecapData);
+    },
+    showWhatIfRecapPopup(bucket) {
+      const lines = this.whatIfRecapData[bucket] || [];
+      if (lines.length === 0) return;
+      this.whatIfRecapPopupClosing = false;
+      this.whatIfRecapCopied = false;
+      this.whatIfRecapPopup = { bucket, lines };
+    },
+    hideWhatIfRecapPopup() {
+      if (!this.whatIfRecapPopup) return;
+      this.whatIfRecapPopupClosing = true;
+      setTimeout(() => {
+        this.whatIfRecapPopup = null;
+        this.whatIfRecapPopupClosing = false;
+      }, 300);
+    },
+    whatIfRecapTitle() {
+      if (!this.whatIfRecapPopup) return "";
+      const labels = { all: "What-If recap", wins: "Wins", draws: "Draws", losses: "Losses" };
+      return labels[this.whatIfRecapPopup.bucket] || "";
+    },
+    // Glyph for how a single guess graded, rendered in a coloured circle beside the (square)
+    // guessed-outcome badge. A draw guess that landed within one goal is the "half" case —
+    // right instinct, wrong result — hence the tilde rather than a tick. Loss is a dash rather
+    // than a cross so it never reads as a repeat of a draw pick's "X".
+    whatIfRecapMark(grade) {
+      return { WIN: "✓", DRAW: "~", LOSS: "–" }[grade] || "";
+    },
+    whatIfRecapMarkClass(grade) {
+      return {
+        WIN: "bg-green-50 text-green-700",
+        DRAW: "bg-amber-50 text-amber-700",
+        LOSS: "bg-red-50 text-red-700"
+      }[grade] || "bg-gray-100 text-gray-500";
+    },
+    whatIfRecapNumber(index) {
+      return String(index + 1).padStart(2, "0");
+    },
+    // Shareable summary of the whole round — always the full list, not just the open bucket:
+    // "3W 1D 1L" only reads correctly against every match.
+    buildWhatIfRecapShareText() {
+      const d = this.whatIfRecapData;
+      const emoji = { WIN: "✅", DRAW: "🟡", LOSS: "❌" };
+      const header = `My GW${d.round} Predictions — ${d.wins.length}W ${d.draws.length}D ${d.losses.length}L ⚽`;
+      const lines = d.all.map(
+        (l, i) => `${this.whatIfRecapNumber(i)}. ${l.homeTeamCode} – ${l.awayTeamCode}  ${l.actualScore.replace(/ /g, "")}  ${l.guessedOutcome} ${emoji[l.grade] || ""}`
+      );
+      return `${header}
+${lines.join("\n")}
+
+Predict the table — LigiPredictor.com`;
+    },
+    copyWhatIfRecap() {
+      navigator.clipboard.writeText(this.buildWhatIfRecapShareText());
+      this.whatIfRecapCopied = true;
+      setTimeout(() => {
+        this.whatIfRecapCopied = false;
+      }, 2e3);
+    }
+  };
 };
 (function() {
   function dismissResultsBanner(roundNumber) {
