@@ -202,6 +202,68 @@ class WhatIfControllerTest {
         verify(response, never()).setStatus(anyInt());
     }
 
+    // ---- GET /predictions/user/what-if/saved ----
+
+    @Test
+    void savedScores_shouldReturn401_whenUnauthenticated() {
+        Map<String, Object> body = controller.savedScores(null, response);
+
+        verify(response).setStatus(401);
+        assertEquals(false, body.get("success"));
+        verifyNoInteractions(whatIfPredictionRepo);
+    }
+
+    @Test
+    void savedScores_shouldReturnEmptyList_whenNothingSaved() {
+        authenticate();
+        Season season = Season.builder()
+                .id(UUID.randomUUID())
+                .currentRoundId(UUID.randomUUID())
+                .build();
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(whatIfPredictionRepo.findByUserAndRound(userId, season.getCurrentRoundId()))
+                .thenReturn(Optional.empty());
+
+        Map<String, Object> body = controller.savedScores(principal, response);
+
+        assertEquals(true, body.get("success"));
+        assertEquals(List.of(), body.get("scores"));
+    }
+
+    @Test
+    void savedScores_shouldReturnSavedScores_whenPresent() {
+        authenticate();
+        UUID matchId = UUID.randomUUID();
+        Season season = Season.builder()
+                .id(UUID.randomUUID())
+                .currentRoundId(UUID.randomUUID())
+                .build();
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(whatIfPredictionRepo.findByUserAndRound(userId, season.getCurrentRoundId()))
+                .thenReturn(Optional.of(WhatIfPrediction.builder()
+                        .userId(userId)
+                        .roundId(season.getCurrentRoundId())
+                        .scores(List.of(new com.ligitabl.model.domain.WhatIfScore(matchId, 3, 0)))
+                        .build()));
+
+        Map<String, Object> body = controller.savedScores(principal, response);
+
+        assertEquals(true, body.get("success"));
+        assertEquals(List.of(new com.ligitabl.model.domain.WhatIfScore(matchId, 3, 0)), body.get("scores"));
+    }
+
+    @Test
+    void savedScores_shouldReturnEmptyList_whenNoActiveSeason() {
+        authenticate();
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.empty());
+
+        Map<String, Object> body = controller.savedScores(principal, response);
+
+        assertEquals(true, body.get("success"));
+        assertEquals(List.of(), body.get("scores"));
+        verifyNoInteractions(whatIfPredictionRepo);
+    }
+
     // ---- GET /predictions/user/what-if ----
 
     @Test

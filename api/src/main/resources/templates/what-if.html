@@ -72,14 +72,45 @@
             <p x-show="!hasEdited" x-cloak class="text-[11px] text-gray-400 mb-1 px-1">
               Tap a score or 1/X/2 to change a pick.
             </p>
-            <div class="flex justify-between items-baseline mb-3">
+            <div class="flex justify-between items-center mb-3">
               <h2 class="text-sm font-semibold text-gray-700">
                 Enter hypothetical scores
               </h2>
-              <span
-                class="text-xs text-gray-500"
-                x-text="remainingCount() === 0 ? 'All in' : remainingCount() + ' left'"
-              ></span>
+              <div class="flex items-center gap-2">
+                <span
+                  x-show="refreshMessage"
+                  x-cloak
+                  x-text="refreshMessage"
+                  class="text-xs text-gray-500"
+                ></span>
+                <button
+                  type="button"
+                  @click="refreshFromServer()"
+                  :disabled="isRefreshing || isComputing"
+                  aria-label="Refresh saved scores"
+                  title="Refresh saved scores"
+                  class="shrink-0 text-gray-400 hover:text-indigo-600 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    :class="isRefreshing ? 'animate-spin' : ''"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+                    <polyline points="21 3 21 9 15 9" />
+                  </svg>
+                </button>
+                <span
+                  class="text-xs text-gray-500"
+                  x-text="remainingCount() === 0 ? 'All in' : remainingCount() + ' left'"
+                ></span>
+              </div>
             </div>
             <div
               class="bg-white border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100"

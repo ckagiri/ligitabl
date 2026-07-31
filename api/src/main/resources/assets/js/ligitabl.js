@@ -939,6 +939,9 @@ window.Ligitabl.whatIfPage = function (el) {
         activeTab: "standings",
         hasComputed: false,
         isComputing: false,
+        isRefreshing: false,
+        // Transient "Already up to date" / "Updated from your last apply" note next to Refresh.
+        refreshMessage: null,
         errorMessage: null,
         // Snapshot of `scores` as of the last successful apply() — compared against the live
         // `scores` to tell whether the computed result is stale (scoresDirty()), so the Apply
@@ -957,14 +960,20 @@ window.Ligitabl.whatIfPage = function (el) {
             this._restoreWhatIfSession();
             this._reconcileWithServer();
         },
-        // Cross-device sync. The server holds whatever this user last Applied; if that disagrees
-        // with what this browser is about to show, the server wins — scores are populated from it
-        // (not blanked) and the sandbox is reset. Deliberately no auto re-Apply: the user clicks
-        // Apply themselves to project standings for the now-current scores.
+        // Cross-device sync at page load, from the scores the server rendered into the page. Silent
+        // by design — a confirm dialog on page load would be intolerable, and there's nothing on
+        // screen yet for the user to weigh it against. The Refresh button does ask (see below).
         _reconcileWithServer() {
-            const savedScores = Ligitabl._parseJSON(el?.dataset?.savedWhatIfScores, null);
-            if (!Array.isArray(savedScores) || savedScores.length === 0) return;
-
+            const serverScores = this._normalizeServerScores(
+                Ligitabl._parseJSON(el?.dataset?.savedWhatIfScores, null)
+            );
+            if (!serverScores || this._scoresMatchServer(serverScores)) return;
+            this._adoptServerScores(serverScores);
+        },
+        // Server list -> the `{matchId: {home, away}}` shape `scores` uses. Null when there's
+        // nothing usable to reconcile against.
+        _normalizeServerScores(savedScores) {
+            if (!Array.isArray(savedScores) || savedScores.length === 0) return null;
             const serverScores = {};
             savedScores.forEach((s) => {
                 // A match postponed since the save is no longer tracked in `scores` — skip it,
@@ -972,9 +981,12 @@ window.Ligitabl.whatIfPage = function (el) {
                 if (!this.scores[s.matchId]) return;
                 serverScores[s.matchId] = { home: s.homeGoals, away: s.awayGoals };
             });
-            if (Object.keys(serverScores).length === 0) return;
-            if (this._scoresMatchServer(serverScores)) return;
-
+            return Object.keys(serverScores).length > 0 ? serverScores : null;
+        },
+        // The server wins: scores are populated from it (not blanked) and the sandbox is reset.
+        // Deliberately no auto re-Apply — the user clicks Apply themselves to project standings for
+        // the now-current scores.
+        _adoptServerScores(serverScores) {
             Object.keys(this.scores).forEach((matchId) => {
                 this.scores[matchId] = serverScores[matchId] || { home: null, away: null };
             });
@@ -987,7 +999,63 @@ window.Ligitabl.whatIfPage = function (el) {
             this.hasComputed = false;
             this.appliedScores = null;
             this.activeTab = "standings";
+            this.openId = null;
+            this.openSeg = null;
+            this.rollingId = null;
             this._saveWhatIfSession();
+        },
+        // Refresh: same server-wins reconciliation as page load, but against a live fetch rather
+        // than the scores baked into the page when it was rendered — and it asks first when there's
+        // local work to lose, since the user pressed a button rather than just opening the page.
+        refreshFromServer() {
+            if (this.isRefreshing || this.isComputing) return;
+            this.isRefreshing = true;
+            this.refreshMessage = null;
+            this.errorMessage = null;
+
+            fetch("/predictions/user/what-if/saved", { headers: { Accept: "application/json" } })
+                .then((r) => r.json().then((data) => ({ ok: r.ok, data })))
+                .then(({ ok, data }) => {
+                    this.isRefreshing = false;
+                    if (!ok || !data.success) {
+                        this.errorMessage = (data && data.message) || "Couldn't refresh";
+                        return;
+                    }
+
+                    const serverScores = this._normalizeServerScores(data.scores);
+                    if (!serverScores) {
+                        this._flashRefreshMessage("Nothing saved yet");
+                        return;
+                    }
+                    if (this._scoresMatchServer(serverScores)) {
+                        this._flashRefreshMessage("Already up to date");
+                        return;
+                    }
+                    if (this._hasLocalWork() && !window.confirm(
+                        "Load your last applied scores? This replaces the scores and swaps you have here."
+                    )) {
+                        this._flashRefreshMessage("Kept what you have");
+                        return;
+                    }
+
+                    this._adoptServerScores(serverScores);
+                    this._flashRefreshMessage("Updated from your last apply");
+                })
+                .catch(() => {
+                    this.isRefreshing = false;
+                    this.errorMessage = "Couldn't refresh. Check your connection.";
+                });
+        },
+        // Anything the user would actually lose to a server-wins overwrite. An untouched page (no
+        // scores entered, no swaps) has nothing at stake, so it syncs without asking.
+        _hasLocalWork() {
+            return this.hasEdited || this.swapLog.length > 0;
+        },
+        _flashRefreshMessage(message) {
+            this.refreshMessage = message;
+            setTimeout(() => {
+                if (this.refreshMessage === message) this.refreshMessage = null;
+            }, 2500);
         },
         // Compared match-by-match rather than by JSON.stringify: `scores` is keyed in round order,
         // the server's list carries no such guarantee, and key order would make identical scores

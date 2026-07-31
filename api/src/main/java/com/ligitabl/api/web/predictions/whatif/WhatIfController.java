@@ -188,6 +188,36 @@ public class WhatIfController {
         return TeamRankDto.listOf(sorted, teamsByCode);
     }
 
+    /**
+     * The scores this user last applied, for the Refresh button — the page-load equivalent is the
+     * {@code savedWhatIfScoresJson} model attribute, but a refresh needs them live rather than as of
+     * whenever the page was rendered.
+     */
+    @GetMapping("/saved")
+    @ResponseBody
+    public Map<String, Object> savedScores(Principal principal, HttpServletResponse response) {
+        WebUserDetails userDetails = WebSecurity.resolveUser(principal);
+        if (userDetails == null) {
+            response.setStatus(401);
+            return Map.of("success", false, "message", "Authentication required");
+        }
+
+        UUID roundId = seasonRepo
+                .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
+                .map(Season::getCurrentRoundId)
+                .orElse(null);
+        if (roundId == null) {
+            return Map.of("success", true, "scores", List.of());
+        }
+
+        List<com.ligitabl.model.domain.WhatIfScore> scores = whatIfPredictionRepo
+                .findByUserAndRound(userDetails.getUserId(), roundId)
+                .map(WhatIfPrediction::getScores)
+                .orElseGet(List::of);
+
+        return Map.of("success", true, "scores", scores);
+    }
+
     @PostMapping("/compute")
     @ResponseBody
     public Map<String, Object> compute(
