@@ -3,6 +3,8 @@ package com.ligitabl.api.rest.prediction.whatif;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -133,8 +135,15 @@ class ComputeWhatIfUseCaseTest {
                 new RoundSupport(roundRepo, matchRepo, hierarchyValidator, competitionDefaults),
                 new StandingsCalculatorService(teamRepo, matchRepo, seasonRepo, standingsRepo));
 
-        // Reached by every test path (season + round resolution happen before any validation can fail).
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+    }
+
+    /**
+     * Round resolution, stubbed per-test rather than in setUp: the season-phase tests short-circuit
+     * before the round is ever looked up, and a blanket stub would either go unused there (strict-stub
+     * failure) or have to be made lenient, which would stop verifying it anywhere.
+     */
+    private void stubCurrentRound() {
         when(roundRepo.findById(round2Id)).thenReturn(Optional.of(round));
     }
 
@@ -147,8 +156,76 @@ class ComputeWhatIfUseCaseTest {
                 .thenReturn(List.of(teamArs, teamLiv, teamMci, teamChe));
     }
 
+    // ─── Season phase: pre-season and in-play only ───────────────────────────
+
+    @Test
+    void shouldAllowPreSeason_soRoundOneCanBePlayedOut() {
+        stubCurrentRound();
+        when(seasonRepo.findActiveSeason("premier-league"))
+                .thenReturn(Optional.of(seasonInPhase(
+                        OffsetDateTime.now().minusDays(1), // pre-season already opened
+                        OffsetDateTime.now().plusDays(1), // predictions not yet open
+                        LocalDate.now().plusDays(7)))); // season hasn't started
+        when(matchRepo.findByRoundId(round2Id)).thenReturn(List.of(currentArsMci, currentLivChe));
+        stubSuccessfulCalculation(List.of(currentArsMci, currentLivChe));
+
+        Either<WhatIfError, WhatIfResult> result = useCase.execute(new WhatIfCommand(
+                List.of(new WhatIfScore(currentArsMci.getId(), 2, 0), new WhatIfScore(currentLivChe.getId(), 1, 0))));
+
+        assertTrue(result.isRight(), () -> "expected success but got " + (result.isLeft() ? result.getLeft() : ""));
+    }
+
+    @Test
+    void shouldRejectOffSeason() {
+        when(seasonRepo.findActiveSeason("premier-league"))
+                .thenReturn(Optional.of(seasonInPhase(
+                        null, // pre-season never opened
+                        OffsetDateTime.now().plusDays(1),
+                        LocalDate.now().plusDays(7))));
+
+        Either<WhatIfError, WhatIfResult> result = useCase.execute(new WhatIfCommand(List.of()));
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(WhatIfError.SeasonNotOpen.class, result.getLeft());
+    }
+
+    @Test
+    void shouldRejectSetupMode_evenWhileInPlay() {
+        Season inSetup = Season.builder()
+                .id(seasonId)
+                .currentRoundId(round2Id)
+                .completed(false)
+                .mainContestId(null) // setup mode is the absence of a main contest
+                .maxHitPoints(8)
+                .initialRankings(List.of())
+                .build();
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(inSetup));
+
+        Either<WhatIfError, WhatIfResult> result = useCase.execute(new WhatIfCommand(List.of()));
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(WhatIfError.SeasonInSetupMode.class, result.getLeft());
+    }
+
+    private Season seasonInPhase(
+            OffsetDateTime preSeasonOpensAt, OffsetDateTime predictionsOpenAt, LocalDate startDate) {
+        return Season.builder()
+                .id(seasonId)
+                .currentRoundId(round2Id)
+                .completed(false)
+                .mainContestId(UUID.randomUUID())
+                .maxHitPoints(8)
+                .preSeasonOpensAt(preSeasonOpensAt)
+                .predictionsOpenAt(predictionsOpenAt)
+                .startDate(startDate)
+                .initialRankings(List.of(
+                        TeamRank.of("ARS", 1), TeamRank.of("LIV", 2), TeamRank.of("MCI", 3), TeamRank.of("CHE", 4)))
+                .build();
+    }
+
     @Test
     void shouldComputeWhatIfStandings_whenAllScoresProvided() {
+        stubCurrentRound();
         when(matchRepo.findByRoundId(round2Id)).thenReturn(List.of(currentArsMci, currentLivChe));
         stubSuccessfulCalculation(List.of(currentArsMci, currentLivChe));
 
@@ -171,6 +248,7 @@ class ComputeWhatIfUseCaseTest {
 
     @Test
     void shouldExcludePostponedMatch_fromRequiredScoresAndCalculation() {
+        stubCurrentRound();
         Match postponed = scheduledMatch(round2Id, teamMciId, teamCheId);
         postponed.setStatus(MatchStatus.POSTPONED);
 
@@ -190,6 +268,7 @@ class ComputeWhatIfUseCaseTest {
 
     @Test
     void shouldRejectPostponedMatchScore_asUnknownMatch() {
+        stubCurrentRound();
         Match postponed = scheduledMatch(round2Id, teamMciId, teamCheId);
         postponed.setStatus(MatchStatus.POSTPONED);
 
@@ -209,6 +288,7 @@ class ComputeWhatIfUseCaseTest {
 
     @Test
     void shouldReturnRoundNotOpen_whenRoundIsLocked() {
+        stubCurrentRound();
         Match finished = finishedMatch(round2Id, teamMciId, teamCheId, 1, 1);
         when(matchRepo.findByRoundId(round2Id)).thenReturn(List.of(currentArsMci, finished)); // mix -> LOCKED
 
@@ -223,6 +303,7 @@ class ComputeWhatIfUseCaseTest {
 
     @Test
     void shouldReturnMissingScores_whenNotAllScheduledMatchesScored() {
+        stubCurrentRound();
         when(matchRepo.findByRoundId(round2Id)).thenReturn(List.of(currentArsMci, currentLivChe));
         when(matchRepo.findByRoundIdWithTeams(round2Id)).thenReturn(List.of(currentArsMci, currentLivChe));
 
@@ -237,6 +318,7 @@ class ComputeWhatIfUseCaseTest {
 
     @Test
     void shouldReturnUnknownMatch_whenMatchIdNotInCurrentRound() {
+        stubCurrentRound();
         when(matchRepo.findByRoundId(round2Id)).thenReturn(List.of(currentArsMci, currentLivChe));
         when(matchRepo.findByRoundIdWithTeams(round2Id)).thenReturn(List.of(currentArsMci, currentLivChe));
 
@@ -255,6 +337,7 @@ class ComputeWhatIfUseCaseTest {
 
     @Test
     void shouldReturnInvalidScore_whenGoalsAreNegative() {
+        stubCurrentRound();
         when(matchRepo.findByRoundId(round2Id)).thenReturn(List.of(currentArsMci, currentLivChe));
         when(matchRepo.findByRoundIdWithTeams(round2Id)).thenReturn(List.of(currentArsMci, currentLivChe));
 

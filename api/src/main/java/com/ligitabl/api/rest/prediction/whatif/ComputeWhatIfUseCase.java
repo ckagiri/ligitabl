@@ -66,8 +66,8 @@ public class ComputeWhatIfUseCase {
                     if (season.isCompleted()) {
                         return Either.left(new WhatIfError.SeasonCompleted());
                     }
-                    if (!season.isInPlay()) {
-                        return Either.left(new WhatIfError.SeasonNotInPlay(season.getId()));
+                    if (!season.isInPlay() && !season.isPreSeason()) {
+                        return Either.left(new WhatIfError.SeasonNotOpen(season.getId()));
                     }
                     if (season.isInSetupMode()) {
                         return Either.left(new WhatIfError.SeasonInSetupMode());

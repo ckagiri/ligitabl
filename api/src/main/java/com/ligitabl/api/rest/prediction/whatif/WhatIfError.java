@@ -6,7 +6,7 @@ import java.util.UUID;
 public sealed interface WhatIfError {
     record SeasonNotFound(UUID seasonId) implements WhatIfError {}
 
-    record SeasonNotInPlay(UUID seasonId) implements WhatIfError {}
+    record SeasonNotOpen(UUID seasonId) implements WhatIfError {}
 
     record SeasonCompleted() implements WhatIfError {}
 
