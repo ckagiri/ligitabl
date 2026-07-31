@@ -41,10 +41,12 @@ import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.WhatIfPrediction;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.TeamRepo;
+import com.ligitabl.model.repo.WhatIfPredictionRepo;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -68,6 +70,7 @@ public class WhatIfController {
     private final ContestRepo contestRepo;
     private final MatchRepo matchRepo;
     private final TeamRepo teamRepo;
+    private final WhatIfPredictionRepo whatIfPredictionRepo;
     private final CompetitionDefaults competitionDefaults;
     private final ObjectMapper objectMapper;
     private final CurrentUserPublicId currentUserPublicId;
@@ -100,11 +103,16 @@ public class WhatIfController {
 
         return result.fold(
                 error -> bounceToMyTable(response, hxRequest),
-                data -> renderPage(data, season, model, hxRequest, response));
+                data -> renderPage(data, season, userDetails.getUserId(), model, hxRequest, response));
     }
 
     private String renderPage(
-            UserPredictionViewData data, Season season, Model model, String hxRequest, HttpServletResponse response) {
+            UserPredictionViewData data,
+            Season season,
+            UUID userId,
+            Model model,
+            String hxRequest,
+            HttpServletResponse response) {
         boolean roundOpen = "open".equalsIgnoreCase(data.roundState());
         boolean hasLivePrediction = !data.canCreateEntry();
 
@@ -131,6 +139,7 @@ public class WhatIfController {
             model.addAttribute("currentStandingsJson", objectMapper.writeValueAsString(data.standingsMap()));
             model.addAttribute("currentPointsJson", objectMapper.writeValueAsString(data.pointsMap()));
             model.addAttribute("currentGoalDifferenceJson", objectMapper.writeValueAsString(data.goalDifferenceMap()));
+            model.addAttribute("savedWhatIfScoresJson", savedScoresJson(userId, season.getCurrentRoundId()));
         } catch (JsonProcessingException e) {
             log.error("Failed to serialize what-if page data", e);
             model.addAttribute("whatIfMatchesJson", "[]");
@@ -138,12 +147,24 @@ public class WhatIfController {
             model.addAttribute("currentStandingsJson", "{}");
             model.addAttribute("currentPointsJson", "{}");
             model.addAttribute("currentGoalDifferenceJson", "{}");
+            model.addAttribute("savedWhatIfScoresJson", "[]");
         }
 
         if (hxRequest != null && !hxRequest.isBlank()) {
             return "what-if :: whatIfPage";
         }
         return "what-if";
+    }
+
+    private String savedScoresJson(UUID userId, UUID roundId) throws JsonProcessingException {
+        if (roundId == null) {
+            return "[]";
+        }
+        List<com.ligitabl.model.domain.WhatIfScore> scores = whatIfPredictionRepo
+                .findByUserAndRound(userId, roundId)
+                .map(WhatIfPrediction::getScores)
+                .orElseGet(List::of);
+        return objectMapper.writeValueAsString(scores);
     }
 
     private String bounceToMyTable(HttpServletResponse response, String hxRequest) {

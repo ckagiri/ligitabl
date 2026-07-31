@@ -38,10 +38,12 @@ import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.StandingsMetadata;
 import com.ligitabl.model.domain.StandingsTeamRank;
 import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.WhatIfPrediction;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.TeamRepo;
+import com.ligitabl.model.repo.WhatIfPredictionRepo;
 
 import jakarta.servlet.http.HttpServletResponse;
 
@@ -72,6 +74,9 @@ class WhatIfControllerTest {
     private TeamRepo teamRepo;
 
     @Mock
+    private WhatIfPredictionRepo whatIfPredictionRepo;
+
+    @Mock
     private CurrentUserPublicId currentUserPublicId;
 
     @Mock
@@ -92,6 +97,7 @@ class WhatIfControllerTest {
                 contestRepo,
                 matchRepo,
                 teamRepo,
+                whatIfPredictionRepo,
                 competitionDefaults,
                 new ObjectMapper(),
                 currentUserPublicId);
@@ -223,6 +229,8 @@ class WhatIfControllerTest {
         when(getUserPredictionUseCase.execute(any()))
                 .thenReturn(Either.right(liveViewData(season, "LOCKED", PredictionAccessMode.EDITABLE)));
         when(matchRepo.findByRoundIdWithTeams(season.getCurrentRoundId())).thenReturn(List.of());
+        when(whatIfPredictionRepo.findByUserAndRound(userId, season.getCurrentRoundId()))
+                .thenReturn(Optional.empty());
 
         String view = controller.page(principal, model, response, null);
 
@@ -269,11 +277,43 @@ class WhatIfControllerTest {
         when(getUserPredictionUseCase.execute(any()))
                 .thenReturn(Either.right(liveViewData(season, "OPEN", PredictionAccessMode.EDITABLE)));
         when(matchRepo.findByRoundIdWithTeams(season.getCurrentRoundId())).thenReturn(List.of());
+        when(whatIfPredictionRepo.findByUserAndRound(userId, season.getCurrentRoundId()))
+                .thenReturn(Optional.empty());
 
         String view = controller.page(principal, model, response, null);
 
         assertEquals("what-if", view);
         assertEquals("What-If", model.asMap().get("pageTitle"));
+        assertEquals("[]", model.asMap().get("savedWhatIfScoresJson"));
+    }
+
+    @Test
+    void page_shouldExposeSavedScores_whenUserHasAppliedBefore() {
+        authenticate();
+        Model model = new ExtendedModelMap();
+        UUID matchId = UUID.randomUUID();
+        Season season = Season.builder()
+                .id(UUID.randomUUID())
+                .currentRoundId(UUID.randomUUID())
+                .mainContestId(UUID.randomUUID())
+                .build();
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(contestRepo.existsByUserAndContest(userId, season.getMainContestId()))
+                .thenReturn(true);
+        when(getUserPredictionUseCase.execute(any()))
+                .thenReturn(Either.right(liveViewData(season, "OPEN", PredictionAccessMode.EDITABLE)));
+        when(matchRepo.findByRoundIdWithTeams(season.getCurrentRoundId())).thenReturn(List.of());
+        when(whatIfPredictionRepo.findByUserAndRound(userId, season.getCurrentRoundId()))
+                .thenReturn(Optional.of(WhatIfPrediction.builder()
+                        .userId(userId)
+                        .roundId(season.getCurrentRoundId())
+                        .scores(List.of(new com.ligitabl.model.domain.WhatIfScore(matchId, 2, 1)))
+                        .build()));
+
+        controller.page(principal, model, response, null);
+
+        String json = (String) model.asMap().get("savedWhatIfScoresJson");
+        assertEquals("[{\"matchId\":\"" + matchId + "\",\"homeGoals\":2,\"awayGoals\":1}]", json);
     }
 
     private UserPredictionViewData liveViewData(Season season, String roundState, PredictionAccessMode accessMode) {

@@ -21,8 +21,6 @@ public class TeamRankDto {
     UUID teamId;
     String teamName;
     String teamShortName;
-    // Compact name for space-constrained UI (Team.shorterName); falls back to teamShortName
-    // when a team hasn't had one seeded yet.
     String teamShorterName;
     String teamSlug;
     String teamTla;

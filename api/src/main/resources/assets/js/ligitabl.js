@@ -955,6 +955,50 @@ window.Ligitabl.whatIfPage = function (el) {
             this.teams = Ligitabl._mapServerPredictions(parsed.predictions);
             this.originalTeams = Ligitabl._mapServerPredictions(parsed.predictions);
             this._restoreWhatIfSession();
+            this._reconcileWithServer();
+        },
+        // Cross-device sync. The server holds whatever this user last Applied; if that disagrees
+        // with what this browser is about to show, the server wins — scores are populated from it
+        // (not blanked) and the sandbox is reset. Deliberately no auto re-Apply: the user clicks
+        // Apply themselves to project standings for the now-current scores.
+        _reconcileWithServer() {
+            const savedScores = Ligitabl._parseJSON(el?.dataset?.savedWhatIfScores, null);
+            if (!Array.isArray(savedScores) || savedScores.length === 0) return;
+
+            const serverScores = {};
+            savedScores.forEach((s) => {
+                // A match postponed since the save is no longer tracked in `scores` — skip it,
+                // same exclusion rule the rest of the page uses.
+                if (!this.scores[s.matchId]) return;
+                serverScores[s.matchId] = { home: s.homeGoals, away: s.awayGoals };
+            });
+            if (Object.keys(serverScores).length === 0) return;
+            if (this._scoresMatchServer(serverScores)) return;
+
+            Object.keys(this.scores).forEach((matchId) => {
+                this.scores[matchId] = serverScores[matchId] || { home: null, away: null };
+            });
+            this.hasEdited = true;
+            this.reset(); // inherited from _predictionBase: teams = originalTeams, selectedTeam = null, swapStack = []
+            this.swapLog = [];
+            this.currentStandings = parsed.currentStandings;
+            this.currentPoints = parsed.currentPoints;
+            this.currentGoalDifference = parsed.currentGoalDifference;
+            this.hasComputed = false;
+            this.appliedScores = null;
+            this.activeTab = "standings";
+            this._saveWhatIfSession();
+        },
+        // Compared match-by-match rather than by JSON.stringify: `scores` is keyed in round order,
+        // the server's list carries no such guarantee, and key order would make identical scores
+        // look different.
+        _scoresMatchServer(serverScores) {
+            const localIds = Object.keys(this.scores);
+            if (localIds.length !== Object.keys(serverScores).length) return false;
+            return localIds.every((id) => {
+                const server = serverScores[id];
+                return server && this.scores[id].home === server.home && this.scores[id].away === server.away;
+            });
         },
         _whatIfStorageKey() {
             return `ligitabl.whatif.${userId}.${roundId}`;
