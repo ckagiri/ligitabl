@@ -390,7 +390,6 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
           <!-- Non-guest view uses regular component -->
           <div
             th:if="${!isGuest}"
-            class="bg-white rounded-lg shadow-sm mb-6"
             x-data="Ligitabl.predictionPage($el)"
             th:attr="data-predictions=${predictionsJson},
                     data-round-open=${isRoundOpenForPrediction},
@@ -409,6 +408,7 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
                     data-user-id=${userId},
                     data-access-mode=${accessMode}"
           >
+            <div class="bg-white rounded-lg shadow-sm mb-6">
             <!-- Contextual Swap Instructions Banner (editable + cooldown-interactive states) -->
             <div
               th:replace="~{fragments/swap-instructions :: instructions(false, ${canInteractEffective}, ${isInitialPredictionEditable})}"
@@ -448,34 +448,6 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
                   ${totalHits}, ${totalScore}, ${zeroesCount},
                   ${seasonBestScore}, ${sprintBestScore}, ${sprintLabel})}"
               ></div>
-            </th:block>
-
-            <!-- Actions Footer (editable + cooldown-interactive states; also used for pre-season registration).
-                 footerVisible is shared between the inline "actions" button and the floating pill so exactly
-                 one of them is ever showing: the pill while scrolling, the inline one once the footer is near. -->
-            <th:block
-              th:if="${canInteractEffective}"
-            >
-              <div
-                x-data="{ footerVisible: false }"
-                x-init="
-                  const footer = document.querySelector('footer');
-                  if (footer) {
-                    new IntersectionObserver(
-                      (entries) => { footerVisible = entries[0].isIntersecting; }
-                    ).observe(footer);
-                  }
-                "
-              >
-                <div
-                  x-show="canInteract || isInitialPrediction"
-                  th:replace="~{fragments/prediction-actions :: actions}"
-                ></div>
-                <div
-                  x-show="canInteract || isInitialPrediction"
-                  th:replace="~{fragments/prediction-actions :: floating-submit}"
-                ></div>
-              </div>
             </th:block>
 
             <!-- Swap History (own predictions only, collapsible) — part of the round's result
@@ -519,7 +491,9 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
                     th:each="entry, iterStat : ${swapHistory}"
                     class="px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1"
                   >
-                    <span class="text-sm font-mono text-gray-700">
+                    <!-- whitespace-nowrap + scroll: one swap is one line, so the A→B ↔ B→A
+                         symmetry survives on narrow screens instead of orphaning the last "#17". -->
+                    <span class="text-sm font-mono text-gray-700 whitespace-nowrap overflow-x-auto max-w-full">
                       <span class="text-gray-300 mr-1.5 select-none" th:text="${iterStat.count} + '.'">1.</span>
                       <span class="font-semibold text-gray-900" th:text="${entry.teamACode}">ARS</span>
                       <span class="text-gray-400">#</span><span th:text="${entry.teamAFrom}">1</span>
@@ -540,6 +514,35 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
                 </ul>
               </div>
             </div>
+          </div>
+
+          <!-- footerVisible is shared between the inline "actions" button and the floating pill so exactly
+               one of them is ever showing: the pill while scrolling, the inline one once the footer is near. -->
+          <th:block
+            th:if="${canInteractEffective}"
+          >
+            <div
+              x-data="{ footerVisible: false }"
+              x-init="
+                const footer = document.querySelector('footer');
+                if (footer) {
+                  new IntersectionObserver(
+                    (entries) => { footerVisible = entries[0].isIntersecting; }
+                  ).observe(footer);
+                }
+              "
+            >
+              <div
+                x-show="canInteract || isInitialPrediction"
+                th:replace="~{fragments/prediction-actions :: actions}"
+              ></div>
+              <div
+                x-show="canInteract || isInitialPrediction"
+                th:replace="~{fragments/prediction-actions :: floating-submit}"
+              ></div>
+            </div>
+          </th:block>
+
           </div>
 
           <!-- What-If recap: its own section (see fragments/what-if-recap.html) -->

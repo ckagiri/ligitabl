@@ -55,10 +55,13 @@
     <span x-show="isPreSeasonRegistration && getSwapCount() > 0">
       Update Prediction (<span x-text="getSwapCount()"></span>)
     </span>
-    <span x-show="!isInitialPrediction && !isPreSeasonRegistration && getSwapCount() === 0"
+    <span
+      x-show="!isInitialPrediction && !isPreSeasonRegistration && getSwapCount() === 0"
       >Update Prediction</span
     >
-    <span x-show="!isInitialPrediction && !isPreSeasonRegistration && getSwapCount() > 0">
+    <span
+      x-show="!isInitialPrediction && !isPreSeasonRegistration && getSwapCount() > 0"
+    >
       Update Prediction (<span x-text="getSwapCount()"></span>)
     </span>
   </span>
@@ -111,7 +114,11 @@
       </div>
     </div>
 
-    <!-- Cooldown notices -->
+    <!-- Changes Summary -->
+    <div th:replace="~{fragments/prediction-actions :: changes-summary}"></div>
+
+    <!-- Cooldown notices — why the submit button below is unavailable. Sits after the changes
+         summary so the order reads: what you changed, why you can't submit it yet, the button. -->
     <p
       x-show="canInteract && !canSwap && !isInitialPrediction && isRoundOpen"
       class="text-xs text-yellow-700 text-center"
@@ -125,15 +132,23 @@
       Round is not open — submit resumes when the next round opens.
     </p>
 
-    <!-- Changes Summary -->
-    <div th:replace="~{fragments/prediction-actions :: changes-summary}"></div>
+    <!-- the run reads: what you changed, why you can't submit yet, share it, submit.
+         Collapsed by default, and hidden entirely on historical views.
+         -->
+    <div
+      th:replace="~{fragments/share-prediction :: card(
+        'w-full max-w-md bg-white rounded-lg shadow-sm overflow-hidden', 'false')}"
+    ></div>
 
     <!-- Submit Button — takes over once the floating pill hides near the footer.
          Uses `invisible` (not x-show) so this slot always reserves its height: toggling
          it via display:none would shift the footer's position, re-triggering the
          IntersectionObserver that drives footerVisible and causing a scroll-position
          feedback loop (the footer becoming "visible" pushes it back out of view). -->
-    <div :class="footerVisible ? '' : 'invisible'" th:insert="~{fragments/prediction-actions :: submit-button('rounded-full shadow-lg')}"></div>
+    <div
+      :class="footerVisible ? '' : 'invisible'"
+      th:insert="~{fragments/prediction-actions :: submit-button('rounded-full shadow-lg')}"
+    ></div>
   </div>
 </div>
 
@@ -152,13 +167,13 @@
      the inline button above) hides this pill once the page footer scrolls into view,
      so it never covers the footer links — the inline button takes over at that point. -->
 <template th:fragment="floating-submit" x-teleport="body">
-<div
-  x-cloak
-  x-show="!footerVisible"
-  x-transition.opacity
-  class="fixed bottom-5 inset-x-0 z-40 flex justify-center px-4 pointer-events-none"
-  th:insert="~{fragments/prediction-actions :: submit-button('pointer-events-auto rounded-full shadow-lg')}"
-></div>
+  <div
+    x-cloak
+    x-show="!footerVisible"
+    x-transition.opacity
+    class="fixed bottom-5 inset-x-0 z-40 flex justify-center px-4 pointer-events-none"
+    th:insert="~{fragments/prediction-actions :: submit-button('pointer-events-auto rounded-full shadow-lg')}"
+  ></div>
 </template>
 
 <!-- Changes Summary Fragment (reused in guest and non-guest views) -->
@@ -225,7 +240,10 @@
         >
       </div>
 
-      <div x-show="!undoing" class="flex items-center space-x-2 whitespace-nowrap">
+      <div
+        x-show="!undoing"
+        class="flex items-center space-x-2 whitespace-nowrap"
+      >
         <svg
           class="h-5 w-5 text-indigo-600"
           fill="none"
@@ -273,18 +291,20 @@
         </div>
       </div>
       <div class="text-xs text-gray-500">
-        <span x-show="isPreSeasonRegistration || isInitialPrediction">Limit: 5</span>
+        <span x-show="isPreSeasonRegistration || isInitialPrediction"
+          >Limit: 5</span
+        >
         <span x-show="isOpeningRound">Limit: 2</span>
-        <span x-show="!isPreSeasonRegistration && !isInitialPrediction && !isOpeningRound">Limit: 1</span>
+        <span
+          x-show="!isPreSeasonRegistration && !isInitialPrediction && !isOpeningRound"
+          >Limit: 1</span
+        >
       </div>
     </div>
 
     <!-- List of Changes -->
     <div class="space-y-2">
-      <template
-        x-for="(change, index) in getChangedTeams()"
-        :key="change.code"
-      >
+      <template x-for="(change, index) in getChangedTeams()" :key="change.code">
         <div
           class="flex items-center justify-between text-sm py-1.5 px-2 bg-gray-50 rounded"
         >
@@ -292,9 +312,7 @@
             >Man City</span
           >
           <div class="flex items-center space-x-2">
-            <span class="text-gray-400 text-xs" x-text="change.from"
-              >1</span
-            >
+            <span class="text-gray-400 text-xs" x-text="change.from">1</span>
             <svg
               class="h-4 w-4"
               :class="change.direction === 'up' ? 'text-green-600' : 'text-red-600'"
@@ -314,9 +332,7 @@
                 clip-rule="evenodd"
               />
             </svg>
-            <span
-              class="text-gray-900 font-semibold text-xs"
-              x-text="change.to"
+            <span class="text-gray-900 font-semibold text-xs" x-text="change.to"
               >3</span
             >
           </div>
@@ -350,7 +366,8 @@
             <span x-show="isOpeningRound"
               >Max 2 swaps allowed. Undo last or reset to continue.</span
             >
-            <span x-show="!isInitialPrediction && !isPreSeasonRegistration && !isOpeningRound"
+            <span
+              x-show="!isInitialPrediction && !isPreSeasonRegistration && !isOpeningRound"
               >Only 1 swap allowed per 24h. Undo last or reset to
               continue.</span
             >

@@ -35,6 +35,7 @@ import com.ligitabl.api.web.shared.error.ErrorMapper;
 import com.ligitabl.api.web.shared.error.ErrorViewMapper;
 import com.ligitabl.api.web.shared.fixtures.FixtureJsonMapper;
 import com.ligitabl.api.web.shared.season.SeasonPhase;
+import com.ligitabl.api.web.shared.season.SeasonPredictionSupport;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.ResultTeamRank;
@@ -68,6 +69,7 @@ public class UserPredictionsController {
     private final FixtureJsonMapper fixtureJsonMapper;
     private final RoundRepo roundRepo;
     private final WhatIfRecapBuilder whatIfRecapBuilder;
+    private final SeasonPredictionSupport seasonPredictionSupport;
 
     /**
      * GET /predictions/user/me - View current user's prediction.
@@ -256,6 +258,19 @@ public class UserPredictionsController {
         });
     }
 
+    private void addShareData(Model model, UUID userId, boolean isHistoricalView) {
+        var shareData = userId == null || isHistoricalView
+                ? SeasonPredictionSupport.ShareData.hidden()
+                : userRepo.findById(userId)
+                        .map(user -> seasonPredictionSupport.buildShareData(
+                                user, competitionDefaults.defaultCompetitionSlug()))
+                        .orElseGet(SeasonPredictionSupport.ShareData::hidden);
+
+        model.addAttribute("showShareSection", shareData.visible());
+        model.addAttribute("shareUrl", shareData.shareUrl());
+        model.addAttribute("shareText", shareData.shareText());
+    }
+
     private String handleNoActiveSeason(Model model, HttpServletResponse response, String hxRequest) {
         response.setStatus(404);
         model.addAttribute("error", "No active season available");
@@ -380,6 +395,7 @@ public class UserPredictionsController {
             addWhatIfRecap(model, season, data.viewingRound(), userId);
         }
         model.addAttribute("hasRoundResult", data.hasRoundResult());
+        addShareData(model, userId, isHistoricalView);
 
         // Season phase state — used for off-season/pre-season UI branches
         SeasonPhase phase = SeasonPhase.resolve(season);
