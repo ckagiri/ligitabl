@@ -327,6 +327,170 @@
             </div>
           </div>
 
+          <!-- Planning with What-If -->
+          <p
+            class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
+          >
+            Planning with What-If
+          </p>
+          <div class="divide-y divide-gray-100 mb-8">
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>What is the What-If page?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                A sandbox for the current gameweek. Enter hypothetical scores for every match, hit Apply, and it works out the league table those results would produce &mdash; then lets you rearrange your predicted table against it to see what you&rsquo;d score. Nothing there is a prediction and nothing is submitted.
+              </p>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>How do I use it to decide a swap?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                Play out the gameweek you expect, Apply, and look at your projected result. Then rearrange your table in the Round Result card: every arrangement shows the score it would have earned. If a swap you&rsquo;re considering improves that number, it&rsquo;s probably worth spending a real swap on.
+              </p>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>Does anything I do on What-If change my real table?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                No. Swaps made there are sandbox-only &mdash; they never touch your prediction, never count against your swap allowance, and never appear in your swap history. To make a change for real, go back to My Table and swap there.
+              </p>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>Does it remember what I entered?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                Yes. The last set of scores you applied is saved to your account, so opening What-If on another device or after clearing your browser brings them back. The refresh button next to the score list pulls the saved copy on demand; if you&rsquo;ve entered something different locally it asks before replacing it.
+              </p>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>What&rsquo;s the What-If recap on a past gameweek?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                Once a gameweek is scored, My Table shows how the scores you last applied actually turned out. Your picks earn a record like a team does: calling the winner right is a Win whatever the score; calling a draw is a Win if it finished level, a Draw if one side edged it by a single goal, and a Loss if the margin was two or more. Calling the wrong winner is always a Loss &mdash; only draw picks get the one-goal reprieve.
+              </p>
+            </div>
+          </div>
+
           <!-- Scoring & grades -->
           <p
             class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
@@ -632,19 +796,108 @@
                   />
                 </svg>
               </button>
-              <p
+              <div
                 x-show="open"
                 x-transition
                 x-cloak
-                class="text-sm text-gray-600 pb-3"
+                class="space-y-3 pb-4"
               >
-                In order: (1) total points for the competition period, (2) most
-                zeroes — exact position matches, (3) fewest swaps used for the
-                same score, (4) best single gameweek score, and (5) an internal
-                identifier in the rare case everything above is tied. In
-                practice, points and zeroes decide almost everything — the rest
-                are footnotes.
-              </p>
+                <div
+                  class="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100"
+                >
+                  <div
+                    class="flex-shrink-0 w-7 h-7 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold"
+                  >
+                    1
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-sm text-gray-900">
+                      Total Points
+                    </h4>
+                    <p class="text-xs text-gray-600 mt-0.5">
+                      Your cumulative score for the competition period &mdash; sprint, quarter, or full season. Highest wins.
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100"
+                >
+                  <div
+                    class="flex-shrink-0 w-7 h-7 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold"
+                  >
+                    2
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-sm text-gray-900">
+                      Zeroes
+                      <span class="text-xs font-normal text-green-700 ml-1"
+                        >&mdash; worth their weight in gold</span
+                      >
+                    </h4>
+                    <p class="text-xs text-gray-600 mt-0.5">
+                      Count of perfect predictions &mdash; position matched exactly (0 positions off). The more the better.
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100"
+                >
+                  <div
+                    class="flex-shrink-0 w-7 h-7 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold"
+                  >
+                    3
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-sm text-gray-900">
+                      Fewest Swaps Used
+                    </h4>
+                    <p class="text-xs text-gray-600 mt-0.5">
+                      Total swaps used during the phase. Fewer swaps for the same score signals higher efficiency and wins the tiebreaker.
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100"
+                >
+                  <div
+                    class="flex-shrink-0 w-7 h-7 bg-indigo-600 text-white rounded-full flex items-center justify-center text-xs font-bold"
+                  >
+                    4
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-sm text-gray-900">
+                      Best Single Gameweek Score
+                    </h4>
+                    <p class="text-xs text-gray-600 mt-0.5">
+                      Your highest scoring gameweek within the phase. Peak performance counts.
+                    </p>
+                  </div>
+                </div>
+                <div
+                  class="flex items-start gap-4 p-4 bg-gray-50 rounded-lg border border-gray-100"
+                >
+                  <div
+                    class="flex-shrink-0 w-7 h-7 bg-gray-400 text-white rounded-full flex items-center justify-center text-xs font-bold"
+                  >
+                    5
+                  </div>
+                  <div>
+                    <h4 class="font-semibold text-sm text-gray-700">
+                      Internal Tiebreak
+                    </h4>
+                    <p class="text-xs text-gray-500 mt-0.5">
+                      In the extremely rare case of a perfect tie across all criteria, an internal identifier is used. Focus on points and zeroes long before worrying about this.
+                    </p>
+                  </div>
+                </div>
+                <p class="text-center text-xs text-gray-400 pt-1">
+                  The goal is simple:
+                  <strong class="text-gray-600"
+                    >more points and more zeroes.</strong
+                  >
+                  Everything else is a footnote.
+                </p>
+              </div>
             </div>
             <div class="py-1" x-data="{ open: false }">
               <button

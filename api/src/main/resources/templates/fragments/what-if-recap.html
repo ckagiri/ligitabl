@@ -1,0 +1,200 @@
+<!-- What-If recap (own predictions only, collapsible) -->
+<div th:fragment="recap" th:if="${whatIfRecap != null}">
+  <div
+    x-cloak
+    class="bg-white rounded-lg shadow-sm mb-6"
+    x-data="Ligitabl.whatIfRecapCard($el)"
+    th:attr="data-what-if-recap=${whatIfRecapJson}"
+  >
+    <button
+      @click="open = !open"
+      type="button"
+      class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 rounded-lg transition-colors"
+    >
+      <span class="text-sm font-medium text-gray-700">
+        What-If recap
+        <span
+          class="ml-1 text-xs text-gray-400 font-normal"
+          th:text="'(GW' + ${viewingRound} + ')'"
+          >(GW12)</span
+        >
+      </span>
+      <svg
+        class="h-4 w-4 text-gray-400 transition-transform duration-200"
+        :class="open ? 'rotate-180' : ''"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M19 9l-7 7-7-7"
+        />
+      </svg>
+    </button>
+
+    <div x-show="open" x-transition class="px-6 pb-5 pt-1 border-t border-gray-100">
+      <div class="flex flex-wrap items-center gap-2 text-xs">
+        <button
+          type="button"
+          @click="showWhatIfRecapPopup('all')"
+          title="Every match you guessed, with how it graded"
+          class="px-2.5 py-1 rounded-full bg-gray-100 text-gray-600 font-medium hover:bg-gray-200 transition-colors"
+        >
+          Played: <span th:text="${whatIfRecap.played()}">8</span>
+        </button>
+        <button
+          type="button"
+          @click="showWhatIfRecapPopup('wins')"
+          title="Called the winner right, or called a draw and it finished level"
+          class="px-2.5 py-1 rounded-full bg-green-50 text-green-700 font-medium hover:bg-green-100 transition-colors"
+        >
+          Wins: <span th:text="${whatIfRecap.winCount()}">4</span>
+        </button>
+        <button
+          type="button"
+          @click="showWhatIfRecapPopup('draws')"
+          title="Called a draw and one side edged it by a single goal — a near miss"
+          class="px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 font-medium hover:bg-amber-100 transition-colors"
+        >
+          Draws: <span th:text="${whatIfRecap.drawCount()}">2</span>
+        </button>
+        <button
+          type="button"
+          @click="showWhatIfRecapPopup('losses')"
+          title="Called the wrong winner, or called a draw and the margin was two or more"
+          class="px-2.5 py-1 rounded-full bg-red-50 text-red-700 font-medium hover:bg-red-100 transition-colors"
+        >
+          Losses: <span th:text="${whatIfRecap.lossCount()}">1</span>
+        </button>
+      </div>
+
+      <!-- The draw rule is the non-obvious one (it is the only guess that can half-count), so
+           it gets its own line rather than living only in a hover tooltip. -->
+      <div class="mt-3 text-[11px] text-gray-500 leading-relaxed">
+        <p class="font-medium text-gray-600">How this is graded</p>
+        <p class="mt-0.5">
+          Your picks earn a result, like a team does. Call the winner right and it&rsquo;s a
+          <span class="text-green-700 font-medium">Win</span>, whatever the score. Call a draw and
+          you get a <span class="text-green-700 font-medium">Win</span> if it finished level, a
+          <span class="text-amber-700 font-medium">Draw</span> if one side edged it by a single
+          goal, and a <span class="text-red-600 font-medium">Loss</span> if the margin was two or
+          more. Call the wrong winner and it&rsquo;s a
+          <span class="text-red-600 font-medium">Loss</span> every time &mdash; only draw picks get
+          the one-goal reprieve.
+        </p>
+        <p class="mt-1.5 text-gray-400">Tap any of the above to see which matches.</p>
+      </div>
+    </div>
+
+    <!-- Bucket detail — teleported to body to avoid fixed-position containment issues -->
+    <template x-teleport="body">
+      <div
+        x-show="whatIfRecapPopup !== null || whatIfRecapPopupClosing"
+        :class="whatIfRecapPopupClosing ? 'popup-backdrop-leave' : 'popup-backdrop-enter'"
+        @click="hideWhatIfRecapPopup()"
+        class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40"
+        style="display:none"
+      >
+        <div
+          @click.stop
+          :class="whatIfRecapPopupClosing ? 'popup-card-leave' : 'popup-card-enter'"
+          class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden"
+        >
+          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <span
+              class="text-sm font-semibold text-gray-800"
+              x-text="whatIfRecapTitle() + (whatIfRecapPopup ? ' (' + whatIfRecapPopup.lines.length + ')' : '')"
+            ></span>
+            <button @click="hideWhatIfRecapPopup()" class="text-gray-400 hover:text-gray-600 p-1 -mr-1">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+              </svg>
+            </button>
+          </div>
+          <ul class="divide-y divide-gray-50 max-h-80 overflow-y-auto" x-show="whatIfRecapPopup !== null">
+            <template
+              x-for="(line, idx) in (whatIfRecapPopup ? whatIfRecapPopup.lines : [])"
+              :key="line.homeTeamCode + line.awayTeamCode + idx"
+            >
+              <li class="flex items-center justify-between gap-3 px-4 py-2.5">
+                <span class="min-w-0 text-sm text-gray-700 font-mono truncate">
+                  <!-- The shareable full list uses codes throughout and is numbered to match the
+                       copied text. A single bucket has room for names and nothing to number
+                       against — except on mobile, where codes still fit better. Visibility is
+                       driven by :class, never x-show, so the sm: breakpoint can win (x-show's
+                       inline display:none would override it). -->
+                  <span
+                    x-show="whatIfRecapPopup && whatIfRecapPopup.bucket === 'all'"
+                    class="text-gray-300 mr-1 select-none"
+                    x-text="whatIfRecapNumber(idx) + '.'"
+                  ></span>
+                  <span
+                    x-text="line.homeTeamCode + ' - ' + line.awayTeamCode"
+                    :class="whatIfRecapPopup && whatIfRecapPopup.bucket === 'all' ? '' : 'sm:hidden'"
+                  ></span>
+                  <span
+                    class="hidden"
+                    :class="whatIfRecapPopup && whatIfRecapPopup.bucket !== 'all' ? 'sm:inline' : ''"
+                    x-text="line.homeTeamShorterName + ' - ' + line.awayTeamShorterName"
+                  ></span>
+                  <span class="ml-2 text-gray-900 font-semibold" x-text="line.actualScore"></span>
+                </span>
+                <span class="shrink-0 flex items-center gap-3">
+                  <span
+                    class="w-6 h-6 flex items-center justify-center rounded text-xs font-bold bg-gray-100 text-gray-700"
+                    :title="'You picked ' + line.guessedOutcome"
+                    x-text="line.guessedOutcome"
+                  ></span>
+                  <span
+                    class="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold leading-none"
+                    :class="whatIfRecapMarkClass(line.grade)"
+                    :title="line.grade === 'WIN' ? 'Win' : (line.grade === 'DRAW' ? 'Draw — near miss' : 'Loss')"
+                    x-text="whatIfRecapMark(line.grade)"
+                  ></span>
+                </span>
+              </li>
+            </template>
+          </ul>
+
+          <!-- Copy is offered from the Played modal only, and always emits the whole round: the
+               "3W 1D 1L" header only reads correctly against every match, so a per-bucket share
+               would be misleading. -->
+          <div class="px-4 py-3 border-t border-gray-100 flex items-center justify-between gap-3">
+            <span class="flex items-center gap-2 text-[11px] text-gray-400">
+              <span class="inline-flex items-center gap-1">
+                <span class="w-4 h-4 inline-flex items-center justify-center rounded-full bg-green-50 text-green-700 text-[10px] font-bold leading-none">✓</span>
+                win
+              </span>
+              <span class="inline-flex items-center gap-1">
+                <span class="w-4 h-4 inline-flex items-center justify-center rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold leading-none">~</span>
+                near miss
+              </span>
+              <span class="inline-flex items-center gap-1">
+                <span class="w-4 h-4 inline-flex items-center justify-center rounded-full bg-red-50 text-red-700 text-[10px] font-bold leading-none">–</span>
+                loss
+              </span>
+            </span>
+            <button
+              type="button"
+              x-show="whatIfRecapPopup && whatIfRecapPopup.bucket === 'all'"
+              x-cloak
+              @click="copyWhatIfRecap()"
+              class="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border border-indigo-200 bg-indigo-50 text-indigo-600 hover:text-indigo-700 hover:border-indigo-300 text-xs font-medium transition-colors"
+            >
+              <svg x-show="!whatIfRecapCopied" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"/>
+              </svg>
+              <svg x-show="whatIfRecapCopied" x-cloak class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+              </svg>
+              <span x-text="whatIfRecapCopied ? 'Copied!' : 'Copy to share'"></span>
+            </button>
+          </div>
+        </div>
+      </div>
+    </template>
+  </div>
+</div>

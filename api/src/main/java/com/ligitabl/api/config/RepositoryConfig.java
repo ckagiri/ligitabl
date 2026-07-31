@@ -26,6 +26,7 @@ import com.ligitabl.model.infra.SeasonPredictionPersistenceAdapter;
 import com.ligitabl.model.infra.StandingsPersistenceAdapter;
 import com.ligitabl.model.infra.TeamPersistenceAdapter;
 import com.ligitabl.model.infra.UserPersistenceAdapter;
+import com.ligitabl.model.infra.WhatIfPredictionPersistenceAdapter;
 import com.ligitabl.model.repo.AppSettingRepo;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
@@ -43,6 +44,7 @@ import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.StandingsRepo;
 import com.ligitabl.model.repo.TeamRepo;
 import com.ligitabl.model.repo.UserRepo;
+import com.ligitabl.model.repo.WhatIfPredictionRepo;
 
 @Configuration
 public class RepositoryConfig {
@@ -150,5 +152,10 @@ public class RepositoryConfig {
     @Bean
     public AppSettingRepo appSettingRepo(DSLContext dsl) {
         return new AppSettingPersistenceAdapter(dsl);
+    }
+
+    @Bean
+    public WhatIfPredictionRepo whatIfPredictionRepo(DSLContext dsl) {
+        return new WhatIfPredictionPersistenceAdapter(dsl);
     }
 }

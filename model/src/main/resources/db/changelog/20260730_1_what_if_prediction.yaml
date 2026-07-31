@@ -1,0 +1,75 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260730_1_what_if_prediction
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: t_what_if_prediction
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: t_what_if_prediction
+            schemaName: public
+            remarks: >-
+              Last hypothetical scoreline a user applied on the What-If page, one row per
+              (user, round). Purely a sandbox artifact — never feeds real scoring.
+            columns:
+              - column:
+                  name: pk_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: fk_user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fk_round_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_scores
+                  type: jsonb
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_created_at
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_updated_at
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: t_what_if_prediction
+            baseColumnNames: fk_user_id
+            baseTableSchemaName: public
+            constraintName: fk_what_if_prediction_user_id
+            referencedTableName: t_user
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+        - addForeignKeyConstraint:
+            baseTableName: t_what_if_prediction
+            baseColumnNames: fk_round_id
+            baseTableSchemaName: public
+            constraintName: fk_what_if_prediction_round_id
+            referencedTableName: t_round
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+        - addUniqueConstraint:
+            tableName: t_what_if_prediction
+            schemaName: public
+            columnNames: fk_user_id, fk_round_id
+            constraintName: uq_t_what_if_prediction_user_round

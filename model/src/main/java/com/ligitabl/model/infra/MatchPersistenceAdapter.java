@@ -391,6 +391,7 @@ public class MatchPersistenceAdapter implements MatchRepo {
                 .clientId(record.getClientId())
                 .name(record.getName())
                 .shortName(record.getShortName())
+                .shorterName(record.getShorterName())
                 .slug(record.getSlug() == null ? null : TeamSlug.of(record.getSlug()))
                 .tla(record.getTla())
                 .createDate(record.getCreateDate())

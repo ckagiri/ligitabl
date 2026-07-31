@@ -14,6 +14,7 @@ import com.ligitabl.model.repo.RoundResultRepo;
 import com.ligitabl.model.repo.RoundSubmissionRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.UserRepo;
+import com.ligitabl.model.repo.WhatIfPredictionRepo;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,6 +31,7 @@ public class DeleteUserUseCase {
     private final RoundSubmissionRepo roundSubmissionRepo;
     private final PasswordResetTokenRepo passwordResetTokenRepo;
     private final ContestRepo contestRepo;
+    private final WhatIfPredictionRepo whatIfPredictionRepo;
 
     public sealed interface Result permits Result.Ok, Result.UserNotFound, Result.NotEligible, Result.OwnsContest {
         record Ok(UUID userId) implements Result {}
@@ -69,6 +71,7 @@ public class DeleteUserUseCase {
         passwordResetTokenRepo.deleteAllForUser(userId);
         roundResultRepo.deleteByUserId(userId);
         roundSubmissionRepo.deleteByUserId(userId);
+        whatIfPredictionRepo.deleteByUserId(userId);
         seasonPredictionRepo.deleteByUserId(userId);
         userRepo.delete(userId);
 

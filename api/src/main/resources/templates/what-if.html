@@ -1,0 +1,427 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <div layout:fragment="content">
+      <div
+        id="prediction-page"
+        th:fragment="whatIfPage"
+        class="max-w-4xl mx-auto"
+      >
+        <!-- Page Header -->
+        <div class="bg-white rounded-lg shadow-sm mb-6">
+          <div class="px-6 py-4 border-b border-gray-200 flex items-center justify-between gap-2">
+            <div>
+              <h1
+                class="text-xl sm:text-2xl font-bold text-gray-900"
+                th:text="${pageTitle}"
+              >
+                What-If
+              </h1>
+              <p class="text-sm text-gray-600 mt-1">
+                Gameweek <span th:text="${currentRound}">19</span> — explore hypothetical results
+              </p>
+            </div>
+            <button
+              th:attr="hx-get=@{/my-table}"
+              hx-target="#prediction-page"
+              hx-swap="outerHTML swap:100ms settle:100ms"
+              hx-disabled-elt="this"
+              aria-label="Back to My Table"
+              class="shrink-0 inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors px-2.5 py-1 rounded-full border border-indigo-200 hover:border-indigo-300 bg-indigo-50"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-4 h-4"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="M19 12H5M12 19l-7-7 7-7" />
+              </svg>
+              My Table
+            </button>
+          </div>
+        </div>
+
+        <!-- What-If Panel -->
+        <div
+          id="what-if-content"
+          class="bg-white rounded-lg shadow-sm mb-6"
+          x-data="Ligitabl.whatIfPage($el)"
+          th:attr="data-what-if-matches=${whatIfMatchesJson},
+                  data-predictions=${predictionsJson},
+                  data-current-standings=${currentStandingsJson},
+                  data-current-points=${currentPointsJson},
+                  data-current-goal-difference=${currentGoalDifferenceJson},
+                  data-max-hit-points=${maxHitPoints},
+                  data-round-id=${currentRoundId},
+                  data-user-id=${userId},
+                  data-round-open=${roundOpen},
+                  data-current-round=${currentRound},
+                  data-saved-what-if-scores=${savedWhatIfScoresJson}"
+        >
+          <!-- Match score input section (design: .art/gameweek-v5.html) -->
+          <div class="px-6 py-4">
+            <p x-show="!hasEdited" x-cloak class="text-[11px] text-gray-400 mb-1 px-1">
+              Tap a score or 1/X/2 to change a pick.
+            </p>
+            <div class="flex justify-between items-center mb-3">
+              <h2 class="text-sm font-semibold text-gray-700">
+                Enter hypothetical scores
+              </h2>
+              <div class="flex items-center gap-2">
+                <span
+                  x-show="refreshMessage"
+                  x-cloak
+                  x-text="refreshMessage"
+                  class="text-xs text-gray-500"
+                ></span>
+                <button
+                  type="button"
+                  @click="refreshFromServer()"
+                  :disabled="isRefreshing || isComputing"
+                  aria-label="Refresh saved scores"
+                  title="Refresh saved scores"
+                  class="shrink-0 text-gray-400 hover:text-indigo-600 disabled:text-gray-300 disabled:cursor-not-allowed transition-colors"
+                >
+                  <svg
+                    class="w-4 h-4"
+                    :class="isRefreshing ? 'animate-spin' : ''"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  >
+                    <path d="M21 12a9 9 0 1 1-2.64-6.36" />
+                    <polyline points="21 3 21 9 15 9" />
+                  </svg>
+                </button>
+                <span
+                  class="text-xs text-gray-500"
+                  x-text="remainingCount() === 0 ? 'All in' : remainingCount() + ' left'"
+                ></span>
+              </div>
+            </div>
+            <div
+              class="bg-white border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100"
+            >
+              <template x-for="match in visibleMatches()" :key="match.matchId">
+                <div :class="isScorePickerOpen(match.matchId) ? 'bg-gray-50' : ''">
+                  <div class="flex items-center gap-1.5 px-2.5 py-1.5">
+                    <span
+                      class="flex-1 min-w-0 text-right text-[13px] truncate"
+                      :class="!roundOpen ? 'text-gray-400' : (scoreAnswered(match.matchId) ? 'text-gray-900' : 'text-gray-500')"
+                    ><span class="sm:hidden" x-text="match.homeTeamCode"></span><span class="hidden sm:inline" x-text="match.homeTeamShortName"></span></span>
+
+                    <template x-if="!roundOpen || match.status === 'SCHEDULED'">
+                      <template x-for="side in ['home', 'away']" :key="side">
+                        <button
+                          type="button"
+                          @click="focusScoreBox(match.matchId, side)"
+                          :disabled="!roundOpen"
+                          class="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-md border bg-white font-mono text-sm disabled:bg-gray-50 disabled:text-gray-400"
+                          :class="[
+                            isScorePickerOpen(match.matchId) && focusSide === side ? 'border-2 border-indigo-600' : 'border-gray-200',
+                            scores[match.matchId][side] === null ? 'text-gray-300' : 'text-gray-900'
+                          ]"
+                          x-text="scores[match.matchId][side] ?? '–'"
+                        ></button>
+                      </template>
+                    </template>
+                    <template x-if="roundOpen && match.status !== 'SCHEDULED'">
+                      <span
+                        class="text-xs font-medium text-gray-400 px-2 py-1 bg-gray-50 rounded-full whitespace-nowrap"
+                        x-text="match.status"
+                      ></span>
+                    </template>
+
+                    <span
+                      class="flex-1 min-w-0 text-[13px] truncate"
+                      :class="!roundOpen ? 'text-gray-400' : (scoreAnswered(match.matchId) ? 'text-gray-900' : 'text-gray-500')"
+                    ><span class="sm:hidden" x-text="match.awayTeamCode"></span><span class="hidden sm:inline" x-text="match.awayTeamShortName"></span></span>
+
+                    <template x-if="!roundOpen || match.status === 'SCHEDULED'">
+                      <div
+                        class="flex rounded-lg border overflow-hidden shrink-0"
+                        :class="[
+                          !roundOpen ? 'border-gray-200' : (scoreAnswered(match.matchId) ? 'border-indigo-600' : 'border-gray-200'),
+                          !roundOpen ? 'opacity-40' : ''
+                        ]"
+                      >
+                        <template x-for="seg in ['H', 'D', 'A']" :key="seg">
+                          <button
+                            type="button"
+                            @click="toggleSeg(match.matchId, seg)"
+                            :disabled="!roundOpen"
+                            class="w-9 h-9 text-xs border-l first:border-l-0 border-gray-200"
+                            :class="scoreOutcome(match.matchId) === seg
+                              ? 'bg-indigo-600 text-white'
+                              : (isScorePickerOpen(match.matchId) && openSeg === seg ? 'bg-indigo-50 text-indigo-800' : 'text-gray-400')"
+                            x-text="{ H: '1', D: 'X', A: '2' }[seg]"
+                          ></button>
+                        </template>
+                      </div>
+                    </template>
+                  </div>
+
+                  <div
+                    x-show="isScorePickerOpen(match.matchId) && openSeg"
+                    x-cloak
+                    class="flex items-center gap-1.5 px-2.5 pb-2"
+                  >
+                    <div class="flex-1 flex gap-1.5 min-w-0">
+                      <template x-for="[h, a] in scoreChips()" :key="h + '-' + a">
+                        <button
+                          type="button"
+                          @click="pickScore(match.matchId, h, a)"
+                          class="flex-1 h-9 rounded-full font-mono text-xs border bg-white"
+                          :class="isChipSelected(match.matchId, h, a) ? 'border-2 border-indigo-600 bg-indigo-50 text-indigo-800' : 'border-gray-200 text-gray-600'"
+                          x-text="h + '-' + a"
+                        ></button>
+                      </template>
+                    </div>
+
+                    <button
+                      type="button"
+                      @click="rerollScore(match.matchId)"
+                      :disabled="!scoreAnswered(match.matchId)"
+                      class="hidden sm:flex w-9 h-9 shrink-0 rounded-md border border-gray-200 bg-white text-gray-600 items-center justify-center disabled:opacity-40"
+                      aria-label="Roll another score"
+                    >
+                      <svg
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="1.6"
+                        stroke-linecap="round"
+                        class="w-4 h-4"
+                        :class="rollingId === match.matchId ? 'what-if-dice-rolling' : ''"
+                      >
+                        <rect x="3.5" y="3.5" width="17" height="17" rx="3.5" />
+                        <circle cx="8.5" cy="8.5" r=".9" fill="currentColor" stroke="none" />
+                        <circle cx="15.5" cy="8.5" r=".9" fill="currentColor" stroke="none" />
+                        <circle cx="12" cy="12" r=".9" fill="currentColor" stroke="none" />
+                        <circle cx="8.5" cy="15.5" r=".9" fill="currentColor" stroke="none" />
+                        <circle cx="15.5" cy="15.5" r=".9" fill="currentColor" stroke="none" />
+                      </svg>
+                    </button>
+
+                    <button
+                      type="button"
+                      @click="bumpScore(match.matchId, -1)"
+                      class="w-9 h-9 shrink-0 rounded-md border border-gray-200 bg-white text-gray-600"
+                      aria-label="Lower the focused score"
+                    >
+                      &minus;
+                    </button>
+                    <button
+                      type="button"
+                      @click="bumpScore(match.matchId, 1)"
+                      class="w-9 h-9 shrink-0 rounded-md border border-gray-200 bg-white text-gray-600"
+                      aria-label="Raise the focused score"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+              </template>
+              <template x-if="visibleMatches().length === 0">
+                <p class="text-sm text-gray-500 py-4 px-2.5">
+                  No matches found for this round.
+                </p>
+              </template>
+            </div>
+
+            <div class="flex items-center gap-3 mt-4">
+              <button
+                type="button"
+                @click="apply()"
+                :disabled="!allScoresEntered() || isComputing || (hasComputed && !scoresDirty())"
+                :class="allScoresEntered() && !isComputing && !(hasComputed && !scoresDirty()) ? 'bg-indigo-600 hover:bg-indigo-700 cursor-pointer' : 'bg-gray-300 cursor-not-allowed'"
+                class="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white transition-colors"
+              >
+                <svg
+                  x-show="isComputing"
+                  class="animate-spin -ml-1 h-4 w-4 text-white"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                >
+                  <circle
+                    class="opacity-25"
+                    cx="12"
+                    cy="12"
+                    r="10"
+                    stroke="currentColor"
+                    stroke-width="4"
+                  ></circle>
+                  <path
+                    class="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  ></path>
+                </svg>
+                <span x-text="isComputing ? 'Applying…' : (scoresDirty() ? '*Apply' : 'Apply')"></span>
+              </button>
+              <button
+                type="button"
+                @click="scoresDirty() ? revertScores() : confirmReset()"
+                x-show="hasEdited || hasComputed"
+                x-cloak
+                class="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors"
+              >
+                <span x-text="scoresDirty() ? 'Revert' : 'Reset'"></span>
+              </button>
+              <p
+                x-show="errorMessage"
+                x-cloak
+                x-text="errorMessage"
+                class="text-sm text-red-600"
+              ></p>
+            </div>
+          </div>
+
+          <!-- Tables section: tabs on mobile, two cards side by side on desktop. Swapping
+               (previously its own "Round Prediction" card) now lives inside Round Result. Score
+               banner + swap hint live here (once, above both cards) rather than inside Round
+               Result, so each card's table starts at the same height and rows line up. -->
+          <div class="px-6 pb-6">
+            <div class="md:hidden flex gap-2 mb-3">
+              <button
+                type="button"
+                @click="activeTab = 'standings'"
+                :class="activeTab === 'standings' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'"
+                class="flex-1 text-xs font-medium py-1.5 rounded-md transition-colors"
+              >
+                Standings
+              </button>
+              <button
+                type="button"
+                @click="activeTab = 'result'"
+                :class="activeTab === 'result' ? 'bg-indigo-600 text-white' : 'bg-gray-100 text-gray-600'"
+                class="flex-1 text-xs font-medium py-1.5 rounded-md transition-colors"
+              >
+                Result
+              </button>
+            </div>
+
+            <div x-show="hasComputed" x-cloak class="mb-3">
+              <div
+                class="px-2.5 py-1.5 bg-white rounded-md border border-gray-200 text-xs font-medium text-gray-900 mb-1.5"
+              >
+                Score: <span x-text="totalScore()"></span> (Max:
+                <span x-text="maxHitPoints"></span> Lost:
+                <span x-text="totalHit()"></span>)
+              </div>
+              <div
+                :class="activeTab === 'standings' ? 'hidden md:flex' : 'flex'"
+                class="items-center justify-between gap-2"
+              >
+                <p class="text-xs text-gray-400" x-show="!selectedTeam && !undoing">
+                  Tap two teams to swap them
+                </p>
+                <p class="text-xs text-indigo-500" x-show="selectedTeam && !undoing" x-cloak>
+                  <span x-text="getSelectedTeamShortName()"></span> selected —
+                  tap another team to swap
+                </p>
+                <!-- Undoing flash — same treatment as the prediction page's swap controls
+                     (fragments/prediction-actions.html), since undoLastSwap() animates over ~400ms
+                     and the table would otherwise appear to change on its own. -->
+                <span
+                  x-show="undoing"
+                  x-cloak
+                  class="text-xs font-semibold text-amber-600 animate-pulse whitespace-nowrap"
+                  >↩ undoing…</span
+                >
+                <div class="flex items-center gap-2" x-show="getSwapCount() > 0 && !undoing" x-cloak>
+                  <button
+                    type="button"
+                    @click="undoLastSwap()"
+                    x-show="canUndo()"
+                    class="text-xs font-medium text-amber-600 hover:text-amber-700 underline"
+                  >
+                    Undo
+                  </button>
+                  <button
+                    type="button"
+                    @click="resetSwaps()"
+                    class="text-xs font-medium text-red-600 hover:text-red-700 underline"
+                  >
+                    Reset
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div x-show="activeTab === 'standings'" class="md:!block">
+                <div th:replace="~{fragments/what-if-cards :: standings-card}"></div>
+              </div>
+              <div x-show="activeTab === 'result'" class="md:!block">
+                <div th:replace="~{fragments/what-if-cards :: round-result-card}"></div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            x-show="hasComputed"
+            x-cloak
+            class="border-t border-gray-100"
+            x-data="{ open: false, copiedText: false }"
+          >
+            <button
+              @click="open = !open"
+              type="button"
+              class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+            >
+              <span class="text-sm font-medium text-gray-700">
+                Share your predictions
+                <span
+                  class="ml-1 text-xs text-gray-400 font-normal"
+                  x-text="'(GW' + currentRound + ')'"
+                ></span>
+              </span>
+              <svg
+                class="h-4 w-4 text-gray-400 transition-transform duration-200"
+                :class="open ? 'rotate-180' : ''"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M19 9l-7 7-7-7"
+                />
+              </svg>
+            </button>
+
+            <div x-show="open" x-transition class="px-6 pb-5 pt-1 border-t border-gray-100 space-y-3">
+              <pre
+                class="text-xs font-mono text-gray-700 leading-snug whitespace-pre-wrap break-words bg-gray-50 border border-gray-200 rounded-lg p-3"
+                x-text="buildShareText()"
+              ></pre>
+              <button
+                type="button"
+                @click="navigator.clipboard.writeText(buildShareText()); copiedText = true; setTimeout(() => copiedText = false, 2000)"
+                class="w-full text-center px-4 py-2 rounded-lg text-sm font-medium border border-gray-200 text-gray-700 hover:bg-gray-50 transition"
+              >
+                <span x-text="copiedText ? 'Copied!' : 'Copy to share'"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

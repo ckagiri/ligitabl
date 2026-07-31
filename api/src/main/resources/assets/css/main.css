@@ -263,6 +263,17 @@
   }
 }
 
+/* What-if score picker's reroll-dice flourish */
+@keyframes whatIfDiceRoll {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.what-if-dice-rolling {
+  animation: whatIfDiceRoll 300ms ease-out;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
