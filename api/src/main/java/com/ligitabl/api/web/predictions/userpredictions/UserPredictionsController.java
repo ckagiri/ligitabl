@@ -66,6 +66,8 @@ public class UserPredictionsController {
     private final ErrorViewMapper errorMapper;
     private final FormService formService;
     private final FixtureJsonMapper fixtureJsonMapper;
+    private final RoundRepo roundRepo;
+    private final WhatIfRecapBuilder whatIfRecapBuilder;
 
     /**
      * GET /predictions/user/me - View current user's prediction.
@@ -117,7 +119,7 @@ public class UserPredictionsController {
 
         return result.fold(
                 error -> handleError(error, model, response, hxRequest),
-                data -> handleSuccess(data, model, hxRequest, season));
+                data -> handleSuccess(data, model, hxRequest, season, resolvedUserId));
     }
 
     /**
@@ -146,7 +148,7 @@ public class UserPredictionsController {
 
         return result.fold(
                 error -> handleError(error, model, response, hxRequest),
-                data -> handleSuccess(data, model, hxRequest, season));
+                data -> handleSuccess(data, model, hxRequest, season, null));
     }
 
     /**
@@ -226,6 +228,34 @@ public class UserPredictionsController {
         }
     }
 
+    private void addWhatIfRecap(Model model, Season season, int viewingRound, UUID userId) {
+        if (userId == null) {
+            return;
+        }
+        UUID roundId = roundRepo
+                .findBySeasonIdAndPosition(season.getId(), viewingRound)
+                .map(round -> round.getId())
+                .orElse(null);
+
+        whatIfRecapBuilder.build(userId, roundId).ifPresent(recap -> {
+            model.addAttribute("whatIfRecap", recap);
+            try {
+                model.addAttribute(
+                        "whatIfRecapJson",
+                        objectMapper.writeValueAsString(Map.of(
+                                "round", viewingRound,
+                                "played", recap.played(),
+                                "all", recap.all(),
+                                "wins", recap.wins(),
+                                "draws", recap.draws(),
+                                "losses", recap.losses())));
+            } catch (JsonProcessingException e) {
+                log.error("Failed to serialize what-if recap", e);
+                model.addAttribute("whatIfRecapJson", "{}");
+            }
+        });
+    }
+
     private String handleNoActiveSeason(Model model, HttpServletResponse response, String hxRequest) {
         response.setStatus(404);
         model.addAttribute("error", "No active season available");
@@ -252,7 +282,8 @@ public class UserPredictionsController {
     /**
      * Handle successful use case result.
      */
-    private String handleSuccess(UserPredictionViewData data, Model model, String hxRequest, Season season) {
+    private String handleSuccess(
+            UserPredictionViewData data, Model model, String hxRequest, Season season, UUID userId) {
         // Convert rankings to DTOs
         List<TeamRankDto> predictions = enrichRankings(data.rankings());
 
@@ -346,6 +377,7 @@ public class UserPredictionsController {
             model.addAttribute("seasonBestScore", data.seasonBestScore());
             model.addAttribute("sprintBestScore", data.sprintBestScore());
             model.addAttribute("sprintLabel", data.sprintLabel());
+            addWhatIfRecap(model, season, data.viewingRound(), userId);
         }
         model.addAttribute("hasRoundResult", data.hasRoundResult());
 

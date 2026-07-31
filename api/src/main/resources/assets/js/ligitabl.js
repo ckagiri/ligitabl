@@ -1417,6 +1417,89 @@ window.Ligitabl.whatIfPage = function (el) {
     });
 };
 
+// --- Historical What-If recap card ---
+
+// Standalone component (its own top-level card, outside the predictionPage scope) covering the
+// collapsible, the per-bucket modal, and the share text. The modal is teleported to <body>, so its
+// state has to live here rather than in the collapsible's own throwaway x-data.
+window.Ligitabl.whatIfRecapCard = function (el) {
+    return {
+        open: false,
+        whatIfRecapData: { round: null, played: 0, all: [], wins: [], draws: [], losses: [] },
+        whatIfRecapPopup: null,
+        whatIfRecapPopupClosing: false,
+        whatIfRecapCopied: false,
+
+        init() {
+            this.whatIfRecapData = Ligitabl._parseJSON(el?.dataset?.whatIfRecap, this.whatIfRecapData);
+        },
+
+        showWhatIfRecapPopup(bucket) {
+            const lines = this.whatIfRecapData[bucket] || [];
+            if (lines.length === 0) return;
+            this.whatIfRecapPopupClosing = false;
+            this.whatIfRecapCopied = false;
+            this.whatIfRecapPopup = { bucket, lines };
+        },
+
+        hideWhatIfRecapPopup() {
+            if (!this.whatIfRecapPopup) return;
+            this.whatIfRecapPopupClosing = true;
+            setTimeout(() => {
+                this.whatIfRecapPopup = null;
+                this.whatIfRecapPopupClosing = false;
+            }, 300);
+        },
+
+        whatIfRecapTitle() {
+            if (!this.whatIfRecapPopup) return "";
+            const labels = { all: "What-If recap", wins: "Wins", draws: "Draws", losses: "Losses" };
+            return labels[this.whatIfRecapPopup.bucket] || "";
+        },
+
+        // Glyph for how a single guess graded, rendered in a coloured circle beside the (square)
+        // guessed-outcome badge. A draw guess that landed within one goal is the "half" case —
+        // right instinct, wrong result — hence the tilde rather than a tick. The loss cross sits
+        // next to a draw pick's "X", but the circle and colour keep the two apart.
+        whatIfRecapMark(grade) {
+            return { WIN: "✓", DRAW: "~", LOSS: "✗" }[grade] || "";
+        },
+
+        whatIfRecapMarkClass(grade) {
+            return (
+                {
+                    WIN: "bg-green-50 text-green-700",
+                    DRAW: "bg-amber-50 text-amber-700",
+                    LOSS: "bg-red-50 text-red-700"
+                }[grade] || "bg-gray-100 text-gray-500"
+            );
+        },
+
+        // Shareable summary of the whole round — always the full list, not just the open bucket:
+        // "3W 1D 1L" only reads correctly against every match.
+        buildWhatIfRecapShareText() {
+            const d = this.whatIfRecapData;
+            const emoji = { WIN: "✅", DRAW: "🟡", LOSS: "❌" };
+            const header =
+                `My GW${d.round} What-If — ` +
+                `${d.wins.length}W ${d.draws.length}D ${d.losses.length}L ⚽`;
+            const lines = d.all.map(
+                (l) =>
+                    `${l.homeTeamCode} – ${l.awayTeamCode}  ${l.actualScore.replace(/ /g, "")}  ${l.guessedOutcome} ${emoji[l.grade] || ""}`
+            );
+            return `${header}\n${lines.join("\n")}\n\nPredict the table — LigiPredictor.com`;
+        },
+
+        copyWhatIfRecap() {
+            navigator.clipboard.writeText(this.buildWhatIfRecapShareText());
+            this.whatIfRecapCopied = true;
+            setTimeout(() => {
+                this.whatIfRecapCopied = false;
+            }, 2000);
+        }
+    };
+};
+
 // --- Results Banner Dismissal ---
 
 (function () {

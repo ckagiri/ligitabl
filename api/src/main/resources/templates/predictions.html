@@ -474,69 +474,73 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
                 ></div>
               </div>
             </th:block>
-          </div>
 
-          <!-- Swap History (own predictions only, collapsible) -->
-          <div
-            th:if="${!isGuest && swapHistory != null && !#lists.isEmpty(swapHistory)}"
-            x-cloak
-            class="bg-white rounded-lg shadow-sm mb-6"
-            x-data="{ open: false }"
-          >
-            <button
-              @click="open = !open"
-              type="button"
-              class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 rounded-lg transition-colors"
+            <!-- Swap History (own predictions only, collapsible) — part of the round's result
+                 view, so it lives inside this card rather than as a section of its own. -->
+            <div
+              th:if="${!isGuest && swapHistory != null && !#lists.isEmpty(swapHistory)}"
+              x-cloak
+              class="border-t border-gray-100"
+              x-data="{ open: false }"
             >
-              <span class="text-sm font-medium text-gray-700">
-                Swap history
-                <span
-                  class="ml-1 text-xs text-gray-400 font-normal"
-                  th:text="'(GW' + ${viewingRound} + ')'"
-                ></span>
-              </span>
-              <svg
-                class="h-4 w-4 text-gray-400 transition-transform duration-200"
-                :class="open ? 'rotate-180' : ''"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
+              <button
+                @click="open = !open"
+                type="button"
+                class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
               >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M19 9l-7 7-7-7"
-                />
-              </svg>
-            </button>
-            <div x-show="open" x-transition class="border-t border-gray-100">
-              <ul class="divide-y divide-gray-100">
-                <li
-                  th:each="entry, iterStat : ${swapHistory}"
-                  class="px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1"
-                >
-                  <span class="text-sm font-mono text-gray-700">
-                    <span class="text-gray-300 mr-1.5 select-none" th:text="${iterStat.count} + '.'">1.</span>
-                    <span class="font-semibold text-gray-900" th:text="${entry.teamACode}">ARS</span>
-                    <span class="text-gray-400">#</span><span th:text="${entry.teamAFrom}">1</span>
-                    <span class="text-gray-400">→</span>
-                    <span class="text-gray-400">#</span><span th:text="${entry.teamATo}">4</span>
-                    <span class="mx-1 font-bold text-indigo-500">↔</span>
-                    <span class="font-semibold text-gray-900" th:text="${entry.teamBCode}">CHE</span>
-                    <span class="text-gray-400">#</span><span th:text="${entry.teamBFrom}">4</span>
-                    <span class="text-gray-400">→</span>
-                    <span class="text-gray-400">#</span><span th:text="${entry.teamBTo}">1</span>
-                  </span>
+                <span class="text-sm font-medium text-gray-700">
+                  Swap history
                   <span
-                    class="text-xs text-gray-400 whitespace-nowrap"
-                    th:attr="data-timestamp=${entry.formattedTime}"
-                    th:text="${entry.formattedTime}"
-                  >2026-02-12T14:23:00Z</span>
-                </li>
-              </ul>
+                    class="ml-1 text-xs text-gray-400 font-normal"
+                    th:text="'(GW' + ${viewingRound} + ')'"
+                  ></span>
+                </span>
+                <svg
+                  class="h-4 w-4 text-gray-400 transition-transform duration-200"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <div x-show="open" x-transition class="border-t border-gray-100">
+                <ul class="divide-y divide-gray-100">
+                  <li
+                    th:each="entry, iterStat : ${swapHistory}"
+                    class="px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1"
+                  >
+                    <span class="text-sm font-mono text-gray-700">
+                      <span class="text-gray-300 mr-1.5 select-none" th:text="${iterStat.count} + '.'">1.</span>
+                      <span class="font-semibold text-gray-900" th:text="${entry.teamACode}">ARS</span>
+                      <span class="text-gray-400">#</span><span th:text="${entry.teamAFrom}">1</span>
+                      <span class="text-gray-400">→</span>
+                      <span class="text-gray-400">#</span><span th:text="${entry.teamATo}">4</span>
+                      <span class="mx-1 font-bold text-indigo-500">↔</span>
+                      <span class="font-semibold text-gray-900" th:text="${entry.teamBCode}">CHE</span>
+                      <span class="text-gray-400">#</span><span th:text="${entry.teamBFrom}">4</span>
+                      <span class="text-gray-400">→</span>
+                      <span class="text-gray-400">#</span><span th:text="${entry.teamBTo}">1</span>
+                    </span>
+                    <span
+                      class="text-xs text-gray-400 whitespace-nowrap"
+                      th:attr="data-timestamp=${entry.formattedTime}"
+                      th:text="${entry.formattedTime}"
+                    >2026-02-12T14:23:00Z</span>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
+
+          <!-- What-If recap: its own section (see fragments/what-if-recap.html) -->
+          <div th:replace="~{fragments/what-if-recap :: recap}"></div>
         </div>
       </div>
     </div>
