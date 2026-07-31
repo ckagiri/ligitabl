@@ -276,10 +276,18 @@
                 type="button"
                 @click="scoresDirty() ? revertScores() : confirmReset()"
                 x-show="hasEdited || hasComputed"
+                :disabled="isReverting || isComputing"
                 x-cloak
-                class="text-sm font-medium text-gray-500 hover:text-red-600 transition-colors"
+                class="px-4 py-2 rounded-lg text-sm font-medium border transition-colors disabled:cursor-not-allowed"
+                :class="isReverting
+                  ? 'border-gray-200 text-gray-400 animate-pulse'
+                  : (scoresDirty()
+                      ? 'border-amber-300 text-amber-700 bg-white hover:bg-amber-50 hover:border-amber-400'
+                      : 'border-red-200 text-red-600 bg-red-50 hover:bg-red-100 hover:border-red-300 hover:text-red-700')"
               >
-                <span x-text="scoresDirty() ? 'Revert' : 'Reset'"></span>
+                <span
+                  x-text="isReverting ? 'Reverting…' : (scoresDirty() ? 'Revert' : 'Reset')"
+                ></span>
               </button>
               <p
                 x-show="errorMessage"
@@ -326,13 +334,12 @@
                 :class="activeTab === 'standings' ? 'hidden md:flex' : 'flex'"
                 class="items-center justify-between gap-2"
               >
-                <p class="text-xs text-gray-400" x-show="!selectedTeam && !undoing">
-                  Tap two teams to swap them
-                </p>
-                <p class="text-xs text-indigo-500" x-show="selectedTeam && !undoing" x-cloak>
-                  <span x-text="getSelectedTeamShortName()"></span> selected —
-                  tap another team to swap
-                </p>
+                <p
+                  class="text-xs"
+                  :class="selectedTeam ? 'text-indigo-500' : 'text-gray-400'"
+                  x-show="!undoing"
+                  x-text="swapHint()"
+                ></p>
                 <!-- Undoing flash — same treatment as the prediction page's swap controls
                      (fragments/prediction-actions.html), since undoLastSwap() animates over ~400ms
                      and the table would otherwise appear to change on its own. -->
@@ -360,6 +367,17 @@
                   </button>
                 </div>
               </div>
+
+              <!-- Hit legend, always on rather than behind a hover tooltip on the column header:
+                   it's a two-symbol key, and hover discovery doesn't exist on touch anyway. -->
+              <p
+                :class="activeTab === 'standings' ? 'hidden md:block' : 'block'"
+                class="text-[11px] text-gray-400 mt-1"
+              >
+                Hit: <span class="text-green-600 font-semibold">&uarr;</span> move up
+                <span class="mx-1">·</span>
+                <span class="text-red-600 font-semibold">&darr;</span> move down
+              </p>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
