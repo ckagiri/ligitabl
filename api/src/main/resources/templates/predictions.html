@@ -390,7 +390,6 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
           <!-- Non-guest view uses regular component -->
           <div
             th:if="${!isGuest}"
-            class="bg-white rounded-lg shadow-sm mb-6"
             x-data="Ligitabl.predictionPage($el)"
             th:attr="data-predictions=${predictionsJson},
                     data-round-open=${isRoundOpenForPrediction},
@@ -409,6 +408,7 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
                     data-user-id=${userId},
                     data-access-mode=${accessMode}"
           >
+            <div class="bg-white rounded-lg shadow-sm mb-6">
             <!-- Contextual Swap Instructions Banner (editable + cooldown-interactive states) -->
             <div
               th:replace="~{fragments/swap-instructions :: instructions(false, ${canInteractEffective}, ${isInitialPredictionEditable})}"
@@ -514,45 +514,36 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
                 </ul>
               </div>
             </div>
-
-            <!-- Actions Footer (editable + cooldown-interactive states; also used for pre-season registration).
-                 footerVisible is shared between the inline "actions" button and the floating pill so exactly
-                 one of them is ever showing: the pill while scrolling, the inline one once the footer is near. -->
-            <th:block
-              th:if="${canInteractEffective}"
-            >
-              <div
-                x-data="{ footerVisible: false }"
-                x-init="
-                  const footer = document.querySelector('footer');
-                  if (footer) {
-                    new IntersectionObserver(
-                      (entries) => { footerVisible = entries[0].isIntersecting; }
-                    ).observe(footer);
-                  }
-                "
-              >
-                <div
-                  x-show="canInteract || isInitialPrediction"
-                  th:replace="~{fragments/prediction-actions :: actions}"
-                ></div>
-                <div
-                  x-show="canInteract || isInitialPrediction"
-                  th:replace="~{fragments/prediction-actions :: floating-submit}"
-                ></div>
-              </div>
-            </th:block>
-
           </div>
 
-          <!-- Share your prediction (see fragments/share-prediction.html) — its own card below the
-               table, i.e. after the thing being shared. Starts collapsed, unlike the settings page,
-               since it's secondary to the table itself. Hidden on historical views (see
-               UserPredictionsController.addShareData). -->
-          <div
-            th:replace="~{fragments/share-prediction :: card(
-              'bg-white rounded-lg shadow-sm mb-6 overflow-hidden', 'false')}"
-          ></div>
+          <!-- footerVisible is shared between the inline "actions" button and the floating pill so exactly
+               one of them is ever showing: the pill while scrolling, the inline one once the footer is near. -->
+          <th:block
+            th:if="${canInteractEffective}"
+          >
+            <div
+              x-data="{ footerVisible: false }"
+              x-init="
+                const footer = document.querySelector('footer');
+                if (footer) {
+                  new IntersectionObserver(
+                    (entries) => { footerVisible = entries[0].isIntersecting; }
+                  ).observe(footer);
+                }
+              "
+            >
+              <div
+                x-show="canInteract || isInitialPrediction"
+                th:replace="~{fragments/prediction-actions :: actions}"
+              ></div>
+              <div
+                x-show="canInteract || isInitialPrediction"
+                th:replace="~{fragments/prediction-actions :: floating-submit}"
+              ></div>
+            </div>
+          </th:block>
+
+          </div>
 
           <!-- What-If recap: its own section (see fragments/what-if-recap.html) -->
           <div th:replace="~{fragments/what-if-recap :: recap}"></div>

@@ -14,183 +14,273 @@
     th:fragment="comparison-options(hasFormData, showMoveHelperText)"
     class="px-6 pt-4 pb-2"
   >
-    <!-- Mobile card chrome lives on this inner wrapper, not the root. The root spaces itself with
-         padding: as the card's first child it would otherwise have its top *margin* collapse out
-         through the (unpadded) parent card, leaving no gap above "Show on table" on mobile. -->
-    <div class="max-sm:overflow-hidden max-sm:rounded-lg max-sm:border max-sm:border-gray-200">
-    <!-- Desktop: original plain text+chevron toggle (unchanged) -->
-    <button
-      type="button"
-      @click="compareOptionsOpen = !compareOptionsOpen"
-      class="hidden sm:flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition"
-    >
-      <svg
-        class="h-4 w-4 transition-transform duration-200"
-        :class="compareOptionsOpen ? 'rotate-180' : ''"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
-      Compare options
-    </button>
-
-    <!-- Mobile: tappable header card with a live summary of what's active, so the
-         collapsed state still tells you what's currently showing on the table. -->
-    <button
-      type="button"
-      @click="compareOptionsOpen = !compareOptionsOpen"
-      :aria-expanded="compareOptionsOpen.toString()"
-      aria-controls="compare-options-panel"
-      class="flex sm:hidden w-full items-center justify-between gap-3 bg-gray-50 px-4 py-3 text-left transition-colors hover:bg-gray-100 active:bg-gray-200"
-    >
-      <span class="min-w-0">
-        <span class="block text-sm font-medium text-gray-900">Show on table</span>
-        <span
-          class="mt-0.5 block text-xs text-gray-500"
-          x-text="[showPoints && 'Points', showGD && 'GD', showFixtures && 'Fixtures', showForm && 'Form', showStandings && 'Actual positions'].filter(Boolean).join(', ') || 'Nothing selected'"
-        ></span>
-      </span>
-      <svg
-        class="h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200"
-        :class="compareOptionsOpen ? 'rotate-180' : ''"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-      >
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
-    </button>
-
     <div
-      id="compare-options-panel"
-      x-show="compareOptionsOpen"
-      x-transition
-      x-cloak
-      class="space-y-3 mt-3 max-sm:space-y-1 max-sm:mt-0 max-sm:border-t max-sm:border-gray-200 max-sm:px-4 max-sm:py-4"
+      class="max-sm:overflow-hidden max-sm:rounded-lg max-sm:border max-sm:border-gray-200"
     >
-      <!-- 2-column grid — all rows share the same gap so spacing is uniform. max-sm:min-h-[44px]
+      <button
+        type="button"
+        @click="compareOptionsOpen = !compareOptionsOpen"
+        class="hidden sm:flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-gray-700 transition"
+      >
+        <svg
+          class="h-4 w-4 transition-transform duration-200"
+          :class="compareOptionsOpen ? 'rotate-180' : ''"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+        Compare options
+      </button>
+
+      <!-- Mobile: tappable header card with a live summary of what's active, so the
+         collapsed state still tells you what's currently showing on the table. -->
+      <button
+        type="button"
+        @click="compareOptionsOpen = !compareOptionsOpen"
+        :aria-expanded="compareOptionsOpen.toString()"
+        aria-controls="compare-options-panel"
+        class="flex sm:hidden w-full items-center justify-between gap-3 bg-gray-50 px-4 py-3 text-left transition-colors hover:bg-gray-100 active:bg-gray-200"
+      >
+        <span class="min-w-0">
+          <span class="block text-sm font-medium text-gray-900"
+            >Show on table</span
+          >
+          <span
+            class="mt-0.5 block text-xs text-gray-500"
+            x-text="[showPoints && 'Points', showGD && 'GD', showFixtures && 'Fixtures', showForm && 'Form', showStandings && 'Actual positions'].filter(Boolean).join(', ') || 'Nothing selected'"
+          ></span>
+        </span>
+        <svg
+          class="h-5 w-5 shrink-0 text-gray-400 transition-transform duration-200"
+          :class="compareOptionsOpen ? 'rotate-180' : ''"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M19 9l-7 7-7-7"
+          />
+        </svg>
+      </button>
+
+      <div
+        id="compare-options-panel"
+        x-show="compareOptionsOpen"
+        x-transition
+        x-cloak
+        class="space-y-3 mt-3 max-sm:space-y-1 max-sm:mt-0 max-sm:border-t max-sm:border-gray-200 max-sm:px-4 max-sm:py-4"
+      >
+        <!-- 2-column grid — all rows share the same gap so spacing is uniform. max-sm:min-h-[44px]
            rows give each checkbox a properly-sized mobile tap target; desktop sizing is unchanged. -->
-      <div class="grid grid-cols-2 gap-x-6 gap-y-3 w-fit max-sm:w-full max-sm:gap-x-3 max-sm:gap-y-1">
-        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition max-sm:min-h-[44px] max-sm:gap-2.5">
-          <input type="checkbox" x-model="showPoints" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5" />
-          <span>Show points</span>
-        </label>
-        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition max-sm:min-h-[44px] max-sm:gap-2.5">
-          <input type="checkbox" x-model="showGD" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5" />
-          <span>Show GD</span>
-        </label>
-        <label class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition max-sm:min-h-[44px] max-sm:gap-2.5">
-          <input type="checkbox" x-model="showFixtures" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5" />
-          <span>Show fixtures</span>
-        </label>
-        <label
-          th:if="${hasFormData}"
-          class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition max-sm:min-h-[44px] max-sm:gap-2.5"
-        >
-          <input type="checkbox" x-model="showForm" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5" />
-          <span>Show form</span>
-        </label>
-        <!-- Form legend — visible when showForm is on -->
         <div
-          th:if="${hasFormData}"
-          x-show="showForm"
-          class="col-span-2 flex items-center gap-3 pl-1 text-[11px] text-gray-500 select-none"
+          class="grid grid-cols-2 gap-x-6 gap-y-3 w-fit max-sm:w-full max-sm:gap-x-3 max-sm:gap-y-1"
         >
-          <span class="relative flex items-center gap-1 cursor-help" x-data="{ tip: false }" @mouseenter="tip = true" @mouseleave="tip = false">
-            <span class="inline-block w-3 h-3 rounded-full bg-gray-400 flex-shrink-0"></span>
-            <span>Home</span>
-            <span x-show="tip" x-transition.opacity.duration.100ms
-                  class="absolute bottom-full left-0 mb-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1
-                         text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none">
-              Circle = home game
-              <span class="absolute top-full left-2 border-4 border-transparent border-t-gray-200"></span>
+          <label
+            class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition max-sm:min-h-[44px] max-sm:gap-2.5"
+          >
+            <input
+              type="checkbox"
+              x-model="showPoints"
+              autocomplete="off"
+              class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5"
+            />
+            <span>Show points</span>
+          </label>
+          <label
+            class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition max-sm:min-h-[44px] max-sm:gap-2.5"
+          >
+            <input
+              type="checkbox"
+              x-model="showGD"
+              autocomplete="off"
+              class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5"
+            />
+            <span>Show GD</span>
+          </label>
+          <label
+            class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition max-sm:min-h-[44px] max-sm:gap-2.5"
+          >
+            <input
+              type="checkbox"
+              x-model="showFixtures"
+              autocomplete="off"
+              class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5"
+            />
+            <span>Show fixtures</span>
+          </label>
+          <label
+            th:if="${hasFormData}"
+            class="flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition max-sm:min-h-[44px] max-sm:gap-2.5"
+          >
+            <input
+              type="checkbox"
+              x-model="showForm"
+              autocomplete="off"
+              class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5"
+            />
+            <span>Show form</span>
+          </label>
+          <!-- Form legend — visible when showForm is on -->
+          <div
+            th:if="${hasFormData}"
+            x-show="showForm"
+            class="col-span-2 flex items-center gap-3 pl-1 text-[11px] text-gray-500 select-none"
+          >
+            <span
+              class="relative flex items-center gap-1 cursor-help"
+              x-data="{ tip: false }"
+              @mouseenter="tip = true"
+              @mouseleave="tip = false"
+            >
+              <span
+                class="inline-block w-3 h-3 rounded-full bg-gray-400 flex-shrink-0"
+              ></span>
+              <span>Home</span>
+              <span
+                x-show="tip"
+                x-transition.opacity.duration.100ms
+                class="absolute bottom-full left-0 mb-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1 text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none"
+              >
+                Circle = home game
+                <span
+                  class="absolute top-full left-2 border-4 border-transparent border-t-gray-200"
+                ></span>
+              </span>
             </span>
-          </span>
-          <span class="relative flex items-center gap-1 cursor-help" x-data="{ tip: false }" @mouseenter="tip = true" @mouseleave="tip = false">
-            <span class="inline-block w-3 h-3 rounded-sm bg-gray-400 flex-shrink-0"></span>
-            <span>Away</span>
-            <span x-show="tip" x-transition.opacity.duration.100ms
-                  class="absolute bottom-full left-0 mb-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1
-                         text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none">
-              Square = away game
-              <span class="absolute top-full left-2 border-4 border-transparent border-t-gray-200"></span>
+            <span
+              class="relative flex items-center gap-1 cursor-help"
+              x-data="{ tip: false }"
+              @mouseenter="tip = true"
+              @mouseleave="tip = false"
+            >
+              <span
+                class="inline-block w-3 h-3 rounded-sm bg-gray-400 flex-shrink-0"
+              ></span>
+              <span>Away</span>
+              <span
+                x-show="tip"
+                x-transition.opacity.duration.100ms
+                class="absolute bottom-full left-0 mb-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1 text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none"
+              >
+                Square = away game
+                <span
+                  class="absolute top-full left-2 border-4 border-transparent border-t-gray-200"
+                ></span>
+              </span>
             </span>
-          </span>
-          <span class="text-gray-300">|</span>
-          <span class="relative flex items-center gap-1 cursor-help" x-data="{ tip: false }" @mouseenter="tip = true" @mouseleave="tip = false">
-            <span class="inline-block w-3 h-3 rounded-sm bg-green-500 flex-shrink-0"></span>
-            <span>W</span>
-            <span x-show="tip" x-transition.opacity.duration.100ms
-                  class="absolute bottom-full left-0 mb-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1
-                         text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none">
-              Win
-              <span class="absolute top-full left-2 border-4 border-transparent border-t-gray-200"></span>
+            <span class="text-gray-300">|</span>
+            <span
+              class="relative flex items-center gap-1 cursor-help"
+              x-data="{ tip: false }"
+              @mouseenter="tip = true"
+              @mouseleave="tip = false"
+            >
+              <span
+                class="inline-block w-3 h-3 rounded-sm bg-green-500 flex-shrink-0"
+              ></span>
+              <span>W</span>
+              <span
+                x-show="tip"
+                x-transition.opacity.duration.100ms
+                class="absolute bottom-full left-0 mb-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1 text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none"
+              >
+                Win
+                <span
+                  class="absolute top-full left-2 border-4 border-transparent border-t-gray-200"
+                ></span>
+              </span>
             </span>
-          </span>
-          <span class="relative flex items-center gap-1 cursor-help" x-data="{ tip: false }" @mouseenter="tip = true" @mouseleave="tip = false">
-            <span class="inline-block w-3 h-3 rounded-sm bg-amber-400 flex-shrink-0"></span>
-            <span>D</span>
-            <span x-show="tip" x-transition.opacity.duration.100ms
-                  class="absolute bottom-full left-0 mb-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1
-                         text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none">
-              Draw
-              <span class="absolute top-full left-2 border-4 border-transparent border-t-gray-200"></span>
+            <span
+              class="relative flex items-center gap-1 cursor-help"
+              x-data="{ tip: false }"
+              @mouseenter="tip = true"
+              @mouseleave="tip = false"
+            >
+              <span
+                class="inline-block w-3 h-3 rounded-sm bg-amber-400 flex-shrink-0"
+              ></span>
+              <span>D</span>
+              <span
+                x-show="tip"
+                x-transition.opacity.duration.100ms
+                class="absolute bottom-full left-0 mb-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1 text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none"
+              >
+                Draw
+                <span
+                  class="absolute top-full left-2 border-4 border-transparent border-t-gray-200"
+                ></span>
+              </span>
             </span>
-          </span>
-          <span class="relative flex items-center gap-1 cursor-help" x-data="{ tip: false }" @mouseenter="tip = true" @mouseleave="tip = false">
-            <span class="inline-block w-3 h-3 rounded-sm bg-red-500 flex-shrink-0"></span>
-            <span>L</span>
-            <span x-show="tip" x-transition.opacity.duration.100ms
-                  class="absolute bottom-full left-0 mb-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1
-                         text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none">
-              Loss
-              <span class="absolute top-full left-2 border-4 border-transparent border-t-gray-200"></span>
+            <span
+              class="relative flex items-center gap-1 cursor-help"
+              x-data="{ tip: false }"
+              @mouseenter="tip = true"
+              @mouseleave="tip = false"
+            >
+              <span
+                class="inline-block w-3 h-3 rounded-sm bg-red-500 flex-shrink-0"
+              ></span>
+              <span>L</span>
+              <span
+                x-show="tip"
+                x-transition.opacity.duration.100ms
+                class="absolute bottom-full left-0 mb-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1 text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none"
+              >
+                Loss
+                <span
+                  class="absolute top-full left-2 border-4 border-transparent border-t-gray-200"
+                ></span>
+              </span>
             </span>
-          </span>
+          </div>
+
+          <label
+            class="col-span-2 flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition max-sm:min-h-[44px] max-sm:gap-2.5"
+          >
+            <input
+              type="checkbox"
+              x-model="showStandings"
+              autocomplete="off"
+              class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5"
+            />
+            <span class="hidden sm:inline">Compare with current standings</span>
+            <span class="sm:hidden">Show actual positions</span>
+          </label>
         </div>
 
-        <label class="col-span-2 flex items-center gap-2 text-sm text-gray-600 cursor-pointer hover:text-gray-900 transition max-sm:min-h-[44px] max-sm:gap-2.5">
-          <input type="checkbox" x-model="showStandings" autocomplete="off" class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5" />
-          <span class="hidden sm:inline">Compare with current standings</span>
-          <span class="sm:hidden">Show actual positions</span>
-        </label>
+        <p
+          th:if="${showMoveHelperText}"
+          x-show="showStandings"
+          class="text-[11px] text-gray-500 leading-snug pl-6 max-sm:pl-7"
+        >
+          <span class="sm:hidden">
+            <span class="block"
+              ><span class="text-green-600 font-semibold">↑ Green:</span> Better
+              than actual (move up).</span
+            >
+            <span class="block"
+              ><span class="text-red-600 font-semibold">↓ Red:</span> Worse than
+              actual (move down).</span
+            >
+          </span>
+          <span class="hidden sm:inline">
+            <span class="text-green-600 font-semibold">↑ Green:</span> Better
+            than actual (move up).
+            <span class="text-red-600 font-semibold">↓ Red:</span> Worse than
+            actual (move down).
+          </span>
+        </p>
       </div>
-
-      <p
-        th:if="${showMoveHelperText}"
-        x-show="showStandings"
-        class="text-[11px] text-gray-500 leading-snug pl-6 max-sm:pl-7"
-      >
-        <span class="sm:hidden">
-          <span class="block"
-            ><span class="text-green-600 font-semibold">↑ Green:</span> Better
-            than actual (move up).</span
-          >
-          <span class="block"
-            ><span class="text-red-600 font-semibold">↓ Red:</span> Worse than
-            actual (move down).</span
-          >
-        </span>
-        <span class="hidden sm:inline">
-          <span class="text-green-600 font-semibold">↑ Green:</span> Better than
-          actual (move up).
-          <span class="text-red-600 font-semibold">↓ Red:</span> Worse than actual
-          (move down).
-        </span>
-      </p>
-    </div>
     </div>
   </div>
 
@@ -257,12 +347,12 @@
                   <span
                     x-show="tip"
                     x-transition.opacity.duration.100ms
-                    class="absolute top-full right-0 mt-1.5 z-50
-                           bg-white border border-gray-200 shadow-md rounded px-2 py-1
-                           text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none normal-case tracking-normal"
+                    class="absolute top-full right-0 mt-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1 text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none normal-case tracking-normal"
                   >
                     Hover a dot to see the match score
-                    <span class="absolute bottom-full right-1 border-4 border-transparent border-b-gray-200"></span>
+                    <span
+                      class="absolute bottom-full right-1 border-4 border-transparent border-b-gray-200"
+                    ></span>
                   </span>
                 </span>
               </span>
@@ -305,163 +395,29 @@
                     x-text="team.code"
                   ></div>
                   <div class="min-w-0 flex-1">
-                      <!-- Team name -->
-                      <div class="flex items-center gap-1">
+                    <!-- Team name -->
+                    <div class="flex items-center gap-1">
+                      <span
+                        x-show="isSelected(team.code)"
+                        class="text-blue-600 text-xs font-medium flex-shrink-0"
+                        >●</span
+                      >
+                      <div class="text-sm font-medium text-gray-900 truncate">
+                        <span class="lg:hidden" x-text="team.shortName"></span>
                         <span
-                          x-show="isSelected(team.code)"
-                          class="text-blue-600 text-xs font-medium flex-shrink-0"
-                          >●</span
-                        >
-                        <div class="text-sm font-medium text-gray-900 truncate">
-                          <span class="lg:hidden" x-text="team.shortName"></span>
-                          <span class="hidden lg:inline" x-text="team.name"></span>
-                        </div>
+                          class="hidden lg:inline"
+                          x-text="team.name"
+                        ></span>
                       </div>
+                    </div>
 
-                      <!-- Mobile: Fixtures AND/OR Standings AND/OR Points+GD -->
-                      <div
-                        x-show="showFixtures || showStandings || showPoints || showGD || showForm"
-                        class="sm:hidden flex items-center gap-1.5 mt-1 flex-wrap"
-                      >
-                        <!-- Fixtures -->
-                        <template x-if="showFixtures && hasFixtures(team.code)">
-                          <template
-                            x-for="fixture in getFixtures(team.code)"
-                            :key="fixture.opponent"
-                          >
-                            <span
-                              class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium"
-                              :class="{
-                                'bg-green-50 text-green-700': fixture.result === 'WIN',
-                                'bg-red-50 text-red-700': fixture.result === 'LOSS',
-                                'bg-yellow-100 text-yellow-700': fixture.result === 'DRAW',
-                                'bg-blue-50 text-blue-700': fixture.status === 'LIVE',
-                                'bg-violet-50 text-violet-700': fixture.status === 'POSTPONED',
-                                'bg-gray-100 text-gray-600': fixture.status === 'SCHEDULED' || (!fixture.result && fixture.status !== 'LIVE' && fixture.status !== 'POSTPONED')
-                              }"
-                            >
-                              <template x-if="fixture.status === 'LIVE'">
-                                <span
-                                  class="inline-block w-1.5 h-1.5 bg-red-500 rounded-full mr-1"
-                                  style="
-                                    animation: liveFade 1.2s ease-in-out
-                                      infinite !important;
-                                  "
-                                ></span>
-                              </template>
-                              <span
-                                x-show="fixture.status === 'POSTPONED'"
-                                class="mr-1 font-bold"
-                                >P</span
-                              >
-                              <span x-show="!fixture.isHome">@</span
-                              ><span x-text="fixture.opponent"></span>
-                            </span>
-                          </template>
-                        </template>
-
-                        <!-- Bullet separator (fixtures/standings) — only when single fixture -->
-                        <template
-                          x-if="showFixtures && hasFixtures(team.code) && showStandings && getFixtures(team.code).length === 1"
-                        >
-                          <span class="text-gray-400">•</span>
-                        </template>
-
-                        <!-- Actual position with delta — wraps to own line when multiple fixtures -->
-                        <div
-                          x-show="showStandings"
-                          class="flex items-center gap-1 text-xs"
-                          :class="showFixtures && hasFixtures(team.code) && getFixtures(team.code).length > 1 ? 'basis-full' : ''"
-                        >
-                          <span class="text-gray-500">Actual:</span>
-                          <span
-                            class="text-gray-700 font-medium"
-                            x-text="getActualPosition(team.code)"
-                            >2</span
-                          >
-                          <span
-                            x-show="getDelta(team.code) !== 0 && getDelta(team.code) !== '-'"
-                            class="flex items-center gap-0.5 font-semibold"
-                            :class="getDeltaDirection(team.code) === 'down' ? 'text-red-600' : 'text-green-600'"
-                          >
-                            <svg
-                              class="h-3 w-3"
-                              fill="currentColor"
-                              viewBox="0 0 20 20"
-                            >
-                              <path
-                                x-show="getDeltaDirection(team.code) === 'up'"
-                                fill-rule="evenodd"
-                                d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
-                                clip-rule="evenodd"
-                              />
-                              <path
-                                x-show="getDeltaDirection(team.code) === 'down'"
-                                fill-rule="evenodd"
-                                d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                clip-rule="evenodd"
-                              />
-                            </svg>
-                            <span x-text="getDelta(team.code)"></span>
-                          </span>
-                          <span
-                            x-show="getDelta(team.code) === 0"
-                            class="text-green-600 font-semibold"
-                            >✓</span
-                          >
-                        </div>
-
-                        <!-- Points + GD (mobile) — own line via basis-full -->
-                        <div
-                          x-show="showPoints || showGD"
-                          class="flex basis-full items-center gap-1 text-xs"
-                        >
-                          <template x-if="showPoints">
-                            <span class="flex items-center gap-1">
-                              <span class="text-gray-700 font-medium" x-text="getCurrentPoints(team.code)"></span>
-                              <span class="text-gray-500" x-text="getCurrentPoints(team.code) == 1 ? 'pt' : 'pts'"></span>
-                            </span>
-                          </template>
-                          <template x-if="showPoints && showGD">
-                            <span class="text-gray-400">•</span>
-                          </template>
-                          <template x-if="showGD">
-                            <span
-                              class="font-medium"
-                              :class="{
-                                'text-green-600': getGDDirection(team.code) === 'positive',
-                                'text-red-600': getGDDirection(team.code) === 'negative',
-                                'text-gray-500': getGDDirection(team.code) === 'neutral' || getGDDirection(team.code) === null
-                              }"
-                              x-text="getCurrentGD(team.code)"
-                            ></span>
-                          </template>
-                        </div>
-
-                        <!-- Form circles (mobile) — tap circles only to see match details -->
-                        <template x-if="showForm && getForm(team.code).length > 0">
-                          <div class="flex basis-full items-center gap-1.5 mt-0.5">
-                            <span
-                              class="inline-flex items-center gap-0.5 cursor-pointer"
-                              @click.stop="showFormPopup(team.code, team.shortName)"
-                            >
-                              <template x-for="entry in getForm(team.code)" :key="entry.opponentCode + entry.result + entry.goalsFor">
-                                <span
-                                  class="flex items-center justify-center w-2.5 h-2.5 flex-shrink-0"
-                                  :class="(entry.result === 'W' ? 'bg-green-500' : entry.result === 'D' ? 'bg-amber-400' : 'bg-red-500') + (entry.wasHome ? ' rounded-full' : '')"
-                                ></span>
-                              </template>
-                            </span>
-                            <span x-show="teamIndex === 0" class="text-[10px] text-gray-400">tap for scores</span>
-                          </div>
-                        </template>
-                      </div>
-
-                      <!-- Desktop: Just fixtures (standings/points in separate columns) -->
-                      <div
-                        x-show="showFixtures && hasFixtures(team.code)"
-                        class="hidden sm:flex items-center gap-1.5 mt-1"
-                      >
+                    <!-- Mobile: Fixtures AND/OR Standings AND/OR Points+GD -->
+                    <div
+                      x-show="showFixtures || showStandings || showPoints || showGD || showForm"
+                      class="sm:hidden flex items-center gap-1.5 mt-1 flex-wrap"
+                    >
+                      <!-- Fixtures -->
+                      <template x-if="showFixtures && hasFixtures(team.code)">
                         <template
                           x-for="fixture in getFixtures(team.code)"
                           :key="fixture.opponent"
@@ -469,13 +425,13 @@
                           <span
                             class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium"
                             :class="{
-                              'bg-green-50 text-green-700': fixture.result === 'WIN',
-                              'bg-red-50 text-red-700': fixture.result === 'LOSS',
-                              'bg-yellow-100 text-yellow-700': fixture.result === 'DRAW',
-                              'bg-blue-50 text-blue-700': fixture.status === 'LIVE',
-                              'bg-violet-50 text-violet-700': fixture.status === 'POSTPONED',
-                              'bg-gray-100 text-gray-600': fixture.status === 'SCHEDULED' || (!fixture.result && fixture.status !== 'LIVE' && fixture.status !== 'POSTPONED')
-                            }"
+                                'bg-green-50 text-green-700': fixture.result === 'WIN',
+                                'bg-red-50 text-red-700': fixture.result === 'LOSS',
+                                'bg-yellow-100 text-yellow-700': fixture.result === 'DRAW',
+                                'bg-blue-50 text-blue-700': fixture.status === 'LIVE',
+                                'bg-violet-50 text-violet-700': fixture.status === 'POSTPONED',
+                                'bg-gray-100 text-gray-600': fixture.status === 'SCHEDULED' || (!fixture.result && fixture.status !== 'LIVE' && fixture.status !== 'POSTPONED')
+                              }"
                           >
                             <template x-if="fixture.status === 'LIVE'">
                               <span
@@ -494,7 +450,160 @@
                             ><span x-text="fixture.opponent"></span>
                           </span>
                         </template>
+                      </template>
+
+                      <!-- Bullet separator (fixtures/standings) — only when single fixture -->
+                      <template
+                        x-if="showFixtures && hasFixtures(team.code) && showStandings && getFixtures(team.code).length === 1"
+                      >
+                        <span class="text-gray-400">•</span>
+                      </template>
+
+                      <!-- Actual position with delta — wraps to own line when multiple fixtures -->
+                      <div
+                        x-show="showStandings"
+                        class="flex items-center gap-1 text-xs"
+                        :class="showFixtures && hasFixtures(team.code) && getFixtures(team.code).length > 1 ? 'basis-full' : ''"
+                      >
+                        <span class="text-gray-500">Actual:</span>
+                        <span
+                          class="text-gray-700 font-medium"
+                          x-text="getActualPosition(team.code)"
+                          >2</span
+                        >
+                        <span
+                          x-show="getDelta(team.code) !== 0 && getDelta(team.code) !== '-'"
+                          class="flex items-center gap-0.5 font-semibold"
+                          :class="getDeltaDirection(team.code) === 'down' ? 'text-red-600' : 'text-green-600'"
+                        >
+                          <svg
+                            class="h-3 w-3"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              x-show="getDeltaDirection(team.code) === 'up'"
+                              fill-rule="evenodd"
+                              d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z"
+                              clip-rule="evenodd"
+                            />
+                            <path
+                              x-show="getDeltaDirection(team.code) === 'down'"
+                              fill-rule="evenodd"
+                              d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                              clip-rule="evenodd"
+                            />
+                          </svg>
+                          <span x-text="getDelta(team.code)"></span>
+                        </span>
+                        <span
+                          x-show="getDelta(team.code) === 0"
+                          class="text-green-600 font-semibold"
+                          >✓</span
+                        >
                       </div>
+
+                      <!-- Points + GD (mobile) — own line via basis-full -->
+                      <div
+                        x-show="showPoints || showGD"
+                        class="flex basis-full items-center gap-1 text-xs"
+                      >
+                        <template x-if="showPoints">
+                          <span class="flex items-center gap-1">
+                            <span
+                              class="text-gray-700 font-medium"
+                              x-text="getCurrentPoints(team.code)"
+                            ></span>
+                            <span
+                              class="text-gray-500"
+                              x-text="getCurrentPoints(team.code) == 1 ? 'pt' : 'pts'"
+                            ></span>
+                          </span>
+                        </template>
+                        <template x-if="showPoints && showGD">
+                          <span class="text-gray-400">•</span>
+                        </template>
+                        <template x-if="showGD">
+                          <span
+                            class="font-medium"
+                            :class="{
+                                'text-green-600': getGDDirection(team.code) === 'positive',
+                                'text-red-600': getGDDirection(team.code) === 'negative',
+                                'text-gray-500': getGDDirection(team.code) === 'neutral' || getGDDirection(team.code) === null
+                              }"
+                            x-text="getCurrentGD(team.code)"
+                          ></span>
+                        </template>
+                      </div>
+
+                      <!-- Form circles (mobile) — tap circles only to see match details -->
+                      <template
+                        x-if="showForm && getForm(team.code).length > 0"
+                      >
+                        <div
+                          class="flex basis-full items-center gap-1.5 mt-0.5"
+                        >
+                          <span
+                            class="inline-flex items-center gap-0.5 cursor-pointer"
+                            @click.stop="showFormPopup(team.code, team.shortName)"
+                          >
+                            <template
+                              x-for="entry in getForm(team.code)"
+                              :key="entry.opponentCode + entry.result + entry.goalsFor"
+                            >
+                              <span
+                                class="flex items-center justify-center w-2.5 h-2.5 flex-shrink-0"
+                                :class="(entry.result === 'W' ? 'bg-green-500' : entry.result === 'D' ? 'bg-amber-400' : 'bg-red-500') + (entry.wasHome ? ' rounded-full' : '')"
+                              ></span>
+                            </template>
+                          </span>
+                          <span
+                            x-show="teamIndex === 0"
+                            class="text-[10px] text-gray-400"
+                            >tap for scores</span
+                          >
+                        </div>
+                      </template>
+                    </div>
+
+                    <!-- Desktop: Just fixtures (standings/points in separate columns) -->
+                    <div
+                      x-show="showFixtures && hasFixtures(team.code)"
+                      class="hidden sm:flex items-center gap-1.5 mt-1"
+                    >
+                      <template
+                        x-for="fixture in getFixtures(team.code)"
+                        :key="fixture.opponent"
+                      >
+                        <span
+                          class="inline-flex items-center px-1.5 py-0.5 rounded text-[11px] font-medium"
+                          :class="{
+                              'bg-green-50 text-green-700': fixture.result === 'WIN',
+                              'bg-red-50 text-red-700': fixture.result === 'LOSS',
+                              'bg-yellow-100 text-yellow-700': fixture.result === 'DRAW',
+                              'bg-blue-50 text-blue-700': fixture.status === 'LIVE',
+                              'bg-violet-50 text-violet-700': fixture.status === 'POSTPONED',
+                              'bg-gray-100 text-gray-600': fixture.status === 'SCHEDULED' || (!fixture.result && fixture.status !== 'LIVE' && fixture.status !== 'POSTPONED')
+                            }"
+                        >
+                          <template x-if="fixture.status === 'LIVE'">
+                            <span
+                              class="inline-block w-1.5 h-1.5 bg-red-500 rounded-full mr-1"
+                              style="
+                                animation: liveFade 1.2s ease-in-out infinite !important;
+                              "
+                            ></span>
+                          </template>
+                          <span
+                            x-show="fixture.status === 'POSTPONED'"
+                            class="mr-1 font-bold"
+                            >P</span
+                          >
+                          <span x-show="!fixture.isHome">@</span
+                          ><span x-text="fixture.opponent"></span>
+                        </span>
+                      </template>
+                    </div>
                   </div>
                 </div>
               </td>
@@ -569,7 +678,10 @@
                   class="flex items-center justify-center gap-0.5 select-none cursor-pointer"
                   @contextmenu.prevent
                 >
-                  <template x-for="entry in getForm(team.code)" :key="entry.opponentCode + entry.result + entry.goalsFor">
+                  <template
+                    x-for="entry in getForm(team.code)"
+                    :key="entry.opponentCode + entry.result + entry.goalsFor"
+                  >
                     <span
                       class="relative flex-shrink-0"
                       x-data="{ tip: false }"
@@ -583,27 +695,35 @@
                       <span
                         x-show="tip"
                         x-transition.opacity.duration.100ms
-                        class="absolute bottom-full right-0 mb-1.5 z-50
-                               bg-white border border-gray-200 shadow-md rounded px-2 py-1
-                               text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none"
+                        class="absolute bottom-full right-0 mb-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1 text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none"
                       >
                         <template x-if="entry.wasHome">
                           <span>
                             <span class="font-bold" x-text="team.code"></span>
-                            <span x-text="' ' + entry.goalsFor + '-' + entry.goalsAgainst + ' ' + entry.opponentCode"></span>
+                            <span
+                              x-text="' ' + entry.goalsFor + '-' + entry.goalsAgainst + ' ' + entry.opponentCode"
+                            ></span>
                           </span>
                         </template>
                         <template x-if="!entry.wasHome">
                           <span>
-                            <span x-text="entry.opponentCode + ' ' + entry.goalsAgainst + '-' + entry.goalsFor + ' '"></span>
+                            <span
+                              x-text="entry.opponentCode + ' ' + entry.goalsAgainst + '-' + entry.goalsFor + ' '"
+                            ></span>
                             <span class="font-bold" x-text="team.code"></span>
                           </span>
                         </template>
-                        <span class="absolute top-full right-1 border-4 border-transparent border-t-gray-200"></span>
+                        <span
+                          class="absolute top-full right-1 border-4 border-transparent border-t-gray-200"
+                        ></span>
                       </span>
                     </span>
                   </template>
-                  <span x-show="getForm(team.code).length === 0" class="text-gray-300 text-[11px]">—</span>
+                  <span
+                    x-show="getForm(team.code).length === 0"
+                    class="text-gray-300 text-[11px]"
+                    >—</span
+                  >
                 </div>
               </td>
             </tr>
@@ -621,7 +741,7 @@
         @touchend.prevent="hideFormPopup()"
         @contextmenu.prevent
         class="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/40"
-        style="display:none"
+        style="display: none"
       >
         <div
           @click.stop
@@ -630,17 +750,38 @@
           class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden"
         >
           <!-- Header -->
-          <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-            <span class="text-sm font-semibold text-gray-800" x-text="formPopup ? formPopup.teamName + ' — Last ' + formPopup.entries.length + ' matches' : ''"></span>
-            <button @click="hideFormPopup()" class="text-gray-400 hover:text-gray-600 p-1 -mr-1">
-              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+          <div
+            class="flex items-center justify-between px-4 py-3 border-b border-gray-100"
+          >
+            <span
+              class="text-sm font-semibold text-gray-800"
+              x-text="formPopup ? formPopup.teamName + ' — Last ' + formPopup.entries.length + ' matches' : ''"
+            ></span>
+            <button
+              @click="hideFormPopup()"
+              class="text-gray-400 hover:text-gray-600 p-1 -mr-1"
+            >
+              <svg
+                class="w-4 h-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
           <!-- Entries -->
           <ul class="divide-y divide-gray-50" x-show="formPopup !== null">
-            <template x-for="entry in (formPopup ? formPopup.entries : [])" :key="entry.opponentCode + entry.result + entry.goalsFor">
+            <template
+              x-for="entry in (formPopup ? formPopup.entries : [])"
+              :key="entry.opponentCode + entry.result + entry.goalsFor"
+            >
               <li class="flex items-center gap-3 px-4 py-2.5">
                 <span
                   class="flex-shrink-0 w-6 h-6 flex items-center justify-center text-xs font-bold text-white"
@@ -650,14 +791,24 @@
                 <span class="text-sm text-gray-700 font-mono">
                   <template x-if="entry.wasHome">
                     <span>
-                      <span class="font-bold" x-text="formPopup.teamCode"></span>
-                      <span x-text="' ' + entry.goalsFor + '–' + entry.goalsAgainst + ' ' + entry.opponentCode"></span>
+                      <span
+                        class="font-bold"
+                        x-text="formPopup.teamCode"
+                      ></span>
+                      <span
+                        x-text="' ' + entry.goalsFor + '–' + entry.goalsAgainst + ' ' + entry.opponentCode"
+                      ></span>
                     </span>
                   </template>
                   <template x-if="!entry.wasHome">
                     <span>
-                      <span x-text="entry.opponentCode + ' ' + entry.goalsAgainst + '–' + entry.goalsFor + ' '"></span>
-                      <span class="font-bold" x-text="formPopup.teamCode"></span>
+                      <span
+                        x-text="entry.opponentCode + ' ' + entry.goalsAgainst + '–' + entry.goalsFor + ' '"
+                      ></span>
+                      <span
+                        class="font-bold"
+                        x-text="formPopup.teamCode"
+                      ></span>
                     </span>
                   </template>
                 </span>

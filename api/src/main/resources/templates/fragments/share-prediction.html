@@ -1,12 +1,3 @@
-<!--
-  Share Prediction card — the share text/link widget, shared by the profile settings page and
-  /my-table. Rendered only when the controller found something to share (a pre-season registration
-  or an in-play prediction); see SeasonPredictionSupport.buildShareData.
-
-  Parameters:
-    cardClass: outer card chrome, so each host can match its own page's card style
-    open: 'true' to start expanded (settings), 'false' to start collapsed (my-table)
--->
 <div
   th:fragment="card(cardClass, open)"
   th:if="${showShareSection == true}"

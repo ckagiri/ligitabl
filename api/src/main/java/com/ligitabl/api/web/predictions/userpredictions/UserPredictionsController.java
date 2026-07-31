@@ -258,15 +258,6 @@ public class UserPredictionsController {
         });
     }
 
-    /**
-     * Share text/link for the "Share your prediction" card, the same data the profile settings page
-     * uses. Hidden for guests and for anyone without a pre-season registration or in-play prediction
-     * — {@code buildShareData} decides that, so the two pages can't disagree about what's shareable.
-     *
-     * <p>Also hidden on historical views: sharing is about your live table, and {@code buildShareData}
-     * always describes the <i>current</i> round, so on a past round it would offer a share that
-     * doesn't match what's on screen.
-     */
     private void addShareData(Model model, UUID userId, boolean isHistoricalView) {
         var shareData = userId == null || isHistoricalView
                 ? SeasonPredictionSupport.ShareData.hidden()

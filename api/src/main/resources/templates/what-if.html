@@ -408,15 +408,9 @@
             </div>
           </div>
 
-            <!-- Swap history: a section below the tables, not nested inside the Round Result
-                 card — same arrangement as the historical view on /my-table. -->
             <div th:replace="~{fragments/what-if-swap-log :: swap-log}"></div>
           </div>
 
-          <!-- Share section: its own card below the What-If content, i.e. after the tables it
-               describes. Collapsed by default. Unlike the analogous cards in profile/settings.html
-               the share text isn't hydrated once via x-init — it's a live computed method
-               (buildShareText()), since it must reflect the current scores across re-Applies. -->
           <div
             x-show="hasComputed"
             x-cloak
