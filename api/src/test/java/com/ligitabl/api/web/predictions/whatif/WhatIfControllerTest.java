@@ -249,7 +249,7 @@ class WhatIfControllerTest {
         Map<String, Object> body = controller.savedScores(principal, response);
 
         assertEquals(true, body.get("success"));
-        assertEquals(List.of(new com.ligitabl.model.domain.WhatIfScore(matchId, 3, 0)), body.get("scores"));
+        assertEquals(List.of(new WhatIfScoreDto(matchId.toString(), 3, 0)), body.get("scores"));
     }
 
     @Test

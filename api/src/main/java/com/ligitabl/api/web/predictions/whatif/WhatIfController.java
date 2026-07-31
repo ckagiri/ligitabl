@@ -157,14 +157,17 @@ public class WhatIfController {
     }
 
     private String savedScoresJson(UUID userId, UUID roundId) throws JsonProcessingException {
+        return objectMapper.writeValueAsString(savedScoresFor(userId, roundId));
+    }
+
+    private List<WhatIfScoreDto> savedScoresFor(UUID userId, UUID roundId) {
         if (roundId == null) {
-            return "[]";
+            return List.of();
         }
-        List<com.ligitabl.model.domain.WhatIfScore> scores = whatIfPredictionRepo
+        return WhatIfScoreDto.listOf(whatIfPredictionRepo
                 .findByUserAndRound(userId, roundId)
                 .map(WhatIfPrediction::getScores)
-                .orElseGet(List::of);
-        return objectMapper.writeValueAsString(scores);
+                .orElseGet(List::of));
     }
 
     private String bounceToMyTable(HttpServletResponse response, String hxRequest) {
@@ -206,16 +209,8 @@ public class WhatIfController {
                 .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
                 .map(Season::getCurrentRoundId)
                 .orElse(null);
-        if (roundId == null) {
-            return Map.of("success", true, "scores", List.of());
-        }
 
-        List<com.ligitabl.model.domain.WhatIfScore> scores = whatIfPredictionRepo
-                .findByUserAndRound(userDetails.getUserId(), roundId)
-                .map(WhatIfPrediction::getScores)
-                .orElseGet(List::of);
-
-        return Map.of("success", true, "scores", scores);
+        return Map.of("success", true, "scores", savedScoresFor(userDetails.getUserId(), roundId));
     }
 
     @PostMapping("/compute")
