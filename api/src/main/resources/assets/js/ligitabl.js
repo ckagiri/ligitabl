@@ -1244,9 +1244,7 @@ window.Ligitabl.whatIfPage = function (el) {
             if (!this.hasComputed || !this.appliedScores) return false;
             return JSON.stringify(this.scores) !== JSON.stringify(this.appliedScores);
         },
-        // Deliberately paced like undoLastSwap(): reverting rewrites every score at once, and doing
-        // that on the same tick reads as the page glitching. The 200ms lead-in gives "Reverting…"
-        // time to register as the cause of the change.
+        // The 200ms lead-in gives "Reverting…" time to register as the cause of the change.
         revertScores() {
             if (!this.appliedScores || this.isReverting) return;
             this.isReverting = true;
@@ -1323,9 +1321,6 @@ window.Ligitabl.whatIfPage = function (el) {
                 }, 200);
             }, 200);
         },
-        // One line that covers all four states rather than two x-show'd paragraphs: before any swap
-        // the instruction has to teach the interaction, afterwards it can be terse, and either way a
-        // selected team needs naming so it's obvious what the next tap acts on.
         swapHint() {
             const hasSwaps = this.getSwapCount() > 0;
             if (this.selectedTeam) {

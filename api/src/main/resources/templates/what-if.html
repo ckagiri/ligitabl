@@ -272,9 +272,6 @@
                 </svg>
                 <span x-text="isComputing ? 'Applying…' : (scoresDirty() ? '*Apply' : 'Apply')"></span>
               </button>
-              <!-- Two actions sharing one slot, so they must not look alike: Revert only undoes
-                   score edits back to the last Apply (amber on white, matching the amber Undo in
-                   the swap row), while Reset clears every score and swap (filled red). -->
               <button
                 type="button"
                 @click="scoresDirty() ? revertScores() : confirmReset()"
