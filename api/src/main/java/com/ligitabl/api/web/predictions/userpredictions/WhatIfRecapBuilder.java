@@ -22,14 +22,6 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * Grades a user's saved what-if guesses for a round against what actually happened.
- *
- * <p>The rule:
- * <ul>
- *   <li>Guessed a <b>win</b> (home or away) → <b>Win</b> only if that same side actually won, any
- *       scoreline. Anything else is a flat <b>Loss</b>; margin never rescues a wrong win-guess.</li>
- *   <li>Guessed a <b>draw</b> → <b>Win</b> if it actually drew; <b>Draw</b> (near-miss) if either
- *       side won by <i>exactly one</i> goal; <b>Loss</b> if the margin was two or more.</li>
- * </ul>
  * The one-goal leniency only ever applies coming from a draw guess.
  */
 @Component
@@ -121,7 +113,6 @@ public class WhatIfRecapBuilder {
         return margin == 1 ? Grade.DRAW : Grade.LOSS;
     }
 
-    /** Same shorter-name-with-fallback rule the rest of the UI uses (see {@code TeamRankDto}). */
     private String displayName(Team team) {
         return team.getShorterName() != null ? team.getShorterName() : team.getShortName();
     }

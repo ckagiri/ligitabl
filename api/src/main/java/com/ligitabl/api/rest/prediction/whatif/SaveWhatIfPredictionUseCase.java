@@ -21,8 +21,8 @@ public class SaveWhatIfPredictionUseCase {
 
     private final WhatIfPredictionRepo whatIfPredictionRepo;
 
-    public WhatIfPrediction execute(UUID userId, UUID roundId, List<WhatIfScore> scores) {
-        return whatIfPredictionRepo.save(WhatIfPrediction.builder()
+    public void execute(UUID userId, UUID roundId, List<WhatIfScore> scores) {
+        whatIfPredictionRepo.save(WhatIfPrediction.builder()
                 .userId(userId)
                 .roundId(roundId)
                 .scores(toDomain(scores))

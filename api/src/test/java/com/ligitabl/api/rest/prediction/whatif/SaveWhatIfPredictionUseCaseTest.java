@@ -34,7 +34,6 @@ class SaveWhatIfPredictionUseCaseTest {
     @Test
     void execute_shouldSaveScoresKeyedByUserAndRound() {
         UUID matchId = UUID.randomUUID();
-        when(whatIfPredictionRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
         useCase.execute(userId, roundId, List.of(new WhatIfScore(matchId, 2, 1)));
 
@@ -52,8 +51,6 @@ class SaveWhatIfPredictionUseCaseTest {
 
     @Test
     void execute_shouldTreatNullScoresAsEmpty() {
-        when(whatIfPredictionRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
-
         useCase.execute(userId, roundId, null);
 
         ArgumentCaptor<WhatIfPrediction> captor = ArgumentCaptor.forClass(WhatIfPrediction.class);
