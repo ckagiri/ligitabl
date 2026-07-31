@@ -11,10 +11,18 @@ public record WhatIfRecap(int played, List<Line> all, List<Line> wins, List<Line
 
     /**
      * One graded match: "ARS - CHE 2 - 1 X" — actual scoreline, the outcome the user guessed, and
-     * how that guess graded ({@code WIN} / {@code DRAW} / {@code LOSS}).
+     * how that guess graded ({@code WIN} / {@code DRAW} / {@code LOSS}). Both the code and the
+     * shorter name are carried: the shareable full list uses codes (compact, travels well in chat),
+     * the per-bucket lists use names (nothing to keep short, easier to read).
      */
     public record Line(
-            String homeTeamCode, String awayTeamCode, String actualScore, String guessedOutcome, String grade) {}
+            String homeTeamCode,
+            String awayTeamCode,
+            String homeTeamShorterName,
+            String awayTeamShorterName,
+            String actualScore,
+            String guessedOutcome,
+            String grade) {}
 
     public int winCount() {
         return wins.size();

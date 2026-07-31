@@ -326,14 +326,23 @@
                 :class="activeTab === 'standings' ? 'hidden md:flex' : 'flex'"
                 class="items-center justify-between gap-2"
               >
-                <p class="text-xs text-gray-400" x-show="!selectedTeam">
+                <p class="text-xs text-gray-400" x-show="!selectedTeam && !undoing">
                   Tap two teams to swap them
                 </p>
-                <p class="text-xs text-indigo-500" x-show="selectedTeam" x-cloak>
+                <p class="text-xs text-indigo-500" x-show="selectedTeam && !undoing" x-cloak>
                   <span x-text="getSelectedTeamShortName()"></span> selected —
                   tap another team to swap
                 </p>
-                <div class="flex items-center gap-2" x-show="getSwapCount() > 0" x-cloak>
+                <!-- Undoing flash — same treatment as the prediction page's swap controls
+                     (fragments/prediction-actions.html), since undoLastSwap() animates over ~400ms
+                     and the table would otherwise appear to change on its own. -->
+                <span
+                  x-show="undoing"
+                  x-cloak
+                  class="text-xs font-semibold text-amber-600 animate-pulse whitespace-nowrap"
+                  >↩ undoing…</span
+                >
+                <div class="flex items-center gap-2" x-show="getSwapCount() > 0 && !undoing" x-cloak>
                   <button
                     type="button"
                     @click="undoLastSwap()"

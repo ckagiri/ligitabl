@@ -79,8 +79,9 @@
         <tbody>
           <template x-for="team in teams" :key="team.code">
             <tr
-              class="border-t border-gray-100 cursor-pointer transition-colors"
+              class="prediction-row no-hover border-t border-gray-100 cursor-pointer"
               :class="isSelected(team.code) ? 'bg-indigo-100' : 'hover:bg-gray-100'"
+              :data-team-code="team.code"
               @click="teamClick(team.code)"
             >
               <td class="py-1.5 text-gray-500" x-text="team.position"></td>

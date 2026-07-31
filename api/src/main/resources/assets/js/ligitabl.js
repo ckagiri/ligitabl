@@ -1459,10 +1459,10 @@ window.Ligitabl.whatIfRecapCard = function (el) {
 
         // Glyph for how a single guess graded, rendered in a coloured circle beside the (square)
         // guessed-outcome badge. A draw guess that landed within one goal is the "half" case —
-        // right instinct, wrong result — hence the tilde rather than a tick. The loss cross sits
-        // next to a draw pick's "X", but the circle and colour keep the two apart.
+        // right instinct, wrong result — hence the tilde rather than a tick. Loss is a dash rather
+        // than a cross so it never reads as a repeat of a draw pick's "X".
         whatIfRecapMark(grade) {
-            return { WIN: "✓", DRAW: "~", LOSS: "✗" }[grade] || "";
+            return { WIN: "✓", DRAW: "~", LOSS: "–" }[grade] || "";
         },
 
         whatIfRecapMarkClass(grade) {
@@ -1475,17 +1475,21 @@ window.Ligitabl.whatIfRecapCard = function (el) {
             );
         },
 
+        whatIfRecapNumber(index) {
+            return String(index + 1).padStart(2, "0");
+        },
+
         // Shareable summary of the whole round — always the full list, not just the open bucket:
         // "3W 1D 1L" only reads correctly against every match.
         buildWhatIfRecapShareText() {
             const d = this.whatIfRecapData;
             const emoji = { WIN: "✅", DRAW: "🟡", LOSS: "❌" };
             const header =
-                `My GW${d.round} What-If — ` +
+                `My GW${d.round} Predictions — ` +
                 `${d.wins.length}W ${d.draws.length}D ${d.losses.length}L ⚽`;
             const lines = d.all.map(
-                (l) =>
-                    `${l.homeTeamCode} – ${l.awayTeamCode}  ${l.actualScore.replace(/ /g, "")}  ${l.guessedOutcome} ${emoji[l.grade] || ""}`
+                (l, i) =>
+                    `${this.whatIfRecapNumber(i)}. ${l.homeTeamCode} – ${l.awayTeamCode}  ${l.actualScore.replace(/ /g, "")}  ${l.guessedOutcome} ${emoji[l.grade] || ""}`
             );
             return `${header}\n${lines.join("\n")}\n\nPredict the table — LigiPredictor.com`;
         },

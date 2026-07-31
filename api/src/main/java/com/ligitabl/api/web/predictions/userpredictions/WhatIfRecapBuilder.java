@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Score;
+import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.WhatIfScore;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.WhatIfPredictionRepo;
@@ -79,6 +80,8 @@ public class WhatIfRecapBuilder {
             WhatIfRecap.Line line = new WhatIfRecap.Line(
                     match.getHomeTeam().getCode(),
                     match.getAwayTeam().getCode(),
+                    displayName(match.getHomeTeam()),
+                    displayName(match.getAwayTeam()),
                     actual.getHomeGoals() + " - " + actual.getAwayGoals(),
                     outcomeLetter(outcomeOf(guess.homeGoals(), guess.awayGoals())),
                     grade.name());
@@ -116,6 +119,11 @@ public class WhatIfRecapBuilder {
         }
         int margin = Math.abs(actual.getHomeGoals() - actual.getAwayGoals());
         return margin == 1 ? Grade.DRAW : Grade.LOSS;
+    }
+
+    /** Same shorter-name-with-fallback rule the rest of the UI uses (see {@code TeamRankDto}). */
+    private String displayName(Team team) {
+        return team.getShorterName() != null ? team.getShorterName() : team.getShortName();
     }
 
     private Outcome outcomeOf(int homeGoals, int awayGoals) {

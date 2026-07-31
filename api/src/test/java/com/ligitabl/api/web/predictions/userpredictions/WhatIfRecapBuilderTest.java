@@ -130,6 +130,8 @@ class WhatIfRecapBuilderTest {
         assertThat(recap.wins().get(0).actualScore()).isEqualTo("1 - 0");
         assertThat(recap.wins().get(0).homeTeamCode()).isEqualTo("ARS");
         assertThat(recap.wins().get(0).awayTeamCode()).isEqualTo("CHE");
+        assertThat(recap.wins().get(0).homeTeamShorterName()).isEqualTo("Arsenal");
+        assertThat(recap.wins().get(0).awayTeamShorterName()).isEqualTo("Chelsea");
 
         // `all` keeps the round's fixture order and carries the grade for the per-match marks.
         assertThat(recap.all()).hasSize(3);
@@ -164,6 +166,23 @@ class WhatIfRecapBuilderTest {
         matches.add(match(matchId, MatchStatus.POSTPONED, null));
 
         assertThat(build()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("shorter name falls back to short name when unset")
+    void shorterNameFallsBackToShortName() {
+        UUID matchId = UUID.randomUUID();
+        guesses.add(new WhatIfScore(matchId, 1, 0));
+        matches.add(Match.builder()
+                .id(matchId)
+                .roundId(roundId)
+                .status(MatchStatus.FINISHED)
+                .score(Score.builder().homeGoals(1).awayGoals(0).build())
+                .homeTeam(Team.builder().tla("ARS").shortName("Arsenal FC").build())
+                .awayTeam(Team.builder().tla("CHE").shortName("Chelsea FC").build())
+                .build());
+
+        assertThat(recap().all().get(0).homeTeamShorterName()).isEqualTo("Arsenal FC");
     }
 
     @Test
@@ -216,8 +235,8 @@ class WhatIfRecapBuilderTest {
                 .roundId(roundId)
                 .status(status)
                 .score(score)
-                .homeTeam(Team.builder().tla("ARS").build())
-                .awayTeam(Team.builder().tla("CHE").build())
+                .homeTeam(Team.builder().tla("ARS").shorterName("Arsenal").build())
+                .awayTeam(Team.builder().tla("CHE").shorterName("Chelsea").build())
                 .build();
     }
 }
