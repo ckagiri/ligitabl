@@ -92,6 +92,10 @@ public class WhatIfController {
         }
         Season season = seasonOpt.get();
 
+        if (!isOpenForWhatIf(season)) {
+            return bounceToMyTable(response, hxRequest);
+        }
+
         UUID mainContestId = season.getMainContestId();
         boolean hasMainContestEntry =
                 mainContestId != null && contestRepo.existsByUserAndContest(userDetails.getUserId(), mainContestId);
@@ -168,6 +172,10 @@ public class WhatIfController {
                 .findByUserAndRound(userId, roundId)
                 .map(WhatIfPrediction::getScores)
                 .orElseGet(List::of));
+    }
+
+    private boolean isOpenForWhatIf(Season season) {
+        return !season.isCompleted() && !season.isInSetupMode() && (season.isInPlay() || season.isPreSeason());
     }
 
     private String bounceToMyTable(HttpServletResponse response, String hxRequest) {
@@ -276,7 +284,7 @@ public class WhatIfController {
     private int toHttpStatus(WhatIfError error) {
         return switch (error) {
             case WhatIfError.SeasonNotFound __ -> 404;
-            case WhatIfError.SeasonNotInPlay __ -> 409;
+            case WhatIfError.SeasonNotOpen __ -> 409;
             case WhatIfError.SeasonCompleted __ -> 409;
             case WhatIfError.SeasonInSetupMode __ -> 409;
             case WhatIfError.RoundNotFound __ -> 404;
@@ -291,7 +299,7 @@ public class WhatIfController {
     private String errorMessage(WhatIfError error) {
         return switch (error) {
             case WhatIfError.SeasonNotFound __ -> "No active season found";
-            case WhatIfError.SeasonNotInPlay __ -> "Season is not currently in play";
+            case WhatIfError.SeasonNotOpen __ -> "Season is not open for what-if right now";
             case WhatIfError.SeasonCompleted __ -> "Season has been completed";
             case WhatIfError.SeasonInSetupMode __ -> "Season is being reconfigured. Please try again shortly.";
             case WhatIfError.RoundNotFound __ -> "Current round not found";
