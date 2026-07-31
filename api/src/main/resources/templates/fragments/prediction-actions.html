@@ -111,7 +111,11 @@
       </div>
     </div>
 
-    <!-- Cooldown notices -->
+    <!-- Changes Summary -->
+    <div th:replace="~{fragments/prediction-actions :: changes-summary}"></div>
+
+    <!-- Cooldown notices — why the submit button below is unavailable. Sits after the changes
+         summary so the order reads: what you changed, why you can't submit it yet, the button. -->
     <p
       x-show="canInteract && !canSwap && !isInitialPrediction && isRoundOpen"
       class="text-xs text-yellow-700 text-center"
@@ -124,9 +128,6 @@
     >
       Round is not open — submit resumes when the next round opens.
     </p>
-
-    <!-- Changes Summary -->
-    <div th:replace="~{fragments/prediction-actions :: changes-summary}"></div>
 
     <!-- Submit Button — takes over once the floating pill hides near the footer.
          Uses `invisible` (not x-show) so this slot always reserves its height: toggling

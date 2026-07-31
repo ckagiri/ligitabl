@@ -12,8 +12,12 @@
     x-data="{ compareOptionsOpen: window.matchMedia('(min-width: 640px)').matches }"
     x-init="$el.previousElementSibling && $el.previousElementSibling.hasAttribute('x-skeleton') && $el.previousElementSibling.remove()"
     th:fragment="comparison-options(hasFormData, showMoveHelperText)"
-    class="px-6 pt-4 pb-2 max-sm:mx-6 max-sm:mt-4 max-sm:overflow-hidden max-sm:rounded-lg max-sm:border max-sm:border-gray-200 max-sm:px-0 max-sm:pt-0 max-sm:pb-0"
+    class="px-6 pt-4 pb-2"
   >
+    <!-- Mobile card chrome lives on this inner wrapper, not the root. The root spaces itself with
+         padding: as the card's first child it would otherwise have its top *margin* collapse out
+         through the (unpadded) parent card, leaving no gap above "Show on table" on mobile. -->
+    <div class="max-sm:overflow-hidden max-sm:rounded-lg max-sm:border max-sm:border-gray-200">
     <!-- Desktop: original plain text+chevron toggle (unchanged) -->
     <button
       type="button"
@@ -186,6 +190,7 @@
           (move down).
         </span>
       </p>
+    </div>
     </div>
   </div>
 

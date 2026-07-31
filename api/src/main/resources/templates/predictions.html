@@ -450,34 +450,6 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
               ></div>
             </th:block>
 
-            <!-- Actions Footer (editable + cooldown-interactive states; also used for pre-season registration).
-                 footerVisible is shared between the inline "actions" button and the floating pill so exactly
-                 one of them is ever showing: the pill while scrolling, the inline one once the footer is near. -->
-            <th:block
-              th:if="${canInteractEffective}"
-            >
-              <div
-                x-data="{ footerVisible: false }"
-                x-init="
-                  const footer = document.querySelector('footer');
-                  if (footer) {
-                    new IntersectionObserver(
-                      (entries) => { footerVisible = entries[0].isIntersecting; }
-                    ).observe(footer);
-                  }
-                "
-              >
-                <div
-                  x-show="canInteract || isInitialPrediction"
-                  th:replace="~{fragments/prediction-actions :: actions}"
-                ></div>
-                <div
-                  x-show="canInteract || isInitialPrediction"
-                  th:replace="~{fragments/prediction-actions :: floating-submit}"
-                ></div>
-              </div>
-            </th:block>
-
             <!-- Swap History (own predictions only, collapsible) — part of the round's result
                  view, so it lives inside this card rather than as a section of its own. -->
             <div
@@ -519,7 +491,9 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
                     th:each="entry, iterStat : ${swapHistory}"
                     class="px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1"
                   >
-                    <span class="text-sm font-mono text-gray-700">
+                    <!-- whitespace-nowrap + scroll: one swap is one line, so the A→B ↔ B→A
+                         symmetry survives on narrow screens instead of orphaning the last "#17". -->
+                    <span class="text-sm font-mono text-gray-700 whitespace-nowrap overflow-x-auto max-w-full">
                       <span class="text-gray-300 mr-1.5 select-none" th:text="${iterStat.count} + '.'">1.</span>
                       <span class="font-semibold text-gray-900" th:text="${entry.teamACode}">ARS</span>
                       <span class="text-gray-400">#</span><span th:text="${entry.teamAFrom}">1</span>
@@ -540,7 +514,45 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
                 </ul>
               </div>
             </div>
+
+            <!-- Actions Footer (editable + cooldown-interactive states; also used for pre-season registration).
+                 footerVisible is shared between the inline "actions" button and the floating pill so exactly
+                 one of them is ever showing: the pill while scrolling, the inline one once the footer is near. -->
+            <th:block
+              th:if="${canInteractEffective}"
+            >
+              <div
+                x-data="{ footerVisible: false }"
+                x-init="
+                  const footer = document.querySelector('footer');
+                  if (footer) {
+                    new IntersectionObserver(
+                      (entries) => { footerVisible = entries[0].isIntersecting; }
+                    ).observe(footer);
+                  }
+                "
+              >
+                <div
+                  x-show="canInteract || isInitialPrediction"
+                  th:replace="~{fragments/prediction-actions :: actions}"
+                ></div>
+                <div
+                  x-show="canInteract || isInitialPrediction"
+                  th:replace="~{fragments/prediction-actions :: floating-submit}"
+                ></div>
+              </div>
+            </th:block>
+
           </div>
+
+          <!-- Share your prediction (see fragments/share-prediction.html) — its own card below the
+               table, i.e. after the thing being shared. Starts collapsed, unlike the settings page,
+               since it's secondary to the table itself. Hidden on historical views (see
+               UserPredictionsController.addShareData). -->
+          <div
+            th:replace="~{fragments/share-prediction :: card(
+              'bg-white rounded-lg shadow-sm mb-6 overflow-hidden', 'false')}"
+          ></div>
 
           <!-- What-If recap: its own section (see fragments/what-if-recap.html) -->
           <div th:replace="~{fragments/what-if-recap :: recap}"></div>

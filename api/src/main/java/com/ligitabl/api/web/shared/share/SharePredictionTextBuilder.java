@@ -31,7 +31,7 @@ public class SharePredictionTextBuilder {
         StringBuilder text = new StringBuilder();
         text.append("🏆 My ")
                 .append(preSeason ? "early " : "")
-                .append("Premier-League Gameweek ")
+                .append("Gameweek ")
                 .append(round)
                 .append(" Prediction:\n\n");
         appendTeamLines(text, sorted, teamsByCode);

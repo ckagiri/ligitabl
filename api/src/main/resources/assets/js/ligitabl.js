@@ -960,6 +960,15 @@ window.Ligitabl.whatIfPage = function (el) {
             this.originalTeams = Ligitabl._mapServerPredictions(parsed.predictions);
             this._restoreWhatIfSession();
             this._reconcileWithServer();
+            this._autoApplyOnLoad();
+        },
+        // Only ever fires when the round is open (a closed round would fail server-side)
+        // and when nothing is computed yet, so a restored local session with its own
+        // standings is left alone.
+        _autoApplyOnLoad() {
+            if (!this.roundOpen || this.hasComputed || this.isComputing) return;
+            if (!this.allScoresEntered()) return;
+            this.apply();
         },
         // Cross-device sync at page load, from the scores the server rendered into the page. Silent
         // by design — a confirm dialog on page load would be intolerable, and there's nothing on
@@ -1144,7 +1153,7 @@ window.Ligitabl.whatIfPage = function (el) {
             const lines = visible.map(
                 (m, i) => `${String(i + 1).padStart(width, "0")}. ${m.homeTeamCode} – ${m.awayTeamCode}  ${outcomeMap[this.scoreOutcome(m.matchId)] ?? "?"}`
             );
-            return `My GW${this.currentRound} Predictions ⚽\n${lines.join("\n")}\n\nPredict the table — LigiPredictor.com`;
+            return `My Gameweek ${this.currentRound} Predictions ⚽\n${lines.join("\n")}\n\nPredict the table — LigiPredictor.com`;
         },
         scoreOutcome(matchId) {
             const s = this.scores[matchId];
