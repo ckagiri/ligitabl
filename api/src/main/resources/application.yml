@@ -45,6 +45,11 @@ server:
   servlet:
     session:
       timeout: 1d
+      cookie:
+        # Without this the SESSION cookie is a browser-session cookie (Spring Session's
+        # default max-age is -1). Mobile browsers evict those when they reclaim tabs, which
+        # drops the session and forces a fall back to remember-me on every phone visit.
+        max-age: 1d
   error:
     include-message: never
     include-stacktrace: never
@@ -116,7 +121,10 @@ ligitabl:
     email-verification-resend-cooldown-minutes: ${EMAIL_VERIFICATION_RESEND_COOLDOWN_MINUTES:2}
     remember-me:
       key: ${REMEMBER_ME_KEY:dev-remember-me-key}
-      token-validity-seconds: ${REMEMBER_ME_TOKEN_VALIDITY_SECONDS:1209600}
+      # 60 days. This, not the session, is what decides how long a user stays logged in —
+      # it slides, refreshed on every auto-login. Sized for a season-long app where someone
+      # may skip a few rounds; at the previous 14 days a three-week absence meant a logout.
+      token-validity-seconds: ${REMEMBER_ME_TOKEN_VALIDITY_SECONDS:5184000}
 
   email:
     provider: ${EMAIL_PROVIDER:logging}

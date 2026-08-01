@@ -42,7 +42,7 @@ class RaceTolerantPersistentTokenRememberMeServicesTest {
     private static final String SERIES = "series-abc";
     private static final String STORED_TOKEN = "stored-token";
     private static final String USERNAME = "ada@example.com";
-    private static final int VALIDITY_SECONDS = 1_209_600; // 14 days, as configured in application.yml
+    private static final int VALIDITY_SECONDS = 5_184_000; // 60 days, as configured in application.yml
 
     private PersistentTokenRepository tokenRepository;
     private RaceTolerantPersistentTokenRememberMeServices services;
