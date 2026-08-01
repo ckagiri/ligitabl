@@ -25,7 +25,6 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.rememberme.JdbcTokenRepositoryImpl;
-import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices;
 import org.springframework.security.web.authentication.rememberme.PersistentTokenRepository;
 
 import com.ligitabl.api.auth.impersonation.ClearImpersonationLogoutHandler;
@@ -33,6 +32,7 @@ import com.ligitabl.api.auth.oauth2.CustomOAuth2UserService;
 import com.ligitabl.api.auth.oauth2.OAuth2AuthenticationSuccessHandler;
 import com.ligitabl.api.auth.security.JwtAuthenticationFilter;
 import com.ligitabl.api.auth.security.QuietRememberMeServices;
+import com.ligitabl.api.auth.security.RaceTolerantPersistentTokenRememberMeServices;
 import com.ligitabl.api.auth.security.TokenGenerator;
 
 @Configuration
@@ -139,7 +139,7 @@ public class SecurityConfig {
     public RememberMeServices rememberMeServices(
             @Qualifier("webUserDetailsService") UserDetailsService userDetailsService,
             PersistentTokenRepository persistentTokenRepository) {
-        var services = new PersistentTokenBasedRememberMeServices(
+        var services = new RaceTolerantPersistentTokenRememberMeServices(
                 rememberMeKey, userDetailsService, persistentTokenRepository);
         services.setParameter("rememberMe");
         services.setTokenValiditySeconds(rememberMeTokenValiditySeconds);
@@ -156,7 +156,7 @@ public class SecurityConfig {
     public RememberMeServices oauth2RememberMeServices(
             @Qualifier("webUserDetailsService") UserDetailsService userDetailsService,
             PersistentTokenRepository persistentTokenRepository) {
-        var services = new PersistentTokenBasedRememberMeServices(
+        var services = new RaceTolerantPersistentTokenRememberMeServices(
                 rememberMeKey, userDetailsService, persistentTokenRepository);
         services.setAlwaysRemember(true);
         services.setTokenValiditySeconds(rememberMeTokenValiditySeconds);

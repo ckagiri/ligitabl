@@ -83,3 +83,5 @@ databaseChangeLog:
       file: db/changelog/20260724_3_user_results_email_opt_out.yaml
   - include:
       file: db/changelog/20260730_1_what_if_prediction.yaml
+  - include:
+      file: db/changelog/20260801_1_spring_session.yaml

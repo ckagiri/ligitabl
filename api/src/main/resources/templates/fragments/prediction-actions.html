@@ -134,10 +134,13 @@
 
     <!-- the run reads: what you changed, why you can't submit yet, share it, submit.
          Collapsed by default, and hidden entirely on historical views.
-         -->
+         Width: this column is items-center, so without an explicit width the card sizes to its
+         content — narrow collapsed, wide expanded. self-stretch fills the column, and -mx-6 cancels
+         this fragment's px-6 so the card lines up edge-to-edge with the table card above rather
+         than sitting inset from it. -->
     <div
       th:replace="~{fragments/share-prediction :: card(
-        'w-full max-w-md bg-white rounded-lg shadow-sm overflow-hidden', 'false')}"
+        'self-stretch -mx-6 bg-white rounded-lg shadow-sm overflow-hidden', 'false')}"
     ></div>
 
     <!-- Submit Button — takes over once the floating pill hides near the footer.

@@ -1,0 +1,111 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260801_1_spring_session
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: spring_session
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: spring_session
+            schemaName: public
+            remarks: >-
+              Spring Session JDBC store. Sessions live in Postgres rather than the app
+              container's heap, so a deploy or restart no longer logs every user out.
+              Table, column and index names must stay exactly as
+              JdbcIndexedSessionRepository's SQL expects — this is a transcription of the
+              official schema-postgresql.sql shipped in spring-session-jdbc.
+            columns:
+              - column:
+                  name: primary_id
+                  type: char(36)
+                  constraints:
+                    primaryKey: true
+                    primaryKeyName: spring_session_pk
+                    nullable: false
+              - column:
+                  name: session_id
+                  type: char(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: creation_time
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: last_access_time
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: max_inactive_interval
+                  type: int
+                  constraints:
+                    nullable: false
+              - column:
+                  name: expiry_time
+                  type: bigint
+                  constraints:
+                    nullable: false
+              - column:
+                  name: principal_name
+                  type: varchar(100)
+        - createIndex:
+            tableName: spring_session
+            schemaName: public
+            indexName: spring_session_ix1
+            unique: true
+            columns:
+              - column:
+                  name: session_id
+        - createIndex:
+            tableName: spring_session
+            schemaName: public
+            indexName: spring_session_ix2
+            columns:
+              - column:
+                  name: expiry_time
+        - createIndex:
+            tableName: spring_session
+            schemaName: public
+            indexName: spring_session_ix3
+            columns:
+              - column:
+                  name: principal_name
+        - createTable:
+            tableName: spring_session_attributes
+            schemaName: public
+            columns:
+              - column:
+                  name: session_primary_id
+                  type: char(36)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: attribute_name
+                  type: varchar(200)
+                  constraints:
+                    nullable: false
+              - column:
+                  name: attribute_bytes
+                  type: bytea
+                  constraints:
+                    nullable: false
+        - addPrimaryKey:
+            tableName: spring_session_attributes
+            schemaName: public
+            constraintName: spring_session_attributes_pk
+            columnNames: session_primary_id, attribute_name
+        - addForeignKeyConstraint:
+            constraintName: spring_session_attributes_fk
+            baseTableName: spring_session_attributes
+            baseTableSchemaName: public
+            baseColumnNames: session_primary_id
+            referencedTableName: spring_session
+            referencedTableSchemaName: public
+            referencedColumnNames: primary_id
+            onDelete: CASCADE
