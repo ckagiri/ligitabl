@@ -49,7 +49,10 @@ services:
 
       # Application secrets
       JWT_SECRET: ${JWT_SECRET}
-      REMEMBER_ME_KEY: ${REMEMBER_ME_KEY}
+      # Signs remember-me cookies. Spring refuses to start on an empty key, and compose
+      # would substitute "" for an unset var — so fail at `pull` (before `down`) rather
+      # than leaving prod stopped. Set it in .env.prod on the server.
+      REMEMBER_ME_KEY: ${REMEMBER_ME_KEY:?set REMEMBER_ME_KEY in .env.prod (openssl rand -base64 48)}
       FOOTBALL_DATA_API_TOKEN: ${FOOTBALL_DATA_API_TOKEN}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
