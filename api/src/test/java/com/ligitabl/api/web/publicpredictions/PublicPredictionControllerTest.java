@@ -22,6 +22,7 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.standings.FormService;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.shared.fixtures.FixtureJsonMapper;
+import com.ligitabl.api.web.shared.swap.SwapHistoryFormatter;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
@@ -70,7 +71,8 @@ class PublicPredictionControllerTest {
                 getPublicPredictionUseCase,
                 formService,
                 fixtureJsonMapper,
-                objectMapper);
+                objectMapper,
+                new SwapHistoryFormatter());
 
         competitionId = UUID.randomUUID();
         seasonId = UUID.randomUUID();
@@ -116,6 +118,44 @@ class PublicPredictionControllerTest {
 
         assertThat(view).isEqualTo("error");
         assertThat(response.getStatus()).isEqualTo(404);
+    }
+
+    @Test
+    void redirectToSeasonCurrentRound_redirectsToCanonicalUrl() {
+        when(seasonRepo.findByCompetitionIdAndSlug(competitionId, SeasonSlug.of("2025-26")))
+                .thenReturn(Optional.of(season));
+        when(roundRepo.findById(roundId))
+                .thenReturn(Optional.of(Round.builder().id(roundId).position(7).build()));
+
+        String view = controller.redirectToSeasonCurrentRound(
+                "T2ADsSc8hQ", "2526", new ExtendedModelMap(), new MockHttpServletResponse());
+
+        assertThat(view).isEqualTo("redirect:/u/T2ADsSc8hQ/2526/gw/7");
+    }
+
+    @Test
+    void redirectToSeasonCurrentRound_seasonNotFound_rendersError() {
+        when(seasonRepo.findByCompetitionIdAndSlug(competitionId, SeasonSlug.of("2025-26")))
+                .thenReturn(Optional.empty());
+        Model model = new ExtendedModelMap();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        String view = controller.redirectToSeasonCurrentRound("T2ADsSc8hQ", "2526", model, response);
+
+        assertThat(view).isEqualTo("error");
+        assertThat(response.getStatus()).isEqualTo(404);
+    }
+
+    @Test
+    void redirectToSeasonCurrentRound_invalidSeasonShorthand_rendersError() {
+        Model model = new ExtendedModelMap();
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        String view = controller.redirectToSeasonCurrentRound("T2ADsSc8hQ", "not-a-season", model, response);
+
+        assertThat(view).isEqualTo("error");
+        assertThat(response.getStatus()).isEqualTo(404);
+        verifyNoInteractions(seasonRepo);
     }
 
     @Test

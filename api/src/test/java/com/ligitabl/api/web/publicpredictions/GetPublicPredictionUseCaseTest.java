@@ -17,6 +17,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.shared.season.SeasonPredictionSupport;
 import com.ligitabl.model.auth.PublicId;
+import com.ligitabl.model.domain.Entry;
 import com.ligitabl.model.domain.ResultTeamRank;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundResult;
@@ -27,6 +28,7 @@ import com.ligitabl.model.domain.StandingsMetadata;
 import com.ligitabl.model.domain.StandingsTeamRank;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.domain.User;
+import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundResultRepo;
 import com.ligitabl.model.repo.StandingsRepo;
@@ -54,6 +56,9 @@ class GetPublicPredictionUseCaseTest {
     @Mock
     private TeamRepo teamRepo;
 
+    @Mock
+    private EntryRepo entryRepo;
+
     private GetPublicPredictionUseCase useCase;
 
     private UUID seasonId;
@@ -61,16 +66,18 @@ class GetPublicPredictionUseCaseTest {
     private UUID userId;
     private String publicId;
     private List<TeamRank> baselineRankings;
+    private UUID mainContestId;
 
     @BeforeEach
     void setUp() {
         useCase = new GetPublicPredictionUseCase(
-                seasonPredictionSupport, roundResultRepo, standingsRepo, matchRepo, userRepo, teamRepo);
+                seasonPredictionSupport, roundResultRepo, standingsRepo, matchRepo, userRepo, teamRepo, entryRepo);
 
         seasonId = UUID.randomUUID();
         roundId = UUID.randomUUID();
         userId = UUID.randomUUID();
         publicId = "T2ADsSc8hQ";
+        mainContestId = UUID.randomUUID();
         baselineRankings = List.of(TeamRank.of("ARS", 1), TeamRank.of("LIV", 2));
 
         // TeamRepo lookups aren't the focus of these tests — no team rows means DTOs fall back to
@@ -85,6 +92,7 @@ class GetPublicPredictionUseCaseTest {
         return Season.builder()
                 .id(seasonId)
                 .currentRoundId(roundId)
+                .mainContestId(mainContestId)
                 .maxRounds(maxRounds)
                 .completed(false)
                 .initialRankings(baselineRankings)
@@ -259,6 +267,7 @@ class GetPublicPredictionUseCaseTest {
         when(userRepo.findByPublicId(PublicId.create(publicId))).thenReturn(Optional.of(createUser()));
         when(seasonPredictionSupport.findPrediction(userId, seasonId)).thenReturn(Optional.of(prediction));
         when(roundResultRepo.findByUserAndRound(userId, 8)).thenReturn(Optional.of(roundResult));
+        stubJoinedAtRound(1);
 
         var query = new GetPublicPredictionQuery(publicId, seasonId, 8);
         Either<?, PublicPredictionViewData> result = useCase.execute(query);
@@ -284,7 +293,7 @@ class GetPublicPredictionUseCaseTest {
     }
 
     @Test
-    void requestedRoundBelowUserAtRoundNumber_clampsToMinRound() {
+    void requestedRoundBeforeUserJoined_clampsToMinRound() {
         Season season = createSeason(20);
         Round round = createRound(10, false);
         SeasonPrediction prediction = SeasonPrediction.builder()
@@ -305,13 +314,28 @@ class GetPublicPredictionUseCaseTest {
         when(userRepo.findByPublicId(PublicId.create(publicId))).thenReturn(Optional.of(createUser()));
         when(seasonPredictionSupport.findPrediction(userId, seasonId)).thenReturn(Optional.of(prediction));
         when(roundResultRepo.findByUserAndRound(userId, 6)).thenReturn(Optional.of(roundResult));
+        stubJoinedAtRound(6);
 
-        // Requested round 2 is before this user's atRoundNumber (6) — clamp up to 6, not down.
+        // Requested round 2 is before this user joined (round 6) — clamp up to 6, not down.
         var query = new GetPublicPredictionQuery(publicId, seasonId, 2);
         Either<?, PublicPredictionViewData> result = useCase.execute(query);
 
         assertTrue(result.isRight());
         assertEquals(6, result.get().viewingRound());
+    }
+
+    /**
+     * The nav floor comes from the main-contest {@code Entry.joinedAtRound}, not from
+     * {@code SeasonPrediction.atRoundNumber} — the latter moves forward with every swap, which
+     * would clamp away the user's own earlier rounds.
+     */
+    private void stubJoinedAtRound(int joinedAtRound) {
+        when(entryRepo.findByUserAndContest(userId, mainContestId))
+                .thenReturn(Optional.of(Entry.builder()
+                        .userId(userId)
+                        .contestId(mainContestId)
+                        .joinedAtRound(joinedAtRound)
+                        .build()));
     }
 
     private static StandingsMetadata zeroMetadata() {
