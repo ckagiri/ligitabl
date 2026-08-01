@@ -119,6 +119,37 @@
                 @click="open = !open"
                 class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
               >
+                <span>Where does the default table come from?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                Last season&rsquo;s final standings, with the relegated clubs taken out and the promoted clubs added at the bottom in the order they finished. That&rsquo;s the season baseline &mdash; the same starting point everyone sees before anyone has played a gameweek.
+              </p>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
                 <span>What if I don't use all 5 setup swaps?</span>
                 <svg
                   class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
@@ -323,6 +354,141 @@
                 Once a single gameweek's match kicks off, swapping locks
                 completely for that round — regardless of how many swaps you had
                 left. It reopens when the next gameweek opens.
+              </p>
+            </div>
+          </div>
+
+          <!-- Pre-season & joining later — placed after "Swaps during the season": both the
+               pre-season allowance and what becomes of that table afterwards only make sense once
+               the normal one-swap-per-24h rule has been introduced. -->
+          <p
+            class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
+          >
+            Pre-season &amp; joining later
+          </p>
+          <div class="divide-y divide-gray-100 mb-8">
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>Can I set my own starting table before the season begins?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                Yes. Register during pre-season and submit your table, and that becomes your table when predictions open &mdash; instead of the default baseline. It&rsquo;s the one chance to arrive at gameweek 1 with an order you chose rather than one you inherited.
+              </p>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>How many swaps do I get in pre-season?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                Five &mdash; the same allowance you&rsquo;d get setting up a table for the first time once the season is open. You don&rsquo;t have to use them: submitting the baseline unchanged is a perfectly good starting position.
+              </p>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>Does the pre-season table I submit still count once the season starts?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                It becomes your live table when predictions open. From there the normal swap rules above apply &mdash; the pre-season allowance is for building the table, not a head start on playing the season.
+              </p>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>What table do I start from if I join once the season is under way?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <p
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                For gameweeks 1 and 2 it&rsquo;s the season baseline, since there&rsquo;s little or no real table yet. From gameweek 3 onwards you start from the standings as they were <strong>two gameweeks ago</strong> &mdash; join at GW5 and you start from the GW3 table. That&rsquo;s deliberate: a two-week-old table has moved on enough to give you something to react to, where last gameweek&rsquo;s would leave you with almost nothing to change.
               </p>
             </div>
           </div>
