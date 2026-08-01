@@ -21,7 +21,9 @@
               >
                 Predictions
               </h1>
-              <div class="flex flex-wrap sm:flex-nowrap items-center gap-2 mt-1">
+              <div
+                class="flex flex-wrap sm:flex-nowrap items-center gap-2 mt-1"
+              >
                 <div class="flex flex-wrap items-center gap-2">
                   <span class="text-sm sm:text-base text-gray-600">
                     Gameweek <span th:text="${viewingRound}">19</span>
@@ -72,7 +74,11 @@
                         clip-rule="evenodd"
                       />
                     </svg>
-                    <span class="text-xs font-medium text-blue-700" th:text="${sourceLabel}">Last Season Baseline</span>
+                    <span
+                      class="text-xs font-medium text-blue-700"
+                      th:text="${sourceLabel}"
+                      >Last Season Baseline</span
+                    >
                   </div>
 
                   <!-- What-If (own predictions only, current round — renders read-only/locked
@@ -95,7 +101,9 @@
                       stroke-linecap="round"
                       stroke-linejoin="round"
                     >
-                      <path d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 1 1 4.243 0M9.5 21h5" />
+                      <path
+                        d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 1 1 4.243 0M9.5 21h5"
+                      />
                     </svg>
                     What-If
                   </button>
@@ -108,8 +116,19 @@
                     class="shrink-0 text-gray-400 hover:text-blue-500 transition-colors p-1.5 rounded htmx-indicator:animate-spin"
                     title="Refresh"
                   >
-                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                      <path d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"/>
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="w-4 h-4"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <path
+                        d="M21.5 2v6h-6M2.5 22v-6h6M2 11.5a10 10 0 0 1 18.8-4.3M22 12.5a10 10 0 0 1-18.8 4.2"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -119,16 +138,22 @@
             <!-- Setup Mode Banner (season under admin reconfiguration — swaps/joins paused).
                  Guests can only register/login here, so this admin-state banner isn't relevant to them. -->
             <th:block th:if="${seasonInSetupMode and !isGuest}">
-              <div class="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-4">
-                🛠️ Setup mode: an admin is reconfiguring this season's fixtures. Swaps and new entries are paused until it's back online.
+              <div
+                class="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-4"
+              >
+                🛠️ Setup mode: an admin is reconfiguring this season's fixtures.
+                Swaps and new entries are paused until it's back online.
               </div>
             </th:block>
 
             <!-- Inactive Season Banner (none of off-season/pre-season/in-play apply — treated the
                  same as setup mode: swaps/joins paused until the season is properly configured). -->
             <th:block th:if="${!seasonInSetupMode and isInactive and !isGuest}">
-              <div class="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-4">
-                🛠️ This season isn't active right now. Swaps and new entries are paused until it's configured.
+              <div
+                class="rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm px-4 py-3 mb-4"
+              >
+                🛠️ This season isn't active right now. Swaps and new entries are
+                paused until it's configured.
               </div>
             </th:block>
 
@@ -150,27 +175,50 @@
             <th:block th:if="${isPreSeason}">
               <!-- Registered: predictions not yet open -->
               <th:block th:if="${!isGuest && !canCreateEntry}">
-                <div class="mt-3 rounded-lg bg-green-50 border border-green-200 px-4 py-4">
+                <div
+                  class="mt-3 rounded-lg bg-green-50 border border-green-200 px-4 py-4"
+                >
                   <div class="flex items-start">
-                    <svg class="h-6 w-6 text-green-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd"
+                    <svg
+                      class="h-6 w-6 text-green-600 mt-0.5 mr-3 flex-shrink-0"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
                         d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                        clip-rule="evenodd" />
+                        clip-rule="evenodd"
+                      />
                     </svg>
                     <div>
-                      <p class="text-sm font-semibold text-green-800">✅ You're Registered!</p>
+                      <p class="text-sm font-semibold text-green-800">
+                        ✅ You're Registered!
+                      </p>
                       <p class="text-sm text-green-700 mt-1">
                         Your table is set for the new season.
                         <th:block th:if="${predictionsOpenAt != null}">
-                          Predictions open on <strong th:text="${#temporals.format(predictionsOpenAt, 'dd MMM yyyy')}"></strong>.
+                          Predictions open on
+                          <strong
+                            th:text="${#temporals.format(predictionsOpenAt, 'dd MMM yyyy')}"
+                          ></strong
+                          >.
                         </th:block>
                         <th:block th:if="${daysToPredictions != null}">
-                          <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full bg-green-100 text-xs font-medium text-green-800">
-                            <span th:text="${daysToPredictions}"></span>&nbsp;day<th:block th:if="${daysToPredictions != 1}">s</th:block> to go
+                          <span
+                            class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full bg-green-100 text-xs font-medium text-green-800"
+                          >
+                            <span th:text="${daysToPredictions}"></span
+                            >&nbsp;day<th:block
+                              th:if="${daysToPredictions != 1}"
+                              >s</th:block
+                            >
+                            to go
                           </span>
                         </th:block>
                         <th:block th:if="${predictionsAboutToStart == true}">
-                          <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full bg-green-100 text-xs font-medium text-green-800">
+                          <span
+                            class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full bg-green-100 text-xs font-medium text-green-800"
+                          >
                             Starting soon
                           </span>
                         </th:block>
@@ -181,36 +229,68 @@
               </th:block>
               <!-- Not yet registered: call-to-action (also covers guests previewing pre-season) -->
               <th:block th:if="${isGuest || canCreateEntry}">
-                <div class="mt-3 rounded-lg bg-indigo-50 border border-indigo-200 px-4 py-4" x-data="{ imported: false }"
+                <div
+                  class="mt-3 rounded-lg bg-indigo-50 border border-indigo-200 px-4 py-4"
+                  x-data="{ imported: false }"
                   x-init="imported = localStorage.getItem('ligitabl.guestPrediction') !== null"
-                  @guest-storage-cleared.window="imported = false">
+                  @guest-storage-cleared.window="imported = false"
+                >
                   <div class="flex items-start">
-                    <svg class="h-6 w-6 text-indigo-600 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd"
+                    <svg
+                      class="h-6 w-6 text-indigo-600 mt-0.5 mr-3 flex-shrink-0"
+                      fill="currentColor"
+                      viewBox="0 0 20 20"
+                    >
+                      <path
+                        fill-rule="evenodd"
                         d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
-                        clip-rule="evenodd" />
+                        clip-rule="evenodd"
+                      />
                     </svg>
                     <div>
-                      <p class="text-sm font-semibold text-indigo-800">🚀 Pre-Season</p>
+                      <p class="text-sm font-semibold text-indigo-800">
+                        🚀 Pre-Season
+                      </p>
                       <p class="text-sm text-indigo-700 mt-1">
                         <th:block th:if="${isGuest}">
-                          Tap teams to swap and build your prediction — up to 5 swaps.
-                          <a th:href="@{/auth/register}" class="underline font-medium hover:text-indigo-900">Sign up</a>
+                          Tap teams to swap and build your prediction — up to 5
+                          swaps.
+                          <a
+                            th:href="@{/auth/register}"
+                            class="underline font-medium hover:text-indigo-900"
+                            >Sign up</a
+                          >
                           to save and join the competition.
                         </th:block>
                         <th:block th:if="${!isGuest}">
-                          <span x-show="imported">We've loaded your prediction - review it and
-                            submit<th:block th:if="${!isPreSeasonRegistration}">&nbsp;to join the competition</th:block>.</span>
-                          <span x-show="!imported">Set your predicted order and submit. Take your time —
-                            no swaps needed, but up to 5 to fine-tune.</span>
+                          <span x-show="imported"
+                            >We've loaded your prediction - review it and
+                            submit<th:block th:if="${!isPreSeasonRegistration}"
+                              >&nbsp;to join the competition</th:block
+                            >.</span
+                          >
+                          <span x-show="!imported"
+                            >Set your predicted order and submit. Take your time
+                            — no swaps needed, but up to 5 to fine-tune.</span
+                          >
                         </th:block>
                         <th:block th:if="${daysToPredictions != null}">
-                          <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full bg-indigo-100 text-xs font-medium text-indigo-800">
-                            Competition starts in&nbsp;<span th:text="${daysToPredictions}"></span>&nbsp;day<th:block th:if="${daysToPredictions != 1}">s</th:block>
+                          <span
+                            class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full bg-indigo-100 text-xs font-medium text-indigo-800"
+                          >
+                            Competition starts in&nbsp;<span
+                              th:text="${daysToPredictions}"
+                            ></span
+                            >&nbsp;day<th:block
+                              th:if="${daysToPredictions != 1}"
+                              >s</th:block
+                            >
                           </span>
                         </th:block>
                         <th:block th:if="${predictionsAboutToStart == true}">
-                          <span class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full bg-indigo-100 text-xs font-medium text-indigo-800">
+                          <span
+                            class="inline-flex items-center mt-1 px-2 py-0.5 rounded-full bg-indigo-100 text-xs font-medium text-indigo-800"
+                          >
                             Competition is about to start
                           </span>
                         </th:block>
@@ -223,27 +303,48 @@
 
             <!-- Off-season banner (season completed, predictions not yet open for the new season) -->
             <th:block th:if="${isOffSeason}">
-              <div class="mt-3 rounded-lg bg-slate-50 border border-slate-200 px-4 py-4">
+              <div
+                class="mt-3 rounded-lg bg-slate-50 border border-slate-200 px-4 py-4"
+              >
                 <div class="flex items-start">
-                  <svg class="h-6 w-6 text-slate-500 mt-0.5 mr-3 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                  <svg
+                    class="h-6 w-6 text-slate-500 mt-0.5 mr-3 flex-shrink-0"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
                     <path
-                      d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z" />
+                      d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"
+                    />
                   </svg>
                   <div>
-                    <p class="text-sm font-semibold text-slate-700">🌙 Off-Season</p>
+                    <p class="text-sm font-semibold text-slate-700">
+                      🌙 Off-Season
+                    </p>
                     <th:block th:if="${daysToPreSeason != null}">
                       <p class="text-sm text-slate-600 mt-1">
                         Pre-season opens in
-                        <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-200 text-xs font-medium text-slate-700">
-                          <span th:text="${daysToPreSeason}"></span> day<th:block th:if="${daysToPreSeason != 1}">s</th:block>
+                        <span
+                          class="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-200 text-xs font-medium text-slate-700"
+                        >
+                          <span th:text="${daysToPreSeason}"></span>
+                          day<th:block th:if="${daysToPreSeason != 1}"
+                            >s</th:block
+                          >
                         </span>
                       </p>
                     </th:block>
                     <th:block th:if="${preSeasonAboutToStart == true}">
-                      <p class="text-sm text-slate-600 mt-1">Pre-season is about to open.</p>
+                      <p class="text-sm text-slate-600 mt-1">
+                        Pre-season is about to open.
+                      </p>
                     </th:block>
-                    <th:block th:if="${daysToPreSeason == null and preSeasonAboutToStart != true}">
-                      <p class="text-sm text-slate-600 mt-1">Pre-season dates haven't been announced yet — check back soon.</p>
+                    <th:block
+                      th:if="${daysToPreSeason == null and preSeasonAboutToStart != true}"
+                    >
+                      <p class="text-sm text-slate-600 mt-1">
+                        Pre-season dates haven't been announced yet — check back
+                        soon.
+                      </p>
                     </th:block>
                   </div>
                 </div>
@@ -303,10 +404,7 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
         </div>
 
         <!-- Prediction Table -->
-        <div
-          id="prediction-content"
-          th:fragment="predictionContent"
-        >
+        <div id="prediction-content" th:fragment="predictionContent">
           <!-- Guest view uses localStorage-enabled component -->
           <div
             th:if="${isGuest}"
@@ -326,9 +424,7 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
             ></div>
 
             <!-- Comparison Options for guests (only for current editable round, not historical views) -->
-            <th:block
-              th:if="${!isHistoricalView}"
-            >
+            <th:block th:if="${!isHistoricalView}">
               <!-- Skeleton: visible before Alpine, removed once Alpine initialises -->
               <div x-skeleton class="px-6 pt-4 pb-2">
                 <div class="grid grid-cols-2 gap-x-6 gap-y-2 w-fit">
@@ -336,7 +432,9 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
                   <div class="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
                   <div class="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
                   <div class="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-                  <div class="h-4 w-48 bg-gray-200 rounded animate-pulse col-span-2"></div>
+                  <div
+                    class="h-4 w-48 bg-gray-200 rounded animate-pulse col-span-2"
+                  ></div>
                 </div>
               </div>
               <div
@@ -350,9 +448,14 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
             ></div>
 
             <!-- Skeleton shown while Alpine initialises -->
-            <div x-skeleton class="px-6 py-6 bg-gray-50 border-t border-gray-200">
+            <div
+              x-skeleton
+              class="px-6 py-6 bg-gray-50 border-t border-gray-200"
+            >
               <div class="flex flex-col items-center space-y-3">
-                <div class="h-11 w-56 bg-gray-300 rounded-lg animate-pulse"></div>
+                <div
+                  class="h-11 w-56 bg-gray-300 rounded-lg animate-pulse"
+                ></div>
                 <div class="h-4 w-40 bg-gray-200 rounded animate-pulse"></div>
               </div>
             </div>
@@ -366,7 +469,9 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
               class="px-6 py-6"
             >
               <div class="flex justify-center">
-                <div th:replace="~{fragments/prediction-actions :: changes-summary}"></div>
+                <div
+                  th:replace="~{fragments/prediction-actions :: changes-summary}"
+                ></div>
               </div>
             </div>
 
@@ -409,121 +514,150 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
                     data-access-mode=${accessMode}"
           >
             <div class="bg-white rounded-lg shadow-sm mb-6">
-            <!-- Contextual Swap Instructions Banner (editable + cooldown-interactive states) -->
-            <div
-              th:replace="~{fragments/swap-instructions :: instructions(false, ${canInteractEffective}, ${isInitialPredictionEditable})}"
-            ></div>
+              <!-- Contextual Swap Instructions Banner (editable + cooldown-interactive states) -->
+              <div
+                th:replace="~{fragments/swap-instructions :: instructions(false, ${canInteractEffective}, ${isInitialPredictionEditable})}"
+              ></div>
 
-            <!-- Comparison Options (only for current editable round, not historical views) -->
-            <th:block
-              th:if="${!isHistoricalView}"
-            >
-              <!-- Skeleton: visible before Alpine, removed once Alpine initialises -->
-              <div x-skeleton class="px-6 pt-4 pb-2">
-                <div class="grid grid-cols-2 gap-x-6 gap-y-2 w-fit">
-                  <div class="h-4 w-28 bg-gray-200 rounded animate-pulse"></div>
-                  <div class="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-                  <div class="h-4 w-32 bg-gray-200 rounded animate-pulse"></div>
-                  <div class="h-4 w-24 bg-gray-200 rounded animate-pulse"></div>
-                  <div class="h-4 w-48 bg-gray-200 rounded animate-pulse col-span-2"></div>
+              <!-- Comparison Options (only for current editable round, not historical views) -->
+              <th:block th:if="${!isHistoricalView}">
+                <!-- Skeleton: visible before Alpine, removed once Alpine initialises -->
+                <div x-skeleton class="px-6 pt-4 pb-2">
+                  <div class="grid grid-cols-2 gap-x-6 gap-y-2 w-fit">
+                    <div
+                      class="h-4 w-28 bg-gray-200 rounded animate-pulse"
+                    ></div>
+                    <div
+                      class="h-4 w-24 bg-gray-200 rounded animate-pulse"
+                    ></div>
+                    <div
+                      class="h-4 w-32 bg-gray-200 rounded animate-pulse"
+                    ></div>
+                    <div
+                      class="h-4 w-24 bg-gray-200 rounded animate-pulse"
+                    ></div>
+                    <div
+                      class="h-4 w-48 bg-gray-200 rounded animate-pulse col-span-2"
+                    ></div>
+                  </div>
                 </div>
-              </div>
-              <div
-                th:replace="~{fragments/prediction-table :: comparison-options(true, true)}"
-              ></div>
-            </th:block>
+                <div
+                  th:replace="~{fragments/prediction-table :: comparison-options(true, true)}"
+                ></div>
+              </th:block>
 
-            <!-- Current Round: Interactive Table (when not a historical view) -->
-            <th:block th:if="${!isHistoricalView}">
-              <div
-                th:replace="~{fragments/prediction-table :: interactive-table(alwaysHoverable=false)}"
-              ></div>
-            </th:block>
+              <!-- Current Round: Interactive Table (when not a historical view) -->
+              <th:block th:if="${!isHistoricalView}">
+                <div
+                  th:replace="~{fragments/prediction-table :: interactive-table(alwaysHoverable=false)}"
+                ></div>
+              </th:block>
 
-            <!-- Historical Rounds: Static Table (past rounds or season completed) -->
-            <th:block th:if="${isHistoricalView}">
-              <div
-                th:replace="~{fragments/prediction-historical-view :: historical-view(
+              <!-- Historical Rounds: Static Table (past rounds or season completed) -->
+              <th:block th:if="${isHistoricalView}">
+                <div
+                  th:replace="~{fragments/prediction-historical-view :: historical-view(
                   ${hasRoundResult}, ${roundResultRankings}, ${predictions},
                   ${totalHits}, ${totalScore}, ${zeroesCount},
                   ${seasonBestScore}, ${sprintBestScore}, ${sprintLabel})}"
-              ></div>
-            </th:block>
+                ></div>
+              </th:block>
 
-            <!-- Swap History (own predictions only, collapsible) — part of the round's result
+              <!-- Swap History (own predictions only, collapsible) — part of the round's result
                  view, so it lives inside this card rather than as a section of its own. -->
-            <div
-              th:if="${!isGuest && swapHistory != null && !#lists.isEmpty(swapHistory)}"
-              x-cloak
-              class="border-t border-gray-100"
-              x-data="{ open: false }"
-            >
-              <button
-                @click="open = !open"
-                type="button"
-                class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
+              <div
+                th:if="${!isGuest && swapHistory != null && !#lists.isEmpty(swapHistory)}"
+                x-cloak
+                class="border-t border-gray-100"
+                x-data="{ open: false }"
               >
-                <span class="text-sm font-medium text-gray-700">
-                  Swap history
-                  <span
-                    class="ml-1 text-xs text-gray-400 font-normal"
-                    th:text="'(GW' + ${viewingRound} + ')'"
-                  ></span>
-                </span>
-                <svg
-                  class="h-4 w-4 text-gray-400 transition-transform duration-200"
-                  :class="open ? 'rotate-180' : ''"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
+                <button
+                  @click="open = !open"
+                  type="button"
+                  class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 transition-colors"
                 >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-              <div x-show="open" x-transition class="border-t border-gray-100">
-                <ul class="divide-y divide-gray-100">
-                  <li
-                    th:each="entry, iterStat : ${swapHistory}"
-                    class="px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1"
-                  >
-                    <!-- whitespace-nowrap + scroll: one swap is one line, so the A→B ↔ B→A
-                         symmetry survives on narrow screens instead of orphaning the last "#17". -->
-                    <span class="text-sm font-mono text-gray-700 whitespace-nowrap overflow-x-auto max-w-full">
-                      <span class="text-gray-300 mr-1.5 select-none" th:text="${iterStat.count} + '.'">1.</span>
-                      <span class="font-semibold text-gray-900" th:text="${entry.teamACode}">ARS</span>
-                      <span class="text-gray-400">#</span><span th:text="${entry.teamAFrom}">1</span>
-                      <span class="text-gray-400">→</span>
-                      <span class="text-gray-400">#</span><span th:text="${entry.teamATo}">4</span>
-                      <span class="mx-1 font-bold text-indigo-500">↔</span>
-                      <span class="font-semibold text-gray-900" th:text="${entry.teamBCode}">CHE</span>
-                      <span class="text-gray-400">#</span><span th:text="${entry.teamBFrom}">4</span>
-                      <span class="text-gray-400">→</span>
-                      <span class="text-gray-400">#</span><span th:text="${entry.teamBTo}">1</span>
-                    </span>
+                  <span class="text-sm font-medium text-gray-700">
+                    Swap history
                     <span
-                      class="text-xs text-gray-400 whitespace-nowrap"
-                      th:attr="data-timestamp=${entry.formattedTime}"
-                      th:text="${entry.formattedTime}"
-                    >2026-02-12T14:23:00Z</span>
-                  </li>
-                </ul>
+                      class="ml-1 text-xs text-gray-400 font-normal"
+                      th:text="'(GW' + ${viewingRound} + ')'"
+                    ></span>
+                  </span>
+                  <svg
+                    class="h-4 w-4 text-gray-400 transition-transform duration-200"
+                    :class="open ? 'rotate-180' : ''"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </button>
+                <div
+                  x-show="open"
+                  x-transition
+                  class="border-t border-gray-100"
+                >
+                  <ul class="divide-y divide-gray-100">
+                    <li
+                      th:each="entry, iterStat : ${swapHistory}"
+                      class="px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1"
+                    >
+                      <!-- whitespace-nowrap + scroll: one swap is one line, so the A→B ↔ B→A
+                         symmetry survives on narrow screens instead of orphaning the last "#17". -->
+                      <span
+                        class="text-sm font-mono text-gray-700 whitespace-nowrap overflow-x-auto max-w-full"
+                      >
+                        <span
+                          class="text-gray-300 mr-1.5 select-none"
+                          th:text="${iterStat.count} + '.'"
+                          >1.</span
+                        >
+                        <span
+                          class="font-semibold text-gray-900"
+                          th:text="${entry.teamACode}"
+                          >ARS</span
+                        >
+                        <span class="text-gray-400">#</span
+                        ><span th:text="${entry.teamAFrom}">1</span>
+                        <span class="text-gray-400">→</span>
+                        <span class="text-gray-400">#</span
+                        ><span th:text="${entry.teamATo}">4</span>
+                        <span class="mx-1 font-bold text-indigo-500">↔</span>
+                        <span
+                          class="font-semibold text-gray-900"
+                          th:text="${entry.teamBCode}"
+                          >CHE</span
+                        >
+                        <span class="text-gray-400">#</span
+                        ><span th:text="${entry.teamBFrom}">4</span>
+                        <span class="text-gray-400">→</span>
+                        <span class="text-gray-400">#</span
+                        ><span th:text="${entry.teamBTo}">1</span>
+                      </span>
+                      <span
+                        class="text-xs text-gray-400 whitespace-nowrap"
+                        th:attr="data-timestamp=${entry.formattedTime}"
+                        th:text="${entry.formattedTime}"
+                        >2026-02-12T14:23:00Z</span
+                      >
+                    </li>
+                  </ul>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- footerVisible is shared between the inline "actions" button and the floating pill so exactly
+            <!-- footerVisible is shared between the inline "actions" button and the floating pill so exactly
                one of them is ever showing: the pill while scrolling, the inline one once the footer is near. -->
-          <th:block
-            th:if="${canInteractEffective}"
-          >
-            <div
-              x-data="{ footerVisible: false }"
-              x-init="
+            <th:block th:if="${canInteractEffective}">
+              <div
+                x-data="{ footerVisible: false }"
+                x-init="
                 const footer = document.querySelector('footer');
                 if (footer) {
                   new IntersectionObserver(
@@ -531,18 +665,25 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
                   ).observe(footer);
                 }
               "
-            >
-              <div
-                x-show="canInteract || isInitialPrediction"
-                th:replace="~{fragments/prediction-actions :: actions}"
-              ></div>
-              <div
-                x-show="canInteract || isInitialPrediction"
-                th:replace="~{fragments/prediction-actions :: floating-submit}"
-              ></div>
-            </div>
-          </th:block>
+              >
+                <div
+                  x-show="canInteract || isInitialPrediction"
+                  th:replace="~{fragments/prediction-actions :: actions}"
+                ></div>
+                <div
+                  x-show="canInteract || isInitialPrediction"
+                  th:replace="~{fragments/prediction-actions :: floating-submit}"
+                ></div>
+              </div>
+            </th:block>
 
+            <!-- Mutually exclusive with the copy insidec the actions footer, so exactly one ever renders. -->
+            <th:block th:if="${!canInteractEffective}">
+              <div
+                th:replace="~{fragments/share-prediction :: card(
+                'bg-white rounded-lg shadow-sm mb-6 overflow-hidden', 'false')}"
+              ></div>
+            </th:block>
           </div>
 
           <!-- What-If recap: its own section (see fragments/what-if-recap.html) -->
