@@ -104,15 +104,18 @@
     <div
       class="inline-flex flex-col items-center px-6 py-3 bg-gray-50 rounded-lg border border-gray-200"
     >
+      <!-- Same shape as the owner's own historical summary (prediction-historical-view.html), with
+           a "Score:" label since a visitor arriving on a share link has no context for a bare sum. -->
       <div class="flex items-center text-sm text-gray-600 mb-1">
-        <span class="font-mono">200</span>
+        <span class="mr-1">Score:</span>
+        <span class="font-mono" th:text="${maxHitPoints}">200</span>
         <span class="mx-2">−</span>
-        <span class="font-mono" th:text="${totalHits}">44</span>
+        <span class="font-mono" th:text="${totalHits}">92</span>
         <span class="mx-2">=</span>
         <span
           class="font-mono font-bold text-gray-900"
           th:text="${totalScore}"
-          >156</span
+          >108</span
         >
         <span class="ml-1">points</span>
         <span class="ml-1">
@@ -121,7 +124,12 @@
       </div>
 
       <div class="text-xs text-green-600 font-semibold">
-        🎯 <span th:text="${zeroesCount}">5</span> perfect predictions!
+        🎯 <span th:text="${zeroesCount}">0</span> perfect predictions!
+      </div>
+
+      <div class="text-xs text-gray-500">
+        (Max: <span th:text="${maxHitPoints}">200</span>, Lost:
+        <span th:text="${totalHits}">92</span>)
       </div>
     </div>
   </div>

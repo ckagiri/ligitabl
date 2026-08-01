@@ -15,6 +15,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.standings.FormService;
 import com.ligitabl.api.web.shared.fixtures.FixtureJsonMapper;
+import com.ligitabl.api.web.shared.swap.SwapHistoryFormatter;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
@@ -43,6 +44,7 @@ public class PublicPredictionController {
     private final FormService formService;
     private final FixtureJsonMapper fixtureJsonMapper;
     private final ObjectMapper objectMapper;
+    private final SwapHistoryFormatter swapHistoryFormatter;
 
     /**
      * GET /u/{publicId}/gw — resolves the active season's current round and redirects to the
@@ -69,6 +71,50 @@ public class PublicPredictionController {
 
         return "redirect:"
                 + canonicalUrl(publicId, season.getSlug(), currentRoundOpt.get().getPosition());
+    }
+
+    /**
+     * GET /u/{publicId}/{season} and /u/{publicId}/{season}/gw — same landing behaviour as
+     * {@code /u/{publicId}/gw}, but for an explicitly named season rather than the active one:
+     * resolve that season's current round and redirect to the canonical URL, so a link without a
+     * round still opens on something.
+     *
+     * <p>{@code /u/{publicId}/gw} is a more specific pattern than {@code /u/{publicId}/{season}},
+     * so Spring keeps routing it to the active-season handler above rather than treating "gw" as a
+     * season slug.
+     */
+    @GetMapping({"/u/{publicId}/{season}", "/u/{publicId}/{season}/gw"})
+    public String redirectToSeasonCurrentRound(
+            @PathVariable String publicId, @PathVariable String season, Model model, HttpServletResponse response) {
+        SeasonSlug seasonSlug;
+        try {
+            seasonSlug = SeasonSlug.fromShorthand(season);
+        } catch (IllegalArgumentException e) {
+            return notFound(model, response, "Invalid season: " + season);
+        }
+
+        Optional<Competition> competitionOpt = competitionRepo.findBySlug(competitionDefaults.defaultCompetitionSlug());
+        if (competitionOpt.isEmpty()) {
+            return notFound(model, response, "Competition not found");
+        }
+
+        Optional<Season> seasonOpt =
+                seasonRepo.findByCompetitionIdAndSlug(competitionOpt.get().getId(), seasonSlug);
+        if (seasonOpt.isEmpty()) {
+            return notFound(model, response, "Season not found: " + season);
+        }
+        Season resolvedSeason = seasonOpt.get();
+
+        Optional<Round> currentRoundOpt = roundRepo.findById(resolvedSeason.getCurrentRoundId());
+        if (currentRoundOpt.isEmpty()) {
+            return notFound(model, response, "Current round not found");
+        }
+
+        return "redirect:"
+                + canonicalUrl(
+                        publicId,
+                        resolvedSeason.getSlug(),
+                        currentRoundOpt.get().getPosition());
     }
 
     @GetMapping("/u/{publicId}/{season}/gw/{position}")
@@ -140,6 +186,8 @@ public class PublicPredictionController {
         model.addAttribute("totalScore", data.totalScore());
         model.addAttribute("totalHits", data.totalHits());
         model.addAttribute("zeroesCount", data.zeroesCount());
+        model.addAttribute("maxHitPoints", season.getMaxHitPoints());
+        model.addAttribute("swapHistory", swapHistoryFormatter.format(data.roundSwaps()));
         model.addAttribute(
                 "navBaseUrl", "/u/" + publicId + "/" + season.getSlug().toShorthand());
 

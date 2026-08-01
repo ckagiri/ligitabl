@@ -6,6 +6,7 @@ import java.util.Objects;
 
 import com.ligitabl.api.web.shared.dto.PublicRankDto;
 import com.ligitabl.model.domain.Match;
+import com.ligitabl.model.domain.SwapChange;
 
 import lombok.Builder;
 
@@ -36,13 +37,15 @@ public record PublicPredictionViewData(
         Integer zeroesCount,
         Map<String, List<Match>> matches,
         Map<String, Integer> pointsMap,
-        Map<String, Integer> goalDifferenceMap) {
+        Map<String, Integer> goalDifferenceMap,
+        List<SwapChange> roundSwaps) {
     public PublicPredictionViewData {
         Objects.requireNonNull(rows, "rows are required");
         rows = List.copyOf(rows);
         matches = matches != null ? Map.copyOf(matches) : Map.of();
         pointsMap = pointsMap != null ? Map.copyOf(pointsMap) : Map.of();
         goalDifferenceMap = goalDifferenceMap != null ? Map.copyOf(goalDifferenceMap) : Map.of();
+        roundSwaps = roundSwaps != null ? List.copyOf(roundSwaps) : List.of();
     }
 
     public boolean isCurrentRound() {

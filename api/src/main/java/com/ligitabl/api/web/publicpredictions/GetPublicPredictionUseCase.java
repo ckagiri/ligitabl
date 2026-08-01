@@ -17,11 +17,14 @@ import com.ligitabl.api.web.shared.season.SeasonPredictionSupport;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundResult;
+import com.ligitabl.model.domain.RoundSwap;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonPrediction;
+import com.ligitabl.model.domain.SwapChange;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.domain.User;
+import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundResultRepo;
 import com.ligitabl.model.repo.StandingsRepo;
@@ -45,6 +48,7 @@ public class GetPublicPredictionUseCase {
     private final MatchRepo matchRepo;
     private final UserRepo userRepo;
     private final TeamRepo teamRepo;
+    private final EntryRepo entryRepo;
 
     public sealed interface Error {
         record SeasonNotFound(UUID seasonId) implements Error {}
@@ -104,8 +108,7 @@ public class GetPublicPredictionUseCase {
         Optional<User> userOpt = resolveUser(query.publicId());
         Optional<SeasonPrediction> predictionOpt = userOpt.flatMap(user -> seasonPredictionSupport.findPrediction(
                 user.getId(), ctx.season().getId()));
-        int minRound =
-                predictionOpt.map(sp -> Math.max(1, sp.getAtRoundNumber())).orElse(ctx.currentRound());
+        int minRound = predictionOpt.isEmpty() ? ctx.currentRound() : minRoundForNav(userOpt, ctx);
         int viewingRound = clampRound(query.requestedRound(), minRound, ctx.currentRound());
         String targetDisplayName = userOpt.map(user -> user.getDisplayName()).orElse(null);
 
@@ -119,6 +122,19 @@ public class GetPublicPredictionUseCase {
                 minRound,
                 viewingRound,
                 targetDisplayName);
+    }
+
+    /**
+     * How far back the round navigation may go for the target user.
+     */
+    private int minRoundForNav(Optional<User> userOpt, Ctx ctx) {
+        UUID mainContestId = ctx.season().getMainContestId();
+        if (mainContestId == null) {
+            return ctx.currentRound();
+        }
+        return userOpt.flatMap(user -> entryRepo.findByUserAndContest(user.getId(), mainContestId))
+                .map(entry -> Math.max(1, entry.getJoinedAtRound()))
+                .orElse(ctx.currentRound());
     }
 
     private PublicPredictionViewData buildViewData(Ctx ctx) {
@@ -206,6 +222,7 @@ public class GetPublicPredictionUseCase {
                 .totalHits(sortedRanks.stream().mapToInt(r -> r.getHit()).sum())
                 .zeroesCount(
                         (int) sortedRanks.stream().filter(r -> r.getHit() == 0).count())
+                .roundSwaps(swapsForRound(ctx.predictionOpt(), ctx.viewingRound()))
                 .build();
     }
 
@@ -243,7 +260,20 @@ public class GetPublicPredictionUseCase {
                 .matches(matchRepo.findBySeasonAndRound(season.getId(), ctx.currentRound()))
                 .pointsMap(standingsData.points())
                 .goalDifferenceMap(standingsData.goalDifference())
+                .roundSwaps(swapsForRound(Optional.of(prediction), ctx.currentRound()))
                 .build();
+    }
+
+    /**
+     * The target user's swaps for one round — same lookup {@code GetUserPredictionUseCase} does for
+     * the owner's own view, so the public page's "Swap history" lists exactly what the owner sees.
+     */
+    private List<SwapChange> swapsForRound(Optional<SeasonPrediction> predictionOpt, int round) {
+        return predictionOpt.map(SeasonPrediction::getSwaps).orElseGet(List::of).stream()
+                .filter(rs -> rs.getRound() == round)
+                .findFirst()
+                .map(RoundSwap::getChanges)
+                .orElseGet(List::of);
     }
 
     /** Positions, points, and GD from a single {@code Standings} row, plus its raw rankings. */

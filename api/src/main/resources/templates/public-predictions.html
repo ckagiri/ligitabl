@@ -66,6 +66,8 @@
             th:replace="~{fragments/prediction-public-view :: public-view(
               ${rows}, ${hasRoundResult}, ${totalScore}, ${totalHits}, ${zeroesCount})}"
           ></div>
+          <!-- Collapsed: on someone else's table the swaps are context, not the point. -->
+          <div th:replace="~{fragments/swap-history :: history(false)}"></div>
         </div>
 
         <!-- Current/live round: comparison-options (standings/points/GD/fixtures/form) + rich table -->
@@ -83,6 +85,7 @@
         >
           <div th:replace="~{fragments/prediction-table :: comparison-options(${hasFormData}, false)}"></div>
           <div th:replace="~{fragments/prediction-public-view :: public-rich-table}"></div>
+          <div th:replace="~{fragments/swap-history :: history(false)}"></div>
         </div>
       </div>
     </div>

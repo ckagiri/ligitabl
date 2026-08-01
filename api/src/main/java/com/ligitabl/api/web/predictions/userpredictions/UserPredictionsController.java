@@ -36,11 +36,12 @@ import com.ligitabl.api.web.shared.error.ErrorViewMapper;
 import com.ligitabl.api.web.shared.fixtures.FixtureJsonMapper;
 import com.ligitabl.api.web.shared.season.SeasonPhase;
 import com.ligitabl.api.web.shared.season.SeasonPredictionSupport;
+import com.ligitabl.api.web.shared.swap.SwapHistoryFormatter;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.ResultTeamRank;
+import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.SwapChange;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.domain.User;
@@ -70,6 +71,7 @@ public class UserPredictionsController {
     private final RoundRepo roundRepo;
     private final WhatIfRecapBuilder whatIfRecapBuilder;
     private final SeasonPredictionSupport seasonPredictionSupport;
+    private final SwapHistoryFormatter swapHistoryFormatter;
 
     /**
      * GET /predictions/user/me - View current user's prediction.
@@ -117,6 +119,13 @@ public class UserPredictionsController {
 
         GetUserPredictionQuery query = buildQueryForMe(resolvedUserId, round, season);
 
+        // Canonicalise: a ?round= that resolves to the current round renders exactly what the bare
+        // URL does, so send it there rather than serving the same page under two URLs. Also covers
+        // out-of-range values, which resolveRound clamps to current.
+        if (round != null && resolvesToCurrentRound(season, query)) {
+            return "redirect:/my-table";
+        }
+
         Either<UseCaseError, UserPredictionViewData> result = getUserPredictionUseCase.execute(query);
 
         return result.fold(
@@ -142,15 +151,40 @@ public class UserPredictionsController {
             return handleNoActiveSeason(model, response, hxRequest);
         }
 
+        // Guests get no round navigation (see predictions.html — the nav is th:if="${!isGuest}"),
+        // so any ?round= here is a hand-typed or stale URL with no way to have been reached from
+        // the UI. Send every one of them to the canonical guest URL rather than serving a past
+        // round nothing links to. The authenticated /me path keeps its nav, so it only
+        // canonicalises the current round.
+        if (round != null) {
+            return "redirect:/my-table/guest";
+        }
+
         Season season = seasonOpt.get();
-        UUID activeSeasonId = season.getId();
-        GetUserPredictionQuery query = GetUserPredictionQuery.forGuest(activeSeasonId, round);
+        GetUserPredictionQuery query = GetUserPredictionQuery.forGuest(season.getId(), round);
 
         Either<UseCaseError, UserPredictionViewData> result = getUserPredictionUseCase.execute(query);
 
         return result.fold(
                 error -> handleError(error, model, response, hxRequest),
                 data -> handleSuccess(data, model, hxRequest, season, null));
+    }
+
+    /**
+     * Whether an explicit {@code ?round=} lands on the current round once
+     * {@link GetUserPredictionQuery#resolveRound} has had its say — reusing that method rather than
+     * re-deriving the rule, so the redirect can't disagree with what would have been rendered. Also
+     * catches out-of-range values, which resolveRound clamps to current.
+     */
+    private boolean resolvesToCurrentRound(Season season, GetUserPredictionQuery query) {
+        Integer currentRound = roundRepo
+                .findById(season.getCurrentRoundId())
+                .map(Round::getPosition)
+                .orElse(null);
+        if (currentRound == null) {
+            return false;
+        }
+        return query.resolveRound(currentRound, season.getMaxRounds()) == currentRound.intValue();
     }
 
     /**
@@ -306,6 +340,7 @@ public class UserPredictionsController {
         model.addAttribute(
                 "userId", currentUserPublicId.resolve().map(PublicId::value).orElse("guest"));
         model.addAttribute("currentRoundId", season.getCurrentRoundId());
+        model.addAttribute("maxHitPoints", season.getMaxHitPoints());
 
         // Set model attributes for template
         model.addAttribute("pageTitle", getPageTitle(data));
@@ -378,7 +413,7 @@ public class UserPredictionsController {
 
         // Swap history (own predictions only)
         if (data.roundSwapHistory() != null && !data.roundSwapHistory().isEmpty()) {
-            model.addAttribute("swapHistory", formatSwapHistory(data.roundSwapHistory()));
+            model.addAttribute("swapHistory", swapHistoryFormatter.format(data.roundSwapHistory()));
         }
 
         // Round result for historical views
@@ -544,26 +579,6 @@ public class UserPredictionsController {
         return ErrorMapper.toHttpStatus(error);
     }
 
-    private List<SwapHistoryEntryDTO> formatSwapHistory(List<SwapChange> changes) {
-        return changes.stream()
-                .sorted(Comparator.comparing(SwapChange::timestamp))
-                .map(swap -> {
-                    String[] partsA = swap.teamA().split(":");
-                    String[] posA = partsA[1].split("\u2192"); // →
-                    String[] partsB = swap.teamB().split(":");
-                    String[] posB = partsB[1].split("\u2192"); // →
-                    return new SwapHistoryEntryDTO(
-                            partsA[0],
-                            Integer.parseInt(posA[0]),
-                            Integer.parseInt(posA[1]),
-                            partsB[0],
-                            Integer.parseInt(posB[0]),
-                            Integer.parseInt(posB[1]),
-                            swap.timestamp().toString()); // ISO 8601 UTC — formatted client-side to user's locale
-                })
-                .toList();
-    }
-
     /**
      * DTO for swap status information displayed in templates.
      */
@@ -585,16 +600,4 @@ public class UserPredictionsController {
             return new SwapStatusDTO(false, "", "Never", false, false, false);
         }
     }
-
-    /**
-     * DTO for a single swap change entry displayed in the swap history section.
-     */
-    public record SwapHistoryEntryDTO(
-            String teamACode,
-            int teamAFrom,
-            int teamATo,
-            String teamBCode,
-            int teamBFrom,
-            int teamBTo,
-            String formattedTime) {}
 }

@@ -147,7 +147,7 @@
       class="inline-flex flex-col items-center px-6 py-3 bg-gray-50 rounded-lg border border-gray-200"
     >
       <div class="flex items-center text-sm text-gray-600 mb-1">
-        <span class="font-mono">200</span>
+        <span class="font-mono" th:text="${maxHitPoints}">200</span>
         <span class="mx-2">−</span>
         <span class="font-mono" th:text="${totalHits}">44</span>
         <span class="mx-2">=</span>
@@ -167,7 +167,8 @@
       </div>
 
       <div class="text-xs text-gray-500">
-        (Max: 200, Lost: <span th:text="${totalHits}">156</span>)
+        (Max: <span th:text="${maxHitPoints}">200</span>, Lost:
+        <span th:text="${totalHits}">156</span>)
       </div>
 
       <div th:if="${seasonBestScore != null}" class="mt-2 flex gap-2 flex-wrap justify-center">
