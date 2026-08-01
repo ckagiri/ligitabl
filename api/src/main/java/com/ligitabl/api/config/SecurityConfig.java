@@ -233,7 +233,14 @@ public class SecurityConfig {
                 .oauth2Login(oauth2 -> oauth2.loginPage("/auth/login")
                         .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
                         .successHandler(oauth2AuthenticationSuccessHandler))
-                .rememberMe(remember -> remember.rememberMeServices(rememberMeServices))
+                // .key(...) is REQUIRED here, not optional. RememberMeConfigurer can only infer
+                // the key when the services bean is an AbstractRememberMeServices; ours is wrapped
+                // in QuietRememberMeServices, so it would silently fall back to a random
+                // UUID-per-startup key for the RememberMeAuthenticationProvider. Auto-login would
+                // then always fail the provider's key-hash check and the filter would cancel the
+                // cookie via loginFail() — remember-me never working, on any device.
+                .rememberMe(remember ->
+                        remember.key(rememberMeKey).rememberMeServices(rememberMeServices))
                 .logout(logout -> logout.logoutUrl("/auth/logout")
                         .addLogoutHandler(clearImpersonationLogoutHandler)
                         .logoutSuccessUrl("/")
