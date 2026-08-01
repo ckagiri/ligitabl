@@ -121,8 +121,8 @@ public class RaceTolerantPersistentTokenRememberMeServices extends PersistentTok
         }
 
         // Token matches: rotate the value, keeping the same series.
-        PersistentRememberMeToken newToken = new PersistentRememberMeToken(
-                token.getUsername(), token.getSeries(), generateTokenData(), new Date());
+        PersistentRememberMeToken newToken =
+                new PersistentRememberMeToken(token.getUsername(), token.getSeries(), generateTokenData(), new Date());
         try {
             tokenRepository.updateToken(newToken.getSeries(), newToken.getTokenValue(), newToken.getDate());
             setCookie(

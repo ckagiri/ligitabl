@@ -54,7 +54,10 @@ class RaceTolerantPersistentTokenRememberMeServicesTest {
         tokenRepository = mock(PersistentTokenRepository.class);
         UserDetailsService userDetailsService = mock(UserDetailsService.class);
         when(userDetailsService.loadUserByUsername(USERNAME))
-                .thenReturn(User.withUsername(USERNAME).password("n/a").roles("PLAYER").build());
+                .thenReturn(User.withUsername(USERNAME)
+                        .password("n/a")
+                        .roles("PLAYER")
+                        .build());
 
         services = new RaceTolerantPersistentTokenRememberMeServices("test-key", userDetailsService, tokenRepository);
         services.setTokenValiditySeconds(VALIDITY_SECONDS);
@@ -127,8 +130,8 @@ class RaceTolerantPersistentTokenRememberMeServicesTest {
     void mismatchOutsideGraceWindow_isTreatedAsTheft() {
         givenStoredToken(RaceTolerantPersistentTokenRememberMeServices.GRACE_WINDOW_MS + 5_000L);
 
-        assertThatThrownBy(() ->
-                        services.processAutoLoginCookie(new String[] {SERIES, "stolen-token"}, request, response))
+        assertThatThrownBy(
+                        () -> services.processAutoLoginCookie(new String[] {SERIES, "stolen-token"}, request, response))
                 .isInstanceOf(CookieTheftException.class);
 
         verify(tokenRepository).removeUserTokens(USERNAME);
@@ -139,8 +142,8 @@ class RaceTolerantPersistentTokenRememberMeServicesTest {
     void expiredToken_isRejected() {
         givenStoredToken((VALIDITY_SECONDS * 1000L) + 60_000L);
 
-        assertThatThrownBy(() ->
-                        services.processAutoLoginCookie(new String[] {SERIES, STORED_TOKEN}, request, response))
+        assertThatThrownBy(
+                        () -> services.processAutoLoginCookie(new String[] {SERIES, STORED_TOKEN}, request, response))
                 .isInstanceOf(RememberMeAuthenticationException.class)
                 .hasMessageContaining("expired");
 
@@ -152,8 +155,8 @@ class RaceTolerantPersistentTokenRememberMeServicesTest {
     void unknownSeries_isRejected() {
         when(tokenRepository.getTokenForSeries("no-such-series")).thenReturn(null);
 
-        assertThatThrownBy(() ->
-                        services.processAutoLoginCookie(new String[] {"no-such-series", "t"}, request, response))
+        assertThatThrownBy(
+                        () -> services.processAutoLoginCookie(new String[] {"no-such-series", "t"}, request, response))
                 .isInstanceOf(RememberMeAuthenticationException.class);
 
         verify(tokenRepository, never()).removeUserTokens(anyString());
@@ -172,8 +175,8 @@ class RaceTolerantPersistentTokenRememberMeServicesTest {
         givenStoredToken(60_000L);
         doThrowOnUpdate();
 
-        assertThatThrownBy(() ->
-                        services.processAutoLoginCookie(new String[] {SERIES, STORED_TOKEN}, request, response))
+        assertThatThrownBy(
+                        () -> services.processAutoLoginCookie(new String[] {SERIES, STORED_TOKEN}, request, response))
                 .isInstanceOf(RememberMeAuthenticationException.class)
                 .hasMessageContaining("data access problem");
 
