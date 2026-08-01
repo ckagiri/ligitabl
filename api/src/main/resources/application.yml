@@ -16,6 +16,13 @@ spring:
     enabled: false
     change-log: classpath:db/changelog/db.changelog-master.yaml
 
+  # Sessions live in Postgres, not the container's heap, so a deploy or restart
+  # doesn't log everyone out. Lifetime comes from server.servlet.session.timeout.
+  session:
+    store-type: jdbc
+    jdbc:
+      initialize-schema: never # Liquibase owns the schema (20260801_1_spring_session.yaml)
+
   security:
     oauth2:
       client:
