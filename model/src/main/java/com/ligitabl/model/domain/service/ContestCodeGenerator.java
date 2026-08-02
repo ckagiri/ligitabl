@@ -3,7 +3,7 @@ package com.ligitabl.model.domain.service;
 import java.security.SecureRandom;
 
 public class ContestCodeGenerator {
-    private static final String ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+    private static final String ALPHABET = "23456789abcdefghjkmnpqrstuvwxyz";
     private static final int LENGTH = 6;
     private final SecureRandom random = new SecureRandom();
 
