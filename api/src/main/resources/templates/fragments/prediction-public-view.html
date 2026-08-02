@@ -443,7 +443,7 @@
         class="bg-white rounded-xl shadow-xl w-full max-w-sm overflow-hidden"
       >
         <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-          <span class="text-sm font-semibold text-gray-800" x-text="formPopup ? formPopup.teamName + ' — Last ' + formPopup.entries.length + ' matches' : ''"></span>
+          <span class="text-sm font-semibold text-gray-800" x-text="formPopup ? formPopup.teamName + ' — Last ' + formPopup.entries.length + (formPopup.entries.length === 1 ? ' match' : ' matches') : ''"></span>
           <button @click="hideFormPopup()" class="text-gray-400 hover:text-gray-600 p-1 -mr-1">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
