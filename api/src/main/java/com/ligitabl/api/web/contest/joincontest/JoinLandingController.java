@@ -39,7 +39,8 @@ public class JoinLandingController {
     private String resolveJoin(String rawCode, Principal principal) {
         // Lowercased on the way through so the URL the user lands on matches the code they were
         // given, including invites shared before codes were lowercase. Lookups are case-insensitive.
-        String code = (rawCode == null || rawCode.isBlank()) ? null : rawCode.trim().toLowerCase();
+        String code =
+                (rawCode == null || rawCode.isBlank()) ? null : rawCode.trim().toLowerCase();
 
         if (WebSecurity.resolveUser(principal) != null) {
             if (code != null) {

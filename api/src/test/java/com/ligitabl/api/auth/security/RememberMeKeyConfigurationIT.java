@@ -63,7 +63,9 @@ class RememberMeKeyConfigurationIT extends AbstractPostgresIT {
         AuthenticationManager authenticationManager = rememberMeAuthenticationManager();
 
         var foreign = new RememberMeAuthenticationToken(
-                UUID.randomUUID().toString(), "someone@example.com", List.of(new SimpleGrantedAuthority("ROLE_PLAYER")));
+                UUID.randomUUID().toString(),
+                "someone@example.com",
+                List.of(new SimpleGrantedAuthority("ROLE_PLAYER")));
 
         assertThatCode(() -> authenticationManager.authenticate(foreign)).isInstanceOf(RuntimeException.class);
     }

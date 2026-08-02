@@ -194,7 +194,8 @@ class WhatIfControllerTest {
                 .ranking(TeamRank.of("ARS", 1))
                 .metadata(new StandingsMetadata(2, 2, 0, 0, 6, 5, 1, 4))
                 .build();
-        when(computeWhatIfUseCase.execute(any())).thenReturn(Either.right(new WhatIfResult(List.of(arsRank), roundId, true)));
+        when(computeWhatIfUseCase.execute(any()))
+                .thenReturn(Either.right(new WhatIfResult(List.of(arsRank), roundId, true)));
 
         Map<String, Object> body = controller.compute(request, principal, response);
 
@@ -218,7 +219,8 @@ class WhatIfControllerTest {
                 .ranking(TeamRank.of("ARS", 1))
                 .metadata(new StandingsMetadata(2, 2, 0, 0, 6, 5, 1, 4))
                 .build();
-        when(computeWhatIfUseCase.execute(any())).thenReturn(Either.right(new WhatIfResult(List.of(arsRank), roundId, true)));
+        when(computeWhatIfUseCase.execute(any()))
+                .thenReturn(Either.right(new WhatIfResult(List.of(arsRank), roundId, true)));
         doThrow(new IllegalStateException("db down"))
                 .when(saveWhatIfPredictionUseCase)
                 .execute(any(), any(), anyList());
