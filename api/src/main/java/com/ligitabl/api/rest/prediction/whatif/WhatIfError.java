@@ -14,8 +14,6 @@ public sealed interface WhatIfError {
 
     record RoundNotFound(UUID seasonId) implements WhatIfError {}
 
-    record RoundNotOpen(String roundStatus) implements WhatIfError {}
-
     record UnknownMatch(List<UUID> matchIds) implements WhatIfError {}
 
     record MissingScores(List<UUID> matchIds) implements WhatIfError {}

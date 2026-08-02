@@ -1174,6 +1174,8 @@ const WHAT_IF_CHIPS = {
   D: [[1, 1], [0, 0], [2, 2]],
   A: [[0, 1], [1, 2], [0, 2]]
 };
+const WHAT_IF_UNSCOREABLE_STATUSES = ["POSTPONED", "CANCELLED", "SUSPENDED"];
+const isWhatIfScoreable = (match) => !WHAT_IF_UNSCOREABLE_STATUSES.includes(match.status);
 window.Ligitabl.whatIfPage = function(el) {
   const parsed = Ligitabl._parseDataAttributes(el);
   const matches = Ligitabl._parseJSON(el?.dataset?.whatIfMatches, []);
@@ -1186,7 +1188,7 @@ window.Ligitabl.whatIfPage = function(el) {
   const originalPerformSwap = base._performSwap;
   const scores = {};
   matches.forEach((m) => {
-    if (m.status === "POSTPONED") return;
+    if (!isWhatIfScoreable(m)) return;
     scores[m.matchId] = { home: null, away: null };
   });
   return Object.assign(base, {
@@ -1215,18 +1217,24 @@ window.Ligitabl.whatIfPage = function(el) {
     focusSide: "home",
     hasEdited: false,
     rollingId: null,
+    // Set when a restored session had swaps that the lock threw away, so the page can explain
+    // why the table (and the score with it) came back different. Not persisted: the session is
+    // re-saved without those swaps, so the next load has nothing to explain.
+    swapsClearedByLock: false,
     init() {
       this.teams = Ligitabl._mapServerPredictions(parsed.predictions);
       this.originalTeams = Ligitabl._mapServerPredictions(parsed.predictions);
       this._restoreWhatIfSession();
       this._reconcileWithServer();
-      this._autoApplyOnLoad();
+      this._applyIfComplete();
     },
-    // Only ever fires when the round is open (a closed round would fail server-side)
-    // and when nothing is computed yet, so a restored local session with its own
-    // standings is left alone.
-    _autoApplyOnLoad() {
-      if (!this.roundOpen || this.hasComputed || this.isComputing) return;
+    // A complete set of scores with no projection behind it is never a state worth showing, so
+    // it's applied for the user — at page load, and again after a Refresh adopts the server's
+    // scores. Runs on closed rounds too (that's the only way a locked round shows its result at
+    // all, since the scores can't be re-entered by hand). No-op once something is computed, so
+    // a restored local session with its own swaps and standings is left alone.
+    _applyIfComplete() {
+      if (this.hasComputed || this.isComputing) return;
       if (!this.allScoresEntered()) return;
       this.apply();
     },
@@ -1251,9 +1259,9 @@ window.Ligitabl.whatIfPage = function(el) {
       });
       return Object.keys(serverScores).length > 0 ? serverScores : null;
     },
-    // The server wins: scores are populated from it (not blanked) and the sandbox is reset.
-    // Deliberately no auto re-Apply — the user clicks Apply themselves to project standings for
-    // the now-current scores.
+    // The server wins: scores are populated from it (not blanked) and the sandbox is reset back
+    // to the real standings. Callers follow with _applyIfComplete() to project the adopted
+    // scores — this only clears the old result, it doesn't compute the new one.
     _adoptServerScores(serverScores) {
       Object.keys(this.scores).forEach((matchId) => {
         this.scores[matchId] = serverScores[matchId] || { home: null, away: null };
@@ -1302,6 +1310,7 @@ window.Ligitabl.whatIfPage = function(el) {
           return;
         }
         this._adoptServerScores(serverScores);
+        this._applyIfComplete();
         this._flashRefreshMessage("Updated from your last apply");
       }).catch(() => {
         this.isRefreshing = false;
@@ -1369,9 +1378,13 @@ window.Ligitabl.whatIfPage = function(el) {
       }
       if (!saved) return false;
       this.scores = saved.scores || this.scores;
-      this.teams = saved.teams || this.teams;
-      this.swapStack = saved.swapStack || [];
-      this.swapLog = saved.swapLog || [];
+      if (this.roundOpen) {
+        this.teams = saved.teams || this.teams;
+        this.swapStack = saved.swapStack || [];
+        this.swapLog = saved.swapLog || [];
+      } else {
+        this.swapsClearedByLock = (saved.swapLog || []).length > 0;
+      }
       this.hasComputed = !!saved.hasComputed;
       this.currentStandings = saved.currentStandings || this.currentStandings;
       this.currentPoints = saved.currentPoints || this.currentPoints;
@@ -1383,9 +1396,12 @@ window.Ligitabl.whatIfPage = function(el) {
       if (this.hasComputed) this.activeTab = "result";
       return true;
     },
+    // A session saved before the round locked still carries scores for matches that have since
+    // kicked off or finished — those stay, they're the hypothesis. Only matches called off since
+    // the save drop out.
     _reconcileMatches() {
-      this.matches.filter((m) => m.status === "POSTPONED").forEach((m) => delete this.scores[m.matchId]);
-      this.matches.filter((m) => m.status === "SCHEDULED").forEach((m) => {
+      this.matches.filter((m) => !isWhatIfScoreable(m)).forEach((m) => delete this.scores[m.matchId]);
+      this.matches.filter(isWhatIfScoreable).forEach((m) => {
         if (!this.scores[m.matchId]) this.scores[m.matchId] = { home: null, away: null };
       });
     },
@@ -1393,6 +1409,17 @@ window.Ligitabl.whatIfPage = function(el) {
     // and this getter) rather than shown blanked out.
     visibleMatches() {
       return this.matches.filter((m) => m.status !== "POSTPONED");
+    },
+    // The matches a hypothesis is made of — what Apply sends and what "all scores entered"
+    // measures against. Mirrors the server's scoreable set exactly.
+    scoreableMatches() {
+      return this.matches.filter(isWhatIfScoreable);
+    },
+    // Whether this match takes score input right now: while the round is open only fixtures that
+    // haven't kicked off do (the rest show a status badge), and once it's closed every scoreable
+    // match shows its locked-in guess.
+    acceptsScore(match) {
+      return isWhatIfScoreable(match) && (!this.roundOpen || match.status === "SCHEDULED");
     },
     buildShareText() {
       const outcomeMap = { H: "1", D: "X", A: "2" };
@@ -1495,7 +1522,7 @@ Predict the table — LigiPredictor.com`;
       this._saveWhatIfSession();
     },
     remainingCount() {
-      return this.matches.filter((m) => m.status === "SCHEDULED" && !this.scoreAnswered(m.matchId)).length;
+      return this.scoreableMatches().filter((m) => !this.scoreAnswered(m.matchId)).length;
     },
     scoresDirty() {
       if (!this.hasComputed || !this.appliedScores) return false;
@@ -1527,6 +1554,7 @@ Predict the table — LigiPredictor.com`;
       return false;
     },
     teamClick(teamCode) {
+      if (!this.roundOpen) return;
       if (this.selectedTeam === null) {
         this._selectTeam(teamCode);
         return;
@@ -1589,7 +1617,8 @@ Predict the table — LigiPredictor.com`;
       this._saveWhatIfSession();
     },
     allScoresEntered() {
-      return this.matches.filter((m) => m.status === "SCHEDULED").every((m) => {
+      const scoreable = this.scoreableMatches();
+      return scoreable.length > 0 && scoreable.every((m) => {
         const s = this.scores[m.matchId];
         return s && Number.isInteger(s.home) && s.home >= 0 && Number.isInteger(s.away) && s.away >= 0;
       });
@@ -1627,7 +1656,7 @@ Predict the table — LigiPredictor.com`;
       const headers = { "Content-Type": "application/json" };
       if (csrfToken) headers["X-CSRF-TOKEN"] = csrfToken;
       const body = {
-        scores: this.matches.filter((m) => m.status === "SCHEDULED").map((m) => ({
+        scores: this.scoreableMatches().map((m) => ({
           matchId: m.matchId,
           homeGoals: this.scores[m.matchId].home,
           awayGoals: this.scores[m.matchId].away
@@ -1656,7 +1685,7 @@ Predict the table — LigiPredictor.com`;
       });
     },
     resetWhatIf() {
-      this.matches.forEach((m) => {
+      this.scoreableMatches().forEach((m) => {
         this.scores[m.matchId] = { home: null, away: null };
       });
       this.hasEdited = false;

@@ -55,8 +55,12 @@
         </thead>
         <tbody>
           <template x-for="team in teams" :key="team.code">
+            <!-- Interactive only while the round is open: teamClick() ignores the click once it
+                 locks, so the pointer/hover affordances have to go too or the row would still
+                 look tappable. -->
             <tr
-              class="prediction-row no-hover border-t border-gray-100 cursor-pointer hover:bg-gray-100"
+              class="prediction-row no-hover border-t border-gray-100"
+              :class="roundOpen ? 'cursor-pointer hover:bg-gray-100' : ''"
               :data-team-code="team.code"
               @click="teamClick(team.code)"
             >

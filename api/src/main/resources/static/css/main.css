@@ -646,6 +646,10 @@ video {
   margin-left: -1rem;
   margin-right: -1rem;
 }
+.-mx-6 {
+  margin-left: -1.5rem;
+  margin-right: -1.5rem;
+}
 .mx-1 {
   margin-left: 0.25rem;
   margin-right: 0.25rem;
@@ -1243,6 +1247,9 @@ video {
 .divide-gray-50 > :not([hidden]) ~ :not([hidden]) {
   --tw-divide-opacity: 1;
   border-color: rgb(249 250 251 / var(--tw-divide-opacity, 1));
+}
+.self-stretch {
+  align-self: stretch;
 }
 .justify-self-end {
   justify-self: end;
