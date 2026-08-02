@@ -45,12 +45,6 @@ public class ComputeWhatIfUseCase {
 
     private record ScoredCtx(Ctx ctx, Map<UUID, WhatIfScore> scoresByMatchId) {}
 
-    /**
-     * Deliberately not gated on the round being open. A locked round's what-if is frozen — the user
-     * can no longer change the scores — but it still has to be projectable, or the page would show
-     * locked scores with no standings behind them. Whether the round is open is carried through on
-     * {@link WhatIfResult} instead, for the caller to decide whether the scores are still savable.
-     */
     public Either<WhatIfError, WhatIfResult> execute(WhatIfCommand command) {
         return getActiveSeason()
                 .flatMap(season -> getCurrentRound(season)

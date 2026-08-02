@@ -972,11 +972,6 @@ window.Ligitabl.whatIfPage = function (el) {
             this._reconcileWithServer();
             this._applyIfComplete();
         },
-        // A complete set of scores with no projection behind it is never a state worth showing, so
-        // it's applied for the user — at page load, and again after a Refresh adopts the server's
-        // scores. Runs on closed rounds too (that's the only way a locked round shows its result at
-        // all, since the scores can't be re-entered by hand). No-op once something is computed, so
-        // a restored local session with its own swaps and standings is left alone.
         _applyIfComplete() {
             if (this.hasComputed || this.isComputing) return;
             if (!this.allScoresEntered()) return;
@@ -1130,10 +1125,6 @@ window.Ligitabl.whatIfPage = function (el) {
             }
             if (!saved) return false;
             this.scores = saved.scores || this.scores;
-            // Swaps made while the round was open don't survive it locking: the swapped team order
-            // is no longer a table the user could have had, so the session comes back with only its
-            // scores and standings, sat against the prediction they're actually locked into. The
-            // _saveWhatIfSession() below then writes the stripped session back.
             if (this.roundOpen) {
                 this.teams = saved.teams || this.teams;
                 this.swapStack = saved.swapStack || [];
