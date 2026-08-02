@@ -116,7 +116,7 @@ public class ContestDetailController {
                                     "renewalQuarters",
                                     renewal.visible() ? contestSupport.resolveQuarterOptions() : List.of());
                             String joinCode = detail.joinCode() != null
-                                    ? detail.joinCode().toUpperCase()
+                                    ? detail.joinCode().toLowerCase()
                                     : null;
                             model.addAttribute("joinCode", joinCode);
                             model.addAttribute(

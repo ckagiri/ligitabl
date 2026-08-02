@@ -47,12 +47,14 @@ public class JoinContestController {
      *  - code + valid         → preview card + confirm button
      */
     @GetMapping("/join")
-    public String joinForm(@RequestParam(required = false) String code, Model model, Principal principal) {
+    public String joinForm(
+            @RequestParam(name = "code", required = false) String rawCode, Model model, Principal principal) {
 
         WebUserDetails user = WebSecurity.resolveUser(principal);
         if (user == null) return "redirect:/auth/login";
 
-        if (code == null || code.isBlank()) {
+        String code = normalize(rawCode);
+        if (code == null) {
             return "contest/join";
         }
 
@@ -80,12 +82,18 @@ public class JoinContestController {
 
     /** GET /contests/join/preview — HTMX fragment; fires after 7-char input on /contests page. */
     @GetMapping("/join/preview")
-    public String joinPreview(@RequestParam String code, Model model, Principal principal) {
+    public String joinPreview(@RequestParam(name = "code") String rawCode, Model model, Principal principal) {
 
         WebUserDetails user = WebSecurity.resolveUser(principal);
         if (user == null) {
             model.addAttribute("errorCode", "NOT_FOUND");
             return "contest-join :: preview-fragment";
+        }
+
+        String code = normalize(rawCode);
+        if (code == null) {
+            model.addAttribute("errorCode", "NOT_FOUND");
+            return "contest/join :: preview-fragment";
         }
 
         var previewResult = previewContestByCodeUseCase.execute(code);
@@ -101,10 +109,16 @@ public class JoinContestController {
 
     /** POST /contests/join/confirm — executes the join, redirects to /contests/{id} on success. */
     @PostMapping("/join/confirm")
-    public String joinConfirm(@RequestParam String code, Model model, Principal principal) {
+    public String joinConfirm(@RequestParam(name = "code") String rawCode, Model model, Principal principal) {
 
         WebUserDetails user = WebSecurity.resolveUser(principal);
         if (user == null) return "redirect:/auth/login";
+
+        String code = normalize(rawCode);
+        if (code == null) {
+            model.addAttribute("errorCode", "NOT_FOUND");
+            return "contest/join";
+        }
 
         var result = joinPrivateContestUseCase.execute(new JoinPrivateContestCommand(user.getUserId(), code));
         return result.fold(
@@ -114,6 +128,19 @@ public class JoinContestController {
                     return "contest/join";
                 },
                 success -> "redirect:/contests/" + success.contestId());
+    }
+
+    /**
+     * Codes are lowercase now, so whatever arrives — typed in caps, pasted from an old invite, or
+     * autocapitalised by a phone keyboard — is folded before it's looked up or echoed back into the
+     * form. Matching is case-insensitive either way; this is what keeps the page reading lowercase.
+     * Null for a blank code, so callers can treat "nothing entered" as one case.
+     */
+    private static String normalize(String code) {
+        if (code == null || code.isBlank()) {
+            return null;
+        }
+        return code.trim().toLowerCase();
     }
 
     private static String toPreviewErrorCode(PreviewContestByCodeError error) {

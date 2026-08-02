@@ -248,7 +248,9 @@ public class WhatIfController {
                     return Map.of("success", false, "message", errorMessage(error));
                 },
                 whatIfResult -> {
-                    persistScores(userDetails.getUserId(), whatIfResult.roundId(), command.scores());
+                    if (whatIfResult.roundOpen()) {
+                        persistScores(userDetails.getUserId(), whatIfResult.roundId(), command.scores());
+                    }
                     WhatIfComputeResponse body = WhatIfComputeResponse.from(whatIfResult);
                     return Map.of(
                             "success", body.success(),
@@ -260,7 +262,9 @@ public class WhatIfController {
 
     /**
      * Best-effort side-effect: the standings the user is about to see don't depend on the save, so a
-     * persistence failure is logged and swallowed rather than failing the compute response.
+     * persistence failure is logged and swallowed rather than failing the compute response. Only
+     * called while the round is open — a closed round's saved scores are what the projection is
+     * replaying, and must not be overwritten by it.
      */
     private void persistScores(UUID userId, UUID roundId, List<WhatIfScore> scores) {
         try {
@@ -288,7 +292,6 @@ public class WhatIfController {
             case WhatIfError.SeasonCompleted __ -> 409;
             case WhatIfError.SeasonInSetupMode __ -> 409;
             case WhatIfError.RoundNotFound __ -> 404;
-            case WhatIfError.RoundNotOpen __ -> 409;
             case WhatIfError.UnknownMatch __ -> 400;
             case WhatIfError.MissingScores __ -> 400;
             case WhatIfError.InvalidScore __ -> 400;
@@ -303,7 +306,6 @@ public class WhatIfController {
             case WhatIfError.SeasonCompleted __ -> "Season has been completed";
             case WhatIfError.SeasonInSetupMode __ -> "Season is being reconfigured. Please try again shortly.";
             case WhatIfError.RoundNotFound __ -> "Current round not found";
-            case WhatIfError.RoundNotOpen e -> "Cannot compute what-if when round is " + e.roundStatus();
             case WhatIfError.UnknownMatch __ -> "Unknown or non-scoreable match id(s) submitted";
             case WhatIfError.MissingScores e -> "Missing scores for "
                     + e.matchIds().size() + " match(es)";

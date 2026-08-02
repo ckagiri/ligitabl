@@ -147,7 +147,7 @@ class ComputeWhatIfUseCaseTest {
         when(roundRepo.findById(round2Id)).thenReturn(Optional.of(round));
     }
 
-    /** Stubs reached only once the round is confirmed OPEN and score validation has passed. */
+    /** Stubs reached only once score validation has passed. */
     private void stubSuccessfulCalculation(List<Match> currentRoundMatchesWithTeams) {
         when(matchRepo.findByRoundIdWithTeams(round2Id)).thenReturn(currentRoundMatchesWithTeams);
         when(matchRepo.findFinishedMatchesUpToRoundWithTeams(seasonId, 2))
@@ -286,19 +286,62 @@ class ComputeWhatIfUseCaseTest {
         assertInstanceOf(WhatIfError.UnknownMatch.class, result.getLeft());
     }
 
+    /**
+     * A locked round still projects: the user can no longer change the scores, but the page has to be
+     * able to show the standings behind the ones they saved while it was open. The real result of an
+     * already-played match is ignored — the hypothetical score is what's replayed.
+     */
     @Test
-    void shouldReturnRoundNotOpen_whenRoundIsLocked() {
+    void shouldComputeOnLockedRound_replayingTheHypotheticalOverRealResults() {
         stubCurrentRound();
-        Match finished = finishedMatch(round2Id, teamMciId, teamCheId, 1, 1);
-        when(matchRepo.findByRoundId(round2Id)).thenReturn(List.of(currentArsMci, finished)); // mix -> LOCKED
+        Match livChePlayed = finishedMatch(round2Id, teamLivId, teamCheId, 0, 4); // CHE thrashed LIV for real
+        when(matchRepo.findByRoundId(round2Id)).thenReturn(List.of(currentArsMci, livChePlayed)); // mix -> LOCKED
+        when(matchRepo.findByRoundIdWithTeams(round2Id)).thenReturn(List.of(currentArsMci, livChePlayed));
+        when(matchRepo.findFinishedMatchesUpToRoundWithTeams(seasonId, 2))
+                .thenReturn(List.of(priorArsChe, priorLivMci));
+        when(teamRepo.findAllByCodes(Set.of("ARS", "LIV", "MCI", "CHE")))
+                .thenReturn(List.of(teamArs, teamLiv, teamMci, teamChe));
+
+        WhatIfCommand command = new WhatIfCommand(List.of(
+                new WhatIfScore(currentArsMci.getId(), 2, 0),
+                new WhatIfScore(livChePlayed.getId(), 1, 0))); // guessed LIV win, not the real 0-4
+
+        Either<WhatIfError, WhatIfResult> result = useCase.execute(command);
+
+        assertTrue(result.isRight(), () -> "expected success but got " + (result.isLeft() ? result.getLeft() : ""));
+        assertFalse(result.get().roundOpen());
+        // Same table as the all-open case: the guess, not the real 0-4, is what counted.
+        assertPosition(result.get().whatIfStandings(), "LIV", 2, 6, 2);
+        assertPosition(result.get().whatIfStandings(), "CHE", 4, 0, -4);
+    }
+
+    @Test
+    void shouldReportRoundOpen_whenRoundIsStillOpen() {
+        stubCurrentRound();
+        when(matchRepo.findByRoundId(round2Id)).thenReturn(List.of(currentArsMci, currentLivChe));
+        stubSuccessfulCalculation(List.of(currentArsMci, currentLivChe));
+
+        Either<WhatIfError, WhatIfResult> result = useCase.execute(new WhatIfCommand(
+                List.of(new WhatIfScore(currentArsMci.getId(), 2, 0), new WhatIfScore(currentLivChe.getId(), 1, 0))));
+
+        assertTrue(result.isRight());
+        assertTrue(result.get().roundOpen());
+    }
+
+    @Test
+    void shouldRequireScoresForAlreadyPlayedMatches_onALockedRound() {
+        stubCurrentRound();
+        Match livChePlayed = finishedMatch(round2Id, teamLivId, teamCheId, 0, 4);
+        when(matchRepo.findByRoundId(round2Id)).thenReturn(List.of(currentArsMci, livChePlayed));
+        when(matchRepo.findByRoundIdWithTeams(round2Id)).thenReturn(List.of(currentArsMci, livChePlayed));
 
         WhatIfCommand command = new WhatIfCommand(List.of(new WhatIfScore(currentArsMci.getId(), 1, 0)));
 
         Either<WhatIfError, WhatIfResult> result = useCase.execute(command);
 
         assertTrue(result.isLeft());
-        assertInstanceOf(WhatIfError.RoundNotOpen.class, result.getLeft());
-        assertEquals("LOCKED", ((WhatIfError.RoundNotOpen) result.getLeft()).roundStatus());
+        assertInstanceOf(WhatIfError.MissingScores.class, result.getLeft());
+        assertEquals(List.of(livChePlayed.getId()), ((WhatIfError.MissingScores) result.getLeft()).matchIds());
     }
 
     @Test

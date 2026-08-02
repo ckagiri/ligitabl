@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 
 class ContestCodeGeneratorTest {
 
-    private static final String ALPHABET = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
+    private static final String ALPHABET = "23456789abcdefghjkmnpqrstuvwxyz";
     private final ContestCodeGenerator generator = new ContestCodeGenerator();
 
     @Test
@@ -30,14 +30,14 @@ class ContestCodeGeneratorTest {
 
     @Test
     void alphabetExcludesAmbiguousCharacters() {
-        assertThat(ALPHABET).doesNotContain("0", "1", "O", "I", "l", "o");
+        assertThat(ALPHABET).doesNotContain("0", "1", "O", "I", "l", "o", "i");
     }
 
     @Test
-    void generatedCodesAreAlwaysUppercase() {
+    void generatedCodesAreAlwaysLowercase() {
         for (int i = 0; i < 50; i++) {
             String code = generator.generate();
-            assertThat(code).isEqualTo(code.toUpperCase());
+            assertThat(code).isEqualTo(code.toLowerCase());
         }
     }
 

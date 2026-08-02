@@ -141,18 +141,45 @@ class WhatIfControllerTest {
     }
 
     @Test
-    void compute_shouldReturn409_whenRoundNotOpen() {
+    void compute_shouldReturn409_whenSeasonNotOpen() {
         authenticate();
         UUID matchId = UUID.randomUUID();
         WhatIfComputeRequest request =
                 new WhatIfComputeRequest(List.of(new WhatIfScoreInput(matchId.toString(), 1, 0)));
 
-        when(computeWhatIfUseCase.execute(any())).thenReturn(Either.left(new WhatIfError.RoundNotOpen("LOCKED")));
+        when(computeWhatIfUseCase.execute(any()))
+                .thenReturn(Either.left(new WhatIfError.SeasonNotOpen(UUID.randomUUID())));
 
         Map<String, Object> body = controller.compute(request, principal, response);
 
         verify(response).setStatus(409);
         assertEquals(false, body.get("success"));
+    }
+
+    /**
+     * A closed round is still projected — that's how the locked page shows a result at all — but its
+     * saved scores are the input to that projection, so they must not be written back over.
+     */
+    @Test
+    void compute_shouldNotPersistScores_whenRoundIsClosed() {
+        authenticate();
+        UUID matchId = UUID.randomUUID();
+        UUID roundId = UUID.randomUUID();
+        WhatIfComputeRequest request =
+                new WhatIfComputeRequest(List.of(new WhatIfScoreInput(matchId.toString(), 2, 0)));
+
+        StandingsTeamRank arsRank = StandingsTeamRank.builder()
+                .ranking(TeamRank.of("ARS", 1))
+                .metadata(new StandingsMetadata(2, 2, 0, 0, 6, 5, 1, 4))
+                .build();
+        when(computeWhatIfUseCase.execute(any()))
+                .thenReturn(Either.right(new WhatIfResult(List.of(arsRank), roundId, false)));
+
+        Map<String, Object> body = controller.compute(request, principal, response);
+
+        assertEquals(true, body.get("success"));
+        verify(response, never()).setStatus(anyInt());
+        verifyNoInteractions(saveWhatIfPredictionUseCase);
     }
 
     @Test
@@ -167,7 +194,8 @@ class WhatIfControllerTest {
                 .ranking(TeamRank.of("ARS", 1))
                 .metadata(new StandingsMetadata(2, 2, 0, 0, 6, 5, 1, 4))
                 .build();
-        when(computeWhatIfUseCase.execute(any())).thenReturn(Either.right(new WhatIfResult(List.of(arsRank), roundId)));
+        when(computeWhatIfUseCase.execute(any()))
+                .thenReturn(Either.right(new WhatIfResult(List.of(arsRank), roundId, true)));
 
         Map<String, Object> body = controller.compute(request, principal, response);
 
@@ -191,7 +219,8 @@ class WhatIfControllerTest {
                 .ranking(TeamRank.of("ARS", 1))
                 .metadata(new StandingsMetadata(2, 2, 0, 0, 6, 5, 1, 4))
                 .build();
-        when(computeWhatIfUseCase.execute(any())).thenReturn(Either.right(new WhatIfResult(List.of(arsRank), roundId)));
+        when(computeWhatIfUseCase.execute(any()))
+                .thenReturn(Either.right(new WhatIfResult(List.of(arsRank), roundId, true)));
         doThrow(new IllegalStateException("db down"))
                 .when(saveWhatIfPredictionUseCase)
                 .execute(any(), any(), anyList());

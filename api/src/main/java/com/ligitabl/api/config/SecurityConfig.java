@@ -239,8 +239,7 @@ public class SecurityConfig {
                 // UUID-per-startup key for the RememberMeAuthenticationProvider. Auto-login would
                 // then always fail the provider's key-hash check and the filter would cancel the
                 // cookie via loginFail() — remember-me never working, on any device.
-                .rememberMe(remember ->
-                        remember.key(rememberMeKey).rememberMeServices(rememberMeServices))
+                .rememberMe(remember -> remember.key(rememberMeKey).rememberMeServices(rememberMeServices))
                 .logout(logout -> logout.logoutUrl("/auth/logout")
                         .addLogoutHandler(clearImpersonationLogoutHandler)
                         .logoutSuccessUrl("/")
