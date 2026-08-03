@@ -1217,10 +1217,10 @@ window.Ligitabl.whatIfPage = function(el) {
     focusSide: "home",
     hasEdited: false,
     rollingId: null,
-    // Set when a restored session had swaps that the lock threw away, so the page can explain
-    // why the table (and the score with it) came back different. Not persisted: the session is
-    // re-saved without those swaps, so the next load has nothing to explain.
-    swapsClearedByLock: false,
+    // Set when a restored session had swaps that a fixture change threw away, so the page can
+    // explain why the table (and the score with it) came back different. Not persisted: the
+    // session is re-saved without those swaps, so the next load has nothing to explain.
+    swapsClearedByFixtureChange: false,
     init() {
       this.teams = Ligitabl._mapServerPredictions(parsed.predictions);
       this.originalTeams = Ligitabl._mapServerPredictions(parsed.predictions);
@@ -1228,11 +1228,6 @@ window.Ligitabl.whatIfPage = function(el) {
       this._reconcileWithServer();
       this._applyIfComplete();
     },
-    // A complete set of scores with no projection behind it is never a state worth showing, so
-    // it's applied for the user — at page load, and again after a Refresh adopts the server's
-    // scores. Runs on closed rounds too (that's the only way a locked round shows its result at
-    // all, since the scores can't be re-entered by hand). No-op once something is computed, so
-    // a restored local session with its own swaps and standings is left alone.
     _applyIfComplete() {
       if (this.hasComputed || this.isComputing) return;
       if (!this.allScoresEntered()) return;
@@ -1259,16 +1254,16 @@ window.Ligitabl.whatIfPage = function(el) {
       });
       return Object.keys(serverScores).length > 0 ? serverScores : null;
     },
-    // The server wins: scores are populated from it (not blanked) and the sandbox is reset back
-    // to the real standings. Callers follow with _applyIfComplete() to project the adopted
-    // scores — this only clears the old result, it doesn't compute the new one.
+    // The server wins on scores: they're populated from it (not blanked) and the standings go
+    // back to the real ones. Swaps are left alone — they're an arrangement of the user's own
+    // table, and which scores are loaded doesn't make them wrong. Callers follow with
+    // _applyIfComplete() to project the adopted scores against that same arrangement.
     _adoptServerScores(serverScores) {
       Object.keys(this.scores).forEach((matchId) => {
         this.scores[matchId] = serverScores[matchId] || { home: null, away: null };
       });
       this.hasEdited = true;
-      this.reset();
-      this.swapLog = [];
+      this.selectedTeam = null;
       this.currentStandings = parsed.currentStandings;
       this.currentPoints = parsed.currentPoints;
       this.currentGoalDifference = parsed.currentGoalDifference;
@@ -1294,17 +1289,19 @@ window.Ligitabl.whatIfPage = function(el) {
           this.errorMessage = data && data.message || "Couldn't refresh";
           return;
         }
+        const fixturesChanged = this._adoptServerFixtures(data.matches, data.roundOpen);
         const serverScores = this._normalizeServerScores(data.scores);
         if (!serverScores) {
-          this._flashRefreshMessage("Nothing saved yet");
+          this._flashRefreshMessage(fixturesChanged ? "Fixtures updated" : "Nothing saved yet");
           return;
         }
         if (this._scoresMatchServer(serverScores)) {
-          this._flashRefreshMessage("Already up to date");
+          if (fixturesChanged) this._applyIfComplete();
+          this._flashRefreshMessage(fixturesChanged ? "Fixtures updated" : "Already up to date");
           return;
         }
         if (this._hasLocalWork() && !window.confirm(
-          "Load your last applied scores? This replaces the scores and swaps you have here."
+          "Load your last applied scores? This replaces the scores you have here. Your swaps stay."
         )) {
           this._flashRefreshMessage("Kept what you have");
           return;
@@ -1317,10 +1314,11 @@ window.Ligitabl.whatIfPage = function(el) {
         this.errorMessage = "Couldn't refresh. Check your connection.";
       });
     },
-    // Anything the user would actually lose to a server-wins overwrite. An untouched page (no
-    // scores entered, no swaps) has nothing at stake, so it syncs without asking.
+    // Anything the user would actually lose to a server-wins overwrite — which is the entered
+    // scores and nothing else now that swaps survive a Refresh. A page with no scores entered
+    // has nothing at stake, so it syncs without asking.
     _hasLocalWork() {
-      return this.hasEdited || this.swapLog.length > 0;
+      return this.hasEdited;
     },
     _flashRefreshMessage(message) {
       this.refreshMessage = message;
@@ -1353,7 +1351,8 @@ window.Ligitabl.whatIfPage = function(el) {
           currentStandings: this.currentStandings,
           currentPoints: this.currentPoints,
           currentGoalDifference: this.currentGoalDifference,
-          appliedScores: this.appliedScores
+          appliedScores: this.appliedScores,
+          matchStatuses: this._matchStatuses()
         }));
       } catch (e) {
         console.warn("Failed to save what-if session:", e);
@@ -1378,23 +1377,72 @@ window.Ligitabl.whatIfPage = function(el) {
       }
       if (!saved) return false;
       this.scores = saved.scores || this.scores;
-      if (this.roundOpen) {
-        this.teams = saved.teams || this.teams;
-        this.swapStack = saved.swapStack || [];
-        this.swapLog = saved.swapLog || [];
-      } else {
-        this.swapsClearedByLock = (saved.swapLog || []).length > 0;
-      }
+      this.teams = saved.teams || this.teams;
+      this.swapStack = saved.swapStack || [];
+      this.swapLog = saved.swapLog || [];
       this.hasComputed = !!saved.hasComputed;
       this.currentStandings = saved.currentStandings || this.currentStandings;
       this.currentPoints = saved.currentPoints || this.currentPoints;
       this.currentGoalDifference = saved.currentGoalDifference || this.currentGoalDifference;
       this.appliedScores = saved.appliedScores || null;
+      if (this._fixturesChangedSince(saved)) {
+        this.swapsClearedByFixtureChange = this.swapLog.length > 0;
+        this.reset();
+        this.swapLog = [];
+      }
       this._reconcileMatches();
       this._saveWhatIfSession();
       this.hasEdited = Object.values(this.scores).some((s) => s.home !== null || s.away !== null);
       if (this.hasComputed) this.activeTab = "result";
       return true;
+    },
+    // Resyncs the round itself — the fixtures and whether it's still open — from the payload
+    // Refresh already fetches. Returns whether the change was one that invalidates the sandbox
+    // (same rule as a restored session: a tracked match off SCHEDULED, or gone), in which case
+    // the swaps and the projection built on the old fixtures go with it.
+    _adoptServerFixtures(serverMatches, serverRoundOpen) {
+      if (!Array.isArray(serverMatches) || serverMatches.length === 0) return false;
+      const before = { scores: this.scores, matchStatuses: this._matchStatuses() };
+      this.matches = serverMatches;
+      if (typeof serverRoundOpen === "boolean") this.roundOpen = serverRoundOpen;
+      const changed = this._fixturesChangedSince(before);
+      this._reconcileMatches();
+      if (!this.roundOpen) this.closeScorePicker();
+      if (changed) {
+        this.swapsClearedByFixtureChange = this.swapLog.length > 0;
+        this.reset();
+        this.swapLog = [];
+        this.hasComputed = false;
+        this.appliedScores = null;
+        this.currentStandings = parsed.currentStandings;
+        this.currentPoints = parsed.currentPoints;
+        this.currentGoalDifference = parsed.currentGoalDifference;
+        this.activeTab = "standings";
+      }
+      this._saveWhatIfSession();
+      return changed;
+    },
+    _matchStatuses() {
+      const statuses = {};
+      this.matches.forEach((m) => {
+        statuses[m.matchId] = m.status;
+      });
+      return statuses;
+    },
+    // Swaps are the user's own exploration of their table and survive both a Reset and a
+    // Refresh — pulling different scores doesn't make an arrangement of teams wrong. What does
+    // is the fixtures moving underneath it: a match that has left SCHEDULED (the round locked,
+    // or it kicked off) or dropped out of the round entirely means the table is now being scored
+    // against a different set of games than the one it was arranged for.
+    _fixturesChangedSince(saved) {
+      const current = this._matchStatuses();
+      const savedStatuses = saved.matchStatuses || null;
+      return Object.keys(saved.scores || {}).some((matchId) => {
+        const now = current[matchId];
+        if (now === void 0) return true;
+        const was = savedStatuses ? savedStatuses[matchId] : "SCHEDULED";
+        return was === "SCHEDULED" && now !== "SCHEDULED";
+      });
     },
     // A session saved before the round locked still carries scores for matches that have since
     // kicked off or finished — those stay, they're the hypothesis. Only matches called off since
@@ -1545,7 +1593,7 @@ Predict the table — LigiPredictor.com`;
       }, 200);
     },
     confirmReset() {
-      if (window.confirm("Reset your what-if? This clears all entered scores and swaps.")) {
+      if (window.confirm("Reset your what-if? This clears all entered scores. Your swaps stay.")) {
         this.resetWhatIf();
       }
     },
@@ -1684,6 +1732,8 @@ Predict the table — LigiPredictor.com`;
         this.errorMessage = "Failed to compute. Check your connection.";
       });
     },
+    // Clears the scores, not the swaps: the swap controls in the tables section have their own
+    // Reset for those, and this button sits under the score entry it undoes.
     resetWhatIf() {
       this.scoreableMatches().forEach((m) => {
         this.scores[m.matchId] = { home: null, away: null };
@@ -1692,8 +1742,7 @@ Predict the table — LigiPredictor.com`;
       this.openId = null;
       this.openSeg = null;
       this.rollingId = null;
-      this.reset();
-      this.swapLog = [];
+      this.selectedTeam = null;
       this.currentStandings = parsed.currentStandings;
       this.currentPoints = parsed.currentPoints;
       this.currentGoalDifference = parsed.currentGoalDifference;

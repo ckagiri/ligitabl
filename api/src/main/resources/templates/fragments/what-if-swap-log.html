@@ -1,9 +1,10 @@
 <!-- What-If Swap Log: same visual format as predictions.html's "Swap History" section
      (predictions.html:455-515), but populated live from the sandbox's swapLog array instead
-     of a server-rendered list. -->
+     of a server-rendered list.
+ -->
 <div
   th:fragment="swap-log"
-  x-show="swapLog.length > 0"
+  x-show="hasComputed && swapLog.length > 0"
   x-cloak
   class="border-t border-gray-100"
   x-data="{ open: true }"
