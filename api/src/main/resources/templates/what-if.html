@@ -415,15 +415,15 @@
             </div>
 
             <!-- The score below will have moved since this user last had the page open, because the
-                 swaps it was built on went with the lock. Say so rather than let it look like a
-                 miscalculation. Shows once: the session is re-saved without the swaps. -->
+                 swaps it was built on went with the fixture change. Say so rather than let it look
+                 like a miscalculation. Shows once: the session is re-saved without the swaps. -->
             <div
-              x-show="swapsClearedByLock"
+              x-show="swapsClearedByFixtureChange"
               x-cloak
               class="mb-3 px-3 py-2 rounded-md border border-amber-200 bg-amber-50 text-xs text-amber-800"
             >
-              Round locked — your sandbox swaps were cleared. This is the prediction you're locked
-              into, scored against the projection.
+              This round's fixtures changed, so your sandbox swaps were cleared. The table below is
+              your own prediction, scored against the projection.
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

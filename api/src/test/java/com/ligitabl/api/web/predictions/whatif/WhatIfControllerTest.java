@@ -28,12 +28,15 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.shared.PredictionAccessMode;
 import com.ligitabl.api.rest.prediction.shared.RankingSource;
 import com.ligitabl.api.rest.prediction.whatif.ComputeWhatIfUseCase;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.rest.prediction.whatif.SaveWhatIfPredictionUseCase;
 import com.ligitabl.api.rest.prediction.whatif.WhatIfError;
 import com.ligitabl.api.rest.prediction.whatif.WhatIfResult;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.predictions.userpredictions.GetUserPredictionUseCase;
 import com.ligitabl.api.web.predictions.userpredictions.UserPredictionViewData;
+import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.StandingsMetadata;
 import com.ligitabl.model.domain.StandingsTeamRank;
@@ -77,6 +80,9 @@ class WhatIfControllerTest {
     private WhatIfPredictionRepo whatIfPredictionRepo;
 
     @Mock
+    private RoundSupport roundSupport;
+
+    @Mock
     private CurrentUserPublicId currentUserPublicId;
 
     @Mock
@@ -98,6 +104,7 @@ class WhatIfControllerTest {
                 matchRepo,
                 teamRepo,
                 whatIfPredictionRepo,
+                roundSupport,
                 competitionDefaults,
                 new ObjectMapper(),
                 currentUserPublicId);
@@ -233,6 +240,13 @@ class WhatIfControllerTest {
 
     // ---- GET /predictions/user/what-if/saved ----
 
+    /** The round /saved resolves through RoundSupport before it can look up scores or fixtures. */
+    private Round stubCurrentRound(Season season) {
+        Round round = Round.builder().id(season.getCurrentRoundId()).build();
+        when(roundSupport.resolveCurrentRound(season)).thenReturn(round);
+        return round;
+    }
+
     @Test
     void savedScores_shouldReturn401_whenUnauthenticated() {
         Map<String, Object> body = controller.savedScores(null, response);
@@ -250,6 +264,7 @@ class WhatIfControllerTest {
                 .currentRoundId(UUID.randomUUID())
                 .build();
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        stubCurrentRound(season);
         when(whatIfPredictionRepo.findByUserAndRound(userId, season.getCurrentRoundId()))
                 .thenReturn(Optional.empty());
 
@@ -257,6 +272,32 @@ class WhatIfControllerTest {
 
         assertEquals(true, body.get("success"));
         assertEquals(List.of(), body.get("scores"));
+    }
+
+    /**
+     * Refresh resyncs the round itself, not just the scores — the client judges its saved scores and
+     * swaps against these fixtures, so a stale set would have it reasoning about the round as it was
+     * when the page was rendered.
+     */
+    @Test
+    void savedScores_shouldReturnRoundFixturesAndOpenState() {
+        authenticate();
+        Season season = Season.builder()
+                .id(UUID.randomUUID())
+                .currentRoundId(UUID.randomUUID())
+                .build();
+        Round round = stubCurrentRound(season);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(roundSupport.resolveStatus(round)).thenReturn(RoundStatus.LOCKED);
+        when(whatIfPredictionRepo.findByUserAndRound(userId, season.getCurrentRoundId()))
+                .thenReturn(Optional.empty());
+
+        Map<String, Object> body = controller.savedScores(principal, response);
+
+        assertEquals(true, body.get("success"));
+        assertEquals(false, body.get("roundOpen"));
+        assertEquals(List.of(), body.get("matches"));
+        verify(matchRepo).findByRoundIdWithTeams(season.getCurrentRoundId());
     }
 
     @Test
@@ -268,6 +309,7 @@ class WhatIfControllerTest {
                 .currentRoundId(UUID.randomUUID())
                 .build();
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        stubCurrentRound(season);
         when(whatIfPredictionRepo.findByUserAndRound(userId, season.getCurrentRoundId()))
                 .thenReturn(Optional.of(WhatIfPrediction.builder()
                         .userId(userId)

@@ -29,6 +29,7 @@ import com.ligitabl.api.rest.prediction.whatif.WhatIfCommand;
 import com.ligitabl.api.rest.prediction.whatif.WhatIfError;
 import com.ligitabl.api.rest.prediction.whatif.WhatIfResult;
 import com.ligitabl.api.rest.prediction.whatif.WhatIfScore;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.web.predictions.userpredictions.GetUserPredictionQuery;
@@ -38,6 +39,8 @@ import com.ligitabl.api.web.shared.dto.TeamRankDto;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Match;
+import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
@@ -71,6 +74,7 @@ public class WhatIfController {
     private final MatchRepo matchRepo;
     private final TeamRepo teamRepo;
     private final WhatIfPredictionRepo whatIfPredictionRepo;
+    private final RoundSupport roundSupport;
     private final CompetitionDefaults competitionDefaults;
     private final ObjectMapper objectMapper;
     private final CurrentUserPublicId currentUserPublicId;
@@ -200,9 +204,8 @@ public class WhatIfController {
     }
 
     /**
-     * The scores this user last applied, for the Refresh button — the page-load equivalent is the
-     * {@code savedWhatIfScoresJson} model attribute, but a refresh needs them live rather than as of
-     * whenever the page was rendered.
+     * The state the Refresh button resyncs to: the scores this user last applied, plus the round's
+     * fixtures and whether it's still open.
      */
     @GetMapping("/saved")
     @ResponseBody
@@ -213,12 +216,23 @@ public class WhatIfController {
             return Map.of("success", false, "message", "Authentication required");
         }
 
-        UUID roundId = seasonRepo
+        Round currentRound = seasonRepo
                 .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
-                .map(Season::getCurrentRoundId)
+                .map(roundSupport::resolveCurrentRound)
                 .orElse(null);
+        UUID roundId = currentRound != null ? currentRound.getId() : null;
 
-        return Map.of("success", true, "scores", savedScoresFor(userDetails.getUserId(), roundId));
+        List<WhatIfMatchDto> matches = roundId == null
+                ? List.of()
+                : matchRepo.findByRoundIdWithTeams(roundId).stream()
+                        .map(WhatIfMatchDto::from)
+                        .toList();
+
+        return Map.of(
+                "success", true,
+                "scores", savedScoresFor(userDetails.getUserId(), roundId),
+                "matches", matches,
+                "roundOpen", roundSupport.resolveStatus(currentRound) == RoundStatus.OPEN);
     }
 
     @PostMapping("/compute")
