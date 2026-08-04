@@ -35,6 +35,30 @@ public class RoundSupport {
         return (matches == null || matches.isEmpty()) ? RoundStatus.OPEN : round.computeStatus(matches);
     }
 
+    /**
+     * Like {@link #resolveStatus} but with the round's own lifecycle flag taking precedence over
+     * the no-matches default.
+     *
+     * <p>Needed because {@code resolveStatus} short-circuits to OPEN when a round has no matches
+     * loaded, <em>before</em> {@link Round#computeStatus} gets a chance to report FINALIZED — so a
+     * finalized round with no matches otherwise reads as open, and a join would be accepted into a
+     * round that has already been scored.
+     *
+     * <p>Use this wherever the question is "may someone still join at this round?".
+     * {@code resolveStatus} remains correct for display and for match-driven questions.
+     *
+     * <p>⚠️ Covers {@code finalized} only. {@code computeStatus} short-circuits on {@code advanced}
+     * too, so an advanced-but-not-finalized round with no matches still reads OPEN here. That
+     * matches the behaviour this method was extracted from and is believed unreachable (advancing
+     * follows finalization); widening it would be a real behaviour change, not a cleanup.
+     */
+    public RoundStatus resolveJoinEligibilityStatus(Round round) {
+        if (round == null) {
+            return RoundStatus.UNKNOWN;
+        }
+        return round.isFinalized() ? RoundStatus.FINALIZED : resolveStatus(round);
+    }
+
     /** The default competition's current round status. */
     public RoundStatus currentRoundStatus() {
         return resolveStatus(resolveCurrentRound());

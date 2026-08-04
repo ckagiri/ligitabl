@@ -100,6 +100,12 @@ ligitabl:
   scheduling:
     enabled: true
 
+  auto-join:
+    # Gives a default table to users who were around during pre-season but never submitted,
+    # at the moment predictions open. Eligibility is anchored to the season's own
+    # preSeasonOpensAt, so there is no window to tune here.
+    enabled: ${AUTO_JOIN_ENABLED:true}
+
   outbox:
     # Kill-switch for the relay only (other schedulers unaffected). While false,
     # events accumulate as PENDING and are delivered once re-enabled.
