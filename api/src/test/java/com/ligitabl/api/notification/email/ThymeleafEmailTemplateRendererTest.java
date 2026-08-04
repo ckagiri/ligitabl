@@ -64,14 +64,52 @@ class ThymeleafEmailTemplateRendererTest {
                                 "myTableUrl",
                                 "http://x/my-table",
                                 "leaderboardUrl",
-                                "http://x/leaderboard"));
+                                "http://x/leaderboard"),
+                EmailCommand.EmailType.SEASON_WELCOME, seasonWelcomeData());
 
         for (EmailCommand.EmailType type : EmailCommand.EmailType.values()) {
+            // Without this, a newly added type renders with null variables and passes
+            // vacuously — the loop would claim coverage it does not have.
+            assertThat(dataByType)
+                    .as("every EmailType needs fixture data here, or this loop proves nothing for it")
+                    .containsKey(type);
+
             var result = renderer.render(type, dataByType.get(type));
             assertThat(result.isRight()).as("render %s", type).isTrue();
             assertThat(result.get().subject()).isNotBlank();
             assertThat(result.get().htmlBody()).isNotBlank();
         }
+    }
+
+    private static Map<String, Object> seasonWelcomeData() {
+        return Map.of(
+                "myTableUrl", "http://x/my-table",
+                "leaderboardUrl", "http://x/leaderboard",
+                "faqUrl", "http://x/faq");
+    }
+
+    @Test
+    void seasonWelcomeStatesTheSwapAllowanceAndTheDeadline() {
+        // These are the promises the email makes. If the copy drifts from what the code
+        // actually allows, this is the test that should fail — not a user finding out.
+        var result = renderer.render(EmailCommand.EmailType.SEASON_WELCOME, seasonWelcomeData());
+
+        assertThat(result.isRight()).isTrue();
+        EmailContent content = result.get();
+
+        assertThat(content.subject()).isEqualTo("The season's underway — you have 5 swaps");
+        assertThat(content.htmlBody())
+                .as("the allowance, matching CreatePredictionUseCase.MAX_INITIAL_SWAPS")
+                .contains("5 swaps");
+        assertThat(content.htmlBody())
+                .as("names the deadline concretely; SeasonInPlayEnqueuer guarantees round 1 is open")
+                .contains("Gameweek 1 is still open")
+                .contains("Once Gameweek 1 locks");
+        assertThat(content.htmlBody())
+                .contains("http://x/my-table")
+                .contains("http://x/leaderboard")
+                .contains("http://x/faq");
+        assertThat(content.textBody()).isNotBlank();
     }
 
     @Test

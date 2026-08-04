@@ -18,7 +18,14 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-@ConditionalOnProperty(name = "ligitabl.auto-join.enabled", havingValue = "true", matchIfMissing = true)
+// Both flags, matching OutboxRelayJob: ligitabl.scheduling.enabled is the global scheduler
+// kill-switch and must be able to stop this too — auto-join writes real rows, so a job that
+// ignored it would keep mutating data in environments (tests, maintenance) that had explicitly
+// turned scheduling off.
+@ConditionalOnProperty(
+        name = {"ligitabl.scheduling.enabled", "ligitabl.auto-join.enabled"},
+        havingValue = "true",
+        matchIfMissing = true)
 public class SeasonInPlayJob {
 
     private final SeasonInPlayEnqueuer seasonInPlayEnqueuer;
