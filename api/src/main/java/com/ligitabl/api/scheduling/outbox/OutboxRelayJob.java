@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 
+import io.sentry.Sentry;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -19,6 +20,10 @@ import lombok.extern.slf4j.Slf4j;
  * (FOR UPDATE SKIP LOCKED — multi-instance safe) and hands each to
  * {@link OutboxEventProcessor}. A second schedule sweeps PROCESSING rows
  * orphaned by a crash back into the retry cycle.
+ *
+ * <p>Each event is isolated: one that throws past the processor is logged,
+ * marked failed out of band, and the batch continues. The batch is a unit of
+ * claiming, not of failure.
  */
 @Component
 // Both flags must be true (or absent): ligitabl.scheduling.enabled is the global
@@ -58,7 +63,34 @@ public class OutboxRelayJob {
         }
         log.info("[OUTBOX_RELAY_BATCH] size={}", batch.size());
         for (OutboxEvent event : batch) {
-            processor.processOne(event);
+            try {
+                processor.processOne(event);
+            } catch (Exception e) {
+                // processOne swallows almost everything, but not a database error that
+                // aborted its transaction — that also defeats its own markFailed write.
+                // Without this guard the escaping exception abandons the rest of the
+                // claimed batch, leaving up to batchSize-1 untouched events PROCESSING
+                // until the stuck sweep.
+                log.error("[OUTBOX_RELAY_EVENT_FAILED] id={}, type={}", event.getId(), event.getEventType(), e);
+                Sentry.captureException(e);
+                recordFailureOutOfBand(event, e);
+            }
+        }
+    }
+
+    /**
+     * Retries the failure bookkeeping now that the exception has crossed the processor's
+     * transactional proxy: Spring has rolled back, so this write runs on a clean
+     * connection and commits, and the event re-enters the retry cycle with normal backoff
+     * instead of waiting for {@link #recoverStuckProcessing}. Guarded in turn — a failure
+     * to record a failure must not cost the remaining events their turn.
+     */
+    private void recordFailureOutOfBand(OutboxEvent event, Exception cause) {
+        try {
+            processor.recordFailure(event, cause);
+        } catch (Exception e) {
+            log.error("[OUTBOX_RELAY_MARK_FAILED_FAILED] id={}: {}", event.getId(), e.getMessage(), e);
+            Sentry.captureException(e);
         }
     }
 

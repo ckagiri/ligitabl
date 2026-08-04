@@ -24,6 +24,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -354,6 +355,65 @@ class OutboxEventProcessorTest {
         verify(createPredictionUseCase).executeWithContext(eq(goodUser), eq(ctx), any());
         verify(outboxRepo).markSent(event.getId());
         verify(outboxRepo, never()).markFailed(any(), any(), any());
+    }
+
+    @Test
+    void roundLockedDatabaseFailure_abortsLoopImmediatelyInsteadOfBlamingTheRemainingUsers() throws Exception {
+        // A DataAccessException aborts the shared transaction, so every later user would fail
+        // too and be logged as if at fault. The loop must stop at the real culprit and let the
+        // whole batch retry.
+        Season season = activeSeason(seasonId);
+        UUID firstUser = UUID.randomUUID();
+        UUID laterUser = UUID.randomUUID();
+        var ctx = new CreatePredictionUseCase.JoinCtx(
+                season, Contest.builder().id(UUID.randomUUID()).build(), 1, 1);
+
+        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
+        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any()))
+                .thenReturn(java.util.List.of(firstUser, laterUser));
+        when(createPredictionUseCase.resolveJoinContext(season)).thenReturn(Either.right(ctx));
+        // jOOQ's DataAccessException, not Spring's — that is what the repos actually throw
+        // here, as OutboxFailureIsolationIT demonstrates against a real Postgres.
+        when(createPredictionUseCase.executeWithContext(eq(firstUser), eq(ctx), any()))
+                .thenThrow(new org.jooq.exception.DataAccessException("current transaction is aborted"));
+
+        OutboxEvent event = claimedEvent(
+                OutboxEventTypes.ROUND_LOCKED,
+                objectMapper.writeValueAsString(new RoundLockedPayload(seasonId, UUID.randomUUID(), 1)),
+                1);
+
+        processor.processOne(event);
+
+        verify(createPredictionUseCase, never()).executeWithContext(eq(laterUser), any(), any());
+        verify(outboxRepo).markFailed(eq(event.getId()), contains("transaction is aborted"), any());
+        verify(outboxRepo, never()).markSent(any());
+    }
+
+    @Test
+    void roundLockedSpringDatabaseFailure_alsoAbortsTheLoop() throws Exception {
+        // The two DataAccessException types share no supertype, so both arms are exercised.
+        Season season = activeSeason(seasonId);
+        UUID firstUser = UUID.randomUUID();
+        UUID laterUser = UUID.randomUUID();
+        var ctx = new CreatePredictionUseCase.JoinCtx(
+                season, Contest.builder().id(UUID.randomUUID()).build(), 1, 1);
+
+        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
+        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any()))
+                .thenReturn(java.util.List.of(firstUser, laterUser));
+        when(createPredictionUseCase.resolveJoinContext(season)).thenReturn(Either.right(ctx));
+        when(createPredictionUseCase.executeWithContext(eq(firstUser), eq(ctx), any()))
+                .thenThrow(new DuplicateKeyException("duplicate key value violates unique constraint"));
+
+        OutboxEvent event = claimedEvent(
+                OutboxEventTypes.ROUND_LOCKED,
+                objectMapper.writeValueAsString(new RoundLockedPayload(seasonId, UUID.randomUUID(), 1)),
+                1);
+
+        processor.processOne(event);
+
+        verify(createPredictionUseCase, never()).executeWithContext(eq(laterUser), any(), any());
+        verify(outboxRepo).markFailed(eq(event.getId()), contains("duplicate key"), any());
     }
 
     @Test

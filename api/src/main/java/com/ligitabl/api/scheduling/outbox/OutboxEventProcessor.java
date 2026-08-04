@@ -43,8 +43,10 @@ import lombok.extern.slf4j.Slf4j;
  * counted the in-flight attempt). Unknown event types dead-letter immediately —
  * retrying can't fix an event the code doesn't know how to handle. If the
  * failure was a database error that aborted the transaction, the markFailed
- * write itself may fail too; the row then stays PROCESSING until the stuck-row
- * sweep returns it to the retry cycle.
+ * write itself fails too and the exception escapes this method;
+ * {@link OutboxRelayJob} then retries {@link #recordFailure} from outside the
+ * rolled-back transaction, so the row still enters the retry cycle promptly
+ * rather than waiting on the stuck-row sweep.
  */
 @Component
 @RequiredArgsConstructor
@@ -84,7 +86,7 @@ public class OutboxEventProcessor {
             outboxRepo.markSent(event.getId());
             log.info("[OUTBOX_SENT] id={}, type={}", event.getId(), event.getEventType());
         } catch (Exception e) {
-            handleFailure(event, e);
+            recordFailure(event, e);
         }
     }
 
@@ -131,6 +133,19 @@ public class OutboxEventProcessor {
                                             .executeWithContext(userId, ctx, new CreatePredictionCommand(List.of()))
                                             .peekLeft(error -> log.warn(
                                                     "[ROUND_LOCKED] Auto-join skipped for user {}: {}", userId, error));
+                                } catch (org.jooq.exception.DataAccessException
+                                        | org.springframework.dao.DataAccessException e) {
+                                    // Not survivable per-user: the batch shares one transaction, and a
+                                    // failed statement aborts it, so every remaining user would fail too
+                                    // and be logged as if they were at fault. Fail now, attributed
+                                    // correctly — the whole batch retries, and the NOT EXISTS filter
+                                    // skips anyone already created.
+                                    //
+                                    // Both types are caught deliberately: the repos surface jOOQ's
+                                    // DataAccessException (verified in OutboxFailureIsolationIT), while
+                                    // Spring's is what a translated JDBC path would throw. They share no
+                                    // supertype, so neither alone is sufficient.
+                                    throw e;
                                 } catch (Exception e) {
                                     log.error("[ROUND_LOCKED] Auto-join failed for user {}", userId, e);
                                 }
@@ -203,7 +218,19 @@ public class OutboxEventProcessor {
         return data;
     }
 
-    private void handleFailure(OutboxEvent event, Exception e) {
+    /**
+     * Records a failed attempt: FAILED with backoff, or DEAD_LETTER once attempts are
+     * exhausted (the claim already counted the in-flight attempt).
+     *
+     * <p>Deliberately <em>not</em> {@code @Transactional}. When the failure was a database
+     * error, {@link #processOne}'s transaction is already aborted and this write cannot
+     * land from inside it — Postgres rejects every subsequent statement with
+     * {@code current transaction is aborted}. {@link OutboxRelayJob} therefore calls this
+     * again from outside, after the exception has crossed the transactional proxy and
+     * Spring has rolled back: by then the connection is clean and the write commits on
+     * its own. Adding {@code @Transactional} here would re-break that.
+     */
+    public void recordFailure(OutboxEvent event, Exception e) {
         String error = e.getMessage() != null ? e.getMessage() : e.toString();
         if (event.hasExceededMaxAttempts()) {
             outboxRepo.markDeadLetter(event.getId(), error);
