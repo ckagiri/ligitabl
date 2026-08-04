@@ -126,17 +126,9 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
         return predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
     }
 
-    /**
-     * The table as the user sees it, ordered by position.
-     *
-     * <p>Necessary because {@code SwapHelper.applySwap} swaps the two teams' <em>position
-     * values</em> and leaves the list order untouched — so {@code getCurrentRankings()} still
-     * reads in its original order after a swap, and asserting on that order would silently pass
-     * whether or not the swap happened.
-     */
+    /** Codes in display order — see {@link TeamRank#inPositionOrder} for why list order is not it. */
     private List<String> tableOrder(SeasonPrediction prediction) {
-        return prediction.getCurrentRankings().stream()
-                .sorted(java.util.Comparator.comparingInt(TeamRank::getPosition))
+        return TeamRank.inPositionOrder(prediction.getCurrentRankings()).stream()
                 .map(TeamRank::getCode)
                 .toList();
     }

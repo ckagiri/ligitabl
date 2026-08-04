@@ -460,6 +460,49 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             assertThat(countSeasonPredictionsForUser(userId)).isEqualTo(1);
             assertThat(countEntriesForUser(userId)).isEqualTo(1);
         }
+
+        @Test
+        @DisplayName("should reject the merge when the round-0 row has lost its initialRankings marker")
+        void shouldRejectMergeWhenMarkerMissing() {
+            // The other half of "initialRankings is the permanent marker". Every round-0 writer —
+            // a user registering in pre-season, and CreatePredictionUseCase.autoRegisterDefaultTable
+            // on behalf of one — sets it precisely so this guard never fires. Nothing proved the
+            // guard actually fires without it, so the marker's purpose was asserted but untested.
+            assertThat(useCase.execute(userId, singleSwap("MCI", "ARS")).isRight())
+                    .isTrue();
+            jdbcTemplate.update(
+                    "UPDATE t_season_prediction SET c_initial_rankings = NULL WHERE fk_user_id = ?", userId);
+
+            setPredictionsOpenAt(OffsetDateTime.now().minusMinutes(1));
+
+            Either<CreatePredictionError, CreatePredictionResult> merged =
+                    useCase.execute(userId, multiSwap(List.of()));
+
+            assertThat(merged.isLeft()).isTrue();
+            assertThat(merged.getLeft()).isInstanceOf(CreatePredictionError.CorruptPreSeasonRegistration.class);
+            assertThat(predictionRepo
+                            .findByUserAndSeason(userId, seasonId)
+                            .orElseThrow()
+                            .getAtRoundNumber())
+                    .as("a rejected merge must leave the row at round 0, not half-migrated")
+                    .isZero();
+        }
+
+        @Test
+        @DisplayName("should reject the merge when initialRankings is an empty list rather than null")
+        void shouldRejectMergeWhenMarkerEmpty() {
+            // The guard tests null OR empty; an empty jsonb array is the shape a bad migration or
+            // a partial write would leave behind, and it is not the same code path as null.
+            assertThat(useCase.execute(userId, singleSwap("MCI", "ARS")).isRight())
+                    .isTrue();
+            jdbcTemplate.update(
+                    "UPDATE t_season_prediction SET c_initial_rankings = '[]'::jsonb WHERE fk_user_id = ?", userId);
+
+            setPredictionsOpenAt(OffsetDateTime.now().minusMinutes(1));
+
+            assertThat(useCase.execute(userId, multiSwap(List.of())).getLeft())
+                    .isInstanceOf(CreatePredictionError.CorruptPreSeasonRegistration.class);
+        }
     }
 
     // --- Helpers ---

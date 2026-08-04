@@ -133,8 +133,7 @@ public class GetUserDetailUseCase {
         }
 
         // Resolve team codes to names
-        List<TeamRank> sortedRanks = rankings.stream()
-                .sorted(Comparator.comparingInt(TeamRank::getPosition))
+        List<TeamRank> sortedRanks = TeamRank.inPositionOrder(rankings).stream()
                 .toList();
 
         Set<String> teamCodes = sortedRanks.stream().map(TeamRank::getCode).collect(Collectors.toSet());

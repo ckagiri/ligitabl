@@ -194,8 +194,7 @@ public class WhatIfController {
         if (ranks == null || ranks.isEmpty()) {
             return List.of();
         }
-        List<TeamRank> sorted = ranks.stream()
-                .sorted(Comparator.comparingInt(TeamRank::getPosition))
+        List<TeamRank> sorted = TeamRank.inPositionOrder(ranks).stream()
                 .toList();
         Map<String, Team> teamsByCode =
                 teamRepo.findAllByCodes(sorted.stream().map(TeamRank::getCode).collect(Collectors.toSet())).stream()

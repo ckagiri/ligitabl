@@ -240,9 +240,7 @@ public class GetPublicPredictionUseCase {
                     .orElseGet(() -> StandingsData.fromBaseline(season.getInitialRankings()));
         }
 
-        var sortedRanks = predictedRanks.stream()
-                .sorted(Comparator.comparingInt(r -> r.getPosition()))
-                .toList();
+        var sortedRanks = TeamRank.inPositionOrder(predictedRanks);
         Map<String, Team> teamsByCode =
                 teamsByCodeFromCodes(sortedRanks.stream().map(r -> r.getCode()).collect(Collectors.toSet()));
 
