@@ -62,6 +62,36 @@ public class CreatePredictionUseCase {
                 .map(info -> new JoinCtx(season, contest, info.atRoundNumber(), info.currentRoundPosition())));
     }
 
+    /**
+     * Resolves just the main contest, for batch callers that need it once for many users.
+     *
+     * <p>Deliberately not {@link #resolveJoinContext}: that also runs {@code determineAtRoundNumber},
+     * which the pre-season registration path has no use for and which can fail with {@code Ended} —
+     * turning a batch that would have succeeded into a skipped one.
+     */
+    public Either<CreatePredictionError, Contest> resolveMainContest(Season season) {
+        return findMainContest(season);
+    }
+
+    /**
+     * Writes the round-0 registration a user would have written themselves by submitting the
+     * default table during pre-season — same shape, same allowance, same first-swap bonus.
+     *
+     * <p>Bypasses {@link #resolveJoinPlan}'s {@code isPreSeason()} gate on purpose. This runs at
+     * the moment predictions open, when that gate has just closed: the system is standing in for a
+     * submission the user had the whole pre-season to make, so the row must be the one they would
+     * have produced, not the mid-season {@code NewJoin} shape. Producing a {@code NewJoin} row here
+     * would silently cost them the guest-prediction import and drop their swap allowance from 5 to
+     * the round-opening 1–2 (see {@code .art/task_80.md}).
+     *
+     * <p>Not {@code @Transactional}: callers run inside their own transaction, matching how
+     * {@link #executeWithContext} is used by the outbox processor.
+     */
+    public Either<CreatePredictionError, CreatePredictionResult> autoRegisterDefaultTable(
+            UUID userId, Season season, Contest mainContest) {
+        return registerPreSeason(userId, season, mainContest, new CreatePredictionCommand(List.of()));
+    }
+
     public Either<CreatePredictionError, CreatePredictionResult> executeWithContext(
             UUID userId, JoinCtx ctx, CreatePredictionCommand request) {
         return validateSwapTeams(request, ctx.season())
@@ -205,8 +235,7 @@ public class CreatePredictionUseCase {
         }
         Round currentRound = currentRoundOpt.get();
 
-        RoundStatus roundStatus =
-                currentRound.isFinalized() ? RoundStatus.FINALIZED : roundSupport.resolveStatus(currentRound);
+        RoundStatus roundStatus = roundSupport.resolveJoinEligibilityStatus(currentRound);
 
         int atRoundNumber;
         if (roundStatus == RoundStatus.OPEN) {
