@@ -40,6 +40,9 @@ import com.ligitabl.api.notification.outbox.RoundLockedPayload;
 import com.ligitabl.api.notification.outbox.RoundResultsEmailEnqueuer;
 import com.ligitabl.api.notification.outbox.RoundResultsPayload;
 import com.ligitabl.api.notification.outbox.SeasonInPlayPayload;
+import com.ligitabl.api.notification.outbox.SeasonWelcomeEmailEnqueuer;
+import com.ligitabl.api.notification.outbox.SeasonWelcomeFanoutPayload;
+import com.ligitabl.api.notification.outbox.SeasonWelcomePayload;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionCommand;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionError;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionResult;
@@ -64,6 +67,9 @@ class OutboxEventProcessorTest {
 
     @Mock
     RoundResultsEmailEnqueuer enqueuer;
+
+    @Mock
+    SeasonWelcomeEmailEnqueuer seasonWelcomeEnqueuer;
 
     @Mock
     EmailTemplateRenderer renderer;
@@ -91,6 +97,7 @@ class OutboxEventProcessorTest {
         processor = new OutboxEventProcessor(
                 outboxRepo,
                 enqueuer,
+                seasonWelcomeEnqueuer,
                 renderer,
                 emailProvider,
                 objectMapper,
@@ -104,6 +111,8 @@ class OutboxEventProcessorTest {
                 .thenReturn(Either.right(new EmailContent("subject", "<html/>", "text")));
         when(renderer.render(eq(EmailCommand.EmailType.JOIN_REMINDER), any()))
                 .thenReturn(Either.right(new EmailContent("join subject", "<html/>", "text")));
+        when(renderer.render(eq(EmailCommand.EmailType.SEASON_WELCOME), any()))
+                .thenReturn(Either.right(new EmailContent("welcome subject", "<html/>", "text")));
         when(emailProvider.sendSingle(anyString(), anyString(), anyString(), any()))
                 .thenReturn(Either.right(null));
     }
@@ -636,6 +645,87 @@ class OutboxEventProcessorTest {
         processor.processOne(event);
 
         verify(outboxRepo).markFailed(eq(event.getId()), contains("Season not found"), any());
+        verify(outboxRepo, never()).markSent(any());
+    }
+
+    // --- SEASON_WELCOME_FANOUT / SEASON_WELCOME (task 80) ----------------------------------
+
+    @Test
+    void seasonWelcomeFanoutDelegatesThenMarksSent() throws Exception {
+        SeasonWelcomeFanoutPayload payload = new SeasonWelcomeFanoutPayload(seasonId);
+        OutboxEvent event = claimedEvent(
+                OutboxEventTypes.SEASON_WELCOME_FANOUT, objectMapper.writeValueAsString(payload), 1);
+
+        processor.processOne(event);
+
+        verify(seasonWelcomeEnqueuer).enqueue(payload);
+        verify(outboxRepo).markSent(event.getId());
+    }
+
+    @Test
+    void seasonWelcomeFanoutFailure_marksFailedSoTheWholeExpansionRetries() throws Exception {
+        org.mockito.Mockito.doThrow(new RuntimeException("db down"))
+                .when(seasonWelcomeEnqueuer)
+                .enqueue(any());
+        OutboxEvent event = claimedEvent(
+                OutboxEventTypes.SEASON_WELCOME_FANOUT,
+                objectMapper.writeValueAsString(new SeasonWelcomeFanoutPayload(seasonId)),
+                1);
+
+        processor.processOne(event);
+
+        verify(outboxRepo).markFailed(eq(event.getId()), contains("db down"), any());
+        verify(outboxRepo, never()).markSent(any());
+    }
+
+    @Test
+    void seasonWelcomeRendersAndSendsThenMarksSent() throws Exception {
+        OutboxEvent event = claimedEvent(
+                OutboxEventTypes.SEASON_WELCOME,
+                objectMapper.writeValueAsString(new SeasonWelcomePayload(userId, "carol@x.com")),
+                1);
+
+        processor.processOne(event);
+
+        ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.captor();
+        verify(renderer).render(eq(EmailCommand.EmailType.SEASON_WELCOME), dataCaptor.capture());
+        Assertions.assertThat(dataCaptor.getValue())
+                .containsEntry("myTableUrl", "http://localhost:8080/my-table")
+                .containsEntry("leaderboardUrl", "http://localhost:8080/leaderboard")
+                .containsEntry("faqUrl", "http://localhost:8080/faq");
+
+        verify(emailProvider)
+                .sendSingle(eq("carol@x.com"), eq("welcome subject"), eq("<html/>"), eq(EmailCommand.Priority.NORMAL));
+        verify(outboxRepo).markSent(event.getId());
+    }
+
+    @Test
+    void seasonWelcomeRenderFailure_marksFailed() throws Exception {
+        when(renderer.render(eq(EmailCommand.EmailType.SEASON_WELCOME), any()))
+                .thenReturn(Either.left(new EmailError.TemplateRenderError("email/season-welcome", "boom")));
+        OutboxEvent event = claimedEvent(
+                OutboxEventTypes.SEASON_WELCOME,
+                objectMapper.writeValueAsString(new SeasonWelcomePayload(userId, "carol@x.com")),
+                1);
+
+        processor.processOne(event);
+
+        verify(emailProvider, never()).sendSingle(any(), any(), any(), any());
+        verify(outboxRepo).markFailed(eq(event.getId()), contains("Template render failed"), any());
+    }
+
+    @Test
+    void seasonWelcomeSendFailure_marksFailed() throws Exception {
+        when(emailProvider.sendSingle(anyString(), anyString(), anyString(), any()))
+                .thenReturn(Either.left(new EmailError.EmailProviderError("mailgun 500")));
+        OutboxEvent event = claimedEvent(
+                OutboxEventTypes.SEASON_WELCOME,
+                objectMapper.writeValueAsString(new SeasonWelcomePayload(userId, "carol@x.com")),
+                1);
+
+        processor.processOne(event);
+
+        verify(outboxRepo).markFailed(eq(event.getId()), contains("Email send failed"), any());
         verify(outboxRepo, never()).markSent(any());
     }
 

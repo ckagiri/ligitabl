@@ -25,6 +25,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
+import com.ligitabl.api.testsupport.TestIds;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.RoundStatus;
@@ -640,7 +641,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
                 email,
                 "test-password-hash",
                 "Join User",
-                randomPublicId(),
+                TestIds.randomPublicId(),
                 true);
 
         jdbcTemplate.update("INSERT INTO t_user_role (fk_user_id, c_role) VALUES (?, ?)", id, "PLAYER");
@@ -663,13 +664,4 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         return sb.toString();
     }
 
-    private static String randomPublicId() {
-        String alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";
-        StringBuilder sb = new StringBuilder(10);
-        for (int i = 0; i < 10; i++) {
-            int idx = java.util.concurrent.ThreadLocalRandom.current().nextInt(alphabet.length());
-            sb.append(alphabet.charAt(idx));
-        }
-        return sb.toString();
-    }
 }

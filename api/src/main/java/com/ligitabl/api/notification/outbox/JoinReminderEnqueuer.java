@@ -60,6 +60,13 @@ public class JoinReminderEnqueuer {
             log.info("[JOIN_REMINDER_SKIPPED] a JOIN_REMINDER batch was already enqueued today; skipping this run");
             return;
         }
+        if (outboxRepo.existsEventsOfTypeCreatedSince(OutboxEventTypes.SEASON_WELCOME, todayStart.toInstant())) {
+            // Season-opening day. The welcome batch reaches the same audience with the opposite
+            // message ("your table is in"), so a reminder alongside it would contradict itself —
+            // and the two batches together are the biggest send volume of the season.
+            log.info("[JOIN_REMINDER_SKIPPED] a SEASON_WELCOME batch was enqueued today; skipping this run");
+            return;
+        }
 
         Season season = seasonRepo
                 .findActiveSeason(competitionDefaults.defaultCompetitionSlug())

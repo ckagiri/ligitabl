@@ -30,6 +30,7 @@ import com.ligitabl.api.notification.outbox.RoundLockedPayload;
 import com.ligitabl.api.notification.outbox.SeasonInPlayPayload;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionUseCase;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
+import com.ligitabl.api.testsupport.TestIds;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
@@ -283,6 +284,46 @@ class OutboxFailureIsolationIT extends AbstractPostgresIT {
                 .isEmpty();
     }
 
+    @Test
+    @DisplayName("Full chain: SEASON_IN_PLAY -> fan-out -> per-user welcome, rendered and sent")
+    void fullChainReachesAPerUserWelcomeEmail() throws Exception {
+        UUID returningPlayer = insertUser("chain@example.com");
+
+        outboxRepo.save(OutboxEvent.create(
+                "season-in-play:it-chain",
+                OutboxEventTypes.SEASON_IN_PLAY,
+                "season",
+                seasonId.toString(),
+                objectMapper.writeValueAsString(new SeasonInPlayPayload(seasonId))));
+
+        // Hop 1: auto-join + chain event.
+        relayFor(outboxRepo.claimBatchForProcessing(10)).relay();
+        // Hop 2: fan-out into per-user events.
+        relayFor(outboxRepo.claimBatchForProcessing(10)).relay();
+        // Hop 3: render + send.
+        relayFor(outboxRepo.claimBatchForProcessing(10)).relay();
+
+        String welcomeKey = "season-welcome:%s:%s".formatted(returningPlayer, seasonId);
+        OutboxEvent welcome = outboxRepo.findByIdempotencyKey(welcomeKey).orElseThrow();
+        assertThat(welcome.getStatus())
+                .as("template must render and the provider must accept it")
+                .isEqualTo(OutboxEvent.Status.SENT);
+
+        assertThat(outboxRepo
+                        .findByIdempotencyKey("season-welcome-fanout:" + seasonId)
+                        .orElseThrow()
+                        .getStatus())
+                .isEqualTo(OutboxEvent.Status.SENT);
+
+        // Re-running the whole chain must not produce a second welcome for the same user.
+        relayFor(outboxRepo.claimBatchForProcessing(10)).relay();
+        assertThat(jdbc.queryForObject(
+                        "SELECT count(*) FROM t_outbox_event WHERE c_event_type = ?",
+                        Integer.class,
+                        OutboxEventTypes.SEASON_WELCOME))
+                .isEqualTo(1);
+    }
+
     /**
      * The scheduled relay bean is absent in tests (ligitabl.scheduling.enabled=false), and
      * we need the claim to return an already-claimed, deterministically ordered batch — so
@@ -358,7 +399,7 @@ class OutboxFailureIsolationIT extends AbstractPostgresIT {
                 email,
                 "test-password-hash",
                 "Test User",
-                UUID.randomUUID().toString().replace("-", "").substring(0, 10),
+                TestIds.randomPublicId(),
                 true);
         jdbc.update("INSERT INTO t_user_role (fk_user_id, c_role) VALUES (?, ?)", id, "PLAYER");
         return id;

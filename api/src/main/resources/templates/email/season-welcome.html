@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: #28a745;
+            color: white;
+            padding: 30px;
+            border-radius: 10px 10px 0 0;
+            text-align: center;
+        }
+        .content {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+        }
+        .cta {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .swaps {
+            background: #e9f7ef;
+            border-left: 4px solid #28a745;
+            padding: 12px 16px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>⚽ You're in — the season's underway!</h1>
+    </div>
+
+    <div class="content">
+        <p>Hi there,</p>
+
+        <p>The new season has kicked off and <strong>your table is in</strong>. If you didn't set
+            your own order, we've started you off with the standings as they finished last time.</p>
+
+        <!--
+          "Gameweek 1" is safe to hardcode: SeasonInPlayEnqueuer only fires this chain while the
+          current round is position 1 AND reads OPEN. If that guard is ever relaxed, this copy
+          becomes a lie — update it alongside.
+        -->
+        <div class="swaps">
+            <p style="margin: 0;">
+                <strong>You still have up to 5 swaps.</strong> Gameweek 1 is still open — head to
+                <strong>My Table</strong> and move teams around until it looks right to you.
+            </p>
+        </div>
+
+        <p>Once Gameweek 1 locks, your table is set and you'll start earning points on the
+            <a th:href="${leaderboardUrl}">leaderboard</a>.</p>
+
+        <p style="text-align: center;">
+            <a class="cta" th:href="${myTableUrl}">Reshape my table</a>
+        </p>
+
+        <p style="margin-top: 30px;">
+            New to how the swaps work? The <a th:href="${faqUrl}">FAQ</a> has the short version.
+        </p>
+
+        <p style="margin-top: 30px;">
+            Good luck,<br>
+            <strong>The LigiPredictor Team</strong>
+        </p>
+    </div>
+</body>
+</html>

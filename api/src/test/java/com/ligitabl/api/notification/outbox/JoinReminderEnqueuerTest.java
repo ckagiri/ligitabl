@@ -125,6 +125,19 @@ class JoinReminderEnqueuerTest {
     }
 
     @Test
+    void skipsEntirely_whenSeasonWelcomeBatchEnqueuedToday() {
+        // Season-opening day: the welcome batch reaches the same audience with the opposite
+        // message ("your table is in"), so a reminder alongside it would contradict itself.
+        when(outboxRepo.existsEventsOfTypeCreatedSince(eq(OutboxEventTypes.SEASON_WELCOME), any()))
+                .thenReturn(true);
+
+        enqueuer.enqueueDueReminders();
+
+        verifyNoInteractions(seasonRepo, userRepo);
+        verify(outboxRepo, never()).save(any());
+    }
+
+    @Test
     void skipsEntirely_whenNoActiveSeason() {
         when(seasonRepo.findActiveSeason("pl")).thenReturn(Optional.empty());
 

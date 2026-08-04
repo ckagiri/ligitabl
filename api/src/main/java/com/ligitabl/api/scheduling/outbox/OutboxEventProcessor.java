@@ -22,7 +22,9 @@ import com.ligitabl.api.notification.outbox.RoundLockedPayload;
 import com.ligitabl.api.notification.outbox.RoundResultsEmailEnqueuer;
 import com.ligitabl.api.notification.outbox.RoundResultsPayload;
 import com.ligitabl.api.notification.outbox.SeasonInPlayPayload;
+import com.ligitabl.api.notification.outbox.SeasonWelcomeEmailEnqueuer;
 import com.ligitabl.api.notification.outbox.SeasonWelcomeFanoutPayload;
+import com.ligitabl.api.notification.outbox.SeasonWelcomePayload;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionCommand;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionUseCase;
 import com.ligitabl.model.domain.OutboxEvent;
@@ -57,6 +59,7 @@ public class OutboxEventProcessor {
 
     private final OutboxRepo outboxRepo;
     private final RoundResultsEmailEnqueuer roundResultsEmailEnqueuer;
+    private final SeasonWelcomeEmailEnqueuer seasonWelcomeEmailEnqueuer;
     private final EmailTemplateRenderer emailTemplateRenderer;
     private final EmailProvider emailProvider;
     private final ObjectMapper objectMapper;
@@ -76,6 +79,8 @@ public class OutboxEventProcessor {
                 case OutboxEventTypes.ROUND_RESULTS -> processRoundResults(event);
                 case OutboxEventTypes.ROUND_LOCKED -> processRoundLocked(event);
                 case OutboxEventTypes.SEASON_IN_PLAY -> processSeasonInPlay(event);
+                case OutboxEventTypes.SEASON_WELCOME_FANOUT -> processSeasonWelcomeFanout(event);
+                case OutboxEventTypes.SEASON_WELCOME -> processSeasonWelcome(event);
                 case OutboxEventTypes.JOIN_REMINDER -> processJoinReminder(event);
                 default -> {
                     log.warn(
@@ -246,6 +251,43 @@ public class OutboxEventProcessor {
                 seasonId.toString(),
                 objectMapper.writeValueAsString(new SeasonWelcomeFanoutPayload(seasonId)));
         outboxRepo.save(fanout);
+    }
+
+    /**
+     * Second hop of the chain: expands into per-user SEASON_WELCOME events. Runs in its own
+     * transaction alongside its markSent, so a crash mid-fan-out retries the whole expansion —
+     * duplicate-free via the per-user idempotency keys.
+     */
+    private void processSeasonWelcomeFanout(OutboxEvent event) throws Exception {
+        SeasonWelcomeFanoutPayload payload =
+                objectMapper.readValue(event.getPayload(), SeasonWelcomeFanoutPayload.class);
+        seasonWelcomeEmailEnqueuer.enqueue(payload);
+    }
+
+    private void processSeasonWelcome(OutboxEvent event) throws Exception {
+        SeasonWelcomePayload payload = objectMapper.readValue(event.getPayload(), SeasonWelcomePayload.class);
+
+        EmailContent content = emailTemplateRenderer
+                .render(EmailCommand.EmailType.SEASON_WELCOME, seasonWelcomeTemplateData())
+                .fold(
+                        error -> {
+                            throw new IllegalStateException("Template render failed: " + error);
+                        },
+                        c -> c);
+
+        emailProvider
+                .sendSingle(payload.userEmail(), content.subject(), content.htmlBody(), EmailCommand.Priority.NORMAL)
+                .peekLeft(error -> {
+                    throw new IllegalStateException("Email send failed: " + error);
+                });
+    }
+
+    private Map<String, Object> seasonWelcomeTemplateData() {
+        Map<String, Object> data = new HashMap<>();
+        data.put("myTableUrl", frontendUrl + "/my-table");
+        data.put("leaderboardUrl", frontendUrl + "/leaderboard");
+        data.put("faqUrl", frontendUrl + "/faq");
+        return data;
     }
 
     private void processJoinReminder(OutboxEvent event) throws Exception {

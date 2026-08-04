@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
+import com.ligitabl.api.testsupport.TestIds;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.UserRepo;
@@ -219,23 +220,13 @@ class AutoJoinUserQueriesIT extends AbstractPostgresIT {
                 email,
                 "hash",
                 "User",
-                randomPublicId(),
+                TestIds.randomPublicId(),
                 verified,
                 optedOut,
                 lastLoginAt,
                 updateDate);
         jdbc.update("INSERT INTO t_user_role (fk_user_id, c_role) VALUES (?, ?)", id, "PLAYER");
         return id;
-    }
-
-    /** Public IDs use an ambiguity-free alphabet, so a hex substring would fail validation. */
-    private static String randomPublicId() {
-        String alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";
-        StringBuilder sb = new StringBuilder(10);
-        for (int i = 0; i < 10; i++) {
-            sb.append(alphabet.charAt(java.util.concurrent.ThreadLocalRandom.current().nextInt(alphabet.length())));
-        }
-        return sb.toString();
     }
 
     private void insertPrediction(UUID userId, UUID seasonId, int atRoundNumber) {
