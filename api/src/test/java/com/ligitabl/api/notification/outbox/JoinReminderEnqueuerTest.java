@@ -44,6 +44,11 @@ class JoinReminderEnqueuerTest {
 
     private static final Instant NOW = Instant.parse("2026-07-26T09:00:00Z");
     private static final UUID SEASON_ID = UUID.randomUUID();
+    /** Pre-season opened 40 days ago; predictions open in 10 days unless a test says otherwise. */
+    private static final OffsetDateTime PRE_SEASON_OPENED =
+            OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(40);
+    private static final OffsetDateTime PREDICTIONS_OPEN =
+            OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusDays(10);
 
     @Mock
     OutboxRepo outboxRepo;
@@ -66,11 +71,19 @@ class JoinReminderEnqueuerTest {
         enqueuer = new JoinReminderEnqueuer(
                 outboxRepo, userRepo, seasonRepo, competitionDefaults, objectMapper, properties, clock);
 
-        Season season = Season.builder().id(SEASON_ID).build();
-        when(seasonRepo.findActiveSeason("pl")).thenReturn(Optional.of(season));
+        activeSeason(PRE_SEASON_OPENED, PREDICTIONS_OPEN);
         when(outboxRepo.existsSentEventsOfTypeSince(eq(OutboxEventTypes.ROUND_RESULTS), any()))
                 .thenReturn(false);
         when(outboxRepo.save(any())).thenReturn(true);
+    }
+
+    private void activeSeason(OffsetDateTime preSeasonOpensAt, OffsetDateTime predictionsOpenAt) {
+        Season season = Season.builder()
+                .id(SEASON_ID)
+                .preSeasonOpensAt(preSeasonOpensAt)
+                .predictionsOpenAt(predictionsOpenAt)
+                .build();
+        when(seasonRepo.findActiveSeason("pl")).thenReturn(Optional.of(season));
     }
 
     private User userAgedDays(long days) {
@@ -137,8 +150,9 @@ class JoinReminderEnqueuerTest {
     }
 
     @Test
-    void passesConfiguredMaxStaleDays_asStaleCutoff() {
-        properties.setMaxStaleDays(45);
+    void passesPreSeasonOpensAt_asStaleCutoff() {
+        // The anchor, not a rolling window: someone last seen before the season opened never
+        // saw it, so reminding them is a cold approach rather than a nudge.
         when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
                 .thenReturn(List.of());
 
@@ -146,8 +160,54 @@ class JoinReminderEnqueuerTest {
 
         ArgumentCaptor<OffsetDateTime> staleCutoffCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
         verify(userRepo).findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), staleCutoffCaptor.capture());
-        Assertions.assertThat(staleCutoffCaptor.getValue())
-                .isEqualTo(OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(45));
+        Assertions.assertThat(staleCutoffCaptor.getValue()).isEqualTo(PRE_SEASON_OPENED);
+    }
+
+    @Test
+    void skipsEntirely_whenSeasonHasNoPreSeasonOpensAt() {
+        activeSeason(null, PREDICTIONS_OPEN);
+
+        enqueuer.enqueueDueReminders();
+
+        verifyNoInteractions(userRepo);
+        verify(outboxRepo, never()).save(any());
+    }
+
+    @Test
+    void skipsEntirely_withinTheQuietPeriodBeforePredictionsOpen() {
+        // Auto-join is hours away; "you haven't set your table" would be contradicted by the
+        // welcome email the same day.
+        activeSeason(PRE_SEASON_OPENED, OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusHours(3));
+
+        enqueuer.enqueueDueReminders();
+
+        verifyNoInteractions(userRepo);
+        verify(outboxRepo, never()).save(any());
+    }
+
+    @Test
+    void stillRuns_justOutsideTheQuietPeriod() {
+        activeSeason(PRE_SEASON_OPENED, OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusDays(1).plusMinutes(1));
+        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
+                .thenReturn(List.of(userAgedDays(4)));
+
+        enqueuer.enqueueDueReminders();
+
+        verify(outboxRepo).save(any());
+    }
+
+    @Test
+    void resumesAfterPredictionsHaveOpened_forMidSeasonSignups() {
+        // The quiet period is one-sided. Once predictions are open the auto-join has already
+        // emptied the eligible set, so anyone still matching is a fresh signup who does deserve
+        // a nudge — silencing reminders for the rest of the season would drop them.
+        activeSeason(PRE_SEASON_OPENED, OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(3));
+        when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
+                .thenReturn(List.of(userAgedDays(4)));
+
+        enqueuer.enqueueDueReminders();
+
+        verify(outboxRepo).save(any());
     }
 
     @Test
