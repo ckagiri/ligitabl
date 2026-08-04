@@ -39,6 +39,7 @@ import com.ligitabl.api.notification.outbox.RoundAdvancedPayload;
 import com.ligitabl.api.notification.outbox.RoundLockedPayload;
 import com.ligitabl.api.notification.outbox.RoundResultsEmailEnqueuer;
 import com.ligitabl.api.notification.outbox.RoundResultsPayload;
+import com.ligitabl.api.notification.outbox.SeasonInPlayPayload;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionCommand;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionError;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionResult;
@@ -444,6 +445,194 @@ class OutboxEventProcessorTest {
                 objectMapper.writeValueAsString(new RoundLockedPayload(seasonId, UUID.randomUUID(), 1)),
                 1);
 
+        processor.processOne(event);
+
+        verify(outboxRepo).markFailed(eq(event.getId()), contains("Season not found"), any());
+        verify(outboxRepo, never()).markSent(any());
+    }
+
+    // --- SEASON_IN_PLAY (task 80) ----------------------------------------------------------
+
+    private Season inPlaySeason() {
+        return Season.builder()
+                .id(seasonId)
+                .mainContestId(UUID.randomUUID())
+                .preSeasonOpensAt(NOW.minusSeconds(30L * 86400).atOffset(ZoneOffset.UTC))
+                .build();
+    }
+
+    private OutboxEvent seasonInPlayEvent() throws Exception {
+        return claimedEvent(
+                OutboxEventTypes.SEASON_IN_PLAY,
+                objectMapper.writeValueAsString(new SeasonInPlayPayload(seasonId)),
+                1);
+    }
+
+    private java.util.List<OutboxEvent> savedEvents() {
+        ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
+        verify(outboxRepo, org.mockito.Mockito.atLeast(0)).save(captor.capture());
+        return captor.getAllValues();
+    }
+
+    @Test
+    void seasonInPlayAutoRegistersEligibleUsersAsRoundZeroThenMarksSent() throws Exception {
+        Season season = inPlaySeason();
+        UUID user1 = UUID.randomUUID();
+        UUID user2 = UUID.randomUUID();
+        Contest mainContest = Contest.builder().id(UUID.randomUUID()).build();
+
+        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
+        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any())).thenReturn(java.util.List.of(user1, user2));
+        when(createPredictionUseCase.resolveMainContest(season)).thenReturn(Either.right(mainContest));
+        when(createPredictionUseCase.autoRegisterDefaultTable(any(), eq(season), eq(mainContest)))
+                .thenReturn(Either.right(new CreatePredictionResult(UUID.randomUUID(), UUID.randomUUID(), 0, "ok")));
+
+        OutboxEvent event = seasonInPlayEvent();
+        processor.processOne(event);
+
+        verify(createPredictionUseCase).autoRegisterDefaultTable(eq(user1), eq(season), eq(mainContest));
+        verify(createPredictionUseCase).autoRegisterDefaultTable(eq(user2), eq(season), eq(mainContest));
+        // Never the mid-season shape — that would cost these users their swap allowance.
+        verify(createPredictionUseCase, never()).executeWithContext(any(), any(), any());
+        verify(outboxRepo).markSent(event.getId());
+    }
+
+    @Test
+    void seasonInPlayUsesTheSeasonsPreSeasonOpensAtAsTheAnchor() throws Exception {
+        Season season = inPlaySeason();
+        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
+        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any())).thenReturn(java.util.List.of());
+
+        processor.processOne(seasonInPlayEvent());
+
+        ArgumentCaptor<java.time.OffsetDateTime> anchor = ArgumentCaptor.forClass(java.time.OffsetDateTime.class);
+        verify(userRepo).findUnjoinedUserIdsActiveSince(eq(seasonId), anchor.capture());
+        Assertions.assertThat(anchor.getValue()).isEqualTo(season.getPreSeasonOpensAt());
+    }
+
+    @Test
+    void seasonInPlayWritesTheWelcomeFanoutEvenWhenNobodyNeededAutoJoining() throws Exception {
+        // The trap: processRoundLocked returns early on an empty candidate list. Doing that here
+        // would silently skip welcoming genuine pre-season registrants, who exist regardless of
+        // whether anyone needed auto-joining.
+        Season season = inPlaySeason();
+        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
+        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any())).thenReturn(java.util.List.of());
+
+        OutboxEvent event = seasonInPlayEvent();
+        processor.processOne(event);
+
+        verify(createPredictionUseCase, never()).resolveMainContest(any());
+        Assertions.assertThat(savedEvents())
+                .singleElement()
+                .satisfies(e -> {
+                    Assertions.assertThat(e.getIdempotencyKey()).isEqualTo("season-welcome-fanout:" + seasonId);
+                    Assertions.assertThat(e.getEventType()).isEqualTo(OutboxEventTypes.SEASON_WELCOME_FANOUT);
+                });
+        verify(outboxRepo).markSent(event.getId());
+    }
+
+    @Test
+    void seasonInPlayWritesExactlyOneFanoutEventNotOnePerUser() throws Exception {
+        Season season = inPlaySeason();
+        Contest mainContest = Contest.builder().id(UUID.randomUUID()).build();
+        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
+        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any()))
+                .thenReturn(java.util.List.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()));
+        when(createPredictionUseCase.resolveMainContest(season)).thenReturn(Either.right(mainContest));
+        when(createPredictionUseCase.autoRegisterDefaultTable(any(), any(), any()))
+                .thenReturn(Either.right(new CreatePredictionResult(UUID.randomUUID(), UUID.randomUUID(), 0, "ok")));
+
+        processor.processOne(seasonInPlayEvent());
+
+        Assertions.assertThat(savedEvents()).hasSize(1);
+    }
+
+    @Test
+    void seasonInPlayOneUserFailure_doesNotBlockOthersOrFailTheEvent() throws Exception {
+        Season season = inPlaySeason();
+        UUID badUser = UUID.randomUUID();
+        UUID goodUser = UUID.randomUUID();
+        Contest mainContest = Contest.builder().id(UUID.randomUUID()).build();
+
+        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
+        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any()))
+                .thenReturn(java.util.List.of(badUser, goodUser));
+        when(createPredictionUseCase.resolveMainContest(season)).thenReturn(Either.right(mainContest));
+        when(createPredictionUseCase.autoRegisterDefaultTable(eq(badUser), any(), any()))
+                .thenThrow(new RuntimeException("boom"));
+        when(createPredictionUseCase.autoRegisterDefaultTable(eq(goodUser), any(), any()))
+                .thenReturn(Either.right(new CreatePredictionResult(UUID.randomUUID(), UUID.randomUUID(), 0, "ok")));
+
+        OutboxEvent event = seasonInPlayEvent();
+        processor.processOne(event);
+
+        verify(createPredictionUseCase).autoRegisterDefaultTable(eq(goodUser), any(), any());
+        verify(outboxRepo).markSent(event.getId());
+    }
+
+    @Test
+    void seasonInPlayDatabaseFailure_abortsLoopAndFailsTheEvent() throws Exception {
+        Season season = inPlaySeason();
+        UUID firstUser = UUID.randomUUID();
+        UUID laterUser = UUID.randomUUID();
+        Contest mainContest = Contest.builder().id(UUID.randomUUID()).build();
+
+        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
+        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any()))
+                .thenReturn(java.util.List.of(firstUser, laterUser));
+        when(createPredictionUseCase.resolveMainContest(season)).thenReturn(Either.right(mainContest));
+        when(createPredictionUseCase.autoRegisterDefaultTable(eq(firstUser), any(), any()))
+                .thenThrow(new org.jooq.exception.DataAccessException("current transaction is aborted"));
+
+        OutboxEvent event = seasonInPlayEvent();
+        processor.processOne(event);
+
+        verify(createPredictionUseCase, never()).autoRegisterDefaultTable(eq(laterUser), any(), any());
+        verify(outboxRepo).markFailed(eq(event.getId()), contains("transaction is aborted"), any());
+        verify(outboxRepo, never()).markSent(any());
+    }
+
+    @Test
+    void seasonInPlayContestResolutionFails_skipsBatchButStillWelcomesAndMarksSent() throws Exception {
+        Season season = inPlaySeason();
+        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
+        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any())).thenReturn(java.util.List.of(UUID.randomUUID()));
+        when(createPredictionUseCase.resolveMainContest(season))
+                .thenReturn(Either.left(new CreatePredictionError.MainContestNotFound()));
+
+        OutboxEvent event = seasonInPlayEvent();
+        processor.processOne(event);
+
+        verify(createPredictionUseCase, never()).autoRegisterDefaultTable(any(), any(), any());
+        Assertions.assertThat(savedEvents()).hasSize(1);
+        verify(outboxRepo).markSent(event.getId());
+    }
+
+    @Test
+    void seasonInPlayWithoutPreSeasonOpensAt_skipsAutoJoinButStillWelcomes() throws Exception {
+        // Only reachable if the season was edited between enqueue and process — the enqueuer
+        // guards it. Guessing a cohort would be worse than skipping one.
+        Season season = Season.builder()
+                .id(seasonId)
+                .mainContestId(UUID.randomUUID())
+                .preSeasonOpensAt(null)
+                .build();
+        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
+
+        OutboxEvent event = seasonInPlayEvent();
+        processor.processOne(event);
+
+        verify(userRepo, never()).findUnjoinedUserIdsActiveSince(any(), any());
+        Assertions.assertThat(savedEvents()).hasSize(1);
+        verify(outboxRepo).markSent(event.getId());
+    }
+
+    @Test
+    void seasonInPlaySeasonNotFound_marksFailed() throws Exception {
+        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.empty());
+
+        OutboxEvent event = seasonInPlayEvent();
         processor.processOne(event);
 
         verify(outboxRepo).markFailed(eq(event.getId()), contains("Season not found"), any());

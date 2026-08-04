@@ -27,6 +27,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.notification.outbox.OutboxEventTypes;
 import com.ligitabl.api.notification.outbox.RoundLockedPayload;
+import com.ligitabl.api.notification.outbox.SeasonInPlayPayload;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionUseCase;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
@@ -192,6 +193,94 @@ class OutboxFailureIsolationIT extends AbstractPostgresIT {
         assertThat(outboxRepo.findByIdempotencyKey("mystery:it-1").orElseThrow().getStatus())
                 .as("batch-mate claimed after the poisoned event must still be processed")
                 .isEqualTo(OutboxEvent.Status.DEAD_LETTER);
+    }
+
+    @Test
+    @DisplayName("SEASON_IN_PLAY writes round-0 rows and chains the welcome fan-out")
+    void seasonInPlayAutoRegistersAsRoundZeroAndChainsTheFanout() throws Exception {
+        UUID returningPlayer = insertUser("returning@example.com");
+
+        outboxRepo.save(OutboxEvent.create(
+                "season-in-play:it",
+                OutboxEventTypes.SEASON_IN_PLAY,
+                "season",
+                seasonId.toString(),
+                objectMapper.writeValueAsString(new SeasonInPlayPayload(seasonId))));
+
+        relayFor(outboxRepo.claimBatchForProcessing(10)).relay();
+
+        assertThat(outboxRepo.findByIdempotencyKey("season-in-play:it").orElseThrow().getStatus())
+                .isEqualTo(OutboxEvent.Status.SENT);
+
+        // The shape is the whole point: a pre-season registration, not a mid-season join.
+        Integer atRound = jdbc.queryForObject(
+                "SELECT c_at_round_number FROM t_season_prediction WHERE fk_user_id = ?", Integer.class, returningPlayer);
+        assertThat(atRound).as("round-0, so the user keeps the full merge allowance").isZero();
+        assertThat(jdbc.queryForObject(
+                        "SELECT c_initial_rankings IS NOT NULL FROM t_season_prediction WHERE fk_user_id = ?",
+                        Boolean.class,
+                        returningPlayer))
+                .as("the permanent pre-registration marker; without it the later merge reports corrupt")
+                .isTrue();
+        assertThat(jdbc.queryForObject(
+                        "SELECT c_last_swap_at IS NULL FROM t_season_prediction WHERE fk_user_id = ?",
+                        Boolean.class,
+                        returningPlayer))
+                .as("no swaps used, so the first-swap bonus survives")
+                .isTrue();
+        assertThat(jdbc.queryForObject(
+                        "SELECT c_joined_at_round FROM t_entry WHERE fk_user_id = ?", Integer.class, returningPlayer))
+                .isZero();
+
+        assertThat(outboxRepo.findByIdempotencyKey("season-welcome-fanout:" + seasonId))
+                .as("chain event written in the same transaction as the auto-joins")
+                .isPresent();
+    }
+
+    @Test
+    @DisplayName("SEASON_IN_PLAY chains the fan-out even when there is nobody to auto-join")
+    void seasonInPlayChainsTheFanoutWithNoEligibleUsers() throws Exception {
+        // No users at all. Pre-season registrants would still be waiting on the welcome, so the
+        // chain event must not be conditional on the auto-join batch being non-empty.
+        outboxRepo.save(OutboxEvent.create(
+                "season-in-play:it-empty",
+                OutboxEventTypes.SEASON_IN_PLAY,
+                "season",
+                seasonId.toString(),
+                objectMapper.writeValueAsString(new SeasonInPlayPayload(seasonId))));
+
+        relayFor(outboxRepo.claimBatchForProcessing(10)).relay();
+
+        assertThat(outboxRepo.findByIdempotencyKey("season-in-play:it-empty").orElseThrow().getStatus())
+                .isEqualTo(OutboxEvent.Status.SENT);
+        assertThat(outboxRepo.findByIdempotencyKey("season-welcome-fanout:" + seasonId))
+                .isPresent();
+    }
+
+    @Test
+    @DisplayName("A poisoned SEASON_IN_PLAY rolls back its auto-joins and its chain event together")
+    void poisonedSeasonInPlayRollsBackTheChainEventToo() throws Exception {
+        insertUser("candidate-x@example.com");
+        insertUser("candidate-y@example.com");
+        insertUser("candidate-z@example.com");
+        poisonSeasonPredictionInserts();
+
+        outboxRepo.save(OutboxEvent.create(
+                "season-in-play:it-poison",
+                OutboxEventTypes.SEASON_IN_PLAY,
+                "season",
+                seasonId.toString(),
+                objectMapper.writeValueAsString(new SeasonInPlayPayload(seasonId))));
+
+        relayFor(outboxRepo.claimBatchForProcessing(10)).relay();
+
+        assertThat(outboxRepo.findByIdempotencyKey("season-in-play:it-poison").orElseThrow().getStatus())
+                .isEqualTo(OutboxEvent.Status.FAILED);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM t_season_prediction", Integer.class))
+                .isZero();
+        assertThat(outboxRepo.findByIdempotencyKey("season-welcome-fanout:" + seasonId))
+                .as("no half-state: nobody was auto-joined, so nobody is queued to be welcomed")
+                .isEmpty();
     }
 
     /**
