@@ -12,6 +12,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -39,10 +40,13 @@ import com.ligitabl.api.notification.outbox.RoundAdvancedPayload;
 import com.ligitabl.api.notification.outbox.RoundLockedPayload;
 import com.ligitabl.api.notification.outbox.RoundResultsEmailEnqueuer;
 import com.ligitabl.api.notification.outbox.RoundResultsPayload;
+import com.ligitabl.api.notification.outbox.SeasonCompletedPayload;
 import com.ligitabl.api.notification.outbox.SeasonInPlayPayload;
 import com.ligitabl.api.notification.outbox.SeasonWelcomeEmailEnqueuer;
 import com.ligitabl.api.notification.outbox.SeasonWelcomeFanoutPayload;
 import com.ligitabl.api.notification.outbox.SeasonWelcomePayload;
+import com.ligitabl.api.notification.outbox.SegmentResultsEmailEnqueuer;
+import com.ligitabl.api.notification.outbox.SegmentResultsPayload;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionCommand;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionError;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionResult;
@@ -67,6 +71,9 @@ class OutboxEventProcessorTest {
 
     @Mock
     RoundResultsEmailEnqueuer enqueuer;
+
+    @Mock
+    SegmentResultsEmailEnqueuer segmentResultsEnqueuer;
 
     @Mock
     SeasonWelcomeEmailEnqueuer seasonWelcomeEnqueuer;
@@ -97,6 +104,7 @@ class OutboxEventProcessorTest {
         processor = new OutboxEventProcessor(
                 outboxRepo,
                 enqueuer,
+                segmentResultsEnqueuer,
                 seasonWelcomeEnqueuer,
                 renderer,
                 emailProvider,
@@ -113,6 +121,8 @@ class OutboxEventProcessorTest {
                 .thenReturn(Either.right(new EmailContent("join subject", "<html/>", "text")));
         when(renderer.render(eq(EmailCommand.EmailType.SEASON_WELCOME), any()))
                 .thenReturn(Either.right(new EmailContent("welcome subject", "<html/>", "text")));
+        when(renderer.render(eq(EmailCommand.EmailType.SEGMENT_RESULTS), any()))
+                .thenReturn(Either.right(new EmailContent("segment subject", "<html/>", "text")));
         when(emailProvider.sendSingle(anyString(), anyString(), anyString(), any()))
                 .thenReturn(Either.right(null));
     }
@@ -155,6 +165,147 @@ class OutboxEventProcessorTest {
         verify(enqueuer).enqueue(payload);
         verify(outboxRepo).markSent(event.getId());
         verify(outboxRepo, never()).markFailed(any(), any(), any());
+    }
+
+    /**
+     * ROUND_ADVANCED drives two fan-outs. The segment one no-ops on most rounds, but it must be
+     * <em>called</em> on every one — deciding whether the round closes a segment is the enqueuer's
+     * job, not the processor's.
+     */
+    @Test
+    void roundAdvancedAlsoFansOutSegmentResults() throws Exception {
+        RoundAdvancedPayload payload = new RoundAdvancedPayload(seasonId, 9, 10);
+        OutboxEvent event = claimedEvent(OutboxEventTypes.ROUND_ADVANCED, objectMapper.writeValueAsString(payload), 1);
+
+        processor.processOne(event);
+
+        verify(segmentResultsEnqueuer).enqueueForRound(payload);
+        verify(outboxRepo).markSent(event.getId());
+    }
+
+    @Test
+    void segmentFanOutFailureRetriesTheWholeEvent() throws Exception {
+        org.mockito.Mockito.doThrow(new RuntimeException("board query down"))
+                .when(segmentResultsEnqueuer)
+                .enqueueForRound(any());
+        OutboxEvent event = claimedEvent(
+                OutboxEventTypes.ROUND_ADVANCED,
+                objectMapper.writeValueAsString(new RoundAdvancedPayload(seasonId, 9, 10)),
+                1);
+
+        processor.processOne(event);
+
+        // Both expansions replay on retry; that is safe because every insert they make is keyed.
+        verify(outboxRepo).markFailed(eq(event.getId()), contains("board query down"), any());
+        verify(outboxRepo, never()).markSent(any());
+    }
+
+    @Test
+    void seasonCompletedFansOutTheFinalPodium() throws Exception {
+        SeasonCompletedPayload payload = new SeasonCompletedPayload(seasonId);
+        OutboxEvent event =
+                claimedEvent(OutboxEventTypes.SEASON_COMPLETED, objectMapper.writeValueAsString(payload), 1);
+
+        processor.processOne(event);
+
+        verify(segmentResultsEnqueuer).enqueueForSeasonCompleted(payload);
+        verify(segmentResultsEnqueuer, never()).enqueueForRound(any());
+        verify(outboxRepo).markSent(event.getId());
+    }
+
+    private String segmentResultsJson(SegmentResultsPayload.SegmentPlacement... placements) throws Exception {
+        return objectMapper.writeValueAsString(new SegmentResultsPayload(
+                userId, "alice@x.com", "Alice", "aaaaaaaabc", "2025-26", "r9", 9, List.of(placements)));
+    }
+
+    private static SegmentResultsPayload.SegmentPlacement sprint(int rank) {
+        return new SegmentResultsPayload.SegmentPlacement("SPRINT", "S2", "Sprint 2", 5, 9, rank, 41, 210);
+    }
+
+    private static SegmentResultsPayload.SegmentPlacement quarter(int rank) {
+        return new SegmentResultsPayload.SegmentPlacement("QUARTER", "Q1", "Quarter 1", 1, 9, rank, 58, 395);
+    }
+
+    private static SegmentResultsPayload.SegmentPlacement season(int rank) {
+        return new SegmentResultsPayload.SegmentPlacement("FULL_SEASON", "FS", "Season", 1, 38, rank, 61, 1500);
+    }
+
+    @Test
+    void segmentResultsRendersAndSendsThenMarksSent() throws Exception {
+        OutboxEvent event = claimedEvent(OutboxEventTypes.SEGMENT_RESULTS, segmentResultsJson(sprint(2)), 1);
+
+        processor.processOne(event);
+
+        ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.captor();
+        verify(renderer).render(eq(EmailCommand.EmailType.SEGMENT_RESULTS), dataCaptor.capture());
+        Assertions.assertThat(dataCaptor.getValue())
+                .containsEntry("userDisplayName", "Alice")
+                .containsEntry("headlineName", "Sprint 2")
+                .containsEntry("headlineRank", 2)
+                .containsEntry("isDouble", false)
+                .containsEntry("isSeasonFinale", false)
+                .containsEntry("leaderboardUrl", "http://localhost:8080/leaderboard?phase=S2");
+
+        verify(emailProvider).sendSingle(eq("alice@x.com"), eq("segment subject"), eq("<html/>"), any());
+        verify(outboxRepo).markSent(event.getId());
+    }
+
+    /**
+     * Placements arrive smallest-window-first, so the headline is the <em>last</em>. A user who
+     * took both the sprint and the quarter it closes must be told about the quarter — the bigger
+     * achievement — not whichever block sorts first.
+     */
+    @Test
+    void segmentResultsHeadlinesTheLargestSegment() throws Exception {
+        OutboxEvent event =
+                claimedEvent(OutboxEventTypes.SEGMENT_RESULTS, segmentResultsJson(sprint(1), quarter(2)), 1);
+
+        processor.processOne(event);
+
+        ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.captor();
+        verify(renderer).render(eq(EmailCommand.EmailType.SEGMENT_RESULTS), dataCaptor.capture());
+        Assertions.assertThat(dataCaptor.getValue())
+                .containsEntry("headlineName", "Quarter 1")
+                .containsEntry("headlineRank", 2)
+                .containsEntry("isDouble", true)
+                .containsEntry("leaderboardUrl", "http://localhost:8080/leaderboard?phase=Q1");
+    }
+
+    @Test
+    void segmentResultsFlagsTheSeasonFinale() throws Exception {
+        OutboxEvent event = claimedEvent(OutboxEventTypes.SEGMENT_RESULTS, segmentResultsJson(season(1)), 1);
+
+        processor.processOne(event);
+
+        ArgumentCaptor<Map<String, Object>> dataCaptor = ArgumentCaptor.captor();
+        verify(renderer).render(eq(EmailCommand.EmailType.SEGMENT_RESULTS), dataCaptor.capture());
+        Assertions.assertThat(dataCaptor.getValue())
+                .containsEntry("isSeasonFinale", true)
+                .containsEntry("isDouble", false);
+    }
+
+    @Test
+    void segmentResultsRenderFailureRetries() throws Exception {
+        when(renderer.render(eq(EmailCommand.EmailType.SEGMENT_RESULTS), any()))
+                .thenReturn(Either.left(new EmailError.TemplateRenderError("SEGMENT_RESULTS", "boom")));
+        OutboxEvent event = claimedEvent(OutboxEventTypes.SEGMENT_RESULTS, segmentResultsJson(sprint(1)), 1);
+
+        processor.processOne(event);
+
+        verify(outboxRepo).markFailed(eq(event.getId()), contains("Template render failed"), any());
+        verify(outboxRepo, never()).markSent(any());
+    }
+
+    @Test
+    void segmentResultsSendFailureRetries() throws Exception {
+        when(emailProvider.sendSingle(anyString(), anyString(), anyString(), any()))
+                .thenReturn(Either.left(new EmailError.EmailProviderError("mailgun 500")));
+        OutboxEvent event = claimedEvent(OutboxEventTypes.SEGMENT_RESULTS, segmentResultsJson(sprint(1)), 1);
+
+        processor.processOne(event);
+
+        verify(outboxRepo).markFailed(eq(event.getId()), contains("Email send failed"), any());
+        verify(outboxRepo, never()).markSent(any());
     }
 
     @Test
