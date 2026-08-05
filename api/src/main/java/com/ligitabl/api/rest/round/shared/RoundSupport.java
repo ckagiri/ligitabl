@@ -46,11 +46,6 @@ public class RoundSupport {
      *
      * <p>Use this wherever the question is "may someone still join at this round?".
      * {@code resolveStatus} remains correct for display and for match-driven questions.
-     *
-     * <p>⚠️ Covers {@code finalized} only. {@code computeStatus} short-circuits on {@code advanced}
-     * too, so an advanced-but-not-finalized round with no matches still reads OPEN here. That
-     * matches the behaviour this method was extracted from and is believed unreachable (advancing
-     * follows finalization); widening it would be a real behaviour change, not a cleanup.
      */
     public RoundStatus resolveJoinEligibilityStatus(Round round) {
         if (round == null) {

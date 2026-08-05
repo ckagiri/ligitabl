@@ -61,9 +61,6 @@ public class JoinReminderEnqueuer {
             return;
         }
         if (outboxRepo.existsEventsOfTypeCreatedSince(OutboxEventTypes.SEASON_WELCOME, todayStart.toInstant())) {
-            // Season-opening day. The welcome batch reaches the same audience with the opposite
-            // message ("your table is in"), so a reminder alongside it would contradict itself —
-            // and the two batches together are the biggest send volume of the season.
             log.info("[JOIN_REMINDER_SKIPPED] a SEASON_WELCOME batch was enqueued today; skipping this run");
             return;
         }
@@ -97,16 +94,7 @@ public class JoinReminderEnqueuer {
             return;
         }
 
-        // "Registered before" here really means "not seen since".
         OffsetDateTime earliestCutoff = now.minusDays(stages.get(0));
-        // Anchored to the season rather than a rolling window: reminding someone who has not
-        // opened the app since before this season existed is not a reminder, it is a cold
-        // approach — they never saw the season and never declined it. A floating "last N days"
-        // reaches back past preSeasonOpensAt and sweeps exactly those people in.
-        //
-        // This also makes the reminder set self-emptying: once SEASON_IN_PLAY auto-joins
-        // everyone unjoined-and-seen-since-preseason, nobody matches until a fresh mid-season
-        // signup appears — who does still deserve reminders, and gets them.
         OffsetDateTime staleCutoff = season.getPreSeasonOpensAt();
         List<User> candidates = userRepo.findUnjoinedUsersRegisteredBefore(season.getId(), earliestCutoff, staleCutoff);
 

@@ -123,7 +123,7 @@ class SeasonInPlayEnqueuerTest {
     @Test
     void enqueuesWhenRoundOneHasNoMatchesSyncedYet() {
         // A round with no matches loaded resolves OPEN, which is exactly the state at the moment
-        // predictions open — fixtures often aren't in place yet.
+        // predictions open — fixtures may not be in place yet (eg when testing).
         when(roundSupport.resolveJoinEligibilityStatus(any())).thenReturn(RoundStatus.OPEN);
 
         enqueuer.enqueueIfSeasonInPlay();

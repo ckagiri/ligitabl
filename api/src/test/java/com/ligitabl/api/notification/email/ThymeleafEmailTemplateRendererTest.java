@@ -69,7 +69,7 @@ class ThymeleafEmailTemplateRendererTest {
 
         for (EmailCommand.EmailType type : EmailCommand.EmailType.values()) {
             // Without this, a newly added type renders with null variables and passes
-            // vacuously — the loop would claim coverage it does not have.
+            // meaninglessly — the loop would claim coverage it does not have.
             assertThat(dataByType)
                     .as("every EmailType needs fixture data here, or this loop proves nothing for it")
                     .containsKey(type);
@@ -90,8 +90,6 @@ class ThymeleafEmailTemplateRendererTest {
 
     @Test
     void seasonWelcomeStatesTheSwapAllowanceAndTheDeadline() {
-        // These are the promises the email makes. If the copy drifts from what the code
-        // actually allows, this is the test that should fail — not a user finding out.
         var result = renderer.render(EmailCommand.EmailType.SEASON_WELCOME, seasonWelcomeData());
 
         assertThat(result.isRight()).isTrue();

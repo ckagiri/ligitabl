@@ -15,8 +15,7 @@ import lombok.Data;
  * stage per run — see {@link JoinReminderEnqueuer}.
  *
  * <p>{@code quietDaysBeforePredictionsOpen} suppresses runs in the run-up to predictions
- * opening, when auto-join is about to hand these same users a table: "you haven't set your
- * table" followed hours later by "welcome, your table is set" reads as a bug.
+ * opening, when auto-join is about to hand these same users a table.
  */
 @Data
 @Component

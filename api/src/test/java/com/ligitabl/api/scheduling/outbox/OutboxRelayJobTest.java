@@ -28,8 +28,7 @@ import com.ligitabl.model.repo.OutboxRepo;
 
 /**
  * Covers the batch-isolation contract: the claimed batch is a unit of claiming, not of
- * failure. Before this guard existed, an exception escaping {@code processOne} abandoned
- * every remaining event in the batch, stranding them PROCESSING until the stuck sweep.
+ * failure.
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)

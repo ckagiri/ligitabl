@@ -460,7 +460,7 @@ class OutboxEventProcessorTest {
         verify(outboxRepo, never()).markSent(any());
     }
 
-    // --- SEASON_IN_PLAY (task 80) ----------------------------------------------------------
+    // --- SEASON_IN_PLAY ----------------------------------------------------------
 
     private Season inPlaySeason() {
         return Season.builder()

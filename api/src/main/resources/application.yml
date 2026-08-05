@@ -102,8 +102,7 @@ ligitabl:
 
   auto-join:
     # Gives a default table to users who were around during pre-season but never submitted,
-    # at the moment predictions open. Eligibility is anchored to the season's own
-    # preSeasonOpensAt, so there is no window to tune here.
+    # at the moment predictions open.
     enabled: ${AUTO_JOIN_ENABLED:true}
 
   outbox:
@@ -152,12 +151,8 @@ ligitabl:
       # Backoff schedule (days since last seen); a user is emailed once per stage, at the latest
       # stage reached, never more than one per run, and never again after the last stage.
       stage-days: ${JOIN_REMINDER_STAGE_DAYS:1,4,11}
-      # Staleness is anchored to the season's preSeasonOpensAt, not a rolling window: users who
-      # have not opened the app since this season became joinable never saw it, so a reminder
-      # would be a cold approach rather than a nudge. Nothing to configure.
-      #
       # Go quiet this many days before predictions open — auto-join is about to hand these same
-      # users a table, and "set your table" followed by "your table is set" reads as a bug.
+      # users a table.
       quiet-days-before-predictions-open: ${JOIN_REMINDER_QUIET_DAYS:1}
       cron: ${JOIN_REMINDER_CRON:0 0 9 * * *}
 

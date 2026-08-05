@@ -106,7 +106,6 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
         predictionRepo.save(prediction);
     }
 
-    /** Codes in display order — see {@link TeamRank#inPositionOrder} for why list order is not it. */
     private List<String> tableOrder(SeasonPrediction prediction) {
         return TeamRank.inPositionOrder(prediction.getCurrentRankings()).stream()
                 .map(TeamRank::getCode)
@@ -241,7 +240,7 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
         void shouldRejectWhenOpeningWindowNotYetUsed() {
             // The rule pairing this use case with RoundOpeningSwapUseCase: once the first-swap
             // bonus is gone, the round's opening window must be spent before ordinary swaps
-            // resume. Untested until now, on either side.
+            // resume.
             jdbcTemplate.update(
                     "UPDATE t_season_prediction SET c_last_swap_at = ?, c_opening_committed_round = 0"
                             + " WHERE fk_user_id = ?",
@@ -258,7 +257,7 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("should allow an ordinary swap once the opening window has been spent")
         void shouldAllowOnceOpeningWindowSpent() {
-            // Same state as above but with the opening committed for this round — the cooldown
+            // With the opening committed for this round — the cooldown
             // is the only remaining gate, and it has elapsed.
             jdbcTemplate.update(
                     "UPDATE t_season_prediction SET c_last_swap_at = ?, c_opening_committed_round = 10"

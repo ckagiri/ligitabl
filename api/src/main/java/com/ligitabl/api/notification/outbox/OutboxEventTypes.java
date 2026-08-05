@@ -19,9 +19,7 @@ public final class OutboxEventTypes {
     public static final String SEASON_IN_PLAY = "SEASON_IN_PLAY";
 
     /**
-     * Chained from SEASON_IN_PLAY once its auto-joins have committed. Splitting the fan-out into
-     * its own event keeps recipient selection off the auto-join transaction and gives it an
-     * independent retry budget.
+     * Chained from SEASON_IN_PLAY once its auto-joins have committed.
      */
     public static final String SEASON_WELCOME_FANOUT = "SEASON_WELCOME_FANOUT";
 
