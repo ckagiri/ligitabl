@@ -785,7 +785,7 @@ class CreatePredictionUseCaseTest {
         return new CreatePredictionCommand(swaps);
     }
 
-    // --- Auto-join entry point (task 80) ---------------------------------------------------
+    // --- Auto-join entry point ---------------------------------------------------
 
     @Test
     void autoRegisterDefaultTable_producesTheSameRowAPreSeasonSubmissionWould() {

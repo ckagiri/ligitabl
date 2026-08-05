@@ -17,12 +17,7 @@ import lombok.extern.slf4j.Slf4j;
  * Expands the season-welcome fan-out into one SEASON_WELCOME event per recipient.
  *
  * <p>Recipients are round-0 holders — auto-joined and genuinely pre-registered alike — because
- * that is exactly the set for whom "you still have up to 5 swaps" is true. A prediction at round
- * ≥ 1 is already committed and gets only the smaller round-opening allowance, so including it
- * would overstate what the user can still do.
- *
- * <p>Far leaner than {@link RoundResultsEmailEnqueuer} on purpose: there is no leaderboard,
- * phase or placement work here — a query and a loop.
+ * that is exactly the set for whom "you still have up to 5 swaps" is true.
  */
 @Component
 @RequiredArgsConstructor

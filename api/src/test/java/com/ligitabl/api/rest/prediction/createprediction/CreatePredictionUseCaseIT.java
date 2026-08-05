@@ -466,8 +466,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         void shouldRejectMergeWhenMarkerMissing() {
             // The other half of "initialRankings is the permanent marker". Every round-0 writer —
             // a user registering in pre-season, and CreatePredictionUseCase.autoRegisterDefaultTable
-            // on behalf of one — sets it precisely so this guard never fires. Nothing proved the
-            // guard actually fires without it, so the marker's purpose was asserted but untested.
+            // on behalf of one — sets it precisely so this guard never fires.
             assertThat(useCase.execute(userId, singleSwap("MCI", "ARS")).isRight())
                     .isTrue();
             jdbcTemplate.update(

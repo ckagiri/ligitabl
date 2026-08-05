@@ -98,13 +98,12 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
     }
 
     /**
-     * {@code openingCommittedRound} is a primitive with no explicit "unused" value — 0 works as
-     * one only because round positions start at 1. Named here so the fixtures do not read as
+     * {@code openingCommittedRound} is a primitive with no explicit "unused" value — 0 works
+     * here only because round positions start at 1. Named here so the fixtures do not read as
      * arbitrary zeroes.
      */
     private static final int OPENING_UNUSED = 0;
 
-    /** A prediction still at round 0 has not entered the season — it must merge first. */
     private static final int ROUND_ZERO = 0;
 
     /**

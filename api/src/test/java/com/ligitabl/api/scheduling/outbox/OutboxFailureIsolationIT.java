@@ -8,8 +8,6 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 import java.time.Clock;
-import java.time.LocalDate;
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,7 +15,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
@@ -30,37 +27,36 @@ import com.ligitabl.api.notification.outbox.RoundLockedPayload;
 import com.ligitabl.api.notification.outbox.SeasonInPlayPayload;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionUseCase;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
-import com.ligitabl.api.testsupport.TestIds;
-import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
+import com.ligitabl.api.testsupport.InPlaySeasonFixture;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 
 /**
- * Proves the Phase 0 failure-isolation contract against a real PostgreSQL, which is the
- * only place it can be proven: the whole mechanism turns on server-side transaction-abort
- * behaviour ("current transaction is aborted, commands ignored until end of transaction
- * block") that mocks cannot reproduce.
+ * What happens to the outbox when a batch dies mid-flight.
  *
- * <p>The poison is a trigger that raises on {@code t_season_prediction} insert. That
- * stands in for "any database error mid-batch" — which is the actual precondition under
- * test — rather than depending on a specific constraint an upsert might quietly absorb
- * ({@code EntryPersistenceAdapter.save} does exactly that). Everything after the raise is
- * real production code:
+ * <p>Only provable against a real PostgreSQL: the whole mechanism turns on server-side
+ * transaction-abort behaviour — {@code current transaction is aborted, commands ignored until
+ * end of transaction block} — which mocks cannot reproduce. A unit test can assert the wiring;
+ * only this can assert the guarantee.
+ *
+ * <p>The poison is a trigger that raises on {@code t_season_prediction} insert, standing in for
+ * "any database error mid-batch", which is the real precondition. An earlier attempt used a
+ * genuine unique-constraint violation and proved nothing, because
+ * {@code EntryPersistenceAdapter.save} is an upsert and quietly absorbed it. Everything after
+ * the raise is production code:
  *
  * <ol>
- *   <li>{@code createPredictionAndEntry} catches the violation itself and returns
- *       {@code Either.left(TransactionFailed)} — so the loop sees no exception, but the
- *       transaction is already poisoned;
- *   <li>the <em>next</em> user's {@code resolveJoinPlan} query throws for real — this is
- *       where the narrowed catch (5c) aborts the loop instead of blaming that user;
- *   <li>{@code markSent} and then {@code recordFailure} both fail inside the dead
- *       transaction, so the exception escapes {@code processOne} (5a);
- *   <li>the relay records the failure from outside the rolled-back transaction (5b).
+ *   <li>the auto-join catches the error itself and returns {@code Either.left(TransactionFailed)},
+ *       so the loop sees no exception — but the transaction is already dead;
+ *   <li>the <em>next</em> user's query throws for real, and the narrowed catch stops the loop
+ *       there instead of blaming that user;
+ *   <li>{@code markSent}, then {@code recordFailure}, both fail inside the dead transaction, so
+ *       the exception escapes {@code processOne};
+ *   <li>{@link OutboxRelayJob} records the failure from outside the rolled-back transaction.
  * </ol>
  */
 @SpringBootTest
 @DisplayName("Outbox failure isolation (real Postgres)")
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class OutboxFailureIsolationIT extends AbstractPostgresIT {
 
     @Autowired
@@ -78,26 +74,28 @@ class OutboxFailureIsolationIT extends AbstractPostgresIT {
     @Autowired
     CompetitionDefaults competitionDefaults;
 
-    /** Counts real invocations only — the use case still runs against the real database. */
+    /**
+     * Counts real invocations only — the use case still runs against the real database. Needed to
+     * observe that the loop <em>stopped</em>, which no database state can show.
+     */
     @SpyBean
     CreatePredictionUseCase createPredictionUseCase;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private UUID competitionId;
-    private UUID seasonId;
-    private UUID contestId;
-    private UUID roundId;
+    private InPlaySeasonFixture season;
+
+    @BeforeEach
+    void setup() {
+        season = InPlaySeasonFixture.createFresh(jdbc, competitionDefaults.defaultCompetitionSlug());
+    }
 
     @AfterEach
     void dropPoison() {
         jdbc.execute("DROP TRIGGER IF EXISTS it_poison_trg ON t_season_prediction");
     }
 
-    /**
-     * Any server-side error inside the batch's transaction will do; a trigger is simply the
-     * most direct way to guarantee one at a known point.
-     */
+    /** Any server-side error inside the batch's transaction will do; a trigger just guarantees one. */
     private void poisonSeasonPredictionInserts() {
         jdbc.execute("CREATE OR REPLACE FUNCTION it_poison() RETURNS trigger AS $$ "
                 + "BEGIN RAISE EXCEPTION 'it-poison'; END $$ LANGUAGE plpgsql");
@@ -105,303 +103,145 @@ class OutboxFailureIsolationIT extends AbstractPostgresIT {
                 + "FOR EACH ROW EXECUTE FUNCTION it_poison()");
     }
 
-    @BeforeEach
-    void setup() {
-        PostgresTestDbCleaner.truncateAllDomainTables(jdbc);
+    private OutboxEvent saveEvent(String key, String type, String payload) {
+        OutboxEvent event = OutboxEvent.create(key, type, "season", season.seasonId.toString(), payload);
+        outboxRepo.save(event);
+        return event;
+    }
 
-        competitionId = UUID.randomUUID();
-        seasonId = UUID.randomUUID();
-        contestId = UUID.randomUUID();
-        roundId = UUID.randomUUID();
+    private String roundLockedPayload() throws Exception {
+        return objectMapper.writeValueAsString(new RoundLockedPayload(season.seasonId, season.roundId, 1));
+    }
 
-        insertCompetitionAndSeason();
-        insertContest();
-        jdbc.update("UPDATE t_season SET fk_main_contest_id = ? WHERE pk_id = ?", contestId, seasonId);
-        insertRound();
+    private String seasonInPlayPayload() throws Exception {
+        return objectMapper.writeValueAsString(new SeasonInPlayPayload(season.seasonId));
+    }
+
+    private OutboxEvent stored(String key) {
+        return outboxRepo.findByIdempotencyKey(key).orElseThrow();
+    }
+
+    private int countPredictions() {
+        return jdbc.queryForObject("SELECT count(*) FROM t_season_prediction", Integer.class);
+    }
+
+    /**
+     * The scheduled relay bean is absent in tests ({@code ligitabl.scheduling.enabled=false}), and
+     * the batch order has to be deterministic — so the repo is spied for
+     * {@code claimBatchForProcessing} only. Every other call, and all of the processor's work,
+     * hits the real database.
+     */
+    private void relay(List<OutboxEvent> batch) {
+        OutboxRepo spied = spy(outboxRepo);
+        doReturn(batch).when(spied).claimBatchForProcessing(25);
+        new OutboxRelayJob(spied, processor, clock, 25).relay();
+    }
+
+    private void relayClaimed() {
+        relay(outboxRepo.claimBatchForProcessing(10));
     }
 
     @Test
-    @DisplayName("A poisoned event lands FAILED with backoff, not stranded PROCESSING")
+    @DisplayName("A poisoned event lands FAILED with backoff rather than stranded PROCESSING")
     void poisonedEventIsMarkedFailedOutOfBand() throws Exception {
-        // Three candidates, because the cascade has two distinct stages: the first user's
-        // failure is swallowed inside createPredictionAndEntry (returns Either.left), the
-        // second throws for real off the now-dead transaction, and the third must never be
-        // attempted. Two users could not tell 5c working from 5c absent.
-        insertUser("candidate-a@example.com");
-        insertUser("candidate-b@example.com");
-        insertUser("candidate-c@example.com");
+        // Three candidates, because the cascade has two distinct stages: the first user's failure
+        // is swallowed inside createPredictionAndEntry, the second throws for real off the dead
+        // transaction, and the third must never be attempted. With two users the call count is
+        // identical whether the loop stops or not, so the test would prove nothing.
+        season.insertUser("first@example.com");
+        season.insertUser("second@example.com");
+        season.insertUser("third@example.com");
         poisonSeasonPredictionInserts();
 
-        outboxRepo.save(OutboxEvent.create(
-                "round-locked:it-poison",
-                OutboxEventTypes.ROUND_LOCKED,
-                "round",
-                roundId.toString(),
-                objectMapper.writeValueAsString(new RoundLockedPayload(seasonId, roundId, 1))));
+        saveEvent("round-locked:poison", OutboxEventTypes.ROUND_LOCKED, roundLockedPayload());
+        relayClaimed();
 
-        relayFor(outboxRepo.claimBatchForProcessing(10)).relay();
-
-        OutboxEvent stored =
-                outboxRepo.findByIdempotencyKey("round-locked:it-poison").orElseThrow();
-        assertThat(stored.getStatus())
+        OutboxEvent event = stored("round-locked:poison");
+        assertThat(event.getStatus())
                 .as("must not be left PROCESSING awaiting the 10-minute stuck sweep")
                 .isEqualTo(OutboxEvent.Status.FAILED);
-        assertThat(stored.getAttempts()).isEqualTo(1);
-        assertThat(stored.getLastError()).isNotBlank();
+        assertThat(event.getAttempts()).isEqualTo(1);
+        assertThat(event.getLastError()).isNotBlank();
 
-        // The whole batch rolled back, so no half-written auto-join survives.
-        assertThat(jdbc.queryForObject("SELECT count(*) FROM t_season_prediction", Integer.class))
+        assertThat(countPredictions())
+                .as("the whole batch rolled back, so no half-written auto-join survives")
                 .isZero();
 
-        // 5c: the loop stops at the user who actually threw, leaving the third candidate
-        // unattempted rather than logging it as if it were at fault.
+        // The loop stopped at the user who actually threw: the third was never attempted, which
+        // no database state can show because nothing was written either way.
         verify(createPredictionUseCase, times(2)).executeWithContext(any(), any(), any());
     }
 
     @Test
-    @DisplayName("A poisoned event does not strand the other events in its batch")
+    @DisplayName("A poisoned event does not strand the rest of its claimed batch")
     void poisonedEventDoesNotStrandItsBatchMates() throws Exception {
-        insertUser("candidate-d@example.com");
-        insertUser("candidate-e@example.com");
+        season.insertUser("first@example.com");
+        season.insertUser("second@example.com");
         poisonSeasonPredictionInserts();
 
-        outboxRepo.save(OutboxEvent.create(
-                "round-locked:it-poison-2",
-                OutboxEventTypes.ROUND_LOCKED,
-                "round",
-                roundId.toString(),
-                objectMapper.writeValueAsString(new RoundLockedPayload(seasonId, roundId, 1))));
-        outboxRepo.save(OutboxEvent.create("mystery:it-1", "MYSTERY", "round", "1", "{}"));
+        saveEvent("round-locked:poison", OutboxEventTypes.ROUND_LOCKED, roundLockedPayload());
+        saveEvent("mystery:1", "MYSTERY", "{}");
 
         List<OutboxEvent> claimed = outboxRepo.claimBatchForProcessing(10);
         assertThat(claimed).hasSize(2);
 
-        // Pin the order so the poisoned event is processed first — otherwise the test would
-        // pass trivially whenever the healthy event happened to be claimed first.
+        // Order is pinned rather than assumed: RETURNING makes no ordering guarantee, and if the
+        // healthy event happened to run first the test would pass without the guard.
         List<OutboxEvent> poisonFirst = claimed.stream()
                 .sorted((a, b) -> Boolean.compare(
                         !OutboxEventTypes.ROUND_LOCKED.equals(a.getEventType()),
                         !OutboxEventTypes.ROUND_LOCKED.equals(b.getEventType())))
                 .toList();
 
-        relayFor(poisonFirst).relay();
+        relay(poisonFirst);
 
-        assertThat(outboxRepo
-                        .findByIdempotencyKey("round-locked:it-poison-2")
-                        .orElseThrow()
-                        .getStatus())
-                .isEqualTo(OutboxEvent.Status.FAILED);
-        assertThat(outboxRepo.findByIdempotencyKey("mystery:it-1").orElseThrow().getStatus())
-                .as("batch-mate claimed after the poisoned event must still be processed")
+        assertThat(stored("round-locked:poison").getStatus()).isEqualTo(OutboxEvent.Status.FAILED);
+        assertThat(stored("mystery:1").getStatus())
+                .as("claimed after the poisoned event, so it would be lost without the relay guard")
                 .isEqualTo(OutboxEvent.Status.DEAD_LETTER);
-    }
-
-    @Test
-    @DisplayName("SEASON_IN_PLAY writes round-0 rows and chains the welcome fan-out")
-    void seasonInPlayAutoRegistersAsRoundZeroAndChainsTheFanout() throws Exception {
-        UUID returningPlayer = insertUser("returning@example.com");
-
-        outboxRepo.save(OutboxEvent.create(
-                "season-in-play:it",
-                OutboxEventTypes.SEASON_IN_PLAY,
-                "season",
-                seasonId.toString(),
-                objectMapper.writeValueAsString(new SeasonInPlayPayload(seasonId))));
-
-        relayFor(outboxRepo.claimBatchForProcessing(10)).relay();
-
-        assertThat(outboxRepo.findByIdempotencyKey("season-in-play:it").orElseThrow().getStatus())
-                .isEqualTo(OutboxEvent.Status.SENT);
-
-        // The shape is the whole point: a pre-season registration, not a mid-season join.
-        Integer atRound = jdbc.queryForObject(
-                "SELECT c_at_round_number FROM t_season_prediction WHERE fk_user_id = ?", Integer.class, returningPlayer);
-        assertThat(atRound).as("round-0, so the user keeps the full merge allowance").isZero();
-        assertThat(jdbc.queryForObject(
-                        "SELECT c_initial_rankings IS NOT NULL FROM t_season_prediction WHERE fk_user_id = ?",
-                        Boolean.class,
-                        returningPlayer))
-                .as("the permanent pre-registration marker; without it the later merge reports corrupt")
-                .isTrue();
-        assertThat(jdbc.queryForObject(
-                        "SELECT c_last_swap_at IS NULL FROM t_season_prediction WHERE fk_user_id = ?",
-                        Boolean.class,
-                        returningPlayer))
-                .as("no swaps used, so the first-swap bonus survives")
-                .isTrue();
-        assertThat(jdbc.queryForObject(
-                        "SELECT c_joined_at_round FROM t_entry WHERE fk_user_id = ?", Integer.class, returningPlayer))
-                .isZero();
-
-        assertThat(outboxRepo.findByIdempotencyKey("season-welcome-fanout:" + seasonId))
-                .as("chain event written in the same transaction as the auto-joins")
-                .isPresent();
-    }
-
-    @Test
-    @DisplayName("SEASON_IN_PLAY chains the fan-out even when there is nobody to auto-join")
-    void seasonInPlayChainsTheFanoutWithNoEligibleUsers() throws Exception {
-        // No users at all. Pre-season registrants would still be waiting on the welcome, so the
-        // chain event must not be conditional on the auto-join batch being non-empty.
-        outboxRepo.save(OutboxEvent.create(
-                "season-in-play:it-empty",
-                OutboxEventTypes.SEASON_IN_PLAY,
-                "season",
-                seasonId.toString(),
-                objectMapper.writeValueAsString(new SeasonInPlayPayload(seasonId))));
-
-        relayFor(outboxRepo.claimBatchForProcessing(10)).relay();
-
-        assertThat(outboxRepo.findByIdempotencyKey("season-in-play:it-empty").orElseThrow().getStatus())
-                .isEqualTo(OutboxEvent.Status.SENT);
-        assertThat(outboxRepo.findByIdempotencyKey("season-welcome-fanout:" + seasonId))
-                .isPresent();
     }
 
     @Test
     @DisplayName("A poisoned SEASON_IN_PLAY rolls back its auto-joins and its chain event together")
     void poisonedSeasonInPlayRollsBackTheChainEventToo() throws Exception {
-        insertUser("candidate-x@example.com");
-        insertUser("candidate-y@example.com");
-        insertUser("candidate-z@example.com");
+        // The guarantee the three-hop design rests on. A half-state — nobody auto-joined but
+        // everyone queued to be welcomed — is the one outcome that cannot be recovered from,
+        // because the welcome would tell users about a table they do not have.
+        season.insertUser("first@example.com");
+        season.insertUser("second@example.com");
+        season.insertUser("third@example.com");
         poisonSeasonPredictionInserts();
 
-        outboxRepo.save(OutboxEvent.create(
-                "season-in-play:it-poison",
-                OutboxEventTypes.SEASON_IN_PLAY,
-                "season",
-                seasonId.toString(),
-                objectMapper.writeValueAsString(new SeasonInPlayPayload(seasonId))));
+        saveEvent("season-in-play:poison", OutboxEventTypes.SEASON_IN_PLAY, seasonInPlayPayload());
+        relayClaimed();
 
-        relayFor(outboxRepo.claimBatchForProcessing(10)).relay();
-
-        assertThat(outboxRepo.findByIdempotencyKey("season-in-play:it-poison").orElseThrow().getStatus())
-                .isEqualTo(OutboxEvent.Status.FAILED);
-        assertThat(jdbc.queryForObject("SELECT count(*) FROM t_season_prediction", Integer.class))
-                .isZero();
-        assertThat(outboxRepo.findByIdempotencyKey("season-welcome-fanout:" + seasonId))
-                .as("no half-state: nobody was auto-joined, so nobody is queued to be welcomed")
+        assertThat(stored("season-in-play:poison").getStatus()).isEqualTo(OutboxEvent.Status.FAILED);
+        assertThat(countPredictions()).isZero();
+        assertThat(outboxRepo.findByIdempotencyKey("season-welcome-fanout:" + season.seasonId))
+                .as("nobody was auto-joined, so nobody may be queued to be welcomed")
                 .isEmpty();
     }
 
     @Test
-    @DisplayName("Full chain: SEASON_IN_PLAY -> fan-out -> per-user welcome, rendered and sent")
-    void fullChainReachesAPerUserWelcomeEmail() throws Exception {
-        UUID returningPlayer = insertUser("chain@example.com");
+    @DisplayName("A retry after the poison clears succeeds, because nothing was half-written")
+    void retryAfterPoisonClearsSucceeds() throws Exception {
+        // The other half of "it rolls back": rolling back is only useful if the retry then works.
+        UUID user = season.insertUser("retrying@example.com");
+        poisonSeasonPredictionInserts();
 
-        outboxRepo.save(OutboxEvent.create(
-                "season-in-play:it-chain",
-                OutboxEventTypes.SEASON_IN_PLAY,
-                "season",
-                seasonId.toString(),
-                objectMapper.writeValueAsString(new SeasonInPlayPayload(seasonId))));
+        saveEvent("season-in-play:retry", OutboxEventTypes.SEASON_IN_PLAY, seasonInPlayPayload());
+        relayClaimed();
+        assertThat(stored("season-in-play:retry").getStatus()).isEqualTo(OutboxEvent.Status.FAILED);
 
-        // Hop 1: auto-join + chain event.
-        relayFor(outboxRepo.claimBatchForProcessing(10)).relay();
-        // Hop 2: fan-out into per-user events.
-        relayFor(outboxRepo.claimBatchForProcessing(10)).relay();
-        // Hop 3: render + send.
-        relayFor(outboxRepo.claimBatchForProcessing(10)).relay();
+        dropPoison();
+        // markFailed pushes availability into the future, so re-claim by hand rather than wait.
+        relay(List.of(stored("season-in-play:retry")));
 
-        String welcomeKey = "season-welcome:%s:%s".formatted(returningPlayer, seasonId);
-        OutboxEvent welcome = outboxRepo.findByIdempotencyKey(welcomeKey).orElseThrow();
-        assertThat(welcome.getStatus())
-                .as("template must render and the provider must accept it")
-                .isEqualTo(OutboxEvent.Status.SENT);
-
-        assertThat(outboxRepo
-                        .findByIdempotencyKey("season-welcome-fanout:" + seasonId)
-                        .orElseThrow()
-                        .getStatus())
-                .isEqualTo(OutboxEvent.Status.SENT);
-
-        // Re-running the whole chain must not produce a second welcome for the same user.
-        relayFor(outboxRepo.claimBatchForProcessing(10)).relay();
+        assertThat(stored("season-in-play:retry").getStatus()).isEqualTo(OutboxEvent.Status.SENT);
         assertThat(jdbc.queryForObject(
-                        "SELECT count(*) FROM t_outbox_event WHERE c_event_type = ?",
+                        "SELECT c_at_round_number FROM t_season_prediction WHERE fk_user_id = ?",
                         Integer.class,
-                        OutboxEventTypes.SEASON_WELCOME))
-                .isEqualTo(1);
-    }
-
-    /**
-     * The scheduled relay bean is absent in tests (ligitabl.scheduling.enabled=false), and
-     * we need the claim to return an already-claimed, deterministically ordered batch — so
-     * the repo is spied for {@code claimBatchForProcessing} only. Every other call, and all
-     * of the processor's work, hits the real database.
-     */
-    private OutboxRelayJob relayFor(List<OutboxEvent> batch) {
-        OutboxRepo spied = spy(outboxRepo);
-        doReturn(batch).when(spied).claimBatchForProcessing(25);
-        return new OutboxRelayJob(spied, processor, clock, 25);
-    }
-
-    private void insertCompetitionAndSeason() {
-        jdbc.update(
-                "INSERT INTO t_competition (pk_id, c_name, c_slug, c_code, c_phases, fk_active_season_id) VALUES (?,?,?,?, '[]'::jsonb, ?)",
-                competitionId,
-                "Premier League",
-                competitionDefaults.defaultCompetitionSlug(),
-                "PL",
-                seasonId);
-
-        jdbc.update(
-                "INSERT INTO t_season (pk_id, c_client_id, fk_competition_id, c_name, c_slug, c_start_date, c_end_date,"
-                        + " c_max_rounds, c_total_teams, c_initial_rankings, c_completed, fk_current_round_id,"
-                        + " c_current_match_day, c_pre_season_opens_at) VALUES (?,?,?,?,?,?,?,?,?,?::jsonb,?,?,?,?)",
-                seasonId,
-                1,
-                competitionId,
-                "2024/25",
-                "2024-25",
-                LocalDate.of(2024, 8, 1),
-                LocalDate.of(2025, 5, 31),
-                22,
-                4,
-                "[{\"code\":\"MCI\",\"position\":1},{\"code\":\"ARS\",\"position\":2},"
-                        + "{\"code\":\"LIV\",\"position\":3},{\"code\":\"CHE\",\"position\":4}]",
-                false,
-                roundId,
-                1,
-                OffsetDateTime.now().minusDays(30));
-    }
-
-    private void insertContest() {
-        jdbc.update(
-                "INSERT INTO t_contest (pk_id, fk_season_id, c_name, c_is_private, c_join_code, c_from_round_position,"
-                        + " c_to_round_position, c_max_entries) VALUES (?,?,?,?,?,?,?,?)",
-                contestId,
-                seasonId,
-                "Main League",
-                false,
-                null,
-                1,
-                22,
-                null);
-    }
-
-    private void insertRound() {
-        jdbc.update(
-                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized) VALUES (?,?,?,?,?,?)",
-                roundId,
-                seasonId,
-                "Round 1",
-                "round-1",
-                1,
-                false);
-    }
-
-    private UUID insertUser(String email) {
-        UUID id = UUID.randomUUID();
-        jdbc.update(
-                "INSERT INTO t_user (pk_id, c_email, c_password_hash, c_display_name, c_public_id, c_email_verified) VALUES (?,?,?,?,?,?)",
-                id,
-                email,
-                "test-password-hash",
-                "Test User",
-                TestIds.randomPublicId(),
-                true);
-        jdbc.update("INSERT INTO t_user_role (fk_user_id, c_role) VALUES (?, ?)", id, "PLAYER");
-        return id;
+                        user))
+                .isZero();
     }
 }

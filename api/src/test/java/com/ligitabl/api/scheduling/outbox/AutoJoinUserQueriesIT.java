@@ -51,9 +51,7 @@ class AutoJoinUserQueriesIT extends AbstractPostgresIT {
     private UUID roundZeroUnverified;
     private UUID roundOneVerified;
     /**
-     * Played last season, never joined this one, still logging in. The cohort this whole
-     * feature exists for — and the one {@code findUnjoinedUserIdsAfter} misses, because it
-     * filters on signup date and this account is several seasons old.
+     * Played last season, never joined this one, still logging in.
      */
     private UUID returningPlayerFromLastSeason;
 

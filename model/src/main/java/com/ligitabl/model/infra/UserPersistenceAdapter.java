@@ -277,15 +277,6 @@ public class UserPersistenceAdapter implements UserRepo {
 
     @Override
     public List<UUID> findUnjoinedUserIdsActiveSince(UUID seasonId, OffsetDateTime activeSince) {
-        // Callers pass the season's preSeasonOpensAt, so this reads as "seen since this season
-        // became joinable" rather than "seen in the last N days" — a floating window would reach
-        // back past the season's own start and pick up people who never saw it.
-        //
-        // Last-seen rather than signup basis (the difference from findUnjoinedUserIdsAfter just
-        // above): create_date persists from a user's original signup, possibly several seasons
-        // ago, so it says nothing about whether the account is still in use. Since
-        // COALESCE(last_login_at, update_date) >= create_date always, this is a strict superset
-        // of that query at the same anchor.
         if (activeSince == null) {
             throw new IllegalArgumentException("activeSince must not be null");
         }
@@ -302,12 +293,6 @@ public class UserPersistenceAdapter implements UserRepo {
 
     @Override
     public List<User> findMailableUsersWithPreSeasonRegistration(UUID seasonId) {
-        // EXISTS rather than a join: a user has at most one prediction per season
-        // (uq_t_season_prediction_user_season), so a join could not duplicate rows — but EXISTS
-        // states the intent, which is a filter and not a widening.
-        //
-        // The email predicates are the deliberate opposite of findUnjoinedUserIdsActiveSince:
-        // opting out of email must not cost a user their table, but it does cost them this email.
         var records = dsl.selectFrom(T_USER)
                 .where(T_USER.C_EMAIL_VERIFIED.isTrue())
                 .and(T_USER.C_RESULTS_EMAIL_OPT_OUT.isFalse())
@@ -323,9 +308,6 @@ public class UserPersistenceAdapter implements UserRepo {
     @Override
     public List<User> findUnjoinedUsersRegisteredBefore(
             UUID seasonId, OffsetDateTime dueCutoff, OffsetDateTime staleCutoff) {
-        // Last-seen basis, not signup basis: create_date persists from a user's original signup
-        // (possibly a prior season), so a long-dormant account would otherwise look "overdue" the
-        // moment it resurfaces. COALESCE(last_login_at, update_date) reflects recent activity.
         var lastSeen = DSL.coalesce(T_USER.C_LAST_LOGIN_AT, T_USER.C_UPDATE_DATE);
         var records = dsl.selectFrom(T_USER)
                 .where(lastSeen.le(dueCutoff))
