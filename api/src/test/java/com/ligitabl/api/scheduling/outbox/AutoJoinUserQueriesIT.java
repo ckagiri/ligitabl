@@ -116,10 +116,6 @@ class AutoJoinUserQueriesIT extends AbstractPostgresIT {
     @Test
     @DisplayName("findUnjoinedUserIdsActiveSince: last seen before pre-season opened is excluded")
     void lastSeenBeforePreSeasonOpenedIsExcluded() {
-        // The distinction a rolling "last N days" window cannot make. This user was in the app
-        // 45 days ago, which a 60-day window would have accepted — but 15 days before this
-        // season became joinable, so they never saw it and never declined it. They get an
-        // invitation (see the follow-up in .art/task_80.md), not a silent table.
         assertThat(userRepo.findUnjoinedUserIdsActiveSince(seasonId, PRE_SEASON_OPENED))
                 .doesNotContain(seenBeforePreSeasonOpened);
 

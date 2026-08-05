@@ -169,7 +169,7 @@ public class OutboxEventProcessor {
      * <p>Unlike {@link #processRoundLocked} this uses {@code autoRegisterDefaultTable}, which
      * writes the row a user would have produced by submitting the default table themselves — the
      * mid-season {@code NewJoin} shape would quietly cost them the guest-prediction import and
-     * most of their swap allowance. See {@code .art/task_80.md}.
+     * most of their swap allowance.
      */
     private void processSeasonInPlay(OutboxEvent event) throws Exception {
         SeasonInPlayPayload payload = objectMapper.readValue(event.getPayload(), SeasonInPlayPayload.class);
