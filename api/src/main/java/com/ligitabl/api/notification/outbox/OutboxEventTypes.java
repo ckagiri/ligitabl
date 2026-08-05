@@ -25,4 +25,14 @@ public final class OutboxEventTypes {
 
     /** One user's season-welcome email, ready to render and send. */
     public static final String SEASON_WELCOME = "SEASON_WELCOME";
+
+    /** An admin has marked the season completed; the full-season standings are now final. */
+    public static final String SEASON_COMPLETED = "SEASON_COMPLETED";
+
+    /**
+     * One user's segment-success email — the sprint, quarter and/or season they just finished in
+     * the top 3. Written with a future {@code available_at} so it lands a day after the
+     * round-results email for the same boundary.
+     */
+    public static final String SEGMENT_RESULTS = "SEGMENT_RESULTS";
 }

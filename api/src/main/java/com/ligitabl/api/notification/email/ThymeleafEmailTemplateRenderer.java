@@ -40,6 +40,7 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
             case ROUND_RESULTS -> "email/round-results";
             case JOIN_REMINDER -> "email/join-reminder";
             case SEASON_WELCOME -> "email/season-welcome";
+            case SEGMENT_RESULTS -> "email/segment-results";
         };
     }
 
@@ -52,7 +53,42 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
                     .formatted(templateData.get("round"), templateData.get("score"));
             case JOIN_REMINDER -> joinReminderSubject((Integer) templateData.get("stage"));
             case SEASON_WELCOME -> "The season's underway — you have 5 swaps";
+            case SEGMENT_RESULTS -> segmentResultsSubject(templateData);
         };
+    }
+
+    /**
+     * Names the <em>largest</em> segment the reader placed in, so someone who took both a sprint
+     * and the quarter it closes reads the quarter — the bigger achievement — rather than whichever
+     * block happens to sort first. The enqueuer picks that headline; this only formats it.
+     */
+    private String segmentResultsSubject(Map<String, Object> templateData) {
+        String name = String.valueOf(templateData.get("headlineName"));
+        int rank = (Integer) templateData.get("headlineRank");
+
+        if (Boolean.TRUE.equals(templateData.get("isSeasonFinale"))) {
+            return rank == 1
+                    ? "You won the season 🏆"
+                    : "The season's done — you finished %s".formatted(ordinal(rank));
+        }
+        return rank == 1
+                ? "%s is yours 🏆".formatted(name)
+                : "%s wrapped — you finished %s".formatted(name, ordinal(rank));
+    }
+
+    /** Only ever called with a podium rank, but written generally so 4th never renders "4rd". */
+    private static String ordinal(int n) {
+        int lastTwo = Math.abs(n) % 100;
+        if (lastTwo >= 11 && lastTwo <= 13) {
+            return n + "th";
+        }
+        return n
+                + switch (Math.abs(n) % 10) {
+                    case 1 -> "st";
+                    case 2 -> "nd";
+                    case 3 -> "rd";
+                    default -> "th";
+                };
     }
 
     /**

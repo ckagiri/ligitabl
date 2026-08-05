@@ -2,6 +2,7 @@ package com.ligitabl.api.notification.email;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
 import java.util.Map;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +11,7 @@ import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 import com.ligitabl.api.notification.outbox.RoundResultsPayload;
+import com.ligitabl.api.notification.outbox.SegmentResultsPayload;
 import com.ligitabl.model.domain.HitDistribution;
 
 class ThymeleafEmailTemplateRendererTest {
@@ -65,7 +67,8 @@ class ThymeleafEmailTemplateRendererTest {
                                 "http://x/my-table",
                                 "leaderboardUrl",
                                 "http://x/leaderboard"),
-                EmailCommand.EmailType.SEASON_WELCOME, seasonWelcomeData());
+                EmailCommand.EmailType.SEASON_WELCOME, seasonWelcomeData(),
+                EmailCommand.EmailType.SEGMENT_RESULTS, segmentResultsData());
 
         for (EmailCommand.EmailType type : EmailCommand.EmailType.values()) {
             // Without this, a newly added type renders with null variables and passes
@@ -87,6 +90,31 @@ class ThymeleafEmailTemplateRendererTest {
                 "leaderboardUrl", "http://x/leaderboard",
                 "faqUrl", "http://x/faq",
                 "whatIfUrl", "http://x/predictions/user/what-if");
+    }
+
+    /**
+     * A sprint-only podium, the simplest shape. Phase 5 pins the copy itself (the double callout,
+     * the season finale, the ordinal subjects); this exists so the exhaustive-type loop above has
+     * real variables to render with rather than passing vacuously on nulls.
+     */
+    private static Map<String, Object> segmentResultsData() {
+        return Map.of(
+                "userDisplayName",
+                "Ada",
+                "placements",
+                List.of(new SegmentResultsPayload.SegmentPlacement("SPRINT", "S1", "Sprint 1", 1, 4, 2, 40, 180)),
+                "headlineName",
+                "Sprint 1",
+                "headlineRank",
+                2,
+                "isSeasonFinale",
+                false,
+                "isDouble",
+                false,
+                "leaderboardUrl",
+                "http://x/leaderboard?phase=S1",
+                "myTableUrl",
+                "http://x/my-table");
     }
 
     @Test
