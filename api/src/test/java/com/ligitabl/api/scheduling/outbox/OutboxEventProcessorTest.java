@@ -843,7 +843,10 @@ class OutboxEventProcessorTest {
         Assertions.assertThat(dataCaptor.getValue())
                 .containsEntry("myTableUrl", "http://localhost:8080/my-table")
                 .containsEntry("leaderboardUrl", "http://localhost:8080/leaderboard")
-                .containsEntry("faqUrl", "http://localhost:8080/faq");
+                .containsEntry("faqUrl", "http://localhost:8080/faq")
+                // The public, linkable address — /predictions/user/what-if is internal and is
+                // reached in-app by an htmx swap that never changes the URL.
+                .containsEntry("whatIfUrl", "http://localhost:8080/my-table/what-if");
 
         verify(emailProvider)
                 .sendSingle(eq("carol@x.com"), eq("welcome subject"), eq("<html/>"), eq(EmailCommand.Priority.NORMAL));

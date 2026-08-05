@@ -1,6 +1,7 @@
 package com.ligitabl.api.notification.outbox;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -105,13 +106,14 @@ public class SegmentResultsEmailEnqueuer {
             return;
         }
 
-        enqueue(ctx, ended, "r" + roundPosition, roundPosition);
+        enqueue(ctx, ended, "r" + roundPosition, roundPosition, properties.getDelay());
     }
 
     /**
-     * Season completion is a separate admin action that happens <em>after</em> the last round
-     * advanced, so the full-season standing arrives as its own email rather than as a third block
-     * on the round-38 one.
+     * The season finale, and only the season: the full-season span is deliberately <em>not</em>
+     * considered by {@link #enqueueForRound}, so advancing the last round closes its sprint and
+     * quarter and nothing more. Completing the season is a separate admin action taken afterwards,
+     * and it produces an email carrying the season podium alone.
      */
     public void enqueueForSeasonCompleted(SeasonCompletedPayload event) {
         Context ctx = resolveContext(event.seasonId(), "season-completed");
@@ -128,10 +130,11 @@ public class SegmentResultsEmailEnqueuer {
             return;
         }
 
-        enqueue(ctx, List.of(fullSeason), SEASON_SCOPE, fullSeason.getTo());
+        enqueue(ctx, List.of(fullSeason), SEASON_SCOPE, fullSeason.getTo(), properties.getSeasonDelay());
     }
 
-    private void enqueue(Context ctx, List<RoundSpan> ended, String scopeKey, int boundaryRound) {
+    private void enqueue(
+            Context ctx, List<RoundSpan> ended, String scopeKey, int boundaryRound, Duration delay) {
         Set<String> ignoreList = loadIgnoreList();
 
         List<ClosedSegment> segments = ended.stream()
@@ -158,7 +161,7 @@ public class SegmentResultsEmailEnqueuer {
         int inserted = 0;
         for (Recipient recipient : byUserId.values()) {
             try {
-                if (writeEvent(ctx, recipient.user(), recipient.placements(), scopeKey, boundaryRound)) {
+                if (writeEvent(ctx, recipient.user(), recipient.placements(), scopeKey, boundaryRound, delay)) {
                     inserted++;
                 }
             } catch (Exception e) {
@@ -225,7 +228,8 @@ public class SegmentResultsEmailEnqueuer {
             User user,
             List<SegmentResultsPayload.SegmentPlacement> placements,
             String scopeKey,
-            int boundaryRound)
+            int boundaryRound,
+            Duration delay)
             throws Exception {
         // Sprint before quarter before season, so the template reads smallest-window first and the
         // headline (largest) is simply the last one.
@@ -249,7 +253,7 @@ public class SegmentResultsEmailEnqueuer {
                 "user",
                 user.getId().toString(),
                 objectMapper.writeValueAsString(payload),
-                clock.instant().plus(properties.getDelay()));
+                clock.instant().plus(delay));
         return outboxRepo.save(event);
     }
 

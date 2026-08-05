@@ -310,7 +310,7 @@ public class OutboxEventProcessor {
         data.put("myTableUrl", frontendUrl + "/my-table");
         data.put("leaderboardUrl", frontendUrl + "/leaderboard");
         data.put("faqUrl", frontendUrl + "/faq");
-        data.put("whatIfUrl", frontendUrl + "/predictions/user/what-if");
+        data.put("whatIfUrl", frontendUrl + "/my-table/what-if");
         return data;
     }
 

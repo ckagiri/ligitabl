@@ -139,6 +139,7 @@ class SegmentResultsEmailEnqueuerTest {
         properties.setTopN(3);
         properties.setMode("live");
         properties.setDelay(Duration.ofDays(1));
+        properties.setSeasonDelay(Duration.ofHours(1));
 
         enqueuer = new SegmentResultsEmailEnqueuer(
                 outboxRepo,
@@ -435,6 +436,30 @@ class SegmentResultsEmailEnqueuerTest {
             enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 4, 5));
 
             assertThat(savedEvents().get(0).getAvailableAt()).isEqualTo(NOW.plus(Duration.ofDays(1)));
+        }
+
+        @Test
+        @DisplayName("the season finale uses the shorter seasonDelay, not the round delay")
+        void seasonUsesItsOwnDelay() {
+            board(FULL_SEASON, 61, entry(alice, 1, 1500));
+
+            enqueuer.enqueueForSeasonCompleted(new SeasonCompletedPayload(seasonId));
+
+            assertThat(savedEvents().get(0).getAvailableAt()).isEqualTo(NOW.plus(Duration.ofHours(1)));
+        }
+
+        @Test
+        @DisplayName("the two delays are applied independently")
+        void roundAndSeasonDelaysDoNotShareAValue() {
+            board(S1, 41, entry(alice, 1, 90));
+            board(FULL_SEASON, 61, entry(alice, 1, 1500));
+
+            enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 4, 5));
+            enqueuer.enqueueForSeasonCompleted(new SeasonCompletedPayload(seasonId));
+
+            assertThat(savedEvents())
+                    .extracting(OutboxEvent::getAvailableAt)
+                    .containsExactly(NOW.plus(Duration.ofDays(1)), NOW.plus(Duration.ofHours(1)));
         }
 
         @Test

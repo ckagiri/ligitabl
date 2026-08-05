@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
  * <ul>
  *   <li>/my-table -> /predictions/user/me (authenticated) or /my-table/guest (guest)</li>
  *   <li>/my-table/guest -> /my-table (authenticated) or /predictions/user/guest (guest)</li>
+ *   <li>/my-table/what-if -> /predictions/user/what-if (authenticated) or /my-table (guest)</li>
  * </ul>
  */
 @Controller
@@ -35,6 +36,18 @@ public class MyTableController {
             return withRoundRedirect("/my-table", round);
         }
         return withRoundForward("/predictions/user/guest", round);
+    }
+
+    /**
+     * <p>Guests are sent to {@code /my-table} rather than {@code /predictions/user/what-if}, which
+     * bounces them anyway: better to land somewhere useful than to be redirected twice.
+     */
+    @GetMapping("/my-table/what-if")
+    public String whatIf() {
+        if (!isAuthenticatedUser()) {
+            return "redirect:/my-table";
+        }
+        return "forward:/predictions/user/what-if";
     }
 
     private boolean isAuthenticatedUser() {

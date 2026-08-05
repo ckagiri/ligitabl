@@ -25,10 +25,14 @@
                 Gameweek <span th:text="${currentRound}">19</span> — explore hypothetical results
               </p>
             </div>
+            <!--
+              hx-push-url so the address bar actually lands on /my-table.
+            -->
             <button
               th:attr="hx-get=@{/my-table}"
               hx-target="#prediction-page"
               hx-swap="outerHTML swap:100ms settle:100ms"
+              hx-push-url="true"
               hx-disabled-elt="this"
               aria-label="Back to My Table"
               class="shrink-0 inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors px-2.5 py-1 rounded-full border border-indigo-200 hover:border-indigo-300 bg-indigo-50"

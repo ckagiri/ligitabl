@@ -497,6 +497,30 @@ class SegmentResultsChainIT extends AbstractPostgresIT {
         }
 
         @Test
+        @DisplayName("the season email goes out on the short delay, the round boundary on the long one")
+        void seasonUsesTheShorterDelay() throws Exception {
+            advance(4);
+            completeSeason();
+
+            assertThat(jdbc.queryForObject(
+                            "SELECT count(*) FROM t_outbox_event WHERE c_event_type = ?"
+                                    + " AND c_idempotency_key LIKE '%:season:%'"
+                                    + " AND c_available_at < now() + interval '2 hours'",
+                            Integer.class,
+                            OutboxEventTypes.SEGMENT_RESULTS))
+                    .as("season events are due within the hour")
+                    .isGreaterThan(0);
+            assertThat(jdbc.queryForObject(
+                            "SELECT count(*) FROM t_outbox_event WHERE c_event_type = ?"
+                                    + " AND c_idempotency_key LIKE '%:r4:%'"
+                                    + " AND c_available_at < now() + interval '2 hours'",
+                            Integer.class,
+                            OutboxEventTypes.SEGMENT_RESULTS))
+                    .as("round-boundary events are still a day out")
+                    .isZero();
+        }
+
+        @Test
         @DisplayName("the season email reports the full-season window")
         void seasonEmailReportsTheSeason() throws Exception {
             completeSeason();
