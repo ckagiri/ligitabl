@@ -105,8 +105,7 @@ public class PublicController {
         }
 
         List<TeamRank> rankings = previewRankingsSupport.getPreviewRankings(season.getId(), currentRound);
-        List<TeamRank> topRankings = rankings.stream()
-                .sorted(Comparator.comparingInt(TeamRank::getPosition))
+        List<TeamRank> topRankings = TeamRank.inPositionOrder(rankings).stream()
                 .limit(PREVIEW_TEAM_COUNT)
                 .toList();
 

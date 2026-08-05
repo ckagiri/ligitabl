@@ -1,5 +1,6 @@
 package com.ligitabl.api.rest.prediction.createprediction;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.AdditionalAnswers.returnsFirstArg;
 import static org.mockito.ArgumentMatchers.any;
@@ -7,6 +8,7 @@ import static org.mockito.Mockito.*;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -15,6 +17,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -780,6 +783,137 @@ class CreatePredictionUseCaseTest {
 
     private static CreatePredictionCommand multiSwap(List<CreatePredictionCommand.SwapPair> swaps) {
         return new CreatePredictionCommand(swaps);
+    }
+
+    // --- Auto-join entry point ---------------------------------------------------
+
+    @Test
+    void autoRegisterDefaultTable_producesTheSameRowAPreSeasonSubmissionWould() {
+        // The premise of the whole feature: an auto-joined user and someone who submitted the
+        // default table during pre-season must be indistinguishable afterwards.
+        when(clock.instant()).thenReturn(now);
+        when(predictionRepo.save(any())).thenAnswer(i -> {
+            SeasonPrediction p = i.getArgument(0);
+            p.setId(UUID.randomUUID());
+            return p;
+        });
+        when(entryRepo.save(any())).thenAnswer(i -> {
+            Entry e = i.getArgument(0);
+            e.setId(UUID.randomUUID());
+            return e;
+        });
+
+        var result = useCase.autoRegisterDefaultTable(userId, season, defaultContest);
+
+        assertThat(result.isRight()).isTrue();
+
+        ArgumentCaptor<SeasonPrediction> predictionCaptor = ArgumentCaptor.forClass(SeasonPrediction.class);
+        verify(predictionRepo).save(predictionCaptor.capture());
+        SeasonPrediction saved = predictionCaptor.getValue();
+
+        assertThat(saved.getAtRoundNumber()).isZero();
+        assertThat(saved.getInitialRankings())
+                .as("the permanent pre-registration marker; without it the later merge reports "
+                        + "CorruptPreSeasonRegistration")
+                .isEqualTo(season.getInitialRankings());
+        assertThat(saved.getCurrentRankings()).isEqualTo(season.getInitialRankings());
+        assertThat(saved.getLastSwapAt())
+                .as("no swaps used, so the first-swap bonus survives")
+                .isNull();
+        assertThat(saved.getSwaps()).hasSize(1);
+        assertThat(saved.getSwaps().get(0).getRound()).isZero();
+        assertThat(saved.getSwaps().get(0).getChanges()).isEmpty();
+
+        ArgumentCaptor<Entry> entryCaptor = ArgumentCaptor.forClass(Entry.class);
+        verify(entryRepo).save(entryCaptor.capture());
+        assertThat(entryCaptor.getValue().getJoinedAtRound()).isZero();
+        assertThat(entryCaptor.getValue().getContestId()).isEqualTo(contestId);
+    }
+
+    @Test
+    void autoRegisterDefaultTable_worksWhileTheSeasonIsAlreadyInPlay() {
+        // The reason this entry point exists at all: resolveJoinPlan gates
+        // NewPreSeasonRegistration on isPreSeason(), which is false by the time the auto-join
+        // fires. Going through execute() here would produce a NewJoin row instead.
+        Season inPlaySeason = createSeason();
+        inPlaySeason.setPreSeasonOpensAt(OffsetDateTime.now().minusDays(30));
+        inPlaySeason.setPredictionsOpenAt(OffsetDateTime.now().minusHours(1));
+        assertThat(inPlaySeason.isPreSeason()).isFalse();
+
+        when(clock.instant()).thenReturn(now);
+        when(predictionRepo.save(any())).thenAnswer(i -> {
+            SeasonPrediction p = i.getArgument(0);
+            p.setId(UUID.randomUUID());
+            return p;
+        });
+        when(entryRepo.save(any())).thenAnswer(i -> {
+            Entry e = i.getArgument(0);
+            e.setId(UUID.randomUUID());
+            return e;
+        });
+
+        var result = useCase.autoRegisterDefaultTable(userId, inPlaySeason, defaultContest);
+
+        assertThat(result.isRight()).isTrue();
+        ArgumentCaptor<SeasonPrediction> captor = ArgumentCaptor.forClass(SeasonPrediction.class);
+        verify(predictionRepo).save(captor.capture());
+        assertThat(captor.getValue().getAtRoundNumber()).isZero();
+        assertThat(captor.getValue().getInitialRankings()).isNotEmpty();
+    }
+
+    @Test
+    void autoRegisteredUser_thenMergesLikeAnyPreSeasonRegistrant() {
+        // The consequence that matters to the user: after auto-join they still get the full
+        // 5-swap merge form, not the 1-2 swap round-opening path.
+        Season inPlaySeason = createSeason();
+        inPlaySeason.setPreSeasonOpensAt(OffsetDateTime.now().minusDays(30));
+        inPlaySeason.setPredictionsOpenAt(OffsetDateTime.now().minusHours(1));
+
+        SeasonPrediction autoRegistered = SeasonPrediction.builder()
+                .id(UUID.randomUUID())
+                .userId(userId)
+                .seasonId(seasonId)
+                .initialRankings(inPlaySeason.getInitialRankings())
+                .currentRankings(inPlaySeason.getInitialRankings())
+                .swaps(new java.util.ArrayList<>(List.of(new RoundSwap(0, List.of()))))
+                .lastSwapAt(null)
+                .atRoundNumber(0)
+                .build();
+
+        when(clock.instant()).thenReturn(now);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(inPlaySeason));
+        when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(autoRegistered));
+        when(roundRepo.findById(inPlaySeason.getCurrentRoundId())).thenReturn(Optional.of(round));
+        when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
+        when(contestRepo.findById(inPlaySeason.getMainContestId())).thenReturn(Optional.of(defaultContest));
+        when(entryRepo.findByUserAndContest(userId, contestId))
+                .thenReturn(Optional.of(Entry.builder()
+                        .id(UUID.randomUUID())
+                        .userId(userId)
+                        .contestId(contestId)
+                        .joinedAtRound(0)
+                        .build()));
+        when(predictionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        var result = useCase.execute(
+                userId, new CreatePredictionCommand(List.of(new CreatePredictionCommand.SwapPair("ARS", "LIV"))));
+
+        assertThat(result.isRight())
+                .as("must resolve to MergePreSeasonRegistration, not AlreadyJoined")
+                .isTrue();
+        ArgumentCaptor<SeasonPrediction> captor = ArgumentCaptor.forClass(SeasonPrediction.class);
+        verify(predictionRepo).save(captor.capture());
+        assertThat(captor.getValue().getAtRoundNumber()).isEqualTo(1);
+        assertThat(captor.getValue().getOpeningCommittedRound()).isEqualTo(1);
+    }
+
+    @Test
+    void resolveMainContest_failsWhenSeasonHasNoMainContest() {
+        Season noContest = createSeason();
+        noContest.setMainContestId(null);
+        when(contestRepo.findById(null)).thenReturn(Optional.empty());
+
+        assertThat(useCase.resolveMainContest(noContest).isLeft()).isTrue();
     }
 
     private Season createSeason() {

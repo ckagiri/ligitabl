@@ -55,6 +55,18 @@ public interface UserRepo {
     List<UUID> findUnjoinedUserIdsAfter(UUID seasonId, OffsetDateTime registeredAfter);
 
     /**
+     * <p>It asks "have you opened the app at any time since this season became joinable?"
+     * @param activeSince exclusive lower bound on last-seen; must not be null
+     */
+    List<UUID> findUnjoinedUserIdsActiveSince(UUID seasonId, OffsetDateTime activeSince);
+
+    /**
+     * Verified, non-opted-out users holding a round-0 (pre-season registration) prediction for the
+     * season — auto-joined and genuinely pre-registered alike.
+     */
+    List<User> findMailableUsersWithPreSeasonRegistration(UUID seasonId);
+
+    /**
      * @param dueCutoff old enough to be due for the earliest reminder stage
      * @param staleCutoff exclusive lower bound; users not seen since before this are excluded as
      *     too dormant to bother reminding

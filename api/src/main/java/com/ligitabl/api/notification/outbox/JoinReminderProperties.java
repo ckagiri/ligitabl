@@ -14,9 +14,8 @@ import lombok.Data;
  * the latest stage their time-since-last-seen has reached, never more than one
  * stage per run — see {@link JoinReminderEnqueuer}.
  *
- * <p>{@code maxStaleDays} hard-excludes users not seen in that long, so a long-dormant
- * account doesn't get emailed the moment it happens to be queried, long after the
- * reminder window was meaningful.
+ * <p>{@code quietDaysBeforePredictionsOpen} suppresses runs in the run-up to predictions
+ * opening, when auto-join is about to hand these same users a table.
  */
 @Data
 @Component
@@ -24,5 +23,5 @@ import lombok.Data;
 public class JoinReminderProperties {
     private boolean enabled = false;
     private List<Integer> stageDays = List.of(1, 4, 11);
-    private int maxStaleDays = 60;
+    private int quietDaysBeforePredictionsOpen = 1;
 }

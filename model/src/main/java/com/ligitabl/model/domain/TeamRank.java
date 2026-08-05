@@ -1,5 +1,8 @@
 package com.ligitabl.model.domain;
 
+import java.util.Comparator;
+import java.util.List;
+
 import lombok.Builder;
 import lombok.Value;
 import lombok.extern.jackson.Jacksonized;
@@ -22,6 +25,17 @@ public class TeamRank {
 
     public TeamRank withPosition(int newPosition) {
         return new TeamRank(this.code, newPosition);
+    }
+
+    /**
+     * The list in the order a table is displayed: by position, ascending.
+     */
+    public static List<TeamRank> inPositionOrder(List<TeamRank> ranks) {
+        return ranks == null
+                ? List.of()
+                : ranks.stream()
+                        .sorted(Comparator.comparingInt(TeamRank::getPosition))
+                        .toList();
     }
 
     @Override

@@ -276,11 +276,38 @@ public class UserPersistenceAdapter implements UserRepo {
     }
 
     @Override
+    public List<UUID> findUnjoinedUserIdsActiveSince(UUID seasonId, OffsetDateTime activeSince) {
+        if (activeSince == null) {
+            throw new IllegalArgumentException("activeSince must not be null");
+        }
+        var lastSeen = DSL.coalesce(T_USER.C_LAST_LOGIN_AT, T_USER.C_UPDATE_DATE);
+        return dsl.select(T_USER.PK_ID)
+                .from(T_USER)
+                .where(lastSeen.gt(activeSince))
+                .andNotExists(dsl.selectOne()
+                        .from(T_SEASON_PREDICTION)
+                        .where(T_SEASON_PREDICTION.FK_USER_ID.eq(T_USER.PK_ID))
+                        .and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId)))
+                .fetch(T_USER.PK_ID);
+    }
+
+    @Override
+    public List<User> findMailableUsersWithPreSeasonRegistration(UUID seasonId) {
+        var records = dsl.selectFrom(T_USER)
+                .where(T_USER.C_EMAIL_VERIFIED.isTrue())
+                .and(T_USER.C_RESULTS_EMAIL_OPT_OUT.isFalse())
+                .andExists(dsl.selectOne()
+                        .from(T_SEASON_PREDICTION)
+                        .where(T_SEASON_PREDICTION.FK_USER_ID.eq(T_USER.PK_ID))
+                        .and(T_SEASON_PREDICTION.FK_SEASON_ID.eq(seasonId))
+                        .and(T_SEASON_PREDICTION.C_AT_ROUND_NUMBER.eq(0)))
+                .fetch();
+        return records.stream().map(this::map).toList();
+    }
+
+    @Override
     public List<User> findUnjoinedUsersRegisteredBefore(
             UUID seasonId, OffsetDateTime dueCutoff, OffsetDateTime staleCutoff) {
-        // Last-seen basis, not signup basis: create_date persists from a user's original signup
-        // (possibly a prior season), so a long-dormant account would otherwise look "overdue" the
-        // moment it resurfaces. COALESCE(last_login_at, update_date) reflects recent activity.
         var lastSeen = DSL.coalesce(T_USER.C_LAST_LOGIN_AT, T_USER.C_UPDATE_DATE);
         var records = dsl.selectFrom(T_USER)
                 .where(lastSeen.le(dueCutoff))

@@ -14,4 +14,15 @@ public final class OutboxEventTypes {
 
     /** A round has transitioned from OPEN to LOCKED for the first time. */
     public static final String ROUND_LOCKED = "ROUND_LOCKED";
+
+    /** The season has opened for play; auto-join everyone who was around but never submitted. */
+    public static final String SEASON_IN_PLAY = "SEASON_IN_PLAY";
+
+    /**
+     * Chained from SEASON_IN_PLAY once its auto-joins have committed.
+     */
+    public static final String SEASON_WELCOME_FANOUT = "SEASON_WELCOME_FANOUT";
+
+    /** One user's season-welcome email, ready to render and send. */
+    public static final String SEASON_WELCOME = "SEASON_WELCOME";
 }

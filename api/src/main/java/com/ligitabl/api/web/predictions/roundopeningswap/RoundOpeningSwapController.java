@@ -68,6 +68,7 @@ public class RoundOpeningSwapController {
             case SwapError.RoundNotFound __ -> 404;
             case SwapError.RoundNotOpen __ -> 409;
             case SwapError.OpeningAlreadyUsed __ -> 409;
+            case SwapError.PreSeasonMergeRequired __ -> 409;
             case SwapError.SeasonCompleted __ -> 409;
             case SwapError.SeasonNotFound __ -> 404;
             case SwapError.SeasonNotInPlay __ -> 409;
@@ -86,6 +87,7 @@ public class RoundOpeningSwapController {
             case SwapError.RoundNotFound e -> "Round " + e.roundPosition() + " not found";
             case SwapError.RoundNotOpen e -> "Cannot swap when round is " + e.roundStatus();
             case SwapError.OpeningAlreadyUsed e -> "Opening swaps already used for round " + e.round();
+            case SwapError.PreSeasonMergeRequired __ -> "Submit your table for the season before swapping";
             case SwapError.SeasonCompleted __ -> "Cannot swap in completed season";
             case SwapError.SeasonNotFound __ -> "No active season found";
             case SwapError.SeasonNotInPlay __ -> "Cannot swap when the season is not in play";

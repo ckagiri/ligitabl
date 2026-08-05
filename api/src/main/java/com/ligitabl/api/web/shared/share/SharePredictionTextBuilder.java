@@ -24,8 +24,7 @@ public class SharePredictionTextBuilder {
 
     public String build(
             int round, List<TeamRank> rankings, Map<String, Team> teamsByCode, String shareUrl, boolean preSeason) {
-        var sorted = rankings.stream()
-                .sorted(Comparator.comparingInt(r -> r.getPosition()))
+        var sorted = TeamRank.inPositionOrder(rankings).stream()
                 .toList();
 
         StringBuilder text = new StringBuilder();

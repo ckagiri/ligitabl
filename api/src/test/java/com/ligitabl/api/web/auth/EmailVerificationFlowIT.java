@@ -38,8 +38,8 @@ import com.ligitabl.model.repo.UserRepo;
  * Full-stack coverage of the email-verification web flow: GET /auth/verify-email page states and
  * POST /profile/resend-verification. Registration goes through the real web form (Turnstile
  * mocked, same rationale as AuthControllerRegisterFormIT), so tokens are created by the real
- * post-registration hook. The impersonation-blocked path (403) is exercised live in task_67
- * Group 4 — wiring an admin + impersonation session through TestRestTemplate isn't worth the
+ * post-registration hook. The impersonation-blocked path (403) is exercised live
+ *  — wiring an admin + impersonation session through TestRestTemplate isn't worth the
  * plumbing here given the guard is the handler's first line, identical to set-password.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

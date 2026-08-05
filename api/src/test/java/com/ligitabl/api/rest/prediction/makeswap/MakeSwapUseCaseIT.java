@@ -106,9 +106,27 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
         predictionRepo.save(prediction);
     }
 
+    private List<String> tableOrder(SeasonPrediction prediction) {
+        return TeamRank.inPositionOrder(prediction.getCurrentRankings()).stream()
+                .map(TeamRank::getCode)
+                .toList();
+    }
+
     @Nested
     @DisplayName("Success Cases")
     class SuccessCases {
+
+        @Test
+        @DisplayName("a swap moves exactly the two teams named and nothing else")
+        void swapMovesOnlyTheTwoTeamsNamed() {
+            useCase.execute(userId, new SwapCommand("ARS", "LIV"));
+
+            assertThat(tableOrder(predictionRepo
+                            .findByUserAndSeason(userId, seasonId)
+                            .orElseThrow()))
+                    .containsExactly(
+                            "MCI", "LIV", "ARS", "AVL", "CHE", "NEW", "MUN", "TOT", "BHA", "CRY", "BRE", "WHU");
+        }
 
         @Test
         @DisplayName("should allow first swap immediately")
@@ -215,6 +233,40 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
             SwapError.CooldownActive cooldownActive = (SwapError.CooldownActive) result.getLeft();
             assertThat(cooldownActive.nextSwapAt()).isEqualTo(now.plus(Duration.ofHours(1)));
             assertThat(cooldownActive.hoursRemaining()).isCloseTo(1.0, offset(0.01));
+        }
+
+        @Test
+        @DisplayName("should reject an ordinary swap when the round's opening window is unspent")
+        void shouldRejectWhenOpeningWindowNotYetUsed() {
+            // The rule pairing this use case with RoundOpeningSwapUseCase: once the first-swap
+            // bonus is gone, the round's opening window must be spent before ordinary swaps
+            // resume.
+            jdbcTemplate.update(
+                    "UPDATE t_season_prediction SET c_last_swap_at = ?, c_opening_committed_round = 0"
+                            + " WHERE fk_user_id = ?",
+                    java.sql.Timestamp.from(now.minus(Duration.ofDays(2))),
+                    userId);
+
+            Either<SwapError, SwapResult> result = useCase.execute(userId, new SwapCommand("ARS", "LIV"));
+
+            assertThat(result.isLeft()).isTrue();
+            assertThat(result.getLeft()).isInstanceOf(SwapError.UseOpeningWindowFirst.class);
+            assertThat(((SwapError.UseOpeningWindowFirst) result.getLeft()).round()).isEqualTo(10);
+        }
+
+        @Test
+        @DisplayName("should allow an ordinary swap once the opening window has been spent")
+        void shouldAllowOnceOpeningWindowSpent() {
+            // With the opening committed for this round — the cooldown
+            // is the only remaining gate, and it has elapsed.
+            jdbcTemplate.update(
+                    "UPDATE t_season_prediction SET c_last_swap_at = ?, c_opening_committed_round = 10"
+                            + " WHERE fk_user_id = ?",
+                    java.sql.Timestamp.from(now.minus(Duration.ofDays(2))),
+                    userId);
+
+            assertThat(useCase.execute(userId, new SwapCommand("ARS", "LIV")).isRight())
+                    .isTrue();
         }
 
         @Test

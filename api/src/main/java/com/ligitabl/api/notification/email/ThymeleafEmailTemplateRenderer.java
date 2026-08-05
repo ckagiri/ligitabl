@@ -39,6 +39,7 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
             case EMAIL_VERIFICATION -> "email/email-verification";
             case ROUND_RESULTS -> "email/round-results";
             case JOIN_REMINDER -> "email/join-reminder";
+            case SEASON_WELCOME -> "email/season-welcome";
         };
     }
 
@@ -50,6 +51,7 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
             case ROUND_RESULTS -> "Your Gameweek %s Results — %s points!"
                     .formatted(templateData.get("round"), templateData.get("score"));
             case JOIN_REMINDER -> joinReminderSubject((Integer) templateData.get("stage"));
+            case SEASON_WELCOME -> "The season's underway — you have 5 swaps";
         };
     }
 

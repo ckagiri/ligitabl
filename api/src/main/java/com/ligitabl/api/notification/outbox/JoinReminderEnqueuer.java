@@ -60,6 +60,10 @@ public class JoinReminderEnqueuer {
             log.info("[JOIN_REMINDER_SKIPPED] a JOIN_REMINDER batch was already enqueued today; skipping this run");
             return;
         }
+        if (outboxRepo.existsEventsOfTypeCreatedSince(OutboxEventTypes.SEASON_WELCOME, todayStart.toInstant())) {
+            log.info("[JOIN_REMINDER_SKIPPED] a SEASON_WELCOME batch was enqueued today; skipping this run");
+            return;
+        }
 
         Season season = seasonRepo
                 .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
@@ -74,10 +78,24 @@ public class JoinReminderEnqueuer {
             return;
         }
 
+        if (season.getPreSeasonOpensAt() == null) {
+            log.info("[JOIN_REMINDER_SKIPPED] season {} has no preSeasonOpensAt to anchor to", season.getId());
+            return;
+        }
+
         OffsetDateTime now = OffsetDateTime.now(clock);
-        // "Registered before" here really means "not seen since".
+
+        if (inQuietPeriodBeforePredictionsOpen(season, now)) {
+            log.info(
+                    "[JOIN_REMINDER_SKIPPED] within {} day(s) of predictions opening for season {}; "
+                            + "auto-join is about to give these users a table",
+                    properties.getQuietDaysBeforePredictionsOpen(),
+                    season.getId());
+            return;
+        }
+
         OffsetDateTime earliestCutoff = now.minusDays(stages.get(0));
-        OffsetDateTime staleCutoff = now.minusDays(properties.getMaxStaleDays());
+        OffsetDateTime staleCutoff = season.getPreSeasonOpensAt();
         List<User> candidates = userRepo.findUnjoinedUsersRegisteredBefore(season.getId(), earliestCutoff, staleCutoff);
 
         int inserted = 0;
@@ -110,6 +128,20 @@ public class JoinReminderEnqueuer {
         }
 
         log.info("[JOIN_REMINDER_ENQUEUED] candidates={}, inserted={}", candidates.size(), inserted);
+    }
+
+    /**
+     * True in the window immediately before predictions open. Only ever suppresses runs
+     * <em>before</em> the transition: once predictions are open the window is behind us, and
+     * reminders resume for whoever is still legitimately unjoined (mid-season signups).
+     */
+    private boolean inQuietPeriodBeforePredictionsOpen(Season season, OffsetDateTime now) {
+        OffsetDateTime predictionsOpenAt = season.getPredictionsOpenAt();
+        if (predictionsOpenAt == null) {
+            return false;
+        }
+        OffsetDateTime quietFrom = predictionsOpenAt.minusDays(properties.getQuietDaysBeforePredictionsOpen());
+        return !now.isBefore(quietFrom) && now.isBefore(predictionsOpenAt);
     }
 
     /** The largest configured stage the user's time-since-last-seen has reached, or -1 if none. */

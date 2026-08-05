@@ -62,6 +62,27 @@ public class CreatePredictionUseCase {
                 .map(info -> new JoinCtx(season, contest, info.atRoundNumber(), info.currentRoundPosition())));
     }
 
+    /**
+     * Resolves just the main contest, for batch callers that need it once for many users.
+     */
+    public Either<CreatePredictionError, Contest> resolveMainContest(Season season) {
+        return findMainContest(season);
+    }
+
+    /**
+     * Writes the round-0 registration a user would have written themselves by submitting the
+     * default table during pre-season — same shape, same allowance.
+     *
+     * <p>Not {@code @Transactional}: callers run inside their own transaction.
+     */
+    public Either<CreatePredictionError, CreatePredictionResult> autoRegisterDefaultTable(
+            UUID userId, Season season, Contest mainContest) {
+        return registerPreSeason(userId, season, mainContest, new CreatePredictionCommand(List.of()));
+    }
+
+    /**
+     * <p>Not {@code @Transactional}: callers run inside their own transaction.
+     */
     public Either<CreatePredictionError, CreatePredictionResult> executeWithContext(
             UUID userId, JoinCtx ctx, CreatePredictionCommand request) {
         return validateSwapTeams(request, ctx.season())
@@ -205,8 +226,7 @@ public class CreatePredictionUseCase {
         }
         Round currentRound = currentRoundOpt.get();
 
-        RoundStatus roundStatus =
-                currentRound.isFinalized() ? RoundStatus.FINALIZED : roundSupport.resolveStatus(currentRound);
+        RoundStatus roundStatus = roundSupport.resolveJoinEligibilityStatus(currentRound);
 
         int atRoundNumber;
         if (roundStatus == RoundStatus.OPEN) {
@@ -322,6 +342,7 @@ public class CreatePredictionUseCase {
                     .swaps(new ArrayList<>(List.of(new RoundSwap(ROUND_ZERO, swapResult.changes()))))
                     .lastSwapAt(null)
                     .atRoundNumber(ROUND_ZERO)
+                    .openingCommittedRound(ROUND_ZERO)
                     .build();
 
             SeasonPrediction savedPrediction = predictionRepo.save(prediction);
