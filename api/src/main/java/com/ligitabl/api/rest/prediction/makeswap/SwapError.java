@@ -28,5 +28,7 @@ public sealed interface SwapError {
 
     record OpeningAlreadyUsed(int round) implements SwapError {}
 
+    record PreSeasonMergeRequired(int round) implements SwapError {}
+
     record BatchSizeInvalid(int size) implements SwapError {}
 }

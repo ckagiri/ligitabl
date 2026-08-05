@@ -80,6 +80,7 @@ public class MakeSwapController {
             case SwapError.SeasonInSetupMode __ -> 409;
             case SwapError.UseOpeningWindowFirst __ -> 409;
             case SwapError.OpeningAlreadyUsed __ -> 500;
+            case SwapError.PreSeasonMergeRequired __ -> 409;
             case SwapError.BatchSizeInvalid __ -> 500;
         };
     }
@@ -98,6 +99,7 @@ public class MakeSwapController {
             case SwapError.SeasonNotInPlay __ -> "Cannot swap when the season is not in play";
             case SwapError.SeasonInSetupMode __ -> "Season is being reconfigured. Please try again shortly.";
             case SwapError.UseOpeningWindowFirst e -> "Use your opening swaps for round " + e.round() + " first";
+            case SwapError.PreSeasonMergeRequired __ -> "Submit your table for the season before swapping";
             case SwapError.OpeningAlreadyUsed __ -> "Something went wrong";
             case SwapError.BatchSizeInvalid __ -> "Something went wrong";
         };

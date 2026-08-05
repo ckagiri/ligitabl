@@ -23,6 +23,7 @@ public class RoundOpeningSwapUseCase {
 
     private static final int MIN_SWAPS = 1;
     private static final int MAX_SWAPS = 2;
+    private static final int ROUND_ZERO = 0;
 
     private final SeasonPredictionRepo predictionRepo;
     private final Clock clock;
@@ -44,10 +45,24 @@ public class RoundOpeningSwapUseCase {
                 .flatMap(ctx -> applySwaps(ctx.prediction(), command.swaps(), ctx.season(), ctx.round()));
     }
 
+    /**
+     * <pre>
+     * path                        atRoundNumber  openingCommittedRound  at round N
+     * pre-season register         0              0                      merge first
+     * merged at N                 N              N                      already reshuffled
+     * new join at N               N              0                      already reshuffled
+     * joined/merged at N-1        N-1            N-1 or 0               allowed — this is it
+     * </pre>
+     */
     private Either<SwapError, Void> validateOpeningNotUsed(SeasonPrediction prediction, Round round) {
-        return prediction.getOpeningCommittedRound() == round.getPosition()
-                ? Either.left(new SwapError.OpeningAlreadyUsed(round.getPosition()))
-                : Either.right(null);
+        if (prediction.getAtRoundNumber() == ROUND_ZERO) {
+            return Either.left(new SwapError.PreSeasonMergeRequired(round.getPosition()));
+        }
+        if (prediction.getAtRoundNumber() == round.getPosition()
+                || prediction.getOpeningCommittedRound() == round.getPosition()) {
+            return Either.left(new SwapError.OpeningAlreadyUsed(round.getPosition()));
+        }
+        return Either.right(null);
     }
 
     private Either<SwapError, Void> validateBatchSize(List<SwapCommand> swaps) {

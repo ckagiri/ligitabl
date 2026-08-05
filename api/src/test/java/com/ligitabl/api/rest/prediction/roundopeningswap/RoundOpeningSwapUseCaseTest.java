@@ -442,7 +442,9 @@ class RoundOpeningSwapUseCaseTest {
                 .swaps(new ArrayList<>())
                 .lastSwapAt(now.minusSeconds(86400 * 2)) // cooldown long expired
                 .openingCommittedRound(0) // opening not yet used this season
-                .atRoundNumber(round != null ? round.getPosition() : 5)
+                // Entered in an *earlier* round. The opening window is for a table carried into a
+                // round, never the round the user arrived in.
+                .atRoundNumber(round != null ? round.getPosition() - 1 : 4)
                 .build();
     }
 }

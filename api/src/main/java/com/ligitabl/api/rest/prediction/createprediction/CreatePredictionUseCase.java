@@ -342,6 +342,7 @@ public class CreatePredictionUseCase {
                     .swaps(new ArrayList<>(List.of(new RoundSwap(ROUND_ZERO, swapResult.changes()))))
                     .lastSwapAt(null)
                     .atRoundNumber(ROUND_ZERO)
+                    .openingCommittedRound(ROUND_ZERO)
                     .build();
 
             SeasonPrediction savedPrediction = predictionRepo.save(prediction);

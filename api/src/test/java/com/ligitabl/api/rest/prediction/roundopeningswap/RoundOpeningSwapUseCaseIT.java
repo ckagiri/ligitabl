@@ -35,8 +35,7 @@ import com.ligitabl.model.repo.SeasonPredictionRepo;
  * The round-opening swap is a separate allowance from the ordinary swap: 1–2 swaps, once per
  * round, and — unlike {@code MakeSwapUseCase} — with no cooldown gate. It is spent by setting
  * {@code openingCommittedRound}, which is also what
- * {@code CreatePredictionUseCase.mergePreSeasonRegistration} sets, so the two features interact
- * whether or not anyone intended them to. That interaction is covered here.
+ * {@code CreatePredictionUseCase.mergePreSeasonRegistration} sets.
  */
 @SpringBootTest
 @DisplayName("RoundOpeningSwapUseCase Integration Tests")
@@ -45,6 +44,8 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
 
     private static final String SEASON_SLUG = "2024-25";
     private static final int CURRENT_ROUND = 10;
+    /** Eligible users entered in an earlier round — the window is for a table carried *into* one. */
+    private static final int ENTERED_AT_ROUND = CURRENT_ROUND - 1;
 
     private static final List<TeamRank> RANKINGS = List.of(
             new TeamRank("MCI", 1),
@@ -103,11 +104,18 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
      */
     private static final int OPENING_UNUSED = 0;
 
+    /** A prediction still at round 0 has not entered the season — it must merge first. */
+    private static final int ROUND_ZERO = 0;
+
     /**
      * Replaces the prediction from {@link #setup()} — {@code uq_t_season_prediction_user_season}
      * means a second insert for the same user/season would violate the constraint.
      */
     private SeasonPrediction savePrediction(int openingCommittedRound, Instant lastSwapAt) {
+        return savePrediction(openingCommittedRound, lastSwapAt, ENTERED_AT_ROUND);
+    }
+
+    private SeasonPrediction savePrediction(int openingCommittedRound, Instant lastSwapAt, int atRoundNumber) {
         jdbcTemplate.update("DELETE FROM t_season_prediction WHERE fk_user_id = ?", userId);
         SeasonPrediction prediction = SeasonPrediction.builder()
                 .userId(userId)
@@ -117,7 +125,7 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
                 .swaps(List.of())
                 .lastSwapAt(lastSwapAt)
                 .openingCommittedRound(openingCommittedRound)
-                .atRoundNumber(CURRENT_ROUND)
+                .atRoundNumber(atRoundNumber)
                 .build();
         return predictionRepo.save(prediction);
     }
@@ -159,7 +167,9 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
                     .as("the window is spent by recording the round, not by a counter")
                     .isEqualTo(CURRENT_ROUND);
             assertThat(saved.getLastSwapAt()).isEqualTo(now);
-            assertThat(saved.getAtRoundNumber()).isEqualTo(CURRENT_ROUND);
+            assertThat(saved.getAtRoundNumber())
+                    .as("the window carries the table into this round")
+                    .isEqualTo(CURRENT_ROUND);
         }
 
         @Test
@@ -204,7 +214,7 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("an opening used in an earlier round does not block this one")
         void openingFromAnEarlierRoundDoesNotCarryOver() {
-            savePrediction(CURRENT_ROUND - 1, null);
+            savePrediction(ENTERED_AT_ROUND, null);
 
             assertThat(swap("MCI", "ARS").isRight()).isTrue();
             assertThat(reload().getOpeningCommittedRound()).isEqualTo(CURRENT_ROUND);
@@ -325,28 +335,37 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
     class PreSeasonRegistrationInteraction {
 
         @Test
-        @DisplayName("merging a pre-season registration consumes that round's opening window")
+        @DisplayName("merging at this round consumes its opening window")
         void mergeConsumesTheOpeningWindow() {
-            // mergePreSeasonRegistration sets openingCommittedRound = atRoundNumber, which is the
-            // same field this use case checks. So a user who merged in at this round — including
-            // anyone auto-registered by the SEASON_IN_PLAY flow — has already had their reshuffle
-            // (up to 5 swaps there, rather than 2 here) and cannot also take the opening window.
-            savePrediction(CURRENT_ROUND, now);
+            // mergePreSeasonRegistration sets both atRoundNumber and openingCommittedRound to the
+            // merge round.
+            savePrediction(CURRENT_ROUND, now, CURRENT_ROUND);
 
-            var result = swap("MCI", "ARS");
-
-            assertThat(result.isLeft()).isTrue();
-            assertThat(result.getLeft()).isInstanceOf(SwapError.OpeningAlreadyUsed.class);
+            assertThat(swap("MCI", "ARS").getLeft()).isInstanceOf(SwapError.OpeningAlreadyUsed.class);
         }
 
         @Test
-        @DisplayName("a round-0 registration that has not merged can still use the opening")
-        void unmergedPreSeasonRegistrationKeepsTheOpening() {
-            // Round-0 row, opening never committed: the auto-registered shape from task 80.
-            savePrediction(OPENING_UNUSED, null);
+        @DisplayName("joining at this round consumes its opening window, even though the field is 0")
+        void newJoinConsumesTheOpeningWindow() {
+            // createPredictionAndEntry never sets openingCommittedRound, so it stays 0 — which is
+            // why that field alone cannot decide this.
+            savePrediction(OPENING_UNUSED, now, CURRENT_ROUND);
 
-            assertThat(swap("MCI", "ARS").isRight()).isTrue();
-            assertThat(reload().getOpeningCommittedRound()).isEqualTo(CURRENT_ROUND);
+            assertThat(swap("MCI", "ARS").getLeft()).isInstanceOf(SwapError.OpeningAlreadyUsed.class);
+        }
+
+        @Test
+        @DisplayName("an unmerged pre-season registration must merge before using the window")
+        void unmergedPreSeasonRegistrationMustMergeFirst() {
+            // Round-0 row: the shape auto-registration writes. Allowing the swap would set
+            // atRoundNumber and silently convert it to in-play, after which resolveJoinPlan
+            // reports AlreadyJoined.
+            savePrediction(OPENING_UNUSED, null, ROUND_ZERO);
+
+            assertThat(swap("MCI", "ARS").getLeft()).isInstanceOf(SwapError.PreSeasonMergeRequired.class);
+            assertThat(reload().getAtRoundNumber())
+                    .as("the row must stay a pre-season registration")
+                    .isZero();
         }
     }
 
