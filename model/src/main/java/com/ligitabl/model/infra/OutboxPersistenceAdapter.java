@@ -25,8 +25,9 @@ public class OutboxPersistenceAdapter implements OutboxRepo {
 
     @Override
     public boolean save(OutboxEvent event) {
-        // c_available_at / c_created_at are left to their DB defaults (now()).
-        int inserted = dsl.insertInto(T_OUTBOX_EVENT)
+        // c_created_at is left to its DB default (now()), as is c_available_at unless the caller
+        // asked for a delayed delivery (OutboxEvent.createAvailableAt).
+        var insert = dsl.insertInto(T_OUTBOX_EVENT)
                 .set(T_OUTBOX_EVENT.PK_ID, event.getId())
                 .set(T_OUTBOX_EVENT.C_IDEMPOTENCY_KEY, event.getIdempotencyKey())
                 .set(T_OUTBOX_EVENT.C_EVENT_TYPE, event.getEventType())
@@ -35,10 +36,14 @@ public class OutboxPersistenceAdapter implements OutboxRepo {
                 .set(T_OUTBOX_EVENT.C_PAYLOAD, JSONB.valueOf(event.getPayload()))
                 .set(T_OUTBOX_EVENT.C_STATUS, event.getStatus().name())
                 .set(T_OUTBOX_EVENT.C_ATTEMPTS, event.getAttempts())
-                .set(T_OUTBOX_EVENT.C_MAX_ATTEMPTS, event.getMaxAttempts())
-                .onConflict(T_OUTBOX_EVENT.C_IDEMPOTENCY_KEY)
-                .doNothing()
-                .execute();
+                .set(T_OUTBOX_EVENT.C_MAX_ATTEMPTS, event.getMaxAttempts());
+
+        if (event.getAvailableAt() != null) {
+            insert = insert.set(T_OUTBOX_EVENT.C_AVAILABLE_AT, toOffset(event.getAvailableAt()));
+        }
+
+        int inserted =
+                insert.onConflict(T_OUTBOX_EVENT.C_IDEMPOTENCY_KEY).doNothing().execute();
         return inserted > 0;
     }
 

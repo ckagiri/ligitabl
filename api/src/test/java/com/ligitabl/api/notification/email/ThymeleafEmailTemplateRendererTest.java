@@ -85,7 +85,8 @@ class ThymeleafEmailTemplateRendererTest {
         return Map.of(
                 "myTableUrl", "http://x/my-table",
                 "leaderboardUrl", "http://x/leaderboard",
-                "faqUrl", "http://x/faq");
+                "faqUrl", "http://x/faq",
+                "whatIfUrl", "http://x/predictions/user/what-if");
     }
 
     @Test
@@ -103,6 +104,10 @@ class ThymeleafEmailTemplateRendererTest {
                 .as("names the deadline concretely; SeasonInPlayEnqueuer guarantees round 1 is open")
                 .contains("Gameweek 1 is still open")
                 .contains("Once Gameweek 1 locks");
+        assertThat(content.htmlBody())
+                .as("What-If is how a new joiner reasons about spending the swaps, so it is linked")
+                .contains("What-If")
+                .contains("http://x/predictions/user/what-if");
         assertThat(content.htmlBody())
                 .contains("http://x/my-table")
                 .contains("http://x/leaderboard")

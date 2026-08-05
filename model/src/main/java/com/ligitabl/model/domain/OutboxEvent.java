@@ -57,7 +57,11 @@ public class OutboxEvent {
 
     String lastError;
 
-    /** Earliest time the event is eligible for (re-)delivery. Set by the DB on insert. */
+    /**
+     * Earliest time the event is eligible for (re-)delivery. Null on a freshly built event means
+     * "as soon as possible" — the insert leaves the column to its DB default of {@code now()}.
+     * Set it via {@link #createAvailableAt} to hold an event back until a chosen time.
+     */
     Instant availableAt;
 
     /** Set by the DB on insert. */
@@ -78,6 +82,26 @@ public class OutboxEvent {
                 .status(Status.PENDING)
                 .attempts(0)
                 .maxAttempts(DEFAULT_MAX_ATTEMPTS)
+                .build();
+    }
+
+    /**
+     * An event that must not be delivered before {@code availableAt} — the relay's claim query
+     * only considers rows whose {@code available_at} has passed, so a future value simply parks
+     * the row in PENDING until then.
+     *
+     * <p>Use this for deliberate scheduling ("send this a day from now"), not for retry backoff;
+     * failed events are rescheduled through {@link #nextAvailableAt(Instant)} instead.
+     */
+    public static OutboxEvent createAvailableAt(
+            String idempotencyKey,
+            String eventType,
+            String aggregateType,
+            String aggregateId,
+            String payload,
+            Instant availableAt) {
+        return create(idempotencyKey, eventType, aggregateType, aggregateId, payload).toBuilder()
+                .availableAt(availableAt)
                 .build();
     }
 
