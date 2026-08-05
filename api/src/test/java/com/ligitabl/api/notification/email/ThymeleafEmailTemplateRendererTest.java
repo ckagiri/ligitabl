@@ -160,6 +160,141 @@ class ThymeleafEmailTemplateRendererTest {
         assertThat(lateStage.get().subject()).isEqualTo("Last chance to set your table before reminders stop");
     }
 
+    // ---------------------------------------------------------- segment results
+
+    private static SegmentResultsPayload.SegmentPlacement sprint(int rank) {
+        return new SegmentResultsPayload.SegmentPlacement("SPRINT", "S2", "Sprint 2", 5, 9, rank, 41, 210);
+    }
+
+    private static SegmentResultsPayload.SegmentPlacement quarter(int rank) {
+        return new SegmentResultsPayload.SegmentPlacement("QUARTER", "Q1", "Quarter 1", 1, 9, rank, 58, 395);
+    }
+
+    private static SegmentResultsPayload.SegmentPlacement season(int rank) {
+        return new SegmentResultsPayload.SegmentPlacement("FULL_SEASON", "FS", "Season", 1, 38, rank, 61, 1500);
+    }
+
+    /**
+     * Mirrors {@code OutboxEventProcessor.segmentResultsTemplateData}: the headline is the
+     * <em>last</em> placement, since they arrive smallest-window-first.
+     */
+    private static Map<String, Object> segmentData(List<SegmentResultsPayload.SegmentPlacement> placements) {
+        var headline = placements.get(placements.size() - 1);
+        Map<String, Object> data = new java.util.HashMap<>();
+        data.put("userDisplayName", "Ada");
+        data.put("placements", placements);
+        data.put("headlineName", headline.name());
+        data.put("headlineRank", headline.rank());
+        data.put("isSeasonFinale", "FULL_SEASON".equals(headline.type()));
+        data.put("isDouble", placements.size() > 1);
+        data.put("leaderboardUrl", "http://x/leaderboard?phase=" + headline.code());
+        data.put("myTableUrl", "http://x/my-table");
+        return data;
+    }
+
+    @Test
+    void segmentResultsSprintOnlyStatesTheSegmentAndTheField() {
+        var content = renderer
+                .render(EmailCommand.EmailType.SEGMENT_RESULTS, segmentData(List.of(sprint(2))))
+                .get();
+
+        assertThat(content.subject()).isEqualTo("Sprint 2 wrapped — you finished 2nd");
+        assertThat(content.htmlBody())
+                .contains("Sprint 2")
+                .contains("runner-up")
+                .as("rank, field size, points and the window are all quoted")
+                .contains("2")
+                .contains("41")
+                .contains("210")
+                .contains("http://x/leaderboard?phase=S2");
+        assertThat(content.htmlBody())
+                .as("no double callout for a single placement")
+                .doesNotContain("Two at once");
+        assertThat(content.htmlBody())
+                .as("a sprint ending is not the end of the season")
+                .doesNotContain("That's the season")
+                .contains("Podium finish");
+        assertThat(content.textBody()).isNotBlank();
+    }
+
+    /** The standout case: one email covering both, with the double called out as one achievement. */
+    @Test
+    void segmentResultsDoubleShowsBothBlocksAndTheCallout() {
+        var content = renderer
+                .render(EmailCommand.EmailType.SEGMENT_RESULTS, segmentData(List.of(sprint(1), quarter(2))))
+                .get();
+
+        assertThat(content.subject())
+                .as("headlines the quarter — the larger of the two — not the sprint")
+                .isEqualTo("Quarter 1 wrapped — you finished 2nd");
+        assertThat(content.htmlBody())
+                .contains("Sprint 2")
+                .contains("Quarter 1")
+                .contains("Two at once")
+                .contains("http://x/leaderboard?phase=Q1");
+        assertThat(content.htmlBody())
+                .as("each segment quotes its own field size, not one shared number")
+                .contains("41")
+                .contains("58");
+    }
+
+    @Test
+    void segmentResultsSeasonFinaleUsesFinaleCopy() {
+        var content = renderer
+                .render(EmailCommand.EmailType.SEGMENT_RESULTS, segmentData(List.of(season(1))))
+                .get();
+
+        assertThat(content.subject()).isEqualTo("You won the season 🏆");
+        assertThat(content.htmlBody())
+                .contains("That's the season")
+                .contains("final table is locked in")
+                .contains("See you next season");
+        assertThat(content.htmlBody())
+                .as("nothing is 'already running' once the season is over")
+                .doesNotContain("already running")
+                .doesNotContain("Podium finish");
+    }
+
+    @Test
+    void segmentResultsSubjectVariesWithRank() {
+        assertThat(renderer.render(EmailCommand.EmailType.SEGMENT_RESULTS, segmentData(List.of(sprint(1))))
+                        .get()
+                        .subject())
+                .isEqualTo("Sprint 2 is yours 🏆");
+        assertThat(renderer.render(EmailCommand.EmailType.SEGMENT_RESULTS, segmentData(List.of(sprint(2))))
+                        .get()
+                        .subject())
+                .isEqualTo("Sprint 2 wrapped — you finished 2nd");
+        assertThat(renderer.render(EmailCommand.EmailType.SEGMENT_RESULTS, segmentData(List.of(sprint(3))))
+                        .get()
+                        .subject())
+                .isEqualTo("Sprint 2 wrapped — you finished 3rd");
+        assertThat(renderer.render(EmailCommand.EmailType.SEGMENT_RESULTS, segmentData(List.of(season(2))))
+                        .get()
+                        .subject())
+                .as("the finale gets its own wording rather than naming the 'Season' phase")
+                .isEqualTo("The season's done — you finished 2nd");
+    }
+
+    /**
+     * The plain-text alternative currently inherits the {@code <style>} block (see task 81
+     * follow-ups), so this asserts the one thing that <em>is</em> in this template's control:
+     * entities must not reach the reader as literal {@code &middot;}.
+     */
+    @Test
+    void segmentResultsTextBodyCarriesNoRawEntities() {
+        var content = renderer
+                .render(EmailCommand.EmailType.SEGMENT_RESULTS, segmentData(List.of(sprint(1), quarter(2))))
+                .get();
+
+        assertThat(content.textBody())
+                .doesNotContain("&middot;")
+                .doesNotContain("&ndash;")
+                .doesNotContain("&mdash;")
+                .doesNotContain("&nbsp;");
+        assertThat(content.textBody()).contains("Sprint 2").contains("Quarter 1");
+    }
+
     @Test
     void roundResultsSubjectCarriesRoundAndScore() {
         var result = renderer.render(EmailCommand.EmailType.ROUND_RESULTS, roundResultsData());
