@@ -1,5 +1,7 @@
 package com.ligitabl.api.web.predictions.whatif;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.security.Principal;
 import java.util.Comparator;
 import java.util.List;
@@ -78,6 +80,7 @@ public class WhatIfController {
     private final CompetitionDefaults competitionDefaults;
     private final ObjectMapper objectMapper;
     private final CurrentUserPublicId currentUserPublicId;
+    private final Clock clock;
 
     @GetMapping
     public String page(
@@ -179,7 +182,8 @@ public class WhatIfController {
     }
 
     private boolean isOpenForWhatIf(Season season) {
-        return !season.isCompleted() && !season.isInSetupMode() && (season.isInPlay() || season.isPreSeason());
+        Instant now = clock.instant();
+        return !season.isCompleted() && !season.isInSetupMode() && (season.isInPlay(now) || season.isPreSeason(now));
     }
 
     private String bounceToMyTable(HttpServletResponse response, String hxRequest) {

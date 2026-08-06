@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.testsupport.FixedClockConfig;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.shared.RankingSource;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
@@ -264,7 +265,7 @@ class GetPredictionUseCaseTest {
                 .seasonId(seasonId)
                 .currentRankings(List.of(TeamRank.of("ARS", 1)))
                 .initialRankings(List.of(TeamRank.of("ARS", 1)))
-                .lastSwapAt(Instant.parse("2024-12-22T10:00:00Z"))
+                .lastSwapAt(FixedClockConfig.NOW)
                 .build();
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(completedSeason));
@@ -282,7 +283,7 @@ class GetPredictionUseCaseTest {
 
     @Test
     void swap_status_blocked_when_cooldown_active() {
-        Instant now = Instant.parse("2024-12-22T10:00:00Z");
+        Instant now = FixedClockConfig.NOW;
 
         var prediction = SeasonPrediction.builder()
                 .id(UUID.randomUUID())

@@ -14,6 +14,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.notification.outbox.OutboxEventTypes;
 import com.ligitabl.api.notification.outbox.SeasonCompletedPayload;
@@ -28,6 +29,7 @@ import com.ligitabl.model.repo.SeasonRepo;
 
 @ExtendWith(MockitoExtension.class)
 class CompleteSeasonUseCaseTest {
+
 
     private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
 
@@ -52,7 +54,7 @@ class CompleteSeasonUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new CompleteSeasonUseCase(
-                seasonRepo, roundRepo, matchRepo, outboxRepo, objectMapper, competitionDefaults);
+                seasonRepo, roundRepo, matchRepo, outboxRepo, objectMapper, competitionDefaults, TestClock.FIXED);
         seasonId = UUID.randomUUID();
         roundId = UUID.randomUUID();
     }

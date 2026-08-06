@@ -16,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.web.shared.share.SharePredictionTextBuilder;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Round;
@@ -31,6 +32,7 @@ import com.ligitabl.model.repo.TeamRepo;
 
 @ExtendWith(MockitoExtension.class)
 class SeasonPredictionSupportTest {
+
 
     @Mock
     private SeasonRepo seasonRepo;
@@ -54,7 +56,7 @@ class SeasonPredictionSupportTest {
     @BeforeEach
     void setUp() {
         support = new SeasonPredictionSupport(
-                seasonRepo, roundRepo, seasonPredictionRepo, teamRepo, new SharePredictionTextBuilder());
+                seasonRepo, roundRepo, seasonPredictionRepo, teamRepo, new SharePredictionTextBuilder(), TestClock.FIXED);
         ReflectionTestUtils.setField(support, "frontendShareUrl", "https://ligipredictor.com");
 
         seasonId = UUID.randomUUID();

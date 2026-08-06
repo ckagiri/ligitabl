@@ -15,11 +15,13 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 
 @ExtendWith(MockitoExtension.class)
 class PreviewContestByCodeUseCaseTest {
+
 
     @Mock
     ContestRepo contestRepo;
@@ -48,7 +50,7 @@ class PreviewContestByCodeUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new PreviewContestByCodeUseCase(contestRepo, entryRepo, seasonRepo, competitionRepo, matchRepo);
+        useCase = new PreviewContestByCodeUseCase(contestRepo, entryRepo, seasonRepo, competitionRepo, matchRepo, TestClock.FIXED);
 
         seasonId = UUID.randomUUID();
         competitionId = UUID.randomUUID();

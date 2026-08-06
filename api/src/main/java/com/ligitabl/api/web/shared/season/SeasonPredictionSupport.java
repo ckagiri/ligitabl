@@ -1,5 +1,7 @@
 package com.ligitabl.api.web.shared.season;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -35,6 +37,7 @@ public class SeasonPredictionSupport {
     private final SeasonPredictionRepo seasonPredictionRepo;
     private final TeamRepo teamRepo;
     private final SharePredictionTextBuilder sharePredictionTextBuilder;
+    private final Clock clock;
 
     @Value("${ligitabl.frontend.share-url:${ligitabl.frontend.url:http://localhost:8080}}")
     private String frontendShareUrl;
@@ -86,9 +89,10 @@ public class SeasonPredictionSupport {
         SeasonPrediction prediction = predictionOpt.get();
 
         List<TeamRank> rankings;
-        if (season.isPreSeason() && prediction.getInitialRankings() != null) {
+        Instant now = clock.instant();
+        if (season.isPreSeason(now) && prediction.getInitialRankings() != null) {
             rankings = prediction.getInitialRankings();
-        } else if (season.isInPlay() && prediction.getCurrentRankings() != null) {
+        } else if (season.isInPlay(now) && prediction.getCurrentRankings() != null) {
             rankings = prediction.getCurrentRankings();
         } else {
             return ShareData.hidden();
@@ -105,7 +109,7 @@ public class SeasonPredictionSupport {
         Map<String, Team> teamsByCode = teamRepo.findAllTeamsByCode(rankings);
 
         String shareText =
-                sharePredictionTextBuilder.build(round, rankings, teamsByCode, shareUrl, season.isPreSeason());
+                sharePredictionTextBuilder.build(round, rankings, teamsByCode, shareUrl, season.isPreSeason(now));
         return new ShareData(true, shareUrl, shareText);
     }
 }

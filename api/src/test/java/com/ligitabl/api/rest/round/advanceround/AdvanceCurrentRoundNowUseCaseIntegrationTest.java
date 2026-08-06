@@ -1,11 +1,12 @@
 package com.ligitabl.api.rest.round.advanceround;
 
+import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_END;
+import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_NAME;
+import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_SLUG;
+import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_START;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 import java.time.Clock;
-import java.time.Instant;
-import java.time.LocalDate;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -14,14 +15,15 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.notification.outbox.RoundAdvancedPayload;
 import com.ligitabl.api.shared.errors.ConflictError;
 import com.ligitabl.api.shared.errors.NotFoundError;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
+import com.ligitabl.api.testsupport.FixedClockConfig;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Round;
@@ -30,8 +32,10 @@ import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 @SpringBootTest
+@Import(FixedClockConfig.class)
 @DisplayName("AdvanceCurrentRoundNowUseCase Integration Tests")
 class AdvanceCurrentRoundNowUseCaseIntegrationTest extends AbstractPostgresIT {
+
 
     @Autowired
     JdbcTemplate jdbc;
@@ -50,7 +54,7 @@ class AdvanceCurrentRoundNowUseCaseIntegrationTest extends AbstractPostgresIT {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    @MockitoBean
+    @Autowired
     Clock clock;
 
     private UUID competitionId;
@@ -59,7 +63,6 @@ class AdvanceCurrentRoundNowUseCaseIntegrationTest extends AbstractPostgresIT {
     @BeforeEach
     void setup() {
         PostgresTestDbCleaner.truncateAllDomainTables(jdbc);
-        when(clock.instant()).thenReturn(Instant.parse("2025-03-27T12:00:00Z"));
 
         competitionId = UUID.randomUUID();
         seasonId = UUID.randomUUID();
@@ -198,10 +201,10 @@ class AdvanceCurrentRoundNowUseCaseIntegrationTest extends AbstractPostgresIT {
                 seasonId,
                 ThreadLocalRandom.current().nextInt(1_000, 1_000_000),
                 competitionId,
-                "2024/25",
-                "2024-25",
-                LocalDate.of(2024, 8, 1),
-                LocalDate.of(2025, 5, 31),
+                SEASON_NAME,
+                SEASON_SLUG,
+                SEASON_START,
+                SEASON_END,
                 maxRounds,
                 false,
                 null,

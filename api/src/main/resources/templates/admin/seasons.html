@@ -57,7 +57,7 @@
                   <dd class="mt-1 text-sm text-gray-700">
                     <span th:if="${activeSeason.predictionsOpenAt != null}" th:text="${#temporals.format(activeSeason.predictionsOpenAt, 'dd MMM yyyy')}"></span>
                     <span th:if="${activeSeason.predictionsOpenAt == null}" class="text-gray-400">Not set (open by default)</span>
-                    <span th:if="${activeSeason.predictionsOpenAt != null and activeSeason.isInPlay() == true}" class="ml-2 text-xs text-green-600">(opened)</span>
+                    <span th:if="${activeSeason.predictionsOpenAt != null and activeSeasonInPlay == true}" class="ml-2 text-xs text-green-600">(opened)</span>
                   </dd>
                 </div>
                 <div>
@@ -331,7 +331,7 @@
                     <span th:if="${s.id == formerSeason?.id}" class="ml-1 text-xs font-medium text-gray-500">(former)</span>
                   </td>
                   <td class="px-6 py-3 text-sm text-gray-700" th:text="${s.completed}"></td>
-                  <td class="px-6 py-3 text-sm text-gray-600" th:text="${s.getSeasonState().name()}"></td>
+                  <td class="px-6 py-3 text-sm text-gray-600" th:text="${seasonStatesById.get(s.id)}"></td>
                   <td class="px-6 py-3 text-sm text-gray-600">
                     <span th:if="${s.preSeasonOpensAt != null}" th:text="${#temporals.format(s.preSeasonOpensAt, 'dd MMM yyyy')}"></span>
                     <span th:if="${s.preSeasonOpensAt == null}" class="text-gray-400">—</span>

@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Season;
@@ -23,6 +24,7 @@ import com.ligitabl.model.repo.SeasonRepo;
 
 @ExtendWith(MockitoExtension.class)
 class UpdateSeasonDatesUseCaseTest {
+
 
     @Mock
     SeasonRepo seasonRepo;
@@ -37,7 +39,7 @@ class UpdateSeasonDatesUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new UpdateSeasonDatesUseCase(seasonRepo, competitionRepo);
+        useCase = new UpdateSeasonDatesUseCase(seasonRepo, competitionRepo, TestClock.FIXED);
         competitionId = UUID.randomUUID();
         outgoingId = UUID.randomUUID();
         upcomingId = UUID.randomUUID();

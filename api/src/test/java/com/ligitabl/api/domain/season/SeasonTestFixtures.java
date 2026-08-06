@@ -1,15 +1,13 @@
 package com.ligitabl.api.domain.season;
 
-import static java.time.temporal.ChronoUnit.DAYS;
-
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
-import java.time.Year;
 import java.time.ZoneOffset;
 import java.util.UUID;
 
+import com.ligitabl.api.testsupport.TestCalendar;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
 
@@ -35,31 +33,14 @@ final class SeasonTestFixtures {
     // -- The real calendar -------------------------------------------------------------------
 
     /**
-     * The year the upcoming season kicks off in — <b>the current year</b>, so these fixtures never
-     * read as a stale snapshot of one particular season.
-     *
-     * <p>This is the only wall-clock read left in the package, and it is safe for one reason worth
-     * stating: every assertion here is about <em>ordering</em>, and shifting the whole calendar by a
-     * whole number of years preserves ordering exactly. {@link #NOW} is derived from these constants
-     * rather than from the clock, so a run is fully deterministic within itself; only the labels
-     * move from year to year. None of the month/day values below is 29 February, so leap years
-     * change nothing either.
-     *
-     * <p>That argument was checked rather than assumed, and can be re-checked in two minutes:
-     * replace this expression with a literal year well outside the current one — 2019 and 2031 were
-     * used — and run {@code make test-api-core}. The counts must be identical to the live value. If
-     * they are not, something in the package has started depending on the absolute year and this
-     * constant has to go back to a fixed date.
-     *
-     * <p>⚠️ Read at a fixed zone on purpose. {@code Year.now()} uses the JVM default, so a suite
-     * running across midnight on 31 December could otherwise compute one base year in the class
-     * loaded before midnight and another in the class loaded after — which is the exact species of
-     * time-dependent flakiness these fixtures were rebuilt to eliminate.
+     * The year the upcoming season kicks off in — the current year, so these fixtures never read as
+     * a stale snapshot of one particular season. See {@link TestCalendar} for why deriving it is
+     * safe and how to re-check that.
      */
-    private static final int SEASON_START_YEAR = Year.now(ZoneOffset.UTC).getValue();
+    private static final int SEASON_START_YEAR = TestCalendar.SEASON_START_YEAR;
 
     /** The upcoming season's slug, in the {@code YYYY-YY} form {@code SeasonSlug} requires. */
-    static final String SEASON_SLUG = "%d-%02d".formatted(SEASON_START_YEAR, (SEASON_START_YEAR + 1) % 100);
+    static final String SEASON_SLUG = TestCalendar.seasonSlug(SEASON_START_YEAR);
 
     /** Last season — over by the time {@link #NOW} arrives. */
     static final LocalDate PREVIOUS_SEASON_START = LocalDate.of(SEASON_START_YEAR - 1, 8, 10);
@@ -121,9 +102,8 @@ final class SeasonTestFixtures {
      * fixture in the package. {@code Season_lifecycleTest} pins the invariants anyway, for the case
      * where an edit makes them unsatisfiable rather than merely different.
      */
-    static final Instant NOW = middayOn(PRE_SEASON_OPENS_AT
-            .toLocalDate()
-            .plusDays(DAYS.between(PRE_SEASON_OPENS_AT.toLocalDate(), PREDICTIONS_OPEN_AT.toLocalDate()) / 2));
+    static final Instant NOW =
+            TestCalendar.middayMidwayBetween(PRE_SEASON_OPENS_AT.toLocalDate(), PREDICTIONS_OPEN_AT.toLocalDate());
 
     /** {@link #NOW} as a calendar date, in the zone {@code getSeasonState} evaluates in. */
     private static final LocalDate TODAY = LocalDate.ofInstant(NOW, ZoneOffset.UTC);
@@ -169,10 +149,6 @@ final class SeasonTestFixtures {
         return OffsetDateTime.of(date, LocalTime.MIDNIGHT, ZoneOffset.UTC);
     }
 
-    /** Midday UTC on the given date — see {@link #NOW} for why assertions are made at noon. */
-    static Instant middayOn(LocalDate date) {
-        return date.atTime(LocalTime.NOON).toInstant(ZoneOffset.UTC);
-    }
 
     /** A relative point in time, named for parameterized-test readability instead of raw timestamps. */
     enum RelativeDate {

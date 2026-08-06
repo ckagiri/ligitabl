@@ -1,5 +1,6 @@
 package com.ligitabl.api.notification.outbox;
 
+import java.time.Clock;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
@@ -42,6 +43,7 @@ public class SeasonInPlayEnqueuer {
     private final CompetitionDefaults competitionDefaults;
     private final OutboxRepo outboxRepo;
     private final ObjectMapper objectMapper;
+    private final Clock clock;
 
     public void enqueueIfSeasonInPlay() {
         Season season = seasonRepo
@@ -51,7 +53,7 @@ public class SeasonInPlayEnqueuer {
             log.debug("[SEASON_IN_PLAY_SKIPPED] no active season");
             return;
         }
-        if (season.isCompleted() || !season.isInPlay()) {
+        if (season.isCompleted() || !season.isInPlay(clock.instant())) {
             log.debug("[SEASON_IN_PLAY_SKIPPED] season {} is not in play", season.getId());
             return;
         }

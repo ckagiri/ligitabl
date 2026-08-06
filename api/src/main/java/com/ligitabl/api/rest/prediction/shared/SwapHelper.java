@@ -1,5 +1,6 @@
 package com.ligitabl.api.rest.prediction.shared;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -37,6 +38,7 @@ public class SwapHelper {
     private final RoundRepo roundRepo;
     private final SeasonPredictionRepo predictionRepo;
     private final RoundSupport roundSupport;
+    private final Clock clock;
 
     public Either<SwapError, Season> getActiveSeason() {
         return seasonRepo
@@ -51,7 +53,7 @@ public class SwapHelper {
                         log.info("Season {} is completed, rejecting swap", season.getId());
                         return Either.left(new SwapError.SeasonCompleted());
                     }
-                    if (!season.isInPlay()) {
+                    if (!season.isInPlay(clock.instant())) {
                         log.info("Season {} is not in play, rejecting swap", season.getId());
                         return Either.left(new SwapError.SeasonNotInPlay(season.getId()));
                     }

@@ -9,6 +9,7 @@ import static org.mockito.Mockito.*;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -21,6 +22,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.testsupport.FixedClockConfig;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.shared.SwapHelper;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
@@ -73,12 +75,18 @@ class CreatePredictionUseCaseTest {
     @Mock
     private StandingsRepo standingsRepo;
 
-    @Mock
-    private Clock clock;
+    /**
+     * A real frozen clock, not a mock. Every stub this replaced returned the same instant and
+     * nothing verified interactions on it, so the mock bought nothing — while costing a
+     * {@code lenient()} default, because the season-phase predicates consult the clock on paths
+     * that return before reaching the rest of the use case. A real clock cannot be unstubbed.
+     */
+    private final Instant now = FixedClockConfig.NOW;
+
+    private final Clock clock = Clock.fixed(now, ZoneOffset.UTC);
 
     private CreatePredictionUseCase useCase;
 
-    private Instant now;
     private UUID userId;
     private UUID seasonId;
     private UUID roundId;
@@ -88,9 +96,21 @@ class CreatePredictionUseCaseTest {
     private Round round;
     private Contest defaultContest;
 
+    /**
+     * The frozen {@code now} as an {@link OffsetDateTime}.
+     *
+     * <p>Season fixtures must be dated relative to the same instant the use case reads from the
+     * clock. They previously used real {@code OffsetDateTime.now()} while the clock was pinned to
+     * 2024 — harmless only because the season predicates read the wall clock themselves and so
+     * never consulted this clock. Now that they take an explicit instant, a fixture and a clock
+     * that disagree describe two different worlds.
+     */
+    private OffsetDateTime atNow() {
+        return OffsetDateTime.ofInstant(now, ZoneOffset.UTC);
+    }
+
     @BeforeEach
     void setUp() {
-        now = Instant.parse("2024-12-22T10:00:00Z");
 
         userId = UUID.randomUUID();
         seasonId = UUID.randomUUID();
@@ -112,7 +132,7 @@ class CreatePredictionUseCaseTest {
                 predictionRepo,
                 entryRepo,
                 standingsRepo,
-                new SwapHelper(competitionDefaults, seasonRepo, roundRepo, predictionRepo, roundSupport),
+                new SwapHelper(competitionDefaults, seasonRepo, roundRepo, predictionRepo, roundSupport, clock),
                 clock);
     }
 
@@ -121,7 +141,6 @@ class CreatePredictionUseCaseTest {
         UUID predictionId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
 
-        when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
@@ -153,7 +172,6 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void shouldApplySwapToBaseline_andRecordInitialSwap() {
-        when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
@@ -195,7 +213,6 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void shouldApplyMultipleSwapsToBaseline_andRecordAllChanges() {
-        when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
@@ -243,7 +260,6 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void shouldSetNextRound_whenRoundIsLocked() {
-        when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
@@ -300,7 +316,6 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void shouldAllow_whenEmptySwapList() {
-        when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
@@ -426,15 +441,14 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void shouldRegisterPreSeason_whenSeasonIsPreSeason() {
-        season.setPredictionsOpenAt(java.time.OffsetDateTime.now().plusDays(30));
-        season.setPreSeasonOpensAt(java.time.OffsetDateTime.now().minusDays(1));
-        season.setStartDate(java.time.LocalDate.now().plusDays(1));
+        season.setPredictionsOpenAt(atNow().plusDays(30));
+        season.setPreSeasonOpensAt(atNow().minusDays(1));
+        season.setStartDate(atNow().toLocalDate().plusDays(1));
         // isPreSeason() == true: !isOffSeason && !isInPlay && preSeasonOpen && beforeActualStart
 
         UUID predictionId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
 
-        when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
         when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
@@ -469,9 +483,9 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void shouldReject_whenAlreadyPreRegistered_andStillPreSeason() {
-        season.setPredictionsOpenAt(java.time.OffsetDateTime.now().plusDays(30));
-        season.setPreSeasonOpensAt(java.time.OffsetDateTime.now().minusDays(1));
-        season.setStartDate(java.time.LocalDate.now().plusDays(1));
+        season.setPredictionsOpenAt(atNow().plusDays(30));
+        season.setPreSeasonOpensAt(atNow().minusDays(1));
+        season.setStartDate(atNow().toLocalDate().plusDays(1));
         SeasonPrediction preSeasonPrediction = SeasonPrediction.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
@@ -514,7 +528,6 @@ class CreatePredictionUseCaseTest {
                 .joinedAtRound(0)
                 .build();
 
-        when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(existing));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
@@ -563,7 +576,6 @@ class CreatePredictionUseCaseTest {
                 .joinedAtRound(0)
                 .build();
 
-        when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(existing));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
@@ -606,7 +618,6 @@ class CreatePredictionUseCaseTest {
                 .joinedAtRound(0)
                 .build();
 
-        when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(existing));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
@@ -724,7 +735,6 @@ class CreatePredictionUseCaseTest {
         UUID entryId = UUID.randomUUID();
         var ctx = new CreatePredictionUseCase.JoinCtx(season, defaultContest, round.getPosition(), round.getPosition());
 
-        when(clock.instant()).thenReturn(now);
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
         when(predictionRepo.save(any())).thenAnswer(i -> {
             SeasonPrediction p = i.getArgument(0);
@@ -791,7 +801,6 @@ class CreatePredictionUseCaseTest {
     void autoRegisterDefaultTable_producesTheSameRowAPreSeasonSubmissionWould() {
         // The premise of the whole feature: an auto-joined user and someone who submitted the
         // default table during pre-season must be indistinguishable afterwards.
-        when(clock.instant()).thenReturn(now);
         when(predictionRepo.save(any())).thenAnswer(i -> {
             SeasonPrediction p = i.getArgument(0);
             p.setId(UUID.randomUUID());
@@ -836,11 +845,10 @@ class CreatePredictionUseCaseTest {
         // NewPreSeasonRegistration on isPreSeason(), which is false by the time the auto-join
         // fires. Going through execute() here would produce a NewJoin row instead.
         Season inPlaySeason = createSeason();
-        inPlaySeason.setPreSeasonOpensAt(OffsetDateTime.now().minusDays(30));
-        inPlaySeason.setPredictionsOpenAt(OffsetDateTime.now().minusHours(1));
-        assertThat(inPlaySeason.isPreSeason()).isFalse();
+        inPlaySeason.setPreSeasonOpensAt(atNow().minusDays(30));
+        inPlaySeason.setPredictionsOpenAt(atNow().minusHours(1));
+        assertThat(inPlaySeason.isPreSeason(now)).isFalse();
 
-        when(clock.instant()).thenReturn(now);
         when(predictionRepo.save(any())).thenAnswer(i -> {
             SeasonPrediction p = i.getArgument(0);
             p.setId(UUID.randomUUID());
@@ -866,8 +874,8 @@ class CreatePredictionUseCaseTest {
         // The consequence that matters to the user: after auto-join they still get the full
         // 5-swap merge form, not the 1-2 swap round-opening path.
         Season inPlaySeason = createSeason();
-        inPlaySeason.setPreSeasonOpensAt(OffsetDateTime.now().minusDays(30));
-        inPlaySeason.setPredictionsOpenAt(OffsetDateTime.now().minusHours(1));
+        inPlaySeason.setPreSeasonOpensAt(atNow().minusDays(30));
+        inPlaySeason.setPredictionsOpenAt(atNow().minusHours(1));
 
         SeasonPrediction autoRegistered = SeasonPrediction.builder()
                 .id(UUID.randomUUID())
@@ -880,7 +888,6 @@ class CreatePredictionUseCaseTest {
                 .atRoundNumber(0)
                 .build();
 
-        when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(inPlaySeason));
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(autoRegistered));
         when(roundRepo.findById(inPlaySeason.getCurrentRoundId())).thenReturn(Optional.of(round));

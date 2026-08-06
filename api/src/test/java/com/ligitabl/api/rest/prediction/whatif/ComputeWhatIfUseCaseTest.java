@@ -16,6 +16,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.domain.StandingsCalculatorService;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
@@ -38,6 +39,7 @@ import com.ligitabl.model.repo.TeamRepo;
 
 @ExtendWith(MockitoExtension.class)
 class ComputeWhatIfUseCaseTest {
+
 
     private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
 
@@ -133,7 +135,8 @@ class ComputeWhatIfUseCaseTest {
                 matchRepo,
                 teamRepo,
                 new RoundSupport(roundRepo, matchRepo, hierarchyValidator, competitionDefaults),
-                new StandingsCalculatorService(teamRepo, matchRepo, seasonRepo, standingsRepo));
+                new StandingsCalculatorService(teamRepo, matchRepo, seasonRepo, standingsRepo),
+                TestClock.FIXED);
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
     }

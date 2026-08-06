@@ -22,6 +22,7 @@ import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.auth.CurrentUserPublicId;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
@@ -52,6 +53,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 @ExtendWith(MockitoExtension.class)
 class WhatIfControllerTest {
+
 
     private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
 
@@ -107,7 +109,8 @@ class WhatIfControllerTest {
                 roundSupport,
                 competitionDefaults,
                 new ObjectMapper(),
-                currentUserPublicId);
+                currentUserPublicId,
+                TestClock.FIXED);
     }
 
     @AfterEach

@@ -8,6 +8,7 @@ import static org.mockito.Mockito.*;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -19,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.testsupport.FixedClockConfig;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.shared.SwapHelper;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
@@ -55,12 +57,18 @@ class MakeSwapUseCaseTest {
     @Mock
     private HierarchyValidator hierarchyValidator;
 
-    @Mock
-    private Clock clock;
+    /**
+     * A real frozen clock, not a mock. Every stub this replaced returned the same instant and
+     * nothing verified interactions on it, so the mock bought nothing — while costing a
+     * {@code lenient()} default, because the season-phase predicates consult the clock on paths
+     * that return before reaching the rest of the use case. A real clock cannot be unstubbed.
+     */
+    private final Instant now = FixedClockConfig.NOW;
+
+    private final Clock clock = Clock.fixed(now, ZoneOffset.UTC);
 
     private MakeSwapUseCase useCase;
 
-    private Instant now;
     private UUID userId;
     private UUID seasonId;
     private UUID roundId;
@@ -71,7 +79,6 @@ class MakeSwapUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        now = Instant.parse("2024-12-22T10:00:00Z");
 
         userId = UUID.randomUUID();
         seasonId = UUID.randomUUID();
@@ -90,14 +97,14 @@ class MakeSwapUseCaseTest {
                         seasonRepo,
                         roundRepo,
                         predictionRepo,
-                        new RoundSupport(roundRepo, matchRepo, hierarchyValidator, competitionDefaults)));
+                        new RoundSupport(roundRepo, matchRepo, hierarchyValidator, competitionDefaults),
+                        clock));
     }
 
     @Test
     void shouldSwapSuccessfully_whenAllConditionsMet() {
         SwapCommand command = new SwapCommand("ARS", "LIV");
 
-        when(clock.instant()).thenReturn(now);
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
@@ -125,7 +132,6 @@ class MakeSwapUseCaseTest {
         prediction.setOpeningCommittedRound(round.getPosition()); // opening window already used
         SwapCommand command = new SwapCommand("ARS", "LIV");
 
-        when(clock.instant()).thenReturn(now);
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
@@ -211,7 +217,6 @@ class MakeSwapUseCaseTest {
         prediction.setAtRoundNumber(5); // stale from an earlier round, distinct from the target round
         SwapCommand command = new SwapCommand("ARS", "LIV");
 
-        when(clock.instant()).thenReturn(now);
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
@@ -239,7 +244,6 @@ class MakeSwapUseCaseTest {
         round = createRound(true, 10);
         season.setCurrentRoundId(round.getId());
 
-        when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));

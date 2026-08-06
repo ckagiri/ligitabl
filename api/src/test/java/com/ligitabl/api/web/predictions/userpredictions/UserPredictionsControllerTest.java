@@ -23,6 +23,7 @@ import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.auth.CurrentUserPublicId;
 import com.ligitabl.api.auth.impersonation.CurrentUserFacade;
 import com.ligitabl.api.auth.security.WebUserDetails;
@@ -51,6 +52,7 @@ import jakarta.servlet.http.HttpServletResponse;
 @ExtendWith(MockitoExtension.class)
 @DisplayName("UserPredictionsController — ?round= canonicalisation")
 class UserPredictionsControllerTest {
+
 
     private static final int CURRENT_ROUND = 5;
 
@@ -122,7 +124,8 @@ class UserPredictionsControllerTest {
                 roundRepo,
                 whatIfRecapBuilder,
                 seasonPredictionSupport,
-                new SwapHistoryFormatter());
+                new SwapHistoryFormatter(),
+                TestClock.FIXED);
 
         Season season = Season.builder()
                 .id(seasonId)

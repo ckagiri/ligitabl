@@ -16,12 +16,14 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 
 @ExtendWith(MockitoExtension.class)
 class JoinPrivateContestUseCaseTest {
+
 
     @Mock
     ContestRepo contestRepo;
@@ -65,7 +67,7 @@ class JoinPrivateContestUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new JoinPrivateContestUseCase(
-                contestRepo, entryRepo, predictionRepo, seasonRepo, roundRepo, competitionRepo, roundSupport);
+                contestRepo, entryRepo, predictionRepo, seasonRepo, roundRepo, competitionRepo, roundSupport, TestClock.FIXED);
 
         userId = UUID.randomUUID();
         contestId = UUID.randomUUID();
