@@ -9,21 +9,6 @@ import lombok.Data;
 
 /**
  * Recipient scoping and timing for segment-success emails.
- *
- * <p>{@code topN} is the size of the podium, not a mailing-list cap — unlike
- * {@link RoundResultsEmailProperties#getTopN()}, a filtered-out finisher's slot is <em>not</em>
- * backfilled from the next rank down (see {@code SegmentResultsEmailEnqueuer}).
- *
- * <p>{@code mode=test} sends only to ignore-list accounts, sharing
- * {@code round_results_email_ignore_list} rather than keeping a second list in sync.
- *
- * <p>{@code delay} holds a round-boundary event back so the podium email doesn't arrive in the same
- * minute as the round-results email for the same boundary. {@code PT0S} makes the whole chain run
- * in one relay poll, which is what local verification and the ITs use.
- *
- * <p>{@code seasonDelay} is much shorter because the season finale has nothing to compete with:
- * completing the season is a deliberate admin action taken well after the last round advanced, so
- * its round-results email is long gone. Waiting a full day would just make the result feel stale.
  */
 @Data
 @Component

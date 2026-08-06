@@ -40,16 +40,6 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Expands a segment boundary into one SEGMENT_RESULTS event per podium finisher.
- *
- * <p>Two entry points, one body: {@link #enqueueForRound} fires when an advanced round closes a
- * sprint and/or a quarter, {@link #enqueueForSeasonCompleted} when an admin completes the season.
- * Most rounds close nothing and no-op.
- *
- * <p>Every segment reported is a <b>closed</b> window.
- *
- * <p>The standings are computed <em>now</em>, not when the email is due: the window is closed,
- * so a later read would return the same numbers, and computing now surfaces a broken query
- * immediately.
  */
 @Component
 @RequiredArgsConstructor

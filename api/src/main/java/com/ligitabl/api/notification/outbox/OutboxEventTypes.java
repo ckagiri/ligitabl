@@ -30,9 +30,8 @@ public final class OutboxEventTypes {
     public static final String SEASON_COMPLETED = "SEASON_COMPLETED";
 
     /**
-     * One user's segment-success email — the sprint, quarter and/or season they just finished in
-     * the top 3. Written with a future {@code available_at} so it lands a day after the
-     * round-results email for the same boundary.
+     * One user's segment-success email — the sprint and/or quarter they just finished in
+     * the top 3.
      */
     public static final String SEGMENT_RESULTS = "SEGMENT_RESULTS";
 }

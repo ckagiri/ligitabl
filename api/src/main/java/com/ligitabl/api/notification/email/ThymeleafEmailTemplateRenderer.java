@@ -34,20 +34,6 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
     /**
      * The {@code text/plain} alternative, derived from the rendered HTML.
      *
-     * <p>This used to be {@code htmlBody.replaceAll("<[^>]*>", "")} and nothing else, which strips
-     * <em>tags</em> but keeps what sits between them. Three consequences, all of which were live:
-     *
-     * <ol>
-     *   <li>the whole contents of {@code <style>} survived, so the text part of most templates
-     *       opened with a wall of CSS before any prose;
-     *   <li>entities passed through literally — {@code &middot;} reached the reader as seven
-     *       characters, which {@code segment-results.html} was working around per-element;
-     *   <li>the HTML's indentation became leading whitespace on nearly every line.
-     * </ol>
-     *
-     * <p>It went unnoticed because nothing sent the text part at all until now, and because
-     * {@code isNotBlank()} is perfectly happy with a body that is entirely CSS.
-     *
      * <p>Deliberately still a regex rather than a parser: these are our own templates, not
      * arbitrary input, and adding an HTML parser to send email is a poor trade. The tests assert
      * the properties that matter ({@code no braces, no entities}) rather than exact output.

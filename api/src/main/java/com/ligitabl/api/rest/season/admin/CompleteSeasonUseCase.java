@@ -95,9 +95,7 @@ public class CompleteSeasonUseCase {
      * season's completed flag. The relay expands it into per-user SEGMENT_RESULTS events for the
      * full-season podium.
      *
-     * <p>Any failure here logs loudly but never blocks the completion itself — the same contract
-     * as {@code RoundAdvancementService.enqueueRoundResultsEmail}. Completing the season is the
-     * admin's action; a missing congratulations email must not make it look like it failed.
+     * <p>Any failure here logs loudly but never blocks the completion itself.
      */
     private void enqueueSeasonCompleted(Season season) {
         try {

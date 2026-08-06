@@ -116,16 +116,14 @@ public class OutboxEventProcessor {
         roundResultsEmailEnqueuer.enqueue(payload);
 
         // Second fan-out from the same fact. Most rounds close no segment and this is a cheap
-        // no-op; at a boundary it writes the podium emails, held back a day by their own
-        // available_at rather than by a separate hop. Sharing this transaction means a failure in
-        // either expansion retries both, which is safe — every insert is keyed.
+        // no-op; at a boundary it writes the podium emails. Sharing this transaction means a
+        // failure in either expansion retries both, which is safe — every insert is keyed.
         segmentResultsEmailEnqueuer.enqueueForRound(payload);
     }
 
     /**
      * The season's final standing. A separate trigger from ROUND_ADVANCED because completing the
-     * season is its own admin action, taken after the last round already advanced — so the
-     * full-season podium arrives as its own email rather than as a third block on the round-38 one.
+     * season is its own admin action.
      */
     private void processSeasonCompleted(OutboxEvent event) throws Exception {
         SeasonCompletedPayload payload = objectMapper.readValue(event.getPayload(), SeasonCompletedPayload.class);

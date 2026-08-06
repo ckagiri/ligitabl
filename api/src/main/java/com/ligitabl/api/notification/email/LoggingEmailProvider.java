@@ -49,7 +49,7 @@ public class LoggingEmailProvider implements EmailProvider {
         log.warn("Subject: {}", content.subject());
         log.warn("Priority: {}", priority);
         // The text part is what local verification should read: it is short, and it is the half
-        // that used to be silently discarded.
+        // that shouldn't be silently discarded.
         log.warn("Body (text):");
         log.warn(content.textBody());
         log.warn("Body (HTML):");
