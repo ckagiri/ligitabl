@@ -116,8 +116,7 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
         // "premier-league" competition under a random PK (InPlaySeasonFixture, SegmentResultsChainIT)
         // without cleaning up. c_slug is unique, so an insert pinned to COMPETITION_ID then
         // conflicts on the slug and onConflictDoNothing() silently does nothing — leaving no row at
-        // COMPETITION_ID for the season's FK to reference. That made this class pass alone and fail
-        // in the full suite, purely on class order.
+        // COMPETITION_ID for the season's FK to reference.
         UUID competitionId = dsl.select(competition.PK_ID)
                 .from(competition)
                 .where(competition.C_SLUG.eq("premier-league"))
