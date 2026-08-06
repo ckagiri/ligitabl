@@ -38,6 +38,12 @@
             padding: 12px 16px;
             margin: 20px 0;
         }
+        .whatif {
+            background: #eef4fb;
+            border-left: 4px solid #3d7ebd;
+            padding: 12px 16px;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
@@ -60,6 +66,14 @@
             <p style="margin: 0;">
                 <strong>You still have up to 5 swaps.</strong> Gameweek 1 is still open — head to
                 <strong>My Table</strong> and move teams around until it looks right to you.
+            </p>
+        </div>
+
+        <div class="whatif">
+            <p style="margin: 0;">
+                <strong>Not sure how to spend them?</strong> Try <a th:href="${whatIfUrl}">What-If</a>
+                first — put in the scores you expect for the gameweek and watch how the table moves
+                and how many points you'd pick up. Nothing you do there touches your real table.
             </p>
         </div>
 

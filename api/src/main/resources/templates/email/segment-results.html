@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background: #b8860b;
+            color: white;
+            padding: 30px;
+            border-radius: 10px 10px 0 0;
+            text-align: center;
+        }
+        .content {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 0 0 10px 10px;
+        }
+        .cta {
+            display: inline-block;
+            background: #b8860b;
+            color: white;
+            text-decoration: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            margin: 20px 0;
+        }
+        .placement {
+            background: #fdf7e6;
+            border-left: 4px solid #b8860b;
+            padding: 12px 16px;
+            margin: 16px 0;
+        }
+        .placement .rank {
+            font-size: 20px;
+            font-weight: bold;
+        }
+        .placement .detail {
+            color: #666;
+            font-size: 14px;
+        }
+        .double {
+            background: #e9f7ef;
+            border-left: 4px solid #28a745;
+            padding: 12px 16px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <!--
+      th:block wrappers around the mutually exclusive branches: th:if and a fragment/text
+      processor on the same element is the documented trap in docs/backend-dev.md.
+    -->
+    <div class="header">
+        <th:block th:if="${isSeasonFinale == true}">
+            <h1>🏆 That's the season</h1>
+        </th:block>
+        <th:block th:if="${isSeasonFinale == false || isSeasonFinale == null}">
+            <h1>🏆 Podium finish</h1>
+        </th:block>
+    </div>
+
+    <div class="content">
+        <p>Hi <span th:text="${userDisplayName}">there</span>,</p>
+
+        <th:block th:if="${isSeasonFinale == true}">
+            <p>The season is complete and the final table is locked in. Here's where you landed.</p>
+        </th:block>
+        <th:block th:if="${isSeasonFinale == false || isSeasonFinale == null}">
+            <p>Results are in and you finished in the top three. Here's how it went.</p>
+        </th:block>
+
+        <!--
+          One block per CLOSED window the reader placed in. There is deliberately no "so far"
+          block for a segment still running: a partial-window rank reflects when someone joined
+          as much as how they played, and this email must not present that as a standing.
+        -->
+        <div class="placement" th:each="p : ${placements}">
+            <div class="rank">
+                <span th:text="${p.name}">Sprint 1</span> —
+                <span th:text="${p.rank == 1 ? 'winner' : (p.rank == 2 ? 'runner-up' : 'third')}">runner-up</span>
+            </div>
+            <!--
+              Literal characters, not HTML entities: EmailContent's textBody is the html body with
+              tags stripped and nothing else, so "&middot;" would reach the plain-text part as the
+              seven characters "&middot;" rather than a separator.
+            -->
+            <div class="detail">
+                <span th:text="${p.rank}">2</span> of <span th:text="${p.totalParticipants}">40</span>
+                · <span th:text="${p.totalScore}">180</span> points
+                · gameweeks <span th:text="${p.fromRound}">1</span>–<span th:text="${p.toRound}">4</span>
+            </div>
+        </div>
+
+        <div class="double" th:if="${isDouble == true}">
+            <p style="margin: 0;">
+                <strong>Two at once.</strong> Taking the sprint and the quarter it closes in the same
+                week is the hard version — well played.
+            </p>
+        </div>
+
+        <p style="text-align: center;">
+            <a class="cta" th:href="${leaderboardUrl}">See the full standings</a>
+        </p>
+
+        <th:block th:if="${isSeasonFinale == false || isSeasonFinale == null}">
+            <p style="margin-top: 30px;">
+                The next one's already running. Keep an eye on your table over at
+                <a th:href="${myTableUrl}">My Table</a>.
+            </p>
+        </th:block>
+        <th:block th:if="${isSeasonFinale == true}">
+            <p style="margin-top: 30px;">
+                Thanks for playing the whole way through. See you next season.
+            </p>
+        </th:block>
+
+        <p style="margin-top: 30px;">
+            <strong>The LigiPredictor Team</strong>
+        </p>
+    </div>
+</body>
+</html>

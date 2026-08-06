@@ -13,11 +13,16 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.notification.outbox.OutboxEventTypes;
+import com.ligitabl.api.notification.outbox.SeasonCompletedPayload;
+import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
 import com.ligitabl.model.repo.MatchRepo;
+import com.ligitabl.model.repo.OutboxRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
@@ -35,13 +40,19 @@ class CompleteSeasonUseCaseTest {
     @Mock
     MatchRepo matchRepo;
 
+    @Mock
+    OutboxRepo outboxRepo;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
+
     private CompleteSeasonUseCase useCase;
     private UUID seasonId;
     private UUID roundId;
 
     @BeforeEach
     void setUp() {
-        useCase = new CompleteSeasonUseCase(seasonRepo, roundRepo, matchRepo, competitionDefaults);
+        useCase = new CompleteSeasonUseCase(
+                seasonRepo, roundRepo, matchRepo, outboxRepo, objectMapper, competitionDefaults);
         seasonId = UUID.randomUUID();
         roundId = UUID.randomUUID();
     }
@@ -121,6 +132,63 @@ class CompleteSeasonUseCaseTest {
         assertThat(season.isCompleted()).isTrue();
         assertThat(season.getCompletedAt()).isNotNull();
         verify(seasonRepo).save(season);
+    }
+
+    @Test
+    void completingTheSeason_announcesItForTheFinalPodiumEmails() throws Exception {
+        Season season = buildSeason(3);
+        Round round = buildRound(3, true, true);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(roundRepo.findFirstNotFinalizedOrAdvanced(seasonId)).thenReturn(Optional.empty());
+        when(matchRepo.allMatchesFinished(roundId)).thenReturn(true);
+
+        useCase.execute();
+
+        var captor = org.mockito.ArgumentCaptor.forClass(OutboxEvent.class);
+        verify(outboxRepo).save(captor.capture());
+        OutboxEvent event = captor.getValue();
+        assertThat(event.getEventType()).isEqualTo(OutboxEventTypes.SEASON_COMPLETED);
+        assertThat(event.getIdempotencyKey())
+                .as("keyed on the season, so a re-run cannot double-announce")
+                .isEqualTo("season-completed:" + seasonId);
+        assertThat(objectMapper.readValue(event.getPayload(), SeasonCompletedPayload.class)
+                        .seasonId())
+                .isEqualTo(seasonId);
+    }
+
+    /**
+     * The email is a nice-to-have; the completion is the admin's action. A broken outbox must not
+     * make a successful completion report as a failure.
+     */
+    @Test
+    void outboxFailure_doesNotBlockCompletion() {
+        Season season = buildSeason(3);
+        Round round = buildRound(3, true, true);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(roundRepo.findFirstNotFinalizedOrAdvanced(seasonId)).thenReturn(Optional.empty());
+        when(matchRepo.allMatchesFinished(roundId)).thenReturn(true);
+        when(outboxRepo.save(any())).thenThrow(new IllegalStateException("outbox down"));
+
+        var result = useCase.execute();
+
+        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.Ok.class);
+        assertThat(season.isCompleted()).isTrue();
+        verify(seasonRepo).save(season);
+    }
+
+    /** A rejected completion must not announce a podium for a season that is still running. */
+    @Test
+    void ineligibleSeason_announcesNothing() {
+        Season season = buildSeason(3);
+        Round round = buildRound(2, true, true);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+
+        useCase.execute();
+
+        verify(outboxRepo, never()).save(any());
     }
 
     @Test

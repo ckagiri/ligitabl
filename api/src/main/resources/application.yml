@@ -145,6 +145,17 @@ ligitabl:
       # live: exclude ignore-list/unverified/opted-out users.
       # test: send ONLY to ignore-list accounts (local testing against test users).
       mode: ${ROUND_RESULTS_EMAIL_MODE:live}
+    segment-results:
+      # Podium size for a finished sprint/quarter/season.
+      top-n: ${SEGMENT_RESULTS_EMAIL_TOP_N:3}
+      # Same semantics as round-results, and shares its ignore list.
+      mode: ${SEGMENT_RESULTS_EMAIL_MODE:live}
+      # Held back so the podium email doesn't land in the same minute as the round-results email
+      # for the same boundary. PT0S runs the whole chain in one relay poll (local/IT).
+      delay: ${SEGMENT_RESULTS_EMAIL_DELAY:P1D}
+      # Completing the season is a separate admin action long after the last round advanced —
+      # so it goes out much sooner.
+      season-delay: ${SEGMENT_RESULTS_EMAIL_SEASON_DELAY:PT1H}
     join-reminder:
       # Off by default; enable per environment once rollout is ready.
       enabled: ${JOIN_REMINDER_ENABLED:false}

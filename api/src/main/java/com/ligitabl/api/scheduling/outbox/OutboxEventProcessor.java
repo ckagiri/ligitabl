@@ -21,13 +21,17 @@ import com.ligitabl.api.notification.outbox.RoundAdvancedPayload;
 import com.ligitabl.api.notification.outbox.RoundLockedPayload;
 import com.ligitabl.api.notification.outbox.RoundResultsEmailEnqueuer;
 import com.ligitabl.api.notification.outbox.RoundResultsPayload;
+import com.ligitabl.api.notification.outbox.SeasonCompletedPayload;
 import com.ligitabl.api.notification.outbox.SeasonInPlayPayload;
 import com.ligitabl.api.notification.outbox.SeasonWelcomeEmailEnqueuer;
 import com.ligitabl.api.notification.outbox.SeasonWelcomeFanoutPayload;
 import com.ligitabl.api.notification.outbox.SeasonWelcomePayload;
+import com.ligitabl.api.notification.outbox.SegmentResultsEmailEnqueuer;
+import com.ligitabl.api.notification.outbox.SegmentResultsPayload;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionCommand;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionUseCase;
 import com.ligitabl.model.domain.OutboxEvent;
+import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.OutboxRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -59,6 +63,7 @@ public class OutboxEventProcessor {
 
     private final OutboxRepo outboxRepo;
     private final RoundResultsEmailEnqueuer roundResultsEmailEnqueuer;
+    private final SegmentResultsEmailEnqueuer segmentResultsEmailEnqueuer;
     private final SeasonWelcomeEmailEnqueuer seasonWelcomeEmailEnqueuer;
     private final EmailTemplateRenderer emailTemplateRenderer;
     private final EmailProvider emailProvider;
@@ -78,6 +83,8 @@ public class OutboxEventProcessor {
                 case OutboxEventTypes.ROUND_ADVANCED -> processRoundAdvanced(event);
                 case OutboxEventTypes.ROUND_RESULTS -> processRoundResults(event);
                 case OutboxEventTypes.ROUND_LOCKED -> processRoundLocked(event);
+                case OutboxEventTypes.SEASON_COMPLETED -> processSeasonCompleted(event);
+                case OutboxEventTypes.SEGMENT_RESULTS -> processSegmentResults(event);
                 case OutboxEventTypes.SEASON_IN_PLAY -> processSeasonInPlay(event);
                 case OutboxEventTypes.SEASON_WELCOME_FANOUT -> processSeasonWelcomeFanout(event);
                 case OutboxEventTypes.SEASON_WELCOME -> processSeasonWelcome(event);
@@ -107,6 +114,20 @@ public class OutboxEventProcessor {
     private void processRoundAdvanced(OutboxEvent event) throws Exception {
         RoundAdvancedPayload payload = objectMapper.readValue(event.getPayload(), RoundAdvancedPayload.class);
         roundResultsEmailEnqueuer.enqueue(payload);
+
+        // Second fan-out from the same fact. Most rounds close no segment and this is a cheap
+        // no-op; at a boundary it writes the podium emails. Sharing this transaction means a
+        // failure in either expansion retries both, which is safe — every insert is keyed.
+        segmentResultsEmailEnqueuer.enqueueForRound(payload);
+    }
+
+    /**
+     * The season's final standing. A separate trigger from ROUND_ADVANCED because completing the
+     * season is its own admin action.
+     */
+    private void processSeasonCompleted(OutboxEvent event) throws Exception {
+        SeasonCompletedPayload payload = objectMapper.readValue(event.getPayload(), SeasonCompletedPayload.class);
+        segmentResultsEmailEnqueuer.enqueueForSeasonCompleted(payload);
     }
 
     /**
@@ -276,7 +297,7 @@ public class OutboxEventProcessor {
                         c -> c);
 
         emailProvider
-                .sendSingle(payload.userEmail(), content.subject(), content.htmlBody(), EmailCommand.Priority.NORMAL)
+                .sendSingle(payload.userEmail(), content, EmailCommand.Priority.NORMAL)
                 .peekLeft(error -> {
                     throw new IllegalStateException("Email send failed: " + error);
                 });
@@ -287,6 +308,7 @@ public class OutboxEventProcessor {
         data.put("myTableUrl", frontendUrl + "/my-table");
         data.put("leaderboardUrl", frontendUrl + "/leaderboard");
         data.put("faqUrl", frontendUrl + "/faq");
+        data.put("whatIfUrl", frontendUrl + "/my-table/what-if");
         return data;
     }
 
@@ -302,7 +324,7 @@ public class OutboxEventProcessor {
                         c -> c);
 
         emailProvider
-                .sendSingle(payload.userEmail(), content.subject(), content.htmlBody(), EmailCommand.Priority.NORMAL)
+                .sendSingle(payload.userEmail(), content, EmailCommand.Priority.NORMAL)
                 .peekLeft(error -> {
                     throw new IllegalStateException("Email send failed: " + error);
                 });
@@ -314,6 +336,42 @@ public class OutboxEventProcessor {
         data.put("myTableUrl", frontendUrl + "/my-table");
         data.put("leaderboardUrl", frontendUrl + "/leaderboard");
         data.put("faqUrl", frontendUrl + "/faq");
+        return data;
+    }
+
+    private void processSegmentResults(OutboxEvent event) throws Exception {
+        SegmentResultsPayload payload = objectMapper.readValue(event.getPayload(), SegmentResultsPayload.class);
+
+        EmailContent content = emailTemplateRenderer
+                .render(EmailCommand.EmailType.SEGMENT_RESULTS, segmentResultsTemplateData(payload))
+                .fold(
+                        error -> {
+                            throw new IllegalStateException("Template render failed: " + error);
+                        },
+                        c -> c);
+
+        emailProvider
+                .sendSingle(payload.userEmail(), content, EmailCommand.Priority.NORMAL)
+                .peekLeft(error -> {
+                    throw new IllegalStateException("Email send failed: " + error);
+                });
+    }
+
+    private Map<String, Object> segmentResultsTemplateData(SegmentResultsPayload payload) {
+        // Placements arrive smallest-window-first, so the largest — the one the subject and the
+        // leaderboard link should name — is the last.
+        List<SegmentResultsPayload.SegmentPlacement> placements = payload.placements();
+        SegmentResultsPayload.SegmentPlacement headline = placements.get(placements.size() - 1);
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("userDisplayName", payload.userDisplayName());
+        data.put("placements", placements);
+        data.put("headlineName", headline.name());
+        data.put("headlineRank", headline.rank());
+        data.put("isSeasonFinale", PhaseType.FULL_SEASON.name().equals(headline.type()));
+        data.put("isDouble", placements.size() > 1);
+        data.put("leaderboardUrl", frontendUrl + "/leaderboard?phase=" + headline.code());
+        data.put("myTableUrl", frontendUrl + "/my-table");
         return data;
     }
 
@@ -329,7 +387,7 @@ public class OutboxEventProcessor {
                         c -> c);
 
         emailProvider
-                .sendSingle(payload.userEmail(), content.subject(), content.htmlBody(), EmailCommand.Priority.NORMAL)
+                .sendSingle(payload.userEmail(), content, EmailCommand.Priority.NORMAL)
                 .peekLeft(error -> {
                     throw new IllegalStateException("Email send failed: " + error);
                 });

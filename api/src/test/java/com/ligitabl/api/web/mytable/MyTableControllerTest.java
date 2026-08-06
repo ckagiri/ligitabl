@@ -117,4 +117,36 @@ class MyTableControllerTest {
 
         assertThat(view).isEqualTo("forward:/predictions/user/guest");
     }
+
+    /** The address the season-welcome email links to; What-If has no other linkable URL. */
+    @Test
+    @DisplayName("/my-table/what-if forwards authenticated users to the What-If page")
+    void whatIf_forwardsAuthenticatedUsers() {
+        Principal principal = () -> "user@example.com";
+        SecurityContextHolder.getContext()
+                .setAuthentication(
+                        new UsernamePasswordAuthenticationToken(principal, null, AuthorityUtils.NO_AUTHORITIES));
+
+        assertThat(controller.whatIf()).isEqualTo("forward:/predictions/user/what-if");
+    }
+
+    /**
+     * What-If bounces guests anyway; sending them straight to /my-table lands them somewhere
+     * useful instead of redirecting twice.
+     */
+    @Test
+    @DisplayName("/my-table/what-if sends guests to /my-table rather than through the bounce")
+    void whatIf_redirectsGuestsToMyTable() {
+        assertThat(controller.whatIf()).isEqualTo("redirect:/my-table");
+    }
+
+    @Test
+    @DisplayName("/my-table/what-if treats anonymous authentication as guest")
+    void whatIf_treatsAnonymousAsGuest() {
+        SecurityContextHolder.getContext()
+                .setAuthentication(new AnonymousAuthenticationToken(
+                        "key", "anonymousUser", AuthorityUtils.createAuthorityList("ROLE_ANONYMOUS")));
+
+        assertThat(controller.whatIf()).isEqualTo("redirect:/my-table");
+    }
 }

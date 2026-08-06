@@ -36,7 +36,6 @@ public class EmailVerificationEmailService {
         var rendered = renderedResult.get();
 
         log.info("[EMAIL_VERIFICATION_EMAIL] Sending to {}", recipientEmail);
-        return emailProvider.sendSingle(
-                recipientEmail, rendered.subject(), rendered.htmlBody(), EmailCommand.Priority.HIGH);
+        return emailProvider.sendSingle(recipientEmail, rendered, EmailCommand.Priority.HIGH);
     }
 }

@@ -35,8 +35,7 @@ public class PasswordResetEmailService {
         var rendered = renderedResult.get();
 
         log.info("[PASSWORD_RESET_EMAIL] Sending to {}", recipientEmail);
-        return emailProvider.sendSingle(
-                recipientEmail, rendered.subject(), rendered.htmlBody(), EmailCommand.Priority.HIGH);
+        return emailProvider.sendSingle(recipientEmail, rendered, EmailCommand.Priority.HIGH);
     }
 
     public Either<EmailError, Void> sendPasswordResetConfirmation(String recipientEmail) {
@@ -50,7 +49,6 @@ public class PasswordResetEmailService {
         var content = contentResult.get();
 
         log.info("[PASSWORD_RESET_EMAIL] Sending to {}", recipientEmail);
-        return emailProvider.sendSingle(
-                recipientEmail, content.subject(), content.htmlBody(), EmailCommand.Priority.NORMAL);
+        return emailProvider.sendSingle(recipientEmail, content, EmailCommand.Priority.NORMAL);
     }
 }

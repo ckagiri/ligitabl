@@ -42,7 +42,7 @@
             }
           </script>
 
-          <div class="px-6 py-3 flex items-center justify-between border-b border-gray-200" th:if="${!#lists.isEmpty(users)}">
+          <div class="px-3 sm:px-6 py-3 flex items-center justify-between gap-3 border-b border-gray-200" th:if="${!#lists.isEmpty(users)}">
             <span class="text-xs text-gray-500">Check eligible (🚩) rows to batch-delete.</span>
             <button type="submit" form="batch-delete-form" title="Delete selected"
                     class="p-1.5 text-red-700 bg-red-50 border border-red-200 rounded-md hover:bg-red-100">
@@ -54,39 +54,80 @@
             </button>
           </div>
 
-          <div class="overflow-x-auto">
+          <!--
+            No pinned columns: the table simply scrolls sideways, and alternating row bands are
+            what keep your eye on the right row once the email has scrolled out of view.
+
+            Scoped CSS rather than Tailwind utilities because dist/css/main.css is a BUILT
+            artifact — Tailwind only emits a class that already appears in a scanned template, so
+            a newly introduced utility is silently inert until someone runs `npm run build`.
+            `overscroll-x-contain` is absent from the current build; leaderboard.html ships its
+            table CSS the same way.
+          -->
+          <style>
+            /* A checkbox needs no more, and a narrow first column shortens the scroll. */
+            .au-check-col { min-width: 56px !important; max-width: 56px !important; }
+            /*
+              min-width, not a w-* utility. In an auto-layout table a width is only a hint the
+              browser may ignore, and it did: the email column collapsed to ~55px and broke
+              addresses over five lines.
+
+              And NOT word-break: break-all, which is what caused that. break-all sets the
+              column's min-content width to a single character, so the other columns were free to
+              squeeze this one to nothing. overflow-wrap only breaks a word that cannot fit on its
+              own line, so a long address still wraps but never invites the collapse.
+            */
+            .au-email-col { min-width: 12rem; overflow-wrap: anywhere; }
+            /* A swipe that overruns the table would otherwise trigger the browser back gesture. */
+            .au-table-scroll { overscroll-behavior-x: contain; }
+            @media (max-width: 639px) {
+              .au-table-scroll::-webkit-scrollbar { height: 3px; }
+              .au-table-scroll::-webkit-scrollbar-track { background: transparent; }
+              .au-table-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+            }
+          </style>
+
+          <div class="overflow-x-auto au-table-scroll">
             <table class="min-w-full divide-y divide-gray-200">
+              <!--
+                All nine columns stay at every width; the table scrolls horizontally on narrow
+                screens. Padding is tight below sm so the scroll distance is as short as it can be
+                without dropping anything.
+              -->
               <thead>
                 <tr class="bg-gray-50">
-                  <th class="px-4 py-3 text-left">
+                  <th class="au-check-col px-2 sm:px-4 py-3 text-left">
                     <input type="checkbox" onchange="document.querySelectorAll('.row-checkbox').forEach(cb => cb.checked = this.checked)" />
                   </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Display Name</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Auth</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Last Login</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  <th class="au-email-col px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                  <th class="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Display Name</th>
+                  <th class="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Auth</th>
+                  <th class="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Created</th>
+                  <th class="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider whitespace-nowrap">Last Login</th>
+                  <th class="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                       title="total-predictions:total-swaps current-season-prediction(1/0):current-season-swaps">Preds</th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    <button type="button" onclick="sortBySuspicionScore()" class="uppercase tracking-wider hover:text-gray-700"
+                  <th class="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    <button type="button" onclick="sortBySuspicionScore()" class="uppercase tracking-wider hover:text-gray-700 whitespace-nowrap"
                             title="Sort this page by suspicion score (client-side; score isn't persisted or indexed)">
                       Susp ↕
                     </button>
                   </th>
-                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
+                  <th class="px-2 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Action
+                  </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-gray-100" th:with="failed=${failedDeleteIds != null ? failedDeleteIds : {}}">
                 <tr th:each="u, stat : ${users}" th:with="eng=${engagement.get(u.id)},susp=${suspicion.get(u.id)}"
                     th:attr="data-score=${susp.score()}"
-                    th:class="${stat.even} ? 'bg-gray-50 hover:bg-indigo-50' : 'bg-white hover:bg-indigo-50'">
-                  <td class="px-4 py-3">
+                    th:class="${stat.even} ? 'bg-gray-100 hover:bg-indigo-50' : 'bg-white hover:bg-indigo-50'">
+                  <td class="au-check-col px-2 sm:px-4 py-3">
                     <input th:if="${eng.eligibleForDelete()}" type="checkbox" name="ids" th:value="${u.id}"
                            form="batch-delete-form" class="row-checkbox" />
                   </td>
-                  <td class="px-6 py-3 text-sm text-gray-900" th:text="${u.email.value()}"></td>
-                  <td class="px-6 py-3 text-sm text-gray-700" x-data="{ editing: false }">
+                  <!-- au-email-col holds the column open (see the min-width note above). -->
+                  <td class="au-email-col px-2 sm:px-6 py-3 text-sm text-gray-900" th:text="${u.email.value()}"></td>
+                  <td class="px-2 sm:px-6 py-3 text-sm text-gray-700" x-data="{ editing: false }">
                     <div x-show="!editing">
                       <span th:if="${u.displayName != null}" th:text="${u.displayName}"></span>
                       <span th:if="${u.displayName == null}" class="text-gray-400">—</span>
@@ -127,7 +168,7 @@
                       </button>
                     </form>
                   </td>
-                  <td class="px-6 py-3 text-sm">
+                  <td class="px-2 sm:px-6 py-3 text-sm">
                     <svg th:if="${u.googleId != null}" class="h-5 w-5" viewBox="0 0 24 24" aria-hidden="true">
                       <title>Google</title>
                       <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
@@ -141,24 +182,25 @@
                             d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                     </svg>
                   </td>
-                  <td class="px-6 py-3 text-sm text-gray-600">
+                  <td class="px-2 sm:px-6 py-3 text-sm text-gray-600 whitespace-nowrap">
                     <span th:if="${u.createDate != null}" th:text="${#temporals.format(u.createDate, 'yyyy-MM-dd')}"></span>
                     <span th:if="${u.createDate == null}" class="text-gray-400">—</span>
                   </td>
-                  <td class="px-6 py-3 text-sm text-gray-600" th:text="${lastLoginDisplay.get(u.id)}"></td>
-                  <td class="px-6 py-3 text-sm">
+                  <td class="px-2 sm:px-6 py-3 text-sm text-gray-600 whitespace-nowrap"
+                      th:text="${lastLoginDisplay.get(u.id)}"></td>
+                  <td class="px-2 sm:px-6 py-3 text-sm">
                     <div class="flex flex-col leading-tight">
                       <span class="text-gray-700" th:text="${eng.totalPredictions()} + ':' + ${eng.totalSwaps()}"></span>
                       <span class="text-indigo-600" th:text="${eng.hasCurrentSeasonPrediction() ? 1 : 0} + ':' + ${eng.currentSeasonSwaps()}"></span>
                     </div>
                   </td>
-                  <td class="px-6 py-3 text-sm text-gray-600" th:title="${susp.reasonsTooltip()}">
+                  <td class="px-2 sm:px-6 py-3 text-sm text-gray-600 whitespace-nowrap" th:title="${susp.reasonsTooltip()}">
                     <span th:text="${susp.score()}"></span>
                     <span th:if="${!#strings.isEmpty(susp.icon())}" th:text="${susp.icon()}" class="ml-1"></span>
                     <span th:if="${!#strings.isEmpty(eng.indicator()) and eng.indicator() != susp.icon()}"
                           th:text="${eng.indicator()}" class="ml-1"></span>
                   </td>
-                  <td class="px-6 py-3 text-sm">
+                  <td class="px-2 sm:px-6 py-3 text-sm">
                     <form th:if="${eng.eligibleForDelete()}" method="post"
                           th:action="@{/admin/users/{id}/delete(id=${u.id})}"
                           th:attr="data-swaps=${eng.currentSeasonSwaps()}"
@@ -184,6 +226,8 @@
                   </td>
                 </tr>
                 <tr th:if="${#lists.isEmpty(users)}">
+                  <!-- Spans the widest configuration; a colspan larger than the rendered column
+                       count is harmless, and hard-coding 4 would break the row at lg. -->
                   <td colspan="9" class="px-6 py-8 text-center text-sm text-gray-500">No users found.</td>
                 </tr>
               </tbody>
@@ -191,14 +235,14 @@
           </div>
 
           <!-- Pagination -->
-          <div class="px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-t border-gray-200">
-            <div class="flex items-center gap-3 text-sm text-gray-500">
+          <div class="px-3 sm:px-6 py-4 flex flex-wrap items-center justify-between gap-3 border-t border-gray-200">
+            <div class="flex flex-wrap items-center gap-3 text-sm text-gray-500">
               <span>
                 Showing <span th:text="${showingFrom}">1</span>–<span th:text="${showingTo}">10</span>
                 of <span th:text="${totalEntries}">0</span> users
               </span>
               <label class="flex items-center gap-1">
-                <span class="text-gray-500">Per page</span>
+                <span class="text-gray-500 whitespace-nowrap">Per page</span>
                 <select
                   name="size"
                   class="border border-gray-300 rounded-md text-sm px-2 py-1 focus:outline-none focus:ring-2 focus:ring-indigo-500"

@@ -7,7 +7,8 @@ public interface EmailCommand {
         EMAIL_VERIFICATION,
         ROUND_RESULTS,
         JOIN_REMINDER,
-        SEASON_WELCOME
+        SEASON_WELCOME,
+        SEGMENT_RESULTS
     }
 
     enum Priority {
