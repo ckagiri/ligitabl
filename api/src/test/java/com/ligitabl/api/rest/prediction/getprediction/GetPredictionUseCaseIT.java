@@ -1,9 +1,9 @@
 package com.ligitabl.api.rest.prediction.getprediction;
 
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_END;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_NAME;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_SLUG;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_START;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_END;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_NAME;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_SLUG;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_START;
 import static com.ligitabl.api.testsupport.TestIds.randomPublicId;
 import static org.assertj.core.api.Assertions.assertThat;
 

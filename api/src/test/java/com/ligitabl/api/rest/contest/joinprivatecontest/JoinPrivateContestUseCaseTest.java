@@ -199,7 +199,7 @@ class JoinPrivateContestUseCaseTest {
                 .maxRounds(20)
                 .totalTeams(12)
                 .completed(true)
-                .endDate(java.time.LocalDate.now().minusDays(1))
+                .endDate(TestClock.TODAY.minusDays(1))
                 .build();
         when(contestRepo.findByJoinCode(CODE)).thenReturn(Optional.of(openContest));
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(offSeason));
@@ -222,7 +222,7 @@ class JoinPrivateContestUseCaseTest {
                 .maxRounds(20)
                 .totalTeams(12)
                 .completed(false)
-                .startDate(java.time.LocalDate.now().plusDays(30))
+                .startDate(TestClock.TODAY.plusDays(30))
                 .preSeasonOpensAt(OffsetDateTime.now().minusDays(1))
                 .predictionsOpenAt(OffsetDateTime.now().plusDays(29))
                 .build();

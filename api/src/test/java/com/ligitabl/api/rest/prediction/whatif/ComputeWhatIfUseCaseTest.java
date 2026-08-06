@@ -168,7 +168,7 @@ class ComputeWhatIfUseCaseTest {
                 .thenReturn(Optional.of(seasonInPhase(
                         OffsetDateTime.now().minusDays(1), // pre-season already opened
                         OffsetDateTime.now().plusDays(1), // predictions not yet open
-                        LocalDate.now().plusDays(7)))); // season hasn't started
+                        TestClock.TODAY.plusDays(7)))); // season hasn't started
         when(matchRepo.findByRoundId(round2Id)).thenReturn(List.of(currentArsMci, currentLivChe));
         stubSuccessfulCalculation(List.of(currentArsMci, currentLivChe));
 
@@ -184,7 +184,7 @@ class ComputeWhatIfUseCaseTest {
                 .thenReturn(Optional.of(seasonInPhase(
                         null, // pre-season never opened
                         OffsetDateTime.now().plusDays(1),
-                        LocalDate.now().plusDays(7))));
+                        TestClock.TODAY.plusDays(7))));
 
         Either<WhatIfError, WhatIfResult> result = useCase.execute(new WhatIfCommand(List.of()));
 

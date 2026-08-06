@@ -1,10 +1,10 @@
 package com.ligitabl.api.rest.prediction.makeswap;
 
-import static com.ligitabl.api.testsupport.FixedClockConfig.NOW;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_END;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_NAME;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_SLUG;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_START;
+import static com.ligitabl.api.testsupport.TestCalendar.MID_SEASON;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_END;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_NAME;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_SLUG;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_START;
 import static com.ligitabl.api.testsupport.TestIds.randomPublicId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.offset;
@@ -144,7 +144,7 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
 
             assertThat(result.isRight()).isTrue();
             assertThat(result.get().success()).isTrue();
-            assertThat(result.get().nextSwapAt()).isEqualTo(NOW.plus(Duration.ofHours(24)));
+            assertThat(result.get().nextSwapAt()).isEqualTo(MID_SEASON.plus(Duration.ofHours(24)));
             assertThat(result.get().hoursUntilNext()).isEqualTo(24.0);
             assertThat(result.get().updatedPrediction()).isNotNull();
 
@@ -162,7 +162,7 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
 
             assertThat(ars.getPosition()).isEqualTo(3);
             assertThat(liv.getPosition()).isEqualTo(2);
-            assertThat(persisted.getLastSwapAt()).isEqualTo(NOW);
+            assertThat(persisted.getLastSwapAt()).isEqualTo(MID_SEASON);
             assertThat(persisted.getAtRoundNumber()).isEqualTo(10);
 
             assertThat(persisted.getSwaps()).hasSize(1);
@@ -170,7 +170,7 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
             assertThat(roundSwap.getRound()).isEqualTo(10);
             assertThat(roundSwap.getChanges()).hasSize(1);
             SwapChange change = roundSwap.getChanges().get(0);
-            assertThat(change.timestamp()).isEqualTo(NOW);
+            assertThat(change.timestamp()).isEqualTo(MID_SEASON);
             assertThat(change.teamA()).isEqualTo("ARS:2→3");
             assertThat(change.teamB()).isEqualTo("LIV:3→2");
         }
@@ -200,7 +200,7 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
 
             SeasonPrediction afterFirst =
                     predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
-            afterFirst.setLastSwapAt(NOW.minus(Duration.ofHours(24)));
+            afterFirst.setLastSwapAt(MID_SEASON.minus(Duration.ofHours(24)));
             predictionRepo.save(afterFirst);
 
             Either<SwapError, SwapResult> second = useCase.execute(userId, new SwapCommand("MCI", "CHE"));
@@ -223,7 +223,7 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
         void shouldRejectWhenCooldownActive() {
             SeasonPrediction prediction =
                     predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
-            prediction.setLastSwapAt(NOW.minus(Duration.ofHours(23)));
+            prediction.setLastSwapAt(MID_SEASON.minus(Duration.ofHours(23)));
             prediction.setOpeningCommittedRound(10);
             predictionRepo.save(prediction);
 
@@ -233,7 +233,7 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
             assertThat(result.getLeft()).isInstanceOf(SwapError.CooldownActive.class);
 
             SwapError.CooldownActive cooldownActive = (SwapError.CooldownActive) result.getLeft();
-            assertThat(cooldownActive.nextSwapAt()).isEqualTo(NOW.plus(Duration.ofHours(1)));
+            assertThat(cooldownActive.nextSwapAt()).isEqualTo(MID_SEASON.plus(Duration.ofHours(1)));
             assertThat(cooldownActive.hoursRemaining()).isCloseTo(1.0, offset(0.01));
         }
 
@@ -246,7 +246,7 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
             jdbcTemplate.update(
                     "UPDATE t_season_prediction SET c_last_swap_at = ?, c_opening_committed_round = 0"
                             + " WHERE fk_user_id = ?",
-                    java.sql.Timestamp.from(NOW.minus(Duration.ofDays(2))),
+                    java.sql.Timestamp.from(MID_SEASON.minus(Duration.ofDays(2))),
                     userId);
 
             Either<SwapError, SwapResult> result = useCase.execute(userId, new SwapCommand("ARS", "LIV"));
@@ -264,7 +264,7 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
             jdbcTemplate.update(
                     "UPDATE t_season_prediction SET c_last_swap_at = ?, c_opening_committed_round = 10"
                             + " WHERE fk_user_id = ?",
-                    java.sql.Timestamp.from(NOW.minus(Duration.ofDays(2))),
+                    java.sql.Timestamp.from(MID_SEASON.minus(Duration.ofDays(2))),
                     userId);
 
             assertThat(useCase.execute(userId, new SwapCommand("ARS", "LIV")).isRight())

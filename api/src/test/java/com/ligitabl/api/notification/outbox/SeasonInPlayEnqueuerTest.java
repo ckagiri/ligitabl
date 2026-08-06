@@ -87,8 +87,8 @@ class SeasonInPlayEnqueuerTest {
                 .id(SEASON_ID)
                 .mainContestId(UUID.randomUUID())
                 .currentRoundId(ROUND_ID)
-                .startDate(LocalDate.now().minusDays(1))
-                .endDate(LocalDate.now().plusMonths(9))
+                .startDate(TestClock.TODAY.minusDays(1))
+                .endDate(TestClock.TODAY.plusMonths(9))
                 .completed(false)
                 .preSeasonOpensAt(now.minusDays(30))
                 .predictionsOpenAt(now.minusHours(1))
@@ -147,7 +147,7 @@ class SeasonInPlayEnqueuerTest {
     void skips_whenSeasonStillInPreSeason() {
         activeSeason(inPlaySeason()
                 .predictionsOpenAt(OffsetDateTime.now().plusDays(3))
-                .startDate(LocalDate.now().plusDays(3))
+                .startDate(TestClock.TODAY.plusDays(3))
                 .build());
 
         enqueuer.enqueueIfSeasonInPlay();

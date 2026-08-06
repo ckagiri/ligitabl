@@ -40,6 +40,31 @@ public final class TestCalendar {
     /** The year the season under test kicks off in. */
     public static final int SEASON_START_YEAR = Year.now(ZoneOffset.UTC).getValue();
 
+    /** The season window every DB-backed integration fixture seeds: 1 August through 31 May. */
+    public static final LocalDate SEASON_START = LocalDate.of(SEASON_START_YEAR, 8, 1);
+
+    public static final LocalDate SEASON_END = LocalDate.of(SEASON_START_YEAR + 1, 5, 31);
+
+    /** {@code YYYY-YY} — the only form {@code SeasonSlug} accepts. */
+    public static final String SEASON_SLUG = seasonSlug(SEASON_START_YEAR);
+
+    /** The season before {@link #SEASON_SLUG}, for fixtures that need a prior season to exist. */
+    public static final String PREVIOUS_SEASON_SLUG = seasonSlug(SEASON_START_YEAR - 1);
+
+    /** {@code YYYY/YY} — the display name. */
+    public static final String SEASON_NAME = SEASON_SLUG.replace('-', '/');
+
+    /**
+     * Midday, halfway through {@link #SEASON_START}–{@link #SEASON_END}: the instant DB-backed tests
+     * evaluate at, and what {@link FixedClockConfig} freezes its {@code Clock} to.
+     *
+     * <p>It has to sit comfortably inside the window rather than near either end, so that a test
+     * shifting it by hours or days (a 24-hour swap cooldown, {@code .plusMinutes(10)}) stays in the
+     * same season phase and goes on testing what it means to. The midpoint gives that by
+     * construction — edit either boundary and this moves with it.
+     */
+    public static final Instant MID_SEASON = middayMidwayBetween(SEASON_START, SEASON_END);
+
     private TestCalendar() {}
 
     /**

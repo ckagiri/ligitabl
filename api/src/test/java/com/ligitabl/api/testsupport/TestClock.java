@@ -1,7 +1,9 @@
 package com.ligitabl.api.testsupport;
 
+import com.ligitabl.api.testsupport.TestClock;
 import java.time.Clock;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 
 /**
@@ -32,6 +34,23 @@ public final class TestClock {
 
     /** Frozen at {@link #NOW}, UTC — matching the application's {@code Clock.systemUTC()} bean. */
     public static final Clock FIXED = Clock.fixed(NOW, ZoneOffset.UTC);
+
+    /**
+     * {@link #NOW} as a calendar date, <b>in UTC</b>. Use this in season fixtures instead of
+     * {@code TestClock.TODAY}.
+     *
+     * <p>⚠️ They are not the same date. {@code TestClock.TODAY} uses the JVM default zone, while
+     * {@code Season.getSeasonState(Instant)} derives its date in UTC to match the application's
+     * {@code Clock.systemUTC()} bean. On a machine east of UTC the two disagree for the last hours
+     * of each UTC day — on UTC+3, between 21:00 and midnight UTC — so a fixture saying
+     * "{@code endDate} was yesterday" describes today to the code evaluating it, and a season that
+     * should read OFF_SEASON reads INACTIVE instead.
+     *
+     * <p>That is a test failing for three hours a day and passing for the other twenty-one, which is
+     * worse than one that fails outright. Deriving the fixture date from the same instant the code
+     * reads removes the window entirely.
+     */
+    public static final LocalDate TODAY = LocalDate.ofInstant(NOW, ZoneOffset.UTC);
 
     private TestClock() {}
 }

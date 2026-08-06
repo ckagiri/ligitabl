@@ -131,7 +131,7 @@ class PreviewContestByCodeUseCaseTest {
                 .clientId(1)
                 .maxRounds(20)
                 .completed(true)
-                .endDate(LocalDate.now().minusDays(1))
+                .endDate(TestClock.TODAY.minusDays(1))
                 .build();
         when(contestRepo.findByJoinCode(CODE)).thenReturn(Optional.of(contest));
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(offSeason));

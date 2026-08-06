@@ -1,10 +1,10 @@
 package com.ligitabl.api.rest.prediction.createprediction;
 
-import static com.ligitabl.api.testsupport.FixedClockConfig.NOW;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_END;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_NAME;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_SLUG;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_START;
+import static com.ligitabl.api.testsupport.TestCalendar.MID_SEASON;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_END;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_NAME;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_SLUG;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_START;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Clock;
@@ -107,16 +107,16 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
     }
 
     /**
-     * The frozen {@code NOW} as an {@link OffsetDateTime}.
+     * The frozen {@code MID_SEASON} as an {@link OffsetDateTime}.
      *
      * <p>Season fixtures must be dated against the same instant the use case reads from the mocked
-     * clock. They previously used real {@code NOW()} while the clock was pinned to 2024 — harmless
+     * clock. They previously used real {@code MID_SEASON()} while the clock was pinned to 2024 — harmless
      * only while the season predicates read the wall clock themselves and so never consulted this
      * clock. Now that they take an explicit instant, a fixture and a clock that disagree describe
      * two different worlds.
      */
     private OffsetDateTime atNow() {
-        return OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC);
+        return OffsetDateTime.ofInstant(MID_SEASON, ZoneOffset.UTC);
     }
 
     @BeforeEach
@@ -178,7 +178,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             assertThat(prediction.get().getSwaps()).hasSize(1);
             assertThat(prediction.get().getSwaps().get(0).getRound()).isEqualTo(1);
             assertThat(prediction.get().getSwaps().get(0).getChanges()).hasSize(1);
-            assertThat(prediction.get().getLastSwapAt()).isEqualTo(NOW);
+            assertThat(prediction.get().getLastSwapAt()).isEqualTo(MID_SEASON);
 
             assertThat(prediction.get().getAtRoundNumber()).isEqualTo(1);
 
@@ -225,7 +225,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             // first-swap bonus is already consumed (lastSwapAt is set)
             assertThat(prediction.get().getSwaps()).hasSize(1);
             assertThat(prediction.get().getSwaps().get(0).getChanges()).hasSize(2);
-            assertThat(prediction.get().getLastSwapAt()).isEqualTo(NOW);
+            assertThat(prediction.get().getLastSwapAt()).isEqualTo(MID_SEASON);
         }
 
         @Test

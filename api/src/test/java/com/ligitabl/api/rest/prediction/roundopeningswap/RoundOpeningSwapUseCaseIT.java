@@ -1,10 +1,10 @@
 package com.ligitabl.api.rest.prediction.roundopeningswap;
 
-import static com.ligitabl.api.testsupport.FixedClockConfig.NOW;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_END;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_NAME;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_SLUG;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_START;
+import static com.ligitabl.api.testsupport.TestCalendar.MID_SEASON;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_END;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_NAME;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_SLUG;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_START;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Clock;
@@ -167,7 +167,7 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
             assertThat(saved.getOpeningCommittedRound())
                     .as("the window is spent by recording the round, not by a counter")
                     .isEqualTo(CURRENT_ROUND);
-            assertThat(saved.getLastSwapAt()).isEqualTo(NOW);
+            assertThat(saved.getLastSwapAt()).isEqualTo(MID_SEASON);
             assertThat(saved.getAtRoundNumber())
                     .as("the window carries the table into this round")
                     .isEqualTo(CURRENT_ROUND);
@@ -207,7 +207,7 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
         void openingWindowIgnoresTheSwapCooldown() {
             // The distinguishing behaviour vs MakeSwapUseCase, which rejects with CooldownActive.
             // The opening window is a separate allowance, not another ordinary swap.
-            savePrediction(OPENING_UNUSED, NOW.minusSeconds(60));
+            savePrediction(OPENING_UNUSED, MID_SEASON.minusSeconds(60));
 
             assertThat(swap("MCI", "ARS").isRight()).isTrue();
         }
@@ -340,7 +340,7 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
         void mergeConsumesTheOpeningWindow() {
             // mergePreSeasonRegistration sets both atRoundNumber and openingCommittedRound to the
             // merge round.
-            savePrediction(CURRENT_ROUND, NOW, CURRENT_ROUND);
+            savePrediction(CURRENT_ROUND, MID_SEASON, CURRENT_ROUND);
 
             assertThat(swap("MCI", "ARS").getLeft()).isInstanceOf(SwapError.OpeningAlreadyUsed.class);
         }
@@ -350,7 +350,7 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
         void newJoinConsumesTheOpeningWindow() {
             // createPredictionAndEntry never sets openingCommittedRound, so it stays 0 — which is
             // why that field alone cannot decide this.
-            savePrediction(OPENING_UNUSED, NOW, CURRENT_ROUND);
+            savePrediction(OPENING_UNUSED, MID_SEASON, CURRENT_ROUND);
 
             assertThat(swap("MCI", "ARS").getLeft()).isInstanceOf(SwapError.OpeningAlreadyUsed.class);
         }

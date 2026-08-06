@@ -145,8 +145,8 @@ class SeasonPredictionSupportTest {
                 .currentRoundId(roundId)
                 .maxRounds(38)
                 .slug(SeasonSlug.of("2025-26"))
-                .startDate(LocalDate.now().minusMonths(1))
-                .endDate(LocalDate.now().plusMonths(9))
+                .startDate(TestClock.TODAY.minusMonths(1))
+                .endDate(TestClock.TODAY.plusMonths(9))
                 .completed(false)
                 .predictionsOpenAt(null) // null => open, i.e. IN_PLAY
                 .build();
@@ -158,8 +158,8 @@ class SeasonPredictionSupportTest {
                 .currentRoundId(roundId)
                 .maxRounds(38)
                 .slug(SeasonSlug.of("2025-26"))
-                .startDate(LocalDate.now().plusMonths(1))
-                .endDate(LocalDate.now().plusMonths(10))
+                .startDate(TestClock.TODAY.plusMonths(1))
+                .endDate(TestClock.TODAY.plusMonths(10))
                 .completed(false)
                 .preSeasonOpensAt(OffsetDateTime.now().minusDays(1))
                 .predictionsOpenAt(OffsetDateTime.now().plusDays(10))

@@ -1,10 +1,10 @@
 package com.ligitabl.api.rest.round.advanceround;
 
-import static com.ligitabl.api.testsupport.FixedClockConfig.NOW;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_END;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_NAME;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_SLUG;
-import static com.ligitabl.api.testsupport.FixedClockConfig.SEASON_START;
+import static com.ligitabl.api.testsupport.TestCalendar.MID_SEASON;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_END;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_NAME;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_SLUG;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_START;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Clock;
@@ -63,7 +63,7 @@ class GetRoundAdvancementStatusUseCaseIntegrationTest extends AbstractPostgresIT
     @Test
     @DisplayName("Should return scheduled status with minutesRemaining when advanceAt is in the future")
     void shouldReturnScheduledWithMinutesRemaining() {
-        OffsetDateTime advanceAt = OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusMinutes(10);
+        OffsetDateTime advanceAt = OffsetDateTime.ofInstant(MID_SEASON, ZoneOffset.UTC).plusMinutes(10);
         Round round = setupRound(true, false, advanceAt);
         setCurrentRound(round.getId());
 
@@ -81,7 +81,7 @@ class GetRoundAdvancementStatusUseCaseIntegrationTest extends AbstractPostgresIT
     @Test
     @DisplayName("Should return minutesRemaining=0 when advanceAt is in the past (overdue)")
     void shouldReturnOverdueWhenAdvanceAtInPast() {
-        OffsetDateTime advanceAt = OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusMinutes(5);
+        OffsetDateTime advanceAt = OffsetDateTime.ofInstant(MID_SEASON, ZoneOffset.UTC).minusMinutes(5);
         Round round = setupRound(true, false, advanceAt);
         setCurrentRound(round.getId());
 

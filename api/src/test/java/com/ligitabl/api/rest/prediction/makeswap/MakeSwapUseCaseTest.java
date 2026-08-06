@@ -20,6 +20,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.testsupport.TestCalendar;
 import com.ligitabl.api.testsupport.FixedClockConfig;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.shared.SwapHelper;
@@ -63,7 +64,7 @@ class MakeSwapUseCaseTest {
      * {@code lenient()} default, because the season-phase predicates consult the clock on paths
      * that return before reaching the rest of the use case. A real clock cannot be unstubbed.
      */
-    private final Instant now = FixedClockConfig.NOW;
+    private final Instant now = TestCalendar.MID_SEASON;
 
     private final Clock clock = Clock.fixed(now, ZoneOffset.UTC);
 
