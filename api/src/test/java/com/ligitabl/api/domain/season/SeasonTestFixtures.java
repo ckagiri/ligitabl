@@ -149,7 +149,6 @@ final class SeasonTestFixtures {
         return OffsetDateTime.of(date, LocalTime.MIDNIGHT, ZoneOffset.UTC);
     }
 
-
     /** A relative point in time, named for parameterized-test readability instead of raw timestamps. */
     enum RelativeDate {
         NULL,

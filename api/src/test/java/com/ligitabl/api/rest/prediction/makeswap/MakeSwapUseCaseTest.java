@@ -20,13 +20,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.api.testsupport.TestCalendar;
-import com.ligitabl.api.testsupport.FixedClockConfig;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.shared.SwapHelper;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.testsupport.TestCalendar;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -106,7 +105,6 @@ class MakeSwapUseCaseTest {
     void shouldSwapSuccessfully_whenAllConditionsMet() {
         SwapCommand command = new SwapCommand("ARS", "LIV");
 
-
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
@@ -132,7 +130,6 @@ class MakeSwapUseCaseTest {
         prediction.setLastSwapAt(now.minus(Duration.ofHours(23)));
         prediction.setOpeningCommittedRound(round.getPosition()); // opening window already used
         SwapCommand command = new SwapCommand("ARS", "LIV");
-
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));
@@ -217,7 +214,6 @@ class MakeSwapUseCaseTest {
     void shouldUpdateAtRoundNumber_whenSwapApplied() {
         prediction.setAtRoundNumber(5); // stale from an earlier round, distinct from the target round
         SwapCommand command = new SwapCommand("ARS", "LIV");
-
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));

@@ -852,7 +852,6 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
         roundResultRepo.save(result);
     }
 
-
     @SuppressWarnings("unused")
     private static List<TeamRank> dummyRankings() {
         return List.of(TeamRank.of("AAA", 1), TeamRank.of("BBB", 2));

@@ -47,7 +47,6 @@ import com.ligitabl.model.repo.SeasonPredictionRepo;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
 
-
     private static final int CURRENT_ROUND = 10;
     /** Eligible users entered in an earlier round — the window is for a table carried *into* one. */
     private static final int ENTERED_AT_ROUND = CURRENT_ROUND - 1;
@@ -80,11 +79,9 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
     private UUID seasonId;
     private UUID roundId;
 
-
     @BeforeEach
     void setup() {
         PostgresTestDbCleaner.truncateAllDomainTables(jdbcTemplate);
-
 
         userId = UUID.randomUUID();
         competitionId = UUID.randomUUID();

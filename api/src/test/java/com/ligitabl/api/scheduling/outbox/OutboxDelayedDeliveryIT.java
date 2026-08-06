@@ -44,8 +44,8 @@ class OutboxDelayedDeliveryIT extends AbstractPostgresIT {
     }
 
     private OutboxEvent saveDelayed(Duration delay) {
-        OutboxEvent event =
-                OutboxEvent.createAvailableAt(key(), TYPE, "it", "delayed", "{}", Instant.now().plus(delay));
+        OutboxEvent event = OutboxEvent.createAvailableAt(
+                key(), TYPE, "it", "delayed", "{}", Instant.now().plus(delay));
         assertThat(outboxRepo.save(event)).isTrue();
         return event;
     }
@@ -55,8 +55,7 @@ class OutboxDelayedDeliveryIT extends AbstractPostgresIT {
     }
 
     private String statusOf(OutboxEvent event) {
-        return jdbc.queryForObject(
-                "SELECT c_status FROM t_outbox_event WHERE pk_id = ?", String.class, event.getId());
+        return jdbc.queryForObject("SELECT c_status FROM t_outbox_event WHERE pk_id = ?", String.class, event.getId());
     }
 
     @Test
@@ -80,8 +79,9 @@ class OutboxDelayedDeliveryIT extends AbstractPostgresIT {
         OutboxEvent due = saveDue();
         OutboxEvent delayed = saveDelayed(Duration.ofDays(1));
 
-        List<UUID> claimed =
-                outboxRepo.claimBatchForProcessing(50).stream().map(OutboxEvent::getId).toList();
+        List<UUID> claimed = outboxRepo.claimBatchForProcessing(50).stream()
+                .map(OutboxEvent::getId)
+                .toList();
 
         assertThat(claimed).contains(due.getId()).doesNotContain(delayed.getId());
         assertThat(statusOf(delayed)).isEqualTo(OutboxEvent.Status.PENDING.name());
@@ -91,14 +91,17 @@ class OutboxDelayedDeliveryIT extends AbstractPostgresIT {
     @DisplayName("the same event is claimed once its available_at has passed")
     void delayedEventIsClaimedOnceDue() {
         OutboxEvent delayed = saveDelayed(Duration.ofDays(1));
-        assertThat(outboxRepo.claimBatchForProcessing(50)).noneMatch(e -> e.getId().equals(delayed.getId()));
+        assertThat(outboxRepo.claimBatchForProcessing(50))
+                .noneMatch(e -> e.getId().equals(delayed.getId()));
 
         // Standing in for the day passing. Asserting only "not claimed early" would pass just as
         // well against an event that is never deliverable at all.
-        jdbc.update("UPDATE t_outbox_event SET c_available_at = now() - interval '1 minute' WHERE pk_id = ?",
+        jdbc.update(
+                "UPDATE t_outbox_event SET c_available_at = now() - interval '1 minute' WHERE pk_id = ?",
                 delayed.getId());
 
-        assertThat(outboxRepo.claimBatchForProcessing(50)).anyMatch(e -> e.getId().equals(delayed.getId()));
+        assertThat(outboxRepo.claimBatchForProcessing(50))
+                .anyMatch(e -> e.getId().equals(delayed.getId()));
     }
 
     @Test
@@ -131,6 +134,7 @@ class OutboxDelayedDeliveryIT extends AbstractPostgresIT {
                         .getAvailableAt())
                 .isNotNull()
                 .isBefore(Instant.now().plusSeconds(1));
-        assertThat(outboxRepo.claimBatchForProcessing(50)).anyMatch(e -> e.getId().equals(due.getId()));
+        assertThat(outboxRepo.claimBatchForProcessing(50))
+                .anyMatch(e -> e.getId().equals(due.getId()));
     }
 }

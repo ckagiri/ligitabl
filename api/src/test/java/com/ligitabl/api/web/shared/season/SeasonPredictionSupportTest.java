@@ -3,7 +3,6 @@ package com.ligitabl.api.web.shared.season;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +32,6 @@ import com.ligitabl.model.repo.TeamRepo;
 @ExtendWith(MockitoExtension.class)
 class SeasonPredictionSupportTest {
 
-
     @Mock
     private SeasonRepo seasonRepo;
 
@@ -56,7 +54,12 @@ class SeasonPredictionSupportTest {
     @BeforeEach
     void setUp() {
         support = new SeasonPredictionSupport(
-                seasonRepo, roundRepo, seasonPredictionRepo, teamRepo, new SharePredictionTextBuilder(), TestClock.FIXED);
+                seasonRepo,
+                roundRepo,
+                seasonPredictionRepo,
+                teamRepo,
+                new SharePredictionTextBuilder(),
+                TestClock.FIXED);
         ReflectionTestUtils.setField(support, "frontendShareUrl", "https://ligipredictor.com");
 
         seasonId = UUID.randomUUID();

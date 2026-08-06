@@ -1,9 +1,8 @@
 package com.ligitabl.api.web;
 
+import java.security.Principal;
 import java.time.Clock;
 import java.time.Instant;
-import java.security.Principal;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 

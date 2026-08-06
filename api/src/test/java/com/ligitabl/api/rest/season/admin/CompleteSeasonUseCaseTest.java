@@ -3,7 +3,6 @@ package com.ligitabl.api.rest.season.admin;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -14,10 +13,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.notification.outbox.OutboxEventTypes;
 import com.ligitabl.api.notification.outbox.SeasonCompletedPayload;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
@@ -29,7 +28,6 @@ import com.ligitabl.model.repo.SeasonRepo;
 
 @ExtendWith(MockitoExtension.class)
 class CompleteSeasonUseCaseTest {
-
 
     private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("premier-league");
 
@@ -154,7 +152,8 @@ class CompleteSeasonUseCaseTest {
         assertThat(event.getIdempotencyKey())
                 .as("keyed on the season, so a re-run cannot double-announce")
                 .isEqualTo("season-completed:" + seasonId);
-        assertThat(objectMapper.readValue(event.getPayload(), SeasonCompletedPayload.class)
+        assertThat(objectMapper
+                        .readValue(event.getPayload(), SeasonCompletedPayload.class)
                         .seasonId())
                 .isEqualTo(seasonId);
     }

@@ -346,7 +346,9 @@ class SegmentResultsEmailEnqueuerTest {
                             .map(SegmentResultsEmailEnqueuerTest.this::payloadOf)
                             .filter(p -> p.userId().equals(alice.id)))
                     .hasSize(1);
-            assertThat(savedEvents()).as("alice, bob, carol, dave — four people, four emails").hasSize(4);
+            assertThat(savedEvents())
+                    .as("alice, bob, carol, dave — four people, four emails")
+                    .hasSize(4);
         }
     }
 
@@ -549,8 +551,10 @@ class SegmentResultsEmailEnqueuerTest {
         @DisplayName("a competition with no phases is skipped")
         void noPhasesIsSkipped() {
             when(competitionRepo.findById(competitionId))
-                    .thenReturn(Optional.of(
-                            Competition.builder().id(competitionId).phases(List.of()).build()));
+                    .thenReturn(Optional.of(Competition.builder()
+                            .id(competitionId)
+                            .phases(List.of())
+                            .build()));
 
             enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 4, 5));
 

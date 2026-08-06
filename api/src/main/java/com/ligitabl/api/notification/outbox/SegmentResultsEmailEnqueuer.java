@@ -123,8 +123,7 @@ public class SegmentResultsEmailEnqueuer {
         enqueue(ctx, List.of(fullSeason), SEASON_SCOPE, fullSeason.getTo(), properties.getSeasonDelay());
     }
 
-    private void enqueue(
-            Context ctx, List<RoundSpan> ended, String scopeKey, int boundaryRound, Duration delay) {
+    private void enqueue(Context ctx, List<RoundSpan> ended, String scopeKey, int boundaryRound, Duration delay) {
         Set<String> ignoreList = loadIgnoreList();
 
         List<ClosedSegment> segments = ended.stream()
@@ -183,7 +182,8 @@ public class SegmentResultsEmailEnqueuer {
 
         List<Finisher> podium = new ArrayList<>();
         for (LeaderboardEntry entry : board.entries()) {
-            User user = userRepo.findByPublicId(PublicId.create(entry.publicId())).orElse(null);
+            User user =
+                    userRepo.findByPublicId(PublicId.create(entry.publicId())).orElse(null);
             if (user == null || user.getEmail() == null) {
                 continue;
             }
@@ -304,8 +304,7 @@ public class SegmentResultsEmailEnqueuer {
             offset += PAGE_SIZE;
         }
         return new Board(
-                entries.size() > maxEntries ? List.copyOf(entries.subList(0, maxEntries)) : entries,
-                totalParticipants);
+                entries.size() > maxEntries ? List.copyOf(entries.subList(0, maxEntries)) : entries, totalParticipants);
     }
 
     private Set<String> loadIgnoreList() {

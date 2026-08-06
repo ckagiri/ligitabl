@@ -34,8 +34,6 @@ import com.ligitabl.model.domain.TeamRank;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class GetPredictionUseCaseIT extends AbstractPostgresIT {
 
-
-
     private static final List<TeamRank> INITIAL_RANKINGS =
             List.of(new TeamRank("MCI", 1), new TeamRank("ARS", 2), new TeamRank("LIV", 3), new TeamRank("AVL", 4));
 
@@ -70,7 +68,6 @@ class GetPredictionUseCaseIT extends AbstractPostgresIT {
         insertTeams();
         insertUser(userId, "prediction-user-" + userId + "@example.com");
     }
-
 
     @AfterAll
     void cleanup() {

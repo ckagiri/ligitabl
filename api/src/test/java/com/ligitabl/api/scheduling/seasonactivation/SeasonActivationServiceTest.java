@@ -2,7 +2,6 @@ package com.ligitabl.api.scheduling.seasonactivation;
 
 import static org.mockito.Mockito.*;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -13,9 +12,9 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.notification.AdminNotificationService;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Season;
@@ -25,7 +24,6 @@ import com.ligitabl.model.repo.SeasonRepo;
 
 @ExtendWith(MockitoExtension.class)
 class SeasonActivationServiceTest {
-
 
     private static final CompetitionDefaults DEFAULTS = new CompetitionDefaults("premier-league");
 
@@ -44,7 +42,8 @@ class SeasonActivationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new SeasonActivationService(DEFAULTS, competitionRepo, seasonRepo, adminNotificationService, TestClock.FIXED);
+        service = new SeasonActivationService(
+                DEFAULTS, competitionRepo, seasonRepo, adminNotificationService, TestClock.FIXED);
         competitionId = UUID.randomUUID();
         activeSeasonId = UUID.randomUUID();
     }

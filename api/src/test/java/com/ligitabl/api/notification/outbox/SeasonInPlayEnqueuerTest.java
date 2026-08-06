@@ -1,12 +1,10 @@
 package com.ligitabl.api.notification.outbox;
 
-import java.time.Clock;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -23,9 +21,9 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundStatus;
@@ -47,7 +45,6 @@ import com.ligitabl.model.repo.SeasonRepo;
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
 class SeasonInPlayEnqueuerTest {
-
 
     private static final UUID SEASON_ID = UUID.randomUUID();
     private static final UUID ROUND_ID = UUID.randomUUID();
@@ -74,7 +71,8 @@ class SeasonInPlayEnqueuerTest {
         enqueuer = new SeasonInPlayEnqueuer(
                 seasonRepo, roundRepo, roundSupport, competitionDefaults, outboxRepo, objectMapper, TestClock.FIXED);
 
-        when(seasonRepo.findActiveSeason("pl")).thenReturn(Optional.of(inPlaySeason().build()));
+        when(seasonRepo.findActiveSeason("pl"))
+                .thenReturn(Optional.of(inPlaySeason().build()));
         when(roundRepo.findById(ROUND_ID)).thenReturn(Optional.of(round(1, false)));
         when(roundSupport.resolveJoinEligibilityStatus(any())).thenReturn(RoundStatus.OPEN);
         when(outboxRepo.save(any())).thenReturn(true);

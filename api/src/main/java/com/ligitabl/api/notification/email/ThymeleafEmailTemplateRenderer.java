@@ -105,9 +105,7 @@ public class ThymeleafEmailTemplateRenderer implements EmailTemplateRenderer {
         int rank = (Integer) templateData.get("headlineRank");
 
         if (Boolean.TRUE.equals(templateData.get("isSeasonFinale"))) {
-            return rank == 1
-                    ? "You won the season 🏆"
-                    : "The season's done — you finished %s".formatted(ordinal(rank));
+            return rank == 1 ? "You won the season 🏆" : "The season's done — you finished %s".formatted(ordinal(rank));
         }
         return rank == 1
                 ? "%s is yours 🏆".formatted(name)

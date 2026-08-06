@@ -3,7 +3,6 @@ package com.ligitabl.api.rest.season.admin;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,7 +23,6 @@ import com.ligitabl.model.repo.SeasonRepo;
 
 @ExtendWith(MockitoExtension.class)
 class UpdateSeasonDatesUseCaseTest {
-
 
     @Mock
     SeasonRepo seasonRepo;

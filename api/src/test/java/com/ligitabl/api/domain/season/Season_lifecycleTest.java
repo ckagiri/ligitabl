@@ -57,7 +57,9 @@ class Season_lifecycleTest {
                 at("a fortnight before pre-season opens", preSeasonOpens.minusDays(14), SeasonState.OFF_SEASON),
                 // isAfter is strict, so the season is not yet open on the instant it opens.
                 Arguments.of(
-                        "midnight on the exact opening instant", PRE_SEASON_OPENS_AT.toInstant(), SeasonState.OFF_SEASON),
+                        "midnight on the exact opening instant",
+                        PRE_SEASON_OPENS_AT.toInstant(),
+                        SeasonState.OFF_SEASON),
                 at("the day after, pre-season underway", preSeasonOpens.plusDays(1), SeasonState.PRE_SEASON),
                 at("the day before predictions open", predictionsOpen.minusDays(1), SeasonState.PRE_SEASON),
                 at("the day after predictions open", predictionsOpen.plusDays(1), SeasonState.IN_PLAY),

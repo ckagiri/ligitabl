@@ -124,8 +124,7 @@ class OutboxEventProcessorTest {
                 .thenReturn(Either.right(new EmailContent("welcome subject", "<html/>", "text")));
         when(renderer.render(eq(EmailCommand.EmailType.SEGMENT_RESULTS), any()))
                 .thenReturn(Either.right(new EmailContent("segment subject", "<html/>", "text")));
-        when(emailProvider.sendSingle(anyString(), any(), any()))
-                .thenReturn(Either.right(null));
+        when(emailProvider.sendSingle(anyString(), any(), any())).thenReturn(Either.right(null));
     }
 
     private OutboxEvent claimedEvent(String type, String payload, int attempts) {
@@ -247,7 +246,11 @@ class OutboxEventProcessorTest {
                 .containsEntry("isSeasonFinale", false)
                 .containsEntry("leaderboardUrl", "http://localhost:8080/leaderboard?phase=S2");
 
-        verify(emailProvider).sendSingle(eq("alice@x.com"), argThat(c -> "segment subject".equals(c.subject()) && "<html/>".equals(c.htmlBody())), any());
+        verify(emailProvider)
+                .sendSingle(
+                        eq("alice@x.com"),
+                        argThat(c -> "segment subject".equals(c.subject()) && "<html/>".equals(c.htmlBody())),
+                        any());
         verify(outboxRepo).markSent(event.getId());
     }
 
@@ -326,7 +329,10 @@ class OutboxEventProcessorTest {
                 .containsKeys("hitDistribution", "sprint", "quarter", "season");
 
         verify(emailProvider)
-                .sendSingle(eq("alice@x.com"), argThat(c -> "subject".equals(c.subject()) && "<html/>".equals(c.htmlBody())), eq(EmailCommand.Priority.NORMAL));
+                .sendSingle(
+                        eq("alice@x.com"),
+                        argThat(c -> "subject".equals(c.subject()) && "<html/>".equals(c.htmlBody())),
+                        eq(EmailCommand.Priority.NORMAL));
         verify(outboxRepo).markSent(event.getId());
     }
 
@@ -435,7 +441,10 @@ class OutboxEventProcessorTest {
                 .containsEntry("leaderboardUrl", "http://localhost:8080/leaderboard");
 
         verify(emailProvider)
-                .sendSingle(eq("bob@x.com"), argThat(c -> "join subject".equals(c.subject()) && "<html/>".equals(c.htmlBody())), eq(EmailCommand.Priority.NORMAL));
+                .sendSingle(
+                        eq("bob@x.com"),
+                        argThat(c -> "join subject".equals(c.subject()) && "<html/>".equals(c.htmlBody())),
+                        eq(EmailCommand.Priority.NORMAL));
         verify(outboxRepo).markSent(event.getId());
     }
 
@@ -624,9 +633,7 @@ class OutboxEventProcessorTest {
 
     private OutboxEvent seasonInPlayEvent() throws Exception {
         return claimedEvent(
-                OutboxEventTypes.SEASON_IN_PLAY,
-                objectMapper.writeValueAsString(new SeasonInPlayPayload(seasonId)),
-                1);
+                OutboxEventTypes.SEASON_IN_PLAY, objectMapper.writeValueAsString(new SeasonInPlayPayload(seasonId)), 1);
     }
 
     private java.util.List<OutboxEvent> savedEvents() {
@@ -684,12 +691,10 @@ class OutboxEventProcessorTest {
         processor.processOne(event);
 
         verify(createPredictionUseCase, never()).resolveMainContest(any());
-        Assertions.assertThat(savedEvents())
-                .singleElement()
-                .satisfies(e -> {
-                    Assertions.assertThat(e.getIdempotencyKey()).isEqualTo("season-welcome-fanout:" + seasonId);
-                    Assertions.assertThat(e.getEventType()).isEqualTo(OutboxEventTypes.SEASON_WELCOME_FANOUT);
-                });
+        Assertions.assertThat(savedEvents()).singleElement().satisfies(e -> {
+            Assertions.assertThat(e.getIdempotencyKey()).isEqualTo("season-welcome-fanout:" + seasonId);
+            Assertions.assertThat(e.getEventType()).isEqualTo(OutboxEventTypes.SEASON_WELCOME_FANOUT);
+        });
         verify(outboxRepo).markSent(event.getId());
     }
 
@@ -758,7 +763,8 @@ class OutboxEventProcessorTest {
     void seasonInPlayContestResolutionFails_skipsBatchButStillWelcomesAndMarksSent() throws Exception {
         Season season = inPlaySeason();
         when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any())).thenReturn(java.util.List.of(UUID.randomUUID()));
+        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any()))
+                .thenReturn(java.util.List.of(UUID.randomUUID()));
         when(createPredictionUseCase.resolveMainContest(season))
                 .thenReturn(Either.left(new CreatePredictionError.MainContestNotFound()));
 
@@ -805,8 +811,8 @@ class OutboxEventProcessorTest {
     @Test
     void seasonWelcomeFanoutDelegatesThenMarksSent() throws Exception {
         SeasonWelcomeFanoutPayload payload = new SeasonWelcomeFanoutPayload(seasonId);
-        OutboxEvent event = claimedEvent(
-                OutboxEventTypes.SEASON_WELCOME_FANOUT, objectMapper.writeValueAsString(payload), 1);
+        OutboxEvent event =
+                claimedEvent(OutboxEventTypes.SEASON_WELCOME_FANOUT, objectMapper.writeValueAsString(payload), 1);
 
         processor.processOne(event);
 
@@ -850,7 +856,10 @@ class OutboxEventProcessorTest {
                 .containsEntry("whatIfUrl", "http://localhost:8080/my-table/what-if");
 
         verify(emailProvider)
-                .sendSingle(eq("carol@x.com"), argThat(c -> "welcome subject".equals(c.subject()) && "<html/>".equals(c.htmlBody())), eq(EmailCommand.Priority.NORMAL));
+                .sendSingle(
+                        eq("carol@x.com"),
+                        argThat(c -> "welcome subject".equals(c.subject()) && "<html/>".equals(c.htmlBody())),
+                        eq(EmailCommand.Priority.NORMAL));
         verify(outboxRepo).markSent(event.getId());
     }
 

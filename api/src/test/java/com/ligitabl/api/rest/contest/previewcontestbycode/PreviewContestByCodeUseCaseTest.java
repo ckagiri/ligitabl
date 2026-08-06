@@ -3,7 +3,6 @@ package com.ligitabl.api.rest.contest.previewcontestbycode;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -21,7 +20,6 @@ import com.ligitabl.model.repo.*;
 
 @ExtendWith(MockitoExtension.class)
 class PreviewContestByCodeUseCaseTest {
-
 
     @Mock
     ContestRepo contestRepo;
@@ -50,7 +48,8 @@ class PreviewContestByCodeUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new PreviewContestByCodeUseCase(contestRepo, entryRepo, seasonRepo, competitionRepo, matchRepo, TestClock.FIXED);
+        useCase = new PreviewContestByCodeUseCase(
+                contestRepo, entryRepo, seasonRepo, competitionRepo, matchRepo, TestClock.FIXED);
 
         seasonId = UUID.randomUUID();
         competitionId = UUID.randomUUID();

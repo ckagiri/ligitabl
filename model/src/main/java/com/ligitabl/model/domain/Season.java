@@ -119,8 +119,7 @@ public class Season extends AbstractModel<UUID> {
         boolean pastActualEnd = completed && endDate != null && today.isAfter(endDate);
         boolean beforeActualStart = !completed && startDate != null && today.isBefore(startDate);
         boolean preSeasonOpen = isPreSeasonOpen(at);
-        boolean predictionsOpen =
-                predictionsOpenAt == null || at.isAfter(predictionsOpenAt.toInstant());
+        boolean predictionsOpen = predictionsOpenAt == null || at.isAfter(predictionsOpenAt.toInstant());
 
         if ((!preSeasonOpen && pastActualEnd) || (!predictionsOpen && !preSeasonOpen && beforeActualStart)) {
             return SeasonState.OFF_SEASON;
@@ -156,5 +155,4 @@ public class Season extends AbstractModel<UUID> {
     public boolean isInactive(Instant at) {
         return getSeasonState(at) == SeasonState.INACTIVE;
     }
-
 }

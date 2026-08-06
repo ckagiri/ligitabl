@@ -33,7 +33,6 @@ import com.ligitabl.model.repo.RoundRepo;
 @DisplayName("CancelRoundAdvancementUseCase Integration Tests")
 class CancelRoundAdvancementUseCaseIntegrationTest extends AbstractPostgresIT {
 
-
     @Autowired
     JdbcTemplate jdbc;
 

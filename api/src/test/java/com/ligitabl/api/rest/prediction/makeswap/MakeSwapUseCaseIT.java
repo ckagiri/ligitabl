@@ -43,8 +43,6 @@ import com.ligitabl.model.repo.SeasonPredictionRepo;
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class MakeSwapUseCaseIT extends AbstractPostgresIT {
 
-
-
     private static final List<TeamRank> RANKINGS = List.of(
             new TeamRank("MCI", 1),
             new TeamRank("ARS", 2),
@@ -79,11 +77,9 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
     private UUID seasonId;
     private UUID roundId;
 
-
     @BeforeEach
     void setup() {
         PostgresTestDbCleaner.truncateAllDomainTables(jdbcTemplate);
-
 
         userId = UUID.randomUUID();
         competitionId = UUID.randomUUID();
@@ -123,9 +119,8 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
         void swapMovesOnlyTheTwoTeamsNamed() {
             useCase.execute(userId, new SwapCommand("ARS", "LIV"));
 
-            assertThat(tableOrder(predictionRepo
-                            .findByUserAndSeason(userId, seasonId)
-                            .orElseThrow()))
+            assertThat(tableOrder(
+                            predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow()))
                     .containsExactly(
                             "MCI", "LIV", "ARS", "AVL", "CHE", "NEW", "MUN", "TOT", "BHA", "CRY", "BRE", "WHU");
         }
@@ -253,7 +248,8 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
 
             assertThat(result.isLeft()).isTrue();
             assertThat(result.getLeft()).isInstanceOf(SwapError.UseOpeningWindowFirst.class);
-            assertThat(((SwapError.UseOpeningWindowFirst) result.getLeft()).round()).isEqualTo(10);
+            assertThat(((SwapError.UseOpeningWindowFirst) result.getLeft()).round())
+                    .isEqualTo(10);
         }
 
         @Test

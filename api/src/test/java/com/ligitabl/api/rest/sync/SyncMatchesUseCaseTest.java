@@ -22,7 +22,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.client.FootballDataApiError;
 import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.client.footballdata.MatchDto;
@@ -35,6 +34,7 @@ import com.ligitabl.api.scheduling.syncmatches.LiveMatchTracker;
 import com.ligitabl.api.scheduling.syncmatches.SyncMatchesUseCase;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;

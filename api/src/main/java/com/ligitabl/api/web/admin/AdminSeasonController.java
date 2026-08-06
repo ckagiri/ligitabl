@@ -109,9 +109,8 @@ public class AdminSeasonController {
         // clock at render time and disagree with the "now" above on a date boundary.
         model.addAttribute(
                 "seasonStatesById",
-                allSeasons.stream()
-                        .collect(Collectors.toMap(
-                                Season::getId, season -> season.getSeasonState(at).name())));
+                allSeasons.stream().collect(Collectors.toMap(Season::getId, season -> season.getSeasonState(at)
+                        .name())));
 
         model.addAttribute("activeSeasonInPlay", activeSeason != null && activeSeason.isInPlay(at));
 

@@ -24,11 +24,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
-import com.ligitabl.api.testsupport.TestCalendar;
 import com.ligitabl.api.client.TurnstileClient;
 import com.ligitabl.api.client.turnstile.TurnstileVerifyResponse;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
+import com.ligitabl.api.testsupport.TestCalendar;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.domain.EmailVerificationToken;
 import com.ligitabl.model.domain.User;
@@ -343,8 +343,8 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
                 .filter(c -> c.startsWith("SESSION=") || c.startsWith("JSESSIONID="))
                 .map(c -> c.split(";")[0])
                 .reduce((first, second) -> second)
-                .orElseThrow(() ->
-                        new AssertionError("login must establish a session; cookies received: " + setCookies));
+                .orElseThrow(
+                        () -> new AssertionError("login must establish a session; cookies received: " + setCookies));
 
         String settingsBody = settingsPage(new Session(sessionCookie, null));
         Matcher matcher = CSRF_PATTERN.matcher(settingsBody);

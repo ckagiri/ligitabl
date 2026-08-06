@@ -1,6 +1,5 @@
 package com.ligitabl.api.rest.leaderboard.getuserdetail;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -133,8 +132,7 @@ public class GetUserDetailUseCase {
         }
 
         // Resolve team codes to names
-        List<TeamRank> sortedRanks = TeamRank.inPositionOrder(rankings).stream()
-                .toList();
+        List<TeamRank> sortedRanks = TeamRank.inPositionOrder(rankings).stream().toList();
 
         Set<String> teamCodes = sortedRanks.stream().map(TeamRank::getCode).collect(Collectors.toSet());
 

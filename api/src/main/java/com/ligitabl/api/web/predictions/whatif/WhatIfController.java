@@ -1,9 +1,8 @@
 package com.ligitabl.api.web.predictions.whatif;
 
+import java.security.Principal;
 import java.time.Clock;
 import java.time.Instant;
-import java.security.Principal;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -198,8 +197,7 @@ public class WhatIfController {
         if (ranks == null || ranks.isEmpty()) {
             return List.of();
         }
-        List<TeamRank> sorted = TeamRank.inPositionOrder(ranks).stream()
-                .toList();
+        List<TeamRank> sorted = TeamRank.inPositionOrder(ranks).stream().toList();
         Map<String, Team> teamsByCode =
                 teamRepo.findAllByCodes(sorted.stream().map(TeamRank::getCode).collect(Collectors.toSet())).stream()
                         .collect(Collectors.toMap(Team::getCode, Function.identity()));
@@ -232,10 +230,14 @@ public class WhatIfController {
                         .toList();
 
         return Map.of(
-                "success", true,
-                "scores", savedScoresFor(userDetails.getUserId(), roundId),
-                "matches", matches,
-                "roundOpen", roundSupport.resolveStatus(currentRound) == RoundStatus.OPEN);
+                "success",
+                true,
+                "scores",
+                savedScoresFor(userDetails.getUserId(), roundId),
+                "matches",
+                matches,
+                "roundOpen",
+                roundSupport.resolveStatus(currentRound) == RoundStatus.OPEN);
     }
 
     @PostMapping("/compute")

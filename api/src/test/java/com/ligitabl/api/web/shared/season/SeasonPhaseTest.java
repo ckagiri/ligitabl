@@ -93,7 +93,8 @@ class SeasonPhaseTest {
      */
     @Test
     void everyFieldIsDerivedFromTheOneInstantPassedIn() {
-        Season season = season(AT.minusDays(3), AT.plusDays(20), AT.toLocalDate().plusMonths(1));
+        Season season =
+                season(AT.minusDays(3), AT.plusDays(20), AT.toLocalDate().plusMonths(1));
 
         assertThat(SeasonPhase.resolve(season, NOW).daysToPredictions()).isEqualTo(20L);
         assertThat(SeasonPhase.resolve(season, NOW.plusSeconds(86_400)).daysToPredictions())

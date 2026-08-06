@@ -2,7 +2,6 @@ package com.ligitabl.api.rest.prediction.whatif;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -13,9 +12,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import com.ligitabl.api.testsupport.TestCalendar;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
+import com.ligitabl.api.testsupport.TestCalendar;
 import com.ligitabl.model.domain.WhatIfPrediction;
 import com.ligitabl.model.domain.WhatIfScore;
 import com.ligitabl.model.repo.WhatIfPredictionRepo;

@@ -24,12 +24,12 @@ import org.mockito.quality.Strictness;
 import org.springframework.ui.ExtendedModelMap;
 import org.springframework.ui.Model;
 
-import com.ligitabl.api.testsupport.TestCalendar;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.season.admin.ActivateSeasonUseCase;
 import com.ligitabl.api.rest.season.admin.AssignUpcomingSeasonUseCase;
 import com.ligitabl.api.rest.season.admin.RevertSeasonUseCase;
 import com.ligitabl.api.rest.season.admin.UpdateSeasonDatesUseCase;
+import com.ligitabl.api.testsupport.TestCalendar;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Season;
@@ -54,7 +54,9 @@ class AdminSeasonControllerTest {
 
     /** Mid-season, derived — see {@link TestCalendar}. The absolute date is not load-bearing here. */
     private static final Instant NOW = TestCalendar.middayMidwayBetween(
-            LocalDate.of(TestCalendar.SEASON_START_YEAR, 8, 1), LocalDate.of(TestCalendar.SEASON_START_YEAR + 1, 5, 31));
+            LocalDate.of(TestCalendar.SEASON_START_YEAR, 8, 1),
+            LocalDate.of(TestCalendar.SEASON_START_YEAR + 1, 5, 31));
+
     private static final LocalDate TODAY = LocalDate.ofInstant(NOW, ZoneOffset.UTC);
     private static final Clock CLOCK = Clock.fixed(NOW, ZoneOffset.UTC);
 
@@ -145,7 +147,8 @@ class AdminSeasonControllerTest {
         Season active = inPlaySeason(activeSeasonId);
         active.setPreSeasonOpensAt(OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusDays(10));
         Season upcoming = preSeasonSeason(upcomingSeasonId);
-        upcoming.setPredictionsOpenAt(OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusDays(4));
+        upcoming.setPredictionsOpenAt(
+                OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusDays(4));
         givenCompetition(active, upcoming, List.of(active, upcoming));
 
         controller.seasonsPage(model);
@@ -182,7 +185,8 @@ class AdminSeasonControllerTest {
     private Season inPlaySeason(UUID id) {
         Season season = season(id, TODAY.minusMonths(1), TODAY.plusMonths(8));
         season.setPreSeasonOpensAt(OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(30));
-        season.setPredictionsOpenAt(OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(7));
+        season.setPredictionsOpenAt(
+                OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(7));
         return season;
     }
 
@@ -190,7 +194,8 @@ class AdminSeasonControllerTest {
     private Season preSeasonSeason(UUID id) {
         Season season = season(id, TODAY.plusMonths(1), TODAY.plusMonths(10));
         season.setPreSeasonOpensAt(OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(3));
-        season.setPredictionsOpenAt(OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusDays(20));
+        season.setPredictionsOpenAt(
+                OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusDays(20));
         return season;
     }
 

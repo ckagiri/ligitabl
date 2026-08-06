@@ -7,7 +7,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
@@ -25,7 +24,6 @@ import org.springframework.test.context.DynamicPropertySource;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.scheduling.advancematchday.AdvanceMatchdayUseCase;
 import com.ligitabl.api.scheduling.advancematchday.MatchdayAdvancementScheduler;
 import com.ligitabl.api.scheduling.syncmatches.AsyncStandingsService;
@@ -34,6 +32,7 @@ import com.ligitabl.api.scheduling.syncmatches.SyncMatchesUseCase;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -41,7 +40,6 @@ import com.ligitabl.model.repo.SeasonRepo;
 @SpringBootTest
 @DisplayName("Match sync + round advancement integration")
 class MatchSyncIntegrationTest extends AbstractPostgresIT {
-
 
     private static final WireMockServer WIREMOCK =
             new WireMockServer(WireMockConfiguration.options().dynamicPort());

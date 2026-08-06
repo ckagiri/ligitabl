@@ -36,7 +36,6 @@ import com.ligitabl.model.repo.SeasonRepo;
 @DisplayName("AdvanceCurrentRoundNowUseCase Integration Tests")
 class AdvanceCurrentRoundNowUseCaseIntegrationTest extends AbstractPostgresIT {
 
-
     @Autowired
     JdbcTemplate jdbc;
 

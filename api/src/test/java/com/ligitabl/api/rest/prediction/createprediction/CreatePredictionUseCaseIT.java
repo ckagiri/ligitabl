@@ -8,7 +8,6 @@ import static com.ligitabl.api.testsupport.TestCalendar.SEASON_START;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -44,8 +43,6 @@ import com.ligitabl.model.repo.SeasonPredictionRepo;
 @DisplayName("CreatePredictionUseCase Integration Tests")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class CreatePredictionUseCaseIT extends AbstractPostgresIT {
-
-
 
     private static final List<TeamRank> INITIAL_RANKINGS = List.of(
             new TeamRank("MCI", 1),
@@ -86,7 +83,6 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
     private UUID userId;
     private UUID homeTeamId;
     private UUID awayTeamId;
-
 
     @BeforeAll
     void setupPrerequisites() {
@@ -393,7 +389,8 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             // getSeasonState() only classifies PRE_SEASON when the season's own start date is still
             // in the future (an upcoming, not-yet-started season) — the class-level fixture uses a
             // fixed historical 2024/25 window for the in-play tests, so push it out here.
-            setSeasonWindow(atNow().toLocalDate().plusDays(1), atNow().toLocalDate().plusMonths(9));
+            setSeasonWindow(
+                    atNow().toLocalDate().plusDays(1), atNow().toLocalDate().plusMonths(9));
             setPreSeasonOpensAt(atNow().minusDays(1));
             setPredictionsOpenAt(atNow().plusDays(30));
         }
@@ -722,5 +719,4 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         sb.append("]");
         return sb.toString();
     }
-
 }

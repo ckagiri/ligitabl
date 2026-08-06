@@ -5,7 +5,6 @@ import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.spy;
 
 import java.time.Clock;
-import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -95,8 +94,7 @@ class SeasonInPlayChainIT extends AbstractPostgresIT {
     }
 
     private int countEventsOfType(String type) {
-        return jdbc.queryForObject(
-                "SELECT count(*) FROM t_outbox_event WHERE c_event_type = ?", Integer.class, type);
+        return jdbc.queryForObject("SELECT count(*) FROM t_outbox_event WHERE c_event_type = ?", Integer.class, type);
     }
 
     @Nested
@@ -161,7 +159,8 @@ class SeasonInPlayChainIT extends AbstractPostgresIT {
             enqueueSeasonInPlay("season-in-play:single-chain");
             relayOnce();
 
-            assertThat(countEventsOfType(OutboxEventTypes.SEASON_WELCOME_FANOUT)).isEqualTo(1);
+            assertThat(countEventsOfType(OutboxEventTypes.SEASON_WELCOME_FANOUT))
+                    .isEqualTo(1);
         }
     }
 
@@ -204,7 +203,8 @@ class SeasonInPlayChainIT extends AbstractPostgresIT {
             relayOnce();
 
             assertThat(countEventsOfType(OutboxEventTypes.SEASON_WELCOME)).isEqualTo(1);
-            assertThat(countEventsOfType(OutboxEventTypes.SEASON_WELCOME_FANOUT)).isEqualTo(1);
+            assertThat(countEventsOfType(OutboxEventTypes.SEASON_WELCOME_FANOUT))
+                    .isEqualTo(1);
             assertThat(jdbc.queryForObject("SELECT count(*) FROM t_season_prediction", Integer.class))
                     .isEqualTo(1);
         }
