@@ -244,7 +244,13 @@ public class SecurityConfig {
                         .addLogoutHandler(clearImpersonationLogoutHandler)
                         .logoutSuccessUrl("/")
                         .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID", "remember-me")
+                        // "SESSION", not "JSESSIONID": sessions moved to Postgres via Spring Session
+                        // (spring.session.store-type: jdbc, changelog 20260801_1_spring_session.yaml),
+                        // whose cookie is SESSION. The servlet container's JSESSIONID is never issued,
+                        // so naming it here cleared nothing. Logout still worked without this — the
+                        // session is invalidated server-side and Spring Session expires its own cookie
+                        // — which is exactly why the stale name went unnoticed.
+                        .deleteCookies("SESSION", "remember-me")
                         .permitAll())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
 
