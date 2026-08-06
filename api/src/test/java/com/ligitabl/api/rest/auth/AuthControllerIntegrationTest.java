@@ -1,5 +1,6 @@
 package com.ligitabl.api.rest.auth;
 
+import static com.ligitabl.api.testsupport.TestIds.randomPublicId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.any;
@@ -85,17 +86,6 @@ class AuthControllerIntegrationTest extends AbstractPostgresIT {
         Integer count = jdbcTemplate.queryForObject(
                 "select count(*) from t_user where c_email = ?", Integer.class, emailToCount);
         return count == null ? 0 : count;
-    }
-
-    private static String randomPublicId() {
-        // Must match model PublicId regex: ^[23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz]{10}$
-        String alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";
-        StringBuilder sb = new StringBuilder(10);
-        for (int i = 0; i < 10; i++) {
-            int idx = (int) (Math.random() * alphabet.length());
-            sb.append(alphabet.charAt(idx));
-        }
-        return sb.toString();
     }
 
     @Test

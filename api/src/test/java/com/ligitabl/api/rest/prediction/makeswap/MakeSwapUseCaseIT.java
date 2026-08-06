@@ -1,5 +1,6 @@
 package com.ligitabl.api.rest.prediction.makeswap;
 
+import static com.ligitabl.api.testsupport.TestIds.randomPublicId;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.offset;
 import static org.mockito.Mockito.when;
@@ -419,16 +420,6 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
                     .append("}");
         }
         sb.append("]");
-        return sb.toString();
-    }
-
-    private static String randomPublicId() {
-        String alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";
-        StringBuilder sb = new StringBuilder(10);
-        for (int i = 0; i < 10; i++) {
-            int idx = java.util.concurrent.ThreadLocalRandom.current().nextInt(alphabet.length());
-            sb.append(alphabet.charAt(idx));
-        }
         return sb.toString();
     }
 }

@@ -1,5 +1,6 @@
 package com.ligitabl.api.rest.round.finalizeround;
 
+import static com.ligitabl.api.testsupport.TestIds.randomPublicId;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
@@ -772,15 +773,5 @@ class FinalizeRoundUseCaseIntegrationTest extends AbstractPostgresIT {
                 true);
         jdbc.update("INSERT INTO t_user_role (fk_user_id, c_role) VALUES (?, ?)", userId, "PLAYER");
         return userId;
-    }
-
-    private static String randomPublicId() {
-        String alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";
-        StringBuilder sb = new StringBuilder(10);
-        for (int i = 0; i < 10; i++) {
-            int idx = ThreadLocalRandom.current().nextInt(alphabet.length());
-            sb.append(alphabet.charAt(idx));
-        }
-        return sb.toString();
     }
 }
