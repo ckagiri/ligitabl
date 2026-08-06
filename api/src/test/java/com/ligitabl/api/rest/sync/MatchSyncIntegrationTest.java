@@ -42,16 +42,6 @@ import com.ligitabl.model.repo.SeasonRepo;
 @DisplayName("Match sync + round advancement integration")
 class MatchSyncIntegrationTest extends AbstractPostgresIT {
 
-    /**
-     * The sync window is computed by {@code SyncMatchesUseCase} with a bare {@code LocalDate.now()},
-     * i.e. in the <b>JVM default zone</b> — so this assertion has to use the same zone to match it.
-     *
-     * <p>⚠️ Not interchangeable with {@link TestClock#TODAY}, which is UTC because that is what
-     * {@code Season.getSeasonState(Instant)} derives its date in. East of UTC the two differ for the
-     * last hours of each UTC day. The season fixture below correctly uses the UTC one; this
-     * correctly does not. The real oddity is production reading the wall clock here at all.
-     */
-    private static final java.time.LocalDate SYNC_WINDOW_TODAY = java.time.LocalDate.now();
 
     private static final WireMockServer WIREMOCK =
             new WireMockServer(WireMockConfiguration.options().dynamicPort());
@@ -129,8 +119,8 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
 
         WIREMOCK.verify(getRequestedFor(urlPathEqualTo("/matches"))
                 .withQueryParam("competitions", equalTo(COMPETITION_CODE))
-                .withQueryParam("dateFrom", equalTo(SYNC_WINDOW_TODAY.toString()))
-                .withQueryParam("dateTo", equalTo(SYNC_WINDOW_TODAY.plusDays(2).toString())));
+                .withQueryParam("dateFrom", equalTo(TestClock.TODAY.toString()))
+                .withQueryParam("dateTo", equalTo(TestClock.TODAY.plusDays(2).toString())));
     }
 
     @Test
@@ -147,9 +137,9 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
                 3,
                 getRequestedFor(urlPathEqualTo("/matches"))
                         .withQueryParam("competitions", equalTo(COMPETITION_CODE))
-                        .withQueryParam("dateFrom", equalTo(SYNC_WINDOW_TODAY.toString()))
+                        .withQueryParam("dateFrom", equalTo(TestClock.TODAY.toString()))
                         .withQueryParam(
-                                "dateTo", equalTo(SYNC_WINDOW_TODAY.plusDays(2).toString())));
+                                "dateTo", equalTo(TestClock.TODAY.plusDays(2).toString())));
     }
 
     @Test

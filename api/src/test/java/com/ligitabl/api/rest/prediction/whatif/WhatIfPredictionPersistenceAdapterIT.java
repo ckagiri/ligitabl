@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.ligitabl.api.testsupport.TestCalendar;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.model.domain.WhatIfPrediction;
@@ -123,9 +124,9 @@ class WhatIfPredictionPersistenceAdapterIT extends AbstractPostgresIT {
                 1,
                 competitionId,
                 "2025/26",
-                "2025-26",
-                LocalDate.of(2025, 8, 1),
-                LocalDate.of(2026, 5, 31),
+                TestCalendar.SEASON_SLUG,
+                TestCalendar.SEASON_START,
+                TestCalendar.SEASON_END,
                 38,
                 12,
                 "[]",

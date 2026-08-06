@@ -22,6 +22,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.client.FootballDataApiError;
 import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.client.footballdata.MatchDto;
@@ -85,7 +86,8 @@ class SyncMatchesUseCaseTest {
                 standingsService,
                 new CompetitionDefaults(COMPETITION_SLUG),
                 liveMatchTracker,
-                new MatchUpdateHelper());
+                new MatchUpdateHelper(),
+                TestClock.FIXED);
 
         var field = SyncMatchesUseCase.class.getDeclaredField("competitionCode");
         field.setAccessible(true);

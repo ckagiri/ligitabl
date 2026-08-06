@@ -24,6 +24,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 
+import com.ligitabl.api.testsupport.TestCalendar;
 import com.ligitabl.api.client.TurnstileClient;
 import com.ligitabl.api.client.turnstile.TurnstileVerifyResponse;
 import com.ligitabl.api.shared.Either;
@@ -135,10 +136,10 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
                 .set(season.PK_ID, SEASON_ID)
                 .set(season.C_CLIENT_ID, 1)
                 .set(season.FK_COMPETITION_ID, competitionId)
-                .set(season.C_NAME, "2025/26")
-                .set(season.C_SLUG, "2025-26")
-                .set(season.C_START_DATE, java.time.LocalDate.of(2025, 8, 1))
-                .set(season.C_END_DATE, java.time.LocalDate.of(2026, 5, 31))
+                .set(season.C_NAME, TestCalendar.SEASON_NAME)
+                .set(season.C_SLUG, TestCalendar.SEASON_SLUG)
+                .set(season.C_START_DATE, TestCalendar.SEASON_START)
+                .set(season.C_END_DATE, TestCalendar.SEASON_END)
                 .set(season.C_MAX_ROUNDS, 38)
                 .set(season.C_CURRENT_MATCH_DAY, 0)
                 .onConflictDoNothing()

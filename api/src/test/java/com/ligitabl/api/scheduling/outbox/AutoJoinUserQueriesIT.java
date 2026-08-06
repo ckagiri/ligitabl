@@ -13,6 +13,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
+import com.ligitabl.api.testsupport.TestCalendar;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.TestIds;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
@@ -63,8 +64,8 @@ class AutoJoinUserQueriesIT extends AbstractPostgresIT {
         seasonId = UUID.randomUUID();
         otherSeasonId = UUID.randomUUID();
         insertCompetition(competitionId);
-        insertSeason(seasonId, competitionId, "2024-25", PRE_SEASON_OPENED);
-        insertSeason(otherSeasonId, competitionId, "2023-24", PRE_SEASON_OPENED.minusYears(1));
+        insertSeason(seasonId, competitionId, TestCalendar.SEASON_SLUG, PRE_SEASON_OPENED);
+        insertSeason(otherSeasonId, competitionId, TestCalendar.PREVIOUS_SEASON_SLUG, PRE_SEASON_OPENED.minusYears(1));
 
         OffsetDateTime now = OffsetDateTime.now();
 
@@ -180,8 +181,8 @@ class AutoJoinUserQueriesIT extends AbstractPostgresIT {
                 competitionId,
                 slug,
                 slug,
-                LocalDate.of(2024, 8, 1),
-                LocalDate.of(2025, 5, 31),
+                TestCalendar.SEASON_START,
+                TestCalendar.SEASON_END,
                 38,
                 2,
                 "[{\"code\":\"MCI\",\"position\":1},{\"code\":\"ARS\",\"position\":2}]",

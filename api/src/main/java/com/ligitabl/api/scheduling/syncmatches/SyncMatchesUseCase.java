@@ -1,6 +1,7 @@
 package com.ligitabl.api.scheduling.syncmatches;
 
 import java.time.Duration;
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -41,6 +42,14 @@ public class SyncMatchesUseCase {
     private final CompetitionDefaults competitionDefaults;
     private final LiveMatchTracker liveMatchTracker;
     private final MatchUpdateHelper matchUpdateHelper;
+
+    /**
+     * The sync window is a calendar date, so it needs a zone: this resolves it in UTC, matching the
+     * application's {@code Clock.systemUTC()} bean and the timestamps the upstream API returns.
+     * Previously a bare {@code LocalDate.now()} in the JVM default zone — identical on a UTC
+     * deployment, but unfreezable in a test and a day out on a developer machine east of UTC.
+     */
+    private final Clock clock;
 
     @Value("${football-data.competition.code}")
     private String competitionCode;
@@ -181,7 +190,7 @@ public class SyncMatchesUseCase {
      * Fetch via GET /matches?date=today
      */
     private Either<SyncMatchesError, FetchedMatchData> fetchTodayMatches(RoundContext context) {
-        var today = LocalDate.now();
+        var today = LocalDate.now(clock);
 
         return footballDataClient
                 .getMatchesForDate(competitionCode, today)
@@ -196,8 +205,8 @@ public class SyncMatchesUseCase {
      * covering matches that finished past midnight or were processed a day late.
      */
     private Either<SyncMatchesError, FetchedMatchData> fetchYesterdayAndTodayMatches(RoundContext context) {
-        var yesterday = LocalDate.now().minusDays(2);
-        var today = LocalDate.now().plusDays(1);
+        var yesterday = LocalDate.now(clock).minusDays(2);
+        var today = LocalDate.now(clock).plusDays(1);
 
         return footballDataClient
                 .getMatchesInDateRange(competitionCode, yesterday, today)
@@ -209,7 +218,7 @@ public class SyncMatchesUseCase {
      * Fetch via GET /matches?dateFrom=today&dateTo=tomorrow
      */
     private Either<SyncMatchesError, FetchedMatchData> fetchUpcomingMatches(RoundContext context) {
-        var today = LocalDate.now();
+        var today = LocalDate.now(clock);
         var dayAfterTomorrow = today.plusDays(2);
 
         return footballDataClient
