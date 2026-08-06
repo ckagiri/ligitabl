@@ -3,7 +3,6 @@ package com.ligitabl.api.rest.season.admin;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -14,6 +13,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Season;
@@ -37,7 +37,7 @@ class UpdateSeasonDatesUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new UpdateSeasonDatesUseCase(seasonRepo, competitionRepo);
+        useCase = new UpdateSeasonDatesUseCase(seasonRepo, competitionRepo, TestClock.FIXED);
         competitionId = UUID.randomUUID();
         outgoingId = UUID.randomUUID();
         upcomingId = UUID.randomUUID();
@@ -176,8 +176,8 @@ class UpdateSeasonDatesUseCaseTest {
                 .competitionId(competitionId)
                 .name("2026/27")
                 .slug(SeasonSlug.of("2026-27"))
-                .startDate(LocalDate.now().minusMonths(1))
-                .endDate(LocalDate.now().plusMonths(9))
+                .startDate(TestClock.TODAY.minusMonths(1))
+                .endDate(TestClock.TODAY.plusMonths(9))
                 .completed(false)
                 .initialRankings(java.util.List.of())
                 .build();
@@ -196,8 +196,8 @@ class UpdateSeasonDatesUseCaseTest {
                 .competitionId(competitionId)
                 .name("2027/28")
                 .slug(SeasonSlug.of("2027-28"))
-                .startDate(LocalDate.now().plusMonths(1))
-                .endDate(LocalDate.now().plusMonths(10))
+                .startDate(TestClock.TODAY.plusMonths(1))
+                .endDate(TestClock.TODAY.plusMonths(10))
                 .completed(false)
                 .initialRankings(java.util.List.of())
                 .build();
@@ -215,8 +215,8 @@ class UpdateSeasonDatesUseCaseTest {
                 .competitionId(competitionId)
                 .name("2026/27")
                 .slug(SeasonSlug.of("2026-27"))
-                .startDate(LocalDate.now().minusMonths(1))
-                .endDate(LocalDate.now().plusMonths(9))
+                .startDate(TestClock.TODAY.minusMonths(1))
+                .endDate(TestClock.TODAY.plusMonths(9))
                 .completed(false)
                 .preSeasonOpensAt(OffsetDateTime.now().minusDays(5))
                 .predictionsOpenAt(OffsetDateTime.now().plusDays(5))

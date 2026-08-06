@@ -1,5 +1,7 @@
 package com.ligitabl.api.rest.prediction.whatif;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -40,6 +42,7 @@ public class ComputeWhatIfUseCase {
     private final TeamRepo teamRepo;
     private final RoundSupport roundSupport;
     private final StandingsCalculatorService standingsCalculatorService;
+    private final Clock clock;
 
     private record Ctx(Season season, Round round, boolean roundOpen, List<Match> roundMatches) {}
 
@@ -66,7 +69,8 @@ public class ComputeWhatIfUseCase {
                     if (season.isCompleted()) {
                         return Either.left(new WhatIfError.SeasonCompleted());
                     }
-                    if (!season.isInPlay() && !season.isPreSeason()) {
+                    Instant now = clock.instant();
+                    if (!season.isInPlay(now) && !season.isPreSeason(now)) {
                         return Either.left(new WhatIfError.SeasonNotOpen(season.getId()));
                     }
                     if (season.isInSetupMode()) {

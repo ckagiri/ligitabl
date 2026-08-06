@@ -3,7 +3,6 @@ package com.ligitabl.api.rest.season.admin;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -17,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.notification.outbox.OutboxEventTypes;
 import com.ligitabl.api.notification.outbox.SeasonCompletedPayload;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
@@ -52,7 +52,7 @@ class CompleteSeasonUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new CompleteSeasonUseCase(
-                seasonRepo, roundRepo, matchRepo, outboxRepo, objectMapper, competitionDefaults);
+                seasonRepo, roundRepo, matchRepo, outboxRepo, objectMapper, competitionDefaults, TestClock.FIXED);
         seasonId = UUID.randomUUID();
         roundId = UUID.randomUUID();
     }
@@ -152,7 +152,8 @@ class CompleteSeasonUseCaseTest {
         assertThat(event.getIdempotencyKey())
                 .as("keyed on the season, so a re-run cannot double-announce")
                 .isEqualTo("season-completed:" + seasonId);
-        assertThat(objectMapper.readValue(event.getPayload(), SeasonCompletedPayload.class)
+        assertThat(objectMapper
+                        .readValue(event.getPayload(), SeasonCompletedPayload.class)
                         .seasonId())
                 .isEqualTo(seasonId);
     }
@@ -231,8 +232,8 @@ class CompleteSeasonUseCaseTest {
                 .competitionId(UUID.randomUUID())
                 .name("2026/27")
                 .slug(SeasonSlug.of("2026-27"))
-                .startDate(LocalDate.now().minusMonths(9))
-                .endDate(LocalDate.now().plusMonths(1))
+                .startDate(TestClock.TODAY.minusMonths(9))
+                .endDate(TestClock.TODAY.plusMonths(1))
                 .maxRounds(3)
                 .completed(false)
                 .currentRoundId(roundId)
@@ -259,8 +260,8 @@ class CompleteSeasonUseCaseTest {
                 .competitionId(UUID.randomUUID())
                 .name("2026/27")
                 .slug(SeasonSlug.of("2026-27"))
-                .startDate(LocalDate.now().minusMonths(9))
-                .endDate(LocalDate.now().minusDays(1))
+                .startDate(TestClock.TODAY.minusMonths(9))
+                .endDate(TestClock.TODAY.minusDays(1))
                 .maxRounds(maxRounds)
                 .completed(false)
                 .currentRoundId(roundId)

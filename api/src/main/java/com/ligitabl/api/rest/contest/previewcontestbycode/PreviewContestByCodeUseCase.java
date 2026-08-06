@@ -1,5 +1,7 @@
 package com.ligitabl.api.rest.contest.previewcontestbycode;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
@@ -33,6 +35,7 @@ public class PreviewContestByCodeUseCase {
     private final SeasonRepo seasonRepo;
     private final CompetitionRepo competitionRepo;
     private final MatchRepo matchRepo;
+    private final Clock clock;
 
     public Either<PreviewContestByCodeError, ContestPreviewDto> execute(String joinCode) {
         var contest = contestRepo.findByJoinCode(joinCode).orElse(null);
@@ -45,7 +48,8 @@ public class PreviewContestByCodeUseCase {
 
         // A closed contest, or one whose season is neither in play nor in pre-season (off-season,
         // inactive, or any past season), is treated the same as closed — no live preview to join.
-        if (!contest.isOpen() || (!season.isInPlay() && !season.isPreSeason()))
+        Instant now = clock.instant();
+        if (!contest.isOpen() || (!season.isInPlay(now) && !season.isPreSeason(now)))
             return Either.left(new PreviewContestByCodeError.ContestClosed());
 
         Competition competition =

@@ -28,11 +28,12 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.shared.PredictionAccessMode;
 import com.ligitabl.api.rest.prediction.shared.RankingSource;
 import com.ligitabl.api.rest.prediction.whatif.ComputeWhatIfUseCase;
-import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.rest.prediction.whatif.SaveWhatIfPredictionUseCase;
 import com.ligitabl.api.rest.prediction.whatif.WhatIfError;
 import com.ligitabl.api.rest.prediction.whatif.WhatIfResult;
+import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.web.predictions.userpredictions.GetUserPredictionUseCase;
 import com.ligitabl.api.web.predictions.userpredictions.UserPredictionViewData;
 import com.ligitabl.model.domain.Round;
@@ -107,7 +108,8 @@ class WhatIfControllerTest {
                 roundSupport,
                 competitionDefaults,
                 new ObjectMapper(),
-                currentUserPublicId);
+                currentUserPublicId,
+                TestClock.FIXED);
     }
 
     @AfterEach

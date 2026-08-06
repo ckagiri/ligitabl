@@ -92,9 +92,7 @@ class OutboxRelayJobTest {
         when(outboxRepo.claimBatchForProcessing(25)).thenReturn(List.of(poisoned, last));
 
         doThrow(new DuplicateKeyException("aborted")).when(processor).processOne(poisoned);
-        doThrow(new IllegalStateException("connection gone"))
-                .when(processor)
-                .recordFailure(eq(poisoned), any());
+        doThrow(new IllegalStateException("connection gone")).when(processor).recordFailure(eq(poisoned), any());
         doNothing().when(processor).processOne(last);
 
         job.relay();

@@ -1,36 +1,38 @@
 package com.ligitabl.api.rest.prediction.getprediction;
 
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_END;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_NAME;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_SLUG;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_START;
+import static com.ligitabl.api.testsupport.TestIds.randomPublicId;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 import java.time.Clock;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.shared.RankingSource;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
+import com.ligitabl.api.testsupport.FixedClockConfig;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.model.domain.TeamRank;
 
 @SpringBootTest
+@Import(FixedClockConfig.class)
 @DisplayName("GetPredictionUseCase Integration Tests")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class GetPredictionUseCaseIT extends AbstractPostgresIT {
-
-    private static final String SEASON_SLUG = "2024-25";
 
     private static final List<TeamRank> INITIAL_RANKINGS =
             List.of(new TeamRank("MCI", 1), new TeamRank("ARS", 2), new TeamRank("LIV", 3), new TeamRank("AVL", 4));
@@ -44,7 +46,7 @@ class GetPredictionUseCaseIT extends AbstractPostgresIT {
     @Autowired
     JdbcTemplate jdbcTemplate;
 
-    @MockBean
+    @Autowired
     Clock clock;
 
     private UUID competitionId;
@@ -65,11 +67,6 @@ class GetPredictionUseCaseIT extends AbstractPostgresIT {
         insertRound(roundId, seasonId, 1);
         insertTeams();
         insertUser(userId, "prediction-user-" + userId + "@example.com");
-    }
-
-    @BeforeEach
-    void setupMocks() {
-        when(clock.instant()).thenReturn(java.time.Instant.parse("2024-12-22T10:00:00Z"));
     }
 
     @AfterAll
@@ -112,10 +109,10 @@ class GetPredictionUseCaseIT extends AbstractPostgresIT {
                 seasonId,
                 1,
                 competitionId,
-                "2024/25",
+                SEASON_NAME,
                 SEASON_SLUG,
-                LocalDate.of(2024, 8, 1),
-                LocalDate.of(2025, 5, 31),
+                SEASON_START,
+                SEASON_END,
                 22,
                 INITIAL_RANKINGS.size(),
                 initialRankingsJson(),
@@ -188,16 +185,6 @@ class GetPredictionUseCaseIT extends AbstractPostgresIT {
                     .append("}");
         }
         sb.append("]");
-        return sb.toString();
-    }
-
-    private static String randomPublicId() {
-        String alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";
-        StringBuilder sb = new StringBuilder(10);
-        for (int i = 0; i < 10; i++) {
-            int idx = java.util.concurrent.ThreadLocalRandom.current().nextInt(alphabet.length());
-            sb.append(alphabet.charAt(idx));
-        }
         return sb.toString();
     }
 }

@@ -239,9 +239,7 @@ class OutboxFailureIsolationIT extends AbstractPostgresIT {
 
         assertThat(stored("season-in-play:retry").getStatus()).isEqualTo(OutboxEvent.Status.SENT);
         assertThat(jdbc.queryForObject(
-                        "SELECT c_at_round_number FROM t_season_prediction WHERE fk_user_id = ?",
-                        Integer.class,
-                        user))
+                        "SELECT c_at_round_number FROM t_season_prediction WHERE fk_user_id = ?", Integer.class, user))
                 .isZero();
     }
 }

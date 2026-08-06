@@ -60,13 +60,7 @@ class ThymeleafEmailTemplateRendererTest {
                         Map.of("verificationUrl", "http://x", "expiryHours", 48, "recipientEmail", "a@b.c"),
                 EmailCommand.EmailType.ROUND_RESULTS, roundResultsData(),
                 EmailCommand.EmailType.JOIN_REMINDER,
-                        Map.of(
-                                "stage",
-                                1,
-                                "myTableUrl",
-                                "http://x/my-table",
-                                "leaderboardUrl",
-                                "http://x/leaderboard"),
+                        Map.of("stage", 1, "myTableUrl", "http://x/my-table", "leaderboardUrl", "http://x/leaderboard"),
                 EmailCommand.EmailType.SEASON_WELCOME, seasonWelcomeData(),
                 EmailCommand.EmailType.SEGMENT_RESULTS, segmentResultsData());
     }
@@ -153,7 +147,8 @@ class ThymeleafEmailTemplateRendererTest {
     @Test
     void everyTemplatesTextPartIsProseNotMarkup() {
         for (var entry : allTemplateData().entrySet()) {
-            String text = renderer.render(entry.getKey(), entry.getValue()).get().textBody();
+            String text =
+                    renderer.render(entry.getKey(), entry.getValue()).get().textBody();
 
             assertThat(text).as("%s text part", entry.getKey()).isNotBlank();
             assertThat(text)
@@ -284,8 +279,7 @@ class ThymeleafEmailTemplateRendererTest {
 
     @Test
     void segmentResultsSprintOnlyStatesTheSegmentAndTheField() {
-        var content = renderer
-                .render(EmailCommand.EmailType.SEGMENT_RESULTS, segmentData(List.of(sprint(2))))
+        var content = renderer.render(EmailCommand.EmailType.SEGMENT_RESULTS, segmentData(List.of(sprint(2))))
                 .get();
 
         assertThat(content.subject()).isEqualTo("Sprint 2 wrapped — you finished 2nd");
@@ -310,8 +304,8 @@ class ThymeleafEmailTemplateRendererTest {
     /** The standout case: one email covering both, with the double called out as one achievement. */
     @Test
     void segmentResultsDoubleShowsBothBlocksAndTheCallout() {
-        var content = renderer
-                .render(EmailCommand.EmailType.SEGMENT_RESULTS, segmentData(List.of(sprint(1), quarter(2))))
+        var content = renderer.render(
+                        EmailCommand.EmailType.SEGMENT_RESULTS, segmentData(List.of(sprint(1), quarter(2))))
                 .get();
 
         assertThat(content.subject())
@@ -330,8 +324,7 @@ class ThymeleafEmailTemplateRendererTest {
 
     @Test
     void segmentResultsSeasonFinaleUsesFinaleCopy() {
-        var content = renderer
-                .render(EmailCommand.EmailType.SEGMENT_RESULTS, segmentData(List.of(season(1))))
+        var content = renderer.render(EmailCommand.EmailType.SEGMENT_RESULTS, segmentData(List.of(season(1))))
                 .get();
 
         assertThat(content.subject()).isEqualTo("You won the season 🏆");
@@ -367,14 +360,19 @@ class ThymeleafEmailTemplateRendererTest {
     }
 
     /**
-     * The plain-text alternative currently inherits the {@code <style>} block (see task 81
-     * follow-ups), so this asserts the one thing that <em>is</em> in this template's control:
-     * entities must not reach the reader as literal {@code &middot;}.
+     * Names the specific entities this template uses, so a regression points straight at the copy
+     * rather than at the renderer.
+     *
+     * <p>The general property is covered for every template by
+     * {@link #everyTemplatesTextPartIsProseNotMarkup}, which asserts no {@code &entity;} survives
+     * anywhere — so this case is strictly subsumed by it. Kept because a failure here reads as
+     * "somebody put {@code &middot;} back in segment-results.html", which is the likelier mistake
+     * and the more useful message; the general test only says the property broke somewhere.
      */
     @Test
     void segmentResultsTextBodyCarriesNoRawEntities() {
-        var content = renderer
-                .render(EmailCommand.EmailType.SEGMENT_RESULTS, segmentData(List.of(sprint(1), quarter(2))))
+        var content = renderer.render(
+                        EmailCommand.EmailType.SEGMENT_RESULTS, segmentData(List.of(sprint(1), quarter(2))))
                 .get();
 
         assertThat(content.textBody())

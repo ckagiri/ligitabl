@@ -5,7 +5,6 @@ import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +23,7 @@ import org.mockito.quality.Strictness;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundStatus;
@@ -69,9 +69,10 @@ class SeasonInPlayEnqueuerTest {
     @BeforeEach
     void setup() {
         enqueuer = new SeasonInPlayEnqueuer(
-                seasonRepo, roundRepo, roundSupport, competitionDefaults, outboxRepo, objectMapper);
+                seasonRepo, roundRepo, roundSupport, competitionDefaults, outboxRepo, objectMapper, TestClock.FIXED);
 
-        when(seasonRepo.findActiveSeason("pl")).thenReturn(Optional.of(inPlaySeason().build()));
+        when(seasonRepo.findActiveSeason("pl"))
+                .thenReturn(Optional.of(inPlaySeason().build()));
         when(roundRepo.findById(ROUND_ID)).thenReturn(Optional.of(round(1, false)));
         when(roundSupport.resolveJoinEligibilityStatus(any())).thenReturn(RoundStatus.OPEN);
         when(outboxRepo.save(any())).thenReturn(true);
@@ -84,8 +85,8 @@ class SeasonInPlayEnqueuerTest {
                 .id(SEASON_ID)
                 .mainContestId(UUID.randomUUID())
                 .currentRoundId(ROUND_ID)
-                .startDate(LocalDate.now().minusDays(1))
-                .endDate(LocalDate.now().plusMonths(9))
+                .startDate(TestClock.TODAY.minusDays(1))
+                .endDate(TestClock.TODAY.plusMonths(9))
                 .completed(false)
                 .preSeasonOpensAt(now.minusDays(30))
                 .predictionsOpenAt(now.minusHours(1))
@@ -144,7 +145,7 @@ class SeasonInPlayEnqueuerTest {
     void skips_whenSeasonStillInPreSeason() {
         activeSeason(inPlaySeason()
                 .predictionsOpenAt(OffsetDateTime.now().plusDays(3))
-                .startDate(LocalDate.now().plusDays(3))
+                .startDate(TestClock.TODAY.plusDays(3))
                 .build());
 
         enqueuer.enqueueIfSeasonInPlay();

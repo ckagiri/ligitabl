@@ -1,5 +1,7 @@
 package com.ligitabl.api.domain.season;
 
+import static com.ligitabl.api.domain.season.SeasonTestFixtures.NOW;
+import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.EXACTLY_NOW;
 import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.FUTURE;
 import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.NULL;
 import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.PAST;
@@ -23,7 +25,7 @@ class Season_getSeasonStateTest {
     void getSeasonState(
             boolean completed, RelativeDate preSeasonOpensAt, RelativeDate predictionsOpenAt, SeasonState expected) {
         Season season = SeasonTestFixtures.season(completed, preSeasonOpensAt.resolve(), predictionsOpenAt.resolve());
-        assertThat(season.getSeasonState()).isEqualTo(expected);
+        assertThat(season.getSeasonState(NOW)).isEqualTo(expected);
     }
 
     private static Stream<Arguments> truthTable() {
@@ -64,9 +66,25 @@ class Season_getSeasonStateTest {
                 false,
                 FUTURE.resolve(),
                 FUTURE.resolve(),
-                java.time.LocalDate.now().minusDays(1),
-                java.time.LocalDate.now().plusMonths(9));
+                SeasonTestFixtures.daysFromToday(-1),
+                SeasonTestFixtures.daysFromToday(270));
 
-        assertThat(season.getSeasonState()).isEqualTo(SeasonState.INACTIVE);
+        assertThat(season.getSeasonState(NOW)).isEqualTo(SeasonState.INACTIVE);
+    }
+
+    /**
+     * The windows are compared with {@code isAfter}, which is strict, so a season whose
+     * predictionsOpenAt is *exactly* the evaluation instant has not opened yet. Untestable before
+     * the predicates took an explicit instant — with a wall clock there was no way to name "now"
+     * and have the assertion still hold by the time it ran.
+     */
+    @Test
+    void getSeasonState_treatsAWindowOpeningAtThisExactInstantAsNotYetOpen() {
+        Season atTheBoundary = SeasonTestFixtures.season(false, PAST.resolve(), EXACTLY_NOW.resolve());
+        assertThat(atTheBoundary.getSeasonState(NOW)).isEqualTo(SeasonState.PRE_SEASON);
+
+        // One second later the same season is in play, which is what pins the strictness as
+        // deliberate rather than an off-by-one nobody chose.
+        assertThat(atTheBoundary.getSeasonState(NOW.plusSeconds(1))).isEqualTo(SeasonState.IN_PLAY);
     }
 }

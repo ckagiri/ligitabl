@@ -1,5 +1,6 @@
 package com.ligitabl.api.domain.season;
 
+import static com.ligitabl.api.domain.season.SeasonTestFixtures.NOW;
 import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.FUTURE;
 import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.NULL;
 import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.PAST;
@@ -20,7 +21,7 @@ class Season_isInPlayTest {
     @MethodSource("cases")
     void isInPlay(boolean completed, RelativeDate predictionsOpenAt, boolean expected) {
         Season season = SeasonTestFixtures.season(completed, null, predictionsOpenAt.resolve());
-        assertThat(season.isInPlay()).isEqualTo(expected);
+        assertThat(season.isInPlay(NOW)).isEqualTo(expected);
     }
 
     private static Stream<Arguments> cases() {

@@ -1,5 +1,8 @@
 package com.ligitabl.api.rest.contest.joinprivatecontest;
 
+import java.time.Clock;
+import java.time.Instant;
+
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +34,7 @@ public class JoinPrivateContestUseCase {
     private final RoundRepo roundRepo;
     private final CompetitionRepo competitionRepo;
     private final RoundSupport roundSupport;
+    private final Clock clock;
 
     @Transactional
     public Either<JoinPrivateContestError, JoinPrivateContestResult> execute(JoinPrivateContestCommand cmd) {
@@ -50,7 +54,8 @@ public class JoinPrivateContestUseCase {
 
         // Only join a season that's currently in play or in its pre-season window — not
         // off-season/inactive, and never a past season (which resolves to one of those states).
-        if (!season.isInPlay() && !season.isPreSeason()) {
+        Instant now = clock.instant();
+        if (!season.isInPlay(now) && !season.isPreSeason(now)) {
             return Either.left(new JoinPrivateContestError.SeasonNotJoinable());
         }
 

@@ -28,6 +28,7 @@ import com.ligitabl.api.client.TurnstileClient;
 import com.ligitabl.api.client.turnstile.TurnstileVerifyResponse;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
+import com.ligitabl.api.testsupport.TestCalendar;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.domain.EmailVerificationToken;
 import com.ligitabl.model.domain.User;
@@ -135,10 +136,10 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
                 .set(season.PK_ID, SEASON_ID)
                 .set(season.C_CLIENT_ID, 1)
                 .set(season.FK_COMPETITION_ID, competitionId)
-                .set(season.C_NAME, "2025/26")
-                .set(season.C_SLUG, "2025-26")
-                .set(season.C_START_DATE, java.time.LocalDate.of(2025, 8, 1))
-                .set(season.C_END_DATE, java.time.LocalDate.of(2026, 5, 31))
+                .set(season.C_NAME, TestCalendar.SEASON_NAME)
+                .set(season.C_SLUG, TestCalendar.SEASON_SLUG)
+                .set(season.C_START_DATE, TestCalendar.SEASON_START)
+                .set(season.C_END_DATE, TestCalendar.SEASON_END)
                 .set(season.C_MAX_ROUNDS, 38)
                 .set(season.C_CURRENT_MATCH_DAY, 0)
                 .onConflictDoNothing()
@@ -342,8 +343,8 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
                 .filter(c -> c.startsWith("SESSION=") || c.startsWith("JSESSIONID="))
                 .map(c -> c.split(";")[0])
                 .reduce((first, second) -> second)
-                .orElseThrow(() ->
-                        new AssertionError("login must establish a session; cookies received: " + setCookies));
+                .orElseThrow(
+                        () -> new AssertionError("login must establish a session; cookies received: " + setCookies));
 
         String settingsBody = settingsPage(new Session(sessionCookie, null));
         Matcher matcher = CSRF_PATTERN.matcher(settingsBody);

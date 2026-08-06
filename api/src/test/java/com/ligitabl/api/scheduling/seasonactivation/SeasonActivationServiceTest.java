@@ -2,7 +2,6 @@ package com.ligitabl.api.scheduling.seasonactivation;
 
 import static org.mockito.Mockito.*;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
@@ -15,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.notification.AdminNotificationService;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Season;
@@ -42,7 +42,8 @@ class SeasonActivationServiceTest {
 
     @BeforeEach
     void setUp() {
-        service = new SeasonActivationService(DEFAULTS, competitionRepo, seasonRepo, adminNotificationService);
+        service = new SeasonActivationService(
+                DEFAULTS, competitionRepo, seasonRepo, adminNotificationService, TestClock.FIXED);
         competitionId = UUID.randomUUID();
         activeSeasonId = UUID.randomUUID();
     }
@@ -99,8 +100,8 @@ class SeasonActivationServiceTest {
                 .competitionId(competitionId)
                 .name("2026/27")
                 .slug(SeasonSlug.of("2026-27"))
-                .startDate(LocalDate.now().plusMonths(1))
-                .endDate(LocalDate.now().plusMonths(10))
+                .startDate(TestClock.TODAY.plusMonths(1))
+                .endDate(TestClock.TODAY.plusMonths(10))
                 .completed(false)
                 .preSeasonOpensAt(null)
                 .initialRankings(java.util.List.of())
@@ -133,8 +134,8 @@ class SeasonActivationServiceTest {
                 .competitionId(competitionId)
                 .name("2025/26")
                 .slug(SeasonSlug.of("2025-26"))
-                .startDate(LocalDate.now().minusMonths(9))
-                .endDate(LocalDate.now().plusMonths(1))
+                .startDate(TestClock.TODAY.minusMonths(9))
+                .endDate(TestClock.TODAY.plusMonths(1))
                 .completed(false)
                 .initialRankings(java.util.List.of())
                 .build();
@@ -148,8 +149,8 @@ class SeasonActivationServiceTest {
                 .competitionId(competitionId)
                 .name("2025/26")
                 .slug(SeasonSlug.of("2025-26"))
-                .startDate(LocalDate.now().minusMonths(9))
-                .endDate(LocalDate.now().minusDays(1))
+                .startDate(TestClock.TODAY.minusMonths(9))
+                .endDate(TestClock.TODAY.minusDays(1))
                 .completed(true)
                 .preSeasonOpensAt(OffsetDateTime.now().minusDays(1))
                 .initialRankings(java.util.List.of())

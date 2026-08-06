@@ -149,13 +149,15 @@ public class CreatePredictionUseCase {
                 .findByUserAndSeason(userId, season.getId())
                 .map(existing -> resolveExistingPrediction(season, existing))
                 .orElseGet(() -> Either.right(
-                        season.isPreSeason() ? new JoinPlan.NewPreSeasonRegistration() : new JoinPlan.NewJoin()));
+                        season.isPreSeason(clock.instant())
+                                ? new JoinPlan.NewPreSeasonRegistration()
+                                : new JoinPlan.NewJoin()));
     }
 
     private Either<CreatePredictionError, JoinPlan> resolveExistingPrediction(
             Season season, SeasonPrediction existing) {
         boolean isPreSeasonRegistrationRow = existing.getAtRoundNumber() == ROUND_ZERO;
-        boolean predictionsNowOpen = season.isInPlay();
+        boolean predictionsNowOpen = season.isInPlay(clock.instant());
 
         if (isPreSeasonRegistrationRow && predictionsNowOpen) {
             return Either.right(new JoinPlan.MergePreSeasonRegistration(existing));

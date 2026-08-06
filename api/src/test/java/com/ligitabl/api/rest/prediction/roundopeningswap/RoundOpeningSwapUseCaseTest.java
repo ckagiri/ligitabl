@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 
 import java.time.Clock;
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -24,6 +25,7 @@ import com.ligitabl.api.rest.prediction.makeswap.SwapError;
 import com.ligitabl.api.rest.prediction.shared.SwapHelper;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
+import com.ligitabl.api.testsupport.TestCalendar;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -55,12 +57,18 @@ class RoundOpeningSwapUseCaseTest {
     @Mock
     private HierarchyValidator hierarchyValidator;
 
-    @Mock
-    private Clock clock;
+    /**
+     * A real frozen clock, not a mock. Every stub this replaced returned the same instant and
+     * nothing verified interactions on it, so the mock bought nothing — while costing a
+     * {@code lenient()} default, because the season-phase predicates consult the clock on paths
+     * that return before reaching the rest of the use case. A real clock cannot be unstubbed.
+     */
+    private final Instant now = TestCalendar.MID_SEASON;
+
+    private final Clock clock = Clock.fixed(now, ZoneOffset.UTC);
 
     private RoundOpeningSwapUseCase useCase;
 
-    private Instant now;
     private UUID userId;
     private UUID seasonId;
     private UUID roundId;
@@ -71,7 +79,6 @@ class RoundOpeningSwapUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        now = Instant.parse("2024-12-22T10:00:00Z");
 
         userId = UUID.randomUUID();
         seasonId = UUID.randomUUID();
@@ -89,7 +96,8 @@ class RoundOpeningSwapUseCaseTest {
                         seasonRepo,
                         roundRepo,
                         predictionRepo,
-                        new RoundSupport(roundRepo, matchRepo, hierarchyValidator, competitionDefaults)));
+                        new RoundSupport(roundRepo, matchRepo, hierarchyValidator, competitionDefaults),
+                        clock));
     }
 
     // ── Happy path ────────────────────────────────────────────────────────────
@@ -141,7 +149,6 @@ class RoundOpeningSwapUseCaseTest {
         prediction = createPredictionWithRankings(
                 List.of(TeamRank.of("ARS", 1), TeamRank.of("LIV", 2), TeamRank.of("MCI", 3), TeamRank.of("CHE", 4)));
 
-        when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
@@ -395,7 +402,6 @@ class RoundOpeningSwapUseCaseTest {
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private void stubHappyPath() {
-        when(clock.instant()).thenReturn(now);
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());

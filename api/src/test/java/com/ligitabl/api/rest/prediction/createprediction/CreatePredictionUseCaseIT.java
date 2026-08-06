@@ -1,12 +1,16 @@
 package com.ligitabl.api.rest.prediction.createprediction;
 
+import static com.ligitabl.api.testsupport.TestCalendar.MID_SEASON;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_END;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_NAME;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_SLUG;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_START;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 import java.time.Clock;
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -19,14 +23,15 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
-import com.ligitabl.api.testsupport.TestIds;
+import com.ligitabl.api.testsupport.FixedClockConfig;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
+import com.ligitabl.api.testsupport.TestIds;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.TeamRank;
@@ -34,11 +39,10 @@ import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 
 @SpringBootTest
+@Import(FixedClockConfig.class)
 @DisplayName("CreatePredictionUseCase Integration Tests")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class CreatePredictionUseCaseIT extends AbstractPostgresIT {
-
-    private static final String SEASON_SLUG = "2024-25";
 
     private static final List<TeamRank> INITIAL_RANKINGS = List.of(
             new TeamRank("MCI", 1),
@@ -69,7 +73,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
     @Autowired
     EntryRepo entryRepo;
 
-    @MockBean
+    @Autowired
     Clock clock;
 
     private UUID competitionId;
@@ -79,8 +83,6 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
     private UUID userId;
     private UUID homeTeamId;
     private UUID awayTeamId;
-
-    private Instant now;
 
     @BeforeAll
     void setupPrerequisites() {
@@ -100,10 +102,21 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         insertRound(roundId, seasonId, 1, RoundStatus.OPEN);
     }
 
+    /**
+     * The frozen {@code MID_SEASON} as an {@link OffsetDateTime}.
+     *
+     * <p>Season fixtures must be dated against the same instant the use case reads from the mocked
+     * clock. They previously used real {@code MID_SEASON()} while the clock was pinned to 2024 — harmless
+     * only while the season predicates read the wall clock themselves and so never consulted this
+     * clock. Now that they take an explicit instant, a fixture and a clock that disagree describe
+     * two different worlds.
+     */
+    private OffsetDateTime atNow() {
+        return OffsetDateTime.ofInstant(MID_SEASON, ZoneOffset.UTC);
+    }
+
     @BeforeEach
     void setupMocks() {
-        now = Instant.parse("2024-12-22T10:00:00Z");
-        when(clock.instant()).thenReturn(now);
 
         resetToRound1Open();
 
@@ -161,7 +174,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             assertThat(prediction.get().getSwaps()).hasSize(1);
             assertThat(prediction.get().getSwaps().get(0).getRound()).isEqualTo(1);
             assertThat(prediction.get().getSwaps().get(0).getChanges()).hasSize(1);
-            assertThat(prediction.get().getLastSwapAt()).isEqualTo(now);
+            assertThat(prediction.get().getLastSwapAt()).isEqualTo(MID_SEASON);
 
             assertThat(prediction.get().getAtRoundNumber()).isEqualTo(1);
 
@@ -208,7 +221,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             // first-swap bonus is already consumed (lastSwapAt is set)
             assertThat(prediction.get().getSwaps()).hasSize(1);
             assertThat(prediction.get().getSwaps().get(0).getChanges()).hasSize(2);
-            assertThat(prediction.get().getLastSwapAt()).isEqualTo(now);
+            assertThat(prediction.get().getLastSwapAt()).isEqualTo(MID_SEASON);
         }
 
         @Test
@@ -376,9 +389,10 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             // getSeasonState() only classifies PRE_SEASON when the season's own start date is still
             // in the future (an upcoming, not-yet-started season) — the class-level fixture uses a
             // fixed historical 2024/25 window for the in-play tests, so push it out here.
-            setSeasonWindow(LocalDate.now().plusDays(1), LocalDate.now().plusMonths(9));
-            setPreSeasonOpensAt(OffsetDateTime.now().minusDays(1));
-            setPredictionsOpenAt(OffsetDateTime.now().plusDays(30));
+            setSeasonWindow(
+                    atNow().toLocalDate().plusDays(1), atNow().toLocalDate().plusMonths(9));
+            setPreSeasonOpensAt(atNow().minusDays(1));
+            setPredictionsOpenAt(atNow().plusDays(30));
         }
 
         @Test
@@ -439,7 +453,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             UUID predictionId = registration.get().predictionId();
             UUID entryId = registration.get().entryId();
 
-            setPredictionsOpenAt(OffsetDateTime.now().minusMinutes(1));
+            setPredictionsOpenAt(atNow().minusMinutes(1));
 
             Either<CreatePredictionError, CreatePredictionResult> merged =
                     useCase.execute(userId, multiSwap(List.of()));
@@ -472,7 +486,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             jdbcTemplate.update(
                     "UPDATE t_season_prediction SET c_initial_rankings = NULL WHERE fk_user_id = ?", userId);
 
-            setPredictionsOpenAt(OffsetDateTime.now().minusMinutes(1));
+            setPredictionsOpenAt(atNow().minusMinutes(1));
 
             Either<CreatePredictionError, CreatePredictionResult> merged =
                     useCase.execute(userId, multiSwap(List.of()));
@@ -497,7 +511,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
             jdbcTemplate.update(
                     "UPDATE t_season_prediction SET c_initial_rankings = '[]'::jsonb WHERE fk_user_id = ?", userId);
 
-            setPredictionsOpenAt(OffsetDateTime.now().minusMinutes(1));
+            setPredictionsOpenAt(atNow().minusMinutes(1));
 
             assertThat(useCase.execute(userId, multiSwap(List.of())).getLeft())
                     .isInstanceOf(CreatePredictionError.CorruptPreSeasonRegistration.class);
@@ -554,10 +568,10 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
                 seasonId,
                 1,
                 competitionId,
-                "2024/25",
+                SEASON_NAME,
                 SEASON_SLUG,
-                LocalDate.of(2024, 8, 1),
-                LocalDate.of(2025, 5, 31),
+                SEASON_START,
+                SEASON_END,
                 22,
                 12,
                 initialRankingsJson(),
@@ -705,5 +719,4 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         sb.append("]");
         return sb.toString();
     }
-
 }

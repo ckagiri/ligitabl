@@ -1,6 +1,5 @@
 package com.ligitabl.api.web.shared.share;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -24,8 +23,7 @@ public class SharePredictionTextBuilder {
 
     public String build(
             int round, List<TeamRank> rankings, Map<String, Team> teamsByCode, String shareUrl, boolean preSeason) {
-        var sorted = TeamRank.inPositionOrder(rankings).stream()
-                .toList();
+        var sorted = TeamRank.inPositionOrder(rankings).stream().toList();
 
         StringBuilder text = new StringBuilder();
         text.append("🏆 My ")

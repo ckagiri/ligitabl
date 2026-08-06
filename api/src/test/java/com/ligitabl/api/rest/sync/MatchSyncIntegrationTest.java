@@ -7,7 +7,6 @@ import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.UUID;
@@ -33,6 +32,7 @@ import com.ligitabl.api.scheduling.syncmatches.SyncMatchesUseCase;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -117,8 +117,8 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
 
         WIREMOCK.verify(getRequestedFor(urlPathEqualTo("/matches"))
                 .withQueryParam("competitions", equalTo(COMPETITION_CODE))
-                .withQueryParam("dateFrom", equalTo(LocalDate.now().toString()))
-                .withQueryParam("dateTo", equalTo(LocalDate.now().plusDays(2).toString())));
+                .withQueryParam("dateFrom", equalTo(TestClock.TODAY.toString()))
+                .withQueryParam("dateTo", equalTo(TestClock.TODAY.plusDays(2).toString())));
     }
 
     @Test
@@ -135,9 +135,9 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
                 3,
                 getRequestedFor(urlPathEqualTo("/matches"))
                         .withQueryParam("competitions", equalTo(COMPETITION_CODE))
-                        .withQueryParam("dateFrom", equalTo(LocalDate.now().toString()))
+                        .withQueryParam("dateFrom", equalTo(TestClock.TODAY.toString()))
                         .withQueryParam(
-                                "dateTo", equalTo(LocalDate.now().plusDays(2).toString())));
+                                "dateTo", equalTo(TestClock.TODAY.plusDays(2).toString())));
     }
 
     @Test
@@ -353,8 +353,8 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
                     competitionId,
                     "2024/25",
                     "2024-25",
-                    java.sql.Date.valueOf(LocalDate.now().minusDays(10)),
-                    java.sql.Date.valueOf(LocalDate.now().plusDays(200)),
+                    java.sql.Date.valueOf(TestClock.TODAY.minusDays(10)),
+                    java.sql.Date.valueOf(TestClock.TODAY.plusDays(200)),
                     38,
                     roundId,
                     1,

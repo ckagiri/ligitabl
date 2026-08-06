@@ -1,7 +1,9 @@
 package com.ligitabl.model.domain;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.UUID;
 
@@ -92,17 +94,32 @@ public class Season extends AbstractModel<UUID> {
         this.detachedContestId = null;
     }
 
-    public boolean isPreSeasonOpen() {
-        return preSeasonOpensAt != null && OffsetDateTime.now().isAfter(preSeasonOpensAt);
+    /**
+     * The zone the {@code startDate}/{@code endDate} comparisons in {@link #getSeasonState(Instant)}
+     * are evaluated in.
+     *
+     * <p>These are {@link LocalDate} fields, so an {@link Instant} alone cannot be compared against
+     * them — a calendar date has to be derived first, and that needs a zone. UTC is chosen to match
+     * the application's {@code Clock} bean ({@code Clock.systemUTC()}), so a caller passing
+     * {@code clock.instant()} gets the date the rest of the system agrees on.
+     *
+     * <p>This is a deliberate change from the wall-clock versions these methods replaced, which used
+     * {@code LocalDate.now()} and therefore the JVM's default zone. On a UTC JVM the two are
+     * identical; elsewhere they disagree for the part of the day where the local date and the UTC
+     * date differ.
+     */
+    private static final ZoneOffset SEASON_DATE_ZONE = ZoneOffset.UTC;
+
+    public boolean isPreSeasonOpen(Instant at) {
+        return preSeasonOpensAt != null && at.isAfter(preSeasonOpensAt.toInstant());
     }
 
-    public SeasonState getSeasonState() {
-        boolean pastActualEnd = completed && endDate != null && LocalDate.now().isAfter(endDate);
-        boolean beforeActualStart =
-                !completed && startDate != null && LocalDate.now().isBefore(startDate);
-        boolean preSeasonOpen = preSeasonOpensAt != null && OffsetDateTime.now().isAfter(preSeasonOpensAt);
-        boolean predictionsOpen =
-                predictionsOpenAt == null || OffsetDateTime.now().isAfter(predictionsOpenAt);
+    public SeasonState getSeasonState(Instant at) {
+        LocalDate today = LocalDate.ofInstant(at, SEASON_DATE_ZONE);
+        boolean pastActualEnd = completed && endDate != null && today.isAfter(endDate);
+        boolean beforeActualStart = !completed && startDate != null && today.isBefore(startDate);
+        boolean preSeasonOpen = isPreSeasonOpen(at);
+        boolean predictionsOpen = predictionsOpenAt == null || at.isAfter(predictionsOpenAt.toInstant());
 
         if ((!preSeasonOpen && pastActualEnd) || (!predictionsOpen && !preSeasonOpen && beforeActualStart)) {
             return SeasonState.OFF_SEASON;
@@ -119,23 +136,23 @@ public class Season extends AbstractModel<UUID> {
         return SeasonState.INACTIVE;
     }
 
-    public boolean isOffSeason() {
-        return getSeasonState() == SeasonState.OFF_SEASON;
+    public boolean isOffSeason(Instant at) {
+        return getSeasonState(at) == SeasonState.OFF_SEASON;
     }
 
-    public boolean isInPlay() {
-        return getSeasonState() == SeasonState.IN_PLAY;
+    public boolean isInPlay(Instant at) {
+        return getSeasonState(at) == SeasonState.IN_PLAY;
     }
 
-    public boolean isPreSeason() {
-        return getSeasonState() == SeasonState.PRE_SEASON;
+    public boolean isPreSeason(Instant at) {
+        return getSeasonState(at) == SeasonState.PRE_SEASON;
     }
 
     /**
      * True when none of the other three phases apply — e.g. a completed season whose
      * preSeasonOpensAt has passed but whose successor hasn't been promoted/configured yet.
      */
-    public boolean isInactive() {
-        return getSeasonState() == SeasonState.INACTIVE;
+    public boolean isInactive(Instant at) {
+        return getSeasonState(at) == SeasonState.INACTIVE;
     }
 }

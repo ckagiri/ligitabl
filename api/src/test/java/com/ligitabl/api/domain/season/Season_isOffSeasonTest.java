@@ -1,5 +1,6 @@
 package com.ligitabl.api.domain.season;
 
+import static com.ligitabl.api.domain.season.SeasonTestFixtures.NOW;
 import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.FUTURE;
 import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.NULL;
 import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.PAST;
@@ -22,7 +23,7 @@ class Season_isOffSeasonTest {
     @MethodSource("truthTable")
     void isOffSeason(boolean completed, RelativeDate preSeasonOpensAt, boolean expected) {
         Season season = SeasonTestFixtures.season(completed, preSeasonOpensAt.resolve(), null);
-        assertThat(season.isOffSeason()).isEqualTo(expected);
+        assertThat(season.isOffSeason(NOW)).isEqualTo(expected);
     }
 
     private static Stream<Arguments> truthTable() {
@@ -43,14 +44,14 @@ class Season_isOffSeasonTest {
     void neverOverlapsWithIsPreSeason(
             boolean completed, RelativeDate preSeasonOpensAt, RelativeDate predictionsOpenAt) {
         Season season = SeasonTestFixtures.season(completed, preSeasonOpensAt.resolve(), predictionsOpenAt.resolve());
-        assertThat(season.isOffSeason() && season.isPreSeason()).isFalse();
+        assertThat(season.isOffSeason(NOW) && season.isPreSeason(NOW)).isFalse();
     }
 
     @ParameterizedTest(name = "completed={0}, preSeasonOpensAt={1}, predictionsOpenAt={2}")
     @MethodSource("allInputCombinations")
     void neverOverlapsWithIsInPlay(boolean completed, RelativeDate preSeasonOpensAt, RelativeDate predictionsOpenAt) {
         Season season = SeasonTestFixtures.season(completed, preSeasonOpensAt.resolve(), predictionsOpenAt.resolve());
-        assertThat(season.isOffSeason() && season.isInPlay()).isFalse();
+        assertThat(season.isOffSeason(NOW) && season.isInPlay(NOW)).isFalse();
     }
 
     private static Stream<Arguments> allInputCombinations() {

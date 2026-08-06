@@ -1,11 +1,14 @@
 package com.ligitabl.api.rest.prediction.roundopeningswap;
 
+import static com.ligitabl.api.testsupport.TestCalendar.MID_SEASON;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_END;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_NAME;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_SLUG;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_START;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.when;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestInstance;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.boot.test.mock.mockito.MockBean;
+import org.springframework.context.annotation.Import;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.ligitabl.api.config.CompetitionDefaults;
@@ -24,6 +27,7 @@ import com.ligitabl.api.rest.prediction.makeswap.SwapCommand;
 import com.ligitabl.api.rest.prediction.makeswap.SwapError;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
+import com.ligitabl.api.testsupport.FixedClockConfig;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.api.testsupport.TestIds;
 import com.ligitabl.model.domain.RoundStatus;
@@ -38,11 +42,11 @@ import com.ligitabl.model.repo.SeasonPredictionRepo;
  * {@code CreatePredictionUseCase.mergePreSeasonRegistration} sets.
  */
 @SpringBootTest
+@Import(FixedClockConfig.class)
 @DisplayName("RoundOpeningSwapUseCase Integration Tests")
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
 
-    private static final String SEASON_SLUG = "2024-25";
     private static final int CURRENT_ROUND = 10;
     /** Eligible users entered in an earlier round — the window is for a table carried *into* one. */
     private static final int ENTERED_AT_ROUND = CURRENT_ROUND - 1;
@@ -67,7 +71,7 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
     @Autowired
     SeasonPredictionRepo predictionRepo;
 
-    @MockBean
+    @Autowired
     Clock clock;
 
     private UUID userId;
@@ -75,14 +79,9 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
     private UUID seasonId;
     private UUID roundId;
 
-    private Instant now;
-
     @BeforeEach
     void setup() {
         PostgresTestDbCleaner.truncateAllDomainTables(jdbcTemplate);
-
-        now = Instant.parse("2024-12-22T10:00:00Z");
-        when(clock.instant()).thenReturn(now);
 
         userId = UUID.randomUUID();
         competitionId = UUID.randomUUID();
@@ -165,7 +164,7 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
             assertThat(saved.getOpeningCommittedRound())
                     .as("the window is spent by recording the round, not by a counter")
                     .isEqualTo(CURRENT_ROUND);
-            assertThat(saved.getLastSwapAt()).isEqualTo(now);
+            assertThat(saved.getLastSwapAt()).isEqualTo(MID_SEASON);
             assertThat(saved.getAtRoundNumber())
                     .as("the window carries the table into this round")
                     .isEqualTo(CURRENT_ROUND);
@@ -205,7 +204,7 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
         void openingWindowIgnoresTheSwapCooldown() {
             // The distinguishing behaviour vs MakeSwapUseCase, which rejects with CooldownActive.
             // The opening window is a separate allowance, not another ordinary swap.
-            savePrediction(OPENING_UNUSED, now.minusSeconds(60));
+            savePrediction(OPENING_UNUSED, MID_SEASON.minusSeconds(60));
 
             assertThat(swap("MCI", "ARS").isRight()).isTrue();
         }
@@ -338,7 +337,7 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
         void mergeConsumesTheOpeningWindow() {
             // mergePreSeasonRegistration sets both atRoundNumber and openingCommittedRound to the
             // merge round.
-            savePrediction(CURRENT_ROUND, now, CURRENT_ROUND);
+            savePrediction(CURRENT_ROUND, MID_SEASON, CURRENT_ROUND);
 
             assertThat(swap("MCI", "ARS").getLeft()).isInstanceOf(SwapError.OpeningAlreadyUsed.class);
         }
@@ -348,7 +347,7 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
         void newJoinConsumesTheOpeningWindow() {
             // createPredictionAndEntry never sets openingCommittedRound, so it stays 0 — which is
             // why that field alone cannot decide this.
-            savePrediction(OPENING_UNUSED, now, CURRENT_ROUND);
+            savePrediction(OPENING_UNUSED, MID_SEASON, CURRENT_ROUND);
 
             assertThat(swap("MCI", "ARS").getLeft()).isInstanceOf(SwapError.OpeningAlreadyUsed.class);
         }
@@ -385,10 +384,10 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
                 seasonId,
                 1,
                 competitionId,
-                "2024/25",
+                SEASON_NAME,
                 SEASON_SLUG,
-                LocalDate.of(2024, 8, 1),
-                LocalDate.of(2025, 5, 31),
+                SEASON_START,
+                SEASON_END,
                 22,
                 RANKINGS.size(),
                 initialRankingsJson(),

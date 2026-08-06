@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.rest.round.shared.RoundSupport;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 
@@ -65,7 +66,14 @@ class JoinPrivateContestUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new JoinPrivateContestUseCase(
-                contestRepo, entryRepo, predictionRepo, seasonRepo, roundRepo, competitionRepo, roundSupport);
+                contestRepo,
+                entryRepo,
+                predictionRepo,
+                seasonRepo,
+                roundRepo,
+                competitionRepo,
+                roundSupport,
+                TestClock.FIXED);
 
         userId = UUID.randomUUID();
         contestId = UUID.randomUUID();
@@ -197,7 +205,7 @@ class JoinPrivateContestUseCaseTest {
                 .maxRounds(20)
                 .totalTeams(12)
                 .completed(true)
-                .endDate(java.time.LocalDate.now().minusDays(1))
+                .endDate(TestClock.TODAY.minusDays(1))
                 .build();
         when(contestRepo.findByJoinCode(CODE)).thenReturn(Optional.of(openContest));
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(offSeason));
@@ -220,7 +228,7 @@ class JoinPrivateContestUseCaseTest {
                 .maxRounds(20)
                 .totalTeams(12)
                 .completed(false)
-                .startDate(java.time.LocalDate.now().plusDays(30))
+                .startDate(TestClock.TODAY.plusDays(30))
                 .preSeasonOpensAt(OffsetDateTime.now().minusDays(1))
                 .predictionsOpenAt(OffsetDateTime.now().plusDays(29))
                 .build();

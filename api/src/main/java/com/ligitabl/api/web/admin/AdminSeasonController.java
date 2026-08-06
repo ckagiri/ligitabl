@@ -1,9 +1,13 @@
 package com.ligitabl.api.web.admin;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -44,6 +48,7 @@ public class AdminSeasonController {
     private final RevertSeasonUseCase revertSeasonUseCase;
     private final AssignUpcomingSeasonUseCase assignUpcomingSeasonUseCase;
     private final UpdateSeasonDatesUseCase updateSeasonDatesUseCase;
+    private final Clock clock;
 
     @GetMapping("/seasons")
     public String seasonsPage(Model model) {
@@ -85,27 +90,39 @@ public class AdminSeasonController {
         model.addAttribute("formerSeason", formerSeason);
         model.addAttribute("assignableSeasons", assignableSeasons);
         model.addAttribute("allSeasons", allSeasons);
-        model.addAttribute("now", OffsetDateTime.now());
+
+        Instant at = clock.instant();
+        OffsetDateTime now = OffsetDateTime.ofInstant(at, ZoneOffset.UTC);
+        model.addAttribute("now", now);
         model.addAttribute(
                 "activeSeasonState",
-                activeSeason != null ? activeSeason.getSeasonState().name() : null);
+                activeSeason != null ? activeSeason.getSeasonState(at).name() : null);
         model.addAttribute(
                 "upcomingSeasonState",
-                upcomingSeason != null ? upcomingSeason.getSeasonState().name() : null);
+                upcomingSeason != null ? upcomingSeason.getSeasonState(at).name() : null);
         model.addAttribute(
                 "formerSeasonState",
-                formerSeason != null ? formerSeason.getSeasonState().name() : null);
+                formerSeason != null ? formerSeason.getSeasonState(at).name() : null);
+
+        // Per-row states for the seasons table. Precomputed rather than called from the template:
+        // Thymeleaf can reach a no-arg predicate on the model object, which would read the wall
+        // clock at render time and disagree with the "now" above on a date boundary.
+        model.addAttribute(
+                "seasonStatesById",
+                allSeasons.stream().collect(Collectors.toMap(Season::getId, season -> season.getSeasonState(at)
+                        .name())));
+
+        model.addAttribute("activeSeasonInPlay", activeSeason != null && activeSeason.isInPlay(at));
 
         if (activeSeason != null && activeSeason.getPreSeasonOpensAt() != null) {
-            long daysToPreSeason = ChronoUnit.DAYS.between(OffsetDateTime.now(), activeSeason.getPreSeasonOpensAt());
+            long daysToPreSeason = ChronoUnit.DAYS.between(now, activeSeason.getPreSeasonOpensAt());
             if (daysToPreSeason > 0) {
                 model.addAttribute("daysToPreSeason", daysToPreSeason);
             }
         }
 
         if (upcomingSeason != null && upcomingSeason.getPredictionsOpenAt() != null) {
-            long daysToPredictions =
-                    ChronoUnit.DAYS.between(OffsetDateTime.now(), upcomingSeason.getPredictionsOpenAt());
+            long daysToPredictions = ChronoUnit.DAYS.between(now, upcomingSeason.getPredictionsOpenAt());
             if (daysToPredictions > 0) {
                 model.addAttribute("daysToPredictions", daysToPredictions);
             }

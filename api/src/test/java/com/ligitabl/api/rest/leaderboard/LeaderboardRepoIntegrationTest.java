@@ -1,5 +1,6 @@
 package com.ligitabl.api.rest.leaderboard;
 
+import static com.ligitabl.api.testsupport.TestIds.randomPublicId;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
@@ -849,16 +850,6 @@ class LeaderboardRepoIntegrationTest extends AbstractPostgresIT {
                 .build();
 
         roundResultRepo.save(result);
-    }
-
-    private static String randomPublicId() {
-        String alphabet = "23456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz";
-        StringBuilder sb = new StringBuilder(10);
-        for (int i = 0; i < 10; i++) {
-            int idx = java.util.concurrent.ThreadLocalRandom.current().nextInt(alphabet.length());
-            sb.append(alphabet.charAt(idx));
-        }
-        return sb.toString();
     }
 
     @SuppressWarnings("unused")

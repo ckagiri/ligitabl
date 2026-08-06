@@ -244,7 +244,7 @@ public class SecurityConfig {
                         .addLogoutHandler(clearImpersonationLogoutHandler)
                         .logoutSuccessUrl("/")
                         .invalidateHttpSession(true)
-                        .deleteCookies("JSESSIONID", "remember-me")
+                        .deleteCookies("SESSION", "remember-me")
                         .permitAll())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED));
 

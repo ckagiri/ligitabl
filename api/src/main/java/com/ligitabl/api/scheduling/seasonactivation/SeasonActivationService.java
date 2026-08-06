@@ -1,5 +1,7 @@
 package com.ligitabl.api.scheduling.seasonactivation;
 
+import java.time.Clock;
+
 import org.springframework.context.annotation.Profile;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,7 @@ public class SeasonActivationService {
     private final CompetitionRepo competitionRepo;
     private final SeasonRepo seasonRepo;
     private final AdminNotificationService adminNotificationService;
+    private final Clock clock;
 
     @Scheduled(fixedDelay = 15 * 60 * 1000)
     @Transactional
@@ -50,7 +53,7 @@ public class SeasonActivationService {
             return;
         }
 
-        if (!activeSeason.isCompleted() || !activeSeason.isPreSeasonOpen()) {
+        if (!activeSeason.isCompleted() || !activeSeason.isPreSeasonOpen(clock.instant())) {
             return;
         }
 

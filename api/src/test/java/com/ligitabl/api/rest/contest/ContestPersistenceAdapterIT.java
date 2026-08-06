@@ -1,5 +1,6 @@
 package com.ligitabl.api.rest.contest;
 
+import static com.ligitabl.api.testsupport.TestIds.randomPublicId;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.LocalDate;
@@ -330,15 +331,5 @@ class ContestPersistenceAdapterIT extends AbstractPostgresIT {
                 .atRoundNumber(atRound)
                 .build();
         predictionRepo.save(pred);
-    }
-
-    private static String randomPublicId() {
-        String alpha = "23456789ABCDEFGHJKLMNPQRSTUVWXYZ";
-        StringBuilder sb = new StringBuilder(10);
-        for (int i = 0; i < 10; i++) {
-            sb.append(alpha.charAt(
-                    java.util.concurrent.ThreadLocalRandom.current().nextInt(alpha.length())));
-        }
-        return sb.toString();
     }
 }

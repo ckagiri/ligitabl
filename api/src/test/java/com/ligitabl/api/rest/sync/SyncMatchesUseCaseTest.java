@@ -34,6 +34,7 @@ import com.ligitabl.api.scheduling.syncmatches.LiveMatchTracker;
 import com.ligitabl.api.scheduling.syncmatches.SyncMatchesUseCase;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
@@ -85,7 +86,8 @@ class SyncMatchesUseCaseTest {
                 standingsService,
                 new CompetitionDefaults(COMPETITION_SLUG),
                 liveMatchTracker,
-                new MatchUpdateHelper());
+                new MatchUpdateHelper(),
+                TestClock.FIXED);
 
         var field = SyncMatchesUseCase.class.getDeclaredField("competitionCode");
         field.setAccessible(true);

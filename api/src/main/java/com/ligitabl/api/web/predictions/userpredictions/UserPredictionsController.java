@@ -1,6 +1,7 @@
 package com.ligitabl.api.web.predictions.userpredictions;
 
 import java.security.Principal;
+import java.time.Clock;
 import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
@@ -72,6 +73,7 @@ public class UserPredictionsController {
     private final WhatIfRecapBuilder whatIfRecapBuilder;
     private final SeasonPredictionSupport seasonPredictionSupport;
     private final SwapHistoryFormatter swapHistoryFormatter;
+    private final Clock clock;
 
     /**
      * GET /predictions/user/me - View current user's prediction.
@@ -433,7 +435,7 @@ public class UserPredictionsController {
         addShareData(model, userId, isHistoricalView);
 
         // Season phase state — used for off-season/pre-season UI branches
-        SeasonPhase phase = SeasonPhase.resolve(season);
+        SeasonPhase phase = SeasonPhase.resolve(season, clock.instant());
         model.addAttribute("isPreSeason", phase.isPreSeason());
         model.addAttribute("isOffSeason", phase.isOffSeason());
         model.addAttribute("isInPlay", phase.isInPlay());

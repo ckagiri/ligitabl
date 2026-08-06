@@ -30,6 +30,7 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.standings.FormService;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.NotFoundError;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.web.shared.error.ErrorViewMapper;
 import com.ligitabl.api.web.shared.fixtures.FixtureJsonMapper;
 import com.ligitabl.api.web.shared.season.SeasonPredictionSupport;
@@ -122,7 +123,8 @@ class UserPredictionsControllerTest {
                 roundRepo,
                 whatIfRecapBuilder,
                 seasonPredictionSupport,
-                new SwapHistoryFormatter());
+                new SwapHistoryFormatter(),
+                TestClock.FIXED);
 
         Season season = Season.builder()
                 .id(seasonId)

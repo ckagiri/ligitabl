@@ -1,7 +1,8 @@
 package com.ligitabl.api.web;
 
 import java.security.Principal;
-import java.util.Comparator;
+import java.time.Clock;
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +38,7 @@ public class PublicController {
     private final RoundSupport roundSupport;
     private final PreviewRankingsSupport previewRankingsSupport;
     private final TeamRepo teamRepo;
+    private final Clock clock;
 
     @GetMapping("/")
     public String home(Model model, Principal principal) {
@@ -82,17 +84,18 @@ public class PublicController {
             return;
         }
 
+        Instant now = clock.instant();
         int currentRound = roundSupport.resolveCurrentRoundPosition();
         RoundStatus currentRoundStatus = roundSupport.currentRoundStatus();
 
-        boolean showLoggedInCta = season.isInPlay()
+        boolean showLoggedInCta = season.isInPlay(now)
                 && currentRound != season.getMaxRounds()
                 && currentRoundStatus != RoundStatus.FINALIZED;
         model.addAttribute("showLoggedInCta", showLoggedInCta);
 
         // Pre-season banner — lets a guest landing during pre-season know registration is
         // open early, or when predictions open.
-        SeasonPhase phase = SeasonPhase.resolve(season);
+        SeasonPhase phase = SeasonPhase.resolve(season, now);
         model.addAttribute("isPreSeason", phase.isPreSeason());
         if (phase.daysToPredictions() != null) {
             model.addAttribute("daysToPredictions", phase.daysToPredictions());

@@ -38,8 +38,8 @@ public class SeasonWelcomeEmailEnqueuer {
         int inserted = 0;
         for (User user : recipients) {
             try {
-                String json = objectMapper.writeValueAsString(new SeasonWelcomePayload(
-                        user.getId(), user.getEmail().value()));
+                String json = objectMapper.writeValueAsString(
+                        new SeasonWelcomePayload(user.getId(), user.getEmail().value()));
                 OutboxEvent welcome = OutboxEvent.create(
                         "season-welcome:%s:%s".formatted(user.getId(), event.seasonId()),
                         OutboxEventTypes.SEASON_WELCOME,

@@ -47,6 +47,7 @@ class JoinReminderEnqueuerTest {
     /** Pre-season opened 40 days ago; predictions open in 10 days unless a test says otherwise. */
     private static final OffsetDateTime PRE_SEASON_OPENED =
             OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(40);
+
     private static final OffsetDateTime PREDICTIONS_OPEN =
             OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusDays(10);
 
@@ -190,7 +191,8 @@ class JoinReminderEnqueuerTest {
     void skipsEntirely_withinTheQuietPeriodBeforePredictionsOpen() {
         // Auto-join is hours away; "you haven't set your table" would be contradicted by the
         // welcome email the same day.
-        activeSeason(PRE_SEASON_OPENED, OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusHours(3));
+        activeSeason(
+                PRE_SEASON_OPENED, OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusHours(3));
 
         enqueuer.enqueueDueReminders();
 
@@ -200,7 +202,9 @@ class JoinReminderEnqueuerTest {
 
     @Test
     void stillRuns_justOutsideTheQuietPeriod() {
-        activeSeason(PRE_SEASON_OPENED, OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusDays(1).plusMinutes(1));
+        activeSeason(
+                PRE_SEASON_OPENED,
+                OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusDays(1).plusMinutes(1));
         when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
                 .thenReturn(List.of(userAgedDays(4)));
 
@@ -214,7 +218,8 @@ class JoinReminderEnqueuerTest {
         // The quiet period is one-sided. Once predictions are open the auto-join has already
         // emptied the eligible set, so anyone still matching is a fresh signup who does deserve
         // a nudge — silencing reminders for the rest of the season would drop them.
-        activeSeason(PRE_SEASON_OPENED, OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(3));
+        activeSeason(
+                PRE_SEASON_OPENED, OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(3));
         when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
                 .thenReturn(List.of(userAgedDays(4)));
 

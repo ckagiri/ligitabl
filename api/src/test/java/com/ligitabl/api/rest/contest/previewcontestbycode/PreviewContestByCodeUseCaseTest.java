@@ -3,7 +3,6 @@ package com.ligitabl.api.rest.contest.previewcontestbycode;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
 
-import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -15,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 
@@ -48,7 +48,8 @@ class PreviewContestByCodeUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new PreviewContestByCodeUseCase(contestRepo, entryRepo, seasonRepo, competitionRepo, matchRepo);
+        useCase = new PreviewContestByCodeUseCase(
+                contestRepo, entryRepo, seasonRepo, competitionRepo, matchRepo, TestClock.FIXED);
 
         seasonId = UUID.randomUUID();
         competitionId = UUID.randomUUID();
@@ -129,7 +130,7 @@ class PreviewContestByCodeUseCaseTest {
                 .clientId(1)
                 .maxRounds(20)
                 .completed(true)
-                .endDate(LocalDate.now().minusDays(1))
+                .endDate(TestClock.TODAY.minusDays(1))
                 .build();
         when(contestRepo.findByJoinCode(CODE)).thenReturn(Optional.of(contest));
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(offSeason));

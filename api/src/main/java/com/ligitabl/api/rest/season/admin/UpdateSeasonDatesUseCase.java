@@ -1,5 +1,7 @@
 package com.ligitabl.api.rest.season.admin;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -21,6 +23,7 @@ public class UpdateSeasonDatesUseCase {
 
     private final SeasonRepo seasonRepo;
     private final CompetitionRepo competitionRepo;
+    private final Clock clock;
 
     public sealed interface Result
             permits Result.Ok, Result.OutgoingSeasonNotFound, Result.UpcomingSeasonNotFound, Result.InvalidDateOrder {
@@ -89,11 +92,12 @@ public class UpdateSeasonDatesUseCase {
 
         // Reject if either incoming season would land on INACTIVE, before persisting anything.
         // The outgoing season is allowed to become INACTIVE — it's on its way out regardless.
-        if (upcoming != null && upcoming.getSeasonState() == SeasonState.INACTIVE) {
+        Instant now = clock.instant();
+        if (upcoming != null && upcoming.getSeasonState(now) == SeasonState.INACTIVE) {
             return new Result.InvalidDateOrder(
                     "Resulting state for upcoming season " + upcomingSeasonId + " would be INACTIVE");
         }
-        if (competitionUpcoming != null && competitionUpcoming.getSeasonState() == SeasonState.INACTIVE) {
+        if (competitionUpcoming != null && competitionUpcoming.getSeasonState(now) == SeasonState.INACTIVE) {
             return new Result.InvalidDateOrder("Resulting state for competition's upcoming season "
                     + competitionUpcoming.getId() + " would be INACTIVE");
         }

@@ -1,5 +1,6 @@
 package com.ligitabl.api.rest.season.admin;
 
+import java.time.Clock;
 import java.time.OffsetDateTime;
 
 import org.springframework.stereotype.Component;
@@ -31,6 +32,7 @@ public class CompleteSeasonUseCase {
     private final OutboxRepo outboxRepo;
     private final ObjectMapper objectMapper;
     private final CompetitionDefaults competitionDefaults;
+    private final Clock clock;
 
     public sealed interface Result permits Result.Ok, Result.SeasonNotFound, Result.SeasonNotEligible {
         record Ok() implements Result {}
@@ -78,7 +80,7 @@ public class CompleteSeasonUseCase {
         // yet open), not INACTIVE — INACTIVE here means preSeasonOpensAt isn't configured/ordered
         // correctly. Reject rather than leave the season in limbo; the
         // admin needs to fix the season's dates first (see UpdateSeasonDatesUseCase).
-        if (season.getSeasonState() == SeasonState.INACTIVE) {
+        if (season.getSeasonState(clock.instant()) == SeasonState.INACTIVE) {
             return new Result.SeasonNotEligible(
                     "Completing this season would leave it INACTIVE — check preSeasonOpensAt/season.endDate");
         }

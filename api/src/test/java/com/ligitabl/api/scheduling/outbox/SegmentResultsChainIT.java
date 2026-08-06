@@ -220,11 +220,8 @@ class SegmentResultsChainIT extends AbstractPostgresIT {
         seasonPredictionRepo.save(prediction);
         predictionIds.put(id, prediction.getId());
 
-        entryRepo.save(Entry.builder()
-                .userId(id)
-                .contestId(contestId)
-                .joinedAtRound(1)
-                .build());
+        entryRepo.save(
+                Entry.builder().userId(id).contestId(contestId).joinedAtRound(1).build());
         return id;
     }
 
@@ -280,8 +277,7 @@ class SegmentResultsChainIT extends AbstractPostgresIT {
                 OutboxEventTypes.ROUND_ADVANCED,
                 "round",
                 String.valueOf(roundPosition),
-                objectMapper.writeValueAsString(
-                        new RoundAdvancedPayload(seasonId, roundPosition, roundPosition + 1)));
+                objectMapper.writeValueAsString(new RoundAdvancedPayload(seasonId, roundPosition, roundPosition + 1)));
         outboxRepo.save(event);
         processor.processOne(event);
     }
@@ -341,7 +337,9 @@ class SegmentResultsChainIT extends AbstractPostgresIT {
             advance(4);
 
             assertThat(segmentEvents()).hasSize(3);
-            assertThat(segmentEvents()).extracting(SegmentResultsPayload::userId).doesNotContain(dave);
+            assertThat(segmentEvents())
+                    .extracting(SegmentResultsPayload::userId)
+                    .doesNotContain(dave);
 
             SegmentResultsPayload payload = eventFor(alice);
             assertThat(payload.scopeKey()).isEqualTo("r4");
@@ -402,8 +400,8 @@ class SegmentResultsChainIT extends AbstractPostgresIT {
             assertThat(segmentEvents())
                     .as("dave + alice (one podium each) and bob + carol (both) — four people, four emails")
                     .hasSize(4);
-            assertThat(segmentEvents()).allSatisfy(p -> assertThat(p.placements())
-                    .isNotEmpty());
+            assertThat(segmentEvents())
+                    .allSatisfy(p -> assertThat(p.placements()).isNotEmpty());
         }
 
         @Test
@@ -491,8 +489,7 @@ class SegmentResultsChainIT extends AbstractPostgresIT {
             assertThat(jdbc.queryForList(
                             "SELECT c_idempotency_key FROM t_outbox_event WHERE c_event_type = ?"
                                     + " AND c_idempotency_key LIKE '%:season:%'",
-                            String.class,
-                            OutboxEventTypes.SEGMENT_RESULTS))
+                            String.class, OutboxEventTypes.SEGMENT_RESULTS))
                     .isNotEmpty();
         }
 
@@ -506,16 +503,14 @@ class SegmentResultsChainIT extends AbstractPostgresIT {
                             "SELECT count(*) FROM t_outbox_event WHERE c_event_type = ?"
                                     + " AND c_idempotency_key LIKE '%:season:%'"
                                     + " AND c_available_at < now() + interval '2 hours'",
-                            Integer.class,
-                            OutboxEventTypes.SEGMENT_RESULTS))
+                            Integer.class, OutboxEventTypes.SEGMENT_RESULTS))
                     .as("season events are due within the hour")
                     .isGreaterThan(0);
             assertThat(jdbc.queryForObject(
                             "SELECT count(*) FROM t_outbox_event WHERE c_event_type = ?"
                                     + " AND c_idempotency_key LIKE '%:r4:%'"
                                     + " AND c_available_at < now() + interval '2 hours'",
-                            Integer.class,
-                            OutboxEventTypes.SEGMENT_RESULTS))
+                            Integer.class, OutboxEventTypes.SEGMENT_RESULTS))
                     .as("round-boundary events are still a day out")
                     .isZero();
         }
@@ -557,8 +552,9 @@ class SegmentResultsChainIT extends AbstractPostgresIT {
             processor.processOne(outboxRepo
                     .findByIdempotencyKey("round-advanced:%s:%d".formatted(seasonId, 9))
                     .orElseThrow());
-            processor.processOne(
-                    outboxRepo.findByIdempotencyKey("season-completed:" + seasonId).orElseThrow());
+            processor.processOne(outboxRepo
+                    .findByIdempotencyKey("season-completed:" + seasonId)
+                    .orElseThrow());
 
             assertThat(countSegmentEvents()).isEqualTo(afterFirstPass);
         }

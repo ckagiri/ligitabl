@@ -21,6 +21,7 @@ import com.ligitabl.api.domain.StandingsCalculatorService;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -133,7 +134,8 @@ class ComputeWhatIfUseCaseTest {
                 matchRepo,
                 teamRepo,
                 new RoundSupport(roundRepo, matchRepo, hierarchyValidator, competitionDefaults),
-                new StandingsCalculatorService(teamRepo, matchRepo, seasonRepo, standingsRepo));
+                new StandingsCalculatorService(teamRepo, matchRepo, seasonRepo, standingsRepo),
+                TestClock.FIXED);
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
     }
@@ -165,7 +167,7 @@ class ComputeWhatIfUseCaseTest {
                 .thenReturn(Optional.of(seasonInPhase(
                         OffsetDateTime.now().minusDays(1), // pre-season already opened
                         OffsetDateTime.now().plusDays(1), // predictions not yet open
-                        LocalDate.now().plusDays(7)))); // season hasn't started
+                        TestClock.TODAY.plusDays(7)))); // season hasn't started
         when(matchRepo.findByRoundId(round2Id)).thenReturn(List.of(currentArsMci, currentLivChe));
         stubSuccessfulCalculation(List.of(currentArsMci, currentLivChe));
 
@@ -181,7 +183,7 @@ class ComputeWhatIfUseCaseTest {
                 .thenReturn(Optional.of(seasonInPhase(
                         null, // pre-season never opened
                         OffsetDateTime.now().plusDays(1),
-                        LocalDate.now().plusDays(7))));
+                        TestClock.TODAY.plusDays(7))));
 
         Either<WhatIfError, WhatIfResult> result = useCase.execute(new WhatIfCommand(List.of()));
 

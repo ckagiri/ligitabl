@@ -2,7 +2,6 @@ package com.ligitabl.api.scheduling.outbox;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
@@ -14,8 +13,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
-import com.ligitabl.api.testsupport.TestIds;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
+import com.ligitabl.api.testsupport.TestCalendar;
+import com.ligitabl.api.testsupport.TestIds;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.UserRepo;
 
@@ -63,15 +63,14 @@ class AutoJoinUserQueriesIT extends AbstractPostgresIT {
         seasonId = UUID.randomUUID();
         otherSeasonId = UUID.randomUUID();
         insertCompetition(competitionId);
-        insertSeason(seasonId, competitionId, "2024-25", PRE_SEASON_OPENED);
-        insertSeason(otherSeasonId, competitionId, "2023-24", PRE_SEASON_OPENED.minusYears(1));
+        insertSeason(seasonId, competitionId, TestCalendar.SEASON_SLUG, PRE_SEASON_OPENED);
+        insertSeason(otherSeasonId, competitionId, TestCalendar.PREVIOUS_SEASON_SLUG, PRE_SEASON_OPENED.minusYears(1));
 
         OffsetDateTime now = OffsetDateTime.now();
 
         activeNoPrediction = insertUser("active@x.com", now.minusDays(5), true, false);
         // Last in the app before this season existed — never saw it, never declined it.
-        seenBeforePreSeasonOpened =
-                insertUser("pre-window@x.com", now.minusDays(45), true, false, now.minusDays(45));
+        seenBeforePreSeasonOpened = insertUser("pre-window@x.com", now.minusDays(45), true, false, now.minusDays(45));
         activeOptedOutNoPrediction = insertUser("active-optout@x.com", now.minusDays(5), true, true);
         activeUnverifiedNoPrediction = insertUser("active-unverified@x.com", now.minusDays(5), false, false);
 
@@ -144,7 +143,8 @@ class AutoJoinUserQueriesIT extends AbstractPostgresIT {
                 .containsExactly(roundZeroVerified)
                 .as("opted-out and unverified are excluded; round 1 is already committed; "
                         + "another season's round-0 row is irrelevant")
-                .doesNotContain(roundZeroOptedOut, roundZeroUnverified, roundOneVerified, returningPlayerFromLastSeason);
+                .doesNotContain(
+                        roundZeroOptedOut, roundZeroUnverified, roundOneVerified, returningPlayerFromLastSeason);
     }
 
     @Test
@@ -153,7 +153,11 @@ class AutoJoinUserQueriesIT extends AbstractPostgresIT {
         // A user who registered in pre-season and then vanished still gets welcomed — they
         // have a table in play and an unspent swap allowance.
         UUID longDormantRegistrant = insertUser(
-                "r0-dormant@x.com", OffsetDateTime.now().minusDays(200), true, false, OffsetDateTime.now().minusDays(200));
+                "r0-dormant@x.com",
+                OffsetDateTime.now().minusDays(200),
+                true,
+                false,
+                OffsetDateTime.now().minusDays(200));
         insertPrediction(longDormantRegistrant, seasonId, 0);
 
         assertThat(userRepo.findMailableUsersWithPreSeasonRegistration(seasonId).stream()
@@ -180,8 +184,8 @@ class AutoJoinUserQueriesIT extends AbstractPostgresIT {
                 competitionId,
                 slug,
                 slug,
-                LocalDate.of(2024, 8, 1),
-                LocalDate.of(2025, 5, 31),
+                TestCalendar.SEASON_START,
+                TestCalendar.SEASON_END,
                 38,
                 2,
                 "[{\"code\":\"MCI\",\"position\":1},{\"code\":\"ARS\",\"position\":2}]",
@@ -200,11 +204,7 @@ class AutoJoinUserQueriesIT extends AbstractPostgresIT {
      * overwritten.
      */
     private UUID insertUser(
-            String email,
-            OffsetDateTime lastLoginAt,
-            boolean verified,
-            boolean optedOut,
-            OffsetDateTime updateDate) {
+            String email, OffsetDateTime lastLoginAt, boolean verified, boolean optedOut, OffsetDateTime updateDate) {
         UUID id = UUID.randomUUID();
         jdbc.update(
                 "INSERT INTO t_user (pk_id, c_email, c_password_hash, c_display_name, c_public_id,"

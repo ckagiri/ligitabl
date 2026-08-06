@@ -3,7 +3,6 @@ package com.ligitabl.api.web.shared.season;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -16,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.web.shared.share.SharePredictionTextBuilder;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Round;
@@ -54,7 +54,12 @@ class SeasonPredictionSupportTest {
     @BeforeEach
     void setUp() {
         support = new SeasonPredictionSupport(
-                seasonRepo, roundRepo, seasonPredictionRepo, teamRepo, new SharePredictionTextBuilder());
+                seasonRepo,
+                roundRepo,
+                seasonPredictionRepo,
+                teamRepo,
+                new SharePredictionTextBuilder(),
+                TestClock.FIXED);
         ReflectionTestUtils.setField(support, "frontendShareUrl", "https://ligipredictor.com");
 
         seasonId = UUID.randomUUID();
@@ -143,8 +148,8 @@ class SeasonPredictionSupportTest {
                 .currentRoundId(roundId)
                 .maxRounds(38)
                 .slug(SeasonSlug.of("2025-26"))
-                .startDate(LocalDate.now().minusMonths(1))
-                .endDate(LocalDate.now().plusMonths(9))
+                .startDate(TestClock.TODAY.minusMonths(1))
+                .endDate(TestClock.TODAY.plusMonths(9))
                 .completed(false)
                 .predictionsOpenAt(null) // null => open, i.e. IN_PLAY
                 .build();
@@ -156,8 +161,8 @@ class SeasonPredictionSupportTest {
                 .currentRoundId(roundId)
                 .maxRounds(38)
                 .slug(SeasonSlug.of("2025-26"))
-                .startDate(LocalDate.now().plusMonths(1))
-                .endDate(LocalDate.now().plusMonths(10))
+                .startDate(TestClock.TODAY.plusMonths(1))
+                .endDate(TestClock.TODAY.plusMonths(10))
                 .completed(false)
                 .preSeasonOpensAt(OffsetDateTime.now().minusDays(1))
                 .predictionsOpenAt(OffsetDateTime.now().plusDays(10))
