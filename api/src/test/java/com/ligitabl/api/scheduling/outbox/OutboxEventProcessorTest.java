@@ -800,7 +800,7 @@ class OutboxEventProcessorTest {
         verify(outboxRepo, never()).markSent(any());
     }
 
-    // --- SEASON_WELCOME_FANOUT / SEASON_WELCOME (task 80) ----------------------------------
+    // --- SEASON_WELCOME_FANOUT / SEASON_WELCOME -----------------------------------
 
     @Test
     void seasonWelcomeFanoutDelegatesThenMarksSent() throws Exception {

@@ -1,5 +1,6 @@
 package com.ligitabl.api.domain.season;
 
+import static com.ligitabl.api.domain.season.SeasonTestFixtures.NOW;
 import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.FUTURE;
 import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.NULL;
 import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.PAST;
@@ -22,7 +23,7 @@ class Season_isInactiveTest {
     void isInactive(
             boolean completed, RelativeDate preSeasonOpensAt, RelativeDate predictionsOpenAt, boolean expected) {
         Season season = SeasonTestFixtures.season(completed, preSeasonOpensAt.resolve(), predictionsOpenAt.resolve());
-        assertThat(season.isInactive()).isEqualTo(expected);
+        assertThat(season.isInactive(NOW)).isEqualTo(expected);
     }
 
     private static Stream<Arguments> truthTable() {
@@ -73,9 +74,9 @@ class Season_isInactiveTest {
                 false,
                 FUTURE.resolve(),
                 FUTURE.resolve(),
-                java.time.LocalDate.now().minusDays(1),
-                java.time.LocalDate.now().plusMonths(9));
+                SeasonTestFixtures.daysFromToday(-1),
+                SeasonTestFixtures.daysFromToday(270));
 
-        assertThat(season.isInactive()).isTrue();
+        assertThat(season.isInactive(NOW)).isTrue();
     }
 }

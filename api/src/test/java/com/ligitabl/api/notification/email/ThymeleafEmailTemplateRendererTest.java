@@ -367,9 +367,14 @@ class ThymeleafEmailTemplateRendererTest {
     }
 
     /**
-     * The plain-text alternative currently inherits the {@code <style>} block (see task 81
-     * follow-ups), so this asserts the one thing that <em>is</em> in this template's control:
-     * entities must not reach the reader as literal {@code &middot;}.
+     * Names the specific entities this template uses, so a regression points straight at the copy
+     * rather than at the renderer.
+     *
+     * <p>The general property is covered for every template by
+     * {@link #everyTemplatesTextPartIsProseNotMarkup}, which asserts no {@code &entity;} survives
+     * anywhere — so this case is strictly subsumed by it. Kept because a failure here reads as
+     * "somebody put {@code &middot;} back in segment-results.html", which is the likelier mistake
+     * and the more useful message; the general test only says the property broke somewhere.
      */
     @Test
     void segmentResultsTextBodyCarriesNoRawEntities() {

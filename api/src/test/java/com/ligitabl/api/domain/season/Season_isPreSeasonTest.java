@@ -1,5 +1,6 @@
 package com.ligitabl.api.domain.season;
 
+import static com.ligitabl.api.domain.season.SeasonTestFixtures.NOW;
 import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.FUTURE;
 import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.NULL;
 import static com.ligitabl.api.domain.season.SeasonTestFixtures.RelativeDate.PAST;
@@ -21,7 +22,7 @@ class Season_isPreSeasonTest {
     void isPreSeason(
             boolean completed, RelativeDate preSeasonOpensAt, RelativeDate predictionsOpenAt, boolean expected) {
         Season season = SeasonTestFixtures.season(completed, preSeasonOpensAt.resolve(), predictionsOpenAt.resolve());
-        assertThat(season.isPreSeason()).isEqualTo(expected);
+        assertThat(season.isPreSeason(NOW)).isEqualTo(expected);
     }
 
     private static Stream<Arguments> truthTable() {
