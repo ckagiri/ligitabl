@@ -299,7 +299,7 @@ public class OutboxEventProcessor {
                         c -> c);
 
         emailProvider
-                .sendSingle(payload.userEmail(), content.subject(), content.htmlBody(), EmailCommand.Priority.NORMAL)
+                .sendSingle(payload.userEmail(), content, EmailCommand.Priority.NORMAL)
                 .peekLeft(error -> {
                     throw new IllegalStateException("Email send failed: " + error);
                 });
@@ -326,7 +326,7 @@ public class OutboxEventProcessor {
                         c -> c);
 
         emailProvider
-                .sendSingle(payload.userEmail(), content.subject(), content.htmlBody(), EmailCommand.Priority.NORMAL)
+                .sendSingle(payload.userEmail(), content, EmailCommand.Priority.NORMAL)
                 .peekLeft(error -> {
                     throw new IllegalStateException("Email send failed: " + error);
                 });
@@ -353,7 +353,7 @@ public class OutboxEventProcessor {
                         c -> c);
 
         emailProvider
-                .sendSingle(payload.userEmail(), content.subject(), content.htmlBody(), EmailCommand.Priority.NORMAL)
+                .sendSingle(payload.userEmail(), content, EmailCommand.Priority.NORMAL)
                 .peekLeft(error -> {
                     throw new IllegalStateException("Email send failed: " + error);
                 });
@@ -389,7 +389,7 @@ public class OutboxEventProcessor {
                         c -> c);
 
         emailProvider
-                .sendSingle(payload.userEmail(), content.subject(), content.htmlBody(), EmailCommand.Priority.NORMAL)
+                .sendSingle(payload.userEmail(), content, EmailCommand.Priority.NORMAL)
                 .peekLeft(error -> {
                     throw new IllegalStateException("Email send failed: " + error);
                 });

@@ -50,9 +50,9 @@ class ThymeleafEmailTemplateRendererTest {
         assertThat(content.textBody()).isNotBlank();
     }
 
-    @Test
-    void rendersAllEmailTypesWithoutError() {
-        Map<EmailCommand.EmailType, Map<String, Object>> dataByType = Map.of(
+    /** Fixture data for every {@link EmailCommand.EmailType}; shared by the two whole-set tests. */
+    private static Map<EmailCommand.EmailType, Map<String, Object>> allTemplateData() {
+        return Map.of(
                 EmailCommand.EmailType.PASSWORD_RESET,
                         Map.of("resetUrl", "http://x", "expiryMinutes", 30, "recipientEmail", "a@b.c"),
                 EmailCommand.EmailType.PASSWORD_RESET_CONFIRMATION, Map.of("recipientEmail", "a@b.c"),
@@ -69,6 +69,64 @@ class ThymeleafEmailTemplateRendererTest {
                                 "http://x/leaderboard"),
                 EmailCommand.EmailType.SEASON_WELCOME, seasonWelcomeData(),
                 EmailCommand.EmailType.SEGMENT_RESULTS, segmentResultsData());
+    }
+
+    /**
+     * Direct coverage of the HTML→text conversion, because the whole-template test can only
+     * exercise the entities and structures our templates happen to use today. Adding
+     * {@code &nbsp;} handling and asserting it via a template would pass whether or not the code
+     * existed, since no template currently contains one.
+     */
+    @Test
+    void toPlainTextStripsCodeElementsAndUnescapesEntities() {
+        String html =
+                """
+                <html><head><title>ignored</title></head>
+                <body>
+                  <style>
+                    body { font-family: 'Segoe UI'; line-height: 1.6; }
+                  </style>
+                  <script>var x = 1 < 2;</script>
+                  <h1>Podium finish</h1>
+                  <p>2 of 41 &middot; 210 points &middot; gameweeks 5&ndash;9</p>
+                  <p>Nice &amp; tidy&nbsp;&mdash; that&#39;s the &quot;point&quot;.</p>
+                  <div>Line one<br/>Line two</div>
+                </body></html>
+                """;
+
+        String text = ThymeleafEmailTemplateRenderer.toPlainText(html);
+
+        assertThat(text)
+                .as("style and script bodies are code, not prose")
+                .doesNotContain("font-family")
+                .doesNotContain("{")
+                .doesNotContain("var x");
+        assertThat(text).as("<head> content is not body copy").doesNotContain("ignored");
+        assertThat(text)
+                .contains("Podium finish")
+                .contains("2 of 41 · 210 points · gameweeks 5–9")
+                .contains("Nice & tidy — that's the \"point\".");
+        assertThat(text).as("block boundaries become line breaks").contains("Line one\nLine two");
+        assertThat(text).doesNotContain("<").doesNotContain(">");
+        assertThat(text).doesNotContainPattern("&[a-zA-Z]+;").doesNotContainPattern("&#\\d+;");
+        assertThat(text).as("no leading indentation carried over").doesNotContainPattern("\n[ \\t]");
+    }
+
+    /** {@code &amp;} must be unescaped last, or {@code &amp;lt;} would become a real tag bracket. */
+    @Test
+    void toPlainTextDoesNotDoubleUnescape() {
+        assertThat(ThymeleafEmailTemplateRenderer.toPlainText("<p>&amp;lt;not-a-tag&amp;gt;</p>"))
+                .isEqualTo("&lt;not-a-tag&gt;");
+    }
+
+    @Test
+    void toPlainTextHandlesNull() {
+        assertThat(ThymeleafEmailTemplateRenderer.toPlainText(null)).isEmpty();
+    }
+
+    @Test
+    void rendersAllEmailTypesWithoutError() {
+        Map<EmailCommand.EmailType, Map<String, Object>> dataByType = allTemplateData();
 
         for (EmailCommand.EmailType type : EmailCommand.EmailType.values()) {
             // Without this, a newly added type renders with null variables and passes
@@ -81,6 +139,38 @@ class ThymeleafEmailTemplateRendererTest {
             assertThat(result.isRight()).as("render %s", type).isTrue();
             assertThat(result.get().subject()).isNotBlank();
             assertThat(result.get().htmlBody()).isNotBlank();
+        }
+    }
+
+    /**
+     * The text part is a real {@code text/plain} alternative now that {@code EmailProvider} sends
+     * it, so it has to read as prose for every template — not just the one that happened to be
+     * inspected.
+     *
+     * <p>These are the assertions whose absence hid the problem: {@code isNotBlank()} passes
+     * happily on a body that is entirely CSS.
+     */
+    @Test
+    void everyTemplatesTextPartIsProseNotMarkup() {
+        for (var entry : allTemplateData().entrySet()) {
+            String text = renderer.render(entry.getKey(), entry.getValue()).get().textBody();
+
+            assertThat(text).as("%s text part", entry.getKey()).isNotBlank();
+            assertThat(text)
+                    .as("%s: <style> contents must not survive tag-stripping", entry.getKey())
+                    .doesNotContain("{")
+                    .doesNotContain("font-family");
+            assertThat(text)
+                    .as("%s: entities must be unescaped, not passed through literally", entry.getKey())
+                    .doesNotContainPattern("&[a-zA-Z]+;")
+                    .doesNotContainPattern("&#\\d+;");
+            assertThat(text)
+                    .as("%s: no leftover tags", entry.getKey())
+                    .doesNotContain("<")
+                    .doesNotContain(">");
+            assertThat(text)
+                    .as("%s: HTML indentation must not become leading whitespace", entry.getKey())
+                    .doesNotContainPattern("\n[ \\t]");
         }
     }
 

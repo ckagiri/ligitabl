@@ -50,9 +50,9 @@ public class MailgunEmailProvider implements EmailProvider {
     @Override
     @SuppressWarnings("null")
     public Either<EmailError, Void> sendBatch(
-            List<String> recipientEmails, String subject, String htmlBody, EmailCommand.Priority priority) {
+            List<String> recipientEmails, EmailContent content, EmailCommand.Priority priority) {
 
-        log.info("[MAILGUN_SEND_BATCH] recipients={} subject={}", recipientEmails.size(), subject);
+        log.info("[MAILGUN_SEND_BATCH] recipients={} subject={}", recipientEmails.size(), content.subject());
 
         try {
             URI uri = URI.create(String.format("%s/%s/messages", apiBaseUrl, domain));
@@ -61,8 +61,15 @@ public class MailgunEmailProvider implements EmailProvider {
 
             MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
             formData.add("from", String.format("%s <%s>", fromName, fromEmail));
-            formData.add("subject", subject);
-            formData.add("html", htmlBody);
+            formData.add("subject", content.subject());
+            formData.add("html", content.htmlBody());
+
+            // Sending both parts makes the message multipart/alternative. HTML-only mail is a
+            // negative deliverability signal and leaves text-only and accessibility clients with
+            // whatever they can salvage from the markup.
+            if (content.textBody() != null && !content.textBody().isBlank()) {
+                formData.add("text", content.textBody());
+            }
 
             for (String recipient : recipientEmails) {
                 formData.add("to", recipient);
@@ -96,7 +103,7 @@ public class MailgunEmailProvider implements EmailProvider {
 
     @Override
     public Either<EmailError, Void> sendSingle(
-            String recipientEmail, String subject, String htmlBody, EmailCommand.Priority priority) {
-        return sendBatch(List.of(recipientEmail), subject, htmlBody, priority);
+            String recipientEmail, EmailContent content, EmailCommand.Priority priority) {
+        return sendBatch(List.of(recipientEmail), content, priority);
     }
 }

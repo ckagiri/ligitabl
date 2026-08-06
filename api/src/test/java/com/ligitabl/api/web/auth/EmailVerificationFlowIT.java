@@ -110,8 +110,22 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
         var competition = com.ligitabl.model.db.tables.TCompetition.T_COMPETITION;
         var season = com.ligitabl.model.db.tables.TSeason.T_SEASON;
 
+        // The competition is resolved by SLUG, not assumed to be at COMPETITION_ID.
+        //
+        // Every IT shares one Testcontainers Postgres, and several seed their own
+        // "premier-league" competition under a random PK (InPlaySeasonFixture, SegmentResultsChainIT)
+        // without cleaning up. c_slug is unique, so an insert pinned to COMPETITION_ID then
+        // conflicts on the slug and onConflictDoNothing() silently does nothing — leaving no row at
+        // COMPETITION_ID for the season's FK to reference. That made this class pass alone and fail
+        // in the full suite, purely on class order.
+        UUID competitionId = dsl.select(competition.PK_ID)
+                .from(competition)
+                .where(competition.C_SLUG.eq("premier-league"))
+                .fetchOptional(competition.PK_ID)
+                .orElse(COMPETITION_ID);
+
         dsl.insertInto(competition)
-                .set(competition.PK_ID, COMPETITION_ID)
+                .set(competition.PK_ID, competitionId)
                 .set(competition.C_NAME, "Premier League")
                 .set(competition.C_SLUG, "premier-league")
                 .set(competition.C_CODE, "PL")
@@ -121,7 +135,7 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
         dsl.insertInto(season)
                 .set(season.PK_ID, SEASON_ID)
                 .set(season.C_CLIENT_ID, 1)
-                .set(season.FK_COMPETITION_ID, COMPETITION_ID)
+                .set(season.FK_COMPETITION_ID, competitionId)
                 .set(season.C_NAME, "2025/26")
                 .set(season.C_SLUG, "2025-26")
                 .set(season.C_START_DATE, java.time.LocalDate.of(2025, 8, 1))
@@ -131,9 +145,12 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
                 .onConflictDoNothing()
                 .execute();
 
+        // Point the competition at this class's season regardless of which one it already had:
+        // NavbarControllerAdvice resolves the active season on every authenticated render, and a
+        // leftover season from another IT may since have been truncated away.
         dsl.update(competition)
                 .set(competition.FK_ACTIVE_SEASON_ID, SEASON_ID)
-                .where(competition.PK_ID.eq(COMPETITION_ID))
+                .where(competition.PK_ID.eq(competitionId))
                 .execute();
     }
 
@@ -310,15 +327,24 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
                 .as("login must redirect on success")
                 .isEqualTo(302);
 
-        // The login response sets several cookies (remember-me among them) — only JSESSIONID
-        // carries the authenticated session. Last one wins if fixation protection reissues it.
+        // The login response sets several cookies (remember-me among them); only the session
+        // cookie carries the authenticated session. Last one wins if fixation protection
+        // reissues it.
+        //
+        // Both names are accepted deliberately. Sessions live in Postgres via Spring Session
+        // (spring.session.store-type=jdbc), whose cookie is SESSION — not the servlet
+        // container's JSESSIONID. This test matched only JSESSIONID and so failed on every
+        // login from the moment Spring Session was introduced. The failure message lists what
+        // actually arrived, so the next rename is a one-run diagnosis rather than an
+        // investigation.
         List<String> setCookies = response.getHeaders().get(HttpHeaders.SET_COOKIE);
         assertThat(setCookies).as("login must set cookies").isNotNull();
         String sessionCookie = setCookies.stream()
-                .filter(c -> c.startsWith("JSESSIONID"))
+                .filter(c -> c.startsWith("SESSION=") || c.startsWith("JSESSIONID="))
                 .map(c -> c.split(";")[0])
                 .reduce((first, second) -> second)
-                .orElseThrow(() -> new AssertionError("login must establish a session"));
+                .orElseThrow(() ->
+                        new AssertionError("login must establish a session; cookies received: " + setCookies));
 
         String settingsBody = settingsPage(new Session(sessionCookie, null));
         Matcher matcher = CSRF_PATTERN.matcher(settingsBody);

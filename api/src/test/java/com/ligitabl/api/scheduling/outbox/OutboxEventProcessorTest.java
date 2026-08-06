@@ -2,6 +2,7 @@ package com.ligitabl.api.scheduling.outbox;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.ArgumentMatchers.contains;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
@@ -123,7 +124,7 @@ class OutboxEventProcessorTest {
                 .thenReturn(Either.right(new EmailContent("welcome subject", "<html/>", "text")));
         when(renderer.render(eq(EmailCommand.EmailType.SEGMENT_RESULTS), any()))
                 .thenReturn(Either.right(new EmailContent("segment subject", "<html/>", "text")));
-        when(emailProvider.sendSingle(anyString(), anyString(), anyString(), any()))
+        when(emailProvider.sendSingle(anyString(), any(), any()))
                 .thenReturn(Either.right(null));
     }
 
@@ -246,7 +247,7 @@ class OutboxEventProcessorTest {
                 .containsEntry("isSeasonFinale", false)
                 .containsEntry("leaderboardUrl", "http://localhost:8080/leaderboard?phase=S2");
 
-        verify(emailProvider).sendSingle(eq("alice@x.com"), eq("segment subject"), eq("<html/>"), any());
+        verify(emailProvider).sendSingle(eq("alice@x.com"), argThat(c -> "segment subject".equals(c.subject()) && "<html/>".equals(c.htmlBody())), any());
         verify(outboxRepo).markSent(event.getId());
     }
 
@@ -298,7 +299,7 @@ class OutboxEventProcessorTest {
 
     @Test
     void segmentResultsSendFailureRetries() throws Exception {
-        when(emailProvider.sendSingle(anyString(), anyString(), anyString(), any()))
+        when(emailProvider.sendSingle(anyString(), any(), any()))
                 .thenReturn(Either.left(new EmailError.EmailProviderError("mailgun 500")));
         OutboxEvent event = claimedEvent(OutboxEventTypes.SEGMENT_RESULTS, segmentResultsJson(sprint(1)), 1);
 
@@ -325,7 +326,7 @@ class OutboxEventProcessorTest {
                 .containsKeys("hitDistribution", "sprint", "quarter", "season");
 
         verify(emailProvider)
-                .sendSingle(eq("alice@x.com"), eq("subject"), eq("<html/>"), eq(EmailCommand.Priority.NORMAL));
+                .sendSingle(eq("alice@x.com"), argThat(c -> "subject".equals(c.subject()) && "<html/>".equals(c.htmlBody())), eq(EmailCommand.Priority.NORMAL));
         verify(outboxRepo).markSent(event.getId());
     }
 
@@ -368,12 +369,12 @@ class OutboxEventProcessorTest {
         verify(outboxRepo)
                 .markFailed(eq(event.getId()), contains("Template render failed"), eq(NOW.plus(Duration.ofMinutes(1))));
         verify(outboxRepo, never()).markSent(any());
-        verify(emailProvider, never()).sendSingle(any(), any(), any(), any());
+        verify(emailProvider, never()).sendSingle(any(), any(), any());
     }
 
     @Test
     void sendFailureMarksFailedWithBackoff() throws Exception {
-        when(emailProvider.sendSingle(anyString(), anyString(), anyString(), any()))
+        when(emailProvider.sendSingle(anyString(), any(), any()))
                 .thenReturn(Either.left(new EmailError.EmailProviderError("mailgun 500")));
         OutboxEvent event = claimedEvent(OutboxEventTypes.ROUND_RESULTS, roundResultsJson(), 2);
 
@@ -387,7 +388,7 @@ class OutboxEventProcessorTest {
 
     @Test
     void exhaustedAttemptsDeadLetter() throws Exception {
-        when(emailProvider.sendSingle(anyString(), anyString(), anyString(), any()))
+        when(emailProvider.sendSingle(anyString(), any(), any()))
                 .thenReturn(Either.left(new EmailError.EmailProviderError("mailgun 500")));
         OutboxEvent event = claimedEvent(OutboxEventTypes.ROUND_RESULTS, roundResultsJson(), 5);
 
@@ -434,7 +435,7 @@ class OutboxEventProcessorTest {
                 .containsEntry("leaderboardUrl", "http://localhost:8080/leaderboard");
 
         verify(emailProvider)
-                .sendSingle(eq("bob@x.com"), eq("join subject"), eq("<html/>"), eq(EmailCommand.Priority.NORMAL));
+                .sendSingle(eq("bob@x.com"), argThat(c -> "join subject".equals(c.subject()) && "<html/>".equals(c.htmlBody())), eq(EmailCommand.Priority.NORMAL));
         verify(outboxRepo).markSent(event.getId());
     }
 
@@ -849,7 +850,7 @@ class OutboxEventProcessorTest {
                 .containsEntry("whatIfUrl", "http://localhost:8080/my-table/what-if");
 
         verify(emailProvider)
-                .sendSingle(eq("carol@x.com"), eq("welcome subject"), eq("<html/>"), eq(EmailCommand.Priority.NORMAL));
+                .sendSingle(eq("carol@x.com"), argThat(c -> "welcome subject".equals(c.subject()) && "<html/>".equals(c.htmlBody())), eq(EmailCommand.Priority.NORMAL));
         verify(outboxRepo).markSent(event.getId());
     }
 
@@ -864,13 +865,13 @@ class OutboxEventProcessorTest {
 
         processor.processOne(event);
 
-        verify(emailProvider, never()).sendSingle(any(), any(), any(), any());
+        verify(emailProvider, never()).sendSingle(any(), any(), any());
         verify(outboxRepo).markFailed(eq(event.getId()), contains("Template render failed"), any());
     }
 
     @Test
     void seasonWelcomeSendFailure_marksFailed() throws Exception {
-        when(emailProvider.sendSingle(anyString(), anyString(), anyString(), any()))
+        when(emailProvider.sendSingle(anyString(), any(), any()))
                 .thenReturn(Either.left(new EmailError.EmailProviderError("mailgun 500")));
         OutboxEvent event = claimedEvent(
                 OutboxEventTypes.SEASON_WELCOME,
