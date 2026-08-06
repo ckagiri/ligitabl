@@ -123,7 +123,7 @@ class WhatIfPredictionPersistenceAdapterIT extends AbstractPostgresIT {
                 seasonId,
                 1,
                 competitionId,
-                "2025/26",
+                TestCalendar.SEASON_NAME,
                 TestCalendar.SEASON_SLUG,
                 TestCalendar.SEASON_START,
                 TestCalendar.SEASON_END,
