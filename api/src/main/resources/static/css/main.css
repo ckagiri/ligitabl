@@ -556,6 +556,9 @@ video {
 .invisible {
   visibility: hidden;
 }
+.collapse {
+  visibility: collapse;
+}
 .static {
   position: static;
 }
@@ -1269,6 +1272,9 @@ video {
 .overflow-y-scroll {
   overflow-y: scroll;
 }
+.overscroll-x-contain {
+  overscroll-behavior-x: contain;
+}
 .truncate {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -1282,6 +1288,9 @@ video {
 }
 .break-words {
   overflow-wrap: break-word;
+}
+.break-all {
+  word-break: break-all;
 }
 .rounded {
   border-radius: 0.25rem;
