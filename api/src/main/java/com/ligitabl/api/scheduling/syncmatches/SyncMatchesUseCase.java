@@ -157,8 +157,8 @@ public class SyncMatchesUseCase {
                 .min(OffsetDateTime::compareTo);
 
         if (nextKickoff.isPresent()) {
-            var minutesUntilKickoff =
-                    Duration.between(OffsetDateTime.now(), nextKickoff.get()).toMinutes();
+            var minutesUntilKickoff = Duration.between(OffsetDateTime.now(clock), nextKickoff.get())
+                    .toMinutes();
 
             if (minutesUntilKickoff <= 60) {
                 log.debug("Kickoff in {} minutes - using TODAY endpoint", minutesUntilKickoff);
@@ -348,7 +348,14 @@ public class SyncMatchesUseCase {
                 .orElse(null);
 
         var nextSchedule = SyncFrequencyCalculator.calculateNextSync(
-                hasLive, hasScheduled, hasSuspended, hasCancelled, nextKickoff, allComplete, roundObstructed);
+                hasLive,
+                hasScheduled,
+                hasSuspended,
+                hasCancelled,
+                nextKickoff,
+                allComplete,
+                roundObstructed,
+                OffsetDateTime.now(clock));
 
         return new MatchSyncResult(
                 context.season().getId(),

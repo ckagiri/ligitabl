@@ -2,7 +2,6 @@ package com.ligitabl.api.web.predictions.userpredictions;
 
 import java.security.Principal;
 import java.time.Clock;
-import java.time.Instant;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -395,7 +394,9 @@ public class UserPredictionsController {
         boolean isOpeningRound = false;
         if (data.swapCooldown() != null) {
             var cooldown = data.swapCooldown();
-            var now = Instant.now();
+            // The use case's instant, not a fresh read: this banner must describe the same moment
+            // the access mode above was decided at.
+            var now = data.accessModeEvaluatedAt();
             boolean firstSwapBonus = cooldown.initialPredictionMade() && cooldown.lastSwapAt() == null;
             swapStatus = new SwapStatusDTO(
                     cooldown.canSwap(now),

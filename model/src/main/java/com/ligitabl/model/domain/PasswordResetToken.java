@@ -22,8 +22,13 @@ public class PasswordResetToken {
     @With
     Instant usedAt;
 
-    public static PasswordResetToken create(UUID userId, int validityMinutes) {
-        Instant now = Instant.now();
+    /**
+     * The instant is an argument rather than a wall-clock read so the caller's {@code Clock} decides
+     * it — the same reason {@link Season#getSeasonState(Instant)} takes one. A token minted from a
+     * different instant than {@link #isExpired(Instant)} later evaluates against describes a
+     * validity window nobody chose.
+     */
+    public static PasswordResetToken create(UUID userId, int validityMinutes, Instant now) {
         return PasswordResetToken.builder()
                 .token(UUID.randomUUID().toString())
                 .userId(userId)
@@ -34,15 +39,19 @@ public class PasswordResetToken {
                 .build();
     }
 
-    public boolean isExpired() {
-        return Instant.now().isAfter(expiresAt);
+    /**
+     * ⚠️ Strict: a token whose {@code expiresAt} is <em>exactly</em> {@code at} has not expired yet.
+     * Matches {@code Season}'s windows, which are compared the same way.
+     */
+    public boolean isExpired(Instant at) {
+        return at.isAfter(expiresAt);
     }
 
-    public boolean isValid() {
-        return !used && !isExpired();
+    public boolean isValid(Instant at) {
+        return !used && !isExpired(at);
     }
 
-    public PasswordResetToken markAsUsed() {
-        return this.withUsed(true).withUsedAt(Instant.now());
+    public PasswordResetToken markAsUsed(Instant at) {
+        return this.withUsed(true).withUsedAt(at);
     }
 }

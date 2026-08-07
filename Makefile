@@ -778,6 +778,16 @@ test-model-domain-with-codegen: ## Run model domain-only tests after generating 
 	mvn -q -pl model -am -Pwith-jooq -Djooq.codegen.skip=true \
 		-Dsurefire.failIfNoSpecifiedTests=false -Dtest='com.ligitabl.model.domain.*Test' test
 
+.PHONY: test-model-repo
+test-model-repo: ## Run model's DB-backed *RepoTest classes (needs the test DB up)
+	# These carry @Tag("integration"), which model/pom.xml excludes by default
+	# (model.test.groups = !integration) — so without this target nothing ever runs them, and
+	# they can rot unnoticed. They talk to the local test DB directly, not Testcontainers.
+	$(MAKE) model-codegen-local
+	mvn -pl model -am -Pwith-jooq -Djooq.codegen.skip=true \
+		-Dmodel.test.groups=integration \
+		-Dsurefire.failIfNoSpecifiedTests=false -Dtest='com.ligitabl.model.repo.*RepoTest' test
+
 .PHONY: test-all
 test-all: ## Run full test suite
 	mvn test

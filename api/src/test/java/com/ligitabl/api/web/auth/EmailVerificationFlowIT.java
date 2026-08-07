@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
 
+import java.time.Clock;
 import java.util.List;
 import java.util.UUID;
 import java.util.regex.Matcher;
@@ -92,6 +93,15 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
     @Autowired
     org.jooq.DSLContext dsl;
 
+    /**
+     * The application's own {@code Clock} bean (systemUTC), not a frozen one: this test drives the
+     * real registration flow end to end, so the token it reads back was minted from this same bean
+     * milliseconds earlier. Importing {@link com.ligitabl.api.testsupport.FixedClockConfig} would
+     * cost a second Spring context for no gain — nothing here asserts a specific instant.
+     */
+    @Autowired
+    Clock clock;
+
     private static final UUID COMPETITION_ID = UUID.fromString("00000000-0000-0000-0000-0000000000c1");
     private static final UUID SEASON_ID = UUID.fromString("00000000-0000-0000-0000-00000000005e");
 
@@ -132,8 +142,20 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
                 .onConflictDoNothing()
                 .execute();
 
+        // Same trap as the competition above, one level down. Every IT that seeds a season now takes
+        // its slug from TestCalendar, so they all seed the *same* slug — and c_slug is unique, so an
+        // insert pinned to SEASON_ID conflicts with whichever IT got there first and
+        // onConflictDoNothing() silently does nothing, leaving no row at SEASON_ID for the
+        // active-season pointer below. Resolve by slug first, exactly as the competition does.
+        UUID seasonId = dsl.select(season.PK_ID)
+                .from(season)
+                .where(season.C_SLUG.eq(TestCalendar.SEASON_SLUG))
+                .and(season.FK_COMPETITION_ID.eq(competitionId))
+                .fetchOptional(season.PK_ID)
+                .orElse(SEASON_ID);
+
         dsl.insertInto(season)
-                .set(season.PK_ID, SEASON_ID)
+                .set(season.PK_ID, seasonId)
                 .set(season.C_CLIENT_ID, 1)
                 .set(season.FK_COMPETITION_ID, competitionId)
                 .set(season.C_NAME, TestCalendar.SEASON_NAME)
@@ -149,7 +171,7 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
         // NavbarControllerAdvice resolves the active season on every authenticated render, and a
         // leftover season from another IT may since have been truncated away.
         dsl.update(competition)
-                .set(competition.FK_ACTIVE_SEASON_ID, SEASON_ID)
+                .set(competition.FK_ACTIVE_SEASON_ID, seasonId)
                 .where(competition.PK_ID.eq(competitionId))
                 .execute();
     }
@@ -271,7 +293,7 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
 
         assertThat(settingsPage(session)).contains("Verification email sent to");
         EmailVerificationToken fresh = latestToken(user);
-        assertThat(fresh.isValid()).isTrue();
+        assertThat(fresh.isValid(clock.instant())).isTrue();
         assertThat(fresh.getUserId()).isEqualTo(user.getId());
     }
 

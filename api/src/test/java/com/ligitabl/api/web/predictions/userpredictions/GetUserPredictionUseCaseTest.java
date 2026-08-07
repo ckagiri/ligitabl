@@ -18,6 +18,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.shared.PredictionAccessMode;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
@@ -86,7 +87,8 @@ class GetUserPredictionUseCaseTest {
                 standingsRepo,
                 matchRepo,
                 entryRepo,
-                new PreviewRankingsSupport(seasonRepo, standingsRepo));
+                new PreviewRankingsSupport(seasonRepo, standingsRepo),
+                TestClock.FIXED);
 
         seasonId = UUID.randomUUID();
         roundId = UUID.randomUUID();

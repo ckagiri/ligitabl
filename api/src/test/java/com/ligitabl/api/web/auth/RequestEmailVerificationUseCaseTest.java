@@ -24,6 +24,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.web.auth.RequestEmailVerificationUseCase.RequestError;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.Role;
@@ -52,7 +53,7 @@ class RequestEmailVerificationUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        useCase = new RequestEmailVerificationUseCase(userRepo, tokenRepo, emailService);
+        useCase = new RequestEmailVerificationUseCase(userRepo, tokenRepo, emailService, TestClock.FIXED);
         ReflectionTestUtils.setField(useCase, "frontendUrl", "http://localhost:8080");
         ReflectionTestUtils.setField(useCase, "tokenValidityHours", 48);
         ReflectionTestUtils.setField(useCase, "resendCooldownMinutes", 2);
@@ -96,7 +97,7 @@ class RequestEmailVerificationUseCaseTest {
     void shouldThrottleResendInsideCooldown() {
         when(userRepo.findById(userId)).thenReturn(Optional.of(user));
         when(tokenRepo.findLatestForUser(userId))
-                .thenReturn(Optional.of(tokenCreatedAt(Instant.now().minus(30, ChronoUnit.SECONDS))));
+                .thenReturn(Optional.of(tokenCreatedAt(TestClock.NOW.minus(30, ChronoUnit.SECONDS))));
 
         var result = useCase.execute(userId);
 
@@ -112,7 +113,7 @@ class RequestEmailVerificationUseCaseTest {
     void shouldAllowResendAfterCooldown() {
         when(userRepo.findById(userId)).thenReturn(Optional.of(user));
         when(tokenRepo.findLatestForUser(userId))
-                .thenReturn(Optional.of(tokenCreatedAt(Instant.now().minus(3, ChronoUnit.MINUTES))));
+                .thenReturn(Optional.of(tokenCreatedAt(TestClock.NOW.minus(3, ChronoUnit.MINUTES))));
         when(emailService.sendVerificationEmail(anyString(), anyString(), anyInt()))
                 .thenReturn(Either.right(null));
 
@@ -151,7 +152,10 @@ class RequestEmailVerificationUseCaseTest {
         verify(tokenRepo).save(tokenCaptor.capture());
         EmailVerificationToken saved = tokenCaptor.getValue();
         assertThat(saved.getUserId()).isEqualTo(userId);
-        assertThat(saved.isValid()).isTrue();
+        assertThat(saved.isValid(TestClock.NOW)).isTrue();
+        // The token is minted from the same read the throttle above was evaluated at, so the next
+        // resend's window is measured from an instant this call actually checked.
+        assertThat(saved.getCreatedAt()).isEqualTo(TestClock.NOW);
 
         verify(emailService)
                 .sendVerificationEmail(
@@ -188,6 +192,23 @@ class RequestEmailVerificationUseCaseTest {
 
         assertThat(result.isLeft()).isTrue();
         assertThat(result.getLeft()).isInstanceOf(RequestError.UnexpectedError.class);
+    }
+
+    @Test
+    @DisplayName("Should allow a resend at the exact instant the cooldown elapses")
+    void shouldAllowResendAtTheExactCooldownBoundary() {
+        // The throttle is `now.isBefore(earliestResend)`, which is strict, so a request landing
+        // exactly on the boundary goes through. Untestable while the use case read the wall clock:
+        // naming the boundary meant naming an instant that had already passed by the time the
+        // assertion ran, so only "well inside" and "well outside" could be expressed.
+        when(userRepo.findById(userId)).thenReturn(Optional.of(user));
+        when(tokenRepo.findLatestForUser(userId))
+                .thenReturn(Optional.of(tokenCreatedAt(TestClock.NOW.minus(2, ChronoUnit.MINUTES))));
+        when(emailService.sendVerificationEmail(anyString(), anyString(), anyInt()))
+                .thenReturn(Either.right(null));
+
+        assertThat(useCase.execute(userId).isRight()).isTrue();
+        verify(tokenRepo).save(any(EmailVerificationToken.class));
     }
 
     private static EmailVerificationToken tokenCreatedAt(Instant createdAt) {

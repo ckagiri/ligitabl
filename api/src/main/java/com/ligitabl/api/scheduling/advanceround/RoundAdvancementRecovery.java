@@ -1,5 +1,6 @@
 package com.ligitabl.api.scheduling.advanceround;
 
+import java.time.Clock;
 import java.time.OffsetDateTime;
 
 import org.springframework.boot.context.event.ApplicationReadyEvent;
@@ -30,13 +31,14 @@ public class RoundAdvancementRecovery {
 
     private final RoundRepo roundRepo;
     private final RoundAdvancementService advancementService;
+    private final Clock clock;
 
     @EventListener(ApplicationReadyEvent.class)
     public void recoverMissedAdvancements() {
         log.info("Checking for missed round advancements...");
 
         try {
-            var missed = roundRepo.findMissedAdvancements(OffsetDateTime.now());
+            var missed = roundRepo.findMissedAdvancements(OffsetDateTime.now(clock));
 
             if (missed.isEmpty()) {
                 log.info("No missed advancements found");
