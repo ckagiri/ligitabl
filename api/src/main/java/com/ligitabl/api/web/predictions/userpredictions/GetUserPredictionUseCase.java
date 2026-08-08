@@ -1,5 +1,6 @@
 package com.ligitabl.api.web.predictions.userpredictions;
 
+import java.time.Clock;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
@@ -42,6 +43,7 @@ public class GetUserPredictionUseCase {
     private final MatchRepo matchRepo;
     private final EntryRepo entryRepo;
     private final PreviewRankingsSupport previewRankingsSupport;
+    private final Clock clock;
 
     /**
      * Execute the use case with user context resolution.
@@ -249,7 +251,12 @@ public class GetUserPredictionUseCase {
                     && rc.currentRoundStatus() == RoundStatus.OPEN;
             swapCooldown = new SwapCooldown(seasonPrediction.getLastSwapAt(), true, openingRoundAvailable);
         }
-        PredictionAccessMode accessMode = determineAccessMode(swapCooldown, rc.isCurrentRound());
+        // Read once and hand downstream. The controller derives the cooldown banner from the same
+        // SwapCooldown this access mode was decided from, so a second read there could disagree
+        // with this one across the 24-hour boundary — a page telling the user they may swap while
+        // the table it renders is read-only, or the reverse.
+        Instant evaluatedAt = clock.instant();
+        PredictionAccessMode accessMode = determineAccessMode(swapCooldown, rc.isCurrentRound(), evaluatedAt);
 
         StandingsMaps standingsMaps = getStandingsMaps(qry.seasonId(), rc.currentRound());
 
@@ -258,6 +265,7 @@ public class GetUserPredictionUseCase {
                 .source(RankingSource.USER_PREDICTION)
                 .accessMode(accessMode)
                 .swapCooldown(swapCooldown)
+                .accessModeEvaluatedAt(evaluatedAt)
                 .matches(rc.currentRoundMatches())
                 .standingsMap(standingsMaps.positions())
                 .pointsMap(standingsMaps.points())
@@ -328,12 +336,12 @@ public class GetUserPredictionUseCase {
     /**
      * Determine access mode based on swap cooldown status.
      */
-    private PredictionAccessMode determineAccessMode(SwapCooldown swapCooldown, boolean isCurrentRound) {
+    private PredictionAccessMode determineAccessMode(SwapCooldown swapCooldown, boolean isCurrentRound, Instant at) {
         if (!isCurrentRound) {
             return PredictionAccessMode.READONLY; // Historical rounds are always readonly
         }
 
-        if (swapCooldown != null && (swapCooldown.canSwap(Instant.now()) || swapCooldown.openingRoundAvailable())) {
+        if (swapCooldown != null && (swapCooldown.canSwap(at) || swapCooldown.openingRoundAvailable())) {
             return PredictionAccessMode.EDITABLE;
         }
 

@@ -1,5 +1,6 @@
 package com.ligitabl.api.client;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -30,6 +31,15 @@ public class FootballDataClient {
     private static final DateTimeFormatter DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
 
     private final WebClient webClient;
+
+    /**
+     * The date-range window is a calendar date, so it needs a zone: {@code LocalDate.now(clock)}
+     * resolves it in UTC to match the application's {@code Clock.systemUTC()} bean and the
+     * timestamps this API returns. A bare {@code LocalDate.now()} used the JVM default zone, so on
+     * a machine west of UTC the "today+tomorrow" request could ask for a day the upstream calendar
+     * had already moved past.
+     */
+    private final Clock clock;
 
     /**
      * Get live matches for a competition
@@ -159,7 +169,7 @@ public class FootballDataClient {
      * Get matches for today and tomorrow
      */
     public Either<FootballDataApiError, MatchesResponse> getUpcomingMatches(String competitionCode) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(clock);
         LocalDate dayAfterTomorrow = today.plusDays(2);
 
         log.debug(

@@ -1,6 +1,9 @@
 package com.ligitabl.api.web.auth;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -19,6 +22,7 @@ import lombok.extern.slf4j.Slf4j;
 public class VerifyEmailUseCase {
     private final UserRepo userRepo;
     private final EmailVerificationTokenRepo tokenRepo;
+    private final Clock clock;
 
     @Transactional
     public Either<VerifyError, VerifyResult> execute(String token) {
@@ -32,12 +36,17 @@ public class VerifyEmailUseCase {
             return Either.left(new VerifyError.InvalidToken());
         }
 
+        // One read, reused for the validity branch, the used-at stamp and emailVerifiedAt: separate
+        // reads could straddle the expiry boundary, and could stamp the user verified at an instant
+        // before the token that verified them was marked used.
+        Instant now = clock.instant();
+
         var verificationToken = tokenResult.get();
-        if (!verificationToken.isValid()) {
+        if (!verificationToken.isValid(now)) {
             log.warn(
                     "[EMAIL_VERIFICATION] Token invalid: used={} expired={}",
                     verificationToken.isUsed(),
-                    verificationToken.isExpired());
+                    verificationToken.isExpired(now));
 
             if (verificationToken.isUsed()) {
                 return Either.left(new VerifyError.TokenAlreadyUsed());
@@ -54,8 +63,8 @@ public class VerifyEmailUseCase {
 
         var user = userResult.get();
 
-        tokenRepo.update(verificationToken.markAsUsed());
-        userRepo.markEmailVerified(user.getId(), OffsetDateTime.now());
+        tokenRepo.update(verificationToken.markAsUsed(now));
+        userRepo.markEmailVerified(user.getId(), OffsetDateTime.ofInstant(now, ZoneOffset.UTC));
 
         log.info("[EMAIL_VERIFICATION] Success userId={}", user.getId());
 

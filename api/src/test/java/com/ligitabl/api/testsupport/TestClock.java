@@ -36,9 +36,9 @@ public final class TestClock {
 
     /**
      * {@link #NOW} as a calendar date, <b>in UTC</b>. Use this in season fixtures instead of
-     * {@code TestClock.TODAY}.
+     * {@code LocalDate.now()}.
      *
-     * <p>⚠️ They are not the same date. {@code TestClock.TODAY} uses the JVM default zone, while
+     * <p>⚠️ They are not the same date. {@code LocalDate.now()} uses the JVM default zone, while
      * {@code Season.getSeasonState(Instant)} derives its date in UTC to match the application's
      * {@code Clock.systemUTC()} bean. On a machine east of UTC the two disagree for the last hours
      * of each UTC day — on UTC+3, between 21:00 and midnight UTC — so a fixture saying

@@ -1,5 +1,7 @@
 package com.ligitabl.api.web.auth;
 
+import java.time.Clock;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,6 +22,7 @@ public class RequestPasswordResetUseCase {
     private final UserRepo userRepo;
     private final PasswordResetTokenRepo tokenRepo;
     private final PasswordResetEmailService emailService;
+    private final Clock clock;
 
     @Value("${ligitabl.frontend.url:http://localhost:8080}")
     private String frontendUrl;
@@ -43,7 +46,7 @@ public class RequestPasswordResetUseCase {
             var user = userResult.get();
             tokenRepo.invalidateAllForUser(user.getId());
 
-            PasswordResetToken token = PasswordResetToken.create(user.getId(), tokenValidityMinutes);
+            PasswordResetToken token = PasswordResetToken.create(user.getId(), tokenValidityMinutes, clock.instant());
             tokenRepo.save(token);
 
             log.info("[PASSWORD_RESET] Token created userId={} expiresAt={}", user.getId(), token.getExpiresAt());

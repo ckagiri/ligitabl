@@ -1,5 +1,6 @@
 package com.ligitabl.api.web.predictions.userpredictions;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -26,6 +27,9 @@ public record UserPredictionViewData(
         RankingSource source,
         PredictionAccessMode accessMode,
         SwapCooldown swapCooldown,
+        // The instant accessMode was decided at. Carried rather than re-read so the controller's
+        // cooldown banner and this access mode cannot straddle the 24-hour swap boundary.
+        Instant accessModeEvaluatedAt,
         Map<String, List<Match>> matches,
         Map<String, Integer> standingsMap,
         Map<String, Integer> pointsMap,
@@ -49,6 +53,10 @@ public record UserPredictionViewData(
         Objects.requireNonNull(rankings, "rankings are required");
         Objects.requireNonNull(source, "source is required");
         Objects.requireNonNull(accessMode, "accessMode is required");
+        if (swapCooldown != null) {
+            Objects.requireNonNull(
+                    accessModeEvaluatedAt, "accessModeEvaluatedAt is required whenever swapCooldown is present");
+        }
         rankings = List.copyOf(rankings);
         matches = matches != null ? Map.copyOf(matches) : Map.of();
         standingsMap = standingsMap != null ? Map.copyOf(standingsMap) : Map.of();

@@ -303,6 +303,8 @@ public class MatchSyncScheduler {
         }
 
         // Schedule next execution
+        // ⚠️ A deliberate wall-clock read — do not route this through the application `Clock` bean.
+        // This instant is handed straight to `taskScheduler`, which fires on real time.
         Instant nextRun = Instant.now().plus(delay);
         currentTask = taskScheduler.schedule(this::executeSync, Objects.requireNonNull(nextRun));
 

@@ -39,8 +39,11 @@ import com.ligitabl.model.repo.SeasonRepo;
  * the behaviour worth pinning — a regression that makes it fire early is far more damaging than
  * one that makes it fire late, since ROUND_LOCKED is the designed catch-up path.
  *
- * <p>{@link Season#isInPlay()} reads the wall clock rather than an injected {@code Clock}, so
- * fixtures are built relative to {@code OffsetDateTime.now()} instead of a frozen instant.
+ * <p>Fixtures are built relative to {@code OffsetDateTime.now()} rather than a frozen instant.
+ * That is now a choice rather than a constraint: {@link Season#isInPlay(java.time.Instant)} takes
+ * the instant, and the enqueuer passes {@code clock.instant()}. Nothing here asserts a specific
+ * instant — every case is "far enough inside/outside the window" — so converting the fixtures would
+ * buy nothing. A case that wants a boundary should declare its own anchor and pin the clock to it.
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)

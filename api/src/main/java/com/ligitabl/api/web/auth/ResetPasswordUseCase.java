@@ -1,5 +1,7 @@
 package com.ligitabl.api.web.auth;
 
+import java.time.Clock;
+import java.time.Instant;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -22,6 +24,7 @@ public class ResetPasswordUseCase {
     private final PasswordResetTokenRepo tokenRepo;
     private final PasswordHasher passwordHasher;
     private final PasswordResetEmailService emailService;
+    private final Clock clock;
 
     @Transactional
     public Either<ResetError, ResetResult> execute(String token, String newPassword) {
@@ -42,9 +45,16 @@ public class ResetPasswordUseCase {
             return Either.left(new ResetError.InvalidToken());
         }
 
+        // One read, reused for the validity branch and the used-at stamp: two reads could straddle
+        // the expiry boundary and mark a token used that the branch above judged expired.
+        Instant now = clock.instant();
+
         var resetToken = tokenResult.get();
-        if (!resetToken.isValid()) {
-            log.warn("[PASSWORD_RESET] Token invalid: used={} expired={}", resetToken.isUsed(), resetToken.isExpired());
+        if (!resetToken.isValid(now)) {
+            log.warn(
+                    "[PASSWORD_RESET] Token invalid: used={} expired={}",
+                    resetToken.isUsed(),
+                    resetToken.isExpired(now));
 
             if (resetToken.isUsed()) {
                 return Either.left(new ResetError.TokenAlreadyUsed());
@@ -63,7 +73,7 @@ public class ResetPasswordUseCase {
         var hashedPassword = passwordHasher.hash(plaintext);
         userRepo.updatePassword(user.getId(), hashedPassword);
 
-        var usedToken = resetToken.markAsUsed();
+        var usedToken = resetToken.markAsUsed(now);
         tokenRepo.update(usedToken);
 
         log.info("[PASSWORD_RESET] Success userId={}", user.getId());

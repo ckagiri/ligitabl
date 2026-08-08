@@ -64,16 +64,6 @@ public record SwapCooldown(Instant lastSwapAt, boolean initialPredictionMade, bo
     }
 
     /**
-     * Get next swap time.
-     */
-    public Instant getNextSwapTime() {
-        if (lastSwapAt == null) {
-            return Instant.now();
-        }
-        return lastSwapAt.plus(COOLDOWN);
-    }
-
-    /**
      * Get formatted last swap time.
      */
     public String getLastSwapAtFormatted() {
@@ -81,16 +71,6 @@ public record SwapCooldown(Instant lastSwapAt, boolean initialPredictionMade, bo
             return "Never";
         }
         return FORMATTER.format(lastSwapAt);
-    }
-
-    /**
-     * Get formatted next swap time.
-     */
-    public String getNextSwapAtFormatted(Instant now) {
-        if (canSwap(now)) {
-            return "Now";
-        }
-        return FORMATTER.format(getNextSwapTime());
     }
 
     /**

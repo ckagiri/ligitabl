@@ -34,6 +34,8 @@ public class SyncFrequencyCalculator {
      * @param allMatchesComplete True if all matches are in terminal state
      * @param matchCount Total number of matches (0 = no upcoming matches)
      * @param seasonComplete True if season is complete (all rounds finalized)
+     * @param now The instant the kickoff distance is measured from — the caller's {@code Clock},
+     *     since this class is static and has none of its own
      * @return Next sync schedule with delay and reason
      */
     public static NextSyncSchedule calculateNextSync(
@@ -45,7 +47,8 @@ public class SyncFrequencyCalculator {
             boolean allMatchesComplete,
             boolean roundObstructed,
             int matchCount,
-            boolean seasonComplete) {
+            boolean seasonComplete,
+            OffsetDateTime now) {
 
         // PRIORITY 1: All matches complete - trigger finalization immediately
         if (allMatchesComplete) {
@@ -67,12 +70,12 @@ public class SyncFrequencyCalculator {
             return NextSyncSchedule.hours(12, "No upcoming matches - checking twice daily", true);
         }
 
-        var schedule = matchDaySchedule(hasLiveMatches, hasScheduledMatches, nextKickoff);
+        var schedule = matchDaySchedule(hasLiveMatches, hasScheduledMatches, nextKickoff, now);
         return applyBlockingMatchCap(schedule, hasSuspendedMatches, hasCancelledMatches);
     }
 
     private static NextSyncSchedule matchDaySchedule(
-            boolean hasLiveMatches, boolean hasScheduledMatches, OffsetDateTime nextKickoff) {
+            boolean hasLiveMatches, boolean hasScheduledMatches, OffsetDateTime nextKickoff, OffsetDateTime now) {
 
         // PRIORITY 4: Live matches - sync frequently
         if (hasLiveMatches) {
@@ -85,10 +88,8 @@ public class SyncFrequencyCalculator {
         }
 
         // PRIORITY 6: Calculate time until next kickoff
-        var now = OffsetDateTime.now();
-
-        // Use ceiling rounding so tests like now().plusMinutes(X) remain stable even if
-        // a few milliseconds elapse between constructing nextKickoff and evaluating now.
+        // Rounding partial minutes up is the right behaviour on its own: it never schedules a poll later than the
+        // bucket the kickoff actually falls in.
         long secondsUntilKickoff = Duration.between(now, nextKickoff).getSeconds();
         long minutesUntilKickoff = secondsUntilKickoff < 0 ? -1 : ceilDiv(secondsUntilKickoff, 60);
 
@@ -163,7 +164,8 @@ public class SyncFrequencyCalculator {
             boolean allMatchesComplete,
             boolean roundObstructed,
             int matchCount,
-            boolean seasonComplete) {
+            boolean seasonComplete,
+            OffsetDateTime now) {
 
         return calculateNextSync(
                 hasLiveMatches,
@@ -174,7 +176,8 @@ public class SyncFrequencyCalculator {
                 allMatchesComplete,
                 roundObstructed,
                 matchCount,
-                seasonComplete);
+                seasonComplete,
+                now);
     }
 
     /**
@@ -185,7 +188,8 @@ public class SyncFrequencyCalculator {
             boolean hasScheduledMatches,
             OffsetDateTime nextKickoff,
             boolean allMatchesComplete,
-            int matchCount) {
+            int matchCount,
+            OffsetDateTime now) {
 
         return calculateNextSync(
                 hasLiveMatches,
@@ -194,8 +198,8 @@ public class SyncFrequencyCalculator {
                 allMatchesComplete,
                 false,
                 matchCount,
-                false // Assume season not complete
-                );
+                false, // Assume season not complete
+                now);
     }
 
     /**
@@ -205,7 +209,8 @@ public class SyncFrequencyCalculator {
             boolean hasLiveMatches,
             boolean hasScheduledMatches,
             OffsetDateTime nextKickoff,
-            boolean allMatchesComplete) {
+            boolean allMatchesComplete,
+            OffsetDateTime now) {
 
         return calculateNextSync(
                 hasLiveMatches,
@@ -214,8 +219,8 @@ public class SyncFrequencyCalculator {
                 allMatchesComplete,
                 false,
                 1, // Assume at least 1 match
-                false // Assume season not complete
-                );
+                false, // Assume season not complete
+                now);
     }
 
     /**
@@ -228,7 +233,8 @@ public class SyncFrequencyCalculator {
             boolean hasCancelledMatches,
             OffsetDateTime nextKickoff,
             boolean allMatchesComplete,
-            boolean roundObstructed) {
+            boolean roundObstructed,
+            OffsetDateTime now) {
 
         return calculateNextSync(
                 hasLiveMatches,
@@ -239,6 +245,7 @@ public class SyncFrequencyCalculator {
                 allMatchesComplete,
                 roundObstructed,
                 1,
-                false);
+                false,
+                now);
     }
 }

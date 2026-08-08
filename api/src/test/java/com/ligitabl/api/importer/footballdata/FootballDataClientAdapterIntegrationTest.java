@@ -8,6 +8,7 @@ import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.net.ServerSocket;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.List;
 import java.util.Objects;
@@ -68,7 +69,7 @@ class FootballDataClientAdapterIntegrationTest {
                 .defaultHeader("Accept", "application/json")
                 .build();
 
-        return new FootballDataClientAdapter(new FootballDataClient(webClient));
+        return new FootballDataClientAdapter(new FootballDataClient(webClient, Clock.systemUTC()));
     }
 
     @AfterAll

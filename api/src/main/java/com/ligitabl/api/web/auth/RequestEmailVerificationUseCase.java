@@ -1,5 +1,6 @@
 package com.ligitabl.api.web.auth;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
@@ -23,6 +24,7 @@ public class RequestEmailVerificationUseCase {
     private final UserRepo userRepo;
     private final EmailVerificationTokenRepo tokenRepo;
     private final EmailVerificationEmailService emailService;
+    private final Clock clock;
 
     @Value("${ligitabl.frontend.url:http://localhost:8080}")
     private String frontendUrl;
@@ -47,10 +49,15 @@ public class RequestEmailVerificationUseCase {
                 return Either.left(new RequestError.AlreadyVerified());
             }
 
+            // One read, shared by the throttle test and the token minted just below: two reads mean
+            // the new token's createdAt is not the instant the throttle was evaluated at, so the
+            // next resend's window is measured from an instant this call never checked.
+            Instant now = clock.instant();
+
             var latest = tokenRepo.findLatestForUser(userId);
             if (latest.isPresent()) {
                 Instant earliestResend = latest.get().getCreatedAt().plus(Duration.ofMinutes(resendCooldownMinutes));
-                if (Instant.now().isBefore(earliestResend)) {
+                if (now.isBefore(earliestResend)) {
                     log.info("[EMAIL_VERIFICATION] Resend throttled userId={}", userId);
                     return Either.left(new RequestError.ResendTooSoon());
                 }
@@ -58,7 +65,7 @@ public class RequestEmailVerificationUseCase {
 
             tokenRepo.invalidateAllForUser(userId);
 
-            EmailVerificationToken token = EmailVerificationToken.create(userId, tokenValidityHours);
+            EmailVerificationToken token = EmailVerificationToken.create(userId, tokenValidityHours, now);
             tokenRepo.save(token);
 
             log.info("[EMAIL_VERIFICATION] Token created userId={} expiresAt={}", userId, token.getExpiresAt());
