@@ -41,6 +41,7 @@ public class FinalTableController {
         model.addAttribute("pageTitle", "Final Table Predictor");
         model.addAttribute("rankings", data.rankings());
         model.addAttribute("teamsByCode", data.teamsByCode());
+        model.addAttribute("rowsJson", data.rowsJson());
         model.addAttribute("entryOpen", data.entryOpen());
         model.addAttribute("hasEntry", data.hasEntry());
         model.addAttribute("revealed", data.revealed());
@@ -55,6 +56,11 @@ public class FinalTableController {
         model.addAttribute("roundStatus", data.roundStatus());
         model.addAttribute("shareUrl", data.shareUrl());
         model.addAttribute("shareText", data.shareText());
+        model.addAttribute("shareRowsJson", data.shareRowsJson());
+        model.addAttribute("shareCardTitle", "My Final Table");
+        model.addAttribute(
+                "shareCardSubtitle",
+                data.revealed() ? "Scored " + data.totalScore() : "Predicted before a ball was kicked");
         model.addAttribute("isGuest", data.isGuest());
         model.addAttribute("devPreviewEnabled", data.devPreviewEnabled());
         model.addAttribute("readOnly", false);

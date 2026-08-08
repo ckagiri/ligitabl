@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.config.FinalTableDevProperties;
 import com.ligitabl.api.rest.finaltable.shared.FinalTableError;
+import com.ligitabl.api.rest.finaltable.shared.FinalTableRowsJson;
 import com.ligitabl.api.rest.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.shared.share.SharePredictionTextBuilder;
@@ -36,6 +37,7 @@ public class GetFinalTableUseCase {
     private final TeamRepo teamRepo;
     private final SharePredictionTextBuilder shareTextBuilder;
     private final FinalTableDevProperties devProperties;
+    private final FinalTableRowsJson rowsJson;
 
     @Value("${ligitabl.frontend.share-url:${ligitabl.frontend.url:http://localhost:8080}}")
     private String frontendShareUrl;
@@ -62,6 +64,7 @@ public class GetFinalTableUseCase {
         return new FinalTableViewData(
                 rankings,
                 teamsByCode,
+                rowsJson.rows(rankings, teamsByCode),
                 finalTableSupport.isEntryOpen(season),
                 prediction != null,
                 revealed,
@@ -76,6 +79,7 @@ public class GetFinalTableUseCase {
                 finalTableSupport.entryStatus(season).name(),
                 shareUrl,
                 shareUrl == null ? null : shareTextBuilder.buildFinalTable(rankings, teamsByCode, shareUrl),
+                rowsJson.shareRows(rankings, teamsByCode, revealed ? prediction.getResultRankings() : null),
                 guest,
                 devProperties.isEnabled());
     }

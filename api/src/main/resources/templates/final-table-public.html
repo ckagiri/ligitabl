@@ -84,7 +84,13 @@
         </div>
       </th:block>
 
+      <!--
+        The same component, mounted read-only: entryOpen is false here so canEdit() never allows a
+        tap. Reusing it keeps one renderer for the table rather than a near-duplicate fragment.
+      -->
       <div
+        x-data="Ligitabl.finalTablePage($el)"
+        th:attr="data-rows=${rowsJson},data-entry-open=false,data-has-entry=true"
         class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700"
       >
         <th:block th:if="${revealed == true}">
@@ -95,10 +101,12 @@
         </th:block>
       </div>
 
+      <div th:replace="~{fragments/final-table-share :: card}"></div>
+
       <div class="mt-8">
         <a
           th:href="@{/final-table}"
-          class="rounded-lg bg-emerald-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-emerald-700"
+          class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
           >Make your own prediction</a
         >
       </div>

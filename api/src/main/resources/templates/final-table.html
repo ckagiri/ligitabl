@@ -19,14 +19,14 @@
       <!-- Guest, still open: read-only with a sign-up CTA. The game doubles as an on-ramp. -->
       <th:block th:if="${isGuest == true and entryOpen == true}">
         <div
-          class="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950"
+          class="mb-6 rounded-lg border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-800 dark:bg-indigo-950"
         >
-          <p class="text-sm text-emerald-900 dark:text-emerald-200">
+          <p class="text-sm text-indigo-900 dark:text-indigo-200">
             Sign in to make this table your own before gameweek 1 locks it in.
           </p>
           <a
             th:href="@{/auth/register}"
-            class="mt-3 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+            class="mt-3 inline-block rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
             >Create an account</a
           >
         </div>
@@ -105,78 +105,116 @@
       </th:block>
 
       <div
-        class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700"
-        th:attr="data-expected-order=${#strings.listJoin(expectedOrder, ',')},data-entry-open=${entryOpen},data-has-entry=${hasEntry}"
+        x-data="Ligitabl.finalTablePage($el)"
+        th:attr="data-rows=${rowsJson},data-entry-open=${entryOpen and !isGuest},data-has-entry=${hasEntry}"
       >
-        <!--
-          th:block wrappers, never th:if on the same element as th:replace: attribute processing
-          order otherwise renders both branches (docs/backend-dev.md).
-        -->
-        <th:block th:if="${revealed == true}">
-          <div th:replace="~{fragments/final-table-rows :: result}"></div>
+        <div
+          class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700"
+        >
+          <!--
+            th:block wrappers, never th:if on the same element as th:replace: attribute processing
+            order otherwise renders both branches (docs/backend-dev.md).
+          -->
+          <th:block th:if="${revealed == true}">
+            <div th:replace="~{fragments/final-table-rows :: result}"></div>
+          </th:block>
+          <th:block th:if="${revealed == false}">
+            <div th:replace="~{fragments/final-table-rows :: table}"></div>
+          </th:block>
+        </div>
+
+        <!-- Save: shown only while the table can still be changed and the viewer owns it. -->
+        <th:block th:if="${entryOpen == true and isGuest == false}">
+          <!--
+            Same mechanism as predictions.html: a raw IntersectionObserver on the page footer (the
+            x-intersect plugin is not bundled). The floating pill shows only while the footer is
+            off-screen, so a long table never leaves Save out of reach.
+          -->
+          <div
+            class="mt-4 flex items-center gap-3"
+            x-init="
+              const footer = document.querySelector('footer');
+              if (footer) {
+                new IntersectionObserver(
+                  (entries) => { footerVisible = entries[0].isIntersecting; }
+                ).observe(footer);
+              }
+            "
+          >
+            <div th:replace="~{fragments/final-table-actions :: save-button('rounded-lg')}"></div>
+            <span
+              x-show="getDirtyCount() > 0"
+              x-cloak
+              class="text-sm text-gray-500"
+              x-text="getDirtyCount() + ' moved'"
+            ></span>
+            <span
+              x-show="message"
+              x-cloak
+              x-text="message"
+              class="text-sm"
+              :class="messageKind === 'error' ? 'text-red-600' : 'text-indigo-600'"
+            ></span>
+          </div>
+
+          <template x-teleport="body">
+            <div
+              x-cloak
+              x-show="!footerVisible"
+              x-transition.opacity
+              class="pointer-events-none fixed inset-x-0 bottom-5 z-40 flex justify-center px-4"
+            >
+              <div
+                th:replace="~{fragments/final-table-actions :: save-button('pointer-events-auto rounded-full shadow-lg')}"
+              ></div>
+            </div>
+          </template>
         </th:block>
-        <th:block th:if="${revealed == false}">
-          <div th:replace="~{fragments/final-table-rows :: table}"></div>
+
+        <!-- Dev-only, and visually distinct so it can never read as a player action. -->
+        <th:block th:if="${devPreviewEnabled == true}">
+          <div
+            class="mt-8 rounded-lg border-2 border-dashed border-amber-400 bg-amber-50 p-4 dark:border-amber-600 dark:bg-amber-950"
+          >
+            <p
+              class="mb-3 text-xs font-semibold uppercase text-amber-800 dark:text-amber-300"
+            >
+              Dev preview — scores against current standings, not final
+            </p>
+            <div class="flex gap-2">
+              <button
+                type="button"
+                @click="devScore()"
+                :disabled="inFlight"
+                class="rounded border border-amber-600 px-3 py-1.5 text-sm text-amber-900 hover:bg-amber-100 disabled:opacity-50 dark:text-amber-200 dark:hover:bg-amber-900"
+              >
+                Score now (dev)
+              </button>
+              <button
+                type="button"
+                @click="devClear()"
+                :disabled="inFlight"
+                class="rounded border border-amber-600 px-3 py-1.5 text-sm text-amber-900 hover:bg-amber-100 disabled:opacity-50 dark:text-amber-200 dark:hover:bg-amber-900"
+              >
+                Clear scores (dev)
+              </button>
+            </div>
+          </div>
         </th:block>
       </div>
 
-      <!-- Save: shown only while the table can still be changed and the viewer owns it. -->
-      <th:block th:if="${entryOpen == true and isGuest == false}">
-        <div class="mt-4 flex items-center gap-3">
-          <button
-            type="button"
-            id="final-table-save"
-            class="rounded-lg bg-emerald-600 px-5 py-2.5 font-medium text-white hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
-            th:disabled="${hasEntry == true}"
-          >
-            Save
-          </button>
-          <span
-            class="text-sm text-gray-500 dark:text-gray-400"
-            th:if="${swapCount > 0}"
-            th:text="|${swapCount} swaps so far|"
-            >0 swaps so far</span
-          >
-        </div>
-      </th:block>
-
-      <!-- Dev-only, and visually distinct so it can never read as a player action. -->
-      <th:block th:if="${devPreviewEnabled == true}">
-        <div
-          class="mt-8 rounded-lg border-2 border-dashed border-amber-400 bg-amber-50 p-4 dark:border-amber-600 dark:bg-amber-950"
-        >
-          <p class="mb-3 text-xs font-semibold uppercase text-amber-800 dark:text-amber-300">
-            Dev preview — scores against current standings, not final
-          </p>
-          <div class="flex gap-2">
-            <button
-              type="button"
-              id="final-table-dev-score"
-              class="rounded border border-amber-600 px-3 py-1.5 text-sm text-amber-900 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900"
-            >
-              Score now (dev)
-            </button>
-            <button
-              type="button"
-              id="final-table-dev-clear"
-              class="rounded border border-amber-600 px-3 py-1.5 text-sm text-amber-900 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900"
-            >
-              Clear scores (dev)
-            </button>
-          </div>
-        </div>
-      </th:block>
+      <div th:replace="~{fragments/final-table-share :: card}"></div>
 
       <div class="mt-8 flex gap-4 text-sm">
         <a
           th:href="@{/final-table/leaderboard}"
-          class="text-emerald-600 hover:underline dark:text-emerald-400"
+          class="text-indigo-600 hover:underline dark:text-indigo-400"
           >Leaderboard</a
         >
         <a
           th:if="${shareUrl != null}"
           th:href="${shareUrl}"
-          class="text-emerald-600 hover:underline dark:text-emerald-400"
+          class="text-indigo-600 hover:underline dark:text-indigo-400"
           >Public link</a
         >
       </div>

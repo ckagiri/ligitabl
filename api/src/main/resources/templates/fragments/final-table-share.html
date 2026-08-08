@@ -1,0 +1,45 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <!--
+      Share controls. Mounted separately from finalTablePage so the read-only public view can carry
+      them without the editing component.
+    -->
+    <div
+      th:fragment="card"
+      th:if="${shareUrl != null}"
+      x-data="Ligitabl.finalTableShareCard($el)"
+      th:attr="data-rows=${shareRowsJson},data-share-url=${shareUrl},data-share-text=${shareText},data-title=${shareCardTitle},data-subtitle=${shareCardSubtitle}"
+      class="mt-6 flex flex-wrap items-center gap-2"
+    >
+      <button
+        type="button"
+        @click="shareCard()"
+        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+      >
+        Share
+      </button>
+      <button
+        type="button"
+        @click="downloadCard()"
+        :disabled="rendering"
+        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+      >
+        Download image
+      </button>
+      <button
+        type="button"
+        @click="copyLink()"
+        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
+      >
+        Copy link
+      </button>
+      <span
+        x-show="message"
+        x-cloak
+        x-text="message"
+        class="text-sm text-emerald-600 dark:text-emerald-400"
+      ></span>
+    </div>
+  </body>
+</html>

@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.finaltable.shared.FinalTableRowsJson;
 import com.ligitabl.api.web.shared.share.SharePredictionTextBuilder;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Competition;
@@ -46,6 +47,7 @@ public class PublicFinalTableController {
     private final TeamRepo teamRepo;
     private final SharePredictionTextBuilder shareTextBuilder;
     private final CompetitionDefaults competitionDefaults;
+    private final FinalTableRowsJson rowsJson;
 
     @Value("${ligitabl.frontend.share-url:${ligitabl.frontend.url:http://localhost:8080}}")
     private String frontendShareUrl;
@@ -111,6 +113,14 @@ public class PublicFinalTableController {
         model.addAttribute("seasonName", season.getName());
         model.addAttribute("shareUrl", shareUrl);
         model.addAttribute("shareText", shareTextBuilder.buildFinalTable(rankings, teamsByCode, shareUrl));
+        model.addAttribute("rowsJson", rowsJson.rows(rankings, teamsByCode));
+        model.addAttribute(
+                "shareRowsJson",
+                rowsJson.shareRows(rankings, teamsByCode, revealed ? prediction.getResultRankings() : null));
+        model.addAttribute("shareCardTitle", "%s's Final Table".formatted(user.getDisplayName()));
+        model.addAttribute(
+                "shareCardSubtitle",
+                revealed ? "Scored " + prediction.getTotalScore() : "Predicted before a ball was kicked");
         model.addAttribute("ogTitle", "%s's Final Table prediction".formatted(user.getDisplayName()));
         model.addAttribute(
                 "ogDescription",

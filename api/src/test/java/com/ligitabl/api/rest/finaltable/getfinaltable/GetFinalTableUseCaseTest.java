@@ -20,6 +20,7 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.config.FinalTableDevProperties;
+import com.ligitabl.api.rest.finaltable.shared.FinalTableRowsJson;
 import com.ligitabl.api.rest.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
@@ -89,7 +90,8 @@ class GetFinalTableUseCaseTest {
                 new FinalTableSupport(competitionDefaults, seasonRepo, roundRepo, roundSupport),
                 teamRepo,
                 new SharePredictionTextBuilder(),
-                devProperties);
+                devProperties,
+                new FinalTableRowsJson());
         ReflectionTestUtils.setField(useCase, "frontendShareUrl", "https://ligipredictor.test");
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));

@@ -900,6 +900,403 @@ window.Ligitabl.publicPredictionPage = function (el) {
     });
 };
 
+// --- Final Table Predictor ---------------------------------------------------
+//
+// The select-and-swap behaviour only, extracted so finalTablePage can reuse it without
+// inheriting predictionPage's cooldown state, round navigation, what-if, results banners and
+// access modes — nine months of main-game concerns it would then have to suppress.
+window.Ligitabl._selectAndSwap = function () {
+    return {
+        teams: [],
+        selectedTeam: null,
+
+        isSelected(teamCode) {
+            return this.selectedTeam === teamCode;
+        },
+
+        // Tap a row to select, tap a second to swap them. Tapping the same row cancels.
+        tapTeam(teamCode) {
+            if (this.selectedTeam === null) {
+                this._select(teamCode);
+                return;
+            }
+            if (this.selectedTeam === teamCode) {
+                this.selectedTeam = null;
+                return;
+            }
+            const from = this.selectedTeam;
+            this.selectedTeam = null;
+            this._swap(from, teamCode);
+        },
+
+        _select(teamCode) {
+            this.selectedTeam = teamCode;
+            this.$nextTick(() => {
+                const row = document.querySelector(`[data-team-code='${teamCode}']`);
+                if (row) {
+                    row.classList.add('selected-pulse');
+                    setTimeout(() => row.classList.remove('selected-pulse'), 300);
+                }
+            });
+        },
+
+        // Swaps the two rows and renumbers. onSwapped fires before the highlight so callers can
+        // record the pair while positions are still fresh.
+        _swap(codeA, codeB, onSwapped) {
+            const indexA = this.teams.findIndex((t) => t.code === codeA);
+            const indexB = this.teams.findIndex((t) => t.code === codeB);
+            if (indexA < 0 || indexB < 0) return;
+
+            const temp = this.teams[indexA];
+            this.teams[indexA] = this.teams[indexB];
+            this.teams[indexB] = temp;
+            this.teams.forEach((team, idx) => (team.position = idx + 1));
+
+            if (onSwapped) onSwapped();
+
+            this.$nextTick(() => {
+                const rowA = document.querySelector(`[data-team-code='${codeA}']`);
+                const rowB = document.querySelector(`[data-team-code='${codeB}']`);
+                if (rowA) rowA.classList.add('swapping');
+                if (rowB) rowB.classList.add('swapping');
+                setTimeout(() => {
+                    if (rowA) rowA.classList.remove('swapping');
+                    if (rowB) rowB.classList.remove('swapping');
+                }, 400);
+            });
+        },
+    };
+};
+
+window.Ligitabl.finalTablePage = function (el) {
+    const dataset = el?.dataset || {};
+    const readBool = (value) => value === 'true';
+
+    const base = Ligitabl._selectAndSwap();
+    // Captured before the override below replaces it on the merged object.
+    const baseSwap = base._swap;
+
+    return Object.assign(base, {
+        // Server truth, re-read after every successful save.
+        hasEntry: readBool(dataset.hasEntry),
+        entryOpen: readBool(dataset.entryOpen),
+        originalTeams: [],
+        // The pairs tapped since the last save, in order. Replayed server-side.
+        pendingSwaps: [],
+        inFlight: false,
+        // Set by an IntersectionObserver on the page footer (see final-table.html); the floating
+        // pill shows while the footer is off-screen. Starts false so the pill is available on load
+        // rather than waiting for the first observer callback.
+        footerVisible: false,
+        message: null,
+        messageKind: null,
+
+        init() {
+            // Rows carry code/name/shortName so a swap re-renders without another round trip.
+            const rows = Ligitabl._parseJSON(dataset.rows, []);
+            this.teams = rows.map((row, idx) => ({ ...row, position: idx + 1 }));
+            // The last saved order. Drives the dirty tint and the ↑/↓ arrows, and is re-baselined
+            // on every successful save so the markers reflect "since you last saved".
+            this.originalTeams = JSON.parse(JSON.stringify(this.teams));
+        },
+
+        // --- shared visual language with the main prediction table ---
+
+        isDirty(teamCode) {
+            const team = this.teams.find((t) => t.code === teamCode);
+            const original = this.originalTeams.find((t) => t.code === teamCode);
+            if (!team || !original) return false;
+            return team.position !== original.position;
+        },
+
+        getPositionChange(teamCode) {
+            const team = this.teams.find((t) => t.code === teamCode);
+            const original = this.originalTeams.find((t) => t.code === teamCode);
+            if (!team || !original) return null;
+            const change = original.position - team.position;
+            if (change === 0) return null;
+            return change > 0 ? '↑' + change : '↓' + Math.abs(change);
+        },
+
+        // Neutral badge: pre-GW1 there are no results to tint by, unlike the main table's
+        // form-driven colouring.
+        teamBadgeClasses() {
+            return 'bg-gray-200 text-gray-700';
+        },
+
+        getDirtyCount() {
+            return this.teams.filter((t) => this.isDirty(t.code)).length;
+        },
+
+        // Rows are only interactive while the table can still change.
+        canEdit() {
+            return this.entryOpen && !this.inFlight;
+        },
+
+        onRowTap(teamCode) {
+            if (!this.canEdit()) return;
+            this.tapTeam(teamCode);
+        },
+
+        // Wraps the helper so each swap is also recorded for the server to replay.
+        _swap(codeA, codeB) {
+            baseSwap.call(this, codeA, codeB, () => {
+                this.pendingSwaps.push({ teamA: codeA, teamB: codeB });
+            });
+        },
+
+        // Enabled on the first save even with nothing pending — that is how a player accepts the
+        // baseline, and the only empty batch the server accepts. Once a row exists, a clean table
+        // means there is nothing to save, so the button goes flat rather than earning a 400.
+        saveEnabled() {
+            return this.entryOpen && !this.inFlight && (this.pendingSwaps.length > 0 || !this.hasEntry);
+        },
+
+        currentOrder() {
+            return this.teams
+                .slice()
+                .sort((a, b) => a.position - b.position)
+                .map((t) => t.code);
+        },
+
+        save() {
+            if (!this.saveEnabled()) return;
+            this.inFlight = true;
+            this.message = null;
+
+            const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+            const headers = { 'Content-Type': 'application/json' };
+            if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+
+            fetch('/final-table', {
+                method: 'POST',
+                headers,
+                body: JSON.stringify({
+                    swaps: this.pendingSwaps,
+                    // A checksum, not the payload: the server stores the result of replaying swaps.
+                    expectedOrder: this.currentOrder(),
+                }),
+            })
+                .then((r) => r.json().then((data) => ({ ok: r.ok, status: r.status, data })))
+                .then(({ ok, status, data }) => {
+                    this.inFlight = false;
+
+                    if (ok && data.success) {
+                        this.pendingSwaps = [];
+                        // The saved order is the new baseline, so dirty tints and arrows clear.
+                        this.originalTeams = JSON.parse(JSON.stringify(this.teams));
+                        // Without this the button stays enabled on a now-existing clean row and the
+                        // next press earns the NothingToSave 400 this rule exists to prevent.
+                        this.hasEntry = true;
+                        this._flash(data.message || 'Saved', 'success');
+                        return;
+                    }
+
+                    if (status === 409) {
+                        this._flash(data.message || 'This table changed in another tab. Reloading.', 'error');
+                        setTimeout(() => window.location.reload(), 1200);
+                        return;
+                    }
+
+                    this._flash((data && data.message) || 'Could not save your table', 'error');
+                })
+                .catch(() => {
+                    this.inFlight = false;
+                    this._flash('Could not save your table', 'error');
+                });
+        },
+
+        // Dev preview only: rendered behind devPreviewEnabled, and the endpoints do not exist as
+        // beans outside non-prod profiles. Reloads so every read path picks up the new state.
+        devScore() {
+            this._devPost('/dev/final-table/score');
+        },
+
+        devClear() {
+            this._devPost('/dev/final-table/clear');
+        },
+
+        _devPost(url) {
+            if (this.inFlight) return;
+            this.inFlight = true;
+
+            const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+            const headers = { 'Content-Type': 'application/json' };
+            if (csrfToken) headers['X-CSRF-TOKEN'] = csrfToken;
+
+            fetch(url, { method: 'POST', headers })
+                .then((r) => r.json().then((data) => ({ ok: r.ok, data })))
+                .then(({ ok, data }) => {
+                    this.inFlight = false;
+                    if (!ok) {
+                        this._flash((data && data.message) || 'Dev action failed', 'error');
+                        return;
+                    }
+                    window.location.reload();
+                })
+                .catch(() => {
+                    this.inFlight = false;
+                    this._flash('Dev action failed', 'error');
+                });
+        },
+
+        _flash(message, kind) {
+            this.message = message;
+            this.messageKind = kind;
+            setTimeout(() => {
+                this.message = null;
+                this.messageKind = null;
+            }, 4000);
+        },
+    });
+};
+
+// Share card: draws the table to an offscreen canvas and offers it as a PNG.
+//
+// Separate from finalTablePage so the public read-only view can mount it without the editing
+// component. Text and colour blocks only — remote crest images would taint the canvas and make
+// toBlob() throw SecurityError.
+window.Ligitabl.finalTableShareCard = function (el) {
+    const dataset = el?.dataset || {};
+
+    return {
+        rendering: false,
+        message: null,
+
+        rows() {
+            return Ligitabl._parseJSON(dataset.rows, []);
+        },
+
+        title() {
+            return dataset.title || 'My Final Table';
+        },
+
+        shareUrl() {
+            return dataset.shareUrl || '';
+        },
+
+        shareText() {
+            return dataset.shareText || '';
+        },
+
+        _drawCard() {
+            const rows = this.rows();
+            const width = 720;
+            const headerHeight = 96;
+            const rowHeight = 34;
+            const footerHeight = 56;
+            const height = headerHeight + rows.length * rowHeight + footerHeight;
+
+            const canvas = document.createElement('canvas');
+            // Draw at 2x for a crisp card on high-density screens, then scale the context.
+            const scale = 2;
+            canvas.width = width * scale;
+            canvas.height = height * scale;
+            const ctx = canvas.getContext('2d');
+            ctx.scale(scale, scale);
+
+            const gradient = ctx.createLinearGradient(0, 0, width, height);
+            gradient.addColorStop(0, '#064e3b');
+            gradient.addColorStop(1, '#0f172a');
+            ctx.fillStyle = gradient;
+            ctx.fillRect(0, 0, width, height);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '600 26px system-ui, -apple-system, sans-serif';
+            ctx.fillText(this.title(), 32, 48);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.65)';
+            ctx.font = '15px system-ui, -apple-system, sans-serif';
+            ctx.fillText(dataset.subtitle || 'Predicted before a ball was kicked', 32, 74);
+
+            rows.forEach((row, idx) => {
+                const y = headerHeight + idx * rowHeight;
+
+                if (idx % 2 === 0) {
+                    ctx.fillStyle = 'rgba(255,255,255,0.05)';
+                    ctx.fillRect(24, y - 2, width - 48, rowHeight - 2);
+                }
+
+                // A neutral marker stands in for the crest: Team has no colour field, and remote
+                // logos would taint the canvas and make toBlob() throw.
+                ctx.fillStyle = 'rgba(255,255,255,0.35)';
+                ctx.fillRect(32, y + 6, 4, 16);
+
+                ctx.fillStyle = 'rgba(255,255,255,0.55)';
+                ctx.font = '14px system-ui, -apple-system, sans-serif';
+                ctx.fillText(String(idx + 1).padStart(2, ' '), 52, y + 20);
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '15px system-ui, -apple-system, sans-serif';
+                ctx.fillText(row.name || row.code || '', 88, y + 20);
+
+                if (row.actual != null) {
+                    ctx.fillStyle = row.hit === 0 ? '#34d399' : 'rgba(255,255,255,0.55)';
+                    ctx.font = '14px system-ui, -apple-system, sans-serif';
+                    ctx.fillText('→ ' + row.actual, width - 96, y + 20);
+                }
+            });
+
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.font = '13px system-ui, -apple-system, sans-serif';
+            ctx.fillText(this.shareUrl().replace(/^https?:\/\//, ''), 32, height - 22);
+
+            return canvas;
+        },
+
+        downloadCard() {
+            if (this.rendering) return;
+            this.rendering = true;
+            try {
+                this._drawCard().toBlob((blob) => {
+                    this.rendering = false;
+                    if (!blob) return;
+                    const url = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.download = 'final-table.png';
+                    link.click();
+                    URL.revokeObjectURL(url);
+                });
+            } catch (e) {
+                this.rendering = false;
+                console.warn('Failed to render share card:', e);
+            }
+        },
+
+        shareCard() {
+            // navigator.share with files where supported; copy-link is the fallback everywhere else.
+            if (!navigator.canShare) {
+                this.copyLink();
+                return;
+            }
+            this._drawCard().toBlob((blob) => {
+                if (!blob) return;
+                const file = new File([blob], 'final-table.png', { type: 'image/png' });
+                if (!navigator.canShare({ files: [file] })) {
+                    this.copyLink();
+                    return;
+                }
+                navigator
+                    .share({ files: [file], text: this.shareText(), url: this.shareUrl() })
+                    .catch(() => {});
+            });
+        },
+
+        copyLink() {
+            const text = this.shareText() || this.shareUrl();
+            if (!navigator.clipboard) return;
+            navigator.clipboard.writeText(text).then(
+                () => {
+                    this.message = 'Copied';
+                    setTimeout(() => (this.message = null), 2000);
+                },
+                () => {}
+            );
+        },
+    };
+};
+
 // Three plausible scores per outcome, doubling as both the quick-pick chip strip and the
 // random pool for the reroll dice. Matches the design in .art/gameweek-v5.html.
 const WHAT_IF_CHIPS = {

@@ -13,7 +13,9 @@ import com.ligitabl.model.domain.TeamRank;
  * Everything the Final Table page renders, in one object.
  *
  * @param rankings the table to display, in position order — the user's own, or the season baseline
- * @param teamsByCode crest/name lookup for the rows
+ * @param teamsByCode name lookup for the server-rendered result table
+ * @param rowsJson the same rows as JSON for the Alpine component — a swap has to reorder rows
+ *     client-side, so it needs code and display name without another round trip
  * @param entryOpen whether the table may still be edited (round 1 open, season not completed)
  * @param hasEntry whether a row exists; drives the Save button's enablement on an empty batch
  * @param revealed whether the result may be shown — {@code prediction.isScored()}, not season
@@ -28,11 +30,13 @@ import com.ligitabl.model.domain.TeamRank;
  * @param totalScore base + bonus, null until revealed
  * @param roundStatus round 1's resolved status, for the locked-state copy
  * @param isGuest true when nobody is signed in — read-only teaser with a sign-up CTA
+ * @param shareRowsJson rows for the share canvas, with actual/hit once revealed
  * @param devPreviewEnabled renders the dev score/clear controls
  */
 public record FinalTableViewData(
         List<TeamRank> rankings,
         Map<String, Team> teamsByCode,
+        String rowsJson,
         boolean entryOpen,
         boolean hasEntry,
         boolean revealed,
@@ -47,6 +51,7 @@ public record FinalTableViewData(
         String roundStatus,
         String shareUrl,
         String shareText,
+        String shareRowsJson,
         boolean isGuest,
         boolean devPreviewEnabled) {
 

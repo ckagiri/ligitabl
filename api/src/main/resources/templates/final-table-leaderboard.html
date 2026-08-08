@@ -12,7 +12,7 @@
         </h1>
         <a
           th:href="@{/final-table}"
-          class="mt-2 inline-block text-sm text-emerald-600 hover:underline dark:text-emerald-400"
+          class="mt-2 inline-block text-sm text-indigo-600 hover:underline dark:text-indigo-400"
           >Back to your table</a
         >
       </header>
@@ -78,7 +78,7 @@
               <tbody>
                 <tr
                   th:each="entry, iter : ${leaderboard}"
-                  th:classappend="${entry.publicId == currentUserPublicId} ? 'bg-emerald-50 dark:bg-emerald-950' : ''"
+                  th:classappend="${entry.publicId == currentUserPublicId} ? 'bg-indigo-50 dark:bg-indigo-950' : ''"
                 >
                   <!--
                     displayPositions collapses genuine ties to =4/=4/6; row_number() alone would
@@ -126,9 +126,9 @@
           <!-- The viewer's own standing, when they're off the current page. -->
           <th:block th:if="${userEntry != null}">
             <div
-              class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm dark:border-emerald-800 dark:bg-emerald-950"
+              class="mt-4 rounded-lg border border-indigo-200 bg-indigo-50 p-3 text-sm dark:border-indigo-800 dark:bg-indigo-950"
             >
-              <span class="text-emerald-900 dark:text-emerald-200">
+              <span class="text-indigo-900 dark:text-indigo-200">
                 You're
                 <strong th:text="${userEntry.position}">0</strong>
                 with
@@ -142,7 +142,7 @@
             <a
               th:if="${hasPreviousPage == true}"
               th:href="@{/final-table/leaderboard(page=${currentPage - 1})}"
-              class="text-emerald-600 hover:underline dark:text-emerald-400"
+              class="text-indigo-600 hover:underline dark:text-indigo-400"
               >Previous</a
             >
             <span class="text-gray-500 dark:text-gray-400">
@@ -152,7 +152,7 @@
             <a
               th:if="${hasNextPage == true}"
               th:href="@{/final-table/leaderboard(page=${currentPage + 1})}"
-              class="text-emerald-600 hover:underline dark:text-emerald-400"
+              class="text-indigo-600 hover:underline dark:text-indigo-400"
               >Next</a
             >
           </nav>
