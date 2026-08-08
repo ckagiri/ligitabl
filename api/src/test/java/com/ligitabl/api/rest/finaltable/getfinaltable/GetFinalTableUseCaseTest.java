@@ -134,7 +134,7 @@ class GetFinalTableUseCaseTest {
     @Test
     void aGuestSeesTheBaselineTableReadOnly() {
         // The game is an on-ramp, so a guest gets a real table rather than an empty state.
-        var data = useCase.execute(null, null).get();
+        var data = useCase.execute(null, null, null).get();
 
         assertThat(data.isGuest()).isTrue();
         assertThat(data.hasEntry()).isFalse();
@@ -148,7 +148,7 @@ class GetFinalTableUseCaseTest {
         UUID userId = UUID.randomUUID();
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.empty());
 
-        var data = useCase.execute(userId, "abc123").get();
+        var data = useCase.execute(userId, "abc123", "Foobar").get();
 
         assertThat(data.isGuest()).isFalse();
         assertThat(data.hasEntry()).isFalse();
@@ -161,7 +161,7 @@ class GetFinalTableUseCaseTest {
         UUID userId = UUID.randomUUID();
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
 
-        var data = useCase.execute(userId, "abc123").get();
+        var data = useCase.execute(userId, "abc123", "Foobar").get();
 
         assertThat(data.hasEntry()).isTrue();
         assertThat(data.expectedOrder()).containsExactly("LIV", "ARS", "MCI");
@@ -176,7 +176,7 @@ class GetFinalTableUseCaseTest {
         prediction.setZeroesCount(20);
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
 
-        var data = useCase.execute(userId, "abc123").get();
+        var data = useCase.execute(userId, "abc123", "Foobar").get();
 
         assertThat(data.revealed()).isFalse();
         assertThat(data.totalScore()).isNull();
@@ -196,7 +196,7 @@ class GetFinalTableUseCaseTest {
         prediction.setTotalScore(26);
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
 
-        var data = useCase.execute(userId, "abc123").get();
+        var data = useCase.execute(userId, "abc123", "Foobar").get();
 
         assertThat(data.revealed()).isTrue();
         assertThat(data.totalScore()).isEqualTo(26);
@@ -211,7 +211,7 @@ class GetFinalTableUseCaseTest {
         UUID userId = UUID.randomUUID();
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
 
-        var data = useCase.execute(userId, "abc123").get();
+        var data = useCase.execute(userId, "abc123", "Foobar").get();
 
         assertThat(data.entryOpen()).isFalse();
         assertThat(data.rankings()).hasSize(3);
@@ -223,7 +223,7 @@ class GetFinalTableUseCaseTest {
         UUID userId = UUID.randomUUID();
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
 
-        var data = useCase.execute(userId, "abc123").get();
+        var data = useCase.execute(userId, "abc123", "Foobar").get();
 
         // Shorthand, and specifically not the SeasonSlug record's toString: interpolating that
         // yields ".../SeasonSlug[value=2026-27]" and every share link is broken.
@@ -238,7 +238,7 @@ class GetFinalTableUseCaseTest {
 
     @Test
     void omitsShareLinksForAGuestWhoHasNothingToShare() {
-        var data = useCase.execute(null, null).get();
+        var data = useCase.execute(null, null, null).get();
 
         assertThat(data.shareUrl()).isNull();
         assertThat(data.shareText()).isNull();
@@ -246,9 +246,51 @@ class GetFinalTableUseCaseTest {
 
     @Test
     void devPreviewIsOffByDefault() {
-        var data = useCase.execute(null, null).get();
+        var data = useCase.execute(null, null, null).get();
 
         assertThat(data.devPreviewEnabled()).isFalse();
+    }
+
+    // --- owner name for the share card ----------------------------------------------------
+
+    @Test
+    void carriesTheOwnersNameForTheShareCard() {
+        UUID userId = UUID.randomUUID();
+        when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
+
+        var data = useCase.execute(userId, "abc123", "Foobar").get();
+
+        assertThat(data.ownerName()).isEqualTo("Foobar");
+    }
+
+    @Test
+    void cleansMarkupOutOfTheOwnersName() {
+        // Stored names are validated for length only, so markup is already in the data. It is inert
+        // in every render path (Thymeleaf escapes), but it would be painted verbatim onto the card.
+        // Legible text is salvaged rather than blanked, so the card can still be personalised.
+        UUID userId = UUID.randomUUID();
+        when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
+
+        var data = useCase.execute(userId, "abc123", "<script>alert(1)</script>").get();
+
+        assertThat(data.ownerName()).isEqualTo("alert 1");
+    }
+
+    @Test
+    void hasNoOwnerNameWhenNothingLegibleSurvives() {
+        UUID userId = UUID.randomUUID();
+        when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
+
+        var data = useCase.execute(userId, "abc123", "<script></script>").get();
+
+        assertThat(data.ownerName()).isNull();
+    }
+
+    @Test
+    void hasNoOwnerNameForAGuest() {
+        var data = useCase.execute(null, null, null).get();
+
+        assertThat(data.ownerName()).isNull();
     }
 
     // --- live progress: locked, not yet scored, standings exist ---------------------------
@@ -278,7 +320,7 @@ class GetFinalTableUseCaseTest {
         // Predicted LIV 1, ARS 2, MCI 3; actually ARS 1, MCI 2, LIV 3.
         lockedWithStandings(List.of(standing("ARS", 1), standing("MCI", 2), standing("LIV", 3)));
 
-        var data = useCase.execute(userId, "abc123").get();
+        var data = useCase.execute(userId, "abc123", "Foobar").get();
 
         assertThat(data.liveProgress()).isTrue();
         assertThat(data.liveRowsJson())
@@ -294,7 +336,7 @@ class GetFinalTableUseCaseTest {
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
         lockedWithStandings(List.of(standing("ARS", 1), standing("MCI", 2), standing("LIV", 3)));
 
-        var data = useCase.execute(userId, "abc123").get();
+        var data = useCase.execute(userId, "abc123", "Foobar").get();
 
         assertThat(data.liveProgress()).isTrue();
         assertThat(data.revealed()).isFalse();
@@ -312,7 +354,7 @@ class GetFinalTableUseCaseTest {
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
         lockedWithStandings(List.of(standing("ARS", 1), standing("MCI", 2), standing("LIV", 3)));
 
-        useCase.execute(userId, "abc123");
+        useCase.execute(userId, "abc123", "Foobar");
 
         // A GET must never take the StandingsSource.CURRENT path, which persists and reveals.
         verify(predictionRepo, never()).save(any());
@@ -324,7 +366,7 @@ class GetFinalTableUseCaseTest {
         UUID userId = UUID.randomUUID();
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
 
-        var data = useCase.execute(userId, "abc123").get();
+        var data = useCase.execute(userId, "abc123", "Foobar").get();
 
         assertThat(data.entryOpen()).isTrue();
         assertThat(data.liveProgress()).isFalse();
@@ -341,7 +383,7 @@ class GetFinalTableUseCaseTest {
         season.setCompleted(true);
         when(standingsRepo.findLatestBySeason(seasonId)).thenReturn(Optional.empty());
 
-        var data = useCase.execute(userId, "abc123").get();
+        var data = useCase.execute(userId, "abc123", "Foobar").get();
 
         assertThat(data.liveProgress()).isFalse();
         assertThat(data.liveRowsJson()).isEqualTo("[]");
@@ -356,7 +398,7 @@ class GetFinalTableUseCaseTest {
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
         season.setCompleted(true);
 
-        var data = useCase.execute(userId, "abc123").get();
+        var data = useCase.execute(userId, "abc123", "Foobar").get();
 
         assertThat(data.revealed()).isTrue();
         assertThat(data.liveProgress()).isFalse();
@@ -367,7 +409,7 @@ class GetFinalTableUseCaseTest {
     void liveProgressIsOffForAGuest() {
         season.setCompleted(true);
 
-        var data = useCase.execute(null, null).get();
+        var data = useCase.execute(null, null, null).get();
 
         assertThat(data.liveProgress()).isFalse();
         verify(standingsRepo, never()).findLatestBySeason(any());
@@ -380,7 +422,7 @@ class GetFinalTableUseCaseTest {
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
         lockedWithStandings(List.of(standing("ARS", 1), standing("LIV", 2)));
 
-        var data = useCase.execute(userId, "abc123").get();
+        var data = useCase.execute(userId, "abc123", "Foobar").get();
 
         assertThat(data.liveProgress()).isTrue();
         // MCI is in the prediction but not the standings, so it carries no `current`.

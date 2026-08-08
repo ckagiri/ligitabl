@@ -42,6 +42,9 @@ import com.ligitabl.model.domain.TeamRank;
  * @param liveRowsJson rows with each team's current standings position, {@code "[]"} unless
  *     {@code liveProgress}. Carries no score and deliberately no aggregate — see
  *     {@code FinalTableRowsJson.liveRows}
+ * @param ownerName the player's display name for the share card, cleaned via {@code DisplayNames}
+ *     and null when nothing legible survives. Never an email: the card is an image people post
+ *     publicly, so the caller falls back to generic wording rather than to any identifier
  */
 public record FinalTableViewData(
         List<TeamRank> rankings,
@@ -69,7 +72,8 @@ public record FinalTableViewData(
         boolean isGuest,
         boolean devPreviewEnabled,
         boolean liveProgress,
-        String liveRowsJson) {
+        String liveRowsJson,
+        String ownerName) {
 
     /** The order the client echoes back as its checksum on save. */
     public List<String> expectedOrder() {

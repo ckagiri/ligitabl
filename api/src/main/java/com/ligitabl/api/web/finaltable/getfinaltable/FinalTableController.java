@@ -10,6 +10,7 @@ import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.rest.finaltable.getfinaltable.FinalTableViewData;
 import com.ligitabl.api.rest.finaltable.getfinaltable.GetFinalTableUseCase;
 import com.ligitabl.api.web.shared.security.WebSecurity;
+import com.ligitabl.api.web.shared.user.DisplayNames;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -33,7 +34,12 @@ public class FinalTableController {
         WebUserDetails user = WebSecurity.resolveUser(principal);
 
         return getFinalTableUseCase
-                .execute(user == null ? null : user.getUserId(), user == null ? null : user.getPublicId())
+                .execute(
+                        user == null ? null : user.getUserId(),
+                        user == null ? null : user.getPublicId(),
+                        // Deliberately the raw field, not getDisplayName(): that falls back to the
+                        // email address, which must never reach a share card.
+                        user == null ? null : user.getRawDisplayName())
                 .fold(error -> renderUnavailable(error, model, response), data -> render(data, model));
     }
 
@@ -62,7 +68,14 @@ public class FinalTableController {
         model.addAttribute("shareText", data.shareText());
         model.addAttribute("shareRowsJson", data.shareRowsJson());
         model.addAttribute("shareCardTitle", (data.competitionName() + " " + data.seasonLabel()).trim());
-        model.addAttribute("shareCardKicker", "My final table prediction");
+        // "Foobar's final table prediction" beats "My …" on an image whose whole purpose is being
+        // posted somewhere the author is not obvious. Falls back to the generic wording rather than
+        // to any identifier — a blank display name must never surface an email here.
+        model.addAttribute(
+                "shareCardKicker",
+                data.ownerName() == null
+                        ? "My final table prediction"
+                        : "%s final table prediction".formatted(DisplayNames.possessive(data.ownerName())));
         model.addAttribute("shareCardSubtitle", data.teamCount() + " clubs · shared before season kickoff");
         model.addAttribute("isGuest", data.isGuest());
         model.addAttribute("devPreviewEnabled", data.devPreviewEnabled());

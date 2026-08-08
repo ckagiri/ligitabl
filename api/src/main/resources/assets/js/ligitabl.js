@@ -1376,6 +1376,50 @@ window.Ligitabl.finalTableShareCard = function (el) {
             return dataset.subtitle || '';
         },
 
+        /**
+         * Where a viewer goes to make their own — always the production address.
+         *
+         * Deliberately a constant, not derived from the share URL's host: this is a call to action
+         * printed into an image, and an image drawn on localhost or staging is still shared with
+         * people who need somewhere real to go. "localhost:8090/final-table" on a downloaded card
+         * would be useless to every one of them.
+         */
+        buildYoursUrl() {
+            return 'LigiPredictor.com/final-table';
+        },
+
+        /**
+         * "settled 12 Aug 2026, 14:32", in the viewer's own locale and timezone.
+         *
+         * Formatted client-side from the ISO instant rather than server-side: the server has no
+         * idea where the viewer is, and a UTC timestamp on a card someone shares locally reads as
+         * wrong by however many hours they are offset. Date *and* time, not date alone, because
+         * settledAt is the leaderboard tiebreak — two players who settled the same day are still
+         * separable, and the card should be able to show that.
+         *
+         * Returns '' when absent or unparseable, and the footer simply omits the line.
+         */
+        settledAtLabel() {
+            const raw = dataset.settledAt;
+            if (!raw) return '';
+            const at = new Date(raw);
+            if (Number.isNaN(at.getTime())) return '';
+            try {
+                return (
+                    'settled ' +
+                    at.toLocaleString(undefined, {
+                        day: 'numeric',
+                        month: 'short',
+                        year: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit',
+                    })
+                );
+            } catch (e) {
+                return '';
+            }
+        },
+
         _drawCard() {
             // Two-column scorecard: a 20-row single column makes a tall, thin image that reads
             // badly in a timeline. Square is the social format.
@@ -1599,13 +1643,27 @@ window.Ligitabl.finalTableShareCard = function (el) {
             ctx.fillStyle = 'rgba(0,0,0,0.35)';
             ctx.fillRect(0, footerY, W, 76);
 
+            // URL plus the moment the table was settled. Together they make the image checkable:
+            // the link resolves to the server-rendered table and the timestamp is server-clock
+            // truth, so a doctored screenshot is contradicted by something anyone can click. That
+            // is a better answer to misleading shares than capping how often people can save.
+            const settled = this.settledAtLabel();
             ctx.fillStyle = 'rgba(255,255,255,0.6)';
             ctx.font = '600 15px ' + FONT;
-            ctx.fillText(this.shareUrl().replace(/^https?:\/\//, ''), 60, footerY + 46);
+            ctx.fillText(this.shareUrl().replace(/^https?:\/\//, ''), 60, footerY + (settled ? 36 : 46));
+            if (settled) {
+                ctx.fillStyle = 'rgba(255,255,255,0.45)';
+                ctx.font = '500 13px ' + FONT;
+                ctx.fillText(settled, 60, footerY + 58);
+            }
 
+            // Host derived from the share URL rather than hardcoded, so the card is right on
+            // localhost and prod alike. A typeable path beats a bare brand name: the whole point of
+            // the footer is that someone seeing the image can go and make their own.
             ctx.fillStyle = ACCENT;
+            ctx.font = '600 15px ' + FONT;
             ctx.textAlign = 'right';
-            ctx.fillText('Build yours on LigiPredictor', W - 60, footerY + 46);
+            ctx.fillText('Build yours at ' + this.buildYoursUrl(), W - 60, footerY + 46);
             ctx.textAlign = 'left';
 
             return canvas;

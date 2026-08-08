@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.finaltable.shared.FinalTableRowsJson;
 import com.ligitabl.api.web.shared.share.SharePredictionTextBuilder;
+import com.ligitabl.api.web.shared.user.DisplayNames;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.FinalTablePrediction;
@@ -99,8 +100,14 @@ public class PublicFinalTableController {
         String shareUrl = "%s/final-table/u/%s/%s"
                 .formatted(frontendShareUrl, publicId, season.getSlug().toShorthand());
 
-        model.addAttribute("pageTitle", "%s's Final Table".formatted(user.getDisplayName()));
-        model.addAttribute("ownerName", user.getDisplayName());
+        // One cleaned name for every use below. User.getDisplayName() is a plain Lombok getter over
+        // a nullable column, so without this a user who never set one renders as "null's Final
+        // Table"; and a name containing markup would be painted verbatim onto the share canvas.
+        String ownerName = DisplayNames.clean(user.getDisplayName());
+        String ownerPossessive = ownerName == null ? "This player's" : DisplayNames.possessive(ownerName);
+
+        model.addAttribute("pageTitle", "%s Final Table".formatted(ownerPossessive));
+        model.addAttribute("ownerName", ownerName == null ? "This player" : ownerName);
         model.addAttribute("rankings", rankings);
         model.addAttribute("teamsByCode", teamsByCode);
         model.addAttribute("revealed", revealed);
@@ -118,11 +125,11 @@ public class PublicFinalTableController {
         model.addAttribute(
                 "shareRowsJson",
                 rowsJson.shareRows(rankings, teamsByCode, revealed ? prediction.getResultRankings() : null));
-        model.addAttribute("shareCardTitle", "%s's Final Table".formatted(user.getDisplayName()));
+        model.addAttribute("shareCardTitle", "%s Final Table".formatted(ownerPossessive));
         model.addAttribute("shareCardKicker", "Final table prediction");
         model.addAttribute("shareCardSubtitle", "%d clubs · shared before season kickoff".formatted(rankings.size()));
         model.addAttribute("competitionName", season.getName());
-        model.addAttribute("ogTitle", "%s's Final Table prediction".formatted(user.getDisplayName()));
+        model.addAttribute("ogTitle", "%s Final Table prediction".formatted(ownerPossessive));
         model.addAttribute(
                 "ogDescription",
                 revealed

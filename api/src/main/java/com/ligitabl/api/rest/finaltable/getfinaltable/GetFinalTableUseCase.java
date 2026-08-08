@@ -13,6 +13,7 @@ import com.ligitabl.api.rest.finaltable.shared.FinalTableRowsJson;
 import com.ligitabl.api.rest.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.shared.share.SharePredictionTextBuilder;
+import com.ligitabl.api.web.shared.user.DisplayNames;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.FinalTablePrediction;
 import com.ligitabl.model.domain.Season;
@@ -49,12 +50,16 @@ public class GetFinalTableUseCase {
     @Value("${ligitabl.frontend.share-url:${ligitabl.frontend.url:http://localhost:8080}}")
     private String frontendShareUrl;
 
-    /** @param userId null for a guest */
-    public Either<FinalTableError, FinalTableViewData> execute(UUID userId, String publicId) {
-        return finalTableSupport.activeSeason().map(season -> build(season, userId, publicId));
+    /**
+     * @param userId null for a guest
+     * @param displayName the viewer's own name, for the share card; null for a guest. Cleaned here
+     *     rather than trusted — see {@link DisplayNames}
+     */
+    public Either<FinalTableError, FinalTableViewData> execute(UUID userId, String publicId, String displayName) {
+        return finalTableSupport.activeSeason().map(season -> build(season, userId, publicId, displayName));
     }
 
-    private FinalTableViewData build(Season season, UUID userId, String publicId) {
+    private FinalTableViewData build(Season season, UUID userId, String publicId, String displayName) {
         boolean guest = userId == null;
         FinalTablePrediction prediction = guest
                 ? null
@@ -103,7 +108,8 @@ public class GetFinalTableUseCase {
                 guest,
                 devProperties.isEnabled(),
                 liveProgress,
-                liveProgress ? rowsJson.liveRows(rankings, teamsByCode, liveStandings) : "[]");
+                liveProgress ? rowsJson.liveRows(rankings, teamsByCode, liveStandings) : "[]",
+                guest ? null : DisplayNames.clean(displayName));
     }
 
     /** Falls back to the season name so the banner never renders a blank title. */
