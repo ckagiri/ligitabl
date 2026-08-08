@@ -182,6 +182,26 @@ class SaveFinalTablePredictionUseCaseTest {
         }
 
         @Test
+        void rejectsAFinalizedRoundOneEvenWithNoMatchesLoaded() {
+            // resolveStatus short-circuits to OPEN when a round has no match rows, before
+            // computeStatus can report FINALIZED. Entry must follow join-eligibility semantics
+            // instead, or a finalized round 1 would accept entries into an already-scored game.
+            roundOne.setFinalized(true);
+            when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+            when(roundRepo.findBySeasonIdOrderByPosition(seasonId)).thenReturn(List.of(roundOne));
+
+            var result =
+                    useCase.execute(userId, batch(List.of(new SwapPair("ARS", "LIV")), "LIV", "ARS", "MCI", "CHE"));
+
+            assertTrue(result.isLeft());
+            var error = assertInstanceOf(FinalTableError.EntryClosed.class, result.getLeft());
+            assertEquals("FINALIZED", error.roundStatus());
+            verify(predictionRepo, never()).save(any());
+            // The finalized flag decides it, so the match lookup is never needed.
+            verify(matchRepo, never()).findByRoundId(any());
+        }
+
+        @Test
         void rejectsWhenNoActiveSeason() {
             when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.empty());
 

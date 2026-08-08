@@ -16,8 +16,8 @@
         </p>
       </header>
 
-      <!-- Guest: read-only with a sign-up CTA. The game doubles as an on-ramp. -->
-      <th:block th:if="${isGuest == true}">
+      <!-- Guest, still open: read-only with a sign-up CTA. The game doubles as an on-ramp. -->
+      <th:block th:if="${isGuest == true and entryOpen == true}">
         <div
           class="mb-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950"
         >
@@ -29,6 +29,21 @@
             class="mt-3 inline-block rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
             >Create an account</a
           >
+        </div>
+      </th:block>
+
+      <!--
+        Guest, already locked: no CTA. Inviting someone to enter a game that has closed is a promise
+        the app cannot keep — say what happened and point at next season instead.
+      -->
+      <th:block th:if="${isGuest == true and entryOpen == false}">
+        <div
+          class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800"
+        >
+          <p class="text-sm text-gray-700 dark:text-gray-300">
+            Entries for this season closed when gameweek 1 kicked off. This is the
+            table everyone started from.
+          </p>
         </div>
       </th:block>
 

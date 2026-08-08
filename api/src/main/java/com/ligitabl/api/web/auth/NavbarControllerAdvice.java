@@ -16,6 +16,7 @@ import com.ligitabl.api.auth.impersonation.CurrentUserFacade;
 import com.ligitabl.api.auth.impersonation.UserSummary;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.rest.finaltable.shared.FinalTableSupport;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.User;
@@ -32,6 +33,7 @@ import lombok.RequiredArgsConstructor;
  * <ul>
  *   <li>hasContestEntry - true if logged-in user has joined the main contest</li>
  *   <li>isLoggedIn - true if user is authenticated</li>
+ *   <li>showFinalTableNav - whether to offer the Final Table link (see below)</li>
  * </ul>
  *
  * <p>Navbar label logic:
@@ -50,6 +52,7 @@ public class NavbarControllerAdvice {
     private final CompetitionDefaults competitionDefaults;
     private final UserRepo userRepo;
     private final CurrentUserFacade currentUserFacade;
+    private final FinalTableSupport finalTableSupport;
 
     @Value("${umami.website-id:}")
     private String umamiWebsiteId;
@@ -91,6 +94,29 @@ public class NavbarControllerAdvice {
         }
 
         return contestRepo.existsByUserAndContest(userId, mainContestId);
+    }
+
+    /**
+     * Whether to offer the Final Table Predictor in the navbar.
+     *
+     * <p>Signed-in players always see it — it is theirs whether or not it is still editable, and a
+     * locked or scored table is the whole point of the game. A guest only sees it while entry is
+     * still open: the link exists for them as an on-ramp, and inviting someone to a game they can
+     * no longer join is worse than not mentioning it.
+     *
+     * <p>Falls back to hiding the link if the season can't be resolved: a nav item that 503s is
+     * worse than an absent one.
+     */
+    @ModelAttribute("showFinalTableNav")
+    public boolean showFinalTableNav() {
+        if (isAuthenticatedUser(currentAuthentication())) {
+            return true;
+        }
+        try {
+            return finalTableSupport.isEntryOpen(getActiveSeason());
+        } catch (RuntimeException e) {
+            return false;
+        }
     }
 
     @ModelAttribute("predictionsNavLabel")

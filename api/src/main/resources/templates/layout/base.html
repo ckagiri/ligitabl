@@ -295,11 +295,6 @@
                 >Leaderboard</a
               >
               <a
-                th:href="@{/final-table}"
-                class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
-                >Final Table</a
-              >
-              <a
                 th:href="@{/rounds/current/standings}"
                 class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
                 >Standings</a
@@ -314,6 +309,16 @@
                 th:href="@{/contests}"
                 class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
                 >Contests</a
+              >
+              <!--
+                Guests: Final Table only while entry is still open — it is an on-ramp, and pointing
+                someone at a game they can no longer join is worse than staying quiet.
+              -->
+              <a
+                th:if="${!isLoggedIn and showFinalTableNav}"
+                th:href="@{/final-table}"
+                class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+                >Final Table</a
               >
               <!-- Guests: About/FAQ shown directly (desktop) -->
               <a
@@ -370,6 +375,12 @@
                   class="absolute left-0 mt-2 w-40 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
                 >
                   <div class="py-1">
+                    <a
+                      th:href="@{/final-table}"
+                      class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
+                      @click="moreMenuOpen = false"
+                      >Final Table</a
+                    >
                     <a
                       th:href="@{/about}"
                       class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
@@ -700,11 +711,6 @@
               >Leaderboard</a
             >
             <a
-              th:href="@{/final-table}"
-              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
-              >Final Table</a
-            >
-            <a
               th:href="@{/rounds/current/standings}"
               class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
               >Standings</a
@@ -719,6 +725,13 @@
               th:href="@{/contests}"
               class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
               >Contests</a
+            >
+            <!-- Guests: Final Table only while entry is still open (see desktop note). -->
+            <a
+              th:if="${!isLoggedIn and showFinalTableNav}"
+              th:href="@{/final-table}"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+              >Final Table</a
             >
             <!-- Guests: About/FAQ shown directly (mobile) -->
             <a
@@ -759,6 +772,11 @@
                 </svg>
               </button>
               <div x-show="mobileMoreOpen" x-cloak class="pl-3">
+                <a
+                  th:href="@{/final-table}"
+                  class="block text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                  >Final Table</a
+                >
                 <a
                   th:href="@{/about}"
                   class="block text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"

@@ -78,12 +78,19 @@ public class FinalTableSupport {
     /**
      * The status behind {@link #isEntryOpen}, for error messages. COMPLETED when the season itself
      * is over, otherwise round 1's resolved status (UNKNOWN if there is no round 1 yet).
+     *
+     * <p>Uses {@code resolveJoinEligibilityStatus}, not {@code resolveStatus}: the latter
+     * short-circuits to OPEN for a round with no matches loaded, <em>before</em>
+     * {@code Round.computeStatus} can report FINALIZED — so a finalized round 1 with no match rows
+     * would read as open and let someone enter a game that has already been scored. "May someone
+     * still enter?" is the join-eligibility question, and the finalized check also skips the match
+     * lookup entirely.
      */
     public RoundStatus entryStatus(Season season) {
         if (season == null || season.isCompleted()) {
             return RoundStatus.COMPLETED;
         }
-        return roundSupport.resolveStatus(firstRound(season));
+        return roundSupport.resolveJoinEligibilityStatus(firstRound(season));
     }
 
     private Round firstRound(Season season) {
