@@ -63,12 +63,7 @@ public class FinalTableController {
         model.addAttribute("shareRowsJson", data.shareRowsJson());
         model.addAttribute("shareCardTitle", (data.competitionName() + " " + data.seasonLabel()).trim());
         model.addAttribute("shareCardKicker", "My final table prediction");
-        model.addAttribute("shareCardSubtitle", data.teamCount() + " clubs · locked at gameweek 1");
-        model.addAttribute(
-                "shareCardChampSubtitle",
-                data.revealed()
-                        ? "Scored " + data.totalScore()
-                        : (data.entryOpen() ? "Not locked in yet" : "Locked before the first fixtures"));
+        model.addAttribute("shareCardSubtitle", data.teamCount() + " clubs · shared before season kickoff");
         model.addAttribute("isGuest", data.isGuest());
         model.addAttribute("devPreviewEnabled", data.devPreviewEnabled());
         model.addAttribute("readOnly", false);

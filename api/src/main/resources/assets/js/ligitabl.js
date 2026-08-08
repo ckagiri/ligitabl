@@ -981,13 +981,13 @@ window.Ligitabl.finalTablePage = function (el) {
         hasEntry: readBool(dataset.hasEntry),
         entryOpen: readBool(dataset.entryOpen),
         originalTeams: [],
+        // Declared here, not just assigned in init(): a property that only ever appears via
+        // `this._zones = …` is outside Alpine's reactive data, so anything reading it renders once
+        // and never updates.
+        _zones: {},
         // The pairs tapped since the last save, in order. Replayed server-side.
         pendingSwaps: [],
         inFlight: false,
-        // Set by an IntersectionObserver on the page footer (see final-table.html); the floating
-        // pill shows while the footer is off-screen. Starts false so the pill is available on load
-        // rather than waiting for the first observer callback.
-        footerVisible: false,
         message: null,
         messageKind: null,
 
@@ -1045,6 +1045,8 @@ window.Ligitabl.finalTablePage = function (el) {
         },
 
         // Left edge marker. Colour-only, so it never competes with the selected/dirty row tints.
+        // MID is a zone with its own (grey) marker, not an absence — otherwise mid-table rows read
+        // as having lost their bar rather than as a deliberate band.
         zoneBarClass(position) {
             switch (this.zoneOf(position)) {
                 case 'CL':
@@ -1056,7 +1058,7 @@ window.Ligitabl.finalTablePage = function (el) {
                 case 'REL':
                     return 'bg-red-500';
                 default:
-                    return 'bg-transparent';
+                    return 'bg-gray-300';
             }
         },
 
@@ -1075,17 +1077,52 @@ window.Ligitabl.finalTablePage = function (el) {
             }
         },
 
-        // Split into two columns so a 20-team table fits without vertical scrolling.
-        leftColumn() {
-            return this.teams.slice(0, Math.ceil(this.teams.length / 2));
-        },
-
-        rightColumn() {
-            return this.teams.slice(Math.ceil(this.teams.length / 2));
+        /**
+         * A faint zone wash on the row itself, as in the reference. Deliberately at the -50 step so
+         * it stays below the selected (blue-50) and dirty (amber-50) tints, which must remain the
+         * loudest thing on a row — those are the states the player is acting on.
+         */
+        zoneRowClass(position) {
+            switch (this.zoneOf(position)) {
+                case 'CL':
+                    return 'bg-blue-50/60';
+                case 'UEL':
+                    return 'bg-green-50/60';
+                case 'UECL':
+                    return 'bg-amber-50/60';
+                case 'REL':
+                    return 'bg-red-50/60';
+                default:
+                    return 'bg-white';
+            }
         },
 
         getDirtyCount() {
             return this.teams.filter((t) => this.isDirty(t.code)).length;
+        },
+
+        // Back to the last saved order. Purely client-side: it clears the pending batch rather than
+        // sending inverse swaps, so an undone edit never reaches the server and can never move
+        // settledAt — the tiebreak only ever advances on swaps the player actually kept.
+        /**
+         * Back to the page as freshly rendered — table, tints, arrows and hints all cleared.
+         *
+         * <p>Deliberately restores from {@code originalTeams} rather than re-running init(): init()
+         * rebuilds from the {@code data-rows} attribute, which is the order the page was *first*
+         * served with. After a save that is stale, so resetting would revert past the player's saved
+         * table to whatever they had on page load. {@code originalTeams} is re-baselined on every
+         * successful save, so it is the only correct source.
+         *
+         * <p>Clearing message/messageKind is what stops the "N moved since last save" hint outliving
+         * the reset that made it untrue.
+         */
+        reset() {
+            if (this.inFlight) return;
+            this.teams = JSON.parse(JSON.stringify(this.originalTeams));
+            this.pendingSwaps = [];
+            this.selectedTeam = null;
+            this.message = null;
+            this.messageKind = null;
         },
 
         // Rows are only interactive while the table can still change.
@@ -1109,7 +1146,14 @@ window.Ligitabl.finalTablePage = function (el) {
         // baseline, and the only empty batch the server accepts. Once a row exists, a clean table
         // means there is nothing to save, so the button goes flat rather than earning a 400.
         saveEnabled() {
-            return this.entryOpen && !this.inFlight && (this.pendingSwaps.length > 0 || !this.hasEntry);
+            if (!this.entryOpen || this.inFlight) return false;
+            // No row yet: the first save may be empty — that is how a player accepts the baseline.
+            if (!this.hasEntry) return true;
+            // Otherwise gate on the table actually differing from the last saved order, not on the
+            // pending list being non-empty. Swapping A↔B and back leaves two pending entries but a
+            // table identical to the saved one; posting that would advance settledAt — the tiebreak
+            // — for a change the player did not make.
+            return this.getDirtyCount() > 0;
         },
 
         currentOrder() {
@@ -1121,6 +1165,16 @@ window.Ligitabl.finalTablePage = function (el) {
 
         save() {
             if (!this.saveEnabled()) return;
+
+            // A net-zero batch (A↔B then B↔A) would still pass the server's expectedOrder checksum
+            // and advance settledAt for a change that isn't there. saveEnabled() stops the button,
+            // and this stops the request — the swap list is an audit trail of kept moves, so it
+            // must not carry pairs the player undid.
+            if (this.hasEntry && this.getDirtyCount() === 0) {
+                this.pendingSwaps = [];
+                return;
+            }
+
             this.inFlight = true;
             this.message = null;
 
@@ -1220,8 +1274,28 @@ window.Ligitabl.finalTableShareCard = function (el) {
     const dataset = el?.dataset || {};
 
     return {
+        // Collapsed by default, matching fragments/share-prediction.html: the panel is an offer,
+        // not the main event.
+        open: false,
         rendering: false,
-        message: null,
+        copiedText: false,
+        copiedLink: false,
+        // Feature-detected once: navigator.canShare with files is Safari/Chrome-mobile only, and a
+        // button that silently does nothing is worse than an absent one.
+        canShareFiles: false,
+
+        init() {
+            try {
+                this.canShareFiles =
+                    typeof navigator !== 'undefined' &&
+                    typeof navigator.canShare === 'function' &&
+                    navigator.canShare({
+                        files: [new File([new Blob()], 'p.jpg', { type: 'image/jpeg' })],
+                    });
+            } catch (e) {
+                this.canShareFiles = false;
+            }
+        },
 
         rows() {
             return Ligitabl._parseJSON(dataset.rows, []);
@@ -1245,28 +1319,35 @@ window.Ligitabl.finalTableShareCard = function (el) {
 
         _drawCard() {
             // Two-column scorecard: a 20-row single column makes a tall, thin image that reads
-            // badly in a timeline. 1200x1200 is the square social format.
+            // badly in a timeline. Square is the social format.
             const rows = this.rows();
             const zones = Ligitabl._parseJSON(dataset.zones, {});
-            const W = 1200;
-            const H = 1200;
+            // 1080 at 1x is already above every social service's display size, and dropping the 2x
+            // supersample is most of the size win (5.76M pixels -> 1.17M). Text is drawn at final
+            // size, not scaled, so it stays sharp.
+            const W = 1080;
+            const H = 1080;
 
             const canvas = document.createElement('canvas');
-            const scale = 2;
+            const scale = 1;
             canvas.width = W * scale;
             canvas.height = H * scale;
             const ctx = canvas.getContext('2d');
             ctx.scale(scale, scale);
 
-            const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
-            const GOLD = '#f0b429';
-            const zoneColor = (position) => {
-                for (const [code, range] of Object.entries(zones)) {
-                    if (Array.isArray(range) && position >= range[0] && position <= range[1]) {
-                        return { CL: '#3b82f6', UEL: '#22c55e', UECL: '#f0b429', REL: '#ef4444' }[code] || null;
-                    }
-                }
-                return null;
+            const FONT = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+            // tailwind.config.js `brand` (indigo) — the card and the app share one palette.
+            const BRAND = '#6366f1';
+            const BRAND_DARK = '#312e81';
+            const ACCENT = '#a5b4fc';
+            // MID is a real zone on the card, not an absence: every row gets a left bar, so the
+            // mid-table block reads as deliberate rather than as rows that lost their marker.
+            const ZONES = {
+                CL: { color: '#3b82f6', tint: 'rgba(59,130,246,0.14)', label: 'Champions League' },
+                UEL: { color: '#22c55e', tint: 'rgba(34,197,94,0.14)', label: 'Europa League' },
+                UECL: { color: '#f0b429', tint: 'rgba(240,180,41,0.14)', label: 'Conference League' },
+                MID: { color: '#8b8fa3', tint: 'rgba(255,255,255,0.06)', label: 'Mid-table' },
+                REL: { color: '#ef4444', tint: 'rgba(239,68,68,0.14)', label: 'Relegation' },
             };
             const zoneLabel = (position) => {
                 for (const [code, range] of Object.entries(zones)) {
@@ -1274,16 +1355,22 @@ window.Ligitabl.finalTableShareCard = function (el) {
                 }
                 return 'MID';
             };
+            const zoneColor = (position) => ZONES[zoneLabel(position)].color;
+            // Only the zones this table actually uses, in table order, so a competition without a
+            // Conference League place does not advertise one.
+            const legendCodes = Object.keys(ZONES).filter((code) =>
+                rows.some((_, idx) => zoneLabel(idx + 1) === code)
+            );
 
             // Background: deep green, matching the app's dark surfaces.
             const bg = ctx.createLinearGradient(0, 0, W, H);
-            bg.addColorStop(0, '#0c3b2e');
-            bg.addColorStop(1, '#06251c');
+            bg.addColorStop(0, BRAND_DARK);
+            bg.addColorStop(1, '#1a1740');
             ctx.fillStyle = bg;
             ctx.fillRect(0, 0, W, H);
 
             // Top rule.
-            ctx.fillStyle = GOLD;
+            ctx.fillStyle = BRAND;
             ctx.fillRect(0, 0, W, 6);
 
             // Brand line.
@@ -1302,52 +1389,102 @@ window.Ligitabl.finalTableShareCard = function (el) {
             ctx.font = '600 15px ' + FONT;
             ctx.fillText((dataset.kicker || 'FINAL TABLE PREDICTION').toUpperCase(), 60, 190);
 
+            // The callout box starts at CALLOUT_X, so the title has to fit in what is left of the
+            // width — at 62px "Premier League 26/27" ran straight under it. Shrink to fit rather
+            // than truncate: the competition name is the whole point of the card.
+            const CALLOUT_W = 320;
+            const CALLOUT_X = W - 60 - CALLOUT_W;
+            const titleMaxWidth = CALLOUT_X - 60 - 32;
+            let titleSize = 62;
             ctx.fillStyle = '#ffffff';
-            ctx.font = '700 62px ' + FONT;
+            ctx.font = '700 ' + titleSize + 'px ' + FONT;
+            while (ctx.measureText(this.title()).width > titleMaxWidth && titleSize > 26) {
+                titleSize -= 2;
+                ctx.font = '700 ' + titleSize + 'px ' + FONT;
+            }
             ctx.fillText(this.title(), 60, 258);
 
             ctx.fillStyle = 'rgba(255,255,255,0.55)';
             ctx.font = '400 20px ' + FONT;
             ctx.fillText(this.subtitle(), 60, 296);
 
-            // Champion callout.
+            // Champion callout, phrased as a claim: "I predict that / Arsenal / will win the
+            // league". It is the line people screenshot, so it reads as a sentence rather than a
+            // stat block.
             if (rows.length > 0) {
-                const boxW = 330;
-                const boxX = W - 60 - boxW;
+                const boxW = CALLOUT_W;
+                const boxX = CALLOUT_X;
                 const boxY = 150;
                 const boxH = 150;
-                ctx.strokeStyle = 'rgba(240,180,41,0.45)';
+                ctx.strokeStyle = 'rgba(99,102,241,0.5)';
+                ctx.fillStyle = 'rgba(255,255,255,0.04)';
                 ctx.lineWidth = 2;
                 if (ctx.roundRect) {
                     ctx.beginPath();
                     ctx.roundRect(boxX, boxY, boxW, boxH, 12);
+                    ctx.fill();
                     ctx.stroke();
                 } else {
+                    ctx.fillRect(boxX, boxY, boxW, boxH);
                     ctx.strokeRect(boxX, boxY, boxW, boxH);
                 }
 
+                const cx = boxX + boxW / 2;
+                ctx.textAlign = 'center';
+
                 ctx.fillStyle = 'rgba(255,255,255,0.55)';
-                ctx.font = '600 13px ' + FONT;
-                ctx.fillText('PREDICTED CHAMPION', boxX + 24, boxY + 36);
+                ctx.font = '400 16px ' + FONT;
+                ctx.fillText('I predict that', cx, boxY + 42);
 
                 ctx.fillStyle = '#ffffff';
-                ctx.font = '700 52px ' + FONT;
-                ctx.fillText('1', boxX + 24, boxY + 96);
+                ctx.font = '700 30px ' + FONT;
+                ctx.fillText(rows[0].name || rows[0].code, cx, boxY + 88);
 
-                ctx.font = '700 26px ' + FONT;
-                ctx.fillText(rows[0].name || rows[0].code, boxX + 76, boxY + 92);
+                ctx.fillStyle = 'rgba(255,255,255,0.55)';
+                ctx.font = '400 16px ' + FONT;
+                ctx.fillText('will win the league', cx, boxY + 122);
 
-                ctx.fillStyle = 'rgba(255,255,255,0.45)';
-                ctx.font = '400 14px ' + FONT;
-                ctx.fillText(dataset.champSubtitle || 'Locked before the first fixtures', boxX + 24, boxY + 126);
+                ctx.textAlign = 'left';
             }
+
+            // Legend: pill per zone, so the colour bars on the rows are readable standalone — the
+            // card gets posted without the page around it.
+            const legendY = 360;
+            let legendX = 60;
+            legendCodes.forEach((code) => {
+                const zone = ZONES[code];
+                ctx.font = '700 13px ' + FONT;
+                const codeW = ctx.measureText(code).width;
+                ctx.font = '400 14px ' + FONT;
+                const labelW = ctx.measureText(zone.label).width;
+                const pillW = 16 + codeW + 8 + labelW + 16;
+
+                ctx.fillStyle = 'rgba(255,255,255,0.06)';
+                if (ctx.roundRect) {
+                    ctx.beginPath();
+                    ctx.roundRect(legendX, legendY - 20, pillW, 30, 15);
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(legendX, legendY - 20, pillW, 30);
+                }
+
+                ctx.fillStyle = zone.color;
+                ctx.font = '700 13px ' + FONT;
+                ctx.fillText(code, legendX + 16, legendY);
+
+                ctx.fillStyle = 'rgba(255,255,255,0.75)';
+                ctx.font = '400 14px ' + FONT;
+                ctx.fillText(zone.label, legendX + 16 + codeW + 8, legendY);
+
+                legendX += pillW + 10;
+            });
 
             // Rows: two columns, ten each.
             const half = Math.ceil(rows.length / 2);
             const rowH = 48;
             const gap = 24;
             const colW = (W - 120 - gap) / 2;
-            const top = 400;
+            const top = 420;
 
             rows.forEach((row, idx) => {
                 const col = idx < half ? 0 : 1;
@@ -1356,7 +1493,11 @@ window.Ligitabl.finalTableShareCard = function (el) {
                 const y = top + rowIndex * rowH;
                 const position = idx + 1;
 
-                ctx.fillStyle = 'rgba(255,255,255,0.06)';
+                // Faint zone wash on the row, as on the page. Kept very low alpha: on a dark card
+                // the bar and the tag already carry the colour, and a stronger fill would fight the
+                // team names for attention.
+                const zoneTint = ZONES[zoneLabel(position)].tint;
+                ctx.fillStyle = zoneTint;
                 if (ctx.roundRect) {
                     ctx.beginPath();
                     ctx.roundRect(x, y, colW, rowH - 6, 8);
@@ -1365,12 +1506,10 @@ window.Ligitabl.finalTableShareCard = function (el) {
                     ctx.fillRect(x, y, colW, rowH - 6);
                 }
 
-                // Zone bar.
+                // Zone bar — always drawn, since MID is a zone with its own colour.
                 const zc = zoneColor(position);
-                if (zc) {
-                    ctx.fillStyle = zc;
-                    ctx.fillRect(x, y + 6, 4, rowH - 18);
-                }
+                ctx.fillStyle = zc;
+                ctx.fillRect(x, y + 6, 4, rowH - 18);
 
                 ctx.fillStyle = 'rgba(255,255,255,0.6)';
                 ctx.font = '600 19px ' + FONT;
@@ -1389,7 +1528,7 @@ window.Ligitabl.finalTableShareCard = function (el) {
                     ctx.font = '600 15px ' + FONT;
                     ctx.fillText('→ ' + row.actual, x + colW - 16, y + 28);
                 } else {
-                    ctx.fillStyle = zc ? zc : 'rgba(255,255,255,0.3)';
+                    ctx.fillStyle = zc;
                     ctx.font = '700 12px ' + FONT;
                     ctx.fillText(zoneLabel(position), x + colW - 16, y + 27);
                 }
@@ -1405,7 +1544,7 @@ window.Ligitabl.finalTableShareCard = function (el) {
             ctx.font = '600 15px ' + FONT;
             ctx.fillText(this.shareUrl().replace(/^https?:\/\//, ''), 60, footerY + 46);
 
-            ctx.fillStyle = GOLD;
+            ctx.fillStyle = ACCENT;
             ctx.textAlign = 'right';
             ctx.fillText('Build yours on LigiPredictor', W - 60, footerY + 46);
             ctx.textAlign = 'left';
@@ -1413,17 +1552,25 @@ window.Ligitabl.finalTableShareCard = function (el) {
             return canvas;
         },
 
+        // JPEG, not PNG. Two things drove the ~2.6MB PNG: a 2x supersampled 1200x1200 canvas
+        // (5.76M pixels) and PNG's lossless encoding of a full-bleed gradient, close to its worst
+        // case. Now 1080x1080 at 1x (1.17M pixels, ~5x fewer) encoded as JPEG q0.9 — flat colour
+        // and text are what JPEG handles well, so the visible result is unchanged.
+        _toBlob(callback) {
+            this._drawCard().toBlob(callback, 'image/jpeg', 0.9);
+        },
+
         downloadCard() {
             if (this.rendering) return;
             this.rendering = true;
             try {
-                this._drawCard().toBlob((blob) => {
+                this._toBlob((blob) => {
                     this.rendering = false;
                     if (!blob) return;
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.download = 'final-table.png';
+                    link.download = 'final-table.jpg';
                     link.click();
                     URL.revokeObjectURL(url);
                 });
@@ -1434,14 +1581,15 @@ window.Ligitabl.finalTableShareCard = function (el) {
         },
 
         shareCard() {
-            // navigator.share with files where supported; copy-link is the fallback everywhere else.
-            if (!navigator.canShare) {
+            // The button only renders when canShareFiles is true, but re-check: the panel may have
+            // been open across a navigation.
+            if (!this.canShareFiles) {
                 this.copyLink();
                 return;
             }
-            this._drawCard().toBlob((blob) => {
+            this._toBlob((blob) => {
                 if (!blob) return;
-                const file = new File([blob], 'final-table.png', { type: 'image/png' });
+                const file = new File([blob], 'final-table.jpg', { type: 'image/jpeg' });
                 if (!navigator.canShare({ files: [file] })) {
                     this.copyLink();
                     return;
@@ -1452,13 +1600,25 @@ window.Ligitabl.finalTableShareCard = function (el) {
             });
         },
 
+        displayUrl() {
+            return this.shareUrl().replace(/^https?:\/\//, '');
+        },
+
+        copyText() {
+            this._copy(this.shareText(), 'copiedText');
+        },
+
         copyLink() {
-            const text = this.shareText() || this.shareUrl();
-            if (!navigator.clipboard) return;
-            navigator.clipboard.writeText(text).then(
+            this._copy(this.shareUrl(), 'copiedLink');
+        },
+
+        // Ticks the matching icon for 2s, the same feedback the main share panel gives.
+        _copy(value, flag) {
+            if (!navigator.clipboard || !value) return;
+            navigator.clipboard.writeText(value).then(
                 () => {
-                    this.message = 'Copied';
-                    setTimeout(() => (this.message = null), 2000);
+                    this[flag] = true;
+                    setTimeout(() => (this[flag] = false), 2000);
                 },
                 () => {}
             );

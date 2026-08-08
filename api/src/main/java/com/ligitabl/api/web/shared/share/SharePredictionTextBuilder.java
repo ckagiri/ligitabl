@@ -46,7 +46,7 @@ public class SharePredictionTextBuilder {
         StringBuilder text = new StringBuilder();
         text.append("🔮 My Final Table prediction:\n\n");
         appendTeamLines(text, sorted, teamsByCode);
-        text.append("\nLocked in for the whole season on LigiPredictor!\n").append(displayUrl(shareUrl));
+        text.append("\nShared before season kickoff on LigiPredictor!\n").append(displayUrl(shareUrl));
         return text.toString();
     }
 

@@ -14,27 +14,38 @@
       mounts the same fragment and simply never enables tapping.
 
       Row styling mirrors fragments/prediction-table.html deliberately — badge, blue selection dot,
-      amber dirty tint, ↑/↓ movement arrows — so the two games read as one product. It is a copy,
+      amber dirty tint, ↑/↓ movement arrows — so the two games read as one product. On top of that
+      each row carries a faint qualification-zone wash; selected and dirty use the -100 step so they
+      always out-shout the zone colour underneath them.
+
+      Hover is a ring rather than a background, so it layers over the zone wash instead of replacing
+      it — a hover that blanked the tint would read as the row changing zone. It is a copy,
       not a reuse of `interactive-table`: that fragment is parameterised on standings/fixtures/
       points/GD/form, none of which exist before GW1, so reusing it would mount five toggles that
       render "-" for the entire pre-season.
     -->
-    <div th:fragment="table" class="grid gap-x-6 gap-y-1 sm:grid-cols-2">
-      <template x-for="(column, columnIndex) in [leftColumn(), rightColumn()]" :key="columnIndex">
-        <div class="space-y-1">
-          <template x-for="team in column" :key="team.code">
-            <div
-              @click="onRowTap(team.code)"
-              :data-team-code="team.code"
-              :class="{
-                'cursor-pointer hover:bg-gray-50': canEdit(),
-                'no-hover': !canEdit(),
-                'bg-blue-50 ring-1 ring-blue-300': isSelected(team.code),
-                'bg-amber-50': isDirty(team.code) && !isSelected(team.code),
-                'bg-white': !isSelected(team.code) && !isDirty(team.code)
-              }"
-              class="prediction-row flex items-center gap-2 overflow-hidden rounded-md border border-gray-100 py-2 pr-3 transition-all duration-200"
-            >
+    <!--
+      One x-for over `teams`, with CSS splitting it into columns. The previous version nested an
+      x-for over `[leftColumn(), rightColumn()]` — a fresh array literal on every render, so any
+      state change (selecting a row, for instance) produced new array identities and made Alpine
+      tear down and rebuild both column subtrees rather than patch the one row that changed.
+
+      `columns-2` reflows the same single list into two, so there is nothing to rebuild and each row
+      is keyed stably by team code.
+    -->
+    <div th:fragment="table" class="gap-x-6 sm:columns-2">
+      <template x-for="team in teams" :key="team.code">
+        <div
+          @click="onRowTap(team.code)"
+          :data-team-code="team.code"
+          :class="[
+            canEdit() ? 'cursor-pointer hover:ring-1 hover:ring-gray-300' : 'no-hover',
+            isSelected(team.code)
+              ? 'bg-blue-100 ring-1 ring-blue-400'
+              : (isDirty(team.code) ? 'bg-amber-100' : zoneRowClass(team.position))
+          ]"
+          class="prediction-row mb-1 flex break-inside-avoid items-center gap-2 overflow-hidden rounded-md border border-gray-100 py-2 pr-3 transition-all duration-200"
+        >
               <!-- Zone band: colour only, so it never competes with the row tints. -->
               <span
                 class="h-8 w-1 flex-shrink-0 rounded-r"
@@ -77,10 +88,8 @@
               <span
                 class="flex-shrink-0 text-[10px] font-semibold uppercase tracking-wide"
                 :class="zoneTextClass(team.position)"
-                x-text="zoneLabel(team.position)"
-              ></span>
-            </div>
-          </template>
+            x-text="zoneLabel(team.position)"
+          ></span>
         </div>
       </template>
     </div>

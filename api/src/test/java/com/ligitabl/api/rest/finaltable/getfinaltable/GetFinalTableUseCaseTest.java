@@ -224,6 +224,7 @@ class GetFinalTableUseCaseTest {
                         + SeasonSlug.of(TestCalendar.SEASON_SLUG).toShorthand());
         assertThat(data.shareUrl()).doesNotContain("SeasonSlug");
         assertThat(data.shareText()).contains("Final Table prediction");
+        assertThat(data.shareText()).contains("Shared before season kickoff");
         assertThat(data.shareText()).doesNotContain("Gameweek");
     }
 

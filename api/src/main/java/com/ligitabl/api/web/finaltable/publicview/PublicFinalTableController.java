@@ -120,10 +120,7 @@ public class PublicFinalTableController {
                 rowsJson.shareRows(rankings, teamsByCode, revealed ? prediction.getResultRankings() : null));
         model.addAttribute("shareCardTitle", "%s's Final Table".formatted(user.getDisplayName()));
         model.addAttribute("shareCardKicker", "Final table prediction");
-        model.addAttribute("shareCardSubtitle", "%d clubs · %s".formatted(rankings.size(), season.getName()));
-        model.addAttribute(
-                "shareCardChampSubtitle",
-                revealed ? "Scored " + prediction.getTotalScore() : "Locked before the first fixtures");
+        model.addAttribute("shareCardSubtitle", "%d clubs · shared before season kickoff".formatted(rankings.size()));
         model.addAttribute("competitionName", season.getName());
         model.addAttribute("ogTitle", "%s's Final Table prediction".formatted(user.getDisplayName()));
         model.addAttribute(
