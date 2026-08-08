@@ -43,6 +43,9 @@ public class FinalTableController {
         model.addAttribute("teamsByCode", data.teamsByCode());
         model.addAttribute("rowsJson", data.rowsJson());
         model.addAttribute("zonesJson", data.zonesJson());
+        model.addAttribute("competitionName", data.competitionName());
+        model.addAttribute("seasonLabel", data.seasonLabel());
+        model.addAttribute("teamCount", data.teamCount());
         model.addAttribute("entryOpen", data.entryOpen());
         model.addAttribute("hasEntry", data.hasEntry());
         model.addAttribute("revealed", data.revealed());
@@ -58,10 +61,14 @@ public class FinalTableController {
         model.addAttribute("shareUrl", data.shareUrl());
         model.addAttribute("shareText", data.shareText());
         model.addAttribute("shareRowsJson", data.shareRowsJson());
-        model.addAttribute("shareCardTitle", "My Final Table");
+        model.addAttribute("shareCardTitle", (data.competitionName() + " " + data.seasonLabel()).trim());
+        model.addAttribute("shareCardKicker", "My final table prediction");
+        model.addAttribute("shareCardSubtitle", data.teamCount() + " clubs · locked at gameweek 1");
         model.addAttribute(
-                "shareCardSubtitle",
-                data.revealed() ? "Scored " + data.totalScore() : "Predicted before a ball was kicked");
+                "shareCardChampSubtitle",
+                data.revealed()
+                        ? "Scored " + data.totalScore()
+                        : (data.entryOpen() ? "Not locked in yet" : "Locked before the first fixtures"));
         model.addAttribute("isGuest", data.isGuest());
         model.addAttribute("devPreviewEnabled", data.devPreviewEnabled());
         model.addAttribute("readOnly", false);

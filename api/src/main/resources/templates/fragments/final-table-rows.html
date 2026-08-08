@@ -89,36 +89,11 @@
       The revealed result: prediction beside the real finish, with the distance for each row.
       Server-rendered — nothing here is interactive, and resultRankings is non-null only once the
       row is scored (Change 5).
+
+      No header row: each row already reads as "predicted → actual (off by N)", and a thead is what
+      rendered as a stray empty strip whenever this fragment was inserted with no rows.
     -->
     <table th:fragment="result" class="min-w-full divide-y divide-gray-200">
-      <thead class="bg-gray-50">
-        <tr>
-          <th
-            scope="col"
-            class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-          >
-            Predicted
-          </th>
-          <th
-            scope="col"
-            class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
-          >
-            Team
-          </th>
-          <th
-            scope="col"
-            class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500"
-          >
-            Actual
-          </th>
-          <th
-            scope="col"
-            class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500"
-          >
-            Off by
-          </th>
-        </tr>
-      </thead>
       <tbody class="divide-y divide-gray-200 bg-white">
         <tr th:each="row : ${resultRankings}">
           <td

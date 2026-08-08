@@ -9,37 +9,82 @@
       th:fragment="card"
       th:if="${shareUrl != null}"
       x-data="Ligitabl.finalTableShareCard($el)"
-      th:attr="data-rows=${shareRowsJson},data-share-url=${shareUrl},data-share-text=${shareText},data-title=${shareCardTitle},data-subtitle=${shareCardSubtitle}"
-      class="mt-6 flex flex-wrap items-center gap-2"
+      th:attr="data-rows=${shareRowsJson},data-zones=${zonesJson},data-share-url=${shareUrl},data-share-text=${shareText},data-title=${shareCardTitle},data-subtitle=${shareCardSubtitle},data-kicker=${shareCardKicker},data-champ-subtitle=${shareCardChampSubtitle},data-competition-name=${competitionName}"
+      class="mb-6 rounded-lg bg-white p-4 shadow-sm sm:p-5"
     >
-      <button
-        type="button"
-        @click="shareCard()"
-        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
-      >
-        Share
-      </button>
-      <button
-        type="button"
-        @click="downloadCard()"
-        :disabled="rendering"
-        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
-      >
-        Download image
-      </button>
-      <button
-        type="button"
-        @click="copyLink()"
-        class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 dark:border-gray-600 dark:text-gray-200 dark:hover:bg-gray-800"
-      >
-        Copy link
-      </button>
-      <span
-        x-show="message"
-        x-cloak
-        x-text="message"
-        class="text-sm text-emerald-600 dark:text-emerald-400"
-      ></span>
+      <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <p class="text-sm font-semibold text-gray-900">Share your table</p>
+          <p class="mt-0.5 text-xs text-gray-500">
+            Posts as an image, or copy the public link.
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2">
+          <!-- Primary: the image is the point of the feature, so it gets the solid button. -->
+          <button
+            type="button"
+            @click="shareCard()"
+            class="inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-gray-700"
+          >
+            <svg
+              class="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M8.7 10.7a4 4 0 100 2.6m0-2.6l6.6-3.4m-6.6 6l6.6 3.4M18 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm0 13a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"
+              />
+            </svg>
+            Share
+          </button>
+          <button
+            type="button"
+            @click="downloadCard()"
+            :disabled="rendering"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+          >
+            <svg
+              class="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"
+              />
+            </svg>
+            <span x-text="rendering ? 'Rendering…' : 'Download'">Download</span>
+          </button>
+          <button
+            type="button"
+            @click="copyLink()"
+            class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition hover:bg-gray-50"
+          >
+            <svg
+              class="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M13.8 10.2a4 4 0 000-5.7l-.6-.6a4 4 0 00-5.7 0L4.7 6.7a4 4 0 000 5.7 4 4 0 001.4.9m4.1 0a4 4 0 000 5.7l.6.6a4 4 0 005.7 0l2.8-2.8a4 4 0 000-5.7 4 4 0 00-1.4-.9"
+              />
+            </svg>
+            <span x-text="message || 'Copy link'">Copy link</span>
+          </button>
+        </div>
+      </div>
     </div>
   </body>
 </html>

@@ -31,6 +31,7 @@ import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
 import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.FinalTablePredictionRepo;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
@@ -59,6 +60,9 @@ class GetFinalTableUseCaseTest {
 
     @Mock
     private TeamRepo teamRepo;
+
+    @Mock
+    private CompetitionRepo competitionRepo;
 
     private static final Instant NOW = TestCalendar.MID_SEASON;
     private static final List<TeamRank> BASELINE =
@@ -91,11 +95,13 @@ class GetFinalTableUseCaseTest {
                 teamRepo,
                 new SharePredictionTextBuilder(),
                 devProperties,
-                new FinalTableRowsJson());
+                new FinalTableRowsJson(),
+                competitionRepo);
         ReflectionTestUtils.setField(useCase, "frontendShareUrl", "https://ligipredictor.test");
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         lenient().when(teamRepo.findAllTeamsByCode(any())).thenReturn(Map.of());
+        lenient().when(competitionRepo.findById(any())).thenReturn(Optional.empty());
         lenient()
                 .when(roundRepo.findBySeasonIdOrderByPosition(seasonId))
                 .thenReturn(List.of(Round.builder()

@@ -13,10 +13,12 @@ import com.ligitabl.api.rest.finaltable.shared.FinalTableRowsJson;
 import com.ligitabl.api.rest.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.web.shared.share.SharePredictionTextBuilder;
+import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.FinalTablePrediction;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.FinalTablePredictionRepo;
 import com.ligitabl.model.repo.TeamRepo;
 
@@ -38,6 +40,7 @@ public class GetFinalTableUseCase {
     private final SharePredictionTextBuilder shareTextBuilder;
     private final FinalTableDevProperties devProperties;
     private final FinalTableRowsJson rowsJson;
+    private final CompetitionRepo competitionRepo;
 
     @Value("${ligitabl.frontend.share-url:${ligitabl.frontend.url:http://localhost:8080}}")
     private String frontendShareUrl;
@@ -66,6 +69,9 @@ public class GetFinalTableUseCase {
                 teamsByCode,
                 rowsJson.rows(rankings, teamsByCode),
                 rowsJson.zones(rankings.size()),
+                competitionName(season),
+                seasonLabel(season),
+                rankings.size(),
                 finalTableSupport.isEntryOpen(season),
                 prediction != null,
                 revealed,
@@ -83,6 +89,23 @@ public class GetFinalTableUseCase {
                 rowsJson.shareRows(rankings, teamsByCode, revealed ? prediction.getResultRankings() : null),
                 guest,
                 devProperties.isEnabled());
+    }
+
+    /** Falls back to the season name so the banner never renders a blank title. */
+    private String competitionName(Season season) {
+        return competitionRepo
+                .findById(season.getCompetitionId())
+                .map(Competition::getName)
+                .orElse(season.getName());
+    }
+
+    /** "2026-27" → "26/27", the form the scorecard and social copy use. */
+    private String seasonLabel(Season season) {
+        if (season.getSlug() == null) {
+            return "";
+        }
+        String shorthand = season.getSlug().toShorthand();
+        return shorthand.length() == 4 ? shorthand.substring(0, 2) + "/" + shorthand.substring(2) : shorthand;
     }
 
     private String shareUrl(String publicId, Season season) {

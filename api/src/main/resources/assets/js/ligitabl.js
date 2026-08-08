@@ -1239,67 +1239,176 @@ window.Ligitabl.finalTableShareCard = function (el) {
             return dataset.shareText || '';
         },
 
+        subtitle() {
+            return dataset.subtitle || '';
+        },
+
         _drawCard() {
+            // Two-column scorecard: a 20-row single column makes a tall, thin image that reads
+            // badly in a timeline. 1200x1200 is the square social format.
             const rows = this.rows();
-            const width = 720;
-            const headerHeight = 96;
-            const rowHeight = 34;
-            const footerHeight = 56;
-            const height = headerHeight + rows.length * rowHeight + footerHeight;
+            const zones = Ligitabl._parseJSON(dataset.zones, {});
+            const W = 1200;
+            const H = 1200;
 
             const canvas = document.createElement('canvas');
-            // Draw at 2x for a crisp card on high-density screens, then scale the context.
             const scale = 2;
-            canvas.width = width * scale;
-            canvas.height = height * scale;
+            canvas.width = W * scale;
+            canvas.height = H * scale;
             const ctx = canvas.getContext('2d');
             ctx.scale(scale, scale);
 
-            const gradient = ctx.createLinearGradient(0, 0, width, height);
-            gradient.addColorStop(0, '#064e3b');
-            gradient.addColorStop(1, '#0f172a');
-            ctx.fillStyle = gradient;
-            ctx.fillRect(0, 0, width, height);
+            const FONT = '-apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+            const GOLD = '#f0b429';
+            const zoneColor = (position) => {
+                for (const [code, range] of Object.entries(zones)) {
+                    if (Array.isArray(range) && position >= range[0] && position <= range[1]) {
+                        return { CL: '#3b82f6', UEL: '#22c55e', UECL: '#f0b429', REL: '#ef4444' }[code] || null;
+                    }
+                }
+                return null;
+            };
+            const zoneLabel = (position) => {
+                for (const [code, range] of Object.entries(zones)) {
+                    if (Array.isArray(range) && position >= range[0] && position <= range[1]) return code;
+                }
+                return 'MID';
+            };
+
+            // Background: deep green, matching the app's dark surfaces.
+            const bg = ctx.createLinearGradient(0, 0, W, H);
+            bg.addColorStop(0, '#0c3b2e');
+            bg.addColorStop(1, '#06251c');
+            ctx.fillStyle = bg;
+            ctx.fillRect(0, 0, W, H);
+
+            // Top rule.
+            ctx.fillStyle = GOLD;
+            ctx.fillRect(0, 0, W, 6);
+
+            // Brand line.
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '700 30px ' + FONT;
+            ctx.fillText('LigiPredictor', 60, 92);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.55)';
+            ctx.font = '600 15px ' + FONT;
+            ctx.textAlign = 'right';
+            ctx.fillText((dataset.competitionName || 'FINAL TABLE').toUpperCase(), W - 60, 90);
+            ctx.textAlign = 'left';
+
+            // Title block.
+            ctx.fillStyle = 'rgba(255,255,255,0.55)';
+            ctx.font = '600 15px ' + FONT;
+            ctx.fillText((dataset.kicker || 'FINAL TABLE PREDICTION').toUpperCase(), 60, 190);
 
             ctx.fillStyle = '#ffffff';
-            ctx.font = '600 26px system-ui, -apple-system, sans-serif';
-            ctx.fillText(this.title(), 32, 48);
+            ctx.font = '700 62px ' + FONT;
+            ctx.fillText(this.title(), 60, 258);
 
-            ctx.fillStyle = 'rgba(255,255,255,0.65)';
-            ctx.font = '15px system-ui, -apple-system, sans-serif';
-            ctx.fillText(dataset.subtitle || 'Predicted before a ball was kicked', 32, 74);
+            ctx.fillStyle = 'rgba(255,255,255,0.55)';
+            ctx.font = '400 20px ' + FONT;
+            ctx.fillText(this.subtitle(), 60, 296);
 
-            rows.forEach((row, idx) => {
-                const y = headerHeight + idx * rowHeight;
-
-                if (idx % 2 === 0) {
-                    ctx.fillStyle = 'rgba(255,255,255,0.05)';
-                    ctx.fillRect(24, y - 2, width - 48, rowHeight - 2);
+            // Champion callout.
+            if (rows.length > 0) {
+                const boxW = 330;
+                const boxX = W - 60 - boxW;
+                const boxY = 150;
+                const boxH = 150;
+                ctx.strokeStyle = 'rgba(240,180,41,0.45)';
+                ctx.lineWidth = 2;
+                if (ctx.roundRect) {
+                    ctx.beginPath();
+                    ctx.roundRect(boxX, boxY, boxW, boxH, 12);
+                    ctx.stroke();
+                } else {
+                    ctx.strokeRect(boxX, boxY, boxW, boxH);
                 }
-
-                // A neutral marker stands in for the crest: Team has no colour field, and remote
-                // logos would taint the canvas and make toBlob() throw.
-                ctx.fillStyle = 'rgba(255,255,255,0.35)';
-                ctx.fillRect(32, y + 6, 4, 16);
 
                 ctx.fillStyle = 'rgba(255,255,255,0.55)';
-                ctx.font = '14px system-ui, -apple-system, sans-serif';
-                ctx.fillText(String(idx + 1).padStart(2, ' '), 52, y + 20);
+                ctx.font = '600 13px ' + FONT;
+                ctx.fillText('PREDICTED CHAMPION', boxX + 24, boxY + 36);
 
                 ctx.fillStyle = '#ffffff';
-                ctx.font = '15px system-ui, -apple-system, sans-serif';
-                ctx.fillText(row.name || row.code || '', 88, y + 20);
+                ctx.font = '700 52px ' + FONT;
+                ctx.fillText('1', boxX + 24, boxY + 96);
 
-                if (row.actual != null) {
-                    ctx.fillStyle = row.hit === 0 ? '#34d399' : 'rgba(255,255,255,0.55)';
-                    ctx.font = '14px system-ui, -apple-system, sans-serif';
-                    ctx.fillText('→ ' + row.actual, width - 96, y + 20);
+                ctx.font = '700 26px ' + FONT;
+                ctx.fillText(rows[0].name || rows[0].code, boxX + 76, boxY + 92);
+
+                ctx.fillStyle = 'rgba(255,255,255,0.45)';
+                ctx.font = '400 14px ' + FONT;
+                ctx.fillText(dataset.champSubtitle || 'Locked before the first fixtures', boxX + 24, boxY + 126);
+            }
+
+            // Rows: two columns, ten each.
+            const half = Math.ceil(rows.length / 2);
+            const rowH = 48;
+            const gap = 24;
+            const colW = (W - 120 - gap) / 2;
+            const top = 400;
+
+            rows.forEach((row, idx) => {
+                const col = idx < half ? 0 : 1;
+                const rowIndex = idx < half ? idx : idx - half;
+                const x = 60 + col * (colW + gap);
+                const y = top + rowIndex * rowH;
+                const position = idx + 1;
+
+                ctx.fillStyle = 'rgba(255,255,255,0.06)';
+                if (ctx.roundRect) {
+                    ctx.beginPath();
+                    ctx.roundRect(x, y, colW, rowH - 6, 8);
+                    ctx.fill();
+                } else {
+                    ctx.fillRect(x, y, colW, rowH - 6);
                 }
+
+                // Zone bar.
+                const zc = zoneColor(position);
+                if (zc) {
+                    ctx.fillStyle = zc;
+                    ctx.fillRect(x, y + 6, 4, rowH - 18);
+                }
+
+                ctx.fillStyle = 'rgba(255,255,255,0.6)';
+                ctx.font = '600 19px ' + FONT;
+                ctx.textAlign = 'right';
+                ctx.fillText(String(position), x + 52, y + 28);
+                ctx.textAlign = 'left';
+
+                ctx.fillStyle = '#ffffff';
+                ctx.font = '700 20px ' + FONT;
+                ctx.fillText(row.name || row.code, x + 72, y + 28);
+
+                // Zone tag, or the actual finish once scored.
+                ctx.textAlign = 'right';
+                if (row.actual != null) {
+                    ctx.fillStyle = row.hit === 0 ? '#4ade80' : 'rgba(255,255,255,0.5)';
+                    ctx.font = '600 15px ' + FONT;
+                    ctx.fillText('→ ' + row.actual, x + colW - 16, y + 28);
+                } else {
+                    ctx.fillStyle = zc ? zc : 'rgba(255,255,255,0.3)';
+                    ctx.font = '700 12px ' + FONT;
+                    ctx.fillText(zoneLabel(position), x + colW - 16, y + 27);
+                }
+                ctx.textAlign = 'left';
             });
 
-            ctx.fillStyle = 'rgba(255,255,255,0.5)';
-            ctx.font = '13px system-ui, -apple-system, sans-serif';
-            ctx.fillText(this.shareUrl().replace(/^https?:\/\//, ''), 32, height - 22);
+            // Footer.
+            const footerY = H - 76;
+            ctx.fillStyle = 'rgba(0,0,0,0.35)';
+            ctx.fillRect(0, footerY, W, 76);
+
+            ctx.fillStyle = 'rgba(255,255,255,0.6)';
+            ctx.font = '600 15px ' + FONT;
+            ctx.fillText(this.shareUrl().replace(/^https?:\/\//, ''), 60, footerY + 46);
+
+            ctx.fillStyle = GOLD;
+            ctx.textAlign = 'right';
+            ctx.fillText('Build yours on LigiPredictor', W - 60, footerY + 46);
+            ctx.textAlign = 'left';
 
             return canvas;
         },

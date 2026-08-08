@@ -16,36 +16,80 @@
         x-data="Ligitabl.finalTablePage($el)"
         th:attr="data-rows=${rowsJson},data-zones=${zonesJson},data-entry-open=${entryOpen and !isGuest},data-has-entry=${hasEntry}"
       >
-        <div class="mb-6 rounded-lg bg-white shadow-sm">
-          <!-- Header strip: title, one line of context, and the state chip. -->
-          <div class="border-b border-gray-200 px-6 py-4">
-            <div class="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <h1 class="text-xl font-bold text-gray-900 sm:text-2xl">
+        <div class="mb-6 overflow-hidden rounded-lg bg-white shadow-sm">
+          <!--
+            Dark banner header, echoing the shared scorecard so the page and the image people post
+            look like the same artifact.
+          -->
+          <div class="bg-gray-900 px-6 py-5">
+            <div class="flex flex-wrap items-center justify-between gap-4">
+              <div class="min-w-0">
+                <p
+                  class="text-[11px] font-semibold uppercase tracking-widest text-gray-400"
+                >
                   Final Table Predictor
+                </p>
+                <h1
+                  class="mt-1 text-2xl font-bold text-white sm:text-3xl"
+                  th:text="${competitionName} + ' ' + ${seasonLabel}"
+                >
+                  Premier League 26/27
                 </h1>
-                <p class="mt-1 text-sm text-gray-600">
-                  One prediction for the whole season, locked when gameweek 1 kicks
-                  off.
+                <p class="mt-1 text-sm text-gray-400">
+                  <span th:text="${teamCount}">20</span> clubs · one prediction, locked
+                  at gameweek 1
                 </p>
               </div>
 
-              <span
-                th:if="${entryOpen == true}"
-                class="inline-flex items-center gap-1 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700"
-                >🟢 Open until GW1</span
+              <!-- Who you called for the title: the single most shareable fact on the page. -->
+              <div
+                class="rounded-lg border border-yellow-500/40 px-4 py-3"
+                x-show="teams.length > 0"
+                x-cloak
               >
-              <span
-                th:if="${entryOpen == false and revealed == false}"
-                class="inline-flex items-center gap-1 rounded-full bg-yellow-50 px-3 py-1 text-xs font-medium text-yellow-700"
-                >🔒 Locked</span
-              >
-              <span
-                th:if="${revealed == true}"
-                class="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700"
-                >✅ Scored</span
-              >
+                <p
+                  class="text-[10px] font-semibold uppercase tracking-widest text-gray-400"
+                >
+                  Predicted champion
+                  <span
+                    th:if="${entryOpen == true}"
+                    class="text-yellow-500"
+                    >pre-kickoff</span
+                  >
+                </p>
+                <p class="mt-1 flex items-baseline gap-2">
+                  <span class="text-3xl font-bold leading-none text-white">1</span>
+                  <span
+                    class="text-lg font-semibold text-white"
+                    x-text="teams[0]?.name"
+                    >—</span
+                  >
+                </p>
+                <p class="mt-1 text-xs text-gray-400">
+                  <span th:if="${entryOpen == true}">Not locked in yet</span>
+                  <span th:if="${entryOpen == false}">Locked before the first fixtures</span>
+                </p>
+              </div>
             </div>
+          </div>
+
+          <!-- State chip on its own quiet strip, so it never competes with the banner. -->
+          <div class="border-b border-gray-200 bg-gray-50 px-6 py-2">
+            <span
+              th:if="${entryOpen == true}"
+              class="inline-flex items-center gap-1 text-xs font-medium text-green-700"
+              >🟢 Open until gameweek 1</span
+            >
+            <span
+              th:if="${entryOpen == false and revealed == false}"
+              class="inline-flex items-center gap-1 text-xs font-medium text-yellow-700"
+              >🔒 Locked for the season</span
+            >
+            <span
+              th:if="${revealed == true}"
+              class="inline-flex items-center gap-1 text-xs font-medium text-indigo-700"
+              >✅ Scored</span
+            >
           </div>
 
           <!-- Guest, still open: read-only with a sign-up CTA. The game is an on-ramp. -->
@@ -150,17 +194,19 @@
 
           <div class="px-6 py-4">
             <!--
-              th:block wrappers, never th:if on the same element as th:replace: attribute processing
-              order otherwise renders both branches (docs/backend-dev.md).
+              th:insert on the th:block itself, not th:replace on an inner div. A th:block with only
+              a th:if still renders its children, so the two branches were both appearing — the
+              result table's empty header showed above the editable grid. Putting the insert on the
+              same th:block as the condition is what actually makes them exclusive.
             -->
-            <th:block th:if="${revealed == true}">
-              <div class="overflow-x-auto">
-                <div th:replace="~{fragments/final-table-rows :: result}"></div>
-              </div>
-            </th:block>
-            <th:block th:if="${revealed == false}">
-              <div th:replace="~{fragments/final-table-rows :: table}"></div>
-            </th:block>
+            <th:block
+              th:if="${revealed == true}"
+              th:insert="~{fragments/final-table-rows :: result}"
+            ></th:block>
+            <th:block
+              th:if="${revealed == false}"
+              th:insert="~{fragments/final-table-rows :: table}"
+            ></th:block>
           </div>
 
           <!-- Save: shown only while the table can still be changed and the viewer owns it. -->
@@ -171,7 +217,7 @@
               off-screen, so a long table never leaves Save out of reach.
             -->
             <div
-              class="flex flex-wrap items-center gap-3 border-t border-gray-200 px-6 py-4"
+              class="flex flex-col items-center gap-2 border-t border-gray-200 px-6 py-5"
               x-init="
                 const footer = document.querySelector('footer');
                 if (footer) {
@@ -181,22 +227,25 @@
                 }
               "
             >
+              <!-- Centred on the table, and pill-shaped in both places so the inline button and the
+                   floating one read as the same control. -->
               <div
-                th:replace="~{fragments/final-table-actions :: save-button('rounded-lg')}"
+                th:replace="~{fragments/final-table-actions :: save-button('rounded-full')}"
               ></div>
-              <span
-                x-show="getDirtyCount() > 0"
-                x-cloak
-                class="text-sm text-gray-500"
-                x-text="getDirtyCount() + ' moved since last save'"
-              ></span>
-              <span
-                x-show="message"
-                x-cloak
-                x-text="message"
-                class="text-sm"
-                :class="messageKind === 'error' ? 'text-red-600' : 'text-green-600'"
-              ></span>
+              <p class="h-5 text-sm">
+                <span
+                  x-show="getDirtyCount() > 0 && !message"
+                  x-cloak
+                  class="text-gray-500"
+                  x-text="getDirtyCount() + ' moved since last save'"
+                ></span>
+                <span
+                  x-show="message"
+                  x-cloak
+                  x-text="message"
+                  :class="messageKind === 'error' ? 'text-red-600' : 'text-green-600'"
+                ></span>
+              </p>
             </div>
 
             <template x-teleport="body">
