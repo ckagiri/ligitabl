@@ -88,11 +88,7 @@ public class SyncFrequencyCalculator {
         }
 
         // PRIORITY 6: Calculate time until next kickoff
-        // Ceiling rounding: a kickoff 9 minutes 1 second out is "in 10 minutes", not "in 9". The
-        // original reason was narrower — `now` was read here rather than passed in, so a test
-        // constructing `now().plusMinutes(10)` measured a hair under 10 and fell into the wrong
-        // bucket. That gap is gone now that the caller supplies the instant, but rounding partial
-        // minutes up is the right behaviour on its own: it never schedules a poll later than the
+        // Rounding partial minutes up is the right behaviour on its own: it never schedules a poll later than the
         // bucket the kickoff actually falls in.
         long secondsUntilKickoff = Duration.between(now, nextKickoff).getSeconds();
         long minutesUntilKickoff = secondsUntilKickoff < 0 ? -1 : ceilDiv(secondsUntilKickoff, 60);

@@ -304,11 +304,7 @@ public class MatchSyncScheduler {
 
         // Schedule next execution
         // ⚠️ A deliberate wall-clock read — do not route this through the application `Clock` bean.
-        // This instant is not a decision; it is handed straight to `taskScheduler`, which fires on
-        // real time. Anything injectable can be frozen, and a frozen instant here schedules the next
-        // sync months adrift instead of `delay` from now. `taskScheduler.getClock()` has the same
-        // problem in the other direction: it is a default method, so a mocked TaskScheduler returns
-        // null from it and every test in MatchSyncSchedulerTest NPEs.
+        // This instant is handed straight to `taskScheduler`, which fires on real time.
         Instant nextRun = Instant.now().plus(delay);
         currentTask = taskScheduler.schedule(this::executeSync, Objects.requireNonNull(nextRun));
 

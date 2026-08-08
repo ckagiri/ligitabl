@@ -96,8 +96,7 @@ class EmailVerificationFlowIT extends AbstractPostgresIT {
     /**
      * The application's own {@code Clock} bean (systemUTC), not a frozen one: this test drives the
      * real registration flow end to end, so the token it reads back was minted from this same bean
-     * milliseconds earlier. Importing {@link com.ligitabl.api.testsupport.FixedClockConfig} would
-     * cost a second Spring context for no gain — nothing here asserts a specific instant.
+     * milliseconds earlier.
      */
     @Autowired
     Clock clock;
