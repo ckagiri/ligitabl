@@ -36,6 +36,20 @@ public class SharePredictionTextBuilder {
         return text.toString();
     }
 
+    /**
+     * The Final Table side game's share text. Same shape and truncation as the gameweek version, but
+     * framed as a season-long call rather than a round — this game has no gameweek to name.
+     */
+    public String buildFinalTable(List<TeamRank> rankings, Map<String, Team> teamsByCode, String shareUrl) {
+        var sorted = TeamRank.inPositionOrder(rankings).stream().toList();
+
+        StringBuilder text = new StringBuilder();
+        text.append("🔮 My Final Table prediction:\n\n");
+        appendTeamLines(text, sorted, teamsByCode);
+        text.append("\nLocked in for the whole season on LigiPredictor!\n").append(displayUrl(shareUrl));
+        return text.toString();
+    }
+
     private void appendTeamLines(StringBuilder text, List<TeamRank> sorted, Map<String, Team> teamsByCode) {
         int total = sorted.size();
 

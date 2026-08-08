@@ -10,6 +10,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -217,6 +218,20 @@ public class SecurityConfig {
                         .requestMatchers("/predictions/user/what-if", "/predictions/user/what-if/**")
                         .authenticated()
                         .requestMatchers("/predictions/user/guest", "/predictions/user/guest/*")
+                        .permitAll()
+                        // The shareable artifact: readable by anyone with the link. Must precede the
+                        // /final-table rules below, or those would claim it first.
+                        .requestMatchers("/final-table/u/**")
+                        .permitAll()
+                        // Saving always needs an identity.
+                        .requestMatchers(HttpMethod.POST, "/final-table")
+                        .authenticated()
+                        // GET is permitAll rather than authenticated, unlike the plan's first cut: the
+                        // game is explicitly an on-ramp, so a guest sees the baseline table read-only
+                        // with a sign-up CTA. GetFinalTableUseCase takes a null userId for exactly
+                        // this. (The main game instead redirects guests to /my-table/guest; a separate
+                        // route buys nothing here, since there is no per-round state to resolve.)
+                        .requestMatchers("/final-table", "/final-table/leaderboard")
                         .permitAll()
                         .requestMatchers("/seasonprediction/**")
                         .hasRole("PLAYER")

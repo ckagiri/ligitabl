@@ -1,0 +1,120 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <!--
+      The table itself. Rows carry data-* attributes the Alpine component reads; whether they are
+      actually interactive is decided by the page (entryOpen + ownership), not here, so the public
+      read-only view can reuse the same fragment.
+    -->
+    <table
+      th:fragment="table"
+      class="min-w-full divide-y divide-gray-200 dark:divide-gray-700"
+    >
+      <thead>
+        <tr>
+          <th
+            scope="col"
+            class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+          >
+            #
+          </th>
+          <th
+            scope="col"
+            class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+          >
+            Team
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr
+          th:each="rank : ${rankings}"
+          th:attr="data-team-code=${rank.code},data-position=${rank.position}"
+          class="cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800"
+        >
+          <td
+            class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
+            th:text="${rank.position}"
+          >
+            1
+          </td>
+          <td class="px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+            <span
+              th:with="team=${teamsByCode != null ? teamsByCode.get(rank.code) : null}"
+              th:text="${team != null ? (team.shorterName != null ? team.shorterName : team.shortName) : rank.code}"
+              >Team</span
+            >
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!--
+      The revealed result: prediction beside the real finish, with the distance for each row.
+      resultRankings is non-null only once the row is scored (Change 5).
+    -->
+    <table
+      th:fragment="result"
+      class="min-w-full divide-y divide-gray-200 dark:divide-gray-700"
+    >
+      <thead>
+        <tr>
+          <th
+            scope="col"
+            class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+          >
+            Predicted
+          </th>
+          <th
+            scope="col"
+            class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+          >
+            Team
+          </th>
+          <th
+            scope="col"
+            class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+          >
+            Actual
+          </th>
+          <th
+            scope="col"
+            class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+          >
+            Off by
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr th:each="row : ${resultRankings}">
+          <td
+            class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
+            th:text="${row.ranking.position}"
+          >
+            1
+          </td>
+          <td class="px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100">
+            <span
+              th:with="team=${teamsByCode != null ? teamsByCode.get(row.ranking.code) : null}"
+              th:text="${team != null ? (team.shorterName != null ? team.shorterName : team.shortName) : row.ranking.code}"
+              >Team</span
+            >
+          </td>
+          <td
+            class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
+            th:text="${row.standingsPosition}"
+          >
+            1
+          </td>
+          <td class="px-3 py-2 text-sm">
+            <span
+              th:text="${row.hit}"
+              th:classappend="${row.hit == 0} ? 'font-semibold text-emerald-600 dark:text-emerald-400' : 'text-gray-500 dark:text-gray-400'"
+              >0</span
+            >
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>

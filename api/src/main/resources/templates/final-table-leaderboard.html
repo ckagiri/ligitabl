@@ -1,0 +1,163 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <div layout:fragment="content" class="mx-auto max-w-3xl px-4 py-8">
+      <header class="mb-6">
+        <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+          Final Table Leaderboard
+        </h1>
+        <a
+          th:href="@{/final-table}"
+          class="mt-2 inline-block text-sm text-emerald-600 hover:underline dark:text-emerald-400"
+          >Back to your table</a
+        >
+      </header>
+
+      <div th:fragment="leaderboardContent" id="leaderboardContent">
+        <!-- Waiting: nothing is scored yet, so there is nothing to rank. -->
+        <th:block th:if="${revealed == false}">
+          <div
+            class="rounded-lg border border-gray-200 bg-gray-50 p-6 text-center dark:border-gray-700 dark:bg-gray-800"
+          >
+            <p class="text-gray-700 dark:text-gray-300">
+              Results are revealed when the season ends.
+            </p>
+            <p
+              class="mt-2 text-sm text-gray-500 dark:text-gray-400"
+              th:if="${totalPlayers > 0}"
+              th:text="|${totalPlayers} players have locked in a table.|"
+            >
+              0 players have locked in a table.
+            </p>
+          </div>
+        </th:block>
+
+        <th:block th:if="${revealed == true}">
+          <div
+            class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700"
+          >
+            <table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+              <thead>
+                <tr>
+                  <th
+                    scope="col"
+                    class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                  >
+                    #
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-2 text-left text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                  >
+                    Player
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-2 text-right text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                  >
+                    Score
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-2 text-right text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                  >
+                    Exact
+                  </th>
+                  <th
+                    scope="col"
+                    class="px-3 py-2 text-right text-xs font-medium uppercase text-gray-500 dark:text-gray-400"
+                  >
+                    Swaps
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr
+                  th:each="entry, iter : ${leaderboard}"
+                  th:classappend="${entry.publicId == currentUserPublicId} ? 'bg-emerald-50 dark:bg-emerald-950' : ''"
+                >
+                  <!--
+                    displayPositions collapses genuine ties to =4/=4/6; row_number() alone would
+                    number tied rows distinctly.
+                  -->
+                  <td
+                    class="px-3 py-2 text-sm text-gray-500 dark:text-gray-400"
+                    th:text="${displayPositions[iter.index]}"
+                  >
+                    1
+                  </td>
+                  <td
+                    class="px-3 py-2 text-sm font-medium text-gray-900 dark:text-gray-100"
+                  >
+                    <a
+                      th:href="@{'/final-table/u/' + ${entry.publicId} + '/' + ${seasonShorthand}}"
+                      th:text="${entry.displayName}"
+                      class="hover:underline"
+                      >Player</a
+                    >
+                  </td>
+                  <td
+                    class="px-3 py-2 text-right text-sm font-semibold text-gray-900 dark:text-gray-100"
+                    th:text="${entry.totalScore}"
+                  >
+                    0
+                  </td>
+                  <td
+                    class="px-3 py-2 text-right text-sm text-gray-500 dark:text-gray-400"
+                    th:text="${entry.zeroesCount}"
+                  >
+                    0
+                  </td>
+                  <td
+                    class="px-3 py-2 text-right text-sm text-gray-500 dark:text-gray-400"
+                    th:text="${entry.swapCount}"
+                  >
+                    0
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- The viewer's own standing, when they're off the current page. -->
+          <th:block th:if="${userEntry != null}">
+            <div
+              class="mt-4 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm dark:border-emerald-800 dark:bg-emerald-950"
+            >
+              <span class="text-emerald-900 dark:text-emerald-200">
+                You're
+                <strong th:text="${userEntry.position}">0</strong>
+                with
+                <strong th:text="${userEntry.totalScore}">0</strong>
+                points.
+              </span>
+            </div>
+          </th:block>
+
+          <nav class="mt-4 flex items-center justify-between text-sm">
+            <a
+              th:if="${hasPreviousPage == true}"
+              th:href="@{/final-table/leaderboard(page=${currentPage - 1})}"
+              class="text-emerald-600 hover:underline dark:text-emerald-400"
+              >Previous</a
+            >
+            <span class="text-gray-500 dark:text-gray-400">
+              Page <span th:text="${currentPage}">1</span> of
+              <span th:text="${totalPages}">1</span>
+            </span>
+            <a
+              th:if="${hasNextPage == true}"
+              th:href="@{/final-table/leaderboard(page=${currentPage + 1})}"
+              class="text-emerald-600 hover:underline dark:text-emerald-400"
+              >Next</a
+            >
+          </nav>
+        </th:block>
+      </div>
+    </div>
+  </body>
+</html>
