@@ -220,6 +220,10 @@ public class SecurityConfig {
                         .permitAll()
                         .requestMatchers("/seasonprediction/**")
                         .hasRole("PLAYER")
+                        // Scoring triggers, not page routes. ADMIN-only; /dev/** additionally does
+                        // not exist as a bean outside non-prod profiles.
+                        .requestMatchers("/dev/final-table/**", "/admin/final-table/**")
+                        .hasRole("ADMIN")
                         .requestMatchers("/contests/**")
                         .authenticated()
                         .requestMatchers("/profile/**")
