@@ -85,6 +85,34 @@
                 </span>
               </span>
 
+              <!--
+                Live columns: where the team actually sits now, and the gap. Rendered on the same
+                row as the prediction rather than in a separate table, so "I said 3rd, they're 1st"
+                reads left to right. Hidden entirely outside the locked-but-unscored state, which
+                is the only time `hasLiveProgress` is true.
+              -->
+              <template x-if="hasLiveProgress">
+                <span class="flex flex-shrink-0 items-center gap-1.5">
+                  <span
+                    class="text-[10px] font-medium uppercase tracking-wide text-gray-400"
+                    >now</span
+                  >
+                  <span
+                    class="w-5 text-right text-sm font-semibold"
+                    :class="liveOnTarget(team.code) ? 'text-emerald-600' : 'text-gray-700'"
+                    x-text="livePosition(team.code) ?? '–'"
+                  ></span>
+                  <span
+                    class="w-7 text-xs font-semibold"
+                    :class="{
+                      'text-green-600': liveMovement(team.code)?.startsWith('↑'),
+                      'text-red-600': liveMovement(team.code)?.startsWith('↓')
+                    }"
+                    x-text="liveMovement(team.code)"
+                  ></span>
+                </span>
+              </template>
+
               <span
                 class="flex-shrink-0 text-[10px] font-semibold uppercase tracking-wide"
                 :class="zoneTextClass(team.position)"

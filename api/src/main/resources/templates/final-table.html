@@ -14,7 +14,7 @@
       <div
         class="mx-auto max-w-5xl"
         x-data="Ligitabl.finalTablePage($el)"
-        th:attr="data-rows=${rowsJson},data-zones=${zonesJson},data-entry-open=${entryOpen and !isGuest},data-has-entry=${hasEntry}"
+        th:attr="data-rows=${rowsJson},data-zones=${zonesJson},data-entry-open=${entryOpen and !isGuest},data-has-entry=${hasEntry},data-live-rows=${liveRowsJson}"
       >
         <div class="mb-6 overflow-hidden rounded-lg bg-white shadow-sm">
           <!--
@@ -114,14 +114,28 @@
             </div>
           </th:block>
 
-          <!-- Locked, not yet scored: the wait is the point. -->
+          <!-- Locked, not yet scored, nothing to track against yet: the wait is the point. -->
           <th:block
-            th:if="${isGuest == false and entryOpen == false and revealed == false}"
+            th:if="${isGuest == false and entryOpen == false and revealed == false and liveProgress == false}"
           >
             <div class="border-b border-gray-200 bg-gray-50 px-6 py-3">
               <p class="text-sm text-gray-700">
                 Your table is locked for the season. Results are revealed when the
                 season ends.
+              </p>
+            </div>
+          </th:block>
+
+          <!--
+            Locked, not yet scored, but the season has produced standings. Says plainly that the
+            score is still sealed — the numbers on the rows are a position comparison, not a
+            running total, and the copy has to stop anyone reading them as one.
+          -->
+          <th:block th:if="${liveProgress == true}">
+            <div class="border-b border-indigo-100 bg-indigo-50 px-6 py-3">
+              <p class="text-sm text-indigo-900">
+                Locked in. Each row shows where that club sits right now — your score
+                stays sealed until the season ends.
               </p>
             </div>
           </th:block>

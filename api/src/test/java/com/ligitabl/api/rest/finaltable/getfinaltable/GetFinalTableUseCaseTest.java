@@ -36,7 +36,11 @@ import com.ligitabl.model.repo.FinalTablePredictionRepo;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
+import com.ligitabl.model.repo.StandingsRepo;
 import com.ligitabl.model.repo.TeamRepo;
+import com.ligitabl.model.domain.Standings;
+import com.ligitabl.model.domain.StandingsMetadata;
+import com.ligitabl.model.domain.StandingsTeamRank;
 
 @ExtendWith(MockitoExtension.class)
 class GetFinalTableUseCaseTest {
@@ -63,6 +67,9 @@ class GetFinalTableUseCaseTest {
 
     @Mock
     private CompetitionRepo competitionRepo;
+
+    @Mock
+    private StandingsRepo standingsRepo;
 
     private static final Instant NOW = TestCalendar.MID_SEASON;
     private static final List<TeamRank> BASELINE =
@@ -96,7 +103,8 @@ class GetFinalTableUseCaseTest {
                 new SharePredictionTextBuilder(),
                 devProperties,
                 new FinalTableRowsJson(),
-                competitionRepo);
+                competitionRepo,
+                standingsRepo);
         ReflectionTestUtils.setField(useCase, "frontendShareUrl", "https://ligipredictor.test");
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
@@ -241,5 +249,142 @@ class GetFinalTableUseCaseTest {
         var data = useCase.execute(null, null).get();
 
         assertThat(data.devPreviewEnabled()).isFalse();
+    }
+
+    // --- live progress: locked, not yet scored, standings exist ---------------------------
+
+    /** Closes entry and puts a standings table behind the season, i.e. mid-season. */
+    private void lockedWithStandings(List<StandingsTeamRank> rankings) {
+        season.setCompleted(true);
+        when(standingsRepo.findLatestBySeason(seasonId))
+                .thenReturn(Optional.of(Standings.builder()
+                        .id(UUID.randomUUID())
+                        .seasonId(seasonId)
+                        .rankings(rankings)
+                        .build()));
+    }
+
+    private static StandingsTeamRank standing(String code, int position) {
+        return StandingsTeamRank.builder()
+                .ranking(TeamRank.of(code, position))
+                .metadata(StandingsMetadata.builder().build())
+                .build();
+    }
+
+    @Test
+    void showsLiveProgressOnceTheTableIsLockedAndStandingsExist() {
+        UUID userId = UUID.randomUUID();
+        when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
+        // Predicted LIV 1, ARS 2, MCI 3; actually ARS 1, MCI 2, LIV 3.
+        lockedWithStandings(List.of(standing("ARS", 1), standing("MCI", 2), standing("LIV", 3)));
+
+        var data = useCase.execute(userId, "abc123").get();
+
+        assertThat(data.liveProgress()).isTrue();
+        assertThat(data.liveRowsJson())
+                .contains("\"code\":\"LIV\"", "\"current\":3")
+                .contains("\"code\":\"ARS\"", "\"current\":1");
+    }
+
+    @Test
+    void liveProgressNeverCarriesAScore() {
+        // The whole point of the state: position comparison, no score. A total, a zeroes count or
+        // any aggregate here would be the reveal arriving nine months early.
+        UUID userId = UUID.randomUUID();
+        when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
+        lockedWithStandings(List.of(standing("ARS", 1), standing("MCI", 2), standing("LIV", 3)));
+
+        var data = useCase.execute(userId, "abc123").get();
+
+        assertThat(data.liveProgress()).isTrue();
+        assertThat(data.revealed()).isFalse();
+        assertThat(data.totalScore()).isNull();
+        assertThat(data.baseScore()).isNull();
+        assertThat(data.zeroesCount()).isNull();
+        assertThat(data.bonusPoints()).isNull();
+        assertThat(data.resultRankings()).isNull();
+        assertThat(data.liveRowsJson()).doesNotContain("score", "hit", "zero", "bonus");
+    }
+
+    @Test
+    void renderingLiveProgressNeverWritesToThePredictionRow() {
+        UUID userId = UUID.randomUUID();
+        when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
+        lockedWithStandings(List.of(standing("ARS", 1), standing("MCI", 2), standing("LIV", 3)));
+
+        useCase.execute(userId, "abc123");
+
+        // A GET must never take the StandingsSource.CURRENT path, which persists and reveals.
+        verify(predictionRepo, never()).save(any());
+    }
+
+    @Test
+    void liveProgressIsOffWhileEntryIsStillOpen() {
+        // Pre-lock the player is still editing; a "now" column would just be noise.
+        UUID userId = UUID.randomUUID();
+        when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
+
+        var data = useCase.execute(userId, "abc123").get();
+
+        assertThat(data.entryOpen()).isTrue();
+        assertThat(data.liveProgress()).isFalse();
+        assertThat(data.liveRowsJson()).isEqualTo("[]");
+        verify(standingsRepo, never()).findLatestBySeason(any());
+    }
+
+    @Test
+    void liveProgressIsOffBeforeAnyStandingsExist() {
+        // Locked at GW1 but nothing played yet: fall back to the "results at season end" copy
+        // rather than a table of dashes.
+        UUID userId = UUID.randomUUID();
+        when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
+        season.setCompleted(true);
+        when(standingsRepo.findLatestBySeason(seasonId)).thenReturn(Optional.empty());
+
+        var data = useCase.execute(userId, "abc123").get();
+
+        assertThat(data.liveProgress()).isFalse();
+        assertThat(data.liveRowsJson()).isEqualTo("[]");
+    }
+
+    @Test
+    void liveProgressIsOffOnceTheRowIsScored() {
+        // Revealed wins: the result table is authoritative, so there is nothing provisional to show.
+        UUID userId = UUID.randomUUID();
+        FinalTablePrediction prediction = row();
+        prediction.setScoredAt(NOW);
+        when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
+        season.setCompleted(true);
+
+        var data = useCase.execute(userId, "abc123").get();
+
+        assertThat(data.revealed()).isTrue();
+        assertThat(data.liveProgress()).isFalse();
+        verify(standingsRepo, never()).findLatestBySeason(any());
+    }
+
+    @Test
+    void liveProgressIsOffForAGuest() {
+        season.setCompleted(true);
+
+        var data = useCase.execute(null, null).get();
+
+        assertThat(data.liveProgress()).isFalse();
+        verify(standingsRepo, never()).findLatestBySeason(any());
+    }
+
+    @Test
+    void aTeamMissingFromStandingsSimplyHasNoReading() {
+        // Partial standings must degrade per row, not fail the page.
+        UUID userId = UUID.randomUUID();
+        when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
+        lockedWithStandings(List.of(standing("ARS", 1), standing("LIV", 2)));
+
+        var data = useCase.execute(userId, "abc123").get();
+
+        assertThat(data.liveProgress()).isTrue();
+        // MCI is in the prediction but not the standings, so it carries no `current`.
+        assertThat(data.liveRowsJson()).contains("\"code\":\"MCI\",\"name\"");
+        assertThat(data.liveRowsJson()).doesNotContain("\"code\":\"MCI\",\"name\":\"MCI\",\"shortName\":\"MCI\",\"current\"");
     }
 }

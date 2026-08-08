@@ -66,6 +66,8 @@ public class FinalTableController {
         model.addAttribute("shareCardSubtitle", data.teamCount() + " clubs · shared before season kickoff");
         model.addAttribute("isGuest", data.isGuest());
         model.addAttribute("devPreviewEnabled", data.devPreviewEnabled());
+        model.addAttribute("liveProgress", data.liveProgress());
+        model.addAttribute("liveRowsJson", data.liveRowsJson());
         model.addAttribute("readOnly", false);
         return "final-table";
     }

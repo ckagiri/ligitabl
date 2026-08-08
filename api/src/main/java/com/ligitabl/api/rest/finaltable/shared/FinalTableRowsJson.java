@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.model.domain.ResultTeamRank;
+import com.ligitabl.model.domain.StandingsTeamRank;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
 
@@ -55,6 +56,42 @@ public class FinalTableRowsJson {
                     if (result != null) {
                         row.put("actual", result.getStandingsPosition());
                         row.put("hit", result.getHit());
+                    }
+                    return row;
+                })
+                .toList();
+        return write(rows);
+    }
+
+    /**
+     * As {@link #rows}, plus each team's position in the current standings — the locked-but-not-yet
+     * revealed view, where a player can see how their table is tracking.
+     *
+     * <p>Emits {@code current} only; the distance and the ↑/↓ arrow are derived client-side, the
+     * same way {@code getPositionChange} already derives movement against the saved order. Nothing
+     * resembling a score is serialised, and deliberately no aggregate: a total, an exact-hit count
+     * or a mean distance would each be the provisional score in disguise, and the rule for this
+     * view is that the app does not do that arithmetic for the player.
+     *
+     * <p>⚠️ Not for the share card. {@link #shareRows} publishes to anyone holding the public link;
+     * provisional standings comparisons are for the owner's own page only.
+     *
+     * @param standings current standings; a team absent from them simply omits {@code current}
+     *     rather than failing, so a partial standings row degrades to "no reading yet" per team
+     */
+    public String liveRows(
+            List<TeamRank> rankings, Map<String, Team> teamsByCode, List<StandingsTeamRank> standings) {
+        Map<String, Integer> positionByCode = standings == null
+                ? Map.of()
+                : standings.stream()
+                        .collect(Collectors.toMap(StandingsTeamRank::teamCode, StandingsTeamRank::position, (a, b) -> a));
+
+        List<Map<String, Object>> rows = TeamRank.inPositionOrder(rankings).stream()
+                .map(rank -> {
+                    Map<String, Object> row = row(rank, teamsByCode);
+                    Integer current = positionByCode.get(rank.getCode());
+                    if (current != null) {
+                        row.put("current", current);
                     }
                     return row;
                 })

@@ -36,6 +36,12 @@ import com.ligitabl.model.domain.TeamRank;
  * @param isGuest true when nobody is signed in — read-only teaser with a sign-up CTA
  * @param shareRowsJson rows for the share canvas, with actual/hit once revealed
  * @param devPreviewEnabled renders the dev score/clear controls
+ * @param liveProgress the third state — locked, not yet scored, but current standings exist, so
+ *     the table can show how it is tracking. Distinct from {@code revealed}: no score of any kind
+ *     is computed or shown, and nothing is persisted by rendering it
+ * @param liveRowsJson rows with each team's current standings position, {@code "[]"} unless
+ *     {@code liveProgress}. Carries no score and deliberately no aggregate — see
+ *     {@code FinalTableRowsJson.liveRows}
  */
 public record FinalTableViewData(
         List<TeamRank> rankings,
@@ -61,7 +67,9 @@ public record FinalTableViewData(
         String shareText,
         String shareRowsJson,
         boolean isGuest,
-        boolean devPreviewEnabled) {
+        boolean devPreviewEnabled,
+        boolean liveProgress,
+        String liveRowsJson) {
 
     /** The order the client echoes back as its checksum on save. */
     public List<String> expectedOrder() {

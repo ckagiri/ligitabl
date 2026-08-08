@@ -8,6 +8,8 @@ import java.util.Map;
 import org.junit.jupiter.api.Test;
 
 import com.ligitabl.model.domain.ResultTeamRank;
+import com.ligitabl.model.domain.StandingsMetadata;
+import com.ligitabl.model.domain.StandingsTeamRank;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.domain.TeamSlug;
@@ -112,5 +114,47 @@ class FinalTableRowsJsonTest {
         assertThat(rowsJson.rows(List.of(), Map.of())).isEqualTo("[]");
         assertThat(rowsJson.rows(null, Map.of())).isEqualTo("[]");
         assertThat(rowsJson.rows(TABLE, null)).contains("\"name\":\"ARS\"");
+    }
+
+    // --- liveRows: the locked-but-unscored view ------------------------------------------
+
+    private static StandingsTeamRank standing(String code, int position) {
+        return StandingsTeamRank.builder()
+                .ranking(TeamRank.of(code, position))
+                .metadata(StandingsMetadata.builder().build())
+                .build();
+    }
+
+    @Test
+    void liveRowsCarryEachTeamsCurrentPosition() {
+        String json = rowsJson.liveRows(
+                TABLE, Map.of(), List.of(standing("ARS", 2), standing("LIV", 1), standing("CHE", 3)));
+
+        assertThat(json).contains("\"code\":\"ARS\"", "\"current\":2");
+        assertThat(json).contains("\"code\":\"LIV\"", "\"current\":1");
+    }
+
+    @Test
+    void liveRowsCarryNoScoreOfAnyKind() {
+        // The distance is derived client-side precisely so nothing score-shaped is serialised.
+        String json = rowsJson.liveRows(TABLE, Map.of(), List.of(standing("ARS", 2)));
+
+        assertThat(json).doesNotContain("hit", "score", "zero", "bonus", "distance");
+    }
+
+    @Test
+    void aTeamAbsentFromStandingsOmitsCurrentRatherThanFailing() {
+        // Partial standings degrade per row: the club renders, it just has no reading yet.
+        String json = rowsJson.liveRows(TABLE, Map.of(), List.of(standing("ARS", 1)));
+
+        assertThat(json).contains("\"code\":\"CHE\"");
+        assertThat(json).containsOnlyOnce("\"current\"");
+    }
+
+    @Test
+    void liveRowsHandleEmptyAndNullStandings() {
+        assertThat(rowsJson.liveRows(TABLE, Map.of(), List.of())).doesNotContain("current");
+        assertThat(rowsJson.liveRows(TABLE, Map.of(), null)).doesNotContain("current");
+        assertThat(rowsJson.liveRows(List.of(), Map.of(), List.of())).isEqualTo("[]");
     }
 }

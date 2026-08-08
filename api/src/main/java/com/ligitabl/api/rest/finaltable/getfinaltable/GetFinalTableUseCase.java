@@ -16,10 +16,13 @@ import com.ligitabl.api.web.shared.share.SharePredictionTextBuilder;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.FinalTablePrediction;
 import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.Standings;
+import com.ligitabl.model.domain.StandingsTeamRank;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.FinalTablePredictionRepo;
+import com.ligitabl.model.repo.StandingsRepo;
 import com.ligitabl.model.repo.TeamRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -41,6 +44,7 @@ public class GetFinalTableUseCase {
     private final FinalTableDevProperties devProperties;
     private final FinalTableRowsJson rowsJson;
     private final CompetitionRepo competitionRepo;
+    private final StandingsRepo standingsRepo;
 
     @Value("${ligitabl.frontend.share-url:${ligitabl.frontend.url:http://localhost:8080}}")
     private String frontendShareUrl;
@@ -62,7 +66,16 @@ public class GetFinalTableUseCase {
 
         Map<String, Team> teamsByCode = teamRepo.findAllTeamsByCode(rankings);
         boolean revealed = prediction != null && prediction.isScored();
+        boolean entryOpen = finalTableSupport.isEntryOpen(season);
         String shareUrl = publicId == null ? null : shareUrl(publicId, season);
+
+        // Locked, not yet scored, and the season has produced standings: show how the table is
+        // tracking. Read-only and non-persisting — deliberately NOT StandingsSource.CURRENT, which
+        // writes provisional scores into the result columns and flips `revealed` for everyone.
+        List<StandingsTeamRank> liveStandings = !guest && prediction != null && !entryOpen && !revealed
+                ? standingsRepo.findLatestBySeason(season.getId()).map(Standings::getRankings).orElse(List.of())
+                : List.of();
+        boolean liveProgress = !liveStandings.isEmpty();
 
         return new FinalTableViewData(
                 rankings,
@@ -72,7 +85,7 @@ public class GetFinalTableUseCase {
                 competitionName(season),
                 seasonLabel(season),
                 rankings.size(),
-                finalTableSupport.isEntryOpen(season),
+                entryOpen,
                 prediction != null,
                 revealed,
                 prediction != null ? prediction.getSwaps() : List.of(),
@@ -88,7 +101,9 @@ public class GetFinalTableUseCase {
                 shareUrl == null ? null : shareTextBuilder.buildFinalTable(rankings, teamsByCode, shareUrl),
                 rowsJson.shareRows(rankings, teamsByCode, revealed ? prediction.getResultRankings() : null),
                 guest,
-                devProperties.isEnabled());
+                devProperties.isEnabled(),
+                liveProgress,
+                liveProgress ? rowsJson.liveRows(rankings, teamsByCode, liveStandings) : "[]");
     }
 
     /** Falls back to the season name so the banner never renders a blank title. */

@@ -985,6 +985,11 @@ window.Ligitabl.finalTablePage = function (el) {
         // `this._zones = …` is outside Alpine's reactive data, so anything reading it renders once
         // and never updates.
         _zones: {},
+        // Current standings position per team code, and whether there are any. Same reason as
+        // _zones above: a property that only ever appears via assignment in init() is outside
+        // Alpine's reactive data, so anything reading it renders once and never updates.
+        _livePositions: {},
+        hasLiveProgress: false,
         // The pairs tapped since the last save, in order. Replayed server-side.
         pendingSwaps: [],
         inFlight: false,
@@ -999,6 +1004,14 @@ window.Ligitabl.finalTablePage = function (el) {
             // on every successful save so the markers reflect "since you last saved".
             this.originalTeams = JSON.parse(JSON.stringify(this.teams));
             this._zones = Ligitabl._parseJSON(dataset.zones, {});
+            // Current standings position per code, for the locked-but-unscored view. Empty ([]) in
+            // every other state, which is what keeps the live columns hidden.
+            const live = Ligitabl._parseJSON(dataset.liveRows, []);
+            this._livePositions = live.reduce((acc, row) => {
+                if (row.current != null) acc[row.code] = row.current;
+                return acc;
+            }, {});
+            this.hasLiveProgress = Object.keys(this._livePositions).length > 0;
         },
 
         // --- shared visual language with the main prediction table ---
@@ -1017,6 +1030,37 @@ window.Ligitabl.finalTablePage = function (el) {
             const change = original.position - team.position;
             if (change === 0) return null;
             return change > 0 ? '↑' + change : '↓' + Math.abs(change);
+        },
+
+        // --- live progress (locked, not yet scored) ------------------------------
+        //
+        // Deliberately no score, no total and no exact-hit count: those are the reveal, and the
+        // rule for this view is that the app does not do that arithmetic for the player. Movement
+        // reuses getPositionChange's vocabulary so a row reads the same in both states.
+
+        /** Where the team actually sits now, or null if standings do not list it. */
+        livePosition(teamCode) {
+            const current = this._livePositions[teamCode];
+            return current == null ? null : current;
+        },
+
+        /** Predicted vs actual as ↑/↓N — "you had them 3rd, they are 1st" reads as ↑2. */
+        liveMovement(teamCode) {
+            const current = this._livePositions[teamCode];
+            if (current == null) return null;
+            const team = this.teams.find((t) => t.code === teamCode);
+            if (!team) return null;
+            const change = team.position - current;
+            if (change === 0) return null;
+            return change > 0 ? '↑' + change : '↓' + Math.abs(change);
+        },
+
+        /** Exact-position match against the live table. Per row only — never counted up. */
+        liveOnTarget(teamCode) {
+            const current = this._livePositions[teamCode];
+            if (current == null) return false;
+            const team = this.teams.find((t) => t.code === teamCode);
+            return !!team && team.position === current;
         },
 
         // Neutral badge: pre-GW1 there are no results to tint by, unlike the main table's
