@@ -83,25 +83,26 @@
         will-change: opacity, transform;
       }
 
-      /* Prediction rows - Color changes only */
+      /* Prediction rows - Color changes only.
+         These are plain stylesheet rules, so they out-specify the Tailwind utility
+         classes Alpine binds for the zone wash / selected / dirty tints. Painting
+         background-color here would blank those tints — a hovered selected row would
+         lose its blue, and a row left mid-animation would keep a wash its zone does
+         not have. So the feedback layers on top via box-shadow inset instead. */
       .prediction-row {
-        transition: background-color 100ms;
+        transition: box-shadow 200ms ease;
       }
 
       .prediction-row:hover:not(.no-hover) {
-        background-color: #f9fafb;
-      }
-
-      .prediction-row {
-        transition: background-color 200ms ease;
+        box-shadow: inset 0 0 0 9999px rgb(0 0 0 / 0.02);
       }
 
       .prediction-row.swapping {
-        background-color: #fef3c7;
+        box-shadow: inset 0 0 0 9999px rgb(245 158 11 / 0.18);
       }
 
       .prediction-row.selected-pulse {
-        background-color: #eff6ff;
+        box-shadow: inset 0 0 0 9999px rgb(59 130 246 / 0.12);
       }
 
       /* No animations for anything else */

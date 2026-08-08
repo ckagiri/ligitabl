@@ -1115,10 +1115,25 @@ window.Ligitabl.finalTablePage = function (el) {
          *
          * <p>Clearing message/messageKind is what stops the "N moved since last save" hint outliving
          * the reset that made it untrue.
+         *
+         * <p>Restores by reordering the existing team objects rather than assigning a deep copy.
+         * `x-for` is keyed by team code, so Alpine reuses each row's DOM node either way — but the
+         * `:class` binding's reactive dependency is registered against the *object* that was in
+         * `teams` when it last ran. Replacing the array with fresh copies leaves those effects
+         * watching orphaned objects that nothing writes to again, so `zoneRowClass(team.position)`
+         * never re-evaluates and every row keeps the zone wash of the position it held before the
+         * reset. Mutating the tracked objects in place is what actually notifies the bindings.
          */
         reset() {
             if (this.inFlight) return;
-            this.teams = JSON.parse(JSON.stringify(this.originalTeams));
+            const byCode = new Map(this.teams.map((team) => [team.code, team]));
+            this.teams = this.originalTeams.map((original) => {
+                const team = byCode.get(original.code);
+                if (!team) return { ...original };
+                team.position = original.position;
+                return team;
+            });
+            this.teams.sort((a, b) => a.position - b.position);
             this.pendingSwaps = [];
             this.selectedTeam = null;
             this.message = null;
