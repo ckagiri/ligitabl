@@ -998,6 +998,7 @@ window.Ligitabl.finalTablePage = function (el) {
             // The last saved order. Drives the dirty tint and the ↑/↓ arrows, and is re-baselined
             // on every successful save so the markers reflect "since you last saved".
             this.originalTeams = JSON.parse(JSON.stringify(this.teams));
+            this._zones = Ligitabl._parseJSON(dataset.zones, {});
         },
 
         // --- shared visual language with the main prediction table ---
@@ -1022,6 +1023,65 @@ window.Ligitabl.finalTablePage = function (el) {
         // form-driven colouring.
         teamBadgeClasses() {
             return 'bg-gray-200 text-gray-700';
+        },
+
+        // --- qualification zones -------------------------------------------------
+        //
+        // Read from data-zones so the bands follow the competition rather than hardcoding the
+        // Premier League's shape. Shape: {"CL":[1,5],"UEL":[6,7],"UECL":[8,8],"REL":[18,20]} —
+        // inclusive position ranges, any subset, empty object for a league with no zones.
+        zoneOf(position) {
+            const zones = this._zones || {};
+            for (const [code, range] of Object.entries(zones)) {
+                if (Array.isArray(range) && position >= range[0] && position <= range[1]) {
+                    return code;
+                }
+            }
+            return null;
+        },
+
+        zoneLabel(position) {
+            return this.zoneOf(position) || '';
+        },
+
+        // Left edge marker. Colour-only, so it never competes with the selected/dirty row tints.
+        zoneBarClass(position) {
+            switch (this.zoneOf(position)) {
+                case 'CL':
+                    return 'bg-blue-500';
+                case 'UEL':
+                    return 'bg-green-500';
+                case 'UECL':
+                    return 'bg-amber-500';
+                case 'REL':
+                    return 'bg-red-500';
+                default:
+                    return 'bg-transparent';
+            }
+        },
+
+        zoneTextClass(position) {
+            switch (this.zoneOf(position)) {
+                case 'CL':
+                    return 'text-blue-600';
+                case 'UEL':
+                    return 'text-green-600';
+                case 'UECL':
+                    return 'text-amber-600';
+                case 'REL':
+                    return 'text-red-600';
+                default:
+                    return 'text-gray-400';
+            }
+        },
+
+        // Split into two columns so a 20-team table fits without vertical scrolling.
+        leftColumn() {
+            return this.teams.slice(0, Math.ceil(this.teams.length / 2));
+        },
+
+        rightColumn() {
+            return this.teams.slice(Math.ceil(this.teams.length / 2));
         },
 
         getDirtyCount() {

@@ -5,218 +5,257 @@
   layout:decorate="~{layout/base}"
 >
   <body>
-    <div layout:fragment="content" class="mx-auto max-w-3xl px-4 py-8">
-      <header class="mb-6">
-        <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">
-          Final Table Predictor
-        </h1>
-        <p class="mt-2 text-sm text-gray-600 dark:text-gray-400">
-          One prediction for the whole season. Locked when gameweek 1 kicks off,
-          revealed when the season ends.
-        </p>
-      </header>
-
-      <!-- Guest, still open: read-only with a sign-up CTA. The game doubles as an on-ramp. -->
-      <th:block th:if="${isGuest == true and entryOpen == true}">
-        <div
-          class="mb-6 rounded-lg border border-indigo-200 bg-indigo-50 p-4 dark:border-indigo-800 dark:bg-indigo-950"
-        >
-          <p class="text-sm text-indigo-900 dark:text-indigo-200">
-            Sign in to make this table your own before gameweek 1 locks it in.
-          </p>
-          <a
-            th:href="@{/auth/register}"
-            class="mt-3 inline-block rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
-            >Create an account</a
-          >
-        </div>
-      </th:block>
-
-      <!--
-        Guest, already locked: no CTA. Inviting someone to enter a game that has closed is a promise
-        the app cannot keep — say what happened and point at next season instead.
-      -->
-      <th:block th:if="${isGuest == true and entryOpen == false}">
-        <div
-          class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800"
-        >
-          <p class="text-sm text-gray-700 dark:text-gray-300">
-            Entries for this season closed when gameweek 1 kicked off. This is the
-            table everyone started from.
-          </p>
-        </div>
-      </th:block>
-
-      <!-- Locked, not yet scored: the wait is the point. -->
-      <th:block th:if="${isGuest == false and entryOpen == false and revealed == false}">
-        <div
-          class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-700 dark:bg-gray-800"
-        >
-          <p class="text-sm text-gray-700 dark:text-gray-300">
-            Your table is locked for the season. Results are revealed when the
-            season ends.
-          </p>
-        </div>
-      </th:block>
-
-      <!-- Revealed: the score, out of the season's own maximum. -->
-      <th:block th:if="${revealed == true}">
-        <div
-          class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4"
-          th:with="statClass='rounded-lg border border-gray-200 bg-white p-3 dark:border-gray-700 dark:bg-gray-900'"
-        >
-          <div th:class="${statClass}">
-            <div class="text-xs uppercase text-gray-500 dark:text-gray-400">Total</div>
-            <div
-              class="text-xl font-semibold text-gray-900 dark:text-gray-100"
-              th:text="${totalScore}"
-            >
-              0
-            </div>
-          </div>
-          <div th:class="${statClass}">
-            <div class="text-xs uppercase text-gray-500 dark:text-gray-400">Base</div>
-            <div
-              class="text-xl font-semibold text-gray-900 dark:text-gray-100"
-              th:text="${baseScore}"
-            >
-              0
-            </div>
-          </div>
-          <div th:class="${statClass}">
-            <div class="text-xs uppercase text-gray-500 dark:text-gray-400">Exact</div>
-            <div
-              class="text-xl font-semibold text-gray-900 dark:text-gray-100"
-              th:text="${zeroesCount}"
-            >
-              0
-            </div>
-          </div>
-          <div th:class="${statClass}">
-            <div class="text-xs uppercase text-gray-500 dark:text-gray-400">Bonus</div>
-            <div
-              class="text-xl font-semibold text-gray-900 dark:text-gray-100"
-              th:text="${bonusPoints}"
-            >
-              0
-            </div>
-          </div>
-        </div>
-      </th:block>
-
+    <!--
+      No px/py wrapper here: layout/base.html's <main> already supplies
+      `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8`. Adding another py-8 is what put a large empty
+      band above the title.
+    -->
+    <div layout:fragment="content">
       <div
+        class="mx-auto max-w-5xl"
         x-data="Ligitabl.finalTablePage($el)"
-        th:attr="data-rows=${rowsJson},data-entry-open=${entryOpen and !isGuest},data-has-entry=${hasEntry}"
+        th:attr="data-rows=${rowsJson},data-zones=${zonesJson},data-entry-open=${entryOpen and !isGuest},data-has-entry=${hasEntry}"
       >
-        <div
-          class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700"
-        >
-          <!--
-            th:block wrappers, never th:if on the same element as th:replace: attribute processing
-            order otherwise renders both branches (docs/backend-dev.md).
-          -->
-          <th:block th:if="${revealed == true}">
-            <div th:replace="~{fragments/final-table-rows :: result}"></div>
-          </th:block>
-          <th:block th:if="${revealed == false}">
-            <div th:replace="~{fragments/final-table-rows :: table}"></div>
-          </th:block>
-        </div>
+        <div class="mb-6 rounded-lg bg-white shadow-sm">
+          <!-- Header strip: title, one line of context, and the state chip. -->
+          <div class="border-b border-gray-200 px-6 py-4">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h1 class="text-xl font-bold text-gray-900 sm:text-2xl">
+                  Final Table Predictor
+                </h1>
+                <p class="mt-1 text-sm text-gray-600">
+                  One prediction for the whole season, locked when gameweek 1 kicks
+                  off.
+                </p>
+              </div>
 
-        <!-- Save: shown only while the table can still be changed and the viewer owns it. -->
-        <th:block th:if="${entryOpen == true and isGuest == false}">
-          <!--
-            Same mechanism as predictions.html: a raw IntersectionObserver on the page footer (the
-            x-intersect plugin is not bundled). The floating pill shows only while the footer is
-            off-screen, so a long table never leaves Save out of reach.
-          -->
-          <div
-            class="mt-4 flex items-center gap-3"
-            x-init="
-              const footer = document.querySelector('footer');
-              if (footer) {
-                new IntersectionObserver(
-                  (entries) => { footerVisible = entries[0].isIntersecting; }
-                ).observe(footer);
-              }
-            "
-          >
-            <div th:replace="~{fragments/final-table-actions :: save-button('rounded-lg')}"></div>
-            <span
-              x-show="getDirtyCount() > 0"
-              x-cloak
-              class="text-sm text-gray-500"
-              x-text="getDirtyCount() + ' moved'"
-            ></span>
-            <span
-              x-show="message"
-              x-cloak
-              x-text="message"
-              class="text-sm"
-              :class="messageKind === 'error' ? 'text-red-600' : 'text-indigo-600'"
-            ></span>
+              <span
+                th:if="${entryOpen == true}"
+                class="inline-flex items-center gap-1 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700"
+                >🟢 Open until GW1</span
+              >
+              <span
+                th:if="${entryOpen == false and revealed == false}"
+                class="inline-flex items-center gap-1 rounded-full bg-yellow-50 px-3 py-1 text-xs font-medium text-yellow-700"
+                >🔒 Locked</span
+              >
+              <span
+                th:if="${revealed == true}"
+                class="inline-flex items-center gap-1 rounded-full bg-indigo-50 px-3 py-1 text-xs font-medium text-indigo-700"
+                >✅ Scored</span
+              >
+            </div>
           </div>
 
-          <template x-teleport="body">
+          <!-- Guest, still open: read-only with a sign-up CTA. The game is an on-ramp. -->
+          <th:block th:if="${isGuest == true and entryOpen == true}">
+            <div class="border-b border-indigo-100 bg-indigo-50 px-6 py-3">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <p class="text-sm text-indigo-900">
+                  Sign in to make this table your own before gameweek 1 locks it in.
+                </p>
+                <a
+                  th:href="@{/auth/register}"
+                  class="inline-block flex-shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                  >Create an account</a
+                >
+              </div>
+            </div>
+          </th:block>
+
+          <!--
+            Guest, already locked: no CTA. Inviting someone into a game that has closed is a promise
+            the app cannot keep — say what happened instead.
+          -->
+          <th:block th:if="${isGuest == true and entryOpen == false}">
+            <div class="border-b border-gray-200 bg-gray-50 px-6 py-3">
+              <p class="text-sm text-gray-700">
+                Entries closed when gameweek 1 kicked off. This is the table everyone
+                started from.
+              </p>
+            </div>
+          </th:block>
+
+          <!-- Locked, not yet scored: the wait is the point. -->
+          <th:block
+            th:if="${isGuest == false and entryOpen == false and revealed == false}"
+          >
+            <div class="border-b border-gray-200 bg-gray-50 px-6 py-3">
+              <p class="text-sm text-gray-700">
+                Your table is locked for the season. Results are revealed when the
+                season ends.
+              </p>
+            </div>
+          </th:block>
+
+          <!-- Revealed: the score, out of the season's own maximum. -->
+          <th:block th:if="${revealed == true}">
+            <div class="grid grid-cols-2 gap-px border-b border-gray-200 bg-gray-200 sm:grid-cols-4">
+              <div class="bg-white px-6 py-3">
+                <div class="text-xs uppercase tracking-wide text-gray-500">Total</div>
+                <div class="text-2xl font-bold text-gray-900" th:text="${totalScore}">
+                  0
+                </div>
+              </div>
+              <div class="bg-white px-6 py-3">
+                <div class="text-xs uppercase tracking-wide text-gray-500">Base</div>
+                <div class="text-2xl font-bold text-gray-900" th:text="${baseScore}">
+                  0
+                </div>
+              </div>
+              <div class="bg-white px-6 py-3">
+                <div class="text-xs uppercase tracking-wide text-gray-500">Exact</div>
+                <div class="text-2xl font-bold text-gray-900" th:text="${zeroesCount}">
+                  0
+                </div>
+              </div>
+              <div class="bg-white px-6 py-3">
+                <div class="text-xs uppercase tracking-wide text-gray-500">Bonus</div>
+                <div class="text-2xl font-bold text-gray-900" th:text="${bonusPoints}">
+                  0
+                </div>
+              </div>
+            </div>
+          </th:block>
+
+          <!-- Zone legend, only where the bands mean something (i.e. not on the result table). -->
+          <th:block th:if="${revealed == false}">
             <div
-              x-cloak
-              x-show="!footerVisible"
-              x-transition.opacity
-              class="pointer-events-none fixed inset-x-0 bottom-5 z-40 flex justify-center px-4"
+              class="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-gray-200 bg-gray-50 px-6 py-2 text-[11px] font-medium"
+            >
+              <span class="flex items-center gap-1.5 text-gray-600">
+                <span class="inline-block h-2.5 w-2.5 rounded-sm bg-blue-500"></span>
+                Champions League
+              </span>
+              <span class="flex items-center gap-1.5 text-gray-600">
+                <span class="inline-block h-2.5 w-2.5 rounded-sm bg-green-500"></span>
+                Europa League
+              </span>
+              <span class="flex items-center gap-1.5 text-gray-600">
+                <span class="inline-block h-2.5 w-2.5 rounded-sm bg-amber-500"></span>
+                Conference League
+              </span>
+              <span class="flex items-center gap-1.5 text-gray-600">
+                <span class="inline-block h-2.5 w-2.5 rounded-sm bg-red-500"></span>
+                Relegation
+              </span>
+              <span
+                th:if="${entryOpen == true and isGuest == false}"
+                class="ml-auto text-gray-500"
+                >Tap two teams to swap them</span
+              >
+            </div>
+          </th:block>
+
+          <div class="px-6 py-4">
+            <!--
+              th:block wrappers, never th:if on the same element as th:replace: attribute processing
+              order otherwise renders both branches (docs/backend-dev.md).
+            -->
+            <th:block th:if="${revealed == true}">
+              <div class="overflow-x-auto">
+                <div th:replace="~{fragments/final-table-rows :: result}"></div>
+              </div>
+            </th:block>
+            <th:block th:if="${revealed == false}">
+              <div th:replace="~{fragments/final-table-rows :: table}"></div>
+            </th:block>
+          </div>
+
+          <!-- Save: shown only while the table can still be changed and the viewer owns it. -->
+          <th:block th:if="${entryOpen == true and isGuest == false}">
+            <!--
+              Same mechanism as predictions.html: a raw IntersectionObserver on the page footer (the
+              x-intersect plugin is not bundled). The floating pill shows only while the footer is
+              off-screen, so a long table never leaves Save out of reach.
+            -->
+            <div
+              class="flex flex-wrap items-center gap-3 border-t border-gray-200 px-6 py-4"
+              x-init="
+                const footer = document.querySelector('footer');
+                if (footer) {
+                  new IntersectionObserver(
+                    (entries) => { footerVisible = entries[0].isIntersecting; }
+                  ).observe(footer);
+                }
+              "
             >
               <div
-                th:replace="~{fragments/final-table-actions :: save-button('pointer-events-auto rounded-full shadow-lg')}"
+                th:replace="~{fragments/final-table-actions :: save-button('rounded-lg')}"
               ></div>
+              <span
+                x-show="getDirtyCount() > 0"
+                x-cloak
+                class="text-sm text-gray-500"
+                x-text="getDirtyCount() + ' moved since last save'"
+              ></span>
+              <span
+                x-show="message"
+                x-cloak
+                x-text="message"
+                class="text-sm"
+                :class="messageKind === 'error' ? 'text-red-600' : 'text-green-600'"
+              ></span>
             </div>
-          </template>
-        </th:block>
 
-        <!-- Dev-only, and visually distinct so it can never read as a player action. -->
-        <th:block th:if="${devPreviewEnabled == true}">
-          <div
-            class="mt-8 rounded-lg border-2 border-dashed border-amber-400 bg-amber-50 p-4 dark:border-amber-600 dark:bg-amber-950"
+            <template x-teleport="body">
+              <div
+                x-cloak
+                x-show="!footerVisible"
+                x-transition.opacity
+                class="pointer-events-none fixed inset-x-0 bottom-5 z-40 flex justify-center px-4"
+              >
+                <div
+                  th:replace="~{fragments/final-table-actions :: save-button('pointer-events-auto rounded-full shadow-lg')}"
+                ></div>
+              </div>
+            </template>
+          </th:block>
+
+          <!-- Dev-only, and visually distinct so it can never read as a player action. -->
+          <th:block th:if="${devPreviewEnabled == true}">
+            <div class="border-t-2 border-dashed border-amber-400 bg-amber-50 px-6 py-3">
+              <p class="mb-2 text-xs font-semibold uppercase text-amber-800">
+                Dev preview — scores against current standings, not final
+              </p>
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  @click="devScore()"
+                  :disabled="inFlight"
+                  class="rounded border border-amber-600 px-3 py-1.5 text-sm text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+                >
+                  Score now (dev)
+                </button>
+                <button
+                  type="button"
+                  @click="devClear()"
+                  :disabled="inFlight"
+                  class="rounded border border-amber-600 px-3 py-1.5 text-sm text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+                >
+                  Clear scores (dev)
+                </button>
+              </div>
+            </div>
+          </th:block>
+        </div>
+
+        <div th:replace="~{fragments/final-table-share :: card}"></div>
+
+        <div class="mt-6 flex gap-4 text-sm">
+          <a
+            th:href="@{/final-table/leaderboard}"
+            class="text-indigo-600 hover:underline"
+            >Leaderboard</a
           >
-            <p
-              class="mb-3 text-xs font-semibold uppercase text-amber-800 dark:text-amber-300"
-            >
-              Dev preview — scores against current standings, not final
-            </p>
-            <div class="flex gap-2">
-              <button
-                type="button"
-                @click="devScore()"
-                :disabled="inFlight"
-                class="rounded border border-amber-600 px-3 py-1.5 text-sm text-amber-900 hover:bg-amber-100 disabled:opacity-50 dark:text-amber-200 dark:hover:bg-amber-900"
-              >
-                Score now (dev)
-              </button>
-              <button
-                type="button"
-                @click="devClear()"
-                :disabled="inFlight"
-                class="rounded border border-amber-600 px-3 py-1.5 text-sm text-amber-900 hover:bg-amber-100 disabled:opacity-50 dark:text-amber-200 dark:hover:bg-amber-900"
-              >
-                Clear scores (dev)
-              </button>
-            </div>
-          </div>
-        </th:block>
-      </div>
-
-      <div th:replace="~{fragments/final-table-share :: card}"></div>
-
-      <div class="mt-8 flex gap-4 text-sm">
-        <a
-          th:href="@{/final-table/leaderboard}"
-          class="text-indigo-600 hover:underline dark:text-indigo-400"
-          >Leaderboard</a
-        >
-        <a
-          th:if="${shareUrl != null}"
-          th:href="${shareUrl}"
-          class="text-indigo-600 hover:underline dark:text-indigo-400"
-          >Public link</a
-        >
+          <a
+            th:if="${shareUrl != null}"
+            th:href="${shareUrl}"
+            class="text-indigo-600 hover:underline"
+            >Public link</a
+          >
+        </div>
       </div>
     </div>
   </body>

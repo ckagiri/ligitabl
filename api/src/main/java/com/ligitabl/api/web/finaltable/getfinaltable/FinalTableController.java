@@ -42,6 +42,7 @@ public class FinalTableController {
         model.addAttribute("rankings", data.rankings());
         model.addAttribute("teamsByCode", data.teamsByCode());
         model.addAttribute("rowsJson", data.rowsJson());
+        model.addAttribute("zonesJson", data.zonesJson());
         model.addAttribute("entryOpen", data.entryOpen());
         model.addAttribute("hasEntry", data.hasEntry());
         model.addAttribute("revealed", data.revealed());

@@ -114,6 +114,7 @@ public class PublicFinalTableController {
         model.addAttribute("shareUrl", shareUrl);
         model.addAttribute("shareText", shareTextBuilder.buildFinalTable(rankings, teamsByCode, shareUrl));
         model.addAttribute("rowsJson", rowsJson.rows(rankings, teamsByCode));
+        model.addAttribute("zonesJson", rowsJson.zones(rankings.size()));
         model.addAttribute(
                 "shareRowsJson",
                 rowsJson.shareRows(rankings, teamsByCode, revealed ? prediction.getResultRankings() : null));

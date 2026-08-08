@@ -89,13 +89,44 @@ public class FinalTableRowsJson {
         return team.getShorterName() != null ? team.getShorterName() : fullName(code, team);
     }
 
-    /** An empty array rather than a 500: the page still renders, the table just comes up empty. */
+    /**
+     * Qualification zones as inclusive position ranges, e.g.
+     * {@code {"CL":[1,5],"UEL":[6,7],"UECL":[8,8],"REL":[18,20]}}.
+     *
+     * <p>Derived from the team count rather than hardcoded to 20, and emitted as data so the view
+     * needs no league-specific branching. A table too small for a zone simply omits it — better than
+     * colouring half a five-team league as Champions League places.
+     *
+     * <p>⚠️ These are the current Premier League allocations. They are display-only — nothing about
+     * scoring reads them — but they will be wrong for another competition, so this is the one place
+     * to fix when a second league is added.
+     */
+    public String zones(int teamCount) {
+        Map<String, int[]> zones = new LinkedHashMap<>();
+        if (teamCount >= 12) {
+            zones.put("CL", new int[] {1, 5});
+            zones.put("UEL", new int[] {6, 7});
+            zones.put("UECL", new int[] {8, 8});
+            zones.put("REL", new int[] {teamCount - 2, teamCount});
+        }
+        return write(zones, "{}");
+    }
+
     private String write(Object value) {
+        return write(value, EMPTY);
+    }
+
+    /**
+     * An empty literal rather than a 500: the page still renders, the table just comes up empty (or
+     * unbanded). The fallback must match the shape the client parses — {@code []} for rows,
+     * {@code {}} for zones.
+     */
+    private String write(Object value, String fallback) {
         try {
             return OBJECT_MAPPER.writeValueAsString(value);
         } catch (JsonProcessingException e) {
             log.error("[FINAL_TABLE_ROWS_JSON_FAILED] {}", e.getMessage(), e);
-            return EMPTY;
+            return fallback;
         }
     }
 }

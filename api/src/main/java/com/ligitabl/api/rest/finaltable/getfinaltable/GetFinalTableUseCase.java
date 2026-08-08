@@ -65,6 +65,7 @@ public class GetFinalTableUseCase {
                 rankings,
                 teamsByCode,
                 rowsJson.rows(rankings, teamsByCode),
+                rowsJson.zones(rankings.size()),
                 finalTableSupport.isEntryOpen(season),
                 prediction != null,
                 revealed,

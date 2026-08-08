@@ -85,6 +85,29 @@ class FinalTableRowsJsonTest {
     }
 
     @Test
+    void derivesRelegationFromTheTeamCountRatherThanAssumingTwenty() {
+        // An 18-team league relegates 16-18, not 18-20.
+        assertThat(rowsJson.zones(20)).contains("\"REL\":[18,20]");
+        assertThat(rowsJson.zones(18)).contains("\"REL\":[16,18]");
+    }
+
+    @Test
+    void omitsZonesForATableTooSmallToHaveThem() {
+        // Better an unbanded table than colouring half a tiny league as Champions League places.
+        assertThat(rowsJson.zones(4)).isEqualTo("{}");
+        assertThat(rowsJson.zones(0)).isEqualTo("{}");
+    }
+
+    @Test
+    void zonesAreInclusivePositionRanges() {
+        String json = rowsJson.zones(20);
+
+        assertThat(json).contains("\"CL\":[1,5]");
+        assertThat(json).contains("\"UEL\":[6,7]");
+        assertThat(json).contains("\"UECL\":[8,8]");
+    }
+
+    @Test
     void handlesEmptyAndNullInputWithoutThrowing() {
         assertThat(rowsJson.rows(List.of(), Map.of())).isEqualTo("[]");
         assertThat(rowsJson.rows(null, Map.of())).isEqualTo("[]");

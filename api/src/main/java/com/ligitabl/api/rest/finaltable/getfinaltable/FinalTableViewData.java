@@ -16,6 +16,7 @@ import com.ligitabl.model.domain.TeamRank;
  * @param teamsByCode name lookup for the server-rendered result table
  * @param rowsJson the same rows as JSON for the Alpine component — a swap has to reorder rows
  *     client-side, so it needs code and display name without another round trip
+ * @param zonesJson qualification zones as inclusive position ranges, for the row bands
  * @param entryOpen whether the table may still be edited (round 1 open, season not completed)
  * @param hasEntry whether a row exists; drives the Save button's enablement on an empty batch
  * @param revealed whether the result may be shown — {@code prediction.isScored()}, not season
@@ -37,6 +38,7 @@ public record FinalTableViewData(
         List<TeamRank> rankings,
         Map<String, Team> teamsByCode,
         String rowsJson,
+        String zonesJson,
         boolean entryOpen,
         boolean hasEntry,
         boolean revealed,

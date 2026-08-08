@@ -15,7 +15,8 @@
     <meta name="twitter:description" th:content="${ogDescription}" />
   </head>
   <body>
-    <div layout:fragment="content" class="mx-auto max-w-3xl px-4 py-8">
+    <!-- No px/py here: layout/base.html's <main> already supplies them. -->
+    <div layout:fragment="content" class="mx-auto max-w-5xl">
       <header class="mb-6">
         <h1 class="text-2xl font-semibold text-gray-900 dark:text-gray-100">
           <span th:text="${ownerName}">Player</span>'s Final Table
@@ -90,11 +91,14 @@
       -->
       <div
         x-data="Ligitabl.finalTablePage($el)"
-        th:attr="data-rows=${rowsJson},data-entry-open=false,data-has-entry=true"
-        class="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700"
+        th:attr="data-rows=${rowsJson},data-zones=${zonesJson},data-entry-open=false,data-has-entry=true"
+        class="rounded-lg bg-white p-4 shadow-sm sm:p-6"
       >
+        <!-- The result table scrolls sideways if it must; the grid table reflows instead. -->
         <th:block th:if="${revealed == true}">
-          <div th:replace="~{fragments/final-table-rows :: result}"></div>
+          <div class="overflow-x-auto">
+            <div th:replace="~{fragments/final-table-rows :: result}"></div>
+          </div>
         </th:block>
         <th:block th:if="${revealed == false}">
           <div th:replace="~{fragments/final-table-rows :: table}"></div>
