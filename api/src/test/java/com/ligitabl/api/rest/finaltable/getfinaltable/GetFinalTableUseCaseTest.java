@@ -237,6 +237,20 @@ class GetFinalTableUseCaseTest {
     }
 
     @Test
+    void omitsShareLinksForASignedInUserWithNoTableYet() {
+        // The share card is gated on shareUrl, so this hides it entirely — right, because the
+        // public view 404s until a row exists, and the link would be dead on arrival.
+        UUID userId = UUID.randomUUID();
+        when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.empty());
+
+        var data = useCase.execute(userId, "abc123", "Foobar").get();
+
+        assertThat(data.hasEntry()).isFalse();
+        assertThat(data.shareUrl()).isNull();
+        assertThat(data.shareText()).isNull();
+    }
+
+    @Test
     void omitsShareLinksForAGuestWhoHasNothingToShare() {
         var data = useCase.execute(null, null, null).get();
 

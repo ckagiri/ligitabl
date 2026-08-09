@@ -73,7 +73,7 @@ public class GetFinalTableUseCase {
         Map<String, Team> teamsByCode = teamRepo.findAllTeamsByCode(rankings);
         boolean revealed = prediction != null && prediction.isScored();
         boolean entryOpen = finalTableSupport.isEntryOpen(season);
-        String shareUrl = publicId == null ? null : shareUrl(publicId, season);
+        String shareUrl = publicId == null || prediction == null ? null : shareUrl(publicId, season);
 
         List<StandingsTeamRank> liveStandings = !guest && prediction != null && !entryOpen && !revealed
                 ? standingsRepo.findLatestBySeason(season.getId()).map(Standings::getRankings).orElse(List.of())

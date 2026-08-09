@@ -129,6 +129,32 @@
             </div>
           </th:block>
 
+          <th:block
+            th:if="${isGuest == false and hasEntry == false and entryOpen == true}"
+          >
+            <div class="border-b border-indigo-100 bg-indigo-50 px-6 py-3">
+              <p class="text-sm text-indigo-900">
+                Everyone starts from this table. Tap two clubs to swap them, then
+                save. You can keep tweaking until season kickoff.
+              </p>
+            </div>
+          </th:block>
+
+          <!--
+            Signed in, no table, and entry has closed: they missed it. Say so plainly rather than
+            leaving the baseline unexplained — and no CTA, because there is nothing to act on.
+          -->
+          <th:block
+            th:if="${isGuest == false and hasEntry == false and entryOpen == false}"
+          >
+            <div class="border-b border-gray-200 bg-gray-50 px-6 py-3">
+              <p class="text-sm text-gray-700">
+                Entries closed at season kickoff, so there is no table saved for
+                you this season. This is the table everyone started from.
+              </p>
+            </div>
+          </th:block>
+
           <!--
             Guest, already locked: no CTA. Inviting someone into a game that has closed is a promise
             the app cannot keep — say what happened instead.
@@ -142,9 +168,11 @@
             </div>
           </th:block>
 
-          <!-- Locked, not yet scored, nothing to track against yet: the wait is the point. -->
+          <!--
+            Locked, not yet scored, nothing to track against yet: the wait is the point.
+          -->
           <th:block
-            th:if="${isGuest == false and entryOpen == false and revealed == false and liveProgress == false}"
+            th:if="${isGuest == false and hasEntry == true and entryOpen == false and revealed == false and liveProgress == false}"
           >
             <div class="border-b border-gray-200 bg-gray-50 px-6 py-3">
               <p class="text-sm text-gray-700">
