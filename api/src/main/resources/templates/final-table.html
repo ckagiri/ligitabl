@@ -377,9 +377,10 @@
                   th:replace="~{fragments/final-table-actions :: save-button('rounded-full')}"
                 ></div>
                 <!--
-                  Reset undoes everything since the last save — client-side only, so it never
-                  touches the stored table or the settle time. Restoring the saved order also
-                  restores the row tints, since dirty rows fall back to their zone colour.
+                  Reset returns the table to originalTeams — the last save, or the starting table
+                  for a player who has not saved yet. Client-side only, so it never touches the
+                  stored table or the settle time. Restoring that order also restores the row
+                  tints, since dirty rows fall back to their zone colour.
                 -->
                 <button
                   type="button"
@@ -397,7 +398,7 @@
                   x-show="getDirtyCount() > 0 && !message"
                   x-cloak
                   class="text-gray-500"
-                  x-text="getDirtyCount() + ' moved since last save'"
+                  x-text="getDirtyCount() + (hasEntry ? ' moved since last save' : ' moved from the starting table')"
                 ></span>
                 <span
                   x-show="message"
