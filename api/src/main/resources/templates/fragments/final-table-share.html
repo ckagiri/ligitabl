@@ -14,6 +14,7 @@
       th:fragment="card"
       th:if="${shareUrl != null}"
       x-data="Ligitabl.finalTableShareCard($el)"
+      @final-table-saved.window="open = true"
       th:attr="data-rows=${shareRowsJson},data-zones=${zonesJson},data-share-url=${shareUrl},data-share-text=${shareText},data-title=${shareCardTitle},data-subtitle=${shareCardSubtitle},data-kicker=${shareCardKicker},data-competition-name=${competitionName},data-settled-at=${settledAt}"
       class="mb-6 overflow-hidden rounded-lg bg-white shadow-sm"
     >

@@ -143,7 +143,7 @@ public class PublicFinalTableController {
         // A visitor is looking at someone else's table, so "Share your table" is wrong here — it is
         // this page they would be passing on, not a table of their own.
         model.addAttribute("shareCardHeading", "Share this page");
-        model.addAttribute("shareCardSubtitle", "%d clubs · shared before season kickoff".formatted(rankings.size()));
+        model.addAttribute("shareCardSubtitle", "%d clubs · set before season kickoff".formatted(rankings.size()));
         model.addAttribute("competitionName", season.getName());
         model.addAttribute("ogTitle", "%s Final Table prediction".formatted(ownerPossessive));
         model.addAttribute(

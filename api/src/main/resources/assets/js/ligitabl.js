@@ -1236,6 +1236,9 @@ window.Ligitabl.finalTablePage = function (el) {
 
             this.inFlight = true;
             this.message = null;
+            // Captured before the response flips it, so the handler can tell a first save from a
+            // subsequent one.
+            const wasEntered = this.hasEntry;
 
             const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
             const headers = { 'Content-Type': 'application/json' };
@@ -1260,8 +1263,16 @@ window.Ligitabl.finalTablePage = function (el) {
                         this.originalTeams = JSON.parse(JSON.stringify(this.teams));
                         // Without this the button stays enabled on a now-existing clean row and the
                         // next press earns the NothingToSave 400 this rule exists to prevent.
+                        const firstSave = !wasEntered;
                         this.hasEntry = true;
                         this._flash(data.message || 'Saved', 'success');
+                        // First save only: the card has just appeared, and a collapsed panel a
+                        // player has never seen is easy to miss. Later saves leave it as they
+                        // found it — reopening a panel someone deliberately closed is nagging.
+                        if (firstSave) {
+                            this.$nextTick(() =>
+                                this.$dispatch('final-table-saved', { firstSave: true }));
+                        }
                         return;
                     }
 
@@ -1356,8 +1367,44 @@ window.Ligitabl.finalTableShareCard = function (el) {
             }
         },
 
+        /**
+         * The rows to draw, in the order currently on screen.
+         *
+         * `data-rows` is rendered once at page load, so it goes stale the moment a swap is saved
+         * without a reload — the card would draw the order the page arrived with while the table
+         * above it shows the new one. That was invisible while the card only existed for players
+         * who already had a saved table (load order *was* saved order); it shows as soon as the
+         * card can appear before the first save.
+         *
+         * So prefer the live order from the parent finalTablePage component, which this card is
+         * nested inside. `actual`/`hit` still come from the attribute — those are scored figures
+         * the client never recomputes — merged by code onto the live ordering.
+         */
         rows() {
-            return Ligitabl._parseJSON(dataset.rows, []);
+            const seeded = Ligitabl._parseJSON(dataset.rows, []);
+            const live = this._liveTeams();
+            if (!live) return seeded;
+
+            const extrasByCode = seeded.reduce((acc, row) => {
+                if (row.actual != null || row.hit != null) {
+                    acc[row.code] = { actual: row.actual, hit: row.hit };
+                }
+                return acc;
+            }, {});
+
+            return live.map((team) => ({ ...team, ...(extrasByCode[team.code] || {}) }));
+        },
+
+        /** The enclosing finalTablePage's teams, or null when mounted standalone (public view). */
+        _liveTeams() {
+            try {
+                const host = el?.closest?.('[x-data*="finalTablePage"]');
+                const data = host && window.Alpine ? Alpine.$data(host) : null;
+                const teams = data?.teams;
+                return Array.isArray(teams) && teams.length > 0 ? teams : null;
+            } catch (e) {
+                return null;
+            }
         },
 
         title() {
