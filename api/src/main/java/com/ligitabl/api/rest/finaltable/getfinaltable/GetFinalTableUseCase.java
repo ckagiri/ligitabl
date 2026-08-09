@@ -83,46 +83,50 @@ public class GetFinalTableUseCase {
                 : List.of();
         boolean liveProgress = !liveStandings.isEmpty();
 
-        return new FinalTableViewData(
-                rankings,
-                teamsByCode,
-                rowsJson.rows(rankings, teamsByCode),
-                rowsJson.zones(rankings.size()),
-                competitionName(season),
-                seasonLabel(season),
-                rankings.size(),
-                entryOpen,
-                prediction != null,
-                revealed,
-                prediction != null ? prediction.getSwaps() : List.of(),
-                prediction != null ? prediction.getSwapCount() : 0,
-                prediction != null ? prediction.getSettledAt() : null,
-                revealed ? prediction.getResultRankings() : null,
-                revealed ? prediction.getBaseScore() : null,
-                revealed ? prediction.getZeroesCount() : null,
-                revealed ? prediction.getBonusPoints() : null,
-                revealed ? prediction.getTotalScore() : null,
-                finalTableSupport.entryStatus(season).name(),
-                shareUrl,
-                shareUrl == null ? null : shareTextBuilder.buildFinalTable(rankings, teamsByCode, shareUrl),
-                rowsJson.shareRows(rankings, teamsByCode, revealed ? prediction.getResultRankings() : null),
-                guest,
-                devProperties.isEnabled(),
-                liveProgress,
-                liveProgress ? rowsJson.liveRows(rankings, teamsByCode, liveStandings) : "[]",
-                guest ? null : DisplayNames.clean(displayName),
-                season.getMaxHitPoints(),
+        return FinalTableViewData.builder()
+                .rankings(rankings)
+                .teamsByCode(teamsByCode)
+                .rowsJson(rowsJson.rows(rankings, teamsByCode))
+                .zonesJson(rowsJson.zones(rankings.size()))
+                .competitionName(competitionName(season))
+                .seasonLabel(seasonLabel(season))
+                .teamCount(rankings.size())
+                .entryOpen(entryOpen)
+                .hasEntry(prediction != null)
+                .revealed(revealed)
+                .swaps(prediction != null ? prediction.getSwaps() : List.of())
+                .swapCount(prediction != null ? prediction.getSwapCount() : 0)
+                .settledAt(prediction != null ? prediction.getSettledAt() : null)
+                .resultRankings(revealed ? prediction.getResultRankings() : null)
+                .baseScore(revealed ? prediction.getBaseScore() : null)
+                .zeroesCount(revealed ? prediction.getZeroesCount() : null)
+                .bonusPoints(revealed ? prediction.getBonusPoints() : null)
+                .totalScore(revealed ? prediction.getTotalScore() : null)
+                .roundStatus(finalTableSupport.entryStatus(season).name())
+                .shareUrl(shareUrl)
+                .shareText(shareUrl == null
+                        ? null
+                        : shareTextBuilder.buildFinalTable(rankings, teamsByCode, shareUrl))
+                .shareRowsJson(
+                        rowsJson.shareRows(rankings, teamsByCode, revealed ? prediction.getResultRankings() : null))
+                .isGuest(guest)
+                .devPreviewEnabled(devProperties.isEnabled())
+                .liveProgress(liveProgress)
+                .liveRowsJson(liveProgress ? rowsJson.liveRows(rankings, teamsByCode, liveStandings) : "[]")
+                .ownerName(guest ? null : DisplayNames.clean(displayName))
+                .maxHitPoints(season.getMaxHitPoints())
                 // Same formula as the leaderboard and the public OG description: distance ceiling
                 // plus the per-club bonus, so it tracks the team count rather than assuming 400.
-                season.getMaxHitPoints() + rankings.size() * FinalTableScorer.ZERO_BONUS,
+                .maxScore(season.getMaxHitPoints() + rankings.size() * FinalTableScorer.ZERO_BONUS)
                 // What the base score gave up. Derived rather than stored — baseScore is already
                 // maxHitPoints minus this, so recomputing keeps the two from ever disagreeing.
                 // Null-checked on baseScore, not just `revealed`: scoredAt is written last, so a
                 // row whose scoring failed part-way is revealed with null score columns, and the
                 // caption must be absent there rather than crashing the page.
-                revealed && prediction.getBaseScore() != null
+                .totalHits(revealed && prediction.getBaseScore() != null
                         ? season.getMaxHitPoints() - prediction.getBaseScore()
-                        : null);
+                        : null)
+                .build();
     }
 
     /** Falls back to the season name so the banner never renders a blank title. */

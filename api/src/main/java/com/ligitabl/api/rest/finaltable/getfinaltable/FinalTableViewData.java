@@ -9,8 +9,20 @@ import com.ligitabl.model.domain.SwapChange;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
 
+import lombok.Builder;
+
 /**
  * Everything the Final Table page renders, in one object.
+ *
+ * <p>Built through the generated builder rather than the canonical constructor: at this many
+ * components a positional call is unreadable, and adding one in the middle silently shifts every
+ * argument after it past the compiler whenever the neighbouring types happen to match.
+ *
+ * <p>⚠️ The builder gives that back in one place — an <em>omitted</em> component is not a
+ * compile error. Object components arrive null, which is usually loud enough, but the primitives
+ * here ({@code teamCount}, {@code swapCount}, and the four booleans) quietly default to 0/false.
+ * A forgotten {@code .revealed(...)} therefore renders a scored table as unscored rather than
+ * failing. When adding a component, set it at every call site in the same change.
  *
  * @param rankings the table to display, in position order — the user's own, or the season baseline
  * @param teamsByCode name lookup for the server-rendered result table
@@ -51,6 +63,7 @@ import com.ligitabl.model.domain.TeamRank;
  * @param totalHits places lost across every club; what separates {@code baseScore} from the
  *     ceiling. Null until revealed
  */
+@Builder
 public record FinalTableViewData(
         List<TeamRank> rankings,
         Map<String, Team> teamsByCode,
