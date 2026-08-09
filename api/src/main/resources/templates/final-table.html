@@ -67,11 +67,13 @@
           </div>
 
           <!-- State chip on its own quiet strip, so it never competes with the banner. -->
-          <div class="border-b border-gray-200 bg-gray-50 px-6 py-2">
+          <div
+            class="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-gray-200 bg-gray-50 px-6 py-2"
+          >
             <span
               th:if="${entryOpen == true}"
               class="inline-flex items-center gap-1 text-xs font-medium text-green-700"
-              >🟢 Open until gameweek 1</span
+              >🟢 Open until season kickoff</span
             >
             <span
               th:if="${entryOpen == false and revealed == false}"
@@ -83,6 +85,32 @@
               class="inline-flex items-center gap-1 text-xs font-medium text-indigo-700"
               >✅ Scored</span
             >
+
+            <!--
+              The way back. A player arrives here from the pill on their prediction page, and
+              without this the only route home is the navbar — which is the one place the Final
+              Table is deliberately understated. Mirrors that pill's shape so the pair reads as one
+              round trip. Not shown to guests: they have no table to go back to.
+            -->
+            <a
+              th:if="${isGuest == false}"
+              th:href="@{/my-table}"
+              class="ml-auto inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 transition-colors hover:text-indigo-600"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+              Back to my table
+            </a>
           </div>
 
           <!-- Guest, still open: read-only with a sign-up CTA. The game is an on-ramp. -->
@@ -90,7 +118,7 @@
             <div class="border-b border-indigo-100 bg-indigo-50 px-6 py-3">
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <p class="text-sm text-indigo-900">
-                  Sign in to make this table your own before gameweek 1 locks it in.
+                  Sign in to make this table your own before season kickoff locks it in.
                 </p>
                 <a
                   th:href="@{/auth/register}"

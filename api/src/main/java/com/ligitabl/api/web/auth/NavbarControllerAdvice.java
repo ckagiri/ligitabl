@@ -34,6 +34,7 @@ import lombok.RequiredArgsConstructor;
  *   <li>hasContestEntry - true if logged-in user has joined the main contest</li>
  *   <li>isLoggedIn - true if user is authenticated</li>
  *   <li>showFinalTableNav - whether to offer the Final Table link (see below)</li>
+ *   <li>finalTableEntryOpen - whether the Final Table still accepts entries (see below)</li>
  * </ul>
  *
  * <p>Navbar label logic:
@@ -112,6 +113,23 @@ public class NavbarControllerAdvice {
         if (isAuthenticatedUser(currentAuthentication())) {
             return true;
         }
+        try {
+            return finalTableSupport.isEntryOpen(getActiveSeason());
+        } catch (RuntimeException e) {
+            return false;
+        }
+    }
+
+    /**
+     * Whether the Final Table still accepts entries.
+     *
+     * <p>Distinct from {@link #showFinalTableNav()}, which is true for any signed-in player because
+     * a locked table is still worth visiting. This one is for prompts that invite someone to go and
+     * <em>make</em> one — pointing a player at a game that closed at gameweek 1 is worse than
+     * staying quiet. Same defensive fallback: an unresolvable season means no prompt.
+     */
+    @ModelAttribute("finalTableEntryOpen")
+    public boolean finalTableEntryOpen() {
         try {
             return finalTableSupport.isEntryOpen(getActiveSeason());
         } catch (RuntimeException e) {

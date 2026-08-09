@@ -111,4 +111,36 @@ class NavbarFinalTableNavTest {
 
         assertThat(advice.showFinalTableNav()).isFalse();
     }
+
+    // --- finalTableEntryOpen: for prompts that invite someone to go and make a table -------
+
+    @Test
+    void entryOpenTracksTheSeasonEvenForASignedInPlayer() {
+        // The distinction from showFinalTableNav: that stays true for a player whose table is
+        // locked, because visiting it is still worth it. This one must not, or the "go predict the
+        // final table" prompt would appear after the game has closed.
+        signIn();
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(finalTableSupport.isEntryOpen(season)).thenReturn(false);
+
+        assertThat(advice.showFinalTableNav()).isTrue();
+        assertThat(advice.finalTableEntryOpen()).isFalse();
+    }
+
+    @Test
+    void entryOpenIsTrueWhileTheGameStillAcceptsTables() {
+        signIn();
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(finalTableSupport.isEntryOpen(season)).thenReturn(true);
+
+        assertThat(advice.finalTableEntryOpen()).isTrue();
+    }
+
+    @Test
+    void entryOpenIsFalseWhenNoSeasonCanBeResolved() {
+        signIn();
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.empty());
+
+        assertThat(advice.finalTableEntryOpen()).isFalse();
+    }
 }
