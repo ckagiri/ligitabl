@@ -309,6 +309,10 @@ public class OutboxEventProcessor {
         data.put("leaderboardUrl", frontendUrl + "/leaderboard");
         data.put("faqUrl", frontendUrl + "/faq");
         data.put("whatIfUrl", frontendUrl + "/my-table/what-if");
+        // Safe to offer here only because both windows are the same one: SeasonInPlayEnqueuer
+        // fires this chain solely while round 1 is OPEN, which is exactly when FinalTableSupport
+        // reports entry open. If that guard is relaxed, this link starts pointing at a closed door.
+        data.put("finalTableUrl", frontendUrl + "/final-table");
         return data;
     }
 
