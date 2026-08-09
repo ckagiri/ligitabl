@@ -1776,6 +1776,22 @@ window.Ligitabl.finalTableShareCard = function (el) {
             this._drawCard().toBlob(callback, 'image/jpeg', 0.9);
         },
 
+        // final_table_YYYYMMDDHHmm.jpg. A fixed name makes every re-download after a swap land as
+        // "final-table (1).jpg", which sorts by nothing useful; the stamp keeps them in order and
+        // says when the table looked like that. Local time, not UTC — it is read by the person who
+        // pressed the button.
+        _cardFilename() {
+            const d = new Date();
+            const pad = (n) => String(n).padStart(2, '0');
+            const stamp =
+                d.getFullYear() +
+                pad(d.getMonth() + 1) +
+                pad(d.getDate()) +
+                pad(d.getHours()) +
+                pad(d.getMinutes());
+            return 'final_table_' + stamp + '.jpg';
+        },
+
         downloadCard() {
             if (this.rendering) return;
             this.rendering = true;
@@ -1786,7 +1802,7 @@ window.Ligitabl.finalTableShareCard = function (el) {
                     const url = URL.createObjectURL(blob);
                     const link = document.createElement('a');
                     link.href = url;
-                    link.download = 'final-table.jpg';
+                    link.download = this._cardFilename();
                     link.click();
                     URL.revokeObjectURL(url);
                 });
@@ -1805,7 +1821,7 @@ window.Ligitabl.finalTableShareCard = function (el) {
             }
             this._toBlob((blob) => {
                 if (!blob) return;
-                const file = new File([blob], 'final-table.jpg', { type: 'image/jpeg' });
+                const file = new File([blob], this._cardFilename(), { type: 'image/jpeg' });
                 if (!navigator.canShare({ files: [file] })) {
                     this.copyLink();
                     return;
