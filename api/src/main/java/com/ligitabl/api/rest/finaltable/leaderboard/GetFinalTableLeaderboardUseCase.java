@@ -10,6 +10,7 @@ import com.ligitabl.api.rest.finaltable.shared.FinalTableError;
 import com.ligitabl.api.rest.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.FinalTableLeaderboardEntry;
+import com.ligitabl.model.domain.service.FinalTableScorer;
 import com.ligitabl.model.repo.FinalTablePredictionRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -29,6 +30,9 @@ public class GetFinalTableLeaderboardUseCase {
      * @param displayPositions per-entry position with genuine ties collapsed (=4, =4, 6)
      * @param userEntry the viewer's own standing, or null
      * @param totalEntries scored rows in the season, for pagination
+     * @param maxScore the best score obtainable this season — distance ceiling plus the per-club
+     *     bonus, so a ranked number can be read against something. Derived from the season rather
+     *     than assuming 20 clubs / 400 points
      */
     public record FinalTableLeaderboardData(
             boolean revealed,
@@ -38,7 +42,8 @@ public class GetFinalTableLeaderboardUseCase {
             int totalEntries,
             int totalPlayers,
             /** For building per-player public links; the view has no Season to ask. */
-            String seasonShorthand) {}
+            String seasonShorthand,
+            Integer maxScore) {}
 
     public Either<FinalTableError, FinalTableLeaderboardData> execute(UUID userId, int offset, int limit) {
         return finalTableSupport.activeSeason().map(season -> {
@@ -48,8 +53,18 @@ public class GetFinalTableLeaderboardUseCase {
             int scored = predictionRepo.countScoredBySeason(seasonId);
             int totalPlayers = predictionRepo.countBySeason(seasonId);
 
+            // Same formula as the public view's OG description: distance ceiling plus 10 a club, so
+            // it tracks the season's team count instead of assuming 20 clubs and 400 points.
+            int teamCount = season.getInitialRankings() == null
+                    ? 0
+                    : season.getInitialRankings().size();
+            Integer maxScore = teamCount == 0
+                    ? null
+                    : season.getMaxHitPoints() + teamCount * FinalTableScorer.ZERO_BONUS;
+
             if (scored == 0) {
-                return new FinalTableLeaderboardData(false, List.of(), List.of(), null, 0, totalPlayers, shorthand);
+                return new FinalTableLeaderboardData(
+                        false, List.of(), List.of(), null, 0, totalPlayers, shorthand, maxScore);
             }
 
             List<FinalTableLeaderboardEntry> entries = predictionRepo.leaderboard(seasonId, offset, limit);
@@ -58,7 +73,7 @@ public class GetFinalTableLeaderboardUseCase {
                     : predictionRepo.userStanding(seasonId, userId).orElse(null);
 
             return new FinalTableLeaderboardData(
-                    true, entries, displayPositions(entries), userEntry, scored, totalPlayers, shorthand);
+                    true, entries, displayPositions(entries), userEntry, scored, totalPlayers, shorthand, maxScore);
         });
     }
 

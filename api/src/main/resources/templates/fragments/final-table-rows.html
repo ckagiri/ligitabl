@@ -127,10 +127,41 @@
       Server-rendered — nothing here is interactive, and resultRankings is non-null only once the
       row is scored (Change 5).
 
-      No header row: each row already reads as "predicted → actual (off by N)", and a thead is what
-      rendered as a stray empty strip whenever this fragment was inserted with no rows.
+      The header is conditional, not absent. It was dropped once because an unconditional thead
+      rendered as a stray empty strip when the fragment was inserted with no rows — but without it
+      a row reads "1 Leeds 11 10" and nothing says which number is the finish and which is the gap.
+      th:if on the thead fixes the empty-strip problem without costing the labels.
     -->
     <table th:fragment="result" class="min-w-full divide-y divide-gray-200">
+      <thead th:if="${resultRankings != null and !resultRankings.isEmpty()}">
+        <tr class="bg-gray-50">
+          <th
+            scope="col"
+            class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+          >
+            You said
+          </th>
+          <th
+            scope="col"
+            class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+          >
+            Club
+          </th>
+          <th
+            scope="col"
+            class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500"
+          >
+            Finished
+          </th>
+          <th
+            scope="col"
+            title="Places between your call and where the club actually finished"
+            class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500"
+          >
+            Off by
+          </th>
+        </tr>
+      </thead>
       <tbody class="divide-y divide-gray-200 bg-white">
         <tr th:each="row : ${resultRankings}">
           <td

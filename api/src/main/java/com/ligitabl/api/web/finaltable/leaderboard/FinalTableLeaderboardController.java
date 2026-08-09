@@ -60,6 +60,7 @@ public class FinalTableLeaderboardController {
         model.addAttribute("leaderboard", data.entries());
         model.addAttribute("displayPositions", data.displayPositions());
         model.addAttribute("seasonShorthand", data.seasonShorthand());
+        model.addAttribute("maxScore", data.maxScore());
         model.addAttribute("userEntry", data.userEntry());
         model.addAttribute("currentUserPublicId", user == null ? null : user.getPublicId());
         model.addAttribute("totalEntries", data.totalEntries());

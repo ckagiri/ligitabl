@@ -81,6 +81,9 @@ public class FinalTableController {
         model.addAttribute("devPreviewEnabled", data.devPreviewEnabled());
         model.addAttribute("liveProgress", data.liveProgress());
         model.addAttribute("liveRowsJson", data.liveRowsJson());
+        model.addAttribute("maxHitPoints", data.maxHitPoints());
+        model.addAttribute("maxScore", data.maxScore());
+        model.addAttribute("totalHits", data.totalHits());
         model.addAttribute("readOnly", false);
         return "final-table";
     }

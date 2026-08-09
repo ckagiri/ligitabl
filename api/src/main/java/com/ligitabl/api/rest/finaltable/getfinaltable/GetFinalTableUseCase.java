@@ -21,6 +21,7 @@ import com.ligitabl.model.domain.Standings;
 import com.ligitabl.model.domain.StandingsTeamRank;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.service.FinalTableScorer;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.FinalTablePredictionRepo;
 import com.ligitabl.model.repo.StandingsRepo;
@@ -109,7 +110,19 @@ public class GetFinalTableUseCase {
                 devProperties.isEnabled(),
                 liveProgress,
                 liveProgress ? rowsJson.liveRows(rankings, teamsByCode, liveStandings) : "[]",
-                guest ? null : DisplayNames.clean(displayName));
+                guest ? null : DisplayNames.clean(displayName),
+                season.getMaxHitPoints(),
+                // Same formula as the leaderboard and the public OG description: distance ceiling
+                // plus the per-club bonus, so it tracks the team count rather than assuming 400.
+                season.getMaxHitPoints() + rankings.size() * FinalTableScorer.ZERO_BONUS,
+                // What the base score gave up. Derived rather than stored — baseScore is already
+                // maxHitPoints minus this, so recomputing keeps the two from ever disagreeing.
+                // Null-checked on baseScore, not just `revealed`: scoredAt is written last, so a
+                // row whose scoring failed part-way is revealed with null score columns, and the
+                // caption must be absent there rather than crashing the page.
+                revealed && prediction.getBaseScore() != null
+                        ? season.getMaxHitPoints() - prediction.getBaseScore()
+                        : null);
     }
 
     /** Falls back to the season name so the banner never renders a blank title. */

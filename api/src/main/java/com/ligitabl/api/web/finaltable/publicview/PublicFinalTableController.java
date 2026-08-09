@@ -17,6 +17,7 @@ import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.FinalTablePrediction;
 import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.service.FinalTableScorer;
 import com.ligitabl.model.domain.SeasonSlug;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.domain.User;
@@ -108,6 +109,15 @@ public class PublicFinalTableController {
 
         model.addAttribute("pageTitle", "%s Final Table".formatted(ownerPossessive));
         model.addAttribute("ownerName", ownerName == null ? "This player" : ownerName);
+        // Exposed so the page heading does not hardcode "'s" — Charles's vs Ann's is one rule, and
+        // it already lives in DisplayNames.possessive.
+        model.addAttribute("ownerPossessive", ownerPossessive);
+        // Distance ceiling plus the per-club bonus — tracks the season's team count rather than
+        // assuming 20 clubs and 400 points. Same formula as the owner page and the leaderboard.
+        int maxScore = season.getMaxHitPoints() + rankings.size() * FinalTableScorer.ZERO_BONUS;
+        model.addAttribute("maxScore", maxScore);
+        model.addAttribute("maxHitPoints", season.getMaxHitPoints());
+        model.addAttribute("teamCount", rankings.size());
         model.addAttribute("rankings", rankings);
         model.addAttribute("teamsByCode", teamsByCode);
         model.addAttribute("revealed", revealed);
@@ -133,13 +143,8 @@ public class PublicFinalTableController {
         model.addAttribute(
                 "ogDescription",
                 revealed
-                        // Max is maxHitPoints (distance) + 10 per team (bonus), so it tracks the
-                        // season's team count rather than assuming 20 teams / 400 points.
                         ? "Scored %d/%d with %d exact positions."
-                                .formatted(
-                                        prediction.getTotalScore(),
-                                        season.getMaxHitPoints() + rankings.size() * 10,
-                                        prediction.getZeroesCount())
+                                .formatted(prediction.getTotalScore(), maxScore, prediction.getZeroesCount())
                         : "Locked in before a ball was kicked. Revealed at the end of the season.");
         // Read-only for everyone, including the owner: this URL is the shareable artifact.
         model.addAttribute("readOnly", true);

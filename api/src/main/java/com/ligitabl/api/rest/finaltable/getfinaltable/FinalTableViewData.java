@@ -45,6 +45,11 @@ import com.ligitabl.model.domain.TeamRank;
  * @param ownerName the player's display name for the share card, cleaned via {@code DisplayNames}
  *     and null when nothing legible survives. Never an email: the card is an image people post
  *     publicly, so the caller falls back to generic wording rather than to any identifier
+ * @param maxHitPoints the distance ceiling a base score counts down from, so "90" can be shown as
+ *     "90 / 200". From the season, never assumed
+ * @param maxScore the best obtainable total — {@code maxHitPoints} plus the per-club bonus
+ * @param totalHits places lost across every club; what separates {@code baseScore} from the
+ *     ceiling. Null until revealed
  */
 public record FinalTableViewData(
         List<TeamRank> rankings,
@@ -73,7 +78,10 @@ public record FinalTableViewData(
         boolean devPreviewEnabled,
         boolean liveProgress,
         String liveRowsJson,
-        String ownerName) {
+        String ownerName,
+        Integer maxHitPoints,
+        Integer maxScore,
+        Integer totalHits) {
 
     /** The order the client echoes back as its checksum on save. */
     public List<String> expectedOrder() {

@@ -168,31 +168,67 @@
             </div>
           </th:block>
 
-          <!-- Revealed: the score, out of the season's own maximum. -->
+          <!--
+            Revealed: the score, out of the season's own maximum.
+
+            Each tile carries a caption saying where its number came from. Four bare numbers —
+            110 / 90 / 2 / 20 — leave a reader guessing which is the score, what it is out of, and
+            how the parts relate; "90 of 200" and "2 × 10" make the arithmetic visible without a
+            legend. Denominators come from the season, so they never assume 20 clubs.
+          -->
           <th:block th:if="${revealed == true}">
             <div class="grid grid-cols-2 gap-px border-b border-gray-200 bg-gray-200 sm:grid-cols-4">
               <div class="bg-white px-6 py-3">
                 <div class="text-xs uppercase tracking-wide text-gray-500">Total</div>
-                <div class="text-2xl font-bold text-gray-900" th:text="${totalScore}">
-                  0
+                <div class="text-2xl font-bold text-gray-900">
+                  <span th:text="${totalScore}">0</span
+                  >
                 </div>
+                <div class="mt-0.5 text-[11px] text-gray-400">base + bonus</div>
               </div>
               <div class="bg-white px-6 py-3">
                 <div class="text-xs uppercase tracking-wide text-gray-500">Base</div>
-                <div class="text-2xl font-bold text-gray-900" th:text="${baseScore}">
-                  0
+                <div class="text-2xl font-bold text-gray-900">
+                  <span th:text="${baseScore}">0</span
+                  ><span
+                    th:if="${maxHitPoints != null}"
+                    class="text-base font-medium text-gray-400"
+                    th:text="' / ' + ${maxHitPoints}"
+                    > / 200</span
+                  >
+                </div>
+                <div
+                  class="mt-0.5 text-[11px] text-gray-400"
+                  th:if="${totalHits != null}"
+                  th:text="${totalHits} + ' places out'"
+                >
+                  110 places out
                 </div>
               </div>
               <div class="bg-white px-6 py-3">
                 <div class="text-xs uppercase tracking-wide text-gray-500">Exact</div>
-                <div class="text-2xl font-bold text-gray-900" th:text="${zeroesCount}">
-                  0
+                <div class="text-2xl font-bold text-gray-900">
+                  <span th:text="${zeroesCount}">0</span
+                  ><span
+                    th:if="${teamCount != null}"
+                    class="text-base font-medium text-gray-400"
+                    th:text="' / ' + ${teamCount}"
+                    > / 20</span
+                  >
                 </div>
+                <div class="mt-0.5 text-[11px] text-gray-400">spot on</div>
               </div>
               <div class="bg-white px-6 py-3">
                 <div class="text-xs uppercase tracking-wide text-gray-500">Bonus</div>
                 <div class="text-2xl font-bold text-gray-900" th:text="${bonusPoints}">
                   0
+                </div>
+                <div
+                  class="mt-0.5 text-[11px] text-gray-400"
+                  th:if="${zeroesCount != null}"
+                  th:text="${zeroesCount} + ' × ' + ${T(com.ligitabl.model.domain.service.FinalTableScorer).ZERO_BONUS}"
+                >
+                  2 × 10
                 </div>
               </div>
             </div>
