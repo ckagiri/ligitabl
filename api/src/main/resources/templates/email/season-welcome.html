@@ -44,6 +44,12 @@
             padding: 12px 16px;
             margin: 20px 0;
         }
+        .finaltable {
+            background: #f3effc;
+            border-left: 4px solid #6b4fbb;
+            padding: 12px 16px;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
@@ -74,6 +80,24 @@
                 <strong>Not sure how to spend them?</strong> Try <a th:href="${whatIfUrl}">What-If</a>
                 first — put in the scores you expect for the gameweek and watch how the table moves
                 and how many points you'd pick up. Nothing you do there touches your real table.
+            </p>
+        </div>
+
+        <!--
+          The Final Table is a separate, optional game, so it sits below the swaps ask rather than
+          competing with it. Same deadline as everything else in this email, which is the reason it
+          can be mentioned at all — see seasonWelcomeTemplateData().
+
+          "Change it before kickoff" rather than "one call, made now": the same reassurance the
+          page itself leads with, and the lower barrier is the honest one — nothing is committed
+          until kickoff.
+        -->
+        <div class="finaltable">
+            <p style="margin: 0;">
+                <strong>Fancy also calling the whole season?</strong> The
+                <a th:href="${finalTableUrl}">Final Table</a> is the long game: order all twenty
+                clubs from champion to relegated. You can always change it before season kickoff,
+                and then it locks until May. Separate leaderboard, no effect on your main table.
             </p>
         </div>
 

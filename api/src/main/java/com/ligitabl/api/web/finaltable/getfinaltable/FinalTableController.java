@@ -62,6 +62,7 @@ public class FinalTableController {
         model.addAttribute("baseScore", data.baseScore());
         model.addAttribute("zeroesCount", data.zeroesCount());
         model.addAttribute("bonusPoints", data.bonusPoints());
+        model.addAttribute("championBonus", data.championBonus());
         model.addAttribute("totalScore", data.totalScore());
         model.addAttribute("roundStatus", data.roundStatus());
         model.addAttribute("shareUrl", data.shareUrl());

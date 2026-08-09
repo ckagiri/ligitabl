@@ -99,6 +99,7 @@ public class GetFinalTableUseCase {
                 .baseScore(revealed ? prediction.getBaseScore() : null)
                 .zeroesCount(revealed ? prediction.getZeroesCount() : null)
                 .bonusPoints(revealed ? prediction.getBonusPoints() : null)
+                .championBonus(revealed ? prediction.getChampionBonus() : null)
                 .totalScore(revealed ? prediction.getTotalScore() : null)
                 .roundStatus(finalTableSupport.entryStatus(season).name())
                 .shareUrl(shareUrl)
@@ -113,7 +114,7 @@ public class GetFinalTableUseCase {
                 .liveRowsJson(liveProgress ? rowsJson.liveRows(rankings, teamsByCode, liveStandings) : "[]")
                 .ownerName(guest ? null : DisplayNames.clean(displayName))
                 .maxHitPoints(season.getMaxHitPoints())
-                .maxScore(season.getMaxHitPoints() + rankings.size() * FinalTableScorer.ZERO_BONUS)
+                .maxScore(FinalTableScorer.maxScore(season.getMaxHitPoints(), rankings.size()))
                 .totalHits(revealed && prediction.getBaseScore() != null
                         ? season.getMaxHitPoints() - prediction.getBaseScore()
                         : null)

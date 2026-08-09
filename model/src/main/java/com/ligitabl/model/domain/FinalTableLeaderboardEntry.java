@@ -11,10 +11,11 @@ import java.time.Instant;
  * @param position Position in the leaderboard (1 = first), distinct per row
  * @param publicId User's unique public identifier
  * @param displayName User's display name
- * @param totalScore base + bonus, max 400
+ * @param totalScore base + bonus + champion bonus, max 425
  * @param baseScore ScoringEngine distance score, max 200
  * @param zeroesCount Exactly-right positions
- * @param bonusPoints zeroes * 10
+ * @param bonusPoints zeroes * 10. The champion bonus is inside totalScore but not broken out
+ *     here — the leaderboard ranks on the total and shows the parts only on a player's own page
  * @param swapCount Swaps made before the lock — displayed, but never ordered on
  * @param settledAt When the user settled on their table; the tiebreak after score and zeroes
  */

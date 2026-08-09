@@ -1,0 +1,42 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260809_1_final_table_champion_bonus
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - tableExists:
+            tableName: t_final_table_prediction
+            schemaName: public
+        - not:
+            - columnExists:
+                tableName: t_final_table_prediction
+                schemaName: public
+                columnName: c_champion_bonus
+      changes:
+        - addColumn:
+            tableName: t_final_table_prediction
+            schemaName: public
+            columns:
+              - column:
+                  name: c_champion_bonus
+                  type: int
+                  remarks: >-
+                    25 when the club placed 1st finished 1st, else 0. Nullable like the other
+                    result columns: null means never scored, which is not the same as scored and
+                    missed. Held apart from c_bonus_points so that column stays exactly
+                    zeroes * 10.
+
+        - update:
+            tableName: t_final_table_prediction
+            schemaName: public
+            columns:
+              - column:
+                  name: c_champion_bonus
+                  valueNumeric: 0
+            where: c_scored_at IS NOT NULL
+
+        - setColumnRemarks:
+            tableName: t_final_table_prediction
+            schemaName: public
+            columnName: c_total_score
+            remarks: base + bonus + champion, max 200 + 200 + 25 = 425.

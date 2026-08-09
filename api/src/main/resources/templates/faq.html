@@ -1191,9 +1191,9 @@
             Where a difference genuinely matters, state this game's rule and its reason directly;
             do not name the other game's rule to define it against.
 
-            ZERO_BONUS comes from the domain constant via SpEL, matching how the grade tiers above
-            reach ScoreTier. The 200/400 figures are stated as "a 20-club league" because they are
-            derived from Season.maxHitPoints and the team count, not fixed.
+            ZERO_BONUS and CHAMPION_BONUS come from the domain constants via SpEL, matching how the
+            grade tiers above reach ScoreTier. The 200/425 figures are stated as "a 20-club league"
+            because they are derived from Season.maxHitPoints and the team count, not fixed.
           -->
           <p
             class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
@@ -1296,10 +1296,22 @@
                   >
                   points back.
                 </p>
+                <p class="mb-3">
+                  One club counts for more than the rest. Call the
+                  <strong class="text-gray-900">champion</strong> right and that
+                  is a further
+                  <strong
+                    class="text-gray-900"
+                    th:text="${T(com.ligitabl.model.domain.service.FinalTableScorer).CHAMPION_BONUS}"
+                    >25</strong
+                  >
+                  on top of the exact-position bonus it already earned.
+                </p>
                 <p>
                   So a flawless table scores
-                  <strong class="text-gray-900">400</strong>: 200 for being out
-                  by nothing, and 200 more for twenty exact calls.
+                  <strong class="text-gray-900">425</strong>: 200 for being out
+                  by nothing, 200 more for twenty exact calls, and 25 for the
+                  champion.
                 </p>
               </div>
             </div>

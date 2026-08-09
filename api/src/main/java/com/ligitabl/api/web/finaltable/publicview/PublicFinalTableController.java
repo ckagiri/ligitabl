@@ -112,9 +112,10 @@ public class PublicFinalTableController {
         // Exposed so the page heading does not hardcode "'s" — Charles's vs Ann's is one rule, and
         // it already lives in DisplayNames.possessive.
         model.addAttribute("ownerPossessive", ownerPossessive);
-        // Distance ceiling plus the per-club bonus — tracks the season's team count rather than
-        // assuming 20 clubs and 400 points. Same formula as the owner page and the leaderboard.
-        int maxScore = season.getMaxHitPoints() + rankings.size() * FinalTableScorer.ZERO_BONUS;
+        // Distance ceiling, a zero on every club, and the champion called right — tracks the
+        // season's team count rather than assuming 20 clubs and 425 points. The formula itself
+        // lives with the scoring rule so this page can never quote a number score() cannot produce.
+        int maxScore = FinalTableScorer.maxScore(season.getMaxHitPoints(), rankings.size());
         model.addAttribute("maxScore", maxScore);
         model.addAttribute("maxHitPoints", season.getMaxHitPoints());
         model.addAttribute("teamCount", rankings.size());
@@ -125,6 +126,7 @@ public class PublicFinalTableController {
         model.addAttribute("baseScore", revealed ? prediction.getBaseScore() : null);
         model.addAttribute("zeroesCount", revealed ? prediction.getZeroesCount() : null);
         model.addAttribute("bonusPoints", revealed ? prediction.getBonusPoints() : null);
+        model.addAttribute("championBonus", revealed ? prediction.getChampionBonus() : null);
         model.addAttribute("totalScore", revealed ? prediction.getTotalScore() : null);
         model.addAttribute("swapCount", prediction.getSwapCount());
         // When they settled, for the pre-kickoff state.

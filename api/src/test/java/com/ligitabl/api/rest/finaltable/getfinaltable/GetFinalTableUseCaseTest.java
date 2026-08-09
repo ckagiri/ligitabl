@@ -172,8 +172,9 @@ class GetFinalTableUseCaseTest {
         UUID userId = UUID.randomUUID();
         FinalTablePrediction prediction = row();
         // Even if score columns were somehow populated, an unscored row must not leak them.
-        prediction.setTotalScore(400);
+        prediction.setTotalScore(425);
         prediction.setZeroesCount(20);
+        prediction.setChampionBonus(25);
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
 
         var data = useCase.execute(userId, "abc123", "Foobar").get();
@@ -181,6 +182,7 @@ class GetFinalTableUseCaseTest {
         assertThat(data.revealed()).isFalse();
         assertThat(data.totalScore()).isNull();
         assertThat(data.zeroesCount()).isNull();
+        assertThat(data.championBonus()).isNull();
         assertThat(data.resultRankings()).isNull();
     }
 
@@ -193,15 +195,17 @@ class GetFinalTableUseCaseTest {
         prediction.setBaseScore(6);
         prediction.setZeroesCount(2);
         prediction.setBonusPoints(20);
-        prediction.setTotalScore(26);
+        prediction.setChampionBonus(25);
+        prediction.setTotalScore(51);
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
 
         var data = useCase.execute(userId, "abc123", "Foobar").get();
 
         assertThat(data.revealed()).isTrue();
-        assertThat(data.totalScore()).isEqualTo(26);
+        assertThat(data.totalScore()).isEqualTo(51);
         assertThat(data.baseScore()).isEqualTo(6);
         assertThat(data.bonusPoints()).isEqualTo(20);
+        assertThat(data.championBonus()).isEqualTo(25);
     }
 
     @Test

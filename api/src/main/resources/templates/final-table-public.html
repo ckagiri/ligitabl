@@ -35,9 +35,9 @@
         </p>
       </header>
 
-      <!-- Captions mirror the owner's page: four bare numbers do not say how they relate. -->
+      <!-- Captions mirror the owner's page: bare numbers do not say how they relate. -->
       <th:block th:if="${revealed == true}">
-        <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-5">
           <div class="rounded-lg border border-gray-200 bg-white p-3">
             <div class="text-xs uppercase text-gray-500">Total</div>
             <div class="text-xl font-semibold text-gray-900">
@@ -46,10 +46,12 @@
                 th:if="${maxScore != null}"
                 class="text-sm font-medium text-gray-400"
                 th:text="' / ' + ${maxScore}"
-                > / 400</span
+                > / 425</span
               >
             </div>
-            <div class="mt-0.5 text-[11px] text-gray-400">base + bonus</div>
+            <div class="mt-0.5 text-[11px] text-gray-400">
+              base + bonus + champion
+            </div>
           </div>
           <div class="rounded-lg border border-gray-200 bg-white p-3">
             <div class="text-xs uppercase text-gray-500">Base</div>
@@ -91,6 +93,26 @@
               th:text="${zeroesCount} + ' × ' + ${T(com.ligitabl.model.domain.service.FinalTableScorer).ZERO_BONUS}"
             >
               2 × 10
+            </div>
+          </div>
+          <div class="rounded-lg border border-gray-200 bg-white p-3">
+            <div class="text-xs uppercase text-gray-500">Champion</div>
+            <div
+              class="text-xl font-semibold"
+              th:classappend="${championBonus != null and championBonus > 0}
+                ? 'text-indigo-600' : 'text-gray-900'"
+              th:text="${championBonus}"
+            >
+              0
+            </div>
+            <div
+              class="mt-0.5 text-[11px] text-gray-400"
+              th:if="${championBonus != null}"
+              th:text="${championBonus > 0}
+                ? 'called it'
+                : 'missed · ' + ${T(com.ligitabl.model.domain.service.FinalTableScorer).CHAMPION_BONUS} + ' on offer'"
+            >
+              called it
             </div>
           </div>
         </div>

@@ -348,14 +348,16 @@ class FinalTablePredictionRepoTest {
         row.setBaseScore(196);
         row.setZeroesCount(16);
         row.setBonusPoints(160);
-        row.setTotalScore(356);
+        row.setChampionBonus(25);
+        row.setTotalScore(381);
         row.setScoredAt(BASE.plusSeconds(500));
 
         repo.save(row);
 
         FinalTablePrediction found = repo.findByUserAndSeason(userId, seasonId).orElseThrow();
         assertThat(found.isScored()).isTrue();
-        assertThat(found.getTotalScore()).isEqualTo(356);
+        assertThat(found.getTotalScore()).isEqualTo(381);
+        assertThat(found.getChampionBonus()).isEqualTo(25);
         assertThat(found.getResultRankings()).hasSize(1);
         assertThat(found.getResultRankings().get(0).getHit()).isEqualTo(2);
     }
@@ -379,6 +381,9 @@ class FinalTablePredictionRepoTest {
         assertThat(row.getBaseScore()).isNull();
         assertThat(row.getZeroesCount()).isNull();
         assertThat(row.getBonusPoints()).isNull();
+        // Every result column, not just the ones the reveal predicate reads: a leftover champion
+        // bonus would be re-shown as a fact about the next scoring pass.
+        assertThat(row.getChampionBonus()).isNull();
         assertThat(row.getResultRankings()).isNull();
         // The prediction itself survives.
         assertThat(row.getRankings()).containsExactlyElementsOf(rankings());

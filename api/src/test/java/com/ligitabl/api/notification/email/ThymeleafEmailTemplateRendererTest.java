@@ -174,7 +174,8 @@ class ThymeleafEmailTemplateRendererTest {
                 "myTableUrl", "http://x/my-table",
                 "leaderboardUrl", "http://x/leaderboard",
                 "faqUrl", "http://x/faq",
-                "whatIfUrl", "http://x/my-table/what-if");
+                "whatIfUrl", "http://x/my-table/what-if",
+                "finalTableUrl", "http://x/final-table");
     }
 
     /**
@@ -221,6 +222,10 @@ class ThymeleafEmailTemplateRendererTest {
                 .as("What-If is how a new joiner reasons about spending the swaps, so it is linked")
                 .contains("What-If")
                 .contains("http://x/my-table/what-if");
+        assertThat(content.htmlBody())
+                .as("the Final Table shares this email's deadline, so it can only be offered here")
+                .contains("Final Table")
+                .contains("http://x/final-table");
         assertThat(content.htmlBody())
                 .contains("http://x/my-table")
                 .contains("http://x/leaderboard")

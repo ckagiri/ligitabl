@@ -208,20 +208,25 @@
           <!--
             Revealed: the score, out of the season's own maximum.
 
-            Each tile carries a caption saying where its number came from. Four bare numbers —
+            Each tile carries a caption saying where its number came from. Bare numbers —
             110 / 90 / 2 / 20 — leave a reader guessing which is the score, what it is out of, and
             how the parts relate; "90 of 200" and "2 × 10" make the arithmetic visible without a
             legend. Denominators come from the season, so they never assume 20 clubs.
+
+            Champion is its own tile rather than folded into Bonus: they are two different rules,
+            and merging them would make the Bonus caption stop being "zeroes × 10".
           -->
           <th:block th:if="${revealed == true}">
-            <div class="grid grid-cols-2 gap-px border-b border-gray-200 bg-gray-200 sm:grid-cols-4">
+            <div class="grid grid-cols-2 gap-px border-b border-gray-200 bg-gray-200 sm:grid-cols-5">
               <div class="bg-white px-6 py-3">
                 <div class="text-xs uppercase tracking-wide text-gray-500">Total</div>
                 <div class="text-2xl font-bold text-gray-900">
                   <span th:text="${totalScore}">0</span
                   >
                 </div>
-                <div class="mt-0.5 text-[11px] text-gray-400">base + bonus</div>
+                <div class="mt-0.5 text-[11px] text-gray-400">
+                  base + bonus + champion
+                </div>
               </div>
               <div class="bg-white px-6 py-3">
                 <div class="text-xs uppercase tracking-wide text-gray-500">Base</div>
@@ -266,6 +271,30 @@
                   th:text="${zeroesCount} + ' × ' + ${T(com.ligitabl.model.domain.service.FinalTableScorer).ZERO_BONUS}"
                 >
                   2 × 10
+                </div>
+              </div>
+              <!--
+                A bare "0" here would not say whether the champion was missed or whether the game
+                has a champion rule at all, so the caption carries the verdict either way.
+              -->
+              <div class="bg-white px-6 py-3">
+                <div class="text-xs uppercase tracking-wide text-gray-500">Champion</div>
+                <div
+                  class="text-2xl font-bold"
+                  th:classappend="${championBonus != null and championBonus > 0}
+                    ? 'text-indigo-600' : 'text-gray-900'"
+                  th:text="${championBonus}"
+                >
+                  0
+                </div>
+                <div
+                  class="mt-0.5 text-[11px] text-gray-400"
+                  th:if="${championBonus != null}"
+                  th:text="${championBonus > 0}
+                    ? 'called it'
+                    : 'missed · ' + ${T(com.ligitabl.model.domain.service.FinalTableScorer).CHAMPION_BONUS} + ' on offer'"
+                >
+                  called it
                 </div>
               </div>
             </div>

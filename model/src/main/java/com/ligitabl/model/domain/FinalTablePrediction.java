@@ -58,6 +58,7 @@ public class FinalTablePrediction extends AbstractModel<UUID> {
     private Integer baseScore;
     private Integer zeroesCount;
     private Integer bonusPoints;
+    private Integer championBonus;
     private Integer totalScore;
     private Instant scoredAt;
 
