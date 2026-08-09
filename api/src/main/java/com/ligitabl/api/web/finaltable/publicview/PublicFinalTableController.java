@@ -127,9 +127,12 @@ public class PublicFinalTableController {
         model.addAttribute("bonusPoints", revealed ? prediction.getBonusPoints() : null);
         model.addAttribute("totalScore", revealed ? prediction.getTotalScore() : null);
         model.addAttribute("swapCount", prediction.getSwapCount());
+        // When they settled, for the pre-kickoff state.
+        model.addAttribute("settledAt", prediction.getSettledAt());
         model.addAttribute("seasonName", season.getName());
         model.addAttribute("shareUrl", shareUrl);
-        model.addAttribute("shareText", shareTextBuilder.buildFinalTable(rankings, teamsByCode, shareUrl));
+        // Deliberately null, not the built text.
+        model.addAttribute("shareText", null);
         model.addAttribute("rowsJson", rowsJson.rows(rankings, teamsByCode));
         model.addAttribute("zonesJson", rowsJson.zones(rankings.size()));
         model.addAttribute(
@@ -137,7 +140,10 @@ public class PublicFinalTableController {
                 rowsJson.shareRows(rankings, teamsByCode, revealed ? prediction.getResultRankings() : null));
         model.addAttribute("shareCardTitle", "%s Final Table".formatted(ownerPossessive));
         model.addAttribute("shareCardKicker", "Final table prediction");
-        model.addAttribute("shareCardSubtitle", "%d clubs · shared before season kickoff".formatted(rankings.size()));
+        // A visitor is looking at someone else's table, so "Share your table" is wrong here — it is
+        // this page they would be passing on, not a table of their own.
+        model.addAttribute("shareCardHeading", "Share this page");
+        model.addAttribute("shareCardSubtitle", "%d clubs · set before season kickoff".formatted(rankings.size()));
         model.addAttribute("competitionName", season.getName());
         model.addAttribute("ogTitle", "%s Final Table prediction".formatted(ownerPossessive));
         model.addAttribute(

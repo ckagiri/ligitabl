@@ -237,6 +237,20 @@ class GetFinalTableUseCaseTest {
     }
 
     @Test
+    void buildsAShareUrlBeforeTheFirstSaveSoTheCardCanAppearWithoutAReload() {
+        // The URL is knowable before a row exists, and saving is a client-side POST that never
+        // re-renders the page — so it has to be on hand for the moment the first save lands.
+        // Whether the card is *shown* is the client's call, gated on hasEntry.
+        UUID userId = UUID.randomUUID();
+        when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.empty());
+
+        var data = useCase.execute(userId, "abc123", "Foobar").get();
+
+        assertThat(data.hasEntry()).isFalse();
+        assertThat(data.shareUrl()).contains("/final-table/u/abc123/");
+    }
+
+    @Test
     void omitsShareLinksForAGuestWhoHasNothingToShare() {
         var data = useCase.execute(null, null, null).get();
 

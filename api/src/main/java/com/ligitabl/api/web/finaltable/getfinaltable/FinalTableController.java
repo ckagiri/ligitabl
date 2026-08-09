@@ -76,7 +76,7 @@ public class FinalTableController {
                 data.ownerName() == null
                         ? "My final table prediction"
                         : "%s final table prediction".formatted(DisplayNames.possessive(data.ownerName())));
-        model.addAttribute("shareCardSubtitle", data.teamCount() + " clubs · shared before season kickoff");
+        model.addAttribute("shareCardSubtitle", data.teamCount() + " clubs · set before season kickoff");
         model.addAttribute("isGuest", data.isGuest());
         model.addAttribute("devPreviewEnabled", data.devPreviewEnabled());
         model.addAttribute("liveProgress", data.liveProgress());

@@ -73,6 +73,7 @@ public class GetFinalTableUseCase {
         Map<String, Team> teamsByCode = teamRepo.findAllTeamsByCode(rankings);
         boolean revealed = prediction != null && prediction.isScored();
         boolean entryOpen = finalTableSupport.isEntryOpen(season);
+        // Built for any signed-in user, not only one with a row.
         String shareUrl = publicId == null ? null : shareUrl(publicId, season);
 
         List<StandingsTeamRank> liveStandings = !guest && prediction != null && !entryOpen && !revealed

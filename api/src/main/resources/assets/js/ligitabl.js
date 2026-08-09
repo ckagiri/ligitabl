@@ -27,6 +27,29 @@ window.Ligitabl._parseJSON = function (raw, fallback) {
     }
 };
 
+/**
+ * The team-lines block of the Final Table share text, from live rows.
+ *
+ * ⚠️ Mirrors SharePredictionTextBuilder.appendTeamLines — HEAD_COUNT 5, TAIL_COUNT 3, an ellipsis
+ * line between them, and the whole list when it would not save anything. Duplicated because the
+ * order can change client-side after a save with no re-render; if the server's truncation changes,
+ * this has to change with it.
+ */
+window.Ligitabl._shareTeamLines = function (teams) {
+    const HEAD = 5;
+    const TAIL = 3;
+    const line = (team, index) => `${index + 1} ${team.shortName || team.name || team.code}\n`;
+
+    if (teams.length <= HEAD + TAIL) {
+        return teams.map(line).join('');
+    }
+    return (
+        teams.slice(0, HEAD).map(line).join('') +
+        '...\n' +
+        teams.slice(-TAIL).map((team, i) => line(team, teams.length - TAIL + i)).join('')
+    );
+};
+
 window.Ligitabl._parseDataAttributes = function (el) {
     const p = Ligitabl._parseJSON;
     return {
@@ -1236,6 +1259,9 @@ window.Ligitabl.finalTablePage = function (el) {
 
             this.inFlight = true;
             this.message = null;
+            // Captured before the response flips it, so the handler can tell a first save from a
+            // subsequent one.
+            const wasEntered = this.hasEntry;
 
             const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
             const headers = { 'Content-Type': 'application/json' };
@@ -1260,8 +1286,16 @@ window.Ligitabl.finalTablePage = function (el) {
                         this.originalTeams = JSON.parse(JSON.stringify(this.teams));
                         // Without this the button stays enabled on a now-existing clean row and the
                         // next press earns the NothingToSave 400 this rule exists to prevent.
+                        const firstSave = !wasEntered;
                         this.hasEntry = true;
                         this._flash(data.message || 'Saved', 'success');
+                        // First save only: the card has just appeared, and a collapsed panel a
+                        // player has never seen is easy to miss. Later saves leave it as they
+                        // found it — reopening a panel someone deliberately closed is nagging.
+                        if (firstSave) {
+                            this.$nextTick(() =>
+                                this.$dispatch('final-table-saved', { firstSave: true }));
+                        }
                         return;
                     }
 
@@ -1356,8 +1390,44 @@ window.Ligitabl.finalTableShareCard = function (el) {
             }
         },
 
+        /**
+         * The rows to draw, in the order currently on screen.
+         *
+         * `data-rows` is rendered once at page load, so it goes stale the moment a swap is saved
+         * without a reload — the card would draw the order the page arrived with while the table
+         * above it shows the new one. That was invisible while the card only existed for players
+         * who already had a saved table (load order *was* saved order); it shows as soon as the
+         * card can appear before the first save.
+         *
+         * So prefer the live order from the parent finalTablePage component, which this card is
+         * nested inside. `actual`/`hit` still come from the attribute — those are scored figures
+         * the client never recomputes — merged by code onto the live ordering.
+         */
         rows() {
-            return Ligitabl._parseJSON(dataset.rows, []);
+            const seeded = Ligitabl._parseJSON(dataset.rows, []);
+            const live = this._liveTeams();
+            if (!live) return seeded;
+
+            const extrasByCode = seeded.reduce((acc, row) => {
+                if (row.actual != null || row.hit != null) {
+                    acc[row.code] = { actual: row.actual, hit: row.hit };
+                }
+                return acc;
+            }, {});
+
+            return live.map((team) => ({ ...team, ...(extrasByCode[team.code] || {}) }));
+        },
+
+        /** The enclosing finalTablePage's teams, or null when mounted standalone (public view). */
+        _liveTeams() {
+            try {
+                const host = el?.closest?.('[x-data*="finalTablePage"]');
+                const data = host && window.Alpine ? Alpine.$data(host) : null;
+                const teams = data?.teams;
+                return Array.isArray(teams) && teams.length > 0 ? teams : null;
+            } catch (e) {
+                return null;
+            }
         },
 
         title() {
@@ -1368,8 +1438,36 @@ window.Ligitabl.finalTableShareCard = function (el) {
             return dataset.shareUrl || '';
         },
 
+        /**
+         * The share text, with the team lines re-listed in the order currently on screen.
+         *
+         * Same staleness as rows(): `data-share-text` is built server-side at page load, so after a
+         * save-without-reload it still lists the order the page arrived with. Only the team block
+         * is rebuilt — the header and the footer (URL, "shared before kickoff") are the server's
+         * wording and are reused verbatim, so this cannot drift from SharePredictionTextBuilder's
+         * phrasing, only from its ordering, which is the point.
+         *
+         * Falls back to the server string whenever the shape is not what is expected, or when
+         * mounted standalone with no parent component (the public view).
+         */
         shareText() {
-            return dataset.shareText || '';
+            const seeded = dataset.shareText || '';
+            const live = this._liveTeams();
+            if (!seeded || !live) return seeded;
+
+            // Header ends at the first blank line; footer starts at the last one.
+            const headEnd = seeded.indexOf('\n\n');
+            const footStart = seeded.lastIndexOf('\n\n');
+            if (headEnd < 0 || footStart <= headEnd) return seeded;
+
+            // +1 not +2 on the tail: the rebuilt team block already ends in a newline, and the
+            // footer boundary is a "\n\n", so taking both would insert a blank line the server's
+            // version does not have.
+            return (
+                seeded.slice(0, headEnd + 2) +
+                Ligitabl._shareTeamLines(live) +
+                seeded.slice(footStart + 1)
+            );
         },
 
         subtitle() {

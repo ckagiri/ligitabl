@@ -39,7 +39,7 @@
                   Premier League 26/27
                 </h1>
                 <p class="mt-1 text-sm text-gray-400">
-                  <span th:text="${teamCount}">20</span> clubs · shared before season
+                  <span th:text="${teamCount}">20</span> clubs · set before season
                   kickoff
                 </p>
               </div>
@@ -130,6 +130,41 @@
           </th:block>
 
           <!--
+            th:if picks the state at render; x-show retires it the moment the first save lands.
+            Both are needed: the server decides whether this player has ever entered, but saving is
+            a fetch that does not re-render, so without x-show the "everyone starts from this
+            table" copy outlives the table becoming theirs.
+          -->
+          <th:block
+            th:if="${isGuest == false and hasEntry == false and entryOpen == true}"
+          >
+            <div
+              class="border-b border-indigo-100 bg-indigo-50 px-6 py-3"
+              x-show="!hasEntry"
+            >
+              <p class="text-sm text-indigo-900">
+                Everyone starts from this table. Tap two clubs to swap them, then
+                save — you can always change it before season kickoff.
+              </p>
+            </div>
+          </th:block>
+
+          <!--
+            Signed in, no table, and entry has closed: they missed it. Say so plainly rather than
+            leaving the baseline unexplained — and no CTA, because there is nothing to act on.
+          -->
+          <th:block
+            th:if="${isGuest == false and hasEntry == false and entryOpen == false}"
+          >
+            <div class="border-b border-gray-200 bg-gray-50 px-6 py-3">
+              <p class="text-sm text-gray-700">
+                Entries closed at season kickoff, so there is no table saved for
+                you this season. This is the table everyone started from.
+              </p>
+            </div>
+          </th:block>
+
+          <!--
             Guest, already locked: no CTA. Inviting someone into a game that has closed is a promise
             the app cannot keep — say what happened instead.
           -->
@@ -142,9 +177,11 @@
             </div>
           </th:block>
 
-          <!-- Locked, not yet scored, nothing to track against yet: the wait is the point. -->
+          <!--
+            Locked, not yet scored, nothing to track against yet: the wait is the point.
+          -->
           <th:block
-            th:if="${isGuest == false and entryOpen == false and revealed == false and liveProgress == false}"
+            th:if="${isGuest == false and hasEntry == true and entryOpen == false and revealed == false and liveProgress == false}"
           >
             <div class="border-b border-gray-200 bg-gray-50 px-6 py-3">
               <p class="text-sm text-gray-700">
@@ -371,19 +408,45 @@
           </th:block>
         </div>
 
-        <div th:replace="~{fragments/final-table-share :: card}"></div>
+        <!--
+          Hidden until a table exists, and driven by Alpine rather than the server: saving is a
+          fetch that never re-renders this page, so a th:if on hasEntry would leave the card absent
+          until a manual refresh. finalTablePage flips hasEntry on a successful save and this
+          appears with it. The URL itself is always rendered — it is knowable before the first save,
+          it just should not be offered yet.
+        -->
+        <div x-show="hasEntry" x-cloak>
+          <div th:replace="~{fragments/final-table-share :: card}"></div>
+        </div>
 
-        <div class="mt-6 flex gap-4 text-sm">
+        <div class="mt-6 flex flex-wrap gap-4 text-sm">
           <a
             th:href="@{/final-table/leaderboard}"
             class="text-indigo-600 hover:underline"
             >Leaderboard</a
           >
+          <!--
+            x-show on hasEntry, not th:if on shareUrl: the URL is now rendered for every signed-in
+            player so the share card can appear the instant a first save lands, which means it is
+            no longer a proxy for "has a table". Without the Alpine gate this offers a link that
+            404s ("This player has no final table for that season") until they save.
+          -->
           <a
             th:if="${shareUrl != null}"
             th:href="${shareUrl}"
+            x-show="hasEntry"
+            x-cloak
             class="text-indigo-600 hover:underline"
             >Public link</a
+          >
+          <!--
+            Scoring is four numbers and a formula nobody can infer from the page. Small, and last:
+            the FAQ is a reference, not part of playing.
+          -->
+          <a
+            th:href="@{/faq}"
+            class="text-gray-500 hover:text-indigo-600 hover:underline"
+            >How scoring works</a
           >
         </div>
       </div>

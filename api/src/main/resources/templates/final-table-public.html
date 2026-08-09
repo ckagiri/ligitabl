@@ -96,12 +96,38 @@
         </div>
       </th:block>
 
-      <th:block th:if="${revealed == false}">
-        <div
-          class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4"
-        >
+      <!--
+        Two unrevealed states, not one. "Locked in before a ball was kicked" is a claim about the
+        past, and while entry is still open it is not true of anyone — the table can still change,
+        so saying it is locked would be wrong on every shared link opened before kickoff. Before
+        kickoff the honest thing is when they settled; after it, the original wording holds.
+
+        Same shape as the navbar rule: entry-open and already-locked are different situations and
+        get different copy.
+      -->
+      <th:block th:if="${revealed == false and finalTableEntryOpen == true}">
+        <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
+          <p
+            class="text-sm text-gray-700"
+            th:with="settled=${settledAt != null
+              ? settledAt.atZone(T(java.time.ZoneId).systemDefault()) : null}"
+          >
+            <th:block th:if="${settled != null}">
+              Settled
+              <strong
+                class="text-gray-900"
+                th:text="${#temporals.format(settled, 'd MMM yyyy, HH:mm')}"
+                >12 Aug 2026, 14:32</strong
+              >. </th:block
+            >Still open to change until season kickoff; score revealed when season ends.
+          </p>
+        </div>
+      </th:block>
+
+      <th:block th:if="${revealed == false and finalTableEntryOpen == false}">
+        <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
           <p class="text-sm text-gray-700">
-            Locked in before a ball was kicked. Revealed at the end of the season.
+            Locked in before a ball was kicked. Score revealed at the end of the season.
           </p>
         </div>
       </th:block>
@@ -126,14 +152,34 @@
         </th:block>
       </div>
 
-      <div th:replace="~{fragments/final-table-share :: card}"></div>
+      <!--
+        The offer, above the share controls rather than below them. A visitor arrives from a link
+        with no account and no table; making one is the thing to put in front of them, and sharing
+        someone else's page is the lesser action.
 
-      <div class="mt-8">
-        <a
-          th:href="@{/final-table}"
-          class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
-          >Make your own prediction</a
+        Gated on entry still being open, matching the navbar rule: inviting someone into a game that
+        closed at kickoff is a promise the app cannot keep. Once closed the CTA is dropped rather
+        than reworded — there is nothing to offer until next season.
+      -->
+      <th:block th:if="${finalTableEntryOpen == true}">
+        <div
+          class="mt-6 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-5 py-4"
         >
+          <p class="text-sm text-indigo-900">
+            Think you can do better? Call the whole season yourself — open until
+            kickoff.
+          </p>
+          <a
+            th:href="@{/final-table}"
+            class="flex-shrink-0 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700"
+            >Make your prediction</a
+          >
+        </div>
+      </th:block>
+
+      <!-- Wrapper for the spacing: th:replace discards the host element, class and all. -->
+      <div class="mt-6">
+        <div th:replace="~{fragments/final-table-share :: card}"></div>
       </div>
     </div>
   </body>
