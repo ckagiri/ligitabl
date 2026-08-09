@@ -1,0 +1,392 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <!--
+      No px/py wrapper here: layout/base.html's <main> already supplies
+      `max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8`. Adding another py-8 is what put a large empty
+      band above the title.
+    -->
+    <div layout:fragment="content">
+      <div
+        class="mx-auto max-w-5xl"
+        x-data="Ligitabl.finalTablePage($el)"
+        th:attr="data-rows=${rowsJson},data-zones=${zonesJson},data-entry-open=${entryOpen and !isGuest},data-has-entry=${hasEntry},data-live-rows=${liveRowsJson}"
+      >
+        <div class="mb-6 overflow-hidden rounded-lg bg-white shadow-sm">
+          <!--
+            Dark banner header, echoing the shared scorecard so the page and the image people post
+            look like the same artifact.
+          -->
+          <div class="bg-gray-900 px-6 py-5">
+            <!-- Stacked and centred on mobile, side by side from sm up. -->
+            <div
+              class="flex flex-col items-center gap-4 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left"
+            >
+              <div class="min-w-0">
+                <p
+                  class="text-[11px] font-semibold uppercase tracking-widest text-gray-400"
+                >
+                  Final Table Predictor
+                </p>
+                <h1
+                  class="mt-1 text-2xl font-bold text-white sm:text-3xl"
+                  th:text="${competitionName} + ' ' + ${seasonLabel}"
+                >
+                  Premier League 26/27
+                </h1>
+                <p class="mt-1 text-sm text-gray-400">
+                  <span th:text="${teamCount}">20</span> clubs · shared before season
+                  kickoff
+                </p>
+              </div>
+
+              <!--
+                Who you called for the title, phrased as a claim rather than a stat — it is the one
+                line people screenshot, so it reads as a sentence: "I predict that / Arsenal / will
+                win the league".
+              -->
+              <div
+                class="w-full max-w-xs rounded-lg border border-indigo-400/40 bg-white/5 px-5 py-4 text-center sm:w-auto"
+                x-show="teams.length > 0"
+                x-cloak
+              >
+                <p class="text-xs text-gray-400">I predict that</p>
+                <p
+                  class="mt-1 text-xl font-bold text-white"
+                  x-text="teams[0]?.name"
+                >
+                  —
+                </p>
+                <p class="mt-1 text-xs text-gray-400">will win the league</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- State chip on its own quiet strip, so it never competes with the banner. -->
+          <div
+            class="flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-gray-200 bg-gray-50 px-6 py-2"
+          >
+            <span
+              th:if="${entryOpen == true}"
+              class="inline-flex items-center gap-1 text-xs font-medium text-green-700"
+              >🟢 Open until season kickoff</span
+            >
+            <span
+              th:if="${entryOpen == false and revealed == false}"
+              class="inline-flex items-center gap-1 text-xs font-medium text-yellow-700"
+              >🔒 Locked for the season</span
+            >
+            <span
+              th:if="${revealed == true}"
+              class="inline-flex items-center gap-1 text-xs font-medium text-indigo-700"
+              >✅ Scored</span
+            >
+
+            <!--
+              The way back. A player arrives here from the pill on their prediction page, and
+              without this the only route home is the navbar — which is the one place the Final
+              Table is deliberately understated. Mirrors that pill's shape so the pair reads as one
+              round trip. Not shown to guests: they have no table to go back to.
+            -->
+            <a
+              th:if="${isGuest == false}"
+              th:href="@{/my-table}"
+              class="ml-auto inline-flex items-center gap-1.5 text-xs font-medium text-gray-500 transition-colors hover:text-indigo-600"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="h-3.5 w-3.5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
+                <path d="m15 18-6-6 6-6" />
+              </svg>
+              Back to my table
+            </a>
+          </div>
+
+          <!-- Guest, still open: read-only with a sign-up CTA. The game is an on-ramp. -->
+          <th:block th:if="${isGuest == true and entryOpen == true}">
+            <div class="border-b border-indigo-100 bg-indigo-50 px-6 py-3">
+              <div class="flex flex-wrap items-center justify-between gap-3">
+                <p class="text-sm text-indigo-900">
+                  Sign in to update this table & make it your own before season kickoff locks it in.
+                </p>
+                <a
+                  th:href="@{/auth/register}"
+                  class="inline-block flex-shrink-0 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white hover:bg-indigo-700"
+                  >Create an account</a
+                >
+              </div>
+            </div>
+          </th:block>
+
+          <!--
+            Guest, already locked: no CTA. Inviting someone into a game that has closed is a promise
+            the app cannot keep — say what happened instead.
+          -->
+          <th:block th:if="${isGuest == true and entryOpen == false}">
+            <div class="border-b border-gray-200 bg-gray-50 px-6 py-3">
+              <p class="text-sm text-gray-700">
+                Entries closed when gameweek 1 kicked off. This is the table everyone
+                started from.
+              </p>
+            </div>
+          </th:block>
+
+          <!-- Locked, not yet scored, nothing to track against yet: the wait is the point. -->
+          <th:block
+            th:if="${isGuest == false and entryOpen == false and revealed == false and liveProgress == false}"
+          >
+            <div class="border-b border-gray-200 bg-gray-50 px-6 py-3">
+              <p class="text-sm text-gray-700">
+                Your table is locked for the season. Results are revealed when the
+                season ends.
+              </p>
+            </div>
+          </th:block>
+
+          <!--
+            Locked, not yet scored, but the season has produced standings. Says plainly that the
+            score is still sealed — the numbers on the rows are a position comparison, not a
+            running total, and the copy has to stop anyone reading them as one.
+          -->
+          <th:block th:if="${liveProgress == true}">
+            <div class="border-b border-indigo-100 bg-indigo-50 px-6 py-3">
+              <p class="text-sm text-indigo-900">
+                Locked in. Each row shows where that club sits right now — your score
+                stays sealed until the season ends.
+              </p>
+            </div>
+          </th:block>
+
+          <!--
+            Revealed: the score, out of the season's own maximum.
+
+            Each tile carries a caption saying where its number came from. Four bare numbers —
+            110 / 90 / 2 / 20 — leave a reader guessing which is the score, what it is out of, and
+            how the parts relate; "90 of 200" and "2 × 10" make the arithmetic visible without a
+            legend. Denominators come from the season, so they never assume 20 clubs.
+          -->
+          <th:block th:if="${revealed == true}">
+            <div class="grid grid-cols-2 gap-px border-b border-gray-200 bg-gray-200 sm:grid-cols-4">
+              <div class="bg-white px-6 py-3">
+                <div class="text-xs uppercase tracking-wide text-gray-500">Total</div>
+                <div class="text-2xl font-bold text-gray-900">
+                  <span th:text="${totalScore}">0</span
+                  >
+                </div>
+                <div class="mt-0.5 text-[11px] text-gray-400">base + bonus</div>
+              </div>
+              <div class="bg-white px-6 py-3">
+                <div class="text-xs uppercase tracking-wide text-gray-500">Base</div>
+                <div class="text-2xl font-bold text-gray-900">
+                  <span th:text="${baseScore}">0</span
+                  ><span
+                    th:if="${maxHitPoints != null}"
+                    class="text-base font-medium text-gray-400"
+                    th:text="' / ' + ${maxHitPoints}"
+                    > / 200</span
+                  >
+                </div>
+                <div
+                  class="mt-0.5 text-[11px] text-gray-400"
+                  th:if="${totalHits != null}"
+                  th:text="${totalHits} + ' places out'"
+                >
+                  110 places out
+                </div>
+              </div>
+              <div class="bg-white px-6 py-3">
+                <div class="text-xs uppercase tracking-wide text-gray-500">Exact</div>
+                <div class="text-2xl font-bold text-gray-900">
+                  <span th:text="${zeroesCount}">0</span
+                  ><span
+                    th:if="${teamCount != null}"
+                    class="text-base font-medium text-gray-400"
+                    th:text="' / ' + ${teamCount}"
+                    > / 20</span
+                  >
+                </div>
+                <div class="mt-0.5 text-[11px] text-gray-400">spot on</div>
+              </div>
+              <div class="bg-white px-6 py-3">
+                <div class="text-xs uppercase tracking-wide text-gray-500">Bonus</div>
+                <div class="text-2xl font-bold text-gray-900" th:text="${bonusPoints}">
+                  0
+                </div>
+                <div
+                  class="mt-0.5 text-[11px] text-gray-400"
+                  th:if="${zeroesCount != null}"
+                  th:text="${zeroesCount} + ' × ' + ${T(com.ligitabl.model.domain.service.FinalTableScorer).ZERO_BONUS}"
+                >
+                  2 × 10
+                </div>
+              </div>
+            </div>
+          </th:block>
+
+          <!-- Zone legend, only where the bands mean something (i.e. not on the result table). -->
+          <th:block th:if="${revealed == false}">
+            <div
+              class="flex flex-wrap items-center gap-x-4 gap-y-1 border-b border-gray-200 bg-gray-50 px-6 py-2 text-[11px] font-medium"
+            >
+              <span class="flex items-center gap-1.5 text-gray-600">
+                <span class="inline-block h-2.5 w-2.5 rounded-sm bg-blue-500"></span>
+                Champions League
+              </span>
+              <span class="flex items-center gap-1.5 text-gray-600">
+                <span class="inline-block h-2.5 w-2.5 rounded-sm bg-green-500"></span>
+                Europa League
+              </span>
+              <span class="flex items-center gap-1.5 text-gray-600">
+                <span class="inline-block h-2.5 w-2.5 rounded-sm bg-amber-500"></span>
+                Conference League
+              </span>
+              <span class="flex items-center gap-1.5 text-gray-600">
+                <span class="inline-block h-2.5 w-2.5 rounded-sm bg-red-500"></span>
+                Relegation
+              </span>
+              <span
+                th:if="${entryOpen == true and isGuest == false}"
+                class="ml-auto flex items-center gap-3 text-gray-500"
+              >
+                <span>Tap two teams to swap them</span>
+                <!--
+                  A second Reset, at the top of the table. The actions row sits below twenty rows, so
+                  after a mis-tap near the top the undo is otherwise a scroll away. Same reset() —
+                  two affordances, one behaviour.
+                -->
+                <button
+                  type="button"
+                  x-show="getDirtyCount() > 0"
+                  x-cloak
+                  @click="reset()"
+                  :disabled="inFlight"
+                  class="font-semibold text-indigo-600 underline-offset-2 hover:underline disabled:opacity-50"
+                >
+                  Reset
+                </button>
+              </span>
+            </div>
+          </th:block>
+
+          <div class="px-6 py-4">
+            <!--
+              th:insert on the th:block itself, not th:replace on an inner div. A th:block with only
+              a th:if still renders its children, so the two branches were both appearing — the
+              result table's empty header showed above the editable grid. Putting the insert on the
+              same th:block as the condition is what actually makes them exclusive.
+            -->
+            <th:block
+              th:if="${revealed == true}"
+              th:insert="~{fragments/final-table-rows :: result}"
+            ></th:block>
+            <th:block
+              th:if="${revealed == false}"
+              th:insert="~{fragments/final-table-rows :: table}"
+            ></th:block>
+          </div>
+
+          <!-- Save: shown only while the table can still be changed and the viewer owns it. -->
+          <th:block th:if="${entryOpen == true and isGuest == false}">
+            <!--
+              No floating pill here, unlike predictions.html: two columns of ten keep the whole
+              table on one screen, so the actions row is never scrolled out of reach and a teleported
+              duplicate would just be another thing to keep in sync.
+            -->
+            <div
+              class="flex flex-col items-center gap-3 border-t border-gray-200 px-6 py-5"
+            >
+              <div class="flex items-center gap-2">
+                <div
+                  th:replace="~{fragments/final-table-actions :: save-button('rounded-full')}"
+                ></div>
+                <!--
+                  Reset undoes everything since the last save — client-side only, so it never
+                  touches the stored table or the settle time. Restoring the saved order also
+                  restores the row tints, since dirty rows fall back to their zone colour.
+                -->
+                <button
+                  type="button"
+                  x-show="getDirtyCount() > 0"
+                  x-cloak
+                  @click="reset()"
+                  :disabled="inFlight"
+                  class="rounded-full border border-gray-300 px-5 py-3 text-base font-medium text-gray-600 transition hover:bg-gray-50 disabled:opacity-50"
+                >
+                  Reset
+                </button>
+              </div>
+              <p class="h-5 text-sm">
+                <span
+                  x-show="getDirtyCount() > 0 && !message"
+                  x-cloak
+                  class="text-gray-500"
+                  x-text="getDirtyCount() + ' moved since last save'"
+                ></span>
+                <span
+                  x-show="message"
+                  x-cloak
+                  x-text="message"
+                  :class="messageKind === 'error' ? 'text-red-600' : 'text-green-600'"
+                ></span>
+              </p>
+            </div>
+          </th:block>
+
+          <!-- Dev-only, and visually distinct so it can never read as a player action. -->
+          <th:block th:if="${devPreviewEnabled == true}">
+            <div class="border-t-2 border-dashed border-amber-400 bg-amber-50 px-6 py-3">
+              <p class="mb-2 text-xs font-semibold uppercase text-amber-800">
+                Dev preview — scores against current standings, not final
+              </p>
+              <div class="flex gap-2">
+                <button
+                  type="button"
+                  @click="devScore()"
+                  :disabled="inFlight"
+                  class="rounded border border-amber-600 px-3 py-1.5 text-sm text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+                >
+                  Score now (dev)
+                </button>
+                <button
+                  type="button"
+                  @click="devClear()"
+                  :disabled="inFlight"
+                  class="rounded border border-amber-600 px-3 py-1.5 text-sm text-amber-900 hover:bg-amber-100 disabled:opacity-50"
+                >
+                  Clear scores (dev)
+                </button>
+              </div>
+            </div>
+          </th:block>
+        </div>
+
+        <div th:replace="~{fragments/final-table-share :: card}"></div>
+
+        <div class="mt-6 flex gap-4 text-sm">
+          <a
+            th:href="@{/final-table/leaderboard}"
+            class="text-indigo-600 hover:underline"
+            >Leaderboard</a
+          >
+          <a
+            th:if="${shareUrl != null}"
+            th:href="${shareUrl}"
+            class="text-indigo-600 hover:underline"
+            >Public link</a
+          >
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,150 @@
+databaseChangeLog:
+  - changeSet:
+      id: 20260808_1_final_table_prediction
+      author: system
+      preConditions:
+        - onFail: MARK_RAN
+        - not:
+            - tableExists:
+                tableName: t_final_table_prediction
+                schemaName: public
+      changes:
+        - createTable:
+            tableName: t_final_table_prediction
+            schemaName: public
+            remarks: >-
+              Final Table Predictor: one locked, season-long prediction of the final standings
+              per (user, season). Deliberately separate from t_season_prediction — no rounds, no
+              opening window, no cooldown. Editable only while round 1 is OPEN, then frozen and
+              scored exactly once when an admin completes the season, so the result lives in
+              nullable columns on this row rather than in round submission/result tables.
+            columns:
+              - column:
+                  name: pk_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+                    primaryKey: true
+              - column:
+                  name: fk_user_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: fk_season_id
+                  type: uuid
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_rankings
+                  type: jsonb
+                  remarks: List<TeamRank>, same shape as t_season_prediction.c_current_rankings.
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_swaps
+                  type: jsonb
+                  defaultValue: "[]"
+                  remarks: >-
+                    Flat List<SwapChange>, not List<RoundSwap> — this game has no rounds, so
+                    there is nothing to nest by.
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_swap_count
+                  type: int
+                  defaultValueNumeric: 0
+                  remarks: >-
+                    Denormalised length of c_swaps. Displayed on the leaderboard but never
+                    ordered on; written only via the domain's addSwap, never independently.
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_settled_at
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  remarks: >-
+                    The leaderboard tiebreak: when this user settled on their table. Defaults to
+                    the create date at insert (a player who accepts the baseline has settled the
+                    moment they entered) and is thereafter only ever advanced by a non-empty,
+                    validated batch — never recomputed and never rewound.
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_result_rankings
+                  type: jsonb
+                  remarks: List<ResultTeamRank>, written once at scoring.
+              - column:
+                  name: c_base_score
+                  type: int
+                  remarks: "ScoringEngine distance score: maxHitPoints - sum(hit)."
+              - column:
+                  name: c_zeroes_count
+                  type: int
+              - column:
+                  name: c_bonus_points
+                  type: int
+                  remarks: zeroes * 10.
+              - column:
+                  name: c_total_score
+                  type: int
+                  remarks: base + bonus, max 200 + 200 = 400.
+              - column:
+                  name: c_scored_at
+                  type: timestamp with time zone
+                  remarks: >-
+                    The reveal predicate. A row is revealed because it is scored, not because
+                    the season is complete — this keeps the page in its waiting state if the
+                    scoring pass has not run or failed.
+              - column:
+                  name: c_create_date
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+              - column:
+                  name: c_update_date
+                  type: timestamp with time zone
+                  defaultValueComputed: CURRENT_TIMESTAMP
+                  constraints:
+                    nullable: false
+
+        - addForeignKeyConstraint:
+            baseTableName: t_final_table_prediction
+            baseColumnNames: fk_user_id
+            baseTableSchemaName: public
+            constraintName: fk_final_table_prediction_user_id
+            referencedTableName: t_user
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+        - addForeignKeyConstraint:
+            baseTableName: t_final_table_prediction
+            baseColumnNames: fk_season_id
+            baseTableSchemaName: public
+            constraintName: fk_final_table_prediction_season_id
+            referencedTableName: t_season
+            referencedColumnNames: pk_id
+            referencedTableSchemaName: public
+
+        - addUniqueConstraint:
+            tableName: t_final_table_prediction
+            schemaName: public
+            columnNames: fk_user_id, fk_season_id
+            constraintName: uq_t_final_table_prediction_user_season
+
+        - createIndex:
+            tableName: t_final_table_prediction
+            schemaName: public
+            indexName: idx_t_final_table_prediction_leaderboard
+            columns:
+              - column:
+                  name: fk_season_id
+              - column:
+                  name: c_total_score
+                  descending: true
+              - column:
+                  name: c_zeroes_count
+                  descending: true
+              - column:
+                  name: c_settled_at

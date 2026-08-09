@@ -81,6 +81,41 @@
                     >
                   </div>
 
+                  <!--
+                    Final Table: the side game, offered as a pill beside What-If rather than as a
+                    sentence in the pre-season banner. Two reasons. It costs no vertical space on a
+                    phone, where a full line of copy is expensive; and this header persists, while
+                    that banner disappears the moment predictions open — which is precisely the
+                    window when the Final Table is still open and about to lock, so the prompt would
+                    have vanished exactly when it mattered most.
+
+                    A plain link, not hx-get: /final-table is its own page with its own Alpine
+                    component, not a fragment of this one. Gated on entry still being open —
+                    pointing someone at a game that has closed is worse than staying quiet — and
+                    hidden for guests, who already get the link in the navbar.
+                  -->
+                  <a
+                    th:if="${!isGuest && finalTableEntryOpen == true}"
+                    th:href="@{/final-table}"
+                    title="Predict the final table — open until season kickoff"
+                    class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors px-2.5 py-1 rounded-full border border-emerald-200 hover:border-emerald-300 bg-emerald-50"
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      class="w-3.5 h-3.5"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                    >
+                      <!-- A ranked list: three rows, longest at the top — a finishing table. -->
+                      <path d="M4 6h16M4 12h11M4 18h6" />
+                    </svg>
+                    Final Table
+                  </a>
+
                   <!-- What-If (own predictions only, current round — renders read-only/locked
                        once the round closes rather than requiring roundState == 'open') -->
                   <button

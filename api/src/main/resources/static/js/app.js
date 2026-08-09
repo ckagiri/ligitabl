@@ -1169,6 +1169,673 @@ window.Ligitabl.publicPredictionPage = function(el) {
     }
   });
 };
+window.Ligitabl._selectAndSwap = function() {
+  return {
+    teams: [],
+    selectedTeam: null,
+    isSelected(teamCode) {
+      return this.selectedTeam === teamCode;
+    },
+    // Tap a row to select, tap a second to swap them. Tapping the same row cancels.
+    tapTeam(teamCode) {
+      if (this.selectedTeam === null) {
+        this._select(teamCode);
+        return;
+      }
+      if (this.selectedTeam === teamCode) {
+        this.selectedTeam = null;
+        return;
+      }
+      const from = this.selectedTeam;
+      this.selectedTeam = null;
+      this._swap(from, teamCode);
+    },
+    _select(teamCode) {
+      this.selectedTeam = teamCode;
+      this.$nextTick(() => {
+        const row = document.querySelector(`[data-team-code='${teamCode}']`);
+        if (row) {
+          row.classList.add("selected-pulse");
+          setTimeout(() => row.classList.remove("selected-pulse"), 300);
+        }
+      });
+    },
+    // Swaps the two rows and renumbers. onSwapped fires before the highlight so callers can
+    // record the pair while positions are still fresh.
+    _swap(codeA, codeB, onSwapped) {
+      const indexA = this.teams.findIndex((t) => t.code === codeA);
+      const indexB = this.teams.findIndex((t) => t.code === codeB);
+      if (indexA < 0 || indexB < 0) return;
+      const temp = this.teams[indexA];
+      this.teams[indexA] = this.teams[indexB];
+      this.teams[indexB] = temp;
+      this.teams.forEach((team, idx) => team.position = idx + 1);
+      if (onSwapped) onSwapped();
+      this.$nextTick(() => {
+        const rowA = document.querySelector(`[data-team-code='${codeA}']`);
+        const rowB = document.querySelector(`[data-team-code='${codeB}']`);
+        if (rowA) rowA.classList.add("swapping");
+        if (rowB) rowB.classList.add("swapping");
+        setTimeout(() => {
+          if (rowA) rowA.classList.remove("swapping");
+          if (rowB) rowB.classList.remove("swapping");
+        }, 400);
+      });
+    }
+  };
+};
+window.Ligitabl.finalTablePage = function(el) {
+  const dataset = el?.dataset || {};
+  const readBool = (value) => value === "true";
+  const base = Ligitabl._selectAndSwap();
+  const baseSwap = base._swap;
+  return Object.assign(base, {
+    // Server truth, re-read after every successful save.
+    hasEntry: readBool(dataset.hasEntry),
+    entryOpen: readBool(dataset.entryOpen),
+    originalTeams: [],
+    // Declared here, not just assigned in init(): a property that only ever appears via
+    // `this._zones = …` is outside Alpine's reactive data, so anything reading it renders once
+    // and never updates.
+    _zones: {},
+    // Current standings position per team code, and whether there are any. Same reason as
+    // _zones above: a property that only ever appears via assignment in init() is outside
+    // Alpine's reactive data, so anything reading it renders once and never updates.
+    _livePositions: {},
+    hasLiveProgress: false,
+    // The pairs tapped since the last save, in order. Replayed server-side.
+    pendingSwaps: [],
+    inFlight: false,
+    message: null,
+    messageKind: null,
+    init() {
+      const rows = Ligitabl._parseJSON(dataset.rows, []);
+      this.teams = rows.map((row, idx) => ({ ...row, position: idx + 1 }));
+      this.originalTeams = JSON.parse(JSON.stringify(this.teams));
+      this._zones = Ligitabl._parseJSON(dataset.zones, {});
+      const live = Ligitabl._parseJSON(dataset.liveRows, []);
+      this._livePositions = live.reduce((acc, row) => {
+        if (row.current != null) acc[row.code] = row.current;
+        return acc;
+      }, {});
+      this.hasLiveProgress = Object.keys(this._livePositions).length > 0;
+    },
+    // --- shared visual language with the main prediction table ---
+    isDirty(teamCode) {
+      const team = this.teams.find((t) => t.code === teamCode);
+      const original = this.originalTeams.find((t) => t.code === teamCode);
+      if (!team || !original) return false;
+      return team.position !== original.position;
+    },
+    getPositionChange(teamCode) {
+      const team = this.teams.find((t) => t.code === teamCode);
+      const original = this.originalTeams.find((t) => t.code === teamCode);
+      if (!team || !original) return null;
+      const change = original.position - team.position;
+      if (change === 0) return null;
+      return change > 0 ? "↑" + change : "↓" + Math.abs(change);
+    },
+    // --- live progress (locked, not yet scored) ------------------------------
+    //
+    // Deliberately no score, no total and no exact-hit count: those are the reveal, and the
+    // rule for this view is that the app does not do that arithmetic for the player. Movement
+    // reuses getPositionChange's vocabulary so a row reads the same in both states.
+    /** Where the team actually sits now, or null if standings do not list it. */
+    livePosition(teamCode) {
+      const current = this._livePositions[teamCode];
+      return current == null ? null : current;
+    },
+    /** Predicted vs actual as ↑/↓N — "you had them 3rd, they are 1st" reads as ↑2. */
+    liveMovement(teamCode) {
+      const current = this._livePositions[teamCode];
+      if (current == null) return null;
+      const team = this.teams.find((t) => t.code === teamCode);
+      if (!team) return null;
+      const change = team.position - current;
+      if (change === 0) return null;
+      return change > 0 ? "↑" + change : "↓" + Math.abs(change);
+    },
+    /** Exact-position match against the live table. Per row only — never counted up. */
+    liveOnTarget(teamCode) {
+      const current = this._livePositions[teamCode];
+      if (current == null) return false;
+      const team = this.teams.find((t) => t.code === teamCode);
+      return !!team && team.position === current;
+    },
+    // Neutral badge: pre-GW1 there are no results to tint by, unlike the main table's
+    // form-driven colouring.
+    teamBadgeClasses() {
+      return "bg-gray-200 text-gray-700";
+    },
+    // --- qualification zones -------------------------------------------------
+    //
+    // Read from data-zones so the bands follow the competition rather than hardcoding the
+    // Premier League's shape. Shape: {"CL":[1,5],"UEL":[6,7],"UECL":[8,8],"REL":[18,20]} —
+    // inclusive position ranges, any subset, empty object for a league with no zones.
+    zoneOf(position) {
+      const zones = this._zones || {};
+      for (const [code, range] of Object.entries(zones)) {
+        if (Array.isArray(range) && position >= range[0] && position <= range[1]) {
+          return code;
+        }
+      }
+      return null;
+    },
+    zoneLabel(position) {
+      return this.zoneOf(position) || "";
+    },
+    // Left edge marker. Colour-only, so it never competes with the selected/dirty row tints.
+    // MID is a zone with its own (grey) marker, not an absence — otherwise mid-table rows read
+    // as having lost their bar rather than as a deliberate band.
+    zoneBarClass(position) {
+      switch (this.zoneOf(position)) {
+        case "CL":
+          return "bg-blue-500";
+        case "UEL":
+          return "bg-green-500";
+        case "UECL":
+          return "bg-amber-500";
+        case "REL":
+          return "bg-red-500";
+        default:
+          return "bg-gray-300";
+      }
+    },
+    zoneTextClass(position) {
+      switch (this.zoneOf(position)) {
+        case "CL":
+          return "text-blue-600";
+        case "UEL":
+          return "text-green-600";
+        case "UECL":
+          return "text-amber-600";
+        case "REL":
+          return "text-red-600";
+        default:
+          return "text-gray-400";
+      }
+    },
+    /**
+     * A faint zone wash on the row itself, as in the reference. Deliberately at the -50 step so
+     * it stays below the selected (blue-50) and dirty (amber-50) tints, which must remain the
+     * loudest thing on a row — those are the states the player is acting on.
+     */
+    zoneRowClass(position) {
+      switch (this.zoneOf(position)) {
+        case "CL":
+          return "bg-blue-50/60";
+        case "UEL":
+          return "bg-green-50/60";
+        case "UECL":
+          return "bg-amber-50/60";
+        case "REL":
+          return "bg-red-50/60";
+        default:
+          return "bg-white";
+      }
+    },
+    getDirtyCount() {
+      return this.teams.filter((t) => this.isDirty(t.code)).length;
+    },
+    // Back to the last saved order. Purely client-side: it clears the pending batch rather than
+    // sending inverse swaps, so an undone edit never reaches the server and can never move
+    // settledAt — the tiebreak only ever advances on swaps the player actually kept.
+    /**
+     * Back to the page as freshly rendered — table, tints, arrows and hints all cleared.
+     *
+     * <p>Deliberately restores from {@code originalTeams} rather than re-running init(): init()
+     * rebuilds from the {@code data-rows} attribute, which is the order the page was *first*
+     * served with. After a save that is stale, so resetting would revert past the player's saved
+     * table to whatever they had on page load. {@code originalTeams} is re-baselined on every
+     * successful save, so it is the only correct source.
+     *
+     * <p>Clearing message/messageKind is what stops the "N moved since last save" hint outliving
+     * the reset that made it untrue.
+     *
+     * <p>Restores by reordering the existing team objects rather than assigning a deep copy.
+     * `x-for` is keyed by team code, so Alpine reuses each row's DOM node either way — but the
+     * `:class` binding's reactive dependency is registered against the *object* that was in
+     * `teams` when it last ran. Replacing the array with fresh copies leaves those effects
+     * watching orphaned objects that nothing writes to again, so `zoneRowClass(team.position)`
+     * never re-evaluates and every row keeps the zone wash of the position it held before the
+     * reset. Mutating the tracked objects in place is what actually notifies the bindings.
+     */
+    reset() {
+      if (this.inFlight) return;
+      const byCode = new Map(this.teams.map((team) => [team.code, team]));
+      this.teams = this.originalTeams.map((original) => {
+        const team = byCode.get(original.code);
+        if (!team) return { ...original };
+        team.position = original.position;
+        return team;
+      });
+      this.teams.sort((a, b) => a.position - b.position);
+      this.pendingSwaps = [];
+      this.selectedTeam = null;
+      this.message = null;
+      this.messageKind = null;
+    },
+    // Rows are only interactive while the table can still change.
+    canEdit() {
+      return this.entryOpen && !this.inFlight;
+    },
+    onRowTap(teamCode) {
+      if (!this.canEdit()) return;
+      this.tapTeam(teamCode);
+    },
+    // Wraps the helper so each swap is also recorded for the server to replay.
+    _swap(codeA, codeB) {
+      baseSwap.call(this, codeA, codeB, () => {
+        this.pendingSwaps.push({ teamA: codeA, teamB: codeB });
+      });
+    },
+    // Enabled on the first save even with nothing pending — that is how a player accepts the
+    // baseline, and the only empty batch the server accepts. Once a row exists, a clean table
+    // means there is nothing to save, so the button goes flat rather than earning a 400.
+    saveEnabled() {
+      if (!this.entryOpen || this.inFlight) return false;
+      if (!this.hasEntry) return true;
+      return this.getDirtyCount() > 0;
+    },
+    currentOrder() {
+      return this.teams.slice().sort((a, b) => a.position - b.position).map((t) => t.code);
+    },
+    save() {
+      if (!this.saveEnabled()) return;
+      if (this.hasEntry && this.getDirtyCount() === 0) {
+        this.pendingSwaps = [];
+        return;
+      }
+      this.inFlight = true;
+      this.message = null;
+      const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+      const headers = { "Content-Type": "application/json" };
+      if (csrfToken) headers["X-CSRF-TOKEN"] = csrfToken;
+      fetch("/final-table", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          swaps: this.pendingSwaps,
+          // A checksum, not the payload: the server stores the result of replaying swaps.
+          expectedOrder: this.currentOrder()
+        })
+      }).then((r) => r.json().then((data) => ({ ok: r.ok, status: r.status, data }))).then(({ ok, status, data }) => {
+        this.inFlight = false;
+        if (ok && data.success) {
+          this.pendingSwaps = [];
+          this.originalTeams = JSON.parse(JSON.stringify(this.teams));
+          this.hasEntry = true;
+          this._flash(data.message || "Saved", "success");
+          return;
+        }
+        if (status === 409) {
+          this._flash(data.message || "This table changed in another tab. Reloading.", "error");
+          setTimeout(() => window.location.reload(), 1200);
+          return;
+        }
+        this._flash(data && data.message || "Could not save your table", "error");
+      }).catch(() => {
+        this.inFlight = false;
+        this._flash("Could not save your table", "error");
+      });
+    },
+    // Dev preview only: rendered behind devPreviewEnabled, and the endpoints do not exist as
+    // beans outside non-prod profiles. Reloads so every read path picks up the new state.
+    devScore() {
+      this._devPost("/dev/final-table/score");
+    },
+    devClear() {
+      this._devPost("/dev/final-table/clear");
+    },
+    _devPost(url) {
+      if (this.inFlight) return;
+      this.inFlight = true;
+      const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
+      const headers = { "Content-Type": "application/json" };
+      if (csrfToken) headers["X-CSRF-TOKEN"] = csrfToken;
+      fetch(url, { method: "POST", headers }).then((r) => r.json().then((data) => ({ ok: r.ok, data }))).then(({ ok, data }) => {
+        this.inFlight = false;
+        if (!ok) {
+          this._flash(data && data.message || "Dev action failed", "error");
+          return;
+        }
+        window.location.reload();
+      }).catch(() => {
+        this.inFlight = false;
+        this._flash("Dev action failed", "error");
+      });
+    },
+    _flash(message, kind) {
+      this.message = message;
+      this.messageKind = kind;
+      setTimeout(() => {
+        this.message = null;
+        this.messageKind = null;
+      }, 4e3);
+    }
+  });
+};
+window.Ligitabl.finalTableShareCard = function(el) {
+  const dataset = el?.dataset || {};
+  return {
+    // Collapsed by default, matching fragments/share-prediction.html: the panel is an offer,
+    // not the main event.
+    open: false,
+    rendering: false,
+    copiedText: false,
+    copiedLink: false,
+    // Feature-detected once: navigator.canShare with files is Safari/Chrome-mobile only, and a
+    // button that silently does nothing is worse than an absent one.
+    canShareFiles: false,
+    init() {
+      try {
+        this.canShareFiles = typeof navigator !== "undefined" && typeof navigator.canShare === "function" && navigator.canShare({
+          files: [new File([new Blob()], "p.jpg", { type: "image/jpeg" })]
+        });
+      } catch (e) {
+        this.canShareFiles = false;
+      }
+    },
+    rows() {
+      return Ligitabl._parseJSON(dataset.rows, []);
+    },
+    title() {
+      return dataset.title || "My Final Table";
+    },
+    shareUrl() {
+      return dataset.shareUrl || "";
+    },
+    shareText() {
+      return dataset.shareText || "";
+    },
+    subtitle() {
+      return dataset.subtitle || "";
+    },
+    /**
+     * Where a viewer goes to make their own — always the production address.
+     *
+     * Deliberately a constant, not derived from the share URL's host: this is a call to action
+     * printed into an image, and an image drawn on localhost or staging is still shared with
+     * people who need somewhere real to go. "localhost:8090/final-table" on a downloaded card
+     * would be useless to every one of them.
+     */
+    buildYoursUrl() {
+      return "LigiPredictor.com/final-table";
+    },
+    /**
+     * "settled 12 Aug 2026, 14:32", in the viewer's own locale and timezone.
+     *
+     * Formatted client-side from the ISO instant rather than server-side: the server has no
+     * idea where the viewer is, and a UTC timestamp on a card someone shares locally reads as
+     * wrong by however many hours they are offset. Date *and* time, not date alone, because
+     * settledAt is the leaderboard tiebreak — two players who settled the same day are still
+     * separable, and the card should be able to show that.
+     *
+     * Returns '' when absent or unparseable, and the footer simply omits the line.
+     */
+    settledAtLabel() {
+      const raw = dataset.settledAt;
+      if (!raw) return "";
+      const at = new Date(raw);
+      if (Number.isNaN(at.getTime())) return "";
+      try {
+        return "settled " + at.toLocaleString(void 0, {
+          day: "numeric",
+          month: "short",
+          year: "numeric",
+          hour: "2-digit",
+          minute: "2-digit"
+        });
+      } catch (e) {
+        return "";
+      }
+    },
+    _drawCard() {
+      const rows = this.rows();
+      const zones = Ligitabl._parseJSON(dataset.zones, {});
+      const W = 1080;
+      const H = 1080;
+      const canvas = document.createElement("canvas");
+      const scale = 1;
+      canvas.width = W * scale;
+      canvas.height = H * scale;
+      const ctx = canvas.getContext("2d");
+      ctx.scale(scale, scale);
+      const FONT = 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif';
+      const BRAND = "#6366f1";
+      const BRAND_DARK = "#312e81";
+      const ACCENT = "#a5b4fc";
+      const ZONES = {
+        CL: { color: "#3b82f6", tint: "rgba(59,130,246,0.14)", label: "Champions League" },
+        UEL: { color: "#22c55e", tint: "rgba(34,197,94,0.14)", label: "Europa League" },
+        UECL: { color: "#f0b429", tint: "rgba(240,180,41,0.14)", label: "Conference League" },
+        MID: { color: "#8b8fa3", tint: "rgba(255,255,255,0.06)", label: "Mid-table" },
+        REL: { color: "#ef4444", tint: "rgba(239,68,68,0.14)", label: "Relegation" }
+      };
+      const zoneLabel = (position) => {
+        for (const [code, range] of Object.entries(zones)) {
+          if (Array.isArray(range) && position >= range[0] && position <= range[1]) return code;
+        }
+        return "MID";
+      };
+      const zoneColor = (position) => ZONES[zoneLabel(position)].color;
+      const legendCodes = Object.keys(ZONES).filter(
+        (code) => rows.some((_, idx) => zoneLabel(idx + 1) === code)
+      );
+      const bg = ctx.createLinearGradient(0, 0, W, H);
+      bg.addColorStop(0, BRAND_DARK);
+      bg.addColorStop(1, "#1a1740");
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = BRAND;
+      ctx.fillRect(0, 0, W, 6);
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "700 30px " + FONT;
+      ctx.fillText("LigiPredictor", 60, 92);
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.font = "600 15px " + FONT;
+      ctx.textAlign = "right";
+      ctx.fillText((dataset.competitionName || "FINAL TABLE").toUpperCase(), W - 60, 90);
+      ctx.textAlign = "left";
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.font = "600 15px " + FONT;
+      ctx.fillText((dataset.kicker || "FINAL TABLE PREDICTION").toUpperCase(), 60, 190);
+      const CALLOUT_W = 320;
+      const CALLOUT_X = W - 60 - CALLOUT_W;
+      const titleMaxWidth = CALLOUT_X - 60 - 32;
+      let titleSize = 62;
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "700 " + titleSize + "px " + FONT;
+      while (ctx.measureText(this.title()).width > titleMaxWidth && titleSize > 26) {
+        titleSize -= 2;
+        ctx.font = "700 " + titleSize + "px " + FONT;
+      }
+      ctx.fillText(this.title(), 60, 258);
+      ctx.fillStyle = "rgba(255,255,255,0.55)";
+      ctx.font = "400 20px " + FONT;
+      ctx.fillText(this.subtitle(), 60, 296);
+      if (rows.length > 0) {
+        const boxW = CALLOUT_W;
+        const boxX = CALLOUT_X;
+        const boxY = 150;
+        const boxH = 150;
+        ctx.strokeStyle = "rgba(99,102,241,0.5)";
+        ctx.fillStyle = "rgba(255,255,255,0.04)";
+        ctx.lineWidth = 2;
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(boxX, boxY, boxW, boxH, 12);
+          ctx.fill();
+          ctx.stroke();
+        } else {
+          ctx.fillRect(boxX, boxY, boxW, boxH);
+          ctx.strokeRect(boxX, boxY, boxW, boxH);
+        }
+        const cx = boxX + boxW / 2;
+        ctx.textAlign = "center";
+        ctx.fillStyle = "rgba(255,255,255,0.55)";
+        ctx.font = "400 16px " + FONT;
+        ctx.fillText("I predict that", cx, boxY + 42);
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "700 30px " + FONT;
+        ctx.fillText(rows[0].name || rows[0].code, cx, boxY + 88);
+        ctx.fillStyle = "rgba(255,255,255,0.55)";
+        ctx.font = "400 16px " + FONT;
+        ctx.fillText("will win the league", cx, boxY + 122);
+        ctx.textAlign = "left";
+      }
+      const legendY = 360;
+      let legendX = 60;
+      legendCodes.forEach((code) => {
+        const zone = ZONES[code];
+        ctx.font = "700 13px " + FONT;
+        const codeW = ctx.measureText(code).width;
+        ctx.font = "400 14px " + FONT;
+        const labelW = ctx.measureText(zone.label).width;
+        const pillW = 16 + codeW + 8 + labelW + 16;
+        ctx.fillStyle = "rgba(255,255,255,0.06)";
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(legendX, legendY - 20, pillW, 30, 15);
+          ctx.fill();
+        } else {
+          ctx.fillRect(legendX, legendY - 20, pillW, 30);
+        }
+        ctx.fillStyle = zone.color;
+        ctx.font = "700 13px " + FONT;
+        ctx.fillText(code, legendX + 16, legendY);
+        ctx.fillStyle = "rgba(255,255,255,0.75)";
+        ctx.font = "400 14px " + FONT;
+        ctx.fillText(zone.label, legendX + 16 + codeW + 8, legendY);
+        legendX += pillW + 10;
+      });
+      const half = Math.ceil(rows.length / 2);
+      const rowH = 48;
+      const gap = 24;
+      const colW = (W - 120 - gap) / 2;
+      const top = 420;
+      rows.forEach((row, idx) => {
+        const col = idx < half ? 0 : 1;
+        const rowIndex = idx < half ? idx : idx - half;
+        const x = 60 + col * (colW + gap);
+        const y = top + rowIndex * rowH;
+        const position = idx + 1;
+        const zoneTint = ZONES[zoneLabel(position)].tint;
+        ctx.fillStyle = zoneTint;
+        if (ctx.roundRect) {
+          ctx.beginPath();
+          ctx.roundRect(x, y, colW, rowH - 6, 8);
+          ctx.fill();
+        } else {
+          ctx.fillRect(x, y, colW, rowH - 6);
+        }
+        const zc = zoneColor(position);
+        ctx.fillStyle = zc;
+        ctx.fillRect(x, y + 6, 4, rowH - 18);
+        ctx.fillStyle = "rgba(255,255,255,0.6)";
+        ctx.font = "600 19px " + FONT;
+        ctx.textAlign = "right";
+        ctx.fillText(String(position), x + 52, y + 28);
+        ctx.textAlign = "left";
+        ctx.fillStyle = "#ffffff";
+        ctx.font = "700 20px " + FONT;
+        ctx.fillText(row.name || row.code, x + 72, y + 28);
+        ctx.textAlign = "right";
+        if (row.actual != null) {
+          ctx.fillStyle = row.hit === 0 ? "#4ade80" : "rgba(255,255,255,0.5)";
+          ctx.font = "600 15px " + FONT;
+          ctx.fillText("→ " + row.actual, x + colW - 16, y + 28);
+        } else {
+          ctx.fillStyle = zc;
+          ctx.font = "700 12px " + FONT;
+          ctx.fillText(zoneLabel(position), x + colW - 16, y + 27);
+        }
+        ctx.textAlign = "left";
+      });
+      const footerY = H - 76;
+      ctx.fillStyle = "rgba(0,0,0,0.35)";
+      ctx.fillRect(0, footerY, W, 76);
+      const settled = this.settledAtLabel();
+      ctx.fillStyle = "rgba(255,255,255,0.6)";
+      ctx.font = "600 15px " + FONT;
+      ctx.fillText(this.shareUrl().replace(/^https?:\/\//, ""), 60, footerY + (settled ? 36 : 46));
+      if (settled) {
+        ctx.fillStyle = "rgba(255,255,255,0.45)";
+        ctx.font = "500 13px " + FONT;
+        ctx.fillText(settled, 60, footerY + 58);
+      }
+      ctx.fillStyle = ACCENT;
+      ctx.font = "600 15px " + FONT;
+      ctx.textAlign = "right";
+      ctx.fillText("Play at " + this.buildYoursUrl(), W - 60, footerY + 46);
+      ctx.textAlign = "left";
+      return canvas;
+    },
+    // JPEG, not PNG. Two things drove the ~2.6MB PNG: a 2x supersampled 1200x1200 canvas
+    // (5.76M pixels) and PNG's lossless encoding of a full-bleed gradient, close to its worst
+    // case. Now 1080x1080 at 1x (1.17M pixels, ~5x fewer) encoded as JPEG q0.9 — flat colour
+    // and text are what JPEG handles well, so the visible result is unchanged.
+    _toBlob(callback) {
+      this._drawCard().toBlob(callback, "image/jpeg", 0.9);
+    },
+    downloadCard() {
+      if (this.rendering) return;
+      this.rendering = true;
+      try {
+        this._toBlob((blob) => {
+          this.rendering = false;
+          if (!blob) return;
+          const url = URL.createObjectURL(blob);
+          const link = document.createElement("a");
+          link.href = url;
+          link.download = "final-table.jpg";
+          link.click();
+          URL.revokeObjectURL(url);
+        });
+      } catch (e) {
+        this.rendering = false;
+        console.warn("Failed to render share card:", e);
+      }
+    },
+    shareCard() {
+      if (!this.canShareFiles) {
+        this.copyLink();
+        return;
+      }
+      this._toBlob((blob) => {
+        if (!blob) return;
+        const file = new File([blob], "final-table.jpg", { type: "image/jpeg" });
+        if (!navigator.canShare({ files: [file] })) {
+          this.copyLink();
+          return;
+        }
+        navigator.share({ files: [file], text: this.shareText(), url: this.shareUrl() }).catch(() => {
+        });
+      });
+    },
+    displayUrl() {
+      return this.shareUrl().replace(/^https?:\/\//, "");
+    },
+    copyText() {
+      this._copy(this.shareText(), "copiedText");
+    },
+    copyLink() {
+      this._copy(this.shareUrl(), "copiedLink");
+    },
+    // Ticks the matching icon for 2s, the same feedback the main share panel gives.
+    _copy(value, flag) {
+      if (!navigator.clipboard || !value) return;
+      navigator.clipboard.writeText(value).then(
+        () => {
+          this[flag] = true;
+          setTimeout(() => this[flag] = false, 2e3);
+        },
+        () => {
+        }
+      );
+    }
+  };
+};
 const WHAT_IF_CHIPS = {
   H: [[1, 0], [2, 0], [2, 1]],
   D: [[1, 1], [0, 0], [2, 2]],

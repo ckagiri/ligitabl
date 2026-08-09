@@ -1,0 +1,197 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <!--
+      Entirely Alpine-rendered (x-for over `teams`), matching fragments/prediction-table.html: a swap
+      has to reorder rows in place, which server-rendered rows cannot do. Row data comes from the
+      component's data-rows JSON, so team display names are available client-side.
+
+      Two columns, not one long list: 20 rows in a single column forces the page to scroll while
+      swapping, so the two teams you want to trade are often not on screen together. Both columns
+      render from the same `teams` array, so a swap still reorders the whole table.
+
+      Interactivity is decided by the component (canEdit), not here — so the read-only public view
+      mounts the same fragment and simply never enables tapping.
+
+      Row styling mirrors fragments/prediction-table.html deliberately — badge, blue selection dot,
+      amber dirty tint, ↑/↓ movement arrows — so the two games read as one product. On top of that
+      each row carries a faint qualification-zone wash; selected and dirty use the -100 step so they
+      always out-shout the zone colour underneath them.
+
+      Hover is a ring rather than a background, so it layers over the zone wash instead of replacing
+      it — a hover that blanked the tint would read as the row changing zone. It is a copy,
+      not a reuse of `interactive-table`: that fragment is parameterised on standings/fixtures/
+      points/GD/form, none of which exist before GW1, so reusing it would mount five toggles that
+      render "-" for the entire pre-season.
+    -->
+    <!--
+      One x-for over `teams`, with CSS splitting it into columns. The previous version nested an
+      x-for over `[leftColumn(), rightColumn()]` — a fresh array literal on every render, so any
+      state change (selecting a row, for instance) produced new array identities and made Alpine
+      tear down and rebuild both column subtrees rather than patch the one row that changed.
+
+      `columns-2` reflows the same single list into two, so there is nothing to rebuild and each row
+      is keyed stably by team code.
+    -->
+    <div th:fragment="table" class="gap-x-6 sm:columns-2">
+      <template x-for="team in teams" :key="team.code">
+        <div
+          @click="onRowTap(team.code)"
+          :data-team-code="team.code"
+          :class="[
+            canEdit() ? 'cursor-pointer hover:ring-1 hover:ring-gray-300' : 'no-hover',
+            isSelected(team.code)
+              ? 'bg-blue-100 ring-1 ring-blue-400'
+              : (isDirty(team.code) ? 'bg-amber-100' : zoneRowClass(team.position))
+          ]"
+          class="prediction-row mb-1 flex break-inside-avoid items-center gap-2 overflow-hidden rounded-md border border-gray-100 py-2 pr-3 transition-all duration-200"
+        >
+              <!-- Zone band: colour only, so it never competes with the row tints. -->
+              <span
+                class="h-8 w-1 flex-shrink-0 rounded-r"
+                :class="zoneBarClass(team.position)"
+              ></span>
+
+              <span
+                class="w-6 flex-shrink-0 text-right text-sm font-bold text-gray-900"
+                x-text="team.position"
+              ></span>
+
+              <span
+                class="position-change w-6 flex-shrink-0 text-xs font-semibold"
+                :class="{
+                  'text-green-600': getPositionChange(team.code)?.startsWith('↑'),
+                  'text-red-600': getPositionChange(team.code)?.startsWith('↓')
+                }"
+                x-text="getPositionChange(team.code)"
+              ></span>
+
+              <span
+                class="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded text-[11px] font-bold"
+                :class="teamBadgeClasses(team.code)"
+                x-text="team.code"
+              ></span>
+
+              <span class="flex min-w-0 flex-1 items-center gap-1">
+                <!-- Selection dot: the first tap of a swap. -->
+                <span
+                  x-show="isSelected(team.code)"
+                  class="flex-shrink-0 text-xs font-medium text-blue-600"
+                  >●</span
+                >
+                <span class="truncate text-sm font-medium text-gray-900">
+                  <span class="lg:hidden" x-text="team.shortName || team.name"></span>
+                  <span class="hidden lg:inline" x-text="team.name"></span>
+                </span>
+              </span>
+
+              <!--
+                Live columns: where the team actually sits now, and the gap. Rendered on the same
+                row as the prediction rather than in a separate table, so "I said 3rd, they're 1st"
+                reads left to right. Hidden entirely outside the locked-but-unscored state, which
+                is the only time `hasLiveProgress` is true.
+              -->
+              <template x-if="hasLiveProgress">
+                <span class="flex flex-shrink-0 items-center gap-1.5">
+                  <span
+                    class="text-[10px] font-medium uppercase tracking-wide text-gray-400"
+                    >now</span
+                  >
+                  <span
+                    class="w-5 text-right text-sm font-semibold"
+                    :class="liveOnTarget(team.code) ? 'text-emerald-600' : 'text-gray-700'"
+                    x-text="livePosition(team.code) ?? '–'"
+                  ></span>
+                  <span
+                    class="w-7 text-xs font-semibold"
+                    :class="{
+                      'text-green-600': liveMovement(team.code)?.startsWith('↑'),
+                      'text-red-600': liveMovement(team.code)?.startsWith('↓')
+                    }"
+                    x-text="liveMovement(team.code)"
+                  ></span>
+                </span>
+              </template>
+
+              <span
+                class="flex-shrink-0 text-[10px] font-semibold uppercase tracking-wide"
+                :class="zoneTextClass(team.position)"
+            x-text="zoneLabel(team.position)"
+          ></span>
+        </div>
+      </template>
+    </div>
+
+    <!--
+      The revealed result: prediction beside the real finish, with the distance for each row.
+      Server-rendered — nothing here is interactive, and resultRankings is non-null only once the
+      row is scored (Change 5).
+
+      The header is conditional, not absent. It was dropped once because an unconditional thead
+      rendered as a stray empty strip when the fragment was inserted with no rows — but without it
+      a row reads "1 Leeds 11 10" and nothing says which number is the finish and which is the gap.
+      th:if on the thead fixes the empty-strip problem without costing the labels.
+    -->
+    <table th:fragment="result" class="min-w-full divide-y divide-gray-200">
+      <thead th:if="${resultRankings != null and !resultRankings.isEmpty()}">
+        <tr class="bg-gray-50">
+          <th
+            scope="col"
+            class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+          >
+            You said
+          </th>
+          <th
+            scope="col"
+            class="px-3 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500"
+          >
+            Club
+          </th>
+          <th
+            scope="col"
+            class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500"
+          >
+            Finished
+          </th>
+          <th
+            scope="col"
+            title="Places between your call and where the club actually finished"
+            class="px-3 py-2 text-right text-xs font-medium uppercase tracking-wider text-gray-500"
+          >
+            Off by
+          </th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-200 bg-white">
+        <tr th:each="row : ${resultRankings}">
+          <td
+            class="px-3 py-2 text-sm font-bold text-gray-900"
+            th:text="${row.ranking.position}"
+          >
+            1
+          </td>
+          <td class="px-3 py-2 text-sm font-medium text-gray-900">
+            <span
+              th:with="team=${teamsByCode != null ? teamsByCode.get(row.ranking.code) : null}"
+              th:text="${team != null ? (team.shorterName != null ? team.shorterName : team.shortName) : row.ranking.code}"
+              >Team</span
+            >
+          </td>
+          <td
+            class="px-3 py-2 text-right text-sm text-gray-500"
+            th:text="${row.standingsPosition}"
+          >
+            1
+          </td>
+          <td class="px-3 py-2 text-right text-sm">
+            <span
+              th:text="${row.hit}"
+              th:classappend="${row.hit == 0} ? 'font-semibold text-emerald-600' : 'text-gray-500'"
+              >0</span
+            >
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>

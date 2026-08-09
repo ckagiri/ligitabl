@@ -1,0 +1,140 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <head>
+    <!-- Unfurl tags: the payoff of this game is showing people what you called in August. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" th:content="${ogTitle}" />
+    <meta property="og:description" th:content="${ogDescription}" />
+    <meta property="og:url" th:content="${shareUrl}" />
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" th:content="${ogTitle}" />
+    <meta name="twitter:description" th:content="${ogDescription}" />
+  </head>
+  <body>
+    <!-- No px/py here: layout/base.html's <main> already supplies them. -->
+    <div layout:fragment="content" class="mx-auto max-w-5xl">
+      <header class="mb-6">
+        <h1 class="text-2xl font-semibold text-gray-900">
+          <span th:text="${ownerPossessive}">Player's</span> Final Table
+        </h1>
+        <!--
+          A visitor here usually arrives from a shared image or link with no idea what they are
+          looking at. The season alone did not say — this states the game in one line, and whether
+          the numbers below are final or still pending.
+        -->
+        <p class="mt-1 text-sm text-gray-500">
+          <span th:text="${seasonName}">Season</span> · how they called the whole
+          table before a ball was kicked
+          <span th:if="${revealed == true and maxScore != null}"
+            >, scored out of <strong th:text="${maxScore}">400</strong></span
+          >
+        </p>
+      </header>
+
+      <!-- Captions mirror the owner's page: four bare numbers do not say how they relate. -->
+      <th:block th:if="${revealed == true}">
+        <div class="mb-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <div class="rounded-lg border border-gray-200 bg-white p-3">
+            <div class="text-xs uppercase text-gray-500">Total</div>
+            <div class="text-xl font-semibold text-gray-900">
+              <span th:text="${totalScore}">0</span
+              ><span
+                th:if="${maxScore != null}"
+                class="text-sm font-medium text-gray-400"
+                th:text="' / ' + ${maxScore}"
+                > / 400</span
+              >
+            </div>
+            <div class="mt-0.5 text-[11px] text-gray-400">base + bonus</div>
+          </div>
+          <div class="rounded-lg border border-gray-200 bg-white p-3">
+            <div class="text-xs uppercase text-gray-500">Base</div>
+            <div class="text-xl font-semibold text-gray-900">
+              <span th:text="${baseScore}">0</span
+              ><span
+                th:if="${maxHitPoints != null}"
+                class="text-sm font-medium text-gray-400"
+                th:text="' / ' + ${maxHitPoints}"
+                > / 200</span
+              >
+            </div>
+            <div class="mt-0.5 text-[11px] text-gray-400">distance kept</div>
+          </div>
+          <div class="rounded-lg border border-gray-200 bg-white p-3">
+            <div class="text-xs uppercase text-gray-500">Exact</div>
+            <div class="text-xl font-semibold text-gray-900">
+              <span th:text="${zeroesCount}">0</span
+              ><span
+                th:if="${teamCount != null}"
+                class="text-sm font-medium text-gray-400"
+                th:text="' / ' + ${teamCount}"
+                > / 20</span
+              >
+            </div>
+            <div class="mt-0.5 text-[11px] text-gray-400">spot on</div>
+          </div>
+          <div class="rounded-lg border border-gray-200 bg-white p-3">
+            <div class="text-xs uppercase text-gray-500">Bonus</div>
+            <div
+              class="text-xl font-semibold text-gray-900"
+              th:text="${bonusPoints}"
+            >
+              0
+            </div>
+            <div
+              class="mt-0.5 text-[11px] text-gray-400"
+              th:if="${zeroesCount != null}"
+              th:text="${zeroesCount} + ' × ' + ${T(com.ligitabl.model.domain.service.FinalTableScorer).ZERO_BONUS}"
+            >
+              2 × 10
+            </div>
+          </div>
+        </div>
+      </th:block>
+
+      <th:block th:if="${revealed == false}">
+        <div
+          class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4"
+        >
+          <p class="text-sm text-gray-700">
+            Locked in before a ball was kicked. Revealed at the end of the season.
+          </p>
+        </div>
+      </th:block>
+
+      <!--
+        The same component, mounted read-only: entryOpen is false here so canEdit() never allows a
+        tap. Reusing it keeps one renderer for the table rather than a near-duplicate fragment.
+      -->
+      <div
+        x-data="Ligitabl.finalTablePage($el)"
+        th:attr="data-rows=${rowsJson},data-zones=${zonesJson},data-entry-open=false,data-has-entry=true"
+        class="rounded-lg bg-white p-4 shadow-sm sm:p-6"
+      >
+        <!-- The result table scrolls sideways if it must; the grid table reflows instead. -->
+        <th:block th:if="${revealed == true}">
+          <div class="overflow-x-auto">
+            <div th:replace="~{fragments/final-table-rows :: result}"></div>
+          </div>
+        </th:block>
+        <th:block th:if="${revealed == false}">
+          <div th:replace="~{fragments/final-table-rows :: table}"></div>
+        </th:block>
+      </div>
+
+      <div th:replace="~{fragments/final-table-share :: card}"></div>
+
+      <div class="mt-8">
+        <a
+          th:href="@{/final-table}"
+          class="rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-indigo-700"
+          >Make your own prediction</a
+        >
+      </div>
+    </div>
+  </body>
+</html>

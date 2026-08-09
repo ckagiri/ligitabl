@@ -10,6 +10,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.annotation.Order;
+import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
@@ -218,8 +219,18 @@ public class SecurityConfig {
                         .authenticated()
                         .requestMatchers("/predictions/user/guest", "/predictions/user/guest/*")
                         .permitAll()
+                        .requestMatchers("/final-table/u/**")
+                        .permitAll()
+                        .requestMatchers(HttpMethod.POST, "/final-table")
+                        .authenticated()
+                        .requestMatchers("/final-table", "/final-table/leaderboard")
+                        .permitAll()
                         .requestMatchers("/seasonprediction/**")
                         .hasRole("PLAYER")
+                        // Scoring triggers, not page routes. ADMIN-only; /dev/** additionally does
+                        // not exist as a bean outside non-prod profiles.
+                        .requestMatchers("/dev/final-table/**", "/admin/final-table/**")
+                        .hasRole("ADMIN")
                         .requestMatchers("/contests/**")
                         .authenticated()
                         .requestMatchers("/profile/**")

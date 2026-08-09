@@ -10,6 +10,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.notification.outbox.OutboxEventTypes;
 import com.ligitabl.api.notification.outbox.SeasonCompletedPayload;
+import com.ligitabl.api.rest.finaltable.scorefinaltable.FinalTableScoringHook;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonState;
@@ -32,6 +33,7 @@ public class CompleteSeasonUseCase {
     private final OutboxRepo outboxRepo;
     private final ObjectMapper objectMapper;
     private final CompetitionDefaults competitionDefaults;
+    private final FinalTableScoringHook finalTableScoringHook;
     private final Clock clock;
 
     public sealed interface Result permits Result.Ok, Result.SeasonNotFound, Result.SeasonNotEligible {
@@ -86,10 +88,25 @@ public class CompleteSeasonUseCase {
         }
 
         seasonRepo.save(season);
+        scoreFinalTable(season);
         enqueueSeasonCompleted(season);
 
         log.info("[ADMIN_COMPLETE_SEASON] season={} marked completed", season.getId());
         return new Result.Ok();
+    }
+
+    /**
+     * Scores the Final Table side game against the final standings, in this transaction so the result
+     * is there the moment the season is.
+     *
+     * <p> A side-game bug must not be able to fail an admin's completion.
+     */
+    private void scoreFinalTable(Season season) {
+        try {
+            finalTableScoringHook.onSeasonCompleted(season);
+        } catch (Exception e) {
+            log.error("[FINAL_TABLE_HOOK_FAILED] season={}: {}", season.getId(), e.getMessage(), e);
+        }
     }
 
     /**

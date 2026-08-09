@@ -16,6 +16,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.notification.outbox.OutboxEventTypes;
 import com.ligitabl.api.notification.outbox.SeasonCompletedPayload;
+import com.ligitabl.api.rest.finaltable.scorefinaltable.FinalTableScoringHook;
 import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Round;
@@ -43,6 +44,9 @@ class CompleteSeasonUseCaseTest {
     @Mock
     OutboxRepo outboxRepo;
 
+    @Mock
+    FinalTableScoringHook finalTableScoringHook;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     private CompleteSeasonUseCase useCase;
@@ -52,7 +56,14 @@ class CompleteSeasonUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new CompleteSeasonUseCase(
-                seasonRepo, roundRepo, matchRepo, outboxRepo, objectMapper, competitionDefaults, TestClock.FIXED);
+                seasonRepo,
+                roundRepo,
+                matchRepo,
+                outboxRepo,
+                objectMapper,
+                competitionDefaults,
+                finalTableScoringHook,
+                TestClock.FIXED);
         seasonId = UUID.randomUUID();
         roundId = UUID.randomUUID();
     }
@@ -177,6 +188,58 @@ class CompleteSeasonUseCaseTest {
         assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.Ok.class);
         assertThat(season.isCompleted()).isTrue();
         verify(seasonRepo).save(season);
+    }
+
+    @Test
+    void completingTheSeason_scoresTheFinalTableSideGame() {
+        Season season = buildSeason(3);
+        Round round = buildRound(3, true, true);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(roundRepo.findFirstNotFinalizedOrAdvanced(seasonId)).thenReturn(Optional.empty());
+        when(matchRepo.allMatchesFinished(roundId)).thenReturn(true);
+
+        useCase.execute();
+
+        verify(finalTableScoringHook).onSeasonCompleted(season);
+    }
+
+    /**
+     * The Final Table is a side game; completing the season is the admin's action. A failure in
+     * scoring it must not make a successful completion report as a failure — same contract as the
+     * outbox above.
+     */
+    @Test
+    void finalTableScoringFailure_doesNotBlockCompletion() {
+        Season season = buildSeason(3);
+        Round round = buildRound(3, true, true);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+        when(roundRepo.findFirstNotFinalizedOrAdvanced(seasonId)).thenReturn(Optional.empty());
+        when(matchRepo.allMatchesFinished(roundId)).thenReturn(true);
+        doThrow(new IllegalStateException("scoring blew up"))
+                .when(finalTableScoringHook)
+                .onSeasonCompleted(season);
+
+        var result = useCase.execute();
+
+        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.Ok.class);
+        assertThat(season.isCompleted()).isTrue();
+        verify(seasonRepo).save(season);
+        // The podium announcement still happens: the side game must not swallow the main flow.
+        verify(outboxRepo).save(any());
+    }
+
+    @Test
+    void ineligibleSeason_doesNotScoreTheFinalTable() {
+        Season season = buildSeason(3);
+        Round round = buildRound(2, true, true);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(round));
+
+        useCase.execute();
+
+        verify(finalTableScoringHook, never()).onSeasonCompleted(any());
     }
 
     /** A rejected completion must not announce a podium for a season that is still running. */

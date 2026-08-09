@@ -79,6 +79,13 @@ public class WebUserDetails implements UserDetails {
         return (displayName != null && !displayName.isBlank()) ? displayName : email;
     }
 
+    /**
+     * The stored display name, with no email fallback — null or blank when the user has not set one.
+     */
+    public String getRawDisplayName() {
+        return displayName;
+    }
+
     @Override
     public boolean isAccountNonExpired() {
         return true;

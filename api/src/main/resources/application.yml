@@ -105,6 +105,11 @@ ligitabl:
     # at the moment predictions open.
     enabled: ${AUTO_JOIN_ENABLED:true}
 
+  final-table:
+    dev-preview:
+      # Renders the "Score now (dev)" controls and enables POST /dev/final-table/**.
+      enabled: ${FINAL_TABLE_DEV_PREVIEW_ENABLED:false}
+
   outbox:
     # Kill-switch for the relay only (other schedulers unaffected). While false,
     # events accumulate as PENDING and are delivered once re-enabled.
