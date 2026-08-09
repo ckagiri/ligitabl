@@ -237,17 +237,17 @@ class GetFinalTableUseCaseTest {
     }
 
     @Test
-    void omitsShareLinksForASignedInUserWithNoTableYet() {
-        // The share card is gated on shareUrl, so this hides it entirely — right, because the
-        // public view 404s until a row exists, and the link would be dead on arrival.
+    void buildsAShareUrlBeforeTheFirstSaveSoTheCardCanAppearWithoutAReload() {
+        // The URL is knowable before a row exists, and saving is a client-side POST that never
+        // re-renders the page — so it has to be on hand for the moment the first save lands.
+        // Whether the card is *shown* is the client's call, gated on hasEntry.
         UUID userId = UUID.randomUUID();
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.empty());
 
         var data = useCase.execute(userId, "abc123", "Foobar").get();
 
         assertThat(data.hasEntry()).isFalse();
-        assertThat(data.shareUrl()).isNull();
-        assertThat(data.shareText()).isNull();
+        assertThat(data.shareUrl()).contains("/final-table/u/abc123/");
     }
 
     @Test
