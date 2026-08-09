@@ -107,9 +107,7 @@ ligitabl:
 
   final-table:
     dev-preview:
-      # Renders the "Score now (dev)" controls and enables POST /dev/final-table/**, which score
-      # the Final Table against *current* standings so the result view can be seen without waiting
-      # for May. Defaults false; also gated by @Profile("!prod") so prod cannot enable it at all.
+      # Renders the "Score now (dev)" controls and enables POST /dev/final-table/**.
       enabled: ${FINAL_TABLE_DEV_PREVIEW_ENABLED:false}
 
   outbox:

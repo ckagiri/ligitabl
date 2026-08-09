@@ -76,13 +76,7 @@ public class SaveFinalTablePredictionUseCase {
     }
 
     /**
-     * An empty batch is legal only as the baseline-accepting first save. Checked on row existence
-     * rather than swap count — a player who accepted the baseline and never swapped still has a row,
-     * so their second empty batch is rejected like anyone else's.
-     *
-     * <p>Runs before team validation: an empty batch has no codes to validate, and would otherwise
-     * fall through to a vacuous expectedOrder comparison that passes whenever the client's order
-     * happens to match.
+     * An empty batch is legal only as the baseline-accepting first save.
      */
     private Either<FinalTableError, Ctx> requireSomethingToSave(Ctx ctx, SaveFinalTableCommand command) {
         return command.isEmptyBatch() && ctx.existed()

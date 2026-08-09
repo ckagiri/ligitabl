@@ -66,18 +66,6 @@ public class FinalTableRowsJson {
     /**
      * As {@link #rows}, plus each team's position in the current standings — the locked-but-not-yet
      * revealed view, where a player can see how their table is tracking.
-     *
-     * <p>Emits {@code current} only; the distance and the ↑/↓ arrow are derived client-side, the
-     * same way {@code getPositionChange} already derives movement against the saved order. Nothing
-     * resembling a score is serialised, and deliberately no aggregate: a total, an exact-hit count
-     * or a mean distance would each be the provisional score in disguise, and the rule for this
-     * view is that the app does not do that arithmetic for the player.
-     *
-     * <p>⚠️ Not for the share card. {@link #shareRows} publishes to anyone holding the public link;
-     * provisional standings comparisons are for the owner's own page only.
-     *
-     * @param standings current standings; a team absent from them simply omits {@code current}
-     *     rather than failing, so a partial standings row degrades to "no reading yet" per team
      */
     public String liveRows(
             List<TeamRank> rankings, Map<String, Team> teamsByCode, List<StandingsTeamRank> standings) {
@@ -99,10 +87,6 @@ public class FinalTableRowsJson {
         return write(rows);
     }
 
-    /**
-     * Both names travel: the row shows the compact one on small screens and the fuller one from
-     * {@code lg} up, mirroring the main prediction table.
-     */
     private Map<String, Object> row(TeamRank rank, Map<String, Team> teamsByCode) {
         Team team = teamsByCode == null ? null : teamsByCode.get(rank.getCode());
         Map<String, Object> row = new LinkedHashMap<>();
@@ -131,12 +115,9 @@ public class FinalTableRowsJson {
      * {@code {"CL":[1,5],"UEL":[6,7],"UECL":[8,8],"REL":[18,20]}}.
      *
      * <p>Derived from the team count rather than hardcoded to 20, and emitted as data so the view
-     * needs no league-specific branching. A table too small for a zone simply omits it — better than
-     * colouring half a five-team league as Champions League places.
+     * needs no league-specific branching.
      *
-     * <p>⚠️ These are the current Premier League allocations. They are display-only — nothing about
-     * scoring reads them — but they will be wrong for another competition, so this is the one place
-     * to fix when a second league is added.
+     * <p>⚠️ These are the current Premier League allocations.
      */
     public String zones(int teamCount) {
         Map<String, int[]> zones = new LinkedHashMap<>();

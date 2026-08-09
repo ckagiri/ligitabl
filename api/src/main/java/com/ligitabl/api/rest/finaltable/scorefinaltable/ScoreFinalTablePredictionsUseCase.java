@@ -21,8 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Scores every Final Table prediction for a season, once, against the final standings.
  *
- * <p>One bounded pass over at most a few thousand rows. Scoring is per-row fault-isolated: a single
- * malformed prediction cannot fail the rest of the season.
+ * <p>Scoring is per-row fault-isolated: a single malformed prediction cannot fail the
+ * rest of the season.
  */
 @Component
 @RequiredArgsConstructor
@@ -103,8 +103,6 @@ public class ScoreFinalTablePredictionsUseCase {
         row.setZeroesCount(score.zeroesCount());
         row.setBonusPoints(score.bonusPoints());
         row.setTotalScore(score.totalScore());
-        // Set last: it is the reveal predicate, so it must never be set on a row whose numbers
-        // failed to compute.
         row.setScoredAt(now);
 
         predictionRepo.save(row);

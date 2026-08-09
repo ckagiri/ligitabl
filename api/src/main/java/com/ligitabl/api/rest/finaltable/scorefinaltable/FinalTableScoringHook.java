@@ -9,10 +9,6 @@ import lombok.extern.slf4j.Slf4j;
 
 /**
  * Scores the Final Table side game when an admin completes a season.
- *
- * <p>Hangs off {@code CompleteSeasonUseCase} rather than round finalization: that use case is
- * re-runnable and scheduler-triggered, so "last round finalized" happens repeatedly and is not a
- * season-end fact. Completion is the single explicit, admin-triggered, transactional end of season.
  */
 @Component
 @RequiredArgsConstructor

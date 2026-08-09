@@ -101,24 +101,6 @@ public class NavbarControllerAdvice {
 
     /**
      * Whether to offer the Final Table Predictor in the navbar.
-     *
-     * <p>Two ways to qualify, and a player needs only one:
-     *
-     * <ul>
-     *   <li><b>Entry is still open</b> — anyone can go and make a table, so the link is an
-     *       invitation. This is the guest on-ramp, and it covers signed-in players too.
-     *   <li><b>They already have a table</b> — it is theirs to revisit whether it is locked or
-     *       scored, and a locked table is the whole point of the game.
-     * </ul>
-     *
-     * <p>⚠️ Neither alone is sufficient, which an earlier version got wrong by returning true for
-     * every signed-in user. A player who never entered, arriving after the lock, was offered a link
-     * to a game they cannot join and have nothing in — a dead end, and exactly what the guest rule
-     * already avoided. The two cases are the same problem: do not advertise a closed game to
-     * someone with no stake in it.
-     *
-     * <p>Falls back to hiding the link if the season can't be resolved: a nav item that 503s is
-     * worse than an absent one.
      */
     @ModelAttribute("showFinalTableNav")
     public boolean showFinalTableNav(Principal principal) {
@@ -144,11 +126,6 @@ public class NavbarControllerAdvice {
 
     /**
      * Whether the Final Table still accepts entries.
-     *
-     * <p>Distinct from {@link #showFinalTableNav()}, which is true for any signed-in player because
-     * a locked table is still worth visiting. This one is for prompts that invite someone to go and
-     * <em>make</em> one — pointing a player at a game that closed at gameweek 1 is worse than
-     * staying quiet. Same defensive fallback: an unresolvable season means no prompt.
      */
     @ModelAttribute("finalTableEntryOpen")
     public boolean finalTableEntryOpen() {

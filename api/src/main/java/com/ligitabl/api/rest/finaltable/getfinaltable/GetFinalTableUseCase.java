@@ -75,9 +75,6 @@ public class GetFinalTableUseCase {
         boolean entryOpen = finalTableSupport.isEntryOpen(season);
         String shareUrl = publicId == null ? null : shareUrl(publicId, season);
 
-        // Locked, not yet scored, and the season has produced standings: show how the table is
-        // tracking. Read-only and non-persisting — deliberately NOT StandingsSource.CURRENT, which
-        // writes provisional scores into the result columns and flips `revealed` for everyone.
         List<StandingsTeamRank> liveStandings = !guest && prediction != null && !entryOpen && !revealed
                 ? standingsRepo.findLatestBySeason(season.getId()).map(Standings::getRankings).orElse(List.of())
                 : List.of();
@@ -115,14 +112,7 @@ public class GetFinalTableUseCase {
                 .liveRowsJson(liveProgress ? rowsJson.liveRows(rankings, teamsByCode, liveStandings) : "[]")
                 .ownerName(guest ? null : DisplayNames.clean(displayName))
                 .maxHitPoints(season.getMaxHitPoints())
-                // Same formula as the leaderboard and the public OG description: distance ceiling
-                // plus the per-club bonus, so it tracks the team count rather than assuming 400.
                 .maxScore(season.getMaxHitPoints() + rankings.size() * FinalTableScorer.ZERO_BONUS)
-                // What the base score gave up. Derived rather than stored — baseScore is already
-                // maxHitPoints minus this, so recomputing keeps the two from ever disagreeing.
-                // Null-checked on baseScore, not just `revealed`: scoredAt is written last, so a
-                // row whose scoring failed part-way is revealed with null score columns, and the
-                // caption must be absent there rather than crashing the page.
                 .totalHits(revealed && prediction.getBaseScore() != null
                         ? season.getMaxHitPoints() - prediction.getBaseScore()
                         : null)

@@ -53,8 +53,6 @@ public class GetFinalTableLeaderboardUseCase {
             int scored = predictionRepo.countScoredBySeason(seasonId);
             int totalPlayers = predictionRepo.countBySeason(seasonId);
 
-            // Same formula as the public view's OG description: distance ceiling plus 10 a club, so
-            // it tracks the season's team count instead of assuming 20 clubs and 400 points.
             int teamCount = season.getInitialRankings() == null
                     ? 0
                     : season.getInitialRankings().size();
@@ -78,12 +76,6 @@ public class GetFinalTableLeaderboardUseCase {
     }
 
     /**
-     * Collapses genuine ties to an equal displayed position: {@code row_number()} gives every row a
-     * distinct number, but rows tied on score, zeroes <em>and</em> settle time should read as tied.
-     *
-     * <p>Computed off the already-ordered page rather than with a {@code rank()} window, so
-     * pagination arithmetic stays unchanged.
-     *
      * <p>⚠️ A tie spanning a page boundary cannot be detected from within the page: the first row of
      * page 2 shows its own number even if it ties the last row of page 1. Accepted — the alternative
      * is a window function whose positions no longer match the offsets.

@@ -14,10 +14,6 @@ public sealed interface FinalTableError {
     /**
      * Round 1 is no longer OPEN, or the season is completed: the table is frozen for good.
      *
-     * <p>There is deliberately no {@code SeasonNotInPlay} alongside this. A completed season is never
-     * {@code IN_PLAY}, so a play-state check would fire first and report "not in play" for a table
-     * that is simply locked — and this game stays readable, frozen, for the whole season. One
-     * predicate answers "may this be touched", and this is its error.
      */
     record EntryClosed(String roundStatus) implements FinalTableError {}
 

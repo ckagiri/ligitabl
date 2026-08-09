@@ -22,17 +22,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Dev-only trigger for scoring the Final Table against <em>current</em> standings, so the result
- * view, the leaderboard and the share card can be looked at in minutes instead of in nine months.
- *
- * <p>Because a row is revealed when it is scored (not when the season completes), scoring here needs
- * no view-layer branch: press the button and every read path switches to its end-of-season shape.
- *
- * <p><b>Guarded twice, and the profile is the load-bearing one.</b> {@code @Profile("!prod")} means
- * these beans do not exist in production at all, so the endpoints are unreachable rather than merely
- * disabled; the property then keeps a misconfigured non-prod environment inert. A flag alone is one
- * application.yml mistake away from letting someone overwrite a real season's scores with
- * provisional ones.
+ * Dev-only trigger for scoring the Final Table against <em>current</em> standings.
  */
 @Controller
 @Profile("!prod")

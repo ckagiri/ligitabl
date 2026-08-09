@@ -99,9 +99,7 @@ public class CompleteSeasonUseCase {
      * Scores the Final Table side game against the final standings, in this transaction so the result
      * is there the moment the season is.
      *
-     * <p>The hook swallows its own failures; this catch is deliberate belt-and-braces so that
-     * completing a season can never depend on a side game's internal error discipline. A side-game
-     * bug must not be able to fail an admin's completion.
+     * <p> A side-game bug must not be able to fail an admin's completion.
      */
     private void scoreFinalTable(Season season) {
         try {

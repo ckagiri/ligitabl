@@ -19,11 +19,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Admin recompute of the Final Table scores against the final round's standings.
- *
  * <p>The retry path for {@code FinalTableScoringHook}, which swallows and logs so that a side-game
- * failure cannot block an admin from completing a season. Always {@code FINAL_ROUND} — this is a real
- * scoring run, never the dev preview's provisional one.
+ * failure cannot block an admin from completing a season.
  */
 @Controller
 @RequestMapping("/admin/final-table")

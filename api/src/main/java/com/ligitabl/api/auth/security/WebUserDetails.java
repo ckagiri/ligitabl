@@ -81,11 +81,6 @@ public class WebUserDetails implements UserDetails {
 
     /**
      * The stored display name, with no email fallback — null or blank when the user has not set one.
-     *
-     * <p>For callers that must not leak an address. {@link #getDisplayName()}'s fallback is right
-     * for in-app chrome the user is already looking at, and wrong for anything that leaves the app:
-     * the final-table share card is a downloadable image people post publicly, so it falls back to
-     * generic wording instead.
      */
     public String getRawDisplayName() {
         return displayName;
