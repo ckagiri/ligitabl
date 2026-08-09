@@ -30,9 +30,9 @@ public class GetFinalTableLeaderboardUseCase {
      * @param displayPositions per-entry position with genuine ties collapsed (=4, =4, 6)
      * @param userEntry the viewer's own standing, or null
      * @param totalEntries scored rows in the season, for pagination
-     * @param maxScore the best score obtainable this season — distance ceiling plus the per-club
-     *     bonus, so a ranked number can be read against something. Derived from the season rather
-     *     than assuming 20 clubs / 400 points
+     * @param maxScore the best score obtainable this season — distance ceiling, the per-club bonus
+     *     and the champion bonus, so a ranked number can be read against something. Derived from
+     *     the season rather than assuming 20 clubs / 425 points
      */
     public record FinalTableLeaderboardData(
             boolean revealed,
@@ -56,9 +56,8 @@ public class GetFinalTableLeaderboardUseCase {
             int teamCount = season.getInitialRankings() == null
                     ? 0
                     : season.getInitialRankings().size();
-            Integer maxScore = teamCount == 0
-                    ? null
-                    : season.getMaxHitPoints() + teamCount * FinalTableScorer.ZERO_BONUS;
+            Integer maxScore =
+                    teamCount == 0 ? null : FinalTableScorer.maxScore(season.getMaxHitPoints(), teamCount);
 
             if (scored == 0) {
                 return new FinalTableLeaderboardData(

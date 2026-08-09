@@ -139,7 +139,7 @@ class FinalTableRowsJsonTest {
         // The distance is derived client-side precisely so nothing score-shaped is serialised.
         String json = rowsJson.liveRows(TABLE, Map.of(), List.of(standing("ARS", 2)));
 
-        assertThat(json).doesNotContain("hit", "score", "zero", "bonus", "distance");
+        assertThat(json).doesNotContain("hit", "score", "zero", "bonus", "distance", "champion");
     }
 
     @Test

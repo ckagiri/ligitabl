@@ -43,7 +43,8 @@ import lombok.Builder;
  * @param baseScore distance score, null until revealed
  * @param zeroesCount exact positions, null until revealed
  * @param bonusPoints zeroes * 10, null until revealed
- * @param totalScore base + bonus, null until revealed
+ * @param championBonus 25 when the club placed 1st finished 1st, else 0; null until revealed
+ * @param totalScore base + bonus + champion, null until revealed
  * @param roundStatus round 1's resolved status, for the locked-state copy
  * @param isGuest true when nobody is signed in — read-only teaser with a sign-up CTA
  * @param shareRowsJson rows for the share canvas, with actual/hit once revealed
@@ -59,7 +60,8 @@ import lombok.Builder;
  *     publicly, so the caller falls back to generic wording rather than to any identifier
  * @param maxHitPoints the distance ceiling a base score counts down from, so "90" can be shown as
  *     "90 / 200". From the season, never assumed
- * @param maxScore the best obtainable total — {@code maxHitPoints} plus the per-club bonus
+ * @param maxScore the best obtainable total — {@code maxHitPoints}, the per-club bonus on every
+ *     club, and the champion bonus
  * @param totalHits places lost across every club; what separates {@code baseScore} from the
  *     ceiling. Null until revealed
  */
@@ -82,6 +84,7 @@ public record FinalTableViewData(
         Integer baseScore,
         Integer zeroesCount,
         Integer bonusPoints,
+        Integer championBonus,
         Integer totalScore,
         String roundStatus,
         String shareUrl,

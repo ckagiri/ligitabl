@@ -102,6 +102,7 @@ public class ScoreFinalTablePredictionsUseCase {
         row.setBaseScore(score.baseScore());
         row.setZeroesCount(score.zeroesCount());
         row.setBonusPoints(score.bonusPoints());
+        row.setChampionBonus(score.championBonus());
         row.setTotalScore(score.totalScore());
         row.setScoredAt(now);
 

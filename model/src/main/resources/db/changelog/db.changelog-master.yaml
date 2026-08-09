@@ -87,3 +87,5 @@ databaseChangeLog:
       file: db/changelog/20260801_1_spring_session.yaml
   - include:
       file: db/changelog/20260808_1_final_table_prediction.yaml
+  - include:
+      file: db/changelog/20260809_1_final_table_champion_bonus.yaml

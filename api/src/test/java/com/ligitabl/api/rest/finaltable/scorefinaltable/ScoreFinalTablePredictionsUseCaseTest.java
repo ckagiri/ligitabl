@@ -111,7 +111,8 @@ class ScoreFinalTablePredictionsUseCaseTest {
         assertThat(exact.getBaseScore()).isEqualTo(MAX_HIT_POINTS);
         assertThat(exact.getZeroesCount()).isEqualTo(4);
         assertThat(exact.getBonusPoints()).isEqualTo(40);
-        assertThat(exact.getTotalScore()).isEqualTo(MAX_HIT_POINTS + 40);
+        assertThat(exact.getChampionBonus()).isEqualTo(FinalTableScorer.CHAMPION_BONUS);
+        assertThat(exact.getTotalScore()).isEqualTo(MAX_HIT_POINTS + 40 + FinalTableScorer.CHAMPION_BONUS);
         assertThat(exact.getScoredAt()).isEqualTo(now);
         assertThat(exact.isScored()).isTrue();
         assertThat(exact.getResultRankings()).hasSize(4);
@@ -162,7 +163,8 @@ class ScoreFinalTablePredictionsUseCaseTest {
 
         assertThat(summary.scored()).isEqualTo(1);
         assertThat(summary.skipped()).isZero();
-        assertThat(alreadyScored.getTotalScore()).isEqualTo(MAX_HIT_POINTS + 40);
+        assertThat(alreadyScored.getTotalScore()).isEqualTo(MAX_HIT_POINTS + 40 + FinalTableScorer.CHAMPION_BONUS);
+        assertThat(alreadyScored.getChampionBonus()).isEqualTo(FinalTableScorer.CHAMPION_BONUS);
         assertThat(alreadyScored.getScoredAt()).isEqualTo(now);
     }
 

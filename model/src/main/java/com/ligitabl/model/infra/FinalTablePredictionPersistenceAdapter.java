@@ -112,6 +112,7 @@ public class FinalTablePredictionPersistenceAdapter implements FinalTablePredict
                 .setNull(T_FINAL_TABLE_PREDICTION.C_BASE_SCORE)
                 .setNull(T_FINAL_TABLE_PREDICTION.C_ZEROES_COUNT)
                 .setNull(T_FINAL_TABLE_PREDICTION.C_BONUS_POINTS)
+                .setNull(T_FINAL_TABLE_PREDICTION.C_CHAMPION_BONUS)
                 .setNull(T_FINAL_TABLE_PREDICTION.C_TOTAL_SCORE)
                 // Must be nulled too: it is the reveal predicate, so leaving it set would produce
                 // a "revealed" page with blank numbers.
@@ -226,6 +227,7 @@ public class FinalTablePredictionPersistenceAdapter implements FinalTablePredict
                 .baseScore(record.getBaseScore())
                 .zeroesCount(record.getZeroesCount())
                 .bonusPoints(record.getBonusPoints())
+                .championBonus(record.getChampionBonus())
                 .totalScore(record.getTotalScore())
                 .scoredAt(toInstant(record.getScoredAt()))
                 .createDate(record.getCreateDate())
@@ -248,6 +250,7 @@ public class FinalTablePredictionPersistenceAdapter implements FinalTablePredict
         rec.setBaseScore(model.getBaseScore());
         rec.setZeroesCount(model.getZeroesCount());
         rec.setBonusPoints(model.getBonusPoints());
+        rec.setChampionBonus(model.getChampionBonus());
         rec.setTotalScore(model.getTotalScore());
         rec.setScoredAt(toOffsetDateTime(model.getScoredAt()));
     }
