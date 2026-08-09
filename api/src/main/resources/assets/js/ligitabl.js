@@ -1657,13 +1657,14 @@ window.Ligitabl.finalTableShareCard = function (el) {
                 ctx.fillText(settled, 60, footerY + 58);
             }
 
-            // Host derived from the share URL rather than hardcoded, so the card is right on
-            // localhost and prod alike. A typeable path beats a bare brand name: the whole point of
-            // the footer is that someone seeing the image can go and make their own.
+            // Two URLs share this footer: the personal table on the left, the way in on the right.
+            // "Play at" rather than a bare address is what tells them apart — otherwise a reader
+            // sees two near-identical links and has to work out why. "Play" over "Build yours"
+            // because it also covers the people who will just watch the leaderboard.
             ctx.fillStyle = ACCENT;
             ctx.font = '600 15px ' + FONT;
             ctx.textAlign = 'right';
-            ctx.fillText('Build yours at ' + this.buildYoursUrl(), W - 60, footerY + 46);
+            ctx.fillText('Play at ' + this.buildYoursUrl(), W - 60, footerY + 46);
             ctx.textAlign = 'left';
 
             return canvas;
