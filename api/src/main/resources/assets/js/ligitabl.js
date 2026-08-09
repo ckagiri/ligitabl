@@ -27,6 +27,29 @@ window.Ligitabl._parseJSON = function (raw, fallback) {
     }
 };
 
+/**
+ * The team-lines block of the Final Table share text, from live rows.
+ *
+ * ⚠️ Mirrors SharePredictionTextBuilder.appendTeamLines — HEAD_COUNT 5, TAIL_COUNT 3, an ellipsis
+ * line between them, and the whole list when it would not save anything. Duplicated because the
+ * order can change client-side after a save with no re-render; if the server's truncation changes,
+ * this has to change with it.
+ */
+window.Ligitabl._shareTeamLines = function (teams) {
+    const HEAD = 5;
+    const TAIL = 3;
+    const line = (team, index) => `${index + 1} ${team.shortName || team.name || team.code}\n`;
+
+    if (teams.length <= HEAD + TAIL) {
+        return teams.map(line).join('');
+    }
+    return (
+        teams.slice(0, HEAD).map(line).join('') +
+        '...\n' +
+        teams.slice(-TAIL).map((team, i) => line(team, teams.length - TAIL + i)).join('')
+    );
+};
+
 window.Ligitabl._parseDataAttributes = function (el) {
     const p = Ligitabl._parseJSON;
     return {
@@ -1415,8 +1438,36 @@ window.Ligitabl.finalTableShareCard = function (el) {
             return dataset.shareUrl || '';
         },
 
+        /**
+         * The share text, with the team lines re-listed in the order currently on screen.
+         *
+         * Same staleness as rows(): `data-share-text` is built server-side at page load, so after a
+         * save-without-reload it still lists the order the page arrived with. Only the team block
+         * is rebuilt — the header and the footer (URL, "shared before kickoff") are the server's
+         * wording and are reused verbatim, so this cannot drift from SharePredictionTextBuilder's
+         * phrasing, only from its ordering, which is the point.
+         *
+         * Falls back to the server string whenever the shape is not what is expected, or when
+         * mounted standalone with no parent component (the public view).
+         */
         shareText() {
-            return dataset.shareText || '';
+            const seeded = dataset.shareText || '';
+            const live = this._liveTeams();
+            if (!seeded || !live) return seeded;
+
+            // Header ends at the first blank line; footer starts at the last one.
+            const headEnd = seeded.indexOf('\n\n');
+            const footStart = seeded.lastIndexOf('\n\n');
+            if (headEnd < 0 || footStart <= headEnd) return seeded;
+
+            // +1 not +2 on the tail: the rebuilt team block already ends in a newline, and the
+            // footer boundary is a "\n\n", so taking both would insert a blank line the server's
+            // version does not have.
+            return (
+                seeded.slice(0, headEnd + 2) +
+                Ligitabl._shareTeamLines(live) +
+                seeded.slice(footStart + 1)
+            );
         },
 
         subtitle() {

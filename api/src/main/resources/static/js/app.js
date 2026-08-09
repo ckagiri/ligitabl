@@ -440,6 +440,16 @@ window.Ligitabl._parseJSON = function(raw, fallback) {
     return fallback;
   }
 };
+window.Ligitabl._shareTeamLines = function(teams) {
+  const HEAD = 5;
+  const TAIL = 3;
+  const line = (team, index) => `${index + 1} ${team.shortName || team.name || team.code}
+`;
+  if (teams.length <= HEAD + TAIL) {
+    return teams.map(line).join("");
+  }
+  return teams.slice(0, HEAD).map(line).join("") + "...\n" + teams.slice(-TAIL).map((team, i) => line(team, teams.length - TAIL + i)).join("");
+};
 window.Ligitabl._parseDataAttributes = function(el) {
   const p = Ligitabl._parseJSON;
   return {
@@ -1448,6 +1458,7 @@ window.Ligitabl.finalTablePage = function(el) {
       }
       this.inFlight = true;
       this.message = null;
+      const wasEntered = this.hasEntry;
       const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
       const headers = { "Content-Type": "application/json" };
       if (csrfToken) headers["X-CSRF-TOKEN"] = csrfToken;
@@ -1464,8 +1475,12 @@ window.Ligitabl.finalTablePage = function(el) {
         if (ok && data.success) {
           this.pendingSwaps = [];
           this.originalTeams = JSON.parse(JSON.stringify(this.teams));
+          const firstSave = !wasEntered;
           this.hasEntry = true;
           this._flash(data.message || "Saved", "success");
+          if (firstSave) {
+            this.$nextTick(() => this.$dispatch("final-table-saved", { firstSave: true }));
+          }
           return;
         }
         if (status === 409) {
@@ -1536,8 +1551,41 @@ window.Ligitabl.finalTableShareCard = function(el) {
         this.canShareFiles = false;
       }
     },
+    /**
+     * The rows to draw, in the order currently on screen.
+     *
+     * `data-rows` is rendered once at page load, so it goes stale the moment a swap is saved
+     * without a reload — the card would draw the order the page arrived with while the table
+     * above it shows the new one. That was invisible while the card only existed for players
+     * who already had a saved table (load order *was* saved order); it shows as soon as the
+     * card can appear before the first save.
+     *
+     * So prefer the live order from the parent finalTablePage component, which this card is
+     * nested inside. `actual`/`hit` still come from the attribute — those are scored figures
+     * the client never recomputes — merged by code onto the live ordering.
+     */
     rows() {
-      return Ligitabl._parseJSON(dataset.rows, []);
+      const seeded = Ligitabl._parseJSON(dataset.rows, []);
+      const live = this._liveTeams();
+      if (!live) return seeded;
+      const extrasByCode = seeded.reduce((acc, row) => {
+        if (row.actual != null || row.hit != null) {
+          acc[row.code] = { actual: row.actual, hit: row.hit };
+        }
+        return acc;
+      }, {});
+      return live.map((team) => ({ ...team, ...extrasByCode[team.code] || {} }));
+    },
+    /** The enclosing finalTablePage's teams, or null when mounted standalone (public view). */
+    _liveTeams() {
+      try {
+        const host = el?.closest?.('[x-data*="finalTablePage"]');
+        const data = host && window.Alpine ? Alpine.$data(host) : null;
+        const teams = data?.teams;
+        return Array.isArray(teams) && teams.length > 0 ? teams : null;
+      } catch (e) {
+        return null;
+      }
     },
     title() {
       return dataset.title || "My Final Table";
@@ -1545,8 +1593,26 @@ window.Ligitabl.finalTableShareCard = function(el) {
     shareUrl() {
       return dataset.shareUrl || "";
     },
+    /**
+     * The share text, with the team lines re-listed in the order currently on screen.
+     *
+     * Same staleness as rows(): `data-share-text` is built server-side at page load, so after a
+     * save-without-reload it still lists the order the page arrived with. Only the team block
+     * is rebuilt — the header and the footer (URL, "shared before kickoff") are the server's
+     * wording and are reused verbatim, so this cannot drift from SharePredictionTextBuilder's
+     * phrasing, only from its ordering, which is the point.
+     *
+     * Falls back to the server string whenever the shape is not what is expected, or when
+     * mounted standalone with no parent component (the public view).
+     */
     shareText() {
-      return dataset.shareText || "";
+      const seeded = dataset.shareText || "";
+      const live = this._liveTeams();
+      if (!seeded || !live) return seeded;
+      const headEnd = seeded.indexOf("\n\n");
+      const footStart = seeded.lastIndexOf("\n\n");
+      if (headEnd < 0 || footStart <= headEnd) return seeded;
+      return seeded.slice(0, headEnd + 2) + Ligitabl._shareTeamLines(live) + seeded.slice(footStart + 1);
     },
     subtitle() {
       return dataset.subtitle || "";
