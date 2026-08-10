@@ -195,7 +195,7 @@ All access banners live in `fragments/access-banners.html` and render only when 
 
 - With imported guest prediction (localStorage `ligitabl.guestPrediction`): "Your Guest Prediction Imported! We've loaded your prediction - review it and submit…"
 - Otherwise (`isPreSeasonRegistration`): "Ready to Predict! Your table's saved — make up to 5 swaps if you want to change it. It carries forward each gameweek."
-- Otherwise: "Ready to Predict! Your table's ready — submit as-is to join, or make up to 5 swaps first. It carries forward each gameweek."
+- Otherwise: "Ready to Predict! Your table's ready — submit as-is to join, or make up to 5 swaps. It carries forward each gameweek."
 
 This copy lives in `fragments/predict-cta.html` as `copy(isPreSeasonRegistration)`, shared with the pre-season banner in `predictions.html` — the two banners are mutually exclusive by season phase (`isPreSeason` vs `isInPlay || isOffSeason`, all derived from one `SeasonState`), and the identical sentence had previously drifted between them. The `!imported` variants are a `th:if`/`th:unless` split on `isPreSeasonRegistration` rather than one sentence with an interpolated verb: a pre-season registrant already has a saved entry, so "submit as-is to join" would be wrong for them (they're already in, and their button reads "Confirm Prediction" / "Update Prediction (n)"). The fragment expects an Alpine `imported` boolean in scope; both callers declare it with the same `x-data`/`x-init`.
 

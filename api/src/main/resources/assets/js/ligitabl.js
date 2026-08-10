@@ -548,9 +548,7 @@ window.Ligitabl.predictionPage = function (el) {
             this._clearStorage(GUEST_STORAGE_KEY);
             if (hadGuestStorage && !this.importedFromGuest) {
                 // Banners set `imported` from localStorage in their own x-init, which can run
-                // before this. When we clear a key we did NOT import from — pre-season
-                // registration and the opening round are both excluded from the import above —
-                // their "We've loaded your prediction" copy is a false claim, so tell them.
+                // before this.
                 // The importedFromGuest case is genuine and keeps its banner; reset()/submit
                 // clear it later.
                 window.dispatchEvent(new CustomEvent('guest-storage-cleared'));

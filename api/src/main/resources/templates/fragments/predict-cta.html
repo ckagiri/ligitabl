@@ -1,16 +1,7 @@
 <!-- Predict CTA Copy Fragment -->
 <!--
-  The "what do I do now?" sentence shown to a user who can still create/activate an entry.
-  Extracted because this exact pair was duplicated verbatim in two banners that are mutually
-  exclusive by season phase (SeasonPhase.resolve: isPreSeason vs isInPlay/isOffSeason), so the
-  copies could — and did — drift apart without anyone noticing:
-    - fragments/access-banners.html  "Ready to Predict!" green banner (in play / off-season)
-    - predictions.html               "🚀 Pre-Season" indigo banner (pre-season)
-
   Parameters:
     isPreSeasonRegistration: Boolean - unmerged pre-season registration (atRoundNumber == 0).
-          Such a user is already entered, so the copy must not tell them to "join": their
-          table is saved and the submit button reads "Confirm Prediction".
 
   Requires an Alpine `imported` boolean in scope at the call site — both callers declare
   x-data="{ imported: false }" with the same localStorage init.
@@ -19,8 +10,7 @@
   on `isInitialPrediction && !isOpeningRound` — never a pre-season registration. (A stale guest
   key left over from browsing logged-out used to leak this branch to them; the page now
   dispatches `guest-storage-cleared` when it clears a key it did not import, which the callers
-  listen for.) Hence the single unconditional sentence here: no verb ternary, no "to join"
-  guard — both existed only to serve a case that cannot occur.
+  listen for.)
 -->
 <th:block th:fragment="copy(isPreSeasonRegistration)">
   <span x-show="imported">We've loaded your prediction - review it and submit
@@ -29,6 +19,6 @@
     <th:block th:if="${isPreSeasonRegistration}">Your table's saved — make up to 5 swaps if you want to
       change it. It carries forward each gameweek.</th:block>
     <th:block th:unless="${isPreSeasonRegistration}">Your table's ready — submit as-is to join, or make up to 5
-      swaps first. It carries forward each gameweek.</th:block>
+      swaps. It carries forward each gameweek.</th:block>
   </span>
 </th:block>
