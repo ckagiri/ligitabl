@@ -466,7 +466,7 @@ class OutboxEventProcessorTest {
 
         when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
         when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(java.util.List.of(user1, user2));
-        when(createPredictionUseCase.resolveJoinContext(season)).thenReturn(Either.right(ctx));
+        when(createPredictionUseCase.resolveJoinContextAsOpen(season)).thenReturn(Either.right(ctx));
         when(createPredictionUseCase.executeWithContext(any(), eq(ctx), any()))
                 .thenReturn(Either.right(new CreatePredictionResult(UUID.randomUUID(), UUID.randomUUID(), 1, "ok")));
 
@@ -496,7 +496,7 @@ class OutboxEventProcessorTest {
 
         processor.processOne(event);
 
-        verify(createPredictionUseCase, never()).resolveJoinContext(any());
+        verify(createPredictionUseCase, never()).resolveJoinContextAsOpen(any());
         verify(outboxRepo).markSent(event.getId());
     }
 
@@ -510,7 +510,7 @@ class OutboxEventProcessorTest {
 
         when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
         when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(java.util.List.of(badUser, goodUser));
-        when(createPredictionUseCase.resolveJoinContext(season)).thenReturn(Either.right(ctx));
+        when(createPredictionUseCase.resolveJoinContextAsOpen(season)).thenReturn(Either.right(ctx));
         when(createPredictionUseCase.executeWithContext(eq(badUser), eq(ctx), any()))
                 .thenThrow(new RuntimeException("boom"));
         when(createPredictionUseCase.executeWithContext(eq(goodUser), eq(ctx), any()))
@@ -542,7 +542,7 @@ class OutboxEventProcessorTest {
         when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
         when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any()))
                 .thenReturn(java.util.List.of(firstUser, laterUser));
-        when(createPredictionUseCase.resolveJoinContext(season)).thenReturn(Either.right(ctx));
+        when(createPredictionUseCase.resolveJoinContextAsOpen(season)).thenReturn(Either.right(ctx));
         // jOOQ's DataAccessException, not Spring's — that is what the repos actually throw
         // here, as OutboxFailureIsolationIT demonstrates against a real Postgres.
         when(createPredictionUseCase.executeWithContext(eq(firstUser), eq(ctx), any()))
@@ -572,7 +572,7 @@ class OutboxEventProcessorTest {
         when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
         when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any()))
                 .thenReturn(java.util.List.of(firstUser, laterUser));
-        when(createPredictionUseCase.resolveJoinContext(season)).thenReturn(Either.right(ctx));
+        when(createPredictionUseCase.resolveJoinContextAsOpen(season)).thenReturn(Either.right(ctx));
         when(createPredictionUseCase.executeWithContext(eq(firstUser), eq(ctx), any()))
                 .thenThrow(new DuplicateKeyException("duplicate key value violates unique constraint"));
 
@@ -592,7 +592,7 @@ class OutboxEventProcessorTest {
         Season season = activeSeason(seasonId);
         when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
         when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(java.util.List.of(UUID.randomUUID()));
-        when(createPredictionUseCase.resolveJoinContext(season))
+        when(createPredictionUseCase.resolveJoinContextAsOpen(season))
                 .thenReturn(Either.left(new CreatePredictionError.CurrentRoundNotFound(seasonId)));
 
         OutboxEvent event = claimedEvent(

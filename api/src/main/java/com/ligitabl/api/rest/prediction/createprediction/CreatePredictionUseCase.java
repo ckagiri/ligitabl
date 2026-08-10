@@ -57,9 +57,23 @@ public class CreatePredictionUseCase {
 
     public record JoinCtx(Season season, Contest mainContest, int atRoundNumber, int currentRoundPosition) {}
 
-    public Either<CreatePredictionError, JoinCtx> resolveJoinContext(Season season) {
-        return findMainContest(season).flatMap(contest -> determineAtRoundNumber(season)
-                .map(info -> new JoinCtx(season, contest, info.atRoundNumber(), info.currentRoundPosition())));
+    /**
+     * Batch join context for the ROUND_LOCKED auto-join, resolved <em>as if the current round were
+     * still open</em>: the users this serves are being joined into the round that just locked, as
+     * though they had submitted while it was open.
+     */
+    public Either<CreatePredictionError, JoinCtx> resolveJoinContextAsOpen(Season season) {
+        return findMainContest(season).flatMap(contest -> {
+            var currentRoundOpt = roundRepo.findById(season.getCurrentRoundId());
+            if (currentRoundOpt.isEmpty()) {
+                return Either.left(new CreatePredictionError.CurrentRoundNotFound(season.getId()));
+            }
+            int position = currentRoundOpt.get().getPosition();
+            if (position > season.getMaxRounds()) {
+                return Either.left(new CreatePredictionError.Ended(position, season.getMaxRounds()));
+            }
+            return Either.right(new JoinCtx(season, contest, position, position));
+        });
     }
 
     /**

@@ -134,6 +134,9 @@ public class OutboxEventProcessor {
      * Auto-joins users who registered after the season's pre-season window opened and never
      * created a SeasonPrediction — evaluated fresh at processing time, not from the event's
      * payload, so it reflects whichever round/rankings are current when this actually runs.
+     *
+     * <p>Uses {@code resolveJoinContextAsOpen}: these users are joined into the round that locked,
+     * as if they had submitted while it was open.
      */
     private void processRoundLocked(OutboxEvent event) throws Exception {
         RoundLockedPayload payload = objectMapper.readValue(event.getPayload(), RoundLockedPayload.class);
@@ -148,7 +151,7 @@ public class OutboxEventProcessor {
         }
 
         createPredictionUseCase
-                .resolveJoinContext(season)
+                .resolveJoinContextAsOpen(season)
                 .fold(
                         error -> {
                             log.warn(
