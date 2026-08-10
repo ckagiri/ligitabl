@@ -298,16 +298,9 @@
                           to save and join the competition.
                         </th:block>
                         <th:block th:if="${!isGuest}">
-                          <span x-show="imported"
-                            >We've loaded your prediction - review it and
-                            submit<th:block th:if="${!isPreSeasonRegistration}"
-                              >&nbsp;to join the competition</th:block
-                            >.</span
-                          >
-                          <span x-show="!imported"
-                            >Set your predicted order and submit. Take your time
-                            — no swaps needed, but up to 5 to fine-tune.</span
-                          >
+                          <th:block
+                            th:replace="~{fragments/predict-cta :: copy(${isPreSeasonRegistration})}"
+                          ></th:block>
                         </th:block>
                         <th:block th:if="${daysToPredictions != null}">
                           <span

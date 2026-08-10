@@ -852,7 +852,11 @@ window.Ligitabl.predictionPage = function(el) {
       if (this.teams.length === 0) {
         this.teams = Ligitabl._mapServerPredictions(predictions);
       }
+      const hadGuestStorage = localStorage.getItem(GUEST_STORAGE_KEY) !== null;
       this._clearStorage(GUEST_STORAGE_KEY);
+      if (hadGuestStorage && !this.importedFromGuest) {
+        window.dispatchEvent(new CustomEvent("guest-storage-cleared"));
+      }
       this.originalTeams = Ligitabl._mapServerPredictions(predictions);
       const savePrefs = () => Ligitabl._savePrefs({
         showStandings: this.showStandings,

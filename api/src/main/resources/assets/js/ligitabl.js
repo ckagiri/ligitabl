@@ -544,7 +544,17 @@ window.Ligitabl.predictionPage = function (el) {
             // This is the authenticated prediction page — guest storage is never the source
             // of truth here past the one-time import above, so it's always stale from this
             // point on regardless of which branch populated this.teams.
+            const hadGuestStorage = localStorage.getItem(GUEST_STORAGE_KEY) !== null;
             this._clearStorage(GUEST_STORAGE_KEY);
+            if (hadGuestStorage && !this.importedFromGuest) {
+                // Banners set `imported` from localStorage in their own x-init, which can run
+                // before this. When we clear a key we did NOT import from — pre-season
+                // registration and the opening round are both excluded from the import above —
+                // their "We've loaded your prediction" copy is a false claim, so tell them.
+                // The importedFromGuest case is genuine and keeps its banner; reset()/submit
+                // clear it later.
+                window.dispatchEvent(new CustomEvent('guest-storage-cleared'));
+            }
 
             // originalTeams always reflects server state — diffs are against what was last submitted
             this.originalTeams = Ligitabl._mapServerPredictions(predictions);
