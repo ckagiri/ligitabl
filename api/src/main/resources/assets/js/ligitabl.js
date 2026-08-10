@@ -1354,15 +1354,6 @@ window.Ligitabl.finalTablePage = function (el) {
 
         /**
          * Hand the share card what the server just told us, so it stops showing the old table.
-         *
-         * Saving is a fetch with no re-render, so everything the card was rendered with describes
-         * the page as it first arrived. Two things go stale the moment a save lands: the saved
-         * ordering, and settledAt (the tiebreak, which advances on every save).
-         *
-         * ⚠️ Pushed into the card's Alpine state, not written to its data-* attributes. The panel
-         * binds x-text="shareText()", and Alpine re-evaluates that only when a *reactive*
-         * dependency changes — a dataset write is invisible to it, so the share text kept showing
-         * the pre-save order until a reload. Assigning to component state is what updates it.
          */
         _refreshShareCard(data) {
             const card = document.querySelector('[x-data*="finalTableShareCard"]');
@@ -1433,13 +1424,6 @@ window.Ligitabl.finalTableShareCard = function (el) {
         open: false,
         /**
          * Team codes in the last-saved order, or null to fall back to the seeded `data-rows`.
-         *
-         * ⚠️ Reactive component state, deliberately not read from `data-order` at use time. The
-         * panel binds x-text="shareText()", which Alpine only re-evaluates when a reactive
-         * dependency changes — and a dataset write is invisible to it. Storing the order here is
-         * what makes the share text update after a save with no reload; reading the attribute
-         * directly left it showing the pre-save order.
-         *
          * Seeded from the attribute at init() so a page load still honours a server-rendered
          * order, then overwritten by setSavedOrder() on each save.
          */
@@ -1474,13 +1458,6 @@ window.Ligitabl.finalTableShareCard = function (el) {
 
         /**
          * Hand the card what the server returned from a save.
-         *
-         * Called by finalTablePage rather than having the card poll: the parent owns the request,
-         * and this keeps the card's dependency on the page one-way (page pushes, card never
-         * reaches back). Assigning to reactive state is the point — see savedOrder.
-         *
-         * Missing fields are left alone rather than nulled, so a response without them cannot
-         * blank a card that was rendering correctly.
          */
         applySaved(data) {
             if (Array.isArray(data?.order) && data.order.length > 0) {
