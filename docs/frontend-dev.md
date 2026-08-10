@@ -55,6 +55,83 @@ All Alpine component data factories live in `assets/js/ligitabl.js` under the `L
 namespace, e.g. `Ligitabl.predictionPage($el)`. They are referenced in templates via
 `x-data="Ligitabl.predictionPage($el)"`.
 
+### Updating a component after a fetch: use state, not `data-*`
+
+Components are seeded from `data-*` attributes at mount. That makes it tempting to *update* them
+the same way after a background save — write `el.dataset.foo` and let the next render pick it up.
+
+**It does not work for anything bound.** Alpine re-evaluates a binding only when a *reactive*
+dependency changes, and a `dataset` write is a plain DOM mutation it never observes:
+
+```js
+// Silently stale: x-text="label()" will not re-render.
+card.dataset.order = JSON.stringify(data.order);
+
+// Correct: assign to component state.
+Alpine.$data(card)?.applySaved?.(data);
+```
+
+The failure mode is nasty because it is **partial**. Anything computed on demand — a click handler
+reading `dataset` when it fires — looks fine, while bound text stays stale. On the Final Table
+share card this showed as a downloaded image with the new order and share text with the old one
+(see [Final Table share card](./final-table-share.md#reactivity-why-attributes-are-not-enough)).
+
+Rule of thumb: `data-*` is the **seed**, read once in `init()`. Anything that changes after mount
+belongs in component state.
+
+To push into a sibling/child component from outside, `Alpine.$data(el)` is the supported handle
+(Alpine v3 has no `el.__x` — that was v2). Prefer a named method on the target (`applySaved(data)`)
+over reaching in and assigning fields, so the dependency direction stays obvious.
+
+### Reading a parent's state from a nested fragment
+
+A fragment mounted inside another component's DOM subtree can use the parent's state **directly in
+markup** via Alpine's scope chain — no plumbing, no handle:
+
+```html
+<!-- inside x-data="Ligitabl.finalTablePage($el)" -->
+<div x-show="getDirtyCount() > 0">Unsaved changes</div>
+```
+
+This is worth preferring when the child component should stay independent of the parent: the markup
+sees the parent scope while the component itself keeps no reference back.
+
+Two cautions:
+
+- **Guard fragments that are also mounted standalone.** If the same fragment renders on a page
+  without that parent, the expression must not be emitted at all — gate it server-side with
+  `th:if` on a model attribute that distinguishes the two, rather than letting it render and fail.
+- **Use parser-level comments (`<!--/* … */-->`) for notes near such markup.** A plain HTML comment
+  survives Thymeleaf rendering and ships to the browser; on a public page that leaks internal
+  reasoning to visitors.
+
+## Timestamps: always format client-side
+
+The server does not know the viewer's timezone, so **never** render a user-facing instant with
+`#temporals.format(...)` over `ZoneId.systemDefault()` — that is the *server's* zone, and every
+viewer outside it sees a time wrong by their offset. Emit the raw ISO instant and let the client
+format it.
+
+```html
+<!-- th:text keeps the ISO string as the no-JS fallback -->
+<span th:attr="data-timestamp=${instant}" th:text="${instant}">12 Aug 2026, 14:32</span>
+```
+
+`Ligitabl.formatTimestamps(root?)` rewrites every `[data-timestamp]` in scope, and re-runs on
+`DOMContentLoaded` and `htmx:afterSettle` so swapped-in content is covered. For non-DOM output
+(canvas text, a computed label), call `Ligitabl.formatTimestamp(iso, preset)` — it returns `''`
+for absent or unparseable input so callers can omit the line.
+
+Shapes are named presets in `Ligitabl.TIMESTAMP_FORMATS`, opted into with `data-timestamp-format`:
+
+| Preset | Shape |
+|---|---|
+| `default` (omit the attribute) | `Aug 9, 2026, 4:40 PM` |
+| `settled` | `9 Aug 2026, 16:40` |
+
+Add a preset rather than accepting arbitrary options from a template — a template that can request
+any format is one that can invent a third by accident.
+
 ## Manual browser verification (Playwright)
 
 `curl`/HTML inspection can't confirm real interactive behavior — button-disabled states, JS

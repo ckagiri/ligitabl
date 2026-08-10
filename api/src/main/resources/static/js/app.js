@@ -1491,9 +1491,9 @@ window.Ligitabl.finalTablePage = function(el) {
         if (ok && data.success) {
           this.pendingSwaps = [];
           this.originalTeams = JSON.parse(JSON.stringify(this.teams));
-          this._refreshShareCard(data);
           const firstSave = !wasEntered;
           this.hasEntry = true;
+          this._refreshShareCard(data);
           this._flash(data.message || "Saved", "success");
           if (firstSave) {
             this.$nextTick(() => this.$dispatch("final-table-saved", { firstSave: true }));
@@ -1512,28 +1512,23 @@ window.Ligitabl.finalTablePage = function(el) {
       });
     },
     /**
-     * Hand the share card what the server just told us, so it stops guessing.
+     * Hand the share card what the server just told us, so it stops showing the old table.
      *
-     * Saving is a fetch with no re-render, so the card's server-rendered attributes describe
-     * the page as it first arrived. Two of them go stale the moment a save lands:
+     * Saving is a fetch with no re-render, so everything the card was rendered with describes
+     * the page as it first arrived. Two things go stale the moment a save lands: the saved
+     * ordering, and settledAt (the tiebreak, which advances on every save).
      *
-     * - `data-settled-at` — the tiebreak, which advances on every save. Left alone it showed
-     *   the previous settle time until the next full page load.
-     * - `data-order` — the saved ordering, straight from the server's replay of the swaps.
-     *   This is what lets the card draw the saved table without inferring it from the DOM.
-     *
-     * Written as attributes rather than pushed through a shared store because the card reads
-     * `dataset` fresh on every call, so the next render picks these up with no re-init.
-     *
-     * Missing fields are skipped rather than blanked: an older server that does not send them
-     * should leave the card on its seeded values, not wipe them.
+     * ⚠️ Pushed into the card's Alpine state, not written to its data-* attributes. The panel
+     * binds x-text="shareText()", and Alpine re-evaluates that only when a *reactive*
+     * dependency changes — a dataset write is invisible to it, so the share text kept showing
+     * the pre-save order until a reload. Assigning to component state is what updates it.
      */
     _refreshShareCard(data) {
       const card = document.querySelector('[x-data*="finalTableShareCard"]');
-      if (!card) return;
-      if (data.settledAt) card.dataset.settledAt = data.settledAt;
-      if (Array.isArray(data.order) && data.order.length > 0) {
-        card.dataset.order = JSON.stringify(data.order);
+      if (!card || !window.Alpine) return;
+      try {
+        Alpine.$data(card)?.applySaved?.(data);
+      } catch (e) {
       }
     },
     // Dev preview only: rendered behind devPreviewEnabled, and the endpoints do not exist as
@@ -1578,6 +1573,21 @@ window.Ligitabl.finalTableShareCard = function(el) {
     // Collapsed by default, matching fragments/share-prediction.html: the panel is an offer,
     // not the main event.
     open: false,
+    /**
+     * Team codes in the last-saved order, or null to fall back to the seeded `data-rows`.
+     *
+     * ⚠️ Reactive component state, deliberately not read from `data-order` at use time. The
+     * panel binds x-text="shareText()", which Alpine only re-evaluates when a reactive
+     * dependency changes — and a dataset write is invisible to it. Storing the order here is
+     * what makes the share text update after a save with no reload; reading the attribute
+     * directly left it showing the pre-save order.
+     *
+     * Seeded from the attribute at init() so a page load still honours a server-rendered
+     * order, then overwritten by setSavedOrder() on each save.
+     */
+    savedOrder: null,
+    /** The last-saved settle time, kept reactive for the same reason as savedOrder. */
+    settledAt: null,
     rendering: false,
     copiedText: false,
     copiedLink: false,
@@ -1585,12 +1595,33 @@ window.Ligitabl.finalTableShareCard = function(el) {
     // button that silently does nothing is worse than an absent one.
     canShareFiles: false,
     init() {
+      const seededOrder = Ligitabl._parseJSON(dataset.order, null);
+      this.savedOrder = Array.isArray(seededOrder) && seededOrder.length > 0 ? seededOrder : null;
+      this.settledAt = dataset.settledAt || null;
       try {
         this.canShareFiles = typeof navigator !== "undefined" && typeof navigator.canShare === "function" && navigator.canShare({
           files: [new File([new Blob()], "p.jpg", { type: "image/jpeg" })]
         });
       } catch (e) {
         this.canShareFiles = false;
+      }
+    },
+    /**
+     * Hand the card what the server returned from a save.
+     *
+     * Called by finalTablePage rather than having the card poll: the parent owns the request,
+     * and this keeps the card's dependency on the page one-way (page pushes, card never
+     * reaches back). Assigning to reactive state is the point — see savedOrder.
+     *
+     * Missing fields are left alone rather than nulled, so a response without them cannot
+     * blank a card that was rendering correctly.
+     */
+    applySaved(data) {
+      if (Array.isArray(data?.order) && data.order.length > 0) {
+        this.savedOrder = data.order;
+      }
+      if (data?.settledAt) {
+        this.settledAt = data.settledAt;
       }
     },
     /**
@@ -1622,26 +1653,19 @@ window.Ligitabl.finalTableShareCard = function(el) {
      *
      * ⚠️ Saved state only — deliberately blind to unsaved moves on screen.
      *
-     * Everything this card produces leaves the app: a downloaded image, copied text, a link
-     * to the public page. Drawing the table as currently dragged would let someone share a
-     * prediction the server has never seen — and the public link sitting beside it in the
-     * same panel would show something else. The card also prints settledAt, the leaderboard
-     * tiebreak, which only ever describes a save; pairing it with unsaved rows would make the
-     * card misstate its own provenance.
-     *
      * So the ordering is whichever of these the server last told us:
      *
-     *  1. `data-order` from the most recent save — the server's own replay of the swaps,
-     *     written back by finalTablePage._refreshShareCard.
+     *  1. savedOrder — the server's own replay of the swaps from the most recent save, pushed
+     *     in by finalTablePage via applySaved() (or seeded from `data-order` at init).
      *  2. Neither — first paint, and the standalone public view, where `data-rows` is already
      *     the saved order because the server just rendered it.
      *
-     * `data-order` is codes only, so display fields are looked up in `data-rows`; a code with
+     * savedOrder is codes only, so display fields are looked up in `data-rows`; a code with
      * no seeded row is dropped rather than drawn blank. If that leaves the wrong number of
-     * teams the attribute disagrees with the seed, so the seeded order is used instead.
+     * teams the order disagrees with the seed, so the seeded order is used instead.
      */
     _resolvedOrder(seeded) {
-      const codes = Ligitabl._parseJSON(dataset.order, null);
+      const codes = this.savedOrder;
       if (!Array.isArray(codes) || codes.length === 0) return null;
       const byCode = seeded.reduce((acc, row) => {
         acc[row.code] = row;
@@ -1710,7 +1734,7 @@ window.Ligitabl.finalTableShareCard = function(el) {
      * Returns '' when absent or unparseable, and the footer simply omits the line.
      */
     settledAtLabel() {
-      const formatted = Ligitabl.formatTimestamp(dataset.settledAt, "settled");
+      const formatted = Ligitabl.formatTimestamp(this.settledAt, "settled");
       return formatted ? "settled " + formatted : "";
     },
     _drawCard() {

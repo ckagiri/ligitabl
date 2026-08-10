@@ -4,6 +4,7 @@
 - Frontend dev guide: [Frontend Development Guide](./frontend-dev.md)
 - API reference: [API Endpoints](./api-endpoints.md)
 - Prediction page: [Prediction Page UI States & Banners](./prediction-page-ui.md)
+- Final Table: [Share card and saved state](./final-table-share.md)
 - Leaderboard: [Leaderboard Persistence](./leaderboard.md)
 - Debugging guide: [Debugging Test Failures](./debugging-tests.md)
 - Error handling: [Functional Either](./dev/functional-either.md)
