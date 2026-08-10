@@ -69,6 +69,18 @@ public class PublicController {
         return "faq";
     }
 
+    /**
+     * The Final Table section of the FAQ, on its own. Linked from the Final Table pages, which
+     * previously pointed at /faq and left the reader to find the section themselves.
+     *
+     * <p>Shares one fragment with {@link #faq}, so the two cannot drift apart.
+     */
+    @GetMapping("/faq/final-table")
+    public String faqFinalTable(Model model) {
+        model.addAttribute("pageTitle", "Final Table FAQ");
+        return "faq-final-table";
+    }
+
     @GetMapping("/favicon.ico")
     public String favicon() {
         return "redirect:/favicon.svg";

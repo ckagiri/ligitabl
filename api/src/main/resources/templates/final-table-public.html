@@ -129,16 +129,23 @@
       -->
       <th:block th:if="${revealed == false and finalTableEntryOpen == true}">
         <div class="mb-6 rounded-lg border border-gray-200 bg-gray-50 p-4">
-          <p
-            class="text-sm text-gray-700"
-            th:with="settled=${settledAt != null
-              ? settledAt.atZone(T(java.time.ZoneId).systemDefault()) : null}"
-          >
-            <th:block th:if="${settled != null}">
+          <!--
+            The raw ISO instant, formatted into the viewer's zone by Ligitabl.formatTimestamps.
+
+            Not #temporals.format over systemDefault(): that is the *server's* zone, so every
+            viewer outside it was shown a time wrong by their offset. The share card below already
+            formats this same field client-side for exactly that reason — 'settled' is its preset.
+
+            th:text keeps the ISO string in place as the no-JS fallback.
+          -->
+          <p class="text-sm text-gray-700">
+            <th:block th:if="${settledAt != null}">
               Settled
               <strong
                 class="text-gray-900"
-                th:text="${#temporals.format(settled, 'd MMM yyyy, HH:mm')}"
+                th:attr="data-timestamp=${settledAt}"
+                data-timestamp-format="settled"
+                th:text="${settledAt}"
                 >12 Aug 2026, 14:32</strong
               >. </th:block
             >Still open to change until season kickoff; score revealed when season ends.
@@ -202,6 +209,18 @@
       <!-- Wrapper for the spacing: th:replace discards the host element, class and all. -->
       <div class="mt-6">
         <div th:replace="~{fragments/final-table-share :: card}"></div>
+      </div>
+
+      <!--
+        Ungated, unlike the CTA above: a visitor looking at a locked table still has every reason
+        to ask what the numbers on it mean, and this page is most people's first sight of the game.
+      -->
+      <div class="mt-6 text-sm">
+        <a
+          th:href="@{/faq/final-table}"
+          class="text-gray-500 hover:text-indigo-600 hover:underline"
+          >How scoring works</a
+        >
       </div>
     </div>
   </body>
