@@ -1319,11 +1319,14 @@ window.Ligitabl.finalTablePage = function (el) {
                         this.pendingSwaps = [];
                         // The saved order is the new baseline, so dirty tints and arrows clear.
                         this.originalTeams = JSON.parse(JSON.stringify(this.teams));
-                        this._refreshShareCard(data);
                         // Without this the button stays enabled on a now-existing clean row and the
                         // next press earns the NothingToSave 400 this rule exists to prevent.
                         const firstSave = !wasEntered;
                         this.hasEntry = true;
+                        // After hasEntry: the card is x-show'd on it, and on a first save this is
+                        // the moment it becomes visible. Its component is mounted from page load
+                        // either way, so this only orders the update behind the reveal.
+                        this._refreshShareCard(data);
                         this._flash(data.message || 'Saved', 'success');
                         // First save only: the card has just appeared, and a collapsed panel a
                         // player has never seen is easy to miss. Later saves leave it as they
@@ -1350,14 +1353,15 @@ window.Ligitabl.finalTablePage = function (el) {
         },
 
         /**
-         * Hand the share card what the server just told us.
+         * Hand the share card what the server just told us, so it stops showing the old table.
          */
         _refreshShareCard(data) {
             const card = document.querySelector('[x-data*="finalTableShareCard"]');
-            if (!card) return;
-            if (data.settledAt) card.dataset.settledAt = data.settledAt;
-            if (Array.isArray(data.order) && data.order.length > 0) {
-                card.dataset.order = JSON.stringify(data.order);
+            if (!card || !window.Alpine) return;
+            try {
+                Alpine.$data(card)?.applySaved?.(data);
+            } catch (e) {
+                // A missing or not-yet-initialised card is not worth failing a good save over.
             }
         },
 
@@ -1418,6 +1422,14 @@ window.Ligitabl.finalTableShareCard = function (el) {
         // Collapsed by default, matching fragments/share-prediction.html: the panel is an offer,
         // not the main event.
         open: false,
+        /**
+         * Team codes in the last-saved order, or null to fall back to the seeded `data-rows`.
+         * Seeded from the attribute at init() so a page load still honours a server-rendered
+         * order, then overwritten by setSavedOrder() on each save.
+         */
+        savedOrder: null,
+        /** The last-saved settle time, kept reactive for the same reason as savedOrder. */
+        settledAt: null,
         rendering: false,
         copiedText: false,
         copiedLink: false,
@@ -1426,6 +1438,12 @@ window.Ligitabl.finalTableShareCard = function (el) {
         canShareFiles: false,
 
         init() {
+            const seededOrder = Ligitabl._parseJSON(dataset.order, null);
+            this.savedOrder = Array.isArray(seededOrder) && seededOrder.length > 0
+                ? seededOrder
+                : null;
+            this.settledAt = dataset.settledAt || null;
+
             try {
                 this.canShareFiles =
                     typeof navigator !== 'undefined' &&
@@ -1435,6 +1453,18 @@ window.Ligitabl.finalTableShareCard = function (el) {
                     });
             } catch (e) {
                 this.canShareFiles = false;
+            }
+        },
+
+        /**
+         * Hand the card what the server returned from a save.
+         */
+        applySaved(data) {
+            if (Array.isArray(data?.order) && data.order.length > 0) {
+                this.savedOrder = data.order;
+            }
+            if (data?.settledAt) {
+                this.settledAt = data.settledAt;
             }
         },
 
@@ -1472,17 +1502,17 @@ window.Ligitabl.finalTableShareCard = function (el) {
          *
          * So the ordering is whichever of these the server last told us:
          *
-         *  1. `data-order` from the most recent save — the server's own replay of the swaps,
-         *     written back by finalTablePage._refreshShareCard.
+         *  1. savedOrder — the server's own replay of the swaps from the most recent save, pushed
+         *     in by finalTablePage via applySaved() (or seeded from `data-order` at init).
          *  2. Neither — first paint, and the standalone public view, where `data-rows` is already
          *     the saved order because the server just rendered it.
          *
-         * `data-order` is codes only, so display fields are looked up in `data-rows`; a code with
+         * savedOrder is codes only, so display fields are looked up in `data-rows`; a code with
          * no seeded row is dropped rather than drawn blank. If that leaves the wrong number of
-         * teams the attribute disagrees with the seed, so the seeded order is used instead.
+         * teams the order disagrees with the seed, so the seeded order is used instead.
          */
         _resolvedOrder(seeded) {
-            const codes = Ligitabl._parseJSON(dataset.order, null);
+            const codes = this.savedOrder;
             if (!Array.isArray(codes) || codes.length === 0) return null;
 
             const byCode = seeded.reduce((acc, row) => {
@@ -1568,7 +1598,7 @@ window.Ligitabl.finalTableShareCard = function (el) {
          * Returns '' when absent or unparseable, and the footer simply omits the line.
          */
         settledAtLabel() {
-            const formatted = Ligitabl.formatTimestamp(dataset.settledAt, 'settled');
+            const formatted = Ligitabl.formatTimestamp(this.settledAt, 'settled');
             return formatted ? 'settled ' + formatted : '';
         },
 
