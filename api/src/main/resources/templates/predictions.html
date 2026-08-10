@@ -52,19 +52,17 @@
                       >📊 Finalized</span
                     >
                   </span>
-                </div>
 
-                <!-- ml-auto rather than justify-between on the parent: these controls wrap to their
-                     own line on narrow screens, and justify-between would leave a lone wrapped item
-                     at flex-start. ml-auto pushes it right either way. -->
-                <div class="flex items-center gap-2 ml-auto">
-                  <!-- Source indicator -->
+                  <!-- Source indicator. Sits with Gameweek/status rather than with the buttons:
+                       it is a description of what you're looking at, not a control.
+                       Deliberately NOT pill-styled — the pill/border/icon treatment used by
+                       Final Table and What-If reads as tappable, and this is a static label. -->
                   <div
                     th:if="${source != 'USER_PREDICTION'}"
-                    class="inline-flex items-center gap-1.5 px-2.5 py-1 bg-blue-50 border border-blue-200 rounded-full"
+                    class="inline-flex items-center gap-1 min-w-0"
                   >
                     <svg
-                      class="h-3.5 w-3.5 text-blue-500 flex-shrink-0"
+                      class="h-3.5 w-3.5 text-gray-400 flex-shrink-0"
                       fill="currentColor"
                       viewBox="0 0 20 20"
                     >
@@ -75,12 +73,17 @@
                       />
                     </svg>
                     <span
-                      class="text-xs font-medium text-blue-700"
+                      class="text-xs text-gray-500 truncate"
                       th:text="${sourceLabel}"
                       >Last Season Baseline</span
                     >
                   </div>
+                </div>
 
+                <!-- ml-auto rather than justify-between on the parent: these controls wrap to their
+                     own line on narrow screens, and justify-between would leave a lone wrapped item
+                     at flex-start. ml-auto pushes it right either way. -->
+                <div class="flex items-center gap-2 ml-auto">
                   <!--
                     Final Table: the side game, offered as a pill beside What-If rather than as a
                     sentence in the pre-season banner. Two reasons. It costs no vertical space on a
@@ -98,7 +101,7 @@
                     th:if="${!isGuest && finalTableEntryOpen == true}"
                     th:href="@{/final-table}"
                     title="Predict the final table — open until season kickoff"
-                    class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors px-2.5 py-1 rounded-full border border-emerald-200 hover:border-emerald-300 bg-emerald-50"
+                    class="inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap text-xs sm:text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors px-2.5 py-1 rounded-full border border-emerald-200 hover:border-emerald-300 bg-emerald-50"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -117,14 +120,16 @@
                   </a>
 
                   <!-- What-If (own predictions only, current round — renders read-only/locked
-                       once the round closes rather than requiring roundState == 'open') -->
+                       once the round closes rather than requiring roundState == 'open').
+                       Shown to users who have not joined yet too: they simulate against the
+                       baseline table, and What-If writes nothing. -->
                   <button
-                    th:if="${!isGuest && isCurrentRound && !canCreateEntry}"
+                    th:if="${!isGuest && isCurrentRound}"
                     th:attr="hx-get=@{/predictions/user/what-if}"
                     hx-target="#prediction-page"
                     hx-swap="outerHTML swap:100ms settle:100ms"
                     hx-disabled-elt="this"
-                    class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors px-2.5 py-1 rounded-full border border-indigo-200 hover:border-indigo-300 bg-indigo-50"
+                    class="inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap text-xs sm:text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors px-2.5 py-1 rounded-full border border-indigo-200 hover:border-indigo-300 bg-indigo-50"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"

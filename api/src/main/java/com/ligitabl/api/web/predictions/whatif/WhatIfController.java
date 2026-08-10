@@ -124,9 +124,8 @@ public class WhatIfController {
             String hxRequest,
             HttpServletResponse response) {
         boolean roundOpen = "open".equalsIgnoreCase(data.roundState());
-        boolean hasLivePrediction = !data.canCreateEntry();
 
-        if (!data.isCurrentRound() || !hasLivePrediction) {
+        if (!data.isCurrentRound()) {
             return bounceToMyTable(response, hxRequest);
         }
 
