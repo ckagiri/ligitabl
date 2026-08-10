@@ -188,6 +188,7 @@ public class SecurityConfig {
                                 "/home",
                                 "/about",
                                 "/faq",
+                                "/faq/final-table",
                                 "/my-table",
                                 "/my-table/**",
                                 "/my-table/guest",

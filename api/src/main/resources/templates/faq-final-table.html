@@ -1,0 +1,69 @@
+<!doctype html>
+<html
+  xmlns:th="http://www.thymeleaf.org"
+  xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+  layout:decorate="~{layout/base}"
+>
+  <body>
+    <div layout:fragment="content">
+      <!-- Hero. Same shape as faq.html's, scoped to the one game. -->
+      <div
+        class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 sm:p-12 mb-12 text-white text-center"
+      >
+        <h1 class="text-3xl sm:text-4xl font-extrabold mb-4">
+          The Final Table
+        </h1>
+        <p class="text-base sm:text-lg text-indigo-200 max-w-2xl mx-auto">
+          How the season-long prediction works, how it is scored, and when you
+          find out.
+        </p>
+      </div>
+
+      <div class="bg-white rounded-lg shadow-md p-8 mb-12">
+        <div class="max-w-2xl mx-auto">
+          <!--
+            First item open: this section is the whole page here, and a fully-collapsed list
+            reads as an empty one. Inside /faq it stays closed.
+          -->
+          <th:block
+            th:replace="~{fragments/faq-final-table :: section(true)}"
+          ></th:block>
+
+          <p class="text-sm text-gray-600">
+            Asking about the main competition or gameweek swaps?
+            <a
+              th:href="@{/faq}"
+              class="font-semibold text-indigo-600 hover:text-indigo-700"
+              >See the full FAQ</a
+            >.
+          </p>
+        </div>
+      </div>
+
+      <!--/*
+        CTA only while entry is open, matching final-table-public.html and the navbar: "before a
+        ball is kicked" is a promise the app cannot keep once the season has started, and the
+        table locks at kickoff. Dropped rather than reworded when closed — there is nothing to
+        offer until next season, and the page still works as reference reading.
+
+        finalTableEntryOpen comes from NavbarControllerAdvice, so it is on every page's model
+        without this route having to resolve a season itself.
+      */-->
+      <th:block th:if="${finalTableEntryOpen == true}">
+        <div
+          class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-xl p-8 sm:p-10 text-white text-center"
+        >
+          <h2 class="text-2xl font-bold mb-2">Ready to call it?</h2>
+          <p class="text-indigo-200 mb-6">
+            Order all twenty clubs before a ball is kicked.
+          </p>
+          <a
+            th:href="@{/final-table}"
+            class="inline-block bg-white text-indigo-600 px-6 py-3 rounded-lg font-semibold hover:bg-gray-100 transition"
+            >Build your final table</a
+          >
+        </div>
+      </th:block>
+    </div>
+  </body>
+</html>

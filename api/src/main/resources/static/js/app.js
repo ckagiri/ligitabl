@@ -1048,6 +1048,29 @@ document.body.addEventListener("htmx:afterSwap", function(e) {
     if (spinner) spinner.classList.add("hidden");
   }
 });
+window.Ligitabl.TIMESTAMP_FORMATS = {
+  default: { dateStyle: "medium", timeStyle: "short" },
+  // "12 Aug 2026, 14:32" — the Final Table share card's footer, and the public page's settled
+  // line, which sits beside it and must not disagree with it.
+  settled: {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  }
+};
+window.Ligitabl.formatTimestamp = function(iso, format) {
+  if (!iso) return "";
+  try {
+    const d = new Date(iso);
+    if (isNaN(d.getTime())) return "";
+    const options = Ligitabl.TIMESTAMP_FORMATS[format] || Ligitabl.TIMESTAMP_FORMATS.default;
+    return d.toLocaleString(void 0, options);
+  } catch (e) {
+    return "";
+  }
+};
 window.Ligitabl.formatTimestamps = function(root) {
   const scope = root && document.contains(root) ? root : document;
   const candidates = [];
@@ -1058,15 +1081,8 @@ window.Ligitabl.formatTimestamps = function(root) {
   candidates.forEach((el) => {
     const iso = el.getAttribute("data-timestamp");
     if (!iso) return;
-    try {
-      const d = new Date(iso);
-      if (isNaN(d.getTime())) return;
-      el.textContent = d.toLocaleString(void 0, {
-        dateStyle: "medium",
-        timeStyle: "short"
-      });
-    } catch (e) {
-    }
+    const formatted = Ligitabl.formatTimestamp(iso, el.getAttribute("data-timestamp-format"));
+    if (formatted) el.textContent = formatted;
   });
 };
 document.addEventListener("DOMContentLoaded", () => Ligitabl.formatTimestamps());
@@ -1475,6 +1491,7 @@ window.Ligitabl.finalTablePage = function(el) {
         if (ok && data.success) {
           this.pendingSwaps = [];
           this.originalTeams = JSON.parse(JSON.stringify(this.teams));
+          this._refreshShareCard(data);
           const firstSave = !wasEntered;
           this.hasEntry = true;
           this._flash(data.message || "Saved", "success");
@@ -1493,6 +1510,31 @@ window.Ligitabl.finalTablePage = function(el) {
         this.inFlight = false;
         this._flash("Could not save your table", "error");
       });
+    },
+    /**
+     * Hand the share card what the server just told us, so it stops guessing.
+     *
+     * Saving is a fetch with no re-render, so the card's server-rendered attributes describe
+     * the page as it first arrived. Two of them go stale the moment a save lands:
+     *
+     * - `data-settled-at` — the tiebreak, which advances on every save. Left alone it showed
+     *   the previous settle time until the next full page load.
+     * - `data-order` — the saved ordering, straight from the server's replay of the swaps.
+     *   This is what lets the card draw the saved table without inferring it from the DOM.
+     *
+     * Written as attributes rather than pushed through a shared store because the card reads
+     * `dataset` fresh on every call, so the next render picks these up with no re-init.
+     *
+     * Missing fields are skipped rather than blanked: an older server that does not send them
+     * should leave the card on its seeded values, not wipe them.
+     */
+    _refreshShareCard(data) {
+      const card = document.querySelector('[x-data*="finalTableShareCard"]');
+      if (!card) return;
+      if (data.settledAt) card.dataset.settledAt = data.settledAt;
+      if (Array.isArray(data.order) && data.order.length > 0) {
+        card.dataset.order = JSON.stringify(data.order);
+      }
     },
     // Dev preview only: rendered behind devPreviewEnabled, and the endpoints do not exist as
     // beans outside non-prod profiles. Reloads so every read path picks up the new state.
@@ -1552,7 +1594,7 @@ window.Ligitabl.finalTableShareCard = function(el) {
       }
     },
     /**
-     * The rows to draw, in the order currently on screen.
+     * The rows to draw, in the order the card should show.
      *
      * `data-rows` is rendered once at page load, so it goes stale the moment a swap is saved
      * without a reload — the card would draw the order the page arrived with while the table
@@ -1560,32 +1602,53 @@ window.Ligitabl.finalTableShareCard = function(el) {
      * who already had a saved table (load order *was* saved order); it shows as soon as the
      * card can appear before the first save.
      *
-     * So prefer the live order from the parent finalTablePage component, which this card is
-     * nested inside. `actual`/`hit` still come from the attribute — those are scored figures
-     * the client never recomputes — merged by code onto the live ordering.
+     * Ordering comes from _resolvedOrder(); `actual`/`hit` always come from the attribute —
+     * those are scored figures the client never recomputes — merged back on by code.
      */
     rows() {
       const seeded = Ligitabl._parseJSON(dataset.rows, []);
-      const live = this._liveTeams();
-      if (!live) return seeded;
+      const order = this._resolvedOrder(seeded);
+      if (!order) return seeded;
       const extrasByCode = seeded.reduce((acc, row) => {
         if (row.actual != null || row.hit != null) {
           acc[row.code] = { actual: row.actual, hit: row.hit };
         }
         return acc;
       }, {});
-      return live.map((team) => ({ ...team, ...extrasByCode[team.code] || {} }));
+      return order.map((team) => ({ ...team, ...extrasByCode[team.code] || {} }));
     },
-    /** The enclosing finalTablePage's teams, or null when mounted standalone (public view). */
-    _liveTeams() {
-      try {
-        const host = el?.closest?.('[x-data*="finalTablePage"]');
-        const data = host && window.Alpine ? Alpine.$data(host) : null;
-        const teams = data?.teams;
-        return Array.isArray(teams) && teams.length > 0 ? teams : null;
-      } catch (e) {
-        return null;
-      }
+    /**
+     * The teams in the saved order, or null to use `data-rows` as seeded.
+     *
+     * ⚠️ Saved state only — deliberately blind to unsaved moves on screen.
+     *
+     * Everything this card produces leaves the app: a downloaded image, copied text, a link
+     * to the public page. Drawing the table as currently dragged would let someone share a
+     * prediction the server has never seen — and the public link sitting beside it in the
+     * same panel would show something else. The card also prints settledAt, the leaderboard
+     * tiebreak, which only ever describes a save; pairing it with unsaved rows would make the
+     * card misstate its own provenance.
+     *
+     * So the ordering is whichever of these the server last told us:
+     *
+     *  1. `data-order` from the most recent save — the server's own replay of the swaps,
+     *     written back by finalTablePage._refreshShareCard.
+     *  2. Neither — first paint, and the standalone public view, where `data-rows` is already
+     *     the saved order because the server just rendered it.
+     *
+     * `data-order` is codes only, so display fields are looked up in `data-rows`; a code with
+     * no seeded row is dropped rather than drawn blank. If that leaves the wrong number of
+     * teams the attribute disagrees with the seed, so the seeded order is used instead.
+     */
+    _resolvedOrder(seeded) {
+      const codes = Ligitabl._parseJSON(dataset.order, null);
+      if (!Array.isArray(codes) || codes.length === 0) return null;
+      const byCode = seeded.reduce((acc, row) => {
+        acc[row.code] = row;
+        return acc;
+      }, {});
+      const ordered = codes.map((code) => byCode[code]).filter(Boolean);
+      return ordered.length === seeded.length ? ordered : null;
     },
     title() {
       return dataset.title || "My Final Table";
@@ -1602,17 +1665,21 @@ window.Ligitabl.finalTableShareCard = function(el) {
      * wording and are reused verbatim, so this cannot drift from SharePredictionTextBuilder's
      * phrasing, only from its ordering, which is the point.
      *
+     * Ordering comes from the same _resolvedOrder() as rows() — saved state, never the live
+     * drag — so the text someone copies, the image they download, and the public page behind
+     * the link all list the clubs the same way.
+     *
      * Falls back to the server string whenever the shape is not what is expected, or when
-     * mounted standalone with no parent component (the public view).
+     * there is no better ordering than the one already baked into it.
      */
     shareText() {
       const seeded = dataset.shareText || "";
-      const live = this._liveTeams();
-      if (!seeded || !live) return seeded;
+      const saved = this._resolvedOrder(Ligitabl._parseJSON(dataset.rows, []));
+      if (!seeded || !saved) return seeded;
       const headEnd = seeded.indexOf("\n\n");
       const footStart = seeded.lastIndexOf("\n\n");
       if (headEnd < 0 || footStart <= headEnd) return seeded;
-      return seeded.slice(0, headEnd + 2) + Ligitabl._shareTeamLines(live) + seeded.slice(footStart + 1);
+      return seeded.slice(0, headEnd + 2) + Ligitabl._shareTeamLines(saved) + seeded.slice(footStart + 1);
     },
     subtitle() {
       return dataset.subtitle || "";
@@ -1637,24 +1704,14 @@ window.Ligitabl.finalTableShareCard = function(el) {
      * settledAt is the leaderboard tiebreak — two players who settled the same day are still
      * separable, and the card should be able to show that.
      *
+     * Shares the 'settled' preset with final-table-public.html's settled line, which sits on
+     * the same page as this card and would look like a bug if the two disagreed.
+     *
      * Returns '' when absent or unparseable, and the footer simply omits the line.
      */
     settledAtLabel() {
-      const raw = dataset.settledAt;
-      if (!raw) return "";
-      const at = new Date(raw);
-      if (Number.isNaN(at.getTime())) return "";
-      try {
-        return "settled " + at.toLocaleString(void 0, {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
-          hour: "2-digit",
-          minute: "2-digit"
-        });
-      } catch (e) {
-        return "";
-      }
+      const formatted = Ligitabl.formatTimestamp(dataset.settledAt, "settled");
+      return formatted ? "settled " + formatted : "";
     },
     _drawCard() {
       const rows = this.rows();
