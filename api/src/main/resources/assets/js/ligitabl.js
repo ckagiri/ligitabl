@@ -1350,21 +1350,7 @@ window.Ligitabl.finalTablePage = function (el) {
         },
 
         /**
-         * Hand the share card what the server just told us, so it stops guessing.
-         *
-         * Saving is a fetch with no re-render, so the card's server-rendered attributes describe
-         * the page as it first arrived. Two of them go stale the moment a save lands:
-         *
-         * - `data-settled-at` — the tiebreak, which advances on every save. Left alone it showed
-         *   the previous settle time until the next full page load.
-         * - `data-order` — the saved ordering, straight from the server's replay of the swaps.
-         *   This is what lets the card draw the saved table without inferring it from the DOM.
-         *
-         * Written as attributes rather than pushed through a shared store because the card reads
-         * `dataset` fresh on every call, so the next render picks these up with no re-init.
-         *
-         * Missing fields are skipped rather than blanked: an older server that does not send them
-         * should leave the card on its seeded values, not wipe them.
+         * Hand the share card what the server just told us.
          */
         _refreshShareCard(data) {
             const card = document.querySelector('[x-data*="finalTableShareCard"]');
@@ -1483,13 +1469,6 @@ window.Ligitabl.finalTableShareCard = function (el) {
          * The teams in the saved order, or null to use `data-rows` as seeded.
          *
          * ⚠️ Saved state only — deliberately blind to unsaved moves on screen.
-         *
-         * Everything this card produces leaves the app: a downloaded image, copied text, a link
-         * to the public page. Drawing the table as currently dragged would let someone share a
-         * prediction the server has never seen — and the public link sitting beside it in the
-         * same panel would show something else. The card also prints settledAt, the leaderboard
-         * tiebreak, which only ever describes a save; pairing it with unsaved rows would make the
-         * card misstate its own provenance.
          *
          * So the ordering is whichever of these the server last told us:
          *
