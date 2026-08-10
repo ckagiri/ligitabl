@@ -194,7 +194,20 @@ All access banners live in `fragments/access-banners.html` and render only when 
 **Condition:** `(canCreateEntry || isPreSeasonRegistration) && roundState != 'locked' && seasonEditingAllowed`
 
 - With imported guest prediction (localStorage `ligitabl.guestPrediction`): "Your Guest Prediction Imported! We've loaded your prediction - review it and submit…"
-- Otherwise: "Ready to Predict! Set your predicted order and submit. Take your time — no swaps needed, but up to 5 to fine-tune."
+- Otherwise (`isPreSeasonRegistration`): "Ready to Predict! Your table's saved — make up to 5 swaps if you want to change it. It carries forward each gameweek."
+- Otherwise: "Ready to Predict! Your table's ready — submit as-is to join, or make up to 5 swaps. It carries forward each gameweek."
+
+This copy lives in `fragments/predict-cta.html` as `copy(isPreSeasonRegistration)`, shared with the pre-season banner in `predictions.html` — the two banners are mutually exclusive by season phase (`isPreSeason` vs `isInPlay || isOffSeason`, all derived from one `SeasonState`), and the identical sentence had previously drifted between them. The `!imported` variants are a `th:if`/`th:unless` split on `isPreSeasonRegistration` rather than one sentence with an interpolated verb: a pre-season registrant already has a saved entry, so "submit as-is to join" would be wrong for them (they're already in, and their button reads "Confirm Prediction" / "Update Prediction (n)"). The fragment expects an Alpine `imported` boolean in scope; both callers declare it with the same `x-data`/`x-init`.
+
+**Submit button labels** (`fragments/prediction-actions.html`, shared `submit-button` fragment) key off `isInitialPrediction` / `isPreSeasonRegistration` / `getSwapCount()`:
+
+| State | 0 swaps | n > 0 swaps |
+| ----- | ------- | ----------- |
+| `isInitialPrediction` | "Submit Prediction to Join" | "Submit Prediction to Join (n)" |
+| `isPreSeasonRegistration` | "Confirm Prediction" | "Update Prediction (n)" |
+| otherwise | "Update Prediction" (disabled) | "Update Prediction (n)" |
+
+Only the pre-season row is enabled at 0 swaps: `canUpdate()` folds `isPreSeasonRegistration` into `treatAsInitial`, and the backend allows an empty swap list (`validateSwapTeams`, "0-5 pairs allowed"). A zero-swap submit is a genuine action — it merges the round-0 row into the live season by setting `atRoundNumber`, and keeps the first-swap bonus (`lastSwapAt` stays null). Hence "Confirm", not "Update".
 
 ### 3. Next Swap Bonus Banner (green)
 
@@ -218,7 +231,7 @@ Variant selected via `lockedVariant`:
 | Variant            | Condition                                             | Style  | Message                                                                 |
 | ------------------ | ----------------------------------------------------- | ------ | ----------------------------------------------------------------------- |
 | `seasonCompleting` | `isLastRound`                                         | yellow | "🔒 Season Completing — This is the final round. Matches are in progress and predictions are locked." |
-| `initialPrediction`| `isInitialPredictionEditable`                         | blue   | "👋 Matches In Progress — Set your predicted order and submit…" (or guest-import variant) |
+| `initialPrediction`| `isInitialPredictionEditable`                         | blue   | "👋 Matches In Progress — Your table's ready — submit as-is to join…" (or guest-import variant) |
 | `futureRoundSwap`  | `isFutureRoundPrediction && seasonEditingAllowed`     | blue   | "👋 Matches In Progress — Your prediction will be scored next round. You can still make swaps." |
 | `locked` (default) | otherwise                                             | yellow | "🔒 Round Locked — Matches are in progress. Predictions are locked until results are finalized." |
 
@@ -227,7 +240,7 @@ Variant selected via `lockedVariant`:
 **Condition:** `!isGuest && isCurrentRound && (roundState == 'completed' || roundState == 'finalized') && !seasonCompleted`
 
 - Default: "⏳ Scoring — Scoring predictions. Points will be available shortly."
-- Initial prediction still editable and not last round (`isInitialPredictionEditable && notLastRound`): "⏳ Scoring predictions — Set your predicted order for next round…"
+- Initial prediction still editable and not last round (`isInitialPredictionEditable && notLastRound`): "⏳ Scoring predictions — Your table's ready for next round — leave it as-is, or make up to 5 swaps…"
 
 ### 7. Historical Round Info Banner (blue)
 
@@ -433,6 +446,7 @@ Also on the page: a results banner loaded via HTMX (`/my-table/latest-result-ban
 
 - `api/src/main/resources/templates/predictions.html` — page, header indicators, season-phase banners, navigation, table wiring
 - `api/src/main/resources/templates/fragments/access-banners.html` — all access banners + status indicator
+- `api/src/main/resources/templates/fragments/predict-cta.html` — the shared "what do I do now?" CTA sentence (used by the green in-play banner and the pre-season banner in `predictions.html`)
 - `api/src/main/resources/templates/fragments/swap-instructions.html`, `fragments/prediction-actions.html` — swap-limit copy (5 / 2 / 1 per 24h), submit/update buttons
 - `api/src/main/resources/templates/fragments/round-navigation.html`, `fragments/prediction-table.html`, `fragments/prediction-historical-view.html`
 

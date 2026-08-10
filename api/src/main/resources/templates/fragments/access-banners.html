@@ -75,7 +75,6 @@
 
   <!-- Can Create Entry Banner (pre-season registration is an easter egg) -->
   <div th:if="${(canCreateEntry || isPreSeasonRegistration) && roundState != 'locked' && seasonEditingAllowed}"
-    th:with="verb=${isPreSeasonRegistration ? 'update' : 'submit'}"
     x-data="{ imported: false }"
     x-init="imported = localStorage.getItem('ligitabl.guestPrediction') !== null"
     @guest-storage-cleared.window="imported = false" class="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -91,10 +90,7 @@
           <span x-show="!imported">Ready to Predict!</span>
         </p>
         <span class="text-sm text-green-700 mt-1">
-          <span x-show="imported">We've loaded your prediction - review it and
-            <th:block th:text="${verb}">submit</th:block><th:block th:if="${!isPreSeasonRegistration}">&nbsp;to join the competition</th:block>.</span>
-          <span x-show="!imported">Set your predicted order and <th:block th:text="${verb}">submit</th:block>. Take your time —
-            no swaps needed, but up to 5 to fine-tune.</span>
+          <th:block th:replace="~{fragments/predict-cta :: copy(${isPreSeasonRegistration})}"></th:block>
           </p>
       </div>
     </div>
@@ -185,8 +181,8 @@
           <p class="text-sm text-blue-700 mt-1">
             <span x-show="imported">We've loaded your guest prediction - review it and submit to join the
               competition.</span>
-            <span x-show="!imported">Set your predicted order and submit. Take your time —
-              no swaps needed, but up to 5 to fine-tune.</span>
+            <span x-show="!imported">Your table's ready — submit as-is to join, or make up to 5 swaps.
+              It'll be scored from next round, then carries forward each gameweek.</span>
           </p>
         </th:block>
 
@@ -232,7 +228,7 @@
         <th:block th:if="${isInitialPredictionEditable && notLastRound}">
           <p class="text-sm font-medium text-yellow-800">⏳ Scoring predictions</p>
           <p class="text-sm text-yellow-700 mt-1">
-            Set your predicted order for next round. Take your time — no swaps needed, but up to 5 to fine-tune.
+            Your table's ready for next round — leave it as-is, or make up to 5 swaps. It carries forward each gameweek.
           </p>
         </th:block>
       </div>

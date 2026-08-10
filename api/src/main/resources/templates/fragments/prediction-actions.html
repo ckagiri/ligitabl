@@ -44,13 +44,13 @@
   </svg>
   <span x-show="!isSaving">
     <span x-show="isInitialPrediction && getSwapCount() === 0"
-      >Submit Prediction &amp; Join</span
+      >Submit Prediction to Join</span
     >
     <span x-show="isInitialPrediction && getSwapCount() > 0">
-      Submit Prediction &amp; Join (<span x-text="getSwapCount()"></span>)
+      Submit Prediction to Join (<span x-text="getSwapCount()"></span>)
     </span>
     <span x-show="isPreSeasonRegistration && getSwapCount() === 0"
-      >Update Prediction</span
+      >Confirm Prediction</span
     >
     <span x-show="isPreSeasonRegistration && getSwapCount() > 0">
       Update Prediction (<span x-text="getSwapCount()"></span>)

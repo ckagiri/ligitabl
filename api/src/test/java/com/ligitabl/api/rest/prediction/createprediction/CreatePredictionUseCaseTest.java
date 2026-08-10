@@ -702,12 +702,11 @@ class CreatePredictionUseCaseTest {
     }
 
     @Test
-    void resolveJoinContext_resolvesMainContestAndEffectiveRound() {
+    void resolveJoinContextAsOpen_resolvesMainContestAndEffectiveRound() {
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
-        when(matchRepo.findByRoundId(round.getId())).thenReturn(List.of());
         when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
 
-        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result = useCase.resolveJoinContext(season);
+        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result = useCase.resolveJoinContextAsOpen(season);
 
         assertTrue(result.isRight());
         CreatePredictionUseCase.JoinCtx ctx = result.get();
@@ -718,12 +717,65 @@ class CreatePredictionUseCaseTest {
     }
 
     @Test
-    void resolveJoinContext_rejects_whenMainContestNotFound() {
-        // findMainContest is checked first — determineAtRoundNumber (round/match lookups) is
-        // never reached, since the flatMap chain short-circuits on the first Left.
+    void resolveJoinContextAsOpen_joinsIntoTheLockedRound_notTheNextOne() {
+        // The ROUND_LOCKED auto-join runs when the round is, by definition, no longer OPEN.
+        // These users are joined as if they had submitted while it was open, so atRoundNumber
+        // must stay on the locked round.
+        // No matchRepo stub on purpose: this method must not consult round status at all - that
+        // independence is the fix.
+        Round lockedRound = createRound(2, false);
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(lockedRound));
+        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
+
+        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result = useCase.resolveJoinContextAsOpen(season);
+
+        assertTrue(result.isRight());
+        assertEquals(2, result.get().atRoundNumber());
+        assertEquals(2, result.get().currentRoundPosition());
+    }
+
+    @Test
+    void resolveJoinContextAsOpen_stillResolves_onTheFinalRound() {
+        Round finalRound = createRound(3, false);
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(finalRound));
+        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
+
+        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result = useCase.resolveJoinContextAsOpen(season);
+
+        assertTrue(result.isRight());
+        assertEquals(3, result.get().atRoundNumber());
+    }
+
+    @Test
+    void resolveJoinContextAsOpen_rejects_whenSeasonHasRunPastMaxRounds() {
+        Round beyondEnd = createRound(4, false); // maxRounds is 3
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(beyondEnd));
+        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
+
+        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result = useCase.resolveJoinContextAsOpen(season);
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(CreatePredictionError.Ended.class, result.getLeft());
+    }
+
+    @Test
+    void resolveJoinContextAsOpen_rejects_whenCurrentRoundNotFound() {
+        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.empty());
+
+        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result = useCase.resolveJoinContextAsOpen(season);
+
+        assertTrue(result.isLeft());
+        assertInstanceOf(CreatePredictionError.CurrentRoundNotFound.class, result.getLeft());
+    }
+
+    @Test
+    void resolveJoinContextAsOpen_rejects_whenMainContestNotFound() {
+        // findMainContest is checked first — the round lookup is never reached, since the
+        // flatMap chain short-circuits on the first Left.
         when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.empty());
 
-        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result = useCase.resolveJoinContext(season);
+        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result = useCase.resolveJoinContextAsOpen(season);
 
         assertTrue(result.isLeft());
         assertInstanceOf(CreatePredictionError.MainContestNotFound.class, result.getLeft());
