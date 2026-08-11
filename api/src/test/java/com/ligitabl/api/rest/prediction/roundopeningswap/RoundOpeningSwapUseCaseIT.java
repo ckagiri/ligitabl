@@ -345,8 +345,10 @@ class RoundOpeningSwapUseCaseIT extends AbstractPostgresIT {
         @Test
         @DisplayName("joining at this round consumes its opening window, even though the field is 0")
         void newJoinConsumesTheOpeningWindow() {
-            // createPredictionAndEntry never sets openingCommittedRound, so it stays 0 — which is
-            // why that field alone cannot decide this.
+            // A legacy/backfilled row whose openingCommittedRound is still 0 even though the user
+            // joined at this round — which is why that field alone cannot decide this. The
+            // atRoundNumber == round check is what rejects here. (Fresh joins now stamp
+            // openingCommittedRound = atRoundNumber, so they are caught by either check.)
             savePrediction(OPENING_UNUSED, MID_SEASON, CURRENT_ROUND);
 
             assertThat(swap("MCI", "ARS").getLeft()).isInstanceOf(SwapError.OpeningAlreadyUsed.class);

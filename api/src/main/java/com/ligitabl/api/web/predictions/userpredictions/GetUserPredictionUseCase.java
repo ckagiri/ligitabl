@@ -246,8 +246,7 @@ public class GetUserPredictionUseCase {
         if (seasonPrediction.isPreSeasonRegistration()) {
             swapCooldown = SwapCooldown.initial();
         } else {
-            boolean openingRoundAvailable = seasonPrediction.getOpeningCommittedRound() > 0
-                    && seasonPrediction.getOpeningCommittedRound() != rc.currentRound()
+            boolean openingRoundAvailable = rc.currentRound() > seasonPrediction.getOpeningCommittedRound()
                     && seasonPrediction.getLastSwapAt() != null
                     && rc.currentRoundStatus() == RoundStatus.OPEN;
             swapCooldown = new SwapCooldown(seasonPrediction.getLastSwapAt(), true, openingRoundAvailable);

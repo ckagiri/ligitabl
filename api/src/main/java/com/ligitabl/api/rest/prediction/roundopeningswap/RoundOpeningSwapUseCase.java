@@ -50,8 +50,12 @@ public class RoundOpeningSwapUseCase {
      * path                        atRoundNumber  openingCommittedRound  at round N
      * pre-season register         0              0                      merge first
      * merged at N                 N              N                      already reshuffled
-     * new join at N               N              0                      already reshuffled
-     * joined/merged at N-1        N-1            N-1 or 0               allowed — this is it
+     * new join at N               N              N                      already reshuffled
+     * joined/merged at N-1        N-1            N-1                    allowed — this is it
+     *
+     * Join and merge both stamp openingCommittedRound = atRoundNumber: joining consumes the
+     * opening window of the round you start playing. Legacy rows predating that column, and
+     * rows backfilled to 0, still fall to the atRoundNumber check above.
      * </pre>
      */
     private Either<SwapError, Void> validateOpeningNotUsed(SeasonPrediction prediction, Round round) {

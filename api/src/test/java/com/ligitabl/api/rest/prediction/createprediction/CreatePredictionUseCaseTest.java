@@ -747,6 +747,30 @@ class CreatePredictionUseCaseTest {
     }
 
     @Test
+    void newJoin_whenRoundNotOpen_commitsTheOpeningWindowOfTheRoundTheUserStartsPlaying() {
+        // Joining while round 1 is finalized places the user at round 2, and joining consumes
+        // round 2's opening window — so openingCommittedRound must follow atRoundNumber, not the
+        // current round position. Dating it at round 1 would hand them a round-2 opening swap that
+        // belongs only to users who committed while round 1 was open.
+        Round finalizedRound = createRound(1, true);
+        when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
+        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(finalizedRound));
+        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
+        when(predictionRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+        when(entryRepo.save(any())).thenAnswer(i -> i.getArgument(0));
+
+        Either<CreatePredictionError, CreatePredictionResult> result =
+                useCase.execute(userId, new CreatePredictionCommand(List.of()));
+
+        assertTrue(result.isRight());
+        ArgumentCaptor<SeasonPrediction> captor = ArgumentCaptor.forClass(SeasonPrediction.class);
+        verify(predictionRepo).save(captor.capture());
+        assertThat(captor.getValue().getAtRoundNumber()).isEqualTo(2);
+        assertThat(captor.getValue().getOpeningCommittedRound()).isEqualTo(2);
+    }
+
+    @Test
     void resolveJoinContextAsOpen_rejects_whenSeasonHasRunPastMaxRounds() {
         Round beyondEnd = createRound(4, false); // maxRounds is 3
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(beyondEnd));
