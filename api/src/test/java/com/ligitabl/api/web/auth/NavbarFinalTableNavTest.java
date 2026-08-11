@@ -4,6 +4,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import java.security.Principal;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -25,6 +28,7 @@ import com.ligitabl.api.rest.finaltable.shared.FinalTableSupport;
 import com.ligitabl.model.domain.FinalTablePrediction;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.ContestRepo;
+import com.ligitabl.model.repo.EmailVerificationTokenRepo;
 import com.ligitabl.model.repo.FinalTablePredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.UserRepo;
@@ -53,6 +57,11 @@ class NavbarFinalTableNavTest {
     @Mock
     private FinalTablePredictionRepo predictionRepo;
 
+    @Mock
+    private EmailVerificationTokenRepo emailVerificationTokenRepo;
+
+    private final Clock clock = Clock.fixed(Instant.parse("2026-08-11T12:00:00Z"), ZoneOffset.UTC);
+
     private NavbarControllerAdvice advice;
     private Season season;
     private Principal principal;
@@ -68,7 +77,9 @@ class NavbarFinalTableNavTest {
                 userRepo,
                 currentUserFacade,
                 finalTableSupport,
-                predictionRepo);
+                predictionRepo,
+                emailVerificationTokenRepo,
+                clock);
     }
 
     @AfterEach

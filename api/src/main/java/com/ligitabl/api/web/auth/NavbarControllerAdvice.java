@@ -1,6 +1,8 @@
 package com.ligitabl.api.web.auth;
 
 import java.security.Principal;
+import java.time.Clock;
+import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -21,6 +23,7 @@ import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.ContestRepo;
+import com.ligitabl.model.repo.EmailVerificationTokenRepo;
 import com.ligitabl.model.repo.FinalTablePredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.UserRepo;
@@ -56,9 +59,14 @@ public class NavbarControllerAdvice {
     private final CurrentUserFacade currentUserFacade;
     private final FinalTableSupport finalTableSupport;
     private final FinalTablePredictionRepo predictionRepo;
+    private final EmailVerificationTokenRepo emailVerificationTokenRepo;
+    private final Clock clock;
 
     @Value("${umami.website-id:}")
     private String umamiWebsiteId;
+
+    @Value("${ligitabl.security.email-verification-resend-quiet-minutes:30}")
+    private int resendQuietMinutes;
 
     @ModelAttribute("umamiWebsiteId")
     public String umamiWebsiteId() {
@@ -208,6 +216,43 @@ public class NavbarControllerAdvice {
         }
 
         return userRepo.findById(userId).map(u -> !u.isEmailVerified()).orElse(false);
+    }
+
+    /**
+     * Whether the verify-email banner should offer its "Resend email" action.
+     *
+     * <p>Suppressed while the most recent verification email is still fresh — right after signup the
+     * mail is already in flight, so resend invites a duplicate, and inside
+     * {@code email-verification-resend-cooldown-minutes} the server would reject the attempt with
+     * {@code ResendTooSoon} anyway. The quiet window is deliberately its own setting, and longer than
+     * that cooldown: the cooldown is anti-abuse throttling, this is "don't ask yet".
+     *
+     * <p>Only consulted when {@code emailUnverified} is already true, so the extra token read costs
+     * nothing for verified users — the common case.
+     */
+    @ModelAttribute("verificationResendAvailable")
+    public boolean verificationResendAvailable(Principal principal) {
+        if (!isAuthenticatedUser(currentAuthentication()) || principal == null) {
+            return false;
+        }
+
+        UUID userId = resolveUserId(principal);
+        if (userId == null) {
+            return false;
+        }
+
+        try {
+            return emailVerificationTokenRepo
+                    .findLatestForUser(userId)
+                    .map(token -> clock.instant()
+                            .isAfter(token.getCreatedAt().plus(Duration.ofMinutes(resendQuietMinutes))))
+                    // No token on record means nothing was sent to duplicate — let them ask for one.
+                    .orElse(true);
+        } catch (RuntimeException e) {
+            // A banner button is not worth failing a page render over; offering resend is the
+            // safe fallback, since the server still throttles an over-eager click.
+            return true;
+        }
     }
 
     @ModelAttribute("isImpersonating")
