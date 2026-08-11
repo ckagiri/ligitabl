@@ -309,6 +309,7 @@ public class CreatePredictionUseCase {
                     .swaps(new ArrayList<>(List.of(new RoundSwap(atRoundNumber, swapResult.changes()))))
                     .lastSwapAt(request.swaps().isEmpty() ? null : now) // bonus only if no swaps used at signup
                     .atRoundNumber(atRoundNumber)
+                    .openingCommittedRound(currentRoundPosition)
                     .build();
 
             SeasonPrediction savedPrediction = predictionRepo.save(prediction);
