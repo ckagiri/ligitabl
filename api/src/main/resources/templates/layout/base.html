@@ -289,7 +289,12 @@
                 >LigiPredictor</span
               >
             </a>
-            <div class="hidden md:flex ml-10 space-x-4">
+            <!--
+              Desktop nav switches in at lg (1024px), not md (768px): phone landscape sits
+              at roughly 740-930px, wide enough to clear md but too narrow for the full bar,
+              which wrapped "My Table" onto two lines and pushed the user chip off the edge.
+            -->
+            <div class="hidden lg:flex ml-10 space-x-4">
               <a
                 th:href="@{/leaderboard}"
                 class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
@@ -474,7 +479,7 @@
           </div>
 
           <!-- Desktop Right -->
-          <div class="hidden md:flex items-center space-x-4">
+          <div class="hidden lg:flex items-center space-x-4">
             <a
               th:href="${predictionsNavLink} ?: '/my-table/guest'"
               class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
@@ -649,7 +654,7 @@
           </div>
 
           <!-- Mobile user initials avatar -->
-          <div th:if="${isLoggedIn}" class="md:hidden mr-1">
+          <div th:if="${isLoggedIn}" class="lg:hidden mr-1">
             <span
               class="inline-flex items-center justify-center h-7 w-7 rounded-full bg-indigo-600 text-white text-xs font-semibold select-none"
               th:with="parts=${#strings.arraySplit(userDisplayName, ' ')}"
@@ -659,7 +664,7 @@
           </div>
 
           <!-- Mobile menu button -->
-          <div class="md:hidden">
+          <div class="lg:hidden">
             <button
               type="button"
               @click="mobileMenuOpen = !mobileMenuOpen"
@@ -697,7 +702,7 @@
           x-cloak
           x-transition
           @click.away="mobileMenuOpen = false"
-          class="md:hidden pb-3 border-t border-gray-200"
+          class="lg:hidden pb-3 border-t border-gray-200"
         >
           <div class="flex flex-col space-y-1 pt-2">
             <a

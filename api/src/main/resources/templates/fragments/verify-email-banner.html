@@ -14,11 +14,29 @@
       x-cloak
       x-data="{
         show: false,
+        clientAllowsResend: false,
         dismissKey: 'ligitabl.verifyEmailBannerDismissedAt',
+        seenKey: 'ligitabl.verifyEmailBannerFirstSeenAt',
         init() {
           const dismissedAt = parseInt(localStorage.getItem(this.dismissKey) || '0', 10);
           const sevenDaysMs = 7 * 24 * 60 * 60 * 1000;
           this.show = !dismissedAt || (Date.now() - dismissedAt) > sevenDaysMs;
+
+          // Second gate, on top of the server's quiet window: the very first render in
+          // this browser is the one right after signup, when the verification mail is
+          // already in flight and 'Resend email' would only invite a duplicate. Stamp
+          // the sighting and withhold resend until a later page view. The stamp expires
+          // on the same 7-day clock as the dismissal, so a user still unverified a week
+          // later gets one fresh no-resend render rather than a button they last saw
+          // long enough ago to have forgotten.
+          const firstSeenAt = parseInt(localStorage.getItem(this.seenKey) || '0', 10);
+          const seenRecently = firstSeenAt && (Date.now() - firstSeenAt) <= sevenDaysMs;
+          if (!seenRecently) {
+            localStorage.setItem(this.seenKey, Date.now().toString());
+            this.clientAllowsResend = false;
+          } else {
+            this.clientAllowsResend = true;
+          }
         },
         dismiss() {
           localStorage.setItem(this.dismissKey, Date.now().toString());
@@ -51,7 +69,17 @@
           </span>
         </div>
         <div class="flex items-center gap-3 flex-shrink-0">
-          <form th:action="@{/profile/resend-verification}" method="post">
+          <!--
+            Resend is offered only when both gates agree: the server's quiet window has
+            elapsed since the last verification email (verificationResendAvailable), and
+            this browser has rendered the banner before (clientAllowsResend).
+          -->
+          <form
+            th:if="${verificationResendAvailable == true}"
+            th:action="@{/profile/resend-verification}"
+            method="post"
+            x-show="clientAllowsResend"
+          >
             <input
               type="hidden"
               th:name="${_csrf.parameterName}"
