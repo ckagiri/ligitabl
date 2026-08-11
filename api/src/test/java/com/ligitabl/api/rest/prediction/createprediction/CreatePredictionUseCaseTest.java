@@ -840,6 +840,30 @@ class CreatePredictionUseCaseTest {
     }
 
     @Test
+    void executeWithContext_preSeasonRegistration_neverResolvesTheRound() {
+        // The pre-season branch must not consult the round at all: round resolution carries the
+        // Ended / last-round-must-be-OPEN checks, which have no business failing a round-0
+        // registration. This is what the lazy Supplier in executeJoinPlan protects — an eagerly
+        // resolved value would drag those checks onto this branch.
+        season.setPredictionsOpenAt(atNow().plusDays(30));
+        season.setPreSeasonOpensAt(atNow().minusDays(1));
+        season.setStartDate(atNow().toLocalDate().plusDays(1));
+        var ctx = new CreatePredictionUseCase.JoinCtx(season, defaultContest, round.getPosition(), round.getPosition());
+
+        when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
+        when(predictionRepo.save(any())).thenAnswer(returnsFirstArg());
+        when(entryRepo.save(any())).thenAnswer(returnsFirstArg());
+
+        Either<CreatePredictionError, CreatePredictionResult> result =
+                useCase.executeWithContext(userId, ctx, multiSwap(List.of()));
+
+        assertTrue(result.isRight());
+        verify(predictionRepo).save(argThat(p -> p.getAtRoundNumber() == 0 && p.getOpeningCommittedRound() == 0));
+        verify(roundRepo, never()).findById(any());
+        verify(matchRepo, never()).findByRoundId(any());
+    }
+
+    @Test
     void executeWithContext_rejectsAlreadyJoinedUser() {
         SeasonPrediction existingPrediction = SeasonPrediction.builder()
                 .id(UUID.randomUUID())

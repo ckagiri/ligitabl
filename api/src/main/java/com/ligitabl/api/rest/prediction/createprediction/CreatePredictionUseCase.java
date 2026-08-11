@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.function.Supplier;
 
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -101,19 +102,15 @@ public class CreatePredictionUseCase {
             UUID userId, JoinCtx ctx, CreatePredictionCommand request) {
         return validateSwapTeams(request, ctx.season())
                 .flatMap(__ -> resolveJoinPlan(userId, ctx.season()))
-                .flatMap(plan -> switch (plan) {
-                    case JoinPlan.NewJoin ignored -> createPredictionAndEntry(
-                            userId,
-                            ctx.season(),
-                            ctx.mainContest(),
-                            request,
-                            ctx.atRoundNumber(),
-                            ctx.currentRoundPosition());
-                    case JoinPlan.NewPreSeasonRegistration ignored -> registerPreSeason(
-                            userId, ctx.season(), ctx.mainContest(), request);
-                    case JoinPlan.MergePreSeasonRegistration merge -> mergePreSeasonRegistration(
-                            userId, ctx.mainContest(), request, merge.existing(), ctx.atRoundNumber());
-                });
+                .flatMap(plan -> executeJoinPlan(
+                        userId,
+                        ctx.season(),
+                        ctx.mainContest(),
+                        request,
+                        plan,
+                        // Already resolved by resolveJoinContextAsOpen — never re-derived here,
+                        // which is what keeps the locked round from becoming the next one.
+                        () -> Either.right(new RoundInfo(ctx.atRoundNumber(), ctx.currentRoundPosition()))));
     }
 
     @Transactional
@@ -127,7 +124,13 @@ public class CreatePredictionUseCase {
                 .flatMap(ctx -> validateSwapTeams(request, ctx.season()).map(__ -> ctx))
                 .flatMap(
                         ctx -> findMainContest(ctx.season()).map(contest -> new Ctx(ctx.season(), contest, ctx.plan())))
-                .flatMap(ctx -> executeJoinPlan(userId, ctx.season(), ctx.mainContest(), request, ctx.plan()));
+                .flatMap(ctx -> executeJoinPlan(
+                        userId,
+                        ctx.season(),
+                        ctx.mainContest(),
+                        request,
+                        ctx.plan(),
+                        () -> determineAtRoundNumber(ctx.season())));
     }
 
     // Step 1: resolve the active season, and reject unless it's genuinely joinable
@@ -219,14 +222,24 @@ public class CreatePredictionUseCase {
                 .orElseGet(() -> Either.left(new CreatePredictionError.MainContestNotFound()));
     }
 
+    /**
+     * <p>A {@link Supplier} rather than a resolved value on purpose: the pre-season branch must
+     * never touch {@code roundRepo}, and must not run the Ended / last-round-must-be-OPEN checks
+     * that resolution performs.
+     */
     private Either<CreatePredictionError, CreatePredictionResult> executeJoinPlan(
-            UUID userId, Season season, Contest mainContest, CreatePredictionCommand request, JoinPlan plan) {
+            UUID userId,
+            Season season,
+            Contest mainContest,
+            CreatePredictionCommand request,
+            JoinPlan plan,
+            Supplier<Either<CreatePredictionError, RoundInfo>> roundInfo) {
         return switch (plan) {
-            case JoinPlan.NewJoin __ -> determineAtRoundNumber(season)
+            case JoinPlan.NewJoin __ -> roundInfo.get()
                     .flatMap(info -> createPredictionAndEntry(
                             userId, season, mainContest, request, info.atRoundNumber(), info.currentRoundPosition()));
             case JoinPlan.NewPreSeasonRegistration __ -> registerPreSeason(userId, season, mainContest, request);
-            case JoinPlan.MergePreSeasonRegistration merge -> determineAtRoundNumber(season)
+            case JoinPlan.MergePreSeasonRegistration merge -> roundInfo.get()
                     .flatMap(info -> mergePreSeasonRegistration(
                             userId, mainContest, request, merge.existing(), info.atRoundNumber()));
         };

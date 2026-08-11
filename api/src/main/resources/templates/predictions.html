@@ -100,6 +100,7 @@
                   <a
                     th:if="${!isGuest && finalTableEntryOpen == true}"
                     th:href="@{/final-table}"
+                    onclick="window.flashNavLoadingBar()"
                     title="Predict the final table — open until season kickoff"
                     class="inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap text-xs sm:text-sm font-medium text-emerald-600 hover:text-emerald-700 transition-colors px-2.5 py-1 rounded-full border border-emerald-200 hover:border-emerald-300 bg-emerald-50"
                   >

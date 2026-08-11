@@ -323,6 +323,7 @@
               <a
                 th:if="${!isLoggedIn and showFinalTableNav}"
                 th:href="@{/final-table}"
+                onclick="window.flashNavLoadingBar()"
                 class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
                 >Final Table</a
               >
@@ -383,6 +384,7 @@
                   <div class="py-1">
                     <a
                       th:href="@{/final-table}"
+                      onclick="window.flashNavLoadingBar()"
                       class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
                       @click="moreMenuOpen = false"
                       >Final Table</a
@@ -736,6 +738,7 @@
             <a
               th:if="${!isLoggedIn and showFinalTableNav}"
               th:href="@{/final-table}"
+              onclick="window.flashNavLoadingBar()"
               class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
               >Final Table</a
             >
@@ -780,6 +783,7 @@
               <div x-show="mobileMoreOpen" x-cloak class="pl-3">
                 <a
                   th:href="@{/final-table}"
+                  onclick="window.flashNavLoadingBar()"
                   class="block text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
                   >Final Table</a
                 >
