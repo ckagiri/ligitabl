@@ -225,8 +225,7 @@ public class CreatePredictionUseCase {
     /**
      * <p>A {@link Supplier} rather than a resolved value on purpose: the pre-season branch must
      * never touch {@code roundRepo}, and must not run the Ended / last-round-must-be-OPEN checks
-     * that resolution performs. Resolving eagerly here would fail a pre-season registration on a
-     * season sitting past its last round.
+     * that resolution performs.
      */
     private Either<CreatePredictionError, CreatePredictionResult> executeJoinPlan(
             UUID userId,
