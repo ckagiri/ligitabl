@@ -309,7 +309,11 @@ public class CreatePredictionUseCase {
                     .swaps(new ArrayList<>(List.of(new RoundSwap(atRoundNumber, swapResult.changes()))))
                     .lastSwapAt(request.swaps().isEmpty() ? null : now) // bonus only if no swaps used at signup
                     .atRoundNumber(atRoundNumber)
-                    .openingCommittedRound(currentRoundPosition)
+                    // The commitment belongs to the round the user actually starts playing. Joining
+                    // while the round is locked places them at the next round, and joining consumes
+                    // that round's opening window — so they get cooldown there, not an opening swap.
+                    // Opening swaps belong to those who committed while the previous round was open.
+                    .openingCommittedRound(atRoundNumber)
                     .build();
 
             SeasonPrediction savedPrediction = predictionRepo.save(prediction);
@@ -429,6 +433,8 @@ public class CreatePredictionUseCase {
                 existing.addSwap(atRoundNumber, change);
             }
             existing.setLastSwapAt(preSeasonHadSwaps || usedSwapsNow ? now : null);
+            // Matches createPredictionAndEntry: the commitment belongs to the round this user
+            // starts playing, whose opening window the merge submission consumes.
             existing.setOpeningCommittedRound(atRoundNumber);
 
             SeasonPrediction saved = predictionRepo.save(existing);

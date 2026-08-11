@@ -99,6 +99,9 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
                 .swaps(List.of())
                 .lastSwapAt(null)
                 .atRoundNumber(10)
+                // Joining stamps the round joined at, so a real row is never 0 here while
+                // atRoundNumber is 10. Tests needing an unspent window override it explicitly.
+                .openingCommittedRound(10)
                 .build();
 
         predictionRepo.save(prediction);
