@@ -102,9 +102,6 @@ public class MakeSwapUseCase {
         prediction.setCurrentRankings(updatedRankings);
         prediction.addSwap(targetRound.getPosition(), change);
         prediction.setLastSwapAt(now);
-        // openingCommittedRound is deliberately NOT advanced here: an ordinary swap must never
-        // unblock its own UseOpeningWindowFirst gate. After join, RoundOpeningSwapUseCase is the
-        // sole writer — the opening window is spent through that endpoint, which runs first.
         prediction.setAtRoundNumber(targetRound.getPosition());
 
         SeasonPrediction saved = predictionRepo.save(prediction);
