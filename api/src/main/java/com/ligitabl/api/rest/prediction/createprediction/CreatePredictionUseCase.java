@@ -223,8 +223,6 @@ public class CreatePredictionUseCase {
     }
 
     /**
-     * The one dispatch on {@link JoinPlan}, shared by both entry points.
-     *
      * <p>A {@link Supplier} rather than a resolved value on purpose: the pre-season branch must
      * never touch {@code roundRepo}, and must not run the Ended / last-round-must-be-OPEN checks
      * that resolution performs. Resolving eagerly here would fail a pre-season registration on a
