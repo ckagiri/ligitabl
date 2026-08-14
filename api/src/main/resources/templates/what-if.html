@@ -418,16 +418,58 @@
               </p>
             </div>
 
-            <!-- The score below will have moved since this user last had the page open, because the
-                 swaps it was built on went with the fixture change. Say so rather than let it look
-                 like a miscalculation. Shows once: the session is re-saved without the swaps. -->
+            <!-- The score below will have moved since this user last had the page open, because
+                 the swaps it was built on went with the fixture change. Say so rather than let it
+                 look like a miscalculation. Both notices below explain a reset that already
+                 happened, so dismissing is purely "I've read it" — the flag is display state, and
+                 neither is persisted past this page view anyway. -->
             <div
               x-show="swapsClearedByFixtureChange"
               x-cloak
-              class="mb-3 px-3 py-2 rounded-md border border-amber-200 bg-amber-50 text-xs text-amber-800"
+              class="mb-3 px-3 py-2 rounded-md border border-amber-200 bg-amber-50 text-xs text-amber-800 flex items-center justify-between gap-3"
             >
-              This round's fixtures changed, so your sandbox swaps were cleared. The table below is
-              your own prediction, scored against the projection.
+              <span>Fixtures changed — your sandbox swaps were cleared.</span>
+              <button
+                type="button"
+                @click="swapsClearedByFixtureChange = false"
+                aria-label="Dismiss"
+                class="shrink-0 -mr-1 p-1 text-amber-500 hover:text-amber-700 transition-colors"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </div>
+
+            <!-- Same idea for the other way sandbox swaps disappear: the user took them to their
+                 real table and submitted. Green rather than amber — nothing went wrong here, the
+                 plan just landed. -->
+            <div
+              x-show="swapsClearedBySubmit"
+              x-cloak
+              class="mb-3 px-3 py-2 rounded-md border border-green-200 bg-green-50 text-xs text-green-800 flex items-center justify-between gap-3"
+            >
+              <span>Swaps applied to your table — the sandbox was reset.</span>
+              <button
+                type="button"
+                @click="swapsClearedBySubmit = false"
+                aria-label="Dismiss"
+                class="shrink-0 -mr-1 p-1 text-green-600 hover:text-green-800 transition-colors"
+              >
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
             </div>
 
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">

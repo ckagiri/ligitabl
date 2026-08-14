@@ -487,12 +487,14 @@ window.Ligitabl.predictionPage = function (el) {
     // (ligitabl.whatif.<userId>.<roundId>), so it's scoped to this user and round already and
     // goes quiet on every other round.
     //
-    // Deliberately never mutates that key: what-if owns its session, and my-table only reads.
+    // Read-only apart from clearWhatIfSwaps() below, which runs once the plan has been acted on.
     // Entries are already in the {teamACode, teamAFrom, teamATo, teamBCode, ...} shape the
     // swap-history fragment renders.
+    const WHAT_IF_STORAGE_KEY = `ligitabl.whatif.${userId}.${roundId}`;
+
     function loadWhatIfSwaps() {
         try {
-            const raw = localStorage.getItem(`ligitabl.whatif.${userId}.${roundId}`);
+            const raw = localStorage.getItem(WHAT_IF_STORAGE_KEY);
             if (!raw) return [];
             const saved = JSON.parse(raw);
             const log = saved?.swapLog;
@@ -512,6 +514,45 @@ window.Ligitabl.predictionPage = function (el) {
         } catch (e) {
             console.warn("Failed to load what-if swaps:", e);
             return [];
+        }
+    }
+
+    // Once a submission lands, the what-if plan has been acted on and shouldn't keep being
+    // offered as one — so clear the sandbox's swaps, matching what whatIfPage.resetSwaps() does
+    // to its own state (teams back to baseline, stack and log emptied).
+    //
+    // Done by deleting the three swap fields rather than rewriting them: _restoreWhatIfSession
+    // reads `saved.teams || this.teams` and `saved.swapLog || []`, so their absence restores the
+    // freshly-initialised values — the server table, no stack, no log. That avoids my-table
+    // having to know what-if's baseline, which it can't see.
+    //
+    // The entered scores survive — they're the user's own work, and nothing about them was
+    // acted on. hasComputed/appliedScores do not: that projection was computed against the
+    // table we've just reset, so keeping it would show standings describing an arrangement that
+    // no longer exists. Dropping them puts the session back in the "scores entered, nothing
+    // computed" state whatIfPage.init() already handles — _applyIfComplete() recomputes against
+    // the reset table on the next visit, with no extra flag to keep in step.
+    //
+    // swapsClearedBySubmit is what-if's cue to explain the reset rather than let the user find
+    // it; whatIfPage clears the marker as soon as it has shown it.
+    function clearWhatIfSwaps() {
+        try {
+            const raw = localStorage.getItem(WHAT_IF_STORAGE_KEY);
+            if (!raw) return;
+            const saved = JSON.parse(raw);
+            if (!saved || typeof saved !== "object") return;
+            // Nothing to reset, and nothing to explain — leave the session (and its notice)
+            // exactly as it was.
+            if (!Array.isArray(saved.swapLog) || saved.swapLog.length === 0) return;
+            delete saved.teams;
+            delete saved.swapStack;
+            delete saved.swapLog;
+            delete saved.hasComputed;
+            delete saved.appliedScores;
+            saved.swapsClearedBySubmit = true;
+            localStorage.setItem(WHAT_IF_STORAGE_KEY, JSON.stringify(saved));
+        } catch (e) {
+            console.warn("Failed to clear what-if swaps:", e);
         }
     }
 
@@ -762,6 +803,8 @@ window.Ligitabl.predictionPage = function (el) {
                         if (this.importedFromGuest || ((this.isInitialPrediction || this.isPreSeasonRegistration) && !this.isOpeningRound)) {
                             this._clearStorage(GUEST_STORAGE_KEY);
                         }
+                        // Only on success: a failed submit leaves the plan intact to retry from.
+                        clearWhatIfSwaps();
                         if (data.nextUrl) {
                             window.location.href = data.nextUrl;
                             return;
@@ -2050,6 +2093,11 @@ window.Ligitabl.whatIfPage = function (el) {
         // explain why the table (and the score with it) came back different. Not persisted: the
         // session is re-saved without those swaps, so the next load has nothing to explain.
         swapsClearedByFixtureChange: false,
+        // The same, for swaps cleared because the user submitted them to their real table (see
+        // predictionPage.clearWhatIfSwaps). Persisted, unlike the fixture-change flag: that one
+        // is raised by this page as it restores, while this is raised by the my-table page in a
+        // different page load, so localStorage is the only way it can reach us.
+        swapsClearedBySubmit: false,
         init() {
             this.teams = Ligitabl._mapServerPredictions(parsed.predictions);
             this.originalTeams = Ligitabl._mapServerPredictions(parsed.predictions);
@@ -2216,6 +2264,10 @@ window.Ligitabl.whatIfPage = function (el) {
                 return false;
             }
             if (!saved) return false;
+            // Raised by the my-table page when a submission consumed these swaps. Read here and
+            // never written back: _saveWhatIfSession() below serialises a fixed field list that
+            // omits it, so the marker dies with this restore and the notice shows exactly once.
+            this.swapsClearedBySubmit = !!saved.swapsClearedBySubmit;
             this.scores = saved.scores || this.scores;
             this.teams = saved.teams || this.teams;
             this.swapStack = saved.swapStack || [];
