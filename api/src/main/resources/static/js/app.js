@@ -805,6 +805,21 @@ window.Ligitabl.predictionPage = function(el) {
     };
   });
   const base = Ligitabl._predictionBase(parsed, userId, roundId);
+  function loadWhatIfSwaps() {
+    try {
+      const raw = localStorage.getItem(`ligitabl.whatif.${userId}.${roundId}`);
+      if (!raw) return [];
+      const saved = JSON.parse(raw);
+      const log = saved?.swapLog;
+      if (!Array.isArray(log)) return [];
+      return log.filter(
+        (s) => s && s.teamACode && s.teamBCode && s.teamAFrom != null && s.teamATo != null && s.teamBFrom != null && s.teamBTo != null
+      );
+    } catch (e) {
+      console.warn("Failed to load what-if swaps:", e);
+      return [];
+    }
+  }
   return Object.assign(base, {
     canSwap,
     canInteract,
@@ -816,12 +831,11 @@ window.Ligitabl.predictionPage = function(el) {
     isSaving: false,
     errorMessage: null,
     importedFromGuest: false,
+    whatIfSwaps: [],
     init() {
       if (isInitialPrediction || isOpeningRound || isPreSeasonRegistration) {
         const authPrediction = loadAuthPrediction();
-        if (isPreSeasonRegistration && authPrediction) {
-          this._clearStorage(AUTH_STORAGE_KEY);
-        } else if (authPrediction) {
+        if (authPrediction) {
           this.teams = _extractTeams(authPrediction).map((t, idx) => ({ ...t, position: idx + 1 }));
           this.swapStack = _extractSwapStack(authPrediction);
         }
@@ -858,6 +872,7 @@ window.Ligitabl.predictionPage = function(el) {
         window.dispatchEvent(new CustomEvent("guest-storage-cleared"));
       }
       this.originalTeams = Ligitabl._mapServerPredictions(predictions);
+      this.whatIfSwaps = loadWhatIfSwaps();
       const savePrefs = () => Ligitabl._savePrefs({
         showStandings: this.showStandings,
         showFixtures: this.showFixtures,
@@ -2728,9 +2743,7 @@ Predict the table — LigiPredictor.com`;
     const targetId = e.detail?.target?.id;
     if (NAV_TARGETS.includes(targetId) || PAGINATION_TARGETS.includes(targetId)) {
       finish();
-    }
-    if (PAGINATION_TARGETS.includes(targetId)) {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+      window.scrollTo({ top: 0, behavior: "auto" });
     }
   });
   document.body.addEventListener("htmx:responseError", function() {

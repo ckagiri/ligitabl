@@ -598,10 +598,21 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
               </th:block>
 
               <!-- Swap history (see fragments/swap-history.html) — part of the round's result
-                   view, so it lives inside this card. Expanded here; the public shared view
-                   passes false. -->
-              <div th:replace="~{fragments/swap-history :: history(true)}"></div>
+                   view, so it lives inside this card. Collapsed by default: the What-If swaps
+                   card below opens instead, and two expanded lists of swaps read as one muddle. -->
+              <div th:replace="~{fragments/swap-history :: history(false)}"></div>
             </div>
+
+            <!-- What-If swaps (see fragments/what-if-swaps.html) — read-only reminder of what the
+                 user tried in the sandbox, to copy onto the real table above, falling back to a
+                 pitch for the feature when there's nothing saved. Its own card rather than part
+                 of the table card: it describes a separate sandbox, not this round's result.
+                 Current round only, matching the What-If pill at the top of the page: What-If
+                 only runs there, and a historical round shows its real scored result, where
+                 speculative swaps would only be noise. -->
+            <th:block th:if="${!isHistoricalView}">
+              <div th:replace="~{fragments/what-if-swaps :: swaps}"></div>
+            </th:block>
 
             <!-- footerVisible is shared between the inline "actions" button and the floating pill so exactly
                one of them is ever showing: the pill while scrolling, the inline one once the footer is near. -->

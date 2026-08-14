@@ -1,0 +1,158 @@
+<!--
+  What-If swaps — the swaps the user tried out in the what-if sandbox for the round being viewed,
+  shown on their own table as a read-only reminder of what they were planning.
+
+  Read-only on purpose: these are speculative, and a round's real swap allowance is far smaller
+  than what a what-if session can hold. The user re-applies whichever they want by tapping teams
+  in the table above, which is what keeps the allowance accounted for in one place.
+
+  Entirely client-side — what-if swaps live only in the browser (localStorage key
+  ligitabl.whatif.<userId>.<roundId>), never on the server. `whatIfSwaps` is loaded by
+  Ligitabl.predictionPage, so this fragment must sit inside that x-data scope.
+
+  Two states, driven by whatIfSwaps.length:
+    - swaps saved  → the list, expanded, as a prompt to act on while the table is still editable
+    - none saved   → a short pitch for the feature and a link to it, so the card doubles as the
+                     discovery route for users who have never opened What-If
+  The empty state is why this renders unconditionally rather than hiding when the log is empty.
+  Its call site still gates it to the current round, since What-If only runs there.
+
+  The round's own swap history is collapsed at its call site to balance this one being open.
+-->
+<div
+  th:fragment="swaps"
+  x-cloak
+  class="bg-white rounded-lg shadow-sm mb-6"
+  x-data="{ open: true }"
+>
+  <button
+    @click="open = !open"
+    type="button"
+    class="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50 rounded-lg transition-colors"
+  >
+    <span class="text-sm font-medium text-gray-700">
+      <span x-show="whatIfSwaps.length > 0">From your What-If</span>
+      <span x-show="whatIfSwaps.length === 0">What-If</span>
+      <span
+        class="ml-1 text-xs text-gray-400 font-normal"
+        th:text="'(GW' + ${viewingRound} + ')'"
+        >(GW12)</span
+      >
+    </span>
+    <span class="flex items-center gap-2">
+      <span
+        x-show="whatIfSwaps.length > 0"
+        class="text-xs text-gray-400 font-normal"
+        x-text="whatIfSwaps.length + (whatIfSwaps.length === 1 ? ' swap' : ' swaps')"
+      ></span>
+      <svg
+        class="h-4 w-4 text-gray-400 transition-transform duration-200"
+        :class="open ? 'rotate-180' : ''"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+      >
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M19 9l-7 7-7-7"
+        />
+      </svg>
+    </span>
+  </button>
+
+  <div x-show="open" x-transition class="border-t border-gray-100">
+    <!-- Saved swaps -->
+    <template x-if="whatIfSwaps.length > 0">
+      <div>
+        <ul class="divide-y divide-gray-100">
+          <template x-for="(entry, idx) in whatIfSwaps" :key="entry.teamACode + entry.teamBCode + idx">
+            <li class="px-6 py-3">
+              <!-- whitespace-nowrap + scroll: one swap is one line, so the A→B ↔ B→A
+                 symmetry survives on narrow screens instead of orphaning the last "#17". -->
+              <span
+                class="text-sm font-mono text-gray-700 whitespace-nowrap overflow-x-auto max-w-full block"
+              >
+                <span class="text-gray-300 mr-1.5 select-none" x-text="(idx + 1) + '.'">1.</span>
+                <span class="font-semibold text-gray-900" x-text="entry.teamACode">ARS</span>
+                <span class="text-gray-400">#</span><span x-text="entry.teamAFrom">1</span>
+                <span class="text-gray-400">→</span>
+                <span class="text-gray-400">#</span><span x-text="entry.teamATo">4</span>
+                <span class="mx-1 font-bold text-indigo-500">↔</span>
+                <span class="font-semibold text-gray-900" x-text="entry.teamBCode">CHE</span>
+                <span class="text-gray-400">#</span><span x-text="entry.teamBFrom">4</span>
+                <span class="text-gray-400">→</span>
+                <span class="text-gray-400">#</span><span x-text="entry.teamBTo">1</span>
+              </span>
+            </li>
+          </template>
+        </ul>
+        <!-- The closing verb tracks the action button's own label (see
+             fragments/prediction-actions.html), using the same expression swap-instructions.html
+             uses, so the two never drift apart. Pre-season reads "update" rather than the
+             button's zero-swap "Confirm": acting on this advice means a swap has been made, and
+             the button relabels itself to Update at that point. -->
+        <p class="px-6 py-3 text-[11px] text-gray-400 leading-relaxed border-t border-gray-100">
+          Tried out in your What-If sandbox — nothing here has been applied to your table.
+          <!-- canSwap, not canInteract: during cooldown the table still rearranges (to plan the
+               next swap) but nothing can be saved, so the call to save would be a promise the
+               page can't keep. This is the same line swap-instructions.html draws when it
+               switches to its "changes are local only" wording. -->
+          <span x-show="canSwap || isInitialPrediction">
+            Tap two teams above to make a swap for real, then
+            <span x-text="(isInitialPrediction || isPreSeasonRegistration) ? 'submit' : 'update'"
+              >update</span
+            >
+            to save it.
+          </span>
+          <!-- Rearranging still works here, saving doesn't — said in the card so it doesn't
+               dead-end on "nothing has been applied" with no reason why. Split on isRoundOpen as
+               swap-instructions.html does: a closed round isn't a cooldown. -->
+          <span x-show="canInteract && !canSwap && !isInitialPrediction && isRoundOpen">
+            Rearrange above to plan, but nothing saves until your cooldown ends.
+          </span>
+          <span
+            x-show="canInteract && !canSwap && !isInitialPrediction && !isRoundOpen && !isLastRound"
+          >
+            Rearrange above to plan, but nothing saves until the next round opens.
+          </span>
+        </p>
+      </div>
+    </template>
+
+    <!-- Empty state: the discovery pitch. Same hx-get as the What-If pill at the top of the page,
+         so this is a second route to it rather than a separate entry point. -->
+    <template x-if="whatIfSwaps.length === 0">
+      <div class="px-6 py-4">
+        <p class="text-sm text-gray-600 leading-relaxed">
+          Enter the scores you expect and see where the table lands. Any swaps you try there show
+          up here.
+        </p>
+        <a
+          th:attr="hx-get=@{/predictions/user/what-if}"
+          hx-target="#prediction-page"
+          hx-swap="outerHTML swap:100ms settle:100ms"
+          hx-disabled-elt="this"
+          class="mt-3 inline-flex items-center gap-1.5 cursor-pointer text-xs sm:text-sm font-medium text-indigo-600 hover:text-indigo-700 transition-colors px-2.5 py-1 rounded-full border border-indigo-200 hover:border-indigo-300 bg-indigo-50"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="w-3.5 h-3.5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path
+              d="M9.663 17h4.673M12 3v1m6.364 1.636-.707.707M21 12h-1M4 12H3m3.343-5.657-.707-.707m2.828 9.9a5 5 0 1 1 4.243 0M9.5 21h5"
+            />
+          </svg>
+          Try What-If
+        </a>
+      </div>
+    </template>
+  </div>
+</div>
