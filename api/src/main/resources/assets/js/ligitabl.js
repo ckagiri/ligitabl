@@ -521,18 +521,6 @@ window.Ligitabl.predictionPage = function (el) {
     // offered as one — so clear the sandbox's swaps, matching what whatIfPage.resetSwaps() does
     // to its own state (teams back to baseline, stack and log emptied).
     //
-    // Done by deleting the three swap fields rather than rewriting them: _restoreWhatIfSession
-    // reads `saved.teams || this.teams` and `saved.swapLog || []`, so their absence restores the
-    // freshly-initialised values — the server table, no stack, no log. That avoids my-table
-    // having to know what-if's baseline, which it can't see.
-    //
-    // The entered scores survive — they're the user's own work, and nothing about them was
-    // acted on. hasComputed/appliedScores do not: that projection was computed against the
-    // table we've just reset, so keeping it would show standings describing an arrangement that
-    // no longer exists. Dropping them puts the session back in the "scores entered, nothing
-    // computed" state whatIfPage.init() already handles — _applyIfComplete() recomputes against
-    // the reset table on the next visit, with no extra flag to keep in step.
-    //
     // swapsClearedBySubmit is what-if's cue to explain the reset rather than let the user find
     // it; whatIfPage clears the marker as soon as it has shown it.
     function clearWhatIfSwaps() {
