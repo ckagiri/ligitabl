@@ -8,7 +8,9 @@
 
   Entirely client-side — what-if swaps live only in the browser (localStorage key
   ligitabl.whatif.<userId>.<roundId>), never on the server. `whatIfSwaps` is loaded by
-  Ligitabl.predictionPage, so this fragment must sit inside that x-data scope.
+  Ligitabl.predictionPage, so this fragment must sit inside that x-data scope. That component
+  clears the sandbox's swaps once a submission succeeds, so a plan already acted on stops being
+  offered as one.
 
   Two states, driven by whatIfSwaps.length:
     - swaps saved  → the list, expanded, as a prompt to act on while the table is still editable

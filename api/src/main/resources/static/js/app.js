@@ -805,9 +805,10 @@ window.Ligitabl.predictionPage = function(el) {
     };
   });
   const base = Ligitabl._predictionBase(parsed, userId, roundId);
+  const WHAT_IF_STORAGE_KEY = `ligitabl.whatif.${userId}.${roundId}`;
   function loadWhatIfSwaps() {
     try {
-      const raw = localStorage.getItem(`ligitabl.whatif.${userId}.${roundId}`);
+      const raw = localStorage.getItem(WHAT_IF_STORAGE_KEY);
       if (!raw) return [];
       const saved = JSON.parse(raw);
       const log = saved?.swapLog;
@@ -818,6 +819,24 @@ window.Ligitabl.predictionPage = function(el) {
     } catch (e) {
       console.warn("Failed to load what-if swaps:", e);
       return [];
+    }
+  }
+  function clearWhatIfSwaps() {
+    try {
+      const raw = localStorage.getItem(WHAT_IF_STORAGE_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (!saved || typeof saved !== "object") return;
+      if (!Array.isArray(saved.swapLog) || saved.swapLog.length === 0) return;
+      delete saved.teams;
+      delete saved.swapStack;
+      delete saved.swapLog;
+      delete saved.hasComputed;
+      delete saved.appliedScores;
+      saved.swapsClearedBySubmit = true;
+      localStorage.setItem(WHAT_IF_STORAGE_KEY, JSON.stringify(saved));
+    } catch (e) {
+      console.warn("Failed to clear what-if swaps:", e);
     }
   }
   return Object.assign(base, {
@@ -1025,6 +1044,7 @@ window.Ligitabl.predictionPage = function(el) {
           if (this.importedFromGuest || (this.isInitialPrediction || this.isPreSeasonRegistration) && !this.isOpeningRound) {
             this._clearStorage(GUEST_STORAGE_KEY);
           }
+          clearWhatIfSwaps();
           if (data.nextUrl) {
             window.location.href = data.nextUrl;
             return;
@@ -2041,6 +2061,11 @@ window.Ligitabl.whatIfPage = function(el) {
     // explain why the table (and the score with it) came back different. Not persisted: the
     // session is re-saved without those swaps, so the next load has nothing to explain.
     swapsClearedByFixtureChange: false,
+    // The same, for swaps cleared because the user submitted them to their real table (see
+    // predictionPage.clearWhatIfSwaps). Persisted, unlike the fixture-change flag: that one
+    // is raised by this page as it restores, while this is raised by the my-table page in a
+    // different page load, so localStorage is the only way it can reach us.
+    swapsClearedBySubmit: false,
     init() {
       this.teams = Ligitabl._mapServerPredictions(parsed.predictions);
       this.originalTeams = Ligitabl._mapServerPredictions(parsed.predictions);
@@ -2196,6 +2221,7 @@ window.Ligitabl.whatIfPage = function(el) {
         return false;
       }
       if (!saved) return false;
+      this.swapsClearedBySubmit = !!saved.swapsClearedBySubmit;
       this.scores = saved.scores || this.scores;
       this.teams = saved.teams || this.teams;
       this.swapStack = saved.swapStack || [];
