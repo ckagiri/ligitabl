@@ -497,12 +497,11 @@ window.Ligitabl.predictionPage = function (el) {
         init() {
             if (isInitialPrediction || isOpeningRound || isPreSeasonRegistration) {
                 // 1. Auth localStorage takes priority — user has already made swaps after signing up.
-                // Defensive: a pre-season registration is never supposed to have auth storage of its
-                // own (it's a fresh, still-unedited round-0 row).
+                // Pre-season registration included.
+                // _validateSaved already drops anything stale (different round, or a team set that
+                // no longer matches the server's).
                 const authPrediction = loadAuthPrediction();
-                if (isPreSeasonRegistration && authPrediction) {
-                    this._clearStorage(AUTH_STORAGE_KEY);
-                } else if (authPrediction) {
+                if (authPrediction) {
                     this.teams = _extractTeams(authPrediction).map((t, idx) => ({...t, position: idx + 1}));
                     this.swapStack = _extractSwapStack(authPrediction);
                 }

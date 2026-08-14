@@ -819,9 +819,7 @@ window.Ligitabl.predictionPage = function(el) {
     init() {
       if (isInitialPrediction || isOpeningRound || isPreSeasonRegistration) {
         const authPrediction = loadAuthPrediction();
-        if (isPreSeasonRegistration && authPrediction) {
-          this._clearStorage(AUTH_STORAGE_KEY);
-        } else if (authPrediction) {
+        if (authPrediction) {
           this.teams = _extractTeams(authPrediction).map((t, idx) => ({ ...t, position: idx + 1 }));
           this.swapStack = _extractSwapStack(authPrediction);
         }
