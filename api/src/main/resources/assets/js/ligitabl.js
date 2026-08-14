@@ -482,6 +482,39 @@ window.Ligitabl.predictionPage = function (el) {
 
     const base = Ligitabl._predictionBase(parsed, userId, roundId);
 
+    // The swaps the user tried out in the what-if sandbox for this same round, shown here as a
+    // read-only reminder of what they were planning. Same storage key whatIfPage writes
+    // (ligitabl.whatif.<userId>.<roundId>), so it's scoped to this user and round already and
+    // goes quiet on every other round.
+    //
+    // Deliberately never mutates that key: what-if owns its session, and my-table only reads.
+    // Entries are already in the {teamACode, teamAFrom, teamATo, teamBCode, ...} shape the
+    // swap-history fragment renders.
+    function loadWhatIfSwaps() {
+        try {
+            const raw = localStorage.getItem(`ligitabl.whatif.${userId}.${roundId}`);
+            if (!raw) return [];
+            const saved = JSON.parse(raw);
+            const log = saved?.swapLog;
+            if (!Array.isArray(log)) return [];
+            // A swap is only displayable with both team codes and all four positions; anything
+            // half-written is skipped rather than rendered as blanks.
+            return log.filter(
+                (s) =>
+                    s &&
+                    s.teamACode &&
+                    s.teamBCode &&
+                    s.teamAFrom != null &&
+                    s.teamATo != null &&
+                    s.teamBFrom != null &&
+                    s.teamBTo != null,
+            );
+        } catch (e) {
+            console.warn("Failed to load what-if swaps:", e);
+            return [];
+        }
+    }
+
     return Object.assign(base, {
         canSwap,
         canInteract,
@@ -493,6 +526,7 @@ window.Ligitabl.predictionPage = function (el) {
         isSaving: false,
         errorMessage: null,
         importedFromGuest: false,
+        whatIfSwaps: [],
 
         init() {
             if (isInitialPrediction || isOpeningRound || isPreSeasonRegistration) {
@@ -555,6 +589,8 @@ window.Ligitabl.predictionPage = function (el) {
 
             // originalTeams always reflects server state — diffs are against what was last submitted
             this.originalTeams = Ligitabl._mapServerPredictions(predictions);
+
+            this.whatIfSwaps = loadWhatIfSwaps();
 
             // Persist display preferences
             const savePrefs = () => Ligitabl._savePrefs({
@@ -2800,9 +2836,11 @@ window.Ligitabl.whatIfRecapCard = function (el) {
         const targetId = e.detail?.target?.id;
         if (NAV_TARGETS.includes(targetId) || PAGINATION_TARGETS.includes(targetId)) {
             finish();
-        }
-        if (PAGINATION_TARGETS.includes(targetId)) {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // Both are whole-page swaps, so land at the top rather than wherever the previous
+            // page happened to be scrolled to. 'auto', not 'smooth': this
+            // stands in for a page navigation, and smooth-scrolling the full height of a long
+            // table reads as drift rather than as arriving somewhere new.
+            window.scrollTo({ top: 0, behavior: 'auto' });
         }
     });
 
