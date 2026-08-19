@@ -67,12 +67,12 @@ public class FinalTableRowsJson {
      * As {@link #rows}, plus each team's position in the current standings — the locked-but-not-yet
      * revealed view, where a player can see how their table is tracking.
      */
-    public String liveRows(
-            List<TeamRank> rankings, Map<String, Team> teamsByCode, List<StandingsTeamRank> standings) {
+    public String liveRows(List<TeamRank> rankings, Map<String, Team> teamsByCode, List<StandingsTeamRank> standings) {
         Map<String, Integer> positionByCode = standings == null
                 ? Map.of()
                 : standings.stream()
-                        .collect(Collectors.toMap(StandingsTeamRank::teamCode, StandingsTeamRank::position, (a, b) -> a));
+                        .collect(Collectors.toMap(
+                                StandingsTeamRank::teamCode, StandingsTeamRank::position, (a, b) -> a));
 
         List<Map<String, Object>> rows = TeamRank.inPositionOrder(rankings).stream()
                 .map(rank -> {

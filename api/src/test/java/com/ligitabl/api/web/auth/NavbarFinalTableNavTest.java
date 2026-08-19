@@ -113,8 +113,7 @@ class NavbarFinalTableNavTest {
                 "n/a",
                 AuthorityUtils.createAuthorityList("ROLE_PLAYER"));
         SecurityContextHolder.getContext()
-                .setAuthentication(
-                        new UsernamePasswordAuthenticationToken(details, "n/a", details.getAuthorities()));
+                .setAuthentication(new UsernamePasswordAuthenticationToken(details, "n/a", details.getAuthorities()));
         return userId;
     }
 

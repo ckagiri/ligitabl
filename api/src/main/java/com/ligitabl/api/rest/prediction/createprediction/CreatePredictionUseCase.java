@@ -235,11 +235,13 @@ public class CreatePredictionUseCase {
             JoinPlan plan,
             Supplier<Either<CreatePredictionError, RoundInfo>> roundInfo) {
         return switch (plan) {
-            case JoinPlan.NewJoin __ -> roundInfo.get()
+            case JoinPlan.NewJoin __ -> roundInfo
+                    .get()
                     .flatMap(info -> createPredictionAndEntry(
                             userId, season, mainContest, request, info.atRoundNumber(), info.currentRoundPosition()));
             case JoinPlan.NewPreSeasonRegistration __ -> registerPreSeason(userId, season, mainContest, request);
-            case JoinPlan.MergePreSeasonRegistration merge -> roundInfo.get()
+            case JoinPlan.MergePreSeasonRegistration merge -> roundInfo
+                    .get()
                     .flatMap(info -> mergePreSeasonRegistration(
                             userId, mainContest, request, merge.existing(), info.atRoundNumber()));
         };

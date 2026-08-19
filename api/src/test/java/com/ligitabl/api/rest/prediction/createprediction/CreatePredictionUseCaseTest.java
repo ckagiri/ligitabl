@@ -706,7 +706,8 @@ class CreatePredictionUseCaseTest {
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
 
-        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result = useCase.resolveJoinContextAsOpen(season);
+        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result =
+                useCase.resolveJoinContextAsOpen(season);
 
         assertTrue(result.isRight());
         CreatePredictionUseCase.JoinCtx ctx = result.get();
@@ -727,7 +728,8 @@ class CreatePredictionUseCaseTest {
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(lockedRound));
         when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
 
-        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result = useCase.resolveJoinContextAsOpen(season);
+        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result =
+                useCase.resolveJoinContextAsOpen(season);
 
         assertTrue(result.isRight());
         assertEquals(2, result.get().atRoundNumber());
@@ -740,7 +742,8 @@ class CreatePredictionUseCaseTest {
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(finalRound));
         when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
 
-        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result = useCase.resolveJoinContextAsOpen(season);
+        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result =
+                useCase.resolveJoinContextAsOpen(season);
 
         assertTrue(result.isRight());
         assertEquals(3, result.get().atRoundNumber());
@@ -776,7 +779,8 @@ class CreatePredictionUseCaseTest {
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(beyondEnd));
         when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
 
-        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result = useCase.resolveJoinContextAsOpen(season);
+        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result =
+                useCase.resolveJoinContextAsOpen(season);
 
         assertTrue(result.isLeft());
         assertInstanceOf(CreatePredictionError.Ended.class, result.getLeft());
@@ -787,7 +791,8 @@ class CreatePredictionUseCaseTest {
         when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.empty());
 
-        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result = useCase.resolveJoinContextAsOpen(season);
+        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result =
+                useCase.resolveJoinContextAsOpen(season);
 
         assertTrue(result.isLeft());
         assertInstanceOf(CreatePredictionError.CurrentRoundNotFound.class, result.getLeft());
@@ -799,7 +804,8 @@ class CreatePredictionUseCaseTest {
         // flatMap chain short-circuits on the first Left.
         when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.empty());
 
-        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result = useCase.resolveJoinContextAsOpen(season);
+        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result =
+                useCase.resolveJoinContextAsOpen(season);
 
         assertTrue(result.isLeft());
         assertInstanceOf(CreatePredictionError.MainContestNotFound.class, result.getLeft());

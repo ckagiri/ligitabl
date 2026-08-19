@@ -77,7 +77,10 @@ public class GetFinalTableUseCase {
         String shareUrl = publicId == null ? null : shareUrl(publicId, season);
 
         List<StandingsTeamRank> liveStandings = !guest && prediction != null && !entryOpen && !revealed
-                ? standingsRepo.findLatestBySeason(season.getId()).map(Standings::getRankings).orElse(List.of())
+                ? standingsRepo
+                        .findLatestBySeason(season.getId())
+                        .map(Standings::getRankings)
+                        .orElse(List.of())
                 : List.of();
         boolean liveProgress = !liveStandings.isEmpty();
 
@@ -103,9 +106,7 @@ public class GetFinalTableUseCase {
                 .totalScore(revealed ? prediction.getTotalScore() : null)
                 .roundStatus(finalTableSupport.entryStatus(season).name())
                 .shareUrl(shareUrl)
-                .shareText(shareUrl == null
-                        ? null
-                        : shareTextBuilder.buildFinalTable(rankings, teamsByCode, shareUrl))
+                .shareText(shareUrl == null ? null : shareTextBuilder.buildFinalTable(rankings, teamsByCode, shareUrl))
                 .shareRowsJson(
                         rowsJson.shareRows(rankings, teamsByCode, revealed ? prediction.getResultRankings() : null))
                 .isGuest(guest)
@@ -115,9 +116,10 @@ public class GetFinalTableUseCase {
                 .ownerName(guest ? null : DisplayNames.clean(displayName))
                 .maxHitPoints(season.getMaxHitPoints())
                 .maxScore(FinalTableScorer.maxScore(season.getMaxHitPoints(), rankings.size()))
-                .totalHits(revealed && prediction.getBaseScore() != null
-                        ? season.getMaxHitPoints() - prediction.getBaseScore()
-                        : null)
+                .totalHits(
+                        revealed && prediction.getBaseScore() != null
+                                ? season.getMaxHitPoints() - prediction.getBaseScore()
+                                : null)
                 .build();
     }
 

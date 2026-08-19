@@ -127,8 +127,8 @@ class FinalTableRowsJsonTest {
 
     @Test
     void liveRowsCarryEachTeamsCurrentPosition() {
-        String json = rowsJson.liveRows(
-                TABLE, Map.of(), List.of(standing("ARS", 2), standing("LIV", 1), standing("CHE", 3)));
+        String json =
+                rowsJson.liveRows(TABLE, Map.of(), List.of(standing("ARS", 2), standing("LIV", 1), standing("CHE", 3)));
 
         assertThat(json).contains("\"code\":\"ARS\"", "\"current\":2");
         assertThat(json).contains("\"code\":\"LIV\"", "\"current\":1");

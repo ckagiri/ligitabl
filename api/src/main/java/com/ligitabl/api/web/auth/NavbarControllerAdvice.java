@@ -244,8 +244,8 @@ public class NavbarControllerAdvice {
         try {
             return emailVerificationTokenRepo
                     .findLatestForUser(userId)
-                    .map(token -> clock.instant()
-                            .isAfter(token.getCreatedAt().plus(Duration.ofMinutes(resendQuietMinutes))))
+                    .map(token ->
+                            clock.instant().isAfter(token.getCreatedAt().plus(Duration.ofMinutes(resendQuietMinutes))))
                     // No token on record means nothing was sent to duplicate — let them ask for one.
                     .orElse(true);
         } catch (RuntimeException e) {

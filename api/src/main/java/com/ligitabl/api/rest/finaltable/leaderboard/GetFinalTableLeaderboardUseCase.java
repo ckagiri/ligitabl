@@ -56,8 +56,7 @@ public class GetFinalTableLeaderboardUseCase {
             int teamCount = season.getInitialRankings() == null
                     ? 0
                     : season.getInitialRankings().size();
-            Integer maxScore =
-                    teamCount == 0 ? null : FinalTableScorer.maxScore(season.getMaxHitPoints(), teamCount);
+            Integer maxScore = teamCount == 0 ? null : FinalTableScorer.maxScore(season.getMaxHitPoints(), teamCount);
 
             if (scored == 0) {
                 return new FinalTableLeaderboardData(

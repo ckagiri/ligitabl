@@ -1,5 +1,7 @@
 package com.ligitabl.api.web.leaderboard;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
@@ -33,6 +35,7 @@ public class GetUserDetailController {
             @RequestParam(required = false) Integer maxRound,
             @RequestParam(required = false, defaultValue = "true") boolean scored,
             @RequestParam(required = false) UUID seasonId,
+            @RequestParam(required = false) String from,
             Model model,
             HttpServletResponse response) {
 
@@ -54,6 +57,7 @@ public class GetUserDetailController {
                                 maxRound,
                                 scored,
                                 seasonId,
+                                from,
                                 model));
     }
 
@@ -69,6 +73,7 @@ public class GetUserDetailController {
             Integer maxRoundParam,
             boolean scored,
             UUID seasonId,
+            String from,
             Model model) {
 
         int roundScore = result.roundScore() != null
@@ -92,8 +97,31 @@ public class GetUserDetailController {
         model.addAttribute("maxRound", maxRound);
         model.addAttribute("scored", scored);
         model.addAttribute("seasonId", seasonId);
+        model.addAttribute("from", from);
+        model.addAttribute(
+                "publicPredictionHref", publicPredictionHref(publicId, result.seasonSlug(), result.round(), from));
+        // Shown as the link's visible text: the clean canonical path, without the `from` marker
+        // that the href carries for the target page's Back link.
+        model.addAttribute("publicPredictionPath", publicPredictionPath(publicId, result.seasonSlug(), result.round()));
 
         return "fragments/user-detail :: user-details";
+    }
+
+    /** Canonical public-prediction path, no query string — used as the link's visible label. */
+    private String publicPredictionPath(String publicId, String seasonSlug, int round) {
+        if (seasonSlug == null) return null;
+
+        return "/u/" + publicId + "/" + seasonSlug + "/gw/" + round;
+    }
+
+    private String publicPredictionHref(String publicId, String seasonSlug, int round, String from) {
+        if (seasonSlug == null) return null;
+
+        String href = "/u/" + URLEncoder.encode(publicId, StandardCharsets.UTF_8) + "/" + seasonSlug + "/gw/" + round;
+        if (from != null && !from.isBlank()) {
+            href += "?from=" + URLEncoder.encode(from, StandardCharsets.UTF_8);
+        }
+        return href;
     }
 
     private String handleError(Exception error, Model model, HttpServletResponse response) {
