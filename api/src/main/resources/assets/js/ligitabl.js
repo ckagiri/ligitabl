@@ -2575,6 +2575,12 @@ window.Ligitabl.whatIfPage = function (el) {
         },
         focusScoreBox(matchId, side) {
             if (!this.roundOpen) return;
+
+            if (this.isScorePickerOpen(matchId) && this.focusSide === side) {
+                this.closeScorePicker();
+                return;
+            }
+
             if (!this.scoreAnswered(matchId)) {
                 const seg = this.isScorePickerOpen(matchId) && this.openSeg
                     ? this.openSeg
@@ -2780,6 +2786,10 @@ window.Ligitabl.whatIfPage = function (el) {
             if (!this.allScoresEntered() || this.isComputing) return;
             this.isComputing = true;
             this.errorMessage = null;
+            // Every score is in by this point, so an open picker is finished with — and the result
+            // it is about to be replaced by wants the room. Closed here rather than on success, so
+            // a failed compute doesn't leave a stray panel open over the error.
+            this.closeScorePicker();
 
             const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
             const headers = { "Content-Type": "application/json" };

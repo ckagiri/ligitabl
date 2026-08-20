@@ -2451,6 +2451,10 @@ Predict the table — LigiPredictor.com`;
     },
     focusScoreBox(matchId, side) {
       if (!this.roundOpen) return;
+      if (this.isScorePickerOpen(matchId) && this.focusSide === side) {
+        this.closeScorePicker();
+        return;
+      }
       if (!this.scoreAnswered(matchId)) {
         const seg = this.isScorePickerOpen(matchId) && this.openSeg ? this.openSeg : ["H", "D", "A"][Math.floor(Math.random() * 3)];
         this.openScorePicker(matchId, seg, side);
@@ -2639,6 +2643,7 @@ Predict the table — LigiPredictor.com`;
       if (!this.allScoresEntered() || this.isComputing) return;
       this.isComputing = true;
       this.errorMessage = null;
+      this.closeScorePicker();
       const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
       const headers = { "Content-Type": "application/json" };
       if (csrfToken) headers["X-CSRF-TOKEN"] = csrfToken;
