@@ -461,6 +461,63 @@ window.Ligitabl._parseDataAttributes = function(el) {
     formData: p(el?.dataset?.form, {}) || {}
   };
 };
+window.Ligitabl._newNonce = function() {
+  if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+};
+window.Ligitabl._consumeSwapPairs = function(log, pairs) {
+  const key = (a, b) => a < b ? `${a}|${b}` : `${b}|${a}`;
+  const remaining = /* @__PURE__ */ new Map();
+  (pairs || []).forEach((p) => {
+    if (!p || !p.teamACode || !p.teamBCode) return;
+    const k = key(p.teamACode, p.teamBCode);
+    remaining.set(k, (remaining.get(k) || 0) + 1);
+  });
+  const kept = [];
+  let consumedCount = 0;
+  for (const entry of log || []) {
+    if (!entry || !entry.teamACode || !entry.teamBCode) continue;
+    const k = key(entry.teamACode, entry.teamBCode);
+    const left = remaining.get(k) || 0;
+    if (left > 0) {
+      remaining.set(k, left - 1);
+      consumedCount++;
+      continue;
+    }
+    kept.push(entry);
+  }
+  return { kept, consumedCount };
+};
+window.Ligitabl._replaySwaps = function(baseline, entries) {
+  const teams = JSON.parse(JSON.stringify(baseline || []));
+  const rebuilt = [];
+  const stack = [];
+  let moved = false;
+  for (const entry of entries || []) {
+    const i = teams.findIndex((t) => t.code === entry.teamACode);
+    const j = teams.findIndex((t) => t.code === entry.teamBCode);
+    if (i < 0 || j < 0 || i === j) continue;
+    const teamAFrom = teams[i].position;
+    const teamBFrom = teams[j].position;
+    const tmp = teams[i];
+    teams[i] = teams[j];
+    teams[j] = tmp;
+    teams.forEach((t, idx) => t.position = idx + 1);
+    const top = stack[stack.length - 1];
+    if (top && top.a === entry.teamBCode && top.b === entry.teamACode) stack.pop();
+    else stack.push({ a: entry.teamACode, b: entry.teamBCode });
+    if (entry.teamAFrom !== teamAFrom || entry.teamBFrom !== teamBFrom) moved = true;
+    rebuilt.push({
+      teamACode: entry.teamACode,
+      teamAFrom,
+      teamATo: teamBFrom,
+      teamBCode: entry.teamBCode,
+      teamBFrom,
+      teamBTo: teamAFrom
+    });
+  }
+  return { teams, swapLog: rebuilt, swapStack: stack, moved };
+};
 window.Ligitabl._PREFS_KEY = "ligitabl.prefs";
 window.Ligitabl._loadPrefs = function(key) {
   try {
@@ -489,6 +546,10 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
     selectedTeam: null,
     swapStack: [],
     undoing: false,
+    // Which list the Changes Made card is showing: 'teams' or 'swaps'. Teams is the default —
+    // the per-team diff answers "what did I move", which is the question the card has always
+    // answered; the swap view is the follow-up for how those moves were made.
+    changesView: "teams",
     alwaysHoverable: false,
     isInitialPrediction: false,
     showStandings: savedPrefs ? savedPrefs.showStandings ?? true : true,
@@ -608,6 +669,27 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
           amount: Math.abs(change)
         };
       }).sort((a, b) => a.from - b.from);
+    },
+    // The swaps behind the current diff, in the same {teamACode, teamAFrom, teamATo, ...}
+    // shape the swap-history fragments render — so the Changes Made card can show how the
+    // moves were made, not just what moved.
+    //
+    // Derived rather than stored: swapStack is the exact tap history and is already persisted
+    // by _saveToStorage, so replaying it over originalTeams reconstructs the positions without
+    // a second piece of state to keep in lockstep through undo/reset/restore.
+    //
+    // Replayed twice on purpose. The first pass returns a swapStack with inverse pairs
+    // cancelled (swap A<->B, swap it back, and both drop out); replaying *that* yields
+    // positions for only the swaps that survive. Without it the list would show moves the user
+    // undid by re-swapping, and its length would exceed the Swaps count beside it —
+    // getSwapCount() measures the net permutation, not the tap history.
+    getSwapEntries() {
+      const pairs = this.swapStack.map((s) => ({ teamACode: s.a, teamBCode: s.b }));
+      const net = Ligitabl._replaySwaps(this.originalTeams, pairs).swapStack;
+      return Ligitabl._replaySwaps(
+        this.originalTeams,
+        net.map((s) => ({ teamACode: s.a, teamBCode: s.b }))
+      ).swapLog;
     },
     getPositionChange(teamCode) {
       const team = this.teams.find((t) => t.code === teamCode);
@@ -821,22 +903,31 @@ window.Ligitabl.predictionPage = function(el) {
       return [];
     }
   }
-  function clearWhatIfSwaps() {
+  function reconcileWhatIfSwaps(pairs, newBaseline) {
     try {
+      const cleaned = (Array.isArray(pairs) ? pairs : []).filter((p) => p && p.teamACode && p.teamBCode && p.teamACode !== p.teamBCode).map((p) => ({ teamACode: p.teamACode, teamBCode: p.teamBCode }));
+      if (cleaned.length === 0) return;
       const raw = localStorage.getItem(WHAT_IF_STORAGE_KEY);
       if (!raw) return;
       const saved = JSON.parse(raw);
       if (!saved || typeof saved !== "object") return;
       if (!Array.isArray(saved.swapLog) || saved.swapLog.length === 0) return;
-      delete saved.teams;
-      delete saved.swapStack;
-      delete saved.swapLog;
+      const { kept, consumedCount } = Ligitabl._consumeSwapPairs(saved.swapLog, cleaned);
+      const replayed = Ligitabl._replaySwaps(newBaseline, kept);
+      saved.swapLog = replayed.swapLog;
+      saved.teams = replayed.teams;
+      saved.swapStack = replayed.swapStack;
       delete saved.hasComputed;
       delete saved.appliedScores;
-      saved.swapsClearedBySubmit = true;
+      saved.submitOutcome = {
+        nonce: Ligitabl._newNonce(),
+        consumedCount,
+        rebased: replayed.moved
+      };
+      delete saved.swapsClearedBySubmit;
       localStorage.setItem(WHAT_IF_STORAGE_KEY, JSON.stringify(saved));
     } catch (e) {
-      console.warn("Failed to clear what-if swaps:", e);
+      console.warn("Failed to reconcile what-if swaps:", e);
     }
   }
   return Object.assign(base, {
@@ -940,45 +1031,6 @@ window.Ligitabl.predictionPage = function(el) {
       }
       return this.getSwapCount() > 1;
     },
-    getChangeSummary() {
-      const changed = this.getChangedTeams();
-      if (changed.length === 0) return null;
-      return {
-        teamCount: changed.length,
-        swapCount: this.getSwapCount(),
-        pairs: this.inferSwapPairs(changed)
-      };
-    },
-    inferSwapPairs(changedTeams) {
-      const pairs = [];
-      const processed = /* @__PURE__ */ new Set();
-      for (const team of changedTeams) {
-        if (processed.has(team.code)) continue;
-        const partner = changedTeams.find(
-          (t) => !processed.has(t.code) && t.to === team.from && t.from === team.to
-        );
-        if (partner) {
-          pairs.push({
-            team1: team.name,
-            team2: partner.name,
-            pos1: team.from,
-            pos2: partner.from
-          });
-          processed.add(team.code);
-          processed.add(partner.code);
-        } else {
-          pairs.push({
-            team1: team.name,
-            team2: null,
-            pos1: team.from,
-            pos2: team.to,
-            isComplex: true
-          });
-          processed.add(team.code);
-        }
-      }
-      return pairs;
-    },
     reset() {
       this.teams = JSON.parse(JSON.stringify(this.originalTeams));
       this.selectedTeam = null;
@@ -1008,6 +1060,8 @@ window.Ligitabl.predictionPage = function(el) {
       const toast = document.getElementById("saving-toast");
       if (toast) toast.classList.remove("hidden");
       let url, body;
+      const _submittedStack = this.isInitialPrediction || this.isPreSeasonRegistration || this.isOpeningRound ? this.swapStack : this.swapStack.slice(0, 1);
+      const submittedPairs = _submittedStack.map((s) => ({ teamACode: s.a, teamBCode: s.b }));
       const _working = this.originalTeams.map((t) => ({ ...t }));
       const _targetPosition = Object.fromEntries(this.teams.map((t) => [t.code, t.position]));
       const _derivedSwaps = [];
@@ -1044,7 +1098,7 @@ window.Ligitabl.predictionPage = function(el) {
           if (this.importedFromGuest || (this.isInitialPrediction || this.isPreSeasonRegistration) && !this.isOpeningRound) {
             this._clearStorage(GUEST_STORAGE_KEY);
           }
-          clearWhatIfSwaps();
+          reconcileWhatIfSwaps(submittedPairs, this.teams);
           if (data.nextUrl) {
             window.location.href = data.nextUrl;
             return;
@@ -1600,9 +1654,9 @@ window.Ligitabl.finalTablePage = function(el) {
 window.Ligitabl.finalTableShareCard = function(el) {
   const dataset = el?.dataset || {};
   return {
-    // Collapsed by default, matching fragments/share-prediction.html: the panel is an offer,
-    // not the main event.
-    open: false,
+    // Open by default, unlike fragments/share-prediction.html: this game's whole point is the
+    // shareable card, so the image sits in view rather than behind a disclosure.
+    open: true,
     /**
      * Team codes in the last-saved order, or null to fall back to the seeded `data-rows`.
      * Seeded from the attribute at init() so a page load still honours a server-rendered
@@ -2061,11 +2115,23 @@ window.Ligitabl.whatIfPage = function(el) {
     // explain why the table (and the score with it) came back different. Not persisted: the
     // session is re-saved without those swaps, so the next load has nothing to explain.
     swapsClearedByFixtureChange: false,
-    // The same, for swaps cleared because the user submitted them to their real table (see
-    // predictionPage.clearWhatIfSwaps). Persisted, unlike the fixture-change flag: that one
-    // is raised by this page as it restores, while this is raised by the my-table page in a
-    // different page load, so localStorage is the only way it can reach us.
+    // Set when a submission on my-table consumed swaps out of this sandbox (see
+    // predictionPage.reconcileWhatIfSwaps, which does the consuming and leaves the outcome
+    // behind for us to explain). Only when something actually matched — a rebase that
+    // consumed nothing is bookkeeping, not news.
     swapsClearedBySubmit: false,
+    // How many sandbox swaps that submission consumed, so the notice can name the count
+    // instead of implying the whole sandbox went.
+    swapsConsumedCount: 0,
+    // Set when surviving swaps were replayed onto a table that had moved under them, so their
+    // positions came back different from the ones the user last saw. The numbers are correct,
+    // but they changed without the user touching anything — this drives a quiet line next to
+    // the list rather than lengthening the notice, since it explains the list, not the submit.
+    swapsRebased: false,
+    // Nonce of the last submission whose outcome has been announced. Persisted, because
+    // init() can run twice in one page load (htmx:afterSwap re-inits Alpine over this
+    // fragment) and the second pass must not show the notice again.
+    lastSubmitNonce: null,
     init() {
       this.teams = Ligitabl._mapServerPredictions(parsed.predictions);
       this.originalTeams = Ligitabl._mapServerPredictions(parsed.predictions);
@@ -2197,7 +2263,12 @@ window.Ligitabl.whatIfPage = function(el) {
           currentPoints: this.currentPoints,
           currentGoalDifference: this.currentGoalDifference,
           appliedScores: this.appliedScores,
-          matchStatuses: this._matchStatuses()
+          matchStatuses: this._matchStatuses(),
+          // Nonce of the last submission whose outcome has already been announced.
+          // Persisted so a reload doesn't show the same notice twice; the
+          // submitOutcome record that carried it is deliberately absent from this
+          // fixed field list, so writing the session is also what retires it.
+          lastSubmitNonce: this.lastSubmitNonce
         }));
       } catch (e) {
         console.warn("Failed to save what-if session:", e);
@@ -2221,26 +2292,47 @@ window.Ligitabl.whatIfPage = function(el) {
         return false;
       }
       if (!saved) return false;
-      this.swapsClearedBySubmit = !!saved.swapsClearedBySubmit;
       this.scores = saved.scores || this.scores;
       this.teams = saved.teams || this.teams;
       this.swapStack = saved.swapStack || [];
-      this.swapLog = saved.swapLog || [];
+      this.swapLog = Array.isArray(saved.swapLog) ? saved.swapLog : [];
       this.hasComputed = !!saved.hasComputed;
       this.currentStandings = saved.currentStandings || this.currentStandings;
       this.currentPoints = saved.currentPoints || this.currentPoints;
       this.currentGoalDifference = saved.currentGoalDifference || this.currentGoalDifference;
       this.appliedScores = saved.appliedScores || null;
+      this.lastSubmitNonce = saved.lastSubmitNonce || null;
+      const outcome = saved.submitOutcome;
+      if (outcome && outcome.nonce && outcome.nonce !== this.lastSubmitNonce) {
+        this.swapsClearedBySubmit = (outcome.consumedCount || 0) > 0;
+        this.swapsConsumedCount = outcome.consumedCount || 0;
+        this.swapsRebased = !!outcome.rebased;
+        this.lastSubmitNonce = outcome.nonce;
+      }
       if (this._fixturesChangedSince(saved)) {
         this.swapsClearedByFixtureChange = this.swapLog.length > 0;
         this.reset();
         this.swapLog = [];
+        this._invalidateProjection();
+        this.swapsClearedBySubmit = false;
+        this.swapsConsumedCount = 0;
+        this.swapsRebased = false;
       }
       this._reconcileMatches();
       this._saveWhatIfSession();
       this.hasEdited = Object.values(this.scores).some((s) => s.home !== null || s.away !== null);
       if (this.hasComputed) this.activeTab = "result";
       return true;
+    },
+    // The projection was computed against the previous arrangement, so it no longer describes
+    // what's on screen. Drop it and let init()'s _applyIfComplete() recompute.
+    _invalidateProjection() {
+      this.hasComputed = false;
+      this.appliedScores = null;
+      this.currentStandings = parsed.currentStandings;
+      this.currentPoints = parsed.currentPoints;
+      this.currentGoalDifference = parsed.currentGoalDifference;
+      this.activeTab = "standings";
     },
     // Resyncs the round itself — the fixtures and whether it's still open — from the payload
     // Refresh already fetches. Returns whether the change was one that invalidates the sandbox
@@ -2359,6 +2451,10 @@ Predict the table — LigiPredictor.com`;
     },
     focusScoreBox(matchId, side) {
       if (!this.roundOpen) return;
+      if (this.isScorePickerOpen(matchId) && this.focusSide === side) {
+        this.closeScorePicker();
+        return;
+      }
       if (!this.scoreAnswered(matchId)) {
         const seg = this.isScorePickerOpen(matchId) && this.openSeg ? this.openSeg : ["H", "D", "A"][Math.floor(Math.random() * 3)];
         this.openScorePicker(matchId, seg, side);
@@ -2508,6 +2604,7 @@ Predict the table — LigiPredictor.com`;
     resetSwaps() {
       this.reset();
       this.swapLog = [];
+      this.swapsRebased = false;
       this._saveWhatIfSession();
     },
     allScoresEntered() {
@@ -2546,6 +2643,7 @@ Predict the table — LigiPredictor.com`;
       if (!this.allScoresEntered() || this.isComputing) return;
       this.isComputing = true;
       this.errorMessage = null;
+      this.closeScorePicker();
       const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
       const headers = { "Content-Type": "application/json" };
       if (csrfToken) headers["X-CSRF-TOKEN"] = csrfToken;

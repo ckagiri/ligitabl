@@ -1,7 +1,10 @@
 package com.ligitabl.api.web.publicpredictions;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Controller;
@@ -9,6 +12,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestHeader;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -122,10 +126,13 @@ public class PublicPredictionController {
             @PathVariable String publicId,
             @PathVariable String season,
             @PathVariable int position,
+            @RequestParam(required = false) String from,
             Model model,
             HttpServletResponse response,
             @RequestHeader(value = "HX-Request", required = false) String hxRequest) {
         log.info("GET /u/{}/{}/gw/{}", publicId, season, position);
+
+        model.addAttribute("backHref", resolveBackHref(from));
 
         SeasonSlug seasonSlug;
         try {
@@ -154,7 +161,26 @@ public class PublicPredictionController {
                 .fold(
                         error -> handleError(error, model, response),
                         data -> handleSuccess(
-                                publicId, resolvedSeason, competitionName, position, data, model, hxRequest));
+                                publicId, resolvedSeason, competitionName, position, data, from, model, hxRequest));
+    }
+
+    private String resolveBackHref(String from) {
+        if (from == null || from.isBlank()) return null;
+
+        if ("leaderboard".equals(from)) return "/leaderboard";
+
+        if (from.startsWith("contest:")) {
+            String contestId = from.substring("contest:".length());
+            try {
+                return "/contests/" + UUID.fromString(contestId);
+            } catch (IllegalArgumentException e) {
+                log.warn("Ignoring malformed contest id in `from` marker: {}", from);
+                return null;
+            }
+        }
+
+        log.warn("Ignoring unrecognised `from` marker: {}", from);
+        return null;
     }
 
     private String handleSuccess(
@@ -163,13 +189,14 @@ public class PublicPredictionController {
             String competitionName,
             int requestedPosition,
             PublicPredictionViewData data,
+            String from,
             Model model,
             String hxRequest) {
         // The use case clamps out-of-range requests to the target user's valid bounds — redirect
         // to the canonical URL for the clamped round rather than silently rendering a different
         // round at the requested URL.
         if (data.viewingRound() != requestedPosition) {
-            return "redirect:" + canonicalUrl(publicId, season.getSlug(), data.viewingRound());
+            return "redirect:" + canonicalUrl(publicId, season.getSlug(), data.viewingRound(), from);
         }
 
         model.addAttribute("pageTitle", pageTitle(data, competitionName));
@@ -190,6 +217,14 @@ public class PublicPredictionController {
         model.addAttribute("swapHistory", swapHistoryFormatter.format(data.roundSwaps()));
         model.addAttribute(
                 "navBaseUrl", "/u/" + publicId + "/" + season.getSlug().toShorthand());
+        // Re-set on this path too: the model attribute set before the use case call is lost on the
+        // clamp redirect, and round navigation needs `from` to keep the Back link alive.
+        String backHref = resolveBackHref(from);
+        model.addAttribute("backHref", backHref);
+        // Only propagate `from` through round nav once it resolved to a real destination, so a junk
+        // marker doesn't get carried from URL to URL.
+        model.addAttribute(
+                "navQueryString", backHref != null ? "from=" + URLEncoder.encode(from, StandardCharsets.UTF_8) : null);
 
         // The richer comparison-options view (points/GD/fixtures/form) only applies to the
         // current/live round — historical rounds keep the plain static table, no JSON needed.
@@ -252,7 +287,16 @@ public class PublicPredictionController {
     }
 
     private String canonicalUrl(String publicId, SeasonSlug seasonSlug, int position) {
-        return "/u/" + publicId + "/" + seasonSlug.toShorthand() + "/gw/" + position;
+        return canonicalUrl(publicId, seasonSlug, position, null);
+    }
+
+    /** Canonical URL, preserving the {@code from} back-link marker across redirects. */
+    private String canonicalUrl(String publicId, SeasonSlug seasonSlug, int position, String from) {
+        String url = "/u/" + publicId + "/" + seasonSlug.toShorthand() + "/gw/" + position;
+        if (from != null && !from.isBlank()) {
+            url += "?from=" + URLEncoder.encode(from, StandardCharsets.UTF_8);
+        }
+        return url;
     }
 
     private String pageTitle(PublicPredictionViewData data, String competitionName) {

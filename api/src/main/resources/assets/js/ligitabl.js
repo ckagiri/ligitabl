@@ -62,6 +62,105 @@ window.Ligitabl._parseDataAttributes = function (el) {
     };
 };
 
+// Opaque, per-submission token so a consumption can be applied exactly once even though the
+// pages that write and read it are different page loads (and htmx can re-init the reader within
+// one). crypto.randomUUID needs a secure context, which plain-HTTP local dev isn't.
+window.Ligitabl._newNonce = function () {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+};
+
+// --- What-if swap reconciliation ---
+//
+// Shared by both sides of the handshake: my-table reconciles the stored session the moment a
+// submission succeeds (so its own read-only list is never stale), and the what-if page re-runs
+// the same logic against its live component state on the next load. One implementation, so the
+// two can't drift.
+
+// Removes the log entries a submission has now made real, matching on the unordered team-code
+// pair — the only part of an entry that survives a rebase, since the stored positions are
+// absolute and go stale the moment anything above them moves.
+//
+// Matching is one-to-one against a multiset of the submitted pairs, so submitting A<->B once
+// can't silently swallow two identical sandbox entries.
+window.Ligitabl._consumeSwapPairs = function (log, pairs) {
+    const key = (a, b) => (a < b ? `${a}|${b}` : `${b}|${a}`);
+    const remaining = new Map();
+    (pairs || []).forEach((p) => {
+        if (!p || !p.teamACode || !p.teamBCode) return;
+        const k = key(p.teamACode, p.teamBCode);
+        remaining.set(k, (remaining.get(k) || 0) + 1);
+    });
+
+    const kept = [];
+    let consumedCount = 0;
+    for (const entry of log || []) {
+        if (!entry || !entry.teamACode || !entry.teamBCode) continue; // malformed: drop
+        const k = key(entry.teamACode, entry.teamBCode);
+        const left = remaining.get(k) || 0;
+        if (left > 0) {
+            remaining.set(k, left - 1);
+            consumedCount++;
+            continue;
+        }
+        kept.push(entry);
+    }
+    return {kept, consumedCount};
+};
+
+// Replays surviving swaps onto a new baseline, recomputing each entry's positions as it goes.
+//
+// This is what keeps the log honest. Entries carry absolute positions (teamAFrom/teamATo) that
+// the swap-log fragments render verbatim, and those are only ever true against the arrangement
+// in force when the swap was made — so they're recomputed here from live positions rather than
+// carried over. Only the team-code pair survives a rebase; every other field is derived.
+//
+// Pure: takes and returns plain data, so it can run against a stored session (my-table, at
+// submit) or live component state (what-if, at restore). Returns the replayed team order too,
+// since the what-if page needs it as its table.
+window.Ligitabl._replaySwaps = function (baseline, entries) {
+    const teams = JSON.parse(JSON.stringify(baseline || []));
+    const rebuilt = [];
+    const stack = [];
+    let moved = false;
+
+    for (const entry of entries || []) {
+        const i = teams.findIndex((t) => t.code === entry.teamACode);
+        const j = teams.findIndex((t) => t.code === entry.teamBCode);
+        // A team that's no longer on this table (it moved rounds, or the entry was half-written)
+        // makes the swap unreplayable — drop it rather than render a half-swap or a "#4 -> #4".
+        if (i < 0 || j < 0 || i === j) continue;
+
+        const teamAFrom = teams[i].position;
+        const teamBFrom = teams[j].position;
+        const tmp = teams[i];
+        teams[i] = teams[j];
+        teams[j] = tmp;
+        teams.forEach((t, idx) => (t.position = idx + 1));
+
+        // Mirrors pushSwap's inverse-cancellation so the rebuilt stack is exactly what a live
+        // user would have produced — undoLastSwap pops it and the log in lockstep.
+        const top = stack[stack.length - 1];
+        if (top && top.a === entry.teamBCode && top.b === entry.teamACode) stack.pop();
+        else stack.push({a: entry.teamACode, b: entry.teamBCode});
+
+        // Worth flagging to the user only if the replay actually landed this swap somewhere new;
+        // a rebase that reproduces the same numbers has nothing to explain.
+        if (entry.teamAFrom !== teamAFrom || entry.teamBFrom !== teamBFrom) moved = true;
+
+        rebuilt.push({
+            teamACode: entry.teamACode,
+            teamAFrom,
+            teamATo: teamBFrom,
+            teamBCode: entry.teamBCode,
+            teamBFrom,
+            teamBTo: teamAFrom,
+        });
+    }
+
+    return {teams, swapLog: rebuilt, swapStack: stack, moved};
+};
+
 // --- Persisted display preferences ---
 
 window.Ligitabl._PREFS_KEY = "ligitabl.prefs";
@@ -96,6 +195,10 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         selectedTeam: null,
         swapStack: [],
         undoing: false,
+        // Which list the Changes Made card is showing: 'teams' or 'swaps'. Teams is the default —
+        // the per-team diff answers "what did I move", which is the question the card has always
+        // answered; the swap view is the follow-up for how those moves were made.
+        changesView: 'teams',
         alwaysHoverable: false,
         isInitialPrediction: false,
         showStandings: savedPrefs ? (savedPrefs.showStandings ?? true) : true,
@@ -249,6 +352,28 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
                     };
                 })
                 .sort((a, b) => a.from - b.from);
+        },
+
+        // The swaps behind the current diff, in the same {teamACode, teamAFrom, teamATo, ...}
+        // shape the swap-history fragments render — so the Changes Made card can show how the
+        // moves were made, not just what moved.
+        //
+        // Derived rather than stored: swapStack is the exact tap history and is already persisted
+        // by _saveToStorage, so replaying it over originalTeams reconstructs the positions without
+        // a second piece of state to keep in lockstep through undo/reset/restore.
+        //
+        // Replayed twice on purpose. The first pass returns a swapStack with inverse pairs
+        // cancelled (swap A<->B, swap it back, and both drop out); replaying *that* yields
+        // positions for only the swaps that survive. Without it the list would show moves the user
+        // undid by re-swapping, and its length would exceed the Swaps count beside it —
+        // getSwapCount() measures the net permutation, not the tap history.
+        getSwapEntries() {
+            const pairs = this.swapStack.map((s) => ({teamACode: s.a, teamBCode: s.b}));
+            const net = Ligitabl._replaySwaps(this.originalTeams, pairs).swapStack;
+            return Ligitabl._replaySwaps(
+                this.originalTeams,
+                net.map((s) => ({teamACode: s.a, teamBCode: s.b})),
+            ).swapLog;
         },
 
         getPositionChange(teamCode) {
@@ -487,9 +612,9 @@ window.Ligitabl.predictionPage = function (el) {
     // (ligitabl.whatif.<userId>.<roundId>), so it's scoped to this user and round already and
     // goes quiet on every other round.
     //
-    // Read-only apart from clearWhatIfSwaps() below, which runs once the plan has been acted on.
-    // Entries are already in the {teamACode, teamAFrom, teamATo, teamBCode, ...} shape the
-    // swap-history fragment renders.
+    // Read-only apart from reconcileWhatIfSwaps() below, which drops the ones a submission has
+    // just made real and re-seats the rest. Entries are already in the {teamACode, teamAFrom,
+    // teamATo, teamBCode, ...} shape the swap-history fragment renders.
     const WHAT_IF_STORAGE_KEY = `ligitabl.whatif.${userId}.${roundId}`;
 
     function loadWhatIfSwaps() {
@@ -517,30 +642,56 @@ window.Ligitabl.predictionPage = function (el) {
         }
     }
 
-    // Once a submission lands, the what-if plan has been acted on and shouldn't keep being
-    // offered as one — so clear the sandbox's swaps, matching what whatIfPage.resetSwaps() does
-    // to its own state (teams back to baseline, stack and log emptied).
+    // Once a submission lands, the swaps it carried have stopped being a plan and become the
+    // table. Rather than wiping the sandbox — which also threw away swaps the user never
+    // submitted — drop just the entries that went in and replay the rest onto the table the
+    // submission produced.
     //
-    // swapsClearedBySubmit is what-if's cue to explain the reset rather than let the user find
-    // it; whatIfPage clears the marker as soon as it has shown it.
-    function clearWhatIfSwaps() {
+    // Reconciles immediately rather than leaving the work for the what-if page: `newBaseline` is
+    // the arrangement this page just submitted, which *is* the new real table, so the positions
+    // can be recomputed here and now. That keeps this page's own read-only list correct the
+    // moment it reloads, instead of showing pre-submit positions until what-if is next opened.
+    //
+    // consumedCount rides along so what-if can explain what happened when the user next opens it.
+    function reconcileWhatIfSwaps(pairs, newBaseline) {
         try {
+            const cleaned = (Array.isArray(pairs) ? pairs : [])
+                .filter((p) => p && p.teamACode && p.teamBCode && p.teamACode !== p.teamBCode)
+                .map((p) => ({teamACode: p.teamACode, teamBCode: p.teamBCode}));
+            if (cleaned.length === 0) return;
+
             const raw = localStorage.getItem(WHAT_IF_STORAGE_KEY);
             if (!raw) return;
             const saved = JSON.parse(raw);
             if (!saved || typeof saved !== "object") return;
-            // Nothing to reset, and nothing to explain — leave the session (and its notice)
-            // exactly as it was.
+            // No sandbox swaps to reconcile: nothing to consume, and what-if's own server
+            // baseline already gives it the new table.
             if (!Array.isArray(saved.swapLog) || saved.swapLog.length === 0) return;
-            delete saved.teams;
-            delete saved.swapStack;
-            delete saved.swapLog;
+
+            const {kept, consumedCount} = Ligitabl._consumeSwapPairs(saved.swapLog, cleaned);
+            // Runs even when nothing matched: the baseline moved regardless, so the survivors
+            // still have to be re-seated on top of the new table.
+            const replayed = Ligitabl._replaySwaps(newBaseline, kept);
+
+            saved.swapLog = replayed.swapLog;
+            saved.teams = replayed.teams;
+            saved.swapStack = replayed.swapStack;
+            // The projection was computed against the old arrangement; what-if recomputes it on
+            // its next load rather than showing a score that no longer matches its own table.
             delete saved.hasComputed;
             delete saved.appliedScores;
-            saved.swapsClearedBySubmit = true;
+            // What-if reads these once, to explain the change, then clears them.
+            saved.submitOutcome = {
+                nonce: Ligitabl._newNonce(),
+                consumedCount,
+                rebased: replayed.moved,
+            };
+            // Legacy marker from the wipe-everything era; a session written by an older build
+            // could still carry it, and it would announce a reset that no longer happens.
+            delete saved.swapsClearedBySubmit;
             localStorage.setItem(WHAT_IF_STORAGE_KEY, JSON.stringify(saved));
         } catch (e) {
-            console.warn("Failed to clear what-if swaps:", e);
+            console.warn("Failed to reconcile what-if swaps:", e);
         }
     }
 
@@ -675,48 +826,6 @@ window.Ligitabl.predictionPage = function (el) {
             return this.getSwapCount() > 1;
         },
 
-        getChangeSummary() {
-            const changed = this.getChangedTeams();
-            if (changed.length === 0) return null;
-            return {
-                teamCount: changed.length,
-                swapCount: this.getSwapCount(),
-                pairs: this.inferSwapPairs(changed),
-            };
-        },
-
-        inferSwapPairs(changedTeams) {
-            const pairs = [];
-            const processed = new Set();
-            for (const team of changedTeams) {
-                if (processed.has(team.code)) continue;
-                const partner = changedTeams.find(
-                    (t) =>
-                        !processed.has(t.code) && t.to === team.from && t.from === team.to,
-                );
-                if (partner) {
-                    pairs.push({
-                        team1: team.name,
-                        team2: partner.name,
-                        pos1: team.from,
-                        pos2: partner.from,
-                    });
-                    processed.add(team.code);
-                    processed.add(partner.code);
-                } else {
-                    pairs.push({
-                        team1: team.name,
-                        team2: null,
-                        pos1: team.from,
-                        pos2: team.to,
-                        isComplex: true,
-                    });
-                    processed.add(team.code);
-                }
-            }
-            return pairs;
-        },
-
         reset() {
             this.teams = JSON.parse(JSON.stringify(this.originalTeams));
             this.selectedTeam = null;
@@ -747,6 +856,24 @@ window.Ligitabl.predictionPage = function (el) {
             if (toast) toast.classList.remove("hidden");
 
             let url, body;
+
+            // What reconcileWhatIfSwaps matches the sandbox against: the swaps the user actually
+            // tapped, in the same {teamACode, teamBCode} shape the sandbox log records.
+            //
+            // Deliberately NOT _derivedSwaps. That's a minimal reconstruction of the net
+            // permutation — the pairs it invents reproduce the same final table but are not the
+            // ones the user tapped, so matching against it both misses real swaps and looks for
+            // pairs that were never in the sandbox. Whenever a team moves twice (any cycle
+            // longer than a straight swap) the two lists diverge, and swaps the user did submit
+            // would survive as "not submitted".
+            //
+            // Sliced to match what each branch actually sends: the batch endpoints take the whole
+            // stack, while a standard swap only ever submits swapStack[0].
+            const _submittedStack =
+                this.isInitialPrediction || this.isPreSeasonRegistration || this.isOpeningRound
+                    ? this.swapStack
+                    : this.swapStack.slice(0, 1);
+            const submittedPairs = _submittedStack.map((s) => ({teamACode: s.a, teamBCode: s.b}));
 
             // Derive minimal swap pairs from the net permutation.
             // swapStack may have redundant moves; getSwapCount() reflects the true net count.
@@ -792,7 +919,9 @@ window.Ligitabl.predictionPage = function (el) {
                             this._clearStorage(GUEST_STORAGE_KEY);
                         }
                         // Only on success: a failed submit leaves the plan intact to retry from.
-                        clearWhatIfSwaps();
+                        // this.teams is what was just submitted, so it's the new real table the
+                        // surviving sandbox swaps get replayed onto.
+                        reconcileWhatIfSwaps(submittedPairs, this.teams);
                         if (data.nextUrl) {
                             window.location.href = data.nextUrl;
                             return;
@@ -1493,9 +1622,9 @@ window.Ligitabl.finalTableShareCard = function (el) {
     const dataset = el?.dataset || {};
 
     return {
-        // Collapsed by default, matching fragments/share-prediction.html: the panel is an offer,
-        // not the main event.
-        open: false,
+        // Open by default, unlike fragments/share-prediction.html: this game's whole point is the
+        // shareable card, so the image sits in view rather than behind a disclosure.
+        open: true,
         /**
          * Team codes in the last-saved order, or null to fall back to the seeded `data-rows`.
          * Seeded from the attribute at init() so a page load still honours a server-rendered
@@ -2081,11 +2210,23 @@ window.Ligitabl.whatIfPage = function (el) {
         // explain why the table (and the score with it) came back different. Not persisted: the
         // session is re-saved without those swaps, so the next load has nothing to explain.
         swapsClearedByFixtureChange: false,
-        // The same, for swaps cleared because the user submitted them to their real table (see
-        // predictionPage.clearWhatIfSwaps). Persisted, unlike the fixture-change flag: that one
-        // is raised by this page as it restores, while this is raised by the my-table page in a
-        // different page load, so localStorage is the only way it can reach us.
+        // Set when a submission on my-table consumed swaps out of this sandbox (see
+        // predictionPage.reconcileWhatIfSwaps, which does the consuming and leaves the outcome
+        // behind for us to explain). Only when something actually matched — a rebase that
+        // consumed nothing is bookkeeping, not news.
         swapsClearedBySubmit: false,
+        // How many sandbox swaps that submission consumed, so the notice can name the count
+        // instead of implying the whole sandbox went.
+        swapsConsumedCount: 0,
+        // Set when surviving swaps were replayed onto a table that had moved under them, so their
+        // positions came back different from the ones the user last saw. The numbers are correct,
+        // but they changed without the user touching anything — this drives a quiet line next to
+        // the list rather than lengthening the notice, since it explains the list, not the submit.
+        swapsRebased: false,
+        // Nonce of the last submission whose outcome has been announced. Persisted, because
+        // init() can run twice in one page load (htmx:afterSwap re-inits Alpine over this
+        // fragment) and the second pass must not show the notice again.
+        lastSubmitNonce: null,
         init() {
             this.teams = Ligitabl._mapServerPredictions(parsed.predictions);
             this.originalTeams = Ligitabl._mapServerPredictions(parsed.predictions);
@@ -2229,6 +2370,11 @@ window.Ligitabl.whatIfPage = function (el) {
                     currentGoalDifference: this.currentGoalDifference,
                     appliedScores: this.appliedScores,
                     matchStatuses: this._matchStatuses(),
+                    // Nonce of the last submission whose outcome has already been announced.
+                    // Persisted so a reload doesn't show the same notice twice; the
+                    // submitOutcome record that carried it is deliberately absent from this
+                    // fixed field list, so writing the session is also what retires it.
+                    lastSubmitNonce: this.lastSubmitNonce,
                 }));
             } catch (e) {
                 console.warn("Failed to save what-if session:", e);
@@ -2252,29 +2398,62 @@ window.Ligitabl.whatIfPage = function (el) {
                 return false;
             }
             if (!saved) return false;
-            // Raised by the my-table page when a submission consumed these swaps. Read here and
-            // never written back: _saveWhatIfSession() below serialises a fixed field list that
-            // omits it, so the marker dies with this restore and the notice shows exactly once.
-            this.swapsClearedBySubmit = !!saved.swapsClearedBySubmit;
             this.scores = saved.scores || this.scores;
             this.teams = saved.teams || this.teams;
             this.swapStack = saved.swapStack || [];
-            this.swapLog = saved.swapLog || [];
+            this.swapLog = Array.isArray(saved.swapLog) ? saved.swapLog : [];
             this.hasComputed = !!saved.hasComputed;
             this.currentStandings = saved.currentStandings || this.currentStandings;
             this.currentPoints = saved.currentPoints || this.currentPoints;
             this.currentGoalDifference = saved.currentGoalDifference || this.currentGoalDifference;
             this.appliedScores = saved.appliedScores || null;
+            this.lastSubmitNonce = saved.lastSubmitNonce || null;
+
+            // A submission on my-table since this session was saved. It already did the work —
+            // consumed the entries it made real and replayed the rest onto the table it produced,
+            // so the swapLog/teams restored above are current. All that's left is to explain it.
+            //
+            // The nonce is compared against the last one already announced, so a reload (or htmx
+            // re-initing this component in the same page load) doesn't replay the notice.
+            const outcome = saved.submitOutcome;
+            if (outcome && outcome.nonce && outcome.nonce !== this.lastSubmitNonce) {
+                // Only announce a consumption that actually happened — a rebase with nothing
+                // matched is invisible bookkeeping, not news.
+                this.swapsClearedBySubmit = (outcome.consumedCount || 0) > 0;
+                this.swapsConsumedCount = outcome.consumedCount || 0;
+                this.swapsRebased = !!outcome.rebased;
+                this.lastSubmitNonce = outcome.nonce;
+            }
+
             if (this._fixturesChangedSince(saved)) {
                 this.swapsClearedByFixtureChange = this.swapLog.length > 0;
                 this.reset(); // teams = originalTeams, selectedTeam = null, swapStack = []
                 this.swapLog = [];
+                // The projection was computed against the swaps just thrown away, so it can't
+                // stand either — same invalidation _adoptServerFixtures does for this case.
+                this._invalidateProjection();
+                // The fixture change wiped whatever the submit notice would describe, so it
+                // would only compete with the amber notice for the same explanation.
+                this.swapsClearedBySubmit = false;
+                this.swapsConsumedCount = 0;
+                // No surviving swaps left to have moved.
+                this.swapsRebased = false;
             }
             this._reconcileMatches();
             this._saveWhatIfSession();
             this.hasEdited = Object.values(this.scores).some((s) => s.home !== null || s.away !== null);
             if (this.hasComputed) this.activeTab = "result";
             return true;
+        },
+        // The projection was computed against the previous arrangement, so it no longer describes
+        // what's on screen. Drop it and let init()'s _applyIfComplete() recompute.
+        _invalidateProjection() {
+            this.hasComputed = false;
+            this.appliedScores = null;
+            this.currentStandings = parsed.currentStandings;
+            this.currentPoints = parsed.currentPoints;
+            this.currentGoalDifference = parsed.currentGoalDifference;
+            this.activeTab = "standings";
         },
         // Resyncs the round itself — the fixtures and whether it's still open — from the payload
         // Refresh already fetches. Returns whether the change was one that invalidates the sandbox
@@ -2396,6 +2575,12 @@ window.Ligitabl.whatIfPage = function (el) {
         },
         focusScoreBox(matchId, side) {
             if (!this.roundOpen) return;
+
+            if (this.isScorePickerOpen(matchId) && this.focusSide === side) {
+                this.closeScorePicker();
+                return;
+            }
+
             if (!this.scoreAnswered(matchId)) {
                 const seg = this.isScorePickerOpen(matchId) && this.openSeg
                     ? this.openSeg
@@ -2556,6 +2741,8 @@ window.Ligitabl.whatIfPage = function (el) {
         resetSwaps() {
             this.reset();
             this.swapLog = [];
+            // Nothing left whose positions could need explaining.
+            this.swapsRebased = false;
             this._saveWhatIfSession();
         },
         allScoresEntered() {
@@ -2599,6 +2786,10 @@ window.Ligitabl.whatIfPage = function (el) {
             if (!this.allScoresEntered() || this.isComputing) return;
             this.isComputing = true;
             this.errorMessage = null;
+            // Every score is in by this point, so an open picker is finished with — and the result
+            // it is about to be replaced by wants the room. Closed here rather than on success, so
+            // a failed compute doesn't leave a stray panel open over the error.
+            this.closeScorePicker();
 
             const csrfToken = document.querySelector('meta[name="_csrf"]')?.content;
             const headers = { "Content-Type": "application/json" };

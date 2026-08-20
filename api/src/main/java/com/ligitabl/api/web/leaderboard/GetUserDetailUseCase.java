@@ -53,7 +53,7 @@ public class GetUserDetailUseCase {
     private final UserRepo userRepo;
     private final CompetitionDefaults competitionDefaults;
 
-    public record UserPredictions(int round, Integer roundScore, List<PredictionTeam> predictions) {}
+    public record UserPredictions(int round, Integer roundScore, List<PredictionTeam> predictions, String seasonSlug) {}
 
     public record PredictionTeam(String teamName, Integer hit) {}
 
@@ -80,12 +80,16 @@ public class GetUserDetailUseCase {
             User user = userRepo.findByPublicId(PublicId.create(publicId))
                     .orElseThrow(() -> new NotFoundException("User not found: " + publicId));
 
+            // Only used to build the "View full prediction" deep link; a season without a slug
+            // simply yields no link rather than failing the whole modal.
+            String seasonSlug = season.getSlug() != null ? season.getSlug().toShorthand() : null;
+
             // If a finalized round result exists for the effective round, prefer that.
             return Optional.ofNullable(effectiveToRound)
                     .flatMap(round ->
                             roundSubmissionRepo.findByUserAndSeasonAndRound(user.getId(), season.getId(), round))
                     .flatMap(submission -> roundResultRepo.findByRoundSubmissionId(submission.getId()))
-                    .map(roundResult -> buildUserPredictionsFromResult(effectiveToRound, roundResult))
+                    .map(roundResult -> buildUserPredictionsFromResult(effectiveToRound, roundResult, seasonSlug))
                     .orElseGet(() -> {
                         int displayRound = effectiveToRound != null ? effectiveToRound : currentRound.getPosition();
 
@@ -96,16 +100,20 @@ public class GetUserDetailUseCase {
                                     .orElseThrow(
                                             () -> new NotFoundException("No prediction found for user " + publicId));
                             return new UserPredictions(
-                                    displayRound, null, mapRankingsToPredictionTeams(prediction.getCurrentRankings()));
+                                    displayRound,
+                                    null,
+                                    mapRankingsToPredictionTeams(prediction.getCurrentRankings()),
+                                    seasonSlug);
                         }
 
                         // Past round with no finalized data
-                        return new UserPredictions(displayRound, null, List.of());
+                        return new UserPredictions(displayRound, null, List.of(), seasonSlug);
                     });
         });
     }
 
-    private UserPredictions buildUserPredictionsFromResult(Integer displayRound, RoundResult roundResult) {
+    private UserPredictions buildUserPredictionsFromResult(
+            Integer displayRound, RoundResult roundResult, String seasonSlug) {
         var resultRankings = roundResult.getRankings().stream()
                 .sorted(Comparator.comparingInt(r -> r.getRanking().getPosition()))
                 .toList();
@@ -119,7 +127,7 @@ public class GetUserDetailUseCase {
                         resultRankings.get(i).getHit()))
                 .toList();
 
-        return new UserPredictions(displayRound, roundResult.getTotalScore(), predictions);
+        return new UserPredictions(displayRound, roundResult.getTotalScore(), predictions, seasonSlug);
     }
 
     private List<PredictionTeam> mapRankingsToPredictionTeams(List<TeamRank> rankings) {

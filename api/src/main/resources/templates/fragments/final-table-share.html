@@ -5,10 +5,14 @@
       Share controls, mounted separately from finalTablePage so the read-only public view can carry
       them without the editing component.
 
-      Collapsible, same shape as fragments/share-prediction.html on the main prediction page: the
-      share text is visible and copyable rather than hidden behind a native share sheet that not
-      every browser offers. Copy icons over labelled buttons, for the same reason — it is the
-      pattern the app already uses. The image buttons sit alongside as this game's own addition.
+      Same shape as fragments/share-prediction.html on the main prediction page: the share text is
+      visible and copyable rather than hidden behind a native share sheet that not every browser
+      offers. Copy icons over labelled buttons, for the same reason — it is the pattern the app
+      already uses.
+
+      Two deliberate departures from that fragment, both because the card is this game's point
+      rather than an afterthought: it opens expanded, and the image leads. Text and link follow as
+      the fallbacks for the places an image won't go.
     -->
     <div
       th:fragment="card"
@@ -60,6 +64,38 @@
           </span>
         </div>
 
+        <!-- Image first: the card is the thing people actually share, and the text and link below
+             are the fallbacks for where an image won't go. -->
+        <div>
+          <p class="mb-1.5 text-xs font-medium text-gray-500">Image</p>
+          <div class="flex flex-wrap gap-2">
+            <button
+              type="button"
+              @click="downloadCard()"
+              :disabled="rendering"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
+            >
+              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
+              </svg>
+              <span x-text="rendering ? 'Rendering…' : 'Download image'">Download image</span>
+            </button>
+            <!-- Native share sheet, only where the browser actually supports sharing files. -->
+            <button
+              type="button"
+              x-show="canShareFiles"
+              x-cloak
+              @click="shareCard()"
+              class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
+            >
+              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M8.7 10.7a4 4 0 100 2.6m0-2.6l6.6-3.4m-6.6 6l6.6 3.4M18 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm0 13a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
+              </svg>
+              Share image
+            </button>
+          </div>
+        </div>
+
         <div th:if="${shareText != null}">
           <p class="mb-1.5 text-xs font-medium text-gray-500">Share text</p>
           <div class="flex items-start gap-2 rounded-lg border border-gray-200 bg-gray-50 p-3">
@@ -105,35 +141,6 @@
           </div>
         </div>
 
-        <div>
-          <p class="mb-1.5 text-xs font-medium text-gray-500">Image</p>
-          <div class="flex flex-wrap gap-2">
-            <button
-              type="button"
-              @click="downloadCard()"
-              :disabled="rendering"
-              class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50 disabled:opacity-50"
-            >
-              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
-              </svg>
-              <span x-text="rendering ? 'Rendering…' : 'Download image'">Download image</span>
-            </button>
-            <!-- Native share sheet, only where the browser actually supports sharing files. -->
-            <button
-              type="button"
-              x-show="canShareFiles"
-              x-cloak
-              @click="shareCard()"
-              class="inline-flex items-center gap-1.5 rounded-lg border border-gray-300 bg-white px-3 py-2 text-xs font-medium text-gray-700 transition hover:bg-gray-50"
-            >
-              <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M8.7 10.7a4 4 0 100 2.6m0-2.6l6.6-3.4m-6.6 6l6.6 3.4M18 8a2.5 2.5 0 100-5 2.5 2.5 0 000 5zm0 13a2.5 2.5 0 100-5 2.5 2.5 0 000 5z" />
-              </svg>
-              Share image
-            </button>
-          </div>
-        </div>
       </div>
     </div>
   </body>

@@ -54,6 +54,7 @@
       <input type="hidden" class="modal-param" name="maxRound" th:value="${maxRound}">
       <input type="hidden" class="modal-param" name="scored" th:value="${scored != null ? scored : true}">
       <input type="hidden" class="modal-param" name="seasonId" th:if="${seasonId != null}" th:value="${seasonId}">
+      <input type="hidden" class="modal-param" name="from" th:if="${from != null}" th:value="${from}">
 
       <!-- Round nav bar -->
       <div class="flex items-center justify-between mb-3">
@@ -109,8 +110,10 @@
         </div>
       </div>
 
-      <p th:if="${scored == false or !hasData}" class="text-sm text-gray-400 text-center py-4">No predictions for this round</p>
-      <div th:if="${scored != false and hasData}" class="grid grid-cols-2 gap-x-4">
+      <!-- Predictions render whenever we have them, scored or not. Before the round is
+           scored every hit is null, so the table shows the picks without deltas. -->
+      <p th:if="${hasData == false}" class="text-sm text-gray-400 text-center py-4">No predictions for this round</p>
+      <div th:if="${hasData == true}" class="grid grid-cols-2 gap-x-4">
         <!-- First column: first half -->
         <div class="space-y-2">
           <div class="flex items-center" th:each="pred, iter : ${user.currentPrediction}" th:if="${iter.index < midpoint}">
@@ -145,6 +148,19 @@
             >
           </div>
         </div>
+      </div>
+
+      <!-- Footer: deep link to this user's full public prediction for the round in view.
+           Shows the clean canonical path as its label, while the href also carries the `from`
+           marker so that page can render a Back link straight back to where we came from. -->
+      <div th:if="${publicPredictionHref != null}" class="mt-4 pt-3 border-t border-gray-200 text-right">
+        <a
+          th:href="${publicPredictionHref}"
+          onclick="window.flashNavLoadingBar && window.flashNavLoadingBar()"
+          class="inline-block max-w-full truncate font-mono text-xs sm:text-sm text-indigo-600 hover:text-indigo-800 hover:underline transition"
+          th:text="${publicPredictionPath}"
+          >/u/T2ADsSc8hQ/2526/gw/1</a
+        >
       </div>
     </div>
   </div>

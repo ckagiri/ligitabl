@@ -8,6 +8,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.finaltable.shared.FinalTableRowsJson;
@@ -17,10 +18,10 @@ import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.FinalTablePrediction;
 import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.service.FinalTableScorer;
 import com.ligitabl.model.domain.SeasonSlug;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.service.FinalTableScorer;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.FinalTablePredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -58,8 +59,13 @@ public class PublicFinalTableController {
     public String publicFinalTable(
             @PathVariable String publicId,
             @PathVariable String seasonShorthand,
+            @RequestParam(required = false) String from,
             Model model,
             HttpServletResponse response) {
+
+        // Not set on the notFound paths below: final-table-unavailable.html carries its own
+        // "Back to home", which is the better offer when the link itself was dead.
+        model.addAttribute("backHref", resolveBackHref(from));
 
         Optional<Competition> competition = competitionRepo.findBySlug(competitionDefaults.defaultCompetitionSlug());
         if (competition.isEmpty()) {
@@ -161,6 +167,21 @@ public class PublicFinalTableController {
         model.addAttribute("devPreviewEnabled", false);
 
         return "final-table-public";
+    }
+
+    /**
+     * Resolves the opaque {@code from} marker into an internal path for the Back link.
+     *
+     * <p>A fixed set of accepted tokens, each mapping to a path built here — never a caller-supplied
+     * URL, so this can't be turned into an off-site redirect. Anything unrecognised yields no Back
+     * link at all. Mirrors {@code PublicPredictionController.resolveBackHref}.
+     */
+    private String resolveBackHref(String from) {
+        if (from == null || from.isBlank()) return null;
+        if ("ft-leaderboard".equals(from)) return "/final-table/leaderboard";
+
+        log.warn("Ignoring unrecognised `from` marker: {}", from);
+        return null;
     }
 
     private String notFound(Model model, HttpServletResponse response, String message) {

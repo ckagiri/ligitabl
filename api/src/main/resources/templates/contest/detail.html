@@ -460,7 +460,7 @@
                               hx-target="#user-detail-modal"
                               hx-swap="innerHTML"
                               hx-include="#effectiveToRound, #currentPhaseFrom"
-                              th:attr="hx-vals='js:{publicId: &quot;' + ${entry.publicId} + '&quot;, displayName: &quot;' + ${entry.displayName} + '&quot;, position: ' + ${entry.position} + ', totalScore: ' + ${entry.totalScore} + ', roundScore: ' + ${entry.roundScore} + ', maxScore: ' + ${entry.maxScore} + ', totalSwaps: ' + ${entry.totalSwaps} + ', movement: ' + ${entry.movement} + ', scored: ' + ${entry.scored} + ', seasonId: &quot;' + ${contest.seasonId} + '&quot;}'"
+                              th:attr="hx-vals='js:{publicId: &quot;' + ${entry.publicId} + '&quot;, displayName: &quot;' + ${entry.displayName} + '&quot;, position: ' + ${entry.position} + ', totalScore: ' + ${entry.totalScore} + ', roundScore: ' + ${entry.roundScore} + ', maxScore: ' + ${entry.maxScore} + ', totalSwaps: ' + ${entry.totalSwaps} + ', movement: ' + ${entry.movement} + ', scored: ' + ${entry.scored} + ', seasonId: &quot;' + ${contest.seasonId} + '&quot;, from: &quot;contest:' + ${contest.id} + '&quot;}'"
                               hx-on:click="document.getElementById('modal-loading').classList.remove('hidden')"
                               hx-on::after-request="document.getElementById('modal-loading').classList.add('hidden')"
                               class="inline-flex items-center gap-1 max-w-[6rem] sm:max-w-full text-sm font-medium hover:text-indigo-600 transition cursor-pointer text-left"

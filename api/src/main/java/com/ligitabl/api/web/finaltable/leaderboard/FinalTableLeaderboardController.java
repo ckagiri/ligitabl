@@ -65,6 +65,8 @@ public class FinalTableLeaderboardController {
         model.addAttribute("currentUserPublicId", user == null ? null : user.getPublicId());
         model.addAttribute("totalEntries", data.totalEntries());
         model.addAttribute("totalPlayers", data.totalPlayers());
+        // Pre-reveal only; empty once results are out, where `leaderboard` carries the same people.
+        model.addAttribute("entrants", data.entrants());
         model.addAttribute("currentPage", page);
         model.addAttribute("totalPages", totalPages);
         model.addAttribute("pageSize", PAGE_SIZE);

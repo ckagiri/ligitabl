@@ -36,6 +36,17 @@
     </svg>
   </button>
   <div x-show="open" x-transition class="border-t border-gray-100">
+    <!-- These positions were recomputed against a table that moved under them (a submitted swap
+         landed on the real table), so they read differently than when the user left. Said here,
+         quietly, next to the numbers themselves rather than in the submit notice — it explains
+         the list, not the submission. -->
+    <p
+      x-show="swapsRebased"
+      x-cloak
+      class="px-6 pt-3 text-[11px] text-gray-400 leading-relaxed"
+    >
+      Positions updated for your new table.
+    </p>
     <ul class="divide-y divide-gray-100">
       <!-- One swap reads as one line: wrapping "#17" onto its own row breaks the
            A→B ↔ B→A symmetry that makes the entry scannable. Scroll instead. -->

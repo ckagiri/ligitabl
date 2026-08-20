@@ -9,6 +9,8 @@ import org.springframework.stereotype.Component;
 import com.ligitabl.api.rest.finaltable.shared.FinalTableError;
 import com.ligitabl.api.rest.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.web.shared.user.DisplayNames;
+import com.ligitabl.model.domain.FinalTableEntrant;
 import com.ligitabl.model.domain.FinalTableLeaderboardEntry;
 import com.ligitabl.model.domain.service.FinalTableScorer;
 import com.ligitabl.model.repo.FinalTablePredictionRepo;
@@ -43,7 +45,13 @@ public class GetFinalTableLeaderboardUseCase {
             int totalPlayers,
             /** For building per-player public links; the view has no Season to ask. */
             String seasonShorthand,
-            Integer maxScore) {}
+            Integer maxScore,
+            /**
+             * Everyone who has entered, for the pre-reveal page — which would otherwise be a count
+             * and nothing to look at for the length of a season. Empty once revealed, where
+             * {@code entries} says the same and more.
+             */
+            List<FinalTableEntrant> entrants) {}
 
     public Either<FinalTableError, FinalTableLeaderboardData> execute(UUID userId, int offset, int limit) {
         return finalTableSupport.activeSeason().map(season -> {
@@ -56,12 +64,18 @@ public class GetFinalTableLeaderboardUseCase {
             int teamCount = season.getInitialRankings() == null
                     ? 0
                     : season.getInitialRankings().size();
-            Integer maxScore =
-                    teamCount == 0 ? null : FinalTableScorer.maxScore(season.getMaxHitPoints(), teamCount);
+            Integer maxScore = teamCount == 0 ? null : FinalTableScorer.maxScore(season.getMaxHitPoints(), teamCount);
 
             if (scored == 0) {
+                // Names are cleaned here rather than in the view: display_name is nullable, and an
+                // uncleaned one would render as "null" or paint markup into the page.
+                List<FinalTableEntrant> entrants = predictionRepo.entrantsBySeason(seasonId).stream()
+                        .map(e -> new FinalTableEntrant(
+                                e.publicId(), DisplayNames.cleanOr(e.displayName(), "This player")))
+                        .toList();
+
                 return new FinalTableLeaderboardData(
-                        false, List.of(), List.of(), null, 0, totalPlayers, shorthand, maxScore);
+                        false, List.of(), List.of(), null, 0, totalPlayers, shorthand, maxScore, entrants);
             }
 
             List<FinalTableLeaderboardEntry> entries = predictionRepo.leaderboard(seasonId, offset, limit);
@@ -69,8 +83,17 @@ public class GetFinalTableLeaderboardUseCase {
                     ? null
                     : predictionRepo.userStanding(seasonId, userId).orElse(null);
 
+            // No entrants list once revealed: `entries` is the same people, ranked and scored.
             return new FinalTableLeaderboardData(
-                    true, entries, displayPositions(entries), userEntry, scored, totalPlayers, shorthand, maxScore);
+                    true,
+                    entries,
+                    displayPositions(entries),
+                    userEntry,
+                    scored,
+                    totalPlayers,
+                    shorthand,
+                    maxScore,
+                    List.of());
         });
     }
 

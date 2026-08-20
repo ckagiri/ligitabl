@@ -420,9 +420,10 @@
 
             <!-- The score below will have moved since this user last had the page open, because
                  the swaps it was built on went with the fixture change. Say so rather than let it
-                 look like a miscalculation. Both notices below explain a reset that already
-                 happened, so dismissing is purely "I've read it" — the flag is display state, and
-                 neither is persisted past this page view anyway. -->
+                 look like a miscalculation. Both notices below explain something that already
+                 happened — a full reset here, a partial consumption in the green one — so
+                 dismissing is purely "I've read it": the flag is display state, and neither is
+                 persisted past this page view anyway. -->
             <div
               x-show="swapsClearedByFixtureChange"
               x-cloak
@@ -446,18 +447,31 @@
               </button>
             </div>
 
-            <!-- Same idea for the other way sandbox swaps disappear: the user took them to their
-                 real table and submitted. Green rather than amber — nothing went wrong here, the
-                 plan just landed. -->
+            <!-- Same idea for the other way sandbox swaps leave: the user took them to their real
+                 table and submitted. Green rather than amber — nothing went wrong here, the plan
+                 landed. Only the submitted swaps go; any others are replayed onto the updated
+                 table and stay in the list below, so the copy names the count rather than
+                 implying the whole sandbox was reset. -->
             <div
               x-show="swapsClearedBySubmit"
               x-cloak
               class="mb-3 px-3 py-2 rounded-md border border-green-200 bg-green-50 text-xs text-green-800 flex items-center justify-between gap-3"
             >
-              <span>Swaps applied to your table — the sandbox was reset.</span>
+              <span x-show="swapLog.length === 0"
+                ><span
+                  x-text="swapsConsumedCount === 1 ? 'Your swap is' : 'Your ' + swapsConsumedCount + ' swaps are'"
+                ></span>
+                now on your table.</span
+              >
+              <span x-show="swapLog.length > 0"
+                ><span
+                  x-text="swapsConsumedCount === 1 ? '1 swap' : swapsConsumedCount + ' swaps'"
+                ></span>
+                applied to your table.</span
+              >
               <button
                 type="button"
-                @click="swapsClearedBySubmit = false"
+                @click="swapsClearedBySubmit = false; swapsConsumedCount = 0"
                 aria-label="Dismiss"
                 class="shrink-0 -mr-1 p-1 text-green-600 hover:text-green-800 transition-colors"
               >

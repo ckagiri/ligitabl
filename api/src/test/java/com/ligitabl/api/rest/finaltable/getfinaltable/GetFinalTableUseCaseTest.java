@@ -30,6 +30,9 @@ import com.ligitabl.model.domain.FinalTablePrediction;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
+import com.ligitabl.model.domain.Standings;
+import com.ligitabl.model.domain.StandingsMetadata;
+import com.ligitabl.model.domain.StandingsTeamRank;
 import com.ligitabl.model.domain.TeamRank;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.FinalTablePredictionRepo;
@@ -38,9 +41,6 @@ import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.StandingsRepo;
 import com.ligitabl.model.repo.TeamRepo;
-import com.ligitabl.model.domain.Standings;
-import com.ligitabl.model.domain.StandingsMetadata;
-import com.ligitabl.model.domain.StandingsTeamRank;
 
 @ExtendWith(MockitoExtension.class)
 class GetFinalTableUseCaseTest {
@@ -289,7 +289,8 @@ class GetFinalTableUseCaseTest {
         UUID userId = UUID.randomUUID();
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
 
-        var data = useCase.execute(userId, "abc123", "<script>alert(1)</script>").get();
+        var data =
+                useCase.execute(userId, "abc123", "<script>alert(1)</script>").get();
 
         assertThat(data.ownerName()).isEqualTo("alert 1");
     }
@@ -445,6 +446,7 @@ class GetFinalTableUseCaseTest {
         assertThat(data.liveProgress()).isTrue();
         // MCI is in the prediction but not the standings, so it carries no `current`.
         assertThat(data.liveRowsJson()).contains("\"code\":\"MCI\",\"name\"");
-        assertThat(data.liveRowsJson()).doesNotContain("\"code\":\"MCI\",\"name\":\"MCI\",\"shortName\":\"MCI\",\"current\"");
+        assertThat(data.liveRowsJson())
+                .doesNotContain("\"code\":\"MCI\",\"name\":\"MCI\",\"shortName\":\"MCI\",\"current\"");
     }
 }

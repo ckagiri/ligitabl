@@ -14,10 +14,13 @@
      pathPrefix: For path-based URLs where the fixed segment comes before the round number
        (e.g. '/u/{publicId}/{season}/gw/{n}') rather than after it — when set, builds
        {baseUrl}/{pathPrefix}/{n} instead of {baseUrl}/{n}/{pathSuffix}, and ignores pathSuffix
+     queryString: Optional trailing query string (e.g. 'from=leaderboard') appended to every
+       path-based URL, so markers like the public page's back-link `from` survive round paging
 -->
 <div
-  th:fragment="round-nav(baseUrl, viewingRound, maxRound, currentRound, htmxTarget, htmxSwap, showJumpToCurrent, dismissBanner, urlStyle, pathSuffix, minRound, pathPrefix)"
-  th:with="minRoundNumber=${minRound != null && minRound > 0 ? minRound : 1}"
+  th:fragment="round-nav(baseUrl, viewingRound, maxRound, currentRound, htmxTarget, htmxSwap, showJumpToCurrent, dismissBanner, urlStyle, pathSuffix, minRound, pathPrefix, queryString)"
+  th:with="minRoundNumber=${minRound != null && minRound > 0 ? minRound : 1},
+           qs=${queryString != null and #strings.length(queryString) > 0 ? '?' + queryString : ''}"
   class="flex flex-col space-y-3"
 >
   <div class="flex items-center justify-between gap-2">
@@ -25,7 +28,7 @@
     <button
       th:if="${urlStyle == 'path'}"
       th:with="suffix=${pathSuffix != null ? pathSuffix : 'matches'},
-               prevUrl=${pathPrefix != null ? (baseUrl + '/' + pathPrefix + '/' + (viewingRound - 1)) : (baseUrl + '/' + (viewingRound - 1) + '/' + suffix)}"
+               prevUrl=${(pathPrefix != null ? (baseUrl + '/' + pathPrefix + '/' + (viewingRound - 1)) : (baseUrl + '/' + (viewingRound - 1) + '/' + suffix)) + qs}"
       th:attr="hx-get=@{${prevUrl}},
                          hx-target=${htmxTarget},
                          hx-swap=${htmxSwap}"
@@ -89,7 +92,7 @@
       <option
         th:each="r : ${#numbers.sequence(minRoundNumber, maxRound)}"
         th:value="${r}"
-        th:attr="data-url=@{${pathPrefix != null ? (baseUrl + '/' + pathPrefix + '/' + r) : (baseUrl + '/' + r + '/' + suffix)}}"
+        th:attr="data-url=@{${(pathPrefix != null ? (baseUrl + '/' + pathPrefix + '/' + r) : (baseUrl + '/' + r + '/' + suffix)) + qs}}"
         th:selected="${r == viewingRound}"
         th:text="${r == currentRound ? 'GW ' + r + ' (Current)' : 'GW ' + r}"
       ></option>
@@ -119,7 +122,7 @@
     <button
       th:if="${urlStyle == 'path'}"
       th:with="suffix=${pathSuffix != null ? pathSuffix : 'matches'},
-               nextUrl=${pathPrefix != null ? (baseUrl + '/' + pathPrefix + '/' + (viewingRound + 1)) : (baseUrl + '/' + (viewingRound + 1) + '/' + suffix)}"
+               nextUrl=${(pathPrefix != null ? (baseUrl + '/' + pathPrefix + '/' + (viewingRound + 1)) : (baseUrl + '/' + (viewingRound + 1) + '/' + suffix)) + qs}"
       th:attr="hx-get=@{${nextUrl}},
                          hx-target=${htmxTarget},
                          hx-swap=${htmxSwap}"
@@ -178,7 +181,7 @@
   <div
     th:if="${urlStyle == 'path' and showJumpToCurrent and viewingRound != currentRound}"
     th:with="suffix=${pathSuffix != null ? pathSuffix : 'matches'},
-             jumpUrl=${pathPrefix != null ? (baseUrl + '/' + pathPrefix + '/' + currentRound) : (baseUrl + '/current/' + suffix)}"
+             jumpUrl=${(pathPrefix != null ? (baseUrl + '/' + pathPrefix + '/' + currentRound) : (baseUrl + '/current/' + suffix)) + qs}"
     class="flex justify-center sm:justify-end"
   >
     <button
