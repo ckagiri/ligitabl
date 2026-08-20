@@ -18,6 +18,31 @@
     <!-- No px/py here: layout/base.html's <main> already supplies them. -->
     <div layout:fragment="content" class="mx-auto max-w-5xl">
       <header class="mb-6">
+        <!--
+          Only when we were sent here from somewhere inside the app (a `from` marker the controller
+          recognised). A visitor arriving from a shared link has nowhere here to go back to, so
+          they get no dead offer.
+        -->
+        <a
+          th:if="${backHref != null}"
+          th:href="${backHref}"
+          onclick="window.flashNavLoadingBar && window.flashNavLoadingBar()"
+          class="mb-2 inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-indigo-600"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            class="h-3.5 w-3.5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
+            <path d="m15 18-6-6 6-6" />
+          </svg>
+          Back to leaderboard
+        </a>
         <h1 class="text-2xl font-semibold text-gray-900">
           <span th:text="${ownerPossessive}">Player's</span> Final Table
         </h1>

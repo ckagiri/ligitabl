@@ -21,6 +21,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.model.db.tables.records.FinalTablePredictionRecord;
+import com.ligitabl.model.domain.FinalTableEntrant;
 import com.ligitabl.model.domain.FinalTableLeaderboardEntry;
 import com.ligitabl.model.domain.FinalTablePrediction;
 import com.ligitabl.model.domain.ResultTeamRank;
@@ -158,6 +159,20 @@ public class FinalTablePredictionPersistenceAdapter implements FinalTablePredict
                 .fetchOne();
 
         return Optional.ofNullable(record).map(this::mapEntry);
+    }
+
+    @Override
+    public List<FinalTableEntrant> entrantsBySeason(UUID seasonId) {
+        // Same user join as leaderboard(), minus the scored gate — this one has to answer while the
+        // season is still running — and minus every score and ranking column.
+        return dsl.select(T_USER.C_PUBLIC_ID, T_USER.C_DISPLAY_NAME)
+                .from(T_FINAL_TABLE_PREDICTION)
+                .join(T_USER)
+                .on(T_USER.PK_ID.eq(T_FINAL_TABLE_PREDICTION.FK_USER_ID))
+                .where(T_FINAL_TABLE_PREDICTION.FK_SEASON_ID.eq(seasonId))
+                // First to settle, first listed; create date only to keep reloads stable.
+                .orderBy(T_FINAL_TABLE_PREDICTION.C_SETTLED_AT.asc(), T_FINAL_TABLE_PREDICTION.C_CREATE_DATE.asc())
+                .fetch(r -> new FinalTableEntrant(r.get(T_USER.C_PUBLIC_ID), r.get(T_USER.C_DISPLAY_NAME)));
     }
 
     private org.jooq.Condition scoredInSeason(UUID seasonId) {

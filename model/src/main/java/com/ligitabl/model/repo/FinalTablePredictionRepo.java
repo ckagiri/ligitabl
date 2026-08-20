@@ -4,6 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.ligitabl.model.domain.FinalTableEntrant;
 import com.ligitabl.model.domain.FinalTableLeaderboardEntry;
 import com.ligitabl.model.domain.FinalTablePrediction;
 
@@ -19,6 +20,11 @@ public interface FinalTablePredictionRepo {
 
     /** This user's row in the same ranking, or empty if they have none or it is unscored. */
     Optional<FinalTableLeaderboardEntry> userStanding(UUID seasonId, UUID userId);
+
+    /**
+     * Everyone with an entry this season, scored or not, in the order they settled.
+     */
+    List<FinalTableEntrant> entrantsBySeason(UUID seasonId);
 
     int countBySeason(UUID seasonId);
 
