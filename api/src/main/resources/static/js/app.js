@@ -1668,9 +1668,9 @@ window.Ligitabl.finalTablePage = function(el) {
 window.Ligitabl.finalTableShareCard = function(el) {
   const dataset = el?.dataset || {};
   return {
-    // Collapsed by default, matching fragments/share-prediction.html: the panel is an offer,
-    // not the main event.
-    open: false,
+    // Open by default, unlike fragments/share-prediction.html: this game's whole point is the
+    // shareable card, so the image sits in view rather than behind a disclosure.
+    open: true,
     /**
      * Team codes in the last-saved order, or null to fall back to the seeded `data-rows`.
      * Seeded from the attribute at init() so a page load still honours a server-rendered
