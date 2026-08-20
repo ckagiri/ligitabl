@@ -195,6 +195,10 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         selectedTeam: null,
         swapStack: [],
         undoing: false,
+        // Which list the Changes Made card is showing: 'teams' or 'swaps'. Teams is the default —
+        // the per-team diff answers "what did I move", which is the question the card has always
+        // answered; the swap view is the follow-up for how those moves were made.
+        changesView: 'teams',
         alwaysHoverable: false,
         isInitialPrediction: false,
         showStandings: savedPrefs ? (savedPrefs.showStandings ?? true) : true,
@@ -348,6 +352,28 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
                     };
                 })
                 .sort((a, b) => a.from - b.from);
+        },
+
+        // The swaps behind the current diff, in the same {teamACode, teamAFrom, teamATo, ...}
+        // shape the swap-history fragments render — so the Changes Made card can show how the
+        // moves were made, not just what moved.
+        //
+        // Derived rather than stored: swapStack is the exact tap history and is already persisted
+        // by _saveToStorage, so replaying it over originalTeams reconstructs the positions without
+        // a second piece of state to keep in lockstep through undo/reset/restore.
+        //
+        // Replayed twice on purpose. The first pass returns a swapStack with inverse pairs
+        // cancelled (swap A<->B, swap it back, and both drop out); replaying *that* yields
+        // positions for only the swaps that survive. Without it the list would show moves the user
+        // undid by re-swapping, and its length would exceed the Swaps count beside it —
+        // getSwapCount() measures the net permutation, not the tap history.
+        getSwapEntries() {
+            const pairs = this.swapStack.map((s) => ({teamACode: s.a, teamBCode: s.b}));
+            const net = Ligitabl._replaySwaps(this.originalTeams, pairs).swapStack;
+            return Ligitabl._replaySwaps(
+                this.originalTeams,
+                net.map((s) => ({teamACode: s.a, teamBCode: s.b})),
+            ).swapLog;
         },
 
         getPositionChange(teamCode) {
@@ -798,48 +824,6 @@ window.Ligitabl.predictionPage = function (el) {
                 return this.getSwapCount() > MAX_OPENING_SWAPS;
             }
             return this.getSwapCount() > 1;
-        },
-
-        getChangeSummary() {
-            const changed = this.getChangedTeams();
-            if (changed.length === 0) return null;
-            return {
-                teamCount: changed.length,
-                swapCount: this.getSwapCount(),
-                pairs: this.inferSwapPairs(changed),
-            };
-        },
-
-        inferSwapPairs(changedTeams) {
-            const pairs = [];
-            const processed = new Set();
-            for (const team of changedTeams) {
-                if (processed.has(team.code)) continue;
-                const partner = changedTeams.find(
-                    (t) =>
-                        !processed.has(t.code) && t.to === team.from && t.from === team.to,
-                );
-                if (partner) {
-                    pairs.push({
-                        team1: team.name,
-                        team2: partner.name,
-                        pos1: team.from,
-                        pos2: partner.from,
-                    });
-                    processed.add(team.code);
-                    processed.add(partner.code);
-                } else {
-                    pairs.push({
-                        team1: team.name,
-                        team2: null,
-                        pos1: team.from,
-                        pos2: team.to,
-                        isComplex: true,
-                    });
-                    processed.add(team.code);
-                }
-            }
-            return pairs;
         },
 
         reset() {

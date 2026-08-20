@@ -2325,8 +2325,14 @@ video {
 .underline {
   text-decoration-line: underline;
 }
+.decoration-2 {
+  text-decoration-thickness: 2px;
+}
 .underline-offset-2 {
   text-underline-offset: 2px;
+}
+.underline-offset-4 {
+  text-underline-offset: 4px;
 }
 .placeholder-gray-500::-moz-placeholder {
   --tw-placeholder-opacity: 1;
@@ -2912,6 +2918,9 @@ video {
 }
 .hover\:no-underline:hover {
   text-decoration-line: none;
+}
+.hover\:opacity-100:hover {
+  opacity: 1;
 }
 .hover\:shadow-md:hover {
   --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);

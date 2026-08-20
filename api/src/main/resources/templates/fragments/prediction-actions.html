@@ -274,24 +274,43 @@
     <div
       class="flex items-center justify-between text-sm mb-3 pb-3 border-b border-gray-100"
     >
+      <!--
+        The two counts double as the switch for the list below: Teams shows what moved, Swaps
+        shows how. Buttons rather than plain text, with the active one underlined, so the pair
+        reads as a toggle instead of two links that happen to be numbers.
+      -->
       <div class="flex items-center space-x-4">
-        <div>
+        <button
+          type="button"
+          @click="changesView = 'teams'"
+          :aria-pressed="changesView === 'teams'"
+          :class="changesView === 'teams' ? 'underline decoration-2 underline-offset-4' : 'opacity-60 hover:opacity-100'"
+          class="transition-opacity"
+        >
           <span class="text-gray-500">Teams:</span>
           <span
             class="font-semibold text-gray-900 ml-1"
             x-text="getDirtyCount()"
             >2</span
           >
-        </div>
-        <div>
+        </button>
+        <button
+          type="button"
+          @click="changesView = 'swaps'"
+          :aria-pressed="changesView === 'swaps'"
+          :class="changesView === 'swaps' ? 'underline decoration-2 underline-offset-4' : 'opacity-60 hover:opacity-100'"
+          class="transition-opacity"
+        >
           <span class="text-gray-500">Swaps:</span>
+          <!-- exceedsLimit() keeps the count red in both states: being over the limit outranks
+               which view is selected. -->
           <span
             class="font-semibold ml-1"
             :class="exceedsLimit() ? 'text-red-600' : 'text-indigo-600'"
             x-text="getSwapCount()"
             >1</span
           >
-        </div>
+        </button>
       </div>
       <div class="text-xs text-gray-500">
         <span x-show="isPreSeasonRegistration || isInitialPrediction"
@@ -305,8 +324,8 @@
       </div>
     </div>
 
-    <!-- List of Changes -->
-    <div class="space-y-2">
+    <!-- List of Changes — teams view: what moved, and where to. -->
+    <div class="space-y-2" x-show="changesView === 'teams'">
       <template x-for="(change, index) in getChangedTeams()" :key="change.code">
         <div
           class="flex items-center justify-between text-sm py-1.5 px-2 bg-gray-50 rounded"
@@ -341,6 +360,48 @@
           </div>
         </div>
       </template>
+    </div>
+
+    <!--
+      Swaps view: the pairs behind those moves, in the same format as the swap history on this
+      page and the sandbox log on What-If (fragments/what-if-swap-log.html) — one swap per line,
+      scrolling sideways rather than wrapping, so the A→B ↔ B→A symmetry survives on narrow
+      screens. Codes rather than names, matching those lists: swapStack records codes only.
+    -->
+    <div class="space-y-2" x-show="changesView === 'swaps'" x-cloak>
+      <template x-for="(entry, index) in getSwapEntries()" :key="index">
+        <div
+          class="text-sm font-mono text-gray-700 whitespace-nowrap overflow-x-auto py-1.5 px-2 bg-gray-50 rounded"
+        >
+          <span class="text-gray-300 mr-1 select-none" x-text="(index + 1) + '.'"
+            >1.</span
+          >
+          <span class="font-semibold text-gray-900" x-text="entry.teamACode"
+            >ARS</span
+          >
+          <span class="text-gray-400">#</span><span x-text="entry.teamAFrom">1</span>
+          <span class="text-gray-400">→</span>
+          <span class="text-gray-400">#</span><span x-text="entry.teamATo">4</span>
+          <span class="mx-1 font-bold text-indigo-500">↔</span>
+          <span class="font-semibold text-gray-900" x-text="entry.teamBCode"
+            >CHE</span
+          >
+          <span class="text-gray-400">#</span><span x-text="entry.teamBFrom">4</span>
+          <span class="text-gray-400">→</span>
+          <span class="text-gray-400">#</span><span x-text="entry.teamBTo">1</span>
+        </div>
+      </template>
+      <!--
+        Reachable: a session restored from the legacy storage shape has its team order back but
+        no swapStack, so there is a team diff with no swaps behind it. Say so rather than leave
+        the panel blank.
+      -->
+      <p
+        x-show="getSwapEntries().length === 0"
+        class="text-xs text-gray-400 text-center py-2"
+      >
+        No swap details for these changes.
+      </p>
     </div>
 
     <!-- Warning for exceeding limit -->
