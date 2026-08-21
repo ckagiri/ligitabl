@@ -54,10 +54,6 @@ public class FixtureJsonMapper {
                 resolveGoalsAgainst(match, isHome));
     }
 
-    /**
-     * Goals from the row team's perspective. Unlike {@link #resolveFixtureResult}, this does not
-     * require FINISHED: a live match has a real score, and showing it is the point of the chip.
-     */
     public static Integer resolveGoalsFor(Match match, boolean isHome) {
         return match == null
                 ? null
