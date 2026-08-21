@@ -237,11 +237,6 @@
                                     class="inline-block w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
                               <span th:if="${fix.status == 'POSTPONED'}" class="font-bold">P</span>
                               <span th:unless="${fix.home}">@</span><span th:text="${fix.opponent}">MUN</span>
-                              <!--
-                                Score, own goals first, so "2-0" agrees with the chip colour instead
-                                of leaving the colour as the only thing saying who won. Matches the
-                                orientation of the Form tooltip above.
-                              -->
                               <span th:if="${fix.hasScore()}"
                                     class="font-semibold"
                                     th:text="${fix.goalsFor + '-' + fix.goalsAgainst}">2-0</span>
