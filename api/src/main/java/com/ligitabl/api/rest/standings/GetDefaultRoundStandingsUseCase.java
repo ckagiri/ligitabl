@@ -15,6 +15,7 @@ import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.web.shared.dto.FixtureDto;
+import com.ligitabl.api.web.shared.fixtures.FixtureJsonMapper;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
@@ -100,7 +101,13 @@ public class GetDefaultRoundStandingsUseCase
                 isHome ? match.getAwayTeam().getCode() : match.getHomeTeam().getCode();
         String status = normalizeStatus(match.getStatus());
         String result = resolveResult(match, isHome);
-        return new FixtureDto(opponent, isHome, status, result);
+        return new FixtureDto(
+                opponent,
+                isHome,
+                status,
+                result,
+                FixtureJsonMapper.resolveGoalsFor(match, isHome),
+                FixtureJsonMapper.resolveGoalsAgainst(match, isHome));
     }
 
     private String normalizeStatus(com.ligitabl.model.domain.MatchStatus status) {

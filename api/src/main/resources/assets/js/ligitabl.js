@@ -263,13 +263,18 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             return this.getFixtures(teamCode).length > 0;
         },
 
-        // WIN/LOSS are inverted relative to the fixture chip (chip green/WIN -> badge red,
-        // chip red/LOSS -> badge green); LIVE/DRAW/POSTPONED stay the same on both.
+        // Same colour language as the fixture chip: green means this team won, red means it lost.
+        // WIN/LOSS used to be inverted here relative to the chip, which put a red ARS badge next to
+        // a green "COV 3-0" chip for the same win — two marks on one row disagreeing about the
+        // result.
+        //
+        // The badge stays coloured rather than going neutral because showFixtures is a user toggle:
+        // with chips hidden the badge is the only per-round result signal left on the row.
         teamBadgeClasses(teamCode) {
             const fixtures = this.getFixtures(teamCode);
             if (fixtures.some((f) => f.status === 'LIVE')) return 'bg-blue-50 text-blue-700';
-            if (fixtures.some((f) => f.result === 'WIN')) return 'bg-red-50 text-red-700';
-            if (fixtures.some((f) => f.result === 'LOSS')) return 'bg-green-50 text-green-700';
+            if (fixtures.some((f) => f.result === 'WIN')) return 'bg-green-50 text-green-700';
+            if (fixtures.some((f) => f.result === 'LOSS')) return 'bg-red-50 text-red-700';
             if (fixtures.some((f) => f.result === 'DRAW')) return 'bg-yellow-100 text-yellow-700';
             if (fixtures.some((f) => f.status === 'POSTPONED')) return 'bg-violet-50 text-violet-700';
             return 'bg-gray-200 text-gray-700';
