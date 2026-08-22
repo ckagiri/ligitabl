@@ -390,11 +390,20 @@
               </td>
               <td class="px-2 sm:px-3 py-4">
                 <div class="flex items-center min-w-0">
-                  <div
-                    class="h-7 w-7 sm:h-8 sm:w-8 mr-2 sm:mr-3 rounded flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    :class="teamBadgeClasses(team.code)"
-                    x-text="team.code"
-                  ></div>
+                  <!-- Badge wrapper owns the spacing so the live dot can sit outside the
+                       badge's corner without being clipped or nudging the team code. -->
+                  <div class="relative mr-2 sm:mr-3 flex-shrink-0">
+                    <div
+                      class="h-7 w-7 sm:h-8 sm:w-8 rounded flex items-center justify-center text-xs font-bold"
+                      :class="teamBadgeClasses(team.code)"
+                      x-text="team.code"
+                    ></div>
+                    <span
+                      x-show="hasLiveFixture(team.code)"
+                      class="absolute -top-0.5 -left-0.5 w-1.5 h-1.5 bg-red-500 rounded-full ring-1 ring-white"
+                      style="animation: liveFade 1.2s ease-in-out infinite !important"
+                    ></span>
+                  </div>
                   <div class="min-w-0 flex-1">
                     <!-- Team name -->
                     <div class="flex items-center gap-1">
@@ -452,7 +461,7 @@
                             <span
                               x-show="fixture.goalsFor != null && fixture.goalsAgainst != null"
                               class="ml-1 font-semibold"
-                              x-text="fixture.goalsFor + '-' + fixture.goalsAgainst"
+                              x-text="fixtureScoreLabel(fixture)"
                             ></span>
                           </span>
                         </template>
@@ -610,7 +619,7 @@
                           <span
                             x-show="fixture.goalsFor != null && fixture.goalsAgainst != null"
                             class="ml-1 font-semibold"
-                            x-text="fixture.goalsFor + '-' + fixture.goalsAgainst"
+                            x-text="fixtureScoreLabel(fixture)"
                           ></span>
                         </span>
                       </template>
@@ -708,22 +717,11 @@
                         x-transition.opacity.duration.100ms
                         class="absolute bottom-full right-0 mb-1.5 z-50 bg-white border border-gray-200 shadow-md rounded px-2 py-1 text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none"
                       >
-                        <template x-if="entry.wasHome">
-                          <span>
-                            <span class="font-bold" x-text="team.code"></span>
-                            <span
-                              x-text="' ' + entry.goalsFor + '-' + entry.goalsAgainst + ' ' + entry.opponentCode"
-                            ></span>
-                          </span>
-                        </template>
-                        <template x-if="!entry.wasHome">
-                          <span>
-                            <span
-                              x-text="entry.opponentCode + ' ' + entry.goalsAgainst + '-' + entry.goalsFor + ' '"
-                            ></span>
-                            <span class="font-bold" x-text="team.code"></span>
-                          </span>
-                        </template>
+                        <span>
+                          <span x-text="formResultBefore(entry)"></span>
+                          <span class="font-bold" x-text="team.code"></span>
+                          <span x-text="formResultAfter(entry)"></span>
+                        </span>
                         <span
                           class="absolute top-full right-1 border-4 border-transparent border-t-gray-200"
                         ></span>
@@ -800,28 +798,11 @@
                   x-text="entry.result"
                 ></span>
                 <span class="text-sm text-gray-700 font-mono">
-                  <template x-if="entry.wasHome">
-                    <span>
-                      <span
-                        class="font-bold"
-                        x-text="formPopup.teamCode"
-                      ></span>
-                      <span
-                        x-text="' ' + entry.goalsFor + '–' + entry.goalsAgainst + ' ' + entry.opponentCode"
-                      ></span>
-                    </span>
-                  </template>
-                  <template x-if="!entry.wasHome">
-                    <span>
-                      <span
-                        x-text="entry.opponentCode + ' ' + entry.goalsAgainst + '–' + entry.goalsFor + ' '"
-                      ></span>
-                      <span
-                        class="font-bold"
-                        x-text="formPopup.teamCode"
-                      ></span>
-                    </span>
-                  </template>
+                  <span>
+                    <span x-text="formResultBefore(entry)"></span>
+                    <span class="font-bold" x-text="formPopup.teamCode"></span>
+                    <span x-text="formResultAfter(entry)"></span>
+                  </span>
                 </span>
               </li>
             </template>

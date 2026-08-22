@@ -579,8 +579,17 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
         this.formPopupClosing = false;
       }, 300);
     },
-    formResultLabel(entry, teamCode) {
-      return entry.wasHome ? teamCode + " " + entry.goalsFor + "–" + entry.goalsAgainst + " " + entry.opponentCode : entry.opponentCode + " " + entry.goalsAgainst + "–" + entry.goalsFor + " " + teamCode;
+    formResultBefore(entry) {
+      return entry.wasHome ? "" : entry.opponentCode + " " + this._formScore(entry) + " ";
+    },
+    formResultAfter(entry) {
+      return entry.wasHome ? " " + this._formScore(entry) + " " + entry.opponentCode : "";
+    },
+    _formScore(entry) {
+      return entry.wasHome ? entry.goalsFor + "-" + entry.goalsAgainst : entry.goalsAgainst + "-" + entry.goalsFor;
+    },
+    fixtureScoreLabel(fixture) {
+      return fixture.isHome ? fixture.goalsFor + "-" + fixture.goalsAgainst : fixture.goalsAgainst + "-" + fixture.goalsFor;
     },
     getCurrentPoints(teamCode) {
       return this.currentPoints[teamCode] || "-";
@@ -603,9 +612,12 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
     hasFixtures(teamCode) {
       return this.getFixtures(teamCode).length > 0;
     },
+    hasLiveFixture(teamCode) {
+      return this.getFixtures(teamCode).some((f) => f.status === "LIVE");
+    },
     teamBadgeClasses(teamCode) {
       const fixtures = this.getFixtures(teamCode);
-      if (fixtures.some((f) => f.status === "LIVE")) return "bg-blue-50 text-blue-700";
+      if (this.hasLiveFixture(teamCode)) return "bg-blue-50 text-blue-700";
       if (fixtures.some((f) => f.result === "WIN")) return "bg-green-50 text-green-700";
       if (fixtures.some((f) => f.result === "LOSS")) return "bg-red-50 text-red-700";
       if (fixtures.some((f) => f.result === "DRAW")) return "bg-yellow-100 text-yellow-700";
@@ -2131,11 +2143,24 @@ window.Ligitabl.whatIfPage = function(el) {
     // fragment) and the second pass must not show the notice again.
     lastSubmitNonce: null,
     init() {
+      this._pruneStaleWhatIfSessions();
       this.teams = Ligitabl._mapServerPredictions(parsed.predictions);
       this.originalTeams = Ligitabl._mapServerPredictions(parsed.predictions);
       this._restoreWhatIfSession();
       this._reconcileWithServer();
       this._applyIfComplete();
+    },
+    // The sandbox key is round-scoped, so last round's entry is never read again once
+    // roundId moves on — it just sits there, one dead key per round forever. Drop this
+    // user's stale rounds on the way in.
+    _pruneStaleWhatIfSessions() {
+      const prefix = `ligitabl.whatif.${userId}.`;
+      const keep = this._whatIfStorageKey();
+      try {
+        Object.keys(localStorage).filter((k) => k.startsWith(prefix) && k !== keep).forEach((k) => localStorage.removeItem(k));
+      } catch (e) {
+        console.warn("Failed to prune stale what-if sessions:", e);
+      }
     },
     _applyIfComplete() {
       if (this.hasComputed || this.isComputing) return;
