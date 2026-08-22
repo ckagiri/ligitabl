@@ -579,7 +579,6 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
         this.formPopupClosing = false;
       }, 300);
     },
-
     formResultBefore(entry) {
       return entry.wasHome ? "" : entry.opponentCode + " " + this._formScore(entry) + " ";
     },

@@ -3425,8 +3425,8 @@ video {
   .lg\:hidden {
     display: none;
   }
-  .lg\:max-h-\[calc\(100vh-150px\)\] {
-    max-height: calc(100vh - 150px);
+  .lg\:max-h-\[calc\(100vh-166px\)\] {
+    max-height: calc(100vh - 166px);
   }
   .lg\:w-52 {
     width: 13rem;

@@ -32,7 +32,7 @@
           <div>
             <div class="px-6 py-4">
               <div
-                class="standings-scroll overflow-y-scroll max-h-[calc(100vh-220px)] lg:max-h-[calc(100vh-150px)]"
+                class="standings-scroll overflow-y-scroll max-h-[calc(100vh-220px)] lg:max-h-[calc(100vh-166px)]"
               >
                 <table class="min-w-full divide-y divide-gray-200">
                   <thead class="bg-gray-50">
@@ -229,14 +229,15 @@
                             <span th:each="fix : ${fixes}"
                                   class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-xs font-medium border mr-0.5"
                                   th:class="${'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-medium border mr-0.5 ' +
-                                    (fix.result == 'WIN' ? 'bg-green-50 border-green-400 text-green-700' :
+                                    (fix.status == 'LIVE' ? 'bg-blue-50 border-blue-400 text-blue-700' :
+                                    fix.result == 'WIN' ? 'bg-green-50 border-green-400 text-green-700' :
                                     fix.result == 'LOSS' ? 'bg-red-50 border-red-400 text-red-700' :
                                     fix.result == 'DRAW' ? 'bg-amber-100 border-amber-500 text-amber-700' :
-                                    fix.status == 'LIVE' ? 'bg-blue-50 border-blue-400 text-blue-700' :
                                     fix.status == 'POSTPONED' ? 'bg-violet-50 border-violet-400 text-violet-700' :
                                     'bg-gray-100 border-gray-200 text-gray-600')}">
                               <span th:if="${fix.status == 'LIVE'}"
-                                    class="inline-block w-1.5 h-1.5 bg-red-500 rounded-full animate-pulse"></span>
+                                    class="inline-block w-1.5 h-1.5 bg-red-500 rounded-full"
+                                    style="animation: liveFade 1.2s ease-in-out infinite"></span>
                               <span th:if="${fix.status == 'POSTPONED'}" class="font-bold">P</span>
                               <span th:unless="${fix.home}">@</span><span th:text="${fix.opponent}">MUN</span>
                               <span th:if="${fix.hasScore()}"
