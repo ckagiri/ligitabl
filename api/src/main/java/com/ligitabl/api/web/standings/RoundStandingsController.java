@@ -65,6 +65,7 @@ public class RoundStandingsController {
             model.addAttribute("standings", payload.standings());
             model.addAttribute("isCurrentStandings", payload.viewingRound() == payload.currentRound());
             model.addAttribute("nextFixtures", payload.nextFixtures());
+            model.addAttribute("allFixturesUpcoming", payload.allFixturesUpcoming());
 
             // Return fragment for HTMX requests, full page otherwise
             return isHtmxRequest ? "standings :: standings-content" : "standings";

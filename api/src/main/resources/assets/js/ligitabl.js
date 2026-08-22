@@ -263,13 +263,11 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             return this.getFixtures(teamCode).length > 0;
         },
 
-        // WIN/LOSS are inverted relative to the fixture chip (chip green/WIN -> badge red,
-        // chip red/LOSS -> badge green); LIVE/DRAW/POSTPONED stay the same on both.
         teamBadgeClasses(teamCode) {
             const fixtures = this.getFixtures(teamCode);
             if (fixtures.some((f) => f.status === 'LIVE')) return 'bg-blue-50 text-blue-700';
-            if (fixtures.some((f) => f.result === 'WIN')) return 'bg-red-50 text-red-700';
-            if (fixtures.some((f) => f.result === 'LOSS')) return 'bg-green-50 text-green-700';
+            if (fixtures.some((f) => f.result === 'WIN')) return 'bg-green-50 text-green-700';
+            if (fixtures.some((f) => f.result === 'LOSS')) return 'bg-red-50 text-red-700';
             if (fixtures.some((f) => f.result === 'DRAW')) return 'bg-yellow-100 text-yellow-700';
             if (fixtures.some((f) => f.status === 'POSTPONED')) return 'bg-violet-50 text-violet-700';
             return 'bg-gray-200 text-gray-700';

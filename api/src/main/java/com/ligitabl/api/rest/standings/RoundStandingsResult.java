@@ -12,4 +12,21 @@ public record RoundStandingsResult(
         int currentRound,
         int lastRound,
         List<StandingsEntryDto> standings,
-        Map<String, List<FixtureDto>> nextFixtures) {}
+        Map<String, List<FixtureDto>> nextFixtures) {
+
+    /**
+     * True while every fixture in the round is still ahead — nothing kicked off, nothing scored.
+     */
+    public boolean allFixturesUpcoming() {
+        if (nextFixtures == null || nextFixtures.isEmpty()) {
+            return true;
+        }
+
+        return nextFixtures.values().stream()
+                .filter(java.util.Objects::nonNull)
+                .flatMap(List::stream)
+                .noneMatch(fixture -> fixture.hasScore()
+                        || "LIVE".equals(fixture.status())
+                        || "FINISHED".equals(fixture.status()));
+    }
+}

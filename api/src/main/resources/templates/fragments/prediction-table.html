@@ -449,6 +449,11 @@
                             >
                             <span x-show="!fixture.isHome">@</span
                             ><span x-text="fixture.opponent"></span>
+                            <span
+                              x-show="fixture.goalsFor != null && fixture.goalsAgainst != null"
+                              class="ml-1 font-semibold"
+                              x-text="fixture.goalsFor + '-' + fixture.goalsAgainst"
+                            ></span>
                           </span>
                         </template>
                       </template>
@@ -602,6 +607,11 @@
                           >
                           <span x-show="!fixture.isHome">@</span
                           ><span x-text="fixture.opponent"></span>
+                          <span
+                            x-show="fixture.goalsFor != null && fixture.goalsAgainst != null"
+                            class="ml-1 font-semibold"
+                            x-text="fixture.goalsFor + '-' + fixture.goalsAgainst"
+                          ></span>
                         </span>
                       </template>
                     </div>

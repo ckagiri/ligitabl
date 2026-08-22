@@ -257,6 +257,12 @@
                           </template>
                           <span x-show="fixture.status === 'POSTPONED'" class="mr-1 font-bold">P</span>
                           <span x-show="!fixture.isHome">@</span><span x-text="fixture.opponent"></span>
+                          <!-- Own goals first — see fragments/prediction-table.html. -->
+                          <span
+                            x-show="fixture.goalsFor != null && fixture.goalsAgainst != null"
+                            class="ml-1 font-semibold"
+                            x-text="fixture.goalsFor + '-' + fixture.goalsAgainst"
+                          ></span>
                         </span>
                       </template>
                     </template>
@@ -337,6 +343,12 @@
                         </template>
                         <span x-show="fixture.status === 'POSTPONED'" class="mr-1 font-bold">P</span>
                         <span x-show="!fixture.isHome">@</span><span x-text="fixture.opponent"></span>
+                        <!-- Own goals first — see fragments/prediction-table.html. -->
+                        <span
+                          x-show="fixture.goalsFor != null && fixture.goalsAgainst != null"
+                          class="ml-1 font-semibold"
+                          x-text="fixture.goalsFor + '-' + fixture.goalsAgainst"
+                        ></span>
                       </span>
                     </template>
                   </div>

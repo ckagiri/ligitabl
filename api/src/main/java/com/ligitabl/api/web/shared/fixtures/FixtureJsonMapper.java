@@ -46,7 +46,28 @@ public class FixtureJsonMapper {
         boolean isHome = teamCode.equals(home.getCode());
         String opponent = isHome ? away.getCode() : home.getCode();
         return new FixtureDto(
-                opponent, isHome, normalizeFixtureStatus(match.getStatus()), resolveFixtureResult(match, isHome));
+                opponent,
+                isHome,
+                normalizeFixtureStatus(match.getStatus()),
+                resolveFixtureResult(match, isHome),
+                resolveGoalsFor(match, isHome),
+                resolveGoalsAgainst(match, isHome));
+    }
+
+    public static Integer resolveGoalsFor(Match match, boolean isHome) {
+        return match == null
+                ? null
+                : match.result()
+                        .map(result -> isHome ? result.homeGoals() : result.awayGoals())
+                        .orElse(null);
+    }
+
+    public static Integer resolveGoalsAgainst(Match match, boolean isHome) {
+        return match == null
+                ? null
+                : match.result()
+                        .map(result -> isHome ? result.awayGoals() : result.homeGoals())
+                        .orElse(null);
     }
 
     public static String normalizeFixtureStatus(MatchStatus status) {
