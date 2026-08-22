@@ -579,8 +579,18 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
         this.formPopupClosing = false;
       }, 300);
     },
-    formResultLabel(entry, teamCode) {
-      return entry.wasHome ? teamCode + " " + entry.goalsFor + "–" + entry.goalsAgainst + " " + entry.opponentCode : entry.opponentCode + " " + entry.goalsAgainst + "–" + entry.goalsFor + " " + teamCode;
+
+    formResultBefore(entry) {
+      return entry.wasHome ? "" : entry.opponentCode + " " + this._formScore(entry) + " ";
+    },
+    formResultAfter(entry) {
+      return entry.wasHome ? " " + this._formScore(entry) + " " + entry.opponentCode : "";
+    },
+    _formScore(entry) {
+      return entry.wasHome ? entry.goalsFor + "-" + entry.goalsAgainst : entry.goalsAgainst + "-" + entry.goalsFor;
+    },
+    fixtureScoreLabel(fixture) {
+      return fixture.isHome ? fixture.goalsFor + "-" + fixture.goalsAgainst : fixture.goalsAgainst + "-" + fixture.goalsFor;
     },
     getCurrentPoints(teamCode) {
       return this.currentPoints[teamCode] || "-";

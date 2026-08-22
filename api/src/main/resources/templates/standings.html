@@ -241,7 +241,7 @@
                               <span th:unless="${fix.home}">@</span><span th:text="${fix.opponent}">MUN</span>
                               <span th:if="${fix.hasScore()}"
                                     class="font-semibold"
-                                    th:text="${fix.goalsFor + '-' + fix.goalsAgainst}">2-0</span>
+                                    th:text="${fix.scoreLabel()}">2-0</span>
                             </span>
                           </th:block>
                           <span th:unless="${fixes != null and !fixes.isEmpty()}"

@@ -22,6 +22,13 @@ public record FixtureDto(
         return goalsFor != null && goalsAgainst != null;
     }
 
+    public String scoreLabel() {
+        if (!hasScore()) {
+            return null;
+        }
+        return isHome ? goalsFor + "-" + goalsAgainst : goalsAgainst + "-" + goalsFor;
+    }
+
     public static FixtureDto home(String opponent) {
         return new FixtureDto(opponent, true, "SCHEDULED", null);
     }

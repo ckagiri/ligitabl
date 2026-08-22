@@ -261,7 +261,7 @@
                           <span
                             x-show="fixture.goalsFor != null && fixture.goalsAgainst != null"
                             class="ml-1 font-semibold"
-                            x-text="fixture.goalsFor + '-' + fixture.goalsAgainst"
+                            x-text="fixtureScoreLabel(fixture)"
                           ></span>
                         </span>
                       </template>
@@ -347,7 +347,7 @@
                         <span
                           x-show="fixture.goalsFor != null && fixture.goalsAgainst != null"
                           class="ml-1 font-semibold"
-                          x-text="fixture.goalsFor + '-' + fixture.goalsAgainst"
+                          x-text="fixtureScoreLabel(fixture)"
                         ></span>
                       </span>
                     </template>
@@ -412,18 +412,11 @@
                              bg-white border border-gray-200 shadow-md rounded px-2 py-1
                              text-xs font-medium text-gray-700 whitespace-nowrap pointer-events-none"
                     >
-                      <template x-if="entry.wasHome">
-                        <span>
-                          <span class="font-bold" x-text="team.code"></span>
-                          <span x-text="' ' + entry.goalsFor + '-' + entry.goalsAgainst + ' ' + entry.opponentCode"></span>
-                        </span>
-                      </template>
-                      <template x-if="!entry.wasHome">
-                        <span>
-                          <span x-text="entry.opponentCode + ' ' + entry.goalsAgainst + '-' + entry.goalsFor + ' '"></span>
-                          <span class="font-bold" x-text="team.code"></span>
-                        </span>
-                      </template>
+                      <span>
+                        <span x-text="formResultBefore(entry)"></span>
+                        <span class="font-bold" x-text="team.code"></span>
+                        <span x-text="formResultAfter(entry)"></span>
+                      </span>
                       <span class="absolute top-full right-1 border-4 border-transparent border-t-gray-200"></span>
                     </span>
                   </span>
@@ -471,18 +464,11 @@
                 x-text="entry.result"
               ></span>
               <span class="text-sm text-gray-700 font-mono">
-                <template x-if="entry.wasHome">
-                  <span>
-                    <span class="font-bold" x-text="formPopup.teamCode"></span>
-                    <span x-text="' ' + entry.goalsFor + '–' + entry.goalsAgainst + ' ' + entry.opponentCode"></span>
-                  </span>
-                </template>
-                <template x-if="!entry.wasHome">
-                  <span>
-                    <span x-text="entry.opponentCode + ' ' + entry.goalsAgainst + '–' + entry.goalsFor + ' '"></span>
-                    <span class="font-bold" x-text="formPopup.teamCode"></span>
-                  </span>
-                </template>
+                <span>
+                  <span x-text="formResultBefore(entry)"></span>
+                  <span class="font-bold" x-text="formPopup.teamCode"></span>
+                  <span x-text="formResultAfter(entry)"></span>
+                </span>
               </span>
             </li>
           </template>

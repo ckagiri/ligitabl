@@ -72,6 +72,28 @@ class FixtureJsonMapperTest {
         assertThat(fixture.result()).isNull();
     }
 
+    @Test
+    @DisplayName("scoreLabel reads home-away for both teams in the same fixture")
+    void scoreLabel_readsHomeAwayForBothTeams() {
+        var everton = team("EVE", "Everton");
+        var palace = team("CRY", "Crystal Palace");
+        var match = match(everton, palace, MatchStatus.LIVE, 1, 0);
+
+        // Everton lead 1-0 at home: both chips show the same digits, and only the "@" moves.
+        assertThat(mapper.toFixture("EVE", match).scoreLabel()).isEqualTo("1-0");
+        assertThat(mapper.toFixture("CRY", match).scoreLabel()).isEqualTo("1-0");
+    }
+
+    @Test
+    @DisplayName("scoreLabel is null for a fixture with no score")
+    void scoreLabel_isNullWithoutScore() {
+        var everton = team("EVE", "Everton");
+        var palace = team("CRY", "Crystal Palace");
+        var match = match(everton, palace, MatchStatus.SCHEDULED, null, null);
+
+        assertThat(mapper.toFixture("CRY", match).scoreLabel()).isNull();
+    }
+
     private static Match match(Team home, Team away, MatchStatus status, Integer homeGoals, Integer awayGoals) {
         var match = Match.builder()
                 .id(UUID.randomUUID())
