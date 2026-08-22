@@ -390,11 +390,20 @@
               </td>
               <td class="px-2 sm:px-3 py-4">
                 <div class="flex items-center min-w-0">
-                  <div
-                    class="h-7 w-7 sm:h-8 sm:w-8 mr-2 sm:mr-3 rounded flex items-center justify-center text-xs font-bold flex-shrink-0"
-                    :class="teamBadgeClasses(team.code)"
-                    x-text="team.code"
-                  ></div>
+                  <!-- Badge wrapper owns the spacing so the live dot can sit outside the
+                       badge's corner without being clipped or nudging the team code. -->
+                  <div class="relative mr-2 sm:mr-3 flex-shrink-0">
+                    <div
+                      class="h-7 w-7 sm:h-8 sm:w-8 rounded flex items-center justify-center text-xs font-bold"
+                      :class="teamBadgeClasses(team.code)"
+                      x-text="team.code"
+                    ></div>
+                    <span
+                      x-show="hasLiveFixture(team.code)"
+                      class="absolute -top-0.5 -left-0.5 w-1.5 h-1.5 bg-red-500 rounded-full ring-1 ring-white"
+                      style="animation: liveFade 1.2s ease-in-out infinite !important"
+                    ></span>
+                  </div>
                   <div class="min-w-0 flex-1">
                     <!-- Team name -->
                     <div class="flex items-center gap-1">
