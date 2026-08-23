@@ -588,6 +588,9 @@ video {
 .-left-0\.5 {
   left: -0.125rem;
 }
+.-right-1\.5 {
+  right: -0.375rem;
+}
 .-top-0\.5 {
   top: -0.125rem;
 }

@@ -2080,6 +2080,25 @@ const WHAT_IF_CHIPS = {
 };
 const WHAT_IF_UNSCOREABLE_STATUSES = ["POSTPONED", "CANCELLED", "SUSPENDED"];
 const isWhatIfScoreable = (match) => !WHAT_IF_UNSCOREABLE_STATUSES.includes(match.status);
+const isWhatIfMatchLive = (match) => match.status === "LIVE" || match.status === "SUSPENDED";
+const whatIfOutcomeOf = (home, away) => home > away ? "HOME" : home < away ? "AWAY" : "DRAW";
+const whatIfGrade = (guessHome, guessAway, actualHome, actualAway) => {
+  const guessed = whatIfOutcomeOf(guessHome, guessAway);
+  const happened = whatIfOutcomeOf(actualHome, actualAway);
+  if (guessed !== "DRAW") {
+    return guessed === happened ? "WIN" : "LOSS";
+  }
+  if (happened === "DRAW") {
+    return "WIN";
+  }
+  return Math.abs(actualHome - actualAway) === 1 ? "DRAW" : "LOSS";
+};
+const whatIfGradeMark = (grade) => ({ WIN: "✓", DRAW: "~", LOSS: "–" })[grade] || "";
+const whatIfGradeMarkClass = (grade) => ({
+  WIN: "bg-green-50 text-green-700",
+  DRAW: "bg-amber-50 text-amber-700",
+  LOSS: "bg-red-50 text-red-700"
+})[grade] || "bg-gray-100 text-gray-500";
 window.Ligitabl.whatIfPage = function(el) {
   const parsed = Ligitabl._parseDataAttributes(el);
   const matches = Ligitabl._parseJSON(el?.dataset?.whatIfMatches, []);
@@ -2430,6 +2449,34 @@ window.Ligitabl.whatIfPage = function(el) {
     acceptsScore(match) {
       return isWhatIfScoreable(match) && (!this.roundOpen || match.status === "SCHEDULED");
     },
+    matchIsLive(match) {
+      return isWhatIfMatchLive(match);
+    },
+    hasActualScore(match) {
+      return match.homeGoals !== null && match.homeGoals !== void 0 && match.awayGoals !== null && match.awayGoals !== void 0;
+    },
+    actualScoreLabel(match) {
+      return this.hasActualScore(match) ? `${match.homeGoals} - ${match.awayGoals}` : null;
+    },
+    // A mark is a verdict, so only a finished match earns one — a live score can still flip.
+    matchGrade(match) {
+      if (match.status !== "FINISHED" || !this.hasActualScore(match)) return null;
+      if (!this.scoreAnswered(match.matchId)) return null;
+      const s = this.scores[match.matchId];
+      return whatIfGrade(s.home, s.away, match.homeGoals, match.awayGoals);
+    },
+    showsActuals(match) {
+      return !this.roundOpen && isWhatIfScoreable(match) && this.hasActualScore(match);
+    },
+    gradeMark(grade) {
+      return whatIfGradeMark(grade);
+    },
+    gradeMarkClass(grade) {
+      return whatIfGradeMarkClass(grade);
+    },
+    gradeTitle(grade) {
+      return { WIN: "Win", DRAW: "Draw — near miss", LOSS: "Loss" }[grade] || "";
+    },
     buildShareText() {
       const outcomeMap = { H: "1", D: "X", A: "2" };
       const visible = this.visibleMatches();
@@ -2751,19 +2798,11 @@ window.Ligitabl.whatIfRecapCard = function(el) {
       const labels = { all: "What-If recap", wins: "Wins", draws: "Draws", losses: "Losses" };
       return labels[this.whatIfRecapPopup.bucket] || "";
     },
-    // Glyph for how a single guess graded, rendered in a coloured circle beside the (square)
-    // guessed-outcome badge. A draw guess that landed within one goal is the "half" case —
-    // right instinct, wrong result — hence the tilde rather than a tick. Loss is a dash rather
-    // than a cross so it never reads as a repeat of a draw pick's "X".
     whatIfRecapMark(grade) {
-      return { WIN: "✓", DRAW: "~", LOSS: "–" }[grade] || "";
+      return whatIfGradeMark(grade);
     },
     whatIfRecapMarkClass(grade) {
-      return {
-        WIN: "bg-green-50 text-green-700",
-        DRAW: "bg-amber-50 text-amber-700",
-        LOSS: "bg-red-50 text-red-700"
-      }[grade] || "bg-gray-100 text-gray-500";
+      return whatIfGradeMarkClass(grade);
     },
     whatIfRecapNumber(index) {
       return String(index + 1).padStart(2, "0");

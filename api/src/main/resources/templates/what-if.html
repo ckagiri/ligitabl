@@ -21,8 +21,13 @@
               >
                 What-If
               </h1>
-              <p class="text-sm text-gray-600 mt-1">
+            <!-- Once the round closes the page stops being a sandbox and starts being a
+                   scoreboard for the guess already saved — say so. -->
+              <p class="text-sm text-gray-600 mt-1" th:if="${roundOpen}">
                 Gameweek <span th:text="${currentRound}">19</span> — explore hypothetical results
+              </p>
+              <p class="text-sm text-gray-600 mt-1" th:unless="${roundOpen}">
+                Gameweek <span th:text="${currentRound}">19</span> — how your guesses are landing
               </p>
             </div>
             <!--
@@ -165,7 +170,31 @@
                         :class="!roundOpen ? 'text-gray-400' : (scoreAnswered(match.matchId) ? 'text-gray-900' : 'text-gray-500')"
                       ><span class="sm:hidden" x-text="match.awayTeamCode"></span><span class="hidden sm:inline" x-text="match.awayTeamShortName"></span></span>
 
-                      <template x-if="acceptsScore(match)">
+                      <template x-if="showsActuals(match)">
+                        <div class="flex items-center gap-1.5 shrink-0">
+                          <span class="relative font-mono text-[13px] font-semibold text-gray-900 whitespace-nowrap">
+                            <span x-text="actualScoreLabel(match)"></span>
+                            <!-- Same live dot as the fixture chips elsewhere: the inline animation
+                                 with !important is load-bearing, Tailwind's animate-pulse otherwise
+                                 wins. Keyframes are global in layout/base.html. -->
+                            <span
+                              x-show="matchIsLive(match)"
+                              class="absolute -top-0.5 -right-1.5 w-1.5 h-1.5 bg-red-500 rounded-full ring-1 ring-white"
+                              style="animation: liveFade 1.2s ease-in-out infinite !important"
+                            ></span>
+                          </span>
+                          <!-- Rendered even when there is no mark (live, or no guess to grade) so the
+                               row keeps its width and does not jitter as matches finish. -->
+                          <span
+                            class="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold leading-none"
+                            :class="matchGrade(match) ? gradeMarkClass(matchGrade(match)) : ''"
+                            :title="gradeTitle(matchGrade(match))"
+                            x-text="gradeMark(matchGrade(match))"
+                          ></span>
+                        </div>
+                      </template>
+
+                      <template x-if="acceptsScore(match) && !showsActuals(match)">
                         <div
                           class="flex rounded-lg border overflow-hidden shrink-0"
                           :class="[
