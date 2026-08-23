@@ -1101,6 +1101,9 @@ video {
      -moz-user-select: none;
           user-select: none;
 }
+.list-disc {
+  list-style-type: disc;
+}
 .appearance-none {
   -webkit-appearance: none;
      -moz-appearance: none;
