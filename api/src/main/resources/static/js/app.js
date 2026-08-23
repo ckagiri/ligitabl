@@ -2474,15 +2474,11 @@ window.Ligitabl.whatIfPage = function(el) {
     showsActuals(match) {
       return !this.roundOpen && isWhatIfScoreable(match) && this.hasActualScore(match);
     },
-    // Whether the guess landed on the exact scoreline. Only meaningful once matchGrade() has
-    // said the match is finished and answered, so it assumes nothing and re-checks the score.
     isExactMatch(match) {
       const s = this.scores[match.matchId];
       if (!s || !this.hasActualScore(match)) return false;
       return whatIfExact(s.home, s.away, match.homeGoals, match.awayGoals);
     },
-    // These take the match, not the grade: the mark now depends on how right the guess was,
-    // and the grade alone can no longer tell a tick from a star.
     gradeMark(match) {
       return whatIfGradeMark(this.matchGrade(match), this.isExactMatch(match));
     },

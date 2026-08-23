@@ -12,9 +12,6 @@ public record WhatIfRecap(int played, List<Line> all, List<Line> wins, List<Line
             String actualScore,
             String guessedOutcome,
             String grade,
-            /** Whether the guess named the exact scoreline, not just the right outcome. A stronger
-             * WIN rather than a grade of its own, so the buckets and counts are unaffected — it
-             * only changes how the result is marked. */
             boolean exact) {}
 
     public int winCount() {

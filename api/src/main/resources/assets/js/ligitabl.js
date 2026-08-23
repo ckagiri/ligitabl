@@ -2193,17 +2193,11 @@ const whatIfGrade = (guessHome, guessAway, actualHome, actualAway) => {
     return Math.abs(actualHome - actualAway) === 1 ? "DRAW" : "LOSS";
 };
 
-// Calling the outcome right earns a tick; calling the exact score earns a star. Exact stays a
-// WIN rather than becoming its own grade — the recap buckets on grade, and an exact hit belongs
-// in the wins — so the distinction lives here, in how a win is drawn, not in what it counts as.
 const whatIfGradeMark = (grade, exact) => {
     if (grade === "WIN") return exact ? "★" : "✓";
     return ({ DRAW: "~", LOSS: "–" })[grade] || "";
 };
 
-// A star sits in the same green as a tick, because it is the same verdict — just a deeper one, so
-// an exact call reads as stronger without being mistaken for a different result. Amber is spoken
-// for by DRAW, which is why the emphasis is depth of green rather than gold.
 const whatIfGradeMarkClass = (grade, exact) => {
     if (grade === "WIN") return exact ? "bg-green-100 text-green-800" : "bg-green-50 text-green-700";
     return ({
@@ -2626,15 +2620,11 @@ window.Ligitabl.whatIfPage = function (el) {
         showsActuals(match) {
             return !this.roundOpen && isWhatIfScoreable(match) && this.hasActualScore(match);
         },
-        // Whether the guess landed on the exact scoreline. Only meaningful once matchGrade() has
-        // said the match is finished and answered, so it assumes nothing and re-checks the score.
         isExactMatch(match) {
             const s = this.scores[match.matchId];
             if (!s || !this.hasActualScore(match)) return false;
             return whatIfExact(s.home, s.away, match.homeGoals, match.awayGoals);
         },
-        // These take the match, not the grade: the mark now depends on how right the guess was,
-        // and the grade alone can no longer tell a tick from a star.
         gradeMark(match) {
             return whatIfGradeMark(this.matchGrade(match), this.isExactMatch(match));
         },
