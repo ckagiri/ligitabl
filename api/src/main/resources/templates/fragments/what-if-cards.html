@@ -15,11 +15,11 @@
     <tbody>
       <template x-for="row in standingsRows()" :key="row.teamCode">
         <tr class="border-t border-gray-100">
-          <td class="py-1.5 text-gray-500" x-text="row.position"></td>
-          <td class="py-1.5 font-medium text-gray-900" x-text="row.teamShortName"></td>
-          <td class="py-1.5 text-right text-gray-700" x-text="row.points"></td>
+          <td class="py-2.5 text-gray-500" x-text="row.position"></td>
+          <td class="py-2.5 font-medium text-gray-900" x-text="row.teamShortName"></td>
+          <td class="py-2.5 text-right text-gray-700" x-text="row.points"></td>
           <td
-            class="py-1.5 text-right text-gray-700"
+            class="py-2.5 text-right text-gray-700"
             x-text="row.gd > 0 ? '+' + row.gd : row.gd"
           ></td>
         </tr>
@@ -64,11 +64,11 @@
               :data-team-code="team.code"
               @click="teamClick(team.code)"
             >
-              <td class="py-1.5 text-gray-500" x-text="team.position"></td>
+              <td class="py-2.5 text-gray-500" x-text="team.position"></td>
               <!-- Selection reads as a dot beside the name, same as the my-table row: washing the
                    whole row in colour fights the amber .swapping highlight the swap animation
                    applies to that same row moments later. -->
-              <td class="py-1.5 font-medium text-gray-900">
+              <td class="py-2.5 font-medium text-gray-900">
                 <span class="inline-flex items-center gap-1">
                   <span
                     x-show="isSelected(team.code)"
@@ -80,10 +80,10 @@
                 </span>
               </td>
               <td
-                class="py-1.5 text-right text-gray-700"
+                class="py-2.5 text-right text-gray-700"
                 x-text="getActualPosition(team.code)"
               ></td>
-              <td class="py-1.5 text-right font-medium">
+              <td class="py-2.5 text-right font-medium">
                 <div class="flex items-center justify-end gap-1">
                   <svg
                     x-show="getDelta(team.code) !== 0 && getDelta(team.code) !== '-'"

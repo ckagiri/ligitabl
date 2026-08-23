@@ -49,9 +49,10 @@
     </p>
     <ul class="divide-y divide-gray-100">
       <!-- One swap reads as one line: wrapping "#17" onto its own row breaks the
-           A→B ↔ B→A symmetry that makes the entry scannable. Scroll instead. -->
+           A→B ↔ B→A symmetry that makes the entry scannable. Smaller type on narrow
+           screens instead of a scrollbar. -->
       <template x-for="(entry, index) in swapLog" :key="index">
-        <li class="px-6 py-3 text-sm font-mono text-gray-700 whitespace-nowrap overflow-x-auto">
+        <li class="px-6 py-3 text-xs sm:text-sm font-mono text-gray-700 whitespace-nowrap">
           <span class="text-gray-300 mr-1 select-none" x-text="(index + 1) + '.'"></span>
           <span class="font-semibold text-gray-900" x-text="entry.teamACode"></span>
           <span class="text-gray-400">#</span><span x-text="entry.teamAFrom"></span>

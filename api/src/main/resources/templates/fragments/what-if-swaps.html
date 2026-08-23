@@ -72,10 +72,10 @@
         <ul class="divide-y divide-gray-100">
           <template x-for="(entry, idx) in whatIfSwaps" :key="entry.teamACode + entry.teamBCode + idx">
             <li class="px-6 py-3">
-              <!-- whitespace-nowrap + scroll: one swap is one line, so the A→B ↔ B→A
-                 symmetry survives on narrow screens instead of orphaning the last "#17". -->
+              <!-- One line per swap, kept intact by shrinking the type on narrow screens
+                   rather than scrolling. Same treatment as fragments/swap-history.html. -->
               <span
-                class="text-sm font-mono text-gray-700 whitespace-nowrap overflow-x-auto max-w-full block"
+                class="text-xs sm:text-sm font-mono text-gray-700 whitespace-nowrap max-w-full block"
               >
                 <span class="text-gray-300 mr-1.5 select-none" x-text="(idx + 1) + '.'">1.</span>
                 <span class="font-semibold text-gray-900" x-text="entry.teamACode">ARS</span>
