@@ -365,13 +365,14 @@
     <!--
       Swaps view: the pairs behind those moves, in the same format as the swap history on this
       page and the sandbox log on What-If (fragments/what-if-swap-log.html) — one swap per line,
-      scrolling sideways rather than wrapping, so the A→B ↔ B→A symmetry survives on narrow
-      screens. Codes rather than names, matching those lists: swapStack records codes only.
+      shrinking the type on narrow screens rather than wrapping or scrolling, so the A→B ↔ B→A
+      symmetry survives. Codes rather than names, matching those lists: swapStack records codes
+      only.
     -->
     <div class="space-y-2" x-show="changesView === 'swaps'" x-cloak>
       <template x-for="(entry, index) in getSwapEntries()" :key="index">
         <div
-          class="text-sm font-mono text-gray-700 whitespace-nowrap overflow-x-auto py-1.5 px-2 bg-gray-50 rounded"
+          class="text-xs sm:text-sm font-mono text-gray-700 whitespace-nowrap py-1.5 px-2 bg-gray-50 rounded"
         >
           <span class="text-gray-300 mr-1 select-none" x-text="(index + 1) + '.'"
             >1.</span

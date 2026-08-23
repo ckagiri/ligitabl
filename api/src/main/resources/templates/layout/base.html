@@ -706,32 +706,32 @@
           @click.away="mobileMenuOpen = false"
           class="lg:hidden pb-3 border-t border-gray-200"
         >
-          <div class="flex flex-col space-y-1 pt-2">
+          <div class="flex flex-col space-y-0.5 pt-2">
             <a
               th:href="${predictionsNavLink} ?: '/my-table/guest'"
-              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
               th:text="${predictionsNavLabel} ?: 'Predictions'"
               >Predictions</a
             >
             <a
               th:href="@{/leaderboard}"
-              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
               >Leaderboard</a
             >
             <a
               th:href="@{/rounds/current/standings}"
-              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
               >Standings</a
             >
             <a
               th:href="@{/rounds/current/matches}"
-              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
               >Matches</a
             >
             <a
               th:if="${isLoggedIn}"
               th:href="@{/contests}"
-              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
               >Contests</a
             >
             <!-- Guests: Final Table only while entry is still open (see desktop note). -->
@@ -739,29 +739,38 @@
               th:if="${!isLoggedIn and showFinalTableNav}"
               th:href="@{/final-table}"
               onclick="window.flashNavLoadingBar()"
-              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
               >Final Table</a
             >
             <!-- Guests: About/FAQ shown directly (mobile) -->
             <a
               th:unless="${isLoggedIn}"
               th:href="@{/about}"
-              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
               >About</a
             >
             <a
               th:unless="${isLoggedIn}"
               th:href="@{/faq}"
-              class="text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+              class="text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
               >FAQ</a
             >
+
+            <!-- Divides where you play from what you administer. Above this line are the places
+                 the game happens; below are the utility sections, which are collapsible because
+                 they are visited rarely. Without the rule the whole menu reads as one flat list
+                 of equal-weight rows and scans as longer than it is. -->
+            <div
+              th:if="${isLoggedIn}"
+              class="mt-1 pt-1 border-t border-gray-100"
+            ></div>
 
             <!-- Logged in: About/FAQ tucked under a collapsible More section (mobile) -->
             <div th:if="${isLoggedIn}" x-data="{ mobileMoreOpen: false }">
               <button
                 type="button"
                 @click="mobileMoreOpen = !mobileMoreOpen"
-                class="w-full flex items-center justify-between text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                class="w-full flex items-center justify-between text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
               >
                 <span>More</span>
                 <svg
@@ -784,17 +793,17 @@
                 <a
                   th:href="@{/final-table}"
                   onclick="window.flashNavLoadingBar()"
-                  class="block text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                  class="block text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
                   >Final Table</a
                 >
                 <a
                   th:href="@{/about}"
-                  class="block text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                  class="block text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
                   >About</a
                 >
                 <a
                   th:href="@{/faq}"
-                  class="block text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                  class="block text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
                   >FAQ</a
                 >
               </div>
@@ -803,7 +812,7 @@
               <button
                 type="button"
                 @click="mobileAdminOpen = !mobileAdminOpen"
-                class="w-full flex items-center justify-between text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                class="w-full flex items-center justify-between text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
               >
                 <span>Admin</span>
                 <svg
@@ -825,17 +834,17 @@
               <div x-show="mobileAdminOpen" x-cloak class="pl-3">
                 <a
                   th:href="@{/admin/seasons}"
-                  class="block text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                  class="block text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
                   >Season Management</a
                 >
                 <a
                   th:href="@{/admin/users}"
-                  class="block text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                  class="block text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
                   >Users</a
                 >
                 <a
                   th:href="@{/admin/matches}"
-                  class="block text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                  class="block text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
                   >Matches</a
                 >
                 <button
@@ -843,7 +852,7 @@
                   hx-get="/admin/impersonation/modal"
                   hx-target="#impersonation-modal-root"
                   hx-swap="innerHTML"
-                  class="block w-full text-left text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-md text-base font-medium"
+                  class="block w-full text-left text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
                   @click="mobileMenuOpen = false"
                 >
                   Impersonate

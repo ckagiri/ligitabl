@@ -52,10 +52,11 @@
         th:each="entry, iterStat : ${swapHistory}"
         class="px-6 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1"
       >
-        <!-- whitespace-nowrap + scroll: one swap is one line, so the A→B ↔ B→A
-           symmetry survives on narrow screens instead of orphaning the last "#17". -->
+        <!-- One swap is one line, so the A→B ↔ B→A symmetry survives instead of orphaning the
+           last "#17". Kept on one line by shrinking the type on narrow screens rather than by
+           scrolling — a scrollbar per row is worse than a slightly smaller row. -->
         <span
-          class="text-sm font-mono text-gray-700 whitespace-nowrap overflow-x-auto max-w-full"
+          class="text-xs sm:text-sm font-mono text-gray-700 whitespace-nowrap max-w-full"
         >
           <span
             class="text-gray-300 mr-1.5 select-none"
