@@ -57,24 +57,99 @@
                 class="text-sm text-gray-600 pb-3"
               >
                 <p class="mb-3">
-                  Everyone starts by building a Premier League table prediction
-                  — ordering all the teams where you think they'll stand after
-                  the
-                  <strong class="text-gray-900">current gameweek</strong> plays
-                  out — much like building a squad in Fantasy Premier League.
-                  You do this by tapping two teams to swap them, then when
-                  happy, <strong class="text-gray-900">submitting</strong>.
+                  Everyone starts by predicting the order the Premier League
+                  table will be in after the
+                  <strong class="text-gray-900">current gameweek</strong>.
+                  Here&rsquo;s how it works:
                 </p>
-                <p class="mb-3">
-                  From there, you manage your table all season long—making swaps
-                  as standings shift and new gameweeks open. Earn points after
-                  every gameweek based on how close your prediction is to
-                  reality. A gameweek is a round of fixtures, the same idea as
-                  "Gameweek" in Fantasy Premier League.
-                </p>
+                <ul class="list-disc pl-5 space-y-2 mb-3">
+                  <li>
+                    You don&rsquo;t start from a blank sheet &mdash; you
+                    <strong class="text-gray-900">inherit a table</strong> and
+                    nudge it, tapping two clubs to swap them and then submitting
+                    when you&rsquo;re happy.
+                  </li>
+                  <li>
+                    Setting up, you get
+                    <strong class="text-gray-900">5 swaps</strong>. Once
+                    you&rsquo;re in, one every 24 hours.
+                  </li>
+                  <li>
+                    This game is about
+                    <strong class="text-gray-900">damage limitation</strong>.
+                    You&rsquo;re scored on how far each club sits from where you
+                    placed it &mdash; not on calling the table perfectly.
+                  </li>
+                  <li>
+                    <strong class="text-gray-900">Swap scarcity</strong> is the
+                    mechanic that makes it bite. You can&rsquo;t rebuild the
+                    whole table each week, so every swap has to be worth
+                    spending.
+                  </li>
+                </ul>
                 <p>
                   You can compete on the main leaderboard or in private leagues
                   with friends, family and colleagues.
+                </p>
+              </div>
+            </div>
+            <div class="py-1" x-data="{ open: true }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
+                <span>How do I keep my score high?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <div
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                <p class="mb-3">
+                  Aim for
+                  <strong class="text-gray-900">as few hits as you can</strong>
+                  &mdash; a hit being one point lost for each place a club is
+                  out by. A perfect table is very unlikely, and you don&rsquo;t
+                  need one.
+                </p>
+                <p class="mb-3">
+                  The damage comes from
+                  <strong class="text-gray-900">one club sitting a long way
+                  off</strong>, not from being slightly out. Have Liverpool 1st
+                  while they sit 14th and that single row costs you a 13-hit
+                  swing.
+                </p>
+                <p class="mb-3">
+                  Play defensively: find the clubs sitting furthest from where
+                  you put them and spend your swaps closing those gaps, rather
+                  than chasing exact positions.
+                </p>
+                <p class="mb-3">
+                  Look at the coming fixtures, not just the table as it stands
+                  &mdash; a club you have low, with a kind run ahead, may climb
+                  back, while one you have placed high can slide down.
+                </p>
+                <p>
+                  You don&rsquo;t have to guess which gap to close: the
+                  <strong class="text-gray-900">What-If</strong> page lets you
+                  test a swap before you spend it. See
+                  <em>Planning with What-If</em> below.
                 </p>
               </div>
             </div>
@@ -345,16 +420,27 @@
                   />
                 </svg>
               </button>
-              <p
+              <div
                 x-show="open"
                 x-transition
                 x-cloak
                 class="text-sm text-gray-600 pb-3"
               >
-                Once a single gameweek's match kicks off, swapping locks
-                completely for that round — regardless of how many swaps you had
-                left. It reopens when the next gameweek opens.
-              </p>
+                <p class="mb-3">
+                  Two things stop you. The first is the
+                  <strong class="text-gray-900">cooldown</strong>: after you use
+                  a swap you wait 24 hours for the next one, so if that
+                  clock&rsquo;s still running you can&rsquo;t swap again yet
+                  &mdash; even with the round wide open.
+                </p>
+                <p>
+                  The second is
+                  <strong class="text-gray-900">kick-off</strong>. Once a single
+                  gameweek&rsquo;s match kicks off, swapping locks completely for
+                  that round &mdash; regardless of how many swaps you had left.
+                  It reopens when the next gameweek opens.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -624,37 +710,6 @@
                 Yes. The last set of scores you applied is saved to your account, so opening What-If on another device or after clearing your browser brings them back. The refresh button next to the score list pulls the saved copy on demand; if you&rsquo;ve entered something different locally it asks before replacing it.
               </p>
             </div>
-            <div class="py-1" x-data="{ open: false }">
-              <button
-                type="button"
-                @click="open = !open"
-                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
-              >
-                <span>What&rsquo;s the What-If recap on a past gameweek?</span>
-                <svg
-                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
-                  :class="open ? 'rotate-180' : ''"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-              <p
-                x-show="open"
-                x-transition
-                x-cloak
-                class="text-sm text-gray-600 pb-3"
-              >
-                Once a gameweek is scored, My Table shows how the scores you last applied actually turned out. Your picks earn a record like a team does: calling the winner right is a Win whatever the score; calling a draw is a Win if it finished level, a Draw if one side edged it by a single goal, and a Loss if the margin was two or more. Calling the wrong winner is always a Loss &mdash; only draw picks get the one-goal reprieve.
-              </p>
-            </div>
           </div>
 
           <!-- Scoring & grades -->
@@ -693,8 +748,10 @@
                 class="text-sm text-gray-600 pb-3"
               >
                 <p class="mb-3">
-                  You start each gameweek with 200 points. For every team, you
-                  lose 1 point for each position your prediction was off by:
+                  You start each gameweek on 200. Every club then takes a
+                  <strong class="text-gray-900">hit</strong> for each position
+                  it sits away from where you placed it &mdash; one position
+                  out, one hit:
                 </p>
                 <div class="overflow-x-auto mb-3">
                   <table
@@ -715,8 +772,8 @@
                     </thead>
                     <tbody class="divide-y divide-gray-100">
                       <tr>
-                        <td class="px-3 py-2">Team A in 1st</td>
-                        <td class="px-3 py-2">Team A in 3rd</td>
+                        <td class="px-3 py-2">Arsenal in 1st</td>
+                        <td class="px-3 py-2">Arsenal in 3rd</td>
                         <td
                           class="px-3 py-2 text-right font-semibold text-red-600"
                         >
@@ -724,8 +781,8 @@
                         </td>
                       </tr>
                       <tr>
-                        <td class="px-3 py-2">Team B in 20th</td>
-                        <td class="px-3 py-2">Team B in 15th</td>
+                        <td class="px-3 py-2">Everton in 20th</td>
+                        <td class="px-3 py-2">Everton in 15th</td>
                         <td
                           class="px-3 py-2 text-right font-semibold text-red-600"
                         >
@@ -733,8 +790,8 @@
                         </td>
                       </tr>
                       <tr>
-                        <td class="px-3 py-2">Team C in 10th</td>
-                        <td class="px-3 py-2">Team C in 10th</td>
+                        <td class="px-3 py-2">Chelsea in 10th</td>
+                        <td class="px-3 py-2">Chelsea in 10th</td>
                         <td
                           class="px-3 py-2 text-right font-semibold text-green-600"
                         >
@@ -745,10 +802,10 @@
                   </table>
                 </div>
                 <p>
-                  Your score is 200 minus your total position errors across all
-                  20 teams. Once a new gameweek starts, the previous gameweek's
-                  score is frozen and the next one begins fresh at 200 — your
-                  cumulative score across all gameweeks is what the leaderboard
+                  Your score is 200 minus your total hits across the twenty
+                  clubs. When the next gameweek opens, that score freezes and
+                  you begin again on a fresh 200 &mdash; and it&rsquo;s your
+                  cumulative score across every gameweek that the leaderboard
                   ranks.
                 </p>
               </div>
