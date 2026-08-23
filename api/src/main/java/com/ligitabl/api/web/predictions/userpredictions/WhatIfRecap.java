@@ -11,7 +11,8 @@ public record WhatIfRecap(int played, List<Line> all, List<Line> wins, List<Line
             String awayTeamShorterName,
             String actualScore,
             String guessedOutcome,
-            String grade) {}
+            String grade,
+            boolean exact) {}
 
     public int winCount() {
         return wins.size();

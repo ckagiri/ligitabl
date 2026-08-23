@@ -150,9 +150,9 @@
                   ></span>
                   <span
                     class="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold leading-none"
-                    :class="whatIfRecapMarkClass(line.grade)"
-                    :title="line.grade === 'WIN' ? 'Win' : (line.grade === 'DRAW' ? 'Draw — near miss' : 'Loss')"
-                    x-text="whatIfRecapMark(line.grade)"
+                    :class="whatIfRecapMarkClass(line)"
+                    :title="line.grade === 'WIN' ? (line.exact ? 'Exact score' : 'Win') : (line.grade === 'DRAW' ? 'Draw — near miss' : 'Loss')"
+                    x-text="whatIfRecapMark(line)"
                   ></span>
                 </span>
               </li>

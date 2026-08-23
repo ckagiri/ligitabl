@@ -2093,12 +2093,18 @@ const whatIfGrade = (guessHome, guessAway, actualHome, actualAway) => {
   }
   return Math.abs(actualHome - actualAway) === 1 ? "DRAW" : "LOSS";
 };
-const whatIfGradeMark = (grade) => ({ WIN: "✓", DRAW: "~", LOSS: "–" })[grade] || "";
-const whatIfGradeMarkClass = (grade) => ({
-  WIN: "bg-green-50 text-green-700",
-  DRAW: "bg-amber-50 text-amber-700",
-  LOSS: "bg-red-50 text-red-700"
-})[grade] || "bg-gray-100 text-gray-500";
+const whatIfGradeMark = (grade, exact) => {
+  if (grade === "WIN") return exact ? "★" : "✓";
+  return { DRAW: "~", LOSS: "–" }[grade] || "";
+};
+const whatIfGradeMarkClass = (grade, exact) => {
+  if (grade === "WIN") return exact ? "bg-green-100 text-green-800" : "bg-green-50 text-green-700";
+  return {
+    DRAW: "bg-amber-50 text-amber-700",
+    LOSS: "bg-red-50 text-red-700"
+  }[grade] || "bg-gray-100 text-gray-500";
+};
+const whatIfExact = (guessHome, guessAway, actualHome, actualAway) => guessHome === actualHome && guessAway === actualAway;
 window.Ligitabl.whatIfPage = function(el) {
   const parsed = Ligitabl._parseDataAttributes(el);
   const matches = Ligitabl._parseJSON(el?.dataset?.whatIfMatches, []);
@@ -2468,14 +2474,21 @@ window.Ligitabl.whatIfPage = function(el) {
     showsActuals(match) {
       return !this.roundOpen && isWhatIfScoreable(match) && this.hasActualScore(match);
     },
-    gradeMark(grade) {
-      return whatIfGradeMark(grade);
+    isExactMatch(match) {
+      const s = this.scores[match.matchId];
+      if (!s || !this.hasActualScore(match)) return false;
+      return whatIfExact(s.home, s.away, match.homeGoals, match.awayGoals);
     },
-    gradeMarkClass(grade) {
-      return whatIfGradeMarkClass(grade);
+    gradeMark(match) {
+      return whatIfGradeMark(this.matchGrade(match), this.isExactMatch(match));
     },
-    gradeTitle(grade) {
-      return { WIN: "Win", DRAW: "Draw — near miss", LOSS: "Loss" }[grade] || "";
+    gradeMarkClass(match) {
+      return whatIfGradeMarkClass(this.matchGrade(match), this.isExactMatch(match));
+    },
+    gradeTitle(match) {
+      const grade = this.matchGrade(match);
+      if (grade === "WIN") return this.isExactMatch(match) ? "Exact score" : "Win";
+      return { DRAW: "Draw — near miss", LOSS: "Loss" }[grade] || "";
     },
     buildShareText() {
       const outcomeMap = { H: "1", D: "X", A: "2" };
@@ -2798,11 +2811,13 @@ window.Ligitabl.whatIfRecapCard = function(el) {
       const labels = { all: "What-If recap", wins: "Wins", draws: "Draws", losses: "Losses" };
       return labels[this.whatIfRecapPopup.bucket] || "";
     },
-    whatIfRecapMark(grade) {
-      return whatIfGradeMark(grade);
+    // Take the whole line, not just its grade: an exact call is drawn differently from a
+    // merely-correct one, and `exact` rides along on the line from the server.
+    whatIfRecapMark(line) {
+      return whatIfGradeMark(line.grade, line.exact);
     },
-    whatIfRecapMarkClass(grade) {
-      return whatIfGradeMarkClass(grade);
+    whatIfRecapMarkClass(line) {
+      return whatIfGradeMarkClass(line.grade, line.exact);
     },
     whatIfRecapNumber(index) {
       return String(index + 1).padStart(2, "0");

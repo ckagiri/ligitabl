@@ -76,7 +76,8 @@ public class WhatIfRecapBuilder {
                     displayName(match.getAwayTeam()),
                     actual.getHomeGoals() + " - " + actual.getAwayGoals(),
                     outcomeLetter(outcomeOf(guess.homeGoals(), guess.awayGoals())),
-                    grade.name());
+                    grade.name(),
+                    isExact(guess, actual));
 
             all.add(line);
             switch (grade) {
@@ -111,6 +112,11 @@ public class WhatIfRecapBuilder {
         }
         int margin = Math.abs(actual.getHomeGoals() - actual.getAwayGoals());
         return margin == 1 ? Grade.DRAW : Grade.LOSS;
+    }
+
+    /** Exactly right, not merely the right outcome — the difference between a star and a tick. */
+    private boolean isExact(WhatIfScore guess, Score actual) {
+        return guess.homeGoals() == actual.getHomeGoals() && guess.awayGoals() == actual.getAwayGoals();
     }
 
     private String displayName(Team team) {

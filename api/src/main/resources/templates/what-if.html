@@ -187,9 +187,9 @@
                                row keeps its width and does not jitter as matches finish. -->
                           <span
                             class="w-6 h-6 flex items-center justify-center rounded-full text-xs font-bold leading-none"
-                            :class="matchGrade(match) ? gradeMarkClass(matchGrade(match)) : ''"
-                            :title="gradeTitle(matchGrade(match))"
-                            x-text="gradeMark(matchGrade(match))"
+                            :class="matchGrade(match) ? gradeMarkClass(match) : ''"
+                            :title="gradeTitle(match)"
+                            x-text="gradeMark(match)"
                           ></span>
                         </div>
                       </template>
