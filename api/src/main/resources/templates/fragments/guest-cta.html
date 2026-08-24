@@ -7,10 +7,10 @@
 <a
   th:fragment="signup-button(shapeClasses)"
   th:href="@{/auth/register}"
-  th:class="${'inline-flex items-center px-6 py-3 border border-transparent text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ' + shapeClasses}"
+  th:class="${'inline-flex items-center justify-center whitespace-nowrap max-w-full px-5 sm:px-6 py-3 border border-transparent text-sm sm:text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors ' + shapeClasses}"
 >
   <svg
-    class="h-5 w-5 mr-2"
+    class="h-5 w-5 mr-2 shrink-0"
     fill="none"
     stroke="currentColor"
     viewBox="0 0 24 24"
@@ -23,9 +23,9 @@
     />
   </svg>
   <span x-show="getSwapCount() === 0">Sign Up to Save Prediction</span>
-  <span x-show="getSwapCount() > 0">
-    Sign Up to Save Prediction (<span x-text="getSwapCount()"></span>)
-  </span>
+  <span x-show="getSwapCount() > 0"
+    >Sign Up to Save Prediction (<span x-text="getSwapCount()"></span>)</span
+  >
 </a>
 
 <!-- Inline CTA: takes over once the floating pill hides near the footer. Uses `invisible`
