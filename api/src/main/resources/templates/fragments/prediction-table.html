@@ -289,7 +289,25 @@
     <!-- Switches between the user's prediction and the real standings. The actual-table side is
          read-only (canInteract derives from positionsReversed), so this is a view switch rather
          than an edit mode — naming both sides makes that legible before you press it. -->
-    <div x-show="showStandings" class="flex items-center justify-end gap-2 mb-3">
+    <div
+      x-show="showStandings"
+      class="flex flex-wrap items-center justify-end gap-x-3 gap-y-2 mb-3"
+    >
+      <!-- Arrow key, outside the collapsible panel so it is visible without expanding
+           "Show on table" — the arrows it explains are always on screen. Hidden in the
+           standings view, which has no delta arrows. -->
+      <span
+        x-show="!positionsReversed"
+        x-cloak
+        class="inline-flex items-center gap-2 mr-auto text-[11px] text-gray-500"
+      >
+        <span class="inline-flex items-center gap-0.5">
+          <span class="text-green-600 font-semibold">↑</span> move up
+        </span>
+        <span class="inline-flex items-center gap-0.5">
+          <span class="text-red-600 font-semibold">↓</span> move down
+        </span>
+      </span>
       <!-- Only while the actual table is showing: that is when "you can't swap here" is news.
            Sits left of the switch so it reads as a note about the state, not a third option. -->
       <span
