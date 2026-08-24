@@ -286,6 +286,51 @@
 
   <!-- Interactive Current-Round Table -->
   <div th:fragment="interactive-table(alwaysHoverable)" class="px-6 py-4">
+    <!-- Switches between the user's prediction and the real standings. The actual-table side is
+         read-only (canInteract derives from positionsReversed), so this is a view switch rather
+         than an edit mode — naming both sides makes that legible before you press it. -->
+    <div x-show="showStandings" class="flex items-center justify-end gap-2 mb-3">
+      <!-- Only while the actual table is showing: that is when "you can't swap here" is news.
+           Sits left of the switch so it reads as a note about the state, not a third option. -->
+      <span
+        x-show="positionsReversed"
+        x-cloak
+        class="inline-flex items-center gap-1 text-xs text-gray-500"
+      >
+        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
+          />
+        </svg>
+        Read-only
+      </span>
+      <div
+        class="inline-flex rounded-md border border-gray-300 overflow-hidden text-xs sm:text-sm font-medium"
+        role="group"
+      >
+        <button
+          type="button"
+          @click="if (positionsReversed) toggleStandingsView()"
+          :aria-pressed="(!positionsReversed).toString()"
+          :class="!positionsReversed ? 'bg-indigo-50 text-indigo-700' : 'bg-white text-gray-600 hover:bg-gray-50'"
+          class="px-2.5 py-1.5 sm:px-3 sm:py-1.5 min-h-[34px] sm:min-h-0 transition-colors"
+        >
+          My Table
+        </button>
+        <button
+          type="button"
+          @click="if (!positionsReversed) toggleStandingsView()"
+          :aria-pressed="positionsReversed.toString()"
+          :class="positionsReversed ? 'bg-indigo-50 text-indigo-700' : 'bg-white text-gray-600 hover:bg-gray-50'"
+          class="px-2.5 py-1.5 sm:px-3 sm:py-1.5 min-h-[34px] sm:min-h-0 border-l border-gray-300 transition-colors"
+        >
+          Actual Table
+        </button>
+      </div>
+    </div>
     <div class="overflow-hidden">
       <table class="min-w-full table-fixed">
         <thead class="bg-gray-50">
@@ -294,8 +339,10 @@
               scope="col"
               class="px-2 sm:px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10 sm:w-16"
             >
+              <!-- Mobile stays "Pos" in both views: the column is the row's rank in whatever
+                   table is showing, and the switch above already names which one that is. -->
               <span class="sm:hidden">Pos</span>
-              <span class="hidden sm:inline" x-text="showStandings ? 'Pred' : 'Pos'">Pos</span>
+              <span class="hidden sm:inline" x-text="showStandings ? (positionsReversed ? 'Actual' : 'Pred') : 'Pos'">Pos</span>
             </th>
             <th
               scope="col"
@@ -307,6 +354,7 @@
               x-show="showStandings"
               scope="col"
               class="hidden sm:table-cell px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
+              x-text="positionsReversed ? 'Pred' : 'Actual'"
             >
               Actual
             </th>
@@ -361,13 +409,13 @@
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-          <template x-for="(team, teamIndex) in teams" :key="team.code">
+          <template x-for="(team, teamIndex) in displayTeams()" :key="team.code">
             <tr
               @click="teamClick(team.code)"
               :data-team-code="team.code"
               :class="{
-                'cursor-pointer hover:bg-gray-50': alwaysHoverable || canSwap,
-                'no-hover': !alwaysHoverable && !canSwap,
+                'cursor-pointer hover:bg-gray-50': (alwaysHoverable || canSwap) && !positionsReversed,
+                'no-hover': (!alwaysHoverable && !canSwap) || positionsReversed,
                 'bg-blue-50': isSelected(team.code),
                 'bg-amber-50': isDirty(team.code) && !isSelected(team.code),
                 'transition-all duration-200': true
@@ -378,7 +426,7 @@
                 <div class="flex items-center">
                   <span
                     class="text-sm font-bold text-gray-900 mr-2"
-                    x-text="team.position"
+                    x-text="showStandings && positionsReversed ? getActualPosition(team.code) : team.position"
                   ></span>
                   <span
                     x-show="getPositionChange(team.code)"
@@ -480,10 +528,10 @@
                         class="flex items-center gap-1 text-xs"
                         :class="showFixtures && hasFixtures(team.code) && getFixtures(team.code).length > 1 ? 'basis-full' : ''"
                       >
-                        <span class="text-gray-500">Actual:</span>
+                        <span class="text-gray-500" x-text="positionsReversed ? 'Pred:' : 'Actual:'">Actual:</span>
                         <span
                           class="text-gray-700 font-medium"
-                          x-text="getActualPosition(team.code)"
+                          x-text="positionsReversed ? team.position : getActualPosition(team.code)"
                           >2</span
                         >
                         <span
@@ -628,11 +676,11 @@
                 </div>
               </td>
 
-              <!-- Actual Position - hide on mobile -->
+              <!-- Actual Position - hide on mobile. Shows the prediction in the standings view. -->
               <td
                 x-show="showStandings"
                 class="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-right text-sm text-gray-400"
-                x-text="getActualPosition(team.code)"
+                x-text="positionsReversed ? team.position : getActualPosition(team.code)"
               ></td>
 
               <!-- Delta with Arrow -->

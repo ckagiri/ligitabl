@@ -112,11 +112,11 @@
           <!-- Rearranging still works here, saving doesn't — said in the card so it doesn't
                dead-end on "nothing has been applied" with no reason why. Split on isRoundOpen as
                swap-instructions.html does: a closed round isn't a cooldown. -->
-          <span x-show="canInteract && !canSwap && !isInitialPrediction && isRoundOpen">
+          <span x-show="roundAllowsEditing && !canSwap && !isInitialPrediction && isRoundOpen">
             Rearrange above to plan, but nothing saves until your cooldown ends.
           </span>
           <span
-            x-show="canInteract && !canSwap && !isInitialPrediction && !isRoundOpen && !isLastRound"
+            x-show="roundAllowsEditing && !canSwap && !isInitialPrediction && !isRoundOpen && !isLastRound"
           >
             Rearrange above to plan, but nothing saves until the next round opens.
           </span>

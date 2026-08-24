@@ -876,6 +876,9 @@ video {
 .max-h-\[calc\(100vh-220px\)\] {
   max-height: calc(100vh - 220px);
 }
+.min-h-\[34px\] {
+  min-height: 34px;
+}
 .min-h-screen {
   min-height: 100vh;
 }
@@ -3172,6 +3175,9 @@ video {
   .sm\:h-9 {
     height: 2.25rem;
   }
+  .sm\:min-h-0 {
+    min-height: 0px;
+  }
   .sm\:w-14 {
     width: 3.5rem;
   }
@@ -3319,6 +3325,10 @@ video {
   .sm\:px-6 {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
+  }
+  .sm\:py-1\.5 {
+    padding-top: 0.375rem;
+    padding-bottom: 0.375rem;
   }
   .sm\:py-3 {
     padding-top: 0.75rem;

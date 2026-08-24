@@ -37,38 +37,54 @@
       <div>
         <p class="text-sm font-medium text-yellow-800">Guest Preview</p>
 
+        <!-- The sign-up call is its own paragraph in each variant below: it is a separate
+             action from the instruction above it, and running them together buried the one
+             thing we actually want a guest to do. -->
+
         <!-- Current round + open (editable state) -->
-        <p th:if="${isCurrentRound && roundState == 'open'}"
-          class="text-sm text-yellow-700 mt-1">
-          Tap teams to swap and build your prediction — up to 5 swaps.
-          <a th:href="@{/auth/register}" class="underline font-medium hover:text-yellow-900">Sign up</a>
-          to save and join the competition.
-        </p>
+        <th:block th:if="${isCurrentRound && roundState == 'open'}">
+          <p class="text-sm text-yellow-700 mt-1">
+            Tap teams to swap and build your prediction — up to 5 swaps.
+          </p>
+          <p class="text-sm text-yellow-700 mt-2">
+            <a th:href="@{/auth/register}" class="underline font-medium hover:text-yellow-900">Sign up</a>
+            to save and join the competition.
+          </p>
+        </th:block>
 
         <!-- Current round + locked/completed/finalized (not last round) -->
-        <p th:if="${isCurrentRound && isRoundLockedOrBeyond && notLastRound}"
-          class="text-sm text-yellow-700 mt-1">
-          <strong>👋 Matches In Progress</strong> - Tap teams to swap and build your prediction — up to 5 swaps.
-          <a th:href="@{/auth/register}" class="underline font-medium hover:text-yellow-900">Sign up</a>
-          to save and join the competition.
-        </p>
+        <th:block th:if="${isCurrentRound && isRoundLockedOrBeyond && notLastRound}">
+          <p class="text-sm text-yellow-700 mt-1">
+            <strong>👋 Matches In Progress</strong> - Tap teams to swap and build your prediction — up to 5 swaps.
+          </p>
+          <p class="text-sm text-yellow-700 mt-2">
+            <a th:href="@{/auth/register}" class="underline font-medium hover:text-yellow-900">Sign up</a>
+            to save and join the competition.
+          </p>
+        </th:block>
 
         <!-- Current round + last round + locked/completed/finalized -->
-        <p th:if="${isCurrentRoundLast && isRoundLockedOrBeyond}"
-          class="text-sm text-yellow-700 mt-1">
-          This is the final round. Matches are in progress and the season is
-          completing.
-          <a th:href="@{/auth/register}" class="underline font-medium hover:text-yellow-900">Sign up</a>
-          to join future competitions.
-        </p>
+        <th:block th:if="${isCurrentRoundLast && isRoundLockedOrBeyond}">
+          <p class="text-sm text-yellow-700 mt-1">
+            This is the final round. Matches are in progress and the season is
+            completing.
+          </p>
+          <p class="text-sm text-yellow-700 mt-2">
+            <a th:href="@{/auth/register}" class="underline font-medium hover:text-yellow-900">Sign up</a>
+            to join future competitions.
+          </p>
+        </th:block>
 
         <!-- Current round + season completed -->
-        <p th:if="${isCurrentRound && seasonCompleted}"
-          class="text-sm text-yellow-700 mt-1">
-          This season has completed. You can browse the results.
-          <a th:href="@{/auth/register}" class="underline font-medium hover:text-yellow-900">Sign up</a>
-          to join future competitions.
-        </p>
+        <th:block th:if="${isCurrentRound && seasonCompleted}">
+          <p class="text-sm text-yellow-700 mt-1">
+            This season has completed. You can browse the results.
+          </p>
+          <p class="text-sm text-yellow-700 mt-2">
+            <a th:href="@{/auth/register}" class="underline font-medium hover:text-yellow-900">Sign up</a>
+            to join future competitions.
+          </p>
+        </th:block>
       </div>
     </div>
   </div>
