@@ -28,9 +28,21 @@ public class PreviewRankingsSupport {
 
     public record RankingsWithSource(RankingSource source, List<TeamRank> rankings) {}
 
-    /** Rankings only, for lightweight previews (e.g. the homepage) that don't need the source. */
+    /**
+     * Current standings, for lightweight previews (e.g. the homepage) that don't need the source.
+     *
+     * <p>Deliberately not {@link #getPreviousRoundRankings}: that intentionally lags by two rounds
+     * to give a joining user something to react to, but the homepage presents this as a "live
+     * preview" of the real table.
+     */
     public List<TeamRank> getPreviewRankings(UUID seasonId, int currentRound) {
-        return getPreviousRoundRankings(seasonId, currentRound).rankings();
+        for (int round = currentRound; round >= 1; round--) {
+            var standings = standingsRepo.findBySeasonAndRoundPosition(seasonId, round);
+            if (standings.isPresent()) {
+                return convertStandingsRankingsToTeamRankings(standings.get());
+            }
+        }
+        return getSeasonBaselineRankings(seasonId).rankings();
     }
 
     /**
