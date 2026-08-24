@@ -199,6 +199,10 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         // the per-team diff answers "what did I move", which is the question the card has always
         // answered; the swap view is the follow-up for how those moves were made.
         changesView: 'teams',
+        // Lives here rather than in the comparison-options fragment's own x-data so the table
+        // toolbar can read it too.
+        compareOptionsOpen: window.matchMedia('(min-width: 640px)').matches,
+        positionsReversed: false,
         alwaysHoverable: false,
         isInitialPrediction: false,
         showStandings: savedPrefs ? (savedPrefs.showStandings ?? true) : true,
@@ -452,6 +456,35 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
 
         getActualPosition(teamCode) {
             return this.currentStandings[teamCode] || "?";
+        },
+
+        // Row order for rendering only.
+        displayTeams() {
+            if (!this.positionsReversed || !this.showStandings) return this.teams;
+            const rank = (team) => {
+                const actual = this.getActualPosition(team.code);
+                return actual === "?" ? Number.MAX_SAFE_INTEGER : actual;
+            };
+            return [...this.teams].sort((a, b) => rank(a) - rank(b));
+        },
+
+        _canInteractRaw: false,
+        get canInteract() {
+            return this._canInteractRaw && !this.positionsReversed;
+        },
+
+        // The server's permission on its own, ignoring which view is showing. Status text
+        // about the round itself — cooldown active, round not open — stays true whichever
+        // table you are looking at, so it must not hide when the standings view is on.
+        get roundAllowsEditing() {
+            return this._canInteractRaw;
+        },
+
+        toggleStandingsView() {
+            this.positionsReversed = !this.positionsReversed;
+            // Drop a half-made selection — it can't be completed here, and a highlighted
+            // row you can't act on reads as stuck. Unsaved swaps deliberately survive.
+            if (this.positionsReversed) this.selectedTeam = null;
         },
 
         getDelta(teamCode) {
@@ -713,7 +746,8 @@ window.Ligitabl.predictionPage = function (el) {
 
     return Object.assign(base, {
         canSwap,
-        canInteract,
+        // Raw server permission — Assigning canInteract here would clobber the getter.
+        _canInteractRaw: canInteract,
         isRoundOpen,
         isLastRound,
         isInitialPrediction,
@@ -1117,6 +1151,8 @@ window.Ligitabl.guestPredictionPage = function (el) {
         },
 
         teamClick(teamCode) {
+            // Standings view is for reading the real table, not editing against it.
+            if (this.positionsReversed) return;
             if (this.selectedTeam === null) {
                 this._selectTeam(teamCode);
                 return;

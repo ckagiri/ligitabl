@@ -35,13 +35,13 @@
         >
         <span
           th:if="${!isGuest}"
-          x-show="canInteract && !canSwap && isRoundOpen"
+          x-show="roundAllowsEditing && !canSwap && isRoundOpen"
           >Cooldown active. You can rearrange to plan your next swap, but
           changes won't be saved until cooldown ends.</span
         >
         <span
           th:if="${!isGuest}"
-          x-show="canInteract && !canSwap && !isRoundOpen && !isLastRound"
+          x-show="roundAllowsEditing && !canSwap && !isRoundOpen && !isLastRound"
           >Round is not open. You can rearrange to plan your next swap, but
           changes won't be saved until the next round opens.</span
         >
@@ -169,7 +169,7 @@
             >.
           </span>
         </span>
-        <span x-show="canInteract && !canSwap">
+        <span x-show="roundAllowsEditing && !canSwap">
           <span x-show="isRoundOpen"
             >Cooldown active — changes are local only,</span
           >

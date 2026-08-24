@@ -120,13 +120,13 @@
     <!-- Cooldown notices — why the submit button below is unavailable. Sits after the changes
          summary so the order reads: what you changed, why you can't submit it yet, the button. -->
     <p
-      x-show="canInteract && !canSwap && !isInitialPrediction && isRoundOpen"
+      x-show="roundAllowsEditing && !canSwap && !isInitialPrediction && isRoundOpen"
       class="text-xs text-yellow-700 text-center"
     >
       Cooldown active — submit resumes when cooldown ends.
     </p>
     <p
-      x-show="canInteract && !canSwap && !isInitialPrediction && !isRoundOpen && !isLastRound"
+      x-show="roundAllowsEditing && !canSwap && !isInitialPrediction && !isRoundOpen && !isLastRound"
       class="text-xs text-yellow-700 text-center"
     >
       Round is not open — submit resumes when the next round opens.

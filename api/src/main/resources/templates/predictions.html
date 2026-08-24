@@ -52,32 +52,35 @@
                       >📊 Finalized</span
                     >
                   </span>
+                </div>
 
-                  <!-- Source indicator. Sits with Gameweek/status rather than with the buttons:
-                       it is a description of what you're looking at, not a control.
-                       Deliberately NOT pill-styled — the pill/border/icon treatment used by
-                       Final Table and What-If reads as tappable, and this is a static label. -->
-                  <div
-                    th:if="${source != 'USER_PREDICTION'}"
-                    class="inline-flex items-center gap-1 min-w-0"
+                <!-- Source indicator. A sibling of the Gameweek group rather than part of it:
+                     inside it, its width pushed the controls onto their own line, stranding a
+                     lone refresh button on the guest page (which has no What-If/Final Table
+                     pills beside it). max-sm:order-last + basis-full drops it to its own line
+                     below both, so Gameweek and the controls share the first line.
+                     Deliberately NOT pill-styled — the pill/border/icon treatment used by
+                     Final Table and What-If reads as tappable, and this is a static label. -->
+                <div
+                  th:if="${source != 'USER_PREDICTION'}"
+                  class="inline-flex items-center gap-1 min-w-0 max-sm:order-last max-sm:basis-full"
+                >
+                  <svg
+                    class="h-3.5 w-3.5 text-gray-400 flex-shrink-0"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
                   >
-                    <svg
-                      class="h-3.5 w-3.5 text-gray-400 flex-shrink-0"
-                      fill="currentColor"
-                      viewBox="0 0 20 20"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                    <span
-                      class="text-xs text-gray-500 truncate"
-                      th:text="${sourceLabel}"
-                      >Last Season Baseline</span
-                    >
-                  </div>
+                    <path
+                      fill-rule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                      clip-rule="evenodd"
+                    />
+                  </svg>
+                  <span
+                    class="text-xs text-gray-500 truncate"
+                    th:text="${sourceLabel}"
+                    >Last Season Baseline</span
+                  >
                 </div>
 
                 <!-- ml-auto rather than justify-between on the parent: these controls wrap to their
