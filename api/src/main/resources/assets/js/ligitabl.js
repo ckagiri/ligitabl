@@ -2875,7 +2875,7 @@ window.Ligitabl.whatIfPage = function (el) {
             if (this.selectedTeam) {
                 return `${this.selectedTeam} selected — tap another`;
             }
-            return "Tap to swap";
+            return "Tap teams to swap";
         },
         resetSwaps() {
             this.reset();

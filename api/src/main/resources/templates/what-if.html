@@ -389,14 +389,22 @@
             </div>
 
             <div x-show="hasComputed" x-cloak class="mb-3">
+              <!-- The score is the number the whole page exists to move, so it carries the
+                   emphasis: a tinted panel rather than white-on-white, and a number sized well
+                   clear of the text around it. tabular-nums keeps it from reflowing as the digit
+                   count changes (60 -> 100) while you swap. -->
               <div
-                class="px-3 py-2 bg-white rounded-md border border-gray-200 text-sm font-medium text-gray-900 mb-1.5"
+                class="flex items-baseline flex-wrap gap-x-2 px-3 py-2.5 bg-gray-50 rounded-md border border-gray-200 mb-1.5"
               >
-                Score:
-                <span class="text-base font-bold" x-text="totalScore()"></span>
-                <!-- The score is the number you're here for; the max/lost breakdown is the working
-                     behind it, so it steps back to the size the whole banner used to be. -->
-                <span class="text-xs font-normal text-gray-500">
+                <span class="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
+                  Score
+                </span>
+                <span
+                  class="text-2xl font-bold tabular-nums leading-none text-gray-900"
+                  x-text="totalScore()"
+                ></span>
+                <!-- The max/lost breakdown is the working behind the score, so it stays quiet. -->
+                <span class="text-xs font-normal tabular-nums text-gray-500">
                   (Max: <span x-text="maxHitPoints"></span> Lost:
                   <span x-text="totalHit()"></span>)
                 </span>
@@ -411,11 +419,15 @@
                 <!-- min-w-0 + truncate: the buttons to the right are fixed-width and must stay
                      whole, so on a narrow phone the hint is the part that gives, ellipsizing
                      instead of pushing Undo/Reset off the card. -->
+                <!-- Indigo in both states: this is the page's primary instruction sitting beside
+                     two colored buttons, so gray-on-gray left the least important thing in the row
+                     looking the most important. Matches the "Tap a score" hint above. The selected
+                     state goes solid to stay distinguishable now that both are indigo. -->
                 <p
-                  class="inline-flex items-center gap-1.5 min-w-0 text-xs font-medium rounded-full border px-2.5 py-1 whitespace-nowrap"
+                  class="inline-flex items-center gap-1.5 min-w-0 text-xs font-semibold rounded-full border px-2.5 py-1 whitespace-nowrap"
                   :class="selectedTeam
-                    ? 'text-indigo-700 bg-indigo-50 border-indigo-200'
-                    : 'text-gray-600 bg-gray-50 border-gray-200'"
+                    ? 'text-white bg-indigo-600 border-indigo-600'
+                    : 'text-indigo-700 bg-indigo-50 border-indigo-200'"
                   x-show="!undoing"
                 >
                   <svg class="w-3.5 h-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -428,13 +440,22 @@
                 </p>
                 <!-- Undoing flash — same treatment as the prediction page's swap controls
                      (fragments/prediction-actions.html), since undoLastSwap() animates over ~400ms
-                     and the table would otherwise appear to change on its own. -->
-                <span
+                     and the table would otherwise appear to change on its own. Wears the hint
+                     pill's shape because it stands in that same slot: matching it means the row
+                     keeps its silhouette for the ~400ms rather than visibly changing shape.
+                     Amber, matching the Undo button it reports on, so the state still reads as
+                     distinct from the resting hint. -->
+                <p
                   x-show="undoing"
                   x-cloak
-                  class="text-xs font-semibold text-amber-600 animate-pulse whitespace-nowrap"
-                  >↩ undoing…</span
+                  class="inline-flex items-center gap-1.5 min-w-0 text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1 whitespace-nowrap animate-pulse"
                 >
+                  <svg class="w-3.5 h-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                    <path d="M9 14 4 9l5-5" />
+                    <path d="M4 9h11a5 5 0 0 1 0 10h-3" />
+                  </svg>
+                  <span class="truncate">undoing…</span>
+                </p>
                 <div class="flex shrink-0 items-center gap-2" x-show="getSwapCount() > 0 && !undoing" x-cloak>
                   <!-- canUndo() is false while a team is selected (you can't undo mid-swap). On
                        mobile that hides Undo to save the row's width; on desktop there's room, so it

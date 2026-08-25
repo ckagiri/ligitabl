@@ -2709,11 +2709,10 @@ Predict the table — LigiPredictor.com`;
       }, 200);
     },
     swapHint() {
-      const hasSwaps = this.getSwapCount() > 0;
       if (this.selectedTeam) {
-        return hasSwaps ? `${this.selectedTeam} selected — tap another team to swap` : `Tap another team to swap, or tap ${this.selectedTeam} again to deselect`;
+        return `${this.selectedTeam} selected — tap another`;
       }
-      return hasSwaps ? "Tap two teams to swap them" : "Tap a team to select it, then tap another to swap them.";
+      return "Tap teams to swap";
     },
     resetSwaps() {
       this.reset();
