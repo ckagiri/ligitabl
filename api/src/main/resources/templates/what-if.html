@@ -150,8 +150,17 @@
                 <template x-for="match in visibleMatches()" :key="match.matchId">
                   <div :class="isScorePickerOpen(match.matchId) ? 'bg-gray-50' : ''">
                     <div class="flex items-center gap-1.5 px-2.5 py-1.5">
+                      <!-- The mobile label is a 3-letter TLA and must never truncate — it is the
+                           one thing in the row you cannot afford to lose. Anything flex-based let
+                           it shrink below its own content once the score boxes and 1/X/2 selector
+                           had taken their width (min-w-fit floored it in theory, but still came up
+                           short on the narrowest phones). So on mobile it stops flexing entirely:
+                           a fixed w-9 column, centred, identical on every row, with the selector
+                           taking the leftover width instead. Costs the centred-row look, buys a
+                           guarantee. The sm+ short-name keeps flex-1/min-w-0/truncate, where the
+                           text really can be too long to show. -->
                       <span
-                        class="flex-1 min-w-0 text-right text-[13px] truncate"
+                        class="flex-1 min-w-0 text-right text-[13px] truncate max-sm:flex-none max-sm:w-10 max-sm:text-center max-sm:text-[11px] max-sm:overflow-visible"
                         :class="!roundOpen ? 'text-gray-400' : (scoreAnswered(match.matchId) ? 'text-gray-900' : 'text-gray-700')"
                       ><span class="sm:hidden" x-text="match.homeTeamCode"></span><span class="hidden sm:inline" x-text="match.homeTeamShortName"></span></span>
 
@@ -178,7 +187,7 @@
                       </template>
 
                       <span
-                        class="flex-1 min-w-0 text-[13px] truncate"
+                        class="flex-1 min-w-0 text-[13px] truncate max-sm:flex-none max-sm:w-10 max-sm:text-center max-sm:text-[11px] max-sm:overflow-visible"
                         :class="!roundOpen ? 'text-gray-400' : (scoreAnswered(match.matchId) ? 'text-gray-900' : 'text-gray-700')"
                       ><span class="sm:hidden" x-text="match.awayTeamCode"></span><span class="hidden sm:inline" x-text="match.awayTeamShortName"></span></span>
 
@@ -206,9 +215,16 @@
                         </div>
                       </template>
 
+                      <!-- max-sm:flex-1: on mobile the labels are fixed-width, so this is what
+                           absorbs the row's leftover space — without it the slack pooled as a gap
+                           on the right. Its buttons grow with it (max-sm:flex-1 below), keeping
+                           the three segments equal. Capped at 6.75rem — its natural desktop width
+                           of 3 x w-9 — so on a wide phone it stops growing rather than stretching
+                           into a letterboxed control. Any slack past that point goes back to the
+                           row's justify-between spacing. -->
                       <template x-if="acceptsScore(match) && !showsActuals(match)">
                         <div
-                          class="flex rounded-lg border overflow-hidden shrink-0"
+                          class="flex rounded-lg border overflow-hidden shrink-0 max-sm:flex-1 max-sm:max-w-[6.75rem]"
                           :class="[
                             !roundOpen ? 'border-gray-200' : (scoreAnswered(match.matchId) ? 'border-indigo-600' : 'border-gray-300'),
                             !roundOpen ? 'opacity-40' : ''
@@ -219,7 +235,7 @@
                               type="button"
                               @click="toggleSeg(match.matchId, seg)"
                               :disabled="!roundOpen"
-                              class="w-9 h-9 text-xs font-medium border-gray-300 transition-colors"
+                              class="w-9 h-9 max-sm:flex-1 max-sm:w-auto text-xs font-medium border-gray-300 transition-colors"
                               :class="[
                                 seg === 'H' ? '' : 'border-l',
                                 scoreOutcome(match.matchId) === seg
