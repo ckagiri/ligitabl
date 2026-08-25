@@ -550,6 +550,9 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
     // the per-team diff answers "what did I move", which is the question the card has always
     // answered; the swap view is the follow-up for how those moves were made.
     changesView: "teams",
+    // Lives here rather than in the comparison-options fragment's own x-data so the table
+    // toolbar can read it too.
+    compareOptionsOpen: window.matchMedia("(min-width: 640px)").matches,
     positionsReversed: false,
     alwaysHoverable: false,
     isInitialPrediction: false,
@@ -593,7 +596,9 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
       return fixture.isHome ? fixture.goalsFor + "-" + fixture.goalsAgainst : fixture.goalsAgainst + "-" + fixture.goalsFor;
     },
     getCurrentPoints(teamCode) {
-      return this.currentPoints[teamCode] || "-";
+      const pts = this.currentPoints[teamCode];
+      if (pts === void 0 || pts === null) return "-";
+      return pts;
     },
     getCurrentGD(teamCode) {
       const gd = this.currentGoalDifference[teamCode];
@@ -2704,11 +2709,10 @@ Predict the table — LigiPredictor.com`;
       }, 200);
     },
     swapHint() {
-      const hasSwaps = this.getSwapCount() > 0;
       if (this.selectedTeam) {
-        return hasSwaps ? `${this.selectedTeam} selected — tap another team to swap` : `Tap another team to swap, or tap ${this.selectedTeam} again to deselect`;
+        return `${this.selectedTeam} selected — tap another`;
       }
-      return hasSwaps ? "Tap two teams to swap them" : "Tap a team to select it, then tap another to swap them.";
+      return "Tap teams to swap";
     },
     resetSwaps() {
       this.reset();
