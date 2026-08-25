@@ -40,6 +40,12 @@ public interface OutboxRepo {
     /** Records the failure and schedules the next retry. */
     void markFailed(UUID id, String error, Instant nextAvailableAt);
 
+    /**
+     * Parks the event until {@code nextAvailableAt} <em>without</em> consuming an attempt: the
+     * claim's increment is rolled back so the row keeps its full retry budget.
+     */
+    void markDeferred(UUID id, String error, Instant nextAvailableAt);
+
     /** Terminal failure; the event is never retried automatically. */
     void markDeadLetter(UUID id, String error);
 

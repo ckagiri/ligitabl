@@ -145,8 +145,11 @@ ligitabl:
       domain: ${MAILGUN_DOMAIN:ligipredictor.com}
       api-base-url: ${MAILGUN_API_BASE_URL:https://api.mailgun.net/v3}
     round-results:
-      # Recipient cap per round (sprint-leaderboard order).
-      top-n: ${ROUND_RESULTS_EMAIL_TOP_N:50}
+      # Recipient cap per round (sprint-leaderboard order). Held at 25 to stay under the
+      # Mailgun free-tier recipient limit (26) for an unverified domain — going over gets the
+      # whole send rejected with HTTP 420 until the window resets, which is hours away and so
+      # outlasts the outbox retry budget. Raise once the domain is verified on a paid plan.
+      top-n: ${ROUND_RESULTS_EMAIL_TOP_N:25}
       # live: exclude ignore-list/unverified/opted-out users.
       # test: send ONLY to ignore-list accounts (local testing against test users).
       mode: ${ROUND_RESULTS_EMAIL_MODE:live}

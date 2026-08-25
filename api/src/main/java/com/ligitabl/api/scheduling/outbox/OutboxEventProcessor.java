@@ -1,6 +1,7 @@
 package com.ligitabl.api.scheduling.outbox;
 
 import java.time.Clock;
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -13,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.notification.email.EmailCommand;
 import com.ligitabl.api.notification.email.EmailContent;
+import com.ligitabl.api.notification.email.EmailError;
 import com.ligitabl.api.notification.email.EmailProvider;
 import com.ligitabl.api.notification.email.EmailTemplateRenderer;
 import com.ligitabl.api.notification.outbox.JoinReminderPayload;
@@ -299,11 +301,7 @@ public class OutboxEventProcessor {
                         },
                         c -> c);
 
-        emailProvider
-                .sendSingle(payload.userEmail(), content, EmailCommand.Priority.NORMAL)
-                .peekLeft(error -> {
-                    throw new IllegalStateException("Email send failed: " + error);
-                });
+        send(payload.userEmail(), content);
     }
 
     private Map<String, Object> seasonWelcomeTemplateData() {
@@ -330,11 +328,7 @@ public class OutboxEventProcessor {
                         },
                         c -> c);
 
-        emailProvider
-                .sendSingle(payload.userEmail(), content, EmailCommand.Priority.NORMAL)
-                .peekLeft(error -> {
-                    throw new IllegalStateException("Email send failed: " + error);
-                });
+        send(payload.userEmail(), content);
     }
 
     private Map<String, Object> joinReminderTemplateData(int stage) {
@@ -357,11 +351,7 @@ public class OutboxEventProcessor {
                         },
                         c -> c);
 
-        emailProvider
-                .sendSingle(payload.userEmail(), content, EmailCommand.Priority.NORMAL)
-                .peekLeft(error -> {
-                    throw new IllegalStateException("Email send failed: " + error);
-                });
+        send(payload.userEmail(), content);
     }
 
     private Map<String, Object> segmentResultsTemplateData(SegmentResultsPayload payload) {
@@ -393,11 +383,7 @@ public class OutboxEventProcessor {
                         },
                         c -> c);
 
-        emailProvider
-                .sendSingle(payload.userEmail(), content, EmailCommand.Priority.NORMAL)
-                .peekLeft(error -> {
-                    throw new IllegalStateException("Email send failed: " + error);
-                });
+        send(payload.userEmail(), content);
     }
 
     private Map<String, Object> templateData(RoundResultsPayload payload) {
@@ -420,6 +406,37 @@ public class OutboxEventProcessor {
     }
 
     /**
+     * Sends one email, translating a failure into the exception {@link #processOne} expects.
+     *
+     * <p>A provider rate limit is raised as {@link EmailRateLimitedException} so
+     * {@link #recordFailure} can park the event instead of spending an attempt on it — the
+     * message was never the problem and the window typically outlasts the whole backoff
+     * schedule.
+     */
+    private void send(String recipientEmail, EmailContent content) {
+        emailProvider.sendSingle(recipientEmail, content, EmailCommand.Priority.NORMAL).peekLeft(error -> {
+            if (error instanceof EmailError.RateLimited rateLimited) {
+                throw new EmailRateLimitedException(rateLimited);
+            }
+            throw new IllegalStateException("Email send failed: " + error);
+        });
+    }
+
+    /** Provider-side sending limit; carries the reset time when the provider supplied one. */
+    static final class EmailRateLimitedException extends RuntimeException {
+        private final transient EmailError.RateLimited error;
+
+        EmailRateLimitedException(EmailError.RateLimited error) {
+            super("Email rate limited: " + error.providerMessage());
+            this.error = error;
+        }
+
+        Instant retryAfter() {
+            return error.retryAfter();
+        }
+    }
+
+    /**
      * Records a failed attempt: FAILED with backoff, or DEAD_LETTER once attempts are
      * exhausted (the claim already counted the in-flight attempt).
      *
@@ -433,6 +450,22 @@ public class OutboxEventProcessor {
      */
     public void recordFailure(OutboxEvent event, Exception e) {
         String error = e.getMessage() != null ? e.getMessage() : e.toString();
+        if (e instanceof EmailRateLimitedException rateLimited) {
+            // Falls back to the normal backoff when the provider named no reset time, and floors
+            // the wait at the backoff so a stale or already-past timestamp can't spin the relay.
+            Instant backoff = event.nextAvailableAt(clock.instant());
+            Instant retryAt = rateLimited.retryAfter() != null && rateLimited.retryAfter().isAfter(backoff)
+                    ? rateLimited.retryAfter()
+                    : backoff;
+            outboxRepo.markDeferred(event.getId(), error, retryAt);
+            log.warn(
+                    "[OUTBOX_RATE_LIMITED] id={}, type={}, retryAt={} (attempt not counted): {}",
+                    event.getId(),
+                    event.getEventType(),
+                    retryAt,
+                    error);
+            return;
+        }
         if (event.hasExceededMaxAttempts()) {
             outboxRepo.markDeadLetter(event.getId(), error);
             log.error(

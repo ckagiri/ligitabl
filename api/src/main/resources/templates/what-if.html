@@ -81,7 +81,16 @@
           <div class="bg-white rounded-lg shadow-sm mb-6">
             <!-- Match score input section (design: .art/gameweek-v5.html) -->
             <div class="px-6 py-4">
-              <p x-show="roundOpen && !hasEdited" x-cloak class="text-[11px] text-gray-400 mb-1 px-1">
+              <p
+                x-show="roundOpen && !hasEdited"
+                x-cloak
+                class="inline-flex items-center gap-1.5 text-xs font-medium text-indigo-700 bg-indigo-50 border border-indigo-100 rounded-full px-2.5 py-1 mb-2"
+              >
+                <svg class="w-3.5 h-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M9 11.5V6a1.5 1.5 0 0 1 3 0v9" />
+                  <path d="M12 9.5a1.5 1.5 0 0 1 3 0V15" />
+                  <path d="M15 10.5a1.5 1.5 0 0 1 3 0V16a5 5 0 0 1-5 5h-1.8a5 5 0 0 1-4-2l-3-4a1.5 1.5 0 0 1 2.4-1.8L9 15" />
+                </svg>
                 Tap a score or 1/X/2 to change a pick.
               </p>
               <!-- Nothing entered before the round closed: the fixtures below are read-only, so say
@@ -127,7 +136,10 @@
                     </svg>
                   </button>
                   <span
-                    class="text-xs text-gray-500"
+                    class="text-xs font-semibold rounded-full px-2 py-0.5 whitespace-nowrap"
+                    :class="remainingCount() === 0
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-indigo-100 text-indigo-700'"
                     x-text="remainingCount() === 0 ? 'All in' : remainingCount() + ' left'"
                   ></span>
                 </div>
@@ -140,7 +152,7 @@
                     <div class="flex items-center gap-1.5 px-2.5 py-1.5">
                       <span
                         class="flex-1 min-w-0 text-right text-[13px] truncate"
-                        :class="!roundOpen ? 'text-gray-400' : (scoreAnswered(match.matchId) ? 'text-gray-900' : 'text-gray-500')"
+                        :class="!roundOpen ? 'text-gray-400' : (scoreAnswered(match.matchId) ? 'text-gray-900' : 'text-gray-700')"
                       ><span class="sm:hidden" x-text="match.homeTeamCode"></span><span class="hidden sm:inline" x-text="match.homeTeamShortName"></span></span>
 
                       <template x-if="acceptsScore(match)">
@@ -149,10 +161,10 @@
                             type="button"
                             @click="focusScoreBox(match.matchId, side)"
                             :disabled="!roundOpen"
-                            class="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-md border bg-white font-mono text-sm disabled:bg-gray-50 disabled:text-gray-400"
+                            class="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-md border bg-white font-mono text-sm transition-colors hover:border-indigo-400 disabled:bg-gray-50 disabled:text-gray-400 disabled:hover:border-gray-200"
                             :class="[
-                              isScorePickerOpen(match.matchId) && focusSide === side ? 'border-2 border-indigo-600' : 'border-gray-200',
-                              scores[match.matchId][side] === null ? 'text-gray-300' : 'text-gray-900'
+                              isScorePickerOpen(match.matchId) && focusSide === side ? 'border-2 border-indigo-600' : 'border-gray-300',
+                              scores[match.matchId][side] === null ? 'text-gray-500' : 'text-gray-900'
                             ]"
                             x-text="scores[match.matchId][side] ?? '–'"
                           ></button>
@@ -167,7 +179,7 @@
 
                       <span
                         class="flex-1 min-w-0 text-[13px] truncate"
-                        :class="!roundOpen ? 'text-gray-400' : (scoreAnswered(match.matchId) ? 'text-gray-900' : 'text-gray-500')"
+                        :class="!roundOpen ? 'text-gray-400' : (scoreAnswered(match.matchId) ? 'text-gray-900' : 'text-gray-700')"
                       ><span class="sm:hidden" x-text="match.awayTeamCode"></span><span class="hidden sm:inline" x-text="match.awayTeamShortName"></span></span>
 
                       <template x-if="showsActuals(match)">
@@ -198,7 +210,7 @@
                         <div
                           class="flex rounded-lg border overflow-hidden shrink-0"
                           :class="[
-                            !roundOpen ? 'border-gray-200' : (scoreAnswered(match.matchId) ? 'border-indigo-600' : 'border-gray-200'),
+                            !roundOpen ? 'border-gray-200' : (scoreAnswered(match.matchId) ? 'border-indigo-600' : 'border-gray-300'),
                             !roundOpen ? 'opacity-40' : ''
                           ]"
                         >
@@ -207,12 +219,12 @@
                               type="button"
                               @click="toggleSeg(match.matchId, seg)"
                               :disabled="!roundOpen"
-                              class="w-9 h-9 text-xs border-gray-200"
+                              class="w-9 h-9 text-xs font-medium border-gray-300 transition-colors"
                               :class="[
                                 seg === 'H' ? '' : 'border-l',
                                 scoreOutcome(match.matchId) === seg
                                   ? 'bg-indigo-600 text-white'
-                                  : (isScorePickerOpen(match.matchId) && openSeg === seg ? 'bg-indigo-50 text-indigo-800' : 'text-gray-400')
+                                  : (isScorePickerOpen(match.matchId) && openSeg === seg ? 'bg-indigo-50 text-indigo-800' : 'text-gray-600 hover:bg-indigo-50 hover:text-indigo-700')
                               ]"
                               x-text="{ H: '1', D: 'X', A: '2' }[seg]"
                             ></button>
@@ -397,11 +409,20 @@
                 class="items-center justify-between gap-2 md:justify-end md:gap-3"
               >
                 <p
-                  class="text-xs md:text-right"
-                  :class="selectedTeam ? 'text-indigo-500' : 'text-gray-400'"
+                  class="inline-flex items-center gap-1.5 text-xs font-medium rounded-full border px-2.5 py-1 whitespace-nowrap"
+                  :class="selectedTeam
+                    ? 'text-indigo-700 bg-indigo-50 border-indigo-200'
+                    : 'text-gray-600 bg-gray-50 border-gray-200'"
                   x-show="!undoing"
-                  x-text="swapHint()"
-                ></p>
+                >
+                  <svg class="w-3.5 h-3.5 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M8 3 4 7l4 4" />
+                    <path d="M4 7h16" />
+                    <path d="m16 21 4-4-4-4" />
+                    <path d="M20 17H4" />
+                  </svg>
+                  <span x-text="swapHint()"></span>
+                </p>
                 <!-- Undoing flash — same treatment as the prediction page's swap controls
                      (fragments/prediction-actions.html), since undoLastSwap() animates over ~400ms
                      and the table would otherwise appear to change on its own. -->
@@ -421,14 +442,14 @@
                     @click="undoLastSwap()"
                     :disabled="!canUndo()"
                     :class="canUndo() ? '' : 'hidden md:inline'"
-                    class="text-xs font-medium text-amber-600 hover:text-amber-700 underline disabled:opacity-40 disabled:cursor-not-allowed disabled:no-underline"
+                    class="text-xs font-semibold text-amber-700 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1 transition-colors hover:bg-amber-100 disabled:opacity-40 disabled:cursor-not-allowed"
                   >
                     Undo
                   </button>
                   <button
                     type="button"
                     @click="resetSwaps()"
-                    class="text-xs font-medium text-red-600 hover:text-red-700 underline"
+                    class="text-xs font-semibold text-red-700 bg-red-50 border border-red-200 rounded-full px-2.5 py-1 transition-colors hover:bg-red-100"
                   >
                     Reset
                   </button>

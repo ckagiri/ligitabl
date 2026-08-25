@@ -158,6 +158,24 @@ public class StandingsPersistenceAdapter implements StandingsRepo {
     }
 
     @Override
+    public Standings updateRankings(UUID id, List<StandingsTeamRank> rankings) {
+        if (id == null) {
+            throw new IllegalArgumentException("Standings.id must not be null on updateRankings");
+        }
+
+        int updated = dsl.update(T_STANDINGS)
+                .set(T_STANDINGS.C_RANKINGS, writeRankings(rankings))
+                .where(T_STANDINGS.PK_ID.eq(id))
+                .execute();
+
+        if (updated == 0) {
+            throw new NoSuchElementException(String.format("Standings with id %s not found", id));
+        }
+
+        return findById(id).orElseThrow(() -> new NoSuchElementException("Standings not found after updateRankings"));
+    }
+
+    @Override
     public void delete(UUID id) {
         dsl.deleteFrom(T_STANDINGS).where(T_STANDINGS.PK_ID.eq(id)).execute();
     }

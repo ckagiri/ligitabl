@@ -16,7 +16,8 @@ import lombok.Data;
 @Component
 @ConfigurationProperties(prefix = "ligitabl.email.round-results")
 public class RoundResultsEmailProperties {
-    private int topN = 50;
+    /** Kept in step with the application.yml default — see the Mailgun rate-limit note there. */
+    private int topN = 25;
     private String mode = "live"; // live | test
 
     public boolean isTestMode() {

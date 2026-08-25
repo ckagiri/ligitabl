@@ -52,16 +52,20 @@ public class StandingsCalculatorService {
         return calculateRankings(seasonId, roundPosition)
                 .flatMap(Either.catching(
                         rankings -> {
-                            Standings standings = standingsRepo
+                            Standings existing = standingsRepo
                                     .findBySeasonAndRoundPosition(seasonId, roundPosition)
-                                    .orElseGet(() -> Standings.builder()
-                                            .seasonId(seasonId)
-                                            .roundPosition(roundPosition)
-                                            .rankings(List.of())
-                                            .build());
+                                    .orElse(null);
 
-                            standings.setRankings(rankings);
-                            return standingsRepo.save(standings);
+                            if (existing == null) {
+                                return standingsRepo.save(Standings.builder()
+                                        .seasonId(seasonId)
+                                        .roundPosition(roundPosition)
+                                        .rankings(rankings)
+                                        .finalised(false)
+                                        .build());
+                            }
+
+                            return standingsRepo.updateRankings(existing.getId(), rankings);
                         },
                         e -> {
                             log.error("Failed to persist standings: season={}, round={}", seasonId, roundPosition, e);

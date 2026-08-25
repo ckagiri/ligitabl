@@ -446,7 +446,7 @@
                       >
                         <div class="flex flex-col">
                           <!-- Plain text: just joined this round or former member — no modal -->
-                          <th:block th:if="${entry.isFormerMember == true or (entry.joinedAtGw != null and effectiveToRound != null and entry.joinedAtGw >= effectiveToRound)}">
+                          <th:block th:if="${entry.isFormerMember == true or (entry.joinedAtGw != null and effectiveToRound != null and entry.joinedAtGw > effectiveToRound)}">
                             <span
                               class="inline-flex items-center max-w-[6rem] sm:max-w-full text-sm font-medium text-left"
                               th:classappend="${userPosition != null and entry.publicId == userPosition.publicId ? 'text-indigo-900' : 'text-gray-500'}"
@@ -454,7 +454,7 @@
                             >Alice</span>
                           </th:block>
                           <!-- Clickable: opens player modal -->
-                          <th:block th:unless="${entry.isFormerMember == true or (entry.joinedAtGw != null and effectiveToRound != null and entry.joinedAtGw >= effectiveToRound)}">
+                          <th:block th:unless="${entry.isFormerMember == true or (entry.joinedAtGw != null and effectiveToRound != null and entry.joinedAtGw > effectiveToRound)}">
                             <button
                               hx-post="/leaderboard/user/modal"
                               hx-target="#user-detail-modal"

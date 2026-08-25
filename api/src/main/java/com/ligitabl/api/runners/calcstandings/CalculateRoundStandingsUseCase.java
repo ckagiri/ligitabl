@@ -130,31 +130,32 @@ public class CalculateRoundStandingsUseCase
 
         List<StandingsTeamRank> rankings = calculation.get();
 
-        // Get or create standings record
-        Standings standings = standingsRepo
+        Standings existing = standingsRepo
                 .findBySeasonAndRoundPosition(season.getId(), round.getPosition())
-                .orElseGet(() -> Standings.builder()
-                        .seasonId(season.getId())
-                        .roundPosition(round.getPosition())
-                        .rankings(List.of())
-                        .finalised(false)
-                        .build());
+                .orElse(null);
 
-        if (standings.isFinalised()) {
+        if (existing != null && existing.isFinalised()) {
             return Either.left(UseCaseErrors.validation("Standings already finalised"));
         }
 
-        standings.setRankings(rankings);
-
-        if (shouldFinalise) {
-            standings.setFinalised(true);
-            standings.setFinalisedAt(now());
-        } else {
-            standings.setFinalised(false);
-            standings.setFinalisedAt(null);
+        if (existing == null) {
+            return Either.right(standingsRepo.save(Standings.builder()
+                    .seasonId(season.getId())
+                    .roundPosition(round.getPosition())
+                    .rankings(rankings)
+                    .finalised(shouldFinalise)
+                    .finalisedAt(shouldFinalise ? now() : null)
+                    .build()));
         }
 
-        return Either.right(standingsRepo.save(standings));
+        if (shouldFinalise) {
+            existing.setRankings(rankings);
+            existing.setFinalised(true);
+            existing.setFinalisedAt(now());
+            return Either.right(standingsRepo.save(existing));
+        }
+
+        return Either.right(standingsRepo.updateRankings(existing.getId(), rankings));
     }
 
     private UseCaseError standingsErrorToUseCaseError(StandingsError error) {
