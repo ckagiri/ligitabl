@@ -485,9 +485,17 @@ video {
     transition: opacity 300ms ease-in;
   }
 /* Prediction Table Specific Animations */
+/* Named properties, not `all`: the row also carries .selected, whose 4px
+     border-left would transition its width and force layout on every frame.
+     Only the three properties the swap highlight actually animates are listed,
+     and all three are cheap (background-color repaints; transform and
+     box-shadow are what the swap needs to read as a lift). */
 .prediction-row {
     position: relative;
-    transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background-color 400ms cubic-bezier(0.4, 0, 0.2, 1),
+      transform 400ms cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 400ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 .prediction-row.swapping {
     background-color: #fef3c7;
@@ -979,10 +987,6 @@ video {
 .min-w-\[7rem\] {
   min-width: 7rem;
 }
-.min-w-fit {
-  min-width: -moz-fit-content;
-  min-width: fit-content;
-}
 .min-w-full {
   min-width: 100%;
 }
@@ -1038,14 +1042,8 @@ video {
 .flex-shrink-0 {
   flex-shrink: 0;
 }
-.shrink {
-  flex-shrink: 1;
-}
 .shrink-0 {
   flex-shrink: 0;
-}
-.grow {
-  flex-grow: 1;
 }
 .basis-full {
   flex-basis: 100%;
@@ -1135,6 +1133,9 @@ video {
 }
 .grid-cols-3 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.grid-cols-\[1fr_auto_1fr\] {
+  grid-template-columns: 1fr auto 1fr;
 }
 .flex-col {
   flex-direction: column;
@@ -1302,8 +1303,14 @@ video {
 .self-stretch {
   align-self: stretch;
 }
+.justify-self-start {
+  justify-self: start;
+}
 .justify-self-end {
   justify-self: end;
+}
+.justify-self-center {
+  justify-self: center;
 }
 .overflow-hidden {
   overflow: hidden;
@@ -2349,6 +2356,9 @@ video {
 .underline {
   text-decoration-line: underline;
 }
+.decoration-gray-300 {
+  text-decoration-color: #d1d5db;
+}
 .decoration-2 {
   text-decoration-thickness: 2px;
 }
@@ -2947,9 +2957,6 @@ video {
 .hover\:no-underline:hover {
   text-decoration-line: none;
 }
-.hover\:opacity-100:hover {
-  opacity: 1;
-}
 .hover\:shadow-md:hover {
   --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);
@@ -3089,26 +3096,11 @@ video {
   .max-sm\:min-h-\[44px\] {
     min-height: 44px;
   }
-  .max-sm\:w-10 {
-    width: 2.5rem;
-  }
   .max-sm\:w-5 {
     width: 1.25rem;
   }
-  .max-sm\:w-auto {
-    width: auto;
-  }
   .max-sm\:w-full {
     width: 100%;
-  }
-  .max-sm\:max-w-\[6\.75rem\] {
-    max-width: 6.75rem;
-  }
-  .max-sm\:flex-1 {
-    flex: 1 1 0%;
-  }
-  .max-sm\:flex-none {
-    flex: none;
   }
   .max-sm\:basis-full {
     flex-basis: 100%;
@@ -3133,9 +3125,6 @@ video {
   }
   .max-sm\:overflow-hidden {
     overflow: hidden;
-  }
-  .max-sm\:overflow-visible {
-    overflow: visible;
   }
   .max-sm\:rounded-lg {
     border-radius: 0.5rem;
@@ -3164,11 +3153,13 @@ video {
   .max-sm\:pt-1 {
     padding-top: 0.25rem;
   }
-  .max-sm\:text-center {
-    text-align: center;
+}
+@media (max-width: 340px) {
+  .max-\[340px\]\:basis-full {
+    flex-basis: 100%;
   }
-  .max-sm\:text-\[11px\] {
-    font-size: 11px;
+  .max-\[340px\]\:pt-0\.5 {
+    padding-top: 0.125rem;
   }
 }
 @media (min-width: 640px) {
@@ -3381,6 +3372,10 @@ video {
     padding-top: 0.375rem;
     padding-bottom: 0.375rem;
   }
+  .sm\:py-2\.5 {
+    padding-top: 0.625rem;
+    padding-bottom: 0.625rem;
+  }
   .sm\:py-3 {
     padding-top: 0.75rem;
     padding-bottom: 0.75rem;
@@ -3410,6 +3405,9 @@ video {
   .sm\:text-5xl {
     font-size: 3rem;
     line-height: 1;
+  }
+  .sm\:text-\[13px\] {
+    font-size: 13px;
   }
   .sm\:text-base {
     font-size: 1rem;

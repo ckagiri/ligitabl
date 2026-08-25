@@ -446,8 +446,7 @@
                 'cursor-pointer hover:bg-gray-50': (alwaysHoverable || canSwap) && !positionsReversed,
                 'no-hover': (!alwaysHoverable && !canSwap) || positionsReversed,
                 'bg-blue-50': isSelected(team.code),
-                'bg-amber-50': isDirty(team.code) && !isSelected(team.code),
-                'transition-all duration-200': true
+                'bg-amber-50': isDirty(team.code) && !isSelected(team.code)
               }"
               class="prediction-row"
             >
