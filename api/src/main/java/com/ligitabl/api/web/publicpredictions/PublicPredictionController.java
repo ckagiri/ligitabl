@@ -2,10 +2,8 @@ package com.ligitabl.api.web.publicpredictions;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -248,14 +246,11 @@ public class PublicPredictionController {
         model.addAttribute("hasFormData", !formMap.isEmpty());
         model.addAttribute("roundId", data.viewingRound());
 
-        Map<String, Integer> currentStandings = data.rows().stream()
-                .collect(Collectors.toMap(row -> row.getTeamCode(), row -> row.getActualPosition()));
-
         try {
             model.addAttribute("predictionsJson", objectMapper.writeValueAsString(data.rows()));
             model.addAttribute(
                     "fixturesJson", objectMapper.writeValueAsString(fixtureJsonMapper.buildFixtures(data.matches())));
-            model.addAttribute("currentStandingsJson", objectMapper.writeValueAsString(currentStandings));
+            model.addAttribute("currentStandingsJson", objectMapper.writeValueAsString(data.standingsMap()));
             model.addAttribute("currentPointsJson", objectMapper.writeValueAsString(data.pointsMap()));
             model.addAttribute("currentGoalDifferenceJson", objectMapper.writeValueAsString(data.goalDifferenceMap()));
             model.addAttribute("formJson", objectMapper.writeValueAsString(formMap));

@@ -185,6 +185,7 @@ public class GetPublicPredictionUseCase {
                 .seasonCompleted(ctx.seasonCompleted())
                 .hasRoundResult(false)
                 .matches(matchRepo.findBySeasonAndRound(season.getId(), ctx.currentRound()))
+                .standingsMap(standingsData.positions())
                 .pointsMap(standingsData.points())
                 .goalDifferenceMap(standingsData.goalDifference())
                 .build();
@@ -256,6 +257,7 @@ public class GetPublicPredictionUseCase {
                 .seasonCompleted(ctx.seasonCompleted())
                 .hasRoundResult(false)
                 .matches(matchRepo.findBySeasonAndRound(season.getId(), ctx.currentRound()))
+                .standingsMap(standingsData.positions())
                 .pointsMap(standingsData.points())
                 .goalDifferenceMap(standingsData.goalDifference())
                 .roundSwaps(swapsForRound(Optional.of(prediction), ctx.currentRound()))
