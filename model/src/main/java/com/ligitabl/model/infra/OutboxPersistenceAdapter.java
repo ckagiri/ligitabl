@@ -98,6 +98,19 @@ public class OutboxPersistenceAdapter implements OutboxRepo {
     }
 
     @Override
+    public void markDeferred(UUID id, String error, Instant nextAvailableAt) {
+        dsl.update(T_OUTBOX_EVENT)
+                .set(T_OUTBOX_EVENT.C_STATUS, OutboxEvent.Status.FAILED.name())
+                .set(T_OUTBOX_EVENT.C_LAST_ERROR, error)
+                .set(T_OUTBOX_EVENT.C_AVAILABLE_AT, toOffset(nextAvailableAt))
+                // Undoes the increment claimBatchForProcessing applied: this attempt never got a
+                // verdict on the event itself, so it must not count toward dead-lettering.
+                .set(T_OUTBOX_EVENT.C_ATTEMPTS, DSL.greatest(T_OUTBOX_EVENT.C_ATTEMPTS.minus(1), DSL.inline(0)))
+                .where(T_OUTBOX_EVENT.PK_ID.eq(id))
+                .execute();
+    }
+
+    @Override
     public void markDeadLetter(UUID id, String error) {
         dsl.update(T_OUTBOX_EVENT)
                 .set(T_OUTBOX_EVENT.C_STATUS, OutboxEvent.Status.DEAD_LETTER.name())

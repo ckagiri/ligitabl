@@ -313,6 +313,57 @@ class OutboxEventProcessorTest {
     }
 
     @Test
+    void rateLimitedSendDefersUntilProviderResetWithoutSpendingAnAttempt() throws Exception {
+        Instant reset = NOW.plus(Duration.ofHours(9));
+        when(emailProvider.sendSingle(anyString(), any(), any()))
+                .thenReturn(Either.left(new EmailError.RateLimited("recipient limit (26) exceeded", reset)));
+        OutboxEvent event = claimedEvent(OutboxEventTypes.ROUND_RESULTS, roundResultsJson(), 1);
+
+        processor.processOne(event);
+
+        verify(outboxRepo).markDeferred(eq(event.getId()), contains("rate limited"), eq(reset));
+        verify(outboxRepo, never()).markFailed(any(), any(), any());
+        verify(outboxRepo, never()).markDeadLetter(any(), any());
+        verify(outboxRepo, never()).markSent(any());
+    }
+
+    @Test
+    void rateLimitedSendWithoutResetTimeFallsBackToNormalBackoff() throws Exception {
+        when(emailProvider.sendSingle(anyString(), any(), any()))
+                .thenReturn(Either.left(new EmailError.RateLimited("limit exceeded", null)));
+        OutboxEvent event = claimedEvent(OutboxEventTypes.ROUND_RESULTS, roundResultsJson(), 2);
+
+        processor.processOne(event);
+
+        // Attempt 2's backoff is 5 minutes.
+        verify(outboxRepo).markDeferred(eq(event.getId()), contains("rate limited"), eq(NOW.plus(Duration.ofMinutes(5))));
+    }
+
+    @Test
+    void rateLimitedSendIsNeverDeadLetteredEvenWithAttemptsExhausted() throws Exception {
+        Instant reset = NOW.plus(Duration.ofHours(9));
+        when(emailProvider.sendSingle(anyString(), any(), any()))
+                .thenReturn(Either.left(new EmailError.RateLimited("limit exceeded", reset)));
+        OutboxEvent event = claimedEvent(OutboxEventTypes.ROUND_RESULTS, roundResultsJson(), 5);
+
+        processor.processOne(event);
+
+        verify(outboxRepo).markDeferred(eq(event.getId()), contains("rate limited"), eq(reset));
+        verify(outboxRepo, never()).markDeadLetter(any(), any());
+    }
+
+    @Test
+    void alreadyPastResetTimeStillWaitsTheBackoffRatherThanRetryingImmediately() throws Exception {
+        when(emailProvider.sendSingle(anyString(), any(), any()))
+                .thenReturn(Either.left(new EmailError.RateLimited("limit exceeded", NOW.minus(Duration.ofHours(1)))));
+        OutboxEvent event = claimedEvent(OutboxEventTypes.ROUND_RESULTS, roundResultsJson(), 1);
+
+        processor.processOne(event);
+
+        verify(outboxRepo).markDeferred(eq(event.getId()), contains("rate limited"), eq(NOW.plus(Duration.ofMinutes(1))));
+    }
+
+    @Test
     void roundResultsRendersAndSendsThenMarksSent() throws Exception {
         OutboxEvent event = claimedEvent(OutboxEventTypes.ROUND_RESULTS, roundResultsJson(), 1);
 
