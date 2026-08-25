@@ -256,7 +256,9 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         },
 
         getCurrentPoints(teamCode) {
-            return this.currentPoints[teamCode] || "-";
+            const pts = this.currentPoints[teamCode];
+            if (pts === undefined || pts === null) return "-";
+            return pts;
         },
 
         getCurrentGD(teamCode) {
