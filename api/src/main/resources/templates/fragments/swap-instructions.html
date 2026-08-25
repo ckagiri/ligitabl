@@ -81,9 +81,9 @@
     x-show="exceedsLimit() && selectedTeam === null"
     class="bg-red-50 border border-red-200 rounded-lg p-3"
   >
-    <div class="flex items-center">
+    <div class="flex items-start">
       <svg
-        class="h-4 w-4 text-red-600 mr-2 flex-shrink-0"
+        class="h-4 w-4 text-red-600 mr-2 mt-0.5 flex-shrink-0"
         fill="currentColor"
         viewBox="0 0 20 20"
       >
@@ -93,31 +93,34 @@
           clip-rule="evenodd"
         />
       </svg>
-      <span class="text-sm text-red-800">
-        <strong>Swap limit exceeded!</strong>
-        You've made <span x-text="getSwapCount()"></span> swaps but
-        <span x-show="isInitialPrediction || isPreSeasonRegistration">the limit is 5.</span>
-        <span x-show="isOpeningRound">the limit is 2.</span>
-        <span x-show="!isInitialPrediction && !isPreSeasonRegistration && !isOpeningRound">only 1 is allowed per 24h.</span>
-        <span x-show="!undoing"
-          ><a
-            @click="undoLastSwap()"
-            class="underline cursor-pointer font-semibold text-red-700 hover:text-red-900"
-            >Undo last</a
-          ></span
-        >
-        <span x-show="undoing" class="font-semibold text-red-500 animate-pulse"
-          >↩ undoing…</span
-        >
-        <span x-show="!undoing"
-          >or
-          <a
-            @click="reset()"
-            class="underline cursor-pointer font-semibold text-red-700 hover:text-red-900"
-            >reset all</a
-          >.</span
-        >
-      </span>
+      <div class="text-sm text-red-800">
+        <!-- The situation and the way out are two separate thoughts, so they get
+             two paragraphs rather than one comma-spliced run-on. -->
+        <p>
+          <strong>Swap limit exceeded!</strong>
+          You've made <span x-text="getSwapCount()"></span> swaps but
+          <span x-show="isInitialPrediction || isPreSeasonRegistration">the limit is 5.</span>
+          <span x-show="isOpeningRound">the limit is 2.</span>
+          <span x-show="!isInitialPrediction && !isPreSeasonRegistration && !isOpeningRound">only 1 is allowed per 24h.</span>
+        </p>
+        <p class="mt-1">
+          <span x-show="undoing" class="font-semibold text-red-500 animate-pulse"
+            >↩ Undoing…</span
+          >
+          <span x-show="!undoing"
+            ><a
+              @click="undoLastSwap()"
+              class="underline cursor-pointer font-semibold text-red-700 hover:text-red-900"
+              >Undo last</a
+            >, or
+            <a
+              @click="reset()"
+              class="underline cursor-pointer font-semibold text-red-700 hover:text-red-900"
+              >reset all</a
+            >.</span
+          >
+        </p>
+      </div>
     </div>
   </div>
 
@@ -128,9 +131,9 @@
     x-show="!exceedsLimit() && selectedTeam === null && getSwapCount() > 0"
     class="bg-amber-50 border border-amber-200 rounded-lg p-3"
   >
-    <div class="flex items-center">
+    <div class="flex items-start">
       <svg
-        class="h-4 w-4 text-amber-600 mr-2 flex-shrink-0"
+        class="h-4 w-4 text-amber-600 mr-2 mt-0.5 flex-shrink-0"
         fill="currentColor"
         viewBox="0 0 20 20"
       >
@@ -140,67 +143,56 @@
           clip-rule="evenodd"
         />
       </svg>
-      <span class="text-sm text-amber-800">
-        You've made
-        <strong
-          ><span x-text="getSwapCount()"></span>
-          <span x-text="getSwapCount() === 1 ? 'swap' : 'swaps'"></span></strong
-        >.
-        <span x-show="canSwap || isInitialPrediction">
-          Review your changes, then
-          <span x-text="(isInitialPrediction || isPreSeasonRegistration) ? 'submit' : 'update'"></span> to
-          save,
+      <div class="text-sm text-amber-800">
+        <!-- Two paragraphs, never more: what has happened and what to do about it,
+             then the ways back out. The cooldown/locked wait ("wait for cooldown to
+             submit") belongs to the first paragraph — it is the same thought as
+             "changes are local only", not a third one. -->
+        <p>
+          You've made
+          <strong
+            ><span x-text="getSwapCount()"></span>
+            <span x-text="getSwapCount() === 1 ? 'swap' : 'swaps'"></span></strong
+          >.
+          <span x-show="canSwap || isInitialPrediction">
+            Review your changes, then
+            <span x-text="(isInitialPrediction || isPreSeasonRegistration) ? 'submit' : 'update'"></span>
+            to save.
+          </span>
+          <span x-show="roundAllowsEditing && !canSwap">
+            <span x-show="isRoundOpen"
+              >Cooldown active: changes are local only — wait for cooldown to
+              submit.</span
+            >
+            <span x-show="!isRoundOpen"
+              >Round is not open: changes are local only — wait for the next round
+              to open to submit.</span
+            >
+          </span>
+        </p>
+
+        <!-- The escape hatches, always their own line. -->
+        <p class="mt-1">
           <span
             x-show="undoing"
             class="font-semibold text-amber-600 animate-pulse"
-            >↩ undoing…
-          </span>
+            >↩ Undoing…</span
+          >
           <span x-show="!undoing">
             <span x-show="canUndo() && getSwapCount() > 1"
               ><a
                 @click="undoLastSwap()"
                 class="underline cursor-pointer font-semibold"
-                >undo last</a
+                >Undo last</a
               >
               swap, or </span
-            ><span x-show="!(canUndo() && getSwapCount() > 1)">or </span
             ><a @click="reset()" class="underline cursor-pointer font-semibold"
-              >reset all</a
+              ><span x-show="canUndo() && getSwapCount() > 1">reset all</span
+              ><span x-show="!(canUndo() && getSwapCount() > 1)">Reset all</span></a
             >.
           </span>
-        </span>
-        <span x-show="roundAllowsEditing && !canSwap">
-          <span x-show="isRoundOpen"
-            >Cooldown active — changes are local only,</span
-          >
-          <span x-show="!isRoundOpen"
-            >Round is not open — changes are local only,</span
-          >
-          <span x-show="canUndo() && exceedsLimit() && !undoing"
-            ><a
-              @click="undoLastSwap()"
-              class="underline cursor-pointer font-semibold"
-              >undo last</a
-            >,
-          </span>
-          <span
-            x-show="undoing"
-            class="font-semibold text-amber-600 animate-pulse"
-            >↩ undoing…
-          </span>
-          <span x-show="!undoing"
-            ><a @click="reset()" class="underline cursor-pointer font-semibold"
-              >reset all</a
-            ></span
-          >
-          <span x-show="isRoundOpen && !undoing"
-            >, or wait for cooldown to submit.</span
-          >
-          <span x-show="!isRoundOpen && !undoing"
-            >, or wait for the next round to open to submit.</span
-          >
-        </span>
-      </span>
+        </p>
+      </div>
     </div>
   </div>
 
@@ -211,9 +203,9 @@
     x-show="selectedTeam === null && getSwapCount() > 0"
     class="bg-amber-50 border border-amber-200 rounded-lg p-3"
   >
-    <div class="flex items-center">
+    <div class="flex items-start">
       <svg
-        class="h-4 w-4 text-amber-600 mr-2 flex-shrink-0"
+        class="h-4 w-4 text-amber-600 mr-2 mt-0.5 flex-shrink-0"
         fill="currentColor"
         viewBox="0 0 20 20"
       >
@@ -223,31 +215,36 @@
           clip-rule="evenodd"
         />
       </svg>
-      <span class="text-sm text-amber-800">
-        You've made
-        <strong
-          ><span x-text="getSwapCount()"></span>
-          <span x-text="getSwapCount() === 1 ? 'swap' : 'swaps'"></span></strong
-        ><span x-show="getSwapCount() > 5 && !undoing"> — max 5 allowed to submit</span>.
-        Changes saved locally.
-        <span
-          x-show="undoing"
-          class="font-semibold text-amber-600 animate-pulse"
-          >↩ undoing…
-        </span>
-        <span x-show="!undoing">
-          <span x-show="canUndo() && getSwapCount() > 1"
-            ><a
-              @click="undoLastSwap()"
-              class="underline cursor-pointer font-semibold"
-              >Undo last</a
-            >
-            swap, or </span
-          ><a @click="reset()" class="underline cursor-pointer font-semibold"
-            >Reset all</a
-          >.
-        </span>
-      </span>
+      <div class="text-sm text-amber-800">
+        <p>
+          You've made
+          <strong
+            ><span x-text="getSwapCount()"></span>
+            <span x-text="getSwapCount() === 1 ? 'swap' : 'swaps'"></span></strong
+          ><span x-show="getSwapCount() > 5 && !undoing"> — max 5 allowed to submit</span>.
+          Changes saved locally.
+        </p>
+        <p class="mt-1">
+          <span
+            x-show="undoing"
+            class="font-semibold text-amber-600 animate-pulse"
+            >↩ Undoing…</span
+          >
+          <span x-show="!undoing">
+            <span x-show="canUndo() && getSwapCount() > 1"
+              ><a
+                @click="undoLastSwap()"
+                class="underline cursor-pointer font-semibold"
+                >Undo last</a
+              >
+              swap, or </span
+            ><a @click="reset()" class="underline cursor-pointer font-semibold"
+              ><span x-show="canUndo() && getSwapCount() > 1">reset all</span
+              ><span x-show="!(canUndo() && getSwapCount() > 1)">Reset all</span></a
+            >.
+          </span>
+        </p>
+      </div>
     </div>
   </div>
 </div>

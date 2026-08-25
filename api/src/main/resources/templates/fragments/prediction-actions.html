@@ -186,9 +186,26 @@
   x-show="getDirtyCount() > 0"
   class="w-full max-w-md"
 >
+  <div class="flex items-center whitespace-nowrap mb-3">
+    <svg
+      class="h-5 w-5 shrink-0 text-indigo-600"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+      ></path>
+    </svg>
+    <h4 class="text-sm font-semibold text-gray-900">Changes Made</h4>
+  </div>
+
   <div class="bg-white border border-gray-200 rounded-lg shadow-sm p-4">
-    <!-- Header: Reset all (left) | Undo last when over limit (left) | Changes Made (right) -->
-    <div class="flex items-center justify-between mb-3">
+    <!-- Controls: Reset all | Undo last when over limit -->
+    <div class="flex items-center gap-5 mb-3">
       <div class="flex items-center gap-3">
         <!-- Reset all — always shown when there are changes -->
         <button
@@ -239,35 +256,10 @@
         <span
           x-show="undoing"
           class="text-sm font-semibold text-amber-600 animate-pulse whitespace-nowrap"
-          >↩ undoing…</span
+          >↩ Undoing…</span
         >
       </div>
 
-      <div
-        x-show="!undoing"
-        class="flex items-center space-x-2 whitespace-nowrap"
-      >
-        <svg
-          class="h-5 w-5 text-indigo-600"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-          ></path>
-        </svg>
-        <h4 class="text-sm font-semibold text-gray-900">
-          <span
-            class="sm:hidden"
-            x-text="canUndo() && getSwapCount() > 1 && !undoing ? 'Changes' : 'Changes Made'"
-          ></span>
-          <span class="hidden sm:inline">Changes Made</span>
-        </h4>
-      </div>
     </div>
 
     <!-- Stats -->
@@ -277,17 +269,19 @@
       <!--
         The two counts double as the switch for the list below: Teams shows what moved, Swaps
         shows how. Buttons rather than plain text, with the active one underlined, so the pair
-        reads as a toggle instead of two links that happen to be numbers.
+        reads as a toggle instead of two links that happen to be numbers. The inactive side keeps
+        full-strength colour — dimming it read as disabled rather than tappable — and is
+        distinguished by the underline alone, which fills in on hover.
       -->
       <div class="flex items-center space-x-4">
         <button
           type="button"
           @click="changesView = 'teams'"
           :aria-pressed="changesView === 'teams'"
-          :class="changesView === 'teams' ? 'underline decoration-2 underline-offset-4' : 'opacity-60 hover:opacity-100'"
-          class="transition-opacity"
+          :class="changesView === 'teams' ? 'font-semibold underline decoration-2 underline-offset-4' : 'underline decoration-1 underline-offset-4 decoration-gray-300 hover:decoration-gray-400'"
+          class="transition-colors"
         >
-          <span class="text-gray-500">Teams:</span>
+          <span :class="changesView === 'teams' ? 'text-gray-900' : 'text-gray-500'">Teams:</span>
           <span
             class="font-semibold text-gray-900 ml-1"
             x-text="getDirtyCount()"
@@ -298,10 +292,10 @@
           type="button"
           @click="changesView = 'swaps'"
           :aria-pressed="changesView === 'swaps'"
-          :class="changesView === 'swaps' ? 'underline decoration-2 underline-offset-4' : 'opacity-60 hover:opacity-100'"
-          class="transition-opacity"
+          :class="changesView === 'swaps' ? 'font-semibold underline decoration-2 underline-offset-4' : 'underline decoration-1 underline-offset-4 decoration-gray-300 hover:decoration-gray-400'"
+          class="transition-colors"
         >
-          <span class="text-gray-500">Swaps:</span>
+          <span :class="changesView === 'swaps' ? 'text-gray-900' : 'text-gray-500'">Swaps:</span>
           <!-- exceedsLimit() keeps the count red in both states: being over the limit outranks
                which view is selected. -->
           <span

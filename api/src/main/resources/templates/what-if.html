@@ -149,50 +149,54 @@
               >
                 <template x-for="match in visibleMatches()" :key="match.matchId">
                   <div :class="isScorePickerOpen(match.matchId) ? 'bg-gray-50' : ''">
-                    <div class="flex items-center gap-1.5 px-2.5 py-1.5">
-                      <!-- The mobile label is a 3-letter TLA and must never truncate — it is the
-                           one thing in the row you cannot afford to lose. Anything flex-based let
-                           it shrink below its own content once the score boxes and 1/X/2 selector
-                           had taken their width (min-w-fit floored it in theory, but still came up
-                           short on the narrowest phones). So on mobile it stops flexing entirely:
-                           a fixed w-9 column, centred, identical on every row, with the selector
-                           taking the leftover width instead. Costs the centred-row look, buys a
-                           guarantee. The sm+ short-name keeps flex-1/min-w-0/truncate, where the
-                           text really can be too long to show. -->
-                      <span
-                        class="flex-1 min-w-0 text-right text-[13px] truncate max-sm:flex-none max-sm:w-10 max-sm:text-center max-sm:text-[11px] max-sm:overflow-visible"
-                        :class="!roundOpen ? 'text-gray-400' : (scoreAnswered(match.matchId) ? 'text-gray-900' : 'text-gray-700')"
-                      ><span class="sm:hidden" x-text="match.homeTeamCode"></span><span class="hidden sm:inline" x-text="match.homeTeamShortName"></span></span>
-
-                      <template x-if="acceptsScore(match)">
-                        <template x-for="side in ['home', 'away']" :key="side">
-                          <button
-                            type="button"
-                            @click="focusScoreBox(match.matchId, side)"
-                            :disabled="!roundOpen"
-                            class="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-md border bg-white font-mono text-sm transition-colors hover:border-indigo-400 disabled:bg-gray-50 disabled:text-gray-400 disabled:hover:border-gray-200"
-                            :class="[
-                              isScorePickerOpen(match.matchId) && focusSide === side ? 'border-2 border-indigo-600' : 'border-gray-300',
-                              scores[match.matchId][side] === null ? 'text-gray-500' : 'text-gray-900'
-                            ]"
-                            x-text="scores[match.matchId][side] ?? '–'"
-                          ></button>
-                        </template>
-                      </template>
-                      <template x-if="!acceptsScore(match)">
+                    <div class="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 sm:py-2.5">
+                      <!-- A grid, not a right-pinned flex row. Three fixed tracks — home label,
+                           score boxes, away label — mean the score column lands on the same x in
+                           every row regardless of how long the team names are, and the group is
+                           centered in the row so the slack splits evenly instead of piling up on
+                           the left as dead space. -->
+                      <div class="flex-1 min-w-0 max-[340px]:basis-full grid grid-cols-[1fr_auto_1fr] items-center gap-1.5 sm:gap-2">
+                        <!-- Mobile shows the 3-letter TLA, sm+ the short name; both truncate inside
+                             their track rather than pushing the score column off its x. -->
                         <span
-                          class="text-xs font-medium text-gray-400 px-2 py-1 bg-gray-50 rounded-full whitespace-nowrap"
-                          x-text="match.status"
-                        ></span>
-                      </template>
+                          class="min-w-0 justify-self-end text-right text-[11px] sm:text-[13px] truncate"
+                          :class="!roundOpen ? 'text-gray-400' : (scoreAnswered(match.matchId) ? 'text-gray-900' : 'text-gray-700')"
+                        ><span class="sm:hidden" x-text="match.homeTeamCode"></span><span class="hidden sm:inline" x-text="match.homeTeamShortName"></span></span>
 
-                      <span
-                        class="flex-1 min-w-0 text-[13px] truncate max-sm:flex-none max-sm:w-10 max-sm:text-center max-sm:text-[11px] max-sm:overflow-visible"
-                        :class="!roundOpen ? 'text-gray-400' : (scoreAnswered(match.matchId) ? 'text-gray-900' : 'text-gray-700')"
-                      ><span class="sm:hidden" x-text="match.awayTeamCode"></span><span class="hidden sm:inline" x-text="match.awayTeamShortName"></span></span>
+                        <!-- One grid child, so the score boxes occupy the single centre track
+                             instead of splitting into columns of their own. -->
+                        <div class="flex items-center gap-1.5 justify-self-center">
+                        <template x-if="acceptsScore(match)">
+                          <template x-for="side in ['home', 'away']" :key="side">
+                            <button
+                              type="button"
+                              @click="focusScoreBox(match.matchId, side)"
+                              :disabled="!roundOpen"
+                              class="w-8 h-8 sm:w-9 sm:h-9 shrink-0 rounded-md border bg-white font-mono text-sm transition-colors hover:border-indigo-400 disabled:bg-gray-50 disabled:text-gray-400 disabled:hover:border-gray-200"
+                              :class="[
+                                isScorePickerOpen(match.matchId) && focusSide === side ? 'border-2 border-indigo-600' : 'border-gray-300',
+                                scores[match.matchId][side] === null ? 'text-gray-500' : 'text-gray-900'
+                              ]"
+                              x-text="scores[match.matchId][side] ?? '–'"
+                            ></button>
+                          </template>
+                        </template>
+                        <template x-if="!acceptsScore(match)">
+                          <span
+                            class="text-xs font-medium text-gray-400 px-2 py-1 bg-gray-50 rounded-full whitespace-nowrap"
+                            x-text="match.status"
+                          ></span>
+                        </template>
+                        </div>
+
+                        <span
+                          class="min-w-0 justify-self-start text-left text-[11px] sm:text-[13px] truncate"
+                          :class="!roundOpen ? 'text-gray-400' : (scoreAnswered(match.matchId) ? 'text-gray-900' : 'text-gray-700')"
+                        ><span class="sm:hidden" x-text="match.awayTeamCode"></span><span class="hidden sm:inline" x-text="match.awayTeamShortName"></span></span>
+                      </div>
 
                       <template x-if="showsActuals(match)">
-                        <div class="flex items-center gap-1.5 shrink-0">
+                        <div class="flex items-center gap-1.5 shrink-0 max-[340px]:pt-0.5">
                           <span class="relative font-mono text-[13px] font-semibold text-gray-900 whitespace-nowrap">
                             <span x-text="actualScoreLabel(match)"></span>
                             <!-- Same live dot as the fixture chips elsewhere: the inline animation
@@ -215,16 +219,13 @@
                         </div>
                       </template>
 
-                      <!-- max-sm:flex-1: on mobile the labels are fixed-width, so this is what
-                           absorbs the row's leftover space — without it the slack pooled as a gap
-                           on the right. Its buttons grow with it (max-sm:flex-1 below), keeping
-                           the three segments equal. Capped at 6.75rem — its natural desktop width
-                           of 3 x w-9 — so on a wide phone it stops growing rather than stretching
-                           into a letterboxed control. Any slack past that point goes back to the
-                           row's justify-between spacing. -->
+                      <!-- Fixed width, never stretching — what you want from something tapped
+                           repeatedly. Below 340px the fixture group takes the full first line and
+                           this drops onto its own line beneath the team/score box, rather than
+                           squeezing the team names down to nothing on the narrowest phones. -->
                       <template x-if="acceptsScore(match) && !showsActuals(match)">
                         <div
-                          class="flex rounded-lg border overflow-hidden shrink-0 max-sm:flex-1 max-sm:max-w-[6.75rem]"
+                          class="flex rounded-lg border overflow-hidden shrink-0"
                           :class="[
                             !roundOpen ? 'border-gray-200' : (scoreAnswered(match.matchId) ? 'border-indigo-600' : 'border-gray-300'),
                             !roundOpen ? 'opacity-40' : ''
@@ -235,7 +236,7 @@
                               type="button"
                               @click="toggleSeg(match.matchId, seg)"
                               :disabled="!roundOpen"
-                              class="w-9 h-9 max-sm:flex-1 max-sm:w-auto text-xs font-medium border-gray-300 transition-colors"
+                              class="w-8 h-8 sm:w-9 sm:h-9 text-xs font-medium border-gray-300 transition-colors"
                               :class="[
                                 seg === 'H' ? '' : 'border-l',
                                 scoreOutcome(match.matchId) === seg
@@ -470,7 +471,7 @@
                     <path d="M9 14 4 9l5-5" />
                     <path d="M4 9h11a5 5 0 0 1 0 10h-3" />
                   </svg>
-                  <span class="truncate">undoing…</span>
+                  <span class="truncate">Undoing…</span>
                 </p>
                 <div class="flex shrink-0 items-center gap-2" x-show="getSwapCount() > 0 && !undoing" x-cloak>
                   <!-- canUndo() is false while a team is selected (you can't undo mid-swap). On

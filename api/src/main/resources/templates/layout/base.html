@@ -240,6 +240,35 @@
       .popup-card-leave {
         animation: popupCardOut 300ms ease-in-out forwards;
       }
+
+      /* Users who ask the OS to reduce motion get the same information without
+         the movement. Last in the block so it overrides the rules above.
+         Infinite loops (the live-fixture dot, skeleton pulses) are the ones that
+         actually cause symptoms, so they stop outright rather than shortening —
+         the live dot keeps its colour and ring, which is what identifies it.
+         One-shot transitions collapse to 1ms rather than 0 so transitionend
+         still fires and nothing waiting on it stalls. */
+      @media (prefers-reduced-motion: reduce) {
+        *,
+        *::before,
+        *::after {
+          animation-duration: 1ms !important;
+          animation-iteration-count: 1 !important;
+          transition-duration: 1ms !important;
+          scroll-behavior: auto !important;
+        }
+
+        /* The live dots declare liveFade inline with !important (Tailwind's
+           animate-pulse otherwise wins), and inline !important outranks even the
+           rule above — so neutralise the keyframes themselves, which applies
+           wherever the animation is declared. The dot stays fully opaque. */
+        @keyframes liveFade {
+          0%,
+          100% {
+            opacity: 1;
+          }
+        }
+      }
     </style>
     <script
       th:if="${not #strings.isEmpty(umamiWebsiteId)}"

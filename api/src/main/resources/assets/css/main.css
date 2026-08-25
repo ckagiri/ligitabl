@@ -38,7 +38,10 @@
   /* Prediction Table Specific Animations */
   .prediction-row {
     position: relative;
-    transition: all 400ms cubic-bezier(0.4, 0, 0.2, 1);
+    transition:
+      background-color 400ms cubic-bezier(0.4, 0, 0.2, 1),
+      transform 400ms cubic-bezier(0.4, 0, 0.2, 1),
+      box-shadow 400ms cubic-bezier(0.4, 0, 0.2, 1);
   }
 
   .prediction-row.swapping {
