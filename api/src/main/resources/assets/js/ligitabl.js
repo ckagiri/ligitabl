@@ -2869,15 +2869,13 @@ window.Ligitabl.whatIfPage = function (el) {
             }, 200);
         },
         swapHint() {
-            const hasSwaps = this.getSwapCount() > 0;
+            // Deliberately terse: the swap icon beside it carries the meaning, and the gesture
+            // is self-teaching after a use or two. Only the selected state needs to say more,
+            // since that is the one moment the next tap does something non-obvious.
             if (this.selectedTeam) {
-                return hasSwaps
-                    ? `${this.selectedTeam} selected — tap another team to swap`
-                    : `Tap another team to swap, or tap ${this.selectedTeam} again to deselect`;
+                return `${this.selectedTeam} selected — tap another`;
             }
-            return hasSwaps
-                ? "Tap two teams to swap them"
-                : "Tap a team to select it, then tap another to swap them.";
+            return "Tap to swap";
         },
         resetSwaps() {
             this.reset();
