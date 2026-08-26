@@ -118,7 +118,7 @@
               autocomplete="off"
               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5"
             />
-            <span>Show fixtures</span>
+            <span class="whitespace-nowrap">Show fixtures</span>
           </label>
           <label
             th:if="${hasFormData}"
@@ -368,10 +368,10 @@
               scope="col"
               class="px-2 sm:px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10 sm:w-16"
             >
-              <!-- Mobile stays "Pos" in both views: the column is the row's rank in whatever
-                   table is showing, and the switch above already names which one that is. -->
-              <span class="sm:hidden">Pos</span>
-              <span class="hidden sm:inline" x-text="showStandings ? (positionsReversed ? 'Actual' : 'Pred') : 'Pos'">Pos</span>
+              <!-- The column is always the user's predicted rank unless the standings
+                   comparison is on and reversed, so it reads "Pred" by default rather than
+                   the ambiguous "Pos". Same label at both widths. -->
+              <span x-text="showStandings && positionsReversed ? 'Actual' : 'Pred'">Pred</span>
             </th>
             <th
               scope="col"
