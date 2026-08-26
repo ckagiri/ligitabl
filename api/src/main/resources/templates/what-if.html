@@ -548,13 +548,15 @@
               x-cloak
               class="mb-3 px-3 py-2 rounded-md border border-green-200 bg-green-50 text-xs text-green-800 flex items-center justify-between gap-3"
             >
-              <span x-show="swapLog.length === 0"
+              <!-- Keyed to the visible list: this picks between "everything landed" and "N
+                   landed, the rest are still listed below". -->
+              <span x-show="displayedSwapLog().length === 0"
                 ><span
                   x-text="swapsConsumedCount === 1 ? 'Your swap is' : 'Your ' + swapsConsumedCount + ' swaps are'"
                 ></span>
                 now on your table.</span
               >
-              <span x-show="swapLog.length > 0"
+              <span x-show="displayedSwapLog().length > 0"
                 ><span
                   x-text="swapsConsumedCount === 1 ? '1 swap' : swapsConsumedCount + ' swaps'"
                 ></span>

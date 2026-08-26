@@ -366,6 +366,9 @@
           Actual Table
         </button>
       </div>
+      <!-- Flips the delta column's arrows and colours, never its number. Actual-table view only;
+           toggleStandingsView() clears the flag on the way out, so the inverted reading cannot
+           outlive the view that owns it. aria-label because there is no text node to name it. -->
       <button
         type="button"
         x-show="positionsReversed"
