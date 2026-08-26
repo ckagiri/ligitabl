@@ -118,7 +118,11 @@
               autocomplete="off"
               class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500 max-sm:h-5 max-sm:w-5"
             />
-            <span class="whitespace-nowrap">Show fixtures</span>
+            <!-- Longest label in the 2-col grid, so it is the one that wraps and makes its
+                 row taller than the rest. Held on one line down to 340px; below that the
+                 column is too narrow and nowrap would overrun into the next one, so the
+                 wrap is allowed back. Same 340px cut-off as the what-if score rows. -->
+            <span class="whitespace-nowrap max-[340px]:whitespace-normal">Show fixtures</span>
           </label>
           <label
             th:if="${hasFormData}"
@@ -368,10 +372,8 @@
               scope="col"
               class="px-2 sm:px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10 sm:w-16"
             >
-              <!-- The column is always the user's predicted rank unless the standings
-                   comparison is on and reversed, so it reads "Pred" by default rather than
-                   the ambiguous "Pos". Same label at both widths. -->
-              <span x-text="showStandings && positionsReversed ? 'Actual' : 'Pred'">Pred</span>
+              <span class="sm:hidden" x-text="showStandings ? 'Pos' : 'Pred'">Pred</span>
+              <span class="hidden sm:inline" x-text="showStandings && positionsReversed ? 'Actual' : 'Pred'">Pred</span>
             </th>
             <th
               scope="col"

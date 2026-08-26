@@ -3159,6 +3159,9 @@ video {
   .max-\[340px\]\:basis-full {
     flex-basis: 100%;
   }
+  .max-\[340px\]\:whitespace-normal {
+    white-space: normal;
+  }
   .max-\[340px\]\:pt-0\.5 {
     padding-top: 0.125rem;
   }
