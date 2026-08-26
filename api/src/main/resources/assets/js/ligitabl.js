@@ -1042,6 +1042,9 @@ window.Ligitabl.TIMESTAMP_FORMATS = {
         hour: "2-digit",
         minute: "2-digit",
     },
+    // "12 Aug 2026" — swap history, where the clock time is noise: what matters is
+    // which day a swap was made, not the minute.
+    dateOnly: { day: "numeric", month: "short", year: "numeric" },
 };
 
 /**

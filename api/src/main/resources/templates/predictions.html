@@ -603,7 +603,7 @@ isRoundLockedOrBeyond=[[${isRoundLockedOrBeyond}]] notLastRound=[[${notLastRound
               <!-- Swap history (see fragments/swap-history.html) — part of the round's result
                    view, so it lives inside this card. Collapsed by default: the What-If swaps
                    card below opens instead, and two expanded lists of swaps read as one muddle. -->
-              <div th:replace="~{fragments/swap-history :: history(false)}"></div>
+              <div th:replace="~{fragments/swap-history :: history(false, false)}"></div>
             </div>
 
             <!-- What-If swaps (see fragments/what-if-swaps.html) — read-only reminder of what the

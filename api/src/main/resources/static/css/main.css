@@ -485,11 +485,6 @@ video {
     transition: opacity 300ms ease-in;
   }
 /* Prediction Table Specific Animations */
-/* Named properties, not `all`: the row also carries .selected, whose 4px
-     border-left would transition its width and force layout on every frame.
-     Only the three properties the swap highlight actually animates are listed,
-     and all three are cheap (background-color repaints; transform and
-     box-shadow are what the swap needs to read as a lift). */
 .prediction-row {
     position: relative;
     transition:
@@ -2359,6 +2354,9 @@ video {
 .decoration-gray-300 {
   text-decoration-color: #d1d5db;
 }
+.decoration-1 {
+  text-decoration-thickness: 1px;
+}
 .decoration-2 {
   text-decoration-thickness: 2px;
 }
@@ -2957,6 +2955,9 @@ video {
 .hover\:no-underline:hover {
   text-decoration-line: none;
 }
+.hover\:decoration-gray-400:hover {
+  text-decoration-color: #9ca3af;
+}
 .hover\:shadow-md:hover {
   --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
   --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);
@@ -3195,6 +3196,12 @@ video {
   }
   .sm\:mt-6 {
     margin-top: 1.5rem;
+  }
+  .sm\:line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
   .sm\:block {
     display: block;
@@ -3488,11 +3495,11 @@ video {
   .lg\:max-h-\[calc\(100vh-166px\)\] {
     max-height: calc(100vh - 166px);
   }
-  .lg\:w-52 {
-    width: 13rem;
+  .lg\:w-40 {
+    width: 10rem;
   }
-  .lg\:w-56 {
-    width: 14rem;
+  .lg\:w-44 {
+    width: 11rem;
   }
   .lg\:px-8 {
     padding-left: 2rem;

@@ -240,7 +240,7 @@
                     </th>
                     <th
                       scope="col"
-                      class="sticky left-[56px] z-20 bg-gray-50 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-44 lg:w-56"
+                      class="sticky left-[56px] z-20 bg-gray-50 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-32 lg:w-44"
                     >
                       Player
                     </th>
@@ -267,13 +267,13 @@
                       scope="col"
                       class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
                     >
-                      Swaps
+                      Best
                     </th>
                     <th
                       scope="col"
                       class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20"
                     >
-                      Best
+                      Swaps
                     </th>
                     <th
                       scope="col"
@@ -307,7 +307,7 @@
                     </td>
 
                     <td
-                      class="sticky left-[56px] z-10 px-3 py-4 whitespace-nowrap w-44 lg:w-56"
+                      class="sticky left-[56px] z-10 px-3 py-4 whitespace-nowrap w-32 lg:w-44"
                       th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'bg-indigo-50' : 'bg-white group-hover:bg-gray-50'}"
                     >
                       <div class="flex flex-col">
@@ -322,7 +322,7 @@
                           class="inline-flex items-center gap-1 max-w-[7rem] sm:max-w-full text-sm font-medium hover:text-indigo-600 transition cursor-pointer text-left"
                           th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'text-indigo-900' : 'text-gray-900'}"
                         >
-                          <span class="min-w-0 truncate sm:whitespace-normal sm:overflow-visible sm:text-clip" th:text="${entry.displayName}">Alice Wonder</span>
+                          <span class="min-w-0 truncate sm:whitespace-normal sm:overflow-visible sm:text-clip sm:line-clamp-2" th:text="${entry.displayName}">Alice Wonder</span>
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
                                class="h-3 w-3 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity">
                             <path fill-rule="evenodd" d="M4.25 5.5a.75.75 0 0 0-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 0 0 .75-.75v-4a.75.75 0 0 1 1.5 0v4A2.25 2.25 0 0 1 12.75 17h-8.5A2.25 2.25 0 0 1 2 14.75v-8.5A2.25 2.25 0 0 1 4.25 4h5a.75.75 0 0 1 0 1.5h-5Z" clip-rule="evenodd"/>
@@ -379,22 +379,22 @@
                       >
                     </td>
                     <td
-                      class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-500"
+                      class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-600"
                     >
-                      <span
-                        th:if="${entry.scored}"
-                        th:text="${entry.totalSwaps}"
-                        >23</span
+                      <span th:if="${entry.scored}" th:text="${entry.maxScore}"
+                        >52</span
                       >
                       <span th:if="${!entry.scored}" class="text-gray-400"
                         >—</span
                       >
                     </td>
                     <td
-                      class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-600"
+                      class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-500"
                     >
-                      <span th:if="${entry.scored}" th:text="${entry.maxScore}"
-                        >52</span
+                      <span
+                        th:if="${entry.scored}"
+                        th:text="${entry.totalSwaps}"
+                        >23</span
                       >
                       <span th:if="${!entry.scored}" class="text-gray-400"
                         >—</span
