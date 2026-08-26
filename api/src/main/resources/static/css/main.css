@@ -1007,6 +1007,9 @@ video {
 .max-w-7xl {
   max-width: 80rem;
 }
+.max-w-\[200px\] {
+  max-width: 200px;
+}
 .max-w-\[6rem\] {
   max-width: 6rem;
 }

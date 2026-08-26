@@ -87,7 +87,7 @@
       th:if="${urlStyle == 'path'}"
       th:with="suffix=${pathSuffix != null ? pathSuffix : 'matches'}"
       th:attr="onchange=|const url = this.options[this.selectedIndex].dataset.url; htmx.ajax('GET', url, {target: '${htmxTarget}', swap: '${htmxSwap}'}); history.pushState({}, '', url);|"
-      class="flex-1 sm:flex-initial sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+      class="flex-1 max-w-[200px] sm:flex-initial sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
     >
       <option
         th:each="r : ${#numbers.sequence(minRoundNumber, maxRound)}"
@@ -108,7 +108,7 @@
       hx-push-url="true"
       hx-include="this"
       name="round"
-      class="flex-1 sm:flex-initial sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
+      class="flex-1 max-w-[200px] sm:flex-initial sm:w-auto sm:min-w-[200px] px-3 py-2 text-sm border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500"
     >
       <option
         th:each="r : ${#numbers.sequence(minRoundNumber, maxRound)}"
