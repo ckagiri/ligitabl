@@ -408,7 +408,7 @@
                         <span class="hidden sm:inline">Pos</span>
                         <span class="sm:hidden">#</span>
                       </th>
-                      <th class="sticky left-[48px] z-20 bg-gray-50 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-40 lg:w-52">
+                      <th class="sticky left-[48px] z-20 bg-gray-50 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28 lg:w-40">
                         Player
                       </th>
                       <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Score</th>
@@ -417,8 +417,8 @@
                         <span class="hidden sm:inline">Zeroes</span>
                         <span class="sm:hidden" title="Zeroes">&#x00D8;s</span>
                       </th>
-                      <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Swaps</th>
                       <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Best</th>
+                      <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-16">Swaps</th>
                       <th class="px-3 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Change</th>
                     </tr>
                   </thead>
@@ -441,14 +441,15 @@
 
                       <!-- Player -->
                       <td
-                        class="sticky left-[48px] z-10 px-3 py-4 whitespace-nowrap w-40 lg:w-52"
+                        class="sticky left-[48px] z-10 px-3 py-4 whitespace-nowrap w-28 lg:w-40"
                         th:classappend="${userPosition != null and entry.publicId == userPosition.publicId ? 'bg-indigo-50' : 'bg-white group-hover:bg-gray-50'}"
                       >
                         <div class="flex flex-col">
                           <!-- Plain text: just joined this round or former member — no modal -->
                           <th:block th:if="${entry.isFormerMember == true or (entry.joinedAtGw != null and effectiveToRound != null and entry.joinedAtGw > effectiveToRound)}">
                             <span
-                              class="inline-flex items-center max-w-[6rem] sm:max-w-full text-sm font-medium text-left"
+                              class="block max-w-[6rem] sm:max-w-full min-w-0 truncate sm:whitespace-normal sm:overflow-visible sm:text-clip sm:line-clamp-2 text-sm font-medium text-left"
+                              th:title="${entry.displayName}"
                               th:classappend="${userPosition != null and entry.publicId == userPosition.publicId ? 'text-indigo-900' : 'text-gray-500'}"
                               th:text="${entry.displayName}"
                             >Alice</span>
@@ -466,7 +467,7 @@
                               class="inline-flex items-center gap-1 max-w-[6rem] sm:max-w-full text-sm font-medium hover:text-indigo-600 transition cursor-pointer text-left"
                               th:classappend="${userPosition != null and entry.publicId == userPosition.publicId ? 'text-indigo-900' : 'text-gray-900'}"
                             >
-                              <span class="min-w-0 truncate sm:whitespace-normal sm:overflow-visible sm:text-clip" th:text="${entry.displayName}">Alice</span>
+                              <span class="min-w-0 truncate sm:whitespace-normal sm:overflow-visible sm:text-clip sm:line-clamp-2" th:text="${entry.displayName}">Alice</span>
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
                                    class="h-3 w-3 shrink-0 opacity-40 group-hover:opacity-100 transition-opacity">
                                 <path fill-rule="evenodd" d="M4.25 5.5a.75.75 0 0 0-.75.75v8.5c0 .414.336.75.75.75h8.5a.75.75 0 0 0 .75-.75v-4a.75.75 0 0 1 1.5 0v4A2.25 2.25 0 0 1 12.75 17h-8.5A2.25 2.25 0 0 1 2 14.75v-8.5A2.25 2.25 0 0 1 4.25 4h5a.75.75 0 0 1 0 1.5h-5Z" clip-rule="evenodd"/>
@@ -504,15 +505,15 @@
                         <span th:if="${!entry.scored}" class="text-gray-400 font-normal">—</span>
                       </td>
 
-                      <!-- Swaps -->
-                      <td class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-500">
-                        <span th:if="${entry.scored}" th:text="${entry.totalSwaps}">1</span>
-                        <span th:if="${!entry.scored}" class="text-gray-400">—</span>
-                      </td>
-
                       <!-- Best -->
                       <td class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-600">
                         <span th:if="${entry.scored}" th:text="${entry.maxScore}">52</span>
+                        <span th:if="${!entry.scored}" class="text-gray-400">—</span>
+                      </td>
+
+                      <!-- Swaps -->
+                      <td class="px-3 py-4 whitespace-nowrap text-right text-sm text-gray-500">
+                        <span th:if="${entry.scored}" th:text="${entry.totalSwaps}">1</span>
                         <span th:if="${!entry.scored}" class="text-gray-400">—</span>
                       </td>
 

@@ -4,11 +4,13 @@
 
   The isGuest check for guarding this lives at the call site.
 
-  Parameter:
-    open: 'true' to start expanded, 'false' to start collapsed
+  Parameters:
+    open:     'true' to start expanded, 'false' to start collapsed
+    dateOnly: true to drop the clock time from each entry's timestamp, keeping the date.
+              The public view of someone else's table only needs the day a swap was made.
 -->
 <div
-  th:fragment="history(open)"
+  th:fragment="history(open, dateOnly)"
   th:if="${swapHistory != null && !#lists.isEmpty(swapHistory)}"
   x-cloak
   class="border-t border-gray-100"
@@ -85,12 +87,15 @@
           <span class="text-gray-400">#</span
           ><span th:text="${entry.teamBTo}">1</span>
         </span>
+        <!-- Deliberately empty: formatTimestamps() fills it on DOMContentLoaded /
+             htmx:afterSettle. Rendering the raw ISO instant as a fallback would flash
+             "2026-02-12T14:23:00Z" — and the wrong precision, where dateOnly applies —
+             before the script replaces it. Empty degrades to no timestamp instead. -->
         <span
           class="text-xs text-gray-400 whitespace-nowrap"
-          th:attr="data-timestamp=${entry.formattedTime}"
-          th:text="${entry.formattedTime}"
-          >2026-02-12T14:23:00Z</span
-        >
+          th:attr="data-timestamp=${entry.formattedTime},
+                   data-timestamp-format=${dateOnly ? 'dateOnly' : null}"
+        ></span>
       </li>
     </ul>
   </div>
