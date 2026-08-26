@@ -240,6 +240,10 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         // toolbar can read it too.
         compareOptionsOpen: window.matchMedia('(min-width: 640px)').matches,
         positionsReversed: false,
+        // Flips how the delta column *reads* — arrow direction and green/red — for people who
+        // think of the gap as "how far the real table is from my pick" rather than "how far my
+        // pick is from real".
+        deltaInverted: false,
         alwaysHoverable: false,
         isInitialPrediction: false,
         showStandings: savedPrefs ? (savedPrefs.showStandings ?? true) : true,
@@ -503,6 +507,10 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             // Drop a half-made selection — it can't be completed here, and a highlighted
             // row you can't act on reads as stuck. Unsaved swaps deliberately survive.
             if (this.positionsReversed) this.selectedTeam = null;
+            // The invert toggle only exists in the actual-table view, so leaving it must clear
+            // the flag: otherwise my-table's arrows stay reversed with no visible control to
+            // put them back.
+            else this.deltaInverted = false;
         },
 
         getDelta(teamCode) {
@@ -517,6 +525,20 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             const actual = this.getActualPosition(teamCode);
             if (!team || actual === "?") return null;
             return team.position > actual ? "up" : "down";
+        },
+
+        // The delta as this table is currently displaying it. getDeltaDirection stays the raw
+        // fact — scoring and the read-only views read that one — so the invert toggle cannot
+        // leak into anything that computes a result.
+        displayedDeltaDirection(teamCode) {
+            const dir = this.getDeltaDirection(teamCode);
+            // null must stay null, or a row with no actual position grows an arrow.
+            if (dir === null || !this.deltaInverted) return dir;
+            return dir === "up" ? "down" : "up";
+        },
+
+        toggleDeltaInverted() {
+            this.deltaInverted = !this.deltaInverted;
         },
 
         _performSwap(teamCode) {
