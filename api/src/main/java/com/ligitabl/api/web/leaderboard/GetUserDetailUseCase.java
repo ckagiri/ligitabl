@@ -143,10 +143,21 @@ public class GetUserDetailUseCase {
         return sortedRanks.stream()
                 .map(tr -> {
                     Team team = teamsByCode.get(tr.getCode());
-                    String name = team != null ? team.getShortName() : tr.getCode();
+                    // shorterName over shortName: the modal lists 20 rows in a narrow column and
+                    // truncates, so the tightest name that still reads is the useful one. Falls
+                    // back through shortName to the code when a team has no shorter form.
+                    String name = team != null ? firstNonBlank(team.getShorterName(), team.getShortName(), tr.getCode())
+                                               : tr.getCode();
                     return new PredictionTeam(name, null);
                 })
                 .toList();
+    }
+
+    private static String firstNonBlank(String... candidates) {
+        for (String candidate : candidates) {
+            if (candidate != null && !candidate.isBlank()) return candidate;
+        }
+        return null;
     }
 
     public static class NotFoundException extends RuntimeException {
