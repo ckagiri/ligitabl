@@ -105,6 +105,41 @@
         box-shadow: inset 0 0 0 9999px rgb(59 130 246 / 0.12);
       }
 
+      /* Mobile / touch: no swap colour flash.
+         The wash is added and removed by a timer in app.js, so on a phone it snaps on
+         hard in the same frame Alpine re-renders the swapped rows' text and then snaps
+         off again — it reads as jank rather than feedback. On a touch screen the finger
+         is already on the row it tapped, so the tint tells the user nothing they can't
+         see. Suppress it in CSS only: the JS keeps adding/removing the classes, the
+         hover wash goes too (it sticks after a tap on touch), and desktop is untouched. */
+      @media (hover: none), (max-width: 768px) {
+        .prediction-row {
+          transition: none;
+        }
+
+        .prediction-row:hover:not(.no-hover),
+        .prediction-row.swapping,
+        .prediction-row.selected-pulse {
+          box-shadow: none;
+        }
+
+        /* The row also binds Tailwind's hover:bg-gray-50, which a box-shadow rule
+           cannot reach. On touch that hover state latches after a tap and lingers on
+           the last row touched, so drop it too and let the selected / dirty tints
+           (bg-blue-50 / bg-amber-50, bound by Alpine) be the only row colours. */
+        .prediction-row:hover:not(.no-hover) {
+          background-color: transparent;
+        }
+
+        .prediction-row.bg-blue-50:hover:not(.no-hover) {
+          background-color: rgb(239 246 255);
+        }
+
+        .prediction-row.bg-amber-50:hover:not(.no-hover) {
+          background-color: rgb(255 251 235);
+        }
+      }
+
       /* No animations for anything else */
       .position-change,
       .button-counter,
