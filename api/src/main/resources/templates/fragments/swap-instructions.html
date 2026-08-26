@@ -55,9 +55,11 @@
     x-show="selectedTeam !== null"
     class="bg-blue-50 border border-blue-200 rounded-lg p-3"
   >
-    <div class="flex items-center">
+    <!-- items-start, not items-center: the text is two stacked lines now, so centring would
+         float the icon to the middle of the block instead of aligning it with the first one. -->
+    <div class="flex items-start">
       <svg
-        class="h-4 w-4 text-blue-600 mr-2 flex-shrink-0"
+        class="h-4 w-4 text-blue-600 mr-2 mt-0.5 flex-shrink-0"
         fill="currentColor"
         viewBox="0 0 20 20"
       >
@@ -67,10 +69,16 @@
           clip-rule="evenodd"
         />
       </svg>
-      <span class="text-sm text-blue-800">
-        <strong><span x-text="getSelectedTeamShortName()"></span> selected.</strong>
-        Click another team to swap, or click again to deselect.
-      </span>
+      <div class="text-sm text-blue-800">
+        <p>
+          <strong
+            ><span x-text="getSelectedTeamShortName()"></span> selected.</strong
+          >
+        </p>
+        <p class="mt-0.5">
+          Click another team to swap, or click again to deselect.
+        </p>
+      </div>
     </div>
   </div>
 
