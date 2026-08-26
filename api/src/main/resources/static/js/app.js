@@ -954,11 +954,14 @@ window.Ligitabl.predictionPage = function(el) {
   });
   const base = Ligitabl._predictionBase(parsed, userId, roundId);
   const WHAT_IF_STORAGE_KEY = `ligitabl.whatif.${userId}.${roundId}`;
-  function loadWhatIfSwaps() {
+  function loadWhatIfSwaps(originalTeams) {
     try {
       const raw = localStorage.getItem(WHAT_IF_STORAGE_KEY);
       if (!raw) return [];
       const saved = JSON.parse(raw);
+      if (Array.isArray(saved?.teams) && saved.teams.length > 0 && originalTeams?.length) {
+        return Ligitabl._minimalSwapEntries(originalTeams, saved.teams);
+      }
       const log = saved?.swapLog;
       if (!Array.isArray(log)) return [];
       return log.filter(
@@ -1049,7 +1052,7 @@ window.Ligitabl.predictionPage = function(el) {
         window.dispatchEvent(new CustomEvent("guest-storage-cleared"));
       }
       this.originalTeams = Ligitabl._mapServerPredictions(predictions);
-      this.whatIfSwaps = loadWhatIfSwaps();
+      this.whatIfSwaps = loadWhatIfSwaps(this.originalTeams);
       const savePrefs = () => Ligitabl._savePrefs({
         showStandings: this.showStandings,
         showFixtures: this.showFixtures,
@@ -2175,7 +2178,18 @@ window.Ligitabl.whatIfPage = function(el) {
     maxHitPoints,
     roundOpen,
     currentRound,
+    // Raw tap history, and it must stay raw: _consumeSwapPairs() matches these against the
+    // pairs a submission actually carried. See "Deliberately NOT _derivedSwaps" in
+    // submitChanges().
     swapLog: [],
+    // What the Sandbox swaps list renders: the net permutation, so it agrees with
+    // getSwapCount() instead of listing taps the user undid by re-swapping.
+    //
+    // A method, not a getter — the fragment's own x-data="{ open: true }" would bind a
+    // getter's `this` to that child scope, where originalTeams/teams do not exist.
+    displayedSwapLog() {
+      return Ligitabl._minimalSwapEntries(this.originalTeams, this.teams);
+    },
     activeTab: "standings",
     hasComputed: false,
     isComputing: false,

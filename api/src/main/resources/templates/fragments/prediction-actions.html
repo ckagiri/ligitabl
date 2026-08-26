@@ -359,31 +359,52 @@
     <!--
       Swaps view: the pairs behind those moves, in the same format as the swap history on this
       page and the sandbox log on What-If (fragments/what-if-swap-log.html) — one swap per line,
-      shrinking the type on narrow screens rather than wrapping or scrolling, so the A→B ↔ B→A
-      symmetry survives. Codes rather than names, matching those lists: swapStack records codes
-      only.
+      shrinking the type on narrow screens rather than wrapping, so the A→B ↔ B→A symmetry
+      survives. Codes rather than names, matching those lists: swapStack records codes only.
+
+      Two-digit positions on both sides ("LEE #14 → #18 ↔ COV #18 → #14") outrun a narrow card,
+      so overflow-x-auto sits on the row rather than the list — only the row that needs it
+      scrolls. shrink-0 is what triggers that; without it flex compresses the halves to fit.
     -->
     <div class="space-y-2" x-show="changesView === 'swaps'" x-cloak>
       <template x-for="(entry, index) in getSwapEntries()" :key="index">
         <div
-          class="text-xs sm:text-sm font-mono text-gray-700 whitespace-nowrap py-1.5 px-2 bg-gray-50 rounded"
+          class="flex items-center gap-1 overflow-x-auto text-xs sm:text-sm font-mono tabular-nums text-gray-700 whitespace-nowrap py-1.5 px-2 bg-gray-50 rounded"
         >
-          <span class="text-gray-300 mr-1 select-none" x-text="(index + 1) + '.'"
+          <span
+            class="text-gray-300 select-none shrink-0"
+            x-text="(index + 1) + '.'"
             >1.</span
           >
-          <span class="font-semibold text-gray-900" x-text="entry.teamACode"
-            >ARS</span
-          >
-          <span class="text-gray-400">#</span><span x-text="entry.teamAFrom">1</span>
-          <span class="text-gray-400">→</span>
-          <span class="text-gray-400">#</span><span x-text="entry.teamATo">4</span>
-          <span class="mx-1 font-bold text-indigo-500">↔</span>
-          <span class="font-semibold text-gray-900" x-text="entry.teamBCode"
-            >CHE</span
-          >
-          <span class="text-gray-400">#</span><span x-text="entry.teamBFrom">4</span>
-          <span class="text-gray-400">→</span>
-          <span class="text-gray-400">#</span><span x-text="entry.teamBTo">1</span>
+          <span class="flex items-center gap-1 shrink-0">
+            <span class="font-semibold text-gray-900" x-text="entry.teamACode"
+              >ARS</span
+            >
+            <span
+              ><span class="text-gray-400">#</span
+              ><span x-text="entry.teamAFrom">1</span></span
+            >
+            <span class="text-gray-400">→</span>
+            <span
+              ><span class="text-gray-400">#</span
+              ><span x-text="entry.teamATo">4</span></span
+            >
+          </span>
+          <span class="font-bold text-indigo-500 shrink-0">↔</span>
+          <span class="flex items-center gap-1 shrink-0">
+            <span class="font-semibold text-gray-900" x-text="entry.teamBCode"
+              >CHE</span
+            >
+            <span
+              ><span class="text-gray-400">#</span
+              ><span x-text="entry.teamBFrom">4</span></span
+            >
+            <span class="text-gray-400">→</span>
+            <span
+              ><span class="text-gray-400">#</span
+              ><span x-text="entry.teamBTo">1</span></span
+            >
+          </span>
         </div>
       </template>
       <!--
