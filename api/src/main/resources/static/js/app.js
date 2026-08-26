@@ -465,6 +465,34 @@ window.Ligitabl._newNonce = function() {
   if (window.crypto?.randomUUID) return window.crypto.randomUUID();
   return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
 };
+window.Ligitabl._minimalSwapEntries = function(baseline, target) {
+  const work = (baseline || []).map((t) => ({ ...t }));
+  const targetPosition = Object.fromEntries((target || []).map((t) => [t.code, t.position]));
+  const log = [];
+  for (const t of work) {
+    const tgt = targetPosition[t.code];
+    if (t.position === tgt) continue;
+    const partner = work.find((w) => w.position === tgt);
+    if (!partner) continue;
+    const aFrom = t.position;
+    const bFrom = partner.position;
+    log.push({
+      teamACode: t.code,
+      teamAFrom: aFrom,
+      teamATo: bFrom,
+      teamBCode: partner.code,
+      teamBFrom: bFrom,
+      teamBTo: aFrom
+    });
+    const tmp = t.position;
+    t.position = partner.position;
+    partner.position = tmp;
+  }
+  return log;
+};
+window.Ligitabl._isSamePair = function(a1, b1, a2, b2) {
+  return a1 === a2 && b1 === b2 || a1 === b2 && b1 === a2;
+};
 window.Ligitabl._consumeSwapPairs = function(log, pairs) {
   const key = (a, b) => a < b ? `${a}|${b}` : `${b}|${a}`;
   const remaining = /* @__PURE__ */ new Map();
@@ -504,7 +532,7 @@ window.Ligitabl._replaySwaps = function(baseline, entries) {
     teams[j] = tmp;
     teams.forEach((t, idx) => t.position = idx + 1);
     const top = stack[stack.length - 1];
-    if (top && top.a === entry.teamBCode && top.b === entry.teamACode) stack.pop();
+    if (top && Ligitabl._isSamePair(top.a, top.b, entry.teamACode, entry.teamBCode)) stack.pop();
     else stack.push({ a: entry.teamACode, b: entry.teamBCode });
     if (entry.teamAFrom !== teamAFrom || entry.teamBFrom !== teamBFrom) moved = true;
     rebuilt.push({
@@ -686,26 +714,11 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
         };
       }).sort((a, b) => a.from - b.from);
     },
-    // The swaps behind the current diff, in the same {teamACode, teamAFrom, teamATo, ...}
-    // shape the swap-history fragments render — so the Changes Made card can show how the
-    // moves were made, not just what moved.
-    //
-    // Derived rather than stored: swapStack is the exact tap history and is already persisted
-    // by _saveToStorage, so replaying it over originalTeams reconstructs the positions without
-    // a second piece of state to keep in lockstep through undo/reset/restore.
-    //
-    // Replayed twice on purpose. The first pass returns a swapStack with inverse pairs
-    // cancelled (swap A<->B, swap it back, and both drop out); replaying *that* yields
-    // positions for only the swaps that survive. Without it the list would show moves the user
-    // undid by re-swapping, and its length would exceed the Swaps count beside it —
-    // getSwapCount() measures the net permutation, not the tap history.
+    // The swaps behind the current diff, for the Changes Made card. Shares one helper with
+    // submitChanges() so the card, the Swaps badge and the request all describe the same set
+    // — the tap history would match none of them.
     getSwapEntries() {
-      const pairs = this.swapStack.map((s) => ({ teamACode: s.a, teamBCode: s.b }));
-      const net = Ligitabl._replaySwaps(this.originalTeams, pairs).swapStack;
-      return Ligitabl._replaySwaps(
-        this.originalTeams,
-        net.map((s) => ({ teamACode: s.a, teamBCode: s.b }))
-      ).swapLog;
+      return Ligitabl._minimalSwapEntries(this.originalTeams, this.teams);
     },
     getPositionChange(teamCode) {
       const team = this.teams.find((t) => t.code === teamCode);
@@ -727,7 +740,7 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
     },
     pushSwap(codeA, codeB) {
       const top = this.swapStack[this.swapStack.length - 1];
-      if (top && top.a === codeB && top.b === codeA) {
+      if (top && Ligitabl._isSamePair(top.a, top.b, codeA, codeB)) {
         this.swapStack.pop();
       } else {
         this.swapStack.push({ a: codeA, b: codeB });
@@ -794,7 +807,6 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
       if (!team || actual === "?") return null;
       return team.position > actual ? "up" : "down";
     },
-    // Shared swap mechanics (visual feedback + array swap)
     _performSwap(teamCode) {
       const team1Code = this.selectedTeam;
       const team2Code = teamCode;
@@ -808,7 +820,6 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
       this.pushSwap(team1Code, team2Code);
       this._swapTeamsDirect(team1Code, team2Code);
     },
-    // Shared selection handling
     _selectTeam(teamCode) {
       this.selectedTeam = teamCode;
       this.$nextTick(() => {
@@ -1102,19 +1113,7 @@ window.Ligitabl.predictionPage = function(el) {
       let url, body;
       const _submittedStack = this.isInitialPrediction || this.isPreSeasonRegistration || this.isOpeningRound ? this.swapStack : this.swapStack.slice(0, 1);
       const submittedPairs = _submittedStack.map((s) => ({ teamACode: s.a, teamBCode: s.b }));
-      const _working = this.originalTeams.map((t) => ({ ...t }));
-      const _targetPosition = Object.fromEntries(this.teams.map((t) => [t.code, t.position]));
-      const _derivedSwaps = [];
-      for (const t of _working) {
-        const tgt = _targetPosition[t.code];
-        if (t.position === tgt) continue;
-        const partner = _working.find((w) => w.position === tgt);
-        if (!partner) continue;
-        _derivedSwaps.push({ teamACode: t.code, teamBCode: partner.code });
-        const tmp = t.position;
-        t.position = partner.position;
-        partner.position = tmp;
-      }
+      const _derivedSwaps = Ligitabl._minimalSwapEntries(this.originalTeams, this.teams).map((e) => ({ teamACode: e.teamACode, teamBCode: e.teamBCode }));
       if (this.isInitialPrediction || this.isPreSeasonRegistration) {
         url = "/seasonprediction";
         const _next = new URLSearchParams(window.location.search).get("next");
