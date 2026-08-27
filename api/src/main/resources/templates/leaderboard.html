@@ -21,16 +21,37 @@
           activeGroup: ({FULL_SEASON: 'fullSeason', QUARTER: 'quarters', SPRINT: 'sprints'})[$el.dataset.selectedGroup] || 'sprints',
           selectedPhase: $el.dataset.selectedPhase,
           loading: false,
-          select(phase) {
+          load(phase) {
             this.selectedPhase = phase;
             this.loading = true;
             htmx.ajax('GET', '/leaderboard?phase=' + phase, {
               target: '#leaderboard-content',
               swap: 'outerHTML'
             });
+          },
+          select(phase) {
+            this.load(phase);
             history.pushState({}, '', '/leaderboard?phase=' + phase);
+          },
+          // Back/forward: the URL changes but nothing re-fetches, so the table and chips would keep
+          // showing the previous phase. Deliberately calls load(), not select() — pushing state
+          // here would trap the user in the history entry.
+          restore() {
+            const phase = new URLSearchParams(location.search).get('phase');
+            if (!phase || phase === this.selectedPhase) return;
+            // The group isn't in the URL; the chip carrying this code sits inside its own panel, so
+            // the panel identifies the group. FS has no chip.
+            if (phase === 'FS') {
+              this.activeGroup = 'fullSeason';
+            } else {
+              const chip = $el.querySelector('[data-phase=\'' + phase + '\']');
+              const group = chip && chip.closest('[data-group]');
+              if (group) this.activeGroup = group.dataset.group;
+            }
+            this.load(phase);
           }
         }"
+        @popstate.window="restore()"
         @htmx:after-swap.window="if ($event.detail.target && $event.detail.target.id === 'leaderboard-content') loading = false"
         @htmx:response-error.window="if ($event.detail.target && $event.detail.target.id === 'leaderboard-content') loading = false"
       >
@@ -41,14 +62,22 @@
           </h1>
 
           <div class="space-y-2">
-            <!-- Top-level group tabs -->
+            <!-- Top-level group tabs.
+                 :class uses object syntax, not a ternary string: the server pre-applies the active
+                 classes via th:classappend so the tab is styled before Alpine boots, and only the
+                 object form can then *remove* them again on click. A ternary string appends without
+                 removing, which left every server-active tab stuck looking selected. -->
             <div class="flex gap-1.5">
               <button
                 type="button"
                 @click="activeGroup = 'fullSeason'; select('FS')"
-                :class="activeGroup === 'fullSeason'
+                :class="{
+                  'border-indigo-400 bg-indigo-50 text-indigo-700': activeGroup === 'fullSeason',
+                  'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900': activeGroup !== 'fullSeason'
+                }"
+                th:classappend="${currentPhaseType == 'FULL_SEASON'
                   ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'"
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'}"
                 class="px-3 py-1.5 text-sm font-medium border rounded-md transition whitespace-nowrap"
               >
                 Full Season
@@ -57,9 +86,13 @@
               <button
                 type="button"
                 @click="activeGroup = 'quarters'; select($el.closest('[data-current-quarter]').dataset.currentQuarter)"
-                :class="activeGroup === 'quarters'
+                :class="{
+                  'border-indigo-400 bg-indigo-50 text-indigo-700': activeGroup === 'quarters',
+                  'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900': activeGroup !== 'quarters'
+                }"
+                th:classappend="${currentPhaseType == 'QUARTER'
                   ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'"
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'}"
                 class="px-3 py-1.5 text-sm font-medium border rounded-md transition whitespace-nowrap"
               >
                 Quarters
@@ -68,19 +101,27 @@
               <button
                 type="button"
                 @click="activeGroup = 'sprints'; select($el.closest('[data-current-sprint]').dataset.currentSprint)"
-                :class="activeGroup === 'sprints'
+                :class="{
+                  'border-indigo-400 bg-indigo-50 text-indigo-700': activeGroup === 'sprints',
+                  'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900': activeGroup !== 'sprints'
+                }"
+                th:classappend="${currentPhaseType == 'SPRINT'
                   ? 'border-indigo-400 bg-indigo-50 text-indigo-700'
-                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'"
+                  : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'}"
                 class="px-3 py-1.5 text-sm font-medium border rounded-md transition whitespace-nowrap"
               >
                 Sprints
               </button>
             </div>
 
-            <!-- Quarter sub-tabs -->
+            <!-- Quarter sub-tabs.
+                 The inactive panel is hidden by an inline style the server writes, not x-cloak:
+                 cloaking would hide BOTH panels until Alpine boots, which is the flash this is
+                 meant to remove. x-show takes over on boot and overwrites display. -->
             <div
               x-show="activeGroup === 'quarters'"
-              x-cloak
+              data-group="quarters"
+              th:style="${'-ms-overflow-style: none; scrollbar-width: none;' + (currentPhaseType == 'QUARTER' ? '' : ' display: none;')}"
               class="overflow-x-auto pb-1"
               style="-ms-overflow-style: none; scrollbar-width: none"
             >
@@ -93,13 +134,18 @@
                   th:attrappend="data-is-next=${phase.from == nqFrom ? true : null}"
                   th:disabled="${nqFrom > 0 and phase.from > nqFrom}"
                   @click="!$el.disabled && select($el.dataset.phase)"
-                  :class="selectedPhase === $el.dataset.phase
-                    ? 'border-2 border-indigo-400 bg-indigo-50 text-indigo-700'
-                    : ($el.disabled
-                        ? 'border border-gray-100 bg-gray-50 text-gray-300 cursor-default pointer-events-none'
-                        : ($el.dataset.isNext
+                  :class="{
+                    'border border-indigo-500 bg-indigo-600 text-white': !$el.disabled && selectedPhase === $el.dataset.phase,
+                    'border border-dashed border-indigo-300 bg-white text-indigo-400 hover:border-indigo-400 hover:text-indigo-600': !$el.disabled && selectedPhase !== $el.dataset.phase && $el.dataset.isNext,
+                    'border border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900': !$el.disabled && selectedPhase !== $el.dataset.phase && !$el.dataset.isNext
+                  }"
+                  th:classappend="${(nqFrom > 0 and phase.from > nqFrom)
+                    ? 'border border-gray-100 bg-gray-50 text-gray-300 cursor-default pointer-events-none'
+                    : (phase.code == currentPhase
+                        ? 'border border-indigo-500 bg-indigo-600 text-white'
+                        : (phase.from == nqFrom
                             ? 'border border-dashed border-indigo-300 bg-white text-indigo-400 hover:border-indigo-400 hover:text-indigo-600'
-                            : 'border border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'))"
+                            : 'border border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'))}"
                   class="flex flex-col items-center px-3 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap"
                 >
                   <span class="font-bold" th:text="${phase.code}">Q2</span>
@@ -115,6 +161,8 @@
             <!-- Sprint sub-tabs -->
             <div
               x-show="activeGroup === 'sprints'"
+              data-group="sprints"
+              th:style="${'-ms-overflow-style: none; scrollbar-width: none;' + (currentPhaseType == 'SPRINT' ? '' : ' display: none;')}"
               x-init="$nextTick(() => {
                 const active = $el.querySelector('[data-active-sprint]');
                 if (active) active.scrollIntoView({ inline: 'center', block: 'nearest', behavior: 'smooth' });
@@ -131,13 +179,18 @@
                   th:attrappend="data-active-sprint=${phase.code == cs ? true : null},data-is-next=${phase.from == nsFrom ? true : null}"
                   th:disabled="${nsFrom > 0 and phase.from > nsFrom}"
                   @click="!$el.disabled && select($el.dataset.phase)"
-                  :class="selectedPhase === $el.dataset.phase
-                    ? 'border border-indigo-500 bg-indigo-600 text-white'
-                    : ($el.disabled
-                        ? 'border border-gray-100 bg-gray-50 text-gray-300 cursor-default pointer-events-none'
-                        : ($el.dataset.isNext
+                  :class="{
+                    'border border-indigo-500 bg-indigo-600 text-white': !$el.disabled && selectedPhase === $el.dataset.phase,
+                    'border border-dashed border-indigo-300 bg-white text-indigo-400 hover:border-indigo-400 hover:text-indigo-600': !$el.disabled && selectedPhase !== $el.dataset.phase && $el.dataset.isNext,
+                    'border border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900': !$el.disabled && selectedPhase !== $el.dataset.phase && !$el.dataset.isNext
+                  }"
+                  th:classappend="${(nsFrom > 0 and phase.from > nsFrom)
+                    ? 'border border-gray-100 bg-gray-50 text-gray-300 cursor-default pointer-events-none'
+                    : (phase.code == currentPhase
+                        ? 'border border-indigo-500 bg-indigo-600 text-white'
+                        : (phase.from == nsFrom
                             ? 'border border-dashed border-indigo-300 bg-white text-indigo-400 hover:border-indigo-400 hover:text-indigo-600'
-                            : 'border border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'))"
+                            : 'border border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900'))}"
                   class="flex flex-col items-center px-3 py-1.5 text-xs font-medium rounded-md transition whitespace-nowrap"
                 >
                   <span class="font-bold" th:text="${phase.code}">S4</span>
@@ -216,8 +269,12 @@
             </div>
 
             <style>
+              /* Pinned at every breakpoint, not just under 640px: the Player column's sticky
+                 left-[56px] is unconditional, so a content-sized Pos column left a gap between the
+                 two frozen columns that scrolled content showed through. */
+              .lb-pos-col { min-width: 56px !important; max-width: 56px !important; }
+
               @media (max-width: 639px) {
-                .lb-pos-col { min-width: 56px !important; max-width: 56px !important; }
                 .lb-table-scroll::-webkit-scrollbar { height: 3px; }
                 .lb-table-scroll::-webkit-scrollbar-track { background: transparent; }
                 .lb-table-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
@@ -443,26 +500,37 @@
                 >
                   <tr class="bg-gradient-to-r from-indigo-50 to-blue-50">
                     <td colspan="8" class="px-3 py-4">
-                      <div class="flex items-center space-x-6">
-                        <div class="flex items-center">
-                          <span class="text-indigo-600 mr-1.5 text-base"
-                            >🔹</span
+                      <!-- gap-4 flex-wrap, not space-x-6: this row does not wrap on a phone and
+                           the stats overflow the cell. -->
+                      <div class="flex items-center gap-4 flex-wrap">
+                        <!-- Position + "You" stacked over the name: on a narrow screen the two
+                             sat side by side and squeezed each other. -->
+                        <div class="flex flex-col min-w-0">
+                          <div class="flex items-center">
+                            <span class="text-indigo-600 mr-1.5 text-base"
+                              >🔹</span
+                            >
+                            <span class="text-sm font-semibold text-indigo-900">
+                              <th:block th:if="${userPosition.scored}"
+                                >#<span th:text="${userPosition.position}"
+                                  >45</span
+                                ></th:block
+                              >
+                              <span
+                                th:if="${!userPosition.scored}"
+                                class="text-gray-400"
+                                >—</span
+                              >
+                            </span>
+                            <span class="ml-1.5 text-sm font-bold text-indigo-900"
+                              >You</span
+                            >
+                          </div>
+                          <span
+                            class="truncate text-xs text-indigo-700"
+                            th:text="${currentUserName}"
+                            >Adam</span
                           >
-                          <span class="text-sm font-semibold text-indigo-900">
-                            <th:block th:if="${userPosition.scored}"
-                              >#<span th:text="${userPosition.position}"
-                                >45</span
-                              ></th:block
-                            >
-                            <span
-                              th:if="${!userPosition.scored}"
-                              class="text-gray-400"
-                              >—</span
-                            >
-                          </span>
-                        </div>
-                        <div class="text-sm font-bold text-indigo-900">
-                          You (<span th:text="${currentUserName}">Adam</span>)
                         </div>
                         <th:block th:if="${userPosition.scored}">
                           <div class="flex items-center">

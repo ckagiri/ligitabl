@@ -392,8 +392,12 @@
             <th:block th:if="${leaderboard != null and not #lists.isEmpty(leaderboard.entries)}">
 
               <style>
+                /* Pinned at every breakpoint, not just under 640px: the Player column's sticky
+                   left-[48px] is unconditional, so a content-sized Pos column left a gap between
+                   the two frozen columns that scrolled content showed through. */
+                .cb-pos-col { min-width: 48px !important; max-width: 48px !important; }
+
                 @media (max-width: 639px) {
-                  .cb-pos-col { min-width: 48px !important; max-width: 48px !important; }
                   .cb-table-scroll::-webkit-scrollbar { height: 3px; }
                   .cb-table-scroll::-webkit-scrollbar-track { background: transparent; }
                   .cb-table-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
@@ -541,15 +545,20 @@
                     <tr class="bg-gradient-to-r from-indigo-50 to-blue-50">
                       <td colspan="8" class="px-3 py-4">
                         <div class="flex items-center gap-4 flex-wrap">
-                          <div class="flex items-center gap-1">
-                            <span class="text-indigo-600 text-base">🔹</span>
-                            <span class="text-sm font-semibold text-indigo-900">
-                              <th:block th:if="${userPosition.scored}">#<span th:text="${userPosition.position}">12</span></th:block>
-                              <span th:if="${!userPosition.scored}" class="text-gray-400">—</span>
-                            </span>
+                          <!-- Position + "You" stacked over the name: side by side they squeeze
+                               each other on a narrow screen. -->
+                          <div class="flex flex-col min-w-0">
+                            <div class="flex items-center gap-1">
+                              <span class="text-indigo-600 text-base">🔹</span>
+                              <span class="text-sm font-semibold text-indigo-900">
+                                <th:block th:if="${userPosition.scored}">#<span th:text="${userPosition.position}">12</span></th:block>
+                                <span th:if="${!userPosition.scored}" class="text-gray-400">—</span>
+                              </span>
+                              <span class="text-sm font-bold text-indigo-900">You</span>
+                            </div>
+                            <span class="truncate text-xs text-indigo-700"
+                                  th:text="${currentUserName}">Alice</span>
                           </div>
-                          <span class="text-sm font-bold text-indigo-900"
-                                th:text="'You (' + ${currentUserName} + ')'">You (Alice)</span>
                           <th:block th:if="${userPosition.scored}">
                             <span class="text-sm text-gray-600">Points: <span class="font-bold text-indigo-700" th:text="${userPosition.totalScore}">28</span></span>
                             <span class="text-sm text-gray-600">GW: <span th:text="${userPosition.roundScore}">4</span></span>

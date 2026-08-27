@@ -840,8 +840,10 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
     },
     // Acknowledge the touch on pointerdown: the browser holds `click` back while it decides
     // whether the gesture is a scroll, and that gap is the delay the user actually feels.
-    _pressRow(el) {
-      if (!el || !this.canPressRow()) return;
+    // Skipped on the selected row — it already carries a tint and bullet, so the dim adds
+    // nothing there; on the row being swapped into it is the only cue before the reorder.
+    _pressRow(el, teamCode) {
+      if (!el || !this.canPressRow() || this.isSelected(teamCode)) return;
       el.classList.add("pressed");
     },
     _releaseRow(el) {
