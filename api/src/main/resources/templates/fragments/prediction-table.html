@@ -475,7 +475,7 @@
           <template x-for="(team, teamIndex) in displayTeams()" :key="team.code">
             <tr
               @click="teamClick(team.code)"
-              @pointerdown="_pressRow($el)"
+              @pointerdown="_pressRow($el, team.code)"
               @pointerup="_releaseRow($el)"
               @pointercancel="_releaseRow($el)"
               @pointerleave="_releaseRow($el)"
