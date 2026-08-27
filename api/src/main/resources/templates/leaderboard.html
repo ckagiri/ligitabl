@@ -248,7 +248,8 @@
                       scope="col"
                       class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-24"
                     >
-                      Score
+                      <span class="hidden sm:inline">Points</span>
+                      <span class="sm:hidden" title="Points">Pts</span>
                     </th>
                     <th
                       scope="col"
@@ -466,7 +467,7 @@
                         <th:block th:if="${userPosition.scored}">
                           <div class="flex items-center">
                             <span class="text-xs text-gray-600 mr-1"
-                              >Score:</span
+                              >Points:</span
                             ><span
                               class="text-sm font-bold text-indigo-700"
                               th:text="${userPosition.totalScore}"
