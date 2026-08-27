@@ -411,7 +411,10 @@
                       <th class="sticky left-[48px] z-20 bg-gray-50 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28 lg:w-40">
                         Player
                       </th>
-                      <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20">Score</th>
+                      <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                        <span class="hidden sm:inline">Points</span>
+                        <span class="sm:hidden" title="Points">Pts</span>
+                      </th>
                       <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-16">GW</th>
                       <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
                         <span class="hidden sm:inline">Zeroes</span>
@@ -487,7 +490,7 @@
                         </div>
                       </td>
 
-                      <!-- Score -->
+                      <!-- Points -->
                       <td class="px-3 py-4 whitespace-nowrap text-right text-sm font-bold text-indigo-600">
                         <span th:if="${entry.scored}" th:text="${entry.totalScore}">42</span>
                         <span th:if="${!entry.scored}" class="text-gray-400 font-normal">—</span>
@@ -548,7 +551,7 @@
                           <span class="text-sm font-bold text-indigo-900"
                                 th:text="'You (' + ${currentUserName} + ')'">You (Alice)</span>
                           <th:block th:if="${userPosition.scored}">
-                            <span class="text-sm text-gray-600">Score: <span class="font-bold text-indigo-700" th:text="${userPosition.totalScore}">28</span></span>
+                            <span class="text-sm text-gray-600">Points: <span class="font-bold text-indigo-700" th:text="${userPosition.totalScore}">28</span></span>
                             <span class="text-sm text-gray-600">GW: <span th:text="${userPosition.roundScore}">4</span></span>
                           </th:block>
                         </div>

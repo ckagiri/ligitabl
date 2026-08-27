@@ -668,11 +668,49 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
     isSelected(teamCode) {
       return this.selectedTeam === teamCode;
     },
+    // Code -> position lookups replacing the linear .find() scans these helpers used to do.
+    // The row template calls them once per team per render, so on a 20-team table a single tap
+    // meant thousands of proxied array reads — that was the lag on slower phones.
+    //
+    // Cache validity is checked against the array identity *and* a stamp bumped by every
+    // in-place position edit. Identity alone would miss a mutation that keeps the same array,
+    // so callers that reorder in place bump _positionEpoch rather than having to remember to
+    // rebuild the map themselves.
+    _positionByCode: null,
+    _positionSrc: null,
+    _positionEpoch: 0,
+    _positionCacheEpoch: -1,
+    _originalPositionByCode: null,
+    _originalPositionSrc: null,
+    _reindexPositions() {
+      const map = {};
+      for (const t of this.teams) map[t.code] = t.position;
+      this._positionByCode = map;
+      this._positionSrc = this.teams;
+      this._positionCacheEpoch = this._positionEpoch;
+      return map;
+    },
+    _positions() {
+      if (this._positionByCode && this._positionSrc === this.teams && this._positionCacheEpoch === this._positionEpoch) {
+        return this._positionByCode;
+      }
+      return this._reindexPositions();
+    },
+    _originalPositions() {
+      if (this._originalPositionByCode && this._originalPositionSrc === this.originalTeams) {
+        return this._originalPositionByCode;
+      }
+      const map = {};
+      for (const t of this.originalTeams) map[t.code] = t.position;
+      this._originalPositionByCode = map;
+      this._originalPositionSrc = this.originalTeams;
+      return map;
+    },
     isDirty(teamCode) {
-      const team = this.teams.find((t) => t.code === teamCode);
-      const original = this.originalTeams.find((t) => t.code === teamCode);
-      if (!team || !original) return false;
-      return team.position !== original.position;
+      const pos = this._positions()[teamCode];
+      const orig = this._originalPositions()[teamCode];
+      if (pos === void 0 || orig === void 0) return false;
+      return pos !== orig;
     },
     getDirtyCount() {
       return this.teams.filter((t) => this.isDirty(t.code)).length;
@@ -680,6 +718,9 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
     getSwapCount() {
       const visited = /* @__PURE__ */ new Set();
       let swapCount = 0;
+      const origPositions = this._originalPositions();
+      const codeAtPosition = {};
+      for (const t of this.teams) codeAtPosition[t.position] = t.code;
       for (const team of this.teams) {
         if (visited.has(team.code) || !this.isDirty(team.code)) continue;
         let cycleLength = 0;
@@ -687,12 +728,10 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
         while (!visited.has(currentCode)) {
           visited.add(currentCode);
           cycleLength++;
-          const originalPos = this.originalTeams.find(
-            (t) => t.code === currentCode
-          )?.position;
-          const next = this.teams.find((t) => t.position === originalPos);
-          if (!next || next.code === currentCode) break;
-          currentCode = next.code;
+          const originalPos = origPositions[currentCode];
+          const nextCode = codeAtPosition[originalPos];
+          if (!nextCode || nextCode === currentCode) break;
+          currentCode = nextCode;
         }
         if (cycleLength > 1) {
           swapCount += cycleLength - 1;
@@ -706,12 +745,12 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
     },
     getChangedTeams() {
       return this.teams.filter((t) => this.isDirty(t.code)).map((t) => {
-        const original = this.originalTeams.find((o) => o.code === t.code);
-        const change = original.position - t.position;
+        const from = this._originalPositions()[t.code];
+        const change = from - t.position;
         return {
           name: t.name,
           code: t.code,
-          from: original.position,
+          from,
           to: t.position,
           direction: change > 0 ? "up" : "down",
           amount: Math.abs(change)
@@ -725,10 +764,10 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
       return Ligitabl._minimalSwapEntries(this.originalTeams, this.teams);
     },
     getPositionChange(teamCode) {
-      const team = this.teams.find((t) => t.code === teamCode);
-      const original = this.originalTeams.find((t) => t.code === teamCode);
-      if (!team || !original) return null;
-      const change = original.position - team.position;
+      const pos = this._positions()[teamCode];
+      const orig = this._originalPositions()[teamCode];
+      if (pos === void 0 || orig === void 0) return null;
+      const change = orig - pos;
       if (change === 0) return null;
       return change > 0 ? `↑${change}` : `↓${Math.abs(change)}`;
     },
@@ -757,7 +796,9 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
       const temp = this.teams[index1];
       this.teams[index1] = this.teams[index2];
       this.teams[index2] = temp;
-      this.teams.forEach((team, idx) => team.position = idx + 1);
+      this.teams[index1].position = index1 + 1;
+      this.teams[index2].position = index2 + 1;
+      this._positionEpoch++;
       if (onSwapped) onSwapped();
       this.$nextTick(() => {
         const row1 = document.querySelector(`[data-team-code='${codeA}']`);
@@ -801,16 +842,16 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
       else this.deltaInverted = false;
     },
     getDelta(teamCode) {
-      const team = this.teams.find((t) => t.code === teamCode);
+      const pos = this._positions()[teamCode];
       const actual = this.getActualPosition(teamCode);
-      if (!team || actual === "?") return "-";
-      return Math.abs(team.position - actual);
+      if (pos === void 0 || actual === "?") return "-";
+      return Math.abs(pos - actual);
     },
     getDeltaDirection(teamCode) {
-      const team = this.teams.find((t) => t.code === teamCode);
+      const pos = this._positions()[teamCode];
       const actual = this.getActualPosition(teamCode);
-      if (!team || actual === "?") return null;
-      return team.position > actual ? "up" : "down";
+      if (pos === void 0 || actual === "?") return null;
+      return pos > actual ? "up" : "down";
     },
     // The delta as this table is currently displaying it. getDeltaDirection stays the raw
     // fact — scoring and the read-only views read that one — so the invert toggle cannot
@@ -846,7 +887,9 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
         }
       });
     },
-    _saveToStorage(key) {
+    _saveTimer: null,
+    _pendingSaveKey: null,
+    _writeToStorage(key) {
       try {
         localStorage.setItem(key, JSON.stringify({
           roundId: this.roundId,
@@ -857,7 +900,42 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
         console.warn("Failed to save prediction:", e);
       }
     },
+    // Deferred off the tap: serialising the whole table synchronously inside the click handler
+    // delayed the frame the user is waiting on. Flushed on pagehide (see _installSaveFlush) and
+    // before submit, so nothing is lost if the tab goes away inside the window.
+    _saveToStorage(key) {
+      this._pendingSaveKey = key;
+      if (this._saveTimer) clearTimeout(this._saveTimer);
+      this._saveTimer = setTimeout(() => {
+        this._saveTimer = null;
+        this._pendingSaveKey = null;
+        this._writeToStorage(key);
+      }, 200);
+    },
+    _flushSave() {
+      if (!this._saveTimer) return;
+      clearTimeout(this._saveTimer);
+      this._saveTimer = null;
+      const key = this._pendingSaveKey;
+      this._pendingSaveKey = null;
+      if (key) this._writeToStorage(key);
+    },
+    // Once per component; pagehide covers the mobile case where the tab is frozen without unload.
+    _installSaveFlush() {
+      if (this._saveFlushInstalled) return;
+      this._saveFlushInstalled = true;
+      const flush = () => this._flushSave();
+      window.addEventListener("pagehide", flush);
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "hidden") flush();
+      });
+    },
     _clearStorage(key) {
+      if (this._saveTimer) {
+        clearTimeout(this._saveTimer);
+        this._saveTimer = null;
+        this._pendingSaveKey = null;
+      }
       try {
         localStorage.removeItem(key);
       } catch (e) {
@@ -1013,6 +1091,7 @@ window.Ligitabl.predictionPage = function(el) {
     importedFromGuest: false,
     whatIfSwaps: [],
     init() {
+      this._installSaveFlush();
       if (isInitialPrediction || isOpeningRound || isPreSeasonRegistration) {
         const authPrediction = loadAuthPrediction();
         if (authPrediction) {
@@ -1126,6 +1205,7 @@ window.Ligitabl.predictionPage = function(el) {
       }, 200);
     },
     submitChanges() {
+      this._flushSave();
       this.isSaving = true;
       const toast = document.getElementById("saving-toast");
       if (toast) toast.classList.remove("hidden");
@@ -1186,6 +1266,12 @@ document.body.addEventListener("htmx:afterSwap", (event) => {
   const target = event.detail.target;
   if (!target.querySelector || !target.querySelector("[x-data]")) return;
   window.Alpine.initTree(target);
+});
+document.body.addEventListener("htmx:historyRestore", () => {
+  if (!window.Alpine) return;
+  document.querySelectorAll("[x-data]").forEach((el) => {
+    if (!el._x_dataStack) window.Alpine.initTree(el);
+  });
 });
 document.body.addEventListener("htmx:beforeRequest", function(e) {
   if (e.detail?.target?.id === "user-detail-modal") {
@@ -1271,6 +1357,7 @@ window.Ligitabl.guestPredictionPage = function(el) {
     isOpeningRound: false,
     isPreSeasonRegistration: false,
     init() {
+      this._installSaveFlush();
       const saved = loadSavedPrediction();
       if (saved) {
         const teams = Array.isArray(saved) ? saved : saved?.teams ?? [];
@@ -1390,7 +1477,8 @@ window.Ligitabl._selectAndSwap = function() {
       const temp = this.teams[indexA];
       this.teams[indexA] = this.teams[indexB];
       this.teams[indexB] = temp;
-      this.teams.forEach((team, idx) => team.position = idx + 1);
+      this.teams[indexA].position = indexA + 1;
+      this.teams[indexB].position = indexB + 1;
       if (onSwapped) onSwapped();
       this.$nextTick(() => {
         const rowA = document.querySelector(`[data-team-code='${codeA}']`);
