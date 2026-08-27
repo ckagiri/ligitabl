@@ -17,6 +17,10 @@ window.Ligitabl = window.Ligitabl || {};
 window.Ligitabl._MAX_INITIAL_SWAPS = 5;
 window.Ligitabl._MAX_OPENING_SWAPS = 2;
 
+// Mirrors the CSS block in base.html that blanks .swapping / .selected-pulse on touch: where those
+// classes paint nothing, adding them and timing them out is work with no visible result.
+window.Ligitabl._noRowWash = window.matchMedia('(hover: none), (max-width: 768px)').matches;
+
 // --- Shared helpers for prediction components ---
 
 window.Ligitabl._parseJSON = function (raw, fallback) {
@@ -511,6 +515,7 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             this.teams[index2].position = index2 + 1;
             this._positionEpoch++;
             if (onSwapped) onSwapped();
+            if (Ligitabl._noRowWash) return;
             // After Alpine has updated the DOM, highlight the stable re-rendered rows
             this.$nextTick(() => {
                 const row1 = document.querySelector(`[data-team-code='${codeA}']`);
@@ -545,6 +550,24 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         _canInteractRaw: false,
         get canInteract() {
             return this._canInteractRaw && !this.positionsReversed;
+        },
+
+        // Whether a tap would do anything — mirrors this component's teamClick gate. Overridden by
+        // guestPredictionPage, which gates on positionsReversed alone (it never sets
+        // _canInteractRaw, so canInteract is always false there).
+        canPressRow() {
+            return this.canInteract;
+        },
+
+        // Acknowledge the touch on pointerdown: the browser holds `click` back while it decides
+        // whether the gesture is a scroll, and that gap is the delay the user actually feels.
+        _pressRow(el) {
+            if (!el || !this.canPressRow()) return;
+            el.classList.add('pressed');
+        },
+
+        _releaseRow(el) {
+            if (el) el.classList.remove('pressed');
         },
 
         // The server's permission on its own, ignoring which view is showing. Status text
@@ -609,6 +632,7 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
 
         _selectTeam(teamCode) {
             this.selectedTeam = teamCode;
+            if (Ligitabl._noRowWash) return;
             this.$nextTick(() => {
                 const row = document.querySelector(`[data-team-code='${teamCode}']`);
                 if (row) {
@@ -1131,6 +1155,16 @@ window.Ligitabl.predictionPage = function (el) {
     });
 };
 
+// Safety net for the row press state: the per-row pointerup/cancel/leave handlers miss the case
+// where the pointer is released outside the window, which would strand a row dimmed. Cheap because
+// the query only runs once a press is actually outstanding.
+["pointerup", "pointercancel"].forEach((evt) => {
+    window.addEventListener(evt, () => {
+        const stuck = document.querySelectorAll(".prediction-row.pressed");
+        if (stuck.length) stuck.forEach((el) => el.classList.remove("pressed"));
+    });
+});
+
 // Re-init Alpine after HTMX swaps
 document.body.addEventListener("htmx:afterSwap", (event) => {
     if (!window.Alpine || !event.detail?.target) return;
@@ -1295,6 +1329,11 @@ window.Ligitabl.guestPredictionPage = function (el) {
             this.$watch("showForm", savePrefs);
         },
 
+        // Same gate as teamClick below — the guest table is always editable.
+        canPressRow() {
+            return !this.positionsReversed;
+        },
+
         teamClick(teamCode) {
             // Standings view is for reading the real table, not editing against it.
             if (this.positionsReversed) return;
@@ -1389,6 +1428,7 @@ window.Ligitabl._selectAndSwap = function () {
 
         _select(teamCode) {
             this.selectedTeam = teamCode;
+            if (Ligitabl._noRowWash) return;
             this.$nextTick(() => {
                 const row = document.querySelector(`[data-team-code='${teamCode}']`);
                 if (row) {
@@ -1413,6 +1453,7 @@ window.Ligitabl._selectAndSwap = function () {
             this.teams[indexB].position = indexB + 1;
 
             if (onSwapped) onSwapped();
+            if (Ligitabl._noRowWash) return;
 
             this.$nextTick(() => {
                 const rowA = document.querySelector(`[data-team-code='${codeA}']`);

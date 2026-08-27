@@ -68,21 +68,18 @@
       }
 
       /* Ultra-minimal - Only essential transitions */
-      /* Page transitions - lightweight fade + slide */
+      /* Page transitions - lightweight fade + slide.
+         Deliberately a partial fade, not to zero: swapping starts when the response arrives, but
+         the outgoing content stays on screen for the whole request before that.
+      */
       .htmx-swapping {
-        opacity: 0;
-        transform: translateY(10px);
-        transition:
-          opacity 250ms ease-out,
-          transform 250ms ease-out;
+        opacity: 0.55;
+        transition: opacity 90ms ease-out;
       }
 
       .htmx-settling {
         opacity: 1;
-        transform: translateY(0);
-        transition:
-          opacity 250ms ease-out,
-          transform 250ms ease-out;
+        transition: opacity 90ms ease-out;
       }
 
       /* GPU acceleration hint for smoother animations */
@@ -112,6 +109,16 @@
 
       .prediction-row.selected-pulse {
         box-shadow: inset 0 0 0 9999px rgb(59 130 246 / 0.12);
+      }
+
+      /* Press acknowledgement, applied on pointerdown — ~100-300ms before the browser dispatches
+         click, since it first has to rule out a scroll or double-tap. That gap is dead air today,
+         and filling it is what makes the tap feel immediate. Opacity composites without layout;
+         transform on a <tr> is unreliable. Deliberately no transition — any easing puts back the
+         delay this exists to remove. Outside the touch block below on purpose: this is the
+         feedback that replaces the suppressed wash on phones. */
+      .prediction-row.pressed {
+        opacity: 0.6;
       }
 
       /* Mobile / touch: no swap colour flash.
