@@ -475,6 +475,10 @@
           <template x-for="(team, teamIndex) in displayTeams()" :key="team.code">
             <tr
               @click="teamClick(team.code)"
+              @pointerdown="_pressRow($el)"
+              @pointerup="_releaseRow($el)"
+              @pointercancel="_releaseRow($el)"
+              @pointerleave="_releaseRow($el)"
               :data-team-code="team.code"
               :class="{
                 'cursor-pointer hover:bg-gray-50': (alwaysHoverable || canSwap) && !positionsReversed,
