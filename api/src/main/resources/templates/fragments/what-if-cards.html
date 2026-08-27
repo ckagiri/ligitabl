@@ -12,7 +12,17 @@
         <th class="pb-2 font-medium text-right">GD</th>
       </tr>
     </thead>
-    <tbody>
+    <!-- Skeleton rows: standingsRows() is Alpine-rendered, so the table body is empty until Alpine
+         boots. Removed by the x-init on the real tbody below. -->
+    <tbody x-skeleton>
+      <tr th:each="i : ${#numbers.sequence(1, 6)}" class="border-t border-gray-100">
+        <td class="py-2.5"><div class="h-3 w-3 bg-gray-200 rounded animate-pulse"></div></td>
+        <td class="py-2.5"><div class="h-3 w-20 bg-gray-200 rounded animate-pulse"></div></td>
+        <td class="py-2.5"><div class="h-3 w-5 bg-gray-200 rounded animate-pulse ml-auto"></div></td>
+        <td class="py-2.5"><div class="h-3 w-6 bg-gray-200 rounded animate-pulse ml-auto"></div></td>
+      </tr>
+    </tbody>
+    <tbody x-init="$el.previousElementSibling && $el.previousElementSibling.hasAttribute('x-skeleton') && $el.previousElementSibling.remove()">
       <template x-for="row in standingsRows()" :key="row.teamCode">
         <tr class="border-t border-gray-100">
           <td class="py-2.5 text-gray-500" x-text="row.position"></td>

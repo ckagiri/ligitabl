@@ -1,6 +1,22 @@
 server:
   forward-headers-strategy: native
 
+spring:
+  thymeleaf:
+    # application.properties disables this for dev template reloading; in a deployed jar it just
+    # re-parses every template from disk on every render.
+    cache: true
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          # Overrides the no-cache in application.properties, which otherwise makes every page load
+          # revalidate ~120KB of CSS+JS. Deliberately short: dist/ filenames are unhashed, so a long
+          # max-age would serve stale JS after a deploy.
+          no-cache: false
+          max-age: 60s
+          must-revalidate: true
+
 umami:
   website-id: "b40510d8-722f-4956-bb63-7b07bcfc3f4b"
 

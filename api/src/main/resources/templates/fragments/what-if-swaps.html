@@ -133,7 +133,7 @@
           up here.
         </p>
         <a
-          th:attr="hx-get=@{/predictions/user/what-if}"
+          th:attr="hx-get=@{/predictions/user/what-if},hx-push-url=@{/my-table/what-if}"
           hx-target="#prediction-page"
           hx-swap="outerHTML swap:100ms settle:100ms"
           hx-disabled-elt="this"

@@ -144,7 +144,21 @@
                   ></span>
                 </div>
               </div>
+              <!-- Skeleton: the fixture rows are Alpine-rendered from data attributes, so this area
+                   is empty until Alpine boots. Removed by the x-init on the real container below. -->
               <div
+                x-skeleton
+                class="bg-white border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100"
+              >
+                <div th:each="i : ${#numbers.sequence(1, 5)}" class="flex items-center justify-center gap-2 px-2.5 sm:px-4 py-2 sm:py-2.5">
+                  <div class="h-3 flex-1 max-w-[6rem] bg-gray-200 rounded animate-pulse"></div>
+                  <div class="w-8 h-8 sm:w-9 sm:h-9 shrink-0 bg-gray-200 rounded-md animate-pulse"></div>
+                  <div class="w-8 h-8 sm:w-9 sm:h-9 shrink-0 bg-gray-200 rounded-md animate-pulse"></div>
+                  <div class="h-3 flex-1 max-w-[6rem] bg-gray-200 rounded animate-pulse"></div>
+                </div>
+              </div>
+              <div
+                x-init="$el.previousElementSibling && $el.previousElementSibling.hasAttribute('x-skeleton') && $el.previousElementSibling.remove()"
                 class="bg-white border border-gray-200 rounded-xl overflow-hidden divide-y divide-gray-100"
               >
                 <template x-for="match in visibleMatches()" :key="match.matchId">
