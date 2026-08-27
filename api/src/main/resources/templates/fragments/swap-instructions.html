@@ -10,9 +10,11 @@
     x-show="selectedTeam === null && getSwapCount() === 0"
     class="bg-gray-50 border border-gray-200 rounded-lg p-3"
   >
-    <div class="flex items-center">
+    <!-- items-start, not items-center: the cooldown / round-closed states run to two lines and the
+         icon should sit with the first, not float in the middle. -->
+    <div class="flex items-start">
       <svg
-        class="h-4 w-4 text-gray-500 mr-2 flex-shrink-0"
+        class="h-4 w-4 text-gray-500 mr-2 mt-0.5 flex-shrink-0"
         fill="none"
         stroke="currentColor"
         viewBox="0 0 24 24"
@@ -24,28 +26,38 @@
           d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
         />
       </svg>
-      <span class="text-sm text-gray-600">
-        <span th:if="${isGuest}"
-          >Click a team to select it, then click another team to swap their
-          positions.</span
-        >
-        <span th:if="${!isGuest}" x-show="canSwap || isInitialPrediction"
-          >Click a team to select it, then click another team to swap their
-          positions.</span
-        >
-        <span
+      <!-- Two lines per state: the two taps for the how-to, status then caveat for the rest. Run
+           together as one sentence the second half was easy to miss. -->
+      <div class="text-sm text-gray-600 space-y-1">
+        <div th:if="${isGuest}" class="space-y-1">
+          <p>Click a team to select it.</p>
+          <p>Then click another team to swap their positions.</p>
+        </div>
+        <template th:if="${!isGuest}" x-if="canSwap || isInitialPrediction">
+          <div class="space-y-1">
+            <p>Click a team to select it.</p>
+            <p>Then click another team to swap their positions.</p>
+          </div>
+        </template>
+        <template
           th:if="${!isGuest}"
-          x-show="roundAllowsEditing && !canSwap && isRoundOpen"
-          >Cooldown active. You can rearrange to plan your next swap, but
-          changes won't be saved until cooldown ends.</span
+          x-if="roundAllowsEditing && !canSwap && isRoundOpen"
         >
-        <span
+          <div class="space-y-1">
+            <p>You can rearrange to plan your next swap.</p>
+            <p>Wait for cooldown to end to submit.</p>
+          </div>
+        </template>
+        <template
           th:if="${!isGuest}"
-          x-show="roundAllowsEditing && !canSwap && !isRoundOpen && !isLastRound"
-          >Round is not open. You can rearrange to plan your next swap, but
-          changes won't be saved until the next round opens.</span
+          x-if="roundAllowsEditing && !canSwap && !isRoundOpen && !isLastRound"
         >
-      </span>
+          <div class="space-y-1">
+            <p>You can rearrange to plan your next swap.</p>
+            <p>Wait for the next round to open to submit.</p>
+          </div>
+        </template>
+      </div>
     </div>
   </div>
 
@@ -151,9 +163,9 @@
       </svg>
       <div class="text-sm text-amber-800">
         <!-- Two paragraphs, never more: what has happened and what to do about it,
-             then the ways back out. The cooldown/locked wait ("wait for cooldown to
-             submit") belongs to the first paragraph — it is the same thought as
-             "changes are local only", not a third one. -->
+             then the ways back out. The cooldown/locked wait ("Wait for cooldown to
+             end to submit.") is the what-to-do half, so it stays in the first
+             paragraph rather than becoming a third. -->
         <p>
           You've made
           <strong
@@ -167,12 +179,10 @@
           </span>
           <span x-show="roundAllowsEditing && !canSwap">
             <span x-show="isRoundOpen"
-              >Cooldown active: changes are local only — wait for cooldown to
-              submit.</span
+              >Wait for cooldown to end to submit.</span
             >
             <span x-show="!isRoundOpen"
-              >Round is not open: changes are local only — wait for the next round
-              to open to submit.</span
+              >Wait for the next round to open to submit.</span
             >
           </span>
         </p>

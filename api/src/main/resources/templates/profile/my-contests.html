@@ -54,7 +54,7 @@
                 <tbody class="divide-y divide-gray-100">
                   <tr th:each="c : ${activeContests}" class="hover:bg-gray-50 transition">
                     <td class="py-3 pr-4">
-                      <a th:href="${c.link()}" onclick="window.flashNavLoadingBar()" class="text-sm font-medium text-indigo-600 hover:text-indigo-800" th:text="${c.contestName()}"></a>
+                      <a th:href="${c.link()}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800" th:text="${c.contestName()}"></a>
                       <div class="flex flex-wrap items-center gap-1 mt-1">
                         <span
                           th:if="${c.isOwner()}"
@@ -131,7 +131,7 @@
                 <tbody class="divide-y divide-gray-100">
                   <tr th:each="c : ${pastContests}" class="hover:bg-gray-50 transition">
                     <td class="py-3 pr-4">
-                      <a th:href="${c.link()}" onclick="window.flashNavLoadingBar()" class="text-sm font-medium text-indigo-600 hover:text-indigo-800" th:text="${c.contestName()}"></a>
+                      <a th:href="${c.link()}" class="text-sm font-medium text-indigo-600 hover:text-indigo-800" th:text="${c.contestName()}"></a>
                       <div class="flex flex-wrap items-center gap-1 mt-1">
                         <span
                           th:if="${c.isOwner()}"

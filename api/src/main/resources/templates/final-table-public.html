@@ -26,7 +26,6 @@
         <a
           th:if="${backHref != null}"
           th:href="${backHref}"
-          onclick="window.flashNavLoadingBar && window.flashNavLoadingBar()"
           class="mb-2 inline-flex items-center gap-1.5 text-sm text-gray-500 transition-colors hover:text-indigo-600"
         >
           <svg
@@ -225,7 +224,6 @@
           </p>
           <a
             th:href="@{/final-table}"
-            onclick="window.flashNavLoadingBar()"
             class="flex-shrink-0 rounded-lg bg-indigo-600 px-5 py-2.5 text-sm font-medium text-white transition hover:bg-indigo-700"
             >Make your prediction</a
           >

@@ -840,10 +840,14 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
     },
     // Acknowledge the touch on pointerdown: the browser holds `click` back while it decides
     // whether the gesture is a scroll, and that gap is the delay the user actually feels.
-    // Skipped on the selected row — it already carries a tint and bullet, so the dim adds
-    // nothing there; on the row being swapped into it is the only cue before the reorder.
+    //
+    // Only the swap tap — the one made while a team is already selected. The first tap gets its
+    // own feedback a moment later (tint + bullet), so dimming first just flickers; and pressing
+    // the selected row again only clears it. This is the tap where the rows are about to move
+    // and nothing else marks the press.
     _pressRow(el, teamCode) {
-      if (!el || !this.canPressRow() || this.isSelected(teamCode)) return;
+      if (!el || !this.canPressRow()) return;
+      if (this.selectedTeam === null || this.isSelected(teamCode)) return;
       el.classList.add("pressed");
     },
     _releaseRow(el) {
@@ -3133,4 +3137,17 @@ Predict the table — LigiPredictor.com`;
     finish();
   });
   window.flashNavLoadingBar = start;
+  document.addEventListener("click", function(e) {
+    if (e.defaultPrevented || e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+    const link = e.target.closest && e.target.closest("a[href]");
+    if (!link) return;
+    if (link.hasAttribute("hx-get") || link.hasAttribute("hx-post")) return;
+    if (link.target && link.target !== "_self") return;
+    if (link.hasAttribute("download")) return;
+    const href = link.getAttribute("href");
+    if (!href || href.startsWith("#") || /^(mailto|tel|javascript):/i.test(href)) return;
+    if (link.origin && link.origin !== window.location.origin) return;
+    if (link.href === window.location.href) return;
+    start();
+  });
 })();
