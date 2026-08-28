@@ -149,26 +149,28 @@
           >
             <div class="flex items-start justify-between gap-3 mb-3">
               <span
-                class="text-[11px] uppercase tracking-widest text-indigo-200 font-medium"
-                >Top of the table</span
+                class="flex items-center gap-2 text-[11px] uppercase tracking-widest text-indigo-200 font-medium"
               >
-              <div
-                class="flex flex-col sm:flex-row-reverse items-end sm:items-center gap-1 sm:gap-2 flex-shrink-0"
+                Top of the table
+                <!-- Marks the card as real current standings, not sample data:
+                     getPreviewRankings reads live standings for the round. -->
+                <span class="flex items-center gap-1.5 shrink-0">
+                  <span
+                    class="w-1.5 h-1.5 rounded-full bg-green-500"
+                    aria-hidden="true"
+                  ></span>
+                  Live
+                </span>
+              </span>
+              <button
+                type="button"
+                @click="reset()"
+                x-show="isChanged()"
+                x-cloak
+                class="text-[11px] uppercase tracking-widest text-amber-300 font-medium hover:text-amber-200 transition shrink-0"
               >
-                <span
-                  class="text-[11px] uppercase tracking-widest text-indigo-200 font-medium"
-                  >Live preview</span
-                >
-                <button
-                  type="button"
-                  @click="reset()"
-                  x-show="isChanged()"
-                  x-cloak
-                  class="text-[11px] uppercase tracking-widest text-amber-300 font-medium hover:text-amber-200 transition"
-                >
-                  Reset
-                </button>
-              </div>
+                Reset
+              </button>
             </div>
             <template x-for="(team, i) in teams" :key="team.code">
               <div
@@ -179,11 +181,11 @@
                     ? 'bg-amber-400/30 border-amber-300'
                     : selected === i
                       ? 'bg-amber-400/10 border-amber-400'
-                      : 'bg-white/5 border-white/30'
+                      : 'bg-white/10 border-white/30'
                 "
               >
                 <span
-                  class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold flex-shrink-0"
+                  class="w-6 h-6 rounded flex items-center justify-center text-xs font-bold shrink-0"
                   :class="(flashing.includes(i) || selected === i) ? 'bg-amber-400 text-indigo-950' : 'bg-white/10 text-white'"
                   x-text="i + 1"
                 ></span>
