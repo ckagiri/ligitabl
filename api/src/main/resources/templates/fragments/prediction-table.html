@@ -327,11 +327,7 @@
       </span>
       <!-- Short arrow key: covers for the compare-options panel being collapsed, where the
            colour-naming legend is out of sight — so it hides when that panel is open, being
-           the weaker of the two. It shares a line with the Read-only badge
-           rather than taking one of its own; the row's flex-wrap drops the pair above the
-           buttons only when genuinely too narrow.
-           shrink-0 is what makes that wrap happen: without it these items compress to fit and
-           the row never overflows, so flex-wrap has nothing to react to. -->
+           the weaker of the two. -->
       <span
         x-show="!compareOptionsOpen"
         x-cloak
