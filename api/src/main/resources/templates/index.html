@@ -39,21 +39,29 @@
       <div
         class="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl shadow-2xl p-8 sm:p-12 mb-12 text-white"
       >
-        <div class="max-w-5xl mx-auto grid md:grid-cols-2 gap-10 items-center">
-          <div class="text-center md:text-left">
+        <!-- Three grid children rather than two, so the preview card can sit between the pitch
+             and the buttons on a phone: the demo is what sells the game, and stacked full-width
+             CTAs pushed it below the fold. Desktop is unchanged — md:col-start-1 puts the CTA
+             block back under the text in the left column instead of wrapping to a new row. -->
+        <div
+          class="max-w-5xl mx-auto grid md:grid-cols-2 gap-x-10 gap-y-6 md:gap-y-10 items-center"
+        >
+          <div class="text-center md:text-left order-1 md:order-1">
             <h1 class="text-4xl sm:text-5xl font-extrabold mb-3 animate-pulse">
               ⚽ LigiPredictor
             </h1>
-            <p class="text-lg sm:text-xl font-semibold text-white italic mb-8">
-              Rank 'Em Right
-            </p>
             <p class="text-lg sm:text-xl font-semibold text-white mb-2">
-              Predict the Premier League table.
+              Predict the Premier League table every gameweek.
             </p>
-            <p class="text-sm sm:text-base mb-8 text-indigo-200">
-              Tap two teams to swap them, then watch your table play out week by
-              week.
+            <p class="text-sm sm:text-base text-indigo-200">
+              Watch your table play out. The closer each team lands to its real
+              position, the more you score.
             </p>
+          </div>
+
+          <!-- Buttons and secondary links: straight after the pitch on mobile, back under the
+               text on desktop. -->
+          <div class="text-center md:text-left order-2 md:order-3 md:col-start-1">
             <div
               class="flex flex-col sm:flex-row sm:flex-wrap justify-center md:justify-start gap-3 mb-6"
             >
@@ -137,7 +145,7 @@
             }"
             x-show="teams.length > 0"
             x-cloak
-            class="bg-indigo-950/60 border border-white/10 rounded-xl p-5"
+            class="bg-indigo-950/60 border-y sm:border border-white/10 rounded-none sm:rounded-xl p-5 order-3 md:order-2 -mx-8 sm:-mx-12 md:mx-0 md:col-start-2 md:row-start-1 md:row-span-2 md:self-center"
           >
             <div class="flex items-start justify-between gap-3 mb-3">
               <span
@@ -171,7 +179,7 @@
                     ? 'bg-amber-400/30 border-amber-300'
                     : selected === i
                       ? 'bg-amber-400/10 border-amber-400'
-                      : 'border-white/10 hover:border-white/30'
+                      : 'bg-white/5 border-white/30'
                 "
               >
                 <span
