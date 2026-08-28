@@ -585,8 +585,8 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
     positionsReversed: false,
     // Flips how the delta column *reads* — arrow direction and green/red — for people who
     // think of the gap as "how far the real table is from my pick" rather than "how far my
-    // pick is from real".
-    deltaInverted: false,
+    // pick is from real". Persisted: which way round you read the gap is a lasting habit.
+    deltaInverted: savedPrefs ? savedPrefs.deltaInverted ?? false : false,
     alwaysHoverable: false,
     isInitialPrediction: false,
     showStandings: savedPrefs ? savedPrefs.showStandings ?? true : true,
@@ -862,7 +862,6 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
     toggleStandingsView() {
       this.positionsReversed = !this.positionsReversed;
       if (this.positionsReversed) this.selectedTeam = null;
-      else this.deltaInverted = false;
     },
     getDelta(teamCode) {
       const pos = this._positions()[teamCode];
@@ -1161,13 +1160,15 @@ window.Ligitabl.predictionPage = function(el) {
         showFixtures: this.showFixtures,
         showPoints: this.showPoints,
         showGD: this.showGD,
-        showForm: this.showForm
+        showForm: this.showForm,
+        deltaInverted: this.deltaInverted
       }, this._prefsKey);
       this.$watch("showStandings", savePrefs);
       this.$watch("showFixtures", savePrefs);
       this.$watch("showPoints", savePrefs);
       this.$watch("showGD", savePrefs);
       this.$watch("showForm", savePrefs);
+      this.$watch("deltaInverted", savePrefs);
     },
     teamClick(teamCode) {
       if (!this.canInteract) return;
@@ -1402,13 +1403,15 @@ window.Ligitabl.guestPredictionPage = function(el) {
         showFixtures: this.showFixtures,
         showPoints: this.showPoints,
         showGD: this.showGD,
-        showForm: this.showForm
+        showForm: this.showForm,
+        deltaInverted: this.deltaInverted
       }, this._prefsKey);
       this.$watch("showStandings", savePrefs);
       this.$watch("showFixtures", savePrefs);
       this.$watch("showPoints", savePrefs);
       this.$watch("showGD", savePrefs);
       this.$watch("showForm", savePrefs);
+      this.$watch("deltaInverted", savePrefs);
     },
     // Same gate as teamClick below — the guest table is always editable.
     canPressRow() {

@@ -3,7 +3,7 @@
   <!-- Parameters (both required — every caller passes explicit booleans):
        hasFormData: Boolean - hides the "Show form" checkbox + legend when there's no form data
          yet to compare (e.g. no matches played this season)
-       showMoveHelperText: Boolean - shows the "(move up)/(move down)" legend paragraph, which
+       showMoveHelperText: Boolean - shows the "move up"/"move down" legend paragraph, which
          only makes sense next to the arrow-based Actual/Delta rendering in interactive-table;
          pass false for callers using a plain-number Actual/Delta rendering instead
   -->
@@ -264,29 +264,31 @@
           </label>
         </div>
 
-        <!-- Not in the actual-table view: this describes moving your own rows, which you cannot
-             do there, and its fixed green-up/red-down wording would contradict the table
-             whenever the delta is inverted. -->
+        <!-- Shown in both views so the invert toggle's flipped arrows don't go unexplained.
+             Direction only: "better/worse than actual" read as a claim about the prediction's
+             quality when the arrow is really about which way the team has to travel — and it
+             could not follow the invert toggle the way "move"/"keep" does. Names the colours,
+             which is what this adds over the toolbar's short arrow key. -->
         <p
           th:if="${showMoveHelperText}"
-          x-show="showStandings && !positionsReversed"
+          x-show="showStandings"
           class="text-[11px] text-gray-500 leading-snug pl-6 max-sm:pl-7"
         >
           <span class="sm:hidden">
             <span class="block"
-              ><span class="text-green-600 font-semibold">↑ Green:</span> Better
-              than actual (move up).</span
+              ><span class="text-green-600 font-semibold">↑ Green:</span>
+              <span x-text="deltaInverted ? 'keep' : 'move'">move</span> up.</span
             >
             <span class="block"
-              ><span class="text-red-600 font-semibold">↓ Red:</span> Worse than
-              actual (move down).</span
+              ><span class="text-red-600 font-semibold">↓ Red:</span>
+              <span x-text="deltaInverted ? 'keep' : 'move'">move</span> down.</span
             >
           </span>
           <span class="hidden sm:inline">
-            <span class="text-green-600 font-semibold">↑ Green:</span> Better
-            than actual (move up).
-            <span class="text-red-600 font-semibold">↓ Red:</span> Worse than
-            actual (move down).
+            <span class="text-green-600 font-semibold">↑ Green:</span>
+            <span x-text="deltaInverted ? 'keep' : 'move'">move</span> up.
+            <span class="text-red-600 font-semibold">↓ Red:</span>
+            <span x-text="deltaInverted ? 'keep' : 'move'">move</span> down.
           </span>
         </p>
       </div>
@@ -307,33 +309,15 @@
       x-show="showStandings"
       class="flex flex-wrap items-center justify-end gap-x-2 gap-y-2 mb-3"
     >
-      <!-- Short arrow key: covers for the compare-options panel being collapsed, where the
-           fuller "better/worse than actual" legend is out of sight. Hidden when that panel is
-           open (both would show at once, and this is the weaker of the two) and in the
-           standings view, which has no delta arrows. -->
-      <!-- max-sm:basis-full: on a phone this wraps above the switch anyway, so give it the whole
-           line and a margin matching the card spacing above, instead of sitting tight against
-           the buttons on the gap-y alone. -->
-      <span
-        x-show="!positionsReversed && !compareOptionsOpen"
-        x-cloak
-        class="inline-flex items-center gap-2 text-[11px] text-gray-500 max-sm:basis-full max-sm:justify-end max-sm:mb-1"
-      >
-        <span class="inline-flex items-center gap-0.5">
-          <span class="text-green-600 font-semibold">↑</span> move up
-        </span>
-        <span class="inline-flex items-center gap-0.5">
-          <span class="text-red-600 font-semibold">↓</span> move down
-        </span>
-      </span>
-      <!-- Only while the actual table is showing: that is when "you can't swap here" is news.
-           Sits left of the switch so it reads as a note about the state, not a third option. -->
+      <!-- Read-only, then the arrow key: the table-wide state reads before a note about one
+           column, at every width. Only while the actual table is showing — that is when
+           "you can't swap here" is news. -->
       <span
         x-show="positionsReversed"
         x-cloak
-        class="inline-flex items-center gap-1 text-xs text-gray-500"
+        class="inline-flex shrink-0 items-center gap-1 whitespace-nowrap text-xs text-gray-500"
       >
-        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             stroke-linecap="round"
             stroke-linejoin="round"
@@ -343,58 +327,85 @@
         </svg>
         Read-only
       </span>
-      <div
-        class="inline-flex rounded-md border border-gray-300 overflow-hidden text-sm font-medium"
-        role="group"
+      <!-- Short arrow key: covers for the compare-options panel being collapsed, where the
+           colour-naming legend is out of sight — so it hides when that panel is open, being
+           the weaker of the two. It shares a line with the Read-only badge
+           rather than taking one of its own; the row's flex-wrap drops the pair above the
+           buttons only when genuinely too narrow.
+           shrink-0 is what makes that wrap happen: without it these items compress to fit and
+           the row never overflows, so flex-wrap has nothing to react to. -->
+      <span
+        x-show="!compareOptionsOpen"
+        x-cloak
+        class="inline-flex shrink-0 items-center gap-2 whitespace-nowrap text-[11px] text-gray-500"
       >
+        <span class="inline-flex items-center gap-0.5">
+          <span class="text-green-600 font-semibold">↑</span>
+          <span x-text="deltaInverted ? 'keep' : 'move'">move</span> up
+        </span>
+        <span class="inline-flex items-center gap-0.5">
+          <span class="text-red-600 font-semibold">↓</span>
+          <span x-text="deltaInverted ? 'keep' : 'move'">move</span> down
+        </span>
+      </span>
+      <!-- The switch and the invert button travel together: the invert button acts on the delta
+           column the switch controls, so it must never wrap away from it onto its own line. -->
+      <div class="inline-flex shrink-0 items-center gap-x-2">
+        <div
+          class="inline-flex rounded-md border border-gray-300 overflow-hidden text-sm font-medium"
+          role="group"
+        >
+          <button
+            type="button"
+            @click="if (positionsReversed) toggleStandingsView()"
+            :aria-pressed="(!positionsReversed).toString()"
+            :class="!positionsReversed ? 'bg-indigo-50 text-indigo-700' : 'bg-white text-gray-600 hover:bg-gray-50'"
+            class="px-4 py-2 sm:px-3 sm:py-1.5 whitespace-nowrap transition-colors"
+          >
+            <!-- Below 340px the full labels push the invert button out of the row. Same cut-off as
+                 the "Show fixtures" checkbox above. -->
+            <span class="max-[340px]:hidden">My Table</span>
+            <span class="hidden max-[340px]:inline">Pred</span>
+          </button>
+          <button
+            type="button"
+            @click="if (!positionsReversed) toggleStandingsView()"
+            :aria-pressed="positionsReversed.toString()"
+            :class="positionsReversed ? 'bg-indigo-50 text-indigo-700' : 'bg-white text-gray-600 hover:bg-gray-50'"
+            class="px-4 py-2 sm:px-3 sm:py-1.5 whitespace-nowrap border-l border-gray-300 transition-colors"
+          >
+            <span class="max-[340px]:hidden">Actual Table</span>
+            <span class="hidden max-[340px]:inline">Actual</span>
+          </button>
+        </div>
+        <!-- Flips the delta column's arrows and colours, never its number. Offered in both views,
+             since the delta reads the same way in each.
+             aria-label because there is no text node to name it. -->
         <button
           type="button"
-          @click="if (positionsReversed) toggleStandingsView()"
-          :aria-pressed="(!positionsReversed).toString()"
-          :class="!positionsReversed ? 'bg-indigo-50 text-indigo-700' : 'bg-white text-gray-600 hover:bg-gray-50'"
-          class="px-4 py-2 sm:px-3 sm:py-1.5 transition-colors"
+          @click="toggleDeltaInverted()"
+          :aria-pressed="deltaInverted.toString()"
+          aria-label="Invert delta direction"
+          :class="deltaInverted ? 'bg-indigo-50 text-indigo-700 border-indigo-300' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50 hover:text-gray-700'"
+          class="inline-flex shrink-0 items-center justify-center rounded-md border p-1.5 transition-colors max-sm:p-2"
+          title="Invert delta direction — flips the arrows and colours. The number stays the same."
         >
-          My Table
-        </button>
-        <button
-          type="button"
-          @click="if (!positionsReversed) toggleStandingsView()"
-          :aria-pressed="positionsReversed.toString()"
-          :class="positionsReversed ? 'bg-indigo-50 text-indigo-700' : 'bg-white text-gray-600 hover:bg-gray-50'"
-          class="px-4 py-2 sm:px-3 sm:py-1.5 border-l border-gray-300 transition-colors"
-        >
-          Actual Table
+          <svg
+            class="h-4 w-4 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+            aria-hidden="true"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+            />
+          </svg>
         </button>
       </div>
-      <!-- Flips the delta column's arrows and colours, never its number. Actual-table view only;
-           toggleStandingsView() clears the flag on the way out, so the inverted reading cannot
-           outlive the view that owns it. aria-label because there is no text node to name it. -->
-      <button
-        type="button"
-        x-show="positionsReversed"
-        x-cloak
-        @click="toggleDeltaInverted()"
-        :aria-pressed="deltaInverted.toString()"
-        aria-label="Invert delta direction"
-        :class="deltaInverted ? 'bg-indigo-50 text-indigo-700 border-indigo-300' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50 hover:text-gray-700'"
-        class="inline-flex items-center justify-center rounded-md border p-1.5 transition-colors max-sm:p-2"
-        title="Invert delta direction — flips the arrows and colours. The number stays the same."
-      >
-        <svg
-          class="h-4 w-4 shrink-0"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-          />
-        </svg>
-      </button>
     </div>
     <div class="overflow-hidden">
       <table class="min-w-full table-fixed">
