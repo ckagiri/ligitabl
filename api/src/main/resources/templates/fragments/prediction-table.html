@@ -3,8 +3,9 @@
   <!-- Parameters (both required — every caller passes explicit booleans):
        hasFormData: Boolean - hides the "Show form" checkbox + legend when there's no form data
          yet to compare (e.g. no matches played this season)
-       showMoveHelperText: Boolean - shows the "move up"/"move down" legend paragraph, which
-         only makes sense next to the arrow-based Actual/Delta rendering in interactive-table;
+       showMoveHelperText: Boolean - shows the arrow-key legend paragraph ("move up"/"move
+         down", or "climb up"/"drop down" when the delta is inverted), which only makes sense
+         next to the arrow-based Actual/Delta rendering in interactive-table;
          pass false for callers using a plain-number Actual/Delta rendering instead
   -->
   <!-- compareOptionsOpen comes from the page's prediction component (_predictionBase) rather
@@ -265,8 +266,12 @@
         </div>
 
         <!-- Shown in both views so the invert toggle's flipped arrows don't go unexplained.
-             "move" and "keep" are both instructions, differing only in the target: move this row
-             to match reality, or keep it and let reality come to you. -->
+             The two vocabularies mark which frame the delta is being read in, and differ in
+             their subject: "move" is the editing frame, naming the gesture on this row —
+             move it to match reality. "climb"/"drop" are the forecast frame, describing the
+             team itself — predicted 1st but actually 8th reads as a team expected to climb
+             toward the prediction. Per-direction verbs there, since climb and drop each
+             carry a direction of their own. -->
         <p
           th:if="${showMoveHelperText}"
           x-show="showStandings"
@@ -275,18 +280,18 @@
           <span class="sm:hidden">
             <span class="block"
               ><span class="text-green-600 font-semibold">↑ Green:</span>
-              <span x-text="deltaInverted ? 'keep' : 'move'">move</span> up.</span
+              <span x-text="deltaInverted ? 'climb' : 'move'">move</span> up.</span
             >
             <span class="block"
               ><span class="text-red-600 font-semibold">↓ Red:</span>
-              <span x-text="deltaInverted ? 'keep' : 'move'">move</span> down.</span
+              <span x-text="deltaInverted ? 'drop' : 'move'">move</span> down.</span
             >
           </span>
           <span class="hidden sm:inline">
             <span class="text-green-600 font-semibold">↑ Green:</span>
-            <span x-text="deltaInverted ? 'keep' : 'move'">move</span> up.
+            <span x-text="deltaInverted ? 'climb' : 'move'">move</span> up.
             <span class="text-red-600 font-semibold">↓ Red:</span>
-            <span x-text="deltaInverted ? 'keep' : 'move'">move</span> down.
+            <span x-text="deltaInverted ? 'drop' : 'move'">move</span> down.
           </span>
         </p>
       </div>
@@ -335,11 +340,11 @@
       >
         <span class="inline-flex items-center gap-0.5">
           <span class="text-green-600 font-semibold">↑</span>
-          <span x-text="deltaInverted ? 'keep' : 'move'">move</span> up
+          <span x-text="deltaInverted ? 'climb' : 'move'">move</span> up
         </span>
         <span class="inline-flex items-center gap-0.5">
           <span class="text-red-600 font-semibold">↓</span>
-          <span x-text="deltaInverted ? 'keep' : 'move'">move</span> down
+          <span x-text="deltaInverted ? 'drop' : 'move'">move</span> down
         </span>
       </span>
       <!-- The switch and the invert button travel together: the invert button acts on the delta
