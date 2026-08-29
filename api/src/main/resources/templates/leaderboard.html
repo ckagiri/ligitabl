@@ -274,11 +274,12 @@
                  two frozen columns that scrolled content showed through. */
               .lb-pos-col { min-width: 56px !important; max-width: 56px !important; }
 
-              @media (max-width: 639px) {
-                .lb-table-scroll::-webkit-scrollbar { height: 3px; }
-                .lb-table-scroll::-webkit-scrollbar-track { background: transparent; }
-                .lb-table-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
-              }
+              /* Unscoped rather than mobile-only: overflow-x-auto is unconditional, so a
+                 narrow desktop window overflows too and would otherwise get the browser
+                 default (~15px) bar. 6px matches the standings and contest tables. */
+              .lb-table-scroll::-webkit-scrollbar { height: 6px; }
+              .lb-table-scroll::-webkit-scrollbar-track { background: transparent; }
+              .lb-table-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 9999px; }
             </style>
 
             <div

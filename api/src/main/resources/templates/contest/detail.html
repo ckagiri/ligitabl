@@ -397,11 +397,12 @@
                    the two frozen columns that scrolled content showed through. */
                 .cb-pos-col { min-width: 48px !important; max-width: 48px !important; }
 
-                @media (max-width: 639px) {
-                  .cb-table-scroll::-webkit-scrollbar { height: 3px; }
-                  .cb-table-scroll::-webkit-scrollbar-track { background: transparent; }
-                  .cb-table-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
-                }
+                /* Unscoped rather than mobile-only: overflow-x-auto is unconditional, so a
+                   narrow desktop window overflows too and would otherwise get the browser
+                   default (~15px) bar. 6px matches the standings and leaderboard tables. */
+                .cb-table-scroll::-webkit-scrollbar { height: 6px; }
+                .cb-table-scroll::-webkit-scrollbar-track { background: transparent; }
+                .cb-table-scroll::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 9999px; }
               </style>
 
               <div class="overflow-x-auto cb-table-scroll">
