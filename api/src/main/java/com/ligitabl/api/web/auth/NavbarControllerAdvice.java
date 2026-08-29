@@ -6,6 +6,8 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 
+import jakarta.servlet.http.HttpServletRequest;
+
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -155,6 +157,79 @@ public class NavbarControllerAdvice {
             return "/my-table/guest";
         }
         return "/my-table";
+    }
+
+    /**
+     * Which navbar section the current request belongs to, or {@code null} for pages with no nav
+     * item.
+     *
+     * <p>Matched by prefix, not equality: a section spans several URLs, and the round pager pushes
+     * {@code /rounds/{n}/standings} without a reload. Request is a parameter, not a field, to keep
+     * the constructor signature tests build against.
+     */
+    @ModelAttribute("activeNav")
+    public String activeNav(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        String uri = request.getRequestURI();
+        if (uri == null) {
+            return null;
+        }
+        // Empty when no context path is configured, as today.
+        String path = uri.substring(request.getContextPath().length());
+        return sectionFor(path);
+    }
+
+    private static String sectionFor(String path) {
+        if (path.isEmpty() || "/".equals(path) || matchesSection(path, "/home")) {
+            return "home";
+        }
+        if (matchesSection(path, "/leaderboard")) {
+            return "leaderboard";
+        }
+        // /my-table forwards to /predictions/user/**, and a forward rewrites the request URI —
+        // the browser still shows /my-table, but this sees the target. Both are My Table.
+        if (matchesSection(path, "/my-table") || matchesSection(path, "/predictions/user")) {
+            return "mytable";
+        }
+        if (matchesSection(path, "/final-table")) {
+            return "finaltable";
+        }
+        if (matchesSection(path, "/contests")) {
+            return "contests";
+        }
+        if (matchesSection(path, "/about")) {
+            return "about";
+        }
+        if (matchesSection(path, "/faq")) {
+            return "faq";
+        }
+        if (matchesSection(path, "/admin/seasons")) {
+            return "admin-seasons";
+        }
+        if (matchesSection(path, "/admin/users")) {
+            return "admin-users";
+        }
+        if (matchesSection(path, "/admin/matches")) {
+            return "admin-matches";
+        }
+        // /rounds/{current|n}/{standings|matches} — the section is the last segment.
+        if (matchesSection(path, "/rounds")) {
+            if (path.endsWith("/standings")) {
+                return "standings";
+            }
+            if (path.endsWith("/matches")) {
+                return "matches";
+            }
+            return null;
+        }
+        return null;
+    }
+
+    /** Exact match or a sub-path — so {@code /about-us} does not count as {@code /about}. */
+    private static boolean matchesSection(String path, String prefix) {
+        return path.equals(prefix) || path.startsWith(prefix + "/");
     }
 
     @ModelAttribute("userDisplayName")

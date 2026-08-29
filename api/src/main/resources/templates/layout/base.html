@@ -375,25 +375,36 @@
               which wrapped "My Table" onto two lines and pushed the user chip off the edge.
             -->
             <div class="hidden lg:flex ml-10 space-x-4">
+              <!-- activeNav is a section key, not a URL: the round pager pushes
+                   /rounds/{n}/standings via hx-push-url, so comparing against the href above
+                   would drop the highlight as soon as the user changed round. -->
               <a
                 th:href="@{/leaderboard}"
                 class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+                th:classappend="${activeNav == 'leaderboard'} ? 'bg-indigo-50 text-indigo-700 font-semibold' : ''"
+                th:aria-current="${activeNav == 'leaderboard'} ? 'page' : null"
                 >Leaderboard</a
               >
               <a
                 th:href="@{/rounds/current/standings}"
                 class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+                th:classappend="${activeNav == 'standings'} ? 'bg-indigo-50 text-indigo-700 font-semibold' : ''"
+                th:aria-current="${activeNav == 'standings'} ? 'page' : null"
                 >Standings</a
               >
               <a
                 th:href="@{/rounds/current/matches}"
                 class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+                th:classappend="${activeNav == 'matches'} ? 'bg-indigo-50 text-indigo-700 font-semibold' : ''"
+                th:aria-current="${activeNav == 'matches'} ? 'page' : null"
                 >Matches</a
               >
               <a
                 th:if="${isLoggedIn}"
                 th:href="@{/contests}"
                 class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+                th:classappend="${activeNav == 'contests'} ? 'bg-indigo-50 text-indigo-700 font-semibold' : ''"
+                th:aria-current="${activeNav == 'contests'} ? 'page' : null"
                 >Contests</a
               >
               <!--
@@ -404,6 +415,8 @@
                 th:if="${!isLoggedIn and showFinalTableNav}"
                 th:href="@{/final-table}"
                 class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+                th:classappend="${activeNav == 'finaltable'} ? 'bg-indigo-50 text-indigo-700 font-semibold' : ''"
+                th:aria-current="${activeNav == 'finaltable'} ? 'page' : null"
                 >Final Table</a
               >
               <!-- Guests: About/FAQ shown directly (desktop) -->
@@ -411,12 +424,16 @@
                 th:unless="${isLoggedIn}"
                 th:href="@{/about}"
                 class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+                th:classappend="${activeNav == 'about'} ? 'bg-indigo-50 text-indigo-700 font-semibold' : ''"
+                th:aria-current="${activeNav == 'about'} ? 'page' : null"
                 >About</a
               >
               <a
                 th:unless="${isLoggedIn}"
                 th:href="@{/faq}"
                 class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+                th:classappend="${activeNav == 'faq'} ? 'bg-indigo-50 text-indigo-700 font-semibold' : ''"
+                th:aria-current="${activeNav == 'faq'} ? 'page' : null"
                 >FAQ</a
               >
 
@@ -426,11 +443,16 @@
                 class="relative"
                 x-data="{ moreMenuOpen: false }"
               >
+                <!-- The trigger lights up for its children too: these pages have no other nav
+                     item when logged in, so without this a user on /faq sees nothing selected
+                     anywhere. Lighter than a child's pill so the two don't compete once open.
+                     No aria-current — that is for links, and this is a button. -->
                 <button
                   @click="moreMenuOpen = !moreMenuOpen"
                   @click.away="moreMenuOpen = false"
                   type="button"
                   class="flex items-center space-x-1 text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+                  th:classappend="${activeNav == 'finaltable' or activeNav == 'about' or activeNav == 'faq'} ? 'text-indigo-700 font-semibold' : ''"
                 >
                   <span>More</span>
                   <svg
@@ -464,18 +486,24 @@
                     <a
                       th:href="@{/final-table}"
                       class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
+                      th:classappend="${activeNav == 'finaltable'} ? 'bg-indigo-50 text-indigo-700 font-semibold' : ''"
+                      th:aria-current="${activeNav == 'finaltable'} ? 'page' : null"
                       @click="moreMenuOpen = false"
                       >Final Table</a
                     >
                     <a
                       th:href="@{/about}"
                       class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
+                      th:classappend="${activeNav == 'about'} ? 'bg-indigo-50 text-indigo-700 font-semibold' : ''"
+                      th:aria-current="${activeNav == 'about'} ? 'page' : null"
                       @click="moreMenuOpen = false"
                       >About</a
                     >
                     <a
                       th:href="@{/faq}"
                       class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
+                      th:classappend="${activeNav == 'faq'} ? 'bg-indigo-50 text-indigo-700 font-semibold' : ''"
+                      th:aria-current="${activeNav == 'faq'} ? 'page' : null"
                       @click="moreMenuOpen = false"
                       >FAQ</a
                     >
@@ -494,6 +522,7 @@
                   @click.away="adminMenuOpen = false"
                   type="button"
                   class="flex items-center space-x-1 text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+                  th:classappend="${activeNav != null and #strings.startsWith(activeNav, 'admin-')} ? 'text-indigo-700 font-semibold' : ''"
                 >
                   <span>Admin</span>
                   <svg
@@ -527,18 +556,24 @@
                     <a
                       th:href="@{/admin/seasons}"
                       class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
+                      th:classappend="${activeNav == 'admin-seasons'} ? 'bg-indigo-50 text-indigo-700 font-semibold' : ''"
+                      th:aria-current="${activeNav == 'admin-seasons'} ? 'page' : null"
                       @click="adminMenuOpen = false"
                       >Season Management</a
                     >
                     <a
                       th:href="@{/admin/users}"
                       class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
+                      th:classappend="${activeNav == 'admin-users'} ? 'bg-indigo-50 text-indigo-700 font-semibold' : ''"
+                      th:aria-current="${activeNav == 'admin-users'} ? 'page' : null"
                       @click="adminMenuOpen = false"
                       >Users</a
                     >
                     <a
                       th:href="@{/admin/matches}"
                       class="block px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
+                      th:classappend="${activeNav == 'admin-matches'} ? 'bg-indigo-50 text-indigo-700 font-semibold' : ''"
+                      th:aria-current="${activeNav == 'admin-matches'} ? 'page' : null"
                       @click="adminMenuOpen = false"
                       >Matches</a
                     >
@@ -560,9 +595,13 @@
 
           <!-- Desktop Right -->
           <div class="hidden lg:flex items-center space-x-4">
+            <!-- Href varies (/my-table vs /my-table/guest) but the section does not — the
+                 reason activeNav is keyed by section rather than compared to the href. -->
             <a
               th:href="${predictionsNavLink} ?: '/my-table/guest'"
               class="text-gray-700 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium transition"
+              th:classappend="${activeNav == 'mytable'} ? 'bg-indigo-50 text-indigo-700 font-semibold' : ''"
+              th:aria-current="${activeNav == 'mytable'} ? 'page' : null"
               th:text="${predictionsNavLabel} ?: 'Predictions'"
               >Predictions</a
             >
@@ -785,31 +824,43 @@
           class="lg:hidden pb-3 border-t border-gray-200"
         >
           <div class="flex flex-col space-y-0.5 pt-2">
+            <!-- hover:bg-indigo-50 rides along on the active row: the base hover:bg-gray-50
+                 would otherwise lighten the pill on hover and read as a glitch. -->
             <a
               th:href="${predictionsNavLink} ?: '/my-table/guest'"
               class="text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
+              th:classappend="${activeNav == 'mytable'} ? 'bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-50' : ''"
+              th:aria-current="${activeNav == 'mytable'} ? 'page' : null"
               th:text="${predictionsNavLabel} ?: 'Predictions'"
               >Predictions</a
             >
             <a
               th:href="@{/leaderboard}"
               class="text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
+              th:classappend="${activeNav == 'leaderboard'} ? 'bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-50' : ''"
+              th:aria-current="${activeNav == 'leaderboard'} ? 'page' : null"
               >Leaderboard</a
             >
             <a
               th:href="@{/rounds/current/standings}"
               class="text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
+              th:classappend="${activeNav == 'standings'} ? 'bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-50' : ''"
+              th:aria-current="${activeNav == 'standings'} ? 'page' : null"
               >Standings</a
             >
             <a
               th:href="@{/rounds/current/matches}"
               class="text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
+              th:classappend="${activeNav == 'matches'} ? 'bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-50' : ''"
+              th:aria-current="${activeNav == 'matches'} ? 'page' : null"
               >Matches</a
             >
             <a
               th:if="${isLoggedIn}"
               th:href="@{/contests}"
               class="text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
+              th:classappend="${activeNav == 'contests'} ? 'bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-50' : ''"
+              th:aria-current="${activeNav == 'contests'} ? 'page' : null"
               >Contests</a
             >
             <!-- Guests: Final Table only while entry is still open (see desktop note). -->
@@ -817,6 +868,8 @@
               th:if="${!isLoggedIn and showFinalTableNav}"
               th:href="@{/final-table}"
               class="text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
+              th:classappend="${activeNav == 'finaltable'} ? 'bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-50' : ''"
+              th:aria-current="${activeNav == 'finaltable'} ? 'page' : null"
               >Final Table</a
             >
             <!-- Guests: About/FAQ shown directly (mobile) -->
@@ -824,12 +877,16 @@
               th:unless="${isLoggedIn}"
               th:href="@{/about}"
               class="text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
+              th:classappend="${activeNav == 'about'} ? 'bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-50' : ''"
+              th:aria-current="${activeNav == 'about'} ? 'page' : null"
               >About</a
             >
             <a
               th:unless="${isLoggedIn}"
               th:href="@{/faq}"
               class="text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
+              th:classappend="${activeNav == 'faq'} ? 'bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-50' : ''"
+              th:aria-current="${activeNav == 'faq'} ? 'page' : null"
               >FAQ</a
             >
 
@@ -848,6 +905,7 @@
                 type="button"
                 @click="mobileMoreOpen = !mobileMoreOpen"
                 class="w-full flex items-center justify-between text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
+                th:classappend="${activeNav == 'finaltable' or activeNav == 'about' or activeNav == 'faq'} ? 'text-indigo-700 font-semibold' : ''"
               >
                 <span>More</span>
                 <svg
@@ -870,16 +928,22 @@
                 <a
                   th:href="@{/final-table}"
                   class="block text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
+                  th:classappend="${activeNav == 'finaltable'} ? 'bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-50' : ''"
+                  th:aria-current="${activeNav == 'finaltable'} ? 'page' : null"
                   >Final Table</a
                 >
                 <a
                   th:href="@{/about}"
                   class="block text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
+                  th:classappend="${activeNav == 'about'} ? 'bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-50' : ''"
+                  th:aria-current="${activeNav == 'about'} ? 'page' : null"
                   >About</a
                 >
                 <a
                   th:href="@{/faq}"
                   class="block text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
+                  th:classappend="${activeNav == 'faq'} ? 'bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-50' : ''"
+                  th:aria-current="${activeNav == 'faq'} ? 'page' : null"
                   >FAQ</a
                 >
               </div>
@@ -889,6 +953,7 @@
                 type="button"
                 @click="mobileAdminOpen = !mobileAdminOpen"
                 class="w-full flex items-center justify-between text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
+                th:classappend="${activeNav != null and #strings.startsWith(activeNav, 'admin-')} ? 'text-indigo-700 font-semibold' : ''"
               >
                 <span>Admin</span>
                 <svg
@@ -911,16 +976,22 @@
                 <a
                   th:href="@{/admin/seasons}"
                   class="block text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
+                  th:classappend="${activeNav == 'admin-seasons'} ? 'bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-50' : ''"
+                  th:aria-current="${activeNav == 'admin-seasons'} ? 'page' : null"
                   >Season Management</a
                 >
                 <a
                   th:href="@{/admin/users}"
                   class="block text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
+                  th:classappend="${activeNav == 'admin-users'} ? 'bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-50' : ''"
+                  th:aria-current="${activeNav == 'admin-users'} ? 'page' : null"
                   >Users</a
                 >
                 <a
                   th:href="@{/admin/matches}"
                   class="block text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
+                  th:classappend="${activeNav == 'admin-matches'} ? 'bg-indigo-50 text-indigo-700 font-semibold hover:bg-indigo-50' : ''"
+                  th:aria-current="${activeNav == 'admin-matches'} ? 'page' : null"
                   >Matches</a
                 >
                 <button
