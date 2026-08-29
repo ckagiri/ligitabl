@@ -34,6 +34,25 @@
             .standings-scroll::-webkit-scrollbar-track { background: transparent; }
             .standings-scroll::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 9999px; }
             .standings-scroll::-webkit-scrollbar-thumb:hover { background-color: #9ca3af; }
+
+            /* The max-height below is tuned for a portrait phone: at 100vh-220px a landscape
+               phone (~400px tall) leaves room for the header and about one row, and lg: never
+               kicks in because a landscape phone is under 1024px wide. Short viewport, not
+               landscape, is the real condition — a split-screen laptop window hits it too.
+             */
+            @media (max-height: 600px) {
+              .standings-scroll {
+                max-height: none;
+                overflow-y: visible;
+              }
+              /* With the container no longer the y-scroller, top-0 would resolve against the
+                 page and pin the header over an already-short viewport. Only the vertical
+                 offset is dropped — Pos/Team keep sticky so they stay pinned as the table
+                 scrolls sideways, which is exactly when a narrow screen needs them. */
+              .standings-scroll thead th {
+                top: auto;
+              }
+            }
           </style>
           <div>
             <div class="px-6 py-4">
