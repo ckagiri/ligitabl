@@ -34,6 +34,16 @@
             .standings-scroll::-webkit-scrollbar-track { background: transparent; }
             .standings-scroll::-webkit-scrollbar-thumb { background-color: #d1d5db; border-radius: 9999px; }
             .standings-scroll::-webkit-scrollbar-thumb:hover { background-color: #9ca3af; }
+
+            @media (max-height: 600px) {
+              .standings-scroll {
+                max-height: none;
+                overflow-y: visible;
+              }
+              .standings-scroll thead th {
+                top: auto;
+              }
+            }
           </style>
           <div>
             <div class="px-6 py-4">
