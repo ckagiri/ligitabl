@@ -17,7 +17,8 @@ public enum ScoreTier {
     PROFICIENT(180, "😃", "B+", "Proficient", Group.STRONG),
     ADVANCED(170, "🙂", "B", "Advanced", Group.STRONG),
     COMPETENT(160, "😌", "C+", "Competent", Group.STRONG),
-    NOVICE(145, "😬", "C", "Novice", Group.FAIR),
+    PROSPECT(145, "🙃", "C", "Prospect", Group.FAIR),
+    NOVICE(130, "😬", "D+", "Novice", Group.FAIR),
     ASPIRANT(0, "😩", "D", "Aspirant", Group.FAIR);
 
     /**
@@ -78,7 +79,7 @@ public enum ScoreTier {
         return Arrays.stream(values()).filter(t -> t.group == group).toList();
     }
 
-    /** Human-readable score range for this tier, e.g. "195–199", "200" (top tier), or "< 145" (floor tier). */
+    /** Human-readable score range for this tier, e.g. "195–199", "200" (top tier), or "< 130" (floor tier). */
     public String getRangeLabel() {
         ScoreTier[] all = values();
         int idx = ordinal();
