@@ -108,7 +108,7 @@
         <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-6 mb-4">
           <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
             <div>
-              <div class="flex items-center gap-3 mb-1">
+              <div class="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-1">
                 <h1 class="text-xl font-bold text-gray-900" th:text="${contest.name}">Contest Name</h1>
                 <span
                   th:if="${isOpenForJoining}"
@@ -409,11 +409,11 @@
                 <table class="min-w-full divide-y divide-gray-100">
                   <thead class="bg-gray-50">
                     <tr>
-                      <th class="cb-pos-col sticky left-0 z-20 bg-gray-50 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
+                      <th class="cb-pos-col sticky left-0 z-20 bg-gray-50 pl-2 pr-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">
                         <span class="hidden sm:inline">Pos</span>
                         <span class="sm:hidden">#</span>
                       </th>
-                      <th class="sticky left-[48px] z-20 bg-gray-50 px-3 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-28 lg:w-40">
+                      <th class="sticky left-[48px] z-20 bg-gray-50 px-3 max-sm:pr-0 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-36 max-[340px]:w-32 sm:w-32 lg:w-44">
                         Player
                       </th>
                       <th class="px-3 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
@@ -433,30 +433,31 @@
                   <tbody class="bg-white divide-y divide-gray-100">
                     <tr
                       th:each="entry : ${leaderboard.entries}"
-                      th:classappend="${userPosition != null and entry.publicId == userPosition.publicId ? 'bg-indigo-50 border-l-4 border-indigo-500' : (entry.isFormerMember ? 'opacity-60 bg-gray-50' : '')}"
+                      th:classappend="${userPosition != null and entry.publicId == userPosition.publicId ? 'bg-indigo-50' : (entry.isFormerMember ? 'opacity-60 bg-gray-50' : '')}"
                       class="group hover:bg-gray-50 transition"
                     >
-                      <!-- Pos -->
+                      <!-- Pos — the own-row marker is a left border on this sticky cell rather
+                           than an inline icon: an icon pushed the position number to the right,
+                           and a row-level border is never painted under border-collapse (and
+                           would be covered by this cell's opaque background regardless). -->
                       <td
-                        class="cb-pos-col sticky left-0 z-10 px-3 py-4 whitespace-nowrap text-sm font-bold"
-                        th:classappend="${userPosition != null and entry.publicId == userPosition.publicId ? 'bg-indigo-50 text-indigo-900' : 'bg-white group-hover:bg-gray-50 text-gray-900'}"
+                        class="cb-pos-col sticky left-0 z-10 pl-2 pr-3 py-4 whitespace-nowrap text-sm font-bold"
+                        th:classappend="${userPosition != null and entry.publicId == userPosition.publicId ? 'bg-indigo-50 text-indigo-900 border-l-4 border-indigo-500' : 'bg-white group-hover:bg-gray-50 text-gray-900'}"
                       >
-                        <span th:if="${userPosition != null and entry.publicId == userPosition.publicId}"
-                              class="text-indigo-600 mr-1 text-base">🔹</span>
                         <span th:if="${entry.scored}" th:text="${entry.position}">1</span>
                         <span th:if="${!entry.scored}" class="text-gray-400">—</span>
                       </td>
 
                       <!-- Player -->
                       <td
-                        class="sticky left-[48px] z-10 px-3 py-4 whitespace-nowrap w-28 lg:w-40"
+                        class="sticky left-[48px] z-10 px-3 max-sm:pr-0 py-4 whitespace-nowrap w-36 max-[340px]:w-32 sm:w-32 lg:w-44"
                         th:classappend="${userPosition != null and entry.publicId == userPosition.publicId ? 'bg-indigo-50' : 'bg-white group-hover:bg-gray-50'}"
                       >
                         <div class="flex flex-col">
                           <!-- Plain text: just joined this round or former member — no modal -->
                           <th:block th:if="${entry.isFormerMember == true or (entry.joinedAtGw != null and effectiveToRound != null and entry.joinedAtGw > effectiveToRound)}">
                             <span
-                              class="block max-w-[6rem] sm:max-w-full min-w-0 truncate sm:whitespace-normal sm:overflow-visible sm:text-clip sm:line-clamp-2 text-sm font-medium text-left"
+                              class="block max-w-[8.5rem] max-[340px]:max-w-[7rem] sm:max-w-full min-w-0 truncate sm:whitespace-normal sm:overflow-visible sm:text-clip sm:line-clamp-2 text-sm font-medium text-left"
                               th:title="${entry.displayName}"
                               th:classappend="${userPosition != null and entry.publicId == userPosition.publicId ? 'text-indigo-900' : 'text-gray-500'}"
                               th:text="${entry.displayName}"
@@ -472,7 +473,8 @@
                               th:attr="hx-vals='js:{publicId: &quot;' + ${entry.publicId} + '&quot;, displayName: &quot;' + ${entry.displayName} + '&quot;, position: ' + ${entry.position} + ', totalScore: ' + ${entry.totalScore} + ', roundScore: ' + ${entry.roundScore} + ', maxScore: ' + ${entry.maxScore} + ', totalSwaps: ' + ${entry.totalSwaps} + ', movement: ' + ${entry.movement} + ', scored: ' + ${entry.scored} + ', seasonId: &quot;' + ${contest.seasonId} + '&quot;, from: &quot;contest:' + ${contest.id} + '&quot;}'"
                               hx-on:click="document.getElementById('modal-loading').classList.remove('hidden')"
                               hx-on::after-request="document.getElementById('modal-loading').classList.add('hidden')"
-                              class="inline-flex items-center gap-1 max-w-[6rem] sm:max-w-full text-sm font-medium hover:text-indigo-600 transition cursor-pointer text-left"
+                              class="inline-flex items-center gap-1 max-w-[8.5rem] max-[340px]:max-w-[7rem] sm:max-w-full text-sm font-medium hover:text-indigo-600 transition cursor-pointer text-left"
+                              th:title="${entry.displayName}"
                               th:classappend="${userPosition != null and entry.publicId == userPosition.publicId ? 'text-indigo-900' : 'text-gray-900'}"
                             >
                               <span class="min-w-0 truncate sm:whitespace-normal sm:overflow-visible sm:text-clip sm:line-clamp-2" th:text="${entry.displayName}">Alice</span>

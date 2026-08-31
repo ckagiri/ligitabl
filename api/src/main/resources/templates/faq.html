@@ -60,7 +60,6 @@
                   Everyone starts by predicting the order the Premier League
                   table will be in after the
                   <strong class="text-gray-900">current gameweek</strong>.
-                  Here&rsquo;s how it works:
                 </p>
                 <ul class="list-disc pl-5 space-y-2 mb-3">
                   <li>
@@ -99,6 +98,98 @@
                 @click="open = !open"
                 class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
               >
+                <span>How are points calculated?</span>
+                <svg
+                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
+                  :class="open ? 'rotate-180' : ''"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
+              </button>
+              <div
+                x-show="open"
+                x-transition
+                x-cloak
+                class="text-sm text-gray-600 pb-3"
+              >
+                <p class="mb-3">
+                  You start each gameweek on 200. Every club then takes a
+                  <strong class="text-gray-900">hit</strong> for each position
+                  it sits away from where you placed it &mdash; one position
+                  out, one hit:
+                </p>
+                <div class="overflow-x-auto mb-3">
+                  <table
+                    class="w-full text-sm border border-gray-200 rounded-lg overflow-hidden"
+                  >
+                    <thead>
+                      <tr class="bg-gray-50 text-gray-700">
+                        <th class="text-left font-semibold px-3 py-2">
+                          Prediction
+                        </th>
+                        <th class="text-left font-semibold px-3 py-2">
+                          Actual
+                        </th>
+                        <th class="text-right font-semibold px-3 py-2">
+                          Points Hit
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                      <tr>
+                        <td class="px-3 py-2">Arsenal in 1st</td>
+                        <td class="px-3 py-2">Arsenal in 3rd</td>
+                        <td
+                          class="px-3 py-2 text-right font-semibold text-red-600"
+                        >
+                          -2
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="px-3 py-2">Everton in 20th</td>
+                        <td class="px-3 py-2">Everton in 15th</td>
+                        <td
+                          class="px-3 py-2 text-right font-semibold text-red-600"
+                        >
+                          -5
+                        </td>
+                      </tr>
+                      <tr>
+                        <td class="px-3 py-2">Chelsea in 10th</td>
+                        <td class="px-3 py-2">Chelsea in 10th</td>
+                        <td
+                          class="px-3 py-2 text-right font-semibold text-green-600"
+                        >
+                          -0
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                <p>
+                  Your score is
+                  <strong class="text-gray-900">200 minus your total hits</strong>
+                  across the twenty clubs. When the next gameweek opens, that
+                  score freezes and you begin again on a fresh 200. Your
+                  <strong class="text-gray-900">cumulative score</strong> across
+                  every gameweek is what the leaderboard ranks.
+                </p>
+              </div>
+            </div>
+            <div class="py-1" x-data="{ open: false }">
+              <button
+                type="button"
+                @click="open = !open"
+                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
+              >
                 <span>How do I keep my score high?</span>
                 <svg
                   class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
@@ -123,10 +214,9 @@
               >
                 <p class="mb-3">
                   Aim for
-                  <strong class="text-gray-900">as few hits as you can</strong>
-                  &mdash; a hit being one point lost for each place a club is
-                  out by. A perfect table is very unlikely, and you don&rsquo;t
-                  need one.
+                  <strong class="text-gray-900">as few hits as you can</strong>.
+                  A perfect table is very unlikely, and you don&rsquo;t need
+                  one.
                 </p>
                 <p class="mb-3">
                   The damage comes from
@@ -143,7 +233,7 @@
                 <p class="mb-3">
                   Look at the coming fixtures, not just the table as it stands
                   &mdash; a club you have low, with a kind run ahead, may climb
-                  up, while one you have placed high can slide down.
+                  up, while one you have placed high can drop down.
                 </p>
                 <p>
                   You don&rsquo;t have to guess which gap to close: the
@@ -712,103 +802,13 @@
             </div>
           </div>
 
-          <!-- Scoring & grades -->
+          <!-- Grades -->
           <p
             class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
           >
-            Scoring &amp; grades
+            Grades
           </p>
           <div class="divide-y divide-gray-100 mb-8">
-            <div class="py-1" x-data="{ open: true }">
-              <button
-                type="button"
-                @click="open = !open"
-                class="w-full flex items-center justify-between py-3 text-left font-semibold text-gray-900"
-              >
-                <span>How are points calculated?</span>
-                <svg
-                  class="h-4 w-4 text-indigo-600 transition-transform duration-200 flex-shrink-0 ml-3"
-                  :class="open ? 'rotate-180' : ''"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M19 9l-7 7-7-7"
-                  />
-                </svg>
-              </button>
-              <div
-                x-show="open"
-                x-transition
-                x-cloak
-                class="text-sm text-gray-600 pb-3"
-              >
-                <p class="mb-3">
-                  You start each gameweek on 200. Every club then takes a
-                  <strong class="text-gray-900">hit</strong> for each position
-                  it sits away from where you placed it &mdash; one position
-                  out, one hit:
-                </p>
-                <div class="overflow-x-auto mb-3">
-                  <table
-                    class="w-full text-sm border border-gray-200 rounded-lg overflow-hidden"
-                  >
-                    <thead>
-                      <tr class="bg-gray-50 text-gray-700">
-                        <th class="text-left font-semibold px-3 py-2">
-                          Prediction
-                        </th>
-                        <th class="text-left font-semibold px-3 py-2">
-                          Actual
-                        </th>
-                        <th class="text-right font-semibold px-3 py-2">
-                          Points Hit
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-gray-100">
-                      <tr>
-                        <td class="px-3 py-2">Arsenal in 1st</td>
-                        <td class="px-3 py-2">Arsenal in 3rd</td>
-                        <td
-                          class="px-3 py-2 text-right font-semibold text-red-600"
-                        >
-                          -2
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="px-3 py-2">Everton in 20th</td>
-                        <td class="px-3 py-2">Everton in 15th</td>
-                        <td
-                          class="px-3 py-2 text-right font-semibold text-red-600"
-                        >
-                          -5
-                        </td>
-                      </tr>
-                      <tr>
-                        <td class="px-3 py-2">Chelsea in 10th</td>
-                        <td class="px-3 py-2">Chelsea in 10th</td>
-                        <td
-                          class="px-3 py-2 text-right font-semibold text-green-600"
-                        >
-                          -0
-                        </td>
-                      </tr>
-                    </tbody>
-                  </table>
-                </div>
-                <p>
-                  Your score is 200 minus your total hits across the twenty
-                  clubs. When the next gameweek opens, that score freezes and
-                  you begin again on a fresh 200. Your cumulative score across
-                  every gameweek is what the leaderboard ranks.
-                </p>
-              </div>
-            </div>
             <div class="py-1" x-data="{ open: false }">
               <button
                 type="button"
@@ -953,6 +953,17 @@
                 </div>
               </div>
             </div>
+          </div>
+
+          <!-- Tiebreakers -->
+          <p
+            class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
+          >
+            Tiebreakers
+          </p>
+          <div class="divide-y divide-gray-100 mb-8">
+            <!-- Leads the section: it defines the term the tie-break ordering below uses, and
+                 its closing line runs straight into that item. -->
             <div class="py-1" x-data="{ open: false }">
               <button
                 type="button"
@@ -988,15 +999,6 @@
                 tiebreaker after total points.
               </p>
             </div>
-          </div>
-
-          <!-- Tiebreakers -->
-          <p
-            class="text-xs font-semibold uppercase tracking-wide text-indigo-600 mb-2"
-          >
-            Tiebreakers
-          </p>
-          <div class="divide-y divide-gray-100 mb-8">
             <div class="py-1" x-data="{ open: false }">
               <button
                 type="button"

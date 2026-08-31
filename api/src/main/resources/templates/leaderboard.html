@@ -345,18 +345,13 @@
                 <tbody class="bg-white divide-y divide-gray-200">
                   <tr
                     th:each="entry : ${leaderboard}"
-                    th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'bg-indigo-50 border-l-4 border-indigo-500' : ''}"
+                    th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'bg-indigo-50' : ''}"
                     class="group hover:bg-gray-50 transition"
                   >
                     <td
                       class="lb-pos-col sticky left-0 z-10 px-3 py-4 whitespace-nowrap text-sm font-bold"
-                      th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'bg-indigo-50 text-indigo-900' : 'bg-white group-hover:bg-gray-50 text-gray-900'}"
+                      th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'bg-indigo-50 text-indigo-900 border-l-4 border-indigo-500' : 'bg-white group-hover:bg-gray-50 text-gray-900'}"
                     >
-                      <span
-                        th:if="${userPosition != null && entry.publicId == userPosition.publicId}"
-                        class="text-indigo-600 mr-1.5 text-base"
-                        >🔹</span
-                      >
                       <span th:if="${entry.scored}" th:text="${entry.position}"
                         >1</span
                       >
@@ -385,6 +380,7 @@
                           hx-on:click="document.getElementById('modal-loading').classList.remove('hidden')"
                           hx-on::after-request="document.getElementById('modal-loading').classList.add('hidden')"
                           class="inline-flex items-center gap-1 max-w-[8.5rem] max-[340px]:max-w-[7rem] sm:max-w-full text-sm font-medium hover:text-indigo-600 transition cursor-pointer text-left"
+                          th:title="${entry.displayName}"
                           th:classappend="${userPosition != null && entry.publicId == userPosition.publicId ? 'text-indigo-900' : 'text-gray-900'}"
                         >
                           <span class="min-w-0 truncate sm:whitespace-normal sm:overflow-visible sm:text-clip sm:line-clamp-2" th:text="${entry.displayName}">Alice Wonder</span>
