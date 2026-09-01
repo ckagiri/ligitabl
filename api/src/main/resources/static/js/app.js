@@ -491,6 +491,17 @@ window.Ligitabl._minimalSwapEntries = function(baseline, target) {
   }
   return log;
 };
+window.Ligitabl._displaySwapEntries = function(baseline, swapLog) {
+  if (!Array.isArray(swapLog)) return [];
+  const kept = [];
+  for (const s of swapLog) {
+    if (!s || !s.teamACode || !s.teamBCode) continue;
+    const prev = kept[kept.length - 1];
+    if (prev && Ligitabl._isSamePair(prev.teamACode, prev.teamBCode, s.teamACode, s.teamBCode)) kept.pop();
+    else kept.push(s);
+  }
+  return Ligitabl._replaySwaps(baseline, kept).swapLog;
+};
 window.Ligitabl._isSamePair = function(a1, b1, a2, b2) {
   return a1 === a2 && b1 === b2 || a1 === b2 && b1 === a2;
 };
@@ -1060,14 +1071,8 @@ window.Ligitabl.predictionPage = function(el) {
       const raw = localStorage.getItem(WHAT_IF_STORAGE_KEY);
       if (!raw) return [];
       const saved = JSON.parse(raw);
-      if (Array.isArray(saved?.teams) && saved.teams.length > 0 && originalTeams?.length) {
-        return Ligitabl._minimalSwapEntries(originalTeams, saved.teams);
-      }
-      const log = saved?.swapLog;
-      if (!Array.isArray(log)) return [];
-      return log.filter(
-        (s) => s && s.teamACode && s.teamBCode && s.teamAFrom != null && s.teamATo != null && s.teamBFrom != null && s.teamBTo != null
-      );
+      if (!originalTeams?.length) return [];
+      return Ligitabl._displaySwapEntries(originalTeams, saved?.swapLog);
     } catch (e) {
       console.warn("Failed to load what-if swaps:", e);
       return [];
@@ -2305,13 +2310,10 @@ window.Ligitabl.whatIfPage = function(el) {
     // pairs a submission actually carried. See "Deliberately NOT _derivedSwaps" in
     // submitChanges().
     swapLog: [],
-    // What the Sandbox swaps list renders: the net permutation, so it agrees with
-    // getSwapCount() instead of listing taps the user undid by re-swapping.
-    //
     // A method, not a getter — the fragment's own x-data="{ open: true }" would bind a
     // getter's `this` to that child scope, where originalTeams/teams do not exist.
     displayedSwapLog() {
-      return Ligitabl._minimalSwapEntries(this.originalTeams, this.teams);
+      return Ligitabl._displaySwapEntries(this.originalTeams, this.swapLog);
     },
     activeTab: "standings",
     hasComputed: false,

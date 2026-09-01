@@ -454,8 +454,8 @@
                         th:classappend="${userPosition != null and entry.publicId == userPosition.publicId ? 'bg-indigo-50' : 'bg-white group-hover:bg-gray-50'}"
                       >
                         <div class="flex flex-col">
-                          <!-- Plain text: just joined this round or former member — no modal -->
-                          <th:block th:if="${entry.isFormerMember == true or (entry.joinedAtGw != null and effectiveToRound != null and entry.joinedAtGw > effectiveToRound)}">
+                          <!-- Late joiners stay clickable; the modal clamps to their joinedAtGw. -->
+                          <th:block th:if="${entry.isFormerMember == true}">
                             <span
                               class="block max-w-[8.5rem] max-[340px]:max-w-[7rem] sm:max-w-full min-w-0 truncate sm:whitespace-normal sm:overflow-visible sm:text-clip sm:line-clamp-2 text-sm font-medium text-left"
                               th:title="${entry.displayName}"
@@ -464,13 +464,13 @@
                             >Alice</span>
                           </th:block>
                           <!-- Clickable: opens player modal -->
-                          <th:block th:unless="${entry.isFormerMember == true or (entry.joinedAtGw != null and effectiveToRound != null and entry.joinedAtGw > effectiveToRound)}">
+                          <th:block th:unless="${entry.isFormerMember == true}">
                             <button
                               hx-post="/leaderboard/user/modal"
                               hx-target="#user-detail-modal"
                               hx-swap="innerHTML"
                               hx-include="#effectiveToRound, #currentPhaseFrom"
-                              th:attr="hx-vals='js:{publicId: &quot;' + ${entry.publicId} + '&quot;, displayName: &quot;' + ${entry.displayName} + '&quot;, position: ' + ${entry.position} + ', totalScore: ' + ${entry.totalScore} + ', roundScore: ' + ${entry.roundScore} + ', maxScore: ' + ${entry.maxScore} + ', totalSwaps: ' + ${entry.totalSwaps} + ', movement: ' + ${entry.movement} + ', scored: ' + ${entry.scored} + ', seasonId: &quot;' + ${contest.seasonId} + '&quot;, from: &quot;contest:' + ${contest.id} + '&quot;}'"
+                              th:attr="hx-vals='js:{publicId: &quot;' + ${entry.publicId} + '&quot;, displayName: &quot;' + ${entry.displayName} + '&quot;, position: ' + ${entry.position} + ', totalScore: ' + ${entry.totalScore} + ', roundScore: ' + ${entry.roundScore} + ', maxScore: ' + ${entry.maxScore} + ', totalSwaps: ' + ${entry.totalSwaps} + ', movement: ' + ${entry.movement} + ', scored: ' + ${entry.scored} + ', joinedAtGw: ' + ${entry.joinedAtGw != null ? entry.joinedAtGw : 'null'} + ', seasonId: &quot;' + ${contest.seasonId} + '&quot;, from: &quot;contest:' + ${contest.id} + '&quot;}'"
                               hx-on:click="document.getElementById('modal-loading').classList.remove('hidden')"
                               hx-on::after-request="document.getElementById('modal-loading').classList.add('hidden')"
                               class="inline-flex items-center gap-1 max-w-[8.5rem] max-[340px]:max-w-[7rem] sm:max-w-full text-sm font-medium hover:text-indigo-600 transition cursor-pointer text-left"

@@ -52,6 +52,7 @@
       <input type="hidden" class="modal-param" name="roundScore" th:value="${user.roundScore}">
       <input type="hidden" class="modal-param" name="phaseFrom" th:value="${minRound}">
       <input type="hidden" class="modal-param" name="maxRound" th:value="${maxRound}">
+      <input type="hidden" class="modal-param" name="joinedAtGw" th:if="${joinedAtGw != null}" th:value="${joinedAtGw}">
       <input type="hidden" class="modal-param" name="scored" th:value="${scored != null ? scored : true}">
       <input type="hidden" class="modal-param" name="seasonId" th:if="${seasonId != null}" th:value="${seasonId}">
       <input type="hidden" class="modal-param" name="from" th:if="${from != null}" th:value="${from}">
@@ -109,6 +110,13 @@
           </button>
         </div>
       </div>
+
+      <p
+        th:if="${roundClampedToJoin == true}"
+        class="text-xs text-gray-500 bg-gray-50 border border-gray-200 rounded px-2 py-1.5 mb-3"
+      >
+        Joined at gw<span th:text="${joinedAtGw}">8</span> — showing their first prediction.
+      </p>
 
       <!-- Predictions render whenever we have them, scored or not. Before the round is
            scored every hit is null, so the table shows the picks without deltas. -->

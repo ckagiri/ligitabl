@@ -93,8 +93,8 @@ window.Ligitabl._minimalSwapEntries = function (baseline, target) {
     const targetPosition = Object.fromEntries((target || []).map((t) => [t.code, t.position]));
     const log = [];
     // Team-major traversal, not position-major. Both are minimal and reach the same table, but
-    // they emit different pair sequences, and these pairs are what submitChanges() sends and the
-    // server persists as swap history — so the order is load-bearing, not incidental.
+    // they emit different pairs, and these pairs are what submitChanges() sends and the server
+    // persists as swap history — so which pairs come out is load-bearing, not incidental.
     for (const t of work) {
         const tgt = targetPosition[t.code];
         if (t.position === tgt) continue;
@@ -111,6 +111,24 @@ window.Ligitabl._minimalSwapEntries = function (baseline, target) {
         partner.position = tmp;
     }
     return log;
+};
+
+// The taps as made, rebased onto the current table. Not _minimalSwapEntries: swaps sharing a team
+// don't commute, so a minimal set resequenced chronologically lands on a different table.
+//
+// Cancels a pair against the tap before it, as pushSwap() does. Adjacent only — the same pair with
+// a swap in between acts on a table that moved, so those taps aren't redundant.
+window.Ligitabl._displaySwapEntries = function (baseline, swapLog) {
+    if (!Array.isArray(swapLog)) return [];
+
+    const kept = [];
+    for (const s of swapLog) {
+        if (!s || !s.teamACode || !s.teamBCode) continue;
+        const prev = kept[kept.length - 1];
+        if (prev && Ligitabl._isSamePair(prev.teamACode, prev.teamBCode, s.teamACode, s.teamBCode)) kept.pop();
+        else kept.push(s);
+    }
+    return Ligitabl._replaySwaps(baseline, kept).swapLog;
 };
 
 // A swap is its own inverse, so the pair is unordered: {A,B} and {B,A} are one operation.
@@ -824,35 +842,15 @@ window.Ligitabl.predictionPage = function (el) {
     // teamATo, teamBCode, ...} shape the swap-history fragment renders.
     const WHAT_IF_STORAGE_KEY = `ligitabl.whatif.${userId}.${roundId}`;
 
-    // Derived from the sandbox's team order rather than its stored swapLog, so this matches what
-    // the what-if page shows (whatIfPage.displayedSwapLog) — the raw log holds every tap,
-    // including ones re-swapped away. Both pages baseline on the same server table.
-    //
-    // Falls back to the stored log for sessions written before `teams` was persisted.
+    // Rebased onto this page's server table, so it reads the same as the what-if page's list.
     function loadWhatIfSwaps(originalTeams) {
         try {
             const raw = localStorage.getItem(WHAT_IF_STORAGE_KEY);
             if (!raw) return [];
             const saved = JSON.parse(raw);
+            if (!originalTeams?.length) return [];
 
-            if (Array.isArray(saved?.teams) && saved.teams.length > 0 && originalTeams?.length) {
-                return Ligitabl._minimalSwapEntries(originalTeams, saved.teams);
-            }
-
-            const log = saved?.swapLog;
-            if (!Array.isArray(log)) return [];
-            // A swap is only displayable with both team codes and all four positions; anything
-            // half-written is skipped rather than rendered as blanks.
-            return log.filter(
-                (s) =>
-                    s &&
-                    s.teamACode &&
-                    s.teamBCode &&
-                    s.teamAFrom != null &&
-                    s.teamATo != null &&
-                    s.teamBFrom != null &&
-                    s.teamBTo != null,
-            );
+            return Ligitabl._displaySwapEntries(originalTeams, saved?.swapLog);
         } catch (e) {
             console.warn("Failed to load what-if swaps:", e);
             return [];
@@ -2468,13 +2466,10 @@ window.Ligitabl.whatIfPage = function (el) {
         // pairs a submission actually carried. See "Deliberately NOT _derivedSwaps" in
         // submitChanges().
         swapLog: [],
-        // What the Sandbox swaps list renders: the net permutation, so it agrees with
-        // getSwapCount() instead of listing taps the user undid by re-swapping.
-        //
         // A method, not a getter — the fragment's own x-data="{ open: true }" would bind a
         // getter's `this` to that child scope, where originalTeams/teams do not exist.
         displayedSwapLog() {
-            return Ligitabl._minimalSwapEntries(this.originalTeams, this.teams);
+            return Ligitabl._displaySwapEntries(this.originalTeams, this.swapLog);
         },
         activeTab: "standings",
         hasComputed: false,

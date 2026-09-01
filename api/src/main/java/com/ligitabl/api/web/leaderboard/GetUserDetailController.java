@@ -3,6 +3,7 @@ package com.ligitabl.api.web.leaderboard;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 import org.springframework.stereotype.Controller;
@@ -33,6 +34,7 @@ public class GetUserDetailController {
             @RequestParam(required = false) Integer effectiveToRound,
             @RequestParam(required = false) Integer phaseFrom,
             @RequestParam(required = false) Integer maxRound,
+            @RequestParam(required = false) Integer joinedAtGw,
             @RequestParam(required = false, defaultValue = "true") boolean scored,
             @RequestParam(required = false) UUID seasonId,
             @RequestParam(required = false) String from,
@@ -41,8 +43,11 @@ public class GetUserDetailController {
 
         log.info("POST /leaderboard/user/modal - publicId: {}", publicId);
 
+        Integer resolvedRound = resolveRound(effectiveToRound, joinedAtGw);
+        boolean roundClampedToJoin = !Objects.equals(resolvedRound, effectiveToRound);
+
         return getUserDetailUseCase
-                .execute(publicId, effectiveToRound, seasonId)
+                .execute(publicId, resolvedRound, seasonId)
                 .fold(
                         error -> handleError(error, model, response),
                         result -> handleSuccess(
@@ -52,13 +57,22 @@ public class GetUserDetailController {
                                 position,
                                 totalScore,
                                 roundScore,
-                                effectiveToRound,
+                                resolvedRound,
                                 phaseFrom,
                                 maxRound,
+                                joinedAtGw,
+                                roundClampedToJoin,
                                 scored,
                                 seasonId,
                                 from,
                                 model));
+    }
+
+    /** Clamps up to the join round: a player has no prediction before they joined. */
+    private static Integer resolveRound(Integer effectiveToRound, Integer joinedAtGw) {
+        if (effectiveToRound == null || joinedAtGw == null) return effectiveToRound;
+
+        return effectiveToRound < joinedAtGw ? joinedAtGw : effectiveToRound;
     }
 
     private String handleSuccess(
@@ -71,6 +85,8 @@ public class GetUserDetailController {
             Integer effectiveToRound,
             Integer phaseFrom,
             Integer maxRoundParam,
+            Integer joinedAtGw,
+            boolean roundClampedToJoin,
             boolean scored,
             UUID seasonId,
             String from,
@@ -87,11 +103,15 @@ public class GetUserDetailController {
         var user = new UserDetailDTO(
                 publicId, displayName, position, totalScore, roundScore, roundZeroes, result.predictions());
 
-        int minRound = phaseFrom != null ? phaseFrom : 1;
+        // Prev must not walk back past the join round — there is nothing there.
+        int minRound = Math.max(phaseFrom != null ? phaseFrom : 1, joinedAtGw != null ? joinedAtGw : 1);
         int maxRound =
                 maxRoundParam != null ? maxRoundParam : (effectiveToRound != null ? effectiveToRound : result.round());
+        maxRound = Math.max(maxRound, minRound);
 
         model.addAttribute("user", user);
+        model.addAttribute("joinedAtGw", joinedAtGw);
+        model.addAttribute("roundClampedToJoin", roundClampedToJoin);
         model.addAttribute("round", result.round());
         model.addAttribute("minRound", minRound);
         model.addAttribute("maxRound", maxRound);

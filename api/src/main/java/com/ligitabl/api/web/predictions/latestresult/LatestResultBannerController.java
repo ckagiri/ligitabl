@@ -8,9 +8,8 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.domain.User;
-import com.ligitabl.model.repo.UserRepo;
+import com.ligitabl.api.auth.security.WebUserDetails;
+import com.ligitabl.api.web.shared.security.WebSecurity;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 public class LatestResultBannerController {
     private final GetLatestResultUseCase getLatestResultUseCase;
     private final DismissResultBannerUseCase dismissResultBannerUseCase;
-    private final UserRepo userRepo;
 
     @GetMapping("/latest-result-banner")
     public String getLatestResultBanner(Principal principal, Model model) {
@@ -65,17 +63,9 @@ public class LatestResultBannerController {
                 success -> ResponseEntity.noContent().<Void>build());
     }
 
+    /** Follows the effective user, so an impersonating admin sees the impersonated user's result. */
     private UUID resolveUserId(Principal principal) {
-        if (principal == null
-                || principal.getName() == null
-                || principal.getName().isBlank()) {
-            return null;
-        }
-        try {
-            Email email = Email.create(principal.getName());
-            return userRepo.findByEmail(email).map(User::getId).orElse(null);
-        } catch (IllegalArgumentException e) {
-            return null;
-        }
+        WebUserDetails user = WebSecurity.resolveUser(principal);
+        return user == null ? null : user.getUserId();
     }
 }
