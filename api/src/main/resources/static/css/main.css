@@ -3367,9 +3367,6 @@ video {
   .sm\:items-center {
     align-items: center;
   }
-  .sm\:items-baseline {
-    align-items: baseline;
-  }
   .sm\:justify-start {
     justify-content: flex-start;
   }
