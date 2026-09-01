@@ -67,11 +67,9 @@
                 >
                   MCI
                 </div>
-                <div
-                  class="text-xs sm:text-sm font-medium text-gray-900 truncate"
-                  th:text="${row.teamName}"
-                >
-                  Manchester City
+                <div class="text-xs sm:text-sm font-medium text-gray-900 truncate">
+                  <span class="lg:hidden" th:text="${row.teamShorterName}">Man City</span>
+                  <span class="hidden lg:inline" th:text="${row.teamName}">Manchester City</span>
                 </div>
               </div>
             </td>
