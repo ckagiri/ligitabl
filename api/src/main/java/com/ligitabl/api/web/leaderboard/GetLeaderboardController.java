@@ -11,16 +11,15 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardError;
 import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardQuery;
 import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardResult;
 import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardUseCase;
-import com.ligitabl.model.auth.Email;
+import com.ligitabl.api.web.shared.security.WebSecurity;
 import com.ligitabl.model.domain.LeaderboardEntry;
 import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.RoundSpan;
-import com.ligitabl.model.domain.User;
-import com.ligitabl.model.repo.UserRepo;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +33,6 @@ public class GetLeaderboardController {
     private static final int PAGE_SIZE = 10;
 
     private final GetLeaderboardUseCase getLeaderboardUseCase;
-    private final UserRepo userRepo;
 
     @GetMapping
     public String getLeaderboard(
@@ -66,22 +64,13 @@ public class GetLeaderboardController {
         }
     }
 
+    /** Follows the effective user, so an impersonating admin sees the impersonated user's row. */
     private CurrentUserContext resolveCurrentUser(Principal principal) {
-        if (principal == null) {
+        WebUserDetails user = WebSecurity.resolveUser(principal);
+        if (user == null) {
             return CurrentUserContext.empty();
         }
-
-        try {
-            Email email = Email.create(principal.getName());
-            User user = userRepo.findByEmail(email).orElse(null);
-            if (user == null) {
-                return CurrentUserContext.empty();
-            }
-            return new CurrentUserContext(user.getId(), user.getPublicId().value(), user.getDisplayName());
-        } catch (IllegalArgumentException e) {
-            log.debug("Could not resolve user from principal: {}", e.getMessage());
-            return CurrentUserContext.empty();
-        }
+        return new CurrentUserContext(user.getUserId(), user.getPublicId(), user.getDisplayName());
     }
 
     private String handleSuccess(
