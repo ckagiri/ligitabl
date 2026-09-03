@@ -111,7 +111,10 @@ public class AuthController {
     public String register(
             @Valid @ModelAttribute RegisterForm form,
             BindingResult bindingResult,
-            @RequestParam(name = "cf-turnstile-response", required = false) String turnstileToken,
+            // Our own field (see register.html) — the widget's empty cf-turnstile-response won on
+            // document order and broke verification. That name stays as a fallback.
+            @RequestParam(name = "turnstileToken", required = false) String turnstileToken,
+            @RequestParam(name = "cf-turnstile-response", required = false) String widgetTurnstileToken,
             RedirectAttributes redirectAttributes,
             Model model,
             HttpServletRequest request,
@@ -128,7 +131,9 @@ public class AuthController {
         }
 
         if (turnstileClient.isEnabled()) {
-            String turnstileFailure = verifyTurnstile(turnstileToken, request);
+            String submittedToken =
+                    (turnstileToken != null && !turnstileToken.isBlank()) ? turnstileToken : widgetTurnstileToken;
+            String turnstileFailure = verifyTurnstile(submittedToken, request);
             if (turnstileFailure != null) {
                 response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
                 model.addAttribute("error", turnstileFailure);
