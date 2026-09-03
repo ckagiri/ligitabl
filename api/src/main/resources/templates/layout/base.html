@@ -578,9 +578,8 @@
                       >Matches</a
                     >
                     <!--
-                      The dropdown closes on click, so an indicator on the button itself would
-                      be gone before it was seen. hx-indicator points at the shared overlay near
-                      the modal root instead, which is what the user is actually waiting for.
+                      The dropdown closes on click, so an indicator on the button itself would be
+                      gone before it was seen — point at the shared overlay near the modal root.
                     -->
                     <button
                       type="button"
@@ -1270,9 +1269,8 @@
     <!-- Impersonation: modal mount point + self-hiding banner (mirrors #results-banner pattern) -->
     <div id="impersonation-modal-root"></div>
     <!--
-      Shown while /admin/impersonation/modal is in flight, targeted by hx-indicator from the
-      Impersonate buttons in both menus. The global .htmx-indicator rule toggles `display:
-      inline`, which would break the centring, so this one overrides to flex when active.
+      Shown while the impersonation modal is in flight (hx-indicator from both menus). The global
+      .htmx-indicator rule toggles `display: inline`, which breaks centring — override to flex.
     -->
     <style>
       #impersonation-modal-loading { display: none; }

@@ -160,10 +160,9 @@
   </div>
 
   <!--
-    Cooldown Expired Banner. The sibling of the opening-round card above: same actionable
-    moment ("you may swap now"), so it gets the same weight rather than the inline dot it
-    used to get. The condition is the complement of every other swap-availability banner
-    (first-swap bonus, opening round), so exactly one card is ever on screen.
+    Cooldown Expired Banner. Same actionable moment as the opening-round card above, so it gets
+    the same weight rather than the inline dot it used to get. Conditioned as the complement of
+    the other swap-availability banners, so only one is ever on screen.
   -->
   <div th:if="${!isGuest && !canCreateEntry && canSwap
                  && isCurrentRound && isRoundOpenForPrediction
@@ -311,14 +310,10 @@
   </div>
 
   <!--
-    Status Indicator. Cooldown-active only: the "you can swap now" states all have their own
-    card above (first-swap bonus, opening round, cooldown expired), and a green dot saying
-    the same thing was redundant with them.
-
-    !openingRoundAvailable matters: during the opening window canSwap can still be false
-    (last swap under 24h old) while the table is fully interactive, so without this guard the
-    amber "Opening Swap Available" card and a yellow "Cooldown active" pill contradicted
-    each other on screen.
+    Status Indicator, cooldown-active only — every "you can swap now" state has its own card
+    above. !openingRoundAvailable matters: in the opening window canSwap can still be false (last
+    swap under 24h old) while the table is interactive, which showed the amber "Opening Swap
+    Available" card and a yellow "Cooldown active" pill at once.
   -->
   <div
     th:if="${!isGuest && !canCreateEntry && !swapStatus.firstSwapBonus && seasonEditingAllowed}"

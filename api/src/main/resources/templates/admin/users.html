@@ -6,13 +6,14 @@
 >
   <body>
     <div layout:fragment="content">
-      <section class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- min-w-0: outermost link in the chain the table was widening (see .au-card below). -->
+      <section class="max-w-6xl min-w-0 mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div class="mb-8">
           <h1 class="text-2xl sm:text-3xl font-bold text-gray-900">Users</h1>
           <p class="mt-2 text-sm text-gray-600">All registered users, most recent login first.</p>
         </div>
 
-        <div id="admin-users-content" th:fragment="usersContent" class="bg-white shadow rounded-lg">
+        <div id="admin-users-content" th:fragment="usersContent" class="au-card bg-white shadow rounded-lg">
           <!-- Batch-delete form: empty shell, referenced remotely by each eligible row's checkbox via form="batch-delete-form" -->
           <form id="batch-delete-form" method="post" th:action="@{/admin/users/batch-delete}"
                 onsubmit="return confirmBatchDelete()">
@@ -80,6 +81,18 @@
             .au-email-col { min-width: 12rem; overflow-wrap: anywhere; }
             /* A swipe that overruns the table would otherwise trigger the browser back gesture. */
             .au-table-scroll { overscroll-behavior-x: contain; }
+            /*
+              min-width: 0 stops the table's min-content width propagating up and stretching the
+              card; position: relative anchors the .sr-only rule below.
+            */
+            .au-card, .au-table-scroll { min-width: 0; max-width: 100%; position: relative; }
+            /*
+              Tailwind's .sr-only is position:absolute with no inset, so the row buttons' labels
+              sat at their cell's natural x (~810px). overflow-x clips their painting but they
+              still count toward scrollable width, so <html> scrolled to 813px while <body> was a
+              correct 375. Pinning them here is invisible to sighted users and keeps the a11y tree.
+            */
+            .au-table-scroll .sr-only { left: 0; top: 0; }
             @media (max-width: 639px) {
               .au-table-scroll::-webkit-scrollbar { height: 3px; }
               .au-table-scroll::-webkit-scrollbar-track { background: transparent; }

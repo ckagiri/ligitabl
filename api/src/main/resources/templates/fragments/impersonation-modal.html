@@ -52,11 +52,9 @@
                 Cancel
               </button>
               <!--
-                Starting impersonation is a user lookup plus a session mutation, answered with
-                HX-Redirect to /my-table — a round trip and then a full page load. htmx leaves
-                .htmx-request on the element through that navigation, so the spinner correctly
-                stays up until the new page paints. On the error path the response replaces the
-                whole modal, which resets the button.
+                A lookup plus a session mutation, answered with HX-Redirect — so htmx keeps
+                .htmx-request set through the navigation and the spinner stays up until the new
+                page paints. The error path replaces the whole modal, resetting the button.
               -->
               <button
                 type="submit"
