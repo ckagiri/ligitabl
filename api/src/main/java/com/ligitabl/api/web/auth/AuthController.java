@@ -87,14 +87,23 @@ public class AuthController {
         return userAgent != null && IN_APP_BROWSER_USER_AGENT.matcher(userAgent).find();
     }
 
+    /**
+     * Runs before every handler so a re-rendered form keeps its widget. Set only by
+     * showRegisterForm before, so the POST error paths dropped turnstileEnabled to null — th:if
+     * then removed the widget outright, leaving no checkbox to solve and no way to get a token.
+     */
+    @ModelAttribute
+    void registerPageAttributes(Model model, HttpServletRequest request) {
+        model.addAttribute("turnstileEnabled", turnstileClient.isEnabled());
+        model.addAttribute("turnstileSiteKey", turnstileClient.getSiteKey());
+        model.addAttribute("inAppBrowser", isInAppBrowser(request));
+    }
+
     @GetMapping("/register")
     public String showRegisterForm(Model model, HttpServletRequest request) {
         request.getSession(true);
         model.addAttribute("pageTitle", "Register");
         model.addAttribute("registerForm", new RegisterForm());
-        model.addAttribute("turnstileEnabled", turnstileClient.isEnabled());
-        model.addAttribute("turnstileSiteKey", turnstileClient.getSiteKey());
-        model.addAttribute("inAppBrowser", isInAppBrowser(request));
         return "auth/register";
     }
 
