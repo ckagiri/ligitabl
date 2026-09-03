@@ -88,6 +88,13 @@ public class TurnstileClient {
 
             if (!response.success()) {
                 List<String> errorCodes = response.errorCodes() == null ? List.of() : response.errorCodes();
+                // hostname must match the widget's allowed list — logging it separates a domain
+                // mismatch from an expired token, which share the invalid-input-response code.
+                log.warn(
+                        "[TURNSTILE_VERIFY_REJECTED] errorCodes={} hostname={} challengeTs={}",
+                        errorCodes,
+                        response.hostname(),
+                        response.challengeTs());
                 return Either.left(new TurnstileError.VerificationFailed(errorCodes));
             }
 
