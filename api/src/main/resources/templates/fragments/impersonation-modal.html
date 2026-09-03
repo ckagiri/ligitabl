@@ -51,10 +51,28 @@
               >
                 Cancel
               </button>
+              <!--
+                Starting impersonation is a user lookup plus a session mutation, answered with
+                HX-Redirect to /my-table — a round trip and then a full page load. htmx leaves
+                .htmx-request on the element through that navigation, so the spinner correctly
+                stays up until the new page paints. On the error path the response replaces the
+                whole modal, which resets the button.
+              -->
               <button
                 type="submit"
-                class="px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                hx-disabled-elt="this"
+                class="inline-flex items-center gap-2 px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700 disabled:opacity-50"
               >
+                <svg
+                  class="htmx-indicator animate-spin h-4 w-4"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  aria-hidden="true"
+                >
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor"
+                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                </svg>
                 Impersonate
               </button>
             </div>

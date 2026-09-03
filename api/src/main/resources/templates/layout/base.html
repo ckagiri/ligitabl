@@ -577,11 +577,17 @@
                       @click="adminMenuOpen = false"
                       >Matches</a
                     >
+                    <!--
+                      The dropdown closes on click, so an indicator on the button itself would
+                      be gone before it was seen. hx-indicator points at the shared overlay near
+                      the modal root instead, which is what the user is actually waiting for.
+                    -->
                     <button
                       type="button"
                       hx-get="/admin/impersonation/modal"
                       hx-target="#impersonation-modal-root"
                       hx-swap="innerHTML"
+                      hx-indicator="#impersonation-modal-loading"
                       class="block w-full text-left px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 transition"
                       @click="adminMenuOpen = false"
                     >
@@ -994,11 +1000,13 @@
                   th:aria-current="${activeNav == 'admin-matches'} ? 'page' : null"
                   >Matches</a
                 >
+                <!-- See the desktop button: the menu closes on click, so the overlay is the indicator. -->
                 <button
                   type="button"
                   hx-get="/admin/impersonation/modal"
                   hx-target="#impersonation-modal-root"
                   hx-swap="innerHTML"
+                  hx-indicator="#impersonation-modal-loading"
                   class="block w-full text-left text-gray-700 hover:bg-gray-50 px-3 py-1.5 rounded-md text-base font-medium"
                   @click="mobileMenuOpen = false"
                 >
@@ -1261,6 +1269,27 @@
 
     <!-- Impersonation: modal mount point + self-hiding banner (mirrors #results-banner pattern) -->
     <div id="impersonation-modal-root"></div>
+    <!--
+      Shown while /admin/impersonation/modal is in flight, targeted by hx-indicator from the
+      Impersonate buttons in both menus. The global .htmx-indicator rule toggles `display:
+      inline`, which would break the centring, so this one overrides to flex when active.
+    -->
+    <style>
+      #impersonation-modal-loading { display: none; }
+      .htmx-request #impersonation-modal-loading,
+      #impersonation-modal-loading.htmx-request { display: flex; }
+    </style>
+    <div
+      id="impersonation-modal-loading"
+      class="htmx-indicator fixed inset-0 z-50 items-center justify-center bg-gray-900 bg-opacity-50"
+      aria-hidden="true"
+    >
+      <svg class="animate-spin h-8 w-8 text-white" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+      </svg>
+    </div>
     <div
       th:if="${isLoggedIn}"
       id="impersonation-banner-root"
