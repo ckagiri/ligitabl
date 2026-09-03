@@ -59,14 +59,31 @@
             // window-event listeners, so a fire-and-forget CustomEvent alone can be missed. The
             // form's x-init reads this on mount to catch anything that already happened.
             let turnstileErrorOccurred = false;
+            // Same reasoning as the error flag, for the token: a widget that solves before Alpine
+            // mounts dispatched turnstile-success to nobody, reaching the server as
+            // [TURNSTILE_VERIFY_FAILED] reason=missing-token. init() re-reads this on mount.
+            let turnstileTokenValue = '';
+            // Issue time, so submit can re-check the ~300s TTL rather than trust that the expired
+            // callback was heard — a missed one submitted a stale token (invalid-input-response).
+            let turnstileTokenIssuedAt = 0;
+            const TURNSTILE_TOKEN_TTL_MS = 240000; // 4 min, under Cloudflare's 5 for margin
+            function turnstileTokenExpired() {
+              return !turnstileTokenIssuedAt || Date.now() - turnstileTokenIssuedAt > TURNSTILE_TOKEN_TTL_MS;
+            }
             function onTurnstileSuccess(token) {
+              turnstileTokenValue = token;
+              turnstileTokenIssuedAt = Date.now();
               window.dispatchEvent(new CustomEvent('turnstile-success', { detail: token }));
             }
             function onTurnstileError() {
               turnstileErrorOccurred = true;
+              turnstileTokenValue = '';
+              turnstileTokenIssuedAt = 0;
               window.dispatchEvent(new CustomEvent('turnstile-error'));
             }
             function onTurnstileExpired() {
+              turnstileTokenValue = '';
+              turnstileTokenIssuedAt = 0;
               window.dispatchEvent(new CustomEvent('turnstile-expired'));
             }
           </script>
@@ -76,7 +93,8 @@
             th:action="@{/auth/register}"
             method="post"
             th:object="${registerForm}"
-            x-on:turnstile-success.window="turnstileToken = $event.detail"
+            x-on:submit="onSubmit($event)"
+            x-on:turnstile-success.window="turnstileToken = $event.detail; turnstileError = false; turnstileRefreshed = false"
             x-on:turnstile-error.window="turnstileError = true"
             x-on:turnstile-expired.window="turnstileToken = ''"
             x-data="{
@@ -86,8 +104,28 @@
               confirmPassword: '',
               turnstileToken: '',
               turnstileError: false,
+              turnstileRefreshed: false,
               init() {
                 if (turnstileErrorOccurred) this.turnstileError = true;
+                // Adopt a token that arrived before Alpine was listening (see turnstileTokenValue).
+                if (turnstileTokenValue) this.turnstileToken = turnstileTokenValue;
+              },
+              // Blocks a token past its TTL and asks the widget for a fresh one, so a missed
+              // expiry callback can't leave the user on a dead button.
+              turnstileStale() {
+                return turnstileEnabled && this.turnstileToken.length > 0 && turnstileTokenExpired();
+              },
+              onSubmit(e) {
+                if (this.turnstileStale()) {
+                  e.preventDefault();
+                  this.turnstileToken = '';
+                  turnstileTokenValue = '';
+                  turnstileTokenIssuedAt = 0;
+                  this.turnstileRefreshed = true;
+                  if (window.turnstile && typeof window.turnstile.reset === 'function') {
+                    window.turnstile.reset();
+                  }
+                }
               },
               turnstileOk() {
                 return !turnstileEnabled || (this.turnstileToken.length > 0 && !this.turnstileError);
@@ -425,6 +463,10 @@
               <input type="hidden" name="cf-turnstile-response" :value="turnstileToken" />
               <p x-cloak x-show="turnstileError" class="mt-1 text-sm text-red-600" role="alert">
                 Verification failed to load. Please refresh the page and try again.
+              </p>
+              <!-- Explains the blocked submit when onSubmit() rejects an aged-out token. -->
+              <p x-cloak x-show="turnstileRefreshed" class="mt-1 text-sm text-amber-700" role="alert">
+                Your verification expired. It's being renewed — please submit again.
               </p>
             </div>
 

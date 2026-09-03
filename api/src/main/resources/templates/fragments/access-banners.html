@@ -159,6 +159,34 @@
     </div>
   </div>
 
+  <!--
+    Cooldown Expired Banner. Same actionable moment as the opening-round card above, so it gets
+    the same weight rather than the inline dot it used to get. Conditioned as the complement of
+    the other swap-availability banners, so only one is ever on screen.
+  -->
+  <div th:if="${!isGuest && !canCreateEntry && canSwap
+                 && isCurrentRound && isRoundOpenForPrediction
+                 && !swapStatus.firstSwapBonus
+                 && !swapStatus.openingRoundAvailable
+                 && seasonEditingAllowed}"
+    class="bg-green-50 border border-green-200 rounded-lg p-4">
+    <div class="flex items-start">
+      <div class="bg-green-100 rounded-full p-1.5 mr-3 flex-shrink-0">
+        <svg class="h-5 w-5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd"
+            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+            clip-rule="evenodd" />
+        </svg>
+      </div>
+      <div>
+        <p class="text-sm font-semibold text-slate-800">✅ Swap Available</p>
+        <p class="text-sm text-slate-600 mt-1">
+          Make a swap and hit Update — cooldown restarts after.
+        </p>
+      </div>
+    </div>
+  </div>
+
   <!-- Locked State Banner (locked only) - NOT for guests, NOT for first swap bonus -->
   <div
     th:if="${!isGuest && isCurrentRound && roundState == 'locked' && !swapStatus.firstSwapBonus}"
@@ -281,18 +309,18 @@
     </div>
   </div>
 
-  <!-- Status Indicator (for own predictions, not during first swap bonus which has its own banner) -->
+  <!--
+    Status Indicator, cooldown-active only — every "you can swap now" state has its own card
+    above. !openingRoundAvailable matters: in the opening window canSwap can still be false (last
+    swap under 24h old) while the table is interactive, which showed the amber "Opening Swap
+    Available" card and a yellow "Cooldown active" pill at once.
+  -->
   <div
     th:if="${!isGuest && !canCreateEntry && !swapStatus.firstSwapBonus && seasonEditingAllowed}"
     class="inline-flex items-center gap-2 text-sm">
     <span
-      th:if="${isCurrentRound && canSwap && isRoundOpenForPrediction}"
-      class="flex items-center gap-1.5 text-green-600 font-medium">
-      <span class="w-2 h-2 bg-green-600 rounded-full"></span>
-      Ready to modify
-    </span>
-    <span
-      th:if="${isCurrentRound && !canSwap && isRoundOpenForPrediction}"
+      th:if="${isCurrentRound && !canSwap && isRoundOpenForPrediction
+                && !swapStatus.openingRoundAvailable}"
       class="flex items-center gap-1.5 text-yellow-600 font-medium">
       <span class="w-2 h-2 bg-yellow-600 rounded-full"></span>
       Cooldown active -
