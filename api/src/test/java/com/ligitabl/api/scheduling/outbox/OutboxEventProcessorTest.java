@@ -336,7 +336,8 @@ class OutboxEventProcessorTest {
         processor.processOne(event);
 
         // Attempt 2's backoff is 5 minutes.
-        verify(outboxRepo).markDeferred(eq(event.getId()), contains("rate limited"), eq(NOW.plus(Duration.ofMinutes(5))));
+        verify(outboxRepo)
+                .markDeferred(eq(event.getId()), contains("rate limited"), eq(NOW.plus(Duration.ofMinutes(5))));
     }
 
     @Test
@@ -360,7 +361,8 @@ class OutboxEventProcessorTest {
 
         processor.processOne(event);
 
-        verify(outboxRepo).markDeferred(eq(event.getId()), contains("rate limited"), eq(NOW.plus(Duration.ofMinutes(1))));
+        verify(outboxRepo)
+                .markDeferred(eq(event.getId()), contains("rate limited"), eq(NOW.plus(Duration.ofMinutes(1))));
     }
 
     @Test

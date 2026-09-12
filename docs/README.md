@@ -8,6 +8,7 @@
 - Leaderboard: [Leaderboard Persistence](./leaderboard.md)
 - Debugging guide: [Debugging Test Failures](./debugging-tests.md)
 - Error handling: [Functional Either](./dev/functional-either.md)
+- Scheduled work: [Background Jobs](./background-jobs.md) — read before adding a `@Scheduled` method
 
 ## Common commands
 

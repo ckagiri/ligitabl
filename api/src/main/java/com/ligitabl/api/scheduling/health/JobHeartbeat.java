@@ -82,11 +82,17 @@ public class JobHeartbeat {
      */
     public void register(String jobName, Duration maxInterval) {
         Instant now = Instant.now(clock);
-        entries.compute(jobName, (name, existing) -> existing == null
-                ? new Entry(name, maxInterval, now, null, 0L, null)
-                : new Entry(
-                        name, maxInterval, existing.registeredAt(), existing.lastPingAt(),
-                        existing.pingCount(), existing.lastAlertAt()));
+        entries.compute(
+                jobName,
+                (name, existing) -> existing == null
+                        ? new Entry(name, maxInterval, now, null, 0L, null)
+                        : new Entry(
+                                name,
+                                maxInterval,
+                                existing.registeredAt(),
+                                existing.lastPingAt(),
+                                existing.pingCount(),
+                                existing.lastAlertAt()));
         log.info("[JOB_HEARTBEAT_REGISTERED] job={} maxInterval={}", jobName, maxInterval);
     }
 

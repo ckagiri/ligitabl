@@ -1,5 +1,7 @@
 package com.ligitabl.api.scheduling.advancematchday;
 
+import java.time.Duration;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -9,8 +11,11 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.notification.AdminNotificationService;
+import com.ligitabl.api.scheduling.health.JobHeartbeat;
+import com.ligitabl.api.scheduling.health.JobNames;
 
 import io.sentry.Sentry;
+import jakarta.annotation.PostConstruct;
 
 /**
  * Matchday Advancement Scheduler
@@ -28,13 +33,25 @@ public class MatchdayAdvancementScheduler {
 
     private static final Logger log = LoggerFactory.getLogger(MatchdayAdvancementScheduler.class);
 
+    /** Daily 06:00 cron; 26h allows one missed run before alerting. */
+    private static final Duration HEARTBEAT_MAX_INTERVAL = Duration.ofHours(26);
+
     private final AdvanceMatchdayUseCase advanceMatchdayUseCase;
     private final AdminNotificationService adminNotificationService;
+    private final JobHeartbeat heartbeat;
 
     public MatchdayAdvancementScheduler(
-            AdvanceMatchdayUseCase advanceMatchdayUseCase, AdminNotificationService adminNotificationService) {
+            AdvanceMatchdayUseCase advanceMatchdayUseCase,
+            AdminNotificationService adminNotificationService,
+            JobHeartbeat heartbeat) {
         this.advanceMatchdayUseCase = advanceMatchdayUseCase;
         this.adminNotificationService = adminNotificationService;
+        this.heartbeat = heartbeat;
+    }
+
+    @PostConstruct
+    void registerHeartbeat() {
+        heartbeat.register(JobNames.MATCHDAY_ADVANCEMENT, HEARTBEAT_MAX_INTERVAL);
     }
 
     /**
@@ -53,6 +70,8 @@ public class MatchdayAdvancementScheduler {
     public void scheduledCheck() {
         log.info("MatchdayAdvancementScheduler: Running scheduled daily check");
         checkAndAdvanceMatchday();
+        // Cron path only — onStartup firing is not evidence the cron works.
+        heartbeat.ping(JobNames.MATCHDAY_ADVANCEMENT);
     }
 
     private void checkAndAdvanceMatchday() {

@@ -26,6 +26,8 @@ import com.ligitabl.api.notification.outbox.OutboxEventTypes;
 import com.ligitabl.api.notification.outbox.RoundLockedPayload;
 import com.ligitabl.api.notification.outbox.SeasonInPlayPayload;
 import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionUseCase;
+import com.ligitabl.api.scheduling.health.JobHeartbeat;
+import com.ligitabl.api.scheduling.health.ScheduledJobRunner;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.InPlaySeasonFixture;
 import com.ligitabl.model.domain.OutboxEvent;
@@ -134,7 +136,8 @@ class OutboxFailureIsolationIT extends AbstractPostgresIT {
     private void relay(List<OutboxEvent> batch) {
         OutboxRepo spied = spy(outboxRepo);
         doReturn(batch).when(spied).claimBatchForProcessing(25);
-        new OutboxRelayJob(spied, processor, clock, 25).relay();
+        JobHeartbeat heartbeat = new JobHeartbeat(clock);
+        new OutboxRelayJob(spied, processor, clock, 25, new ScheduledJobRunner(heartbeat), heartbeat).relay();
     }
 
     private void relayClaimed() {

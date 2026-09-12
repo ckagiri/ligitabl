@@ -146,8 +146,7 @@ class ContestDetailControllerTest {
                         .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
                         .toList());
         SecurityContextHolder.getContext()
-                .setAuthentication(
-                        new UsernamePasswordAuthenticationToken(details, null, details.getAuthorities()));
+                .setAuthentication(new UsernamePasswordAuthenticationToken(details, null, details.getAuthorities()));
     }
 
     /** Mirrors {@code ImpersonationSessionFilter}: the context lives on the request. */

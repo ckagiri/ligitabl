@@ -117,8 +117,7 @@ class FinalTableScorerTest {
         assertThat(score.zeroesCount()).isZero();
         assertThat(score.bonusPoints()).isZero();
         assertThat(score.bonusPoints()).isEqualTo(score.zeroesCount() * FinalTableScorer.ZERO_BONUS);
-        assertThat(score.totalScore())
-                .isEqualTo(score.baseScore() + score.bonusPoints() + score.championBonus());
+        assertThat(score.totalScore()).isEqualTo(score.baseScore() + score.bonusPoints() + score.championBonus());
     }
 
     @Test

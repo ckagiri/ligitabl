@@ -414,12 +414,14 @@ public class OutboxEventProcessor {
      * schedule.
      */
     private void send(String recipientEmail, EmailContent content) {
-        emailProvider.sendSingle(recipientEmail, content, EmailCommand.Priority.NORMAL).peekLeft(error -> {
-            if (error instanceof EmailError.RateLimited rateLimited) {
-                throw new EmailRateLimitedException(rateLimited);
-            }
-            throw new IllegalStateException("Email send failed: " + error);
-        });
+        emailProvider
+                .sendSingle(recipientEmail, content, EmailCommand.Priority.NORMAL)
+                .peekLeft(error -> {
+                    if (error instanceof EmailError.RateLimited rateLimited) {
+                        throw new EmailRateLimitedException(rateLimited);
+                    }
+                    throw new IllegalStateException("Email send failed: " + error);
+                });
     }
 
     /** Provider-side sending limit; carries the reset time when the provider supplied one. */
@@ -454,9 +456,10 @@ public class OutboxEventProcessor {
             // Falls back to the normal backoff when the provider named no reset time, and floors
             // the wait at the backoff so a stale or already-past timestamp can't spin the relay.
             Instant backoff = event.nextAvailableAt(clock.instant());
-            Instant retryAt = rateLimited.retryAfter() != null && rateLimited.retryAfter().isAfter(backoff)
-                    ? rateLimited.retryAfter()
-                    : backoff;
+            Instant retryAt =
+                    rateLimited.retryAfter() != null && rateLimited.retryAfter().isAfter(backoff)
+                            ? rateLimited.retryAfter()
+                            : backoff;
             outboxRepo.markDeferred(event.getId(), error, retryAt);
             log.warn(
                     "[OUTBOX_RATE_LIMITED] id={}, type={}, retryAt={} (attempt not counted): {}",

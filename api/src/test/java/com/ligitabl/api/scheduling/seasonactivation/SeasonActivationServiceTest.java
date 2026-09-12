@@ -14,6 +14,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.notification.AdminNotificationService;
+import com.ligitabl.api.scheduling.health.JobHeartbeat;
 import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
@@ -43,7 +44,12 @@ class SeasonActivationServiceTest {
     @BeforeEach
     void setUp() {
         service = new SeasonActivationService(
-                DEFAULTS, competitionRepo, seasonRepo, adminNotificationService, TestClock.FIXED);
+                DEFAULTS,
+                competitionRepo,
+                seasonRepo,
+                adminNotificationService,
+                TestClock.FIXED,
+                new JobHeartbeat(TestClock.FIXED));
         competitionId = UUID.randomUUID();
         activeSeasonId = UUID.randomUUID();
     }

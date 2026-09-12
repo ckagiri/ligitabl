@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,6 +26,8 @@ import org.springframework.scheduling.TaskScheduler;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.api.scheduling.advanceround.RoundAdvancementService;
+import com.ligitabl.api.scheduling.health.JobHeartbeat;
+import com.ligitabl.api.scheduling.health.JobNames;
 import com.ligitabl.api.scheduling.resilience.MatchSyncCircuitBreaker;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
@@ -64,6 +67,9 @@ class MatchSyncSchedulerTest {
     private MatchSyncCircuitBreaker circuitBreaker;
 
     @Mock
+    private JobHeartbeat heartbeat;
+
+    @Mock
     private ScheduledFuture<Object> scheduledFuture;
 
     private MatchSyncScheduler scheduler;
@@ -85,7 +91,8 @@ class MatchSyncSchedulerTest {
                 seasonRepo,
                 outboxRepo,
                 objectMapper,
-                circuitBreaker);
+                circuitBreaker,
+                heartbeat);
 
         setField(scheduler, "competitionCode", "PL");
         setField(scheduler, "retryOnFailureMinutes", 5L);
@@ -345,6 +352,102 @@ class MatchSyncSchedulerTest {
                 false,
                 List.of(),
                 NextSyncSchedule.seconds(90, reason).withPhase(phase));
+    }
+
+    /**
+     * The 2026-09-06 regression. A zero delay scheduled the next run at the same instant, it fired
+     * while the previous one was still inside result.fold(), hit the `running` guard, and returned
+     * without re-arming — orphaning the chain permanently. The schedule() verify is the assertion
+     * that fails against the pre-fix code. See .art/task_89.md.
+     */
+    @Test
+    void reentrantSkip_stillSchedulesNextSync() throws Exception {
+        setField(scheduler, "running", new AtomicBoolean(true));
+
+        scheduler.triggerManualSync();
+
+        verify(syncMatchesUseCase, never()).execute(any());
+
+        ArgumentCaptor<Instant> instantCaptor = ArgumentCaptor.forClass(Instant.class);
+        verify(taskScheduler).schedule(any(Runnable.class), instantCaptor.capture());
+        Duration delay = Duration.between(Instant.now(), instantCaptor.getValue());
+        assertTrue(
+                delay.toSeconds() >= 55 && delay.toSeconds() <= 65,
+                "expected ~60s re-arm after a re-entrant skip, got " + delay);
+    }
+
+    @Test
+    void neverSchedulesZeroDelay_whenScheduleIsImmediate() {
+        MatchSyncResult result = immediateResult();
+        when(syncMatchesUseCase.execute(any())).thenReturn(Either.right(result));
+
+        Instant before = Instant.now();
+        scheduler.triggerManualSync();
+
+        ArgumentCaptor<Instant> instantCaptor = ArgumentCaptor.forClass(Instant.class);
+        verify(taskScheduler).schedule(any(Runnable.class), instantCaptor.capture());
+        Duration delay = Duration.between(before, instantCaptor.getValue());
+        assertTrue(delay.toSeconds() >= 30, "zero-delay schedule must be floored to >=30s, got " + delay);
+    }
+
+    @Test
+    void onStartup_schedulesAtFloorNotImmediately() {
+        scheduler.onStartup();
+
+        ArgumentCaptor<Instant> instantCaptor = ArgumentCaptor.forClass(Instant.class);
+        verify(taskScheduler).schedule(any(Runnable.class), instantCaptor.capture());
+        Duration delay = Duration.between(Instant.now(), instantCaptor.getValue());
+        // Deliberate: the floor applies to startup too, so no path can schedule at "now".
+        assertTrue(delay.toSeconds() >= 25, "startup sync should be floored, got " + delay);
+    }
+
+    /** The breaker's early return moved inside the try; `finally` must still clear `running`. */
+    @Test
+    void circuitBreakerDefer_releasesRunningFlag() {
+        when(circuitBreaker.allowRequest()).thenReturn(false);
+        when(circuitBreaker.getRemainingRecoveryTime()).thenReturn(Duration.ofMinutes(30));
+
+        scheduler.triggerManualSync();
+        scheduler.triggerManualSync();
+
+        verify(taskScheduler, times(2)).schedule(any(Runnable.class), any(Instant.class));
+    }
+
+    @Test
+    void recordsHeartbeat_onSuccessfulSync() {
+        when(syncMatchesUseCase.execute(any())).thenReturn(Either.right(immediateResult()));
+
+        scheduler.triggerManualSync();
+
+        verify(heartbeat).ping(JobNames.MATCH_SYNC);
+    }
+
+    @Test
+    void doesNotRecordHeartbeat_onFailedSync() {
+        when(syncMatchesUseCase.execute(any()))
+                .thenReturn(Either.left(
+                        new SyncMatchesUseCase.SyncMatchesError.HierarchyError(UseCaseErrors.validation("boom"))));
+
+        scheduler.triggerManualSync();
+
+        verify(heartbeat, never()).ping(any());
+    }
+
+    private MatchSyncResult immediateResult() {
+        return new MatchSyncResult(
+                seasonId,
+                roundId,
+                5,
+                RoundStatus.LOCKED,
+                10,
+                1,
+                0,
+                List.of(),
+                false, // not allMatchesComplete — keeps the finalization branch out of the way
+                false,
+                false,
+                List.of(),
+                NextSyncSchedule.immediate("All matches complete - trigger finalization", true));
     }
 
     private MatchSyncResult completeResult() {
