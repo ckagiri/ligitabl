@@ -61,7 +61,9 @@ public class MatchdayAdvancementScheduler {
 
             result.fold(
                     error -> {
+                        // Synthetic exception: the error is a sealed-interface value, not a Throwable.
                         log.error("Matchday advancement failed: {}", error);
+                        Sentry.captureException(new IllegalStateException("Matchday advancement failed: " + error));
                         return null;
                     },
                     success -> {

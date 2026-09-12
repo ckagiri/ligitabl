@@ -1,6 +1,7 @@
 package com.ligitabl.api.notification;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
@@ -58,6 +59,22 @@ public class AdminNotificationService {
         info(
                 "Application started",
                 "Initial match sync starting on application startup (competition: " + competitionCode + ").");
+    }
+
+    // --- Background job watchdog ---
+
+    /** Alert tier rather than info: the usual remedy is an application restart. */
+    public void notifyJobStalled(
+            String jobName, Instant lastHealthyAt, Duration since, Duration maxInterval, long pingCount) {
+        alert(
+                "Background job STALLED: " + jobName,
+                "No successful run of '" + jobName + "' for " + formatDuration(since) + ".\n"
+                        + "Declared max interval: " + formatDuration(maxInterval) + "\n"
+                        + "Last healthy at: " + lastHealthyAt + "\n"
+                        + "Successful runs since boot: " + pingCount + "\n\n"
+                        + (pingCount == 0
+                                ? "This job has never run since the application started."
+                                : "The job ran before and then stopped."));
     }
 
     public void notifySyncScheduleChanged(UUID roundId, int roundPosition, Duration delay, String reason) {

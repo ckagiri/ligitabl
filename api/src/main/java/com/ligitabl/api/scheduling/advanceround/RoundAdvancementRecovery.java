@@ -9,6 +9,7 @@ import org.springframework.stereotype.Component;
 
 import com.ligitabl.model.repo.RoundRepo;
 
+import io.sentry.Sentry;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -59,13 +60,16 @@ public class RoundAdvancementRecovery {
                     log.info("Recovered advancement for roundId={}", round.getId());
                 } catch (Exception e) {
                     log.error("Failed to recover advancement for roundId={}", round.getId(), e);
+                    Sentry.captureException(e);
                 }
             }
 
             log.info("Recovery complete: processed {} missed advancement(s)", missed.size());
 
         } catch (Exception e) {
+            // A failed sweep is how a stalled advancement stays stalled across restarts.
             log.error("Failed to check for missed advancements", e);
+            Sentry.captureException(e);
         }
     }
 }

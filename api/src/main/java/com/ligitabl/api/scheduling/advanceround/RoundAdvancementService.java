@@ -258,7 +258,9 @@ public class RoundAdvancementService {
                     String.valueOf(roundPosition),
                     objectMapper.writeValueAsString(payload)));
         } catch (Exception e) {
+            // The round advanced but nobody gets the results email — worth an alert, not just a log.
             log.error("[ROUND_ADVANCED_OUTBOX_FAILED] round={}: {}", roundPosition, e.getMessage(), e);
+            Sentry.captureException(e);
         }
     }
 
