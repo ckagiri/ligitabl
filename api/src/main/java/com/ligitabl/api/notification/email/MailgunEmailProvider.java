@@ -143,7 +143,8 @@ public class MailgunEmailProvider implements EmailProvider {
             return null;
         }
         try {
-            return Instant.from(DateTimeFormatter.RFC_1123_DATE_TIME.parse(matcher.group(1).replace("UTC", "GMT")));
+            return Instant.from(
+                    DateTimeFormatter.RFC_1123_DATE_TIME.parse(matcher.group(1).replace("UTC", "GMT")));
         } catch (DateTimeParseException e) {
             log.warn("[MAILGUN_RETRY_AFTER_UNPARSEABLE] value={}", matcher.group(1));
             return null;

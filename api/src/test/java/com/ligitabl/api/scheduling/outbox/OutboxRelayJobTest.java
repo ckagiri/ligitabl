@@ -23,6 +23,8 @@ import org.mockito.quality.Strictness;
 import org.springframework.dao.DuplicateKeyException;
 
 import com.ligitabl.api.notification.outbox.OutboxEventTypes;
+import com.ligitabl.api.scheduling.health.JobHeartbeat;
+import com.ligitabl.api.scheduling.health.ScheduledJobRunner;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 
@@ -46,7 +48,10 @@ class OutboxRelayJobTest {
 
     @BeforeEach
     void setup() {
-        job = new OutboxRelayJob(outboxRepo, processor, Clock.fixed(NOW, ZoneOffset.UTC), 25);
+        // Real runner and heartbeat: the guarding they add is part of relay()'s behaviour now.
+        Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
+        JobHeartbeat heartbeat = new JobHeartbeat(clock);
+        job = new OutboxRelayJob(outboxRepo, processor, clock, 25, new ScheduledJobRunner(heartbeat), heartbeat);
     }
 
     private OutboxEvent event(String key) {

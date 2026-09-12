@@ -25,8 +25,7 @@ public record RoundStandingsResult(
         return nextFixtures.values().stream()
                 .filter(java.util.Objects::nonNull)
                 .flatMap(List::stream)
-                .noneMatch(fixture -> fixture.hasScore()
-                        || "LIVE".equals(fixture.status())
-                        || "FINISHED".equals(fixture.status()));
+                .noneMatch(fixture ->
+                        fixture.hasScore() || "LIVE".equals(fixture.status()) || "FINISHED".equals(fixture.status()));
     }
 }

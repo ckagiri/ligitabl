@@ -18,6 +18,7 @@ import lombok.Data;
 public class RoundResultsEmailProperties {
     /** Kept in step with the application.yml default — see the Mailgun rate-limit note there. */
     private int topN = 25;
+
     private String mode = "live"; // live | test
 
     public boolean isTestMode() {

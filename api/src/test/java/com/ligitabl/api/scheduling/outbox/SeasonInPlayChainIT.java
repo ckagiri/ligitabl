@@ -19,6 +19,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.notification.outbox.OutboxEventTypes;
 import com.ligitabl.api.notification.outbox.SeasonInPlayPayload;
+import com.ligitabl.api.scheduling.health.JobHeartbeat;
+import com.ligitabl.api.scheduling.health.ScheduledJobRunner;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.InPlaySeasonFixture;
 import com.ligitabl.model.domain.OutboxEvent;
@@ -78,7 +80,8 @@ class SeasonInPlayChainIT extends AbstractPostgresIT {
     private void relayOnce() {
         OutboxRepo spied = spy(outboxRepo);
         doReturn(outboxRepo.claimBatchForProcessing(25)).when(spied).claimBatchForProcessing(25);
-        new OutboxRelayJob(spied, processor, clock, 25).relay();
+        JobHeartbeat heartbeat = new JobHeartbeat(clock);
+        new OutboxRelayJob(spied, processor, clock, 25, new ScheduledJobRunner(heartbeat), heartbeat).relay();
     }
 
     private OutboxEvent stored(String key) {

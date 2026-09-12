@@ -6,8 +6,6 @@ import java.time.Duration;
 import java.util.Optional;
 import java.util.UUID;
 
-import jakarta.servlet.http.HttpServletRequest;
-
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
 import org.springframework.security.authentication.AnonymousAuthenticationToken;
@@ -30,6 +28,7 @@ import com.ligitabl.model.repo.FinalTablePredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.UserRepo;
 
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 
 /**

@@ -9,10 +9,14 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import com.ligitabl.api.scheduling.health.JobHeartbeat;
+import com.ligitabl.api.scheduling.health.JobNames;
+import com.ligitabl.api.scheduling.health.ScheduledJobRunner;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 
 import io.sentry.Sentry;
+import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -39,43 +43,61 @@ public class OutboxRelayJob {
 
     private static final Duration STUCK_PROCESSING_TIMEOUT = Duration.ofMinutes(10);
 
+    /** 15s poll, so ~20x — loose on purpose: this ticks constantly and would be the noisiest entry. */
+    private static final Duration HEARTBEAT_MAX_INTERVAL = Duration.ofMinutes(5);
+
     private final OutboxRepo outboxRepo;
     private final OutboxEventProcessor processor;
     private final Clock clock;
     private final int batchSize;
+    private final ScheduledJobRunner runner;
+    private final JobHeartbeat heartbeat;
 
     public OutboxRelayJob(
             OutboxRepo outboxRepo,
             OutboxEventProcessor processor,
             Clock clock,
-            @Value("${ligitabl.outbox.batch-size:25}") int batchSize) {
+            @Value("${ligitabl.outbox.batch-size:25}") int batchSize,
+            ScheduledJobRunner runner,
+            JobHeartbeat heartbeat) {
         this.outboxRepo = outboxRepo;
         this.processor = processor;
         this.clock = clock;
         this.batchSize = batchSize;
+        this.runner = runner;
+        this.heartbeat = heartbeat;
+    }
+
+    @PostConstruct
+    void registerHeartbeat() {
+        heartbeat.register(JobNames.OUTBOX_RELAY, HEARTBEAT_MAX_INTERVAL);
     }
 
     @Scheduled(fixedDelayString = "${ligitabl.outbox.poll-interval-ms:15000}")
     public void relay() {
-        List<OutboxEvent> batch = outboxRepo.claimBatchForProcessing(batchSize);
-        if (batch.isEmpty()) {
-            return;
-        }
-        log.info("[OUTBOX_RELAY_BATCH] size={}", batch.size());
-        for (OutboxEvent event : batch) {
-            try {
-                processor.processOne(event);
-            } catch (Exception e) {
-                // processOne swallows almost everything, but not a database error that
-                // aborted its transaction — that also defeats its own markFailed write.
-                // Without this guard the escaping exception abandons the rest of the
-                // claimed batch, leaving up to batchSize-1 untouched events PROCESSING
-                // until the stuck sweep.
-                log.error("[OUTBOX_RELAY_EVENT_FAILED] id={}, type={}", event.getId(), event.getEventType(), e);
-                Sentry.captureException(e);
-                recordFailureOutOfBand(event, e);
+        // Wrapped so a claimBatchForProcessing failure is logged and captured rather than escaping
+        // to the pool. An empty batch still pings: the job ran.
+        runner.runSafely(JobNames.OUTBOX_RELAY, () -> {
+            List<OutboxEvent> batch = outboxRepo.claimBatchForProcessing(batchSize);
+            if (batch.isEmpty()) {
+                return;
             }
-        }
+            log.info("[OUTBOX_RELAY_BATCH] size={}", batch.size());
+            for (OutboxEvent event : batch) {
+                try {
+                    processor.processOne(event);
+                } catch (Exception e) {
+                    // processOne swallows almost everything, but not a database error that
+                    // aborted its transaction — that also defeats its own markFailed write.
+                    // Without this guard the escaping exception abandons the rest of the
+                    // claimed batch, leaving up to batchSize-1 untouched events PROCESSING
+                    // until the stuck sweep.
+                    log.error("[OUTBOX_RELAY_EVENT_FAILED] id={}, type={}", event.getId(), event.getEventType(), e);
+                    Sentry.captureException(e);
+                    recordFailureOutOfBand(event, e);
+                }
+            }
+        });
     }
 
     /**
@@ -99,9 +121,13 @@ public class OutboxRelayJob {
             fixedDelayString = "${ligitabl.outbox.stuck-sweep-interval-ms:300000}",
             initialDelayString = "${ligitabl.outbox.stuck-sweep-interval-ms:300000}")
     public void recoverStuckProcessing() {
-        int reset = outboxRepo.resetStuckProcessing(clock.instant().minus(STUCK_PROCESSING_TIMEOUT));
-        if (reset > 0) {
-            log.warn("[OUTBOX_STUCK_RESET] count={}", reset);
-        }
+        // runGuarded, not runSafely: relay()'s heartbeat already proves this bean and the pool are
+        // alive, so a second ping would assert the same fact twice.
+        runner.runGuarded(JobNames.OUTBOX_RELAY, () -> {
+            int reset = outboxRepo.resetStuckProcessing(clock.instant().minus(STUCK_PROCESSING_TIMEOUT));
+            if (reset > 0) {
+                log.warn("[OUTBOX_STUCK_RESET] count={}", reset);
+            }
+        });
     }
 }

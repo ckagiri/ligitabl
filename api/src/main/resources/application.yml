@@ -99,6 +99,14 @@ ligitabl:
 
   scheduling:
     enabled: true
+    watchdog:
+      # Alerts when a monitored job goes quiet. Defaulted on deliberately — a monitor that silently
+      # fails to start is the failure mode it exists to catch.
+      enabled: ${JOB_WATCHDOG_ENABLED:true}
+      interval-ms: ${JOB_WATCHDOG_INTERVAL_MS:300000}
+      # Must outlast the slowest job's own initialDelay (outbox stuck-sweep, 5 min).
+      initial-delay-ms: ${JOB_WATCHDOG_INITIAL_DELAY_MS:600000}
+      alert-cooldown-minutes: ${JOB_WATCHDOG_ALERT_COOLDOWN_MINUTES:360}
 
   auto-join:
     # Gives a default table to users who were around during pre-season but never submitted,
