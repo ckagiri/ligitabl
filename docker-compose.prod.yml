@@ -71,6 +71,11 @@ services:
       JOIN_REMINDER_STAGE_DAYS: ${JOIN_REMINDER_STAGE_DAYS:-1,4,11}
       JOIN_REMINDER_MAX_STALE_DAYS: ${JOIN_REMINDER_MAX_STALE_DAYS:-60}
       JOIN_REMINDER_CRON: ${JOIN_REMINDER_CRON:-0 0 9 * * *}
+
+      # Alerts when a monitored background job goes quiet. Kill switch for a misbehaving
+      # watchdog — see docs/background-jobs.md.
+      JOB_WATCHDOG_ENABLED: ${JOB_WATCHDOG_ENABLED:-true}
+
       FRONTEND_URL: ${FRONTEND_URL}
       FRONTEND_SHARE_URL: ${FRONTEND_SHARE_URL}
       LOGTAIL_TOKEN: ${LOGTAIL_TOKEN}

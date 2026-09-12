@@ -178,6 +178,9 @@ jobs:
           SLACK_NEW_USER_WEBHOOK_URL=${{ secrets.SLACK_NEW_USER_WEBHOOK_URL }}
           SLACK_NOTIFICATIONS_ENABLED=true
           JOIN_REMINDER_ENABLED=true
+          # Off for the first deploy: watch the [JOB_HEARTBEAT_SUMMARY] lines for a day, then
+          # flip to true. A watchdog that false-alarms on day one gets ignored by day two.
+          JOB_WATCHDOG_ENABLED=false
           FRONTEND_URL=${{ secrets.FRONTEND_URL }}
           FRONTEND_SHARE_URL=${{ secrets.FRONTEND_SHARE_URL }}
           LOGTAIL_TOKEN=${{ secrets.LOGTAIL_TOKEN }}
@@ -247,7 +250,7 @@ jobs:
             SEASON_COUNT=$(docker exec ligitabl-db-prod \
               psql -U "$(grep POSTGRES_USER .env.prod | cut -d= -f2)" \
                    -d "$(grep POSTGRES_DB .env.prod | cut -d= -f2)" \
-                   -tAc "SELECT COUNT(*) FROM season;" 2>/dev/null || echo "0")
+                   -tAc "SELECT COUNT(*) FROM t_season;" 2>/dev/null || echo "0")
             if [ "$SEASON_COUNT" = "0" ]; then
               echo ""
               echo "⚠️  WARNING: Database has no season data — the app will run but won't be functional."
