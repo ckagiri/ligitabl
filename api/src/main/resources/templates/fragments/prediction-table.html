@@ -918,8 +918,8 @@
           <!-- Entries -->
           <ul class="divide-y divide-gray-50" x-show="formPopup !== null">
             <template
-              x-for="entry in (formPopup ? formPopup.entries : [])"
-              :key="entry.opponentCode + entry.result + entry.goalsFor"
+              x-for="(entry, idx) in (formPopup ? formPopup.entries : [])"
+              :key="idx"
             >
               <li class="flex items-center gap-3 px-4 py-2.5">
                 <span
