@@ -261,11 +261,11 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         // Lives here rather than in the comparison-options fragment's own x-data so the table
         // toolbar can read it too.
         compareOptionsOpen: window.matchMedia('(min-width: 640px)').matches,
-        positionsReversed: false,
+        positionsReversed: savedPrefs ? (savedPrefs.positionsReversed ?? false) : false,
         // Flips how the delta column *reads* — arrow direction and green/red — for people who
         // think of the gap as "how far the real table is from my pick" rather than "how far my
         // pick is from real".
-        deltaInverted: false,
+        deltaInverted: savedPrefs ? (savedPrefs.deltaInverted ?? false) : false,
         alwaysHoverable: false,
         isInitialPrediction: false,
         showStandings: savedPrefs ? (savedPrefs.showStandings ?? true) : true,
@@ -285,7 +285,10 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             const entries = this.getForm(teamCode);
             if (entries.length > 0) {
                 this.formPopupClosing = false;
-                this.formPopup = { teamCode, teamName, entries };
+                // Latest first — the modal answers "how are they doing lately". The inline badge
+                // strip reads the same arrays and stays in kickoff order, hence the copy: reverse
+                // mutates, and getForm hands back the live formData array.
+                this.formPopup = { teamCode, teamName, entries: [...entries].reverse() };
             }
         },
 
@@ -997,12 +1000,16 @@ window.Ligitabl.predictionPage = function (el) {
                 showPoints: this.showPoints,
                 showGD: this.showGD,
                 showForm: this.showForm,
+                positionsReversed: this.positionsReversed,
+                deltaInverted: this.deltaInverted,
             }, this._prefsKey);
             this.$watch("showStandings", savePrefs);
             this.$watch("showFixtures", savePrefs);
             this.$watch("showPoints", savePrefs);
             this.$watch("showGD", savePrefs);
             this.$watch("showForm", savePrefs);
+            this.$watch("positionsReversed", savePrefs);
+            this.$watch("deltaInverted", savePrefs);
         },
 
         teamClick(teamCode) {
@@ -1323,12 +1330,16 @@ window.Ligitabl.guestPredictionPage = function (el) {
                 showPoints: this.showPoints,
                 showGD: this.showGD,
                 showForm: this.showForm,
+                positionsReversed: this.positionsReversed,
+                deltaInverted: this.deltaInverted,
             }, this._prefsKey);
             this.$watch("showStandings", savePrefs);
             this.$watch("showFixtures", savePrefs);
             this.$watch("showPoints", savePrefs);
             this.$watch("showGD", savePrefs);
             this.$watch("showForm", savePrefs);
+            this.$watch("positionsReversed", savePrefs);
+            this.$watch("deltaInverted", savePrefs);
         },
 
         // Same gate as teamClick below — the guest table is always editable.
@@ -1389,12 +1400,16 @@ window.Ligitabl.publicPredictionPage = function (el) {
                 showPoints: this.showPoints,
                 showGD: this.showGD,
                 showForm: this.showForm,
+                positionsReversed: this.positionsReversed,
+                deltaInverted: this.deltaInverted,
             }, this._prefsKey);
             this.$watch("showStandings", savePrefs);
             this.$watch("showFixtures", savePrefs);
             this.$watch("showPoints", savePrefs);
             this.$watch("showGD", savePrefs);
             this.$watch("showForm", savePrefs);
+            this.$watch("positionsReversed", savePrefs);
+            this.$watch("deltaInverted", savePrefs);
         },
     });
 };
