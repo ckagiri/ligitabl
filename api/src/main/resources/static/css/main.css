@@ -600,8 +600,8 @@ video {
 .bottom-0 {
   bottom: 0px;
 }
-.bottom-5 {
-  bottom: 1.25rem;
+.bottom-8 {
+  bottom: 2rem;
 }
 .bottom-full {
   bottom: 100%;
@@ -3264,6 +3264,9 @@ video {
   .sm\:mr-3 {
     margin-right: 0.75rem;
   }
+  .sm\:mt-0 {
+    margin-top: 0px;
+  }
   .sm\:mt-6 {
     margin-top: 1.5rem;
   }
@@ -3392,6 +3395,11 @@ video {
     --tw-space-x-reverse: 0;
     margin-right: calc(2rem * var(--tw-space-x-reverse));
     margin-left: calc(2rem * calc(1 - var(--tw-space-x-reverse)));
+  }
+  .sm\:space-y-0 > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0px * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(0px * var(--tw-space-y-reverse));
   }
   .sm\:justify-self-auto {
     justify-self: auto;
