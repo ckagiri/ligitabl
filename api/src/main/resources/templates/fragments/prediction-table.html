@@ -265,7 +265,7 @@
           </label>
         </div>
 
-        <!-- Shown in both views so the invert toggle's flipped arrows don't go unexplained.
+        <!-- Shown in both views so the toggle's flipped arrows don't go unexplained.
              The two vocabularies mark which frame the delta is being read in, and differ in
              their subject: "move" is the editing frame, naming the gesture on this row —
              move it to match reality. "climb"/"drop" are the forecast frame, describing the
@@ -274,25 +274,38 @@
              carry a direction of their own. -->
         <p
           th:if="${showMoveHelperText}"
-          x-show="showStandings"
+          x-show="showStandings && deltaMode !== 'off'"
           class="text-[11px] text-gray-500 leading-snug pl-6 max-sm:pl-7"
         >
           <span class="sm:hidden">
             <span class="block"
               ><span class="text-green-600 font-semibold">↑ Green:</span>
-              <span x-text="deltaInverted ? 'climb' : 'move'">move</span> up.</span
+              <span x-text="deltaMode === 'inverted' ? 'climb' : 'move'">move</span> up.</span
             >
             <span class="block"
               ><span class="text-red-600 font-semibold">↓ Red:</span>
-              <span x-text="deltaInverted ? 'drop' : 'move'">move</span> down.</span
+              <span x-text="deltaMode === 'inverted' ? 'drop' : 'move'">move</span> down.</span
             >
           </span>
           <span class="hidden sm:inline">
             <span class="text-green-600 font-semibold">↑ Green:</span>
-            <span x-text="deltaInverted ? 'climb' : 'move'">move</span> up.
+            <span x-text="deltaMode === 'inverted' ? 'climb' : 'move'">move</span> up.
             <span class="text-red-600 font-semibold">↓ Red:</span>
-            <span x-text="deltaInverted ? 'drop' : 'move'">move</span> down.
+            <span x-text="deltaMode === 'inverted' ? 'drop' : 'move'">move</span> down.
           </span>
+        </p>
+
+        <!-- With the arrows off there is no direction to name, so the colour is all that's left
+             to explain — and it means distance from reality, not direction. -->
+        <p
+          th:if="${showMoveHelperText}"
+          x-show="showStandings && deltaMode === 'off'"
+          x-cloak
+          class="text-[11px] text-gray-500 leading-snug pl-6 max-sm:pl-7"
+        >
+          <span class="text-green-600 font-semibold">Green:</span> exact.
+          <span class="text-yellow-600 font-semibold">Yellow:</span> within 2.
+          <span class="text-red-600 font-semibold">Red:</span> further off.
         </p>
       </div>
     </div>
@@ -334,17 +347,17 @@
            colour-naming legend is out of sight — so it hides when that panel is open, being
            the weaker of the two. -->
       <span
-        x-show="!compareOptionsOpen"
+        x-show="!compareOptionsOpen && deltaMode !== 'off'"
         x-cloak
         class="inline-flex shrink-0 items-center gap-2 whitespace-nowrap text-[11px] text-gray-500"
       >
         <span class="inline-flex items-center gap-0.5">
           <span class="text-green-600 font-semibold">↑</span>
-          <span x-text="deltaInverted ? 'climb' : 'move'">move</span> up
+          <span x-text="deltaMode === 'inverted' ? 'climb' : 'move'">move</span> up
         </span>
         <span class="inline-flex items-center gap-0.5">
           <span class="text-red-600 font-semibold">↓</span>
-          <span x-text="deltaInverted ? 'drop' : 'move'">move</span> down
+          <span x-text="deltaMode === 'inverted' ? 'drop' : 'move'">move</span> down
         </span>
       </span>
       <!-- The switch and the invert button travel together: the invert button acts on the delta
@@ -377,17 +390,25 @@
             <span class="hidden max-[340px]:inline">Actual</span>
           </button>
         </div>
-        <!-- Flips the delta column's arrows and colours, never its number. Offered in both views,
-             since the delta reads the same way in each.
-             aria-label because there is no text node to name it. -->
+        <!-- Cycles how the delta column reads — arrows, flipped arrows, or no arrows at all —
+             never its number. Offered in both views, since the delta reads the same way in each.
+             No aria-pressed: it is a two-state attribute and this control has three, so the
+             live aria-label carries the state instead. -->
         <button
           type="button"
-          @click="toggleDeltaInverted()"
-          :aria-pressed="deltaInverted.toString()"
-          aria-label="Invert delta direction"
-          :class="deltaInverted ? 'bg-indigo-50 text-indigo-700 border-indigo-300' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50 hover:text-gray-700'"
+          @click="cycleDeltaMode()"
+          :aria-label="deltaMode === 'inverted'
+            ? 'Delta direction: inverted. Activate to hide direction.'
+            : (deltaMode === 'off'
+                ? 'Delta direction: hidden. Activate to show direction.'
+                : 'Delta direction: normal. Activate to invert.')"
+          :title="deltaMode === 'inverted'
+            ? 'Delta arrows inverted — click to hide them. The number stays the same.'
+            : (deltaMode === 'off'
+                ? 'Delta arrows hidden, colour shows accuracy — click to show them again.'
+                : 'Delta direction — click to invert the arrows and colours. The number stays the same.')"
+          :class="deltaMode === 'inverted' ? 'bg-indigo-50 text-indigo-700 border-indigo-300' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50 hover:text-gray-700'"
           class="inline-flex shrink-0 items-center justify-center rounded-md border p-1.5 transition-colors max-sm:p-2"
-          title="Invert delta direction — flips the arrows and colours. The number stays the same."
         >
           <svg
             class="h-4 w-4 shrink-0"
@@ -401,6 +422,14 @@
               stroke-linejoin="round"
               stroke-width="2"
               d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+            />
+            <!-- Slash marks the off state, the way a muted icon does. -->
+            <path
+              x-show="deltaMode === 'off'"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M4 20L20 4"
             />
           </svg>
         </button>
@@ -613,9 +642,12 @@
                         <span
                           x-show="getDelta(team.code) !== 0 && getDelta(team.code) !== '-'"
                           class="flex items-center gap-0.5 font-semibold"
-                          :class="displayedDeltaDirection(team.code) === 'down' ? 'text-red-600' : 'text-green-600'"
+                          :class="deltaTextClass(team.code)"
                         >
+                          <!-- Hidden rather than merely arrowless in 'off': both paths would go
+                               false on their own, but the box would still hold its 12px open. -->
                           <svg
+                            x-show="deltaMode !== 'off'"
                             class="h-3 w-3"
                             fill="currentColor"
                             viewBox="0 0 20 20"
@@ -774,9 +806,9 @@
                   class="flex items-center justify-end gap-1 text-sm font-semibold"
                 >
                   <svg
-                    x-show="getDelta(team.code) !== 0 && getDelta(team.code) !== '-'"
+                    x-show="getDelta(team.code) !== 0 && getDelta(team.code) !== '-' && deltaMode !== 'off'"
                     class="h-4 w-4"
-                    :class="displayedDeltaDirection(team.code) === 'down' ? 'text-red-600' : 'text-green-600'"
+                    :class="deltaTextClass(team.code)"
                     fill="currentColor"
                     viewBox="0 0 20 20"
                   >
@@ -794,7 +826,7 @@
                     />
                   </svg>
                   <span
-                    :class="getDelta(team.code) === 0 ? 'text-green-600' : (displayedDeltaDirection(team.code) === 'down' ? 'text-red-600' : 'text-green-600')"
+                    :class="deltaTextClass(team.code)"
                     x-text="getDelta(team.code)"
                   ></span>
                 </div>

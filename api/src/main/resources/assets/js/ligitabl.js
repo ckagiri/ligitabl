@@ -242,6 +242,17 @@ window.Ligitabl._savePrefs = function (prefs, key) {
     }
 };
 
+// Cycle order for the delta column's reading. See deltaMode in _predictionBase.
+window.Ligitabl._DELTA_MODES = ["normal", "inverted", "off"];
+
+// Prefs written before the third state stored a boolean under deltaInverted; honour it once
+// so an existing reader's inverted table does not silently reset.
+window.Ligitabl._readDeltaMode = function (savedPrefs) {
+    if (!savedPrefs) return "normal";
+    if (Ligitabl._DELTA_MODES.includes(savedPrefs.deltaMode)) return savedPrefs.deltaMode;
+    return savedPrefs.deltaInverted ? "inverted" : "normal";
+};
+
 // Shared base for predictionPage and guestPredictionPage
 window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
     const prefsKey = userId ? 'ligitabl.prefs.' + userId : 'ligitabl.prefs.guest';
@@ -262,10 +273,11 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         // toolbar can read it too.
         compareOptionsOpen: window.matchMedia('(min-width: 640px)').matches,
         positionsReversed: savedPrefs ? (savedPrefs.positionsReversed ?? false) : false,
-        // Flips how the delta column *reads* — arrow direction and green/red — for people who
-        // think of the gap as "how far the real table is from my pick" rather than "how far my
-        // pick is from real".
-        deltaInverted: savedPrefs ? (savedPrefs.deltaInverted ?? false) : false,
+        // How the delta column *reads*. 'normal' — arrows say "move this row to match reality";
+        // 'inverted' — the same gap read as the team climbing or dropping toward the pick, for
+        // people who think of it as "how far reality is from my pick"; 'off' — no arrows at all,
+        // just the accuracy colour scale the read-only views use.
+        deltaMode: Ligitabl._readDeltaMode(savedPrefs),
         alwaysHoverable: false,
         isInitialPrediction: false,
         showStandings: savedPrefs ? (savedPrefs.showStandings ?? true) : true,
@@ -609,8 +621,8 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             // Drop a half-made selection — it can't be completed here, and a highlighted
             // row you can't act on reads as stuck. Unsaved swaps deliberately survive.
             if (this.positionsReversed) this.selectedTeam = null;
-            // deltaInverted deliberately survives the view switch — it lasts the visit, and the
-            // legend shows in both views to explain the flipped arrows.
+            // deltaMode deliberately survives the view switch — it lasts the visit, and the
+            // legend shows in both views to explain however the delta is currently reading.
         },
 
         getDelta(teamCode) {
@@ -628,17 +640,36 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         },
 
         // The delta as this table is currently displaying it. getDeltaDirection stays the raw
-        // fact — scoring and the read-only views read that one — so the invert toggle cannot
+        // fact — scoring and the read-only views read that one — so the mode toggle cannot
         // leak into anything that computes a result.
         displayedDeltaDirection(teamCode) {
+            // null is also what a row with no actual position returns, and the markup already
+            // draws no arrow for it — so 'off' needs nothing beyond this.
+            if (this.deltaMode === "off") return null;
             const dir = this.getDeltaDirection(teamCode);
-            // null must stay null, or a row with no actual position grows an arrow.
-            if (dir === null || !this.deltaInverted) return dir;
+            if (dir === null || this.deltaMode !== "inverted") return dir;
             return dir === "up" ? "down" : "up";
         },
 
-        toggleDeltaInverted() {
-            this.deltaInverted = !this.deltaInverted;
+        // Distance from reality rather than direction — the scale the read-only views use.
+        deltaAccuracyClass(teamCode) {
+            const d = this.getDelta(teamCode);
+            if (d === 0) return "text-green-600";
+            return d <= 2 ? "text-yellow-600" : "text-red-600";
+        },
+
+        // Colour for the delta number in whatever mode the table is in.
+        deltaTextClass(teamCode) {
+            if (this.deltaMode === "off") return this.deltaAccuracyClass(teamCode);
+            if (this.getDelta(teamCode) === 0) return "text-green-600";
+            return this.displayedDeltaDirection(teamCode) === "down"
+                ? "text-red-600"
+                : "text-green-600";
+        },
+
+        cycleDeltaMode() {
+            const modes = Ligitabl._DELTA_MODES;
+            this.deltaMode = modes[(modes.indexOf(this.deltaMode) + 1) % modes.length];
         },
 
         _performSwap(teamCode) {
@@ -1001,7 +1032,7 @@ window.Ligitabl.predictionPage = function (el) {
                 showGD: this.showGD,
                 showForm: this.showForm,
                 positionsReversed: this.positionsReversed,
-                deltaInverted: this.deltaInverted,
+                deltaMode: this.deltaMode,
             }, this._prefsKey);
             this.$watch("showStandings", savePrefs);
             this.$watch("showFixtures", savePrefs);
@@ -1009,7 +1040,7 @@ window.Ligitabl.predictionPage = function (el) {
             this.$watch("showGD", savePrefs);
             this.$watch("showForm", savePrefs);
             this.$watch("positionsReversed", savePrefs);
-            this.$watch("deltaInverted", savePrefs);
+            this.$watch("deltaMode", savePrefs);
         },
 
         teamClick(teamCode) {
@@ -1331,7 +1362,7 @@ window.Ligitabl.guestPredictionPage = function (el) {
                 showGD: this.showGD,
                 showForm: this.showForm,
                 positionsReversed: this.positionsReversed,
-                deltaInverted: this.deltaInverted,
+                deltaMode: this.deltaMode,
             }, this._prefsKey);
             this.$watch("showStandings", savePrefs);
             this.$watch("showFixtures", savePrefs);
@@ -1339,7 +1370,7 @@ window.Ligitabl.guestPredictionPage = function (el) {
             this.$watch("showGD", savePrefs);
             this.$watch("showForm", savePrefs);
             this.$watch("positionsReversed", savePrefs);
-            this.$watch("deltaInverted", savePrefs);
+            this.$watch("deltaMode", savePrefs);
         },
 
         // Same gate as teamClick below — the guest table is always editable.
@@ -1401,7 +1432,7 @@ window.Ligitabl.publicPredictionPage = function (el) {
                 showGD: this.showGD,
                 showForm: this.showForm,
                 positionsReversed: this.positionsReversed,
-                deltaInverted: this.deltaInverted,
+                deltaMode: this.deltaMode,
             }, this._prefsKey);
             this.$watch("showStandings", savePrefs);
             this.$watch("showFixtures", savePrefs);
@@ -1409,7 +1440,7 @@ window.Ligitabl.publicPredictionPage = function (el) {
             this.$watch("showGD", savePrefs);
             this.$watch("showForm", savePrefs);
             this.$watch("positionsReversed", savePrefs);
-            this.$watch("deltaInverted", savePrefs);
+            this.$watch("deltaMode", savePrefs);
         },
     });
 };

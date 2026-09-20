@@ -575,6 +575,12 @@ window.Ligitabl._savePrefs = function(prefs, key) {
     console.warn("Failed to save prefs:", e);
   }
 };
+window.Ligitabl._DELTA_MODES = ["normal", "inverted", "off"];
+window.Ligitabl._readDeltaMode = function(savedPrefs) {
+  if (!savedPrefs) return "normal";
+  if (Ligitabl._DELTA_MODES.includes(savedPrefs.deltaMode)) return savedPrefs.deltaMode;
+  return savedPrefs.deltaInverted ? "inverted" : "normal";
+};
 window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
   const prefsKey = userId ? "ligitabl.prefs." + userId : "ligitabl.prefs.guest";
   const savedPrefs = Ligitabl._loadPrefs(prefsKey);
@@ -593,11 +599,12 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
     // Lives here rather than in the comparison-options fragment's own x-data so the table
     // toolbar can read it too.
     compareOptionsOpen: window.matchMedia("(min-width: 640px)").matches,
-    positionsReversed: false,
-    // Flips how the delta column *reads* — arrow direction and green/red — for people who
-    // think of the gap as "how far the real table is from my pick" rather than "how far my
-    // pick is from real".
-    deltaInverted: false,
+    positionsReversed: savedPrefs ? savedPrefs.positionsReversed ?? false : false,
+    // How the delta column *reads*. 'normal' — arrows say "move this row to match reality";
+    // 'inverted' — the same gap read as the team climbing or dropping toward the pick, for
+    // people who think of it as "how far reality is from my pick"; 'off' — no arrows at all,
+    // just the accuracy colour scale the read-only views use.
+    deltaMode: Ligitabl._readDeltaMode(savedPrefs),
     alwaysHoverable: false,
     isInitialPrediction: false,
     showStandings: savedPrefs ? savedPrefs.showStandings ?? true : true,
@@ -616,7 +623,7 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
       const entries = this.getForm(teamCode);
       if (entries.length > 0) {
         this.formPopupClosing = false;
-        this.formPopup = { teamCode, teamName, entries };
+        this.formPopup = { teamCode, teamName, entries: [...entries].reverse() };
       }
     },
     hideFormPopup() {
@@ -887,15 +894,29 @@ window.Ligitabl._predictionBase = function(parsed, userId, roundId) {
       return pos > actual ? "up" : "down";
     },
     // The delta as this table is currently displaying it. getDeltaDirection stays the raw
-    // fact — scoring and the read-only views read that one — so the invert toggle cannot
+    // fact — scoring and the read-only views read that one — so the mode toggle cannot
     // leak into anything that computes a result.
     displayedDeltaDirection(teamCode) {
+      if (this.deltaMode === "off") return null;
       const dir = this.getDeltaDirection(teamCode);
-      if (dir === null || !this.deltaInverted) return dir;
+      if (dir === null || this.deltaMode !== "inverted") return dir;
       return dir === "up" ? "down" : "up";
     },
-    toggleDeltaInverted() {
-      this.deltaInverted = !this.deltaInverted;
+    // Distance from reality rather than direction — the scale the read-only views use.
+    deltaAccuracyClass(teamCode) {
+      const d = this.getDelta(teamCode);
+      if (d === 0) return "text-green-600";
+      return d <= 2 ? "text-yellow-600" : "text-red-600";
+    },
+    // Colour for the delta number in whatever mode the table is in.
+    deltaTextClass(teamCode) {
+      if (this.deltaMode === "off") return this.deltaAccuracyClass(teamCode);
+      if (this.getDelta(teamCode) === 0) return "text-green-600";
+      return this.displayedDeltaDirection(teamCode) === "down" ? "text-red-600" : "text-green-600";
+    },
+    cycleDeltaMode() {
+      const modes = Ligitabl._DELTA_MODES;
+      this.deltaMode = modes[(modes.indexOf(this.deltaMode) + 1) % modes.length];
     },
     _performSwap(teamCode) {
       const team1Code = this.selectedTeam;
@@ -1165,13 +1186,17 @@ window.Ligitabl.predictionPage = function(el) {
         showFixtures: this.showFixtures,
         showPoints: this.showPoints,
         showGD: this.showGD,
-        showForm: this.showForm
+        showForm: this.showForm,
+        positionsReversed: this.positionsReversed,
+        deltaMode: this.deltaMode
       }, this._prefsKey);
       this.$watch("showStandings", savePrefs);
       this.$watch("showFixtures", savePrefs);
       this.$watch("showPoints", savePrefs);
       this.$watch("showGD", savePrefs);
       this.$watch("showForm", savePrefs);
+      this.$watch("positionsReversed", savePrefs);
+      this.$watch("deltaMode", savePrefs);
     },
     teamClick(teamCode) {
       if (!this.canInteract) return;
@@ -1406,13 +1431,17 @@ window.Ligitabl.guestPredictionPage = function(el) {
         showFixtures: this.showFixtures,
         showPoints: this.showPoints,
         showGD: this.showGD,
-        showForm: this.showForm
+        showForm: this.showForm,
+        positionsReversed: this.positionsReversed,
+        deltaMode: this.deltaMode
       }, this._prefsKey);
       this.$watch("showStandings", savePrefs);
       this.$watch("showFixtures", savePrefs);
       this.$watch("showPoints", savePrefs);
       this.$watch("showGD", savePrefs);
       this.$watch("showForm", savePrefs);
+      this.$watch("positionsReversed", savePrefs);
+      this.$watch("deltaMode", savePrefs);
     },
     // Same gate as teamClick below — the guest table is always editable.
     canPressRow() {
@@ -1465,13 +1494,17 @@ window.Ligitabl.publicPredictionPage = function(el) {
         showFixtures: this.showFixtures,
         showPoints: this.showPoints,
         showGD: this.showGD,
-        showForm: this.showForm
+        showForm: this.showForm,
+        positionsReversed: this.positionsReversed,
+        deltaMode: this.deltaMode
       }, this._prefsKey);
       this.$watch("showStandings", savePrefs);
       this.$watch("showFixtures", savePrefs);
       this.$watch("showPoints", savePrefs);
       this.$watch("showGD", savePrefs);
       this.$watch("showForm", savePrefs);
+      this.$watch("positionsReversed", savePrefs);
+      this.$watch("deltaMode", savePrefs);
     }
   });
 };
