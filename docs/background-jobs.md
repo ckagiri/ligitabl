@@ -80,6 +80,23 @@ Confirm logs are arriving before relying on either rule.
 Scheduling logs ship at **INFO** (root ships at WARN), which is what makes absence alerting on an
 INFO heartbeat line possible.
 
+### Turning alerting off
+
+`JOB_WATCHDOG_ENABLED`, `SLACK_NOTIFICATIONS_ENABLED` and `JOIN_REMINDER_ENABLED` are GitHub Actions
+**variables** (Settings → Secrets and variables → Actions → Variables), read by `deploy.yml` when it
+writes `.env.prod`. Set one to `false` there — the value is bare, no quotes — and redeploy; no commit
+needed.
+
+All three default to `true` when the variable is absent, so an unset, empty or misspelled variable
+leaves the feature **on** rather than silently off. That direction is deliberate: a typo that
+disables alerting is the failure mode this whole document exists because of.
+
+Leave the variables absent in the normal case. Anything present in that UI then means someone
+deliberately turned a feature off.
+
+For an emergency switch-off without a deploy, edit `.env.prod` on the server and
+`docker compose ... up -d`. That lasts only until the next deploy, which rewrites the file.
+
 ## The incident this came from
 
 On **2026-09-06 17:30:29** match sync stopped and stayed stopped for five days. Found by noticing
