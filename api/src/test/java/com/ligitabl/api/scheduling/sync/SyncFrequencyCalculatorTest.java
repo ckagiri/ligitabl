@@ -8,6 +8,7 @@ import java.time.ZoneOffset;
 
 import org.junit.jupiter.api.Test;
 
+import com.ligitabl.api.scheduling.syncmatches.NextSyncSchedule;
 import com.ligitabl.api.scheduling.syncmatches.SyncFrequencyCalculator;
 import com.ligitabl.api.testsupport.TestCalendar;
 
@@ -119,6 +120,29 @@ class SyncFrequencyCalculatorTest {
 
         assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(1));
         assertThat(schedule.reason()).contains("passed");
+        // Phase entry notifies once; shouldNotify would post to Slack on every one-minute poll.
+        assertThat(schedule.phase()).isEqualTo(NextSyncSchedule.Phase.OVERDUE);
+        assertThat(schedule.shouldNotify()).isFalse();
+    }
+
+    @Test
+    void shouldBackOffAsStaleFeed_whenKickoffPassedOverThreeHoursAgo() {
+        var staleKickoff = NOW.minusHours(3).minusMinutes(1);
+
+        var schedule =
+                SyncFrequencyCalculator.calculateNextSync(false, true, staleKickoff, false, false, 10, false, NOW);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(15));
+        assertThat(schedule.phase()).isEqualTo(NextSyncSchedule.Phase.STALE);
+    }
+
+    @Test
+    void shouldKeepPollingEveryMinute_atExactlyThreeHoursPastKickoff() {
+        var schedule = SyncFrequencyCalculator.calculateNextSync(
+                false, true, NOW.minusHours(3), false, false, 10, false, NOW);
+
+        assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(1));
+        assertThat(schedule.phase()).isEqualTo(NextSyncSchedule.Phase.OVERDUE);
     }
 
     @Test

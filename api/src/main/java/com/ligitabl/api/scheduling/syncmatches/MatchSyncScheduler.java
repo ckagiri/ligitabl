@@ -43,6 +43,7 @@ import lombok.extern.slf4j.Slf4j;
  * - Season complete: Every 24 hours
  * - No upcoming matches: Every 12 hours
  * - Live matches: Every 90 seconds
+ * - Kickoff passed, not started: Every 1 minute; every 15 minutes after 3 hours, with a stale-feed alert
  * - Kickoff <= 10 min: Every 1 minute
  * - Kickoff <= 60 min: Every 10 minutes
  * - Kickoff < 6 hours: Every 1 hour
@@ -168,6 +169,8 @@ public class MatchSyncScheduler {
             result.fold(
                     error -> {
                         log.error("Match sync failed: {}", error);
+                        // log.error alone never reaches Sentry from this package (docs/background-jobs.md).
+                        Sentry.captureException(new IllegalStateException("Match sync failed: " + error));
 
                         circuitBreaker.recordFailure();
 
@@ -229,7 +232,12 @@ public class MatchSyncScheduler {
                         boolean enteringPhase = phase != NextSyncSchedule.Phase.NONE && phase != lastPhase;
                         lastPhase = phase;
 
-                        if (success.nextSchedule().shouldNotify() || enteringPhase) {
+                        if (enteringPhase && phase == NextSyncSchedule.Phase.STALE) {
+                            adminNotificationService.notifyStaleUpstreamFeed(
+                                    success.roundId(),
+                                    success.roundPosition(),
+                                    success.nextSchedule().reason());
+                        } else if (success.nextSchedule().shouldNotify() || enteringPhase) {
                             adminNotificationService.notifySyncScheduleChanged(
                                     success.roundId(),
                                     success.roundPosition(),

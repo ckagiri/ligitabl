@@ -84,6 +84,13 @@ public class AdminNotificationService {
                         + "\n" + "Round ID: " + roundId);
     }
 
+    public void notifyStaleUpstreamFeed(UUID roundId, int roundPosition, String reason) {
+        alert(
+                "Match data feed looks stale",
+                reason + ". Results will not update until football-data catches up; enter them via the match"
+                        + " admin if needed.\n" + "Round position: " + roundPosition + "\n" + "Round ID: " + roundId);
+    }
+
     // --- Round finalization / advancement ---
 
     public void notifyRoundFinalized(UUID roundId, int roundPosition, int submissions, int results, boolean lastRound) {

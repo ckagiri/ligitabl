@@ -12,6 +12,7 @@ import static org.mockito.Mockito.when;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -24,8 +25,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.client.FootballDataApiError;
 import com.ligitabl.api.client.FootballDataClient;
+import com.ligitabl.api.client.footballdata.FullTime;
 import com.ligitabl.api.client.footballdata.MatchDto;
 import com.ligitabl.api.client.footballdata.MatchesResponse;
+import com.ligitabl.api.client.footballdata.Score;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.match.MatchUpdateHelper;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
@@ -267,6 +270,57 @@ class SyncMatchesUseCaseTest {
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().matchesProcessed()).isZero();
         assertThat(result.get().nextSchedule().delay().toHours()).isEqualTo(12);
+    }
+
+    @Test
+    void fetchesFromOverdueKickoffDate_whenScheduledMatchKickedOffOnEarlierDay() {
+        var season = createSeason();
+        var round = createRound();
+        var yesterdayKickoff = TestClock.TODAY.minusDays(1).atTime(14, 0).atOffset(ZoneOffset.UTC);
+        var overdue = createMatch(1, MatchStatus.SCHEDULED, yesterdayKickoff);
+
+        when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
+                .thenReturn(
+                        Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
+        when(liveMatchTracker.updateTracking(any()))
+                .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
+        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(overdue));
+        when(footballDataClient.getMatchesInDateRange(
+                        COMPETITION_CODE, TestClock.TODAY.minusDays(1), TestClock.TODAY.plusDays(1)))
+                .thenReturn(Either.right(new MatchesResponse(List.of(), null)));
+
+        var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
+
+        assertThat(result.isRight()).isTrue();
+        verify(footballDataClient, never()).getMatchesForDate(any(), any());
+    }
+
+    @Test
+    void recalculatesStandings_whenFinishedMatchScoreIsCorrected() {
+        var season = createSeason();
+        var round = createRound();
+        var finished = createMatch(1, MatchStatus.FINISHED, OffsetDateTime.now().minusHours(3));
+        finished.setScore(2, 1);
+        var upcoming = createMatch(2, MatchStatus.SCHEDULED, OffsetDateTime.now().plusDays(1));
+
+        when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
+                .thenReturn(
+                        Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
+        when(liveMatchTracker.updateTracking(any()))
+                .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
+        when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(finished, upcoming));
+
+        var corrected = new Score(null, "REGULAR", new FullTime(2, 2), null);
+        var apiMatches = List.of(new MatchDto(
+                1L, finished.getKickOff(), "FINISHED", 1, "REGULAR_SEASON", null, null, corrected, null, null));
+        when(footballDataClient.getMatchesInDateRange(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Either.right(new MatchesResponse(apiMatches, null)));
+
+        var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
+
+        assertThat(result.isRight()).isTrue();
+        assertThat(result.get().newlyFinishedMatches()).isZero();
+        verify(standingsService).recalculateAsync(eq(seasonId), eq(1));
     }
 
     private Season createSeason() {
