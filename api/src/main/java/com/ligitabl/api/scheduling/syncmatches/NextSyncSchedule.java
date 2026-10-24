@@ -11,7 +11,11 @@ public record NextSyncSchedule(Duration delay, String reason, boolean shouldNoti
         NONE,
         LIVE,
         IMMINENT,
-        SOON
+        SOON,
+        /** Kickoff passed, API not yet reporting the match as started. */
+        OVERDUE,
+        /** Kickoff passed long enough ago that the upstream feed is presumed stale. */
+        STALE
     }
 
     public NextSyncSchedule(Duration delay, String reason) {

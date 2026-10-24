@@ -2,6 +2,8 @@ package com.ligitabl.api.rest.match;
 
 import java.time.OffsetDateTime;
 import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Component;
 
@@ -10,17 +12,36 @@ import com.ligitabl.api.client.footballdata.Score;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 
+import io.sentry.Sentry;
 import lombok.extern.slf4j.Slf4j;
 
 @Component
 @Slf4j
 public class MatchUpdateHelper {
 
+    /** Report each regressed match once per JVM; the sync polls every minute while the API is stale. */
+    private final Set<Integer> regressionsReported = ConcurrentHashMap.newKeySet();
+
     /**
      * Applies API data to an existing match. Returns true if any field changed.
      */
     public boolean applyUpdate(Match existing, MatchDto apiMatch) {
         var newStatus = mapToDomainStatus(apiMatch.status());
+
+        // football-data has reported results as FINISHED and then flipped them back to TIMED with null
+        // scores (2026-10-24). A finished match never legitimately restarts, so treat it as stale data.
+        if (existing.getStatus() == MatchStatus.FINISHED
+                && (newStatus == MatchStatus.SCHEDULED || newStatus == MatchStatus.LIVE)) {
+            if (existing.getClientId() != null && regressionsReported.add(existing.getClientId())) {
+                log.warn(
+                        "Ignoring API regression FINISHED -> {} for match clientId={}",
+                        apiMatch.status(),
+                        existing.getClientId());
+                Sentry.captureMessage("football-data regressed FINISHED match " + existing.getClientId() + " to "
+                        + apiMatch.status());
+            }
+            return false;
+        }
 
         boolean statusChanged = existing.getStatus() != newStatus;
         boolean scoreChanged = hasScoreChanged(existing, apiMatch.score());

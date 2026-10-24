@@ -12,6 +12,7 @@ import java.time.OffsetDateTime;
  * - Season complete → Every 24 hours (daily check for new season)
  * - No upcoming matches → Every 12 hours (twice daily - international break)
  * - Live matches → Every 90 seconds
+ * - Kickoff passed, not started → Every 1 minute; every 15 minutes once over 3 hours (stale feed)
  * - Kickoff ≤ 10 min → Every 1 minute
  * - Kickoff ≤ 60 min → Every 10 minutes
  * - Kickoff < 6 hours → Every 1 hour
@@ -22,6 +23,9 @@ import java.time.OffsetDateTime;
  * - Cancelled match present → at most every 30 minutes
  */
 public class SyncFrequencyCalculator {
+
+    /** Past kickoff by this much with no LIVE/FINISHED from the API: assume the feed is stale. */
+    public static final Duration STALE_KICKOFF_THRESHOLD = Duration.ofHours(3);
 
     /**
      * Calculate next sync schedule based on match state
@@ -93,9 +97,18 @@ public class SyncFrequencyCalculator {
         long secondsUntilKickoff = Duration.between(now, nextKickoff).getSeconds();
         long minutesUntilKickoff = secondsUntilKickoff < 0 ? -1 : ceilDiv(secondsUntilKickoff, 60);
 
-        // Handle negative values (kickoff in past - shouldn't happen but be defensive)
+        // Kickoff passed but the API hasn't reported the match as started. Briefly normal; hours later it
+        // means the upstream feed is stale, and minute-by-minute polling only burns quota.
         if (minutesUntilKickoff < 0) {
-            return NextSyncSchedule.minutes(1, "Kickoff time passed - checking immediately", true);
+            if (Duration.between(nextKickoff, now).compareTo(STALE_KICKOFF_THRESHOLD) > 0) {
+                return NextSyncSchedule.minutes(
+                                15,
+                                "Kickoff passed over " + STALE_KICKOFF_THRESHOLD.toHours()
+                                        + "h ago but API still reports match not started")
+                        .withPhase(NextSyncSchedule.Phase.STALE);
+            }
+            return NextSyncSchedule.minutes(1, "Kickoff time passed - checking immediately")
+                    .withPhase(NextSyncSchedule.Phase.OVERDUE);
         }
 
         // Imminent kickoff (≤ 10 minutes)

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.domain.StandingsCalculatorService;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.rest.shared.HierarchyValidator.HierarchyContext;
 import com.ligitabl.api.shared.Either;
@@ -37,6 +38,7 @@ public class TransitionMatchStatusUseCase
     private final StandingsRepo standingsRepo;
     private final HierarchyValidator hierarchyValidator;
     private final CompetitionDefaults competitionDefaults;
+    private final StandingsCalculatorService standingsCalculator;
     private final Clock clock;
 
     @Override
@@ -97,6 +99,7 @@ public class TransitionMatchStatusUseCase
         try {
             Match saved = matchRepo.save(ctx.match());
             markOutOfSyncIfPastRound(ctx);
+            recalculateStandingsIfAffected(ctx);
             Instant now = clock.instant();
 
             return Either.right(TransitionResult.builder()
@@ -137,6 +140,36 @@ public class TransitionMatchStatusUseCase
                 currentPosition,
                 seasonId,
                 ctx.match().getSlug());
+    }
+
+    // Outside setup mode nothing else recomputes standings for a manual result: the sync only does so
+    // when the API itself reports a change, which is exactly what is missing when an admin steps in.
+    // Recomputes every round from the match's up to the current one, since each includes earlier results.
+    private void recalculateStandingsIfAffected(TransitionContext ctx) {
+        if (ctx.context().season().isInSetupMode()) {
+            return;
+        }
+        if (ctx.oldStatus() != MatchStatus.FINISHED && ctx.match().getStatus() != MatchStatus.FINISHED) {
+            return;
+        }
+
+        UUID seasonId = ctx.context().season().getId();
+        int currentPosition = ctx.seasonCurrentRound().getPosition();
+        for (int position = ctx.context().round().getPosition(); position <= currentPosition; position++) {
+            int round = position;
+            standingsCalculator
+                    .calculateAndPersist(seasonId, round)
+                    .fold(
+                            error -> {
+                                log.error(
+                                        "Standings recalculation failed after transition of match {}: round={}, error={}",
+                                        ctx.match().getSlug(),
+                                        round,
+                                        error);
+                                return null;
+                            },
+                            standings -> null);
+        }
     }
 
     private record MatchContext(HierarchyContext context, Match match) {}

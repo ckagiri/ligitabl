@@ -248,6 +248,21 @@ class MatchSyncSchedulerTest {
     }
 
     @Test
+    void alertsOnceAsStaleFeed_whenOverdueKickoffGoesStale() {
+        when(syncMatchesUseCase.execute(any()))
+                .thenReturn(Either.right(resultWithPhase("Kickoff time passed", NextSyncSchedule.Phase.OVERDUE)))
+                .thenReturn(Either.right(resultWithPhase("Kickoff passed 3h ago", NextSyncSchedule.Phase.STALE)))
+                .thenReturn(Either.right(resultWithPhase("Kickoff passed 3h ago", NextSyncSchedule.Phase.STALE)));
+
+        scheduler.triggerManualSync();
+        scheduler.triggerManualSync();
+        scheduler.triggerManualSync();
+
+        verify(adminNotificationService, times(1)).notifyStaleUpstreamFeed(any(), anyInt(), eq("Kickoff passed 3h ago"));
+        verify(adminNotificationService, times(1)).notifySyncScheduleChanged(any(), anyInt(), any(), any());
+    }
+
+    @Test
     void writesRoundLockedEvent_whenRoundStatusIsLocked() {
         when(syncMatchesUseCase.execute(any()))
                 .thenReturn(Either.right(resultWithReason("Kickoff in 45 minutes (soon)", false)));

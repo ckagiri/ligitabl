@@ -4,6 +4,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -12,6 +13,8 @@ import java.util.stream.Collectors;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import com.ligitabl.api.client.FootballDataApiError;
 import com.ligitabl.api.client.FootballDataClient;
@@ -53,6 +56,8 @@ public class SyncMatchesUseCase {
 
     @Value("${football-data.competition.code}")
     private String competitionCode;
+
+    private static final int MAX_OVERDUE_LOOKBACK_DAYS = 8;
 
     public record SyncMatchesCommand() {}
 
@@ -160,6 +165,14 @@ public class SyncMatchesUseCase {
             var minutesUntilKickoff = Duration.between(OffsetDateTime.now(clock), nextKickoff.get())
                     .toMinutes();
 
+            // A TODAY fetch would never see an overdue match from an earlier day, leaving it SCHEDULED
+            // (and the round unfinishable) for good.
+            var kickoffDate = nextKickoff.get().atZoneSameInstant(ZoneOffset.UTC).toLocalDate();
+            if (kickoffDate.isBefore(LocalDate.now(clock))) {
+                log.info("Overdue match from {} - fetching from that date to today", kickoffDate);
+                return fetchOverdueMatches(context, kickoffDate);
+            }
+
             if (minutesUntilKickoff <= 60) {
                 log.debug("Kickoff in {} minutes - using TODAY endpoint", minutesUntilKickoff);
                 return fetchTodayMatches(context);
@@ -215,6 +228,21 @@ public class SyncMatchesUseCase {
     }
 
     /**
+     * Fetch via GET /matches?dateFrom=overdueDate&dateTo=tomorrow, the start clamped because the API
+     * caps a date range at 10 days.
+     */
+    private Either<SyncMatchesError, FetchedMatchData> fetchOverdueMatches(RoundContext context, LocalDate from) {
+        var today = LocalDate.now(clock);
+        var earliest = today.minusDays(MAX_OVERDUE_LOOKBACK_DAYS);
+        var dateFrom = from.isBefore(earliest) ? earliest : from;
+
+        return footballDataClient
+                .getMatchesInDateRange(competitionCode, dateFrom, today.plusDays(1))
+                .mapLeft(error -> (SyncMatchesError) new SyncMatchesError.DataAccessError(error))
+                .map(response -> new FetchedMatchData(context, response.matches()));
+    }
+
+    /**
      * Fetch via GET /matches?dateFrom=today&dateTo=tomorrow
      */
     private Either<SyncMatchesError, FetchedMatchData> fetchUpcomingMatches(RoundContext context) {
@@ -240,6 +268,8 @@ public class SyncMatchesUseCase {
 
         var finishedMatchIds = new ArrayList<UUID>();
         int matchesUpdated = 0;
+        int matchesOutsideRound = 0;
+        boolean standingsAffected = false;
 
         for (var apiMatch : apiMatches) {
             var existing = findMatchByExternalId(existingMatches, apiMatch.id().toString());
@@ -250,6 +280,7 @@ public class SyncMatchesUseCase {
                 if (updated.hasChanged()) {
                     matchRepo.save(updated.match());
                     matchesUpdated++;
+                    standingsAffected |= updated.affectsStandings();
 
                     if (updated.becameFinished()) {
                         finishedMatchIds.add(updated.match().getId());
@@ -262,15 +293,18 @@ public class SyncMatchesUseCase {
                             existing.getKickOff());
                 }
             } else {
+                matchesOutsideRound++;
                 log.debug("No existing match found for apiMatchId={}", apiMatch.id());
             }
         }
 
+        // outside current round > 0 with updated 0, round after round, means the round isn't advancing.
         log.info(
-                "Matches processed: {}, updated: {}, newly finished: {}",
+                "Matches processed: {}, updated: {}, newly finished: {}, outside current round: {}",
                 apiMatches.size(),
                 matchesUpdated,
-                finishedMatchIds.size());
+                finishedMatchIds.size(),
+                matchesOutsideRound);
 
         // Reload to get updated status
         var updatedMatches = matchRepo.findByRoundId(context.round().getId());
@@ -281,17 +315,30 @@ public class SyncMatchesUseCase {
                 apiMatches.size(),
                 matchesUpdated,
                 finishedMatchIds,
+                standingsAffected,
                 updatedMatches));
     }
 
     private Either<SyncMatchesError, SyncContext> recalculateStandings(SyncContext context) {
-        if (context.finishedMatchIds().isEmpty()) {
+        if (!context.standingsAffected()) {
             return Either.right(context);
         }
 
-        // Async - don't wait
-        standingsService.recalculateAsync(
-                context.season().getId(), context.round().getPosition());
+        var seasonId = context.season().getId();
+        var roundPosition = context.round().getPosition();
+
+        // The async worker reads matches in its own transaction, so started here it could run before
+        // this one commits and recompute standings without the result that triggered it.
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    standingsService.recalculateAsync(seasonId, roundPosition);
+                }
+            });
+        } else {
+            standingsService.recalculateAsync(seasonId, roundPosition);
+        }
 
         return Either.right(context);
     }
@@ -384,10 +431,12 @@ public class SyncMatchesUseCase {
         var previousStatus = existing.getStatus();
         boolean changed = matchUpdateHelper.applyUpdate(existing, apiMatch);
         if (!changed) {
-            return new UpdateResult(existing, false, false);
+            return new UpdateResult(existing, false, false, false);
         }
-        boolean becameFinished = previousStatus != MatchStatus.FINISHED && existing.getStatus() == MatchStatus.FINISHED;
-        return new UpdateResult(existing, true, becameFinished);
+        boolean nowFinished = existing.getStatus() == MatchStatus.FINISHED;
+        boolean wasFinished = previousStatus == MatchStatus.FINISHED;
+        // Standings count only FINISHED matches, so a score correction on one matters as much as a new result.
+        return new UpdateResult(existing, true, !wasFinished && nowFinished, wasFinished || nowFinished);
     }
 
     private record RoundContext(
@@ -401,7 +450,8 @@ public class SyncMatchesUseCase {
             int matchesProcessed,
             int matchesUpdated,
             List<UUID> finishedMatchIds,
+            boolean standingsAffected,
             List<Match> updatedMatches) {}
 
-    private record UpdateResult(Match match, boolean hasChanged, boolean becameFinished) {}
+    private record UpdateResult(Match match, boolean hasChanged, boolean becameFinished, boolean affectsStandings) {}
 }

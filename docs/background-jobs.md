@@ -117,6 +117,29 @@ Full write-up, including the four wrong hypotheses before the logs settled it: `
 Regression guards: `MatchSyncSchedulerTest#reentrantSkip_stillSchedulesNextSync` (behavioural),
 `ManualSchedulingAuditTest` (stops a third self-arming site appearing unexamined).
 
+## The stale-feed incident (2026-10-24)
+
+The sync loop was healthy all day, but football-data never reported that day's four matches as
+in play. At ~20:00 UTC it briefly reported them FINISHED with scores, then flipped them back to
+`TIMED` with null scores. The sync copied both: the matches went FINISHED and then back to SCHEDULED,
+keeping the scores (null scores are skipped). It kept polling every minute, posting a Slack cadence
+message each time, until someone noticed.
+
+Guards added:
+
+- `MatchUpdateHelper` ignores FINISHED → SCHEDULED/LIVE from the API (reported once per match to
+  Sentry). Score corrections while the API still says FINISHED are still applied.
+- `SyncFrequencyCalculator` puts a past-kickoff match in the `OVERDUE` phase (1 min, notifies once on
+  entry), and in `STALE` after 3h (15 min). Entering `STALE` sends a red alert (Slack + email):
+  "Match data feed looks stale".
+- When the overdue kickoff was on an earlier day, the sync fetches from that date (it used to fetch
+  TODAY only, so such a match could never update).
+
+**Recovery when the feed is stale:** enter the result through the match admin (transition to FINISHED
+with a score). Outside setup mode this now recalculates standings from that match's round to the
+current round. The guard stops the next sync reverting it. If the API later reports a different
+FINISHED score, that score wins and standings recalculate.
+
 ## Known gaps
 
 - **A job silently disabled by an unset env var is not detected.** `JoinReminderJob` has

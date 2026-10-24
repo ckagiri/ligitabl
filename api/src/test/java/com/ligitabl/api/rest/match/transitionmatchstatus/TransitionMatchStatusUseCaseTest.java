@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.domain.StandingsCalculatorService;
 import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionMatchCommand;
 import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionMatchStatusUseCase;
 import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionResult;
@@ -54,6 +55,9 @@ class TransitionMatchStatusUseCaseTest {
 
     @Mock
     private HierarchyValidator hierarchyValidator;
+
+    @Mock
+    private StandingsCalculatorService standingsCalculator;
 
     @Mock
     private Clock clock;
@@ -109,7 +113,69 @@ class TransitionMatchStatusUseCaseTest {
                 .thenReturn(Either.right(new HierarchyValidator.HierarchyContext(competition, season, round)));
 
         useCase = new TransitionMatchStatusUseCase(
-                matchRepo, roundRepo, standingsRepo, hierarchyValidator, competitionDefaults, clock);
+                matchRepo, roundRepo, standingsRepo, hierarchyValidator, competitionDefaults, standingsCalculator, clock);
+    }
+
+    @Test
+    void transitionToFinished_recalculatesCurrentRoundStandings() {
+        Match match = Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .roundId(roundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("home-vs-away")
+                .status(MatchStatus.SCHEDULED)
+                .build();
+
+        TransitionMatchCommand cmd = TransitionMatchCommand.builder()
+                .competitionIdentifier("premier-league")
+                .roundPosition(null)
+                .matchSlug(match.getSlug())
+                .newStatus(MatchStatus.FINISHED)
+                .reason("API stale; result entered manually")
+                .score(new TransitionMatchCommand.ScoreDto(2, 1))
+                .build();
+
+        when(hierarchyValidator.validateCurrentRound(season)).thenReturn(Either.right(round));
+        when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
+        when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
+        when(clock.instant()).thenReturn(Instant.parse("2026-10-24T21:00:00Z"));
+        when(standingsCalculator.calculateAndPersist(seasonId, 1)).thenReturn(Either.right(null));
+
+        Either<UseCaseError, TransitionResult> result = useCase.execute(cmd);
+
+        assertTrue(result.isRight());
+        verify(standingsCalculator).calculateAndPersist(seasonId, 1);
+    }
+
+    @Test
+    void transitionNotInvolvingFinished_doesNotRecalculateStandings() {
+        Match match = Match.builder()
+                .id(UUID.randomUUID())
+                .clientId(1)
+                .roundId(roundId)
+                .homeTeamId(UUID.randomUUID())
+                .awayTeamId(UUID.randomUUID())
+                .slug("home-vs-away")
+                .status(MatchStatus.SCHEDULED)
+                .build();
+
+        TransitionMatchCommand cmd = TransitionMatchCommand.builder()
+                .competitionIdentifier("premier-league")
+                .roundPosition(null)
+                .matchSlug(match.getSlug())
+                .newStatus(MatchStatus.POSTPONED)
+                .reason("Heavy rain")
+                .build();
+
+        when(hierarchyValidator.validateCurrentRound(season)).thenReturn(Either.right(round));
+        when(matchRepo.findByRoundIdAndSlug(roundId, match.getSlug())).thenReturn(Optional.of(match));
+        when(matchRepo.save(any())).thenAnswer(i -> i.getArgument(0, Match.class));
+        when(clock.instant()).thenReturn(Instant.parse("2026-10-24T21:00:00Z"));
+
+        assertTrue(useCase.execute(cmd).isRight());
+        verifyNoInteractions(standingsCalculator);
     }
 
     @Test
