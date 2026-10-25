@@ -11,12 +11,12 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.domain.StandingsCalculatorService;
-import com.ligitabl.api.rest.shared.HierarchyValidator;
-import com.ligitabl.api.rest.shared.HierarchyValidator.HierarchyContext;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.api.usecase.shared.HierarchyValidator;
+import com.ligitabl.api.usecase.shared.HierarchyValidator.HierarchyContext;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;

@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.shared;
+package com.ligitabl.api.usecase.shared;
 
 import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 

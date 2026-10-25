@@ -3,7 +3,7 @@ package com.ligitabl.api.usecase.round.shared;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.shared.HierarchyValidator;
+import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;

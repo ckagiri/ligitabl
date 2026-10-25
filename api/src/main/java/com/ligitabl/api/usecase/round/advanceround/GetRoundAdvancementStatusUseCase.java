@@ -9,9 +9,9 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.repo.MatchRepo;
 

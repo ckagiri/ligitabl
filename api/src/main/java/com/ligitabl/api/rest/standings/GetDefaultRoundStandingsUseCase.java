@@ -9,11 +9,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.api.web.shared.dto.FixtureDto;
 import com.ligitabl.api.web.shared.fixtures.FixtureJsonMapper;
 import com.ligitabl.model.domain.Match;

@@ -4,7 +4,6 @@ import java.util.List;
 
 import org.springframework.stereotype.Service;
 
-import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
@@ -12,6 +11,7 @@ import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecase.match.MatchDto;
 import com.ligitabl.api.usecase.match.MatchEnricher;
+import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.repo.MatchRepo;
 

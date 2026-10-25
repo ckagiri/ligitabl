@@ -12,8 +12,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.domain.StandingsCalculatorService;
 import com.ligitabl.api.notification.AdminNotificationService;
-import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.domain.service.ScoringEngine;
 import com.ligitabl.model.repo.*;

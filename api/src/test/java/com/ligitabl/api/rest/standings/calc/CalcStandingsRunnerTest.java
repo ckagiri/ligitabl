@@ -15,12 +15,12 @@ import org.springframework.boot.DefaultApplicationArguments;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.config.WorkflowConfiguration;
-import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.runners.calcstandings.CalcStandingsRunner;
 import com.ligitabl.api.runners.calcstandings.CalculateRoundStandingsCommand;
 import com.ligitabl.api.runners.calcstandings.CalculateRoundStandingsUseCase;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Round;

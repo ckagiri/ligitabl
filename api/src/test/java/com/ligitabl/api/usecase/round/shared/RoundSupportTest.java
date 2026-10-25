@@ -14,7 +14,7 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.shared.HierarchyValidator;
+import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.repo.MatchRepo;
