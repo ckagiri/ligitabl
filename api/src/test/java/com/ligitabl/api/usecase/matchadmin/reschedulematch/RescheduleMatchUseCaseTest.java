@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.match.reschedulematch;
+package com.ligitabl.api.usecase.matchadmin.reschedulematch;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,9 +18,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.matchadmin.reschedulematch.RescheduleMatchCommand;
-import com.ligitabl.api.rest.matchadmin.reschedulematch.RescheduleMatchUseCase;
-import com.ligitabl.api.rest.matchadmin.reschedulematch.RescheduleResult;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;

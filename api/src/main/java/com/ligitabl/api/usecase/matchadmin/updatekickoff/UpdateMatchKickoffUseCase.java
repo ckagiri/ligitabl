@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.matchadmin.updatekickoff;
+package com.ligitabl.api.usecase.matchadmin.updatekickoff;
 
 import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 

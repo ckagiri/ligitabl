@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.matchadmin.reschedulematch;
+package com.ligitabl.api.usecase.matchadmin.reschedulematch;
 
 import java.util.Optional;
 

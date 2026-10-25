@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.matchadmin.reschedulematch;
+package com.ligitabl.api.usecase.matchadmin.reschedulematch;
 
 import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 

@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.matchadmin.transitionmatchstatus;
+package com.ligitabl.api.usecase.matchadmin.reschedulematch;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -10,11 +10,13 @@ import lombok.Value;
 
 @Value
 @Builder
-public class TransitionResult {
+public class RescheduleResult {
     UUID matchId;
     String matchSlug;
     MatchStatus oldStatus;
     MatchStatus newStatus;
-    int roundPosition;
+    int fromRound;
+    int toRound;
+    boolean wasPostponed;
     Instant timestamp;
 }

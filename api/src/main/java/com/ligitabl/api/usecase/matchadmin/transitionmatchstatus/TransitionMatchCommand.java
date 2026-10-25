@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.matchadmin.transitionmatchstatus;
+package com.ligitabl.api.usecase.matchadmin.transitionmatchstatus;
 
 import java.util.Optional;
 

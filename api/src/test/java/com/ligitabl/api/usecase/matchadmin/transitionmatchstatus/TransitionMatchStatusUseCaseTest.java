@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.match.transitionmatchstatus;
+package com.ligitabl.api.usecase.matchadmin.transitionmatchstatus;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,9 +18,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.domain.StandingsCalculatorService;
-import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionMatchCommand;
-import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionMatchStatusUseCase;
-import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionResult;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;

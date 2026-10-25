@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.matchadmin;
+package com.ligitabl.api.usecase.matchadmin;
 
 import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 
