@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.competition.getcompetitionbyslug;
+package com.ligitabl.api.usecase.competition.getcompetitionbyslug;
 
 import com.ligitabl.model.validator.ValidSlug;
 

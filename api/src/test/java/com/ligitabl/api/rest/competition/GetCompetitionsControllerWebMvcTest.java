@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.competition.getcompetitions;
+package com.ligitabl.api.rest.competition;
 
 import static org.mockito.BDDMockito.given;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -15,8 +15,9 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.ligitabl.api.rest.competition.CompetitionDto;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.competition.CompetitionDto;
+import com.ligitabl.api.usecase.competition.getcompetitions.GetCompetitionsUseCase;
 
 @WebMvcTest(GetCompetitionsController.class)
 class GetCompetitionsControllerWebMvcTest {

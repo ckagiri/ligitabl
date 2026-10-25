@@ -1,13 +1,13 @@
-package com.ligitabl.api.rest.competition.getcompetitionbyslug;
+package com.ligitabl.api.usecase.competition.getcompetitionbyslug;
 
 import org.springframework.stereotype.Service;
 
-import com.ligitabl.api.rest.competition.CompetitionDto;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.validation.RequestValidator;
+import com.ligitabl.api.usecase.competition.CompetitionDto;
 
 import lombok.RequiredArgsConstructor;
 

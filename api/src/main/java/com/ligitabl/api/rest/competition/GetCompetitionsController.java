@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.competition.getcompetitions;
+package com.ligitabl.api.rest.competition;
 
 import java.util.List;
 
@@ -7,8 +7,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ligitabl.api.rest.competition.CompetitionDto;
 import com.ligitabl.api.shared.exceptions.UseCaseException;
+import com.ligitabl.api.usecase.competition.CompetitionDto;
+import com.ligitabl.api.usecase.competition.getcompetitions.GetCompetitionsUseCase;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

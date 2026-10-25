@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.competition;
+package com.ligitabl.api.usecase.competition;
 
 import java.util.List;
 import java.util.UUID;

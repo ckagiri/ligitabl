@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.competition.getcompetitionbyslug;
+package com.ligitabl.api.rest.competition;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -15,9 +15,10 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import com.ligitabl.api.rest.competition.CompetitionDto;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.NotFoundError;
+import com.ligitabl.api.usecase.competition.CompetitionDto;
+import com.ligitabl.api.usecase.competition.getcompetitionbyslug.GetCompetitionBySlugUseCase;
 
 @WebMvcTest(GetCompetitionBySlugController.class)
 class GetCompetitionBySlugControllerWebMvcTest {

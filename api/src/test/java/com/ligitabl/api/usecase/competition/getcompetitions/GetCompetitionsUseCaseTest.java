@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.competition.getcompetitions;
+package com.ligitabl.api.usecase.competition.getcompetitions;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.BDDMockito.given;
@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import com.ligitabl.api.rest.competition.CompetitionDto;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.usecase.competition.CompetitionDto;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.repo.CompetitionRepo;
