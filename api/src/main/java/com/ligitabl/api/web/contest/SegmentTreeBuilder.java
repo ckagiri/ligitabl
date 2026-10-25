@@ -11,7 +11,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
+import com.ligitabl.api.usecase.contest.shared.ContestRankResolver;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.PhaseRules;

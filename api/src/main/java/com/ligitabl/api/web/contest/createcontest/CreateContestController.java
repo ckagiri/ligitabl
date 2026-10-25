@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.contest.createprivatecontest.CreatePrivateContestCommand;
-import com.ligitabl.api.rest.contest.createprivatecontest.CreatePrivateContestError;
-import com.ligitabl.api.rest.contest.createprivatecontest.CreatePrivateContestUseCase;
+import com.ligitabl.api.usecase.contest.createprivatecontest.CreatePrivateContestCommand;
+import com.ligitabl.api.usecase.contest.createprivatecontest.CreatePrivateContestError;
+import com.ligitabl.api.usecase.contest.createprivatecontest.CreatePrivateContestUseCase;
 import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.api.web.shared.season.SeasonPredictionSupport;
 import com.ligitabl.api.web.shared.security.WebSecurity;

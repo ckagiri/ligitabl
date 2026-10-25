@@ -16,7 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
+import com.ligitabl.api.usecase.contest.shared.ContestRankResolver;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.LeaderboardRepo;
 import com.ligitabl.model.repo.MatchRepo;

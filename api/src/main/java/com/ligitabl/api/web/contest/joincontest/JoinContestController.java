@@ -13,12 +13,12 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
-import com.ligitabl.api.rest.contest.joinprivatecontest.JoinPrivateContestCommand;
-import com.ligitabl.api.rest.contest.joinprivatecontest.JoinPrivateContestError;
-import com.ligitabl.api.rest.contest.joinprivatecontest.JoinPrivateContestUseCase;
-import com.ligitabl.api.rest.contest.previewcontestbycode.ContestPreviewDto;
-import com.ligitabl.api.rest.contest.previewcontestbycode.PreviewContestByCodeError;
-import com.ligitabl.api.rest.contest.previewcontestbycode.PreviewContestByCodeUseCase;
+import com.ligitabl.api.usecase.contest.joinprivatecontest.JoinPrivateContestCommand;
+import com.ligitabl.api.usecase.contest.joinprivatecontest.JoinPrivateContestError;
+import com.ligitabl.api.usecase.contest.joinprivatecontest.JoinPrivateContestUseCase;
+import com.ligitabl.api.usecase.contest.previewcontestbycode.ContestPreviewDto;
+import com.ligitabl.api.usecase.contest.previewcontestbycode.PreviewContestByCodeError;
+import com.ligitabl.api.usecase.contest.previewcontestbycode.PreviewContestByCodeUseCase;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;

@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
-import com.ligitabl.api.rest.contest.getprofilecontestlists.GetProfileContestListsQuery;
-import com.ligitabl.api.rest.contest.getprofilecontestlists.GetProfileContestListsUseCase;
+import com.ligitabl.api.usecase.contest.getprofilecontestlists.GetProfileContestListsQuery;
+import com.ligitabl.api.usecase.contest.getprofilecontestlists.GetProfileContestListsUseCase;
 import com.ligitabl.api.web.contest.shared.ContestSupport;
 
 import lombok.RequiredArgsConstructor;

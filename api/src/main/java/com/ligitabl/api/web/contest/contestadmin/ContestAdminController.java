@@ -10,14 +10,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
-import com.ligitabl.api.rest.contest.deletecontest.DeleteContestUseCase;
-import com.ligitabl.api.rest.contest.leavecontest.LeavePrivateContestUseCase;
-import com.ligitabl.api.rest.contest.regeneratecontestcode.RegenerateContestCodeUseCase;
-import com.ligitabl.api.rest.contest.removecontestmember.RemoveContestMemberUseCase;
-import com.ligitabl.api.rest.contest.renewcontest.RenewContestCommand;
-import com.ligitabl.api.rest.contest.renewcontest.RenewContestError;
-import com.ligitabl.api.rest.contest.renewcontest.RenewContestUseCase;
-import com.ligitabl.api.rest.contest.togglecontestjoining.ToggleContestJoiningUseCase;
+import com.ligitabl.api.usecase.contest.deletecontest.DeleteContestUseCase;
+import com.ligitabl.api.usecase.contest.leavecontest.LeavePrivateContestUseCase;
+import com.ligitabl.api.usecase.contest.regeneratecontestcode.RegenerateContestCodeUseCase;
+import com.ligitabl.api.usecase.contest.removecontestmember.RemoveContestMemberUseCase;
+import com.ligitabl.api.usecase.contest.renewcontest.RenewContestCommand;
+import com.ligitabl.api.usecase.contest.renewcontest.RenewContestError;
+import com.ligitabl.api.usecase.contest.renewcontest.RenewContestUseCase;
+import com.ligitabl.api.usecase.contest.togglecontestjoining.ToggleContestJoiningUseCase;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 
