@@ -12,8 +12,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.finaltable.scorefinaltable.ScoreFinalTablePredictionsUseCase;
-import com.ligitabl.api.rest.finaltable.scorefinaltable.StandingsSource;
+import com.ligitabl.api.usecase.finaltable.scorefinaltable.ScoreFinalTablePredictionsUseCase;
+import com.ligitabl.api.usecase.finaltable.scorefinaltable.StandingsSource;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.FinalTablePredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;

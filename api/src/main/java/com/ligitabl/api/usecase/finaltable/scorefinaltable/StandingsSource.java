@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.finaltable.scorefinaltable;
+package com.ligitabl.api.usecase.finaltable.scorefinaltable;
 
 /**
  * Which standings a scoring pass measures predictions against.

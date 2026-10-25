@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.finaltable.savefinaltable;
+package com.ligitabl.api.usecase.finaltable.savefinaltable;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -20,11 +20,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.finaltable.savefinaltable.SaveFinalTableCommand.SwapPair;
-import com.ligitabl.api.rest.finaltable.shared.FinalTableError;
-import com.ligitabl.api.rest.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.rest.prediction.shared.SwapHelper;
 import com.ligitabl.api.testsupport.TestCalendar;
+import com.ligitabl.api.usecase.finaltable.savefinaltable.SaveFinalTableCommand.SwapPair;
+import com.ligitabl.api.usecase.finaltable.shared.FinalTableError;
+import com.ligitabl.api.usecase.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.model.domain.FinalTablePrediction;

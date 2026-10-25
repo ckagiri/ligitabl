@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.finaltable.leaderboard;
+package com.ligitabl.api.usecase.finaltable.leaderboard;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -17,8 +17,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.testsupport.TestCalendar;
+import com.ligitabl.api.usecase.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.model.domain.FinalTableLeaderboardEntry;

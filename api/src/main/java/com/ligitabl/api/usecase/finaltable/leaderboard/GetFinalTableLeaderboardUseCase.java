@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.finaltable.leaderboard;
+package com.ligitabl.api.usecase.finaltable.leaderboard;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,9 +6,9 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.api.rest.finaltable.shared.FinalTableError;
-import com.ligitabl.api.rest.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.finaltable.shared.FinalTableError;
+import com.ligitabl.api.usecase.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.web.shared.user.DisplayNames;
 import com.ligitabl.model.domain.FinalTableEntrant;
 import com.ligitabl.model.domain.FinalTableLeaderboardEntry;

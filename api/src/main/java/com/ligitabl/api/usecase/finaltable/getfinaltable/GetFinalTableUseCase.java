@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.finaltable.getfinaltable;
+package com.ligitabl.api.usecase.finaltable.getfinaltable;
 
 import java.util.List;
 import java.util.Map;
@@ -8,10 +8,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.config.FinalTableDevProperties;
-import com.ligitabl.api.rest.finaltable.shared.FinalTableError;
-import com.ligitabl.api.rest.finaltable.shared.FinalTableRowsJson;
-import com.ligitabl.api.rest.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.finaltable.shared.FinalTableError;
+import com.ligitabl.api.usecase.finaltable.shared.FinalTableRowsJson;
+import com.ligitabl.api.usecase.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.web.shared.share.SharePredictionTextBuilder;
 import com.ligitabl.api.web.shared.user.DisplayNames;
 import com.ligitabl.model.domain.Competition;

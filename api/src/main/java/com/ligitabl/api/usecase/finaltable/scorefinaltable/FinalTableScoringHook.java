@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.finaltable.scorefinaltable;
+package com.ligitabl.api.usecase.finaltable.scorefinaltable;
 
 import org.springframework.stereotype.Component;
 

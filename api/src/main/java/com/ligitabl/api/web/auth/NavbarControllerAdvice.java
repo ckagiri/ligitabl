@@ -18,7 +18,7 @@ import com.ligitabl.api.auth.impersonation.CurrentUserFacade;
 import com.ligitabl.api.auth.impersonation.UserSummary;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.finaltable.shared.FinalTableSupport;
+import com.ligitabl.api.usecase.finaltable.shared.FinalTableSupport;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.User;

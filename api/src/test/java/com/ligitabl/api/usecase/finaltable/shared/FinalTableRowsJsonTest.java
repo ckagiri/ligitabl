@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.finaltable.shared;
+package com.ligitabl.api.usecase.finaltable.shared;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.finaltable.getfinaltable;
+package com.ligitabl.api.usecase.finaltable.getfinaltable;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -20,9 +20,9 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.config.FinalTableDevProperties;
-import com.ligitabl.api.rest.finaltable.shared.FinalTableRowsJson;
-import com.ligitabl.api.rest.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.testsupport.TestCalendar;
+import com.ligitabl.api.usecase.finaltable.shared.FinalTableRowsJson;
+import com.ligitabl.api.usecase.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.api.web.shared.share.SharePredictionTextBuilder;

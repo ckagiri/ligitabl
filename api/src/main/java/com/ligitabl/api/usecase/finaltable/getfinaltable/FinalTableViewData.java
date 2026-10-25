@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.finaltable.getfinaltable;
+package com.ligitabl.api.usecase.finaltable.getfinaltable;
 
 import java.time.Instant;
 import java.util.List;

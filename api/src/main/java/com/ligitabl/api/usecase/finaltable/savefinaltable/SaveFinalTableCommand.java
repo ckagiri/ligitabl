@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.finaltable.savefinaltable;
+package com.ligitabl.api.usecase.finaltable.savefinaltable;
 
 import java.util.List;
 
