@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.leaderboard.getuserdetail;
+package com.ligitabl.api.usecase.leaderboard.getuserdetail;
 
 import java.util.List;
 import java.util.Map;
@@ -9,8 +9,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardError;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.leaderboard.getleaderboard.GetLeaderboardError;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.LeaderboardEntry;

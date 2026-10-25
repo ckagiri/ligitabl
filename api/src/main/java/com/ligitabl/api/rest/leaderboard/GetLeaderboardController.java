@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.leaderboard.getleaderboard;
+package com.ligitabl.api.rest.leaderboard;
 
 import java.util.List;
 import java.util.UUID;
@@ -10,6 +10,10 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+
+import com.ligitabl.api.usecase.leaderboard.getleaderboard.GetLeaderboardError;
+import com.ligitabl.api.usecase.leaderboard.getleaderboard.GetLeaderboardQuery;
+import com.ligitabl.api.usecase.leaderboard.getleaderboard.GetLeaderboardUseCase;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

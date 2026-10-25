@@ -1,6 +1,6 @@
-package com.ligitabl.api.rest.leaderboard.getuserdetail;
+package com.ligitabl.api.usecase.leaderboard.getuserdetail;
 
-import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardError;
+import com.ligitabl.api.usecase.leaderboard.getleaderboard.GetLeaderboardError;
 
 public sealed interface GetUserDetailError {
 

@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
-import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardError;
-import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardQuery;
-import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardResult;
-import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardUseCase;
+import com.ligitabl.api.usecase.leaderboard.getleaderboard.GetLeaderboardError;
+import com.ligitabl.api.usecase.leaderboard.getleaderboard.GetLeaderboardQuery;
+import com.ligitabl.api.usecase.leaderboard.getleaderboard.GetLeaderboardResult;
+import com.ligitabl.api.usecase.leaderboard.getleaderboard.GetLeaderboardUseCase;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 import com.ligitabl.model.domain.LeaderboardEntry;
 import com.ligitabl.model.domain.PhaseType;

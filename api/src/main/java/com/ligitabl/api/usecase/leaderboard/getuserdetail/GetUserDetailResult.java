@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.leaderboard.getuserdetail;
+package com.ligitabl.api.usecase.leaderboard.getuserdetail;
 
 import java.util.List;
 

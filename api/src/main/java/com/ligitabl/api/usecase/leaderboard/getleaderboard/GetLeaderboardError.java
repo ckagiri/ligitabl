@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.leaderboard.getleaderboard;
+package com.ligitabl.api.usecase.leaderboard.getleaderboard;
 
 public sealed interface GetLeaderboardError {
     record DefaultCompetitionNotFound(String message) implements GetLeaderboardError {

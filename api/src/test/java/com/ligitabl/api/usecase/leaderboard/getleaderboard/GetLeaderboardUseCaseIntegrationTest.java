@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.leaderboard;
+package com.ligitabl.api.usecase.leaderboard.getleaderboard;
 
 import static com.ligitabl.api.testsupport.TestIds.randomPublicId;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -17,9 +17,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardError;
-import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardQuery;
-import com.ligitabl.api.rest.leaderboard.getleaderboard.GetLeaderboardUseCase;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.model.domain.Entry;

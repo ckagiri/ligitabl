@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.leaderboard.getleaderboard;
+package com.ligitabl.api.rest.leaderboard;
 
 public record LeaderboardEntryDto(
         int position,
