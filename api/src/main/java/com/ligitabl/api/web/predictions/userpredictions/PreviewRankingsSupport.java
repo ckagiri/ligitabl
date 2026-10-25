@@ -5,7 +5,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.api.rest.prediction.shared.RankingSource;
+import com.ligitabl.api.usecase.prediction.shared.RankingSource;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.Standings;
 import com.ligitabl.model.domain.StandingsTeamRank;

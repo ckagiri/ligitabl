@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
-import com.ligitabl.api.rest.prediction.shared.PredictionAccessMode;
-import com.ligitabl.api.rest.prediction.shared.RankingSource;
+import com.ligitabl.api.usecase.prediction.shared.PredictionAccessMode;
+import com.ligitabl.api.usecase.prediction.shared.RankingSource;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.RoundResult;
 import com.ligitabl.model.domain.SwapChange;

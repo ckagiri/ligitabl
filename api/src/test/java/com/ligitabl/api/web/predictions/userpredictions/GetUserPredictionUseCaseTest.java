@@ -16,9 +16,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.prediction.shared.PredictionAccessMode;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.TestClock;
+import com.ligitabl.api.usecase.prediction.shared.PredictionAccessMode;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;

@@ -9,11 +9,11 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.api.rest.prediction.shared.SwapHelper;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.finaltable.savefinaltable.SaveFinalTableCommand.SwapPair;
 import com.ligitabl.api.usecase.finaltable.shared.FinalTableError;
 import com.ligitabl.api.usecase.finaltable.shared.FinalTableSupport;
+import com.ligitabl.api.usecase.prediction.shared.SwapHelper;
 import com.ligitabl.model.domain.FinalTablePrediction;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SwapChange;

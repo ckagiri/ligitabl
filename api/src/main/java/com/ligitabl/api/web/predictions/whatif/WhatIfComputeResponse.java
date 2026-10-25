@@ -3,7 +3,7 @@ package com.ligitabl.api.web.predictions.whatif;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.ligitabl.api.rest.prediction.whatif.WhatIfResult;
+import com.ligitabl.api.usecase.prediction.whatif.WhatIfResult;
 import com.ligitabl.model.domain.StandingsTeamRank;
 
 /**

@@ -10,11 +10,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
-import com.ligitabl.api.rest.prediction.makeswap.MakeSwapUseCase;
-import com.ligitabl.api.rest.prediction.makeswap.SwapCommand;
-import com.ligitabl.api.rest.prediction.makeswap.SwapError;
-import com.ligitabl.api.rest.prediction.makeswap.SwapResult;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.prediction.makeswap.MakeSwapUseCase;
+import com.ligitabl.api.usecase.prediction.makeswap.SwapCommand;
+import com.ligitabl.api.usecase.prediction.makeswap.SwapError;
+import com.ligitabl.api.usecase.prediction.makeswap.SwapResult;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 
 import jakarta.servlet.http.HttpServletResponse;
