@@ -8,6 +8,16 @@ This repo has developer-facing documentation under `docs/` (this file, endpoints
 
 When changing behavior (endpoints, validation, persistence), update the relevant internal specs/runbooks and the public docs.
 
+## Package layout (api module)
+
+- `usecase/<feature>/<slice>/` — one use case plus its Command/Query/Result/Error types. Helpers shared by a feature's use cases go in `usecase/<feature>/shared/`, and helpers shared across features go in `usecase/shared/`.
+- `rest/<feature>/` — JSON controllers and HTTP-only DTOs.
+- `web/…` — Thymeleaf controllers and view helpers.
+- `scheduling/…` — schedulers that trigger use cases.
+- `runners/…` — self-contained CLI tools (importer, demo seeding, standings calc). These keep their own use cases.
+
+Adapters (`rest`, `web`, `scheduling`, `runners`) depend on `usecase`, never the reverse. `UseCaseDependencyRuleTest` enforces this. If a use case needs something from an adapter package, move that class into `usecase` instead.
+
 ## Formatting (Palantir Java Format, 100-col width)
 
 This repo standardizes Java formatting with Spotless + Palantir Java Format (100 columns).

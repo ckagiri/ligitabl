@@ -453,10 +453,10 @@ Also on the page: a results banner loaded via HTMX (`/my-table/latest-result-ban
 **Controllers / Use Cases**
 
 - `api/.../web/predictions/userpredictions/UserPredictionsController.java` — builds every template flag (`handleSuccess`), `SwapStatusDTO`
-- `api/.../web/predictions/userpredictions/GetUserPredictionUseCase.java` — access mode, `seasonCompleted` derivation, `showAsHistorical`, opening-window computation, pre-season-registration cooldown override
-- `api/.../rest/prediction/createprediction/CreatePredictionUseCase.java` — join plans, pre-season registration & merge, initial-swap allowance
-- `api/.../rest/prediction/makeswap/MakeSwapUseCase.java` — server-side cooldown/opening-window enforcement
-- `api/.../rest/round/finalizeround/FinalizeRoundUseCase.java` — round submissions/results, `countSwapsInRound`
+- `api/.../usecase/prediction/getuserprediction/GetUserPredictionUseCase.java` — access mode, `seasonCompleted` derivation, `showAsHistorical`, opening-window computation, pre-season-registration cooldown override
+- `api/.../usecase/prediction/createprediction/CreatePredictionUseCase.java` — join plans, pre-season registration & merge, initial-swap allowance
+- `api/.../usecase/prediction/makeswap/MakeSwapUseCase.java` — server-side cooldown/opening-window enforcement
+- `api/.../usecase/round/finalizeround/FinalizeRoundUseCase.java` — round submissions/results, `countSwapsInRound`
 
 **Domain (model module)**
 
