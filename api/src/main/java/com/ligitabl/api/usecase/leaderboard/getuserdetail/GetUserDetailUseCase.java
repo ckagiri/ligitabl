@@ -36,10 +36,10 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Web-layer use case that fetches user predictions for modal display.
+ * Fetches a user's predictions for the leaderboard modal.
  * Uses Either.catching to handle errors with exceptions.
  */
-@Service("webGetUserDetailUseCase")
+@Service
 @RequiredArgsConstructor
 @Slf4j
 public class GetUserDetailUseCase {
