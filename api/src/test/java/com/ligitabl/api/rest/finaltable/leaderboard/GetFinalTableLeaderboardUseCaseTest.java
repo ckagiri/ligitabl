@@ -18,9 +18,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.finaltable.shared.FinalTableSupport;
-import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.testsupport.TestCalendar;
+import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.model.domain.FinalTableLeaderboardEntry;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.FinalTablePredictionRepo;

@@ -16,8 +16,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.testsupport.TestClock;
+import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 

@@ -6,9 +6,9 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.api.web.shared.error.ErrorMapper;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.CompetitionRepo;

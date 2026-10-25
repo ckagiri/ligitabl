@@ -18,7 +18,7 @@ import com.ligitabl.api.rest.contest.renewcontest.RenewContestCommand;
 import com.ligitabl.api.rest.contest.renewcontest.RenewContestError;
 import com.ligitabl.api.rest.contest.renewcontest.RenewContestUseCase;
 import com.ligitabl.api.rest.contest.togglecontestjoining.ToggleContestJoiningUseCase;
-import com.ligitabl.api.rest.round.shared.RoundSupport;
+import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 
 import lombok.RequiredArgsConstructor;

@@ -11,7 +11,7 @@ import java.util.stream.IntStream;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.round.shared.RoundSupport;
+import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.ContestJoinWindow;

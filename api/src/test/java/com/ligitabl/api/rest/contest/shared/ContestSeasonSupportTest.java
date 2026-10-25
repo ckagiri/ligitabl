@@ -14,7 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.api.rest.round.shared.RoundSupport;
+import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.SeasonRepo;

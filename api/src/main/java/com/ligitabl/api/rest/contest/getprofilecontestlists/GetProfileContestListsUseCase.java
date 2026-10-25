@@ -11,7 +11,7 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.contest.renewcontest.GetContestRenewalOptionsResult;
 import com.ligitabl.api.rest.contest.renewcontest.GetContestRenewalOptionsUseCase;
 import com.ligitabl.api.rest.contest.shared.ContestRankResolver;
-import com.ligitabl.api.rest.round.shared.RoundSupport;
+import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.api.web.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.PhaseRules;

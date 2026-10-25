@@ -2,7 +2,7 @@ package com.ligitabl.api.rest.contest.shared;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.api.rest.round.shared.RoundSupport;
+import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.ContestJoinWindow;

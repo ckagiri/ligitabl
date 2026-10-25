@@ -8,11 +8,11 @@ import java.util.Comparator;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundError;
-import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundResult;
-import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundUseCase;
-import com.ligitabl.api.scheduling.advanceround.RoundAdvancementService;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.round.advanceround.RoundAdvancementService;
+import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundError;
+import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundResult;
+import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundUseCase;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.domain.SwapChange;

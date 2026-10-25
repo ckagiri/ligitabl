@@ -14,8 +14,8 @@ import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.domain.StandingsCalculatorService;
-import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.domain.standings.StandingsConverter;
 import com.ligitabl.model.repo.MatchRepo;

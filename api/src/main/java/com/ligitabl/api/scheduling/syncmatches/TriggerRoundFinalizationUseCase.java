@@ -4,9 +4,9 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
-import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundError;
-import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundUseCase;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundError;
+import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundUseCase;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;

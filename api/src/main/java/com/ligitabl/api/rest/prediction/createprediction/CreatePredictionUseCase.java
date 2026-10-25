@@ -13,8 +13,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.shared.SwapHelper;
-import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.repo.*;
 

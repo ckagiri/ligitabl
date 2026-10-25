@@ -24,9 +24,9 @@ import com.ligitabl.api.rest.finaltable.savefinaltable.SaveFinalTableCommand.Swa
 import com.ligitabl.api.rest.finaltable.shared.FinalTableError;
 import com.ligitabl.api.rest.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.rest.prediction.shared.SwapHelper;
-import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.testsupport.TestCalendar;
+import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.model.domain.FinalTablePrediction;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;

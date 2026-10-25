@@ -10,8 +10,8 @@ import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.rest.prediction.shared.RankingSource;
-import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
