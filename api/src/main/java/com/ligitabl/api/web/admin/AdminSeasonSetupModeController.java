@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.ligitabl.api.rest.season.seasonsetupmode.ManageSeasonSetupModeUseCase;
-import com.ligitabl.api.rest.season.seasonsetupmode.SeasonSetupModeCommand;
-import com.ligitabl.api.rest.season.seasonsetupmode.SetupModeAction;
+import com.ligitabl.api.usecase.season.seasonsetupmode.ManageSeasonSetupModeUseCase;
+import com.ligitabl.api.usecase.season.seasonsetupmode.SeasonSetupModeCommand;
+import com.ligitabl.api.usecase.season.seasonsetupmode.SetupModeAction;
 import com.ligitabl.api.web.shared.error.ErrorMapper;
 
 import lombok.RequiredArgsConstructor;
