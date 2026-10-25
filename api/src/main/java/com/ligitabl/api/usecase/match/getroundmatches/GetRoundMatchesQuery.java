@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.match.getroundmatches;
+package com.ligitabl.api.usecase.match.getroundmatches;
 
 import com.ligitabl.model.validator.ValidSlug;
 

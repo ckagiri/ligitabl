@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.match.getdefaultroundmatches;
+package com.ligitabl.api.usecase.match.getdefaultroundmatches;
 
 import java.util.Optional;
 

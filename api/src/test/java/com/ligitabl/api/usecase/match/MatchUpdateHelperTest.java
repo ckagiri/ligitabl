@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.match;
+package com.ligitabl.api.usecase.match;
 
 import static org.assertj.core.api.Assertions.assertThat;
 

@@ -1,9 +1,12 @@
-package com.ligitabl.api.rest.match.getdefaultroundmatches;
+package com.ligitabl.api.rest.match;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.ligitabl.api.shared.exceptions.UseCaseException;
+import com.ligitabl.api.usecase.match.getdefaultroundmatches.GetDefaultRoundMatchesQuery;
+import com.ligitabl.api.usecase.match.getdefaultroundmatches.GetDefaultRoundMatchesUseCase;
+import com.ligitabl.api.usecase.match.getdefaultroundmatches.RoundMatchesResult;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

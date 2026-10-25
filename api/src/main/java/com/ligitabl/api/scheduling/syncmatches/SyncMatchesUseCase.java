@@ -20,10 +20,10 @@ import com.ligitabl.api.client.FootballDataApiError;
 import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.client.footballdata.MatchDto;
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.match.MatchUpdateHelper;
 import com.ligitabl.api.rest.shared.HierarchyValidator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.usecase.match.MatchUpdateHelper;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -167,7 +167,8 @@ public class SyncMatchesUseCase {
 
             // A TODAY fetch would never see an overdue match from an earlier day, leaving it SCHEDULED
             // (and the round unfinishable) for good.
-            var kickoffDate = nextKickoff.get().atZoneSameInstant(ZoneOffset.UTC).toLocalDate();
+            var kickoffDate =
+                    nextKickoff.get().atZoneSameInstant(ZoneOffset.UTC).toLocalDate();
             if (kickoffDate.isBefore(LocalDate.now(clock))) {
                 log.info("Overdue match from {} - fetching from that date to today", kickoffDate);
                 return fetchOverdueMatches(context, kickoffDate);

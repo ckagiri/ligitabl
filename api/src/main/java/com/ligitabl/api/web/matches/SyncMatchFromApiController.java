@@ -8,9 +8,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.ligitabl.api.rest.match.syncfromapi.SyncMatchUseCase;
-import com.ligitabl.api.rest.match.syncfromapi.SyncMatchUseCase.SyncMatchCommand;
-import com.ligitabl.api.rest.match.syncfromapi.SyncMatchUseCase.SyncMatchError;
+import com.ligitabl.api.usecase.match.syncfromapi.SyncMatchUseCase;
+import com.ligitabl.api.usecase.match.syncfromapi.SyncMatchUseCase.SyncMatchCommand;
+import com.ligitabl.api.usecase.match.syncfromapi.SyncMatchUseCase.SyncMatchError;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

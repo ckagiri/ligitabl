@@ -6,9 +6,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-import com.ligitabl.api.rest.match.getdefaultroundmatches.GetDefaultRoundMatchesQuery;
-import com.ligitabl.api.rest.match.getdefaultroundmatches.GetDefaultRoundMatchesUseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.usecase.match.getdefaultroundmatches.GetDefaultRoundMatchesQuery;
+import com.ligitabl.api.usecase.match.getdefaultroundmatches.GetDefaultRoundMatchesUseCase;
 import com.ligitabl.api.web.shared.error.ErrorMapper;
 
 import jakarta.servlet.http.HttpServletRequest;

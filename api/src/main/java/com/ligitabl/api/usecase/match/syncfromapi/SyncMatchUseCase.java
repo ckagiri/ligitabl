@@ -1,12 +1,12 @@
-package com.ligitabl.api.rest.match.syncfromapi;
+package com.ligitabl.api.usecase.match.syncfromapi;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.client.FootballDataApiError;
 import com.ligitabl.api.client.FootballDataClient;
-import com.ligitabl.api.rest.match.MatchUpdateHelper;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.match.MatchUpdateHelper;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.repo.MatchRepo;
 

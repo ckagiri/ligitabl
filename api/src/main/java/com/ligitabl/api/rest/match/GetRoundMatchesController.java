@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.match.getroundmatches;
+package com.ligitabl.api.rest.match;
 
 import java.util.List;
 
@@ -8,8 +8,10 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ligitabl.api.rest.match.MatchDto;
 import com.ligitabl.api.shared.exceptions.UseCaseException;
+import com.ligitabl.api.usecase.match.MatchDto;
+import com.ligitabl.api.usecase.match.getroundmatches.GetRoundMatchesQuery;
+import com.ligitabl.api.usecase.match.getroundmatches.GetRoundMatchesUseCase;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

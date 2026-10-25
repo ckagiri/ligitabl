@@ -1,9 +1,9 @@
-package com.ligitabl.api.rest.match.getdefaultroundmatches;
+package com.ligitabl.api.usecase.match.getdefaultroundmatches;
 
 import java.util.List;
 import java.util.UUID;
 
-import com.ligitabl.api.rest.match.MatchDto;
+import com.ligitabl.api.usecase.match.MatchDto;
 
 import lombok.Builder;
 
