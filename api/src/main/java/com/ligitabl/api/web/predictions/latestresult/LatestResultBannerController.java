@@ -9,6 +9,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
+import com.ligitabl.api.usecase.prediction.latestresult.DismissResultBannerUseCase;
+import com.ligitabl.api.usecase.prediction.latestresult.GetLatestResultUseCase;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 
 import lombok.RequiredArgsConstructor;

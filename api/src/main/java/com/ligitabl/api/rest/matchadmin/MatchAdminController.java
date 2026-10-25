@@ -10,14 +10,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ligitabl.api.rest.matchadmin.reschedulematch.RescheduleMatchCommand;
-import com.ligitabl.api.rest.matchadmin.reschedulematch.RescheduleMatchUseCase;
-import com.ligitabl.api.rest.matchadmin.reschedulematch.RescheduleResult;
-import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionMatchCommand;
-import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionMatchStatusUseCase;
-import com.ligitabl.api.rest.matchadmin.transitionmatchstatus.TransitionResult;
 import com.ligitabl.api.rest.shared.RoundPosition;
 import com.ligitabl.api.shared.exceptions.UseCaseException;
+import com.ligitabl.api.usecase.matchadmin.GetMatchAdminDetailsUseCase;
+import com.ligitabl.api.usecase.matchadmin.MatchAdminDetailsDto;
+import com.ligitabl.api.usecase.matchadmin.reschedulematch.RescheduleMatchCommand;
+import com.ligitabl.api.usecase.matchadmin.reschedulematch.RescheduleMatchUseCase;
+import com.ligitabl.api.usecase.matchadmin.reschedulematch.RescheduleResult;
+import com.ligitabl.api.usecase.matchadmin.transitionmatchstatus.TransitionMatchCommand;
+import com.ligitabl.api.usecase.matchadmin.transitionmatchstatus.TransitionMatchStatusUseCase;
+import com.ligitabl.api.usecase.matchadmin.transitionmatchstatus.TransitionResult;
 import com.ligitabl.model.domain.MatchStatus;
 
 import jakarta.validation.Valid;

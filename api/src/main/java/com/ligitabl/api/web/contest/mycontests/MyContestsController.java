@@ -11,10 +11,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.contest.getusercontestsummary.GetUserContestSummaryQuery;
-import com.ligitabl.api.rest.contest.getusercontestsummary.GetUserContestSummaryUseCase;
-import com.ligitabl.api.web.contest.shared.ContestSupport;
-import com.ligitabl.api.web.shared.season.SeasonPredictionSupport;
+import com.ligitabl.api.usecase.contest.getusercontestsummary.GetUserContestSummaryQuery;
+import com.ligitabl.api.usecase.contest.getusercontestsummary.GetUserContestSummaryUseCase;
+import com.ligitabl.api.usecase.contest.shared.ContestSupport;
+import com.ligitabl.api.usecase.shared.season.SeasonPredictionSupport;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 
 import lombok.RequiredArgsConstructor;

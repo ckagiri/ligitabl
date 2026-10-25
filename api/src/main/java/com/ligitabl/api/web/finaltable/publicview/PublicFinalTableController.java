@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.finaltable.shared.FinalTableRowsJson;
-import com.ligitabl.api.web.shared.share.SharePredictionTextBuilder;
-import com.ligitabl.api.web.shared.user.DisplayNames;
+import com.ligitabl.api.usecase.finaltable.shared.FinalTableRowsJson;
+import com.ligitabl.api.usecase.shared.share.SharePredictionTextBuilder;
+import com.ligitabl.api.usecase.shared.user.DisplayNames;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.FinalTablePrediction;

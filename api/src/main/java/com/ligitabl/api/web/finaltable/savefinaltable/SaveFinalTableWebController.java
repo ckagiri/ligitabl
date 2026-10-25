@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
-import com.ligitabl.api.rest.finaltable.savefinaltable.SaveFinalTableCommand;
-import com.ligitabl.api.rest.finaltable.savefinaltable.SaveFinalTablePredictionUseCase;
-import com.ligitabl.api.rest.finaltable.shared.FinalTableError;
+import com.ligitabl.api.usecase.finaltable.savefinaltable.SaveFinalTableCommand;
+import com.ligitabl.api.usecase.finaltable.savefinaltable.SaveFinalTablePredictionUseCase;
+import com.ligitabl.api.usecase.finaltable.shared.FinalTableError;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 import com.ligitabl.model.domain.FinalTablePrediction;
 import com.ligitabl.model.domain.TeamRank;

@@ -24,11 +24,11 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundError;
-import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundUseCase;
 import com.ligitabl.api.runners.demoseeding.*;
-import com.ligitabl.api.scheduling.advanceround.RoundAdvancementService;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.round.advanceround.RoundAdvancementService;
+import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundError;
+import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundUseCase;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.auth.Role;

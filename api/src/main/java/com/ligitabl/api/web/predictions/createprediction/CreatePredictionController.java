@@ -12,11 +12,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
-import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionCommand;
-import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionError;
-import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionResult;
-import com.ligitabl.api.rest.prediction.createprediction.CreatePredictionUseCase;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionCommand;
+import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionError;
+import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionResult;
+import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionUseCase;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 
 import jakarta.servlet.http.HttpServletResponse;

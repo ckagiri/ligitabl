@@ -7,10 +7,10 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
-import com.ligitabl.api.rest.finaltable.getfinaltable.FinalTableViewData;
-import com.ligitabl.api.rest.finaltable.getfinaltable.GetFinalTableUseCase;
+import com.ligitabl.api.usecase.finaltable.getfinaltable.FinalTableViewData;
+import com.ligitabl.api.usecase.finaltable.getfinaltable.GetFinalTableUseCase;
+import com.ligitabl.api.usecase.shared.user.DisplayNames;
 import com.ligitabl.api.web.shared.security.WebSecurity;
-import com.ligitabl.api.web.shared.user.DisplayNames;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

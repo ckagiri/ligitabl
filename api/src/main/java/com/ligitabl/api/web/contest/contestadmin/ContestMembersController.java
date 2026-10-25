@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
-import com.ligitabl.api.rest.contest.shared.ContestSeasonSupport;
+import com.ligitabl.api.usecase.contest.shared.ContestSeasonSupport;
 import com.ligitabl.api.web.contest.contestdetail.ContestDetailController.MemberRow;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 import com.ligitabl.model.domain.Entry;

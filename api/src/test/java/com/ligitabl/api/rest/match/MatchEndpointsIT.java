@@ -15,9 +15,9 @@ import org.springframework.boot.test.web.server.LocalServerPort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import com.ligitabl.api.rest.match.getdefaultroundmatches.RoundMatchesResult;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
+import com.ligitabl.api.usecase.match.getdefaultroundmatches.RoundMatchesResult;
 import com.ligitabl.model.domain.MatchStatus;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

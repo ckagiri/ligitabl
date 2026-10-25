@@ -22,8 +22,8 @@ import org.mockito.quality.Strictness;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.round.shared.RoundSupport;
 import com.ligitabl.api.testsupport.TestClock;
+import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundStatus;

@@ -12,10 +12,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
-import com.ligitabl.api.rest.contest.renamecontest.RenameContestCommand;
-import com.ligitabl.api.rest.contest.renamecontest.RenameContestError;
-import com.ligitabl.api.rest.contest.renamecontest.RenameContestUseCase;
-import com.ligitabl.api.rest.contest.shared.ContestSeasonSupport;
+import com.ligitabl.api.usecase.contest.renamecontest.RenameContestCommand;
+import com.ligitabl.api.usecase.contest.renamecontest.RenameContestError;
+import com.ligitabl.api.usecase.contest.renamecontest.RenameContestUseCase;
+import com.ligitabl.api.usecase.contest.shared.ContestSeasonSupport;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 import com.ligitabl.model.repo.ContestRepo;
 

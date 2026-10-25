@@ -21,10 +21,10 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.season.admin.ActivateSeasonUseCase;
-import com.ligitabl.api.rest.season.admin.AssignUpcomingSeasonUseCase;
-import com.ligitabl.api.rest.season.admin.RevertSeasonUseCase;
-import com.ligitabl.api.rest.season.admin.UpdateSeasonDatesUseCase;
+import com.ligitabl.api.usecase.season.admin.ActivateSeasonUseCase;
+import com.ligitabl.api.usecase.season.admin.AssignUpcomingSeasonUseCase;
+import com.ligitabl.api.usecase.season.admin.RevertSeasonUseCase;
+import com.ligitabl.api.usecase.season.admin.UpdateSeasonDatesUseCase;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;

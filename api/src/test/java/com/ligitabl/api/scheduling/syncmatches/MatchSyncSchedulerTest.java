@@ -25,12 +25,16 @@ import org.springframework.scheduling.TaskScheduler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.notification.AdminNotificationService;
-import com.ligitabl.api.scheduling.advanceround.RoundAdvancementService;
 import com.ligitabl.api.scheduling.health.JobHeartbeat;
 import com.ligitabl.api.scheduling.health.JobNames;
 import com.ligitabl.api.scheduling.resilience.MatchSyncCircuitBreaker;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
+import com.ligitabl.api.usecase.match.syncmatches.MatchSyncResult;
+import com.ligitabl.api.usecase.match.syncmatches.NextSyncSchedule;
+import com.ligitabl.api.usecase.match.syncmatches.SyncMatchesUseCase;
+import com.ligitabl.api.usecase.match.syncmatches.TriggerRoundFinalizationUseCase;
+import com.ligitabl.api.usecase.round.advanceround.RoundAdvancementService;
 import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.OutboxRepo;
@@ -258,7 +262,8 @@ class MatchSyncSchedulerTest {
         scheduler.triggerManualSync();
         scheduler.triggerManualSync();
 
-        verify(adminNotificationService, times(1)).notifyStaleUpstreamFeed(any(), anyInt(), eq("Kickoff passed 3h ago"));
+        verify(adminNotificationService, times(1))
+                .notifyStaleUpstreamFeed(any(), anyInt(), eq("Kickoff passed 3h ago"));
         verify(adminNotificationService, times(1)).notifySyncScheduleChanged(any(), anyInt(), any(), any());
     }
 

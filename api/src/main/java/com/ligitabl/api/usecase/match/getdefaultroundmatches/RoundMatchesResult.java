@@ -1,0 +1,26 @@
+package com.ligitabl.api.usecase.match.getdefaultroundmatches;
+
+import java.util.List;
+import java.util.UUID;
+
+import com.ligitabl.api.usecase.match.MatchDto;
+
+import lombok.Builder;
+
+@Builder
+public record RoundMatchesResult(
+        UUID seasonId,
+        String seasonSlug,
+        int viewingRound,
+        int currentRound,
+        int lastRound,
+        List<MatchDto> matches,
+        boolean roundFinalized,
+        boolean roundAdvanced,
+        boolean autoAdvanceScheduled,
+        boolean seasonInSetupMode,
+        boolean seasonCompleted,
+        boolean standingsFinalised,
+        boolean allMatchesTerminalOrBlocking,
+        boolean allMatchesFinished,
+        boolean matchesComplete) {}

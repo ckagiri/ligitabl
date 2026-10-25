@@ -8,15 +8,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.round.advanceround.AdvanceCurrentRoundNowUseCase;
-import com.ligitabl.api.rest.round.advanceround.CancelRoundAdvancementUseCase;
-import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundCommand;
-import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundError;
-import com.ligitabl.api.rest.round.finalizeround.FinalizeRoundUseCase;
 import com.ligitabl.api.shared.errors.ConflictError;
 import com.ligitabl.api.shared.errors.NotFoundError;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.ValidationError;
+import com.ligitabl.api.usecase.round.advanceround.AdvanceCurrentRoundNowUseCase;
+import com.ligitabl.api.usecase.round.advanceround.CancelRoundAdvancementUseCase;
+import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundCommand;
+import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundError;
+import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundUseCase;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;

@@ -20,8 +20,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.admin.deleteuser.DeleteUserUseCase;
-import com.ligitabl.api.rest.admin.updateusername.UpdateUsernameUseCase;
+import com.ligitabl.api.usecase.admin.deleteuser.DeleteUserUseCase;
+import com.ligitabl.api.usecase.admin.updateusername.UpdateUsernameUseCase;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.SuspicionTier;
 import com.ligitabl.model.domain.SuspiciousEmailDetector;

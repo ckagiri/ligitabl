@@ -1,0 +1,722 @@
+package com.ligitabl.api.usecase.prediction.createprediction;
+
+import static com.ligitabl.api.testsupport.TestCalendar.MID_SEASON;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_END;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_NAME;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_SLUG;
+import static com.ligitabl.api.testsupport.TestCalendar.SEASON_START;
+import static org.assertj.core.api.Assertions.assertThat;
+
+import java.time.Clock;
+import java.time.LocalDate;
+import java.time.OffsetDateTime;
+import java.time.ZoneOffset;
+import java.util.List;
+import java.util.UUID;
+
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestInstance;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.jdbc.core.JdbcTemplate;
+
+import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.testsupport.AbstractPostgresIT;
+import com.ligitabl.api.testsupport.FixedClockConfig;
+import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
+import com.ligitabl.api.testsupport.TestIds;
+import com.ligitabl.model.domain.MatchStatus;
+import com.ligitabl.model.domain.RoundStatus;
+import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.repo.EntryRepo;
+import com.ligitabl.model.repo.SeasonPredictionRepo;
+
+@SpringBootTest
+@Import(FixedClockConfig.class)
+@DisplayName("CreatePredictionUseCase Integration Tests")
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class CreatePredictionUseCaseIT extends AbstractPostgresIT {
+
+    private static final List<TeamRank> INITIAL_RANKINGS = List.of(
+            new TeamRank("MCI", 1),
+            new TeamRank("ARS", 2),
+            new TeamRank("LIV", 3),
+            new TeamRank("AVL", 4),
+            new TeamRank("CHE", 5),
+            new TeamRank("NEW", 6),
+            new TeamRank("MUN", 7),
+            new TeamRank("TOT", 8),
+            new TeamRank("BHA", 9),
+            new TeamRank("CRY", 10),
+            new TeamRank("BRE", 11),
+            new TeamRank("WHU", 12));
+
+    @Autowired
+    CreatePredictionUseCase useCase;
+
+    @Autowired
+    CompetitionDefaults competitionDefaults;
+
+    @Autowired
+    JdbcTemplate jdbcTemplate;
+
+    @Autowired
+    SeasonPredictionRepo predictionRepo;
+
+    @Autowired
+    EntryRepo entryRepo;
+
+    @Autowired
+    Clock clock;
+
+    private UUID competitionId;
+    private UUID seasonId;
+    private UUID contestId;
+    private UUID roundId;
+    private UUID userId;
+    private UUID homeTeamId;
+    private UUID awayTeamId;
+
+    @BeforeAll
+    void setupPrerequisites() {
+        PostgresTestDbCleaner.truncateAllDomainTables(jdbcTemplate);
+
+        competitionId = UUID.randomUUID();
+        seasonId = UUID.randomUUID();
+        contestId = UUID.randomUUID();
+        roundId = UUID.randomUUID();
+        homeTeamId = UUID.randomUUID();
+        awayTeamId = UUID.randomUUID();
+
+        insertCompetitionAndSeason();
+        insertContest();
+        linkSeasonToContest();
+        insertTeamsForMatches();
+        insertRound(roundId, seasonId, 1, RoundStatus.OPEN);
+    }
+
+    /**
+     * The frozen {@code MID_SEASON} as an {@link OffsetDateTime}.
+     *
+     * <p>Season fixtures must be dated against the same instant the use case reads from the mocked
+     * clock. They previously used real {@code MID_SEASON()} while the clock was pinned to 2024 — harmless
+     * only while the season predicates read the wall clock themselves and so never consulted this
+     * clock. Now that they take an explicit instant, a fixture and a clock that disagree describe
+     * two different worlds.
+     */
+    private OffsetDateTime atNow() {
+        return OffsetDateTime.ofInstant(MID_SEASON, ZoneOffset.UTC);
+    }
+
+    @BeforeEach
+    void setupMocks() {
+
+        resetToRound1Open();
+
+        userId = UUID.randomUUID();
+        insertUser(userId, "join-user-" + userId + "@example.com");
+    }
+
+    @AfterAll
+    void cleanup() {
+        PostgresTestDbCleaner.truncateAllDomainTables(jdbcTemplate);
+    }
+
+    @Nested
+    @DisplayName("Success Cases")
+    class SuccessCases {
+
+        @Test
+        @DisplayName("should join contest successfully with a valid swap")
+        void shouldJoinContestSuccessfully() {
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
+
+            assertThat(result.isRight()).isTrue();
+            CreatePredictionResult joinResult = result.get();
+            assertThat(joinResult.predictionId()).isNotNull();
+            assertThat(joinResult.entryId()).isNotNull();
+            assertThat(joinResult.atRoundNumber()).isEqualTo(1);
+            assertThat(joinResult.message()).contains("Welcome").contains("Round 1");
+
+            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId);
+            assertThat(prediction).isPresent();
+            assertThat(prediction.get().getId()).isEqualTo(joinResult.predictionId());
+            assertThat(prediction.get().getUserId()).isEqualTo(userId);
+            assertThat(prediction.get().getSeasonId()).isEqualTo(seasonId);
+
+            // currentRankings should reflect the swap: MCI and ARS positions exchanged
+            var rankings = prediction.get().getCurrentRankings();
+            assertThat(rankings).hasSize(12);
+            TeamRank mci = rankings.stream()
+                    .filter(t -> t.getCode().equals("MCI"))
+                    .findFirst()
+                    .orElseThrow();
+            TeamRank ars = rankings.stream()
+                    .filter(t -> t.getCode().equals("ARS"))
+                    .findFirst()
+                    .orElseThrow();
+            assertThat(mci.getPosition()).isEqualTo(2); // ARS was at 2
+            assertThat(ars.getPosition()).isEqualTo(1); // MCI was at 1
+
+            // initialRankings stays null for a normal (non pre-season) join
+            assertThat(prediction.get().getInitialRankings()).isNull();
+
+            // initial swap is recorded; a swap was used at signup, so the first-swap bonus is
+            // already consumed (lastSwapAt is set), matching CreatePredictionUseCaseTest
+            assertThat(prediction.get().getSwaps()).hasSize(1);
+            assertThat(prediction.get().getSwaps().get(0).getRound()).isEqualTo(1);
+            assertThat(prediction.get().getSwaps().get(0).getChanges()).hasSize(1);
+            assertThat(prediction.get().getLastSwapAt()).isEqualTo(MID_SEASON);
+
+            assertThat(prediction.get().getAtRoundNumber()).isEqualTo(1);
+
+            var entry = entryRepo.findByUserAndContest(userId, contestId);
+            assertThat(entry).isPresent();
+            assertThat(entry.get().getId()).isEqualTo(joinResult.entryId());
+        }
+
+        @Test
+        @DisplayName("should apply multiple swaps sequentially and record all changes")
+        void shouldApplyMultipleSwapsAndRecordAllChanges() {
+            // Baseline: MCI=1, ARS=2, LIV=3
+            // Swap 1: MCI ↔ ARS → ARS=1, MCI=2, LIV=3
+            // Swap 2: LIV ↔ MCI → ARS=1, LIV=2, MCI=3
+            Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(
+                    userId,
+                    multiSwap(List.of(
+                            new CreatePredictionCommand.SwapPair("MCI", "ARS"),
+                            new CreatePredictionCommand.SwapPair("LIV", "MCI"))));
+
+            assertThat(result.isRight()).isTrue();
+
+            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId);
+            assertThat(prediction).isPresent();
+
+            var rankings = prediction.get().getCurrentRankings();
+            TeamRank ars = rankings.stream()
+                    .filter(t -> t.getCode().equals("ARS"))
+                    .findFirst()
+                    .orElseThrow();
+            TeamRank liv = rankings.stream()
+                    .filter(t -> t.getCode().equals("LIV"))
+                    .findFirst()
+                    .orElseThrow();
+            TeamRank mci = rankings.stream()
+                    .filter(t -> t.getCode().equals("MCI"))
+                    .findFirst()
+                    .orElseThrow();
+            assertThat(ars.getPosition()).isEqualTo(1);
+            assertThat(liv.getPosition()).isEqualTo(2);
+            assertThat(mci.getPosition()).isEqualTo(3);
+
+            // Both swap changes recorded under one RoundSwap; swaps were used at signup, so the
+            // first-swap bonus is already consumed (lastSwapAt is set)
+            assertThat(prediction.get().getSwaps()).hasSize(1);
+            assertThat(prediction.get().getSwaps().get(0).getChanges()).hasSize(2);
+            assertThat(prediction.get().getLastSwapAt()).isEqualTo(MID_SEASON);
+        }
+
+        @Test
+        @DisplayName("should set at_round_number to current round when round is OPEN")
+        void shouldSetAtRoundNumberToCurrentWhenOpen() {
+            updateCurrentRoundStatus(RoundStatus.OPEN);
+
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
+
+            assertThat(result.isRight()).isTrue();
+            assertThat(result.get().atRoundNumber()).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("should set at_round_number to next round when round is LOCKED")
+        void shouldSetAtRoundNumberToNextWhenLocked() {
+            updateCurrentRoundStatus(RoundStatus.LOCKED);
+
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
+
+            assertThat(result.isRight()).isTrue();
+            assertThat(result.get().atRoundNumber()).isEqualTo(2);
+            assertThat(result.get().message()).contains("Round 2");
+        }
+
+        @Test
+        @DisplayName("should set at_round_number to next round when round is COMPLETED")
+        void shouldSetAtRoundNumberToNextWhenCompleted() {
+            updateCurrentRoundStatus(RoundStatus.COMPLETED);
+
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
+
+            assertThat(result.isRight()).isTrue();
+            assertThat(result.get().atRoundNumber()).isEqualTo(2);
+        }
+    }
+
+    @Nested
+    @DisplayName("Validation Errors")
+    class ValidationErrors {
+
+        @Test
+        @DisplayName("should allow when no swaps are provided")
+        void shouldAllowWhenEmptySwaps() {
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, multiSwap(List.of()));
+
+            assertThat(result.isRight()).isTrue();
+        }
+
+        @Test
+        @DisplayName("should allow when 5 swaps are provided")
+        void shouldAllowWhenFiveSwapsProvided() {
+            Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(
+                    userId,
+                    multiSwap(List.of(
+                            new CreatePredictionCommand.SwapPair("MCI", "ARS"),
+                            new CreatePredictionCommand.SwapPair("LIV", "AVL"),
+                            new CreatePredictionCommand.SwapPair("CHE", "NEW"),
+                            new CreatePredictionCommand.SwapPair("MUN", "TOT"),
+                            new CreatePredictionCommand.SwapPair("BRE", "WHU"))));
+
+            assertThat(result.isRight()).isTrue();
+        }
+
+        @Test
+        @DisplayName("should reject when more than 5 swaps are provided")
+        void shouldRejectWhenTooManySwaps() {
+            Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(
+                    userId,
+                    multiSwap(List.of(
+                            new CreatePredictionCommand.SwapPair("MCI", "ARS"),
+                            new CreatePredictionCommand.SwapPair("LIV", "AVL"),
+                            new CreatePredictionCommand.SwapPair("CHE", "NEW"),
+                            new CreatePredictionCommand.SwapPair("MUN", "TOT"),
+                            new CreatePredictionCommand.SwapPair("BRE", "WHU"),
+                            new CreatePredictionCommand.SwapPair("BOU", "EVE"))));
+
+            assertThat(result.isLeft()).isTrue();
+            assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.TooManySwaps.class);
+            assertThat(((CreatePredictionError.TooManySwaps) result.getLeft()).provided())
+                    .isEqualTo(6);
+            assertThat(((CreatePredictionError.TooManySwaps) result.getLeft()).max())
+                    .isEqualTo(5);
+        }
+
+        @Test
+        @DisplayName("should reject when swapping a team with itself")
+        void shouldRejectWhenSameTeam() {
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, singleSwap("MCI", "MCI"));
+
+            assertThat(result.isLeft()).isTrue();
+            assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.SameTeam.class);
+        }
+
+        @Test
+        @DisplayName("should reject when team code is not in season")
+        void shouldRejectWhenInvalidTeamCode() {
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, singleSwap("XXX", "ARS"));
+
+            assertThat(result.isLeft()).isTrue();
+            assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.InvalidTeamCode.class);
+            assertThat(((CreatePredictionError.InvalidTeamCode) result.getLeft()).code())
+                    .isEqualTo("XXX");
+        }
+
+        @Test
+        @DisplayName("should reject when season ended (cannot join last round if not OPEN)")
+        void shouldRejectWhenSeasonEnded() {
+            setCurrentRoundTo(22, RoundStatus.LOCKED);
+            setSeasonCurrentRound(roundId, 22);
+
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
+
+            assertThat(result.isLeft()).isTrue();
+            assertThat(result.getLeft()).isInstanceOf(CreatePredictionError.Ended.class);
+            assertThat(((CreatePredictionError.Ended) result.getLeft()).currentRound())
+                    .isEqualTo(22);
+            assertThat(((CreatePredictionError.Ended) result.getLeft()).maxRounds())
+                    .isEqualTo(22);
+        }
+
+        @Test
+        @DisplayName("should allow joining last round if it is OPEN")
+        void shouldAllowJoiningLastRoundIfOpen() {
+            setCurrentRoundTo(22, RoundStatus.OPEN);
+            setSeasonCurrentRound(roundId, 22);
+
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
+
+            assertThat(result.isRight()).isTrue();
+            assertThat(result.get().atRoundNumber()).isEqualTo(22);
+        }
+
+        @Test
+        @DisplayName("should reject when already joined")
+        void shouldRejectWhenAlreadyJoined() {
+            Either<CreatePredictionError, CreatePredictionResult> first =
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
+            assertThat(first.isRight()).isTrue();
+
+            Either<CreatePredictionError, CreatePredictionResult> second =
+                    useCase.execute(userId, singleSwap("MCI", "LIV"));
+
+            assertThat(second.isLeft()).isTrue();
+            assertThat(second.getLeft()).isInstanceOf(CreatePredictionError.AlreadyJoined.class);
+            assertThat(((CreatePredictionError.AlreadyJoined) second.getLeft()).existingPredictionId())
+                    .isEqualTo(first.get().predictionId());
+        }
+    }
+
+    @Nested
+    @DisplayName("Pre-Season Registration")
+    class PreSeasonRegistration {
+
+        @BeforeEach
+        void markSeasonAsPreSeason() {
+            // getSeasonState() only classifies PRE_SEASON when the season's own start date is still
+            // in the future (an upcoming, not-yet-started season) — the class-level fixture uses a
+            // fixed historical 2024/25 window for the in-play tests, so push it out here.
+            setSeasonWindow(
+                    atNow().toLocalDate().plusDays(1), atNow().toLocalDate().plusMonths(9));
+            setPreSeasonOpensAt(atNow().minusDays(1));
+            setPredictionsOpenAt(atNow().plusDays(30));
+        }
+
+        @Test
+        @DisplayName("should register at round 0 with initialRankings populated as the permanent marker")
+        void shouldRegisterPreSeason() {
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
+
+            assertThat(result.isRight()).isTrue();
+            assertThat(result.get().atRoundNumber()).isEqualTo(0);
+
+            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId);
+            assertThat(prediction).isPresent();
+            assertThat(prediction.get().getAtRoundNumber()).isEqualTo(0);
+            assertThat(prediction.get().getInitialRankings())
+                    .isNotNull()
+                    .isEqualTo(prediction.get().getCurrentRankings());
+            assertThat(prediction.get().getSwaps()).hasSize(1);
+            assertThat(prediction.get().getSwaps().get(0).getRound()).isEqualTo(0);
+
+            var entry = entryRepo.findByUserAndContest(userId, contestId);
+            assertThat(entry).isPresent();
+            assertThat(entry.get().getJoinedAtRound()).isEqualTo(0);
+        }
+
+        @Test
+        @DisplayName("should allow registering with zero swaps")
+        void shouldRegisterWithNoSwaps() {
+            Either<CreatePredictionError, CreatePredictionResult> result =
+                    useCase.execute(userId, multiSwap(List.of()));
+
+            assertThat(result.isRight()).isTrue();
+            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId);
+            assertThat(prediction.get().getInitialRankings()).isEqualTo(INITIAL_RANKINGS);
+            assertThat(prediction.get().getCurrentRankings()).isEqualTo(INITIAL_RANKINGS);
+        }
+
+        @Test
+        @DisplayName("should reject re-registration while still pre-season")
+        void shouldRejectDoubleRegistration() {
+            Either<CreatePredictionError, CreatePredictionResult> first =
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
+            assertThat(first.isRight()).isTrue();
+
+            Either<CreatePredictionError, CreatePredictionResult> second =
+                    useCase.execute(userId, singleSwap("MCI", "LIV"));
+
+            assertThat(second.isLeft()).isTrue();
+            assertThat(second.getLeft()).isInstanceOf(CreatePredictionError.AlreadyJoined.class);
+        }
+
+        @Test
+        @DisplayName("should merge the pre-season row into a real entry once predictions open, without duplicating")
+        void shouldMergeIntoRealEntryOncePredictionsOpen() {
+            Either<CreatePredictionError, CreatePredictionResult> registration =
+                    useCase.execute(userId, singleSwap("MCI", "ARS"));
+            assertThat(registration.isRight()).isTrue();
+            UUID predictionId = registration.get().predictionId();
+            UUID entryId = registration.get().entryId();
+
+            setPredictionsOpenAt(atNow().minusMinutes(1));
+
+            Either<CreatePredictionError, CreatePredictionResult> merged =
+                    useCase.execute(userId, multiSwap(List.of()));
+
+            assertThat(merged.isRight()).isTrue();
+            assertThat(merged.get().predictionId()).isEqualTo(predictionId);
+            assertThat(merged.get().entryId()).isEqualTo(entryId);
+            assertThat(merged.get().atRoundNumber()).isEqualTo(1);
+
+            var prediction = predictionRepo.findByUserAndSeason(userId, seasonId);
+            assertThat(prediction).isPresent();
+            assertThat(prediction.get().getId()).isEqualTo(predictionId);
+            assertThat(prediction.get().getAtRoundNumber()).isEqualTo(1);
+            // permanent pre-registration marker is preserved, not cleared
+            assertThat(prediction.get().getInitialRankings()).isNotNull();
+
+            // No duplicate prediction/entry rows
+            assertThat(countSeasonPredictionsForUser(userId)).isEqualTo(1);
+            assertThat(countEntriesForUser(userId)).isEqualTo(1);
+        }
+
+        @Test
+        @DisplayName("should reject the merge when the round-0 row has lost its initialRankings marker")
+        void shouldRejectMergeWhenMarkerMissing() {
+            // The other half of "initialRankings is the permanent marker". Every round-0 writer —
+            // a user registering in pre-season, and CreatePredictionUseCase.autoRegisterDefaultTable
+            // on behalf of one — sets it precisely so this guard never fires.
+            assertThat(useCase.execute(userId, singleSwap("MCI", "ARS")).isRight())
+                    .isTrue();
+            jdbcTemplate.update(
+                    "UPDATE t_season_prediction SET c_initial_rankings = NULL WHERE fk_user_id = ?", userId);
+
+            setPredictionsOpenAt(atNow().minusMinutes(1));
+
+            Either<CreatePredictionError, CreatePredictionResult> merged =
+                    useCase.execute(userId, multiSwap(List.of()));
+
+            assertThat(merged.isLeft()).isTrue();
+            assertThat(merged.getLeft()).isInstanceOf(CreatePredictionError.CorruptPreSeasonRegistration.class);
+            assertThat(predictionRepo
+                            .findByUserAndSeason(userId, seasonId)
+                            .orElseThrow()
+                            .getAtRoundNumber())
+                    .as("a rejected merge must leave the row at round 0, not half-migrated")
+                    .isZero();
+        }
+
+        @Test
+        @DisplayName("should reject the merge when initialRankings is an empty list rather than null")
+        void shouldRejectMergeWhenMarkerEmpty() {
+            // The guard tests null OR empty; an empty jsonb array is the shape a bad migration or
+            // a partial write would leave behind, and it is not the same code path as null.
+            assertThat(useCase.execute(userId, singleSwap("MCI", "ARS")).isRight())
+                    .isTrue();
+            jdbcTemplate.update(
+                    "UPDATE t_season_prediction SET c_initial_rankings = '[]'::jsonb WHERE fk_user_id = ?", userId);
+
+            setPredictionsOpenAt(atNow().minusMinutes(1));
+
+            assertThat(useCase.execute(userId, multiSwap(List.of())).getLeft())
+                    .isInstanceOf(CreatePredictionError.CorruptPreSeasonRegistration.class);
+        }
+    }
+
+    // --- Helpers ---
+
+    private void setPredictionsOpenAt(OffsetDateTime value) {
+        jdbcTemplate.update("UPDATE t_season SET c_predictions_open_at = ? WHERE pk_id = ?", value, seasonId);
+    }
+
+    private void setPreSeasonOpensAt(OffsetDateTime value) {
+        jdbcTemplate.update("UPDATE t_season SET c_pre_season_opens_at = ? WHERE pk_id = ?", value, seasonId);
+    }
+
+    private void setSeasonWindow(LocalDate startDate, LocalDate endDate) {
+        jdbcTemplate.update(
+                "UPDATE t_season SET c_start_date = ?, c_end_date = ? WHERE pk_id = ?", startDate, endDate, seasonId);
+    }
+
+    private int countSeasonPredictionsForUser(UUID userId) {
+        Integer count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM t_season_prediction WHERE fk_user_id = ?", Integer.class, userId);
+        return count == null ? 0 : count;
+    }
+
+    private int countEntriesForUser(UUID userId) {
+        Integer count =
+                jdbcTemplate.queryForObject("SELECT COUNT(*) FROM t_entry WHERE fk_user_id = ?", Integer.class, userId);
+        return count == null ? 0 : count;
+    }
+
+    private static CreatePredictionCommand singleSwap(String teamACode, String teamBCode) {
+        return multiSwap(List.of(new CreatePredictionCommand.SwapPair(teamACode, teamBCode)));
+    }
+
+    private static CreatePredictionCommand multiSwap(List<CreatePredictionCommand.SwapPair> swaps) {
+        return new CreatePredictionCommand(swaps);
+    }
+
+    private void insertCompetitionAndSeason() {
+        String competitionSlug = competitionDefaults.defaultCompetitionSlug();
+        jdbcTemplate.update(
+                "INSERT INTO t_competition (pk_id, c_name, c_slug, c_code, c_phases, fk_active_season_id) VALUES (?,?,?,?, '[]'::jsonb, ?)",
+                competitionId,
+                "Premier League",
+                competitionSlug,
+                "PL",
+                seasonId);
+
+        jdbcTemplate.update(
+                "INSERT INTO t_season (pk_id, c_client_id, fk_competition_id, c_name, c_slug, c_start_date, c_end_date, c_max_rounds, c_total_teams, c_initial_rankings, c_completed, fk_current_round_id, c_current_match_day) VALUES (?,?,?,?,?,?,?,?,?,?::jsonb,?,?,?)",
+                seasonId,
+                1,
+                competitionId,
+                SEASON_NAME,
+                SEASON_SLUG,
+                SEASON_START,
+                SEASON_END,
+                22,
+                12,
+                initialRankingsJson(),
+                false,
+                roundId,
+                1);
+    }
+
+    private void insertContest() {
+        jdbcTemplate.update(
+                "INSERT INTO t_contest (pk_id, fk_season_id, c_name, c_is_private, c_join_code, c_from_round_position, c_to_round_position, c_max_entries) VALUES (?,?,?,?,?,?,?,?)",
+                contestId,
+                seasonId,
+                "Main League",
+                false,
+                null,
+                1,
+                22,
+                null);
+    }
+
+    private void linkSeasonToContest() {
+        jdbcTemplate.update("UPDATE t_season SET fk_main_contest_id = ? WHERE pk_id = ?", contestId, seasonId);
+    }
+
+    private void insertRound(UUID id, UUID seasonId, int position, RoundStatus status) {
+        boolean isFinalized = status == RoundStatus.COMPLETED;
+        jdbcTemplate.update(
+                "INSERT INTO t_round (pk_id, fk_season_id, c_name, c_slug, c_position, c_is_finalized) VALUES (?,?,?,?,?,?)",
+                id,
+                seasonId,
+                "Round " + position,
+                "round-" + position,
+                position,
+                isFinalized);
+    }
+
+    private void updateCurrentRoundStatus(RoundStatus status) {
+        clearMatchesForRound(roundId);
+        if (status == RoundStatus.COMPLETED) {
+            jdbcTemplate.update("UPDATE t_round SET c_is_finalized = true WHERE pk_id = ?", roundId);
+            return;
+        }
+
+        jdbcTemplate.update("UPDATE t_round SET c_is_finalized = false WHERE pk_id = ?", roundId);
+        if (status == RoundStatus.LOCKED) {
+            insertLockedMatch(roundId, 1);
+        }
+    }
+
+    private void setCurrentRoundTo(int position, RoundStatus status) {
+        boolean isFinalized = status == RoundStatus.COMPLETED;
+        jdbcTemplate.update(
+                "UPDATE t_round SET c_name = ?, c_slug = ?, c_position = ?, c_is_finalized = ? WHERE pk_id = ?",
+                "Round " + position,
+                "round-" + position,
+                position,
+                isFinalized,
+                roundId);
+
+        clearMatchesForRound(roundId);
+        if (status == RoundStatus.LOCKED) {
+            insertLockedMatch(roundId, position);
+        }
+    }
+
+    private void resetToRound1Open() {
+        setCurrentRoundTo(1, RoundStatus.OPEN);
+        setSeasonCurrentRound(roundId, 1);
+    }
+
+    private void setSeasonCurrentRound(UUID currentRoundId, int matchDay) {
+        jdbcTemplate.update(
+                "UPDATE t_season SET fk_current_round_id = ?, c_current_match_day = ? WHERE pk_id = ?",
+                currentRoundId,
+                matchDay,
+                seasonId);
+    }
+
+    private void insertTeamsForMatches() {
+        jdbcTemplate.update(
+                "INSERT INTO t_team (pk_id, c_name, c_short_name, c_slug, c_tla) VALUES (?,?,?,?,?)",
+                homeTeamId,
+                "Home Team",
+                "Home",
+                "home-team",
+                "HOM");
+
+        jdbcTemplate.update(
+                "INSERT INTO t_team (pk_id, c_name, c_short_name, c_slug, c_tla) VALUES (?,?,?,?,?)",
+                awayTeamId,
+                "Away Team",
+                "Away",
+                "away-team",
+                "AWY");
+    }
+
+    private void clearMatchesForRound(UUID roundId) {
+        jdbcTemplate.update("DELETE FROM t_match WHERE fk_round_id = ?", roundId);
+    }
+
+    private void insertLockedMatch(UUID roundId, int matchDay) {
+        jdbcTemplate.update(
+                "INSERT INTO t_match (pk_id, c_client_id, fk_round_id, fk_season_id, fk_home_team_id, fk_away_team_id, c_slug, c_status, c_kick_off, c_venue, c_matchday) "
+                        + "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                UUID.randomUUID(),
+                1,
+                roundId,
+                seasonId,
+                homeTeamId,
+                awayTeamId,
+                "home-vs-away-" + matchDay,
+                MatchStatus.LIVE.name(),
+                OffsetDateTime.now().withNano(0),
+                "Test Stadium",
+                matchDay);
+    }
+
+    private void insertUser(UUID id, String email) {
+        jdbcTemplate.update(
+                "INSERT INTO t_user (pk_id, c_email, c_password_hash, c_display_name, c_public_id, c_email_verified) VALUES (?,?,?,?,?,?)",
+                id,
+                email,
+                "test-password-hash",
+                "Join User",
+                TestIds.randomPublicId(),
+                true);
+
+        jdbcTemplate.update("INSERT INTO t_user_role (fk_user_id, c_role) VALUES (?, ?)", id, "PLAYER");
+    }
+
+    private static String initialRankingsJson() {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < INITIAL_RANKINGS.size(); i++) {
+            if (i > 0) {
+                sb.append(",");
+            }
+            TeamRank tr = INITIAL_RANKINGS.get(i);
+            sb.append("{\"code\":\"")
+                    .append(tr.getCode())
+                    .append("\",\"position\":")
+                    .append(tr.getPosition())
+                    .append("}");
+        }
+        sb.append("]");
+        return sb.toString();
+    }
+}

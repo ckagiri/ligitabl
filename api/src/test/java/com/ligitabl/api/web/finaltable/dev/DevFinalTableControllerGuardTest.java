@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.finaltable.scorefinaltable.ScoreFinalTablePredictionsUseCase;
+import com.ligitabl.api.usecase.finaltable.scorefinaltable.ScoreFinalTablePredictionsUseCase;
 import com.ligitabl.model.repo.FinalTablePredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
