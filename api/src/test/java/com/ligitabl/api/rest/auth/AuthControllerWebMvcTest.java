@@ -15,10 +15,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ligitabl.api.rest.auth.login.LoginController;
-import com.ligitabl.api.rest.auth.login.LoginResult;
-import com.ligitabl.api.rest.auth.login.LoginUseCase;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.auth.login.LoginResult;
+import com.ligitabl.api.usecase.auth.login.LoginUseCase;
 
 @WebMvcTest(LoginController.class)
 @AutoConfigureMockMvc(addFilters = false)

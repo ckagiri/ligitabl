@@ -258,7 +258,8 @@ class MatchSyncSchedulerTest {
         scheduler.triggerManualSync();
         scheduler.triggerManualSync();
 
-        verify(adminNotificationService, times(1)).notifyStaleUpstreamFeed(any(), anyInt(), eq("Kickoff passed 3h ago"));
+        verify(adminNotificationService, times(1))
+                .notifyStaleUpstreamFeed(any(), anyInt(), eq("Kickoff passed 3h ago"));
         verify(adminNotificationService, times(1)).notifySyncScheduleChanged(any(), anyInt(), any(), any());
     }
 

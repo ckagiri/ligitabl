@@ -138,8 +138,8 @@ class SyncFrequencyCalculatorTest {
 
     @Test
     void shouldKeepPollingEveryMinute_atExactlyThreeHoursPastKickoff() {
-        var schedule = SyncFrequencyCalculator.calculateNextSync(
-                false, true, NOW.minusHours(3), false, false, 10, false, NOW);
+        var schedule =
+                SyncFrequencyCalculator.calculateNextSync(false, true, NOW.minusHours(3), false, false, 10, false, NOW);
 
         assertThat(schedule.delay()).isEqualTo(Duration.ofMinutes(1));
         assertThat(schedule.phase()).isEqualTo(NextSyncSchedule.Phase.OVERDUE);

@@ -26,6 +26,7 @@ import com.ligitabl.api.auth.impersonation.ImpersonationGuard;
 import com.ligitabl.api.auth.impersonation.UserSummary;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationUseCase;
 import com.ligitabl.api.web.predictions.latestresult.LatestResultSupport;
 import com.ligitabl.api.web.shared.season.SeasonPredictionSupport;
 import com.ligitabl.model.auth.Password;
