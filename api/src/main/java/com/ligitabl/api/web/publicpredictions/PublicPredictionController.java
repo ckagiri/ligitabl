@@ -15,7 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.standings.FormService;
+import com.ligitabl.api.usecase.standings.FormService;
 import com.ligitabl.api.web.shared.fixtures.FixtureJsonMapper;
 import com.ligitabl.api.web.shared.swap.SwapHistoryFormatter;
 import com.ligitabl.model.domain.Competition;

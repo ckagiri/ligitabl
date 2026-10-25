@@ -18,6 +18,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
+import com.ligitabl.api.usecase.standings.StandingsEntryDto;
 import com.ligitabl.model.domain.Standings;
 import com.ligitabl.model.domain.StandingsMetadata;
 import com.ligitabl.model.domain.StandingsTeamRank;

@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.standings;
+package com.ligitabl.api.usecase.standings;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;

@@ -19,8 +19,8 @@ import org.springframework.ui.Model;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.rest.standings.FormService;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.standings.FormService;
 import com.ligitabl.api.web.shared.fixtures.FixtureJsonMapper;
 import com.ligitabl.api.web.shared.swap.SwapHistoryFormatter;
 import com.ligitabl.model.domain.Competition;
