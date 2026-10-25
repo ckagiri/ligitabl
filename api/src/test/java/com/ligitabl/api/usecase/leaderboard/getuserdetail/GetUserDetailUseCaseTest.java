@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.leaderboard.usermodal;
+package com.ligitabl.api.usecase.leaderboard.getuserdetail;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.leaderboard.usermodal;
+package com.ligitabl.api.usecase.leaderboard.getuserdetail;
 
 import java.util.Comparator;
 import java.util.List;

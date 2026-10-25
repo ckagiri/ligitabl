@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-import com.ligitabl.api.usecase.leaderboard.usermodal.GetUserDetailUseCase;
+import com.ligitabl.api.usecase.leaderboard.getuserdetail.GetUserDetailUseCase;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
