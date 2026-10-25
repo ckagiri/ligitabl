@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.finaltable.shared.FinalTableError;
 import com.ligitabl.api.usecase.finaltable.shared.FinalTableSupport;
-import com.ligitabl.api.web.shared.user.DisplayNames;
+import com.ligitabl.api.usecase.shared.user.DisplayNames;
 import com.ligitabl.model.domain.FinalTableEntrant;
 import com.ligitabl.model.domain.FinalTableLeaderboardEntry;
 import com.ligitabl.model.domain.service.FinalTableScorer;

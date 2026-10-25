@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.usecase.shared.error.ErrorMapper;
 import com.ligitabl.api.usecase.standings.GetDefaultRoundStandingsQuery;
 import com.ligitabl.api.usecase.standings.GetDefaultRoundStandingsUseCase;
-import com.ligitabl.api.web.shared.error.ErrorMapper;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;

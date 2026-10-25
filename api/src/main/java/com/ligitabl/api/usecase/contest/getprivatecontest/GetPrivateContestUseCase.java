@@ -6,9 +6,9 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.web.contest.SegmentNodeDto;
-import com.ligitabl.api.web.contest.SegmentTreeBuilder;
-import com.ligitabl.api.web.contest.shared.ContestSupport;
+import com.ligitabl.api.usecase.contest.shared.ContestSupport;
+import com.ligitabl.api.usecase.contest.shared.SegmentNodeDto;
+import com.ligitabl.api.usecase.contest.shared.SegmentTreeBuilder;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.Entry;

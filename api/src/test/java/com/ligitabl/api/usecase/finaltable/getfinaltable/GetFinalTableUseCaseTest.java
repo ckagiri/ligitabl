@@ -25,7 +25,7 @@ import com.ligitabl.api.usecase.finaltable.shared.FinalTableRowsJson;
 import com.ligitabl.api.usecase.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
-import com.ligitabl.api.web.shared.share.SharePredictionTextBuilder;
+import com.ligitabl.api.usecase.shared.share.SharePredictionTextBuilder;
 import com.ligitabl.model.domain.FinalTablePrediction;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;

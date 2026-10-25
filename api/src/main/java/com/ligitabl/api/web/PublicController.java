@@ -11,8 +11,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.usecase.prediction.getuserprediction.PreviewRankingsSupport;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
-import com.ligitabl.api.web.predictions.userpredictions.PreviewRankingsSupport;
 import com.ligitabl.api.web.shared.dto.TeamRankDto;
 import com.ligitabl.api.web.shared.season.SeasonPhase;
 import com.ligitabl.model.domain.RoundStatus;

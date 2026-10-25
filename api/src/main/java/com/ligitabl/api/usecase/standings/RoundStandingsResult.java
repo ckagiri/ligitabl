@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.ligitabl.api.web.shared.dto.FixtureDto;
+import com.ligitabl.api.usecase.shared.dto.FixtureDto;
 
 public record RoundStandingsResult(
         UUID seasonId,

@@ -21,7 +21,7 @@ import com.ligitabl.api.usecase.contest.getprivatecontest.GetPrivateContestUseCa
 import com.ligitabl.api.usecase.contest.renewcontest.GetContestRenewalOptionsResult;
 import com.ligitabl.api.usecase.contest.renewcontest.GetContestRenewalOptionsUseCase;
 import com.ligitabl.api.usecase.contest.shared.ContestSeasonSupport;
-import com.ligitabl.api.web.contest.shared.ContestSupport;
+import com.ligitabl.api.usecase.contest.shared.ContestSupport;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 import com.ligitabl.model.domain.Entry;
 import com.ligitabl.model.domain.LeaderboardResponse;

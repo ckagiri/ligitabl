@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.usecase.contest.shared.ContestRankResolver;
-import com.ligitabl.api.web.contest.shared.ContestSupport;
+import com.ligitabl.api.usecase.contest.shared.ContestSupport;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.ContestRenewalCalculator;

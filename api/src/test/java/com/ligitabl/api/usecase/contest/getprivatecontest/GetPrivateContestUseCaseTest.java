@@ -18,8 +18,8 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.api.web.contest.SegmentTreeBuilder;
-import com.ligitabl.api.web.contest.shared.ContestSupport;
+import com.ligitabl.api.usecase.contest.shared.ContestSupport;
+import com.ligitabl.api.usecase.contest.shared.SegmentTreeBuilder;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionPhaseFixtures;
 import com.ligitabl.model.domain.CompetitionSlug;
