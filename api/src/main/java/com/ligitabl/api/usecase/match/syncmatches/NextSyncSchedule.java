@@ -1,4 +1,4 @@
-package com.ligitabl.api.scheduling.syncmatches;
+package com.ligitabl.api.usecase.match.syncmatches;
 
 import java.time.Duration;
 

@@ -1,4 +1,4 @@
-package com.ligitabl.api.scheduling.advancematchday;
+package com.ligitabl.api.usecase.round.advancematchday;
 
 import java.util.UUID;
 

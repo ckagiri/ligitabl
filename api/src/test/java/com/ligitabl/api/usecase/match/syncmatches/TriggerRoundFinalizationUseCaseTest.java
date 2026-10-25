@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.sync;
+package com.ligitabl.api.usecase.match.syncmatches;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.verify;
@@ -12,7 +12,6 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.api.scheduling.syncmatches.TriggerRoundFinalizationUseCase;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundError;
 import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundResult;

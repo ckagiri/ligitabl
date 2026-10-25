@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.api.scheduling.health.JobHeartbeat;
 import com.ligitabl.api.scheduling.health.JobNames;
+import com.ligitabl.api.usecase.round.advancematchday.AdvanceMatchdayUseCase;
 
 import io.sentry.Sentry;
 import jakarta.annotation.PostConstruct;

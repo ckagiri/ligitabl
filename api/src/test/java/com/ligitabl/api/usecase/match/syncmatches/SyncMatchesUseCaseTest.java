@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.sync;
+package com.ligitabl.api.usecase.match.syncmatches;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -30,9 +30,6 @@ import com.ligitabl.api.client.footballdata.MatchDto;
 import com.ligitabl.api.client.footballdata.MatchesResponse;
 import com.ligitabl.api.client.footballdata.Score;
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.scheduling.syncmatches.AsyncStandingsService;
-import com.ligitabl.api.scheduling.syncmatches.LiveMatchTracker;
-import com.ligitabl.api.scheduling.syncmatches.SyncMatchesUseCase;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.testsupport.TestClock;

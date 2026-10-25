@@ -1,4 +1,4 @@
-package com.ligitabl.api.scheduling.advancematchday;
+package com.ligitabl.api.usecase.round.advancematchday;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

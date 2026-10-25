@@ -24,15 +24,15 @@ import org.springframework.test.context.DynamicPropertySource;
 
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.ligitabl.api.scheduling.advancematchday.AdvanceMatchdayUseCase;
 import com.ligitabl.api.scheduling.advancematchday.MatchdayAdvancementScheduler;
-import com.ligitabl.api.scheduling.syncmatches.AsyncStandingsService;
 import com.ligitabl.api.scheduling.syncmatches.MatchSyncScheduler;
-import com.ligitabl.api.scheduling.syncmatches.SyncMatchesUseCase;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.api.testsupport.TestClock;
+import com.ligitabl.api.usecase.match.syncmatches.AsyncStandingsService;
+import com.ligitabl.api.usecase.match.syncmatches.SyncMatchesUseCase;
+import com.ligitabl.api.usecase.round.advancematchday.AdvanceMatchdayUseCase;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.SeasonRepo;

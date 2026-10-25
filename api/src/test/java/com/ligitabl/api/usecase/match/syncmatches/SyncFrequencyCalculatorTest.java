@@ -1,4 +1,4 @@
-package com.ligitabl.api.scheduling.sync;
+package com.ligitabl.api.usecase.match.syncmatches;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -8,8 +8,6 @@ import java.time.ZoneOffset;
 
 import org.junit.jupiter.api.Test;
 
-import com.ligitabl.api.scheduling.syncmatches.NextSyncSchedule;
-import com.ligitabl.api.scheduling.syncmatches.SyncFrequencyCalculator;
 import com.ligitabl.api.testsupport.TestCalendar;
 
 /**
