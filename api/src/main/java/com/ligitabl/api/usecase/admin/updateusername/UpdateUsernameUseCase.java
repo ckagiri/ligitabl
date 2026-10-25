@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.admin.updateusername;
+package com.ligitabl.api.usecase.admin.updateusername;
 
 import java.util.Locale;
 import java.util.Objects;

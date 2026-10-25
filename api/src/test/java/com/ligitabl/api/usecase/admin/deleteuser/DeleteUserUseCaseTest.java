@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.admin.deleteuser;
+package com.ligitabl.api.usecase.admin.deleteuser;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;

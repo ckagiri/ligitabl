@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.admin.deleteuser;
+package com.ligitabl.api.usecase.admin.deleteuser;
 
 import java.util.List;
 import java.util.UUID;

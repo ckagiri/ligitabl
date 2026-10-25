@@ -1,4 +1,4 @@
-package com.ligitabl.api.rest.admin.updateusername;
+package com.ligitabl.api.usecase.admin.updateusername;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
