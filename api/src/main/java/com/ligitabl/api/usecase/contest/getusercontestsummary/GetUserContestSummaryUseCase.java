@@ -15,7 +15,6 @@ import com.ligitabl.api.usecase.contest.shared.ContestSupport;
 import com.ligitabl.api.usecase.contest.shared.RenewalOptions;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
-import com.ligitabl.model.domain.ContestRenewalCalculator;
 import com.ligitabl.model.domain.PhaseRules;
 import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.Round;
@@ -177,42 +176,12 @@ public class GetUserContestSummaryUseCase {
         return rows;
     }
 
-    /**
-     * Mirrors GetContestRenewalOptionsUseCase's current-season branch using the pure
-     * ContestRenewalCalculator directly — every row here already belongs to the active season
-     * (findPrivateByUserId is scoped to it), so the past-season branch never applies.
-     */
+    // Every row here belongs to the active season (findPrivateByUserId is scoped to it), so the
+    // past-season branch of GetContestRenewalOptionsUseCase never applies.
     private RenewalOptions resolveRenewalOptions(
             Contest contest, UUID userId, Round currentRound, List<RoundSpan> phases) {
-        if (!contest.isOwnedBy(userId) || contest.getRenewedIntoContestId() != null) {
-            return RenewalOptions.hidden();
-        }
-
-        RoundSpan originalFrom = PhaseRules.sprintStartingAt(phases, contest.getFromRoundPosition())
-                .orElse(null);
-        RoundSpan originalTo =
-                PhaseRules.sprintEndingAt(phases, contest.getToRoundPosition()).orElse(null);
-        if (originalFrom == null || originalTo == null) return RenewalOptions.hidden();
-
-        if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases)) return RenewalOptions.hidden();
-
-        var renewalFrom = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases);
-        if (renewalFrom.isEmpty()) return RenewalOptions.hidden();
-
-        RoundSpan from = renewalFrom.get();
-        if (currentRound != null
-                && ContestRenewalCalculator.hasRenewalWindowElapsed(from, currentRound.getPosition())) {
-            return RenewalOptions.hidden();
-        }
-
-        RoundSpan defaultTo = ContestRenewalCalculator.resolveDefaultTo(originalFrom, originalTo, from, phases);
-        List<String> toOptionCodes = ContestRenewalCalculator.resolveValidToOptions(from, phases).stream()
-                .map(RoundSpan::getCode)
-                .toList();
-        boolean enabled = currentRound != null
-                && ContestRenewalCalculator.hasReachedRenewalTiming(
-                        originalFrom, originalTo, currentRound.getPosition(), phases);
-
-        return new RenewalOptions(true, enabled, from.getCode(), defaultTo.getCode(), toOptionCodes);
+        if (!contest.isOwnedBy(userId)) return RenewalOptions.hidden();
+        return RenewalOptions.forCurrentSeason(
+                contest, phases, currentRound != null ? currentRound.getPosition() : null);
     }
 }
