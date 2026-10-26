@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.contest.shared.RenewalOptions;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.ContestRenewalCalculator;
@@ -74,33 +75,21 @@ public class GetContestRenewalOptionsUseCase {
         Season activeSeason = seasonRepo.findActiveSeason(competition.getId()).orElse(null);
         boolean isCurrentSeason = activeSeason != null && activeSeason.getId().equals(season.getId());
 
-        RoundSpan from;
-        RoundSpan defaultTo;
+        String fromCode;
+        String defaultToCode;
         List<String> toOptionCodes;
         boolean enabled;
 
         if (isCurrentSeason) {
-            if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases)) {
-                return Either.right(GetContestRenewalOptionsResult.hidden());
-            }
-            var renewalFrom = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases);
-            if (renewalFrom.isEmpty()) {
-                return Either.right(GetContestRenewalOptionsResult.hidden());
-            }
-            from = renewalFrom.get();
-
             int currentRoundPosition = roundRepo.findPosition(season.getCurrentRoundId());
-            if (ContestRenewalCalculator.hasRenewalWindowElapsed(from, currentRoundPosition)) {
+            RenewalOptions options = RenewalOptions.forCurrentSeason(contest, phases, currentRoundPosition);
+            if (!options.visible()) {
                 return Either.right(GetContestRenewalOptionsResult.hidden());
             }
-
-            defaultTo = ContestRenewalCalculator.resolveDefaultTo(originalFrom, originalTo, from, phases);
-            toOptionCodes = ContestRenewalCalculator.resolveValidToOptions(from, phases).stream()
-                    .map(RoundSpan::getCode)
-                    .toList();
-
-            enabled = ContestRenewalCalculator.hasReachedRenewalTiming(
-                    originalFrom, originalTo, currentRoundPosition, phases);
+            fromCode = options.fromCode();
+            defaultToCode = options.defaultToCode();
+            toOptionCodes = options.toOptionCodes();
+            enabled = options.enabled();
         } else {
             if (activeSeason == null) {
                 return Either.right(GetContestRenewalOptionsResult.hidden());
@@ -111,8 +100,8 @@ public class GetContestRenewalOptionsUseCase {
             }
 
             var window = ContestRenewalCalculator.resolvePastSeasonWindow(originalFrom, originalTo, phases);
-            from = window.from();
-            defaultTo = window.defaultTo();
+            fromCode = window.from().getCode();
+            defaultToCode = window.defaultTo().getCode();
             toOptionCodes =
                     window.validToOptions().stream().map(RoundSpan::getCode).toList();
             enabled = true;
@@ -121,6 +110,6 @@ public class GetContestRenewalOptionsUseCase {
         int activeMembers = entryRepo.countActiveByContestId(contestId);
 
         return Either.right(new GetContestRenewalOptionsResult(
-                true, enabled, contest.getName(), from.getCode(), defaultTo.getCode(), toOptionCodes, activeMembers));
+                true, enabled, contest.getName(), fromCode, defaultToCode, toOptionCodes, activeMembers));
     }
 }
