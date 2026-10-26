@@ -37,8 +37,11 @@ import com.ligitabl.api.client.turnstile.TurnstileVerifyResponse;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
+import com.ligitabl.api.usecase.auth.emailverification.VerifyEmailError;
+import com.ligitabl.api.usecase.auth.emailverification.VerifyEmailResult;
 import com.ligitabl.api.usecase.auth.emailverification.VerifyEmailUseCase;
 import com.ligitabl.api.usecase.auth.passwordreset.RequestPasswordResetUseCase;
+import com.ligitabl.api.usecase.auth.passwordreset.ResetPasswordError;
 import com.ligitabl.api.usecase.auth.passwordreset.ResetPasswordUseCase;
 import com.ligitabl.api.usecase.auth.register.RegisterCommand;
 import com.ligitabl.api.usecase.auth.register.RegisterResult;
@@ -389,12 +392,12 @@ public class AuthController {
 
         String state = result.fold(
                 error -> switch (error) {
-                    case VerifyEmailUseCase.VerifyError.TokenAlreadyUsed __ -> "already-used";
-                    case VerifyEmailUseCase.VerifyError.TokenExpired __ -> "expired";
-                    case VerifyEmailUseCase.VerifyError.InvalidToken __ -> "invalid";
+                    case VerifyEmailError.TokenAlreadyUsed __ -> "already-used";
+                    case VerifyEmailError.TokenExpired __ -> "expired";
+                    case VerifyEmailError.InvalidToken __ -> "invalid";
                 },
                 success -> switch (success) {
-                    case VerifyEmailUseCase.VerifyResult.Success verified -> {
+                    case VerifyEmailResult.Success verified -> {
                         model.addAttribute("verifiedEmail", verified.email());
                         yield "success";
                     }
@@ -427,13 +430,13 @@ public class AuthController {
                 error -> {
                     String errorMessage =
                             switch (error) {
-                                case ResetPasswordUseCase.ResetError.InvalidToken
+                                case ResetPasswordError.InvalidToken
                                 __ -> "Invalid or expired reset link. Please request a new one.";
-                                case ResetPasswordUseCase.ResetError.TokenExpired
+                                case ResetPasswordError.TokenExpired
                                 __ -> "This reset link has expired. Please request a new one.";
-                                case ResetPasswordUseCase.ResetError.TokenAlreadyUsed
+                                case ResetPasswordError.TokenAlreadyUsed
                                 __ -> "This reset link has already been used. Please request a new one.";
-                                case ResetPasswordUseCase.ResetError.WeakPassword weak -> weak.reason();
+                                case ResetPasswordError.WeakPassword weak -> weak.reason();
                             };
 
                     model.addAttribute("error", errorMessage);

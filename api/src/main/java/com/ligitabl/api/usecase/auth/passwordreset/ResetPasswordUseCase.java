@@ -2,7 +2,6 @@ package com.ligitabl.api.usecase.auth.passwordreset;
 
 import java.time.Clock;
 import java.time.Instant;
-import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -27,22 +26,22 @@ public class ResetPasswordUseCase {
     private final Clock clock;
 
     @Transactional
-    public Either<ResetError, ResetResult> execute(String token, String newPassword) {
+    public Either<ResetPasswordError, ResetPasswordResult> execute(String token, String newPassword) {
         if (token == null || token.isBlank()) {
-            return Either.left(new ResetError.InvalidToken());
+            return Either.left(new ResetPasswordError.InvalidToken());
         }
 
         Password.Plaintext plaintext;
         try {
             plaintext = Password.Plaintext.create(newPassword);
         } catch (IllegalArgumentException e) {
-            return Either.left(new ResetError.WeakPassword(e.getMessage()));
+            return Either.left(new ResetPasswordError.WeakPassword(e.getMessage()));
         }
 
         var tokenResult = tokenRepo.findByToken(token);
         if (tokenResult.isEmpty()) {
             log.warn("[PASSWORD_RESET] Token not found: {}", token);
-            return Either.left(new ResetError.InvalidToken());
+            return Either.left(new ResetPasswordError.InvalidToken());
         }
 
         // One read, reused for the validity branch and the used-at stamp: two reads could straddle
@@ -57,16 +56,16 @@ public class ResetPasswordUseCase {
                     resetToken.isExpired(now));
 
             if (resetToken.isUsed()) {
-                return Either.left(new ResetError.TokenAlreadyUsed());
+                return Either.left(new ResetPasswordError.TokenAlreadyUsed());
             } else {
-                return Either.left(new ResetError.TokenExpired());
+                return Either.left(new ResetPasswordError.TokenExpired());
             }
         }
 
         var userResult = userRepo.findById(resetToken.getUserId());
         if (userResult.isEmpty()) {
             log.error("[PASSWORD_RESET] User not found userId={}", resetToken.getUserId());
-            return Either.left(new ResetError.InvalidToken());
+            return Either.left(new ResetPasswordError.InvalidToken());
         }
 
         var user = userResult.get();
@@ -88,20 +87,6 @@ public class ResetPasswordUseCase {
             // Don't fail the use case
         }
 
-        return Either.right(new ResetResult.Success(user.getId()));
-    }
-
-    public sealed interface ResetError {
-        record InvalidToken() implements ResetError {}
-
-        record TokenExpired() implements ResetError {}
-
-        record TokenAlreadyUsed() implements ResetError {}
-
-        record WeakPassword(String reason) implements ResetError {}
-    }
-
-    public sealed interface ResetResult {
-        record Success(UUID userId) implements ResetResult {}
+        return Either.right(new ResetPasswordResult.Success(user.getId()));
     }
 }

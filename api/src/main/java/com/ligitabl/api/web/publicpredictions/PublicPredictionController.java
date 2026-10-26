@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.usecase.prediction.getpublicprediction.GetPublicPredictionError;
 import com.ligitabl.api.usecase.prediction.getpublicprediction.GetPublicPredictionQuery;
 import com.ligitabl.api.usecase.prediction.getpublicprediction.GetPublicPredictionUseCase;
 import com.ligitabl.api.usecase.prediction.getpublicprediction.PublicPredictionViewData;
@@ -268,12 +269,12 @@ public class PublicPredictionController {
         }
     }
 
-    private String handleError(GetPublicPredictionUseCase.Error error, Model model, HttpServletResponse response) {
+    private String handleError(GetPublicPredictionError error, Model model, HttpServletResponse response) {
         String message =
                 switch (error) {
-                    case GetPublicPredictionUseCase.Error.SeasonNotFound e -> "Season not found: " + e.seasonId();
-                    case GetPublicPredictionUseCase.Error.CurrentRoundNotFound
-                    e -> "Current round not found for season: " + e.seasonId();
+                    case GetPublicPredictionError.SeasonNotFound e -> "Season not found: " + e.seasonId();
+                    case GetPublicPredictionError.CurrentRoundNotFound e -> "Current round not found for season: "
+                            + e.seasonId();
                 };
         return notFound(model, response, message);
     }

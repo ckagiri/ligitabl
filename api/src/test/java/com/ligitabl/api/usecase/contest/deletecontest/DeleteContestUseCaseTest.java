@@ -65,7 +65,7 @@ class DeleteContestUseCaseTest {
         var result = useCase.execute(contestId, ownerId);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(DeleteContestUseCase.Error.ContestNotFound.class);
+        assertThat(result.getLeft()).isInstanceOf(DeleteContestError.ContestNotFound.class);
     }
 
     @Test
@@ -76,7 +76,7 @@ class DeleteContestUseCaseTest {
         var result = useCase.execute(contestId, stranger);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(DeleteContestUseCase.Error.NotOwner.class);
+        assertThat(result.getLeft()).isInstanceOf(DeleteContestError.NotOwner.class);
     }
 
     @Test
@@ -115,7 +115,7 @@ class DeleteContestUseCaseTest {
         var result = useCase.execute(contestId, ownerId);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(DeleteContestUseCase.Error.DeleteBlocked.class);
+        assertThat(result.getLeft()).isInstanceOf(DeleteContestError.DeleteBlocked.class);
         verify(entryRepo, never()).deleteByContestId(any());
         verify(contestRepo, never()).delete(any());
     }
@@ -142,7 +142,7 @@ class DeleteContestUseCaseTest {
         var result = useCase.execute(contestId, ownerId);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(DeleteContestUseCase.Error.PastSeasonContest.class);
+        assertThat(result.getLeft()).isInstanceOf(DeleteContestError.PastSeasonContest.class);
         verify(entryRepo, never()).deleteByContestId(any());
         verify(contestRepo, never()).delete(any());
     }

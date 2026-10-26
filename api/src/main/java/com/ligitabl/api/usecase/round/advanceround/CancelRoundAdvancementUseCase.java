@@ -1,7 +1,5 @@
 package com.ligitabl.api.usecase.round.advanceround;
 
-import java.util.UUID;
-
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -21,17 +19,15 @@ public class CancelRoundAdvancementUseCase {
     private final CompetitionDefaults competitionDefaults;
     private final RoundAdvancementService roundAdvancementService;
 
-    public record CancelResult(UUID roundId, String message) {}
-
     @Transactional
-    public Either<UseCaseError, CancelResult> execute() {
+    public Either<UseCaseError, CancelRoundAdvancementResult> execute() {
         return hierarchyValidator
                 .resolveHierarchy(competitionDefaults.defaultCompetitionSlug())
                 .flatMap(ctx -> Either.catching(
                         () -> {
                             roundAdvancementService.cancelScheduledAdvancement(
                                     ctx.round().getId());
-                            return new CancelResult(
+                            return new CancelRoundAdvancementResult(
                                     ctx.round().getId(),
                                     "Automatic advancement cancelled. Round remains FINALIZED. Use advance-now when ready.");
                         },

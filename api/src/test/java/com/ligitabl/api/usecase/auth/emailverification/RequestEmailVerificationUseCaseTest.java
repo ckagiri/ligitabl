@@ -25,7 +25,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.TestClock;
-import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationUseCase.RequestError;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.Role;
 import com.ligitabl.model.domain.EmailVerificationToken;
@@ -76,7 +75,7 @@ class RequestEmailVerificationUseCaseTest {
         var result = useCase.execute(userId);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(RequestError.UserNotFound.class);
+        assertThat(result.getLeft()).isInstanceOf(RequestEmailVerificationError.UserNotFound.class);
         verifyNoInteractions(tokenRepo, emailService);
     }
 
@@ -88,7 +87,7 @@ class RequestEmailVerificationUseCaseTest {
         var result = useCase.execute(userId);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(RequestError.AlreadyVerified.class);
+        assertThat(result.getLeft()).isInstanceOf(RequestEmailVerificationError.AlreadyVerified.class);
         verifyNoInteractions(tokenRepo, emailService);
     }
 
@@ -102,7 +101,7 @@ class RequestEmailVerificationUseCaseTest {
         var result = useCase.execute(userId);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(RequestError.ResendTooSoon.class);
+        assertThat(result.getLeft()).isInstanceOf(RequestEmailVerificationError.ResendTooSoon.class);
         verify(tokenRepo, never()).invalidateAllForUser(any());
         verify(tokenRepo, never()).save(any());
         verifyNoInteractions(emailService);
@@ -164,8 +163,7 @@ class RequestEmailVerificationUseCaseTest {
                         eq(48));
 
         assertThat(result.isRight()).isTrue();
-        assertThat(result.get())
-                .isEqualTo(new RequestEmailVerificationUseCase.RequestResult.EmailSent("player@example.com"));
+        assertThat(result.get()).isEqualTo(new RequestEmailVerificationResult.EmailSent("player@example.com"));
     }
 
     @Test
@@ -191,7 +189,7 @@ class RequestEmailVerificationUseCaseTest {
         var result = useCase.execute(userId);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(RequestError.UnexpectedError.class);
+        assertThat(result.getLeft()).isInstanceOf(RequestEmailVerificationError.UnexpectedError.class);
     }
 
     @Test

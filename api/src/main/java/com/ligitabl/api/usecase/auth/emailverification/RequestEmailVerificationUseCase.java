@@ -36,17 +36,17 @@ public class RequestEmailVerificationUseCase {
     private int resendCooldownMinutes;
 
     @Transactional
-    public Either<RequestError, RequestResult> execute(UUID userId) {
+    public Either<RequestEmailVerificationError, RequestEmailVerificationResult> execute(UUID userId) {
         try {
             var userResult = userRepo.findById(userId);
             if (userResult.isEmpty()) {
                 log.error("[EMAIL_VERIFICATION] User not found userId={}", userId);
-                return Either.left(new RequestError.UserNotFound());
+                return Either.left(new RequestEmailVerificationError.UserNotFound());
             }
 
             var user = userResult.get();
             if (user.isEmailVerified()) {
-                return Either.left(new RequestError.AlreadyVerified());
+                return Either.left(new RequestEmailVerificationError.AlreadyVerified());
             }
 
             // One read, shared by the throttle test and the token minted just below: two reads mean
@@ -59,7 +59,7 @@ public class RequestEmailVerificationUseCase {
                 Instant earliestResend = latest.get().getCreatedAt().plus(Duration.ofMinutes(resendCooldownMinutes));
                 if (now.isBefore(earliestResend)) {
                     log.info("[EMAIL_VERIFICATION] Resend throttled userId={}", userId);
-                    return Either.left(new RequestError.ResendTooSoon());
+                    return Either.left(new RequestEmailVerificationError.ResendTooSoon());
                 }
             }
 
@@ -80,24 +80,11 @@ public class RequestEmailVerificationUseCase {
                         "[EMAIL_VERIFICATION] Email delivery failed userId={} error={}", userId, sendResult.getLeft());
             }
 
-            return Either.right(new RequestResult.EmailSent(user.getEmail().value()));
+            return Either.right(
+                    new RequestEmailVerificationResult.EmailSent(user.getEmail().value()));
         } catch (Exception e) {
             log.error("[EMAIL_VERIFICATION] Unexpected failure userId={}", userId, e);
-            return Either.left(new RequestError.UnexpectedError());
+            return Either.left(new RequestEmailVerificationError.UnexpectedError());
         }
-    }
-
-    public sealed interface RequestError {
-        record UserNotFound() implements RequestError {}
-
-        record AlreadyVerified() implements RequestError {}
-
-        record ResendTooSoon() implements RequestError {}
-
-        record UnexpectedError() implements RequestError {}
-    }
-
-    public sealed interface RequestResult {
-        record EmailSent(String email) implements RequestResult {}
     }
 }

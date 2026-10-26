@@ -99,11 +99,11 @@ class SyncMatchesUseCaseTest {
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
                 .thenReturn(Either.left(UseCaseErrors.notFound("Competition", COMPETITION_SLUG)));
 
-        var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
+        var result = useCase.execute(new SyncMatchesCommand());
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(SyncMatchesUseCase.SyncMatchesError.HierarchyError.class);
-        var error = (SyncMatchesUseCase.SyncMatchesError.HierarchyError) result.getLeft();
+        assertThat(result.getLeft()).isInstanceOf(SyncMatchesError.HierarchyError.class);
+        var error = (SyncMatchesError.HierarchyError) result.getLeft();
         assertThat(error.error().getMessage()).contains("Competition");
     }
 
@@ -112,11 +112,11 @@ class SyncMatchesUseCaseTest {
         when(hierarchyValidator.resolveHierarchy(COMPETITION_SLUG))
                 .thenReturn(Either.left(UseCaseErrors.validation("Competition has no active season")));
 
-        var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
+        var result = useCase.execute(new SyncMatchesCommand());
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(SyncMatchesUseCase.SyncMatchesError.HierarchyError.class);
-        var error = (SyncMatchesUseCase.SyncMatchesError.HierarchyError) result.getLeft();
+        assertThat(result.getLeft()).isInstanceOf(SyncMatchesError.HierarchyError.class);
+        var error = (SyncMatchesError.HierarchyError) result.getLeft();
         assertThat(error.error().getMessage()).contains("active season");
     }
 
@@ -137,10 +137,10 @@ class SyncMatchesUseCaseTest {
         when(footballDataClient.getMatchesInDateRange(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(Either.left(new FootballDataApiError.NetworkError("Network error", null)));
 
-        var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
+        var result = useCase.execute(new SyncMatchesCommand());
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(SyncMatchesUseCase.SyncMatchesError.DataAccessError.class);
+        assertThat(result.getLeft()).isInstanceOf(SyncMatchesError.DataAccessError.class);
     }
 
     @Test
@@ -168,7 +168,7 @@ class SyncMatchesUseCaseTest {
         // First call in getCurrentRound, second call after updateMatches reload.
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches).thenReturn(existingMatches);
 
-        var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
+        var result = useCase.execute(new SyncMatchesCommand());
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().allMatchesComplete()).isTrue();
@@ -203,7 +203,7 @@ class SyncMatchesUseCaseTest {
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches).thenReturn(existingMatches);
         when(matchRepo.save(any(Match.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
+        var result = useCase.execute(new SyncMatchesCommand());
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().roundObstructed()).isTrue();
@@ -236,7 +236,7 @@ class SyncMatchesUseCaseTest {
         when(footballDataClient.getLiveMatches(COMPETITION_CODE))
                 .thenReturn(Either.right(new MatchesResponse(apiMatches, null)));
 
-        var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
+        var result = useCase.execute(new SyncMatchesCommand());
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().allMatchesComplete()).isFalse();
@@ -262,7 +262,7 @@ class SyncMatchesUseCaseTest {
         when(footballDataClient.getMatchesInDateRange(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(Either.right(new MatchesResponse(List.of(), null)));
 
-        var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
+        var result = useCase.execute(new SyncMatchesCommand());
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().matchesProcessed()).isZero();
@@ -286,7 +286,7 @@ class SyncMatchesUseCaseTest {
                         COMPETITION_CODE, TestClock.TODAY.minusDays(1), TestClock.TODAY.plusDays(1)))
                 .thenReturn(Either.right(new MatchesResponse(List.of(), null)));
 
-        var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
+        var result = useCase.execute(new SyncMatchesCommand());
 
         assertThat(result.isRight()).isTrue();
         verify(footballDataClient, never()).getMatchesForDate(any(), any());
@@ -314,7 +314,7 @@ class SyncMatchesUseCaseTest {
         when(footballDataClient.getMatchesInDateRange(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
                 .thenReturn(Either.right(new MatchesResponse(apiMatches, null)));
 
-        var result = useCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
+        var result = useCase.execute(new SyncMatchesCommand());
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().newlyFinishedMatches()).isZero();

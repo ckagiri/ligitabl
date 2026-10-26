@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.usecase.leaderboard.getuserdetail.GetUserDetailUseCase;
+import com.ligitabl.api.usecase.leaderboard.getuserdetail.PredictionTeam;
+import com.ligitabl.api.usecase.leaderboard.getuserdetail.UserPredictions;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -78,7 +80,7 @@ public class GetUserDetailController {
     }
 
     private String handleSuccess(
-            GetUserDetailUseCase.UserPredictions result,
+            UserPredictions result,
             String publicId,
             String displayName,
             int position,
@@ -161,5 +163,5 @@ public class GetUserDetailController {
             int totalScore,
             int roundScore,
             int roundZeroes,
-            List<GetUserDetailUseCase.PredictionTeam> currentPrediction) {}
+            List<PredictionTeam> currentPrediction) {}
 }

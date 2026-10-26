@@ -37,21 +37,11 @@ public class DeleteUserUseCase {
     private final EmailVerificationTokenRepo emailVerificationTokenRepo;
     private final FinalTablePredictionRepo finalTablePredictionRepo;
 
-    public sealed interface Result permits Result.Ok, Result.UserNotFound, Result.NotEligible, Result.OwnsContest {
-        record Ok(UUID userId) implements Result {}
-
-        record UserNotFound(UUID userId) implements Result {}
-
-        record NotEligible(UUID userId, int pastSeasonPredictions, int currentSeasonSwaps) implements Result {}
-
-        record OwnsContest(UUID userId) implements Result {}
-    }
-
     @Transactional
-    public Result execute(UUID userId, UUID currentSeasonId) {
+    public DeleteUserResult execute(UUID userId, UUID currentSeasonId) {
         User user = userRepo.findById(userId).orElse(null);
         if (user == null) {
-            return new Result.UserNotFound(userId);
+            return new DeleteUserResult.UserNotFound(userId);
         }
 
         int totalPredictions =
@@ -64,11 +54,11 @@ public class DeleteUserUseCase {
                 .getOrDefault(userId, 0);
 
         if (pastPredictions > 0 || currentSeasonSwaps > 0) {
-            return new Result.NotEligible(userId, pastPredictions, currentSeasonSwaps);
+            return new DeleteUserResult.NotEligible(userId, pastPredictions, currentSeasonSwaps);
         }
 
         if (contestRepo.existsByOwnerId(userId)) {
-            return new Result.OwnsContest(userId);
+            return new DeleteUserResult.OwnsContest(userId);
         }
 
         // Every table with an FK to t_user must be cleared first: only t_user_role cascades.
@@ -87,6 +77,6 @@ public class DeleteUserUseCase {
                 userId,
                 user.getEmail().value());
 
-        return new Result.Ok(userId);
+        return new DeleteUserResult.Ok(userId);
     }
 }

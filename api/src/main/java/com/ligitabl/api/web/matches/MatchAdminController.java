@@ -24,6 +24,7 @@ import com.ligitabl.api.usecase.matchadmin.reschedulematch.RescheduleMatchComman
 import com.ligitabl.api.usecase.matchadmin.reschedulematch.RescheduleMatchUseCase;
 import com.ligitabl.api.usecase.matchadmin.transitionmatchstatus.TransitionMatchCommand;
 import com.ligitabl.api.usecase.matchadmin.transitionmatchstatus.TransitionMatchStatusUseCase;
+import com.ligitabl.api.usecase.matchadmin.updatekickoff.UpdateMatchKickoffCommand;
 import com.ligitabl.api.usecase.matchadmin.updatekickoff.UpdateMatchKickoffUseCase;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.api.web.admin.AdminMatchesData;
@@ -258,7 +259,7 @@ public class MatchAdminController {
             return "fragments/match-admin-modal :: error-message";
         }
 
-        var cmd = new UpdateMatchKickoffUseCase.Command(round, matchSlug, newKickOff);
+        var cmd = new UpdateMatchKickoffCommand(round, matchSlug, newKickOff);
 
         return updateKickoffUseCase
                 .execute(cmd)

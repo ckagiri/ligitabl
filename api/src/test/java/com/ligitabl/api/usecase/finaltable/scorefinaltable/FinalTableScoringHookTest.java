@@ -31,8 +31,7 @@ class FinalTableScoringHookTest {
     void scoresAgainstTheFinalRoundNeverCurrentStandings() {
         // CURRENT would write provisional scores into a completed season. The enum has no default,
         // so this is the one place that has to state FINAL_ROUND and be checked for it.
-        when(scoreUseCase.execute(any(), any(), anyBoolean()))
-                .thenReturn(new ScoreFinalTablePredictionsUseCase.ScoringSummary(3, 0, 0));
+        when(scoreUseCase.execute(any(), any(), anyBoolean())).thenReturn(new ScoringSummary(3, 0, 0));
 
         hook.onSeasonCompleted(season);
 
@@ -43,8 +42,7 @@ class FinalTableScoringHookTest {
     void doesNotRecompute() {
         // Completion is the first scoring event, so already-scored rows are left alone; an admin
         // recompute is the deliberate override.
-        when(scoreUseCase.execute(any(), any(), anyBoolean()))
-                .thenReturn(new ScoreFinalTablePredictionsUseCase.ScoringSummary(0, 0, 0));
+        when(scoreUseCase.execute(any(), any(), anyBoolean())).thenReturn(new ScoringSummary(0, 0, 0));
 
         hook.onSeasonCompleted(season);
 

@@ -71,7 +71,7 @@ class TriggerRoundFinalizationUseCaseTest {
         when(finalizeRoundUseCase.execute(seasonId))
                 .thenReturn(Either.right(new FinalizeRoundResult(roundId, 10, 10, 5, false, java.time.Instant.now())));
 
-        var result = useCase.execute(new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(COMPETITION_CODE));
+        var result = useCase.execute(new TriggerRoundFinalizationCommand(COMPETITION_CODE));
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().finalized()).isTrue();
@@ -113,7 +113,7 @@ class TriggerRoundFinalizationUseCaseTest {
         when(finalizeRoundUseCase.execute(seasonId))
                 .thenReturn(Either.right(new FinalizeRoundResult(roundId, 10, 10, 5, false, java.time.Instant.now())));
 
-        var result = useCase.execute(new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(COMPETITION_CODE));
+        var result = useCase.execute(new TriggerRoundFinalizationCommand(COMPETITION_CODE));
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().finalized()).isTrue();
@@ -127,11 +127,10 @@ class TriggerRoundFinalizationUseCaseTest {
 
         when(seasonRepo.findActiveSeason(COMPETITION_CODE)).thenReturn(Optional.empty());
 
-        var result = useCase.execute(new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(COMPETITION_CODE));
+        var result = useCase.execute(new TriggerRoundFinalizationCommand(COMPETITION_CODE));
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft())
-                .isInstanceOf(TriggerRoundFinalizationUseCase.TriggerFinalizationError.SeasonNotFound.class);
+        assertThat(result.getLeft()).isInstanceOf(TriggerRoundFinalizationError.SeasonNotFound.class);
     }
 
     @Test
@@ -168,10 +167,9 @@ class TriggerRoundFinalizationUseCaseTest {
                 .thenReturn(Either.left(
                         new FinalizeRoundError.RoundNotReady(roundId, "Round status is OPEN, expected COMPLETED")));
 
-        var result = useCase.execute(new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(COMPETITION_CODE));
+        var result = useCase.execute(new TriggerRoundFinalizationCommand(COMPETITION_CODE));
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft())
-                .isInstanceOf(TriggerRoundFinalizationUseCase.TriggerFinalizationError.FinalizationFailed.class);
+        assertThat(result.getLeft()).isInstanceOf(TriggerRoundFinalizationError.FinalizationFailed.class);
     }
 }

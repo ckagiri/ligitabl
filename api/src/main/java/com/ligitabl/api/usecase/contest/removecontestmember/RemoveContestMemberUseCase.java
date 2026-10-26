@@ -23,52 +23,34 @@ public class RemoveContestMemberUseCase {
     private final EntryRepo entryRepo;
     private final ContestSeasonSupport contestSeasonSupport;
 
-    public sealed interface Error {
-        record ContestNotFound(UUID contestId) implements Error {}
-
-        record NotOwner(UUID requesterId, UUID contestId) implements Error {}
-
-        record CannotRemoveOwner(UUID contestId) implements Error {}
-
-        record NotAMember(UUID targetUserId, UUID contestId) implements Error {}
-
-        /** The contest belongs to a past (no longer active) season — historical, read-only. */
-        record PastSeasonContest(UUID contestId) implements Error {}
-
-        /** The contest's own join window has closed — membership is locked. */
-        record JoinWindowClosed(UUID contestId) implements Error {}
-    }
-
-    public record Result(boolean shouldSuggestCodeRegen) {}
-
     @Transactional
-    public Either<Error, Result> execute(
+    public Either<RemoveContestMemberError, RemoveContestMemberResult> execute(
             UUID contestId, UUID requesterId, UUID targetUserId, int currentRoundPosition) {
         Contest contest = contestRepo.findById(contestId).orElse(null);
         if (contest == null) {
-            return Either.left(new Error.ContestNotFound(contestId));
+            return Either.left(new RemoveContestMemberError.ContestNotFound(contestId));
         }
 
         if (!contest.isOwnedBy(requesterId)) {
-            return Either.left(new Error.NotOwner(requesterId, contestId));
+            return Either.left(new RemoveContestMemberError.NotOwner(requesterId, contestId));
         }
 
         if (contest.isOwnedBy(targetUserId)) {
-            return Either.left(new Error.CannotRemoveOwner(contestId));
+            return Either.left(new RemoveContestMemberError.CannotRemoveOwner(contestId));
         }
 
         var entry = entryRepo.findByUserAndContest(targetUserId, contestId).orElse(null);
         if (entry == null || entry.getRemovedAtRound() != null) {
-            return Either.left(new Error.NotAMember(targetUserId, contestId));
+            return Either.left(new RemoveContestMemberError.NotAMember(targetUserId, contestId));
         }
 
         var seasonGate = contestSeasonSupport.resolveSeasonGateStatus(contest);
         if (seasonGate.isPastSeason()) {
-            return Either.left(new Error.PastSeasonContest(contestId));
+            return Either.left(new RemoveContestMemberError.PastSeasonContest(contestId));
         }
 
         if (seasonGate.isJoinWindowClosed()) {
-            return Either.left(new Error.JoinWindowClosed(contestId));
+            return Either.left(new RemoveContestMemberError.JoinWindowClosed(contestId));
         }
 
         if (entryRepo.hasAnyScore(targetUserId, contestId)) {
@@ -79,6 +61,6 @@ public class RemoveContestMemberUseCase {
             log.info("Requester {} hard-deleted member {} from contest {}", requesterId, targetUserId, contestId);
         }
 
-        return Either.right(new Result(true));
+        return Either.right(new RemoveContestMemberResult(true));
     }
 }

@@ -50,12 +50,6 @@ public class GetPublicPredictionUseCase {
     private final TeamRepo teamRepo;
     private final EntryRepo entryRepo;
 
-    public sealed interface Error {
-        record SeasonNotFound(UUID seasonId) implements Error {}
-
-        record CurrentRoundNotFound(UUID seasonId) implements Error {}
-    }
-
     /** Resolved request-scoped state, accumulated step by step so {@link #execute} stays flat. */
     private record Ctx(
             Season season,
@@ -85,22 +79,23 @@ public class GetPublicPredictionUseCase {
         }
     }
 
-    public Either<Error, PublicPredictionViewData> execute(GetPublicPredictionQuery query) {
+    public Either<GetPublicPredictionError, PublicPredictionViewData> execute(GetPublicPredictionQuery query) {
         return resolveSeason(query.seasonId())
                 .flatMap(this::resolveCurrentRound)
                 .map(ctx -> withUserAndRound(ctx, query))
                 .map(this::buildViewData);
     }
 
-    private Either<Error, Season> resolveSeason(UUID seasonId) {
+    private Either<GetPublicPredictionError, Season> resolveSeason(UUID seasonId) {
         return Either.ofOptional(
-                seasonPredictionSupport.findSeasonById(seasonId), () -> new Error.SeasonNotFound(seasonId));
+                seasonPredictionSupport.findSeasonById(seasonId),
+                () -> new GetPublicPredictionError.SeasonNotFound(seasonId));
     }
 
-    private Either<Error, Ctx> resolveCurrentRound(Season season) {
-        return Either.<Error, Round>ofOptional(
+    private Either<GetPublicPredictionError, Ctx> resolveCurrentRound(Season season) {
+        return Either.<GetPublicPredictionError, Round>ofOptional(
                         seasonPredictionSupport.findCurrentRound(season),
-                        () -> new Error.CurrentRoundNotFound(season.getId()))
+                        () -> new GetPublicPredictionError.CurrentRoundNotFound(season.getId()))
                 .map(currentRoundEntity -> new Ctx(season, currentRoundEntity));
     }
 

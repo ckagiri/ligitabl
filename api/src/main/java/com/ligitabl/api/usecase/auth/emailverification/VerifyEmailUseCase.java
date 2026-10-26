@@ -4,7 +4,6 @@ import java.time.Clock;
 import java.time.Instant;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
-import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -25,15 +24,15 @@ public class VerifyEmailUseCase {
     private final Clock clock;
 
     @Transactional
-    public Either<VerifyError, VerifyResult> execute(String token) {
+    public Either<VerifyEmailError, VerifyEmailResult> execute(String token) {
         if (token == null || token.isBlank()) {
-            return Either.left(new VerifyError.InvalidToken());
+            return Either.left(new VerifyEmailError.InvalidToken());
         }
 
         var tokenResult = tokenRepo.findByToken(token);
         if (tokenResult.isEmpty()) {
             log.warn("[EMAIL_VERIFICATION] Token not found");
-            return Either.left(new VerifyError.InvalidToken());
+            return Either.left(new VerifyEmailError.InvalidToken());
         }
 
         // One read, reused for the validity branch, the used-at stamp and emailVerifiedAt: separate
@@ -49,16 +48,16 @@ public class VerifyEmailUseCase {
                     verificationToken.isExpired(now));
 
             if (verificationToken.isUsed()) {
-                return Either.left(new VerifyError.TokenAlreadyUsed());
+                return Either.left(new VerifyEmailError.TokenAlreadyUsed());
             } else {
-                return Either.left(new VerifyError.TokenExpired());
+                return Either.left(new VerifyEmailError.TokenExpired());
             }
         }
 
         var userResult = userRepo.findById(verificationToken.getUserId());
         if (userResult.isEmpty()) {
             log.error("[EMAIL_VERIFICATION] User not found userId={}", verificationToken.getUserId());
-            return Either.left(new VerifyError.InvalidToken());
+            return Either.left(new VerifyEmailError.InvalidToken());
         }
 
         var user = userResult.get();
@@ -69,18 +68,6 @@ public class VerifyEmailUseCase {
         log.info("[EMAIL_VERIFICATION] Success userId={}", user.getId());
 
         return Either.right(
-                new VerifyResult.Success(user.getId(), user.getEmail().value()));
-    }
-
-    public sealed interface VerifyError {
-        record InvalidToken() implements VerifyError {}
-
-        record TokenExpired() implements VerifyError {}
-
-        record TokenAlreadyUsed() implements VerifyError {}
-    }
-
-    public sealed interface VerifyResult {
-        record Success(UUID userId, String email) implements VerifyResult {}
+                new VerifyEmailResult.Success(user.getId(), user.getEmail().value()));
     }
 }

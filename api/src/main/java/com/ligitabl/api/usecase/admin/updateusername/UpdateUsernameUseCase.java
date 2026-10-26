@@ -23,38 +23,25 @@ public class UpdateUsernameUseCase {
 
     private final UserRepo userRepo;
 
-    public sealed interface Result permits Result.Ok, Result.UserNotFound, Result.InvalidFormat, Result.UsernameTaken {
-        /**
-         * username is the normalized value now stored, or null when cleared.
-         */
-        record Ok(UUID userId, String username) implements Result {}
-
-        record UserNotFound(UUID userId) implements Result {}
-
-        record InvalidFormat(String input) implements Result {}
-
-        record UsernameTaken(String username) implements Result {}
-    }
-
-    public Result execute(UUID userId, String rawInput) {
+    public UpdateUsernameResult execute(UUID userId, String rawInput) {
         User user = userRepo.findById(userId).orElse(null);
         if (user == null) {
-            return new Result.UserNotFound(userId);
+            return new UpdateUsernameResult.UserNotFound(userId);
         }
 
         String normalized = rawInput == null ? "" : rawInput.trim().toLowerCase(Locale.ROOT);
         String username = normalized.isEmpty() ? null : normalized;
 
         if (username != null && !USERNAME_PATTERN.matcher(username).matches()) {
-            return new Result.InvalidFormat(rawInput);
+            return new UpdateUsernameResult.InvalidFormat(rawInput);
         }
 
         if (Objects.equals(username, user.getUsername())) {
-            return new Result.Ok(userId, username);
+            return new UpdateUsernameResult.Ok(userId, username);
         }
 
         if (username != null && userRepo.existsByUsername(username)) {
-            return new Result.UsernameTaken(username);
+            return new UpdateUsernameResult.UsernameTaken(username);
         }
 
         try {
@@ -62,10 +49,10 @@ public class UpdateUsernameUseCase {
         } catch (DataAccessException e) {
             // Lost a race on the unique constraint between the exists check and the update
             log.warn("[ADMIN_UPDATE_USERNAME_CONFLICT] userId={} username={}", userId, username, e);
-            return new Result.UsernameTaken(username);
+            return new UpdateUsernameResult.UsernameTaken(username);
         }
 
         log.info("[ADMIN_UPDATE_USERNAME] userId={} username={}", userId, username);
-        return new Result.Ok(userId, username);
+        return new UpdateUsernameResult.Ok(userId, username);
     }
 }

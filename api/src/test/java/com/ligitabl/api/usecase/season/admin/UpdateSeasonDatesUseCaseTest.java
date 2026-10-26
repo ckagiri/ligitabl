@@ -56,7 +56,7 @@ class UpdateSeasonDatesUseCaseTest {
 
         var result = useCase.execute(outgoingId, preSeasonOpensAt, upcomingId, predictionsOpenAt);
 
-        assertThat(result).isInstanceOf(UpdateSeasonDatesUseCase.Result.Ok.class);
+        assertThat(result).isInstanceOf(UpdateSeasonDatesResult.Ok.class);
         assertThat(outgoing.getPreSeasonOpensAt()).isEqualTo(preSeasonOpensAt);
         assertThat(upcoming.getPredictionsOpenAt()).isEqualTo(predictionsOpenAt);
         // upcomingId already matches the competition's real upcoming season, so preSeasonOpensAt
@@ -78,7 +78,7 @@ class UpdateSeasonDatesUseCaseTest {
 
         var result = useCase.execute(outgoingId, null, null, null);
 
-        assertThat(result).isInstanceOf(UpdateSeasonDatesUseCase.Result.Ok.class);
+        assertThat(result).isInstanceOf(UpdateSeasonDatesResult.Ok.class);
         verify(seasonRepo).save(outgoing);
     }
 
@@ -93,7 +93,7 @@ class UpdateSeasonDatesUseCaseTest {
         var result =
                 useCase.execute(null, null, upcomingId, OffsetDateTime.now().plusDays(5));
 
-        assertThat(result).isInstanceOf(UpdateSeasonDatesUseCase.Result.InvalidDateOrder.class);
+        assertThat(result).isInstanceOf(UpdateSeasonDatesResult.InvalidDateOrder.class);
         verify(seasonRepo, never()).save(any());
         verifyNoInteractions(competitionRepo);
     }
@@ -112,7 +112,7 @@ class UpdateSeasonDatesUseCaseTest {
         // Request doesn't reference an upcomingSeasonId at all.
         var result = useCase.execute(outgoingId, preSeasonOpensAt, null, null);
 
-        assertThat(result).isInstanceOf(UpdateSeasonDatesUseCase.Result.Ok.class);
+        assertThat(result).isInstanceOf(UpdateSeasonDatesResult.Ok.class);
         assertThat(realUpcoming.getPreSeasonOpensAt()).isEqualTo(preSeasonOpensAt);
         verify(seasonRepo).save(outgoing);
         verify(seasonRepo).save(realUpcoming);
@@ -134,7 +134,7 @@ class UpdateSeasonDatesUseCaseTest {
 
         var result = useCase.execute(outgoingId, preSeasonOpensAt, upcomingId, predictionsOpenAt);
 
-        assertThat(result).isInstanceOf(UpdateSeasonDatesUseCase.Result.Ok.class);
+        assertThat(result).isInstanceOf(UpdateSeasonDatesResult.Ok.class);
         assertThat(requestUpcoming.getPredictionsOpenAt()).isEqualTo(predictionsOpenAt);
         assertThat(requestUpcoming.getPreSeasonOpensAt()).isNull();
         assertThat(realUpcoming.getPreSeasonOpensAt()).isEqualTo(preSeasonOpensAt);
@@ -153,7 +153,7 @@ class UpdateSeasonDatesUseCaseTest {
 
         var result = useCase.execute(outgoingId, preSeasonOpensAt, null, null);
 
-        assertThat(result).isInstanceOf(UpdateSeasonDatesUseCase.Result.Ok.class);
+        assertThat(result).isInstanceOf(UpdateSeasonDatesResult.Ok.class);
         verify(seasonRepo).save(outgoing);
         verify(seasonRepo, times(1)).save(any());
     }
