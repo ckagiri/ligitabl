@@ -69,15 +69,16 @@ public class WhatIfRecapBuilder {
 
             Score actual = match.getScore();
             Grade grade = grade(guess, actual);
-            WhatIfRecap.Line line = new WhatIfRecap.Line(
-                    match.getHomeTeam().getCode(),
-                    match.getAwayTeam().getCode(),
-                    displayName(match.getHomeTeam()),
-                    displayName(match.getAwayTeam()),
-                    actual.getHomeGoals() + " - " + actual.getAwayGoals(),
-                    outcomeLetter(outcomeOf(guess.homeGoals(), guess.awayGoals())),
-                    grade.name(),
-                    isExact(guess, actual));
+            WhatIfRecap.Line line = WhatIfRecap.Line.builder()
+                    .homeTeamCode(match.getHomeTeam().getCode())
+                    .awayTeamCode(match.getAwayTeam().getCode())
+                    .homeTeamShorterName(displayName(match.getHomeTeam()))
+                    .awayTeamShorterName(displayName(match.getAwayTeam()))
+                    .actualScore(actual.getHomeGoals() + " - " + actual.getAwayGoals())
+                    .guessedOutcome(outcomeLetter(outcomeOf(guess.homeGoals(), guess.awayGoals())))
+                    .grade(grade.name())
+                    .exact(isExact(guess, actual))
+                    .build();
 
             all.add(line);
             switch (grade) {

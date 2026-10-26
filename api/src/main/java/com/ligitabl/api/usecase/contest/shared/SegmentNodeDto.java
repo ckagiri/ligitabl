@@ -2,6 +2,9 @@ package com.ligitabl.api.usecase.contest.shared;
 
 import java.util.List;
 
+import lombok.Builder;
+
+@Builder
 public record SegmentNodeDto(
         String id,
         String label,

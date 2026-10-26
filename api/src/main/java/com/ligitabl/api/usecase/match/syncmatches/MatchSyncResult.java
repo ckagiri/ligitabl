@@ -6,9 +6,12 @@ import java.util.UUID;
 
 import com.ligitabl.model.domain.RoundStatus;
 
+import lombok.Builder;
+
 /**
  * Result of a match synchronization operation
  */
+@Builder
 public record MatchSyncResult(
         UUID seasonId,
         UUID roundId,
@@ -24,19 +27,20 @@ public record MatchSyncResult(
         List<UUID> obstructedMatchIds,
         NextSyncSchedule nextSchedule) {
     public static MatchSyncResult empty() {
-        return new MatchSyncResult(
-                null,
-                null,
-                0,
-                RoundStatus.UNKNOWN,
-                0,
-                0,
-                0,
-                List.of(),
-                false,
-                false,
-                false,
-                List.of(),
-                new NextSyncSchedule(Duration.ofHours(6), "No matches to sync"));
+        return MatchSyncResult.builder()
+                .seasonId(null)
+                .roundId(null)
+                .roundPosition(0)
+                .roundStatus(RoundStatus.UNKNOWN)
+                .matchesProcessed(0)
+                .matchesUpdated(0)
+                .newlyFinishedMatches(0)
+                .finishedMatchIds(List.of())
+                .allMatchesComplete(false)
+                .hasBlockingMatches(false)
+                .roundObstructed(false)
+                .obstructedMatchIds(List.of())
+                .nextSchedule(new NextSyncSchedule(Duration.ofHours(6), "No matches to sync"))
+                .build();
     }
 }

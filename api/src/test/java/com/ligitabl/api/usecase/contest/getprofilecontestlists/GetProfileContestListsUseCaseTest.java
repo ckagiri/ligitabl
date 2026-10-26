@@ -113,9 +113,9 @@ class GetProfileContestListsUseCaseTest {
 
         var result = useCase.execute(new GetProfileContestListsQuery(userId, 1, 1));
 
-        assertThat(result.activeContests()).hasSize(1);
-        assertThat(result.activeContests().get(0).seasonName()).isEqualTo("2026/27");
-        assertThat(result.activeContests().get(0).periodLabel()).isEqualTo("Q2-3");
+        assertThat(result.active().contests()).hasSize(1);
+        assertThat(result.active().contests().get(0).seasonName()).isEqualTo("2026/27");
+        assertThat(result.active().contests().get(0).periodLabel()).isEqualTo("Q2-3");
     }
 
     @Test
@@ -127,7 +127,7 @@ class GetProfileContestListsUseCaseTest {
 
         var result = useCase.execute(new GetProfileContestListsQuery(userId, 1, 1));
 
-        assertThat(result.activeContests().get(0).periodLabel()).isEqualTo("S3");
+        assertThat(result.active().contests().get(0).periodLabel()).isEqualTo("S3");
     }
 
     @Test
@@ -167,9 +167,9 @@ class GetProfileContestListsUseCaseTest {
 
         var result = useCase.execute(new GetProfileContestListsQuery(userId, 1, 1));
 
-        assertThat(result.activeContests()).hasSize(2);
-        assertThat(result.activeContests().get(0).status()).isEqualTo("FINISHED");
-        assertThat(result.activeContests().get(1).status()).isEqualTo("LIVE");
+        assertThat(result.active().contests()).hasSize(2);
+        assertThat(result.active().contests().get(0).status()).isEqualTo("FINISHED");
+        assertThat(result.active().contests().get(1).status()).isEqualTo("LIVE");
 
         // The current round is resolved once per list build, not once per row.
         verify(roundSupport, times(1)).resolveCurrentRound(activeSeason);
@@ -189,12 +189,12 @@ class GetProfileContestListsUseCaseTest {
 
         var result = useCase.execute(new GetProfileContestListsQuery(userId, 1, 1));
 
-        var row = result.pastContests().get(0);
-        assertThat(row.renewVisible()).isTrue();
-        assertThat(row.renewEnabled()).isTrue();
-        assertThat(row.renewFromCode()).isEqualTo("S1");
-        assertThat(row.renewDefaultToCode()).isEqualTo("S4");
-        assertThat(row.renewToOptionCodes()).containsExactly("S1", "S4");
+        var row = result.past().contests().get(0);
+        assertThat(row.renewal().visible()).isTrue();
+        assertThat(row.renewal().enabled()).isTrue();
+        assertThat(row.renewal().fromCode()).isEqualTo("S1");
+        assertThat(row.renewal().defaultToCode()).isEqualTo("S4");
+        assertThat(row.renewal().toOptionCodes()).containsExactly("S1", "S4");
     }
 
     @Test
@@ -207,9 +207,9 @@ class GetProfileContestListsUseCaseTest {
 
         var result = useCase.execute(new GetProfileContestListsQuery(userId, 1, 1));
 
-        var row = result.pastContests().get(0);
-        assertThat(row.renewVisible()).isFalse();
-        assertThat(row.renewToOptionCodes()).isEmpty();
+        var row = result.past().contests().get(0);
+        assertThat(row.renewal().visible()).isFalse();
+        assertThat(row.renewal().toOptionCodes()).isEmpty();
         verify(getContestRenewalOptionsUseCase, never()).execute(any(), any());
     }
 
@@ -223,7 +223,7 @@ class GetProfileContestListsUseCaseTest {
 
         var result = useCase.execute(new GetProfileContestListsQuery(userId, 1, 1));
 
-        assertThat(result.activeContests().get(0).renewVisible()).isFalse();
+        assertThat(result.active().contests().get(0).renewal().visible()).isFalse();
         verify(getContestRenewalOptionsUseCase, never()).execute(any(), any());
     }
 }

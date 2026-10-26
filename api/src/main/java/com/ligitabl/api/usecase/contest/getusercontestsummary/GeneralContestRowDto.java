@@ -1,5 +1,8 @@
 package com.ligitabl.api.usecase.contest.getusercontestsummary;
 
+import lombok.Builder;
+
+@Builder
 public record GeneralContestRowDto(
         String phaseCode,
         String label,

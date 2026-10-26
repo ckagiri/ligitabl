@@ -354,20 +354,21 @@ public class SyncMatchesUseCase {
 
         // Check if no upcoming matches (empty result)
         if (context.matchesProcessed() == 0) {
-            return new MatchSyncResult(
-                    context.season().getId(),
-                    context.round().getId(),
-                    context.round().getPosition(),
-                    roundStatus,
-                    0,
-                    0,
-                    0,
-                    List.of(),
-                    false,
-                    false,
-                    false,
-                    List.of(),
-                    NextSyncSchedule.hours(12, "No upcoming matches - checking twice daily", true));
+            return MatchSyncResult.builder()
+                    .seasonId(context.season().getId())
+                    .roundId(context.round().getId())
+                    .roundPosition(context.round().getPosition())
+                    .roundStatus(roundStatus)
+                    .matchesProcessed(0)
+                    .matchesUpdated(0)
+                    .newlyFinishedMatches(0)
+                    .finishedMatchIds(List.of())
+                    .allMatchesComplete(false)
+                    .hasBlockingMatches(false)
+                    .roundObstructed(false)
+                    .obstructedMatchIds(List.of())
+                    .nextSchedule(NextSyncSchedule.hours(12, "No upcoming matches - checking twice daily", true))
+                    .build();
         }
 
         boolean hasLive = matches.stream().anyMatch(m -> m.getStatus() == MatchStatus.LIVE);
@@ -395,20 +396,21 @@ public class SyncMatchesUseCase {
                 roundObstructed,
                 OffsetDateTime.now(clock));
 
-        return new MatchSyncResult(
-                context.season().getId(),
-                context.round().getId(),
-                context.round().getPosition(),
-                roundStatus,
-                context.matchesProcessed(),
-                context.matchesUpdated(),
-                context.finishedMatchIds().size(),
-                context.finishedMatchIds(),
-                allComplete,
-                hasBlocking,
-                roundObstructed,
-                obstructedMatchIds,
-                nextSchedule);
+        return MatchSyncResult.builder()
+                .seasonId(context.season().getId())
+                .roundId(context.round().getId())
+                .roundPosition(context.round().getPosition())
+                .roundStatus(roundStatus)
+                .matchesProcessed(context.matchesProcessed())
+                .matchesUpdated(context.matchesUpdated())
+                .newlyFinishedMatches(context.finishedMatchIds().size())
+                .finishedMatchIds(context.finishedMatchIds())
+                .allMatchesComplete(allComplete)
+                .hasBlockingMatches(hasBlocking)
+                .roundObstructed(roundObstructed)
+                .obstructedMatchIds(obstructedMatchIds)
+                .nextSchedule(nextSchedule)
+                .build();
     }
 
     private Match findMatchByExternalId(List<Match> matches, String externalId) {

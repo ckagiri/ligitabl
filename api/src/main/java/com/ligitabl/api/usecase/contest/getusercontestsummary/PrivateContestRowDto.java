@@ -1,8 +1,12 @@
 package com.ligitabl.api.usecase.contest.getusercontestsummary;
 
-import java.util.List;
 import java.util.UUID;
 
+import com.ligitabl.api.usecase.contest.shared.RenewalOptions;
+
+import lombok.Builder;
+
+@Builder
 public record PrivateContestRowDto(
         UUID id,
         String name,
@@ -16,8 +20,4 @@ public record PrivateContestRowDto(
         boolean isOwner,
         String status,
         boolean isOpenForJoining,
-        boolean renewVisible,
-        boolean renewEnabled,
-        String renewFromCode,
-        String renewDefaultToCode,
-        List<String> renewToOptionCodes) {}
+        RenewalOptions renewal) {}

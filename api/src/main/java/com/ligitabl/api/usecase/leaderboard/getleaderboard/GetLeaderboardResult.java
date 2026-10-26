@@ -6,6 +6,9 @@ import java.util.UUID;
 import com.ligitabl.model.domain.LeaderboardEntry;
 import com.ligitabl.model.domain.RoundSpan;
 
+import lombok.Builder;
+
+@Builder
 public record GetLeaderboardResult(
         UUID contestId,
         RoundSpan phase,

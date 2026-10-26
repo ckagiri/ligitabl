@@ -65,15 +65,16 @@ public class PreviewContestByCodeUseCase {
         Map<Integer, RoundDateRange> roundDates = matchRepo.groupRoundDateRangesBySeason(contest.getSeasonId());
         String dateRange = resolveDateRange(contest, roundDates);
 
-        return Either.right(new ContestPreviewDto(
-                contest.getId(),
-                contest.getName(),
-                resolveScopeCode(contest, phases),
-                resolveScopeLabel(contest, phases, gwRange),
-                gwRange,
-                dateRange,
-                memberCount,
-                contest.isOpen()));
+        return Either.right(ContestPreviewDto.builder()
+                .id(contest.getId())
+                .name(contest.getName())
+                .scopeCode(resolveScopeCode(contest, phases))
+                .scopeLabel(resolveScopeLabel(contest, phases, gwRange))
+                .gwRange(gwRange)
+                .dateRange(dateRange)
+                .memberCount(memberCount)
+                .isOpen(contest.isOpen())
+                .build());
     }
 
     private String resolveScopeCode(Contest contest, List<RoundSpan> phases) {

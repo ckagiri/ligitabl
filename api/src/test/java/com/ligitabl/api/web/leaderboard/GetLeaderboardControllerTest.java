@@ -141,22 +141,23 @@ class GetLeaderboardControllerTest {
                 .to(38)
                 .type(PhaseType.FULL_SEASON)
                 .build();
-        return new GetLeaderboardResult(
-                UUID.randomUUID(),
-                phase,
-                null,
-                null,
-                1,
-                List.<LeaderboardEntry>of(),
-                List.of(phase),
-                null,
-                false,
-                0,
-                0,
-                false,
-                false,
-                0,
-                10);
+        return GetLeaderboardResult.builder()
+                .contestId(UUID.randomUUID())
+                .phase(phase)
+                .currentSprint(null)
+                .currentQuarter(null)
+                .effectiveToRound(1)
+                .rankings(List.<LeaderboardEntry>of())
+                .phases(List.of(phase))
+                .userEntry(null)
+                .userInCurrentPage(false)
+                .userPageOffset(0)
+                .totalParticipants(0)
+                .hasNext(false)
+                .hasPrevious(false)
+                .offset(0)
+                .limit(10)
+                .build();
     }
 
     private void authenticateAs(UserSummary user) {

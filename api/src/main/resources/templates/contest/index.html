@@ -241,13 +241,13 @@
                     </td>
                     <td th:if="${showRenewColumn}" class="px-3 sm:px-4 py-3">
                       <!-- Renew button + modal (owner only, when renewable) — scoped to this row -->
-                      <th:block th:if="${row.isOwner and row.renewVisible}">
+                      <th:block th:if="${row.isOwner and row.renewal.visible}">
                         <div
                           th:attr="data-contest-id=${row.id},
                                    data-contest-name=${row.name},
-                                   data-from-code=${row.renewFromCode},
-                                   data-default-to-code=${row.renewDefaultToCode},
-                                   data-to-option-codes=${#strings.listJoin(row.renewToOptionCodes, ',')},
+                                   data-from-code=${row.renewal.fromCode},
+                                   data-default-to-code=${row.renewal.defaultToCode},
+                                   data-to-option-codes=${#strings.listJoin(row.renewal.toOptionCodes, ',')},
                                    data-active-member-count=${row.memberCount}"
                           x-data="contestRenewal({
                             contestId: $el.dataset.contestId,
@@ -261,14 +261,14 @@
                           <button
                             type="button"
                             @click.stop="open = true"
-                            th:disabled="${row.renewEnabled == false}"
+                            th:disabled="${row.renewal.enabled == false}"
                             class="px-2 py-1 text-xs font-medium border rounded-md transition disabled:opacity-40 disabled:cursor-not-allowed border-indigo-300 bg-indigo-50 text-indigo-700 hover:border-indigo-400 disabled:hover:border-indigo-300"
                           >Renew</button>
 
                           <div th:replace="~{fragments/contest-renewal-modal :: modal(${row.id}, ${row.name})}"></div>
                         </div>
                       </th:block>
-                      <span th:unless="${row.isOwner and row.renewVisible}" class="text-gray-300">—</span>
+                      <span th:unless="${row.isOwner and row.renewal.visible}" class="text-gray-300">—</span>
                     </td>
                   </tr>
                 </tbody>

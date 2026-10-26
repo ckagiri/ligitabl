@@ -67,17 +67,18 @@ public class GetLeaderboardController {
                                         result.phase().getFrom(),
                                         result.phase().getTo()),
                                 result.rankings().stream()
-                                        .map(entry -> new LeaderboardEntryDto(
-                                                entry.position(),
-                                                entry.publicId(),
-                                                entry.displayName(),
-                                                entry.totalScore(),
-                                                entry.roundScore(),
-                                                entry.maxScore(),
-                                                entry.totalZeroes(),
-                                                entry.totalSwaps(),
-                                                entry.joinedAtGw(),
-                                                entry.movement()))
+                                        .map(entry -> LeaderboardEntryDto.builder()
+                                                .position(entry.position())
+                                                .publicId(entry.publicId())
+                                                .displayName(entry.displayName())
+                                                .totalScore(entry.totalScore())
+                                                .roundScore(entry.roundScore())
+                                                .maxScore(entry.maxScore())
+                                                .totalZeroes(entry.totalZeroes())
+                                                .totalSwaps(entry.totalSwaps())
+                                                .joinedAtGw(entry.joinedAtGw())
+                                                .movement(entry.movement())
+                                                .build())
                                         .toList())));
     }
 

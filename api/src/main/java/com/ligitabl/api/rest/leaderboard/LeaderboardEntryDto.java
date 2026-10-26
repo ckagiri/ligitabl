@@ -1,5 +1,8 @@
 package com.ligitabl.api.rest.leaderboard;
 
+import lombok.Builder;
+
+@Builder
 public record LeaderboardEntryDto(
         int position,
         String publicId,

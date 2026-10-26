@@ -8,6 +8,8 @@ import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Score;
 import com.ligitabl.model.domain.Team;
 
+import lombok.Builder;
+
 /**
  * Normalized bootstrap payload for the admin matches page. The client composes the lookup graph and does all filtering, sorting,
  * and pagination in the browser.
@@ -41,6 +43,7 @@ public record AdminMatchesData(
      * Also serialized into the HX-Trigger header by match admin mutations so the
      * client store can patch a single match in place without refetching.
      */
+    @Builder
     public record MatchEntry(
             UUID id,
             String slug,
@@ -56,19 +59,23 @@ public record AdminMatchesData(
             ScoreEntry score) {
 
         public static MatchEntry from(Match match) {
-            return new MatchEntry(
-                    match.getId(),
-                    match.getSlug(),
-                    match.getHomeTeamId(),
-                    match.getAwayTeamId(),
-                    match.getRoundId(),
-                    match.getMatchday(),
-                    match.getStatus() != null ? match.getStatus().name() : null,
-                    match.getKickOff() != null ? match.getKickOff().toInstant().toString() : null,
-                    match.getVenue(),
-                    match.getMinute(),
-                    match.getInjuryTime(),
-                    ScoreEntry.from(match.getScore()));
+            return MatchEntry.builder()
+                    .id(match.getId())
+                    .slug(match.getSlug())
+                    .homeTeamId(match.getHomeTeamId())
+                    .awayTeamId(match.getAwayTeamId())
+                    .roundId(match.getRoundId())
+                    .matchday(match.getMatchday())
+                    .status(match.getStatus() != null ? match.getStatus().name() : null)
+                    .kickOff(
+                            match.getKickOff() != null
+                                    ? match.getKickOff().toInstant().toString()
+                                    : null)
+                    .venue(match.getVenue())
+                    .minute(match.getMinute())
+                    .injuryTime(match.getInjuryTime())
+                    .score(ScoreEntry.from(match.getScore()))
+                    .build();
         }
     }
 }

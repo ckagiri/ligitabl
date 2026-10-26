@@ -48,20 +48,39 @@ class OutboxProcessingIntegrationTest extends AbstractPostgresIT {
     }
 
     private String roundResultsJson() throws Exception {
-        RoundResultsPayload payload = new RoundResultsPayload(
-                UUID.randomUUID(),
-                "alice@example.com",
-                "Alice",
-                "aaaaaaaabc",
-                "s1",
-                22,
-                175,
-                22,
-                38,
-                new HitDistribution(5, 8, 5, 2),
-                new RoundResultsPayload.SprintPlacement("S8", 21, 23, 2, 120, 1, 175, true),
-                new RoundResultsPayload.SeasonPlacement("Season", 1, 38, 18, 140, 1, 1800, false),
-                new RoundResultsPayload.Placement("Q3", 5, 130));
+        RoundResultsPayload payload = RoundResultsPayload.builder()
+                .userId(UUID.randomUUID())
+                .userEmail("alice@example.com")
+                .userDisplayName("Alice")
+                .userPublicId("aaaaaaaabc")
+                .seasonSlug("s1")
+                .round(22)
+                .score(175)
+                .currentRound(22)
+                .lastRound(38)
+                .hitDistribution(new HitDistribution(5, 8, 5, 2))
+                .sprint(RoundResultsPayload.SprintPlacement.builder()
+                        .label("S8")
+                        .fromRound(21)
+                        .toRound(23)
+                        .rank(2)
+                        .totalParticipants(120)
+                        .movement(1)
+                        .sprintBest(175)
+                        .isNewSprintBest(true)
+                        .build())
+                .season(RoundResultsPayload.SeasonPlacement.builder()
+                        .label("Season")
+                        .fromRound(1)
+                        .toRound(38)
+                        .rank(18)
+                        .totalParticipants(140)
+                        .movement(1)
+                        .seasonBest(1800)
+                        .isNewSeasonBest(false)
+                        .build())
+                .quarter(new RoundResultsPayload.Placement("Q3", 5, 130))
+                .build();
         return objectMapper.writeValueAsString(payload);
     }
 

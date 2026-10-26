@@ -87,16 +87,8 @@ public class GetProfileContestListsUseCase {
                 .toList();
 
         return new GetProfileContestListsResult(
-                activeContests,
-                activeTotal,
-                (int) Math.ceil((double) activeTotal / PAGE_SIZE),
-                activeTotal == 0 ? 0 : activeOffset + 1,
-                Math.min(activeOffset + PAGE_SIZE, activeTotal),
-                pastContests,
-                pastTotal,
-                (int) Math.ceil((double) pastTotal / PAGE_SIZE),
-                pastTotal == 0 ? 0 : pastOffset + 1,
-                Math.min(pastOffset + PAGE_SIZE, pastTotal));
+                ContestPage.of(activeContests, activeTotal, activeOffset, PAGE_SIZE),
+                ContestPage.of(pastContests, pastTotal, pastOffset, PAGE_SIZE));
     }
 
     private ContestSummary toSummary(
@@ -125,23 +117,20 @@ public class GetProfileContestListsUseCase {
                         .fold(error -> GetContestRenewalOptionsResult.hidden(), r -> r)
                 : GetContestRenewalOptionsResult.hidden();
 
-        return new ContestSummary(
-                view.contestId(),
-                view.contestName(),
-                view.seasonName(),
-                periodLabel,
-                memberCount,
-                rank,
-                link,
-                status,
-                view.isPrivate(),
-                view.isOwner(),
-                view.isOpen(),
-                renewal.visible(),
-                renewal.enabled(),
-                renewal.fromCode(),
-                renewal.defaultToCode(),
-                renewal.toOptionCodes());
+        return ContestSummary.builder()
+                .contestId(view.contestId())
+                .contestName(view.contestName())
+                .seasonName(view.seasonName())
+                .periodLabel(periodLabel)
+                .memberCount(memberCount)
+                .rank(rank)
+                .link(link)
+                .status(status)
+                .isPrivate(view.isPrivate())
+                .isOwner(view.isOwner())
+                .isJoiningOpen(view.isOpen())
+                .renewal(renewal.options())
+                .build();
     }
 
     private Integer resolveRank(ContestRepo.UserContestView view, UUID userId) {
