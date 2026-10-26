@@ -69,7 +69,7 @@ class LeavePrivateContestUseCaseTest {
         var result = useCase.execute(contestId, ownerId, 5);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(LeavePrivateContestUseCase.Error.OwnerCannotLeave.class);
+        assertThat(result.getLeft()).isInstanceOf(LeavePrivateContestError.OwnerCannotLeave.class);
         verify(entryRepo, never()).softRemove(any(), any(), anyInt());
         verify(entryRepo, never()).deleteByUserAndContest(any(), any());
     }
@@ -82,7 +82,7 @@ class LeavePrivateContestUseCaseTest {
         var result = useCase.execute(contestId, memberId, 5);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(LeavePrivateContestUseCase.Error.NotAMember.class);
+        assertThat(result.getLeft()).isInstanceOf(LeavePrivateContestError.NotAMember.class);
     }
 
     @Test
@@ -99,7 +99,7 @@ class LeavePrivateContestUseCaseTest {
         var result = useCase.execute(contestId, memberId, 5);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(LeavePrivateContestUseCase.Error.NotAMember.class);
+        assertThat(result.getLeft()).isInstanceOf(LeavePrivateContestError.NotAMember.class);
     }
 
     @Test
@@ -142,7 +142,7 @@ class LeavePrivateContestUseCaseTest {
         var result = useCase.execute(contestId, memberId, 5);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(LeavePrivateContestUseCase.Error.PastSeasonContest.class);
+        assertThat(result.getLeft()).isInstanceOf(LeavePrivateContestError.PastSeasonContest.class);
         verify(entryRepo, never()).softRemove(any(), any(), anyInt());
         verify(entryRepo, never()).deleteByUserAndContest(any(), any());
     }
@@ -157,7 +157,7 @@ class LeavePrivateContestUseCaseTest {
         var result = useCase.execute(contestId, memberId, 5);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(LeavePrivateContestUseCase.Error.JoinWindowClosed.class);
+        assertThat(result.getLeft()).isInstanceOf(LeavePrivateContestError.JoinWindowClosed.class);
         verify(entryRepo, never()).softRemove(any(), any(), anyInt());
         verify(entryRepo, never()).deleteByUserAndContest(any(), any());
     }
@@ -169,6 +169,6 @@ class LeavePrivateContestUseCaseTest {
         var result = useCase.execute(contestId, memberId, 5);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(LeavePrivateContestUseCase.Error.ContestNotFound.class);
+        assertThat(result.getLeft()).isInstanceOf(LeavePrivateContestError.ContestNotFound.class);
     }
 }

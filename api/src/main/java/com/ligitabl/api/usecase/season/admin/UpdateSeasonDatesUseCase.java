@@ -25,26 +25,15 @@ public class UpdateSeasonDatesUseCase {
     private final CompetitionRepo competitionRepo;
     private final Clock clock;
 
-    public sealed interface Result
-            permits Result.Ok, Result.OutgoingSeasonNotFound, Result.UpcomingSeasonNotFound, Result.InvalidDateOrder {
-        record Ok() implements Result {}
-
-        record OutgoingSeasonNotFound(UUID seasonId) implements Result {}
-
-        record UpcomingSeasonNotFound(UUID seasonId) implements Result {}
-
-        record InvalidDateOrder(String message) implements Result {}
-    }
-
     @Transactional
-    public Result execute(
+    public UpdateSeasonDatesResult execute(
             UUID outgoingSeasonId,
             OffsetDateTime preSeasonOpensAt,
             UUID upcomingSeasonId,
             OffsetDateTime predictionsOpenAt) {
 
         if (preSeasonOpensAt != null && predictionsOpenAt != null && !preSeasonOpensAt.isBefore(predictionsOpenAt)) {
-            return new Result.InvalidDateOrder("preSeasonOpensAt must be before predictionsOpenAt");
+            return new UpdateSeasonDatesResult.InvalidDateOrder("preSeasonOpensAt must be before predictionsOpenAt");
         }
 
         Season outgoing = null;
@@ -56,7 +45,7 @@ public class UpdateSeasonDatesUseCase {
 
         if (outgoingSeasonId != null) {
             outgoing = seasonRepo.findById(outgoingSeasonId).orElse(null);
-            if (outgoing == null) return new Result.OutgoingSeasonNotFound(outgoingSeasonId);
+            if (outgoing == null) return new UpdateSeasonDatesResult.OutgoingSeasonNotFound(outgoingSeasonId);
             outgoing.setPreSeasonOpensAt(preSeasonOpensAt);
         }
 
@@ -64,7 +53,7 @@ public class UpdateSeasonDatesUseCase {
             Season resolvedUpcoming = sameSeason
                     ? outgoing
                     : seasonRepo.findById(upcomingSeasonId).orElse(null);
-            if (resolvedUpcoming == null) return new Result.UpcomingSeasonNotFound(upcomingSeasonId);
+            if (resolvedUpcoming == null) return new UpdateSeasonDatesResult.UpcomingSeasonNotFound(upcomingSeasonId);
             resolvedUpcoming.setPredictionsOpenAt(predictionsOpenAt);
             upcoming = resolvedUpcoming;
         }
@@ -94,11 +83,11 @@ public class UpdateSeasonDatesUseCase {
         // The outgoing season is allowed to become INACTIVE — it's on its way out regardless.
         Instant now = clock.instant();
         if (upcoming != null && upcoming.getSeasonState(now) == SeasonState.INACTIVE) {
-            return new Result.InvalidDateOrder(
+            return new UpdateSeasonDatesResult.InvalidDateOrder(
                     "Resulting state for upcoming season " + upcomingSeasonId + " would be INACTIVE");
         }
         if (competitionUpcoming != null && competitionUpcoming.getSeasonState(now) == SeasonState.INACTIVE) {
-            return new Result.InvalidDateOrder("Resulting state for competition's upcoming season "
+            return new UpdateSeasonDatesResult.InvalidDateOrder("Resulting state for competition's upcoming season "
                     + competitionUpcoming.getId() + " would be INACTIVE");
         }
 
@@ -123,6 +112,6 @@ public class UpdateSeasonDatesUseCase {
                     upcomingSeasonId);
         }
 
-        return new Result.Ok();
+        return new UpdateSeasonDatesResult.Ok();
     }
 }

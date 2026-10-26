@@ -2,9 +2,6 @@ package com.ligitabl.api.usecase.matchadmin.updatekickoff;
 
 import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 
-import java.time.OffsetDateTime;
-import java.util.UUID;
-
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -28,12 +25,8 @@ public class UpdateMatchKickoffUseCase {
     private final HierarchyValidator hierarchyValidator;
     private final CompetitionDefaults competitionDefaults;
 
-    public record Command(Integer roundPosition, String matchSlug, OffsetDateTime newKickOff) {}
-
-    public record Result(UUID matchId, String matchSlug, OffsetDateTime newKickOff) {}
-
     @Transactional
-    public Either<UseCaseError, Result> execute(Command cmd) {
+    public Either<UseCaseError, UpdateMatchKickoffResult> execute(UpdateMatchKickoffCommand cmd) {
         log.info("Executing UpdateMatchKickoff: slug={}, kickOff={}", cmd.matchSlug(), cmd.newKickOff());
 
         return hierarchyValidator
@@ -48,8 +41,8 @@ public class UpdateMatchKickoffUseCase {
                     }
                     match.setKickOff(cmd.newKickOff());
                     var saved = matchRepo.save(match);
-                    return Either.<UseCaseError, Result>right(
-                            new Result(saved.getId(), saved.getSlug(), saved.getKickOff()));
+                    return Either.<UseCaseError, UpdateMatchKickoffResult>right(
+                            new UpdateMatchKickoffResult(saved.getId(), saved.getSlug(), saved.getKickOff()));
                 });
     }
 }

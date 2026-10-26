@@ -20,6 +20,7 @@ import org.springframework.ui.Model;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.prediction.getpublicprediction.GetPublicPredictionError;
 import com.ligitabl.api.usecase.prediction.getpublicprediction.GetPublicPredictionUseCase;
 import com.ligitabl.api.usecase.prediction.getpublicprediction.PublicPredictionViewData;
 import com.ligitabl.api.usecase.shared.fixtures.FixtureJsonMapper;
@@ -294,7 +295,7 @@ class PublicPredictionControllerTest {
         when(seasonRepo.findByCompetitionIdAndSlug(competitionId, SeasonSlug.of("2025-26")))
                 .thenReturn(Optional.of(season));
         when(getPublicPredictionUseCase.execute(any()))
-                .thenReturn(Either.left(new GetPublicPredictionUseCase.Error.CurrentRoundNotFound(seasonId)));
+                .thenReturn(Either.left(new GetPublicPredictionError.CurrentRoundNotFound(seasonId)));
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         String view =

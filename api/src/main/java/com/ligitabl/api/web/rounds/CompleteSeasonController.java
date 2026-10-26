@@ -7,6 +7,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.ligitabl.api.usecase.season.admin.CompleteSeasonResult;
 import com.ligitabl.api.usecase.season.admin.CompleteSeasonUseCase;
 
 import lombok.RequiredArgsConstructor;
@@ -28,14 +29,14 @@ public class CompleteSeasonController {
 
         var result = completeSeasonUseCase.execute();
         return switch (result) {
-            case CompleteSeasonUseCase.Result.Ok ok -> ResponseEntity.ok()
+            case CompleteSeasonResult.Ok ok -> ResponseEntity.ok()
                     .header("HX-Redirect", "/rounds/current/matches")
                     .build();
-            case CompleteSeasonUseCase.Result.SeasonNotFound e -> {
+            case CompleteSeasonResult.SeasonNotFound e -> {
                 log.warn("Complete season failed: no active season found");
                 yield ResponseEntity.notFound().build();
             }
-            case CompleteSeasonUseCase.Result.SeasonNotEligible e -> {
+            case CompleteSeasonResult.SeasonNotEligible e -> {
                 log.warn("Complete season rejected: {}", e.reason());
                 yield ResponseEntity.badRequest().body(e.reason());
             }

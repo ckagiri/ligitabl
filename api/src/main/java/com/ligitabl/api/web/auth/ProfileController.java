@@ -26,6 +26,7 @@ import com.ligitabl.api.auth.impersonation.ImpersonationGuard;
 import com.ligitabl.api.auth.impersonation.UserSummary;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationError;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationUseCase;
 import com.ligitabl.api.usecase.shared.season.SeasonPredictionSupport;
 import com.ligitabl.api.web.predictions.latestresult.LatestResultSupport;
@@ -153,16 +154,16 @@ public class ProfileController {
         result.fold(
                 error -> {
                     switch (error) {
-                        case RequestEmailVerificationUseCase.RequestError.AlreadyVerified __ -> flash(
+                        case RequestEmailVerificationError.AlreadyVerified __ -> flash(
                                 redirectAttributes, "Your email is already verified.", "info");
-                        case RequestEmailVerificationUseCase.RequestError.ResendTooSoon __ -> flash(
+                        case RequestEmailVerificationError.ResendTooSoon __ -> flash(
                                 redirectAttributes,
                                 "A verification email was sent recently — check your inbox,"
                                         + " or try again in a couple of minutes.",
                                 "info");
-                        case RequestEmailVerificationUseCase.RequestError.UserNotFound __ -> flash(
+                        case RequestEmailVerificationError.UserNotFound __ -> flash(
                                 redirectAttributes, "Something went wrong. Please try again later.", "error");
-                        case RequestEmailVerificationUseCase.RequestError.UnexpectedError __ -> flash(
+                        case RequestEmailVerificationError.UnexpectedError __ -> flash(
                                 redirectAttributes, "Something went wrong. Please try again later.", "error");
                     }
                     return null;

@@ -41,7 +41,7 @@ class RevertSeasonUseCaseTest {
 
         var result = useCase.execute("premier-league");
 
-        assertThat(result).isInstanceOf(RevertSeasonUseCase.Result.CompetitionNotFound.class);
+        assertThat(result).isInstanceOf(RevertSeasonResult.CompetitionNotFound.class);
     }
 
     @Test
@@ -51,7 +51,7 @@ class RevertSeasonUseCaseTest {
 
         var result = useCase.execute("premier-league");
 
-        assertThat(result).isInstanceOf(RevertSeasonUseCase.Result.NoFormerSeason.class);
+        assertThat(result).isInstanceOf(RevertSeasonResult.NoFormerSeason.class);
         verify(competitionRepo, never()).revertToFormerSeason(any(), any(), any());
     }
 
@@ -62,8 +62,8 @@ class RevertSeasonUseCaseTest {
 
         var result = useCase.execute("premier-league");
 
-        assertThat(result).isInstanceOf(RevertSeasonUseCase.Result.Ok.class);
-        assertThat(((RevertSeasonUseCase.Result.Ok) result).newActiveSeasonId()).isEqualTo(formerSeasonId);
+        assertThat(result).isInstanceOf(RevertSeasonResult.Ok.class);
+        assertThat(((RevertSeasonResult.Ok) result).newActiveSeasonId()).isEqualTo(formerSeasonId);
         verify(competitionRepo).revertToFormerSeason(competitionId, formerSeasonId, activeSeasonId);
     }
 

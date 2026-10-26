@@ -20,8 +20,6 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.TestClock;
-import com.ligitabl.api.usecase.auth.passwordreset.ResetPasswordUseCase.ResetError;
-import com.ligitabl.api.usecase.auth.passwordreset.ResetPasswordUseCase.ResetResult;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.Password;
 import com.ligitabl.model.auth.Role;
@@ -79,8 +77,8 @@ class ResetPasswordUseCaseTest {
     @Test
     @DisplayName("Should reject null or blank tokens without touching the repos")
     void shouldRejectBlankToken() {
-        assertThat(useCase.execute(null, NEW_PASSWORD).getLeft()).isInstanceOf(ResetError.InvalidToken.class);
-        assertThat(useCase.execute("  ", NEW_PASSWORD).getLeft()).isInstanceOf(ResetError.InvalidToken.class);
+        assertThat(useCase.execute(null, NEW_PASSWORD).getLeft()).isInstanceOf(ResetPasswordError.InvalidToken.class);
+        assertThat(useCase.execute("  ", NEW_PASSWORD).getLeft()).isInstanceOf(ResetPasswordError.InvalidToken.class);
         verifyNoInteractions(tokenRepo, userRepo, passwordHasher, emailService);
     }
 
@@ -91,7 +89,7 @@ class ResetPasswordUseCaseTest {
         // their new password has to request a fresh reset email.
         var result = useCase.execute("some-token", "short");
 
-        assertThat(result.getLeft()).isInstanceOf(ResetError.WeakPassword.class);
+        assertThat(result.getLeft()).isInstanceOf(ResetPasswordError.WeakPassword.class);
         verifyNoInteractions(tokenRepo, userRepo, passwordHasher);
     }
 
@@ -100,7 +98,7 @@ class ResetPasswordUseCaseTest {
     void shouldRejectUnknownToken() {
         when(tokenRepo.findByToken("nope")).thenReturn(Optional.empty());
 
-        assertThat(useCase.execute("nope", NEW_PASSWORD).getLeft()).isInstanceOf(ResetError.InvalidToken.class);
+        assertThat(useCase.execute("nope", NEW_PASSWORD).getLeft()).isInstanceOf(ResetPasswordError.InvalidToken.class);
         verifyNoInteractions(userRepo, passwordHasher);
     }
 
@@ -111,7 +109,7 @@ class ResetPasswordUseCaseTest {
         when(tokenRepo.findByToken(used.getToken())).thenReturn(Optional.of(used));
 
         assertThat(useCase.execute(used.getToken(), NEW_PASSWORD).getLeft())
-                .isInstanceOf(ResetError.TokenAlreadyUsed.class);
+                .isInstanceOf(ResetPasswordError.TokenAlreadyUsed.class);
         verify(userRepo, never()).updatePassword(any(), any());
     }
 
@@ -122,7 +120,7 @@ class ResetPasswordUseCaseTest {
         when(tokenRepo.findByToken(stale.getToken())).thenReturn(Optional.of(stale));
 
         assertThat(useCase.execute(stale.getToken(), NEW_PASSWORD).getLeft())
-                .isInstanceOf(ResetError.TokenExpired.class);
+                .isInstanceOf(ResetPasswordError.TokenExpired.class);
         verify(userRepo, never()).updatePassword(any(), any());
         verify(tokenRepo, never()).update(any());
     }
@@ -147,7 +145,7 @@ class ResetPasswordUseCaseTest {
         when(tokenRepo.findByToken(aSecondStale.getToken())).thenReturn(Optional.of(aSecondStale));
 
         assertThat(useCase.execute(aSecondStale.getToken(), NEW_PASSWORD).getLeft())
-                .isInstanceOf(ResetError.TokenExpired.class);
+                .isInstanceOf(ResetPasswordError.TokenExpired.class);
     }
 
     @Test
@@ -158,7 +156,7 @@ class ResetPasswordUseCaseTest {
         when(userRepo.findById(userId)).thenReturn(Optional.empty());
 
         assertThat(useCase.execute(token.getToken(), NEW_PASSWORD).getLeft())
-                .isInstanceOf(ResetError.InvalidToken.class);
+                .isInstanceOf(ResetPasswordError.InvalidToken.class);
         verify(userRepo, never()).updatePassword(any(), any());
         verify(tokenRepo, never()).update(any());
     }
@@ -176,7 +174,7 @@ class ResetPasswordUseCaseTest {
         var result = useCase.execute(token.getToken(), NEW_PASSWORD);
 
         assertThat(result.isRight()).isTrue();
-        assertThat(result.get()).isEqualTo(new ResetResult.Success(userId));
+        assertThat(result.get()).isEqualTo(new ResetPasswordResult.Success(userId));
         verify(userRepo).updatePassword(userId, hashed);
 
         ArgumentCaptor<PasswordResetToken> captor = ArgumentCaptor.forClass(PasswordResetToken.class);

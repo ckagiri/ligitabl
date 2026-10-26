@@ -23,24 +23,16 @@ public class RevertSeasonUseCase {
 
     private final CompetitionRepo competitionRepo;
 
-    public sealed interface Result permits Result.Ok, Result.CompetitionNotFound, Result.NoFormerSeason {
-        record Ok(UUID newActiveSeasonId) implements Result {}
-
-        record CompetitionNotFound(String slug) implements Result {}
-
-        record NoFormerSeason(UUID competitionId) implements Result {}
-    }
-
     @Transactional
-    public Result execute(String competitionSlug) {
+    public RevertSeasonResult execute(String competitionSlug) {
         Competition competition = competitionRepo.findBySlug(competitionSlug).orElse(null);
         if (competition == null) {
-            return new Result.CompetitionNotFound(competitionSlug);
+            return new RevertSeasonResult.CompetitionNotFound(competitionSlug);
         }
 
         UUID formerSeasonId = competition.getFormerSeasonId();
         if (formerSeasonId == null) {
-            return new Result.NoFormerSeason(competition.getId());
+            return new RevertSeasonResult.NoFormerSeason(competition.getId());
         }
 
         competitionRepo.revertToFormerSeason(competition.getId(), formerSeasonId, competition.getActiveSeasonId());
@@ -51,6 +43,6 @@ public class RevertSeasonUseCase {
                 formerSeasonId,
                 competition.getActiveSeasonId());
 
-        return new Result.Ok(formerSeasonId);
+        return new RevertSeasonResult.Ok(formerSeasonId);
     }
 }

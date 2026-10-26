@@ -49,7 +49,7 @@ class ActivateSeasonUseCaseTest {
 
         var result = useCase.execute("premier-league", null);
 
-        assertThat(result).isInstanceOf(ActivateSeasonUseCase.Result.CompetitionNotFound.class);
+        assertThat(result).isInstanceOf(ActivateSeasonResult.CompetitionNotFound.class);
     }
 
     @Test
@@ -59,7 +59,7 @@ class ActivateSeasonUseCaseTest {
 
         var result = useCase.execute("premier-league", null);
 
-        assertThat(result).isInstanceOf(ActivateSeasonUseCase.Result.NoUpcomingSeason.class);
+        assertThat(result).isInstanceOf(ActivateSeasonResult.NoUpcomingSeason.class);
         verify(competitionRepo, never()).promoteUpcomingSeason(any(), any(), any());
     }
 
@@ -70,9 +70,8 @@ class ActivateSeasonUseCaseTest {
 
         var result = useCase.execute("premier-league", null);
 
-        assertThat(result).isInstanceOf(ActivateSeasonUseCase.Result.Ok.class);
-        assertThat(((ActivateSeasonUseCase.Result.Ok) result).newActiveSeasonId())
-                .isEqualTo(upcomingSeasonId);
+        assertThat(result).isInstanceOf(ActivateSeasonResult.Ok.class);
+        assertThat(((ActivateSeasonResult.Ok) result).newActiveSeasonId()).isEqualTo(upcomingSeasonId);
         verify(competitionRepo).promoteUpcomingSeason(competitionId, upcomingSeasonId, activeSeasonId);
     }
 
@@ -87,7 +86,7 @@ class ActivateSeasonUseCaseTest {
 
         var result = useCase.execute("premier-league", predictionsOpenAt);
 
-        assertThat(result).isInstanceOf(ActivateSeasonUseCase.Result.Ok.class);
+        assertThat(result).isInstanceOf(ActivateSeasonResult.Ok.class);
         verify(seasonRepo).save(argThat(s -> predictionsOpenAt.equals(s.getPredictionsOpenAt())));
         verify(competitionRepo).promoteUpcomingSeason(competitionId, upcomingSeasonId, activeSeasonId);
     }

@@ -70,7 +70,7 @@ class RemoveContestMemberUseCaseTest {
         var result = useCase.execute(contestId, nonOwner, memberId, 5);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(RemoveContestMemberUseCase.Error.NotOwner.class);
+        assertThat(result.getLeft()).isInstanceOf(RemoveContestMemberError.NotOwner.class);
     }
 
     @Test
@@ -80,7 +80,7 @@ class RemoveContestMemberUseCaseTest {
         var result = useCase.execute(contestId, ownerId, ownerId, 5);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(RemoveContestMemberUseCase.Error.CannotRemoveOwner.class);
+        assertThat(result.getLeft()).isInstanceOf(RemoveContestMemberError.CannotRemoveOwner.class);
     }
 
     @Test
@@ -91,7 +91,7 @@ class RemoveContestMemberUseCaseTest {
         var result = useCase.execute(contestId, ownerId, memberId, 5);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(RemoveContestMemberUseCase.Error.NotAMember.class);
+        assertThat(result.getLeft()).isInstanceOf(RemoveContestMemberError.NotAMember.class);
     }
 
     @Test
@@ -136,7 +136,7 @@ class RemoveContestMemberUseCaseTest {
         var result = useCase.execute(contestId, ownerId, memberId, 5);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(RemoveContestMemberUseCase.Error.PastSeasonContest.class);
+        assertThat(result.getLeft()).isInstanceOf(RemoveContestMemberError.PastSeasonContest.class);
         verify(entryRepo, never()).softRemove(any(), any(), anyInt());
         verify(entryRepo, never()).deleteByUserAndContest(any(), any());
     }
@@ -151,7 +151,7 @@ class RemoveContestMemberUseCaseTest {
         var result = useCase.execute(contestId, ownerId, memberId, 5);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(RemoveContestMemberUseCase.Error.JoinWindowClosed.class);
+        assertThat(result.getLeft()).isInstanceOf(RemoveContestMemberError.JoinWindowClosed.class);
         verify(entryRepo, never()).softRemove(any(), any(), anyInt());
         verify(entryRepo, never()).deleteByUserAndContest(any(), any());
     }
@@ -163,6 +163,6 @@ class RemoveContestMemberUseCaseTest {
         var result = useCase.execute(contestId, ownerId, memberId, 5);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(RemoveContestMemberUseCase.Error.ContestNotFound.class);
+        assertThat(result.getLeft()).isInstanceOf(RemoveContestMemberError.ContestNotFound.class);
     }
 }

@@ -22,47 +22,30 @@ public class AssignUpcomingSeasonUseCase {
     private final CompetitionRepo competitionRepo;
     private final SeasonRepo seasonRepo;
 
-    public sealed interface Result
-            permits Result.Ok,
-                    Result.CompetitionNotFound,
-                    Result.SeasonNotFound,
-                    Result.SeasonNotBelongToCompetition,
-                    Result.SeasonAlreadyCompleted {
-        record Ok(UUID seasonId) implements Result {}
-
-        record CompetitionNotFound(String slug) implements Result {}
-
-        record SeasonNotFound(UUID seasonId) implements Result {}
-
-        record SeasonNotBelongToCompetition(UUID seasonId, UUID competitionId) implements Result {}
-
-        record SeasonAlreadyCompleted(UUID seasonId) implements Result {}
-    }
-
     @Transactional
-    public Result execute(String competitionSlug, UUID seasonId) {
+    public AssignUpcomingSeasonResult execute(String competitionSlug, UUID seasonId) {
         Competition competition = competitionRepo.findBySlug(competitionSlug).orElse(null);
         if (competition == null) {
-            return new Result.CompetitionNotFound(competitionSlug);
+            return new AssignUpcomingSeasonResult.CompetitionNotFound(competitionSlug);
         }
 
         Season season = seasonRepo.findById(seasonId).orElse(null);
         if (season == null) {
-            return new Result.SeasonNotFound(seasonId);
+            return new AssignUpcomingSeasonResult.SeasonNotFound(seasonId);
         }
 
         if (!season.getCompetitionId().equals(competition.getId())) {
-            return new Result.SeasonNotBelongToCompetition(seasonId, competition.getId());
+            return new AssignUpcomingSeasonResult.SeasonNotBelongToCompetition(seasonId, competition.getId());
         }
 
         if (season.isCompleted()) {
-            return new Result.SeasonAlreadyCompleted(seasonId);
+            return new AssignUpcomingSeasonResult.SeasonAlreadyCompleted(seasonId);
         }
 
         competitionRepo.assignUpcomingSeason(competition.getId(), seasonId);
 
         log.info("[ADMIN_ASSIGN_UPCOMING_SEASON] competition={} upcomingSeasonId={}", competitionSlug, seasonId);
 
-        return new Result.Ok(seasonId);
+        return new AssignUpcomingSeasonResult.Ok(seasonId);
     }
 }

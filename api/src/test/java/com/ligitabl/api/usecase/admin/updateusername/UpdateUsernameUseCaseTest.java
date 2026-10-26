@@ -53,7 +53,7 @@ class UpdateUsernameUseCaseTest {
 
         var result = useCase.execute(userId, "foobar_1");
 
-        assertThat(result).isEqualTo(new UpdateUsernameUseCase.Result.Ok(userId, "foobar_1"));
+        assertThat(result).isEqualTo(new UpdateUsernameResult.Ok(userId, "foobar_1"));
         verify(userRepo).updateUsername(userId, "foobar_1");
     }
 
@@ -64,7 +64,7 @@ class UpdateUsernameUseCaseTest {
 
         var result = useCase.execute(userId, "  FooBar  ");
 
-        assertThat(result).isEqualTo(new UpdateUsernameUseCase.Result.Ok(userId, "foobar"));
+        assertThat(result).isEqualTo(new UpdateUsernameResult.Ok(userId, "foobar"));
         verify(userRepo).updateUsername(userId, "foobar");
     }
 
@@ -74,7 +74,7 @@ class UpdateUsernameUseCaseTest {
 
         var result = useCase.execute(userId, "   ");
 
-        assertThat(result).isEqualTo(new UpdateUsernameUseCase.Result.Ok(userId, null));
+        assertThat(result).isEqualTo(new UpdateUsernameResult.Ok(userId, null));
         verify(userRepo).updateUsername(userId, null);
     }
 
@@ -84,7 +84,7 @@ class UpdateUsernameUseCaseTest {
 
         var result = useCase.execute(userId, null);
 
-        assertThat(result).isEqualTo(new UpdateUsernameUseCase.Result.Ok(userId, null));
+        assertThat(result).isEqualTo(new UpdateUsernameResult.Ok(userId, null));
         verify(userRepo).updateUsername(userId, null);
     }
 
@@ -94,7 +94,7 @@ class UpdateUsernameUseCaseTest {
 
         var result = useCase.execute(userId, "FooBar");
 
-        assertThat(result).isEqualTo(new UpdateUsernameUseCase.Result.Ok(userId, "foobar"));
+        assertThat(result).isEqualTo(new UpdateUsernameResult.Ok(userId, "foobar"));
         verify(userRepo, never()).existsByUsername(any());
         verify(userRepo, never()).updateUsername(any(), any());
     }
@@ -105,7 +105,7 @@ class UpdateUsernameUseCaseTest {
 
         for (String input : new String[] {"foo@bar", "fo", "foo bar", "foo-bar", "a".repeat(31)}) {
             var result = useCase.execute(userId, input);
-            assertThat(result).isEqualTo(new UpdateUsernameUseCase.Result.InvalidFormat(input));
+            assertThat(result).isEqualTo(new UpdateUsernameResult.InvalidFormat(input));
         }
 
         verify(userRepo, never()).updateUsername(any(), any());
@@ -118,7 +118,7 @@ class UpdateUsernameUseCaseTest {
 
         var result = useCase.execute(userId, "foobar");
 
-        assertThat(result).isEqualTo(new UpdateUsernameUseCase.Result.UsernameTaken("foobar"));
+        assertThat(result).isEqualTo(new UpdateUsernameResult.UsernameTaken("foobar"));
         verify(userRepo, never()).updateUsername(any(), any());
     }
 
@@ -130,7 +130,7 @@ class UpdateUsernameUseCaseTest {
 
         var result = useCase.execute(userId, "foobar");
 
-        assertThat(result).isEqualTo(new UpdateUsernameUseCase.Result.UsernameTaken("foobar"));
+        assertThat(result).isEqualTo(new UpdateUsernameResult.UsernameTaken("foobar"));
     }
 
     @Test
@@ -139,7 +139,7 @@ class UpdateUsernameUseCaseTest {
 
         var result = useCase.execute(userId, "foobar");
 
-        assertThat(result).isEqualTo(new UpdateUsernameUseCase.Result.UserNotFound(userId));
+        assertThat(result).isEqualTo(new UpdateUsernameResult.UserNotFound(userId));
         verify(userRepo, never()).updateUsername(any(), any());
     }
 }

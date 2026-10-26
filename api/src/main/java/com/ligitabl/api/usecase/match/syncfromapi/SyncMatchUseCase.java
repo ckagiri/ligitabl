@@ -3,7 +3,6 @@ package com.ligitabl.api.usecase.match.syncfromapi;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.api.client.FootballDataApiError;
 import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.match.MatchUpdateHelper;
@@ -21,16 +20,6 @@ public class SyncMatchUseCase {
     private final FootballDataClient footballDataClient;
     private final MatchRepo matchRepo;
     private final MatchUpdateHelper matchUpdateHelper;
-
-    public record SyncMatchCommand(int clientId) {}
-
-    public sealed interface SyncMatchError {
-        record NotFound(int clientId) implements SyncMatchError {}
-
-        record AlreadyFinished(int clientId) implements SyncMatchError {}
-
-        record ApiError(FootballDataApiError cause) implements SyncMatchError {}
-    }
 
     @Transactional
     public Either<SyncMatchError, Void> execute(SyncMatchCommand command) {

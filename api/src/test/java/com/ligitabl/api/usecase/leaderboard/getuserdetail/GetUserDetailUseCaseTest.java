@@ -303,7 +303,7 @@ class GetUserDetailUseCaseTest {
         var payload = result.get();
         assertThat(payload.round()).isEqualTo(effectiveToRound);
         assertThat(payload.predictions())
-                .extracting(GetUserDetailUseCase.PredictionTeam::teamName, GetUserDetailUseCase.PredictionTeam::hit)
+                .extracting(PredictionTeam::teamName, PredictionTeam::hit)
                 .containsExactly(Tuple.tuple("ARS", 0), Tuple.tuple("MCI", 3));
     }
 
@@ -383,7 +383,7 @@ class GetUserDetailUseCaseTest {
         var payload = result.get();
         assertThat(payload.round()).isEqualTo(9);
         assertThat(payload.predictions())
-                .extracting(GetUserDetailUseCase.PredictionTeam::teamName, GetUserDetailUseCase.PredictionTeam::hit)
+                .extracting(PredictionTeam::teamName, PredictionTeam::hit)
                 .containsExactly(Tuple.tuple("ARS", null), Tuple.tuple("MCI", null));
     }
 }

@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ligitabl.api.rest.shared.RoundPosition;
 import com.ligitabl.api.shared.exceptions.UseCaseException;
+import com.ligitabl.api.usecase.matchadmin.GetMatchAdminDetailsQuery;
 import com.ligitabl.api.usecase.matchadmin.GetMatchAdminDetailsUseCase;
 import com.ligitabl.api.usecase.matchadmin.MatchAdminDetailsDto;
 import com.ligitabl.api.usecase.matchadmin.reschedulematch.RescheduleMatchCommand;
@@ -118,7 +119,7 @@ public class MatchAdminController {
             @PathVariable String matchSlug,
             @RequestParam(required = false) String competition) {
 
-        var query = new GetMatchAdminDetailsUseCase.Query(competition, RoundPosition.parse(position), matchSlug);
+        var query = new GetMatchAdminDetailsQuery(competition, RoundPosition.parse(position), matchSlug);
 
         return detailsUseCase
                 .execute(query)
