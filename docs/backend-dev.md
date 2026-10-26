@@ -18,6 +18,15 @@ When changing behavior (endpoints, validation, persistence), update the relevant
 
 Adapters (`rest`, `web`, `scheduling`, `runners`) depend on `usecase`, never the reverse. `UseCaseDependencyRuleTest` enforces this. If a use case needs something from an adapter package, move that class into `usecase` instead.
 
+### Use case input/output types
+
+A use case's Command, Query, Result and Error types are its public contract, so each one gets its own file in the slice package rather than being nested in the use case:
+
+- Name them after the use case: `ToggleContestJoiningUseCase` → `ToggleContestJoiningError`, `ToggleContestJoiningResult`. A nested `Error` or `Result` is ambiguous once callers import it, and `Error` hides `java.lang.Error`.
+- Types with a domain name rather than a generic one keep it (`ContestSummary`, `ScoringSummary`).
+- Error and result variants stay nested inside their sealed interface (`ToggleContestJoiningError.NotOwner`). That's how Java models sum types, and it keeps `switch` exhaustive.
+- Keep a type nested only when nothing outside the use case needs it: private step records, local records inside a method.
+
 ## Formatting (Palantir Java Format, 100-col width)
 
 This repo standardizes Java formatting with Spotless + Palantir Java Format (100 columns).
