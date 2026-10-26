@@ -20,36 +20,25 @@ public class ToggleContestJoiningUseCase {
     private final ContestRepo contestRepo;
     private final ContestSeasonSupport contestSeasonSupport;
 
-    public sealed interface Error {
-        record ContestNotFound(UUID contestId) implements Error {}
-
-        record NotOwner(UUID userId, UUID contestId) implements Error {}
-
-        /** The contest belongs to a past (no longer active) season — historical, read-only. */
-        record PastSeasonContest(UUID contestId) implements Error {}
-    }
-
-    public record Result(UUID contestId, boolean isOpen) {}
-
     @Transactional
-    public Either<Error, Result> execute(UUID contestId, UUID userId) {
+    public Either<ToggleContestJoiningError, ToggleContestJoiningResult> execute(UUID contestId, UUID userId) {
         var contest = contestRepo.findById(contestId).orElse(null);
         if (contest == null) {
-            return Either.left(new Error.ContestNotFound(contestId));
+            return Either.left(new ToggleContestJoiningError.ContestNotFound(contestId));
         }
 
         if (!contest.isOwnedBy(userId)) {
-            return Either.left(new Error.NotOwner(userId, contestId));
+            return Either.left(new ToggleContestJoiningError.NotOwner(userId, contestId));
         }
 
         if (contestSeasonSupport.isPastSeason(contest)) {
-            return Either.left(new Error.PastSeasonContest(contestId));
+            return Either.left(new ToggleContestJoiningError.PastSeasonContest(contestId));
         }
 
         contest.setOpen(!contest.isOpen());
         contestRepo.save(contest);
 
         log.info("User {} toggled joining for contest {} — isOpen={}", userId, contestId, contest.isOpen());
-        return Either.right(new Result(contestId, contest.isOpen()));
+        return Either.right(new ToggleContestJoiningResult(contestId, contest.isOpen()));
     }
 }

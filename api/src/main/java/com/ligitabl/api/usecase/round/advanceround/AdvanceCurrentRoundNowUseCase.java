@@ -1,6 +1,5 @@
 package com.ligitabl.api.usecase.round.advanceround;
 
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
@@ -24,10 +23,8 @@ public class AdvanceCurrentRoundNowUseCase {
     private final RoundAdvancementService roundAdvancementService;
     private final RoundRepo roundRepo;
 
-    public record AdvanceNowResult(UUID roundId, int fromPosition, int toPosition, OffsetDateTime advancedAt) {}
-
     @Transactional
-    public Either<UseCaseError, AdvanceNowResult> execute() {
+    public Either<UseCaseError, AdvanceCurrentRoundNowResult> execute() {
         record AdvanceAttempt(UUID roundId, boolean advanced) {}
 
         return hierarchyValidator
@@ -45,8 +42,9 @@ public class AdvanceCurrentRoundNowUseCase {
                     }
                     return roundRepo
                             .findById(attempt.roundId())
-                            .map(r -> Either.<UseCaseError, AdvanceNowResult>right(new AdvanceNowResult(
-                                    r.getId(), r.getPosition(), r.getPosition() + 1, r.getAdvancedAt())))
+                            .map(r -> Either.<UseCaseError, AdvanceCurrentRoundNowResult>right(
+                                    new AdvanceCurrentRoundNowResult(
+                                            r.getId(), r.getPosition(), r.getPosition() + 1, r.getAdvancedAt())))
                             .orElseGet(
                                     () -> Either.left(UseCaseErrors.unexpected("Round not found after advancement")));
                 });

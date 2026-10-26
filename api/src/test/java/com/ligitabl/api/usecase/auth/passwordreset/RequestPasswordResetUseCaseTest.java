@@ -24,7 +24,6 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.TestClock;
-import com.ligitabl.api.usecase.auth.passwordreset.RequestPasswordResetUseCase.PasswordResetResult;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.Role;
 import com.ligitabl.model.domain.PasswordResetToken;
@@ -81,7 +80,7 @@ class RequestPasswordResetUseCaseTest {
         var result = useCase.execute("nobody@example.com");
 
         assertThat(result.isRight()).isTrue();
-        assertThat(result.get()).isEqualTo(new PasswordResetResult.EmailSent("nobody@example.com"));
+        assertThat(result.get()).isEqualTo(new RequestPasswordResetResult.EmailSent("nobody@example.com"));
         verifyNoInteractions(tokenRepo, emailService);
     }
 

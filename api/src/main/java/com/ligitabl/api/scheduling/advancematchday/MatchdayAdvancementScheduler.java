@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.api.scheduling.health.JobHeartbeat;
 import com.ligitabl.api.scheduling.health.JobNames;
+import com.ligitabl.api.usecase.round.advancematchday.AdvanceMatchdayCommand;
 import com.ligitabl.api.usecase.round.advancematchday.AdvanceMatchdayUseCase;
 
 import io.sentry.Sentry;
@@ -77,7 +78,7 @@ public class MatchdayAdvancementScheduler {
 
     private void checkAndAdvanceMatchday() {
         try {
-            var result = advanceMatchdayUseCase.execute(new AdvanceMatchdayUseCase.AdvanceMatchdayCommand());
+            var result = advanceMatchdayUseCase.execute(new AdvanceMatchdayCommand());
 
             result.fold(
                     error -> {

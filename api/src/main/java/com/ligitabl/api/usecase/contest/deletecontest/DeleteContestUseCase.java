@@ -25,30 +25,19 @@ public class DeleteContestUseCase {
     private final LeaderboardRepo leaderboardRepo;
     private final ContestSeasonSupport contestSeasonSupport;
 
-    public sealed interface Error {
-        record ContestNotFound(UUID contestId) implements Error {}
-
-        record NotOwner(UUID userId, UUID contestId) implements Error {}
-
-        record DeleteBlocked(UUID contestId) implements Error {}
-
-        /** The contest belongs to a past (no longer active) season — historical, read-only. */
-        record PastSeasonContest(UUID contestId) implements Error {}
-    }
-
     @Transactional
-    public Either<Error, Unit> execute(UUID contestId, UUID userId) {
+    public Either<DeleteContestError, Unit> execute(UUID contestId, UUID userId) {
         var contest = contestRepo.findById(contestId).orElse(null);
         if (contest == null) {
-            return Either.left(new Error.ContestNotFound(contestId));
+            return Either.left(new DeleteContestError.ContestNotFound(contestId));
         }
 
         if (!contest.isOwnedBy(userId)) {
-            return Either.left(new Error.NotOwner(userId, contestId));
+            return Either.left(new DeleteContestError.NotOwner(userId, contestId));
         }
 
         if (contestSeasonSupport.isPastSeason(contest)) {
-            return Either.left(new Error.PastSeasonContest(contestId));
+            return Either.left(new DeleteContestError.PastSeasonContest(contestId));
         }
 
         int activeMembers = entryRepo.countActiveByContestId(contestId);
@@ -56,7 +45,7 @@ public class DeleteContestUseCase {
             Integer effectiveTo = leaderboardRepo.resolveEffectiveToRound(
                     contest.getSeasonId(), contest.getFromRoundPosition(), contest.getToRoundPosition());
             if (effectiveTo != null) {
-                return Either.left(new Error.DeleteBlocked(contestId));
+                return Either.left(new DeleteContestError.DeleteBlocked(contestId));
             }
         }
 

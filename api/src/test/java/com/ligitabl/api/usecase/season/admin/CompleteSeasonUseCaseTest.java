@@ -74,7 +74,7 @@ class CompleteSeasonUseCaseTest {
 
         var result = useCase.execute();
 
-        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.SeasonNotFound.class);
+        assertThat(result).isInstanceOf(CompleteSeasonResult.SeasonNotFound.class);
     }
 
     @Test
@@ -85,7 +85,7 @@ class CompleteSeasonUseCaseTest {
 
         var result = useCase.execute();
 
-        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.SeasonNotEligible.class);
+        assertThat(result).isInstanceOf(CompleteSeasonResult.SeasonNotEligible.class);
         verify(seasonRepo, never()).save(any());
     }
 
@@ -98,7 +98,7 @@ class CompleteSeasonUseCaseTest {
 
         var result = useCase.execute();
 
-        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.SeasonNotEligible.class);
+        assertThat(result).isInstanceOf(CompleteSeasonResult.SeasonNotEligible.class);
         verify(seasonRepo, never()).save(any());
     }
 
@@ -111,7 +111,7 @@ class CompleteSeasonUseCaseTest {
 
         var result = useCase.execute();
 
-        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.SeasonNotEligible.class);
+        assertThat(result).isInstanceOf(CompleteSeasonResult.SeasonNotEligible.class);
         verify(seasonRepo, never()).save(any());
     }
 
@@ -124,7 +124,7 @@ class CompleteSeasonUseCaseTest {
 
         var result = useCase.execute();
 
-        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.SeasonNotEligible.class);
+        assertThat(result).isInstanceOf(CompleteSeasonResult.SeasonNotEligible.class);
         verify(seasonRepo, never()).save(any());
     }
 
@@ -139,7 +139,7 @@ class CompleteSeasonUseCaseTest {
 
         var result = useCase.execute();
 
-        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.Ok.class);
+        assertThat(result).isInstanceOf(CompleteSeasonResult.Ok.class);
         assertThat(season.isCompleted()).isTrue();
         assertThat(season.getCompletedAt()).isNotNull();
         verify(seasonRepo).save(season);
@@ -185,7 +185,7 @@ class CompleteSeasonUseCaseTest {
 
         var result = useCase.execute();
 
-        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.Ok.class);
+        assertThat(result).isInstanceOf(CompleteSeasonResult.Ok.class);
         assertThat(season.isCompleted()).isTrue();
         verify(seasonRepo).save(season);
     }
@@ -223,7 +223,7 @@ class CompleteSeasonUseCaseTest {
 
         var result = useCase.execute();
 
-        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.Ok.class);
+        assertThat(result).isInstanceOf(CompleteSeasonResult.Ok.class);
         assertThat(season.isCompleted()).isTrue();
         verify(seasonRepo).save(season);
         // The podium announcement still happens: the side game must not swallow the main flow.
@@ -266,7 +266,7 @@ class CompleteSeasonUseCaseTest {
 
         var result = useCase.execute();
 
-        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.SeasonNotEligible.class);
+        assertThat(result).isInstanceOf(CompleteSeasonResult.SeasonNotEligible.class);
         verify(seasonRepo, never()).save(any());
     }
 
@@ -280,7 +280,7 @@ class CompleteSeasonUseCaseTest {
 
         var result = useCase.execute();
 
-        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.SeasonNotEligible.class);
+        assertThat(result).isInstanceOf(CompleteSeasonResult.SeasonNotEligible.class);
         verify(seasonRepo, never()).save(any());
     }
 
@@ -309,7 +309,7 @@ class CompleteSeasonUseCaseTest {
 
         var result = useCase.execute();
 
-        assertThat(result).isInstanceOf(CompleteSeasonUseCase.Result.SeasonNotEligible.class);
+        assertThat(result).isInstanceOf(CompleteSeasonResult.SeasonNotEligible.class);
         verify(seasonRepo, never()).save(any());
     }
 

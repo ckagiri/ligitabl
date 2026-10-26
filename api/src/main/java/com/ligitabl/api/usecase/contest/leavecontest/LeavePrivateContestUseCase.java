@@ -24,43 +24,29 @@ public class LeavePrivateContestUseCase {
     private final EntryRepo entryRepo;
     private final ContestSeasonSupport contestSeasonSupport;
 
-    public sealed interface Error {
-        record ContestNotFound(UUID contestId) implements Error {}
-
-        record OwnerCannotLeave(UUID contestId) implements Error {}
-
-        record NotAMember(UUID userId, UUID contestId) implements Error {}
-
-        /** The contest belongs to a past (no longer active) season — historical, read-only. */
-        record PastSeasonContest(UUID contestId) implements Error {}
-
-        /** The contest's own join window has closed — membership is locked. */
-        record JoinWindowClosed(UUID contestId) implements Error {}
-    }
-
     @Transactional
-    public Either<Error, Unit> execute(UUID contestId, UUID userId, int currentRoundPosition) {
+    public Either<LeavePrivateContestError, Unit> execute(UUID contestId, UUID userId, int currentRoundPosition) {
         Contest contest = contestRepo.findById(contestId).orElse(null);
         if (contest == null) {
-            return Either.left(new Error.ContestNotFound(contestId));
+            return Either.left(new LeavePrivateContestError.ContestNotFound(contestId));
         }
 
         if (contest.isOwnedBy(userId)) {
-            return Either.left(new Error.OwnerCannotLeave(contestId));
+            return Either.left(new LeavePrivateContestError.OwnerCannotLeave(contestId));
         }
 
         var entry = entryRepo.findByUserAndContest(userId, contestId).orElse(null);
         if (entry == null || entry.getRemovedAtRound() != null) {
-            return Either.left(new Error.NotAMember(userId, contestId));
+            return Either.left(new LeavePrivateContestError.NotAMember(userId, contestId));
         }
 
         var seasonGate = contestSeasonSupport.resolveSeasonGateStatus(contest);
         if (seasonGate.isPastSeason()) {
-            return Either.left(new Error.PastSeasonContest(contestId));
+            return Either.left(new LeavePrivateContestError.PastSeasonContest(contestId));
         }
 
         if (seasonGate.isJoinWindowClosed()) {
-            return Either.left(new Error.JoinWindowClosed(contestId));
+            return Either.left(new LeavePrivateContestError.JoinWindowClosed(contestId));
         }
 
         if (entryRepo.hasAnyScore(userId, contestId)) {

@@ -36,43 +36,35 @@ public class CompleteSeasonUseCase {
     private final FinalTableScoringHook finalTableScoringHook;
     private final Clock clock;
 
-    public sealed interface Result permits Result.Ok, Result.SeasonNotFound, Result.SeasonNotEligible {
-        record Ok() implements Result {}
-
-        record SeasonNotFound() implements Result {}
-
-        record SeasonNotEligible(String reason) implements Result {}
-    }
-
     @Transactional
-    public Result execute() {
+    public CompleteSeasonResult execute() {
         var season = seasonRepo
                 .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
                 .orElse(null);
         if (season == null) {
-            return new Result.SeasonNotFound();
+            return new CompleteSeasonResult.SeasonNotFound();
         }
 
         var currentRound = roundRepo.findById(season.getCurrentRoundId()).orElse(null);
         if (currentRound == null) {
-            return new Result.SeasonNotEligible("Current round not found");
+            return new CompleteSeasonResult.SeasonNotEligible("Current round not found");
         }
 
         if (currentRound.getPosition() != season.getMaxRounds()) {
-            return new Result.SeasonNotEligible("Current round is not the season's last round");
+            return new CompleteSeasonResult.SeasonNotEligible("Current round is not the season's last round");
         }
         if (!currentRound.isFinalized() || !currentRound.isAdvanced()) {
-            return new Result.SeasonNotEligible("Last round must be finalized and advanced first");
+            return new CompleteSeasonResult.SeasonNotEligible("Last round must be finalized and advanced first");
         }
 
         var notReady = roundRepo.findFirstNotFinalizedOrAdvanced(season.getId());
         if (notReady.isPresent()) {
-            return new Result.SeasonNotEligible(
+            return new CompleteSeasonResult.SeasonNotEligible(
                     "Round " + notReady.get().getPosition() + " is not finalized and advanced");
         }
 
         if (!matchRepo.allMatchesFinished(currentRound.getId())) {
-            return new Result.SeasonNotEligible("All matches in the last round must be finished");
+            return new CompleteSeasonResult.SeasonNotEligible("All matches in the last round must be finished");
         }
 
         season.setCompleted(true);
@@ -83,7 +75,7 @@ public class CompleteSeasonUseCase {
         // correctly. Reject rather than leave the season in limbo; the
         // admin needs to fix the season's dates first (see UpdateSeasonDatesUseCase).
         if (season.getSeasonState(clock.instant()) == SeasonState.INACTIVE) {
-            return new Result.SeasonNotEligible(
+            return new CompleteSeasonResult.SeasonNotEligible(
                     "Completing this season would leave it INACTIVE — check preSeasonOpensAt/season.endDate");
         }
 
@@ -92,7 +84,7 @@ public class CompleteSeasonUseCase {
         enqueueSeasonCompleted(season);
 
         log.info("[ADMIN_COMPLETE_SEASON] season={} marked completed", season.getId());
-        return new Result.Ok();
+        return new CompleteSeasonResult.Ok();
     }
 
     /**

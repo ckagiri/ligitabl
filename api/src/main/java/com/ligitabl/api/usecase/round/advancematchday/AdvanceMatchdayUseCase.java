@@ -4,7 +4,6 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.api.client.FootballDataApiError;
 import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
@@ -27,16 +26,6 @@ public class AdvanceMatchdayUseCase {
 
     @Value("${football-data.competition.code}")
     private String competitionCode;
-
-    public record AdvanceMatchdayCommand() {}
-
-    public sealed interface AdvanceMatchdayError {
-        record CompetitionNotFound(String code) implements AdvanceMatchdayError {}
-
-        record SeasonNotFound(String competitionCode) implements AdvanceMatchdayError {}
-
-        record ApiError(FootballDataApiError error) implements AdvanceMatchdayError {}
-    }
 
     @Transactional
     public Either<AdvanceMatchdayError, MatchdayAdvancementResult> execute(AdvanceMatchdayCommand command) {

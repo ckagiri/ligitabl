@@ -20,7 +20,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.usecase.admin.deleteuser.DeleteUserResult;
 import com.ligitabl.api.usecase.admin.deleteuser.DeleteUserUseCase;
+import com.ligitabl.api.usecase.admin.updateusername.UpdateUsernameResult;
 import com.ligitabl.api.usecase.admin.updateusername.UpdateUsernameUseCase;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.SuspicionTier;
@@ -104,18 +106,17 @@ public class AdminUserController {
 
         var result = updateUsernameUseCase.execute(id, username);
         switch (result) {
-            case UpdateUsernameUseCase.Result.Ok ok -> flash(
+            case UpdateUsernameResult.Ok ok -> flash(
                     redirectAttributes,
                     ok.username() != null ? "Username updated to @" + ok.username() + "." : "Username cleared.",
                     "success");
-            case UpdateUsernameUseCase.Result.InvalidFormat ignored -> flash(
+            case UpdateUsernameResult.InvalidFormat ignored -> flash(
                     redirectAttributes,
                     "Invalid username — use 3-30 characters: lowercase letters, digits, underscore.",
                     "error");
-            case UpdateUsernameUseCase.Result.UsernameTaken taken -> flash(
+            case UpdateUsernameResult.UsernameTaken taken -> flash(
                     redirectAttributes, "Username @" + taken.username() + " is already taken.", "error");
-            case UpdateUsernameUseCase.Result.UserNotFound ignored -> flash(
-                    redirectAttributes, "User not found.", "error");
+            case UpdateUsernameResult.UserNotFound ignored -> flash(redirectAttributes, "User not found.", "error");
         }
 
         return "redirect:/admin/users?page=" + page + "&size=" + size;
@@ -129,7 +130,7 @@ public class AdminUserController {
             RedirectAttributes redirectAttributes) {
 
         var result = deleteUserUseCase.execute(id, resolveActiveSeasonId());
-        if (result instanceof DeleteUserUseCase.Result.Ok) {
+        if (result instanceof DeleteUserResult.Ok) {
             log.info("[ADMIN_DELETE_USER_OK] userId={}", id);
             flash(redirectAttributes, "User deleted.", "success");
         } else {
@@ -153,7 +154,7 @@ public class AdminUserController {
             UUID currentSeasonId = resolveActiveSeasonId();
             for (UUID id : ids) {
                 var result = deleteUserUseCase.execute(id, currentSeasonId);
-                if (result instanceof DeleteUserUseCase.Result.Ok) {
+                if (result instanceof DeleteUserResult.Ok) {
                     log.info("[ADMIN_BATCH_DELETE_USER_OK] userId={}", id);
                 } else {
                     log.warn("[ADMIN_BATCH_DELETE_USER_FAILED] userId={} result={}", id, result);

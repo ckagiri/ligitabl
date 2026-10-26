@@ -54,7 +54,7 @@ class ToggleContestJoiningUseCaseTest {
         var result = useCase.execute(contestId, ownerId);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(ToggleContestJoiningUseCase.Error.ContestNotFound.class);
+        assertThat(result.getLeft()).isInstanceOf(ToggleContestJoiningError.ContestNotFound.class);
     }
 
     @Test
@@ -64,7 +64,7 @@ class ToggleContestJoiningUseCaseTest {
         var result = useCase.execute(contestId, UUID.randomUUID());
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(ToggleContestJoiningUseCase.Error.NotOwner.class);
+        assertThat(result.getLeft()).isInstanceOf(ToggleContestJoiningError.NotOwner.class);
     }
 
     @Test
@@ -75,7 +75,7 @@ class ToggleContestJoiningUseCaseTest {
         var result = useCase.execute(contestId, ownerId);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(ToggleContestJoiningUseCase.Error.PastSeasonContest.class);
+        assertThat(result.getLeft()).isInstanceOf(ToggleContestJoiningError.PastSeasonContest.class);
     }
 
     @Test

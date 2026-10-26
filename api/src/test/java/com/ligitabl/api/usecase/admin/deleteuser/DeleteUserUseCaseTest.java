@@ -114,7 +114,7 @@ class DeleteUserUseCaseTest {
     void deletesEveryChildTableBeforeTheUser() {
         Object result = useCase.execute(userId, seasonId);
 
-        assertThat(result).isInstanceOf(DeleteUserUseCase.Result.Ok.class);
+        assertThat(result).isInstanceOf(DeleteUserResult.Ok.class);
 
         InOrder inOrder = inOrder(
                 entryRepo,
@@ -145,7 +145,7 @@ class DeleteUserUseCaseTest {
 
         Object result = useCase.execute(unknown, seasonId);
 
-        assertThat(result).isInstanceOf(DeleteUserUseCase.Result.UserNotFound.class);
+        assertThat(result).isInstanceOf(DeleteUserResult.UserNotFound.class);
         verifyNoChildDeletes();
     }
 
@@ -155,7 +155,7 @@ class DeleteUserUseCaseTest {
 
         Object result = useCase.execute(userId, seasonId);
 
-        assertThat(result).isInstanceOf(DeleteUserUseCase.Result.NotEligible.class);
+        assertThat(result).isInstanceOf(DeleteUserResult.NotEligible.class);
         verifyNoChildDeletes();
     }
 
@@ -165,7 +165,7 @@ class DeleteUserUseCaseTest {
 
         Object result = useCase.execute(userId, seasonId);
 
-        assertThat(result).isInstanceOf(DeleteUserUseCase.Result.NotEligible.class);
+        assertThat(result).isInstanceOf(DeleteUserResult.NotEligible.class);
         verifyNoChildDeletes();
     }
 
@@ -175,7 +175,7 @@ class DeleteUserUseCaseTest {
 
         Object result = useCase.execute(userId, seasonId);
 
-        assertThat(result).isInstanceOf(DeleteUserUseCase.Result.OwnsContest.class);
+        assertThat(result).isInstanceOf(DeleteUserResult.OwnsContest.class);
         verifyNoChildDeletes();
     }
 

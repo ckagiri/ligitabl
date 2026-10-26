@@ -4,11 +4,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.api.client.FootballDataApiError;
 import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.usecase.match.MatchUpdateHelper;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.model.domain.MatchStatus;
@@ -30,14 +28,6 @@ public class SyncRoundUseCase {
 
     @Value("${football-data.competition.code}")
     private String competitionCode;
-
-    public record SyncRoundCommand() {}
-
-    public sealed interface SyncRoundError {
-        record HierarchyError(UseCaseError cause) implements SyncRoundError {}
-
-        record ApiError(FootballDataApiError cause) implements SyncRoundError {}
-    }
 
     @Transactional
     public Either<SyncRoundError, Void> execute(SyncRoundCommand command) {

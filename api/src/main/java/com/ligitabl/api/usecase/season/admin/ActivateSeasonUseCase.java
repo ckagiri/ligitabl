@@ -22,25 +22,17 @@ public class ActivateSeasonUseCase {
     private final CompetitionRepo competitionRepo;
     private final SeasonRepo seasonRepo;
 
-    public sealed interface Result permits Result.Ok, Result.CompetitionNotFound, Result.NoUpcomingSeason {
-        record Ok(UUID newActiveSeasonId) implements Result {}
-
-        record CompetitionNotFound(String slug) implements Result {}
-
-        record NoUpcomingSeason(UUID competitionId) implements Result {}
-    }
-
     /** Promotes competition.upcomingSeasonId to activeSeasonId, demoting the current active season to former. */
     @Transactional
-    public Result execute(String competitionSlug, OffsetDateTime predictionsOpenAt) {
+    public ActivateSeasonResult execute(String competitionSlug, OffsetDateTime predictionsOpenAt) {
         Competition competition = competitionRepo.findBySlug(competitionSlug).orElse(null);
         if (competition == null) {
-            return new Result.CompetitionNotFound(competitionSlug);
+            return new ActivateSeasonResult.CompetitionNotFound(competitionSlug);
         }
 
         UUID upcomingSeasonId = competition.getUpcomingSeasonId();
         if (upcomingSeasonId == null) {
-            return new Result.NoUpcomingSeason(competition.getId());
+            return new ActivateSeasonResult.NoUpcomingSeason(competition.getId());
         }
 
         if (predictionsOpenAt != null) {
@@ -60,6 +52,6 @@ public class ActivateSeasonUseCase {
                 competition.getActiveSeasonId(),
                 predictionsOpenAt);
 
-        return new Result.Ok(upcomingSeasonId);
+        return new ActivateSeasonResult.Ok(upcomingSeasonId);
     }
 }

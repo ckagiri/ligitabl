@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
+import com.ligitabl.api.usecase.match.syncfromapi.SyncRoundCommand;
 import com.ligitabl.api.usecase.match.syncfromapi.SyncRoundUseCase;
-import com.ligitabl.api.usecase.match.syncfromapi.SyncRoundUseCase.SyncRoundCommand;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -23,7 +23,9 @@ import com.ligitabl.api.scheduling.health.JobNames;
 import com.ligitabl.api.scheduling.resilience.MatchSyncCircuitBreaker;
 import com.ligitabl.api.usecase.match.syncmatches.MatchSyncResult;
 import com.ligitabl.api.usecase.match.syncmatches.NextSyncSchedule;
+import com.ligitabl.api.usecase.match.syncmatches.SyncMatchesCommand;
 import com.ligitabl.api.usecase.match.syncmatches.SyncMatchesUseCase;
+import com.ligitabl.api.usecase.match.syncmatches.TriggerRoundFinalizationCommand;
 import com.ligitabl.api.usecase.match.syncmatches.TriggerRoundFinalizationUseCase;
 import com.ligitabl.api.usecase.round.advanceround.RoundAdvancementService;
 import com.ligitabl.model.domain.OutboxEvent;
@@ -168,7 +170,7 @@ public class MatchSyncScheduler {
 
             log.info("Executing match sync");
 
-            var result = syncMatchesUseCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
+            var result = syncMatchesUseCase.execute(new SyncMatchesCommand());
 
             result.fold(
                     error -> {
@@ -299,8 +301,7 @@ public class MatchSyncScheduler {
 
     private void triggerFinalization(MatchSyncResult syncResult) {
         try {
-            var result = triggerFinalizationUseCase.execute(
-                    new TriggerRoundFinalizationUseCase.TriggerFinalizationCommand(competitionCode));
+            var result = triggerFinalizationUseCase.execute(new TriggerRoundFinalizationCommand(competitionCode));
 
             result.fold(
                     error -> {

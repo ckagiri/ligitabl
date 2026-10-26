@@ -28,6 +28,7 @@ import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecase.matchadmin.reschedulematch.RescheduleMatchUseCase;
 import com.ligitabl.api.usecase.matchadmin.transitionmatchstatus.TransitionMatchStatusUseCase;
 import com.ligitabl.api.usecase.matchadmin.transitionmatchstatus.TransitionResult;
+import com.ligitabl.api.usecase.matchadmin.updatekickoff.UpdateMatchKickoffResult;
 import com.ligitabl.api.usecase.matchadmin.updatekickoff.UpdateMatchKickoffUseCase;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Competition;
@@ -231,7 +232,7 @@ class MatchAdminControllerTest {
                 .matchday(5)
                 .build();
         when(updateKickoffUseCase.execute(any()))
-                .thenReturn(Either.right(new UpdateMatchKickoffUseCase.Result(matchId, "home-vs-away", newKickOff)));
+                .thenReturn(Either.right(new UpdateMatchKickoffResult(matchId, "home-vs-away", newKickOff)));
         when(matchRepo.findById(matchId)).thenReturn(Optional.of(updated));
 
         MockHttpServletResponse response = new MockHttpServletResponse();

@@ -31,7 +31,10 @@ import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.usecase.match.syncmatches.AsyncStandingsService;
+import com.ligitabl.api.usecase.match.syncmatches.SyncMatchesCommand;
+import com.ligitabl.api.usecase.match.syncmatches.SyncMatchesError;
 import com.ligitabl.api.usecase.match.syncmatches.SyncMatchesUseCase;
+import com.ligitabl.api.usecase.round.advancematchday.AdvanceMatchdayCommand;
 import com.ligitabl.api.usecase.round.advancematchday.AdvanceMatchdayUseCase;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.repo.MatchRepo;
@@ -106,8 +109,7 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
     void shouldSyncMatchesFromApiSuccessfully() {
         stubMatchesApiWithFinishedMatch(fixture.matchClientId(), fixture.apiKickoff());
 
-        Either<SyncMatchesUseCase.SyncMatchesError, ?> result =
-                syncMatchesUseCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
+        Either<SyncMatchesError, ?> result = syncMatchesUseCase.execute(new SyncMatchesCommand());
 
         assertThat(result.isRight()).isTrue();
 
@@ -126,7 +128,7 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
     void shouldHandleApiError() {
         stubMatchesApiWithServerError();
 
-        var result = syncMatchesUseCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
+        var result = syncMatchesUseCase.execute(new SyncMatchesCommand());
 
         assertThat(result.isLeft()).isTrue();
 
@@ -145,7 +147,7 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
     void shouldDetectAllMatchesCompleteAndCalculateNextSync() {
         stubMatchesApiWithFinishedMatch(fixture.matchClientId(), fixture.apiKickoff());
 
-        var result = syncMatchesUseCase.execute(new SyncMatchesUseCase.SyncMatchesCommand());
+        var result = syncMatchesUseCase.execute(new SyncMatchesCommand());
 
         assertThat(result.isRight()).isTrue();
 
@@ -159,7 +161,7 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
     void shouldAdvanceRoundWhenApiIndicatesNewMatchday() {
         stubCompetitionApiWithCurrentMatchday(2);
 
-        var result = advanceRoundUseCase.execute(new AdvanceMatchdayUseCase.AdvanceMatchdayCommand());
+        var result = advanceRoundUseCase.execute(new AdvanceMatchdayCommand());
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().advanced()).isTrue();
@@ -177,7 +179,7 @@ class MatchSyncIntegrationTest extends AbstractPostgresIT {
     void shouldNotAdvanceWhenMatchdayUnchanged() {
         stubCompetitionApiWithCurrentMatchday(1);
 
-        var result = advanceRoundUseCase.execute(new AdvanceMatchdayUseCase.AdvanceMatchdayCommand());
+        var result = advanceRoundUseCase.execute(new AdvanceMatchdayCommand());
 
         assertThat(result.isRight()).isTrue();
         assertThat(result.get().advanced()).isFalse();

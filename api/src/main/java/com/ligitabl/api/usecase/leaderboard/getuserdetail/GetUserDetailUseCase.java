@@ -53,32 +53,28 @@ public class GetUserDetailUseCase {
     private final UserRepo userRepo;
     private final CompetitionDefaults competitionDefaults;
 
-    public record UserPredictions(int round, Integer roundScore, List<PredictionTeam> predictions, String seasonSlug) {}
-
-    public record PredictionTeam(String teamName, Integer hit) {}
-
     public Either<Exception, UserPredictions> execute(String publicId, Integer effectiveToRound, UUID seasonId) {
         return Either.catching(() -> {
             // Resolve competition
             Competition competition = competitionRepo
                     .findBySlug(competitionDefaults.defaultCompetitionSlug())
-                    .orElseThrow(() -> new NotFoundException("Default competition not found"));
+                    .orElseThrow(() -> new GetUserDetailNotFoundException("Default competition not found"));
 
             // Resolve season: prefer the contest's own season when provided, otherwise
             // fall back to the globally active season (e.g. when opened from /leaderboard).
             Season season = (seasonId != null
                             ? seasonRepo.findById(seasonId)
                             : seasonRepo.findActiveSeason(competition.getId()))
-                    .orElseThrow(() -> new NotFoundException("Season not found"));
+                    .orElseThrow(() -> new GetUserDetailNotFoundException("Season not found"));
 
             // Resolve current round
             Round currentRound = roundRepo
                     .findById(season.getCurrentRoundId())
-                    .orElseThrow(() -> new NotFoundException("Current round not found"));
+                    .orElseThrow(() -> new GetUserDetailNotFoundException("Current round not found"));
 
             // Resolve user by publicId
             User user = userRepo.findByPublicId(PublicId.create(publicId))
-                    .orElseThrow(() -> new NotFoundException("User not found: " + publicId));
+                    .orElseThrow(() -> new GetUserDetailNotFoundException("User not found: " + publicId));
 
             // Only used to build the "View full prediction" deep link; a season without a slug
             // simply yields no link rather than failing the whole modal.
@@ -97,8 +93,8 @@ public class GetUserDetailUseCase {
                         if (effectiveToRound == null || effectiveToRound >= currentRound.getPosition()) {
                             SeasonPrediction prediction = seasonPredictionRepo
                                     .findByUserAndSeason(user.getId(), season.getId())
-                                    .orElseThrow(
-                                            () -> new NotFoundException("No prediction found for user " + publicId));
+                                    .orElseThrow(() -> new GetUserDetailNotFoundException(
+                                            "No prediction found for user " + publicId));
                             return new UserPredictions(
                                     displayRound,
                                     null,
@@ -159,11 +155,5 @@ public class GetUserDetailUseCase {
             if (candidate != null && !candidate.isBlank()) return candidate;
         }
         return null;
-    }
-
-    public static class NotFoundException extends RuntimeException {
-        public NotFoundException(String message) {
-            super(message);
-        }
     }
 }

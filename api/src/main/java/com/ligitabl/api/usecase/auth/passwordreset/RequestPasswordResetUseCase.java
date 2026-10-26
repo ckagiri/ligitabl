@@ -31,7 +31,7 @@ public class RequestPasswordResetUseCase {
     private int tokenValidityMinutes;
 
     @Transactional
-    public Either<PasswordResetError, PasswordResetResult> execute(String emailStr) {
+    public Either<RequestPasswordResetError, RequestPasswordResetResult> execute(String emailStr) {
         try {
             Email email = Email.create(emailStr);
             var userResult = userRepo.findByEmail(email);
@@ -40,7 +40,7 @@ public class RequestPasswordResetUseCase {
             // Always return success
             if (userResult.isEmpty()) {
                 log.info("[PASSWORD_RESET] Email not found (returning success): {}", email);
-                return Either.right(new PasswordResetResult.EmailSent(email.value()));
+                return Either.right(new RequestPasswordResetResult.EmailSent(email.value()));
             }
 
             var user = userResult.get();
@@ -61,18 +61,10 @@ public class RequestPasswordResetUseCase {
                         sendResult.getLeft());
             }
 
-            return Either.right(new PasswordResetResult.EmailSent(email.value()));
+            return Either.right(new RequestPasswordResetResult.EmailSent(email.value()));
         } catch (Exception e) {
             log.error("[PASSWORD_RESET] Unexpected failure email={}", emailStr, e);
-            return Either.left(new PasswordResetError.UnexpectedError());
+            return Either.left(new RequestPasswordResetError.UnexpectedError());
         }
-    }
-
-    public sealed interface PasswordResetError {
-        record UnexpectedError() implements PasswordResetError {}
-    }
-
-    public sealed interface PasswordResetResult {
-        record EmailSent(String email) implements PasswordResetResult {}
     }
 }

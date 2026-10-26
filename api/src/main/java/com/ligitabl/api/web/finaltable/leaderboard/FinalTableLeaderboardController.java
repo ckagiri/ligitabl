@@ -9,8 +9,8 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestParam;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
+import com.ligitabl.api.usecase.finaltable.leaderboard.FinalTableLeaderboardData;
 import com.ligitabl.api.usecase.finaltable.leaderboard.GetFinalTableLeaderboardUseCase;
-import com.ligitabl.api.usecase.finaltable.leaderboard.GetFinalTableLeaderboardUseCase.FinalTableLeaderboardData;
 import com.ligitabl.api.web.shared.security.WebSecurity;
 
 import jakarta.servlet.http.HttpServletResponse;

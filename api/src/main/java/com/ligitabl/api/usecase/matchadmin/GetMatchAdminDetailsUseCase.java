@@ -25,14 +25,14 @@ import lombok.RequiredArgsConstructor;
 @Service
 @RequiredArgsConstructor
 public class GetMatchAdminDetailsUseCase
-        implements UseCase<GetMatchAdminDetailsUseCase.Query, Either<UseCaseError, MatchAdminDetailsDto>> {
+        implements UseCase<GetMatchAdminDetailsQuery, Either<UseCaseError, MatchAdminDetailsDto>> {
 
     private final MatchRepo matchRepo;
     private final HierarchyValidator hierarchyValidator;
     private final CompetitionDefaults competitionDefaults;
 
     @Override
-    public Either<UseCaseError, MatchAdminDetailsDto> execute(Query query) {
+    public Either<UseCaseError, MatchAdminDetailsDto> execute(GetMatchAdminDetailsQuery query) {
         return resolveHierarchy(query)
                 .flatMap(ctx -> findMatch(ctx.round(), query.matchSlug())
                         .map(match -> new Context(ctx.season(), ctx.round(), match)))
@@ -45,7 +45,7 @@ public class GetMatchAdminDetailsUseCase
                         .build());
     }
 
-    private Either<UseCaseError, HierarchyContext> resolveHierarchy(Query query) {
+    private Either<UseCaseError, HierarchyContext> resolveHierarchy(GetMatchAdminDetailsQuery query) {
         String competitionIdentifier = query.competitionIdentifier() == null
                         || query.competitionIdentifier().isBlank()
                 ? competitionDefaults.defaultCompetitionSlug()
@@ -76,8 +76,6 @@ public class GetMatchAdminDetailsUseCase
 
         return actions;
     }
-
-    public record Query(String competitionIdentifier, Integer roundPosition, String matchSlug) {}
 
     private record Context(Season season, Round round, Match match) {}
 }

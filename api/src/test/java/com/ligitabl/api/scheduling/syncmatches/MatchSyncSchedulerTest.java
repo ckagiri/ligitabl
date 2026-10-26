@@ -32,7 +32,9 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecase.match.syncmatches.MatchSyncResult;
 import com.ligitabl.api.usecase.match.syncmatches.NextSyncSchedule;
+import com.ligitabl.api.usecase.match.syncmatches.SyncMatchesError;
 import com.ligitabl.api.usecase.match.syncmatches.SyncMatchesUseCase;
+import com.ligitabl.api.usecase.match.syncmatches.TriggerRoundFinalizationError;
 import com.ligitabl.api.usecase.match.syncmatches.TriggerRoundFinalizationUseCase;
 import com.ligitabl.api.usecase.round.advanceround.RoundAdvancementService;
 import com.ligitabl.model.domain.RoundStatus;
@@ -139,8 +141,7 @@ class MatchSyncSchedulerTest {
         MatchSyncResult result = completeResult();
         when(syncMatchesUseCase.execute(any())).thenReturn(Either.right(result));
         when(triggerFinalizationUseCase.execute(any()))
-                .thenReturn(Either.left(
-                        new TriggerRoundFinalizationUseCase.TriggerFinalizationError.RoundNotFound(roundId)));
+                .thenReturn(Either.left(new TriggerRoundFinalizationError.RoundNotFound(roundId)));
 
         scheduler.triggerManualSync();
 
@@ -165,7 +166,7 @@ class MatchSyncSchedulerTest {
     @Test
     void recordsFailure_whenSyncFails() {
         when(syncMatchesUseCase.execute(any()))
-                .thenReturn(Either.left(new SyncMatchesUseCase.SyncMatchesError.HierarchyError(
+                .thenReturn(Either.left(new SyncMatchesError.HierarchyError(
                         UseCaseErrors.validation("Competition has no active season"))));
 
         scheduler.triggerManualSync();
@@ -183,8 +184,7 @@ class MatchSyncSchedulerTest {
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(syncMatchesUseCase.execute(any())).thenReturn(Either.right(completeResult()));
         when(triggerFinalizationUseCase.execute(any()))
-                .thenReturn(Either.left(
-                        new TriggerRoundFinalizationUseCase.TriggerFinalizationError.RoundNotFound(roundId)));
+                .thenReturn(Either.left(new TriggerRoundFinalizationError.RoundNotFound(roundId)));
 
         scheduler.triggerManualSync();
 
@@ -291,8 +291,7 @@ class MatchSyncSchedulerTest {
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(syncMatchesUseCase.execute(any())).thenReturn(Either.right(completeResult()));
         when(triggerFinalizationUseCase.execute(any()))
-                .thenReturn(Either.left(
-                        new TriggerRoundFinalizationUseCase.TriggerFinalizationError.RoundNotFound(roundId)));
+                .thenReturn(Either.left(new TriggerRoundFinalizationError.RoundNotFound(roundId)));
 
         scheduler.triggerManualSync();
 
@@ -332,7 +331,7 @@ class MatchSyncSchedulerTest {
     @Test
     void failedSync_doesNotNotifyScheduleChange() {
         when(syncMatchesUseCase.execute(any()))
-                .thenReturn(Either.left(new SyncMatchesUseCase.SyncMatchesError.HierarchyError(
+                .thenReturn(Either.left(new SyncMatchesError.HierarchyError(
                         UseCaseErrors.validation("Competition has no active season"))));
 
         scheduler.triggerManualSync();
@@ -445,8 +444,7 @@ class MatchSyncSchedulerTest {
     @Test
     void doesNotRecordHeartbeat_onFailedSync() {
         when(syncMatchesUseCase.execute(any()))
-                .thenReturn(Either.left(
-                        new SyncMatchesUseCase.SyncMatchesError.HierarchyError(UseCaseErrors.validation("boom"))));
+                .thenReturn(Either.left(new SyncMatchesError.HierarchyError(UseCaseErrors.validation("boom"))));
 
         scheduler.triggerManualSync();
 

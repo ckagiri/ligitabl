@@ -21,6 +21,8 @@ import com.ligitabl.api.shared.errors.UnexpectedError;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.ValidationError;
 import com.ligitabl.api.shared.validation.RequestValidator;
+import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationError;
+import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationResult;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationUseCase;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.Password;
@@ -82,7 +84,7 @@ class RegisterUseCaseTest {
     /** Only for tests that reach the post-create hook — keeps stubbing strict everywhere else. */
     private void stubVerificationEmailSuccess() {
         when(requestEmailVerificationUseCase.execute(any(UUID.class)))
-                .thenReturn(Either.right(new RequestEmailVerificationUseCase.RequestResult.EmailSent(email.value())));
+                .thenReturn(Either.right(new RequestEmailVerificationResult.EmailSent(email.value())));
     }
 
     @Test
@@ -280,7 +282,7 @@ class RegisterUseCaseTest {
         when(publicIdGenerator.generate(any(UUID.class))).thenReturn(publicId);
         when(userRepo.create(any(User.class))).thenAnswer(inv -> inv.getArgument(0));
         when(requestEmailVerificationUseCase.execute(any(UUID.class)))
-                .thenReturn(Either.left(new RequestEmailVerificationUseCase.RequestError.UnexpectedError()));
+                .thenReturn(Either.left(new RequestEmailVerificationError.UnexpectedError()));
 
         var cmd = new RegisterCommand(email, "Test User", password);
 

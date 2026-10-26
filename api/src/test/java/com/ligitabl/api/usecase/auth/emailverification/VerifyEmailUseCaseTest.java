@@ -21,8 +21,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.testsupport.TestClock;
-import com.ligitabl.api.usecase.auth.emailverification.VerifyEmailUseCase.VerifyError;
-import com.ligitabl.api.usecase.auth.emailverification.VerifyEmailUseCase.VerifyResult;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.Role;
 import com.ligitabl.model.domain.EmailVerificationToken;
@@ -62,8 +60,8 @@ class VerifyEmailUseCaseTest {
     @Test
     @DisplayName("Should reject null or blank tokens")
     void shouldRejectBlankToken() {
-        assertThat(useCase.execute(null).getLeft()).isInstanceOf(VerifyError.InvalidToken.class);
-        assertThat(useCase.execute("  ").getLeft()).isInstanceOf(VerifyError.InvalidToken.class);
+        assertThat(useCase.execute(null).getLeft()).isInstanceOf(VerifyEmailError.InvalidToken.class);
+        assertThat(useCase.execute("  ").getLeft()).isInstanceOf(VerifyEmailError.InvalidToken.class);
         verifyNoInteractions(tokenRepo, userRepo);
     }
 
@@ -74,7 +72,7 @@ class VerifyEmailUseCaseTest {
 
         var result = useCase.execute("nope");
 
-        assertThat(result.getLeft()).isInstanceOf(VerifyError.InvalidToken.class);
+        assertThat(result.getLeft()).isInstanceOf(VerifyEmailError.InvalidToken.class);
         verifyNoInteractions(userRepo);
     }
 
@@ -86,7 +84,7 @@ class VerifyEmailUseCaseTest {
 
         var result = useCase.execute(token.getToken());
 
-        assertThat(result.getLeft()).isInstanceOf(VerifyError.TokenAlreadyUsed.class);
+        assertThat(result.getLeft()).isInstanceOf(VerifyEmailError.TokenAlreadyUsed.class);
         verify(userRepo, never()).markEmailVerified(any(), any());
     }
 
@@ -106,7 +104,7 @@ class VerifyEmailUseCaseTest {
 
         var result = useCase.execute(token.getToken());
 
-        assertThat(result.getLeft()).isInstanceOf(VerifyError.TokenExpired.class);
+        assertThat(result.getLeft()).isInstanceOf(VerifyEmailError.TokenExpired.class);
         verify(userRepo, never()).markEmailVerified(any(), any());
     }
 
@@ -119,7 +117,7 @@ class VerifyEmailUseCaseTest {
 
         var result = useCase.execute(token.getToken());
 
-        assertThat(result.getLeft()).isInstanceOf(VerifyError.InvalidToken.class);
+        assertThat(result.getLeft()).isInstanceOf(VerifyEmailError.InvalidToken.class);
         verify(userRepo, never()).markEmailVerified(any(), any());
         verify(tokenRepo, never()).update(any());
     }
@@ -134,7 +132,7 @@ class VerifyEmailUseCaseTest {
         var result = useCase.execute(token.getToken());
 
         assertThat(result.isRight()).isTrue();
-        assertThat(result.get()).isEqualTo(new VerifyResult.Success(userId, "player@example.com"));
+        assertThat(result.get()).isEqualTo(new VerifyEmailResult.Success(userId, "player@example.com"));
 
         ArgumentCaptor<EmailVerificationToken> tokenCaptor = ArgumentCaptor.forClass(EmailVerificationToken.class);
         verify(tokenRepo).update(tokenCaptor.capture());
@@ -164,7 +162,8 @@ class VerifyEmailUseCaseTest {
         EmailVerificationToken aSecondStale = tokenExpiringAt(TestClock.NOW.minusSeconds(1));
         when(tokenRepo.findByToken(aSecondStale.getToken())).thenReturn(Optional.of(aSecondStale));
 
-        assertThat(useCase.execute(aSecondStale.getToken()).getLeft()).isInstanceOf(VerifyError.TokenExpired.class);
+        assertThat(useCase.execute(aSecondStale.getToken()).getLeft())
+                .isInstanceOf(VerifyEmailError.TokenExpired.class);
     }
 
     private EmailVerificationToken liveToken() {

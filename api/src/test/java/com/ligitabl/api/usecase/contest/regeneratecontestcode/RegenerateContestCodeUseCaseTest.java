@@ -59,7 +59,7 @@ class RegenerateContestCodeUseCaseTest {
         var result = useCase.execute(contestId, ownerId);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(RegenerateContestCodeUseCase.Error.ContestNotFound.class);
+        assertThat(result.getLeft()).isInstanceOf(RegenerateContestCodeError.ContestNotFound.class);
     }
 
     @Test
@@ -69,7 +69,7 @@ class RegenerateContestCodeUseCaseTest {
         var result = useCase.execute(contestId, UUID.randomUUID());
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(RegenerateContestCodeUseCase.Error.NotOwner.class);
+        assertThat(result.getLeft()).isInstanceOf(RegenerateContestCodeError.NotOwner.class);
     }
 
     @Test
@@ -80,7 +80,7 @@ class RegenerateContestCodeUseCaseTest {
         var result = useCase.execute(contestId, ownerId);
 
         assertThat(result.isLeft()).isTrue();
-        assertThat(result.getLeft()).isInstanceOf(RegenerateContestCodeUseCase.Error.PastSeasonContest.class);
+        assertThat(result.getLeft()).isInstanceOf(RegenerateContestCodeError.PastSeasonContest.class);
     }
 
     @Test
