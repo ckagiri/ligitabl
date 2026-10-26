@@ -98,7 +98,29 @@ jobs:
           path: "**/target/surefire-reports/*.xml"
 
   # ============================================================
-  # 2. Build & Push Docker image
+  # 2. Debounce — batches merges that land close together into one
+  #    deploy. A newer push to the same branch cancels a run still
+  #    waiting here, so only the latest commit is built and deployed
+  #    (it contains the earlier ones). A run that has already passed
+  #    this point is not cancelled; `deploy` below queues behind it.
+  #    Wait is the DEPLOY_DEBOUNCE_MINUTES repo variable (default 10,
+  #    0 deploys immediately). Cancelled runs show as "cancelled".
+  # ============================================================
+  debounce:
+    name: Wait for further merges
+    runs-on: ubuntu-latest
+    needs: test
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release')
+    concurrency:
+      group: deploy-debounce-${{ github.ref }}
+      cancel-in-progress: true
+
+    steps:
+      - name: Wait
+        run: sleep $(( ${{ vars.DEPLOY_DEBOUNCE_MINUTES || 10 }} * 60 ))
+
+  # ============================================================
+  # 3. Build & Push Docker image
   #    Runs on push to main (permanent) or release (temporary — for
   #    testing the pipeline without merging to main; remove release
   #    from this condition once the workflow is validated).
@@ -106,7 +128,7 @@ jobs:
   build-and-push:
     name: Build & Push Docker Image
     runs-on: ubuntu-latest
-    needs: test
+    needs: debounce
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release')
 
     steps:
@@ -141,13 +163,17 @@ jobs:
           cache-to: type=gha,mode=max
 
   # ============================================================
-  # 3. Deploy — runs on push to main or release (see note above)
+  # 4. Deploy — runs on push to main or release (see note above)
+  #    Never cancelled mid-way; a second deploy waits for the first.
   # ============================================================
   deploy:
     name: Deploy to Production
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/release')
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
 
     steps:
       - name: Checkout code
