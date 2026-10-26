@@ -27,6 +27,16 @@ A use case's Command, Query, Result and Error types are its public contract, so 
 - Error and result variants stay nested inside their sealed interface (`ToggleContestJoiningError.NotOwner`). That's how Java models sum types, and it keeps `switch` exhaustive.
 - Keep a type nested only when nothing outside the use case needs it: private step records, local records inside a method.
 
+### Large records: group or build
+
+Positional constructors are fine until neighbouring arguments share a type and can be swapped without a compile error. In order of preference:
+
+1. **Group related fields** into a smaller record when they form a cluster. Examples: `ContestPage` (contests, total, pages, from, to) used twice in `GetProfileContestListsResult`, and `RenewalOptions` shared by the contest-list rows.
+2. **Add Lombok `@Builder`** when a record has about 8+ components with 3 or more adjacent fields of the same type (`MatchSyncResult`, `LatestResultResponse`). Build it with named setters at every call site, tests included. A builder doesn't check that every field is set: one you forget becomes `null`/`0`/`false`, so don't use it to hide genuinely required arguments on small records.
+3. **Use neither** for small records or ones whose fields all have distinct types.
+
+Pipeline context records private to a use case (`Ctx`, `JoinCtx`) are exempt. They're rebuilt step by step and never read outside the class.
+
 ## Formatting (Palantir Java Format, 100-col width)
 
 This repo standardizes Java formatting with Spotless + Palantir Java Format (100 columns).
