@@ -202,15 +202,16 @@ public class SegmentResultsEmailEnqueuer {
 
     private SegmentResultsPayload.SegmentPlacement placement(ClosedSegment segment, LeaderboardEntry entry) {
         RoundSpan span = segment.span();
-        return new SegmentResultsPayload.SegmentPlacement(
-                span.getType().name(),
-                span.getCode(),
-                span.getName(),
-                span.getFrom(),
-                span.getTo(),
-                entry.position(),
-                segment.totalParticipants(),
-                entry.totalScore());
+        return SegmentResultsPayload.SegmentPlacement.builder()
+                .type(span.getType().name())
+                .code(span.getCode())
+                .name(span.getName())
+                .fromRound(span.getFrom())
+                .toRound(span.getTo())
+                .rank(entry.position())
+                .totalParticipants(segment.totalParticipants())
+                .totalScore(entry.totalScore())
+                .build();
     }
 
     private boolean writeEvent(
@@ -227,15 +228,16 @@ public class SegmentResultsEmailEnqueuer {
                 .sorted(Comparator.comparingInt(p -> p.toRound() - p.fromRound()))
                 .toList();
 
-        SegmentResultsPayload payload = new SegmentResultsPayload(
-                user.getId(),
-                user.getEmail().value(),
-                user.getDisplayName(),
-                user.getPublicId().value(),
-                ctx.season().getSlug().toShorthand(),
-                scopeKey,
-                boundaryRound,
-                ordered);
+        SegmentResultsPayload payload = SegmentResultsPayload.builder()
+                .userId(user.getId())
+                .userEmail(user.getEmail().value())
+                .userDisplayName(user.getDisplayName())
+                .userPublicId(user.getPublicId().value())
+                .seasonSlug(ctx.season().getSlug().toShorthand())
+                .scopeKey(scopeKey)
+                .boundaryRound(boundaryRound)
+                .placements(ordered)
+                .build();
 
         OutboxEvent event = OutboxEvent.createAvailableAt(
                 "segment-results:%s:%s:%s".formatted(ctx.season().getId(), scopeKey, user.getId()),

@@ -145,11 +145,11 @@ class GetUserContestSummaryUseCaseTest {
         var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
 
         var row = result.privateContests().get(0);
-        assertThat(row.renewVisible()).isTrue();
-        assertThat(row.renewEnabled()).isTrue();
-        assertThat(row.renewFromCode()).isEqualTo("S7");
-        assertThat(row.renewDefaultToCode()).isEqualTo("S7");
-        assertThat(row.renewToOptionCodes()).contains("S7", "S8");
+        assertThat(row.renewal().visible()).isTrue();
+        assertThat(row.renewal().enabled()).isTrue();
+        assertThat(row.renewal().fromCode()).isEqualTo("S7");
+        assertThat(row.renewal().defaultToCode()).isEqualTo("S7");
+        assertThat(row.renewal().toOptionCodes()).contains("S7", "S8");
     }
 
     @Test
@@ -177,7 +177,7 @@ class GetUserContestSummaryUseCaseTest {
 
         var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
 
-        assertThat(result.privateContests().get(0).renewVisible()).isFalse();
+        assertThat(result.privateContests().get(0).renewal().visible()).isFalse();
     }
 
     @Test
@@ -206,8 +206,8 @@ class GetUserContestSummaryUseCaseTest {
         var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
 
         var row = result.privateContests().get(0);
-        assertThat(row.renewVisible()).isTrue();
-        assertThat(row.renewEnabled()).isFalse();
+        assertThat(row.renewal().visible()).isTrue();
+        assertThat(row.renewal().enabled()).isFalse();
     }
 
     @Test
@@ -235,7 +235,7 @@ class GetUserContestSummaryUseCaseTest {
 
         var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
 
-        assertThat(result.privateContests().get(0).renewVisible()).isFalse();
+        assertThat(result.privateContests().get(0).renewal().visible()).isFalse();
     }
 
     @Test
@@ -264,7 +264,7 @@ class GetUserContestSummaryUseCaseTest {
 
         var result = useCase.execute(new GetUserContestSummaryQuery(userId, SLUG));
 
-        assertThat(result.privateContests().get(0).renewVisible()).isFalse();
+        assertThat(result.privateContests().get(0).renewal().visible()).isFalse();
     }
 
     @Test

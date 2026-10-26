@@ -171,16 +171,17 @@ public class SegmentTreeBuilder {
             Integer rank,
             List<SegmentNodeDto> children) {
         String nodeType = children.isEmpty() ? "SPRINT" : (id.equals("overall") ? "OVERALL" : "QUARTER");
-        return new SegmentNodeDto(
-                id,
-                label,
-                gwLabel(span),
-                dateLabel(span, dateRanges),
-                deriveStatus(span, currentPosition),
-                nodeType,
-                rank,
-                rank != null && rank <= 10,
-                children);
+        return SegmentNodeDto.builder()
+                .id(id)
+                .label(label)
+                .gwLabel(gwLabel(span))
+                .dateLabel(dateLabel(span, dateRanges))
+                .status(deriveStatus(span, currentPosition))
+                .nodeType(nodeType)
+                .rank(rank)
+                .isTopTen(rank != null && rank <= 10)
+                .children(children)
+                .build();
     }
 
     private Integer computeRank(Contest contest, int from, int to, UUID userId) {

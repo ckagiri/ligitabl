@@ -39,7 +39,7 @@ public class MyContestsController {
                 new GetUserContestSummaryQuery(userId, competitionDefaults.defaultCompetitionSlug()));
 
         boolean showRenewColumn =
-                result.privateContests().stream().anyMatch(row -> row.isOwner() && row.renewVisible());
+                result.privateContests().stream().anyMatch(row -> row.isOwner() && row.renewal().visible());
 
         boolean hasSeasonPrediction =
                 seasonPredictionSupport.hasSeasonPrediction(userId, competitionDefaults.defaultCompetitionSlug());

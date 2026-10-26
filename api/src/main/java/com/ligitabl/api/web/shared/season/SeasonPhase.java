@@ -8,10 +8,13 @@ import java.time.temporal.ChronoUnit;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonState;
 
+import lombok.Builder;
+
 /**
  * A season's pre-season/off-season/in-play timing, resolved into the countdown fields used by
  * season-phase UI banners (predictions page, homepage).
  */
+@Builder
 public record SeasonPhase(
         boolean isPreSeason,
         boolean isOffSeason,
@@ -57,15 +60,16 @@ public record SeasonPhase(
         }
 
         SeasonState state = season.getSeasonState(at);
-        return new SeasonPhase(
-                state == SeasonState.PRE_SEASON,
-                state == SeasonState.OFF_SEASON,
-                state == SeasonState.IN_PLAY,
-                state == SeasonState.INACTIVE,
-                daysToPreSeason,
-                preSeasonAboutToStart,
-                daysToPredictions,
-                predictionsAboutToStart,
-                predictionsOpenAt);
+        return SeasonPhase.builder()
+                .isPreSeason(state == SeasonState.PRE_SEASON)
+                .isOffSeason(state == SeasonState.OFF_SEASON)
+                .isInPlay(state == SeasonState.IN_PLAY)
+                .isInactive(state == SeasonState.INACTIVE)
+                .daysToPreSeason(daysToPreSeason)
+                .preSeasonAboutToStart(preSeasonAboutToStart)
+                .daysToPredictions(daysToPredictions)
+                .predictionsAboutToStart(predictionsAboutToStart)
+                .predictionsOpenAt(predictionsOpenAt)
+                .build();
     }
 }

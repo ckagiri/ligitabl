@@ -3,6 +3,8 @@ package com.ligitabl.api.notification.outbox;
 import java.util.List;
 import java.util.UUID;
 
+import lombok.Builder;
+
 /**
  * JSON payload of a SEGMENT_RESULTS outbox event: everything the relay needs to render and send
  * one user's segment-success email without further queries.
@@ -12,6 +14,7 @@ import java.util.UUID;
  * @param scopeKey distinguishes the two boundaries that can share a round number — {@code "r38"}
  *     for the round-38 sprint/quarter close, {@code "season"} for the later season completion.
  */
+@Builder
 public record SegmentResultsPayload(
         UUID userId,
         String userEmail,
@@ -23,6 +26,7 @@ public record SegmentResultsPayload(
         List<SegmentPlacement> placements) {
 
     /** One finished segment the user placed in, ordered sprint → quarter → season. */
+    @Builder
     public record SegmentPlacement(
             String type,
             String code,

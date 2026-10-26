@@ -2,6 +2,9 @@ package com.ligitabl.api.usecase.prediction.latestresult;
 
 import com.ligitabl.model.domain.HitDistribution;
 
+import lombok.Builder;
+
+@Builder
 public record LatestResultResponse(
         int round,
         int score,

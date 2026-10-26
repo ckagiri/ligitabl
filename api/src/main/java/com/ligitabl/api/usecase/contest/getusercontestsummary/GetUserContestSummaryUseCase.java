@@ -12,6 +12,7 @@ import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.usecase.contest.shared.ContestRankResolver;
 import com.ligitabl.api.usecase.contest.shared.ContestSupport;
+import com.ligitabl.api.usecase.contest.shared.RenewalOptions;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.ContestRenewalCalculator;
@@ -103,17 +104,18 @@ public class GetUserContestSummaryUseCase {
                 .forEach(phase -> {
                     var rankInfo = contestRankResolver.resolve(
                             mainContestId, season.getId(), phase.getFrom(), phase.getTo(), userId);
-                    rows.add(new GeneralContestRowDto(
-                            phase.getCode(),
-                            phase.getName(),
-                            buildDateLabel(phase.getFrom(), phase.getTo(), dateRanges),
-                            buildDateFrom(phase.getFrom(), dateRanges),
-                            buildDateTo(phase.getTo(), dateRanges),
-                            buildGwLabel(phase.getFrom(), phase.getTo()),
-                            phase.getFrom(),
-                            phase.getTo(),
-                            rankInfo.position(),
-                            rankInfo.movement()));
+                    rows.add(GeneralContestRowDto.builder()
+                            .phaseCode(phase.getCode())
+                            .label(phase.getName())
+                            .dateLabel(buildDateLabel(phase.getFrom(), phase.getTo(), dateRanges))
+                            .dateFrom(buildDateFrom(phase.getFrom(), dateRanges))
+                            .dateTo(buildDateTo(phase.getTo(), dateRanges))
+                            .gwLabel(buildGwLabel(phase.getFrom(), phase.getTo()))
+                            .gwFrom(phase.getFrom())
+                            .gwTo(phase.getTo())
+                            .rank(rankInfo.position())
+                            .movement(rankInfo.movement())
+                            .build());
                 });
         return rows;
     }
@@ -156,34 +158,23 @@ public class GetUserContestSummaryUseCase {
             int memberCount = memberCounts.getOrDefault(contest.getId(), 0);
             String status = contestSupport.deriveContestStatus(
                     contest.getFromRoundPosition(), contest.getToRoundPosition(), currentRound, phases);
-            RenewalInfo renewal = resolveRenewalInfo(contest, userId, currentRound, phases);
-            rows.add(new PrivateContestRowDto(
-                    contest.getId(),
-                    contest.getName(),
-                    buildDateLabel(contest.getFromRoundPosition(), contest.getToRoundPosition(), dateRanges),
-                    buildDateFrom(contest.getFromRoundPosition(), dateRanges),
-                    buildDateTo(contest.getToRoundPosition(), dateRanges),
-                    buildGwLabel(contest.getFromRoundPosition(), contest.getToRoundPosition()),
-                    contest.getFromRoundPosition(),
-                    contest.getToRoundPosition(),
-                    memberCount,
-                    contest.isOwnedBy(userId),
-                    status,
-                    contestSupport.isOpenForJoining(contest, season, competition),
-                    renewal.visible(),
-                    renewal.enabled(),
-                    renewal.fromCode(),
-                    renewal.defaultToCode(),
-                    renewal.toOptionCodes()));
+            rows.add(PrivateContestRowDto.builder()
+                    .id(contest.getId())
+                    .name(contest.getName())
+                    .dateLabel(buildDateLabel(contest.getFromRoundPosition(), contest.getToRoundPosition(), dateRanges))
+                    .dateFrom(buildDateFrom(contest.getFromRoundPosition(), dateRanges))
+                    .dateTo(buildDateTo(contest.getToRoundPosition(), dateRanges))
+                    .gwLabel(buildGwLabel(contest.getFromRoundPosition(), contest.getToRoundPosition()))
+                    .gwFrom(contest.getFromRoundPosition())
+                    .gwTo(contest.getToRoundPosition())
+                    .memberCount(memberCount)
+                    .isOwner(contest.isOwnedBy(userId))
+                    .status(status)
+                    .isOpenForJoining(contestSupport.isOpenForJoining(contest, season, competition))
+                    .renewal(resolveRenewalOptions(contest, userId, currentRound, phases))
+                    .build());
         }
         return rows;
-    }
-
-    private record RenewalInfo(
-            boolean visible, boolean enabled, String fromCode, String defaultToCode, List<String> toOptionCodes) {
-        static RenewalInfo hidden() {
-            return new RenewalInfo(false, false, null, null, List.of());
-        }
     }
 
     /**
@@ -191,26 +182,27 @@ public class GetUserContestSummaryUseCase {
      * ContestRenewalCalculator directly — every row here already belongs to the active season
      * (findPrivateByUserId is scoped to it), so the past-season branch never applies.
      */
-    private RenewalInfo resolveRenewalInfo(Contest contest, UUID userId, Round currentRound, List<RoundSpan> phases) {
+    private RenewalOptions resolveRenewalOptions(
+            Contest contest, UUID userId, Round currentRound, List<RoundSpan> phases) {
         if (!contest.isOwnedBy(userId) || contest.getRenewedIntoContestId() != null) {
-            return RenewalInfo.hidden();
+            return RenewalOptions.hidden();
         }
 
         RoundSpan originalFrom = PhaseRules.sprintStartingAt(phases, contest.getFromRoundPosition())
                 .orElse(null);
         RoundSpan originalTo =
                 PhaseRules.sprintEndingAt(phases, contest.getToRoundPosition()).orElse(null);
-        if (originalFrom == null || originalTo == null) return RenewalInfo.hidden();
+        if (originalFrom == null || originalTo == null) return RenewalOptions.hidden();
 
-        if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases)) return RenewalInfo.hidden();
+        if (!ContestRenewalCalculator.isRenewable(originalFrom, originalTo, phases)) return RenewalOptions.hidden();
 
         var renewalFrom = ContestRenewalCalculator.resolveRenewalFrom(originalTo, phases);
-        if (renewalFrom.isEmpty()) return RenewalInfo.hidden();
+        if (renewalFrom.isEmpty()) return RenewalOptions.hidden();
 
         RoundSpan from = renewalFrom.get();
         if (currentRound != null
                 && ContestRenewalCalculator.hasRenewalWindowElapsed(from, currentRound.getPosition())) {
-            return RenewalInfo.hidden();
+            return RenewalOptions.hidden();
         }
 
         RoundSpan defaultTo = ContestRenewalCalculator.resolveDefaultTo(originalFrom, originalTo, from, phases);
@@ -221,6 +213,6 @@ public class GetUserContestSummaryUseCase {
                 && ContestRenewalCalculator.hasReachedRenewalTiming(
                         originalFrom, originalTo, currentRound.getPosition(), phases);
 
-        return new RenewalInfo(true, enabled, from.getCode(), defaultTo.getCode(), toOptionCodes);
+        return new RenewalOptions(true, enabled, from.getCode(), defaultTo.getCode(), toOptionCodes);
     }
 }

@@ -45,21 +45,24 @@ public class ProfileContestsController {
         var result =
                 getProfileContestListsUseCase.execute(new GetProfileContestListsQuery(userId, activePage, pastPage));
 
-        model.addAttribute("activeContests", result.activeContests());
-        model.addAttribute("activeTotal", result.activeTotal());
+        var active = result.active();
+        model.addAttribute("activeContests", active.contests());
+        model.addAttribute("activeTotal", active.total());
         model.addAttribute("activePage", activePage);
-        model.addAttribute("activePages", result.activePages());
-        model.addAttribute("activeFrom", result.activeFrom());
-        model.addAttribute("activeTo", result.activeTo());
+        model.addAttribute("activePages", active.pages());
+        model.addAttribute("activeFrom", active.from());
+        model.addAttribute("activeTo", active.to());
 
-        model.addAttribute("pastContests", result.pastContests());
-        model.addAttribute("pastTotal", result.pastTotal());
+        var past = result.past();
+        model.addAttribute("pastContests", past.contests());
+        model.addAttribute("pastTotal", past.total());
         model.addAttribute("pastPage", pastPage);
-        model.addAttribute("pastPages", result.pastPages());
-        model.addAttribute("pastFrom", result.pastFrom());
-        model.addAttribute("pastTo", result.pastTo());
+        model.addAttribute("pastPages", past.pages());
+        model.addAttribute("pastFrom", past.from());
+        model.addAttribute("pastTo", past.to());
 
-        boolean showRenewColumn = result.pastContests().stream().anyMatch(c -> c.isOwner() && c.renewVisible());
+        boolean showRenewColumn = past.contests().stream()
+                .anyMatch(c -> c.isOwner() && c.renewal().visible());
         model.addAttribute("showRenewColumn", showRenewColumn);
         model.addAttribute("renewalSprints", showRenewColumn ? contestSupport.resolveSprintOptions() : List.of());
         model.addAttribute("renewalQuarters", showRenewColumn ? contestSupport.resolveQuarterOptions() : List.of());

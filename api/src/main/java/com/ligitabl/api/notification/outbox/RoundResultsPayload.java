@@ -4,10 +4,13 @@ import java.util.UUID;
 
 import com.ligitabl.model.domain.HitDistribution;
 
+import lombok.Builder;
+
 /**
  * JSON payload of a ROUND_RESULTS outbox event: everything the relay needs to
  * render and send one user's round-results email without further queries.
  */
+@Builder
 public record RoundResultsPayload(
         UUID userId,
         String userEmail,
@@ -24,6 +27,7 @@ public record RoundResultsPayload(
         Placement quarter) {
 
     /** Sprint standing, with best/movement. */
+    @Builder
     public record SprintPlacement(
             String label,
             int fromRound,
@@ -34,6 +38,7 @@ public record RoundResultsPayload(
             int sprintBest,
             boolean isNewSprintBest) {}
 
+    @Builder
     public record SeasonPlacement(
             String label,
             int fromRound,

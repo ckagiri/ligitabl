@@ -129,19 +129,20 @@ public class GetLatestResultUseCase {
             }
         }
 
-        return new LatestResultResponse(
-                round,
-                result.getTotalScore(),
-                position,
-                movement,
-                distribution,
-                sprint,
-                sprintPhase.getFrom(),
-                sprintPhase.getTo(),
-                sprintBest,
-                isNewSprintBest,
-                currentRound,
-                season.getMaxRounds());
+        return LatestResultResponse.builder()
+                .round(round)
+                .score(result.getTotalScore())
+                .position(position)
+                .movement(movement)
+                .hitDistribution(distribution)
+                .sprint(sprint)
+                .sprintFrom(sprintPhase.getFrom())
+                .sprintTo(sprintPhase.getTo())
+                .sprintBest(sprintBest)
+                .isNewSprintBest(isNewSprintBest)
+                .currentRound(currentRound)
+                .lastRound(season.getMaxRounds())
+                .build();
     }
 
     private Round getCurrentRoundEntity(Season season) {

@@ -340,37 +340,31 @@ class MatchSyncSchedulerTest {
     }
 
     private MatchSyncResult resultWithReason(String reason, boolean shouldNotify) {
-        return new MatchSyncResult(
-                seasonId,
-                roundId,
-                5,
-                RoundStatus.LOCKED,
-                10,
-                10,
-                0,
-                List.of(),
-                false, // allMatchesComplete
-                false,
-                false,
-                List.of(),
-                NextSyncSchedule.seconds(90, reason, shouldNotify));
+        return lockedResult()
+                .nextSchedule(NextSyncSchedule.seconds(90, reason, shouldNotify))
+                .build();
     }
 
     private MatchSyncResult resultWithPhase(String reason, NextSyncSchedule.Phase phase) {
-        return new MatchSyncResult(
-                seasonId,
-                roundId,
-                5,
-                RoundStatus.LOCKED,
-                10,
-                10,
-                0,
-                List.of(),
-                false, // allMatchesComplete
-                false,
-                false,
-                List.of(),
-                NextSyncSchedule.seconds(90, reason).withPhase(phase));
+        return lockedResult()
+                .nextSchedule(NextSyncSchedule.seconds(90, reason).withPhase(phase))
+                .build();
+    }
+
+    private MatchSyncResult.MatchSyncResultBuilder lockedResult() {
+        return MatchSyncResult.builder()
+                .seasonId(seasonId)
+                .roundId(roundId)
+                .roundPosition(5)
+                .roundStatus(RoundStatus.LOCKED)
+                .matchesProcessed(10)
+                .matchesUpdated(10)
+                .newlyFinishedMatches(0)
+                .finishedMatchIds(List.of())
+                .allMatchesComplete(false)
+                .hasBlockingMatches(false)
+                .roundObstructed(false)
+                .obstructedMatchIds(List.of());
     }
 
     /**
@@ -452,37 +446,20 @@ class MatchSyncSchedulerTest {
     }
 
     private MatchSyncResult immediateResult() {
-        return new MatchSyncResult(
-                seasonId,
-                roundId,
-                5,
-                RoundStatus.LOCKED,
-                10,
-                1,
-                0,
-                List.of(),
-                false, // not allMatchesComplete — keeps the finalization branch out of the way
-                false,
-                false,
-                List.of(),
-                NextSyncSchedule.immediate("All matches complete - trigger finalization", true));
+        return lockedResult()
+                .matchesUpdated(1)
+                // not allMatchesComplete — keeps the finalization branch out of the way
+                .nextSchedule(NextSyncSchedule.immediate("All matches complete - trigger finalization", true))
+                .build();
     }
 
     private MatchSyncResult completeResult() {
-        return new MatchSyncResult(
-                seasonId,
-                roundId,
-                5,
-                RoundStatus.COMPLETED,
-                10,
-                10,
-                10,
-                List.of(),
-                true, // allMatchesComplete
-                false,
-                false,
-                List.of(),
-                NextSyncSchedule.hours(6, "All matches complete"));
+        return lockedResult()
+                .roundStatus(RoundStatus.COMPLETED)
+                .newlyFinishedMatches(10)
+                .allMatchesComplete(true)
+                .nextSchedule(NextSyncSchedule.hours(6, "All matches complete"))
+                .build();
     }
 
     private static void setField(Object target, String fieldName, Object value) throws Exception {

@@ -255,15 +255,16 @@ public class RoundResultsEmailEnqueuer {
         LeaderboardEntry sprintPrevious = sprintPreviousByPublicId.get(sprintEntry.publicId());
         int previousSprintBest = sprintPrevious != null ? sprintPrevious.maxScore() : 0;
         boolean isNewSprintBest = roundPosition > sprint.getFrom() && score > previousSprintBest;
-        RoundResultsPayload.SprintPlacement sprintPlacement = new RoundResultsPayload.SprintPlacement(
-                sprint.getCode(),
-                sprint.getFrom(),
-                sprint.getTo(),
-                sprintEntry.position(),
-                sprintTotalParticipants,
-                sprintEntry.movement(),
-                sprintEntry.maxScore(),
-                isNewSprintBest);
+        RoundResultsPayload.SprintPlacement sprintPlacement = RoundResultsPayload.SprintPlacement.builder()
+                .label(sprint.getCode())
+                .fromRound(sprint.getFrom())
+                .toRound(sprint.getTo())
+                .rank(sprintEntry.position())
+                .totalParticipants(sprintTotalParticipants)
+                .movement(sprintEntry.movement())
+                .sprintBest(sprintEntry.maxScore())
+                .isNewSprintBest(isNewSprintBest)
+                .build();
 
         RoundResultsPayload.SeasonPlacement seasonPlacement = null;
         LeaderboardEntry seasonEntry = seasonByPublicId.get(sprintEntry.publicId());
@@ -271,34 +272,36 @@ public class RoundResultsEmailEnqueuer {
             LeaderboardEntry seasonPrevious = seasonPreviousByPublicId.get(sprintEntry.publicId());
             int previousSeasonBest = seasonPrevious != null ? seasonPrevious.maxScore() : 0;
             boolean isNewSeasonBest = roundPosition > seasonFrom && score > previousSeasonBest;
-            seasonPlacement = new RoundResultsPayload.SeasonPlacement(
-                    "Season",
-                    seasonFrom,
-                    lastRound,
-                    seasonEntry.position(),
-                    seasonTotalParticipants,
-                    seasonEntry.movement(),
-                    seasonEntry.maxScore(),
-                    isNewSeasonBest);
+            seasonPlacement = RoundResultsPayload.SeasonPlacement.builder()
+                    .label("Season")
+                    .fromRound(seasonFrom)
+                    .toRound(lastRound)
+                    .rank(seasonEntry.position())
+                    .totalParticipants(seasonTotalParticipants)
+                    .movement(seasonEntry.movement())
+                    .seasonBest(seasonEntry.maxScore())
+                    .isNewSeasonBest(isNewSeasonBest)
+                    .build();
         }
 
         RoundResultsPayload.Placement quarterPlacement =
                 quarterPlacementBoard == null ? null : quarterPlacementBoard.placementOf(sprintEntry.publicId());
 
-        return new RoundResultsPayload(
-                user.getId(),
-                user.getEmail().value(),
-                user.getDisplayName(),
-                user.getPublicId().value(),
-                seasonSlug,
-                roundPosition,
-                score,
-                currentRoundPosition,
-                lastRound,
-                recipient.result().hitDistribution(),
-                sprintPlacement,
-                seasonPlacement,
-                quarterPlacement);
+        return RoundResultsPayload.builder()
+                .userId(user.getId())
+                .userEmail(user.getEmail().value())
+                .userDisplayName(user.getDisplayName())
+                .userPublicId(user.getPublicId().value())
+                .seasonSlug(seasonSlug)
+                .round(roundPosition)
+                .score(score)
+                .currentRound(currentRoundPosition)
+                .lastRound(lastRound)
+                .hitDistribution(recipient.result().hitDistribution())
+                .sprint(sprintPlacement)
+                .season(seasonPlacement)
+                .quarter(quarterPlacement)
+                .build();
     }
 
     private record PlacementBoard(String label, Map<String, Integer> rankByPublicId, int totalParticipants) {

@@ -88,21 +88,22 @@ public class GetLeaderboardUseCase {
         var response = leaderboardRepo.computeLeaderboard(
                 contest.getId(), season.getId(), phase.getFrom(), phase.getTo(), query.userId(), offset, limit, true);
 
-        return Either.right(new GetLeaderboardResult(
-                contest.getId(),
-                phase,
-                currentSprint,
-                currentQuarter,
-                response.effectiveToRound(),
-                response.entries(),
-                competition.getPhases(),
-                response.userEntry(),
-                response.userInCurrentPage(),
-                response.userPageOffset(),
-                response.totalParticipants(),
-                response.hasNext(),
-                response.hasPrevious(),
-                offset,
-                limit));
+        return Either.right(GetLeaderboardResult.builder()
+                .contestId(contest.getId())
+                .phase(phase)
+                .currentSprint(currentSprint)
+                .currentQuarter(currentQuarter)
+                .effectiveToRound(response.effectiveToRound())
+                .rankings(response.entries())
+                .phases(competition.getPhases())
+                .userEntry(response.userEntry())
+                .userInCurrentPage(response.userInCurrentPage())
+                .userPageOffset(response.userPageOffset())
+                .totalParticipants(response.totalParticipants())
+                .hasNext(response.hasNext())
+                .hasPrevious(response.hasPrevious())
+                .offset(offset)
+                .limit(limit)
+                .build());
     }
 }

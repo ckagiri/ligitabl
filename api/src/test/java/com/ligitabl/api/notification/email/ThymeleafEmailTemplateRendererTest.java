@@ -188,7 +188,16 @@ class ThymeleafEmailTemplateRendererTest {
                 "userDisplayName",
                 "Ada",
                 "placements",
-                List.of(new SegmentResultsPayload.SegmentPlacement("SPRINT", "S1", "Sprint 1", 1, 4, 2, 40, 180)),
+                List.of(SegmentResultsPayload.SegmentPlacement.builder()
+                        .type("SPRINT")
+                        .code("S1")
+                        .name("Sprint 1")
+                        .fromRound(1)
+                        .toRound(4)
+                        .rank(2)
+                        .totalParticipants(40)
+                        .totalScore(180)
+                        .build()),
                 "headlineName",
                 "Sprint 1",
                 "headlineRank",
@@ -253,15 +262,42 @@ class ThymeleafEmailTemplateRendererTest {
     // ---------------------------------------------------------- segment results
 
     private static SegmentResultsPayload.SegmentPlacement sprint(int rank) {
-        return new SegmentResultsPayload.SegmentPlacement("SPRINT", "S2", "Sprint 2", 5, 9, rank, 41, 210);
+        return SegmentResultsPayload.SegmentPlacement.builder()
+                .type("SPRINT")
+                .code("S2")
+                .name("Sprint 2")
+                .fromRound(5)
+                .toRound(9)
+                .rank(rank)
+                .totalParticipants(41)
+                .totalScore(210)
+                .build();
     }
 
     private static SegmentResultsPayload.SegmentPlacement quarter(int rank) {
-        return new SegmentResultsPayload.SegmentPlacement("QUARTER", "Q1", "Quarter 1", 1, 9, rank, 58, 395);
+        return SegmentResultsPayload.SegmentPlacement.builder()
+                .type("QUARTER")
+                .code("Q1")
+                .name("Quarter 1")
+                .fromRound(1)
+                .toRound(9)
+                .rank(rank)
+                .totalParticipants(58)
+                .totalScore(395)
+                .build();
     }
 
     private static SegmentResultsPayload.SegmentPlacement season(int rank) {
-        return new SegmentResultsPayload.SegmentPlacement("FULL_SEASON", "FS", "Season", 1, 38, rank, 61, 1500);
+        return SegmentResultsPayload.SegmentPlacement.builder()
+                .type("FULL_SEASON")
+                .code("FS")
+                .name("Season")
+                .fromRound(1)
+                .toRound(38)
+                .rank(rank)
+                .totalParticipants(61)
+                .totalScore(1500)
+                .build();
     }
 
     /**
@@ -409,9 +445,30 @@ class ThymeleafEmailTemplateRendererTest {
 
         // Negative movement on both sprint and season.
         var negativeMovement = new java.util.HashMap<>(roundResultsData());
-        negativeMovement.put("sprint", new RoundResultsPayload.SprintPlacement("S8", 21, 23, 6, 120, -2, 190, false));
         negativeMovement.put(
-                "season", new RoundResultsPayload.SeasonPlacement("Season", 1, 38, 6, 140, -2, 1900, false));
+                "sprint",
+                RoundResultsPayload.SprintPlacement.builder()
+                        .label("S8")
+                        .fromRound(21)
+                        .toRound(23)
+                        .rank(6)
+                        .totalParticipants(120)
+                        .movement(-2)
+                        .sprintBest(190)
+                        .isNewSprintBest(false)
+                        .build());
+        negativeMovement.put(
+                "season",
+                RoundResultsPayload.SeasonPlacement.builder()
+                        .label("Season")
+                        .fromRound(1)
+                        .toRound(38)
+                        .rank(6)
+                        .totalParticipants(140)
+                        .movement(-2)
+                        .seasonBest(1900)
+                        .isNewSeasonBest(false)
+                        .build());
         assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, negativeMovement)
                         .isRight())
                 .as("negative movement")
@@ -420,8 +477,30 @@ class ThymeleafEmailTemplateRendererTest {
         // round == fromRound for both phases: the 🏁 "your best" variant.
         var phaseOpener = new java.util.HashMap<>(roundResultsData());
         phaseOpener.put("round", 20);
-        phaseOpener.put("sprint", new RoundResultsPayload.SprintPlacement("S8", 20, 22, 2, 120, null, 175, false));
-        phaseOpener.put("season", new RoundResultsPayload.SeasonPlacement("Season", 20, 38, 5, 140, null, 175, false));
+        phaseOpener.put(
+                "sprint",
+                RoundResultsPayload.SprintPlacement.builder()
+                        .label("S8")
+                        .fromRound(20)
+                        .toRound(22)
+                        .rank(2)
+                        .totalParticipants(120)
+                        .movement(null)
+                        .sprintBest(175)
+                        .isNewSprintBest(false)
+                        .build());
+        phaseOpener.put(
+                "season",
+                RoundResultsPayload.SeasonPlacement.builder()
+                        .label("Season")
+                        .fromRound(20)
+                        .toRound(38)
+                        .rank(5)
+                        .totalParticipants(140)
+                        .movement(null)
+                        .seasonBest(175)
+                        .isNewSeasonBest(false)
+                        .build());
         assertThat(renderer.render(EmailCommand.EmailType.ROUND_RESULTS, phaseOpener)
                         .isRight())
                 .as("round == fromRound")
@@ -470,8 +549,30 @@ class ThymeleafEmailTemplateRendererTest {
         data.put("currentRound", 22);
         data.put("lastRound", 38);
         data.put("hitDistribution", new HitDistribution(5, 8, 5, 2));
-        data.put("sprint", new RoundResultsPayload.SprintPlacement("S8", 21, 23, 2, 120, 1, 175, true));
-        data.put("season", new RoundResultsPayload.SeasonPlacement("Season", 1, 38, 18, 140, 1, 175, true));
+        data.put(
+                "sprint",
+                RoundResultsPayload.SprintPlacement.builder()
+                        .label("S8")
+                        .fromRound(21)
+                        .toRound(23)
+                        .rank(2)
+                        .totalParticipants(120)
+                        .movement(1)
+                        .sprintBest(175)
+                        .isNewSprintBest(true)
+                        .build());
+        data.put(
+                "season",
+                RoundResultsPayload.SeasonPlacement.builder()
+                        .label("Season")
+                        .fromRound(1)
+                        .toRound(38)
+                        .rank(18)
+                        .totalParticipants(140)
+                        .movement(1)
+                        .seasonBest(175)
+                        .isNewSeasonBest(true)
+                        .build());
         data.put("quarter", new RoundResultsPayload.Placement("Q3", 5, 130));
         data.put("frontendUrl", "http://localhost:8080");
         data.put("showDetailedResultsLink", true);

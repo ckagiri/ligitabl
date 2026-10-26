@@ -25,6 +25,7 @@ import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
+import lombok.Builder;
 import lombok.RequiredArgsConstructor;
 
 @Component
@@ -39,6 +40,7 @@ public class ContestSupport {
     private final MatchRepo matchRepo;
     private final RoundSupport roundSupport;
 
+    @Builder
     public record SprintOption(
             String code,
             String name,
@@ -186,18 +188,19 @@ public class ContestSupport {
                             ? "GW " + sprint.getFrom()
                             : "GW " + sprint.getFrom() + "–" + sprint.getTo();
 
-                    return new SprintOption(
-                            sprint.getCode(),
-                            sprint.getName(),
-                            i + 1,
-                            status,
-                            quarter != null ? quarter.getCode() : "",
-                            quarter != null ? quarter.getName() : "",
-                            startDate,
-                            endDate,
-                            gwLabel,
-                            isQuarterStart,
-                            isQuarterEnd);
+                    return SprintOption.builder()
+                            .code(sprint.getCode())
+                            .name(sprint.getName())
+                            .num(i + 1)
+                            .status(status)
+                            .quarterCode(quarter != null ? quarter.getCode() : "")
+                            .quarterName(quarter != null ? quarter.getName() : "")
+                            .startDate(startDate)
+                            .endDate(endDate)
+                            .gwLabel(gwLabel)
+                            .isQuarterStart(isQuarterStart)
+                            .isQuarterEnd(isQuarterEnd)
+                            .build();
                 })
                 .toList();
     }

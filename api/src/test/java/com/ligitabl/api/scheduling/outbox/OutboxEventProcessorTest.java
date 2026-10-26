@@ -138,20 +138,39 @@ class OutboxEventProcessorTest {
     }
 
     private String roundResultsJson(int round, int currentRound, int lastRound) throws Exception {
-        RoundResultsPayload payload = new RoundResultsPayload(
-                userId,
-                "alice@x.com",
-                "Alice",
-                "aaaaaaaabc",
-                "s1",
-                round,
-                175,
-                currentRound,
-                lastRound,
-                new HitDistribution(1, 1, 1, 1),
-                new RoundResultsPayload.SprintPlacement("S8", 21, 23, 2, 120, 1, 175, true),
-                new RoundResultsPayload.SeasonPlacement("Season", 1, 38, 18, 140, 1, 1800, false),
-                new RoundResultsPayload.Placement("Q3", 5, 130));
+        RoundResultsPayload payload = RoundResultsPayload.builder()
+                .userId(userId)
+                .userEmail("alice@x.com")
+                .userDisplayName("Alice")
+                .userPublicId("aaaaaaaabc")
+                .seasonSlug("s1")
+                .round(round)
+                .score(175)
+                .currentRound(currentRound)
+                .lastRound(lastRound)
+                .hitDistribution(new HitDistribution(1, 1, 1, 1))
+                .sprint(RoundResultsPayload.SprintPlacement.builder()
+                        .label("S8")
+                        .fromRound(21)
+                        .toRound(23)
+                        .rank(2)
+                        .totalParticipants(120)
+                        .movement(1)
+                        .sprintBest(175)
+                        .isNewSprintBest(true)
+                        .build())
+                .season(RoundResultsPayload.SeasonPlacement.builder()
+                        .label("Season")
+                        .fromRound(1)
+                        .toRound(38)
+                        .rank(18)
+                        .totalParticipants(140)
+                        .movement(1)
+                        .seasonBest(1800)
+                        .isNewSeasonBest(false)
+                        .build())
+                .quarter(new RoundResultsPayload.Placement("Q3", 5, 130))
+                .build();
         return objectMapper.writeValueAsString(payload);
     }
 
@@ -214,20 +233,55 @@ class OutboxEventProcessorTest {
     }
 
     private String segmentResultsJson(SegmentResultsPayload.SegmentPlacement... placements) throws Exception {
-        return objectMapper.writeValueAsString(new SegmentResultsPayload(
-                userId, "alice@x.com", "Alice", "aaaaaaaabc", "2025-26", "r9", 9, List.of(placements)));
+        return objectMapper.writeValueAsString(SegmentResultsPayload.builder()
+                .userId(userId)
+                .userEmail("alice@x.com")
+                .userDisplayName("Alice")
+                .userPublicId("aaaaaaaabc")
+                .seasonSlug("2025-26")
+                .scopeKey("r9")
+                .boundaryRound(9)
+                .placements(List.of(placements))
+                .build());
     }
 
     private static SegmentResultsPayload.SegmentPlacement sprint(int rank) {
-        return new SegmentResultsPayload.SegmentPlacement("SPRINT", "S2", "Sprint 2", 5, 9, rank, 41, 210);
+        return SegmentResultsPayload.SegmentPlacement.builder()
+                .type("SPRINT")
+                .code("S2")
+                .name("Sprint 2")
+                .fromRound(5)
+                .toRound(9)
+                .rank(rank)
+                .totalParticipants(41)
+                .totalScore(210)
+                .build();
     }
 
     private static SegmentResultsPayload.SegmentPlacement quarter(int rank) {
-        return new SegmentResultsPayload.SegmentPlacement("QUARTER", "Q1", "Quarter 1", 1, 9, rank, 58, 395);
+        return SegmentResultsPayload.SegmentPlacement.builder()
+                .type("QUARTER")
+                .code("Q1")
+                .name("Quarter 1")
+                .fromRound(1)
+                .toRound(9)
+                .rank(rank)
+                .totalParticipants(58)
+                .totalScore(395)
+                .build();
     }
 
     private static SegmentResultsPayload.SegmentPlacement season(int rank) {
-        return new SegmentResultsPayload.SegmentPlacement("FULL_SEASON", "FS", "Season", 1, 38, rank, 61, 1500);
+        return SegmentResultsPayload.SegmentPlacement.builder()
+                .type("FULL_SEASON")
+                .code("FS")
+                .name("Season")
+                .fromRound(1)
+                .toRound(38)
+                .rank(rank)
+                .totalParticipants(61)
+                .totalScore(1500)
+                .build();
     }
 
     @Test
