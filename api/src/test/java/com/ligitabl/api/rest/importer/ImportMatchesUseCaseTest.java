@@ -22,15 +22,17 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import com.ligitabl.api.client.FootballDataApiError;
+import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.client.footballdata.AwayTeam;
 import com.ligitabl.api.client.footballdata.CompetitionResponse;
 import com.ligitabl.api.client.footballdata.CurrentSeason;
 import com.ligitabl.api.client.footballdata.FullTime;
 import com.ligitabl.api.client.footballdata.HomeTeam;
 import com.ligitabl.api.client.footballdata.MatchDto;
+import com.ligitabl.api.client.footballdata.MatchesResponse;
 import com.ligitabl.api.runners.importer.ImportMatchesUseCase;
 import com.ligitabl.api.runners.importer.event.ImportEventPublisher;
-import com.ligitabl.api.runners.importer.footballdata.FootballDataGateway;
 import com.ligitabl.api.runners.importer.model.entities.ImportSummary;
 import com.ligitabl.api.runners.importer.model.errors.ApiError;
 import com.ligitabl.api.runners.importer.model.errors.DatabaseError;
@@ -57,7 +59,7 @@ import com.ligitabl.model.repo.TeamRepo;
 class ImportMatchesUseCaseTest {
 
     @Mock
-    FootballDataGateway footballDataGateway;
+    FootballDataClient footballDataClient;
 
     @Mock
     SeasonRepo seasonRepo;
@@ -79,7 +81,11 @@ class ImportMatchesUseCaseTest {
     @BeforeEach
     void setUp() {
         useCase = new ImportMatchesUseCase(
-                footballDataGateway, seasonRepo, teamRepo, roundRepo, matchRepo, eventPublisher);
+                footballDataClient, seasonRepo, teamRepo, roundRepo, matchRepo, eventPublisher);
+    }
+
+    private static MatchesResponse matches(MatchDto... matches) {
+        return new MatchesResponse(List.of(matches), null);
     }
 
     private static CompetitionCode comp(String code) {
@@ -179,9 +185,9 @@ class ImportMatchesUseCaseTest {
         var dbHome = team(homeId, 57, "Arsenal FC", "ARS");
         var dbAway = team(awayId, 61, "Chelsea FC", "CHE");
 
-        when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
+        when(footballDataClient.getCompetition(code.getValue())).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch)));
+        when(footballDataClient.getMatchesForCompetition(code.getValue())).thenReturn(right(matches(extMatch)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
         when(teamRepo.findByClientId(57)).thenReturn(Optional.of(dbHome));
         when(teamRepo.findByClientId(61)).thenReturn(Optional.of(dbAway));
@@ -225,9 +231,9 @@ class ImportMatchesUseCaseTest {
         var dbHome = team(UUID.randomUUID(), 57, "Arsenal", "ARS");
         var dbAway = team(UUID.randomUUID(), 61, "Chelsea", "CHE");
 
-        when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
+        when(footballDataClient.getCompetition(code.getValue())).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch)));
+        when(footballDataClient.getMatchesForCompetition(code.getValue())).thenReturn(right(matches(extMatch)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
         when(roundRepo.findById(currentRoundId)).thenReturn(Optional.of(currentRound));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 3)).thenReturn(Optional.of(nextRound));
@@ -261,9 +267,9 @@ class ImportMatchesUseCaseTest {
         var dbHome = team(UUID.randomUUID(), 57, "Arsenal", "ARS");
         var dbAway = team(UUID.randomUUID(), 61, "Chelsea", "CHE");
 
-        when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
+        when(footballDataClient.getCompetition(code.getValue())).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch)));
+        when(footballDataClient.getMatchesForCompetition(code.getValue())).thenReturn(right(matches(extMatch)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
         when(roundRepo.findById(currentRoundId)).thenReturn(Optional.of(currentRound));
         when(teamRepo.findByClientId(57)).thenReturn(Optional.of(dbHome));
@@ -297,9 +303,9 @@ class ImportMatchesUseCaseTest {
         var dbHome = team(UUID.randomUUID(), 57, "Arsenal", "ARS");
         var dbAway = team(UUID.randomUUID(), 61, "Chelsea", "CHE");
 
-        when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
+        when(footballDataClient.getCompetition(code.getValue())).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch)));
+        when(footballDataClient.getMatchesForCompetition(code.getValue())).thenReturn(right(matches(extMatch)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
         when(roundRepo.findById(currentRoundId)).thenReturn(Optional.of(currentRound));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 3)).thenReturn(Optional.empty());
@@ -343,9 +349,9 @@ class ImportMatchesUseCaseTest {
                 .kickOff(OffsetDateTime.now().minusDays(1).withNano(0))
                 .build();
 
-        when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
+        when(footballDataClient.getCompetition(code.getValue())).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch)));
+        when(footballDataClient.getMatchesForCompetition(code.getValue())).thenReturn(right(matches(extMatch)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(dbRound));
         when(teamRepo.findByClientId(57)).thenReturn(Optional.of(dbHome));
@@ -384,9 +390,10 @@ class ImportMatchesUseCaseTest {
         var dbHome = team(homeId, 57, "Arsenal FC", "ARS");
         var dbAway = team(awayId, 61, "Chelsea FC", "CHE");
 
-        when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
+        when(footballDataClient.getCompetition(code.getValue())).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch1, extMatch2)));
+        when(footballDataClient.getMatchesForCompetition(code.getValue()))
+                .thenReturn(right(matches(extMatch1, extMatch2)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
         when(teamRepo.findByClientId(57)).thenReturn(Optional.of(dbHome));
         when(teamRepo.findByClientId(61)).thenReturn(Optional.of(dbAway));
@@ -415,7 +422,8 @@ class ImportMatchesUseCaseTest {
     void shouldFailWhenApiFails() {
         var code = comp("PL");
 
-        when(footballDataGateway.fetchCompetition(code)).thenReturn(Either.left(ApiError.of("API unavailable", 503)));
+        when(footballDataClient.getCompetition("PL"))
+                .thenReturn(Either.left(new FootballDataApiError.ServerError("API unavailable", 503)));
 
         var result = useCase.execute(code);
 
@@ -425,12 +433,31 @@ class ImportMatchesUseCaseTest {
     }
 
     @Test
+    @DisplayName("should map each client error to an ApiError")
+    void mapsClientErrors() {
+        var code = comp("PL");
+        var cases = java.util.Map.<FootballDataApiError, ImportError>of(
+                new FootballDataApiError.NetworkError("refused", null), ApiError.connectionFailed("refused"),
+                new FootballDataApiError.RateLimitExceeded("slow down"), ApiError.rateLimited(),
+                new FootballDataApiError.NotFound("no such code"), ApiError.of("no such code", 404),
+                new FootballDataApiError.Unauthorized("bad token"), ApiError.of("bad token", 401),
+                new FootballDataApiError.ServerError("bad gateway", 502), ApiError.of("bad gateway", 502),
+                new FootballDataApiError.UnknownError("teapot", null), ApiError.of("teapot", 0),
+                new FootballDataApiError.UnexpectedError("null body"), ApiError.of("null body", 500));
+
+        cases.forEach((clientError, expected) -> {
+            when(footballDataClient.getCompetition("PL")).thenReturn(Either.left(clientError));
+            assertThat(useCase.execute(code).getLeft()).as("%s", clientError).isEqualTo(expected);
+        });
+    }
+
+    @Test
     @DisplayName("should return Left when competition has no current season")
     void shouldFailWhenNoCurrentSeason() {
         var code = comp("PL");
         var extCompetition = new CompetitionResponse(2021L, "Premier League", "PL", "LEAGUE", null, null);
 
-        when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
+        when(footballDataClient.getCompetition(code.getValue())).thenReturn(right(extCompetition));
 
         var result = useCase.execute(code);
 
@@ -444,7 +471,7 @@ class ImportMatchesUseCaseTest {
         var code = comp("PL");
         var extCompetition = competition("PL", 2024);
 
-        when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
+        when(footballDataClient.getCompetition(code.getValue())).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.empty());
 
         var result = useCase.execute(code);
@@ -471,9 +498,10 @@ class ImportMatchesUseCaseTest {
         var dbHome = team(homeId, 57, "Arsenal FC", "ARS");
         var dbAway = team(awayId, 61, "Chelsea FC", "CHE");
 
-        when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
+        when(footballDataClient.getCompetition(code.getValue())).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch1, extMatch2)));
+        when(footballDataClient.getMatchesForCompetition(code.getValue()))
+                .thenReturn(right(matches(extMatch1, extMatch2)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
         when(teamRepo.findByClientId(57)).thenReturn(Optional.of(dbHome));
         when(teamRepo.findByClientId(61)).thenReturn(Optional.of(dbAway));
@@ -520,9 +548,10 @@ class ImportMatchesUseCaseTest {
         var dbHome = team(UUID.randomUUID(), 57, "Arsenal FC", "ARS");
         var dbAway = team(UUID.randomUUID(), 61, "Chelsea FC", "CHE");
 
-        when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
+        when(footballDataClient.getCompetition(code.getValue())).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(validMatch, invalidMatch)));
+        when(footballDataClient.getMatchesForCompetition(code.getValue()))
+                .thenReturn(right(matches(validMatch, invalidMatch)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
         when(teamRepo.findByClientId(57)).thenReturn(Optional.of(dbHome));
         when(teamRepo.findByClientId(61)).thenReturn(Optional.of(dbAway));
@@ -552,9 +581,9 @@ class ImportMatchesUseCaseTest {
         var dbSeason = season(seasonId, 2024);
         var dbRound = round(roundId, seasonId, 1);
 
-        when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
+        when(footballDataClient.getCompetition(code.getValue())).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch)));
+        when(footballDataClient.getMatchesForCompetition(code.getValue())).thenReturn(right(matches(extMatch)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
         when(teamRepo.findByClientId(any())).thenReturn(Optional.empty());
 
@@ -579,9 +608,9 @@ class ImportMatchesUseCaseTest {
         UUID seasonId = UUID.randomUUID();
         var dbSeason = season(seasonId, 2024);
 
-        when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
+        when(footballDataClient.getCompetition(code.getValue())).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch)));
+        when(footballDataClient.getMatchesForCompetition(code.getValue())).thenReturn(right(matches(extMatch)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.empty());
 
         var result = useCase.execute(code);
@@ -610,9 +639,9 @@ class ImportMatchesUseCaseTest {
         var dbHome = team(homeId, 57, "Arsenal FC", "ARS");
         var dbAway = team(awayId, 61, "Chelsea FC", "CHE");
 
-        when(footballDataGateway.fetchCompetition(code)).thenReturn(right(extCompetition));
+        when(footballDataClient.getCompetition(code.getValue())).thenReturn(right(extCompetition));
         when(seasonRepo.findByClientId(2024)).thenReturn(Optional.of(dbSeason));
-        when(footballDataGateway.fetchMatchesForCompetition(code)).thenReturn(right(List.of(extMatch)));
+        when(footballDataClient.getMatchesForCompetition(code.getValue())).thenReturn(right(matches(extMatch)));
         when(roundRepo.findBySeasonIdAndPosition(seasonId, 1)).thenReturn(Optional.of(dbRound));
         when(teamRepo.findByClientId(57)).thenReturn(Optional.of(dbHome));
         when(teamRepo.findByClientId(61)).thenReturn(Optional.of(dbAway));

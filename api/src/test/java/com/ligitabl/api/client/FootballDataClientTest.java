@@ -1,4 +1,4 @@
-package com.ligitabl.api.importer.footballdata;
+package com.ligitabl.api.client;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
@@ -10,7 +10,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import java.net.ServerSocket;
 import java.time.Clock;
 import java.time.Duration;
-import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -26,25 +25,18 @@ import org.springframework.web.reactive.function.client.WebClient;
 import com.github.tomakehurst.wiremock.WireMockServer;
 import com.github.tomakehurst.wiremock.client.WireMock;
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration;
-import com.ligitabl.api.client.FootballDataClient;
-import com.ligitabl.api.client.footballdata.CompetitionResponse;
 import com.ligitabl.api.client.footballdata.MatchDto;
-import com.ligitabl.api.runners.importer.footballdata.FootballDataClientAdapter;
-import com.ligitabl.api.runners.importer.model.errors.ApiError;
-import com.ligitabl.api.runners.importer.model.errors.ImportError;
-import com.ligitabl.api.runners.importer.model.valueobjects.CompetitionCode;
-import com.ligitabl.api.shared.Either;
 
 import io.netty.handler.timeout.ReadTimeoutHandler;
 import io.netty.handler.timeout.WriteTimeoutHandler;
 import reactor.netty.http.client.HttpClient;
 
-@DisplayName("FootballDataClientAdapter Integration Tests")
-class FootballDataClientAdapterIntegrationTest {
+@DisplayName("FootballDataClient over HTTP")
+class FootballDataClientTest {
 
     private static WireMockServer wireMock;
 
-    private static FootballDataClientAdapter adapter;
+    private static FootballDataClient client;
 
     @BeforeAll
     static void setup() {
@@ -52,10 +44,10 @@ class FootballDataClientAdapterIntegrationTest {
         wireMock.start();
         WireMock.configureFor("localhost", wireMock.port());
 
-        adapter = createAdapter(wireMock.baseUrl(), Duration.ofSeconds(10));
+        client = createClient(wireMock.baseUrl(), Duration.ofSeconds(10));
     }
 
-    private static FootballDataClientAdapter createAdapter(String baseUrl, Duration timeout) {
+    private static FootballDataClient createClient(String baseUrl, Duration timeout) {
         String resolvedBaseUrl = Objects.requireNonNull(baseUrl, "baseUrl");
 
         HttpClient httpClient = HttpClient.create().responseTimeout(timeout).doOnConnected(conn -> conn.addHandlerLast(
@@ -69,7 +61,7 @@ class FootballDataClientAdapterIntegrationTest {
                 .defaultHeader("Accept", "application/json")
                 .build();
 
-        return new FootballDataClientAdapter(new FootballDataClient(webClient, Clock.systemUTC()));
+        return new FootballDataClient(webClient, Clock.systemUTC());
     }
 
     @AfterAll
@@ -113,12 +105,10 @@ class FootballDataClientAdapterIntegrationTest {
                                     }
                                     """)));
 
-            var code = CompetitionCode.of("PL").get();
-
-            Either<ImportError, ?> result = adapter.fetchCompetition(code);
+            var result = client.getCompetition("PL");
 
             assertThat(result.isRight()).isTrue();
-            var competition = (CompetitionResponse) result.get();
+            var competition = result.get();
             assertThat(competition.id()).isEqualTo(2021);
             assertThat(competition.name()).isEqualTo("Premier League");
             assertThat(competition.code()).isEqualTo("PL");
@@ -134,28 +124,20 @@ class FootballDataClientAdapterIntegrationTest {
             wireMock.stubFor(get(urlEqualTo("/competitions/XX"))
                     .willReturn(aResponse().withStatus(404).withBody("Not found")));
 
-            var code = CompetitionCode.of("XX").get();
+            var result = client.getCompetition("XX");
 
-            var result = adapter.fetchCompetition(code);
-
-            assertThat(result.isLeft()).isTrue();
-            assertThat(result.getLeft()).isInstanceOf(ApiError.class);
-            assertThat(((ApiError) result.getLeft()).getStatusCode()).isEqualTo(404);
+            assertThat(result.getLeft()).isInstanceOf(FootballDataApiError.NotFound.class);
         }
 
         @Test
-        @DisplayName("should map rate limit to API_RATE_LIMITED")
+        @DisplayName("should map 429 to RateLimitExceeded")
         void shouldHandleRateLimit() {
             wireMock.stubFor(get(urlEqualTo("/competitions/PL"))
                     .willReturn(aResponse().withStatus(429).withBody("Rate limit")));
 
-            var code = CompetitionCode.of("PL").get();
+            var result = client.getCompetition("PL");
 
-            var result = adapter.fetchCompetition(code);
-
-            assertThat(result.isLeft()).isTrue();
-            assertThat(result.getLeft()).isInstanceOf(ApiError.class);
-            assertThat(result.getLeft().code()).isEqualTo("API_RATE_LIMITED");
+            assertThat(result.getLeft()).isInstanceOf(FootballDataApiError.RateLimitExceeded.class);
         }
 
         @Test
@@ -164,13 +146,11 @@ class FootballDataClientAdapterIntegrationTest {
             wireMock.stubFor(get(urlEqualTo("/competitions/PL"))
                     .willReturn(aResponse().withStatus(500).withBody("Internal server error")));
 
-            var code = CompetitionCode.of("PL").get();
+            var result = client.getCompetition("PL");
 
-            var result = adapter.fetchCompetition(code);
-
-            assertThat(result.isLeft()).isTrue();
-            assertThat(result.getLeft()).isInstanceOf(ApiError.class);
-            assertThat(((ApiError) result.getLeft()).getStatusCode()).isEqualTo(500);
+            assertThat(result.getLeft())
+                    .isInstanceOfSatisfying(FootballDataApiError.ServerError.class, e -> assertThat(e.statusCode())
+                            .isEqualTo(500));
         }
 
         @Test
@@ -182,9 +162,7 @@ class FootballDataClientAdapterIntegrationTest {
                             .withHeader("Content-Type", "application/json")
                             .withBody("{ invalid json }")));
 
-            var code = CompetitionCode.of("PL").get();
-
-            var result = adapter.fetchCompetition(code);
+            var result = client.getCompetition("PL");
 
             assertThat(result.isLeft()).isTrue();
         }
@@ -220,12 +198,10 @@ class FootballDataClientAdapterIntegrationTest {
                                     }
                                     """)));
 
-            var code = CompetitionCode.of("PL").get();
-
-            var result = adapter.fetchMatchesForCompetition(code);
+            var result = client.getMatchesForCompetition("PL");
 
             assertThat(result.isRight()).isTrue();
-            var matches = result.get();
+            var matches = result.get().matches();
             assertThat(matches).hasSize(1);
             MatchDto match = matches.get(0);
             assertThat(match.id()).isEqualTo(12345);
@@ -253,12 +229,10 @@ class FootballDataClientAdapterIntegrationTest {
                                                                         { "matches": [] }
                                                                         """)));
 
-            var code = CompetitionCode.of("PL").get();
-
-            Either<ImportError, List<MatchDto>> result = adapter.fetchMatchesForCompetition(code);
+            var result = client.getMatchesForCompetition("PL");
 
             assertThat(result.isRight()).isTrue();
-            assertThat(result.get()).isEmpty();
+            assertThat(result.get().matches()).isEmpty();
         }
 
         @Test
@@ -294,12 +268,10 @@ class FootballDataClientAdapterIntegrationTest {
                                                                         }
                                                                         """)));
 
-            var code = CompetitionCode.of("PL").get();
-
-            Either<ImportError, List<MatchDto>> result = adapter.fetchMatchesForCompetition(code);
+            var result = client.getMatchesForCompetition("PL");
 
             assertThat(result.isRight()).isTrue();
-            assertThat(result.get()).hasSize(2);
+            assertThat(result.get().matches()).hasSize(2);
         }
     }
 
@@ -310,18 +282,14 @@ class FootballDataClientAdapterIntegrationTest {
         @Test
         @DisplayName("should handle connection timeout")
         void shouldHandleTimeout() {
-            // Re-create adapter with a short timeout
-            FootballDataClientAdapter timeoutAdapter = createAdapter(wireMock.baseUrl(), Duration.ofSeconds(1));
+            FootballDataClient timeoutClient = createClient(wireMock.baseUrl(), Duration.ofSeconds(1));
 
             wireMock.stubFor(
                     get(urlEqualTo("/competitions/PL")).willReturn(aResponse().withFixedDelay(31000)));
 
-            var code = CompetitionCode.of("PL").get();
+            var result = timeoutClient.getCompetition("PL");
 
-            var result = timeoutAdapter.fetchCompetition(code);
-
-            assertThat(result.isLeft()).isTrue();
-            assertThat(result.getLeft()).isInstanceOf(ApiError.class);
+            assertThat(result.getLeft()).isInstanceOf(FootballDataApiError.NetworkError.class);
         }
 
         @Test
@@ -334,16 +302,11 @@ class FootballDataClientAdapterIntegrationTest {
                 throw new RuntimeException("Failed to allocate an unused port", e);
             }
 
-            FootballDataClientAdapter refusedAdapter =
-                    createAdapter("http://localhost:" + unusedPort, Duration.ofSeconds(1));
+            FootballDataClient refusedClient = createClient("http://localhost:" + unusedPort, Duration.ofSeconds(1));
 
-            var code = CompetitionCode.of("PL").get();
+            var result = refusedClient.getCompetition("PL");
 
-            var result = refusedAdapter.fetchCompetition(code);
-
-            assertThat(result.isLeft()).isTrue();
-            assertThat(result.getLeft()).isInstanceOf(ApiError.class);
-            assertThat(result.getLeft().code()).isEqualTo("API_CONNECTION_FAILED");
+            assertThat(result.getLeft()).isInstanceOf(FootballDataApiError.NetworkError.class);
         }
     }
 }
