@@ -18,7 +18,7 @@ When changing behavior (endpoints, validation, persistence), update the relevant
 
 Adapters (`rest`, `web`, `scheduling`, `runners`) depend on `usecase`, never the reverse. `UseCaseDependencyRuleTest` enforces this. If a use case needs something from an adapter package, move that class into `usecase` instead.
 
-Outbound adapters (`client.*` and `notification.AdminNotificationService`) are reached through ports: an interface the use case depends on, with the adapter implementing it. `TokenGenerator`, `EmailProvider` and `EmailTemplateRenderer` already work this way. The files that still call an outbound adapter directly are listed in the test's `OUTBOUND_BASELINE`. New ones fail the build, and so does a baseline entry that no longer violates, so the list only shrinks.
+Outbound adapters (`client.*` and `notification.AdminNotificationService`) are reached through ports: an interface the use case depends on, with the adapter implementing it. `AdminAlerts`, `TokenGenerator`, `EmailProvider` and `EmailTemplateRenderer` already work this way. The files that still call an outbound adapter directly are listed in the test's `OUTBOUND_BASELINE`. New ones fail the build, and so does a baseline entry that no longer violates, so the list only shrinks.
 
 ### Use case input/output types
 

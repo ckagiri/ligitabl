@@ -26,7 +26,6 @@ class UseCaseDependencyRuleTest {
             Pattern.compile("\\bcom\\.ligitabl\\.api\\.(client\\.|notification\\.AdminNotificationService\\b)");
 
     private static final Set<String> OUTBOUND_BASELINE = Set.of(
-            "auth/register/RegisterUseCase.java",
             "match/MatchUpdateHelper.java",
             "match/syncfromapi/SyncMatchError.java",
             "match/syncfromapi/SyncMatchUseCase.java",
@@ -35,9 +34,7 @@ class UseCaseDependencyRuleTest {
             "match/syncmatches/SyncMatchesError.java",
             "match/syncmatches/SyncMatchesUseCase.java",
             "round/advancematchday/AdvanceMatchdayError.java",
-            "round/advancematchday/AdvanceMatchdayUseCase.java",
-            "round/advanceround/RoundAdvancementService.java",
-            "round/finalizeround/FinalizeRoundUseCase.java");
+            "round/advancematchday/AdvanceMatchdayUseCase.java");
 
     @Test
     void useCasesDoNotDependOnAdapters() throws IOException {
