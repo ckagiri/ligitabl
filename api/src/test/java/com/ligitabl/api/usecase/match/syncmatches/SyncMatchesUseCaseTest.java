@@ -23,17 +23,14 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.api.client.FootballDataApiError;
-import com.ligitabl.api.client.FootballDataClient;
-import com.ligitabl.api.client.footballdata.FullTime;
-import com.ligitabl.api.client.footballdata.MatchDto;
-import com.ligitabl.api.client.footballdata.MatchesResponse;
-import com.ligitabl.api.client.footballdata.Score;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.usecase.match.MatchUpdateHelper;
+import com.ligitabl.api.usecase.match.shared.FeedMatch;
+import com.ligitabl.api.usecase.match.shared.MatchFeed;
+import com.ligitabl.api.usecase.match.shared.MatchFeedError;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Match;
@@ -53,7 +50,7 @@ class SyncMatchesUseCaseTest {
     private static final String COMPETITION_SLUG = "premier-league";
 
     @Mock
-    private FootballDataClient footballDataClient;
+    private MatchFeed matchFeed;
 
     @Mock
     private HierarchyValidator hierarchyValidator;
@@ -80,7 +77,7 @@ class SyncMatchesUseCaseTest {
         competitionId = UUID.randomUUID();
 
         useCase = new SyncMatchesUseCase(
-                footballDataClient,
+                matchFeed,
                 hierarchyValidator,
                 matchRepo,
                 standingsService,
@@ -134,8 +131,8 @@ class SyncMatchesUseCaseTest {
                 .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches);
 
-        when(footballDataClient.getMatchesInDateRange(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(Either.left(new FootballDataApiError.NetworkError("Network error", null)));
+        when(matchFeed.matchesBetween(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Either.left(new MatchFeedError.Unavailable("Network error")));
 
         var result = useCase.execute(new SyncMatchesCommand());
 
@@ -159,11 +156,11 @@ class SyncMatchesUseCaseTest {
                 .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
 
         var apiMatches = List.of(
-                new MatchDto(1L, OffsetDateTime.now(), "FINISHED", 1, "REGULAR_SEASON", null, null, null, null, null),
-                new MatchDto(2L, OffsetDateTime.now(), "FINISHED", 1, "REGULAR_SEASON", null, null, null, null, null));
+                new FeedMatch(1L, MatchStatus.FINISHED, OffsetDateTime.now(), 1, null, null, null, null),
+                new FeedMatch(2L, MatchStatus.FINISHED, OffsetDateTime.now(), 1, null, null, null, null));
 
-        when(footballDataClient.getMatchesInDateRange(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(Either.right(new MatchesResponse(apiMatches, null)));
+        when(matchFeed.matchesBetween(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Either.right(apiMatches));
 
         // First call in getCurrentRound, second call after updateMatches reload.
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches).thenReturn(existingMatches);
@@ -193,11 +190,11 @@ class SyncMatchesUseCaseTest {
                 .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
 
         var apiMatches = List.of(
-                new MatchDto(1L, OffsetDateTime.now(), "FINISHED", 1, "REGULAR_SEASON", null, null, null, null, null),
-                new MatchDto(2L, OffsetDateTime.now(), "CANCELLED", 1, "REGULAR_SEASON", null, null, null, null, null));
+                new FeedMatch(1L, MatchStatus.FINISHED, OffsetDateTime.now(), 1, null, null, null, null),
+                new FeedMatch(2L, MatchStatus.CANCELLED, OffsetDateTime.now(), 1, null, null, null, null));
 
-        when(footballDataClient.getMatchesInDateRange(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(Either.right(new MatchesResponse(apiMatches, null)));
+        when(matchFeed.matchesBetween(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Either.right(apiMatches));
 
         // First call in resolveHierarchy, second call after updateMatches reload.
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches).thenReturn(existingMatches);
@@ -231,10 +228,8 @@ class SyncMatchesUseCaseTest {
                         Either.right(new HierarchyValidator.HierarchyContext(mock(Competition.class), season, round)));
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches).thenReturn(existingMatches);
 
-        var apiMatches = List.of(
-                new MatchDto(1L, OffsetDateTime.now(), "IN_PLAY", 1, "REGULAR_SEASON", null, null, null, null, null));
-        when(footballDataClient.getLiveMatches(COMPETITION_CODE))
-                .thenReturn(Either.right(new MatchesResponse(apiMatches, null)));
+        var apiMatches = List.of(new FeedMatch(1L, MatchStatus.LIVE, OffsetDateTime.now(), 1, null, null, null, null));
+        when(matchFeed.liveMatches(COMPETITION_CODE)).thenReturn(Either.right(apiMatches));
 
         var result = useCase.execute(new SyncMatchesCommand());
 
@@ -259,8 +254,8 @@ class SyncMatchesUseCaseTest {
                 .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
         when(matchRepo.findByRoundId(roundId)).thenReturn(existingMatches).thenReturn(existingMatches);
 
-        when(footballDataClient.getMatchesInDateRange(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(Either.right(new MatchesResponse(List.of(), null)));
+        when(matchFeed.matchesBetween(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Either.right(List.of()));
 
         var result = useCase.execute(new SyncMatchesCommand());
 
@@ -282,14 +277,13 @@ class SyncMatchesUseCaseTest {
         when(liveMatchTracker.updateTracking(any()))
                 .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
         when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(overdue));
-        when(footballDataClient.getMatchesInDateRange(
-                        COMPETITION_CODE, TestClock.TODAY.minusDays(1), TestClock.TODAY.plusDays(1)))
-                .thenReturn(Either.right(new MatchesResponse(List.of(), null)));
+        when(matchFeed.matchesBetween(COMPETITION_CODE, TestClock.TODAY.minusDays(1), TestClock.TODAY.plusDays(1)))
+                .thenReturn(Either.right(List.of()));
 
         var result = useCase.execute(new SyncMatchesCommand());
 
         assertThat(result.isRight()).isTrue();
-        verify(footballDataClient, never()).getMatchesForDate(any(), any());
+        verify(matchFeed, never()).matchesOn(any(), any());
     }
 
     @Test
@@ -308,11 +302,9 @@ class SyncMatchesUseCaseTest {
                 .thenReturn(new LiveMatchTracker.TrackingResult(false, Set.of(), Set.of()));
         when(matchRepo.findByRoundId(roundId)).thenReturn(List.of(finished, upcoming));
 
-        var corrected = new Score(null, "REGULAR", new FullTime(2, 2), null);
-        var apiMatches = List.of(new MatchDto(
-                1L, finished.getKickOff(), "FINISHED", 1, "REGULAR_SEASON", null, null, corrected, null, null));
-        when(footballDataClient.getMatchesInDateRange(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
-                .thenReturn(Either.right(new MatchesResponse(apiMatches, null)));
+        var apiMatches = List.of(new FeedMatch(1L, MatchStatus.FINISHED, finished.getKickOff(), 1, null, null, 2, 2));
+        when(matchFeed.matchesBetween(eq(COMPETITION_CODE), any(LocalDate.class), any(LocalDate.class)))
+                .thenReturn(Either.right(apiMatches));
 
         var result = useCase.execute(new SyncMatchesCommand());
 

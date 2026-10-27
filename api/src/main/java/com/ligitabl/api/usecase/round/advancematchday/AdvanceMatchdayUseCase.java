@@ -4,9 +4,9 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.match.shared.MatchFeed;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class AdvanceMatchdayUseCase {
 
-    private final FootballDataClient apiClient;
+    private final MatchFeed matchFeed;
     private final CompetitionRepo competitionRepo;
     private final SeasonRepo seasonRepo;
     private final CompetitionDefaults competitionDefaults;
@@ -37,14 +37,10 @@ public class AdvanceMatchdayUseCase {
     private Either<AdvanceMatchdayError, Integer> fetchCurrentMatchdayFromApi() {
         log.debug("Fetching current matchday from API");
 
-        return apiClient
-                .getCompetition(competitionCode)
+        return matchFeed
+                .currentMatchday(competitionCode)
                 .mapLeft(error -> (AdvanceMatchdayError) new AdvanceMatchdayError.ApiError(error))
-                .map(competition -> {
-                    var currentMatchday = competition.currentSeason().currentMatchday();
-                    log.debug("API reports current matchday: {}", currentMatchday);
-                    return currentMatchday;
-                });
+                .peek(currentMatchday -> log.debug("API reports current matchday: {}", currentMatchday));
     }
 
     private Either<AdvanceMatchdayError, SeasonContext> getActiveSeason(Integer apiMatchday) {

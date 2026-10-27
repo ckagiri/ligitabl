@@ -3,9 +3,9 @@ package com.ligitabl.api.usecase.match.syncfromapi;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.match.MatchUpdateHelper;
+import com.ligitabl.api.usecase.match.shared.MatchFeed;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.repo.MatchRepo;
 
@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SyncMatchUseCase {
 
-    private final FootballDataClient footballDataClient;
+    private final MatchFeed matchFeed;
     private final MatchRepo matchRepo;
     private final MatchUpdateHelper matchUpdateHelper;
 
@@ -36,7 +36,7 @@ public class SyncMatchUseCase {
             return Either.left(new SyncMatchError.AlreadyFinished(command.clientId()));
         }
 
-        var apiResult = footballDataClient.getMatchById(command.clientId());
+        var apiResult = matchFeed.match(command.clientId());
         if (apiResult.isLeft()) {
             return Either.left(new SyncMatchError.ApiError(apiResult.getLeft()));
         }

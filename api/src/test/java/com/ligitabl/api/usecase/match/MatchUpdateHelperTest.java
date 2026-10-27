@@ -8,9 +8,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import com.ligitabl.api.client.footballdata.FullTime;
-import com.ligitabl.api.client.footballdata.MatchDto;
-import com.ligitabl.api.client.footballdata.Score;
+import com.ligitabl.api.usecase.match.shared.FeedMatch;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 
@@ -25,7 +23,7 @@ class MatchUpdateHelperTest {
     void ignoresApiRegressionFromFinishedToTimed() {
         var match = finishedMatch(2, 1);
 
-        boolean changed = helper.applyUpdate(match, apiMatch("TIMED", null, null));
+        boolean changed = helper.applyUpdate(match, feedMatch(MatchStatus.SCHEDULED, null, null));
 
         assertThat(changed).isFalse();
         assertThat(match.getStatus()).isEqualTo(MatchStatus.FINISHED);
@@ -37,7 +35,7 @@ class MatchUpdateHelperTest {
     void ignoresApiRegressionFromFinishedToInPlay() {
         var match = finishedMatch(2, 1);
 
-        assertThat(helper.applyUpdate(match, apiMatch("IN_PLAY", 1, 1))).isFalse();
+        assertThat(helper.applyUpdate(match, feedMatch(MatchStatus.LIVE, 1, 1))).isFalse();
         assertThat(match.getStatus()).isEqualTo(MatchStatus.FINISHED);
         assertThat(match.getScore().getHomeGoals()).isEqualTo(2);
     }
@@ -46,7 +44,8 @@ class MatchUpdateHelperTest {
     void appliesScoreCorrectionWhileApiStillReportsFinished() {
         var match = finishedMatch(2, 1);
 
-        assertThat(helper.applyUpdate(match, apiMatch("FINISHED", 2, 2))).isTrue();
+        assertThat(helper.applyUpdate(match, feedMatch(MatchStatus.FINISHED, 2, 2)))
+                .isTrue();
         assertThat(match.getStatus()).isEqualTo(MatchStatus.FINISHED);
         assertThat(match.getScore().getAwayGoals()).isEqualTo(2);
     }
@@ -55,7 +54,8 @@ class MatchUpdateHelperTest {
     void stillAppliesPostponedMatchBeingRescheduled() {
         var match = baseMatch(MatchStatus.POSTPONED);
 
-        assertThat(helper.applyUpdate(match, apiMatch("TIMED", null, null))).isTrue();
+        assertThat(helper.applyUpdate(match, feedMatch(MatchStatus.SCHEDULED, null, null)))
+                .isTrue();
         assertThat(match.getStatus()).isEqualTo(MatchStatus.SCHEDULED);
     }
 
@@ -79,8 +79,7 @@ class MatchUpdateHelperTest {
                 .build();
     }
 
-    private MatchDto apiMatch(String status, Integer home, Integer away) {
-        var score = new Score(null, "REGULAR", new FullTime(home, away), null);
-        return new MatchDto(560616L, KICKOFF, status, 8, "REGULAR_SEASON", null, null, score, null, null);
+    private FeedMatch feedMatch(MatchStatus status, Integer home, Integer away) {
+        return new FeedMatch(560616L, status, KICKOFF, 8, null, null, home, away);
     }
 }
