@@ -11,9 +11,11 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.ligitabl.api.client.FootballDataApiError;
+import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.client.footballdata.MatchDto;
+import com.ligitabl.api.client.footballdata.MatchesResponse;
 import com.ligitabl.api.runners.importer.event.ImportEventPublisher;
-import com.ligitabl.api.runners.importer.footballdata.FootballDataGateway;
 import com.ligitabl.api.runners.importer.model.entities.ImportSummary;
 import com.ligitabl.api.runners.importer.model.entities.MatchImportResult;
 import com.ligitabl.api.runners.importer.model.errors.ApiError;
@@ -43,7 +45,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ImportMatchesUseCase {
 
-    private final FootballDataGateway footballDataGateway;
+    private final FootballDataClient footballDataClient;
     private final SeasonRepo seasonRepo;
     private final TeamRepo teamRepo;
     private final RoundRepo roundRepo;
@@ -69,30 +71,47 @@ public class ImportMatchesUseCase {
      * Fetch competition and resolve the season
      */
     private Either<ImportError, ImportContext> fetchAndResolveSeason(CompetitionCode code) {
-        return footballDataGateway.fetchCompetition(code).flatMap(competition -> {
-            if (competition.currentSeason() == null
-                    || competition.currentSeason().id() == null) {
-                return left(ApiError.of("Competition has no current season", 200));
-            }
-            Integer seasonClientId = competition.currentSeason().id().intValue();
-            Integer currentMatchday = competition.currentSeason().currentMatchday();
-            return Either.<ImportError, Season>ofOptional(
-                            seasonRepo.findByClientId(seasonClientId),
-                            () -> DatabaseError.notFound("Season", seasonClientId))
-                    .map(season -> new ImportContext(code, season, currentMatchday, List.of()));
-        });
+        return footballDataClient
+                .getCompetition(code.getValue())
+                .mapLeft(ImportMatchesUseCase::toImportError)
+                .flatMap(competition -> {
+                    if (competition.currentSeason() == null
+                            || competition.currentSeason().id() == null) {
+                        return left(ApiError.of("Competition has no current season", 200));
+                    }
+                    Integer seasonClientId = competition.currentSeason().id().intValue();
+                    Integer currentMatchday = competition.currentSeason().currentMatchday();
+                    return Either.<ImportError, Season>ofOptional(
+                                    seasonRepo.findByClientId(seasonClientId),
+                                    () -> DatabaseError.notFound("Season", seasonClientId))
+                            .map(season -> new ImportContext(code, season, currentMatchday, List.of()));
+                });
     }
 
     /**
      * Fetch external matches for the competition
      */
     private Either<ImportError, ImportContext> fetchMatches(ImportContext context) {
-        return footballDataGateway
-                .fetchMatchesForCompetition(context.competitionCode)
+        return footballDataClient
+                .getMatchesForCompetition(context.competitionCode.getValue())
+                .mapLeft(ImportMatchesUseCase::toImportError)
+                .map(MatchesResponse::matches)
                 .map(matches -> {
                     log.info("Fetched {} matches from external API", matches.size());
                     return context.withMatches(matches);
                 });
+    }
+
+    private static ImportError toImportError(FootballDataApiError error) {
+        return switch (error) {
+            case FootballDataApiError.NetworkError e -> ApiError.connectionFailed(e.message());
+            case FootballDataApiError.RateLimitExceeded e -> ApiError.rateLimited();
+            case FootballDataApiError.NotFound e -> ApiError.of(e.message(), 404);
+            case FootballDataApiError.Unauthorized e -> ApiError.of(e.message(), 401);
+            case FootballDataApiError.ServerError e -> ApiError.of(e.message(), e.statusCode());
+            case FootballDataApiError.UnknownError e -> ApiError.of(e.message(), 0);
+            case FootballDataApiError.UnexpectedError e -> ApiError.of(e.message(), 500);
+        };
     }
 
     /**
