@@ -17,10 +17,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.domain.StandingsCalculatorService;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
+import com.ligitabl.api.usecase.shared.standings.StandingsCalculatorService;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Match;
