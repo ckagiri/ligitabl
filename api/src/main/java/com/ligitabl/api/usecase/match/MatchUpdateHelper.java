@@ -7,8 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.api.client.footballdata.MatchDto;
-import com.ligitabl.api.client.footballdata.Score;
+import com.ligitabl.api.usecase.match.shared.FeedMatch;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 
@@ -23,10 +22,10 @@ public class MatchUpdateHelper {
     private final Set<Integer> regressionsReported = ConcurrentHashMap.newKeySet();
 
     /**
-     * Applies API data to an existing match. Returns true if any field changed.
+     * Applies feed data to an existing match. Returns true if any field changed.
      */
-    public boolean applyUpdate(Match existing, MatchDto apiMatch) {
-        var newStatus = mapToDomainStatus(apiMatch.status());
+    public boolean applyUpdate(Match existing, FeedMatch feedMatch) {
+        var newStatus = feedMatch.status();
 
         // football-data has reported results as FINISHED and then flipped them back to TIMED with null
         // scores (2026-10-24). A finished match never legitimately restarts, so treat it as stale data.
@@ -34,20 +33,20 @@ public class MatchUpdateHelper {
                 && (newStatus == MatchStatus.SCHEDULED || newStatus == MatchStatus.LIVE)) {
             if (existing.getClientId() != null && regressionsReported.add(existing.getClientId())) {
                 log.warn(
-                        "Ignoring API regression FINISHED -> {} for match clientId={}",
-                        apiMatch.status(),
+                        "Ignoring feed regression FINISHED -> {} for match clientId={}",
+                        newStatus,
                         existing.getClientId());
-                Sentry.captureMessage("football-data regressed FINISHED match " + existing.getClientId() + " to "
-                        + apiMatch.status());
+                Sentry.captureMessage(
+                        "Match feed regressed FINISHED match " + existing.getClientId() + " to " + newStatus);
             }
             return false;
         }
 
         boolean statusChanged = existing.getStatus() != newStatus;
-        boolean scoreChanged = hasScoreChanged(existing, apiMatch.score());
-        boolean kickoffChanged = hasKickoffChanged(existing, apiMatch.utcDate());
-        boolean minuteChanged = !Objects.equals(existing.getMinute(), apiMatch.minute());
-        boolean injuryTimeChanged = !Objects.equals(existing.getInjuryTime(), apiMatch.injuryTime());
+        boolean scoreChanged = hasScoreChanged(existing, feedMatch);
+        boolean kickoffChanged = hasKickoffChanged(existing, feedMatch.kickoff());
+        boolean minuteChanged = !Objects.equals(existing.getMinute(), feedMatch.minute());
+        boolean injuryTimeChanged = !Objects.equals(existing.getInjuryTime(), feedMatch.injuryTime());
 
         if (!statusChanged && !scoreChanged && !kickoffChanged && !minuteChanged && !injuryTimeChanged) {
             return false;
@@ -55,31 +54,16 @@ public class MatchUpdateHelper {
 
         existing.setStatus(newStatus);
         if (kickoffChanged) {
-            existing.setKickOff(apiMatch.utcDate());
+            existing.setKickOff(feedMatch.kickoff());
         }
-        if (apiMatch.matchday() != null) {
-            existing.setMatchday(apiMatch.matchday());
+        if (feedMatch.matchday() != null) {
+            existing.setMatchday(feedMatch.matchday());
         }
-        existing.setMinute(apiMatch.minute());
-        existing.setInjuryTime(apiMatch.injuryTime());
-        applyScore(existing, apiMatch.score());
+        existing.setMinute(feedMatch.minute());
+        existing.setInjuryTime(feedMatch.injuryTime());
+        applyScore(existing, feedMatch);
 
         return true;
-    }
-
-    public MatchStatus mapToDomainStatus(String status) {
-        return switch (status) {
-            case "SCHEDULED", "TIMED" -> MatchStatus.SCHEDULED;
-            case "IN_PLAY", "PAUSED" -> MatchStatus.LIVE;
-            case "FINISHED", "AWARDED" -> MatchStatus.FINISHED;
-            case "SUSPENDED" -> MatchStatus.SUSPENDED;
-            case "POSTPONED" -> MatchStatus.POSTPONED;
-            case "CANCELLED" -> MatchStatus.CANCELLED;
-            default -> {
-                log.warn("Unknown match status from API: {}", status);
-                yield MatchStatus.SCHEDULED;
-            }
-        };
     }
 
     private boolean hasKickoffChanged(Match existing, OffsetDateTime apiKickoff) {
@@ -92,26 +76,21 @@ public class MatchUpdateHelper {
         return dateChanged || timeChanged;
     }
 
-    private boolean hasScoreChanged(Match existing, Score apiScore) {
-        var apiGoals = extractGoals(apiScore);
-        if (apiGoals == null) return false;
+    private boolean hasScoreChanged(Match existing, FeedMatch feedMatch) {
+        if (!hasScore(feedMatch)) return false;
         var existingScore = existing.getScore();
         if (existingScore == null) return true;
-        return existingScore.getHomeGoals() != apiGoals[0] || existingScore.getAwayGoals() != apiGoals[1];
+        return existingScore.getHomeGoals() != feedMatch.homeGoals()
+                || existingScore.getAwayGoals() != feedMatch.awayGoals();
     }
 
-    private void applyScore(Match existing, Score apiScore) {
-        var apiGoals = extractGoals(apiScore);
-        if (apiGoals != null) {
-            existing.setScore(apiGoals[0], apiGoals[1]);
+    private void applyScore(Match existing, FeedMatch feedMatch) {
+        if (hasScore(feedMatch)) {
+            existing.setScore(feedMatch.homeGoals(), feedMatch.awayGoals());
         }
     }
 
-    private Integer[] extractGoals(Score apiScore) {
-        if (apiScore == null || apiScore.fullTime() == null) return null;
-        Integer home = apiScore.fullTime().home();
-        Integer away = apiScore.fullTime().away();
-        if (home == null || away == null) return null;
-        return new Integer[] {home, away};
+    private static boolean hasScore(FeedMatch feedMatch) {
+        return feedMatch.homeGoals() != null && feedMatch.awayGoals() != null;
     }
 }

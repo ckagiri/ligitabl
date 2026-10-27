@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -14,8 +13,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Adapters (rest, web, scheduling, runners) depend on use cases, never the reverse. Use cases reach
- * outbound adapters (the football-data client, Slack alerts) through ports; the files that still
- * call them directly are listed in {@link #OUTBOUND_BASELINE}, which may only shrink.
+ * outbound adapters (the football-data client, Slack alerts) through ports.
  */
 class UseCaseDependencyRuleTest {
 
@@ -25,40 +23,16 @@ class UseCaseDependencyRuleTest {
     private static final Pattern OUTBOUND_ADAPTER_REF =
             Pattern.compile("\\bcom\\.ligitabl\\.api\\.(client\\.|notification\\.AdminNotificationService\\b)");
 
-    private static final Set<String> OUTBOUND_BASELINE = Set.of(
-            "match/MatchUpdateHelper.java",
-            "match/syncfromapi/SyncMatchError.java",
-            "match/syncfromapi/SyncMatchUseCase.java",
-            "match/syncfromapi/SyncRoundError.java",
-            "match/syncfromapi/SyncRoundUseCase.java",
-            "match/syncmatches/SyncMatchesError.java",
-            "match/syncmatches/SyncMatchesUseCase.java",
-            "round/advancematchday/AdvanceMatchdayError.java",
-            "round/advancematchday/AdvanceMatchdayUseCase.java");
-
     @Test
     void useCasesDoNotDependOnAdapters() throws IOException {
         assertThat(refs(ADAPTER_REF)).isEmpty();
     }
 
     @Test
-    void noNewUseCaseDependsOnOutboundAdapters() throws IOException {
-        List<String> violations = refs(OUTBOUND_ADAPTER_REF).stream()
-                .filter(ref -> !OUTBOUND_BASELINE.contains(fileOf(ref)))
-                .toList();
-        assertThat(violations)
+    void useCasesDoNotDependOnOutboundAdapters() throws IOException {
+        assertThat(refs(OUTBOUND_ADAPTER_REF))
                 .as("depend on a port instead; see docs/backend-dev.md")
                 .isEmpty();
-    }
-
-    @Test
-    void outboundBaselineHasNoStaleEntries() throws IOException {
-        Set<String> stillViolating = refs(OUTBOUND_ADAPTER_REF).stream()
-                .map(UseCaseDependencyRuleTest::fileOf)
-                .collect(java.util.stream.Collectors.toSet());
-        assertThat(OUTBOUND_BASELINE)
-                .as("these files no longer reach an outbound adapter; remove them from the baseline")
-                .allMatch(stillViolating::contains);
     }
 
     private static List<String> refs(Pattern pattern) throws IOException {
@@ -78,9 +52,5 @@ class UseCaseDependencyRuleTest {
         } catch (IOException e) {
             throw new java.io.UncheckedIOException(e);
         }
-    }
-
-    private static String fileOf(String ref) {
-        return ref.substring(0, ref.indexOf(": "));
     }
 }

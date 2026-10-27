@@ -16,11 +16,11 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
-import com.ligitabl.api.client.FootballDataClient;
-import com.ligitabl.api.client.footballdata.MatchDto;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.match.MatchUpdateHelper;
+import com.ligitabl.api.usecase.match.shared.FeedMatch;
+import com.ligitabl.api.usecase.match.shared.MatchFeed;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class SyncMatchesUseCase {
 
-    private final FootballDataClient footballDataClient; // Port interface (not implementation!)
+    private final MatchFeed matchFeed;
     private final HierarchyValidator hierarchyValidator;
     private final MatchRepo matchRepo;
     private final AsyncStandingsService standingsService;
@@ -125,7 +125,7 @@ public class SyncMatchesUseCase {
 
             return fetchLiveMatches(context).flatMap(fetchedData -> {
                 var apiLiveMatchIds = fetchedData.matches().stream()
-                        .map(m -> m.id().toString())
+                        .map(m -> String.valueOf(m.id()))
                         .collect(Collectors.toSet());
 
                 var missingMatches = dbLiveMatchIds.stream()
@@ -184,10 +184,10 @@ public class SyncMatchesUseCase {
      * Fetch via GET /matches?status=LIVE
      */
     private Either<SyncMatchesError, FetchedMatchData> fetchLiveMatches(RoundContext context) {
-        return footballDataClient
-                .getLiveMatches(competitionCode)
+        return matchFeed
+                .liveMatches(competitionCode)
                 .mapLeft(error -> (SyncMatchesError) new SyncMatchesError.DataAccessError(error))
-                .map(response -> new FetchedMatchData(context, response.matches()));
+                .map(matches -> new FetchedMatchData(context, matches));
     }
 
     /**
@@ -196,10 +196,10 @@ public class SyncMatchesUseCase {
     private Either<SyncMatchesError, FetchedMatchData> fetchTodayMatches(RoundContext context) {
         var today = LocalDate.now(clock);
 
-        return footballDataClient
-                .getMatchesForDate(competitionCode, today)
+        return matchFeed
+                .matchesOn(competitionCode, today)
                 .mapLeft(error -> (SyncMatchesError) new SyncMatchesError.DataAccessError(error))
-                .map(response -> new FetchedMatchData(context, response.matches()));
+                .map(matches -> new FetchedMatchData(context, matches));
     }
 
     /**
@@ -212,10 +212,10 @@ public class SyncMatchesUseCase {
         var yesterday = LocalDate.now(clock).minusDays(2);
         var today = LocalDate.now(clock).plusDays(1);
 
-        return footballDataClient
-                .getMatchesInDateRange(competitionCode, yesterday, today)
+        return matchFeed
+                .matchesBetween(competitionCode, yesterday, today)
                 .mapLeft(error -> (SyncMatchesError) new SyncMatchesError.DataAccessError(error))
-                .map(response -> new FetchedMatchData(context, response.matches()));
+                .map(matches -> new FetchedMatchData(context, matches));
     }
 
     /**
@@ -227,10 +227,10 @@ public class SyncMatchesUseCase {
         var earliest = today.minusDays(MAX_OVERDUE_LOOKBACK_DAYS);
         var dateFrom = from.isBefore(earliest) ? earliest : from;
 
-        return footballDataClient
-                .getMatchesInDateRange(competitionCode, dateFrom, today.plusDays(1))
+        return matchFeed
+                .matchesBetween(competitionCode, dateFrom, today.plusDays(1))
                 .mapLeft(error -> (SyncMatchesError) new SyncMatchesError.DataAccessError(error))
-                .map(response -> new FetchedMatchData(context, response.matches()));
+                .map(matches -> new FetchedMatchData(context, matches));
     }
 
     /**
@@ -240,10 +240,10 @@ public class SyncMatchesUseCase {
         var today = LocalDate.now(clock);
         var dayAfterTomorrow = today.plusDays(2);
 
-        return footballDataClient
-                .getMatchesInDateRange(competitionCode, today, dayAfterTomorrow)
+        return matchFeed
+                .matchesBetween(competitionCode, today, dayAfterTomorrow)
                 .mapLeft(error -> (SyncMatchesError) new SyncMatchesError.DataAccessError(error))
-                .map(response -> new FetchedMatchData(context, response.matches()));
+                .map(matches -> new FetchedMatchData(context, matches));
     }
 
     private Either<SyncMatchesError, SyncContext> updateMatches(FetchedMatchData fetchedData) {
@@ -263,7 +263,7 @@ public class SyncMatchesUseCase {
         boolean standingsAffected = false;
 
         for (var apiMatch : apiMatches) {
-            var existing = findMatchByExternalId(existingMatches, apiMatch.id().toString());
+            var existing = findMatchByExternalId(existingMatches, String.valueOf(apiMatch.id()));
 
             if (existing != null) {
                 var updated = updateMatch(existing, apiMatch);
@@ -420,7 +420,7 @@ public class SyncMatchesUseCase {
                 .orElse(null);
     }
 
-    private UpdateResult updateMatch(Match existing, MatchDto apiMatch) {
+    private UpdateResult updateMatch(Match existing, FeedMatch apiMatch) {
         var previousStatus = existing.getStatus();
         boolean changed = matchUpdateHelper.applyUpdate(existing, apiMatch);
         if (!changed) {
@@ -435,7 +435,7 @@ public class SyncMatchesUseCase {
     private record RoundContext(
             Season season, Round round, List<Match> existingMatches, LiveMatchTracker.TrackingResult trackingResult) {}
 
-    private record FetchedMatchData(RoundContext roundContext, List<MatchDto> matches) {}
+    private record FetchedMatchData(RoundContext roundContext, List<FeedMatch> matches) {}
 
     private record SyncContext(
             Season season,

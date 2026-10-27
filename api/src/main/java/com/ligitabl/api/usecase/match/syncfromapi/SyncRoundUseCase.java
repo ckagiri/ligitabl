@@ -4,10 +4,10 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.api.client.FootballDataClient;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.match.MatchUpdateHelper;
+import com.ligitabl.api.usecase.match.shared.MatchFeed;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.repo.MatchRepo;
@@ -22,7 +22,7 @@ public class SyncRoundUseCase {
 
     private final HierarchyValidator hierarchyValidator;
     private final MatchRepo matchRepo;
-    private final FootballDataClient footballDataClient;
+    private final MatchFeed matchFeed;
     private final MatchUpdateHelper matchUpdateHelper;
     private final CompetitionDefaults competitionDefaults;
 
@@ -65,12 +65,12 @@ public class SyncRoundUseCase {
 
                     log.info("Fetching {} syncable matches by IDs from API", clientIds.size());
 
-                    var apiResult = footballDataClient.getMatchesByIds(competitionCode, clientIds);
+                    var apiResult = matchFeed.matchesByIds(competitionCode, clientIds);
                     if (apiResult.isLeft()) {
                         return Either.left(new SyncRoundError.ApiError(apiResult.getLeft()));
                     }
 
-                    var apiMatches = apiResult.get().matches();
+                    var apiMatches = apiResult.get();
                     int updated = 0;
                     for (var apiMatch : apiMatches) {
                         var dbMatch = syncable.stream()
