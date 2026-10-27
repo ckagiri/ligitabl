@@ -14,7 +14,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.ConflictError;
 import com.ligitabl.api.shared.errors.UnexpectedError;
@@ -24,6 +23,7 @@ import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationError;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationResult;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationUseCase;
+import com.ligitabl.api.usecase.shared.AdminAlerts;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.Password;
 import com.ligitabl.model.auth.PublicId;
@@ -52,7 +52,7 @@ class RegisterUseCaseTest {
     RequestEmailVerificationUseCase requestEmailVerificationUseCase;
 
     @Mock
-    AdminNotificationService adminNotificationService;
+    AdminAlerts adminAlerts;
 
     RequestValidator requestValidator;
 
@@ -73,7 +73,7 @@ class RegisterUseCaseTest {
                 publicIdGenerator,
                 requestValidator,
                 requestEmailVerificationUseCase,
-                adminNotificationService);
+                adminAlerts);
 
         email = Email.create("newuser@example.com");
         password = Password.Plaintext.create("password123");

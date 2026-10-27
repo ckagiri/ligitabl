@@ -29,8 +29,8 @@ import org.mockito.quality.Strictness;
 import org.springframework.scheduling.TaskScheduler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.api.notification.outbox.OutboxEventTypes;
+import com.ligitabl.api.usecase.shared.AdminAlerts;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
@@ -52,7 +52,7 @@ class RoundAdvancementServiceTest {
     private SeasonRepo seasonRepo;
 
     @Mock
-    private AdminNotificationService adminNotificationService;
+    private AdminAlerts adminAlerts;
 
     @Mock
     private OutboxRepo outboxRepo;
@@ -71,7 +71,7 @@ class RoundAdvancementServiceTest {
         seasonId = UUID.randomUUID();
 
         service = new RoundAdvancementService(
-                taskScheduler, roundRepo, seasonRepo, clock, adminNotificationService, outboxRepo, objectMapper);
+                taskScheduler, roundRepo, seasonRepo, clock, adminAlerts, outboxRepo, objectMapper);
         setField(service, "delayMinutes", 3);
     }
 
@@ -101,8 +101,7 @@ class RoundAdvancementServiceTest {
 
         service.scheduleAdvancement(roundId, seasonId);
 
-        verify(adminNotificationService)
-                .notifyAdvancementScheduled(eq(roundId), eq(5), any(OffsetDateTime.class), eq(3));
+        verify(adminAlerts).notifyAdvancementScheduled(eq(roundId), eq(5), any(OffsetDateTime.class), eq(3));
     }
 
     @Test
@@ -120,8 +119,8 @@ class RoundAdvancementServiceTest {
 
         service.attemptAutoAdvancement(roundId, seasonId);
 
-        verify(adminNotificationService).notifyRoundAdvanced(5, seasonId, false);
-        verify(adminNotificationService, never()).notifyAdvancementFailed(any(), anyString());
+        verify(adminAlerts).notifyRoundAdvanced(5, seasonId, false);
+        verify(adminAlerts, never()).notifyAdvancementFailed(any(), anyString());
         // Enqueued at advance time (not finalize time) — currentRoundPosition is the newly
         // opened next round, since only advanced rounds count toward leaderboard placements.
         assertRoundFinalizedOutboxEvent().hasPayload(5, 6);
@@ -136,7 +135,7 @@ class RoundAdvancementServiceTest {
 
         service.attemptAutoAdvancement(roundId, seasonId);
 
-        verify(adminNotificationService).notifyRoundAdvanced(38, seasonId, true);
+        verify(adminAlerts).notifyRoundAdvanced(38, seasonId, true);
         // No next round to open — currentRoundPosition stays pinned at the final round itself.
         assertRoundFinalizedOutboxEvent().hasPayload(38, 38);
     }
@@ -148,8 +147,8 @@ class RoundAdvancementServiceTest {
 
         service.attemptAutoAdvancement(roundId, seasonId);
 
-        verify(adminNotificationService, never()).notifyRoundAdvanced(anyInt(), any(), anyBoolean());
-        verify(adminNotificationService, never()).notifyAdvancementFailed(any(), anyString());
+        verify(adminAlerts, never()).notifyRoundAdvanced(anyInt(), any(), anyBoolean());
+        verify(adminAlerts, never()).notifyAdvancementFailed(any(), anyString());
     }
 
     @Test
@@ -160,7 +159,7 @@ class RoundAdvancementServiceTest {
 
         service.attemptAutoAdvancement(roundId, seasonId);
 
-        verify(adminNotificationService).notifyAdvancementFailed(eq(roundId), anyString());
+        verify(adminAlerts).notifyAdvancementFailed(eq(roundId), anyString());
     }
 
     @Test
@@ -178,7 +177,7 @@ class RoundAdvancementServiceTest {
 
         service.advanceManually(roundId);
 
-        verify(adminNotificationService).notifyRoundAdvanced(5, seasonId, false);
+        verify(adminAlerts).notifyRoundAdvanced(5, seasonId, false);
         assertRoundFinalizedOutboxEvent().hasPayload(5, 6);
     }
 
@@ -200,7 +199,7 @@ class RoundAdvancementServiceTest {
 
         assertThat(advanced).isTrue();
         verify(seasonRepo).save(season);
-        verify(adminNotificationService).notifyRoundAdvanced(5, seasonId, false);
+        verify(adminAlerts).notifyRoundAdvanced(5, seasonId, false);
     }
 
     private Season season(int maxRounds) {

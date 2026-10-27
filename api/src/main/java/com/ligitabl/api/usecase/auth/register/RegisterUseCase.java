@@ -7,13 +7,13 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.api.notification.AdminNotificationService;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationUseCase;
+import com.ligitabl.api.usecase.shared.AdminAlerts;
 import com.ligitabl.model.auth.Password;
 import com.ligitabl.model.auth.Role;
 import com.ligitabl.model.domain.User;
@@ -35,7 +35,7 @@ public class RegisterUseCase implements UseCase<RegisterCommand, Either<UseCaseE
     private final PublicIdGenerator publicIdGenerator;
     private final RequestValidator requestValidator;
     private final RequestEmailVerificationUseCase requestEmailVerificationUseCase;
-    private final AdminNotificationService adminNotificationService;
+    private final AdminAlerts adminAlerts;
 
     @Override
     public Either<UseCaseError, RegisterResult> execute(RegisterCommand command) {
@@ -66,7 +66,7 @@ public class RegisterUseCase implements UseCase<RegisterCommand, Either<UseCaseE
                         userRepo.updateLastLoginAt(saved.getId(), OffsetDateTime.now());
                         sendVerificationEmail(saved.getId());
                         log.info("User registered successfully: {}", saved.getPublicId());
-                        adminNotificationService.notifyNewUserSignup(
+                        adminAlerts.notifyNewUserSignup(
                                 saved.getPublicId().value(),
                                 saved.getDisplayName(),
                                 saved.getEmail().value(),

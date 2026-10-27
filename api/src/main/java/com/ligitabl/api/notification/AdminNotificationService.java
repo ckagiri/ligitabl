@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.notification.email.EmailService;
+import com.ligitabl.api.usecase.shared.AdminAlerts;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class AdminNotificationService {
+public class AdminNotificationService implements AdminAlerts {
     private final EmailService emailService;
     private final SlackNotificationService slackNotificationService;
 
@@ -93,6 +94,7 @@ public class AdminNotificationService {
 
     // --- Round finalization / advancement ---
 
+    @Override
     public void notifyRoundFinalized(UUID roundId, int roundPosition, int submissions, int results, boolean lastRound) {
         info(
                 "Round finalized",
@@ -101,6 +103,7 @@ public class AdminNotificationService {
                         + results + "\n" + "Round ID: " + roundId);
     }
 
+    @Override
     public void notifyAdvancementScheduled(
             UUID roundId, int roundPosition, OffsetDateTime advanceAt, int delayMinutes) {
         info(
@@ -109,6 +112,7 @@ public class AdminNotificationService {
                         + " minute(s)).\n" + "Round ID: " + roundId);
     }
 
+    @Override
     public void notifyRoundAdvanced(int fromPosition, UUID seasonId, boolean lastRound) {
         info(
                 "Round advanced",
@@ -119,6 +123,7 @@ public class AdminNotificationService {
                                 + seasonId);
     }
 
+    @Override
     public void notifyAdvancementFailed(UUID roundId, String error) {
         alert(
                 "Round advancement FAILED",
@@ -142,6 +147,7 @@ public class AdminNotificationService {
 
     // --- User lifecycle ---
 
+    @Override
     public void notifyNewUserSignup(String publicId, String displayName, String email, String signupMethod) {
         String title = "New user signup";
         String body = displayName + " (" + email + ") signed up via " + signupMethod + ".\n" + "User: " + publicId;
