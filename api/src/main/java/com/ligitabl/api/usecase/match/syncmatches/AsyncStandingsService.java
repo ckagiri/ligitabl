@@ -6,7 +6,7 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.api.usecase.shared.standings.StandingsCalculatorService;
+import com.ligitabl.api.usecase.shared.standings.RoundStandingsCalculator;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class AsyncStandingsService {
 
-    private final StandingsCalculatorService standingsCalculator;
+    private final RoundStandingsCalculator standingsCalculator;
 
     /**
      * Recalculate standings asynchronously

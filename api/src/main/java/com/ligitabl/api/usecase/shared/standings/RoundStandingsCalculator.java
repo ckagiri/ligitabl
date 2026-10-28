@@ -18,24 +18,19 @@ import com.ligitabl.model.repo.*;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * A round's standings from the season's stored teams and finished matches, optionally persisted.
+ * For standings from an in-memory match list, call the domain {@link StandingsCalculator} directly.
+ */
 @Service
 @RequiredArgsConstructor
 @Slf4j
-public class StandingsCalculatorService {
+public class RoundStandingsCalculator {
 
     private final TeamRepo teamRepo;
     private final MatchRepo matchRepo;
     private final SeasonRepo seasonRepo;
     private final StandingsRepo standingsRepo;
-
-    @Transactional(readOnly = true)
-    public Either<StandingsError, List<Standing>> calculateStandings(UUID seasonId, int roundPosition) {
-
-        log.debug("Calculating standings: season={}, round={}", seasonId, roundPosition);
-
-        return fetchTeamsAndMatches(seasonId, roundPosition)
-                .flatMap(data -> calculateStandings(data.matches(), data.teams()));
-    }
 
     @Transactional(readOnly = true)
     public Either<StandingsError, List<StandingsTeamRank>> calculateRankings(UUID seasonId, int roundPosition) {
@@ -101,7 +96,7 @@ public class StandingsCalculatorService {
         return Either.right(new StandingsData(teams, finishedMatches));
     }
 
-    public Either<StandingsError, List<Standing>> calculateStandings(List<Match> finishedMatches, List<Team> teams) {
+    private Either<StandingsError, List<Standing>> calculateStandings(List<Match> finishedMatches, List<Team> teams) {
         try {
             var calculatedStandings = StandingsCalculator.calculate(teams, finishedMatches);
             log.debug("Calculated standings: {} teams", calculatedStandings.size());

@@ -13,7 +13,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.shared.AdminAlerts;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
-import com.ligitabl.api.usecase.shared.standings.StandingsCalculatorService;
+import com.ligitabl.api.usecase.shared.standings.RoundStandingsCalculator;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.domain.service.ScoringEngine;
 import com.ligitabl.model.repo.*;
@@ -36,7 +36,7 @@ public class FinalizeRoundUseCase {
     private final SeasonPredictionRepo predictionRepo;
     private final RoundSubmissionRepo submissionRepo;
     private final RoundResultRepo resultRepo;
-    private final StandingsCalculatorService standingsCalculator;
+    private final RoundStandingsCalculator standingsCalculator;
     private final ScoringEngine scoringEngine;
     private final Clock clock;
     private final AdminAlerts adminAlerts;

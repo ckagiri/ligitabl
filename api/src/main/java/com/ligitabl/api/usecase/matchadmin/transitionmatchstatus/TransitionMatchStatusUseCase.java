@@ -16,7 +16,7 @@ import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.api.usecase.shared.HierarchyValidator.HierarchyContext;
-import com.ligitabl.api.usecase.shared.standings.StandingsCalculatorService;
+import com.ligitabl.api.usecase.shared.standings.RoundStandingsCalculator;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -38,7 +38,7 @@ public class TransitionMatchStatusUseCase
     private final StandingsRepo standingsRepo;
     private final HierarchyValidator hierarchyValidator;
     private final CompetitionDefaults competitionDefaults;
-    private final StandingsCalculatorService standingsCalculator;
+    private final RoundStandingsCalculator standingsCalculator;
     private final Clock clock;
 
     @Override

@@ -15,24 +15,27 @@ import org.springframework.stereotype.Component;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
-import com.ligitabl.api.usecase.shared.standings.StandingsCalculatorService;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.domain.standings.StandingsConverter;
+import com.ligitabl.model.domain.standings.stats.Standing;
+import com.ligitabl.model.domain.standings.table.StandingsCalculator;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.TeamRepo;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Simulates the round's standings table (and, by extension, a user's score against it) from
- * hypothetical match scores, without persisting anything. Reuses {@link StandingsCalculatorService}
- * unmodified by feeding it a synthetic match list (real finished matches from earlier rounds, plus
- * the current round's matches carrying the submitted hypothetical scores) instead of a DB-fetched one.
+ * hypothetical match scores, without persisting anything. Feeds the domain {@link StandingsCalculator}
+ * a synthetic match list (real finished matches from earlier rounds, plus the current round's
+ * matches carrying the submitted hypothetical scores) instead of a DB-fetched one.
  */
 @Component
 @RequiredArgsConstructor
+@Slf4j
 public class ComputeWhatIfUseCase {
 
     private final CompetitionDefaults competitionDefaults;
@@ -41,7 +44,6 @@ public class ComputeWhatIfUseCase {
     private final MatchRepo matchRepo;
     private final TeamRepo teamRepo;
     private final RoundSupport roundSupport;
-    private final StandingsCalculatorService standingsCalculatorService;
     private final Clock clock;
 
     private record Ctx(Season season, Round round, boolean roundOpen, List<Match> roundMatches) {}
@@ -163,9 +165,11 @@ public class ComputeWhatIfUseCase {
                 .collect(Collectors.toSet());
         List<Team> teams = teamRepo.findAllByCodes(teamCodes);
 
-        return standingsCalculatorService
-                .calculateStandings(synthetic, teams)
-                .mapLeft(this::mapStandingsError)
+        return Either.<WhatIfError, List<Standing>>catching(
+                        () -> StandingsCalculator.calculate(teams, synthetic), e -> {
+                            log.error("What-if standings calculation failed", e);
+                            return new WhatIfError.CalculationFailed(e.getMessage());
+                        })
                 .map(standings -> new WhatIfResult(
                         StandingsConverter.convert(standings, teams),
                         ctx.round().getId(),
@@ -183,13 +187,5 @@ public class ComputeWhatIfUseCase {
                         .awayGoals(score.awayGoals())
                         .build())
                 .build();
-    }
-
-    private WhatIfError mapStandingsError(StandingsCalculatorService.StandingsError error) {
-        return switch (error) {
-            case StandingsCalculatorService.StandingsError.CalculationFailed e -> new WhatIfError.CalculationFailed(
-                    e.message());
-            default -> new WhatIfError.CalculationFailed("Standings calculation failed");
-        };
     }
 }
