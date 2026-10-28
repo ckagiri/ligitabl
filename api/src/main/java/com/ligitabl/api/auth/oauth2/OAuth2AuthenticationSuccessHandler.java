@@ -1,7 +1,6 @@
 package com.ligitabl.api.auth.oauth2;
 
 import java.io.IOException;
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
@@ -17,6 +16,7 @@ import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
+import com.ligitabl.api.usecase.auth.recordlogin.RecordLoginUseCase;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.UserRepo;
 
@@ -39,6 +39,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     public static final String LINKING_FEEDBACK_TYPE_SESSION_KEY = "OAUTH2_LINKING_FEEDBACK_TYPE";
 
     private final UserRepo userRepo;
+    private final RecordLoginUseCase recordLoginUseCase;
     private final CustomOAuth2UserService customOAuth2UserService;
     // Always-remember variant (no checkbox exists in the redirect flow); resolved by bean name.
     private final RememberMeServices oauth2RememberMeServices;
@@ -119,7 +120,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
                 ? oauth2User.getUser()
                 : customOAuth2UserService.findOrCreateUser(oauth2Attributes(authentication));
 
-        userRepo.updateLastLoginAt(user.getId(), OffsetDateTime.now());
+        recordLoginUseCase.execute(user.getId());
 
         Authentication webAuthentication = establishSessionAuthentication(user, request.getSession(true));
         oauth2RememberMeServices.loginSuccess(request, response, webAuthentication);

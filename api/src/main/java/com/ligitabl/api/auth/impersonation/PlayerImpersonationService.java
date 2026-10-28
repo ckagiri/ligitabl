@@ -1,11 +1,11 @@
 package com.ligitabl.api.auth.impersonation;
 
 import java.time.Instant;
-import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
 
+import com.ligitabl.api.usecase.auth.recordlogin.RecordLoginUseCase;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.UserRepo;
 
@@ -19,6 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 public class PlayerImpersonationService {
 
     private final UserRepo userRepo;
+    private final RecordLoginUseCase recordLoginUseCase;
     private final ImpersonationAuthorizationService authorizationService;
 
     /**
@@ -34,7 +35,7 @@ public class PlayerImpersonationService {
             session.setAttribute(
                     ImpersonationSession.SESSION_ATTRIBUTE,
                     new ImpersonationSession(target.getId(), target.getEmail().value(), Instant.now(), originalUserId));
-            userRepo.updateLastLoginAt(target.getId(), OffsetDateTime.now());
+            recordLoginUseCase.execute(target.getId());
             log.warn(
                     "[IMPERSONATION_START] admin={} target={} targetEmail={}",
                     originalUserId,

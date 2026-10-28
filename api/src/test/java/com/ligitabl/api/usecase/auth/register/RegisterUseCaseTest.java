@@ -23,6 +23,7 @@ import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationError;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationResult;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationUseCase;
+import com.ligitabl.api.usecase.auth.recordlogin.RecordLoginUseCase;
 import com.ligitabl.api.usecase.shared.AdminAlerts;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.Password;
@@ -54,6 +55,9 @@ class RegisterUseCaseTest {
     @Mock
     AdminAlerts adminAlerts;
 
+    @Mock
+    RecordLoginUseCase recordLoginUseCase;
+
     RequestValidator requestValidator;
 
     RegisterUseCase useCase;
@@ -69,6 +73,7 @@ class RegisterUseCaseTest {
                 new RequestValidator(Validation.buildDefaultValidatorFactory().getValidator());
         useCase = new RegisterUseCase(
                 userRepo,
+                recordLoginUseCase,
                 passwordHasher,
                 publicIdGenerator,
                 requestValidator,
