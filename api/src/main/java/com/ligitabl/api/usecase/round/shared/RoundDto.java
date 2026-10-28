@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.round;
+package com.ligitabl.api.usecase.round.shared;
 
 import java.util.List;
 import java.util.UUID;

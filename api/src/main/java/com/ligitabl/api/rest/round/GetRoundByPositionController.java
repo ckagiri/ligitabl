@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ligitabl.api.shared.exceptions.UseCaseException;
-import com.ligitabl.api.usecase.round.RoundDto;
 import com.ligitabl.api.usecase.round.getroundbyposition.GetRoundByPositionQuery;
 import com.ligitabl.api.usecase.round.getroundbyposition.GetRoundByPositionUseCase;
+import com.ligitabl.api.usecase.round.shared.RoundDto;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

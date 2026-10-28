@@ -18,8 +18,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.NotFoundError;
-import com.ligitabl.api.usecase.season.SeasonDto;
 import com.ligitabl.api.usecase.season.getseasonbyslug.GetSeasonBySlugUseCase;
+import com.ligitabl.api.usecase.season.shared.SeasonDto;
 
 @WebMvcTest(GetSeasonBySlugController.class)
 class GetSeasonBySlugControllerWebMvcTest {

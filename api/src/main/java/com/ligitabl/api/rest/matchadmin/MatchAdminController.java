@@ -12,9 +12,9 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ligitabl.api.rest.shared.RoundPosition;
 import com.ligitabl.api.shared.exceptions.UseCaseException;
-import com.ligitabl.api.usecase.matchadmin.GetMatchAdminDetailsQuery;
-import com.ligitabl.api.usecase.matchadmin.GetMatchAdminDetailsUseCase;
-import com.ligitabl.api.usecase.matchadmin.MatchAdminDetailsDto;
+import com.ligitabl.api.usecase.matchadmin.getmatchadmindetails.GetMatchAdminDetailsQuery;
+import com.ligitabl.api.usecase.matchadmin.getmatchadmindetails.GetMatchAdminDetailsUseCase;
+import com.ligitabl.api.usecase.matchadmin.getmatchadmindetails.MatchAdminDetailsDto;
 import com.ligitabl.api.usecase.matchadmin.reschedulematch.RescheduleMatchCommand;
 import com.ligitabl.api.usecase.matchadmin.reschedulematch.RescheduleMatchUseCase;
 import com.ligitabl.api.usecase.matchadmin.reschedulematch.RescheduleResult;

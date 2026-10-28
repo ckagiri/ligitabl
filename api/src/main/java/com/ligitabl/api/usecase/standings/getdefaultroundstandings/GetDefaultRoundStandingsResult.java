@@ -1,12 +1,13 @@
-package com.ligitabl.api.usecase.standings;
+package com.ligitabl.api.usecase.standings.getdefaultroundstandings;
 
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
 import com.ligitabl.api.usecase.shared.dto.FixtureDto;
+import com.ligitabl.api.usecase.standings.shared.StandingsEntryDto;
 
-public record RoundStandingsResult(
+public record GetDefaultRoundStandingsResult(
         UUID seasonId,
         int viewingRound,
         int currentRound,

@@ -16,8 +16,8 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.usecase.competition.CompetitionDto;
 import com.ligitabl.api.usecase.competition.getcompetitions.GetCompetitionsUseCase;
+import com.ligitabl.api.usecase.competition.shared.CompetitionDto;
 
 @WebMvcTest(GetCompetitionsController.class)
 class GetCompetitionsControllerWebMvcTest {

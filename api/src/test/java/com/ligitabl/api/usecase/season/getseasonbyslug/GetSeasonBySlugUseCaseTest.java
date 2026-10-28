@@ -16,7 +16,7 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.NotFoundError;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.validation.RequestValidator;
-import com.ligitabl.api.usecase.season.SeasonDto;
+import com.ligitabl.api.usecase.season.shared.SeasonDto;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;

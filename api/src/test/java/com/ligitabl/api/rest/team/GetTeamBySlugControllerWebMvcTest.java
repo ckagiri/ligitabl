@@ -18,8 +18,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
-import com.ligitabl.api.usecase.team.TeamDto;
 import com.ligitabl.api.usecase.team.getteambyslug.GetTeamBySlugUseCase;
+import com.ligitabl.api.usecase.team.shared.TeamDto;
 
 @WebMvcTest(controllers = GetTeamBySlugController.class)
 @SuppressWarnings("null")

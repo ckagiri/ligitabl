@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.standings;
+package com.ligitabl.api.usecase.standings.getdefaultroundstandings;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -18,6 +18,9 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
+import com.ligitabl.api.usecase.standings.shared.FormService;
+import com.ligitabl.api.usecase.standings.shared.StandingsEnricher;
+import com.ligitabl.api.usecase.standings.shared.StandingsEntryDto;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
@@ -103,7 +106,7 @@ class GetDefaultRoundStandingsUseCaseTest {
                 StandingsEntryDto.builder().position(1).teamName("Team").build();
         when(standingsEnricher.enrichWithTeams(eq(standings), anyMap())).thenReturn(Either.right(List.of(dto)));
 
-        Either<UseCaseError, RoundStandingsResult> result =
+        Either<UseCaseError, GetDefaultRoundStandingsResult> result =
                 useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
 
         assertThat(result.isRight()).isTrue();
@@ -124,7 +127,7 @@ class GetDefaultRoundStandingsUseCaseTest {
         when(hierarchyValidator.resolveHierarchy("premier-league", null))
                 .thenReturn(Either.left(UseCaseErrors.validation("Competition has no active season")));
 
-        Either<UseCaseError, RoundStandingsResult> result =
+        Either<UseCaseError, GetDefaultRoundStandingsResult> result =
                 useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
 
         assertThat(result.isLeft()).isTrue();
@@ -137,7 +140,7 @@ class GetDefaultRoundStandingsUseCaseTest {
         when(hierarchyValidator.resolveHierarchy("premier-league", null))
                 .thenReturn(Either.left(UseCaseErrors.validation("Season has no current round")));
 
-        Either<UseCaseError, RoundStandingsResult> result =
+        Either<UseCaseError, GetDefaultRoundStandingsResult> result =
                 useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
 
         assertThat(result.isLeft()).isTrue();
@@ -175,7 +178,7 @@ class GetDefaultRoundStandingsUseCaseTest {
 
         when(standingsEnricher.enrichWithTeams(any(Standings.class), anyMap())).thenReturn(Either.right(List.of()));
 
-        Either<UseCaseError, RoundStandingsResult> result =
+        Either<UseCaseError, GetDefaultRoundStandingsResult> result =
                 useCase.execute(GetDefaultRoundStandingsQuery.currentRound(null));
 
         assertThat(result.isRight()).isTrue();

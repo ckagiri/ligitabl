@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.standings;
+package com.ligitabl.api.usecase.standings.getdefaultroundstandings;
 
 import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 
@@ -16,6 +16,9 @@ import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.api.usecase.shared.dto.FixtureDto;
 import com.ligitabl.api.usecase.shared.fixtures.FixtureJsonMapper;
+import com.ligitabl.api.usecase.standings.shared.FormEntry;
+import com.ligitabl.api.usecase.standings.shared.FormService;
+import com.ligitabl.api.usecase.standings.shared.StandingsEnricher;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
@@ -31,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 @Slf4j
 public class GetDefaultRoundStandingsUseCase
-        implements UseCase<GetDefaultRoundStandingsQuery, Either<UseCaseError, RoundStandingsResult>> {
+        implements UseCase<GetDefaultRoundStandingsQuery, Either<UseCaseError, GetDefaultRoundStandingsResult>> {
 
     private final HierarchyValidator hierarchyValidator;
     private final CompetitionDefaults competitionDefaults;
@@ -42,7 +45,7 @@ public class GetDefaultRoundStandingsUseCase
     private final FormService formService;
 
     @Override
-    public Either<UseCaseError, RoundStandingsResult> execute(GetDefaultRoundStandingsQuery query) {
+    public Either<UseCaseError, GetDefaultRoundStandingsResult> execute(GetDefaultRoundStandingsQuery query) {
         String competitionIdentifier = getEffectiveCompetitionIdentifier(query);
 
         return hierarchyValidator
@@ -60,7 +63,7 @@ public class GetDefaultRoundStandingsUseCase
                                     ? buildNextFixtures(
                                             ctx.season().getId(), ctx.round().getPosition())
                                     : null;
-                            return new RoundStandingsResult(
+                            return new GetDefaultRoundStandingsResult(
                                     ctx.season().getId(),
                                     ctx.round().getPosition(),
                                     currentRound.getPosition(),

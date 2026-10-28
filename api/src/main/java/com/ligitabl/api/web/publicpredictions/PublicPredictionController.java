@@ -20,7 +20,7 @@ import com.ligitabl.api.usecase.prediction.getpublicprediction.GetPublicPredicti
 import com.ligitabl.api.usecase.prediction.getpublicprediction.GetPublicPredictionUseCase;
 import com.ligitabl.api.usecase.prediction.getpublicprediction.PublicPredictionViewData;
 import com.ligitabl.api.usecase.shared.fixtures.FixtureJsonMapper;
-import com.ligitabl.api.usecase.standings.FormService;
+import com.ligitabl.api.usecase.standings.shared.FormService;
 import com.ligitabl.api.web.shared.swap.SwapHistoryFormatter;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Round;

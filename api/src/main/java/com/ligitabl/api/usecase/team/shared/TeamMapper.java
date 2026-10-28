@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.team;
+package com.ligitabl.api.usecase.team.shared;
 
 import org.springframework.stereotype.Component;
 

@@ -7,9 +7,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ligitabl.api.shared.exceptions.UseCaseException;
-import com.ligitabl.api.usecase.season.SeasonDto;
 import com.ligitabl.api.usecase.season.getseasonbyslug.GetSeasonBySlugQuery;
 import com.ligitabl.api.usecase.season.getseasonbyslug.GetSeasonBySlugUseCase;
+import com.ligitabl.api.usecase.season.shared.SeasonDto;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

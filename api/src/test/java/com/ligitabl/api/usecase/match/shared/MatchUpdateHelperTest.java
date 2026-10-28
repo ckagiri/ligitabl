@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.match;
+package com.ligitabl.api.usecase.match.shared;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -8,7 +8,6 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import com.ligitabl.api.usecase.match.shared.FeedMatch;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 

@@ -1,6 +1,6 @@
 package com.ligitabl.api.usecase.team.createteam;
 
-import com.ligitabl.api.usecase.team.TeamPayload;
+import com.ligitabl.api.usecase.team.shared.TeamPayload;
 
 import lombok.EqualsAndHashCode;
 import lombok.Getter;

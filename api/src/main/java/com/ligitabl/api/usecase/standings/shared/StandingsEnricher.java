@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.standings;
+package com.ligitabl.api.usecase.standings.shared;
 
 import java.util.Collections;
 import java.util.List;

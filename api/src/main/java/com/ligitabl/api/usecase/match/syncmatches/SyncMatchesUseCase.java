@@ -18,9 +18,9 @@ import org.springframework.transaction.support.TransactionSynchronizationManager
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.usecase.match.MatchUpdateHelper;
 import com.ligitabl.api.usecase.match.shared.FeedMatch;
 import com.ligitabl.api.usecase.match.shared.MatchFeed;
+import com.ligitabl.api.usecase.match.shared.MatchUpdateHelper;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;

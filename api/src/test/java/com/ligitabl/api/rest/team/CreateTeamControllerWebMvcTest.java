@@ -21,8 +21,8 @@ import org.springframework.test.web.servlet.MockMvc;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
-import com.ligitabl.api.usecase.team.TeamDto;
 import com.ligitabl.api.usecase.team.createteam.CreateTeamUseCase;
+import com.ligitabl.api.usecase.team.shared.TeamDto;
 
 @WebMvcTest(controllers = CreateTeamController.class)
 class CreateTeamControllerWebMvcTest {
