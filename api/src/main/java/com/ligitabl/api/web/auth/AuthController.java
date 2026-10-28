@@ -1,6 +1,5 @@
 package com.ligitabl.api.web.auth;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
 import java.util.UUID;
@@ -40,9 +39,11 @@ import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.usecase.auth.emailverification.VerifyEmailError;
 import com.ligitabl.api.usecase.auth.emailverification.VerifyEmailResult;
 import com.ligitabl.api.usecase.auth.emailverification.VerifyEmailUseCase;
+import com.ligitabl.api.usecase.auth.login.VerifyCredentialsUseCase;
 import com.ligitabl.api.usecase.auth.passwordreset.RequestPasswordResetUseCase;
 import com.ligitabl.api.usecase.auth.passwordreset.ResetPasswordError;
 import com.ligitabl.api.usecase.auth.passwordreset.ResetPasswordUseCase;
+import com.ligitabl.api.usecase.auth.recordlogin.RecordLoginUseCase;
 import com.ligitabl.api.usecase.auth.register.RegisterCommand;
 import com.ligitabl.api.usecase.auth.register.RegisterResult;
 import com.ligitabl.api.usecase.auth.register.RegisterUseCase;
@@ -51,7 +52,6 @@ import com.ligitabl.model.auth.Password;
 import com.ligitabl.model.auth.Role;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.User;
-import com.ligitabl.model.domain.service.PasswordHasher;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.UserRepo;
@@ -75,7 +75,8 @@ public class AuthController {
     private final ContestRepo contestRepo;
     private final RegisterUseCase registerUseCase;
     private final UserRepo userRepo;
-    private final PasswordHasher passwordHasher;
+    private final RecordLoginUseCase recordLoginUseCase;
+    private final VerifyCredentialsUseCase verifyCredentialsUseCase;
     private final SeasonRepo seasonRepo;
     private final CompetitionDefaults competitionDefaults;
     private final RememberMeServices rememberMeServices;
@@ -254,10 +255,7 @@ public class AuthController {
             Email email = Email.create(form.getEmail());
             Password.Plaintext password = Password.Plaintext.create(form.getPassword());
 
-            User user = userRepo.findByEmail(email)
-                    .filter(found ->
-                            found.getPassword() != null && passwordHasher.verify(password, found.getPassword()))
-                    .orElse(null);
+            User user = verifyCredentialsUseCase.execute(email, password).fold(invalid -> null, found -> found);
 
             if (user == null) {
                 model.addAttribute("error", "Invalid email or password");
@@ -266,7 +264,7 @@ public class AuthController {
                 return "auth/login";
             }
 
-            userRepo.updateLastLoginAt(user.getId(), OffsetDateTime.now());
+            recordLoginUseCase.execute(user.getId());
 
             var authentication = authenticateUser(
                     user.getId(),

@@ -1,6 +1,5 @@
 package com.ligitabl.api.usecase.auth.register;
 
-import java.time.OffsetDateTime;
 import java.util.Set;
 import java.util.UUID;
 
@@ -13,6 +12,7 @@ import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationUseCase;
+import com.ligitabl.api.usecase.auth.recordlogin.RecordLoginUseCase;
 import com.ligitabl.api.usecase.shared.AdminAlerts;
 import com.ligitabl.model.auth.Password;
 import com.ligitabl.model.auth.Role;
@@ -31,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 public class RegisterUseCase implements UseCase<RegisterCommand, Either<UseCaseError, RegisterResult>> {
 
     private final UserRepo userRepo;
+    private final RecordLoginUseCase recordLoginUseCase;
     private final PasswordHasher passwordHasher;
     private final PublicIdGenerator publicIdGenerator;
     private final RequestValidator requestValidator;
@@ -63,7 +64,7 @@ public class RegisterUseCase implements UseCase<RegisterCommand, Either<UseCaseE
             return Either.catching(() -> userRepo.create(user), UseCaseErrors::fromException)
                     .map(saved -> {
                         // Registration counts as the first login
-                        userRepo.updateLastLoginAt(saved.getId(), OffsetDateTime.now());
+                        recordLoginUseCase.execute(saved.getId());
                         sendVerificationEmail(saved.getId());
                         log.info("User registered successfully: {}", saved.getPublicId());
                         adminAlerts.notifyNewUserSignup(

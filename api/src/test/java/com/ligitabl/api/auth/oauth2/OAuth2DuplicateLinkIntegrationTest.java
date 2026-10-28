@@ -22,6 +22,8 @@ import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 
+import com.ligitabl.api.usecase.account.googlelink.LinkGoogleUseCase;
+import com.ligitabl.api.usecase.auth.recordlogin.RecordLoginUseCase;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.auth.Role;
@@ -44,8 +46,12 @@ class OAuth2DuplicateLinkIntegrationTest {
     private final UserRepo userRepo = Mockito.mock(UserRepo.class);
     private final CustomOAuth2UserService customOAuth2UserService = Mockito.mock(CustomOAuth2UserService.class);
     private final RememberMeServices rememberMeServices = Mockito.mock(RememberMeServices.class);
-    private final OAuth2AuthenticationSuccessHandler handler =
-            new OAuth2AuthenticationSuccessHandler(userRepo, customOAuth2UserService, rememberMeServices);
+    private final OAuth2AuthenticationSuccessHandler handler = new OAuth2AuthenticationSuccessHandler(
+            userRepo,
+            new LinkGoogleUseCase(userRepo),
+            Mockito.mock(RecordLoginUseCase.class),
+            customOAuth2UserService,
+            rememberMeServices);
 
     private static final String GOOGLE_SUBJECT = "google-subject-xyz";
     private static final UUID CURRENT_USER_ID = UUID.randomUUID();

@@ -1,13 +1,11 @@
 package com.ligitabl.api.auth.security;
 
-import java.time.OffsetDateTime;
-
 import org.springframework.context.event.EventListener;
 import org.springframework.security.authentication.RememberMeAuthenticationToken;
 import org.springframework.security.authentication.event.InteractiveAuthenticationSuccessEvent;
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.model.repo.UserRepo;
+import com.ligitabl.api.usecase.auth.recordlogin.RecordLoginUseCase;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -23,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RememberMeLoginListener {
 
-    private final UserRepo userRepo;
+    private final RecordLoginUseCase recordLoginUseCase;
 
     @EventListener
     public void onAuthenticationSuccess(InteractiveAuthenticationSuccessEvent event) {
@@ -32,7 +30,7 @@ public class RememberMeLoginListener {
         }
 
         if (event.getAuthentication().getPrincipal() instanceof WebUserDetails webUserDetails) {
-            userRepo.updateLastLoginAt(webUserDetails.getUserId(), OffsetDateTime.now());
+            recordLoginUseCase.execute(webUserDetails.getUserId());
             log.info("[REMEMBER_ME_LOGIN] userId={}", webUserDetails.getUserId());
         }
     }

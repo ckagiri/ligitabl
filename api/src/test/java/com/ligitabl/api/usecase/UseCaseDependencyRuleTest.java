@@ -31,7 +31,7 @@ class UseCaseDependencyRuleTest {
     @Test
     void useCasesDoNotDependOnOutboundAdapters() throws IOException {
         assertThat(refs(OUTBOUND_ADAPTER_REF))
-                .as("depend on a port instead; see docs/backend-dev.md")
+                .as("depend on a port instead; see docs/architecture.md")
                 .isEmpty();
     }
 
