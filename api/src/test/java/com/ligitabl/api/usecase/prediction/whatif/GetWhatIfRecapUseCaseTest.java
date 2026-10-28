@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.predictions.userpredictions;
+package com.ligitabl.api.usecase.prediction.whatif;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -25,8 +25,8 @@ import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.WhatIfPredictionRepo;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("WhatIfRecapBuilder — win/draw/loss classification")
-class WhatIfRecapBuilderTest {
+@DisplayName("GetWhatIfRecapUseCase — win/draw/loss classification")
+class GetWhatIfRecapUseCaseTest {
 
     @Mock
     private WhatIfPredictionRepo whatIfPredictionRepo;
@@ -34,7 +34,7 @@ class WhatIfRecapBuilderTest {
     @Mock
     private MatchRepo matchRepo;
 
-    private WhatIfRecapBuilder builder;
+    private GetWhatIfRecapUseCase useCase;
 
     private final UUID userId = UUID.randomUUID();
     private final UUID roundId = UUID.randomUUID();
@@ -44,7 +44,7 @@ class WhatIfRecapBuilderTest {
 
     @BeforeEach
     void setUp() {
-        builder = new WhatIfRecapBuilder(whatIfPredictionRepo, matchRepo);
+        useCase = new GetWhatIfRecapUseCase(whatIfPredictionRepo, matchRepo);
     }
 
     // ─── Win guesses: exact side, any scoreline, no leniency ──────────────────
@@ -154,7 +154,7 @@ class WhatIfRecapBuilderTest {
     void noSavedPrediction_isEmpty() {
         when(whatIfPredictionRepo.findByUserAndRound(userId, roundId)).thenReturn(Optional.empty());
 
-        assertThat(builder.build(userId, roundId)).isEmpty();
+        assertThat(useCase.execute(userId, roundId)).isEmpty();
         verifyNoInteractions(matchRepo);
     }
 
@@ -188,7 +188,7 @@ class WhatIfRecapBuilderTest {
     @Test
     @DisplayName("a guest (null user) is never looked up")
     void nullUser_isEmpty() {
-        assertThat(builder.build(null, roundId)).isEmpty();
+        assertThat(useCase.execute(null, roundId)).isEmpty();
         verifyNoInteractions(whatIfPredictionRepo, matchRepo);
     }
 
@@ -226,7 +226,7 @@ class WhatIfRecapBuilderTest {
                         .scores(List.copyOf(guesses))
                         .build()));
         when(matchRepo.findByRoundIdWithTeams(roundId)).thenReturn(List.copyOf(matches));
-        return builder.build(userId, roundId);
+        return useCase.execute(userId, roundId);
     }
 
     private Match match(UUID id, MatchStatus status, Score score) {

@@ -31,6 +31,7 @@ import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.usecase.prediction.getuserprediction.GetUserPredictionQuery;
 import com.ligitabl.api.usecase.prediction.getuserprediction.GetUserPredictionUseCase;
 import com.ligitabl.api.usecase.prediction.getuserprediction.UserPredictionViewData;
+import com.ligitabl.api.usecase.prediction.whatif.GetWhatIfRecapUseCase;
 import com.ligitabl.api.usecase.shared.error.ErrorMapper;
 import com.ligitabl.api.usecase.shared.fixtures.FixtureJsonMapper;
 import com.ligitabl.api.usecase.shared.season.SeasonPredictionSupport;
@@ -72,7 +73,7 @@ public class UserPredictionsController {
     private final FormService formService;
     private final FixtureJsonMapper fixtureJsonMapper;
     private final RoundRepo roundRepo;
-    private final WhatIfRecapBuilder whatIfRecapBuilder;
+    private final GetWhatIfRecapUseCase getWhatIfRecapUseCase;
     private final SeasonPredictionSupport seasonPredictionSupport;
     private final SwapHistoryFormatter swapHistoryFormatter;
     private final Clock clock;
@@ -277,7 +278,7 @@ public class UserPredictionsController {
                 .map(round -> round.getId())
                 .orElse(null);
 
-        whatIfRecapBuilder.build(userId, roundId).ifPresent(recap -> {
+        getWhatIfRecapUseCase.execute(userId, roundId).ifPresent(recap -> {
             model.addAttribute("whatIfRecap", recap);
             try {
                 model.addAttribute(
