@@ -138,6 +138,7 @@ public class AdminNotificationService implements AdminAlerts {
                 "Matchday " + previousMatchday + " → " + newMatchday + ".\n" + "Season ID: " + seasonId);
     }
 
+    @Override
     public void notifySeasonActivated(String competitionSlug, UUID promotedSeasonId, UUID previousSeasonId) {
         info(
                 "Season activated",

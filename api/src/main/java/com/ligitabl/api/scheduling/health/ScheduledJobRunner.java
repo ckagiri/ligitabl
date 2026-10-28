@@ -15,8 +15,8 @@ import lombok.extern.slf4j.Slf4j;
  * {@code com.ligitabl.api.scheduling} (logback-spring.xml) keeps {@code log.error} out of it.
  *
  * <p>⚠️ Never wrap a {@code @Transactional} method of the calling class: the lambda is a
- * self-invocation that bypasses the proxy and runs without a transaction. Such a job hand-writes
- * its try/catch instead — see {@code SeasonActivationService}.
+ * self-invocation that bypasses the proxy and runs without a transaction. Put the transaction on
+ * the use case the job calls instead — see {@code SeasonActivationJob}.
  */
 @Component
 @RequiredArgsConstructor

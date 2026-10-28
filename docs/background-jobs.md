@@ -11,7 +11,7 @@ the one that was not written down is what caused the outage described at the bot
 | `MatchSyncScheduler` | self-armed chain | `matchSync` | 30h |
 | `OutboxRelayJob#relay` | `fixedDelay` 15s | `outboxRelay` | 5m |
 | `OutboxRelayJob#recoverStuckProcessing` | `fixedDelay` 5m | — | covered by `relay` |
-| `SeasonActivationService` | `fixedDelay` 15m | `seasonActivation` | 45m |
+| `SeasonActivationJob` | `fixedDelay` 15m | `seasonActivation` | 45m |
 | `SeasonInPlayJob` | `fixedDelay` 15m | `seasonInPlay` | 45m |
 | `MatchdayAdvancementScheduler` | cron 06:00 | `matchdayAdvancement` | 26h |
 | `JoinReminderJob` | cron 09:00 | — | disabled in prod |

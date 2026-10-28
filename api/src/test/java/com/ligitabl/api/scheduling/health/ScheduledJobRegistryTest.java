@@ -40,7 +40,7 @@ class ScheduledJobRegistryTest {
     private static final Set<String> MONITORED = Set.of(
             "MatchSyncScheduler",
             "OutboxRelayJob",
-            "SeasonActivationService",
+            "SeasonActivationJob",
             "SeasonInPlayJob",
             "MatchdayAdvancementScheduler");
 
