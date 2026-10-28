@@ -21,7 +21,6 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
-import com.ligitabl.api.usecase.shared.standings.StandingsCalculatorService;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 import com.ligitabl.model.domain.Round;
@@ -34,7 +33,6 @@ import com.ligitabl.model.domain.TeamSlug;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
-import com.ligitabl.model.repo.StandingsRepo;
 import com.ligitabl.model.repo.TeamRepo;
 
 @ExtendWith(MockitoExtension.class)
@@ -56,9 +54,6 @@ class ComputeWhatIfUseCaseTest {
 
     @Mock
     private HierarchyValidator hierarchyValidator;
-
-    @Mock
-    private StandingsRepo standingsRepo;
 
     private ComputeWhatIfUseCase useCase;
 
@@ -134,7 +129,6 @@ class ComputeWhatIfUseCaseTest {
                 matchRepo,
                 teamRepo,
                 new RoundSupport(roundRepo, matchRepo, hierarchyValidator, competitionDefaults),
-                new StandingsCalculatorService(teamRepo, matchRepo, seasonRepo, standingsRepo),
                 TestClock.FIXED);
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));

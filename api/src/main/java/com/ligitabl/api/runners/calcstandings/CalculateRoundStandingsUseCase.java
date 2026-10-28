@@ -14,8 +14,8 @@ import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
-import com.ligitabl.api.usecase.shared.standings.StandingsCalculatorService;
-import com.ligitabl.api.usecase.shared.standings.StandingsCalculatorService.StandingsError;
+import com.ligitabl.api.usecase.shared.standings.RoundStandingsCalculator;
+import com.ligitabl.api.usecase.shared.standings.RoundStandingsCalculator.StandingsError;
 import com.ligitabl.api.usecase.standings.StandingsEnricher;
 import com.ligitabl.api.usecase.standings.StandingsEntryDto;
 import com.ligitabl.model.domain.*;
@@ -41,7 +41,7 @@ public class CalculateRoundStandingsUseCase
     private final StandingsRepo standingsRepo;
     private final StandingsEnricher standingsEnricher;
 
-    private final StandingsCalculatorService standingsCalculator;
+    private final RoundStandingsCalculator standingsCalculator;
 
     @Override
     public Either<UseCaseError, List<StandingsEntryDto>> execute(CalculateRoundStandingsCommand command) {
