@@ -1,4 +1,4 @@
-package com.ligitabl.api.notification.outbox;
+package com.ligitabl.api.usecase.notification.joinreminder;
 
 import java.util.List;
 
@@ -12,7 +12,7 @@ import lombok.Data;
  *
  * <p>{@code stageDays} must be ascending; a user is emailed once per stage, at
  * the latest stage their time-since-last-seen has reached, never more than one
- * stage per run — see {@link JoinReminderEnqueuer}.
+ * stage per run — see {@link EnqueueJoinRemindersUseCase}.
  *
  * <p>{@code quietDaysBeforePredictionsOpen} suppresses runs in the run-up to predictions
  * opening, when auto-join is about to hand these same users a table.

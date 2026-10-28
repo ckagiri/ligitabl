@@ -1,4 +1,4 @@
-package com.ligitabl.api.notification.outbox;
+package com.ligitabl.api.usecase.notification.segmentresults;
 
 import java.time.Duration;
 

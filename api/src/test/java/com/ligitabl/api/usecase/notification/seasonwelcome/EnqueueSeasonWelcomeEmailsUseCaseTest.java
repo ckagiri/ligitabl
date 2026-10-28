@@ -1,4 +1,4 @@
-package com.ligitabl.api.notification.outbox;
+package com.ligitabl.api.usecase.notification.seasonwelcome;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -22,6 +22,7 @@ import org.mockito.quality.Strictness;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
+import com.ligitabl.api.usecase.shared.outbox.SeasonWelcomeFanoutPayload;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.OutboxEvent;
@@ -31,7 +32,7 @@ import com.ligitabl.model.repo.UserRepo;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class SeasonWelcomeEmailEnqueuerTest {
+class EnqueueSeasonWelcomeEmailsUseCaseTest {
 
     private static final UUID SEASON_ID = UUID.randomUUID();
 
@@ -42,11 +43,11 @@ class SeasonWelcomeEmailEnqueuerTest {
     OutboxRepo outboxRepo;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
-    private SeasonWelcomeEmailEnqueuer enqueuer;
+    private EnqueueSeasonWelcomeEmailsUseCase enqueuer;
 
     @BeforeEach
     void setup() {
-        enqueuer = new SeasonWelcomeEmailEnqueuer(userRepo, outboxRepo, objectMapper);
+        enqueuer = new EnqueueSeasonWelcomeEmailsUseCase(userRepo, outboxRepo, objectMapper);
         when(outboxRepo.save(any())).thenReturn(true);
     }
 
@@ -68,7 +69,7 @@ class SeasonWelcomeEmailEnqueuerTest {
         User bob = user("bob@x.com");
         when(userRepo.findMailableUsersWithPreSeasonRegistration(SEASON_ID)).thenReturn(List.of(alice, bob));
 
-        enqueuer.enqueue(new SeasonWelcomeFanoutPayload(SEASON_ID));
+        enqueuer.execute(new SeasonWelcomeFanoutPayload(SEASON_ID));
 
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(outboxRepo, times(2)).save(captor.capture());
@@ -87,7 +88,7 @@ class SeasonWelcomeEmailEnqueuerTest {
         UUID nextSeason = UUID.randomUUID();
         when(userRepo.findMailableUsersWithPreSeasonRegistration(nextSeason)).thenReturn(List.of(alice));
 
-        enqueuer.enqueue(new SeasonWelcomeFanoutPayload(nextSeason));
+        enqueuer.execute(new SeasonWelcomeFanoutPayload(nextSeason));
 
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(outboxRepo).save(captor.capture());
@@ -99,7 +100,7 @@ class SeasonWelcomeEmailEnqueuerTest {
     void carriesTheAddressInThePayload() {
         when(userRepo.findMailableUsersWithPreSeasonRegistration(SEASON_ID)).thenReturn(List.of(user("carol@x.com")));
 
-        enqueuer.enqueue(new SeasonWelcomeFanoutPayload(SEASON_ID));
+        enqueuer.execute(new SeasonWelcomeFanoutPayload(SEASON_ID));
 
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(outboxRepo).save(captor.capture());
@@ -112,7 +113,7 @@ class SeasonWelcomeEmailEnqueuerTest {
                 .thenReturn(List.of(user("bad@x.com"), user("good@x.com")));
         when(outboxRepo.save(any())).thenThrow(new RuntimeException("boom")).thenReturn(true);
 
-        enqueuer.enqueue(new SeasonWelcomeFanoutPayload(SEASON_ID));
+        enqueuer.execute(new SeasonWelcomeFanoutPayload(SEASON_ID));
 
         verify(outboxRepo, times(2)).save(any());
     }
@@ -121,7 +122,7 @@ class SeasonWelcomeEmailEnqueuerTest {
     void noRecipients_writesNothing() {
         when(userRepo.findMailableUsersWithPreSeasonRegistration(SEASON_ID)).thenReturn(List.of());
 
-        enqueuer.enqueue(new SeasonWelcomeFanoutPayload(SEASON_ID));
+        enqueuer.execute(new SeasonWelcomeFanoutPayload(SEASON_ID));
 
         verify(outboxRepo, never()).save(any());
     }

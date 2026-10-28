@@ -1,4 +1,4 @@
-package com.ligitabl.api.notification.outbox;
+package com.ligitabl.api.usecase.notification.segmentresults;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -16,9 +16,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ligitabl.api.usecase.notification.roundresults.EnqueueRoundResultsEmailsUseCase;
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.api.usecase.shared.outbox.RoundAdvancedPayload;
 import com.ligitabl.api.usecase.shared.outbox.SeasonCompletedPayload;
+import com.ligitabl.api.usecase.shared.outbox.SegmentResultsPayload;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
@@ -47,8 +49,8 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class SegmentResultsEmailEnqueuer {
-    static final String IGNORE_LIST_SETTING_KEY = RoundResultsEmailEnqueuer.IGNORE_LIST_SETTING_KEY;
+public class EnqueueSegmentResultsEmailsUseCase {
+    static final String IGNORE_LIST_SETTING_KEY = EnqueueRoundResultsEmailsUseCase.IGNORE_LIST_SETTING_KEY;
 
     /** computeLeaderboard rejects limits above 100, so boards are read in pages. */
     private static final int PAGE_SIZE = 100;
@@ -79,7 +81,7 @@ public class SegmentResultsEmailEnqueuer {
      * Fired for every advanced round; returns immediately unless the round is the last of a sprint
      * or a quarter. At rounds 9/19/29/38 both close at once and are reported in one email.
      */
-    public void enqueueForRound(RoundAdvancedPayload event) {
+    public void execute(RoundAdvancedPayload event) {
         int roundPosition = event.roundPosition();
         Context ctx = resolveContext(event.seasonId(), "round=" + roundPosition);
         if (ctx == null) {
@@ -104,11 +106,11 @@ public class SegmentResultsEmailEnqueuer {
 
     /**
      * The season finale, and only the season: the full-season span is deliberately <em>not</em>
-     * considered by {@link #enqueueForRound}, so advancing the last round closes its sprint and
+     * considered by {@link #execute(RoundAdvancedPayload)}, so advancing the last round closes its sprint and
      * quarter and nothing more. Completing the season is a separate admin action taken afterwards,
      * and it produces an email carrying the season podium alone.
      */
-    public void enqueueForSeasonCompleted(SeasonCompletedPayload event) {
+    public void execute(SeasonCompletedPayload event) {
         Context ctx = resolveContext(event.seasonId(), "season-completed");
         if (ctx == null) {
             return;

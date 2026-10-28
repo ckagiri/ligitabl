@@ -12,16 +12,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ligitabl.api.notification.outbox.JoinReminderPayload;
-import com.ligitabl.api.notification.outbox.RoundLockedPayload;
-import com.ligitabl.api.notification.outbox.RoundResultsEmailEnqueuer;
-import com.ligitabl.api.notification.outbox.RoundResultsPayload;
-import com.ligitabl.api.notification.outbox.SeasonInPlayPayload;
-import com.ligitabl.api.notification.outbox.SeasonWelcomeEmailEnqueuer;
-import com.ligitabl.api.notification.outbox.SeasonWelcomeFanoutPayload;
-import com.ligitabl.api.notification.outbox.SeasonWelcomePayload;
-import com.ligitabl.api.notification.outbox.SegmentResultsEmailEnqueuer;
-import com.ligitabl.api.notification.outbox.SegmentResultsPayload;
+import com.ligitabl.api.usecase.notification.roundresults.EnqueueRoundResultsEmailsUseCase;
+import com.ligitabl.api.usecase.notification.seasonwelcome.EnqueueSeasonWelcomeEmailsUseCase;
+import com.ligitabl.api.usecase.notification.segmentresults.EnqueueSegmentResultsEmailsUseCase;
 import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionCommand;
 import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionUseCase;
 import com.ligitabl.api.usecase.shared.email.EmailCommand;
@@ -29,9 +22,16 @@ import com.ligitabl.api.usecase.shared.email.EmailContent;
 import com.ligitabl.api.usecase.shared.email.EmailError;
 import com.ligitabl.api.usecase.shared.email.EmailProvider;
 import com.ligitabl.api.usecase.shared.email.EmailTemplateRenderer;
+import com.ligitabl.api.usecase.shared.outbox.JoinReminderPayload;
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.api.usecase.shared.outbox.RoundAdvancedPayload;
+import com.ligitabl.api.usecase.shared.outbox.RoundLockedPayload;
+import com.ligitabl.api.usecase.shared.outbox.RoundResultsPayload;
 import com.ligitabl.api.usecase.shared.outbox.SeasonCompletedPayload;
+import com.ligitabl.api.usecase.shared.outbox.SeasonInPlayPayload;
+import com.ligitabl.api.usecase.shared.outbox.SeasonWelcomeFanoutPayload;
+import com.ligitabl.api.usecase.shared.outbox.SeasonWelcomePayload;
+import com.ligitabl.api.usecase.shared.outbox.SegmentResultsPayload;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.PhaseType;
 import com.ligitabl.model.domain.Season;
@@ -64,9 +64,9 @@ import lombok.extern.slf4j.Slf4j;
 public class OutboxEventProcessor {
 
     private final OutboxRepo outboxRepo;
-    private final RoundResultsEmailEnqueuer roundResultsEmailEnqueuer;
-    private final SegmentResultsEmailEnqueuer segmentResultsEmailEnqueuer;
-    private final SeasonWelcomeEmailEnqueuer seasonWelcomeEmailEnqueuer;
+    private final EnqueueRoundResultsEmailsUseCase enqueueRoundResultsEmailsUseCase;
+    private final EnqueueSegmentResultsEmailsUseCase enqueueSegmentResultsEmailsUseCase;
+    private final EnqueueSeasonWelcomeEmailsUseCase enqueueSeasonWelcomeEmailsUseCase;
     private final EmailTemplateRenderer emailTemplateRenderer;
     private final EmailProvider emailProvider;
     private final ObjectMapper objectMapper;
@@ -115,12 +115,12 @@ public class OutboxEventProcessor {
      */
     private void processRoundAdvanced(OutboxEvent event) throws Exception {
         RoundAdvancedPayload payload = objectMapper.readValue(event.getPayload(), RoundAdvancedPayload.class);
-        roundResultsEmailEnqueuer.enqueue(payload);
+        enqueueRoundResultsEmailsUseCase.execute(payload);
 
         // Second fan-out from the same fact. Most rounds close no segment and this is a cheap
         // no-op; at a boundary it writes the podium emails. Sharing this transaction means a
         // failure in either expansion retries both, which is safe — every insert is keyed.
-        segmentResultsEmailEnqueuer.enqueueForRound(payload);
+        enqueueSegmentResultsEmailsUseCase.execute(payload);
     }
 
     /**
@@ -129,7 +129,7 @@ public class OutboxEventProcessor {
      */
     private void processSeasonCompleted(OutboxEvent event) throws Exception {
         SeasonCompletedPayload payload = objectMapper.readValue(event.getPayload(), SeasonCompletedPayload.class);
-        segmentResultsEmailEnqueuer.enqueueForSeasonCompleted(payload);
+        enqueueSegmentResultsEmailsUseCase.execute(payload);
     }
 
     /**
@@ -287,7 +287,7 @@ public class OutboxEventProcessor {
     private void processSeasonWelcomeFanout(OutboxEvent event) throws Exception {
         SeasonWelcomeFanoutPayload payload =
                 objectMapper.readValue(event.getPayload(), SeasonWelcomeFanoutPayload.class);
-        seasonWelcomeEmailEnqueuer.enqueue(payload);
+        enqueueSeasonWelcomeEmailsUseCase.execute(payload);
     }
 
     private void processSeasonWelcome(OutboxEvent event) throws Exception {
@@ -310,7 +310,7 @@ public class OutboxEventProcessor {
         data.put("leaderboardUrl", frontendUrl + "/leaderboard");
         data.put("faqUrl", frontendUrl + "/faq");
         data.put("whatIfUrl", frontendUrl + "/my-table/what-if");
-        // Safe to offer here only because both windows are the same one: SeasonInPlayEnqueuer
+        // Safe to offer here only because both windows are the same one: EnqueueSeasonInPlayUseCase
         // fires this chain solely while round 1 is OPEN, which is exactly when FinalTableSupport
         // reports entry open. If that guard is relaxed, this link starts pointing at a closed door.
         data.put("finalTableUrl", frontendUrl + "/final-table");

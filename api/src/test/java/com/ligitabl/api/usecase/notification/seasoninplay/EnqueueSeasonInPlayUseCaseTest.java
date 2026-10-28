@@ -1,4 +1,4 @@
-package com.ligitabl.api.notification.outbox;
+package com.ligitabl.api.usecase.notification.seasoninplay;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -48,7 +48,7 @@ import com.ligitabl.model.repo.SeasonRepo;
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class SeasonInPlayEnqueuerTest {
+class EnqueueSeasonInPlayUseCaseTest {
 
     private static final UUID SEASON_ID = UUID.randomUUID();
     private static final UUID ROUND_ID = UUID.randomUUID();
@@ -68,11 +68,11 @@ class SeasonInPlayEnqueuerTest {
     private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("pl");
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private SeasonInPlayEnqueuer enqueuer;
+    private EnqueueSeasonInPlayUseCase enqueuer;
 
     @BeforeEach
     void setup() {
-        enqueuer = new SeasonInPlayEnqueuer(
+        enqueuer = new EnqueueSeasonInPlayUseCase(
                 seasonRepo, roundRepo, roundSupport, competitionDefaults, outboxRepo, objectMapper, TestClock.FIXED);
 
         when(seasonRepo.findActiveSeason("pl"))
@@ -114,7 +114,7 @@ class SeasonInPlayEnqueuerTest {
 
     @Test
     void enqueuesOnceWithTheSeasonScopedKey() {
-        enqueuer.enqueueIfSeasonInPlay();
+        enqueuer.execute();
 
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(outboxRepo).save(captor.capture());
@@ -131,7 +131,7 @@ class SeasonInPlayEnqueuerTest {
         // predictions open — fixtures may not be in place yet (eg when testing).
         when(roundSupport.resolveJoinEligibilityStatus(any())).thenReturn(RoundStatus.OPEN);
 
-        enqueuer.enqueueIfSeasonInPlay();
+        enqueuer.execute();
 
         verify(outboxRepo).save(any());
     }
@@ -140,7 +140,7 @@ class SeasonInPlayEnqueuerTest {
     void skips_whenNoActiveSeason() {
         when(seasonRepo.findActiveSeason("pl")).thenReturn(Optional.empty());
 
-        enqueuer.enqueueIfSeasonInPlay();
+        enqueuer.execute();
 
         verify(outboxRepo, never()).save(any());
     }
@@ -152,7 +152,7 @@ class SeasonInPlayEnqueuerTest {
                 .startDate(TestClock.TODAY.plusDays(3))
                 .build());
 
-        enqueuer.enqueueIfSeasonInPlay();
+        enqueuer.execute();
 
         verify(outboxRepo, never()).save(any());
     }
@@ -161,7 +161,7 @@ class SeasonInPlayEnqueuerTest {
     void skips_whenSeasonCompleted() {
         activeSeason(inPlaySeason().completed(true).build());
 
-        enqueuer.enqueueIfSeasonInPlay();
+        enqueuer.execute();
 
         verify(outboxRepo, never()).save(any());
     }
@@ -171,7 +171,7 @@ class SeasonInPlayEnqueuerTest {
         // No main contest to join.
         activeSeason(inPlaySeason().mainContestId(null).build());
 
-        enqueuer.enqueueIfSeasonInPlay();
+        enqueuer.execute();
 
         verify(outboxRepo, never()).save(any());
     }
@@ -181,7 +181,7 @@ class SeasonInPlayEnqueuerTest {
         // The eligibility anchor; without it there is no defensible cohort.
         activeSeason(inPlaySeason().preSeasonOpensAt(null).build());
 
-        enqueuer.enqueueIfSeasonInPlay();
+        enqueuer.execute();
 
         verify(outboxRepo, never()).save(any());
     }
@@ -191,7 +191,7 @@ class SeasonInPlayEnqueuerTest {
         // registerPreSeason applies swaps to this baseline; null would NPE per user.
         activeSeason(inPlaySeason().initialRankings(List.of()).build());
 
-        enqueuer.enqueueIfSeasonInPlay();
+        enqueuer.execute();
 
         verify(outboxRepo, never()).save(any());
     }
@@ -200,7 +200,7 @@ class SeasonInPlayEnqueuerTest {
     void skips_whenCurrentRoundCannotBeResolved() {
         when(roundRepo.findById(ROUND_ID)).thenReturn(Optional.empty());
 
-        enqueuer.enqueueIfSeasonInPlay();
+        enqueuer.execute();
 
         verify(outboxRepo, never()).save(any());
     }
@@ -211,7 +211,7 @@ class SeasonInPlayEnqueuerTest {
         // leave these users a wrong result for it.
         when(roundSupport.resolveJoinEligibilityStatus(any())).thenReturn(RoundStatus.LOCKED);
 
-        enqueuer.enqueueIfSeasonInPlay();
+        enqueuer.execute();
 
         verify(outboxRepo, never()).save(any());
     }
@@ -223,7 +223,7 @@ class SeasonInPlayEnqueuerTest {
         when(roundRepo.findById(ROUND_ID)).thenReturn(Optional.of(round(1, true)));
         when(roundSupport.resolveJoinEligibilityStatus(any())).thenReturn(RoundStatus.FINALIZED);
 
-        enqueuer.enqueueIfSeasonInPlay();
+        enqueuer.execute();
 
         verify(outboxRepo, never()).save(any());
     }
@@ -234,7 +234,7 @@ class SeasonInPlayEnqueuerTest {
         when(roundRepo.findById(ROUND_ID)).thenReturn(Optional.of(round(5, false)));
         when(roundSupport.resolveJoinEligibilityStatus(any())).thenReturn(RoundStatus.OPEN);
 
-        enqueuer.enqueueIfSeasonInPlay();
+        enqueuer.execute();
 
         verify(outboxRepo, never()).save(any());
     }
@@ -243,7 +243,7 @@ class SeasonInPlayEnqueuerTest {
     void alreadyEnqueued_isASilentNoOp() {
         when(outboxRepo.save(any())).thenReturn(false);
 
-        enqueuer.enqueueIfSeasonInPlay();
+        enqueuer.execute();
 
         verify(outboxRepo).save(any());
     }
@@ -252,7 +252,7 @@ class SeasonInPlayEnqueuerTest {
     void enqueueFailure_isSwallowedSoThePollerSurvives() {
         when(outboxRepo.save(any())).thenThrow(new RuntimeException("db down"));
 
-        enqueuer.enqueueIfSeasonInPlay();
+        enqueuer.execute();
 
         verify(outboxRepo).save(any());
     }

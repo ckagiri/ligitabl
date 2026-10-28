@@ -1,4 +1,4 @@
-package com.ligitabl.api.notification.outbox;
+package com.ligitabl.api.usecase.notification.roundresults;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -26,6 +26,7 @@ import org.mockito.quality.Strictness;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.api.usecase.shared.outbox.RoundAdvancedPayload;
+import com.ligitabl.api.usecase.shared.outbox.RoundResultsPayload;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Competition;
@@ -52,7 +53,7 @@ import com.ligitabl.model.repo.UserRepo;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class RoundResultsEmailEnqueuerTest {
+class EnqueueRoundResultsEmailsUseCaseTest {
 
     private static final int ROUND = 22;
     private static final RoundSpan SPRINT = span("S8", 21, 23, PhaseType.SPRINT);
@@ -85,7 +86,7 @@ class RoundResultsEmailEnqueuerTest {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private RoundResultsEmailProperties properties;
-    private RoundResultsEmailEnqueuer enqueuer;
+    private EnqueueRoundResultsEmailsUseCase enqueuer;
 
     private final UUID seasonId = UUID.randomUUID();
     private final UUID competitionId = UUID.randomUUID();
@@ -142,7 +143,7 @@ class RoundResultsEmailEnqueuerTest {
         properties = new RoundResultsEmailProperties();
         properties.setTopN(2);
         properties.setMode("live");
-        enqueuer = new RoundResultsEmailEnqueuer(
+        enqueuer = new EnqueueRoundResultsEmailsUseCase(
                 outboxRepo,
                 appSettingRepo,
                 userRepo,
@@ -172,7 +173,7 @@ class RoundResultsEmailEnqueuerTest {
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
         when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));
-        when(appSettingRepo.findValue(RoundResultsEmailEnqueuer.IGNORE_LIST_SETTING_KEY))
+        when(appSettingRepo.findValue(EnqueueRoundResultsEmailsUseCase.IGNORE_LIST_SETTING_KEY))
                 .thenReturn(Optional.of(" Test@X.com , "));
         when(outboxRepo.save(any())).thenReturn(true);
 
@@ -264,7 +265,7 @@ class RoundResultsEmailEnqueuerTest {
     }
 
     private void enqueue() {
-        enqueuer.enqueue(new RoundAdvancedPayload(seasonId, ROUND, ROUND));
+        enqueuer.execute(new RoundAdvancedPayload(seasonId, ROUND, ROUND));
     }
 
     private List<OutboxEvent> savedEvents() {
@@ -577,7 +578,7 @@ class RoundResultsEmailEnqueuerTest {
 
     @Test
     void emptyIgnoreListMeansNoFiltering() throws Exception {
-        when(appSettingRepo.findValue(RoundResultsEmailEnqueuer.IGNORE_LIST_SETTING_KEY))
+        when(appSettingRepo.findValue(EnqueueRoundResultsEmailsUseCase.IGNORE_LIST_SETTING_KEY))
                 .thenReturn(Optional.of(""));
 
         enqueue();
@@ -591,7 +592,7 @@ class RoundResultsEmailEnqueuerTest {
     @Test
     void neverSavesWhenTestModeAndIgnoreListEmpty() {
         properties.setMode("test");
-        when(appSettingRepo.findValue(RoundResultsEmailEnqueuer.IGNORE_LIST_SETTING_KEY))
+        when(appSettingRepo.findValue(EnqueueRoundResultsEmailsUseCase.IGNORE_LIST_SETTING_KEY))
                 .thenReturn(Optional.empty());
 
         enqueue();

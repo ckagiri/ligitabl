@@ -43,15 +43,20 @@ will eventually false-fire.
 6. **`@ConditionalOnProperty` with `matchIfMissing = true`** unless the job must be opt-in. Note the
    trade-off in "Known gaps".
 
-## Trap: `log.error` does not reach Sentry from these packages
+## Trap: `log.error` does not reach Sentry from `scheduling`
 
-`logback-spring.xml` declares `com.ligitabl.api.scheduling` and `com.ligitabl.api.notification.outbox`
-with `additivity="false"`, listing only the Console and Logtail appenders. `sentry-logback`
-auto-attaches its appender at **root**, which those loggers bypass.
+`logback-spring.xml` declares `com.ligitabl.api.scheduling` with `additivity="false"`, listing only
+the Console and Logtail appenders. `sentry-logback` auto-attaches its appender at **root**, which
+that logger bypasses.
 
-So inside those packages, `log.error(...)` alone reaches Console and Better Stack but **never
+So inside `scheduling`, `log.error(...)` alone reaches Console and Better Stack but **never
 Sentry**. Every failure path needs an explicit `Sentry.captureException(e)`. This silently
 de-instrumented five failure paths across four files before it was found.
+
+The outbox enqueuers used to live under a second logger like this (`notification.outbox`). They're
+now use cases in `usecase/notification/…` and log through root, so their errors reach Sentry, but
+their INFO lines no longer ship to Better Stack. Keep job bodies in use cases and this trap stays
+confined to the thin triggers.
 
 ## Trap: the watchdog must not be a `HealthIndicator`
 

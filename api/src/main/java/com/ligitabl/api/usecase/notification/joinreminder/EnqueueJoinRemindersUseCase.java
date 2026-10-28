@@ -1,4 +1,4 @@
-package com.ligitabl.api.notification.outbox;
+package com.ligitabl.api.usecase.notification.joinreminder;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.usecase.shared.outbox.JoinReminderPayload;
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Season;
@@ -38,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class JoinReminderEnqueuer {
+public class EnqueueJoinRemindersUseCase {
 
     private final OutboxRepo outboxRepo;
     private final UserRepo userRepo;
@@ -48,7 +49,7 @@ public class JoinReminderEnqueuer {
     private final JoinReminderProperties properties;
     private final Clock clock;
 
-    public void enqueueDueReminders() {
+    public void execute() {
         OffsetDateTime todayStart = OffsetDateTime.now(clock)
                 .toLocalDate()
                 .atStartOfDay(ZoneOffset.UTC)

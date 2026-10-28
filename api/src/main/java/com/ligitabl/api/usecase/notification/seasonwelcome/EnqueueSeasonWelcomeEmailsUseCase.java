@@ -1,4 +1,4 @@
-package com.ligitabl.api.notification.outbox;
+package com.ligitabl.api.usecase.notification.seasonwelcome;
 
 import java.util.List;
 
@@ -6,6 +6,8 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
+import com.ligitabl.api.usecase.shared.outbox.SeasonWelcomeFanoutPayload;
+import com.ligitabl.api.usecase.shared.outbox.SeasonWelcomePayload;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.OutboxRepo;
@@ -23,13 +25,13 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class SeasonWelcomeEmailEnqueuer {
+public class EnqueueSeasonWelcomeEmailsUseCase {
 
     private final UserRepo userRepo;
     private final OutboxRepo outboxRepo;
     private final ObjectMapper objectMapper;
 
-    public void enqueue(SeasonWelcomeFanoutPayload event) {
+    public void execute(SeasonWelcomeFanoutPayload event) {
         List<User> recipients = userRepo.findMailableUsersWithPreSeasonRegistration(event.seasonId());
         if (recipients.isEmpty()) {
             log.info("[SEASON_WELCOME_ENQUEUED] seasonId={}, recipients=0", event.seasonId());
