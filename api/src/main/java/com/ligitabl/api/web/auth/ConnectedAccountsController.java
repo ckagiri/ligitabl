@@ -14,6 +14,8 @@ import com.ligitabl.api.auth.impersonation.ImpersonationGuard;
 import com.ligitabl.api.auth.impersonation.UserSummary;
 import com.ligitabl.api.auth.oauth2.OAuth2AuthenticationSuccessHandler;
 import com.ligitabl.api.auth.security.WebUserDetails;
+import com.ligitabl.api.usecase.account.googlelink.UnlinkGoogleError;
+import com.ligitabl.api.usecase.account.googlelink.UnlinkGoogleUseCase;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.UserRepo;
 
@@ -29,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 public class ConnectedAccountsController {
 
     private final UserRepo userRepo;
+    private final UnlinkGoogleUseCase unlinkGoogleUseCase;
     private final ImpersonationGuard impersonationGuard;
     private final CurrentUserFacade currentUserFacade;
 
@@ -92,28 +95,32 @@ public class ConnectedAccountsController {
             return "redirect:/auth/login";
         }
 
-        boolean googleLinked = user.getGoogleId() != null && !user.getGoogleId().isBlank();
-        if (!googleLinked) {
-            redirectAttributes.addFlashAttribute("message", "Google account is not linked.");
-            redirectAttributes.addFlashAttribute("messageType", "info");
-            return "redirect:/profile/connected-accounts";
-        }
+        return unlinkGoogleUseCase
+                .execute(user.getId())
+                .fold(
+                        error -> switch (error) {
+                            case UnlinkGoogleError.NotLinked __ -> {
+                                flash(redirectAttributes, "Google account is not linked.", "info");
+                                yield "redirect:/profile/connected-accounts";
+                            }
+                            case UnlinkGoogleError.PasswordRequired __ -> {
+                                flash(
+                                        redirectAttributes,
+                                        "Set a password before unlinking Google so you can still sign in.",
+                                        "error");
+                                yield "redirect:/profile/connected-accounts";
+                            }
+                            case UnlinkGoogleError.UserNotFound __ -> "redirect:/auth/login";
+                        },
+                        updatedUser -> {
+                            flash(redirectAttributes, "Google account unlinked successfully.", "success");
+                            return "redirect:/profile/connected-accounts";
+                        });
+    }
 
-        if (user.getPassword() == null) {
-            redirectAttributes.addFlashAttribute(
-                    "message", "Set a password before unlinking Google so you can still sign in.");
-            redirectAttributes.addFlashAttribute("messageType", "error");
-            return "redirect:/profile/connected-accounts";
-        }
-
-        User updatedUser = user.withGoogleId(null);
-
-        userRepo.update(updatedUser);
-
-        log.info("[GOOGLE_UNLINKED] userId={}", user.getId());
-        redirectAttributes.addFlashAttribute("message", "Google account unlinked successfully.");
-        redirectAttributes.addFlashAttribute("messageType", "success");
-        return "redirect:/profile/connected-accounts";
+    private static void flash(RedirectAttributes redirectAttributes, String message, String messageType) {
+        redirectAttributes.addFlashAttribute("message", message);
+        redirectAttributes.addFlashAttribute("messageType", messageType);
     }
 
     private User currentUser(WebUserDetails userDetails) {

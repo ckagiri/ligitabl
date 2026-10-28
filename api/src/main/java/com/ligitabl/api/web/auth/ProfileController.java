@@ -25,15 +25,16 @@ import com.ligitabl.api.auth.impersonation.ImpersonationGuard;
 import com.ligitabl.api.auth.impersonation.UserSummary;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.usecase.account.setpassword.SetPasswordError;
+import com.ligitabl.api.usecase.account.setpassword.SetPasswordUseCase;
+import com.ligitabl.api.usecase.account.updateprofile.UpdateProfileUseCase;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationError;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationUseCase;
 import com.ligitabl.api.usecase.prediction.latestresult.GetResultBannerSettingUseCase;
 import com.ligitabl.api.usecase.prediction.latestresult.RestoreResultBannerUseCase;
 import com.ligitabl.api.usecase.shared.season.SeasonPredictionSupport;
-import com.ligitabl.model.auth.Password;
 import com.ligitabl.model.auth.Role;
 import com.ligitabl.model.domain.User;
-import com.ligitabl.model.domain.service.PasswordHasher;
 import com.ligitabl.model.repo.UserRepo;
 
 import jakarta.servlet.http.HttpSession;
@@ -52,7 +53,8 @@ import lombok.extern.slf4j.Slf4j;
 public class ProfileController {
 
     private final UserRepo userRepo;
-    private final PasswordHasher passwordHasher;
+    private final UpdateProfileUseCase updateProfileUseCase;
+    private final SetPasswordUseCase setPasswordUseCase;
     private final SeasonPredictionSupport seasonPredictionSupport;
     private final CompetitionDefaults competitionDefaults;
     private final GetResultBannerSettingUseCase getResultBannerSettingUseCase;
@@ -114,9 +116,12 @@ public class ProfileController {
             return "profile/settings";
         }
 
-        User updatedUser =
-                user.withDisplayName(form.getDisplayName()).withResultsEmailOptOut(!form.isReceiveResultsEmail());
-        userRepo.update(updatedUser);
+        User updatedUser = updateProfileUseCase
+                .execute(user.getId(), form.getDisplayName(), form.isReceiveResultsEmail())
+                .fold(error -> null, updated -> updated);
+        if (updatedUser == null) {
+            return "redirect:/auth/login";
+        }
         // While impersonating, the update targets the effective user — rewriting the session's
         // SecurityContext from them would re-authenticate the admin AS that user. Skip it.
         if (!currentUserFacade.isImpersonating()) {
@@ -129,7 +134,6 @@ public class ProfileController {
             restoreResultBannerUseCase.execute(updatedUser.getId());
         }
 
-        log.info("[PROFILE_UPDATED] userId={} newDisplayName={}", updatedUser.getId(), updatedUser.getDisplayName());
         redirectAttributes.addFlashAttribute("message", "Profile updated successfully");
         redirectAttributes.addFlashAttribute("messageType", "success");
 
@@ -218,22 +222,30 @@ public class ProfileController {
             return "profile/set-password";
         }
 
-        try {
-            Password.Hashed hashed = passwordHasher.hash(Password.Plaintext.create(form.getNewPassword()));
-            User updatedUser = user.withPassword(hashed);
-            userRepo.update(updatedUser);
-            refreshSessionAuthentication(updatedUser, session);
-
-            log.info("[PASSWORD_SET] userId={}", updatedUser.getId());
-            redirectAttributes.addFlashAttribute(
-                    "message", "Password set successfully. You can now sign in with email and password.");
-            redirectAttributes.addFlashAttribute("messageType", "success");
-            return "redirect:/profile/connected-accounts";
-        } catch (IllegalArgumentException e) {
-            result.rejectValue("newPassword", "password.invalid", "Password does not meet requirements");
-            model.addAttribute("pageTitle", "Set Password");
-            return "profile/set-password";
-        }
+        return setPasswordUseCase
+                .execute(user.getId(), form.getNewPassword())
+                .fold(
+                        error -> switch (error) {
+                            case SetPasswordError.InvalidPassword __ -> {
+                                result.rejectValue(
+                                        "newPassword", "password.invalid", "Password does not meet requirements");
+                                model.addAttribute("pageTitle", "Set Password");
+                                yield "profile/set-password";
+                            }
+                            case SetPasswordError.AlreadySet __ -> {
+                                flash(redirectAttributes, "A password is already set for this account.", "info");
+                                yield "redirect:/profile/settings";
+                            }
+                            case SetPasswordError.UserNotFound __ -> "redirect:/auth/login";
+                        },
+                        updatedUser -> {
+                            refreshSessionAuthentication(updatedUser, session);
+                            flash(
+                                    redirectAttributes,
+                                    "Password set successfully. You can now sign in with email and password.",
+                                    "success");
+                            return "redirect:/profile/connected-accounts";
+                        });
     }
 
     private static void flash(RedirectAttributes redirectAttributes, String message, String messageType) {

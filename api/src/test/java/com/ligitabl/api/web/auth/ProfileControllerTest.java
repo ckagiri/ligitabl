@@ -27,6 +27,8 @@ import com.ligitabl.api.auth.impersonation.CurrentUserFacade;
 import com.ligitabl.api.auth.impersonation.ImpersonationGuard;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.usecase.account.setpassword.SetPasswordUseCase;
+import com.ligitabl.api.usecase.account.updateprofile.UpdateProfileUseCase;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationUseCase;
 import com.ligitabl.api.usecase.prediction.latestresult.GetResultBannerSettingResult;
 import com.ligitabl.api.usecase.prediction.latestresult.GetResultBannerSettingUseCase;
@@ -82,7 +84,8 @@ class ProfileControllerTest {
     void setup() {
         controller = new ProfileController(
                 userRepo,
-                passwordHasher,
+                new UpdateProfileUseCase(userRepo),
+                new SetPasswordUseCase(userRepo, passwordHasher),
                 seasonPredictionSupport,
                 new CompetitionDefaults("premier-league"),
                 getResultBannerSettingUseCase,
