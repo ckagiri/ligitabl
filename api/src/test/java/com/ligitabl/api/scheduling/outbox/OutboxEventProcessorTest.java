@@ -181,7 +181,7 @@ class OutboxEventProcessorTest {
 
         processor.processOne(event);
 
-        verify(enqueuer).enqueue(payload);
+        verify(enqueuer).execute(payload);
         verify(outboxRepo).markSent(event.getId());
         verify(outboxRepo, never()).markFailed(any(), any(), any());
     }
@@ -198,7 +198,7 @@ class OutboxEventProcessorTest {
 
         processor.processOne(event);
 
-        verify(segmentResultsEnqueuer).enqueueForRound(payload);
+        verify(segmentResultsEnqueuer).execute(payload);
         verify(outboxRepo).markSent(event.getId());
     }
 
@@ -206,7 +206,7 @@ class OutboxEventProcessorTest {
     void segmentFanOutFailureRetriesTheWholeEvent() throws Exception {
         org.mockito.Mockito.doThrow(new RuntimeException("board query down"))
                 .when(segmentResultsEnqueuer)
-                .enqueueForRound(any());
+                .execute(any(RoundAdvancedPayload.class));
         OutboxEvent event = claimedEvent(
                 OutboxEventTypes.ROUND_ADVANCED,
                 objectMapper.writeValueAsString(new RoundAdvancedPayload(seasonId, 9, 10)),
@@ -227,8 +227,8 @@ class OutboxEventProcessorTest {
 
         processor.processOne(event);
 
-        verify(segmentResultsEnqueuer).enqueueForSeasonCompleted(payload);
-        verify(segmentResultsEnqueuer, never()).enqueueForRound(any());
+        verify(segmentResultsEnqueuer).execute(payload);
+        verify(segmentResultsEnqueuer, never()).execute(any(RoundAdvancedPayload.class));
         verify(outboxRepo).markSent(event.getId());
     }
 
@@ -923,7 +923,7 @@ class OutboxEventProcessorTest {
 
         processor.processOne(event);
 
-        verify(seasonWelcomeEnqueuer).enqueue(payload);
+        verify(seasonWelcomeEnqueuer).execute(payload);
         verify(outboxRepo).markSent(event.getId());
     }
 
@@ -931,7 +931,7 @@ class OutboxEventProcessorTest {
     void seasonWelcomeFanoutFailure_marksFailedSoTheWholeExpansionRetries() throws Exception {
         org.mockito.Mockito.doThrow(new RuntimeException("db down"))
                 .when(seasonWelcomeEnqueuer)
-                .enqueue(any());
+                .execute(any());
         OutboxEvent event = claimedEvent(
                 OutboxEventTypes.SEASON_WELCOME_FANOUT,
                 objectMapper.writeValueAsString(new SeasonWelcomeFanoutPayload(seasonId)),
@@ -1004,7 +1004,7 @@ class OutboxEventProcessorTest {
     void fanOutFailureMarksFailedNotSent() throws Exception {
         org.mockito.Mockito.doThrow(new RuntimeException("db down"))
                 .when(enqueuer)
-                .enqueue(any());
+                .execute(any());
         OutboxEvent event = claimedEvent(
                 OutboxEventTypes.ROUND_ADVANCED,
                 objectMapper.writeValueAsString(new RoundAdvancedPayload(seasonId, 22, 22)),

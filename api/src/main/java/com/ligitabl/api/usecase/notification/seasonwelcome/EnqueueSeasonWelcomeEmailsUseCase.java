@@ -31,7 +31,7 @@ public class EnqueueSeasonWelcomeEmailsUseCase {
     private final OutboxRepo outboxRepo;
     private final ObjectMapper objectMapper;
 
-    public void enqueue(SeasonWelcomeFanoutPayload event) {
+    public void execute(SeasonWelcomeFanoutPayload event) {
         List<User> recipients = userRepo.findMailableUsersWithPreSeasonRegistration(event.seasonId());
         if (recipients.isEmpty()) {
             log.info("[SEASON_WELCOME_ENQUEUED] seasonId={}, recipients=0", event.seasonId());

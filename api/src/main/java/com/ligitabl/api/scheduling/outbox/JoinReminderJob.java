@@ -21,7 +21,7 @@ public class JoinReminderJob {
     @Scheduled(cron = "${ligitabl.email.join-reminder.cron:0 0 9 * * *}")
     public void run() {
         try {
-            enqueueJoinRemindersUseCase.enqueueDueReminders();
+            enqueueJoinRemindersUseCase.execute();
         } catch (Exception e) {
             log.error("Join reminder job failed", e);
             Sentry.captureException(e);

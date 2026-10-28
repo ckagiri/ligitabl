@@ -81,7 +81,7 @@ public class EnqueueSegmentResultsEmailsUseCase {
      * Fired for every advanced round; returns immediately unless the round is the last of a sprint
      * or a quarter. At rounds 9/19/29/38 both close at once and are reported in one email.
      */
-    public void enqueueForRound(RoundAdvancedPayload event) {
+    public void execute(RoundAdvancedPayload event) {
         int roundPosition = event.roundPosition();
         Context ctx = resolveContext(event.seasonId(), "round=" + roundPosition);
         if (ctx == null) {
@@ -106,11 +106,11 @@ public class EnqueueSegmentResultsEmailsUseCase {
 
     /**
      * The season finale, and only the season: the full-season span is deliberately <em>not</em>
-     * considered by {@link #enqueueForRound}, so advancing the last round closes its sprint and
+     * considered by {@link #execute(RoundAdvancedPayload)}, so advancing the last round closes its sprint and
      * quarter and nothing more. Completing the season is a separate admin action taken afterwards,
      * and it produces an email carrying the season podium alone.
      */
-    public void enqueueForSeasonCompleted(SeasonCompletedPayload event) {
+    public void execute(SeasonCompletedPayload event) {
         Context ctx = resolveContext(event.seasonId(), "season-completed");
         if (ctx == null) {
             return;

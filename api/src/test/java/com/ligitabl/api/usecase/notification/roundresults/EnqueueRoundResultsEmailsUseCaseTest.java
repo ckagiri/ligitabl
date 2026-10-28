@@ -265,7 +265,7 @@ class EnqueueRoundResultsEmailsUseCaseTest {
     }
 
     private void enqueue() {
-        enqueuer.enqueue(new RoundAdvancedPayload(seasonId, ROUND, ROUND));
+        enqueuer.execute(new RoundAdvancedPayload(seasonId, ROUND, ROUND));
     }
 
     private List<OutboxEvent> savedEvents() {

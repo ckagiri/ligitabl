@@ -109,7 +109,7 @@ class EnqueueJoinRemindersUseCaseTest {
         when(outboxRepo.existsSentEventsOfTypeSince(eq(OutboxEventTypes.ROUND_RESULTS), any()))
                 .thenReturn(true);
 
-        enqueuer.enqueueDueReminders();
+        enqueuer.execute();
 
         verifyNoInteractions(seasonRepo, userRepo);
         verify(outboxRepo, never()).save(any());
@@ -120,7 +120,7 @@ class EnqueueJoinRemindersUseCaseTest {
         when(outboxRepo.existsEventsOfTypeCreatedSince(eq(OutboxEventTypes.JOIN_REMINDER), any()))
                 .thenReturn(true);
 
-        enqueuer.enqueueDueReminders();
+        enqueuer.execute();
 
         verifyNoInteractions(seasonRepo, userRepo);
         verify(outboxRepo, never()).save(any());
@@ -133,7 +133,7 @@ class EnqueueJoinRemindersUseCaseTest {
         when(outboxRepo.existsEventsOfTypeCreatedSince(eq(OutboxEventTypes.SEASON_WELCOME), any()))
                 .thenReturn(true);
 
-        enqueuer.enqueueDueReminders();
+        enqueuer.execute();
 
         verifyNoInteractions(seasonRepo, userRepo);
         verify(outboxRepo, never()).save(any());
@@ -143,7 +143,7 @@ class EnqueueJoinRemindersUseCaseTest {
     void skipsEntirely_whenNoActiveSeason() {
         when(seasonRepo.findActiveSeason("pl")).thenReturn(Optional.empty());
 
-        enqueuer.enqueueDueReminders();
+        enqueuer.execute();
 
         verifyNoInteractions(userRepo);
         verify(outboxRepo, never()).save(any());
@@ -155,7 +155,7 @@ class EnqueueJoinRemindersUseCaseTest {
         when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
                 .thenReturn(List.of(user));
 
-        enqueuer.enqueueDueReminders();
+        enqueuer.execute();
 
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(outboxRepo).save(captor.capture());
@@ -171,7 +171,7 @@ class EnqueueJoinRemindersUseCaseTest {
         when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
                 .thenReturn(List.of());
 
-        enqueuer.enqueueDueReminders();
+        enqueuer.execute();
 
         ArgumentCaptor<OffsetDateTime> staleCutoffCaptor = ArgumentCaptor.forClass(OffsetDateTime.class);
         verify(userRepo).findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), staleCutoffCaptor.capture());
@@ -182,7 +182,7 @@ class EnqueueJoinRemindersUseCaseTest {
     void skipsEntirely_whenSeasonHasNoPreSeasonOpensAt() {
         activeSeason(null, PREDICTIONS_OPEN);
 
-        enqueuer.enqueueDueReminders();
+        enqueuer.execute();
 
         verifyNoInteractions(userRepo);
         verify(outboxRepo, never()).save(any());
@@ -195,7 +195,7 @@ class EnqueueJoinRemindersUseCaseTest {
         activeSeason(
                 PRE_SEASON_OPENED, OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusHours(3));
 
-        enqueuer.enqueueDueReminders();
+        enqueuer.execute();
 
         verifyNoInteractions(userRepo);
         verify(outboxRepo, never()).save(any());
@@ -209,7 +209,7 @@ class EnqueueJoinRemindersUseCaseTest {
         when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
                 .thenReturn(List.of(userAgedDays(4)));
 
-        enqueuer.enqueueDueReminders();
+        enqueuer.execute();
 
         verify(outboxRepo).save(any());
     }
@@ -224,7 +224,7 @@ class EnqueueJoinRemindersUseCaseTest {
         when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
                 .thenReturn(List.of(userAgedDays(4)));
 
-        enqueuer.enqueueDueReminders();
+        enqueuer.execute();
 
         verify(outboxRepo).save(any());
     }
@@ -237,7 +237,7 @@ class EnqueueJoinRemindersUseCaseTest {
         when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
                 .thenReturn(List.of(user));
 
-        enqueuer.enqueueDueReminders();
+        enqueuer.execute();
 
         verify(outboxRepo, times(1)).save(any());
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
@@ -252,7 +252,7 @@ class EnqueueJoinRemindersUseCaseTest {
         when(userRepo.findUnjoinedUsersRegisteredBefore(eq(SEASON_ID), any(), any()))
                 .thenReturn(List.of(user));
 
-        enqueuer.enqueueDueReminders();
+        enqueuer.execute();
 
         verify(outboxRepo, never()).save(any());
     }
@@ -265,7 +265,7 @@ class EnqueueJoinRemindersUseCaseTest {
                 .thenReturn(List.of(bad, good));
         when(outboxRepo.save(any())).thenThrow(new RuntimeException("boom")).thenReturn(true);
 
-        enqueuer.enqueueDueReminders();
+        enqueuer.execute();
 
         verify(outboxRepo, times(2)).save(any());
     }

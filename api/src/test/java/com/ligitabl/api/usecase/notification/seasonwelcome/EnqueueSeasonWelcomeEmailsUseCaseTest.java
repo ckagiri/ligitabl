@@ -69,7 +69,7 @@ class EnqueueSeasonWelcomeEmailsUseCaseTest {
         User bob = user("bob@x.com");
         when(userRepo.findMailableUsersWithPreSeasonRegistration(SEASON_ID)).thenReturn(List.of(alice, bob));
 
-        enqueuer.enqueue(new SeasonWelcomeFanoutPayload(SEASON_ID));
+        enqueuer.execute(new SeasonWelcomeFanoutPayload(SEASON_ID));
 
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(outboxRepo, times(2)).save(captor.capture());
@@ -88,7 +88,7 @@ class EnqueueSeasonWelcomeEmailsUseCaseTest {
         UUID nextSeason = UUID.randomUUID();
         when(userRepo.findMailableUsersWithPreSeasonRegistration(nextSeason)).thenReturn(List.of(alice));
 
-        enqueuer.enqueue(new SeasonWelcomeFanoutPayload(nextSeason));
+        enqueuer.execute(new SeasonWelcomeFanoutPayload(nextSeason));
 
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(outboxRepo).save(captor.capture());
@@ -100,7 +100,7 @@ class EnqueueSeasonWelcomeEmailsUseCaseTest {
     void carriesTheAddressInThePayload() {
         when(userRepo.findMailableUsersWithPreSeasonRegistration(SEASON_ID)).thenReturn(List.of(user("carol@x.com")));
 
-        enqueuer.enqueue(new SeasonWelcomeFanoutPayload(SEASON_ID));
+        enqueuer.execute(new SeasonWelcomeFanoutPayload(SEASON_ID));
 
         ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
         verify(outboxRepo).save(captor.capture());
@@ -113,7 +113,7 @@ class EnqueueSeasonWelcomeEmailsUseCaseTest {
                 .thenReturn(List.of(user("bad@x.com"), user("good@x.com")));
         when(outboxRepo.save(any())).thenThrow(new RuntimeException("boom")).thenReturn(true);
 
-        enqueuer.enqueue(new SeasonWelcomeFanoutPayload(SEASON_ID));
+        enqueuer.execute(new SeasonWelcomeFanoutPayload(SEASON_ID));
 
         verify(outboxRepo, times(2)).save(any());
     }
@@ -122,7 +122,7 @@ class EnqueueSeasonWelcomeEmailsUseCaseTest {
     void noRecipients_writesNothing() {
         when(userRepo.findMailableUsersWithPreSeasonRegistration(SEASON_ID)).thenReturn(List.of());
 
-        enqueuer.enqueue(new SeasonWelcomeFanoutPayload(SEASON_ID));
+        enqueuer.execute(new SeasonWelcomeFanoutPayload(SEASON_ID));
 
         verify(outboxRepo, never()).save(any());
     }

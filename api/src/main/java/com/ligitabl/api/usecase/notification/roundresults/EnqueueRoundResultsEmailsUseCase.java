@@ -80,7 +80,7 @@ public class EnqueueRoundResultsEmailsUseCase {
 
     private record Recipient(User user, LeaderboardEntry sprintEntry, RoundResult result) {}
 
-    public void enqueue(RoundAdvancedPayload event) {
+    public void execute(RoundAdvancedPayload event) {
         int roundPosition = event.roundPosition();
 
         Season season = seasonRepo.findById(event.seasonId()).orElse(null);

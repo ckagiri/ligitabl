@@ -47,7 +47,7 @@ public class EnqueueSeasonInPlayUseCase {
     private final ObjectMapper objectMapper;
     private final Clock clock;
 
-    public void enqueueIfSeasonInPlay() {
+    public void execute() {
         Season season = seasonRepo
                 .findActiveSeason(competitionDefaults.defaultCompetitionSlug())
                 .orElse(null);

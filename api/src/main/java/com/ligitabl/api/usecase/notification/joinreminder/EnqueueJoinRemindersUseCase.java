@@ -49,7 +49,7 @@ public class EnqueueJoinRemindersUseCase {
     private final JoinReminderProperties properties;
     private final Clock clock;
 
-    public void enqueueDueReminders() {
+    public void execute() {
         OffsetDateTime todayStart = OffsetDateTime.now(clock)
                 .toLocalDate()
                 .atStartOfDay(ZoneOffset.UTC)

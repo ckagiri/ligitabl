@@ -46,6 +46,6 @@ public class SeasonInPlayJob {
 
     @Scheduled(fixedDelay = 15 * 60 * 1000, initialDelay = 60 * 1000)
     public void run() {
-        runner.runSafely(JobNames.SEASON_IN_PLAY, enqueueSeasonInPlayUseCase::enqueueIfSeasonInPlay);
+        runner.runSafely(JobNames.SEASON_IN_PLAY, enqueueSeasonInPlayUseCase::execute);
     }
 }

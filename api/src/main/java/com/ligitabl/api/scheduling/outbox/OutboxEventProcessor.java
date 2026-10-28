@@ -115,12 +115,12 @@ public class OutboxEventProcessor {
      */
     private void processRoundAdvanced(OutboxEvent event) throws Exception {
         RoundAdvancedPayload payload = objectMapper.readValue(event.getPayload(), RoundAdvancedPayload.class);
-        enqueueRoundResultsEmailsUseCase.enqueue(payload);
+        enqueueRoundResultsEmailsUseCase.execute(payload);
 
         // Second fan-out from the same fact. Most rounds close no segment and this is a cheap
         // no-op; at a boundary it writes the podium emails. Sharing this transaction means a
         // failure in either expansion retries both, which is safe — every insert is keyed.
-        enqueueSegmentResultsEmailsUseCase.enqueueForRound(payload);
+        enqueueSegmentResultsEmailsUseCase.execute(payload);
     }
 
     /**
@@ -129,7 +129,7 @@ public class OutboxEventProcessor {
      */
     private void processSeasonCompleted(OutboxEvent event) throws Exception {
         SeasonCompletedPayload payload = objectMapper.readValue(event.getPayload(), SeasonCompletedPayload.class);
-        enqueueSegmentResultsEmailsUseCase.enqueueForSeasonCompleted(payload);
+        enqueueSegmentResultsEmailsUseCase.execute(payload);
     }
 
     /**
@@ -287,7 +287,7 @@ public class OutboxEventProcessor {
     private void processSeasonWelcomeFanout(OutboxEvent event) throws Exception {
         SeasonWelcomeFanoutPayload payload =
                 objectMapper.readValue(event.getPayload(), SeasonWelcomeFanoutPayload.class);
-        enqueueSeasonWelcomeEmailsUseCase.enqueue(payload);
+        enqueueSeasonWelcomeEmailsUseCase.execute(payload);
     }
 
     private void processSeasonWelcome(OutboxEvent event) throws Exception {

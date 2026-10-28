@@ -31,7 +31,7 @@ public class JoinReminderStartupRecovery {
     @EventListener(ApplicationReadyEvent.class)
     public void runOnStartup() {
         try {
-            enqueueJoinRemindersUseCase.enqueueDueReminders();
+            enqueueJoinRemindersUseCase.execute();
         } catch (Exception e) {
             log.error("Join reminder startup recovery failed", e);
             Sentry.captureException(e);

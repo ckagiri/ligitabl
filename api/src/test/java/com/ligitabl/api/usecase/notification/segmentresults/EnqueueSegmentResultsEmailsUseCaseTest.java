@@ -253,7 +253,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
         @Test
         @DisplayName("a mid-sprint round closes nothing and writes no events")
         void midSprintRoundIsANoOp() {
-            enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 7, 8));
+            enqueuer.execute(new RoundAdvancedPayload(seasonId, 7, 8));
 
             verify(outboxRepo, never()).save(any());
             verify(leaderboardRepo, never())
@@ -268,7 +268,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
         @DisplayName("no round between two boundaries produces anything")
         void everyMidSegmentRoundIsANoOp() {
             for (int round : new int[] {5, 6, 7, 8, 11, 12, 13}) {
-                enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, round, round + 1));
+                enqueuer.execute(new RoundAdvancedPayload(seasonId, round, round + 1));
             }
 
             verify(outboxRepo, never()).save(any());
@@ -279,7 +279,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
         void sprintOnlyBoundary() {
             board(S1, 41, entry(alice, 1, 90), entry(bob, 2, 85), entry(carol, 3, 80));
 
-            enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 4, 5));
+            enqueuer.execute(new RoundAdvancedPayload(seasonId, 4, 5));
 
             assertThat(savedEvents()).hasSize(3);
             SegmentResultsPayload payload = payloadFor(alice);
@@ -305,7 +305,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
             board(S2, 41, entry(alice, 1, 95), entry(bob, 2, 90), entry(carol, 3, 88));
             board(Q1, 58, entry(alice, 2, 390), entry(dave, 1, 400), entry(carol, 3, 380));
 
-            enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 9, 10));
+            enqueuer.execute(new RoundAdvancedPayload(seasonId, 9, 10));
 
             SegmentResultsPayload alicePayload = payloadFor(alice);
             assertThat(alicePayload.placements())
@@ -323,7 +323,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
             board(S2, 41, entry(alice, 1, 95), entry(bob, 2, 90), entry(carol, 3, 88));
             board(Q1, 58, entry(alice, 2, 390), entry(dave, 1, 400), entry(carol, 3, 380));
 
-            enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 9, 10));
+            enqueuer.execute(new RoundAdvancedPayload(seasonId, 9, 10));
 
             assertThat(payloadFor(bob).placements())
                     .extracting(SegmentResultsPayload.SegmentPlacement::code)
@@ -343,7 +343,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
             board(S2, 41, entry(alice, 1, 95), entry(bob, 2, 90), entry(carol, 3, 88));
             board(Q1, 58, entry(alice, 2, 390), entry(dave, 1, 400), entry(carol, 3, 380));
 
-            enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 9, 10));
+            enqueuer.execute(new RoundAdvancedPayload(seasonId, 9, 10));
 
             assertThat(savedEvents().stream()
                             .map(EnqueueSegmentResultsEmailsUseCaseTest.this::payloadOf)
@@ -370,7 +370,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
         void noBackfill() {
             board(S1, 41, entry(alice, 1, 90), entry(optedOut, 2, 85), entry(carol, 3, 80), entry(dave, 4, 75));
 
-            enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 4, 5));
+            enqueuer.execute(new RoundAdvancedPayload(seasonId, 4, 5));
 
             assertThat(savedEvents()).as("two recipients, not three").hasSize(2);
             assertThat(savedEvents().stream()
@@ -385,7 +385,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
         void liveModeFilters() {
             board(S1, 41, entry(unverified, 1, 90), entry(testAccount, 2, 85), entry(alice, 3, 80));
 
-            enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 4, 5));
+            enqueuer.execute(new RoundAdvancedPayload(seasonId, 4, 5));
 
             assertThat(savedEvents()).hasSize(1);
             assertThat(payloadFor(alice).placements().get(0).rank())
@@ -399,7 +399,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
             properties.setMode("test");
             board(S1, 41, entry(alice, 1, 90), entry(testAccount, 2, 85), entry(carol, 3, 80));
 
-            enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 4, 5));
+            enqueuer.execute(new RoundAdvancedPayload(seasonId, 4, 5));
 
             assertThat(savedEvents()).hasSize(1);
             assertThat(payloadOf(savedEvents().get(0)).userId()).isEqualTo(testAccount.id);
@@ -410,7 +410,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
         void nobodyMailableWritesNothing() {
             board(S1, 41, entry(unverified, 1, 90), entry(optedOut, 2, 85));
 
-            enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 4, 5));
+            enqueuer.execute(new RoundAdvancedPayload(seasonId, 4, 5));
 
             verify(outboxRepo, never()).save(any());
         }
@@ -421,7 +421,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
             properties.setTopN(2);
             board(S1, 41, entry(alice, 1, 90), entry(bob, 2, 85), entry(carol, 3, 80));
 
-            enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 4, 5));
+            enqueuer.execute(new RoundAdvancedPayload(seasonId, 4, 5));
 
             assertThat(savedEvents()).hasSize(2);
         }
@@ -438,7 +438,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
         void appliesTheDelay() {
             board(S1, 41, entry(alice, 1, 90));
 
-            enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 4, 5));
+            enqueuer.execute(new RoundAdvancedPayload(seasonId, 4, 5));
 
             assertThat(savedEvents().get(0).getAvailableAt()).isEqualTo(NOW.plus(Duration.ofDays(1)));
         }
@@ -448,7 +448,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
         void seasonUsesItsOwnDelay() {
             board(FULL_SEASON, 61, entry(alice, 1, 1500));
 
-            enqueuer.enqueueForSeasonCompleted(new SeasonCompletedPayload(seasonId));
+            enqueuer.execute(new SeasonCompletedPayload(seasonId));
 
             assertThat(savedEvents().get(0).getAvailableAt()).isEqualTo(NOW.plus(Duration.ofHours(1)));
         }
@@ -459,8 +459,8 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
             board(S1, 41, entry(alice, 1, 90));
             board(FULL_SEASON, 61, entry(alice, 1, 1500));
 
-            enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 4, 5));
-            enqueuer.enqueueForSeasonCompleted(new SeasonCompletedPayload(seasonId));
+            enqueuer.execute(new RoundAdvancedPayload(seasonId, 4, 5));
+            enqueuer.execute(new SeasonCompletedPayload(seasonId));
 
             assertThat(savedEvents())
                     .extracting(OutboxEvent::getAvailableAt)
@@ -473,7 +473,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
             properties.setDelay(Duration.ZERO);
             board(S1, 41, entry(alice, 1, 90));
 
-            enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 4, 5));
+            enqueuer.execute(new RoundAdvancedPayload(seasonId, 4, 5));
 
             assertThat(savedEvents().get(0).getAvailableAt()).isEqualTo(NOW);
         }
@@ -489,8 +489,8 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
             board(S1, 41, entry(alice, 1, 90));
             board(FULL_SEASON, 61, entry(alice, 1, 1500));
 
-            enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 4, 5));
-            enqueuer.enqueueForSeasonCompleted(new SeasonCompletedPayload(seasonId));
+            enqueuer.execute(new RoundAdvancedPayload(seasonId, 4, 5));
+            enqueuer.execute(new SeasonCompletedPayload(seasonId));
 
             assertThat(savedEvents())
                     .extracting(OutboxEvent::getIdempotencyKey)
@@ -504,7 +504,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
         void seasonCompletionReportsTheSeason() {
             board(FULL_SEASON, 61, entry(alice, 1, 1500), entry(bob, 2, 1450));
 
-            enqueuer.enqueueForSeasonCompleted(new SeasonCompletedPayload(seasonId));
+            enqueuer.execute(new SeasonCompletedPayload(seasonId));
 
             assertThat(savedEvents()).hasSize(2);
             assertThat(payloadFor(alice).placements()).singleElement().satisfies(p -> {
@@ -522,7 +522,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
         void payloadIsSelfContained() {
             board(S1, 41, entry(alice, 1, 90));
 
-            enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 4, 5));
+            enqueuer.execute(new RoundAdvancedPayload(seasonId, 4, 5));
 
             SegmentResultsPayload payload = payloadFor(alice);
             assertThat(payload.userEmail()).isEqualTo("alice@x.com");
@@ -545,7 +545,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
             UUID unknown = UUID.randomUUID();
             when(seasonRepo.findById(unknown)).thenReturn(Optional.empty());
 
-            enqueuer.enqueueForRound(new RoundAdvancedPayload(unknown, 4, 5));
+            enqueuer.execute(new RoundAdvancedPayload(unknown, 4, 5));
 
             verify(outboxRepo, never()).save(any());
         }
@@ -559,7 +559,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
                             .phases(List.of())
                             .build()));
 
-            enqueuer.enqueueForRound(new RoundAdvancedPayload(seasonId, 4, 5));
+            enqueuer.execute(new RoundAdvancedPayload(seasonId, 4, 5));
 
             verify(outboxRepo, never()).save(any());
         }
@@ -573,7 +573,7 @@ class EnqueueSegmentResultsEmailsUseCaseTest {
                             .phases(List.of(Q1, S1))
                             .build()));
 
-            enqueuer.enqueueForSeasonCompleted(new SeasonCompletedPayload(seasonId));
+            enqueuer.execute(new SeasonCompletedPayload(seasonId));
 
             verify(outboxRepo, never()).save(any());
         }
