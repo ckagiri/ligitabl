@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.AuthenticationError;
+import com.ligitabl.api.usecase.shared.auth.TokenGenerator;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.auth.Role;
 

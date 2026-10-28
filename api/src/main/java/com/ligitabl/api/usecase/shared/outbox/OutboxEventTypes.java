@@ -1,4 +1,4 @@
-package com.ligitabl.api.notification.outbox;
+package com.ligitabl.api.usecase.shared.outbox;
 
 public final class OutboxEventTypes {
 

@@ -13,7 +13,7 @@ import org.junit.jupiter.api.Test;
 
 /**
  * Adapters (rest, web, scheduling, runners) depend on use cases, never the reverse. Use cases reach
- * outbound adapters (the football-data client, Slack alerts) through ports.
+ * outbound adapters (client, notification, auth) through ports, which live in usecase.
  */
 class UseCaseDependencyRuleTest {
 
@@ -21,7 +21,7 @@ class UseCaseDependencyRuleTest {
     private static final Pattern ADAPTER_REF =
             Pattern.compile("\\bcom\\.ligitabl\\.api\\.(rest|web|scheduling|runners)\\.");
     private static final Pattern OUTBOUND_ADAPTER_REF =
-            Pattern.compile("\\bcom\\.ligitabl\\.api\\.(client\\.|notification\\.AdminNotificationService\\b)");
+            Pattern.compile("\\bcom\\.ligitabl\\.api\\.(client|notification|auth)\\.");
 
     @Test
     void useCasesDoNotDependOnAdapters() throws IOException {

@@ -4,11 +4,11 @@ import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
-import com.ligitabl.api.notification.email.EmailCommand;
-import com.ligitabl.api.notification.email.EmailError;
-import com.ligitabl.api.notification.email.EmailProvider;
-import com.ligitabl.api.notification.email.EmailTemplateRenderer;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.shared.email.EmailCommand;
+import com.ligitabl.api.usecase.shared.email.EmailError;
+import com.ligitabl.api.usecase.shared.email.EmailProvider;
+import com.ligitabl.api.usecase.shared.email.EmailTemplateRenderer;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

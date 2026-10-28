@@ -18,7 +18,7 @@ When changing behavior (endpoints, validation, persistence), update the relevant
 
 Adapters (`rest`, `web`, `scheduling`, `runners`) depend on `usecase`, never the reverse. `UseCaseDependencyRuleTest` enforces this. If a use case needs something from an adapter package, move that class into `usecase` instead.
 
-Outbound adapters (`client.*` and `notification.AdminNotificationService`) are reached through ports: an interface the use case depends on, with the adapter implementing it. Examples: `MatchFeed`, `AdminAlerts`, `TokenGenerator`, `EmailProvider`, `EmailTemplateRenderer`. The same test fails the build on a direct reference.
+Outbound adapters (`client`, `notification`, `auth`) are reached through ports: an interface the use case depends on, with the adapter implementing it. The port and the types in its signature live in `usecase` (shared ones in `usecase/shared/…`), so the dependency points from adapter to core. Examples: `MatchFeed`, `AdminAlerts`, `TokenGenerator`, `EmailProvider`, `EmailTemplateRenderer`. Outbox event types and the payloads use cases write (`usecase/shared/outbox`) follow the same rule. The same test fails the build on a direct reference.
 
 A port belongs where the core meets the outside world and translates its types: `MatchFeed` returns `FeedMatch` records with our `MatchStatus`, never football-data's DTOs or status strings. Don't put an interface between two adapters; a runner or scheduler can use `client.*` directly.
 

@@ -29,8 +29,8 @@ import org.mockito.quality.Strictness;
 import org.springframework.scheduling.TaskScheduler;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ligitabl.api.notification.outbox.OutboxEventTypes;
 import com.ligitabl.api.usecase.shared.AdminAlerts;
+import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
@@ -86,7 +86,7 @@ class RoundAdvancementServiceTest {
     private record RoundFinalizedOutboxAssertion(OutboxEvent event) {
         void hasPayload(int roundPosition, int currentRoundPosition) throws Exception {
             var payload = new ObjectMapper()
-                    .readValue(event.getPayload(), com.ligitabl.api.notification.outbox.RoundAdvancedPayload.class);
+                    .readValue(event.getPayload(), com.ligitabl.api.usecase.shared.outbox.RoundAdvancedPayload.class);
             assertThat(payload.roundPosition()).isEqualTo(roundPosition);
             assertThat(payload.currentRoundPosition()).isEqualTo(currentRoundPosition);
         }
