@@ -9,12 +9,13 @@ import java.time.Year;
 import java.time.ZoneOffset;
 
 /**
- * The base year and date helpers every test calendar in the suite derives from.
+ * The base year and date helpers every test calendar in this module derives from.
  *
- * <p>Callers keep their own month/day boundaries — the DB-backed integration fixtures use a generic
- * 1 August → 31 May window, while the {@code Season} domain tests use the real Premier League
- * dates. What is shared, and what belongs here, is the base year and the two derivations that were
- * otherwise copied alongside it.
+ * <p>Callers keep their own month/day boundaries; the DB-backed integration fixtures use a generic
+ * 1 August → 31 May window. What is shared, and what belongs here, is the base year and the two
+ * derivations that were otherwise copied alongside it. The {@code Season} domain tests live in the
+ * model module, which can't see this class, so their {@code SeasonTestFixtures} keeps its own copy of
+ * the same base year and midpoint rule.
  *
  * <p><b>Why the year is read from the clock at all.</b> Hard-coding it means a fixture that reads
  * as a stale snapshot within a couple of seasons, at which point somebody "helpfully" refreshes it

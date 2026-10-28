@@ -1,12 +1,12 @@
-package com.ligitabl.api.domain.season;
+package com.ligitabl.model.domain.season;
 
-import static com.ligitabl.api.domain.season.SeasonTestFixtures.NEXT_SEASON_END;
-import static com.ligitabl.api.domain.season.SeasonTestFixtures.NEXT_SEASON_START;
-import static com.ligitabl.api.domain.season.SeasonTestFixtures.NOW;
-import static com.ligitabl.api.domain.season.SeasonTestFixtures.PREDICTIONS_OPEN_AT;
-import static com.ligitabl.api.domain.season.SeasonTestFixtures.PREVIOUS_SEASON_END;
-import static com.ligitabl.api.domain.season.SeasonTestFixtures.PRE_SEASON_OPENS_AT;
-import static com.ligitabl.api.domain.season.SeasonTestFixtures.utc;
+import static com.ligitabl.model.domain.season.SeasonTestFixtures.NEXT_SEASON_END;
+import static com.ligitabl.model.domain.season.SeasonTestFixtures.NEXT_SEASON_START;
+import static com.ligitabl.model.domain.season.SeasonTestFixtures.NOW;
+import static com.ligitabl.model.domain.season.SeasonTestFixtures.PREDICTIONS_OPEN_AT;
+import static com.ligitabl.model.domain.season.SeasonTestFixtures.PREVIOUS_SEASON_END;
+import static com.ligitabl.model.domain.season.SeasonTestFixtures.PRE_SEASON_OPENS_AT;
+import static com.ligitabl.model.domain.season.SeasonTestFixtures.utc;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Instant;

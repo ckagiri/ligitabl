@@ -1,13 +1,14 @@
-package com.ligitabl.api.domain.season;
+package com.ligitabl.model.domain.season;
 
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.time.Year;
 import java.time.ZoneOffset;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
-import com.ligitabl.api.testsupport.TestCalendar;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonSlug;
 
@@ -34,13 +35,13 @@ final class SeasonTestFixtures {
 
     /**
      * The year the upcoming season kicks off in — the current year, so these fixtures never read as
-     * a stale snapshot of one particular season. See {@link TestCalendar} for why deriving it is
+     * a stale snapshot of one particular season. See the api module's {@code TestCalendar} for why deriving it is
      * safe and how to re-check that.
      */
-    private static final int SEASON_START_YEAR = TestCalendar.SEASON_START_YEAR;
+    private static final int SEASON_START_YEAR = Year.now(ZoneOffset.UTC).getValue();
 
     /** The upcoming season's slug, in the {@code YYYY-YY} form {@code SeasonSlug} requires. */
-    static final String SEASON_SLUG = TestCalendar.seasonSlug(SEASON_START_YEAR);
+    static final String SEASON_SLUG = "%d-%02d".formatted(SEASON_START_YEAR, (SEASON_START_YEAR + 1) % 100);
 
     /** Last season — over by the time {@link #NOW} arrives. */
     static final LocalDate PREVIOUS_SEASON_START = LocalDate.of(SEASON_START_YEAR - 1, 8, 10);
@@ -103,12 +104,18 @@ final class SeasonTestFixtures {
      * where an edit makes them unsatisfiable rather than merely different.
      */
     static final Instant NOW =
-            TestCalendar.middayMidwayBetween(PRE_SEASON_OPENS_AT.toLocalDate(), PREDICTIONS_OPEN_AT.toLocalDate());
+            middayMidwayBetween(PRE_SEASON_OPENS_AT.toLocalDate(), PREDICTIONS_OPEN_AT.toLocalDate());
 
     /** {@link #NOW} as a calendar date, in the zone {@code getSeasonState} evaluates in. */
     private static final LocalDate TODAY = LocalDate.ofInstant(NOW, ZoneOffset.UTC);
 
     private SeasonTestFixtures() {}
+
+    private static Instant middayMidwayBetween(LocalDate from, LocalDate to) {
+        return from.plusDays(ChronoUnit.DAYS.between(from, to) / 2)
+                .atTime(LocalTime.NOON)
+                .toInstant(ZoneOffset.UTC);
+    }
 
     static Season season(boolean completed, OffsetDateTime preSeasonOpensAt, OffsetDateTime predictionsOpenAt) {
         // A completed season's own start/end are both in the past; an upcoming (not-yet-started)
