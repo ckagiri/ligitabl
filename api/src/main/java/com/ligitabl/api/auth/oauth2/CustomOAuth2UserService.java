@@ -1,10 +1,6 @@
 package com.ligitabl.api.auth.oauth2;
 
-import java.time.OffsetDateTime;
-import java.util.Locale;
 import java.util.Map;
-import java.util.Set;
-import java.util.UUID;
 
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;
 import org.springframework.security.oauth2.client.userinfo.OAuth2UserRequest;
@@ -13,24 +9,19 @@ import org.springframework.security.oauth2.core.OAuth2Error;
 import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Service;
 
-import com.ligitabl.api.notification.AdminNotificationService;
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.auth.Role;
+import com.ligitabl.api.usecase.auth.googlesignin.GoogleIdentity;
+import com.ligitabl.api.usecase.auth.googlesignin.SignInWithGoogleError;
+import com.ligitabl.api.usecase.auth.googlesignin.SignInWithGoogleUseCase;
 import com.ligitabl.model.domain.User;
-import com.ligitabl.model.domain.service.PublicIdGenerator;
-import com.ligitabl.model.repo.UserRepo;
 
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
+/** Validates Google's payload, then hands the sign-in to {@link SignInWithGoogleUseCase}. */
 @Service
 @RequiredArgsConstructor
-@Slf4j
 public class CustomOAuth2UserService extends DefaultOAuth2UserService {
 
-    private final UserRepo userRepo;
-    private final PublicIdGenerator publicIdGenerator;
-    private final AdminNotificationService adminNotificationService;
+    private final SignInWithGoogleUseCase signInWithGoogleUseCase;
 
     @Override
     public OAuth2User loadUser(OAuth2UserRequest userRequest) throws OAuth2AuthenticationException {
@@ -48,7 +39,20 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
             throw oauthError("Email is missing from OAuth2 payload");
         }
 
-        return userRepo.findByGoogleId(userInfo.id()).orElseGet(() -> findByEmailOrCreate(userInfo));
+        return signInWithGoogleUseCase
+                .execute(new GoogleIdentity(userInfo.id(), userInfo.email(), userInfo.name()))
+                .fold(
+                        error -> {
+                            throw oauthError(message(error));
+                        },
+                        user -> user);
+    }
+
+    private static String message(SignInWithGoogleError error) {
+        return switch (error) {
+            case SignInWithGoogleError.EmailLinkedToOtherGoogleAccount
+            __ -> "This email is already linked to another Google account";
+        };
     }
 
     private OAuth2User processOAuth2User(OAuth2UserRequest userRequest, OAuth2User oauth2User) {
@@ -73,92 +77,7 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
         return new LigitablOAuth2User(user, oauth2User.getAttributes());
     }
 
-    private User findByEmailOrCreate(OAuth2UserInfo userInfo) {
-        Email email = Email.create(userInfo.email().trim().toLowerCase(Locale.ROOT));
-
-        return userRepo.findByEmail(email)
-                .map(existing -> linkExistingUser(existing, userInfo))
-                .orElseGet(() -> createOAuth2User(email, userInfo));
-    }
-
-    private User linkExistingUser(User existing, OAuth2UserInfo userInfo) {
-        String googleId = userInfo.id();
-
-        if (existing.getGoogleId() != null && !existing.getGoogleId().equals(googleId)) {
-            throw oauthError("This email is already linked to another Google account");
-        }
-
-        if (existing.getGoogleId() == null) {
-            User linkedUser = existing.withEmailVerified(true).withGoogleId(googleId);
-            if (linkedUser.getEmailVerifiedAt() == null) {
-                linkedUser = linkedUser.withEmailVerifiedAt(OffsetDateTime.now());
-            }
-            userRepo.update(linkedUser);
-            log.info(
-                    "[OAUTH_GOOGLE_LINKED] userId={} email={}",
-                    existing.getId(),
-                    existing.getEmail().value());
-            return linkedUser;
-        }
-
-        return existing;
-    }
-
-    private User createOAuth2User(Email email, OAuth2UserInfo userInfo) {
-        UUID userId = UUID.randomUUID();
-        String displayName = (userInfo.name() == null || userInfo.name().isBlank())
-                ? extractNameFromEmail(email.value())
-                : userInfo.name();
-
-        User user = User.builder()
-                .id(userId)
-                .publicId(publicIdGenerator.generate(userId))
-                .email(email)
-                .displayName(displayName)
-                .password(null)
-                .roles(Set.of(Role.PLAYER))
-                .emailVerified(true)
-                .emailVerifiedAt(OffsetDateTime.now())
-                .googleId(userInfo.id())
-                .build();
-
-        userRepo.create(user);
-        log.info(
-                "[OAUTH_GOOGLE_CREATED] userId={} email={}",
-                user.getId(),
-                user.getEmail().value());
-        adminNotificationService.notifyNewUserSignup(
-                user.getPublicId().value(),
-                user.getDisplayName(),
-                user.getEmail().value(),
-                "Google sign-in");
-        return user;
-    }
-
     private OAuth2AuthenticationException oauthError(String message) {
         return new OAuth2AuthenticationException(new OAuth2Error("oauth2_user_processing_error"), message);
-    }
-
-    private String extractNameFromEmail(String email) {
-        if (email == null || email.isBlank()) {
-            return "Player";
-        }
-
-        String localPart = email.split("@")[0];
-        String extracted = capitalizeWords(localPart.replace(".", " ").replace("_", " "));
-        return extracted.isBlank() ? "Player" : extracted;
-    }
-
-    private String capitalizeWords(String input) {
-        String[] words = input.split("\\s+");
-        StringBuilder result = new StringBuilder();
-        for (String word : words) {
-            if (!word.isEmpty()) {
-                result.append(Character.toUpperCase(word.charAt(0)))
-                        .append(word.substring(1).toLowerCase())
-                        .append(" ");
-            }
-        }
-        return result.toString().trim();
     }
 }

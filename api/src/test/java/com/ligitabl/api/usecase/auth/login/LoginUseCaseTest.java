@@ -50,7 +50,8 @@ class LoginUseCaseTest {
 
     @BeforeEach
     void setUp() {
-        loginUseCase = new LoginUseCase(userRepo, passwordHasher, tokenGenerator, requestValidator);
+        loginUseCase = new LoginUseCase(
+                new VerifyCredentialsUseCase(userRepo, passwordHasher), tokenGenerator, requestValidator);
 
         email = Email.create("test@example.com");
         password = Password.Plaintext.create("password123");
@@ -99,6 +100,22 @@ class LoginUseCaseTest {
         assertThat(result.getLeft()).isInstanceOf(AuthorizationError.class);
 
         verify(userRepo).findByEmail(email);
+        verify(passwordHasher, never()).verify(any(), any());
+        verify(tokenGenerator, never()).generateAccessToken(any(), any());
+    }
+
+    /** Regression: this used to pass a null hash to the hasher and fail with an NPE (a 500). */
+    @Test
+    void shouldFailWhenAccountHasNoPassword() {
+        var cmd = new LoginCommand(email, password);
+        User googleOnly = user.withPassword(null);
+
+        when(requestValidator.validate(cmd)).thenReturn(Either.right(cmd));
+        when(userRepo.findByEmail(email)).thenReturn(Optional.of(googleOnly));
+
+        Either<UseCaseError, LoginResult> result = loginUseCase.execute(cmd);
+
+        assertThat(result.getLeft()).isInstanceOf(AuthorizationError.class);
         verify(passwordHasher, never()).verify(any(), any());
         verify(tokenGenerator, never()).generateAccessToken(any(), any());
     }

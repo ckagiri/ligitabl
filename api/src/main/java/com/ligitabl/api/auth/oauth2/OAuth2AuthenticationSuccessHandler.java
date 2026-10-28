@@ -16,6 +16,8 @@ import org.springframework.security.web.savedrequest.HttpSessionRequestCache;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
+import com.ligitabl.api.usecase.account.googlelink.LinkGoogleError;
+import com.ligitabl.api.usecase.account.googlelink.LinkGoogleUseCase;
 import com.ligitabl.api.usecase.auth.recordlogin.RecordLoginUseCase;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.UserRepo;
@@ -39,6 +41,7 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
     public static final String LINKING_FEEDBACK_TYPE_SESSION_KEY = "OAUTH2_LINKING_FEEDBACK_TYPE";
 
     private final UserRepo userRepo;
+    private final LinkGoogleUseCase linkGoogleUseCase;
     private final RecordLoginUseCase recordLoginUseCase;
     private final CustomOAuth2UserService customOAuth2UserService;
     // Always-remember variant (no checkbox exists in the redirect flow); resolved by bean name.
@@ -87,24 +90,23 @@ public class OAuth2AuthenticationSuccessHandler extends SimpleUrlAuthenticationS
             return;
         }
 
-        User otherUser = userRepo.findByGoogleId(userInfo.id()).orElse(null);
-        if (otherUser != null && !otherUser.getId().equals(userId)) {
-            log.warn(
-                    "[GOOGLE_ALREADY_LINKED] googleId={} already linked to userId={}",
-                    userInfo.id(),
-                    otherUser.getId());
+        var linked = linkGoogleUseCase.execute(userId, userInfo.id());
+        if (linked.isLeft()) {
             clearLinkingState(session);
             setLinkingFeedback(
-                    session, "That Google account is already linked to another LigiPredictor account.", "error");
+                    session,
+                    switch (linked.getLeft()) {
+                        case LinkGoogleError.LinkedToAnotherUser
+                        __ -> "That Google account is already linked to another LigiPredictor account.";
+                        case LinkGoogleError.UserNotFound
+                        __ -> "We could not link that Google account. Please try again.";
+                    },
+                    "error");
             establishSessionAuthentication(existingUser, session);
             getRedirectStrategy().sendRedirect(request, response, "/profile/connected-accounts");
             return;
         }
-
-        User updatedUser = existingUser.withEmailVerified(true).withGoogleId(userInfo.id());
-
-        userRepo.update(updatedUser);
-        log.info("[GOOGLE_LINKED_SUCCESS] userId={} googleId={}", updatedUser.getId(), userInfo.id());
+        User updatedUser = linked.get();
 
         clearLinkingState(session);
         session.setAttribute("accountLinkingSuccess", true);
