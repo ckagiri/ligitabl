@@ -1,4 +1,4 @@
-package com.ligitabl.api.domain;
+package com.ligitabl.api.usecase.shared.standings;
 
 import java.util.List;
 import java.util.Set;
@@ -110,10 +110,6 @@ public class StandingsCalculatorService {
             log.error("Standings calculation failed", e);
             return Either.left(new StandingsError.CalculationFailed(e.getMessage()));
         }
-    }
-
-    public boolean validate(List<StandingsTeamRank> standings, List<Match> finishedMatches, int totalTeams) {
-        return StandingsCalculator.validate(standings, finishedMatches, totalTeams);
     }
 
     private record StandingsData(List<Team> teams, List<Match> matches) {}

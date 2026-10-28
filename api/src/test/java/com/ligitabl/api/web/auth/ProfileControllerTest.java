@@ -28,8 +28,10 @@ import com.ligitabl.api.auth.impersonation.ImpersonationGuard;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationUseCase;
+import com.ligitabl.api.usecase.prediction.latestresult.GetResultBannerSettingResult;
+import com.ligitabl.api.usecase.prediction.latestresult.GetResultBannerSettingUseCase;
+import com.ligitabl.api.usecase.prediction.latestresult.RestoreResultBannerUseCase;
 import com.ligitabl.api.usecase.shared.season.SeasonPredictionSupport;
-import com.ligitabl.api.web.predictions.latestresult.LatestResultSupport;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.auth.Role;
@@ -57,7 +59,10 @@ class ProfileControllerTest {
     SeasonPredictionSupport seasonPredictionSupport;
 
     @Mock
-    LatestResultSupport latestResultSupport;
+    GetResultBannerSettingUseCase getResultBannerSettingUseCase;
+
+    @Mock
+    RestoreResultBannerUseCase restoreResultBannerUseCase;
 
     @Mock
     ImpersonationGuard impersonationGuard;
@@ -80,10 +85,12 @@ class ProfileControllerTest {
                 passwordHasher,
                 seasonPredictionSupport,
                 new CompetitionDefaults("premier-league"),
-                latestResultSupport,
+                getResultBannerSettingUseCase,
+                restoreResultBannerUseCase,
                 impersonationGuard,
                 currentUserFacade,
                 requestEmailVerificationUseCase);
+        when(getResultBannerSettingUseCase.execute(any())).thenReturn(new GetResultBannerSettingResult(false, false));
 
         UUID userId = UUID.randomUUID();
         optedInUser = User.builder()

@@ -31,6 +31,7 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.NotFoundError;
 import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.usecase.prediction.getuserprediction.GetUserPredictionUseCase;
+import com.ligitabl.api.usecase.prediction.whatif.GetWhatIfRecapUseCase;
 import com.ligitabl.api.usecase.shared.fixtures.FixtureJsonMapper;
 import com.ligitabl.api.usecase.shared.season.SeasonPredictionSupport;
 import com.ligitabl.api.usecase.standings.FormService;
@@ -90,7 +91,7 @@ class UserPredictionsControllerTest {
     private RoundRepo roundRepo;
 
     @Mock
-    private WhatIfRecapBuilder whatIfRecapBuilder;
+    private GetWhatIfRecapUseCase getWhatIfRecapUseCase;
 
     @Mock
     private SeasonPredictionSupport seasonPredictionSupport;
@@ -122,7 +123,7 @@ class UserPredictionsControllerTest {
                 formService,
                 fixtureJsonMapper,
                 roundRepo,
-                whatIfRecapBuilder,
+                getWhatIfRecapUseCase,
                 seasonPredictionSupport,
                 new SwapHistoryFormatter(),
                 TestClock.FIXED);

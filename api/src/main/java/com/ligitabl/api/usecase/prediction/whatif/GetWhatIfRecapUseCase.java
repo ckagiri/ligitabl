@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.predictions.userpredictions;
+package com.ligitabl.api.usecase.prediction.whatif;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,7 +26,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Component
 @RequiredArgsConstructor
-public class WhatIfRecapBuilder {
+public class GetWhatIfRecapUseCase {
 
     private final WhatIfPredictionRepo whatIfPredictionRepo;
     private final MatchRepo matchRepo;
@@ -38,7 +38,7 @@ public class WhatIfRecapBuilder {
     }
 
     /** Empty unless the user saved a what-if for this round and at least one guess can be graded. */
-    public Optional<WhatIfRecap> build(UUID userId, UUID roundId) {
+    public Optional<WhatIfRecap> execute(UUID userId, UUID roundId) {
         if (userId == null || roundId == null) {
             return Optional.empty();
         }
