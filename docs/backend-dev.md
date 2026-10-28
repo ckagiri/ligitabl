@@ -8,21 +8,9 @@ This repo has developer-facing documentation under `docs/` (this file, endpoints
 
 When changing behavior (endpoints, validation, persistence), update the relevant internal specs/runbooks and the public docs.
 
-## Package layout (api module)
+## Use cases
 
-- `usecase/<feature>/<slice>/` — one use case plus its Command/Query/Result/Error types, or the few use cases of one small flow (`auth/passwordreset`: request + reset). Helpers and DTOs shared by a feature's slices go in `usecase/<feature>/shared/`, and ones shared across features go in `usecase/shared/`. Nothing sits directly in `usecase/<feature>/`. (`season/admin` groups the admin season actions by audience rather than flow; it predates this and isn't a pattern to copy.)
-- `rest/<feature>/` — JSON controllers and HTTP-only DTOs.
-- `web/…` — Thymeleaf controllers and view helpers.
-- `scheduling/…` — schedulers that trigger use cases.
-- `runners/…` — self-contained CLI tools (importer, demo seeding, standings calc). These keep their own use cases.
-
-Adapters (`rest`, `web`, `scheduling`, `runners`) depend on `usecase`, never the reverse. `UseCaseDependencyRuleTest` enforces this. If a use case needs something from an adapter package, move that class into `usecase` instead.
-
-An inbound adapter may read a repo directly to assemble a view (a lookup for a page header, a dropdown, a redirect target). Any write, and any business rule, goes through a use case, however small: "unlink Google only if a password is set" is a rule even when the write is one `userRepo.update`. Nothing enforces this; it's checked in review.
-
-Outbound adapters (`client`, `notification`, `auth`) are reached through ports: an interface the use case depends on, with the adapter implementing it. The port and the types in its signature live in `usecase` (shared ones in `usecase/shared/…`), so the dependency points from adapter to core. Examples: `MatchFeed`, `AdminAlerts`, `TokenGenerator`, `EmailProvider`, `EmailTemplateRenderer`. Outbox event types and the payloads use cases write (`usecase/shared/outbox`) follow the same rule. The same test fails the build on a direct reference.
-
-A port belongs where the core meets the outside world and translates its types: `MatchFeed` returns `FeedMatch` records with our `MatchStatus`, never football-data's DTOs or status strings. Don't put an interface between two adapters; a runner or scheduler can use `client.*` directly.
+Package layout and dependency rules, including when a controller may read a repo, are in [Architecture](./architecture.md).
 
 ### Use case input/output types
 

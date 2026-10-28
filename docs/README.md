@@ -1,5 +1,6 @@
 # Project Docs
 
+- Architecture: [Architecture](./architecture.md): layers, dependency rules, enforcement, known gaps. Read before adding a use case, port or adapter.
 - Backend dev guide: [Backend Development Guide](./backend-dev.md)
 - Frontend dev guide: [Frontend Development Guide](./frontend-dev.md)
 - API reference: [API Endpoints](./api-endpoints.md)
