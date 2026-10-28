@@ -9,13 +9,13 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.domain.StandingsCalculatorService;
-import com.ligitabl.api.domain.StandingsCalculatorService.StandingsError;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
+import com.ligitabl.api.usecase.shared.standings.StandingsCalculatorService;
+import com.ligitabl.api.usecase.shared.standings.StandingsCalculatorService.StandingsError;
 import com.ligitabl.api.usecase.standings.StandingsEnricher;
 import com.ligitabl.api.usecase.standings.StandingsEntryDto;
 import com.ligitabl.model.domain.*;
