@@ -8,9 +8,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.notification.outbox.OutboxEventTypes;
-import com.ligitabl.api.notification.outbox.SeasonCompletedPayload;
 import com.ligitabl.api.usecase.finaltable.scorefinaltable.FinalTableScoringHook;
+import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
+import com.ligitabl.api.usecase.shared.outbox.SeasonCompletedPayload;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonState;

@@ -17,12 +17,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.notification.outbox.OutboxEventTypes;
 import com.ligitabl.api.notification.outbox.SeasonInPlayPayload;
 import com.ligitabl.api.scheduling.health.JobHeartbeat;
 import com.ligitabl.api.scheduling.health.ScheduledJobRunner;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.InPlaySeasonFixture;
+import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 

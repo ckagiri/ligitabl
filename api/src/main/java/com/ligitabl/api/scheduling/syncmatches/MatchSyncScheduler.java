@@ -16,7 +16,6 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.notification.AdminNotificationService;
-import com.ligitabl.api.notification.outbox.OutboxEventTypes;
 import com.ligitabl.api.notification.outbox.RoundLockedPayload;
 import com.ligitabl.api.scheduling.health.JobHeartbeat;
 import com.ligitabl.api.scheduling.health.JobNames;
@@ -28,6 +27,7 @@ import com.ligitabl.api.usecase.match.syncmatches.SyncMatchesUseCase;
 import com.ligitabl.api.usecase.match.syncmatches.TriggerRoundFinalizationCommand;
 import com.ligitabl.api.usecase.match.syncmatches.TriggerRoundFinalizationUseCase;
 import com.ligitabl.api.usecase.round.advanceround.RoundAdvancementService;
+import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;

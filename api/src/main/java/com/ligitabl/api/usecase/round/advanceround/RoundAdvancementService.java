@@ -13,9 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ligitabl.api.notification.outbox.OutboxEventTypes;
-import com.ligitabl.api.notification.outbox.RoundAdvancedPayload;
 import com.ligitabl.api.usecase.shared.AdminAlerts;
+import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
+import com.ligitabl.api.usecase.shared.outbox.RoundAdvancedPayload;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
