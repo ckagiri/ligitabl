@@ -60,7 +60,7 @@ final class SeasonTestFixtures {
      * <p>⚠️ The same instant is written to <em>both</em> seasons — {@code UpdateSeasonDatesUseCase}
      * propagates it onto the incoming season deliberately — and it means two different things
      * depending on which one you read it from. On the outgoing season it is "promote my successor
-     * now" ({@code SeasonActivationService}); on the incoming season it is "my pre-season has
+     * now" ({@code AutoActivateSeasonUseCase}); on the incoming season it is "my pre-season has
      * opened" ({@code getSeasonState}). One handover moment, two readings.
      */
     static final OffsetDateTime PRE_SEASON_OPENS_AT = utc(LocalDate.of(SEASON_START_YEAR, 7, 1));

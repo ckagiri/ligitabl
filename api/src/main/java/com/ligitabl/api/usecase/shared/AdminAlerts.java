@@ -14,4 +14,6 @@ public interface AdminAlerts {
     void notifyRoundAdvanced(int fromPosition, UUID seasonId, boolean lastRound);
 
     void notifyAdvancementFailed(UUID roundId, String error);
+
+    void notifySeasonActivated(String competitionSlug, UUID promotedSeasonId, UUID previousSeasonId);
 }
