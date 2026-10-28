@@ -9,15 +9,20 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
+import com.ligitabl.api.logging.RequestId;
 import com.ligitabl.api.shared.errors.AuthorizationError;
 import com.ligitabl.api.shared.errors.ConflictError;
+import com.ligitabl.api.shared.errors.UnexpectedError;
 import com.ligitabl.api.shared.errors.UnprocessableEntityError;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.ValidationError;
 import com.ligitabl.api.shared.exceptions.UseCaseException;
 
+import lombok.extern.slf4j.Slf4j;
+
 @RestControllerAdvice(basePackages = "com.ligitabl.api.rest.auth")
 @Order(Ordered.HIGHEST_PRECEDENCE)
+@Slf4j
 public class AuthErrorHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
@@ -52,6 +57,13 @@ public class AuthErrorHandler {
         if (error instanceof UnprocessableEntityError ue) {
             return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY)
                     .body(new AuthDto.ErrorResponse("VERIFICATION_FAILED", ue.getMessage()));
+        }
+
+        if (error instanceof UnexpectedError ue) {
+            log.error("Unexpected error: {}", ue.getMessage(), ue.cause());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new AuthDto.ErrorResponse(
+                            "INTERNAL_ERROR", UnexpectedError.PUBLIC_MESSAGE, null, RequestId.current()));
         }
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

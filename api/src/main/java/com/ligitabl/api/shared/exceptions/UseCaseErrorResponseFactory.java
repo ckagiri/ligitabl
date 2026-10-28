@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
+import com.ligitabl.api.logging.RequestId;
 import com.ligitabl.api.shared.errors.*;
 
 public class UseCaseErrorResponseFactory {
@@ -20,8 +21,8 @@ public class UseCaseErrorResponseFactory {
             case ConflictError ce -> build("Business Rule Violation", ce.getMessage(), HttpStatus.CONFLICT, path);
             case AuthorizationError ue -> build("Unauthorized", ue.getMessage(), HttpStatus.UNAUTHORIZED, path);
             case AuthenticationError ae -> build("Forbidden", ae.getMessage(), HttpStatus.FORBIDDEN, path);
-            case UnexpectedError ue -> build(
-                    "Unexpected Error", ue.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, path);
+            case UnexpectedError __ -> build(
+                    "Unexpected Error", UnexpectedError.PUBLIC_MESSAGE, HttpStatus.INTERNAL_SERVER_ERROR, path);
         };
     }
 
@@ -32,6 +33,7 @@ public class UseCaseErrorResponseFactory {
                 .error(title)
                 .status(status)
                 .path(path)
+                .requestId(RequestId.current())
                 .build();
 
         HttpHeaders headers = new HttpHeaders();

@@ -14,6 +14,7 @@ public class UseCaseErrorResponse {
     private final String error;
     private final HttpStatusCode status;
     private final String path;
+    private final String requestId;
 
     @Builder.Default
     private final LocalDateTime timestamp = LocalDateTime.now();

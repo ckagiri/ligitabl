@@ -57,6 +57,9 @@ public class ErrorViewMapper {
     }
 
     private String resolveMessage(UseCaseError error) {
+        if (error instanceof UnexpectedError) {
+            return UnexpectedError.PUBLIC_MESSAGE;
+        }
         return error == null ? "Unknown error" : error.getMessage();
     }
 
