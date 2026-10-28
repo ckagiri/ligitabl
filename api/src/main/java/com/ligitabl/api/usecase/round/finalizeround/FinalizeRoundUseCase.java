@@ -10,10 +10,10 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.api.domain.StandingsCalculatorService;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.shared.AdminAlerts;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
+import com.ligitabl.api.usecase.shared.standings.StandingsCalculatorService;
 import com.ligitabl.model.domain.*;
 import com.ligitabl.model.domain.service.ScoringEngine;
 import com.ligitabl.model.repo.*;
