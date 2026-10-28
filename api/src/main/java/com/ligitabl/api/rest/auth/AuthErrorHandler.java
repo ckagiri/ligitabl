@@ -60,7 +60,7 @@ public class AuthErrorHandler {
         }
 
         if (error instanceof UnexpectedError ue) {
-            log.error("Unexpected error: {}", ue.getMessage(), ue.cause());
+            log.error("Unexpected error: {}", ue.logMessage(), ue.cause());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(new AuthDto.ErrorResponse(
                             "INTERNAL_ERROR", UnexpectedError.PUBLIC_MESSAGE, null, RequestId.current()));

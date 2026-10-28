@@ -7,4 +7,10 @@ public sealed interface UseCaseError extends DomainError
                 NotFoundError,
                 UnexpectedError,
                 UnprocessableEntityError,
-                ValidationError {}
+                ValidationError {
+
+    /** For logs only. May differ from {@link #getMessage()}, which is safe to show users. */
+    default String logMessage() {
+        return getMessage();
+    }
+}

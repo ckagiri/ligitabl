@@ -55,7 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     })
                     .peekLeft(error -> {
                         // Error path: log the error
-                        log.debug("JWT authentication failed: {}", error.getMessage());
+                        log.debug("JWT authentication failed: {}", error.logMessage());
                     });
         }
 

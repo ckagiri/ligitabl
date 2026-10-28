@@ -2,8 +2,11 @@ package com.ligitabl.api.shared.exceptions;
 
 import java.util.stream.Collectors;
 
+import org.springframework.beans.TypeMismatchException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestController;
@@ -39,7 +42,7 @@ public class GlobalExceptionHandler {
         var error = ex.getError();
         // Log at WARN for client/expected errors; ERROR for unexpected server errors
         if (error instanceof UnexpectedError ue) {
-            log.error("Unexpected error: {}", ue.getMessage(), ue.cause());
+            log.error("Unexpected error: {}", ue.logMessage(), ue.cause());
         } else if (error instanceof NotFoundError nf) {
             log.warn("Not found: {}", nf.getMessage());
         } else if (error instanceof ValidationError ve) {
@@ -57,8 +60,22 @@ public class GlobalExceptionHandler {
         return UseCaseErrorResponseFactory.from(error, request.getDescription(false));
     }
 
+    // Parser and conversion messages expose internals, so the body gets a fixed message.
+    @ExceptionHandler({HttpMessageNotReadableException.class, TypeMismatchException.class})
+    public ResponseEntity<UseCaseErrorResponse> handleMalformed(Exception ex, WebRequest request) {
+        log.warn("Malformed request: {}", ex.getMessage());
+        return UseCaseErrorResponseFactory.clientError(
+                HttpStatus.BAD_REQUEST, "Malformed request", request.getDescription(false));
+    }
+
     @ExceptionHandler(Exception.class)
     public ResponseEntity<UseCaseErrorResponse> handleUnexpected(Exception ex, WebRequest request) {
+        // Spring's own exceptions (ResponseStatusException, 404, 405, missing parameter…) carry their status.
+        if (ex instanceof ErrorResponse er && !er.getStatusCode().is5xxServerError()) {
+            log.warn("Request failed with {}: {}", er.getStatusCode(), ex.getMessage());
+            return UseCaseErrorResponseFactory.clientError(
+                    er.getStatusCode(), er.getBody().getDetail(), request.getDescription(false));
+        }
         log.error("Unhandled exception", ex);
         var error = UseCaseErrors.unexpected(ex);
         return UseCaseErrorResponseFactory.from(error, request.getDescription(false));

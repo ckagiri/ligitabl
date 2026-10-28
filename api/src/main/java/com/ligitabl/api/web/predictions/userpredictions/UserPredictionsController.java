@@ -38,7 +38,6 @@ import com.ligitabl.api.usecase.shared.season.SeasonPredictionSupport;
 import com.ligitabl.api.usecase.standings.shared.FormService;
 import com.ligitabl.api.web.shared.dto.ResultTeamRankDto;
 import com.ligitabl.api.web.shared.dto.TeamRankDto;
-import com.ligitabl.api.web.shared.error.ErrorViewMapper;
 import com.ligitabl.api.web.shared.season.SeasonPhase;
 import com.ligitabl.api.web.shared.swap.SwapHistoryFormatter;
 import com.ligitabl.model.auth.Email;
@@ -69,7 +68,6 @@ public class UserPredictionsController {
     private final TeamRepo teamRepo;
     private final UserRepo userRepo;
     private final CompetitionDefaults competitionDefaults;
-    private final ErrorViewMapper errorMapper;
     private final FormService formService;
     private final FixtureJsonMapper fixtureJsonMapper;
     private final RoundRepo roundRepo;
@@ -325,7 +323,7 @@ public class UserPredictionsController {
      */
     private String handleError(UseCaseError error, Model model, HttpServletResponse response, String hxRequest) {
         response.setStatus(mapErrorToStatus(error));
-        model.addAttribute("error", errorMapper.toResponse(error));
+        model.addAttribute("error", error.getMessage());
 
         if (hxRequest != null && !hxRequest.isBlank()) {
             return "fragments/error-banner :: banner";

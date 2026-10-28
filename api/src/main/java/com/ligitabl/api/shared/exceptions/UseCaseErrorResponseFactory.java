@@ -21,9 +21,16 @@ public class UseCaseErrorResponseFactory {
             case ConflictError ce -> build("Business Rule Violation", ce.getMessage(), HttpStatus.CONFLICT, path);
             case AuthorizationError ue -> build("Unauthorized", ue.getMessage(), HttpStatus.UNAUTHORIZED, path);
             case AuthenticationError ae -> build("Forbidden", ae.getMessage(), HttpStatus.FORBIDDEN, path);
-            case UnexpectedError __ -> build(
-                    "Unexpected Error", UnexpectedError.PUBLIC_MESSAGE, HttpStatus.INTERNAL_SERVER_ERROR, path);
+            case UnexpectedError ue -> build(
+                    "Unexpected Error", ue.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, path);
         };
+    }
+
+    /** A null message falls back to the status's reason phrase. */
+    public static ResponseEntity<UseCaseErrorResponse> clientError(HttpStatusCode status, String message, String path) {
+        HttpStatus resolved = HttpStatus.valueOf(status.value());
+        return build(
+                resolved.getReasonPhrase(), message != null ? message : resolved.getReasonPhrase(), resolved, path);
     }
 
     private static ResponseEntity<UseCaseErrorResponse> build(

@@ -64,7 +64,7 @@ public class AccessController {
                             user.isEmailVerified()))
                     .map(userInfo -> ResponseEntity.ok(toUserInfoResponse(userInfo)))
                     .getOrElseThrow(error -> {
-                        log.error("Failed to get current user: {}", error.getMessage());
+                        log.error("Failed to get current user: {}", error.logMessage());
                         throw new UseCaseException(error);
                     });
         }
@@ -74,7 +74,7 @@ public class AccessController {
                 .flatMap(getCurrentUserUseCase::execute)
                 .map(userInfo -> ResponseEntity.ok(toUserInfoResponse(userInfo)))
                 .getOrElseThrow(error -> {
-                    log.error("Failed to get current user: {}", error.getMessage());
+                    log.error("Failed to get current user: {}", error.logMessage());
                     throw new UseCaseException(error);
                 });
     }

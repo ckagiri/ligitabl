@@ -7,8 +7,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.MDC;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.mock.http.MockHttpInputMessage;
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.ServletWebRequest;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.ligitabl.api.logging.RequestId;
 import com.ligitabl.api.shared.errors.UnexpectedError;
@@ -48,6 +51,36 @@ class GlobalExceptionHandlerTest {
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.INTERNAL_SERVER_ERROR);
         assertThat(response.getBody().getMessage()).isEqualTo(UnexpectedError.PUBLIC_MESSAGE);
+    }
+
+    @Test
+    void unreadableBodyIsABadRequestWithoutParserDetail() {
+        var ex = new HttpMessageNotReadableException(
+                "JSON parse error: Unexpected end-of-input", new MockHttpInputMessage(new byte[0]));
+
+        var response = handler.handleMalformed(ex, request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.BAD_REQUEST);
+        assertThat(response.getBody().getMessage()).isEqualTo("Malformed request");
+    }
+
+    @Test
+    void springStatusExceptionsKeepTheirStatus() {
+        var response = handler.handleUnexpected(
+                new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Unauthenticated"), request);
+
+        assertThat(response.getStatusCode()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(response.getBody().getMessage()).isEqualTo("Unauthenticated");
+    }
+
+    @Test
+    void unexpectedErrorShowsThePublicMessageAndLogsTheCause() {
+        var cause = new IllegalStateException(LEAKY);
+        var error = UseCaseErrors.unexpected(cause);
+
+        assertThat(error.getMessage()).isEqualTo(UnexpectedError.PUBLIC_MESSAGE);
+        assertThat(error.logMessage()).isEqualTo(LEAKY);
+        assertThat(new UseCaseException(error)).hasMessage(LEAKY).hasCause(cause);
     }
 
     @Test

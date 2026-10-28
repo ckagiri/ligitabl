@@ -35,7 +35,7 @@ public class LatestResultBannerController {
 
         return result.fold(
                 error -> {
-                    log.debug("Error fetching latest result banner: {}", error.getMessage());
+                    log.debug("Error fetching latest result banner: {}", error.logMessage());
                     return "fragments/results-banner :: results-banner-user(result=null)";
                 },
                 bannerResult -> {
@@ -59,7 +59,7 @@ public class LatestResultBannerController {
 
         return result.fold(
                 error -> {
-                    log.debug("Error dismissing result banner: {}", error.getMessage());
+                    log.debug("Error dismissing result banner: {}", error.logMessage());
                     return ResponseEntity.notFound().<Void>build();
                 },
                 success -> ResponseEntity.noContent().<Void>build());

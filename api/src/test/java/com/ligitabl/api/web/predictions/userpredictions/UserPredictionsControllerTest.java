@@ -35,7 +35,6 @@ import com.ligitabl.api.usecase.prediction.whatif.GetWhatIfRecapUseCase;
 import com.ligitabl.api.usecase.shared.fixtures.FixtureJsonMapper;
 import com.ligitabl.api.usecase.shared.season.SeasonPredictionSupport;
 import com.ligitabl.api.usecase.standings.shared.FormService;
-import com.ligitabl.api.web.shared.error.ErrorViewMapper;
 import com.ligitabl.api.web.shared.swap.SwapHistoryFormatter;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
@@ -79,9 +78,6 @@ class UserPredictionsControllerTest {
     private UserRepo userRepo;
 
     @Mock
-    private ErrorViewMapper errorMapper;
-
-    @Mock
     private FormService formService;
 
     @Mock
@@ -119,7 +115,6 @@ class UserPredictionsControllerTest {
                 teamRepo,
                 userRepo,
                 new CompetitionDefaults("premier-league"),
-                errorMapper,
                 formService,
                 fixtureJsonMapper,
                 roundRepo,

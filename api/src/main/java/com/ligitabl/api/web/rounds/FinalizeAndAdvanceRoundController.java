@@ -118,7 +118,7 @@ public class FinalizeAndAdvanceRoundController {
     }
 
     private ResponseEntity<?> toUseCaseErrorResponse(UseCaseError error) {
-        log.warn("Round advancement action failed: {}", error.getMessage());
+        log.warn("Round advancement action failed: {}", error.logMessage());
         return switch (error) {
             case NotFoundError e -> ResponseEntity.notFound().build();
             case ConflictError e -> ResponseEntity.status(409).body(e.getMessage());

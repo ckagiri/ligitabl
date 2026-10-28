@@ -1,0 +1,8 @@
+<!doctype html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <body>
+    <div th:fragment="banner" role="alert" class="max-w-4xl mx-auto my-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+      <p th:text="${error ?: 'Something went wrong. Please try again.'}">Something went wrong. Please try again.</p>
+    </div>
+  </body>
+</html>

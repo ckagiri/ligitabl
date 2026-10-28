@@ -34,7 +34,7 @@ public class LoginController {
                 .flatMap(loginUseCase::execute)
                 .map(result -> ResponseEntity.ok(toLoginResponse(result)))
                 .getOrElseThrow(error -> {
-                    log.warn("Login failed: {}", error.getMessage());
+                    log.warn("Login failed: {}", error.logMessage());
                     throw new UseCaseException(error);
                 });
     }
