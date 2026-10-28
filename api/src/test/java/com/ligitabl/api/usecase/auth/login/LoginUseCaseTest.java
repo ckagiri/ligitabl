@@ -14,11 +14,11 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.api.auth.security.TokenGenerator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.AuthorizationError;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.validation.RequestValidator;
+import com.ligitabl.api.usecase.shared.auth.TokenGenerator;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.Password;
 import com.ligitabl.model.auth.PublicId;

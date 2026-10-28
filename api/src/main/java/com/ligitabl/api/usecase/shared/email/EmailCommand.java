@@ -1,4 +1,4 @@
-package com.ligitabl.api.notification.email;
+package com.ligitabl.api.usecase.shared.email;
 
 public interface EmailCommand {
     enum EmailType {

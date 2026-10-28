@@ -196,7 +196,7 @@ class ResetPasswordUseCaseTest {
         when(passwordHasher.hash(any())).thenReturn(new Password.Hashed("hashed"));
         when(emailService.sendPasswordResetConfirmation(any()))
                 .thenReturn(Either.left(
-                        new com.ligitabl.api.notification.email.EmailError.EmailProviderError("provider down")));
+                        new com.ligitabl.api.usecase.shared.email.EmailError.EmailProviderError("provider down")));
 
         assertThat(useCase.execute(token.getToken(), NEW_PASSWORD).isRight()).isTrue();
         verify(tokenRepo).update(any());

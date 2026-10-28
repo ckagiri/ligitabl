@@ -131,7 +131,7 @@ class RequestPasswordResetUseCaseTest {
         when(userRepo.findByEmail(any())).thenReturn(Optional.of(user));
         when(emailService.sendPasswordResetEmail(anyString(), anyString(), anyInt()))
                 .thenReturn(Either.left(
-                        new com.ligitabl.api.notification.email.EmailError.EmailProviderError("provider down")));
+                        new com.ligitabl.api.usecase.shared.email.EmailError.EmailProviderError("provider down")));
 
         assertThat(useCase.execute("player@example.com").isRight()).isTrue();
         verify(tokenRepo).save(any(PasswordResetToken.class));

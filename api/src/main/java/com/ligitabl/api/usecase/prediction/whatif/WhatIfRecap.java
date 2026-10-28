@@ -1,4 +1,4 @@
-package com.ligitabl.api.web.predictions.userpredictions;
+package com.ligitabl.api.usecase.prediction.whatif;
 
 import java.util.List;
 

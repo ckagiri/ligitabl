@@ -30,6 +30,8 @@ import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ligitabl.api.usecase.shared.outbox.RoundAdvancedPayload;
+import com.ligitabl.api.usecase.shared.outbox.SeasonCompletedPayload;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Competition;

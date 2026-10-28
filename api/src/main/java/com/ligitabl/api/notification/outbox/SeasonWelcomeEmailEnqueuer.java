@@ -5,6 +5,7 @@ import java.util.List;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.repo.OutboxRepo;

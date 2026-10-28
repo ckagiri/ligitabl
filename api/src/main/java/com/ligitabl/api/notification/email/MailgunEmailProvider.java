@@ -22,6 +22,10 @@ import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestTemplate;
 
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.shared.email.EmailCommand;
+import com.ligitabl.api.usecase.shared.email.EmailContent;
+import com.ligitabl.api.usecase.shared.email.EmailError;
+import com.ligitabl.api.usecase.shared.email.EmailProvider;
 
 import lombok.extern.slf4j.Slf4j;
 

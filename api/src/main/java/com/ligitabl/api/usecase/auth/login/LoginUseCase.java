@@ -5,12 +5,12 @@ import static com.ligitabl.api.shared.ValidationUtils.requireFound;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.api.auth.security.TokenGenerator;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
+import com.ligitabl.api.usecase.shared.auth.TokenGenerator;
 import com.ligitabl.model.domain.service.PasswordHasher;
 import com.ligitabl.model.repo.UserRepo;
 

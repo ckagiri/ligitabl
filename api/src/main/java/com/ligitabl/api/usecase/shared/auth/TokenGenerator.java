@@ -1,4 +1,4 @@
-package com.ligitabl.api.auth.security;
+package com.ligitabl.api.usecase.shared.auth;
 
 import java.util.Set;
 

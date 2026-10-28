@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
+import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.User;

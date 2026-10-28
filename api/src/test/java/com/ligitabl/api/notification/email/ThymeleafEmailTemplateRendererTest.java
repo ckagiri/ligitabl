@@ -12,6 +12,8 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
 import com.ligitabl.api.notification.outbox.RoundResultsPayload;
 import com.ligitabl.api.notification.outbox.SegmentResultsPayload;
+import com.ligitabl.api.usecase.shared.email.EmailCommand;
+import com.ligitabl.api.usecase.shared.email.EmailContent;
 import com.ligitabl.model.domain.HitDistribution;
 
 class ThymeleafEmailTemplateRendererTest {

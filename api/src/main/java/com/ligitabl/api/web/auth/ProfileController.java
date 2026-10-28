@@ -1,6 +1,5 @@
 package com.ligitabl.api.web.auth;
 
-import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.beans.propertyeditors.StringTrimmerEditor;
@@ -28,11 +27,11 @@ import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationError;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationUseCase;
+import com.ligitabl.api.usecase.prediction.latestresult.GetResultBannerSettingUseCase;
+import com.ligitabl.api.usecase.prediction.latestresult.RestoreResultBannerUseCase;
 import com.ligitabl.api.usecase.shared.season.SeasonPredictionSupport;
-import com.ligitabl.api.web.predictions.latestresult.LatestResultSupport;
 import com.ligitabl.model.auth.Password;
 import com.ligitabl.model.auth.Role;
-import com.ligitabl.model.domain.RoundResult;
 import com.ligitabl.model.domain.User;
 import com.ligitabl.model.domain.service.PasswordHasher;
 import com.ligitabl.model.repo.UserRepo;
@@ -56,7 +55,8 @@ public class ProfileController {
     private final PasswordHasher passwordHasher;
     private final SeasonPredictionSupport seasonPredictionSupport;
     private final CompetitionDefaults competitionDefaults;
-    private final LatestResultSupport latestResultSupport;
+    private final GetResultBannerSettingUseCase getResultBannerSettingUseCase;
+    private final RestoreResultBannerUseCase restoreResultBannerUseCase;
     private final ImpersonationGuard impersonationGuard;
     private final CurrentUserFacade currentUserFacade;
     private final RequestEmailVerificationUseCase requestEmailVerificationUseCase;
@@ -126,10 +126,7 @@ public class ProfileController {
         // A disabled checkbox never submits, so a submitted `true` only happens when the user
         // re-enabled it (their latest result was already dismissed) — bring the banner back.
         if (form.isShowLatestResultBanner()) {
-            latestResultSupport
-                    .getLatestResult(updatedUser.getId())
-                    .filter(RoundResult::isUserViewed)
-                    .ifPresent(r -> latestResultSupport.setUserViewed(r, false));
+            restoreResultBannerUseCase.execute(updatedUser.getId());
         }
 
         log.info("[PROFILE_UPDATED] userId={} newDisplayName={}", updatedUser.getId(), updatedUser.getDisplayName());
@@ -280,11 +277,10 @@ public class ProfileController {
      * still pending (undismissed) — used as the checkbox's initial checked value on GET.
      */
     private boolean populateLatestResultModel(Model model, UUID userId) {
-        Optional<RoundResult> latestResult = latestResultSupport.getLatestResult(userId);
-        boolean pending = latestResult.map(r -> !r.isUserViewed()).orElse(false);
-        model.addAttribute("latestResultPresent", latestResult.isPresent());
-        model.addAttribute("latestResultPending", pending);
-        return pending;
+        var setting = getResultBannerSettingUseCase.execute(userId);
+        model.addAttribute("latestResultPresent", setting.resultPresent());
+        model.addAttribute("latestResultPending", setting.pending());
+        return setting.pending();
     }
 
     private boolean hasNonDefaultRoles(User user) {

@@ -13,6 +13,8 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
+import com.ligitabl.api.usecase.shared.outbox.RoundAdvancedPayload;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;

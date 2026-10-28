@@ -19,13 +19,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.api.notification.outbox.OutboxEventTypes;
-import com.ligitabl.api.notification.outbox.RoundAdvancedPayload;
-import com.ligitabl.api.notification.outbox.SeasonCompletedPayload;
 import com.ligitabl.api.notification.outbox.SegmentResultsPayload;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.api.testsupport.TestIds;
+import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
+import com.ligitabl.api.usecase.shared.outbox.RoundAdvancedPayload;
+import com.ligitabl.api.usecase.shared.outbox.SeasonCompletedPayload;
 import com.ligitabl.model.domain.Entry;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.ResultTeamRank;
