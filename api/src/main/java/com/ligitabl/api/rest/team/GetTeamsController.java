@@ -8,8 +8,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ligitabl.api.shared.exceptions.UseCaseException;
-import com.ligitabl.api.usecase.team.TeamDto;
 import com.ligitabl.api.usecase.team.getteams.GetTeamsUseCase;
+import com.ligitabl.api.usecase.team.shared.TeamDto;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.match;
+package com.ligitabl.api.usecase.match.shared;
 
 import java.time.OffsetDateTime;
 import java.util.Objects;
@@ -7,7 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.api.usecase.match.shared.FeedMatch;
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.MatchStatus;
 

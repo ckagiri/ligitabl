@@ -17,9 +17,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.usecase.season.SeasonDto;
 import com.ligitabl.api.usecase.season.getseasons.GetSeasonsQuery;
 import com.ligitabl.api.usecase.season.getseasons.GetSeasonsUseCase;
+import com.ligitabl.api.usecase.season.shared.SeasonDto;
 
 @WebMvcTest(GetSeasonsController.class)
 class GetSeasonsControllerWebMvcTest {

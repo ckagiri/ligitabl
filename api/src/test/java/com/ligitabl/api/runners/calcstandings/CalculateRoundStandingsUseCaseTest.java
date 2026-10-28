@@ -23,7 +23,7 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
 import com.ligitabl.api.usecase.shared.standings.RoundStandingsCalculator;
-import com.ligitabl.api.usecase.standings.StandingsEnricher;
+import com.ligitabl.api.usecase.standings.shared.StandingsEnricher;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Match;

@@ -16,7 +16,7 @@ import com.ligitabl.api.shared.errors.NotFoundError;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.ValidationError;
 import com.ligitabl.api.shared.validation.RequestValidator;
-import com.ligitabl.api.usecase.team.TeamDto;
+import com.ligitabl.api.usecase.team.shared.TeamDto;
 import com.ligitabl.model.domain.Team;
 import com.ligitabl.model.domain.TeamSlug;
 import com.ligitabl.model.repo.TeamRepo;

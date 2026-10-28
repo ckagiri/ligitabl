@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.standings;
+package com.ligitabl.api.usecase.standings.getdefaultroundstandings;
 
 import jakarta.annotation.Nullable;
 import lombok.Value;

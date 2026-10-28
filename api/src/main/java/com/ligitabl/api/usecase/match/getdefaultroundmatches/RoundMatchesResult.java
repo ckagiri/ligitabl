@@ -3,7 +3,7 @@ package com.ligitabl.api.usecase.match.getdefaultroundmatches;
 import java.util.List;
 import java.util.UUID;
 
-import com.ligitabl.api.usecase.match.MatchDto;
+import com.ligitabl.api.usecase.match.shared.MatchDto;
 
 import lombok.Builder;
 

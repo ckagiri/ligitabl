@@ -4,8 +4,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.ligitabl.api.shared.exceptions.UseCaseException;
-import com.ligitabl.api.usecase.team.TeamDto;
-import com.ligitabl.api.usecase.team.TeamPayload;
+import com.ligitabl.api.usecase.team.shared.TeamDto;
+import com.ligitabl.api.usecase.team.shared.TeamPayload;
 import com.ligitabl.api.usecase.team.updateteam.UpdateTeamCommand;
 import com.ligitabl.api.usecase.team.updateteam.UpdateTeamUseCase;
 

@@ -4,9 +4,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import com.ligitabl.api.shared.exceptions.UseCaseException;
-import com.ligitabl.api.usecase.team.TeamDto;
 import com.ligitabl.api.usecase.team.getteambyid.GetTeamByIdQuery;
 import com.ligitabl.api.usecase.team.getteambyid.GetTeamByIdUseCase;
+import com.ligitabl.api.usecase.team.shared.TeamDto;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

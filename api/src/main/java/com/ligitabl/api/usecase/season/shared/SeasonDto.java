@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.season;
+package com.ligitabl.api.usecase.season.shared;
 
 import java.time.LocalDate;
 import java.util.List;

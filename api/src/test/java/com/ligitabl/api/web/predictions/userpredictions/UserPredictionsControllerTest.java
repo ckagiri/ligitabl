@@ -34,7 +34,7 @@ import com.ligitabl.api.usecase.prediction.getuserprediction.GetUserPredictionUs
 import com.ligitabl.api.usecase.prediction.whatif.GetWhatIfRecapUseCase;
 import com.ligitabl.api.usecase.shared.fixtures.FixtureJsonMapper;
 import com.ligitabl.api.usecase.shared.season.SeasonPredictionSupport;
-import com.ligitabl.api.usecase.standings.FormService;
+import com.ligitabl.api.usecase.standings.shared.FormService;
 import com.ligitabl.api.web.shared.error.ErrorViewMapper;
 import com.ligitabl.api.web.shared.swap.SwapHistoryFormatter;
 import com.ligitabl.model.domain.Round;

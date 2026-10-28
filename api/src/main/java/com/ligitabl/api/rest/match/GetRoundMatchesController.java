@@ -9,9 +9,9 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ligitabl.api.shared.exceptions.UseCaseException;
-import com.ligitabl.api.usecase.match.MatchDto;
 import com.ligitabl.api.usecase.match.getroundmatches.GetRoundMatchesQuery;
 import com.ligitabl.api.usecase.match.getroundmatches.GetRoundMatchesUseCase;
+import com.ligitabl.api.usecase.match.shared.MatchDto;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

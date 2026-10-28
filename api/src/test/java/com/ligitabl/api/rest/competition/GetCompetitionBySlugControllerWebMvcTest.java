@@ -17,8 +17,8 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.NotFoundError;
-import com.ligitabl.api.usecase.competition.CompetitionDto;
 import com.ligitabl.api.usecase.competition.getcompetitionbyslug.GetCompetitionBySlugUseCase;
+import com.ligitabl.api.usecase.competition.shared.CompetitionDto;
 
 @WebMvcTest(GetCompetitionBySlugController.class)
 class GetCompetitionBySlugControllerWebMvcTest {

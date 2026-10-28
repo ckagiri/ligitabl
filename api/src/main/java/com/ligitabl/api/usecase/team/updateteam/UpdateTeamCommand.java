@@ -2,7 +2,7 @@ package com.ligitabl.api.usecase.team.updateteam;
 
 import java.util.UUID;
 
-import com.ligitabl.api.usecase.team.TeamPayload;
+import com.ligitabl.api.usecase.team.shared.TeamPayload;
 import com.ligitabl.model.validator.ValidUUID;
 
 import lombok.*;

@@ -7,8 +7,8 @@ import com.ligitabl.api.shared.UseCase;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
-import com.ligitabl.api.usecase.team.TeamDto;
-import com.ligitabl.api.usecase.team.TeamMapper;
+import com.ligitabl.api.usecase.team.shared.TeamDto;
+import com.ligitabl.api.usecase.team.shared.TeamMapper;
 import com.ligitabl.model.repo.TeamRepo;
 
 import lombok.RequiredArgsConstructor;

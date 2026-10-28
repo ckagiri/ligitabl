@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.standings;
+package com.ligitabl.api.usecase.standings.shared;
 
 /**
  * One match result from a team's perspective, used to render the Form column.

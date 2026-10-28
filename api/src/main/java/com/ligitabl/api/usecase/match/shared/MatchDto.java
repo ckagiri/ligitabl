@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.match;
+package com.ligitabl.api.usecase.match.shared;
 
 import java.time.OffsetDateTime;
 import java.util.List;

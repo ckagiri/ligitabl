@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.match;
+package com.ligitabl.api.usecase.match.shared;
 
 import java.util.List;
 import java.util.Map;
