@@ -22,6 +22,7 @@ interfaces.
 - `usecase/<feature>/<slice>/`: one use case plus its Command/Query/Result/Error types, or the few use cases of one small flow (`auth/passwordreset`: request + reset).
   - Helpers and DTOs shared by a feature's slices go in `usecase/<feature>/shared/`. Ones shared across features go in `usecase/shared/`.
   - Nothing sits directly in `usecase/<feature>/`.
+  - A use case is a `*UseCase` class whose public entry point is `execute`. When one use case has two triggers, overload `execute` by input type, as `EnqueueSegmentResultsEmailsUseCase` does with a round payload and a season-completed payload.
   - `season/admin` groups the admin season actions by audience rather than by flow. It predates this rule and isn't a pattern to copy.
 - `rest/<feature>/`: JSON controllers and HTTP-only DTOs.
 - `web/…`: Thymeleaf controllers and view helpers.
@@ -58,6 +59,8 @@ A scheduler or controller that needs one is holding logic that belongs in a use 
 | 1. `usecase` doesn't reference `rest`, `web`, `scheduling`, `runners` | `UseCaseDependencyRuleTest` | Build fails |
 | 3. `usecase` doesn't reference `client`, `notification`, `auth` | `UseCaseDependencyRuleTest` | Build fails |
 | Every `@Scheduled` method is monitored or exempt | `ScheduledJobRegistryTest`, `ManualSchedulingAuditTest` | Build fails |
+| Every `*UseCase` has an `execute` entry point | `UseCaseEntryPointRuleTest` (#286) | Build fails |
+| `notification` and `client` don't import `model.repo` | `OutboundAdapterRuleTest` (#286) | Build fails |
 | 2. No writes or rules in adapters | Review | None |
 | 4, 5 | Review | None |
 
