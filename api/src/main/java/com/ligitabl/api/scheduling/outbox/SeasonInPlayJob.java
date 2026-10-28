@@ -6,10 +6,10 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.api.notification.outbox.SeasonInPlayEnqueuer;
 import com.ligitabl.api.scheduling.health.JobHeartbeat;
 import com.ligitabl.api.scheduling.health.JobNames;
 import com.ligitabl.api.scheduling.health.ScheduledJobRunner;
+import com.ligitabl.api.usecase.notification.seasoninplay.EnqueueSeasonInPlayUseCase;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +35,7 @@ public class SeasonInPlayJob {
     /** 15m cadence; 45m allows three missed ticks. */
     private static final Duration HEARTBEAT_MAX_INTERVAL = Duration.ofMinutes(45);
 
-    private final SeasonInPlayEnqueuer seasonInPlayEnqueuer;
+    private final EnqueueSeasonInPlayUseCase enqueueSeasonInPlayUseCase;
     private final ScheduledJobRunner runner;
     private final JobHeartbeat heartbeat;
 
@@ -46,6 +46,6 @@ public class SeasonInPlayJob {
 
     @Scheduled(fixedDelay = 15 * 60 * 1000, initialDelay = 60 * 1000)
     public void run() {
-        runner.runSafely(JobNames.SEASON_IN_PLAY, seasonInPlayEnqueuer::enqueueIfSeasonInPlay);
+        runner.runSafely(JobNames.SEASON_IN_PLAY, enqueueSeasonInPlayUseCase::enqueueIfSeasonInPlay);
     }
 }

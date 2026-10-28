@@ -10,10 +10,10 @@ import org.junit.jupiter.api.Test;
 import org.thymeleaf.spring6.SpringTemplateEngine;
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver;
 
-import com.ligitabl.api.notification.outbox.RoundResultsPayload;
-import com.ligitabl.api.notification.outbox.SegmentResultsPayload;
 import com.ligitabl.api.usecase.shared.email.EmailCommand;
 import com.ligitabl.api.usecase.shared.email.EmailContent;
+import com.ligitabl.api.usecase.shared.outbox.RoundResultsPayload;
+import com.ligitabl.api.usecase.shared.outbox.SegmentResultsPayload;
 import com.ligitabl.model.domain.HitDistribution;
 
 class ThymeleafEmailTemplateRendererTest {
@@ -226,7 +226,7 @@ class ThymeleafEmailTemplateRendererTest {
                 .as("the allowance, matching CreatePredictionUseCase.MAX_INITIAL_SWAPS")
                 .contains("5 swaps");
         assertThat(content.htmlBody())
-                .as("names the deadline concretely; SeasonInPlayEnqueuer guarantees round 1 is open")
+                .as("names the deadline concretely; EnqueueSeasonInPlayUseCase guarantees round 1 is open")
                 .contains("Gameweek 1 is still open")
                 .contains("Once Gameweek 1 locks");
         assertThat(content.htmlBody())

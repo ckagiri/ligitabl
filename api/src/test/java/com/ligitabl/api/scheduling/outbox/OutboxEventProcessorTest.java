@@ -30,17 +30,10 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ligitabl.api.notification.outbox.JoinReminderPayload;
-import com.ligitabl.api.notification.outbox.RoundLockedPayload;
-import com.ligitabl.api.notification.outbox.RoundResultsEmailEnqueuer;
-import com.ligitabl.api.notification.outbox.RoundResultsPayload;
-import com.ligitabl.api.notification.outbox.SeasonInPlayPayload;
-import com.ligitabl.api.notification.outbox.SeasonWelcomeEmailEnqueuer;
-import com.ligitabl.api.notification.outbox.SeasonWelcomeFanoutPayload;
-import com.ligitabl.api.notification.outbox.SeasonWelcomePayload;
-import com.ligitabl.api.notification.outbox.SegmentResultsEmailEnqueuer;
-import com.ligitabl.api.notification.outbox.SegmentResultsPayload;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.notification.roundresults.EnqueueRoundResultsEmailsUseCase;
+import com.ligitabl.api.usecase.notification.seasonwelcome.EnqueueSeasonWelcomeEmailsUseCase;
+import com.ligitabl.api.usecase.notification.segmentresults.EnqueueSegmentResultsEmailsUseCase;
 import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionCommand;
 import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionError;
 import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionResult;
@@ -50,9 +43,16 @@ import com.ligitabl.api.usecase.shared.email.EmailContent;
 import com.ligitabl.api.usecase.shared.email.EmailError;
 import com.ligitabl.api.usecase.shared.email.EmailProvider;
 import com.ligitabl.api.usecase.shared.email.EmailTemplateRenderer;
+import com.ligitabl.api.usecase.shared.outbox.JoinReminderPayload;
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.api.usecase.shared.outbox.RoundAdvancedPayload;
+import com.ligitabl.api.usecase.shared.outbox.RoundLockedPayload;
+import com.ligitabl.api.usecase.shared.outbox.RoundResultsPayload;
 import com.ligitabl.api.usecase.shared.outbox.SeasonCompletedPayload;
+import com.ligitabl.api.usecase.shared.outbox.SeasonInPlayPayload;
+import com.ligitabl.api.usecase.shared.outbox.SeasonWelcomeFanoutPayload;
+import com.ligitabl.api.usecase.shared.outbox.SeasonWelcomePayload;
+import com.ligitabl.api.usecase.shared.outbox.SegmentResultsPayload;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.HitDistribution;
 import com.ligitabl.model.domain.OutboxEvent;
@@ -71,13 +71,13 @@ class OutboxEventProcessorTest {
     OutboxRepo outboxRepo;
 
     @Mock
-    RoundResultsEmailEnqueuer enqueuer;
+    EnqueueRoundResultsEmailsUseCase enqueuer;
 
     @Mock
-    SegmentResultsEmailEnqueuer segmentResultsEnqueuer;
+    EnqueueSegmentResultsEmailsUseCase segmentResultsEnqueuer;
 
     @Mock
-    SeasonWelcomeEmailEnqueuer seasonWelcomeEnqueuer;
+    EnqueueSeasonWelcomeEmailsUseCase seasonWelcomeEnqueuer;
 
     @Mock
     EmailTemplateRenderer renderer;

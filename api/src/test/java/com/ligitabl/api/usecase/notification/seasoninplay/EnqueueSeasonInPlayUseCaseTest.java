@@ -1,4 +1,4 @@
-package com.ligitabl.api.notification.outbox;
+package com.ligitabl.api.usecase.notification.seasoninplay;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
@@ -48,7 +48,7 @@ import com.ligitabl.model.repo.SeasonRepo;
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class SeasonInPlayEnqueuerTest {
+class EnqueueSeasonInPlayUseCaseTest {
 
     private static final UUID SEASON_ID = UUID.randomUUID();
     private static final UUID ROUND_ID = UUID.randomUUID();
@@ -68,11 +68,11 @@ class SeasonInPlayEnqueuerTest {
     private final CompetitionDefaults competitionDefaults = new CompetitionDefaults("pl");
     private final ObjectMapper objectMapper = new ObjectMapper();
 
-    private SeasonInPlayEnqueuer enqueuer;
+    private EnqueueSeasonInPlayUseCase enqueuer;
 
     @BeforeEach
     void setup() {
-        enqueuer = new SeasonInPlayEnqueuer(
+        enqueuer = new EnqueueSeasonInPlayUseCase(
                 seasonRepo, roundRepo, roundSupport, competitionDefaults, outboxRepo, objectMapper, TestClock.FIXED);
 
         when(seasonRepo.findActiveSeason("pl"))

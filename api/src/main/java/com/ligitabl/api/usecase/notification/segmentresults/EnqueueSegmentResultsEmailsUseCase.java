@@ -1,4 +1,4 @@
-package com.ligitabl.api.notification.outbox;
+package com.ligitabl.api.usecase.notification.segmentresults;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -16,9 +16,11 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.ligitabl.api.usecase.notification.roundresults.EnqueueRoundResultsEmailsUseCase;
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.api.usecase.shared.outbox.RoundAdvancedPayload;
 import com.ligitabl.api.usecase.shared.outbox.SeasonCompletedPayload;
+import com.ligitabl.api.usecase.shared.outbox.SegmentResultsPayload;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
@@ -47,8 +49,8 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class SegmentResultsEmailEnqueuer {
-    static final String IGNORE_LIST_SETTING_KEY = RoundResultsEmailEnqueuer.IGNORE_LIST_SETTING_KEY;
+public class EnqueueSegmentResultsEmailsUseCase {
+    static final String IGNORE_LIST_SETTING_KEY = EnqueueRoundResultsEmailsUseCase.IGNORE_LIST_SETTING_KEY;
 
     /** computeLeaderboard rejects limits above 100, so boards are read in pages. */
     private static final int PAGE_SIZE = 100;

@@ -4,7 +4,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.api.notification.outbox.JoinReminderEnqueuer;
+import com.ligitabl.api.usecase.notification.joinreminder.EnqueueJoinRemindersUseCase;
 
 import io.sentry.Sentry;
 import lombok.RequiredArgsConstructor;
@@ -16,12 +16,12 @@ import lombok.extern.slf4j.Slf4j;
 @ConditionalOnProperty(name = "ligitabl.email.join-reminder.enabled", havingValue = "true")
 public class JoinReminderJob {
 
-    private final JoinReminderEnqueuer joinReminderEnqueuer;
+    private final EnqueueJoinRemindersUseCase enqueueJoinRemindersUseCase;
 
     @Scheduled(cron = "${ligitabl.email.join-reminder.cron:0 0 9 * * *}")
     public void run() {
         try {
-            joinReminderEnqueuer.enqueueDueReminders();
+            enqueueJoinRemindersUseCase.enqueueDueReminders();
         } catch (Exception e) {
             log.error("Join reminder job failed", e);
             Sentry.captureException(e);

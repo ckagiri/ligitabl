@@ -14,9 +14,7 @@ import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.TaskScheduler;
 import org.springframework.stereotype.Component;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.notification.AdminNotificationService;
-import com.ligitabl.api.notification.outbox.RoundLockedPayload;
 import com.ligitabl.api.scheduling.health.JobHeartbeat;
 import com.ligitabl.api.scheduling.health.JobNames;
 import com.ligitabl.api.scheduling.resilience.MatchSyncCircuitBreaker;
@@ -26,12 +24,9 @@ import com.ligitabl.api.usecase.match.syncmatches.SyncMatchesCommand;
 import com.ligitabl.api.usecase.match.syncmatches.SyncMatchesUseCase;
 import com.ligitabl.api.usecase.match.syncmatches.TriggerRoundFinalizationCommand;
 import com.ligitabl.api.usecase.match.syncmatches.TriggerRoundFinalizationUseCase;
+import com.ligitabl.api.usecase.notification.roundlocked.RecordRoundLockedUseCase;
 import com.ligitabl.api.usecase.round.advanceround.RoundAdvancementService;
-import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
-import com.ligitabl.model.domain.OutboxEvent;
-import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.repo.OutboxRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import io.sentry.Sentry;
@@ -76,8 +71,7 @@ public class MatchSyncScheduler {
     private final AdminNotificationService adminNotificationService;
     private final RoundAdvancementService roundAdvancementService;
     private final SeasonRepo seasonRepo;
-    private final OutboxRepo outboxRepo;
-    private final ObjectMapper objectMapper;
+    private final RecordRoundLockedUseCase recordRoundLockedUseCase;
     private final MatchSyncCircuitBreaker circuitBreaker;
     private final JobHeartbeat heartbeat;
 
@@ -115,8 +109,7 @@ public class MatchSyncScheduler {
             AdminNotificationService adminNotificationService,
             RoundAdvancementService roundAdvancementService,
             SeasonRepo seasonRepo,
-            OutboxRepo outboxRepo,
-            ObjectMapper objectMapper,
+            RecordRoundLockedUseCase recordRoundLockedUseCase,
             MatchSyncCircuitBreaker circuitBreaker,
             JobHeartbeat heartbeat) {
         this.taskScheduler = taskScheduler;
@@ -124,8 +117,7 @@ public class MatchSyncScheduler {
         this.triggerFinalizationUseCase = triggerFinalizationUseCase;
         this.adminNotificationService = adminNotificationService;
         this.roundAdvancementService = roundAdvancementService;
-        this.outboxRepo = outboxRepo;
-        this.objectMapper = objectMapper;
+        this.recordRoundLockedUseCase = recordRoundLockedUseCase;
         this.seasonRepo = seasonRepo;
         this.circuitBreaker = circuitBreaker;
         this.heartbeat = heartbeat;
@@ -267,25 +259,10 @@ public class MatchSyncScheduler {
         }
     }
 
-    /**
-     * Writes a ROUND_LOCKED outbox event whenever the round currently reads as
-     * LOCKED. The idempotency key ("round-locked:{roundId}") means only the
-     * first write per round actually inserts (ON CONFLICT DO NOTHING) — every
-     * later sync tick while the round stays LOCKED is a harmless no-op.
-     */
+    /** A failed write must not break the sync loop; it's retried on the next tick while LOCKED. */
     private void maybeWriteRoundLockedEvent(MatchSyncResult result) {
-        if (result.roundId() == null || result.roundStatus() != RoundStatus.LOCKED) {
-            return;
-        }
         try {
-            var payload = new RoundLockedPayload(result.seasonId(), result.roundId(), result.roundPosition());
-            var event = OutboxEvent.create(
-                    "round-locked:" + result.roundId(),
-                    OutboxEventTypes.ROUND_LOCKED,
-                    "round",
-                    result.roundId().toString(),
-                    objectMapper.writeValueAsString(payload));
-            outboxRepo.save(event);
+            recordRoundLockedUseCase.execute(result);
         } catch (Exception e) {
             log.error("Failed to write ROUND_LOCKED outbox event for round {}", result.roundId(), e);
             Sentry.captureException(e);

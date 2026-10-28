@@ -1,4 +1,4 @@
-package com.ligitabl.api.notification.outbox;
+package com.ligitabl.api.usecase.notification.joinreminder;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -41,7 +41,7 @@ import com.ligitabl.model.repo.UserRepo;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class JoinReminderEnqueuerTest {
+class EnqueueJoinRemindersUseCaseTest {
 
     private static final Instant NOW = Instant.parse("2026-07-26T09:00:00Z");
     private static final UUID SEASON_ID = UUID.randomUUID();
@@ -66,11 +66,11 @@ class JoinReminderEnqueuerTest {
     private final JoinReminderProperties properties = new JoinReminderProperties();
     private final Clock clock = Clock.fixed(NOW, ZoneOffset.UTC);
 
-    private JoinReminderEnqueuer enqueuer;
+    private EnqueueJoinRemindersUseCase enqueuer;
 
     @BeforeEach
     void setup() {
-        enqueuer = new JoinReminderEnqueuer(
+        enqueuer = new EnqueueJoinRemindersUseCase(
                 outboxRepo, userRepo, seasonRepo, competitionDefaults, objectMapper, properties, clock);
 
         activeSeason(PRE_SEASON_OPENED, PREDICTIONS_OPEN);

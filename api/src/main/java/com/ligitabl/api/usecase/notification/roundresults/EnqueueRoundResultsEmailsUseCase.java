@@ -1,4 +1,4 @@
-package com.ligitabl.api.notification.outbox;
+package com.ligitabl.api.usecase.notification.roundresults;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,6 +15,7 @@ import org.springframework.stereotype.Component;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.api.usecase.shared.outbox.RoundAdvancedPayload;
+import com.ligitabl.api.usecase.shared.outbox.RoundResultsPayload;
 import com.ligitabl.model.auth.PublicId;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Contest;
@@ -56,9 +57,9 @@ import lombok.extern.slf4j.Slf4j;
 @Component
 @RequiredArgsConstructor
 @Slf4j
-public class RoundResultsEmailEnqueuer {
+public class EnqueueRoundResultsEmailsUseCase {
 
-    static final String IGNORE_LIST_SETTING_KEY = "round_results_email_ignore_list";
+    public static final String IGNORE_LIST_SETTING_KEY = "round_results_email_ignore_list";
 
     /** computeLeaderboard rejects limits above 100, so boards are read in pages. */
     private static final int PAGE_SIZE = 100;

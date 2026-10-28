@@ -36,6 +36,7 @@ import com.ligitabl.api.usecase.match.syncmatches.SyncMatchesError;
 import com.ligitabl.api.usecase.match.syncmatches.SyncMatchesUseCase;
 import com.ligitabl.api.usecase.match.syncmatches.TriggerRoundFinalizationError;
 import com.ligitabl.api.usecase.match.syncmatches.TriggerRoundFinalizationUseCase;
+import com.ligitabl.api.usecase.notification.roundlocked.RecordRoundLockedUseCase;
 import com.ligitabl.api.usecase.round.advanceround.RoundAdvancementService;
 import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
@@ -95,8 +96,7 @@ class MatchSyncSchedulerTest {
                 adminNotificationService,
                 roundAdvancementService,
                 seasonRepo,
-                outboxRepo,
-                objectMapper,
+                new RecordRoundLockedUseCase(outboxRepo, objectMapper),
                 circuitBreaker,
                 heartbeat);
 
