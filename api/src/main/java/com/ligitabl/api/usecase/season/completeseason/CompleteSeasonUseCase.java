@@ -68,7 +68,7 @@ public class CompleteSeasonUseCase {
         }
 
         season.setCompleted(true);
-        season.setCompletedAt(OffsetDateTime.now());
+        season.setCompletedAt(OffsetDateTime.now(clock));
 
         // Completing the season should land it on OFF_SEASON (predictions closed, pre-season not
         // yet open), not INACTIVE — INACTIVE here means preSeasonOpensAt isn't configured/ordered

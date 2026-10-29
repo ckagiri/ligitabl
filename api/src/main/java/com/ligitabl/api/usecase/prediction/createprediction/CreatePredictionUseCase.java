@@ -56,61 +56,27 @@ public class CreatePredictionUseCase {
         }
     }
 
-    public record JoinCtx(Season season, Contest mainContest, int atRoundNumber, int currentRoundPosition) {}
+    private static final CreatePredictionCommand NO_SWAPS = new CreatePredictionCommand(List.of());
 
     /**
-     * Batch join context for the ROUND_LOCKED auto-join, resolved <em>as if the current round were
-     * still open</em>: the users this serves are being joined into the round that just locked, as
-     * though they had submitted while it was open.
+     * The auto-join overloads below are not {@code @Transactional}: they run inside the outbox
+     * processor's per-event transaction (docs/architecture.md, rule 5).
      */
-    public Either<CreatePredictionError, JoinCtx> resolveJoinContextAsOpen(Season season) {
-        return findMainContest(season).flatMap(contest -> {
-            var currentRoundOpt = roundRepo.findById(season.getCurrentRoundId());
-            if (currentRoundOpt.isEmpty()) {
-                return Either.left(new CreatePredictionError.CurrentRoundNotFound(season.getId()));
-            }
-            int position = currentRoundOpt.get().getPosition();
-            if (position > season.getMaxRounds()) {
-                return Either.left(new CreatePredictionError.Ended(position, season.getMaxRounds()));
-            }
-            return Either.right(new JoinCtx(season, contest, position, position));
-        });
-    }
-
-    /**
-     * Resolves just the main contest, for batch callers that need it once for many users.
-     */
-    public Either<CreatePredictionError, Contest> resolveMainContest(Season season) {
-        return findMainContest(season);
-    }
-
-    /**
-     * Writes the round-0 registration a user would have written themselves by submitting the
-     * default table during pre-season — same shape, same allowance.
-     *
-     * <p>Not {@code @Transactional}: callers run inside their own transaction.
-     */
-    public Either<CreatePredictionError, CreatePredictionResult> autoRegisterDefaultTable(
-            UUID userId, Season season, Contest mainContest) {
-        return registerPreSeason(userId, season, mainContest, new CreatePredictionCommand(List.of()));
-    }
-
-    /**
-     * <p>Not {@code @Transactional}: callers run inside their own transaction.
-     */
-    public Either<CreatePredictionError, CreatePredictionResult> executeWithContext(
-            UUID userId, JoinCtx ctx, CreatePredictionCommand request) {
-        return validateSwapTeams(request, ctx.season())
-                .flatMap(__ -> resolveJoinPlan(userId, ctx.season()))
+    public Either<CreatePredictionError, CreatePredictionResult> execute(UUID userId, JoinLockedRoundCommand command) {
+        Season season = command.season();
+        return resolveJoinPlan(userId, season)
                 .flatMap(plan -> executeJoinPlan(
                         userId,
-                        ctx.season(),
-                        ctx.mainContest(),
-                        request,
+                        season,
+                        command.mainContest(),
+                        NO_SWAPS,
                         plan,
-                        // Already resolved by resolveJoinContextAsOpen — never re-derived here,
-                        // which is what keeps the locked round from becoming the next one.
-                        () -> Either.right(new RoundInfo(ctx.atRoundNumber(), ctx.currentRoundPosition()))));
+                        () -> Either.right(new RoundInfo(command.roundPosition(), command.roundPosition()))));
+    }
+
+    public Either<CreatePredictionError, CreatePredictionResult> execute(
+            UUID userId, RegisterDefaultTableCommand command) {
+        return registerPreSeason(userId, command.season(), command.mainContest(), NO_SWAPS);
     }
 
     @Transactional

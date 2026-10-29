@@ -22,7 +22,8 @@ interfaces.
 - `usecase/<feature>/<slice>/`: one use case plus its Command/Query/Result/Error types, or the few use cases of one small flow (`auth/passwordreset`: request + reset).
   - Helpers and DTOs shared by a feature's slices go in `usecase/<feature>/shared/`. Ones shared across features go in `usecase/shared/`.
   - Nothing sits directly in `usecase/<feature>/`.
-  - A use case is a `*UseCase` class whose public entry point is `execute`. When one use case has two triggers, overload `execute` by input type, as `EnqueueSegmentResultsEmailsUseCase` does with a round payload and a season-completed payload.
+  - A use case is a `*UseCase` class whose only public methods are `execute` overloads. When one use case has more than one trigger, each gets an `execute` overload with its own input type: `EnqueueSegmentResultsEmailsUseCase` takes a round payload or a season-completed payload, and `CreatePredictionUseCase` takes a user's `CreatePredictionCommand`, a `JoinLockedRoundCommand` or a `RegisterDefaultTableCommand`.
+  - Contract types (commands, queries, results, errors) are top-level files in the slice, never nested in the use case.
 - `rest/<feature>/`: JSON controllers and HTTP-only DTOs.
 - `web/…`: Thymeleaf controllers and view helpers.
 - `scheduling/…`: schedulers that trigger use cases.
@@ -49,7 +50,7 @@ This covers `client`, `notification` and `auth`. The use case depends on an inte
 - Outbox event types, and the payloads use cases write (`usecase/shared/outbox`), follow the same rule.
 
 **4. A port belongs where the core meets the outside world and translates its types.**
-`MatchFeed` returns `FeedMatch` records with our `MatchStatus`, never football-data's DTOs or status strings. Don't put an interface between two adapters: a runner or scheduler can use `client.*` directly. (This is why the importer's `FootballDataGateway` was removed.)
+`MatchFeed` returns `FeedMatch` records with our `MatchStatus`, never football-data's DTOs or status strings. Don't put an interface between two adapters: a runner or scheduler uses `client.*` directly, so the importer calls the football-data client with no gateway interface in between.
 
 **5. Transactions belong on the use case.**
 A scheduler or controller that needs one is holding logic that belongs in a use case. This also sidesteps the self-invocation trap described in [Background Jobs](./background-jobs.md).
@@ -62,41 +63,32 @@ The outbox is the exception. `OutboxEventProcessor.processOne` holds one transac
 |---|---|---|
 | 1. `usecase` doesn't reference `rest`, `web`, `scheduling`, `runners` | `UseCaseDependencyRuleTest` | Build fails |
 | 3. `usecase` doesn't reference `client`, `notification`, `auth` | `UseCaseDependencyRuleTest` | Build fails |
+| Every `*UseCase` has an `execute` method and no other public methods or nested public types | `UseCaseEntryPointRuleTest` | Build fails |
+| `notification` and `client` don't import `model.repo` | `OutboundAdapterRuleTest` | Build fails |
 | Every `@Scheduled` method is monitored or exempt | `ScheduledJobRegistryTest`, `ManualSchedulingAuditTest` | Build fails |
-| Every `*UseCase` has an `execute` entry point | `UseCaseEntryPointRuleTest` (#286) | Build fails |
-| `notification` and `client` don't import `model.repo` | `OutboundAdapterRuleTest` (#286) | Build fails |
 | 2. No writes or rules in adapters | Review | None |
 | 4, 5 | Review | None |
 
-⚠️ `UseCaseDependencyRuleTest` matches **source text** against regexes built from package names. A literal that has gone stale matches nothing, so the test passes no matter what the code does. After moving or renaming a package, prove that each rule still fails: add a violating import, watch the test go red, then remove it.
+⚠️ `UseCaseDependencyRuleTest` and `UseCaseEntryPointRuleTest` match **source text** against regexes. A literal that has gone stale, such as a package name after a rename, matches nothing, so the test passes no matter what the code does. After moving or renaming a package, prove that each rule still fails: add a violation, watch the test go red, then remove it.
 
-## Where the code stands (2026-10-29)
+## Current state
 
 **What holds:**
 - `usecase` has no references to any adapter package, and the build enforces it.
 - `model`'s `domain` and `repo` are free of framework and persistence imports.
-- Use cases don't nest their public contract types; the one exception is `CreatePredictionUseCase.JoinCtx` (gap 9).
+- Use cases expose only `execute` overloads, and their contract types are top-level.
 - Error types are sealed, and so is every result type that models more than one outcome, so `switch` is exhaustive. A result that only carries success data is a record or a `@Value` class.
-- Expected failures are `Either` values rather than exceptions. Newer code takes an injected `Clock`.
+- Expected failures are `Either` values rather than exceptions. Use cases read the time from an injected `Clock`.
 - Use case tests are cheap because of all the above.
 
 **Where it's weaker:**
-- **The leaks are at the edges, in adapters that have repo access.** Every business rule found outside `usecase` sat in one. All the ones found so far have moved into use cases:
-  - the season auto-activation scheduler (#280);
-  - the account and Google sign-in rules (#284, #285);
-  - the outbox enqueuers (#286);
-  - the auto-join cohorts (#292).
-
-  The test guards the core from adapters, but nothing yet stops an adapter from turning into a use case.
-- **Rule 2 relies on review alone,** and a review-only rule erodes. Gap 4 records what an audit found.
-- **Shared helpers are where coupling builds up.** `usecase` has 16 helper classes (`*Support`, `*Service`, `*Helper`, `*Enricher`) beside 91 use cases. The use-case count was 77 on 2026-10-28; the helper count hasn't moved. `*Support` especially tends to become the place logic goes when nobody wants to write a use case. Prefer a use case or a domain method.
+- **Business rules leak at the edges.** Adapters with repo access are where rules creep in outside `usecase`: a scheduler choosing who to email, a controller checking account state before a write. The build guards the core from adapters, but nothing yet stops an adapter from growing a rule of its own (gap 2).
+- **Rule 2 relies on review alone,** and a review-only rule erodes.
+- **Shared helpers are where coupling builds up.** `usecase` has 16 helper classes (`*Support`, `*Service`, `*Helper`, `*Enricher`) beside 91 use cases. `*Support` especially tends to become the place logic goes when nobody wants to write a use case. Prefer a use case or a domain method.
 
 ## Known gaps
 
-Numbers are stable across revisions; a gap is removed once it's fixed. Gaps 1a–2 and 6–8 were fixed in #284–#287 and #292. Gap 5 needed no fix and is now a note under Package layout.
-
-| # | Gap | Fix | When |
-|---|---|---|---|
-| 3 | The dependency rules match text, not real class dependencies. | Replace with ArchUnit, test scope only. | After the rename |
-| 4 | Rule 2 is unenforced. An audit on 2026-10-29 covered `web`, `rest`, `auth`, `scheduling`, `notification` and `client`. 37 classes import a repo (`web` 21, `auth` 8, `scheduling` 6, `rest` 2), and nearly all only read for a view. The repo writes are:<br>• outbox delivery bookkeeping in `OutboxRelayJob` and `OutboxEventProcessor` (`claimBatchForProcessing`, `mark*`, `resetStuckProcessing`): the outbox mechanism itself;<br>• `deleteExpired` in the two token cleanup jobs: housekeeping with no rule;<br>• `predictionRepo.clearResults` in `DevFinalTableController`: dev only.<br>A rule hidden inside a read, as the auto-join cohort queries were, can't be found by grep or ArchUnit and stays review-only. | An ArchUnit rule that adapters don't call repo write methods. It starts with no violations, only the exemptions above, named. | After the rename |
-| 9 | `CreatePredictionUseCase` has four public methods besides `execute`: `resolveJoinContextAsOpen`, `resolveMainContest`, `autoRegisterDefaultTable` and `executeWithContext`. It also nests a public `JoinCtx` record. All of these exist for `AutoJoinUseCase`. `UseCaseEntryPointRuleTest` only checks that an `execute` exists, so it doesn't catch them. | Move the join steps into a `prediction/shared/` helper that both use cases call, with `JoinCtx` as a top-level type. Then make the entry-point test reject any other public method on a `*UseCase`. | Before the rename |
+| # | Gap | Fix |
+|---|---|---|
+| 1 | The dependency and entry-point rules match source text, not real class dependencies. | Replace them with ArchUnit, test scope only. |
+| 2 | Rule 2 is unenforced. 37 adapter classes import a repo (`web` 21, `auth` 8, `scheduling` 6, `rest` 2), and nearly all only read for a view. The only repo writes in adapters are:<br>• outbox delivery bookkeeping in `OutboxRelayJob` and `OutboxEventProcessor` (`claimBatchForProcessing`, `mark*`, `resetStuckProcessing`): the outbox mechanism itself;<br>• `deleteExpired` in the two token cleanup jobs: housekeeping with no rule;<br>• `predictionRepo.clearResults` in `DevFinalTableController`: dev only.<br>A rule hidden inside a read, such as choosing which users a batch applies to, can't be found by grep or ArchUnit and stays review-only. | An ArchUnit rule that adapters don't call repo write methods, with the three exemptions above named. It starts with no violations. |

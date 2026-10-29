@@ -702,54 +702,6 @@ class CreatePredictionUseCaseTest {
     }
 
     @Test
-    void resolveJoinContextAsOpen_resolvesMainContestAndEffectiveRound() {
-        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
-        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
-
-        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result =
-                useCase.resolveJoinContextAsOpen(season);
-
-        assertTrue(result.isRight());
-        CreatePredictionUseCase.JoinCtx ctx = result.get();
-        assertEquals(season, ctx.season());
-        assertEquals(defaultContest, ctx.mainContest());
-        assertEquals(round.getPosition(), ctx.atRoundNumber());
-        assertEquals(round.getPosition(), ctx.currentRoundPosition());
-    }
-
-    @Test
-    void resolveJoinContextAsOpen_joinsIntoTheLockedRound_notTheNextOne() {
-        // The ROUND_LOCKED auto-join runs when the round is, by definition, no longer OPEN.
-        // These users are joined as if they had submitted while it was open, so atRoundNumber
-        // must stay on the locked round.
-        // No matchRepo stub on purpose: this method must not consult round status at all - that
-        // independence is the fix.
-        Round lockedRound = createRound(2, false);
-        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(lockedRound));
-        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
-
-        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result =
-                useCase.resolveJoinContextAsOpen(season);
-
-        assertTrue(result.isRight());
-        assertEquals(2, result.get().atRoundNumber());
-        assertEquals(2, result.get().currentRoundPosition());
-    }
-
-    @Test
-    void resolveJoinContextAsOpen_stillResolves_onTheFinalRound() {
-        Round finalRound = createRound(3, false);
-        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(finalRound));
-        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
-
-        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result =
-                useCase.resolveJoinContextAsOpen(season);
-
-        assertTrue(result.isRight());
-        assertEquals(3, result.get().atRoundNumber());
-    }
-
-    @Test
     void newJoin_whenRoundNotOpen_commitsTheOpeningWindowOfTheRoundTheUserStartsPlaying() {
         // Joining while round 1 is finalized places the user at round 2, and joining consumes
         // round 2's opening window — so openingCommittedRound must follow atRoundNumber, not the
@@ -774,48 +726,10 @@ class CreatePredictionUseCaseTest {
     }
 
     @Test
-    void resolveJoinContextAsOpen_rejects_whenSeasonHasRunPastMaxRounds() {
-        Round beyondEnd = createRound(4, false); // maxRounds is 3
-        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(beyondEnd));
-        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
-
-        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result =
-                useCase.resolveJoinContextAsOpen(season);
-
-        assertTrue(result.isLeft());
-        assertInstanceOf(CreatePredictionError.Ended.class, result.getLeft());
-    }
-
-    @Test
-    void resolveJoinContextAsOpen_rejects_whenCurrentRoundNotFound() {
-        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
-        when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.empty());
-
-        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result =
-                useCase.resolveJoinContextAsOpen(season);
-
-        assertTrue(result.isLeft());
-        assertInstanceOf(CreatePredictionError.CurrentRoundNotFound.class, result.getLeft());
-    }
-
-    @Test
-    void resolveJoinContextAsOpen_rejects_whenMainContestNotFound() {
-        // findMainContest is checked first — the round lookup is never reached, since the
-        // flatMap chain short-circuits on the first Left.
-        when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.empty());
-
-        Either<CreatePredictionError, CreatePredictionUseCase.JoinCtx> result =
-                useCase.resolveJoinContextAsOpen(season);
-
-        assertTrue(result.isLeft());
-        assertInstanceOf(CreatePredictionError.MainContestNotFound.class, result.getLeft());
-    }
-
-    @Test
-    void executeWithContext_joinsNewUser_usingPreResolvedContext() {
+    void joinLockedRound_joinsNewUser_usingPreResolvedContext() {
         UUID predictionId = UUID.randomUUID();
         UUID entryId = UUID.randomUUID();
-        var ctx = new CreatePredictionUseCase.JoinCtx(season, defaultContest, round.getPosition(), round.getPosition());
+        var command = new JoinLockedRoundCommand(season, defaultContest, round.getPosition());
 
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
         when(predictionRepo.save(any())).thenAnswer(i -> {
@@ -829,8 +743,7 @@ class CreatePredictionUseCaseTest {
             return e;
         });
 
-        Either<CreatePredictionError, CreatePredictionResult> result =
-                useCase.executeWithContext(userId, ctx, multiSwap(List.of()));
+        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, command);
 
         assertTrue(result.isRight());
         assertEquals(predictionId, result.get().predictionId());
@@ -838,7 +751,7 @@ class CreatePredictionUseCaseTest {
         assertEquals(round.getPosition(), result.get().atRoundNumber());
 
         // Round/season/contest resolution is skipped entirely — the whole point of passing a
-        // pre-resolved JoinCtx — only resolveJoinPlan's race-safety lookup runs per call.
+        // pre-resolved command — only resolveJoinPlan's race-safety lookup runs per call.
         verify(roundRepo, never()).findById(any());
         verify(matchRepo, never()).findByRoundId(any());
         verify(contestRepo, never()).findById(any());
@@ -846,7 +759,7 @@ class CreatePredictionUseCaseTest {
     }
 
     @Test
-    void executeWithContext_preSeasonRegistration_neverResolvesTheRound() {
+    void joinLockedRound_preSeasonRegistration_neverResolvesTheRound() {
         // The pre-season branch must not consult the round at all: round resolution carries the
         // Ended / last-round-must-be-OPEN checks, which have no business failing a round-0
         // registration. This is what the lazy Supplier in executeJoinPlan protects — an eagerly
@@ -854,14 +767,13 @@ class CreatePredictionUseCaseTest {
         season.setPredictionsOpenAt(atNow().plusDays(30));
         season.setPreSeasonOpensAt(atNow().minusDays(1));
         season.setStartDate(atNow().toLocalDate().plusDays(1));
-        var ctx = new CreatePredictionUseCase.JoinCtx(season, defaultContest, round.getPosition(), round.getPosition());
+        var command = new JoinLockedRoundCommand(season, defaultContest, round.getPosition());
 
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
         when(predictionRepo.save(any())).thenAnswer(returnsFirstArg());
         when(entryRepo.save(any())).thenAnswer(returnsFirstArg());
 
-        Either<CreatePredictionError, CreatePredictionResult> result =
-                useCase.executeWithContext(userId, ctx, multiSwap(List.of()));
+        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, command);
 
         assertTrue(result.isRight());
         verify(predictionRepo).save(argThat(p -> p.getAtRoundNumber() == 0 && p.getOpeningCommittedRound() == 0));
@@ -870,7 +782,7 @@ class CreatePredictionUseCaseTest {
     }
 
     @Test
-    void executeWithContext_rejectsAlreadyJoinedUser() {
+    void joinLockedRound_rejectsAlreadyJoinedUser() {
         SeasonPrediction existingPrediction = SeasonPrediction.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
@@ -878,12 +790,11 @@ class CreatePredictionUseCaseTest {
                 .currentRankings(season.getInitialRankings())
                 .atRoundNumber(1)
                 .build();
-        var ctx = new CreatePredictionUseCase.JoinCtx(season, defaultContest, round.getPosition(), round.getPosition());
+        var command = new JoinLockedRoundCommand(season, defaultContest, round.getPosition());
 
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(existingPrediction));
 
-        Either<CreatePredictionError, CreatePredictionResult> result =
-                useCase.executeWithContext(userId, ctx, multiSwap(List.of()));
+        Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, command);
 
         assertTrue(result.isLeft());
         assertInstanceOf(CreatePredictionError.AlreadyJoined.class, result.getLeft());
@@ -901,10 +812,10 @@ class CreatePredictionUseCaseTest {
         return new CreatePredictionCommand(swaps);
     }
 
-    // --- Auto-join entry point ---------------------------------------------------
+    // --- Auto-join overloads -----------------------------------------------------
 
     @Test
-    void autoRegisterDefaultTable_producesTheSameRowAPreSeasonSubmissionWould() {
+    void registerDefaultTable_producesTheSameRowAPreSeasonSubmissionWould() {
         // The premise of the whole feature: an auto-joined user and someone who submitted the
         // default table during pre-season must be indistinguishable afterwards.
         when(predictionRepo.save(any())).thenAnswer(i -> {
@@ -918,7 +829,7 @@ class CreatePredictionUseCaseTest {
             return e;
         });
 
-        var result = useCase.autoRegisterDefaultTable(userId, season, defaultContest);
+        var result = useCase.execute(userId, new RegisterDefaultTableCommand(season, defaultContest));
 
         assertThat(result.isRight()).isTrue();
 
@@ -946,10 +857,10 @@ class CreatePredictionUseCaseTest {
     }
 
     @Test
-    void autoRegisterDefaultTable_worksWhileTheSeasonIsAlreadyInPlay() {
-        // The reason this entry point exists at all: resolveJoinPlan gates
-        // NewPreSeasonRegistration on isPreSeason(), which is false by the time the auto-join
-        // fires. Going through execute() here would produce a NewJoin row instead.
+    void registerDefaultTable_worksWhileTheSeasonIsAlreadyInPlay() {
+        // The reason this overload exists at all: resolveJoinPlan gates NewPreSeasonRegistration
+        // on isPreSeason(), which is false by the time the auto-join fires. A plain
+        // CreatePredictionCommand here would produce a NewJoin row instead.
         Season inPlaySeason = createSeason();
         inPlaySeason.setPreSeasonOpensAt(atNow().minusDays(30));
         inPlaySeason.setPredictionsOpenAt(atNow().minusHours(1));
@@ -966,7 +877,7 @@ class CreatePredictionUseCaseTest {
             return e;
         });
 
-        var result = useCase.autoRegisterDefaultTable(userId, inPlaySeason, defaultContest);
+        var result = useCase.execute(userId, new RegisterDefaultTableCommand(inPlaySeason, defaultContest));
 
         assertThat(result.isRight()).isTrue();
         ArgumentCaptor<SeasonPrediction> captor = ArgumentCaptor.forClass(SeasonPrediction.class);
@@ -1018,15 +929,6 @@ class CreatePredictionUseCaseTest {
         verify(predictionRepo).save(captor.capture());
         assertThat(captor.getValue().getAtRoundNumber()).isEqualTo(1);
         assertThat(captor.getValue().getOpeningCommittedRound()).isEqualTo(1);
-    }
-
-    @Test
-    void resolveMainContest_failsWhenSeasonHasNoMainContest() {
-        Season noContest = createSeason();
-        noContest.setMainContestId(null);
-        when(contestRepo.findById(null)).thenReturn(Optional.empty());
-
-        assertThat(useCase.resolveMainContest(noContest).isLeft()).isTrue();
     }
 
     private Season createSeason() {

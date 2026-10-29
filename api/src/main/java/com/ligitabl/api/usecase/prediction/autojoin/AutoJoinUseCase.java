@@ -1,21 +1,27 @@
 package com.ligitabl.api.usecase.prediction.autojoin;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionCommand;
 import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionUseCase;
+import com.ligitabl.api.usecase.prediction.createprediction.JoinLockedRoundCommand;
+import com.ligitabl.api.usecase.prediction.createprediction.RegisterDefaultTableCommand;
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.api.usecase.shared.outbox.RoundLockedPayload;
 import com.ligitabl.api.usecase.shared.outbox.SeasonInPlayPayload;
 import com.ligitabl.api.usecase.shared.outbox.SeasonWelcomeFanoutPayload;
+import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.OutboxEvent;
+import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.OutboxRepo;
+import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.UserRepo;
 
@@ -45,6 +51,8 @@ public class AutoJoinUseCase {
 
     private final SeasonRepo seasonRepo;
     private final UserRepo userRepo;
+    private final ContestRepo contestRepo;
+    private final RoundRepo roundRepo;
     private final CreatePredictionUseCase createPredictionUseCase;
     private final OutboxRepo outboxRepo;
     private final ObjectMapper objectMapper;
@@ -61,38 +69,57 @@ public class AutoJoinUseCase {
             return;
         }
 
-        createPredictionUseCase
-                .resolveJoinContextAsOpen(season)
-                .fold(
-                        error -> {
-                            log.warn(
-                                    "[ROUND_LOCKED] Skipping auto-join batch for season {}: {}", season.getId(), error);
-                            return null;
-                        },
-                        ctx -> {
-                            for (UUID userId : unjoinedUserIds) {
-                                try {
-                                    createPredictionUseCase
-                                            .executeWithContext(userId, ctx, new CreatePredictionCommand(List.of()))
-                                            .peekLeft(error -> log.warn(
-                                                    "[ROUND_LOCKED] Auto-join skipped for user {}: {}", userId, error));
-                                } catch (org.jooq.exception.DataAccessException
-                                        | org.springframework.dao.DataAccessException e) {
-                                    throw e;
-                                } catch (Exception e) {
-                                    log.error("[ROUND_LOCKED] Auto-join failed for user {}", userId, e);
-                                }
-                            }
-                            return null;
-                        });
+        Optional<JoinLockedRoundCommand> command = lockedRoundJoin(season);
+        if (command.isEmpty()) {
+            return;
+        }
+
+        for (UUID userId : unjoinedUserIds) {
+            try {
+                createPredictionUseCase
+                        .execute(userId, command.get())
+                        .peekLeft(error -> log.warn("[ROUND_LOCKED] Auto-join skipped for user {}: {}", userId, error));
+            } catch (org.jooq.exception.DataAccessException | org.springframework.dao.DataAccessException e) {
+                throw e;
+            } catch (Exception e) {
+                log.error("[ROUND_LOCKED] Auto-join failed for user {}", userId, e);
+            }
+        }
+    }
+
+    /**
+     * Resolved as if the current round were still open: the round that locked is the one these
+     * users join, so its status is deliberately not consulted.
+     */
+    private Optional<JoinLockedRoundCommand> lockedRoundJoin(Season season) {
+        Optional<Contest> mainContest = contestRepo.findById(season.getMainContestId());
+        if (mainContest.isEmpty()) {
+            log.warn("[ROUND_LOCKED] Skipping auto-join batch for season {}: main contest not found", season.getId());
+            return Optional.empty();
+        }
+        Optional<Round> currentRound = roundRepo.findById(season.getCurrentRoundId());
+        if (currentRound.isEmpty()) {
+            log.warn("[ROUND_LOCKED] Skipping auto-join batch for season {}: current round not found", season.getId());
+            return Optional.empty();
+        }
+        int position = currentRound.get().getPosition();
+        if (position > season.getMaxRounds()) {
+            log.warn(
+                    "[ROUND_LOCKED] Skipping auto-join batch for season {}: round {} is past the last round {}",
+                    season.getId(),
+                    position,
+                    season.getMaxRounds());
+            return Optional.empty();
+        }
+        return Optional.of(new JoinLockedRoundCommand(season, mainContest.get(), position));
     }
 
     /**
      * Gives a round-0 pre-season registration to everyone who was around during pre-season and
      * never submitted, then chains the welcome fan-out.
      *
-     * <p>Unlike the ROUND_LOCKED path this uses {@code autoRegisterDefaultTable}, which writes the
-     * row a user would have produced by submitting the default table themselves — the mid-season
+     * <p>Unlike the ROUND_LOCKED path this uses {@link RegisterDefaultTableCommand}, which writes
+     * the row a user would have produced by submitting the default table themselves — the mid-season
      * {@code NewJoin} shape would quietly cost them the guest-prediction import and most of their
      * swap allowance.
      */
@@ -129,43 +156,34 @@ public class AutoJoinUseCase {
             return;
         }
 
-        createPredictionUseCase
-                .resolveMainContest(season)
-                .fold(
-                        error -> {
-                            log.warn(
-                                    "[SEASON_IN_PLAY] Skipping auto-join batch for season {}: {}",
-                                    season.getId(),
-                                    error);
-                            return null;
-                        },
-                        mainContest -> {
-                            int joined = 0;
-                            for (UUID userId : eligibleUserIds) {
-                                try {
-                                    if (createPredictionUseCase
-                                            .autoRegisterDefaultTable(userId, season, mainContest)
-                                            .peekLeft(error -> log.warn(
-                                                    "[SEASON_IN_PLAY] Auto-join skipped for user {}: {}",
-                                                    userId,
-                                                    error))
-                                            .isRight()) {
-                                        joined++;
-                                    }
-                                } catch (org.jooq.exception.DataAccessException
-                                        | org.springframework.dao.DataAccessException e) {
-                                    throw e;
-                                } catch (Exception e) {
-                                    log.error("[SEASON_IN_PLAY] Auto-join failed for user {}", userId, e);
-                                }
-                            }
-                            log.info(
-                                    "[SEASON_IN_PLAY_AUTO_JOINED] seasonId={}, eligible={}, joined={}",
-                                    season.getId(),
-                                    eligibleUserIds.size(),
-                                    joined);
-                            return null;
-                        });
+        Optional<Contest> mainContest = contestRepo.findById(season.getMainContestId());
+        if (mainContest.isEmpty()) {
+            log.warn("[SEASON_IN_PLAY] Skipping auto-join batch for season {}: main contest not found", season.getId());
+            return;
+        }
+        var command = new RegisterDefaultTableCommand(season, mainContest.get());
+
+        int joined = 0;
+        for (UUID userId : eligibleUserIds) {
+            try {
+                if (createPredictionUseCase
+                        .execute(userId, command)
+                        .peekLeft(
+                                error -> log.warn("[SEASON_IN_PLAY] Auto-join skipped for user {}: {}", userId, error))
+                        .isRight()) {
+                    joined++;
+                }
+            } catch (org.jooq.exception.DataAccessException | org.springframework.dao.DataAccessException e) {
+                throw e;
+            } catch (Exception e) {
+                log.error("[SEASON_IN_PLAY] Auto-join failed for user {}", userId, e);
+            }
+        }
+        log.info(
+                "[SEASON_IN_PLAY_AUTO_JOINED] seasonId={}, eligible={}, joined={}",
+                season.getId(),
+                eligibleUserIds.size(),
+                joined);
     }
 
     private void writeWelcomeFanoutEvent(UUID seasonId) throws JsonProcessingException {
