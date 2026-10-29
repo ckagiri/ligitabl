@@ -41,6 +41,8 @@ This covers `rest`, `web`, `scheduling` and `runners`. If a use case needs somet
 **2. Writes and business rules go through a use case. Reads for a view don't have to.**
 An inbound adapter may read a repo directly to assemble a view: a lookup for a page header, a dropdown, a redirect target. Any write, and any business rule, goes through a use case however small it is. "Unlink Google only if a password is set" is a rule even when the write is a single `userRepo.unlinkGoogle`.
 
+A rule that depends only on one entity's state belongs on the entity, as with `User.canUnlinkGoogle()`. The use case checks it before writing, and the view reads it to decide what to show, so the two can't drift. A use case earns its own class when there is something to do: a write, a transaction, or more than one repo or port to coordinate. A view that only asks the entity a question doesn't need one.
+
 **3. Outbound adapters are reached through ports.**
 This covers `client`, `notification` and `auth`. The use case depends on an interface and the adapter implements it. The port and the types in its signature live in `usecase` (shared ones in `usecase/shared/…`), so the dependency points from the adapter to the core.
 - Examples: `MatchFeed`, `AdminAlerts`, `TokenGenerator`, `EmailProvider`, `EmailTemplateRenderer`.

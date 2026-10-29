@@ -29,7 +29,7 @@ public class SetPasswordUseCase {
         if (user == null) {
             return Either.left(new SetPasswordError.UserNotFound(userId));
         }
-        if (user.getPassword() != null) {
+        if (user.hasPassword()) {
             return Either.left(new SetPasswordError.AlreadySet(userId));
         }
 

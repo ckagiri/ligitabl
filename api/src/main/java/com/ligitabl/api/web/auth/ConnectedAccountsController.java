@@ -43,14 +43,12 @@ public class ConnectedAccountsController {
             return "redirect:/auth/login";
         }
 
-        boolean googleLinked = user.getGoogleId() != null && !user.getGoogleId().isBlank();
-        boolean canUnlinkGoogle = googleLinked && user.getPassword() != null;
-
         model.addAttribute("pageTitle", "Connected Accounts");
-        model.addAttribute("googleLinked", googleLinked);
-        model.addAttribute("canUnlinkGoogle", canUnlinkGoogle);
+        model.addAttribute("googleLinked", user.isGoogleLinked());
+        model.addAttribute("canUnlinkGoogle", user.canUnlinkGoogle());
         model.addAttribute("accountEmail", user.getEmail().value());
-        model.addAttribute("googleEmail", googleLinked ? user.getEmail().value() : null);
+        model.addAttribute(
+                "googleEmail", user.isGoogleLinked() ? user.getEmail().value() : null);
         model.addAttribute("googleSubject", user.getGoogleId());
 
         Object linkingMessage =

@@ -186,7 +186,7 @@ public class ProfileController {
         if (user == null) {
             return "redirect:/auth/login";
         }
-        if (user.getPassword() != null) {
+        if (user.hasPassword()) {
             return "redirect:/profile/settings";
         }
         model.addAttribute("pageTitle", "Set Password");
@@ -207,7 +207,7 @@ public class ProfileController {
         if (user == null) {
             return "redirect:/auth/login";
         }
-        if (user.getPassword() != null) {
+        if (user.hasPassword()) {
             redirectAttributes.addFlashAttribute("message", "A password is already set for this account.");
             redirectAttributes.addFlashAttribute("messageType", "info");
             return "redirect:/profile/settings";

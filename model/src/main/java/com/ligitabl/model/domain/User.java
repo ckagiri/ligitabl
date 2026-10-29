@@ -81,6 +81,20 @@ public class User {
     @With
     OffsetDateTime lastLoginAt;
 
+    /** False for an account created through Google sign-in until it sets one. */
+    public boolean hasPassword() {
+        return password != null;
+    }
+
+    public boolean isGoogleLinked() {
+        return googleId != null && !googleId.isBlank();
+    }
+
+    /** Unlinking must leave a way to sign in. */
+    public boolean canUnlinkGoogle() {
+        return isGoogleLinked() && hasPassword();
+    }
+
     public boolean hasRole(Role role) {
         return roles.contains(role);
     }
