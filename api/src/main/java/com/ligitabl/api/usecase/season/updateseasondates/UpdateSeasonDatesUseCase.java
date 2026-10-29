@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.season.admin;
+package com.ligitabl.api.usecase.season.updateseasondates;
 
 import java.time.Clock;
 import java.time.Instant;

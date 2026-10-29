@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.season.autoactivate;
+package com.ligitabl.api.usecase.season.switchseason;
 
 import java.time.Clock;
 import java.util.UUID;
@@ -6,8 +6,6 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.api.usecase.season.admin.ActivateSeasonResult;
-import com.ligitabl.api.usecase.season.admin.ActivateSeasonUseCase;
 import com.ligitabl.api.usecase.shared.AdminAlerts;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.Season;

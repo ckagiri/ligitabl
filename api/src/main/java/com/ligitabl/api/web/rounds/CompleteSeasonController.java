@@ -7,8 +7,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 
-import com.ligitabl.api.usecase.season.admin.CompleteSeasonResult;
-import com.ligitabl.api.usecase.season.admin.CompleteSeasonUseCase;
+import com.ligitabl.api.usecase.season.completeseason.CompleteSeasonResult;
+import com.ligitabl.api.usecase.season.completeseason.CompleteSeasonUseCase;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

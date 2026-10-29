@@ -13,8 +13,8 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.scheduling.health.JobHeartbeat;
 import com.ligitabl.api.scheduling.health.ScheduledJobRunner;
 import com.ligitabl.api.testsupport.TestClock;
-import com.ligitabl.api.usecase.season.autoactivate.AutoActivateSeasonResult;
-import com.ligitabl.api.usecase.season.autoactivate.AutoActivateSeasonUseCase;
+import com.ligitabl.api.usecase.season.switchseason.AutoActivateSeasonResult;
+import com.ligitabl.api.usecase.season.switchseason.AutoActivateSeasonUseCase;
 
 @ExtendWith(MockitoExtension.class)
 class SeasonActivationJobTest {

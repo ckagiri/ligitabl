@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.season.autoactivate;
+package com.ligitabl.api.usecase.season.switchseason;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -16,7 +16,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.testsupport.TestClock;
-import com.ligitabl.api.usecase.season.admin.ActivateSeasonUseCase;
 import com.ligitabl.api.usecase.shared.AdminAlerts;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;

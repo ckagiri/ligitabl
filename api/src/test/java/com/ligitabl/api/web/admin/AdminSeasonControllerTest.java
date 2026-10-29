@@ -26,10 +26,10 @@ import org.springframework.ui.Model;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.testsupport.TestCalendar;
-import com.ligitabl.api.usecase.season.admin.ActivateSeasonUseCase;
-import com.ligitabl.api.usecase.season.admin.AssignUpcomingSeasonUseCase;
-import com.ligitabl.api.usecase.season.admin.RevertSeasonUseCase;
-import com.ligitabl.api.usecase.season.admin.UpdateSeasonDatesUseCase;
+import com.ligitabl.api.usecase.season.switchseason.ActivateSeasonUseCase;
+import com.ligitabl.api.usecase.season.switchseason.AssignUpcomingSeasonUseCase;
+import com.ligitabl.api.usecase.season.switchseason.RevertSeasonUseCase;
+import com.ligitabl.api.usecase.season.updateseasondates.UpdateSeasonDatesUseCase;
 import com.ligitabl.model.domain.Competition;
 import com.ligitabl.model.domain.CompetitionSlug;
 import com.ligitabl.model.domain.Season;
