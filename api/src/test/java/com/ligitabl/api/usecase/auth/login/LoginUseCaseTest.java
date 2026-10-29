@@ -104,7 +104,7 @@ class LoginUseCaseTest {
         verify(tokenGenerator, never()).generateAccessToken(any(), any());
     }
 
-    /** Regression: this used to pass a null hash to the hasher and fail with an NPE (a 500). */
+    /** Regression: this used to fail with an NPE (a 500). The null-hash half is in BCryptPasswordHasherTest. */
     @Test
     void shouldFailWhenAccountHasNoPassword() {
         var cmd = new LoginCommand(email, password);
@@ -116,7 +116,6 @@ class LoginUseCaseTest {
         Either<UseCaseError, LoginResult> result = loginUseCase.execute(cmd);
 
         assertThat(result.getLeft()).isInstanceOf(AuthorizationError.class);
-        verify(passwordHasher, never()).verify(any(), any());
         verify(tokenGenerator, never()).generateAccessToken(any(), any());
     }
 

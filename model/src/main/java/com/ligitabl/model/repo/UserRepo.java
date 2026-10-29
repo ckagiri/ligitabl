@@ -36,7 +36,15 @@ public interface UserRepo {
 
     User create(User model);
 
-    void update(User user);
+    void updateProfile(UUID userId, String displayName, boolean resultsEmailOptOut);
+
+    /**
+     * Link a Google subject and mark the email verified, since Google vouched for it. An existing
+     * verification time is kept; {@code verifiedAt} only fills a missing one.
+     */
+    void linkGoogle(UUID userId, String googleSubject, OffsetDateTime verifiedAt);
+
+    void unlinkGoogle(UUID userId);
 
     boolean existsByEmail(Email email);
 

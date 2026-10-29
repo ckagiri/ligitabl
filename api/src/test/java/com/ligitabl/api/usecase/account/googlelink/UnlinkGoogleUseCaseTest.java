@@ -33,7 +33,7 @@ class UnlinkGoogleUseCaseTest {
         var result = useCase.execute(user.getId());
 
         assertThat(result.get().getGoogleId()).isNull();
-        verify(userRepo).update(argThat(u -> u.getGoogleId() == null));
+        verify(userRepo).unlinkGoogle(user.getId());
     }
 
     @Test
@@ -44,7 +44,7 @@ class UnlinkGoogleUseCaseTest {
         var result = useCase.execute(user.getId());
 
         assertThat(result.getLeft()).isEqualTo(new UnlinkGoogleError.PasswordRequired(user.getId()));
-        verify(userRepo, never()).update(any());
+        verify(userRepo, never()).unlinkGoogle(any());
     }
 
     @Test
@@ -55,7 +55,7 @@ class UnlinkGoogleUseCaseTest {
         var result = useCase.execute(user.getId());
 
         assertThat(result.getLeft()).isEqualTo(new UnlinkGoogleError.NotLinked(user.getId()));
-        verify(userRepo, never()).update(any());
+        verify(userRepo, never()).unlinkGoogle(any());
     }
 
     @Test

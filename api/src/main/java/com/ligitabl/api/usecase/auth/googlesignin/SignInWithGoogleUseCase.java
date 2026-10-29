@@ -59,11 +59,12 @@ public class SignInWithGoogleUseCase {
         }
 
         // Google has verified the address, which is what makes linking by email safe.
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        userRepo.linkGoogle(existing.getId(), subject, now);
         User linked = existing.withEmailVerified(true).withGoogleId(subject);
         if (linked.getEmailVerifiedAt() == null) {
-            linked = linked.withEmailVerifiedAt(OffsetDateTime.now(clock));
+            linked = linked.withEmailVerifiedAt(now);
         }
-        userRepo.update(linked);
         log.info(
                 "[OAUTH_GOOGLE_LINKED] userId={} email={}",
                 existing.getId(),

@@ -8,7 +8,6 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -33,11 +32,9 @@ class UpdateProfileUseCaseTest {
 
         var result = useCase.execute(user.getId(), "Alice B", false);
 
-        ArgumentCaptor<User> saved = ArgumentCaptor.forClass(User.class);
-        verify(userRepo).update(saved.capture());
-        assertThat(saved.getValue().getDisplayName()).isEqualTo("Alice B");
-        assertThat(saved.getValue().isResultsEmailOptOut()).isTrue();
-        assertThat(result.get()).isEqualTo(saved.getValue());
+        verify(userRepo).updateProfile(user.getId(), "Alice B", true);
+        assertThat(result.get().getDisplayName()).isEqualTo("Alice B");
+        assertThat(result.get().isResultsEmailOptOut()).isTrue();
     }
 
     @Test
@@ -48,6 +45,6 @@ class UpdateProfileUseCaseTest {
         var result = useCase.execute(userId, "Alice", true);
 
         assertThat(result.getLeft()).isEqualTo(new UpdateProfileError.UserNotFound(userId));
-        verify(userRepo, never()).update(any());
+        verify(userRepo, never()).updateProfile(any(), any(), anyBoolean());
     }
 }

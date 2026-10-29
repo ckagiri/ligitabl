@@ -51,7 +51,7 @@ class SignInWithGoogleUseCaseTest {
         var result = useCase.execute(new GoogleIdentity("g-sub", "alice@example.com", "Alice"));
 
         assertThat(result.get()).isEqualTo(linked);
-        verify(userRepo, never()).update(any());
+        verify(userRepo, never()).linkGoogle(any(), any(), any());
         verify(userRepo, never()).create(any());
     }
 
@@ -67,7 +67,7 @@ class SignInWithGoogleUseCaseTest {
         assertThat(linked.getGoogleId()).isEqualTo("g-sub");
         assertThat(linked.isEmailVerified()).isTrue();
         assertThat(linked.getEmailVerifiedAt()).isEqualTo(TestClock.NOW.atOffset(ZoneOffset.UTC));
-        verify(userRepo).update(linked);
+        verify(userRepo).linkGoogle(existing.getId(), "g-sub", TestClock.NOW.atOffset(ZoneOffset.UTC));
         verifyNoInteractions(adminAlerts);
     }
 
@@ -81,7 +81,7 @@ class SignInWithGoogleUseCaseTest {
 
         assertThat(result.getLeft())
                 .isEqualTo(new SignInWithGoogleError.EmailLinkedToOtherGoogleAccount("alice@example.com"));
-        verify(userRepo, never()).update(any());
+        verify(userRepo, never()).linkGoogle(any(), any(), any());
     }
 
     @Test

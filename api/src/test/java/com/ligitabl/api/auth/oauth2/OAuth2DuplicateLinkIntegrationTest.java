@@ -22,6 +22,7 @@ import org.springframework.security.oauth2.core.user.DefaultOAuth2User;
 import org.springframework.security.web.authentication.RememberMeServices;
 import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 
+import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.usecase.account.googlelink.LinkGoogleUseCase;
 import com.ligitabl.api.usecase.auth.recordlogin.RecordLoginUseCase;
 import com.ligitabl.model.auth.Email;
@@ -48,7 +49,7 @@ class OAuth2DuplicateLinkIntegrationTest {
     private final RememberMeServices rememberMeServices = Mockito.mock(RememberMeServices.class);
     private final OAuth2AuthenticationSuccessHandler handler = new OAuth2AuthenticationSuccessHandler(
             userRepo,
-            new LinkGoogleUseCase(userRepo),
+            new LinkGoogleUseCase(userRepo, TestClock.FIXED),
             Mockito.mock(RecordLoginUseCase.class),
             customOAuth2UserService,
             rememberMeServices);
@@ -107,7 +108,7 @@ class OAuth2DuplicateLinkIntegrationTest {
     }
 
     @Test
-    @DisplayName("duplicate Google link: does not call userRepo.update (no data mutation on conflict)")
+    @DisplayName("duplicate Google link: does not call userRepo.linkGoogle (no data mutation on conflict)")
     void duplicateLink_doesNotMutateUser() throws Exception {
         User currentUser = makeUser(CURRENT_USER_ID, "alice@example.com", "Alice", null);
         User otherUser = makeUser(OTHER_USER_ID, "bob@example.com", "Bob", GOOGLE_SUBJECT);
@@ -125,7 +126,7 @@ class OAuth2DuplicateLinkIntegrationTest {
 
         handler.onAuthenticationSuccess(request, response, makeOAuth2Token(GOOGLE_SUBJECT, "eve@gmail.com"));
 
-        Mockito.verify(userRepo, Mockito.never()).update(Mockito.any());
+        Mockito.verify(userRepo, Mockito.never()).linkGoogle(Mockito.any(), Mockito.any(), Mockito.any());
     }
 
     // ---- helpers ----

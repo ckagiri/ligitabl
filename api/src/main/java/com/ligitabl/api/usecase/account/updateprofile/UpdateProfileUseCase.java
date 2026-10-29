@@ -28,10 +28,9 @@ public class UpdateProfileUseCase {
         }
 
         // Stored inverted: the column is an opt-out.
-        User updated = user.withDisplayName(displayName).withResultsEmailOptOut(!receiveResultsEmail);
-        userRepo.update(updated);
+        userRepo.updateProfile(userId, displayName, !receiveResultsEmail);
 
         log.info("[PROFILE_UPDATED] userId={} newDisplayName={}", userId, displayName);
-        return Either.right(updated);
+        return Either.right(user.withDisplayName(displayName).withResultsEmailOptOut(!receiveResultsEmail));
     }
 }

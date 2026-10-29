@@ -41,7 +41,6 @@ public class SetPasswordUseCase {
         }
 
         Password.Hashed hashed = passwordHasher.hash(plaintext);
-        // Not userRepo.update(user): it doesn't write the password column.
         userRepo.updatePassword(userId, hashed);
         User updated = user.withPassword(hashed);
 
