@@ -479,7 +479,7 @@ class CreatePredictionUseCaseIT extends AbstractPostgresIT {
         @DisplayName("should reject the merge when the round-0 row has lost its initialRankings marker")
         void shouldRejectMergeWhenMarkerMissing() {
             // The other half of "initialRankings is the permanent marker". Every round-0 writer —
-            // a user registering in pre-season, and CreatePredictionUseCase.autoRegisterDefaultTable
+            // a user registering in pre-season, and a RegisterDefaultTableCommand
             // on behalf of one — sets it precisely so this guard never fires.
             assertThat(useCase.execute(userId, singleSwap("MCI", "ARS")).isRight())
                     .isTrue();

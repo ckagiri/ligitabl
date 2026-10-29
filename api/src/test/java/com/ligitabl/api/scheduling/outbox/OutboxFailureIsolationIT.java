@@ -27,6 +27,7 @@ import com.ligitabl.api.scheduling.health.ScheduledJobRunner;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.InPlaySeasonFixture;
 import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionUseCase;
+import com.ligitabl.api.usecase.prediction.createprediction.JoinLockedRoundCommand;
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.api.usecase.shared.outbox.RoundLockedPayload;
 import com.ligitabl.api.usecase.shared.outbox.SeasonInPlayPayload;
@@ -172,7 +173,7 @@ class OutboxFailureIsolationIT extends AbstractPostgresIT {
 
         // The loop stopped at the user who actually threw: the third was never attempted, which
         // no database state can show because nothing was written either way.
-        verify(createPredictionUseCase, times(2)).executeWithContext(any(), any(), any());
+        verify(createPredictionUseCase, times(2)).execute(any(), any(JoinLockedRoundCommand.class));
     }
 
     @Test

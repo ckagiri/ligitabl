@@ -141,7 +141,7 @@ class CompleteSeasonUseCaseTest {
 
         assertThat(result).isInstanceOf(CompleteSeasonResult.Ok.class);
         assertThat(season.isCompleted()).isTrue();
-        assertThat(season.getCompletedAt()).isNotNull();
+        assertThat(season.getCompletedAt().toInstant()).isEqualTo(TestClock.NOW);
         verify(seasonRepo).save(season);
     }
 

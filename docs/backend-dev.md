@@ -29,7 +29,7 @@ Positional constructors are fine until neighbouring arguments share a type and c
 2. **Add Lombok `@Builder`** when a record has about 8+ components with 3 or more adjacent fields of the same type (`MatchSyncResult`, `LatestResultResponse`). Build it with named setters at every call site, tests included. A builder doesn't check that every field is set: one you forget becomes `null`/`0`/`false`, so don't use it to hide genuinely required arguments on small records.
 3. **Use neither** for small records or ones whose fields all have distinct types.
 
-Pipeline context records private to a use case (`Ctx`, `JoinCtx`) are exempt. They're rebuilt step by step and never read outside the class.
+Pipeline context records private to a use case (`CreatePredictionUseCase.Ctx`) are exempt. They're rebuilt step by step and never read outside the class.
 
 ## Formatting (Palantir Java Format, 100-col width)
 

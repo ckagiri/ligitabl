@@ -28,17 +28,20 @@ import org.springframework.dao.DuplicateKeyException;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionCommand;
-import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionError;
 import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionResult;
 import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionUseCase;
+import com.ligitabl.api.usecase.prediction.createprediction.JoinLockedRoundCommand;
+import com.ligitabl.api.usecase.prediction.createprediction.RegisterDefaultTableCommand;
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.api.usecase.shared.outbox.RoundLockedPayload;
 import com.ligitabl.api.usecase.shared.outbox.SeasonInPlayPayload;
 import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.OutboxEvent;
+import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.OutboxRepo;
+import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.UserRepo;
 
@@ -47,12 +50,19 @@ import com.ligitabl.model.repo.UserRepo;
 class AutoJoinUseCaseTest {
 
     private static final Instant NOW = Instant.parse("2026-07-24T12:00:00Z");
+    private static final int MAX_ROUNDS = 3;
 
     @Mock
     SeasonRepo seasonRepo;
 
     @Mock
     UserRepo userRepo;
+
+    @Mock
+    ContestRepo contestRepo;
+
+    @Mock
+    RoundRepo roundRepo;
 
     @Mock
     CreatePredictionUseCase createPredictionUseCase;
@@ -63,82 +73,114 @@ class AutoJoinUseCaseTest {
     private AutoJoinUseCase useCase;
 
     private final UUID seasonId = UUID.randomUUID();
+    private final UUID roundId = UUID.randomUUID();
+    private final Contest mainContest = Contest.builder().id(UUID.randomUUID()).build();
 
     @BeforeEach
     void setup() {
-        useCase = new AutoJoinUseCase(seasonRepo, userRepo, createPredictionUseCase, outboxRepo, new ObjectMapper());
+        useCase = new AutoJoinUseCase(
+                seasonRepo, userRepo, contestRepo, roundRepo, createPredictionUseCase, outboxRepo, new ObjectMapper());
     }
 
-    private static CreatePredictionResult created(int atRound) {
-        return new CreatePredictionResult(UUID.randomUUID(), UUID.randomUUID(), atRound, "ok");
+    private static Either<?, CreatePredictionResult> created(int atRound) {
+        return Either.right(new CreatePredictionResult(UUID.randomUUID(), UUID.randomUUID(), atRound, "ok"));
+    }
+
+    private Season season(OffsetDateTime preSeasonOpensAt) {
+        return Season.builder()
+                .id(seasonId)
+                .mainContestId(mainContest.getId())
+                .currentRoundId(roundId)
+                .maxRounds(MAX_ROUNDS)
+                .preSeasonOpensAt(preSeasonOpensAt)
+                .build();
+    }
+
+    private void givenSeason(Season season) {
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        when(contestRepo.findById(mainContest.getId())).thenReturn(Optional.of(mainContest));
     }
 
     // --- ROUND_LOCKED -------------------------------------------------------------
 
     private Season activeSeason() {
-        return Season.builder()
-                .id(seasonId)
-                .mainContestId(UUID.randomUUID())
-                .preSeasonOpensAt(NOW.minusSeconds(86400).atOffset(ZoneOffset.UTC))
-                .build();
+        return season(NOW.minusSeconds(86400).atOffset(ZoneOffset.UTC));
     }
 
     private RoundLockedPayload roundLocked() {
-        return new RoundLockedPayload(seasonId, UUID.randomUUID(), 1);
+        return new RoundLockedPayload(seasonId, roundId, 1);
     }
 
-    private CreatePredictionUseCase.JoinCtx joinCtx(Season season) {
-        return new CreatePredictionUseCase.JoinCtx(
-                season, Contest.builder().id(UUID.randomUUID()).build(), 1, 1);
+    /** The season sits on {@code position}, which has just locked. */
+    private Season givenLockedRound(int position) {
+        Season season = activeSeason();
+        givenSeason(season);
+        when(roundRepo.findById(roundId))
+                .thenReturn(Optional.of(
+                        Round.builder().id(roundId).position(position).build()));
+        return season;
+    }
+
+    private void givenUnjoined(UUID... userIds) {
+        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(List.of(userIds));
     }
 
     @Test
-    void roundLockedAutoJoinsEligibleUsers() {
-        Season season = activeSeason();
+    void roundLockedAutoJoinsEligibleUsersIntoTheLockedRound() {
+        // The round has locked, so a plain join would place these users at the next round. They
+        // are joined as if they had submitted while it was open.
+        Season season = givenLockedRound(2);
         UUID user1 = UUID.randomUUID();
         UUID user2 = UUID.randomUUID();
-        var ctx = joinCtx(season);
-
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(List.of(user1, user2));
-        when(createPredictionUseCase.resolveJoinContextAsOpen(season)).thenReturn(Either.right(ctx));
-        when(createPredictionUseCase.executeWithContext(any(), eq(ctx), any())).thenReturn(Either.right(created(1)));
+        givenUnjoined(user1, user2);
+        var command = new JoinLockedRoundCommand(season, mainContest, 2);
+        when(createPredictionUseCase.execute(any(), any(JoinLockedRoundCommand.class)))
+                .thenAnswer(i -> created(2));
 
         useCase.execute(roundLocked());
 
-        verify(createPredictionUseCase).executeWithContext(eq(user1), eq(ctx), any(CreatePredictionCommand.class));
-        verify(createPredictionUseCase).executeWithContext(eq(user2), eq(ctx), any(CreatePredictionCommand.class));
+        verify(createPredictionUseCase).execute(user1, command);
+        verify(createPredictionUseCase).execute(user2, command);
     }
 
     @Test
-    void roundLockedWithNoUnjoinedUsers_skipsContextResolution() {
-        Season season = activeSeason();
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(List.of());
+    void roundLockedStillJoins_onTheFinalRound() {
+        Season season = givenLockedRound(MAX_ROUNDS);
+        UUID user = UUID.randomUUID();
+        givenUnjoined(user);
+        when(createPredictionUseCase.execute(any(), any(JoinLockedRoundCommand.class)))
+                .thenAnswer(i -> created(MAX_ROUNDS));
 
         useCase.execute(roundLocked());
 
-        verify(createPredictionUseCase, never()).resolveJoinContextAsOpen(any());
+        verify(createPredictionUseCase).execute(user, new JoinLockedRoundCommand(season, mainContest, MAX_ROUNDS));
+    }
+
+    @Test
+    void roundLockedWithNoUnjoinedUsers_skipsResolution() {
+        givenLockedRound(1);
+        givenUnjoined();
+
+        useCase.execute(roundLocked());
+
+        verify(roundRepo, never()).findById(any());
+        verify(createPredictionUseCase, never()).execute(any(), any(JoinLockedRoundCommand.class));
     }
 
     @Test
     void roundLockedOneUserFailure_doesNotBlockOthers() {
-        Season season = activeSeason();
+        givenLockedRound(1);
         UUID badUser = UUID.randomUUID();
         UUID goodUser = UUID.randomUUID();
-        var ctx = joinCtx(season);
-
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(List.of(badUser, goodUser));
-        when(createPredictionUseCase.resolveJoinContextAsOpen(season)).thenReturn(Either.right(ctx));
-        when(createPredictionUseCase.executeWithContext(eq(badUser), eq(ctx), any()))
+        givenUnjoined(badUser, goodUser);
+        when(createPredictionUseCase.execute(eq(badUser), any(JoinLockedRoundCommand.class)))
                 .thenThrow(new RuntimeException("boom"));
-        when(createPredictionUseCase.executeWithContext(eq(goodUser), eq(ctx), any()))
-                .thenReturn(Either.right(created(1)));
+        when(createPredictionUseCase.execute(eq(goodUser), any(JoinLockedRoundCommand.class)))
+                .thenAnswer(i -> created(1));
 
         useCase.execute(roundLocked());
 
-        verify(createPredictionUseCase).executeWithContext(eq(goodUser), eq(ctx), any());
+        verify(createPredictionUseCase).execute(eq(goodUser), any(JoinLockedRoundCommand.class));
     }
 
     @Test
@@ -146,56 +188,67 @@ class AutoJoinUseCaseTest {
         // A DataAccessException aborts the shared transaction, so every later user would fail
         // too and be logged as if at fault. The loop must stop at the real culprit and let the
         // whole batch retry.
-        Season season = activeSeason();
+        givenLockedRound(1);
         UUID firstUser = UUID.randomUUID();
         UUID laterUser = UUID.randomUUID();
-        var ctx = joinCtx(season);
-
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(List.of(firstUser, laterUser));
-        when(createPredictionUseCase.resolveJoinContextAsOpen(season)).thenReturn(Either.right(ctx));
+        givenUnjoined(firstUser, laterUser);
         // jOOQ's DataAccessException, not Spring's — that is what the repos actually throw
         // here, as OutboxFailureIsolationIT demonstrates against a real Postgres.
-        when(createPredictionUseCase.executeWithContext(eq(firstUser), eq(ctx), any()))
+        when(createPredictionUseCase.execute(eq(firstUser), any(JoinLockedRoundCommand.class)))
                 .thenThrow(new org.jooq.exception.DataAccessException("current transaction is aborted"));
 
         assertThatThrownBy(() -> useCase.execute(roundLocked()))
                 .isInstanceOf(org.jooq.exception.DataAccessException.class)
                 .hasMessageContaining("transaction is aborted");
 
-        verify(createPredictionUseCase, never()).executeWithContext(eq(laterUser), any(), any());
+        verify(createPredictionUseCase, never()).execute(eq(laterUser), any(JoinLockedRoundCommand.class));
     }
 
     @Test
     void roundLockedSpringDatabaseFailure_alsoAbortsTheLoop() {
         // The two DataAccessException types share no supertype, so both arms are exercised.
-        Season season = activeSeason();
+        givenLockedRound(1);
         UUID firstUser = UUID.randomUUID();
         UUID laterUser = UUID.randomUUID();
-        var ctx = joinCtx(season);
-
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(List.of(firstUser, laterUser));
-        when(createPredictionUseCase.resolveJoinContextAsOpen(season)).thenReturn(Either.right(ctx));
-        when(createPredictionUseCase.executeWithContext(eq(firstUser), eq(ctx), any()))
+        givenUnjoined(firstUser, laterUser);
+        when(createPredictionUseCase.execute(eq(firstUser), any(JoinLockedRoundCommand.class)))
                 .thenThrow(new DuplicateKeyException("duplicate key value violates unique constraint"));
 
         assertThatThrownBy(() -> useCase.execute(roundLocked())).isInstanceOf(DuplicateKeyException.class);
 
-        verify(createPredictionUseCase, never()).executeWithContext(eq(laterUser), any(), any());
+        verify(createPredictionUseCase, never()).execute(eq(laterUser), any(JoinLockedRoundCommand.class));
     }
 
     @Test
-    void roundLockedContextResolutionFails_skipsBatch() {
-        Season season = activeSeason();
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(List.of(UUID.randomUUID()));
-        when(createPredictionUseCase.resolveJoinContextAsOpen(season))
-                .thenReturn(Either.left(new CreatePredictionError.CurrentRoundNotFound(seasonId)));
+    void roundLockedSkipsTheBatch_whenTheSeasonHasRunPastItsLastRound() {
+        givenLockedRound(MAX_ROUNDS + 1);
+        givenUnjoined(UUID.randomUUID());
 
         useCase.execute(roundLocked());
 
-        verify(createPredictionUseCase, never()).executeWithContext(any(), any(), any());
+        verify(createPredictionUseCase, never()).execute(any(), any(JoinLockedRoundCommand.class));
+    }
+
+    @Test
+    void roundLockedSkipsTheBatch_whenTheCurrentRoundIsMissing() {
+        givenSeason(activeSeason());
+        when(roundRepo.findById(roundId)).thenReturn(Optional.empty());
+        givenUnjoined(UUID.randomUUID());
+
+        useCase.execute(roundLocked());
+
+        verify(createPredictionUseCase, never()).execute(any(), any(JoinLockedRoundCommand.class));
+    }
+
+    @Test
+    void roundLockedSkipsTheBatch_whenTheMainContestIsMissing() {
+        givenLockedRound(1);
+        when(contestRepo.findById(mainContest.getId())).thenReturn(Optional.empty());
+        givenUnjoined(UUID.randomUUID());
+
+        useCase.execute(roundLocked());
+
+        verify(createPredictionUseCase, never()).execute(any(), any(JoinLockedRoundCommand.class));
     }
 
     @Test
@@ -209,12 +262,14 @@ class AutoJoinUseCaseTest {
 
     // --- SEASON_IN_PLAY ----------------------------------------------------------
 
-    private Season inPlaySeason() {
-        return Season.builder()
-                .id(seasonId)
-                .mainContestId(UUID.randomUUID())
-                .preSeasonOpensAt(NOW.minusSeconds(30L * 86400).atOffset(ZoneOffset.UTC))
-                .build();
+    private Season givenInPlaySeason() {
+        Season season = season(NOW.minusSeconds(30L * 86400).atOffset(ZoneOffset.UTC));
+        givenSeason(season);
+        return season;
+    }
+
+    private void givenEligible(UUID... userIds) {
+        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any())).thenReturn(List.of(userIds));
     }
 
     private SeasonInPlayPayload seasonInPlay() {
@@ -228,31 +283,27 @@ class AutoJoinUseCaseTest {
     }
 
     @Test
-    void seasonInPlayAutoRegistersEligibleUsersAsRoundZero() throws Exception {
-        Season season = inPlaySeason();
+    void seasonInPlayAutoRegistersEligibleUsersWithTheDefaultTable() throws Exception {
+        Season season = givenInPlaySeason();
         UUID user1 = UUID.randomUUID();
         UUID user2 = UUID.randomUUID();
-        Contest mainContest = Contest.builder().id(UUID.randomUUID()).build();
-
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any())).thenReturn(List.of(user1, user2));
-        when(createPredictionUseCase.resolveMainContest(season)).thenReturn(Either.right(mainContest));
-        when(createPredictionUseCase.autoRegisterDefaultTable(any(), eq(season), eq(mainContest)))
-                .thenReturn(Either.right(created(0)));
+        givenEligible(user1, user2);
+        var command = new RegisterDefaultTableCommand(season, mainContest);
+        when(createPredictionUseCase.execute(any(), any(RegisterDefaultTableCommand.class)))
+                .thenAnswer(i -> created(0));
 
         useCase.execute(seasonInPlay());
 
-        verify(createPredictionUseCase).autoRegisterDefaultTable(eq(user1), eq(season), eq(mainContest));
-        verify(createPredictionUseCase).autoRegisterDefaultTable(eq(user2), eq(season), eq(mainContest));
+        verify(createPredictionUseCase).execute(user1, command);
+        verify(createPredictionUseCase).execute(user2, command);
         // Never the mid-season shape — that would cost these users their swap allowance.
-        verify(createPredictionUseCase, never()).executeWithContext(any(), any(), any());
+        verify(createPredictionUseCase, never()).execute(any(), any(JoinLockedRoundCommand.class));
     }
 
     @Test
     void seasonInPlayUsesTheSeasonsPreSeasonOpensAtAsTheAnchor() throws Exception {
-        Season season = inPlaySeason();
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any())).thenReturn(List.of());
+        Season season = givenInPlaySeason();
+        givenEligible();
 
         useCase.execute(seasonInPlay());
 
@@ -266,13 +317,12 @@ class AutoJoinUseCaseTest {
         // The trap: the ROUND_LOCKED path returns early on an empty candidate list. Doing that
         // here would silently skip welcoming genuine pre-season registrants, who exist regardless
         // of whether anyone needed auto-joining.
-        Season season = inPlaySeason();
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any())).thenReturn(List.of());
+        givenInPlaySeason();
+        givenEligible();
 
         useCase.execute(seasonInPlay());
 
-        verify(createPredictionUseCase, never()).resolveMainContest(any());
+        verify(contestRepo, never()).findById(any());
         assertThat(savedEvents()).singleElement().satisfies(e -> {
             assertThat(e.getIdempotencyKey()).isEqualTo("season-welcome-fanout:" + seasonId);
             assertThat(e.getEventType()).isEqualTo(OutboxEventTypes.SEASON_WELCOME_FANOUT);
@@ -281,14 +331,10 @@ class AutoJoinUseCaseTest {
 
     @Test
     void seasonInPlayWritesExactlyOneFanoutEventNotOnePerUser() throws Exception {
-        Season season = inPlaySeason();
-        Contest mainContest = Contest.builder().id(UUID.randomUUID()).build();
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any()))
-                .thenReturn(List.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()));
-        when(createPredictionUseCase.resolveMainContest(season)).thenReturn(Either.right(mainContest));
-        when(createPredictionUseCase.autoRegisterDefaultTable(any(), any(), any()))
-                .thenReturn(Either.right(created(0)));
+        givenInPlaySeason();
+        givenEligible(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
+        when(createPredictionUseCase.execute(any(), any(RegisterDefaultTableCommand.class)))
+                .thenAnswer(i -> created(0));
 
         useCase.execute(seasonInPlay());
 
@@ -297,56 +343,46 @@ class AutoJoinUseCaseTest {
 
     @Test
     void seasonInPlayOneUserFailure_doesNotBlockOthers() throws Exception {
-        Season season = inPlaySeason();
+        givenInPlaySeason();
         UUID badUser = UUID.randomUUID();
         UUID goodUser = UUID.randomUUID();
-        Contest mainContest = Contest.builder().id(UUID.randomUUID()).build();
-
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any())).thenReturn(List.of(badUser, goodUser));
-        when(createPredictionUseCase.resolveMainContest(season)).thenReturn(Either.right(mainContest));
-        when(createPredictionUseCase.autoRegisterDefaultTable(eq(badUser), any(), any()))
+        givenEligible(badUser, goodUser);
+        when(createPredictionUseCase.execute(eq(badUser), any(RegisterDefaultTableCommand.class)))
                 .thenThrow(new RuntimeException("boom"));
-        when(createPredictionUseCase.autoRegisterDefaultTable(eq(goodUser), any(), any()))
-                .thenReturn(Either.right(created(0)));
+        when(createPredictionUseCase.execute(eq(goodUser), any(RegisterDefaultTableCommand.class)))
+                .thenAnswer(i -> created(0));
 
         useCase.execute(seasonInPlay());
 
-        verify(createPredictionUseCase).autoRegisterDefaultTable(eq(goodUser), any(), any());
+        verify(createPredictionUseCase).execute(eq(goodUser), any(RegisterDefaultTableCommand.class));
         assertThat(savedEvents()).hasSize(1);
     }
 
     @Test
     void seasonInPlayDatabaseFailure_abortsLoopAndWritesNoFanout() {
-        Season season = inPlaySeason();
+        givenInPlaySeason();
         UUID firstUser = UUID.randomUUID();
         UUID laterUser = UUID.randomUUID();
-        Contest mainContest = Contest.builder().id(UUID.randomUUID()).build();
-
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any())).thenReturn(List.of(firstUser, laterUser));
-        when(createPredictionUseCase.resolveMainContest(season)).thenReturn(Either.right(mainContest));
-        when(createPredictionUseCase.autoRegisterDefaultTable(eq(firstUser), any(), any()))
+        givenEligible(firstUser, laterUser);
+        when(createPredictionUseCase.execute(eq(firstUser), any(RegisterDefaultTableCommand.class)))
                 .thenThrow(new org.jooq.exception.DataAccessException("current transaction is aborted"));
 
         assertThatThrownBy(() -> useCase.execute(seasonInPlay()))
                 .isInstanceOf(org.jooq.exception.DataAccessException.class);
 
-        verify(createPredictionUseCase, never()).autoRegisterDefaultTable(eq(laterUser), any(), any());
+        verify(createPredictionUseCase, never()).execute(eq(laterUser), any(RegisterDefaultTableCommand.class));
         assertThat(savedEvents()).isEmpty();
     }
 
     @Test
-    void seasonInPlayContestResolutionFails_skipsBatchButStillWelcomes() throws Exception {
-        Season season = inPlaySeason();
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any())).thenReturn(List.of(UUID.randomUUID()));
-        when(createPredictionUseCase.resolveMainContest(season))
-                .thenReturn(Either.left(new CreatePredictionError.MainContestNotFound()));
+    void seasonInPlayMissingMainContest_skipsBatchButStillWelcomes() throws Exception {
+        givenInPlaySeason();
+        when(contestRepo.findById(mainContest.getId())).thenReturn(Optional.empty());
+        givenEligible(UUID.randomUUID());
 
         useCase.execute(seasonInPlay());
 
-        verify(createPredictionUseCase, never()).autoRegisterDefaultTable(any(), any(), any());
+        verify(createPredictionUseCase, never()).execute(any(), any(RegisterDefaultTableCommand.class));
         assertThat(savedEvents()).hasSize(1);
     }
 
@@ -354,12 +390,7 @@ class AutoJoinUseCaseTest {
     void seasonInPlayWithoutPreSeasonOpensAt_skipsAutoJoinButStillWelcomes() throws Exception {
         // Only reachable if the season was edited between enqueue and process — the enqueuer
         // guards it. Guessing a cohort would be worse than skipping one.
-        Season season = Season.builder()
-                .id(seasonId)
-                .mainContestId(UUID.randomUUID())
-                .preSeasonOpensAt(null)
-                .build();
-        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
+        givenSeason(season(null));
 
         useCase.execute(seasonInPlay());
 
