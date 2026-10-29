@@ -26,7 +26,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -34,10 +33,7 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.notification.roundresults.EnqueueRoundResultsEmailsUseCase;
 import com.ligitabl.api.usecase.notification.seasonwelcome.EnqueueSeasonWelcomeEmailsUseCase;
 import com.ligitabl.api.usecase.notification.segmentresults.EnqueueSegmentResultsEmailsUseCase;
-import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionCommand;
-import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionError;
-import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionResult;
-import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionUseCase;
+import com.ligitabl.api.usecase.prediction.autojoin.AutoJoinUseCase;
 import com.ligitabl.api.usecase.shared.email.EmailCommand;
 import com.ligitabl.api.usecase.shared.email.EmailContent;
 import com.ligitabl.api.usecase.shared.email.EmailError;
@@ -53,13 +49,9 @@ import com.ligitabl.api.usecase.shared.outbox.SeasonInPlayPayload;
 import com.ligitabl.api.usecase.shared.outbox.SeasonWelcomeFanoutPayload;
 import com.ligitabl.api.usecase.shared.outbox.SeasonWelcomePayload;
 import com.ligitabl.api.usecase.shared.outbox.SegmentResultsPayload;
-import com.ligitabl.model.domain.Contest;
 import com.ligitabl.model.domain.HitDistribution;
 import com.ligitabl.model.domain.OutboxEvent;
-import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.OutboxRepo;
-import com.ligitabl.model.repo.SeasonRepo;
-import com.ligitabl.model.repo.UserRepo;
 
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
@@ -86,13 +78,7 @@ class OutboxEventProcessorTest {
     EmailProvider emailProvider;
 
     @Mock
-    SeasonRepo seasonRepo;
-
-    @Mock
-    UserRepo userRepo;
-
-    @Mock
-    CreatePredictionUseCase createPredictionUseCase;
+    AutoJoinUseCase autoJoinUseCase;
 
     private final ObjectMapper objectMapper = new ObjectMapper();
     private OutboxEventProcessor processor;
@@ -111,9 +97,7 @@ class OutboxEventProcessorTest {
                 emailProvider,
                 objectMapper,
                 Clock.fixed(NOW, ZoneOffset.UTC),
-                seasonRepo,
-                userRepo,
-                createPredictionUseCase);
+                autoJoinUseCase);
         ReflectionTestUtils.setField(processor, "frontendUrl", "http://localhost:8080");
 
         when(renderer.render(eq(EmailCommand.EmailType.ROUND_RESULTS), any()))
@@ -555,106 +539,35 @@ class OutboxEventProcessorTest {
         verify(outboxRepo).markSent(event.getId());
     }
 
-    private Season activeSeason(UUID preSeasonOpensAtOffsetSeasonId) {
-        return Season.builder()
-                .id(preSeasonOpensAtOffsetSeasonId)
-                .mainContestId(UUID.randomUUID())
-                .preSeasonOpensAt(NOW.minusSeconds(86400).atOffset(ZoneOffset.UTC))
-                .build();
-    }
+    // --- ROUND_LOCKED / SEASON_IN_PLAY: auto-join rules live in AutoJoinUseCase ----
 
     @Test
-    void roundLockedAutoJoinsEligibleUsersThenMarksSent() throws Exception {
-        Season season = activeSeason(seasonId);
-        UUID user1 = UUID.randomUUID();
-        UUID user2 = UUID.randomUUID();
-        var ctx = new CreatePredictionUseCase.JoinCtx(
-                season, Contest.builder().id(UUID.randomUUID()).build(), 1, 1);
-
-        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(java.util.List.of(user1, user2));
-        when(createPredictionUseCase.resolveJoinContextAsOpen(season)).thenReturn(Either.right(ctx));
-        when(createPredictionUseCase.executeWithContext(any(), eq(ctx), any()))
-                .thenReturn(Either.right(new CreatePredictionResult(UUID.randomUUID(), UUID.randomUUID(), 1, "ok")));
-
-        OutboxEvent event = claimedEvent(
-                OutboxEventTypes.ROUND_LOCKED,
-                objectMapper.writeValueAsString(new RoundLockedPayload(seasonId, UUID.randomUUID(), 1)),
-                1);
+    void roundLockedDelegatesToAutoJoinThenMarksSent() throws Exception {
+        RoundLockedPayload payload = new RoundLockedPayload(seasonId, UUID.randomUUID(), 1);
+        OutboxEvent event = claimedEvent(OutboxEventTypes.ROUND_LOCKED, objectMapper.writeValueAsString(payload), 1);
 
         processor.processOne(event);
 
-        verify(createPredictionUseCase).executeWithContext(eq(user1), eq(ctx), any(CreatePredictionCommand.class));
-        verify(createPredictionUseCase).executeWithContext(eq(user2), eq(ctx), any(CreatePredictionCommand.class));
-        verify(outboxRepo).markSent(event.getId());
-        verify(outboxRepo, never()).markFailed(any(), any(), any());
-    }
-
-    @Test
-    void roundLockedWithNoUnjoinedUsers_skipsContextResolutionButStillMarksSent() throws Exception {
-        Season season = activeSeason(seasonId);
-        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(java.util.List.of());
-
-        OutboxEvent event = claimedEvent(
-                OutboxEventTypes.ROUND_LOCKED,
-                objectMapper.writeValueAsString(new RoundLockedPayload(seasonId, UUID.randomUUID(), 1)),
-                1);
-
-        processor.processOne(event);
-
-        verify(createPredictionUseCase, never()).resolveJoinContextAsOpen(any());
+        verify(autoJoinUseCase).execute(payload);
         verify(outboxRepo).markSent(event.getId());
     }
 
     @Test
-    void roundLockedOneUserFailure_doesNotBlockOthersOrFailTheEvent() throws Exception {
-        Season season = activeSeason(seasonId);
-        UUID badUser = UUID.randomUUID();
-        UUID goodUser = UUID.randomUUID();
-        var ctx = new CreatePredictionUseCase.JoinCtx(
-                season, Contest.builder().id(UUID.randomUUID()).build(), 1, 1);
-
-        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(java.util.List.of(badUser, goodUser));
-        when(createPredictionUseCase.resolveJoinContextAsOpen(season)).thenReturn(Either.right(ctx));
-        when(createPredictionUseCase.executeWithContext(eq(badUser), eq(ctx), any()))
-                .thenThrow(new RuntimeException("boom"));
-        when(createPredictionUseCase.executeWithContext(eq(goodUser), eq(ctx), any()))
-                .thenReturn(Either.right(new CreatePredictionResult(UUID.randomUUID(), UUID.randomUUID(), 1, "ok")));
-
-        OutboxEvent event = claimedEvent(
-                OutboxEventTypes.ROUND_LOCKED,
-                objectMapper.writeValueAsString(new RoundLockedPayload(seasonId, UUID.randomUUID(), 1)),
-                1);
+    void seasonInPlayDelegatesToAutoJoinThenMarksSent() throws Exception {
+        SeasonInPlayPayload payload = new SeasonInPlayPayload(seasonId);
+        OutboxEvent event = claimedEvent(OutboxEventTypes.SEASON_IN_PLAY, objectMapper.writeValueAsString(payload), 1);
 
         processor.processOne(event);
 
-        verify(createPredictionUseCase).executeWithContext(eq(goodUser), eq(ctx), any());
+        verify(autoJoinUseCase).execute(payload);
         verify(outboxRepo).markSent(event.getId());
-        verify(outboxRepo, never()).markFailed(any(), any(), any());
     }
 
     @Test
-    void roundLockedDatabaseFailure_abortsLoopImmediatelyInsteadOfBlamingTheRemainingUsers() throws Exception {
-        // A DataAccessException aborts the shared transaction, so every later user would fail
-        // too and be logged as if at fault. The loop must stop at the real culprit and let the
-        // whole batch retry.
-        Season season = activeSeason(seasonId);
-        UUID firstUser = UUID.randomUUID();
-        UUID laterUser = UUID.randomUUID();
-        var ctx = new CreatePredictionUseCase.JoinCtx(
-                season, Contest.builder().id(UUID.randomUUID()).build(), 1, 1);
-
-        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any()))
-                .thenReturn(java.util.List.of(firstUser, laterUser));
-        when(createPredictionUseCase.resolveJoinContextAsOpen(season)).thenReturn(Either.right(ctx));
-        // jOOQ's DataAccessException, not Spring's — that is what the repos actually throw
-        // here, as OutboxFailureIsolationIT demonstrates against a real Postgres.
-        when(createPredictionUseCase.executeWithContext(eq(firstUser), eq(ctx), any()))
-                .thenThrow(new org.jooq.exception.DataAccessException("current transaction is aborted"));
-
+    void autoJoinDatabaseFailure_marksFailedNotSent() throws Exception {
+        org.mockito.Mockito.doThrow(new org.jooq.exception.DataAccessException("current transaction is aborted"))
+                .when(autoJoinUseCase)
+                .execute(any(RoundLockedPayload.class));
         OutboxEvent event = claimedEvent(
                 OutboxEventTypes.ROUND_LOCKED,
                 objectMapper.writeValueAsString(new RoundLockedPayload(seasonId, UUID.randomUUID(), 1)),
@@ -662,254 +575,7 @@ class OutboxEventProcessorTest {
 
         processor.processOne(event);
 
-        verify(createPredictionUseCase, never()).executeWithContext(eq(laterUser), any(), any());
         verify(outboxRepo).markFailed(eq(event.getId()), contains("transaction is aborted"), any());
-        verify(outboxRepo, never()).markSent(any());
-    }
-
-    @Test
-    void roundLockedSpringDatabaseFailure_alsoAbortsTheLoop() throws Exception {
-        // The two DataAccessException types share no supertype, so both arms are exercised.
-        Season season = activeSeason(seasonId);
-        UUID firstUser = UUID.randomUUID();
-        UUID laterUser = UUID.randomUUID();
-        var ctx = new CreatePredictionUseCase.JoinCtx(
-                season, Contest.builder().id(UUID.randomUUID()).build(), 1, 1);
-
-        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any()))
-                .thenReturn(java.util.List.of(firstUser, laterUser));
-        when(createPredictionUseCase.resolveJoinContextAsOpen(season)).thenReturn(Either.right(ctx));
-        when(createPredictionUseCase.executeWithContext(eq(firstUser), eq(ctx), any()))
-                .thenThrow(new DuplicateKeyException("duplicate key value violates unique constraint"));
-
-        OutboxEvent event = claimedEvent(
-                OutboxEventTypes.ROUND_LOCKED,
-                objectMapper.writeValueAsString(new RoundLockedPayload(seasonId, UUID.randomUUID(), 1)),
-                1);
-
-        processor.processOne(event);
-
-        verify(createPredictionUseCase, never()).executeWithContext(eq(laterUser), any(), any());
-        verify(outboxRepo).markFailed(eq(event.getId()), contains("duplicate key"), any());
-    }
-
-    @Test
-    void roundLockedContextResolutionFails_skipsBatchButStillMarksSent() throws Exception {
-        Season season = activeSeason(seasonId);
-        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsAfter(eq(seasonId), any())).thenReturn(java.util.List.of(UUID.randomUUID()));
-        when(createPredictionUseCase.resolveJoinContextAsOpen(season))
-                .thenReturn(Either.left(new CreatePredictionError.CurrentRoundNotFound(seasonId)));
-
-        OutboxEvent event = claimedEvent(
-                OutboxEventTypes.ROUND_LOCKED,
-                objectMapper.writeValueAsString(new RoundLockedPayload(seasonId, UUID.randomUUID(), 1)),
-                1);
-
-        processor.processOne(event);
-
-        verify(createPredictionUseCase, never()).executeWithContext(any(), any(), any());
-        verify(outboxRepo).markSent(event.getId());
-    }
-
-    @Test
-    void roundLockedSeasonNotFound_marksFailed() throws Exception {
-        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.empty());
-
-        OutboxEvent event = claimedEvent(
-                OutboxEventTypes.ROUND_LOCKED,
-                objectMapper.writeValueAsString(new RoundLockedPayload(seasonId, UUID.randomUUID(), 1)),
-                1);
-
-        processor.processOne(event);
-
-        verify(outboxRepo).markFailed(eq(event.getId()), contains("Season not found"), any());
-        verify(outboxRepo, never()).markSent(any());
-    }
-
-    // --- SEASON_IN_PLAY ----------------------------------------------------------
-
-    private Season inPlaySeason() {
-        return Season.builder()
-                .id(seasonId)
-                .mainContestId(UUID.randomUUID())
-                .preSeasonOpensAt(NOW.minusSeconds(30L * 86400).atOffset(ZoneOffset.UTC))
-                .build();
-    }
-
-    private OutboxEvent seasonInPlayEvent() throws Exception {
-        return claimedEvent(
-                OutboxEventTypes.SEASON_IN_PLAY, objectMapper.writeValueAsString(new SeasonInPlayPayload(seasonId)), 1);
-    }
-
-    private java.util.List<OutboxEvent> savedEvents() {
-        ArgumentCaptor<OutboxEvent> captor = ArgumentCaptor.forClass(OutboxEvent.class);
-        verify(outboxRepo, org.mockito.Mockito.atLeast(0)).save(captor.capture());
-        return captor.getAllValues();
-    }
-
-    @Test
-    void seasonInPlayAutoRegistersEligibleUsersAsRoundZeroThenMarksSent() throws Exception {
-        Season season = inPlaySeason();
-        UUID user1 = UUID.randomUUID();
-        UUID user2 = UUID.randomUUID();
-        Contest mainContest = Contest.builder().id(UUID.randomUUID()).build();
-
-        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any())).thenReturn(java.util.List.of(user1, user2));
-        when(createPredictionUseCase.resolveMainContest(season)).thenReturn(Either.right(mainContest));
-        when(createPredictionUseCase.autoRegisterDefaultTable(any(), eq(season), eq(mainContest)))
-                .thenReturn(Either.right(new CreatePredictionResult(UUID.randomUUID(), UUID.randomUUID(), 0, "ok")));
-
-        OutboxEvent event = seasonInPlayEvent();
-        processor.processOne(event);
-
-        verify(createPredictionUseCase).autoRegisterDefaultTable(eq(user1), eq(season), eq(mainContest));
-        verify(createPredictionUseCase).autoRegisterDefaultTable(eq(user2), eq(season), eq(mainContest));
-        // Never the mid-season shape — that would cost these users their swap allowance.
-        verify(createPredictionUseCase, never()).executeWithContext(any(), any(), any());
-        verify(outboxRepo).markSent(event.getId());
-    }
-
-    @Test
-    void seasonInPlayUsesTheSeasonsPreSeasonOpensAtAsTheAnchor() throws Exception {
-        Season season = inPlaySeason();
-        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any())).thenReturn(java.util.List.of());
-
-        processor.processOne(seasonInPlayEvent());
-
-        ArgumentCaptor<java.time.OffsetDateTime> anchor = ArgumentCaptor.forClass(java.time.OffsetDateTime.class);
-        verify(userRepo).findUnjoinedUserIdsActiveSince(eq(seasonId), anchor.capture());
-        Assertions.assertThat(anchor.getValue()).isEqualTo(season.getPreSeasonOpensAt());
-    }
-
-    @Test
-    void seasonInPlayWritesTheWelcomeFanoutEvenWhenNobodyNeededAutoJoining() throws Exception {
-        // The trap: processRoundLocked returns early on an empty candidate list. Doing that here
-        // would silently skip welcoming genuine pre-season registrants, who exist regardless of
-        // whether anyone needed auto-joining.
-        Season season = inPlaySeason();
-        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any())).thenReturn(java.util.List.of());
-
-        OutboxEvent event = seasonInPlayEvent();
-        processor.processOne(event);
-
-        verify(createPredictionUseCase, never()).resolveMainContest(any());
-        Assertions.assertThat(savedEvents()).singleElement().satisfies(e -> {
-            Assertions.assertThat(e.getIdempotencyKey()).isEqualTo("season-welcome-fanout:" + seasonId);
-            Assertions.assertThat(e.getEventType()).isEqualTo(OutboxEventTypes.SEASON_WELCOME_FANOUT);
-        });
-        verify(outboxRepo).markSent(event.getId());
-    }
-
-    @Test
-    void seasonInPlayWritesExactlyOneFanoutEventNotOnePerUser() throws Exception {
-        Season season = inPlaySeason();
-        Contest mainContest = Contest.builder().id(UUID.randomUUID()).build();
-        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any()))
-                .thenReturn(java.util.List.of(UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID()));
-        when(createPredictionUseCase.resolveMainContest(season)).thenReturn(Either.right(mainContest));
-        when(createPredictionUseCase.autoRegisterDefaultTable(any(), any(), any()))
-                .thenReturn(Either.right(new CreatePredictionResult(UUID.randomUUID(), UUID.randomUUID(), 0, "ok")));
-
-        processor.processOne(seasonInPlayEvent());
-
-        Assertions.assertThat(savedEvents()).hasSize(1);
-    }
-
-    @Test
-    void seasonInPlayOneUserFailure_doesNotBlockOthersOrFailTheEvent() throws Exception {
-        Season season = inPlaySeason();
-        UUID badUser = UUID.randomUUID();
-        UUID goodUser = UUID.randomUUID();
-        Contest mainContest = Contest.builder().id(UUID.randomUUID()).build();
-
-        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any()))
-                .thenReturn(java.util.List.of(badUser, goodUser));
-        when(createPredictionUseCase.resolveMainContest(season)).thenReturn(Either.right(mainContest));
-        when(createPredictionUseCase.autoRegisterDefaultTable(eq(badUser), any(), any()))
-                .thenThrow(new RuntimeException("boom"));
-        when(createPredictionUseCase.autoRegisterDefaultTable(eq(goodUser), any(), any()))
-                .thenReturn(Either.right(new CreatePredictionResult(UUID.randomUUID(), UUID.randomUUID(), 0, "ok")));
-
-        OutboxEvent event = seasonInPlayEvent();
-        processor.processOne(event);
-
-        verify(createPredictionUseCase).autoRegisterDefaultTable(eq(goodUser), any(), any());
-        verify(outboxRepo).markSent(event.getId());
-    }
-
-    @Test
-    void seasonInPlayDatabaseFailure_abortsLoopAndFailsTheEvent() throws Exception {
-        Season season = inPlaySeason();
-        UUID firstUser = UUID.randomUUID();
-        UUID laterUser = UUID.randomUUID();
-        Contest mainContest = Contest.builder().id(UUID.randomUUID()).build();
-
-        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any()))
-                .thenReturn(java.util.List.of(firstUser, laterUser));
-        when(createPredictionUseCase.resolveMainContest(season)).thenReturn(Either.right(mainContest));
-        when(createPredictionUseCase.autoRegisterDefaultTable(eq(firstUser), any(), any()))
-                .thenThrow(new org.jooq.exception.DataAccessException("current transaction is aborted"));
-
-        OutboxEvent event = seasonInPlayEvent();
-        processor.processOne(event);
-
-        verify(createPredictionUseCase, never()).autoRegisterDefaultTable(eq(laterUser), any(), any());
-        verify(outboxRepo).markFailed(eq(event.getId()), contains("transaction is aborted"), any());
-        verify(outboxRepo, never()).markSent(any());
-    }
-
-    @Test
-    void seasonInPlayContestResolutionFails_skipsBatchButStillWelcomesAndMarksSent() throws Exception {
-        Season season = inPlaySeason();
-        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-        when(userRepo.findUnjoinedUserIdsActiveSince(eq(seasonId), any()))
-                .thenReturn(java.util.List.of(UUID.randomUUID()));
-        when(createPredictionUseCase.resolveMainContest(season))
-                .thenReturn(Either.left(new CreatePredictionError.MainContestNotFound()));
-
-        OutboxEvent event = seasonInPlayEvent();
-        processor.processOne(event);
-
-        verify(createPredictionUseCase, never()).autoRegisterDefaultTable(any(), any(), any());
-        Assertions.assertThat(savedEvents()).hasSize(1);
-        verify(outboxRepo).markSent(event.getId());
-    }
-
-    @Test
-    void seasonInPlayWithoutPreSeasonOpensAt_skipsAutoJoinButStillWelcomes() throws Exception {
-        // Only reachable if the season was edited between enqueue and process — the enqueuer
-        // guards it. Guessing a cohort would be worse than skipping one.
-        Season season = Season.builder()
-                .id(seasonId)
-                .mainContestId(UUID.randomUUID())
-                .preSeasonOpensAt(null)
-                .build();
-        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.of(season));
-
-        OutboxEvent event = seasonInPlayEvent();
-        processor.processOne(event);
-
-        verify(userRepo, never()).findUnjoinedUserIdsActiveSince(any(), any());
-        Assertions.assertThat(savedEvents()).hasSize(1);
-        verify(outboxRepo).markSent(event.getId());
-    }
-
-    @Test
-    void seasonInPlaySeasonNotFound_marksFailed() throws Exception {
-        when(seasonRepo.findById(seasonId)).thenReturn(java.util.Optional.empty());
-
-        OutboxEvent event = seasonInPlayEvent();
-        processor.processOne(event);
-
-        verify(outboxRepo).markFailed(eq(event.getId()), contains("Season not found"), any());
         verify(outboxRepo, never()).markSent(any());
     }
 

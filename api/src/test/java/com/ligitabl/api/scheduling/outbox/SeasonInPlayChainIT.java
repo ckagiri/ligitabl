@@ -142,7 +142,7 @@ class SeasonInPlayChainIT extends AbstractPostgresIT {
         @Test
         @DisplayName("chains the fan-out even when nobody needed auto-joining")
         void chainsTheFanoutWithNoEligibleUsers() throws Exception {
-            // No users at all. processRoundLocked returns early on an empty candidate list;
+            // No users at all. The ROUND_LOCKED auto-join returns early on an empty candidate list;
             // copying that here would silently skip welcoming genuine pre-season registrants,
             // who exist regardless of whether anyone needed auto-joining.
             enqueueSeasonInPlay("season-in-play:empty");
