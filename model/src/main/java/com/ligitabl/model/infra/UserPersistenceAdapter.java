@@ -155,14 +155,31 @@ public class UserPersistenceAdapter implements UserRepo {
     }
 
     @Override
-    public void update(User user) {
+    public void updateProfile(UUID userId, String displayName, boolean resultsEmailOptOut) {
         dsl.update(T_USER)
-                .set(T_USER.C_DISPLAY_NAME, user.getDisplayName())
-                .set(T_USER.C_EMAIL_VERIFIED, user.isEmailVerified())
-                .set(T_USER.C_EMAIL_VERIFIED_AT, user.getEmailVerifiedAt())
-                .set(T_USER.C_GOOGLE_SUBJECT, user.getGoogleId())
-                .set(T_USER.C_RESULTS_EMAIL_OPT_OUT, user.isResultsEmailOptOut())
-                .where(T_USER.PK_ID.eq(user.getId()))
+                .set(T_USER.C_DISPLAY_NAME, displayName)
+                .set(T_USER.C_RESULTS_EMAIL_OPT_OUT, resultsEmailOptOut)
+                .where(T_USER.PK_ID.eq(userId))
+                .execute();
+    }
+
+    @Override
+    public void linkGoogle(UUID userId, String googleSubject, OffsetDateTime verifiedAt) {
+        dsl.update(T_USER)
+                .set(T_USER.C_GOOGLE_SUBJECT, googleSubject)
+                .set(T_USER.C_EMAIL_VERIFIED, true)
+                .set(
+                        T_USER.C_EMAIL_VERIFIED_AT,
+                        DSL.coalesce(T_USER.C_EMAIL_VERIFIED_AT, DSL.val(verifiedAt, T_USER.C_EMAIL_VERIFIED_AT)))
+                .where(T_USER.PK_ID.eq(userId))
+                .execute();
+    }
+
+    @Override
+    public void unlinkGoogle(UUID userId) {
+        dsl.update(T_USER)
+                .setNull(T_USER.C_GOOGLE_SUBJECT)
+                .where(T_USER.PK_ID.eq(userId))
                 .execute();
     }
 

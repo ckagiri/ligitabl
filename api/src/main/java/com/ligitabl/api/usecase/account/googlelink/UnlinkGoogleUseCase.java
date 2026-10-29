@@ -32,10 +32,9 @@ public class UnlinkGoogleUseCase {
             return Either.left(new UnlinkGoogleError.PasswordRequired(userId));
         }
 
-        User updated = user.withGoogleId(null);
-        userRepo.update(updated);
+        userRepo.unlinkGoogle(userId);
 
         log.info("[GOOGLE_UNLINKED] userId={}", userId);
-        return Either.right(updated);
+        return Either.right(user.withGoogleId(null));
     }
 }

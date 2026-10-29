@@ -22,6 +22,9 @@ public class BCryptPasswordHasher implements PasswordHasher {
 
     @Override
     public boolean verify(Password.Plaintext plaintext, Password.Hashed hashed) {
+        if (hashed == null) {
+            return false;
+        }
         return passwordEncoder.matches(plaintext.value(), hashed.value());
     }
 }

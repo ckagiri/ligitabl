@@ -1,5 +1,7 @@
 package com.ligitabl.api.usecase.account.googlelink;
 
+import java.time.Clock;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import org.springframework.stereotype.Service;
@@ -19,6 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 public class LinkGoogleUseCase {
 
     private final UserRepo userRepo;
+    private final Clock clock;
 
     @Transactional
     public Either<LinkGoogleError, User> execute(UUID userId, String googleSubject) {
@@ -38,8 +41,12 @@ public class LinkGoogleUseCase {
                     new LinkGoogleError.LinkedToAnotherUser(other.get().getId()));
         }
 
+        OffsetDateTime now = OffsetDateTime.now(clock);
+        userRepo.linkGoogle(userId, googleSubject, now);
         User updated = user.withEmailVerified(true).withGoogleId(googleSubject);
-        userRepo.update(updated);
+        if (updated.getEmailVerifiedAt() == null) {
+            updated = updated.withEmailVerifiedAt(now);
+        }
         log.info("[GOOGLE_LINKED_SUCCESS] userId={} googleId={}", userId, googleSubject);
         return Either.right(updated);
     }

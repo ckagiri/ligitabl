@@ -15,8 +15,8 @@ public interface PasswordHasher {
      * Verify a plaintext password against a hash.
      *
      * @param plaintext the plaintext password to verify
-     * @param hashed the hashed password to verify against
-     * @return true if the password matches, false otherwise
+     * @param hashed the hashed password to verify against; null for an account with no password
+     * @return true if the password matches, false otherwise (always false for a null hash)
      */
     boolean verify(Password.Plaintext plaintext, Password.Hashed hashed);
 }

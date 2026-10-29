@@ -11,7 +11,6 @@ import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
@@ -149,9 +148,7 @@ class ProfileControllerTest {
                 new RedirectAttributesModelMap(),
                 new ExtendedModelMap());
 
-        ArgumentCaptor<User> savedUser = ArgumentCaptor.forClass(User.class);
-        org.mockito.Mockito.verify(userRepo).update(savedUser.capture());
-        assertThat(savedUser.getValue().isResultsEmailOptOut()).isTrue();
+        org.mockito.Mockito.verify(userRepo).updateProfile(optedInUser.getId(), "Alice", true);
     }
 
     @Test
@@ -171,9 +168,7 @@ class ProfileControllerTest {
                 new RedirectAttributesModelMap(),
                 new ExtendedModelMap());
 
-        ArgumentCaptor<User> savedUser = ArgumentCaptor.forClass(User.class);
-        org.mockito.Mockito.verify(userRepo).update(savedUser.capture());
-        assertThat(savedUser.getValue().isResultsEmailOptOut()).isFalse();
+        org.mockito.Mockito.verify(userRepo).updateProfile(optedInUser.getId(), "Alice", false);
     }
 
     private BindingResult noErrors(Object target) {

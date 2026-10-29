@@ -41,7 +41,6 @@ class SetPasswordUseCaseTest {
 
         assertThat(result.get().getPassword()).isEqualTo(hashed);
         verify(userRepo).updatePassword(user.getId(), hashed);
-        verify(userRepo, never()).update(any());
     }
 
     @Test
@@ -52,7 +51,6 @@ class SetPasswordUseCaseTest {
         var result = useCase.execute(user.getId(), "password123");
 
         assertThat(result.getLeft()).isEqualTo(new SetPasswordError.AlreadySet(user.getId()));
-        verify(userRepo, never()).update(any());
         verify(userRepo, never()).updatePassword(any(), any());
     }
 
@@ -65,7 +63,6 @@ class SetPasswordUseCaseTest {
 
         assertThat(result.getLeft()).isInstanceOf(SetPasswordError.InvalidPassword.class);
         verifyNoInteractions(passwordHasher);
-        verify(userRepo, never()).update(any());
         verify(userRepo, never()).updatePassword(any(), any());
     }
 

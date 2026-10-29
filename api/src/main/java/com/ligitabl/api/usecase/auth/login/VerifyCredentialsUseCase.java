@@ -23,8 +23,7 @@ public class VerifyCredentialsUseCase {
     @Transactional(readOnly = true)
     public Either<VerifyCredentialsError, User> execute(Email email, Password.Plaintext password) {
         return userRepo.findByEmail(email)
-                // A Google-only account has no password to match; the hasher can't take a null hash.
-                .filter(user -> user.getPassword() != null && passwordHasher.verify(password, user.getPassword()))
+                .filter(user -> passwordHasher.verify(password, user.getPassword()))
                 .<Either<VerifyCredentialsError, User>>map(Either::right)
                 .orElseGet(() -> Either.left(new VerifyCredentialsError.InvalidCredentials()));
     }
