@@ -8,6 +8,7 @@ import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
+import com.ligitabl.api.logging.RequestId;
 import com.ligitabl.api.shared.errors.*;
 
 public class UseCaseErrorResponseFactory {
@@ -25,6 +26,13 @@ public class UseCaseErrorResponseFactory {
         };
     }
 
+    /** A null message falls back to the status's reason phrase. */
+    public static ResponseEntity<UseCaseErrorResponse> clientError(HttpStatusCode status, String message, String path) {
+        HttpStatus resolved = HttpStatus.valueOf(status.value());
+        return build(
+                resolved.getReasonPhrase(), message != null ? message : resolved.getReasonPhrase(), resolved, path);
+    }
+
     private static ResponseEntity<UseCaseErrorResponse> build(
             String title, String message, HttpStatus status, String path) {
         var response = UseCaseErrorResponse.builder()
@@ -32,6 +40,7 @@ public class UseCaseErrorResponseFactory {
                 .error(title)
                 .status(status)
                 .path(path)
+                .requestId(RequestId.current())
                 .build();
 
         HttpHeaders headers = new HttpHeaders();

@@ -29,9 +29,13 @@ public class AuthDto {
         }
     }
 
-    public record ErrorResponse(String code, String message, String field) {
+    public record ErrorResponse(String code, String message, String field, String requestId) {
+        public ErrorResponse(String code, String message, String field) {
+            this(code, message, field, null);
+        }
+
         public ErrorResponse(String code, String message) {
-            this(code, message, null);
+            this(code, message, null, null);
         }
     }
 }

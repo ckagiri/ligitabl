@@ -104,10 +104,10 @@ public class CalcStandingsRunner implements ApplicationRunner {
             result.fold(
                     error -> {
                         if (isSkippable(error)) {
-                            log.info("Round {} - Skipped: {}", round.getPosition(), error.getMessage());
+                            log.info("Round {} - Skipped: {}", round.getPosition(), error.logMessage());
                             skippedCount.incrementAndGet();
                         } else {
-                            log.warn("Round {} - Failed: {}", round.getPosition(), error.getMessage());
+                            log.warn("Round {} - Failed: {}", round.getPosition(), error.logMessage());
                             failureCount.incrementAndGet();
                         }
                         return null;
@@ -153,7 +153,7 @@ public class CalcStandingsRunner implements ApplicationRunner {
         log.error("╚══════════════════════════════════════════════════════════╝");
         log.error("Context:       {}", context);
         // log.error("Error Code:    {}", error.code());
-        log.error("Error Message: {}", error.getMessage());
+        log.error("Error Message: {}", error.logMessage());
 
         if (config.isExitAfter()) {
             System.exit(1);

@@ -107,7 +107,7 @@ public class CreatePredictionController {
             case CreatePredictionError.MainContestNotFound __ -> "Default contest not found";
             case CreatePredictionError.CorruptPreSeasonRegistration __ -> "Your pre-season registration is in an "
                     + "invalid state. Please contact support.";
-            case CreatePredictionError.TransactionFailed e -> "Failed to create prediction: " + e.reason();
+            case CreatePredictionError.TransactionFailed __ -> "Failed to create prediction. Please try again.";
         };
     }
 }

@@ -1,13 +1,14 @@
 package com.ligitabl.api.web;
 
 import java.io.IOException;
-import java.util.UUID;
 
 import org.slf4j.MDC;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+
+import com.ligitabl.api.logging.RequestId;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -18,8 +19,8 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Logs inbound HTTP requests with method, path, status and duration.
  *
- * - Adds/propagates a correlation id from X-Request-Id header (or generates one)
- *   and exposes it via MDC as "requestId".
+ * - Adds/propagates a correlation id from X-Request-Id header (or generates one),
+ *   exposes it via MDC as "requestId" and echoes it on the response.
  * - Skips noisy INFO logs for health checks by logging them at DEBUG level.
  * - Does not log request/response bodies to avoid leaking PII.
  */
@@ -28,15 +29,13 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class RequestLoggingFilter extends OncePerRequestFilter {
 
-    private static final String REQUEST_ID_HEADER = "X-Request-Id";
-    private static final String MDC_REQUEST_ID = "requestId";
-
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
         long start = System.currentTimeMillis();
-        String requestId = resolveOrCreateRequestId(request);
-        MDC.put(MDC_REQUEST_ID, requestId);
+        String requestId = RequestId.resolve(request.getHeader(RequestId.HEADER));
+        MDC.put(RequestId.MDC_KEY, requestId);
+        response.setHeader(RequestId.HEADER, requestId);
 
         try {
             filterChain.doFilter(request, response);
@@ -53,16 +52,8 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
                 log.info("{} {} -> {} ({} ms) ua='{}'", method, uri, status, duration, userAgent);
             }
 
-            MDC.remove(MDC_REQUEST_ID);
+            MDC.remove(RequestId.MDC_KEY);
         }
-    }
-
-    private String resolveOrCreateRequestId(HttpServletRequest request) {
-        String incoming = request.getHeader(REQUEST_ID_HEADER);
-        if (incoming != null && !incoming.isBlank()) {
-            return incoming;
-        }
-        return UUID.randomUUID().toString();
     }
 
     private boolean isHealth(String uri) {

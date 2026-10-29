@@ -44,7 +44,7 @@ public class RegisterController {
                 .flatMap(registerUserUseCase::execute)
                 .map(result -> ResponseEntity.status(HttpStatus.CREATED).body(toRegisterResponse(result)))
                 .getOrElseThrow(error -> {
-                    log.warn("Registration failed: {}", error.getMessage());
+                    log.warn("Registration failed: {}", error.logMessage());
                     throw new UseCaseException(error);
                 });
     }

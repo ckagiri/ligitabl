@@ -178,7 +178,7 @@ public class MatchAdminController {
                 .execute(cmd)
                 .fold(
                         err -> {
-                            log.warn("Transition failed for {}: {}", matchSlug, err.getMessage());
+                            log.warn("Transition failed for {}: {}", matchSlug, err.logMessage());
                             response.setStatus(422);
                             model.addAttribute("error", err.getMessage());
                             return "fragments/match-admin-modal :: error-message";
@@ -211,7 +211,7 @@ public class MatchAdminController {
                 .execute(cmd)
                 .fold(
                         err -> {
-                            log.warn("Move failed for {}: {}", matchSlug, err.getMessage());
+                            log.warn("Move failed for {}: {}", matchSlug, err.logMessage());
                             response.setStatus(422);
                             model.addAttribute("error", err.getMessage());
                             return "fragments/match-admin-modal :: error-message";
@@ -265,7 +265,7 @@ public class MatchAdminController {
                 .execute(cmd)
                 .fold(
                         err -> {
-                            log.warn("Kickoff update failed for {}: {}", matchSlug, err.getMessage());
+                            log.warn("Kickoff update failed for {}: {}", matchSlug, err.logMessage());
                             response.setStatus(422);
                             model.addAttribute("error", err.getMessage());
                             return "fragments/match-admin-modal :: error-message";
