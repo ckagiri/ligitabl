@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.season.admin;
+package com.ligitabl.api.usecase.season.switchseason;
 
 import java.util.UUID;
 

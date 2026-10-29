@@ -23,7 +23,6 @@ interfaces.
   - Helpers and DTOs shared by a feature's slices go in `usecase/<feature>/shared/`. Ones shared across features go in `usecase/shared/`.
   - Nothing sits directly in `usecase/<feature>/`.
   - A use case is a `*UseCase` class whose public entry point is `execute`. When one use case has two triggers, overload `execute` by input type, as `EnqueueSegmentResultsEmailsUseCase` does with a round payload and a season-completed payload.
-  - `season/admin` groups the admin season actions by audience rather than by flow. It predates this rule and isn't a pattern to copy.
 - `rest/<feature>/`: JSON controllers and HTTP-only DTOs.
 - `web/…`: Thymeleaf controllers and view helpers.
 - `scheduling/…`: schedulers that trigger use cases.
@@ -68,7 +67,7 @@ A scheduler or controller that needs one is holding logic that belongs in a use 
 
 ⚠️ `UseCaseDependencyRuleTest` matches **source text** against regexes built from package names. A literal that has gone stale matches nothing, so the test passes no matter what the code does. After moving or renaming a package, prove that each rule still fails: add a violating import, watch the test go red, then remove it.
 
-## Where the code stands (2026-10-28)
+## Where the code stands (2026-10-29)
 
 **What holds:**
 - `usecase` has no references to any adapter package, and the build enforces it.
@@ -78,24 +77,22 @@ A scheduler or controller that needs one is holding logic that belongs in a use 
 - Use case tests are cheap because of all the above.
 
 **Where it's weaker:**
-- **The leaks are at the edges, in adapters that have repo access and no rule.** Every business rule found outside `usecase` sat in one:
-  - the season auto-activation scheduler (moved to `AutoActivateSeasonUseCase` in #280);
-  - the outbox enqueuers in `notification/outbox`;
-  - the profile and connected-account controllers.
+- **The leaks are at the edges, in adapters that have repo access.** Every business rule found outside `usecase` sat in one. Most have moved into use cases: the season auto-activation scheduler (#280), the account and Google sign-in rules (gaps 1a and 1b), and the outbox enqueuers (gap 2). One remains: the auto-join cohorts in `OutboxEventProcessor` (gap 8).
 
-  The test guards the core from adapters, but nothing stops an adapter from turning into a use case.
-- **Rule 2 relies on review alone,** and a review-only rule erodes.
-- **Shared helpers are where coupling builds up.** Roughly 28 helper beans (`*Support`, `*Service`, `*Helper`, `*Enricher`…) sit beside 77 use cases. `*Support` especially tends to become the place logic goes when nobody wants to write a use case. Prefer a use case or a domain method.
+  The test guards the core from adapters, but nothing yet stops an adapter from turning into a use case.
+- **Rule 2 relies on review alone,** and a review-only rule erodes. Gap 4 records what an audit found.
+- **Shared helpers are where coupling builds up.** `usecase` has 16 helper classes (`*Support`, `*Service`, `*Helper`, `*Enricher`) beside 90 use cases. The use-case count was 77 on 2026-10-28; the helper count hasn't moved. `*Support` especially tends to become the place logic goes when nobody wants to write a use case. Prefer a use case or a domain method.
 
 ## Known gaps
 
 | # | Gap | Fix | When |
 |---|---|---|---|
-| 1a | Profile update, set-password and unlink-Google rules live in `ProfileController` and `ConnectedAccountsController`. "Record last login" is copied in 4 places (`AuthController`, `OAuth2AuthenticationSuccessHandler`, `PlayerImpersonationService`, `RememberMeLoginListener`), each with `OffsetDateTime.now()`. | Account use cases, plus one `RecordLoginUseCase` that takes a `Clock`. | Before the `api` → `app` rename. #284 (also fixes set-password not saving the password) |
-| 1b | Google sign-in rules live in `auth/oauth2`:<br>• `CustomOAuth2UserService` links an existing user by email, or creates the user and sends the signup alert through the concrete `AdminNotificationService`, so it duplicates part of `RegisterUseCase`.<br>• `OAuth2AuthenticationSuccessHandler` links Google from the profile page.<br>• Web login checks credentials inline in `AuthController` rather than sharing `LoginUseCase`'s check. That check has no guard for a user without a password: `BCryptPasswordHasher.verify` dereferences the null hash. | Google sign-in, Google link and credential-check use cases. The shared credential check guards a missing password. | Before the rename. #285 |
-| 2 | The 5 `notification/outbox/*Enqueuer`s decide who is emailed and write outbox rows, called straight from `scheduling`. `MatchSyncScheduler` writes the `ROUND_LOCKED` event itself. | Move the rules into use cases, so the jobs become triggers. Then add a rule: `notification` and `client` don't import `model.repo`. | Before the rename. #286 (adds `OutboundAdapterRuleTest`) |
+| 1a | Profile update, set-password and unlink-Google rules live in `ProfileController` and `ConnectedAccountsController`. "Record last login" is copied in 4 places (`AuthController`, `OAuth2AuthenticationSuccessHandler`, `PlayerImpersonationService`, `RememberMeLoginListener`), each with `OffsetDateTime.now()`. | Account use cases, plus one `RecordLoginUseCase` that takes a `Clock`. | Done in #284 (also fixes set-password not saving the password) |
+| 1b | Google sign-in rules live in `auth/oauth2`:<br>• `CustomOAuth2UserService` links an existing user by email, or creates the user and sends the signup alert through the concrete `AdminNotificationService`, so it duplicates part of `RegisterUseCase`.<br>• `OAuth2AuthenticationSuccessHandler` links Google from the profile page.<br>• Web login checks credentials inline in `AuthController` rather than sharing `LoginUseCase`'s check. That check has no guard for a user without a password: `BCryptPasswordHasher.verify` dereferences the null hash. | Google sign-in, Google link and credential-check use cases. The shared credential check guards a missing password. | Done in #285 |
+| 2 | The 5 `notification/outbox/*Enqueuer`s decide who is emailed and write outbox rows, called straight from `scheduling`. `MatchSyncScheduler` writes the `ROUND_LOCKED` event itself. | Move the rules into use cases, so the jobs become triggers. Then add a rule: `notification` and `client` don't import `model.repo`. | Done in #286 (adds `OutboundAdapterRuleTest`) |
 | 3 | The dependency rules match text, not real class dependencies. | Replace with ArchUnit, test scope only. | After the rename |
-| 4 | Rule 2 is unenforced. | An ArchUnit rule that `web`, `rest` and `auth` don't call repo write methods, starting from a baseline of the current violations. | After the rename |
+| 4 | Rule 2 is unenforced. An audit on 2026-10-29 covered `web`, `rest`, `auth`, `scheduling`, `notification` and `client`. About 25 classes import a repo, and nearly all only read for a view. The repo writes are:<br>• outbox delivery bookkeeping in `OutboxRelayJob` and `OutboxEventProcessor` (`claimBatchForProcessing`, `mark*`, `resetStuckProcessing`): the outbox mechanism itself;<br>• `deleteExpired` in the two token cleanup jobs: housekeeping with no rule;<br>• `predictionRepo.clearResults` in `DevFinalTableController`: dev only;<br>• `outboxRepo.save` of the welcome fan-out in `OutboxEventProcessor`: part of gap 8.<br>A rule hidden inside a read, like gap 8's cohort queries, can't be found by grep or ArchUnit and stays review-only. | An ArchUnit rule that adapters don't call repo write methods. Once gap 8 is done it starts with no violations, only the exemptions above, named. | After the rename |
 | 5 | `CompetitionDefaults`, a plain record that 28 use cases import, lives in `config`. | None needed. Move it if `config` ever gains a rule. | — |
 | 6 | An unexpected exception in a JSON endpoint returns its raw message in the 500 body. Found via #285: `Cannot invoke "…Password$Hashed.value()" because "hashed" is null`. | Return a generic message, and keep the detail in logs and Sentry. The body and an `X-Request-Id` header carry the request ID, which links the response to the log line. | Done in #287 |
 | 7 | `UnexpectedError.getMessage()` was the cause's message, and about 12 web controllers put `error.getMessage()` straight into the model. | `getMessage()` is now always safe to show; logs use `UseCaseError.logMessage()`. `UseCaseException` carries the real cause. | Done in #287 |
+| 8 | `scheduling/outbox/OutboxEventProcessor` auto-joins users itself, inside its `@Transactional processOne`. It does this in two handlers:<br>• `ROUND_LOCKED` picks the cohort with `userRepo.findUnjoinedUserIdsAfter` and joins each user into the locked round;<br>• `SEASON_IN_PLAY` picks it with `findUnjoinedUserIdsActiveSince`, gives each user a default-table registration, and then writes the welcome fan-out event.<br>Each handler loops over `CreatePredictionUseCase`. That puts a rule in an adapter (rule 2) and a transaction outside a use case (rule 5). | Move both into a use case, so the processor only dispatches. Keep the processor's failure contract: database errors are rethrown, and `markFailed` is deliberately not `@Transactional`. | Before the rename |

@@ -1,4 +1,4 @@
-package com.ligitabl.api.usecase.season.admin;
+package com.ligitabl.api.usecase.season.updateseasondates;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
