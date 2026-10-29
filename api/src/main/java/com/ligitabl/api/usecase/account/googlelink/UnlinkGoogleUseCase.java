@@ -25,10 +25,10 @@ public class UnlinkGoogleUseCase {
         if (user == null) {
             return Either.left(new UnlinkGoogleError.UserNotFound(userId));
         }
-        if (user.getGoogleId() == null || user.getGoogleId().isBlank()) {
+        if (!user.isGoogleLinked()) {
             return Either.left(new UnlinkGoogleError.NotLinked(userId));
         }
-        if (user.getPassword() == null) {
+        if (!user.canUnlinkGoogle()) {
             return Either.left(new UnlinkGoogleError.PasswordRequired(userId));
         }
 

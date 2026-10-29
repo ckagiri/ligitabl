@@ -154,7 +154,7 @@
                   <dd>
                     <!-- Google + Password -->
                     <div
-                      th:if="${user.googleId != null and user.password != null}"
+                      th:if="${user.googleLinked and user.hasPassword()}"
                       class="flex flex-wrap gap-2"
                     >
                       <span
@@ -202,7 +202,7 @@
 
                     <!-- Google only -->
                     <span
-                      th:if="${user.googleId != null and user.password == null}"
+                      th:if="${user.googleLinked and user.hasPassword() == false}"
                       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-100"
                     >
                       <svg class="h-3.5 w-3.5 mr-1" viewBox="0 0 24 24">
@@ -228,7 +228,7 @@
 
                     <!-- Password only -->
                     <span
-                      th:if="${user.googleId == null}"
+                      th:if="${user.googleLinked == false}"
                       class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200"
                     >
                       <svg

@@ -50,11 +50,11 @@ public class SignInWithGoogleUseCase {
     }
 
     private Either<SignInWithGoogleError, User> linkExisting(User existing, String subject) {
-        if (existing.getGoogleId() != null && !existing.getGoogleId().equals(subject)) {
+        if (existing.isGoogleLinked() && !existing.getGoogleId().equals(subject)) {
             return Either.left(new SignInWithGoogleError.EmailLinkedToOtherGoogleAccount(
                     existing.getEmail().value()));
         }
-        if (existing.getGoogleId() != null) {
+        if (existing.isGoogleLinked()) {
             return Either.right(existing);
         }
 

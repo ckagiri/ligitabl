@@ -127,6 +127,31 @@ class UserTest {
     }
 
     @Test
+    void googleLinkedWithPassword_canUnlink() {
+        User user = testUser.withGoogleId("g-sub");
+
+        assertTrue(user.hasPassword());
+        assertTrue(user.isGoogleLinked());
+        assertTrue(user.canUnlinkGoogle());
+    }
+
+    @Test
+    void googleOnly_cannotUnlink() {
+        User user = testUser.withGoogleId("g-sub").withPassword(null);
+
+        assertFalse(user.hasPassword());
+        assertTrue(user.isGoogleLinked());
+        assertFalse(user.canUnlinkGoogle());
+    }
+
+    @Test
+    void blankGoogleId_isNotLinked() {
+        assertFalse(testUser.isGoogleLinked());
+        assertFalse(testUser.withGoogleId(" ").isGoogleLinked());
+        assertFalse(testUser.withGoogleId(" ").canUnlinkGoogle());
+    }
+
+    @Test
     void rolesSetShouldBeImmutableWhenUsingSetOf() {
         Set<Role> originalRoles = testUser.getRoles();
         assertThrows(UnsupportedOperationException.class, () -> originalRoles.add(Role.ADMIN));
