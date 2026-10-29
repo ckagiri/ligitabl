@@ -5,7 +5,6 @@ import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
@@ -15,8 +14,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.usecase.notification.roundresults.EnqueueRoundResultsEmailsUseCase;
 import com.ligitabl.api.usecase.notification.seasonwelcome.EnqueueSeasonWelcomeEmailsUseCase;
 import com.ligitabl.api.usecase.notification.segmentresults.EnqueueSegmentResultsEmailsUseCase;
-import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionCommand;
-import com.ligitabl.api.usecase.prediction.createprediction.CreatePredictionUseCase;
+import com.ligitabl.api.usecase.prediction.autojoin.AutoJoinUseCase;
 import com.ligitabl.api.usecase.shared.email.EmailCommand;
 import com.ligitabl.api.usecase.shared.email.EmailContent;
 import com.ligitabl.api.usecase.shared.email.EmailError;
@@ -34,10 +32,7 @@ import com.ligitabl.api.usecase.shared.outbox.SeasonWelcomePayload;
 import com.ligitabl.api.usecase.shared.outbox.SegmentResultsPayload;
 import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.domain.PhaseType;
-import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.repo.OutboxRepo;
-import com.ligitabl.model.repo.SeasonRepo;
-import com.ligitabl.model.repo.UserRepo;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -71,9 +66,7 @@ public class OutboxEventProcessor {
     private final EmailProvider emailProvider;
     private final ObjectMapper objectMapper;
     private final Clock clock;
-    private final SeasonRepo seasonRepo;
-    private final UserRepo userRepo;
-    private final CreatePredictionUseCase createPredictionUseCase;
+    private final AutoJoinUseCase autoJoinUseCase;
 
     @Value("${ligitabl.frontend.url:http://localhost:8080}")
     private String frontendUrl;
@@ -132,151 +125,12 @@ public class OutboxEventProcessor {
         enqueueSegmentResultsEmailsUseCase.execute(payload);
     }
 
-    /**
-     * Auto-joins users who registered after the season's pre-season window opened and never
-     * created a SeasonPrediction — evaluated fresh at processing time, not from the event's
-     * payload, so it reflects whichever round/rankings are current when this actually runs.
-     *
-     * <p>Uses {@code resolveJoinContextAsOpen}: these users are joined into the round that locked,
-     * as if they had submitted while it was open.
-     */
     private void processRoundLocked(OutboxEvent event) throws Exception {
-        RoundLockedPayload payload = objectMapper.readValue(event.getPayload(), RoundLockedPayload.class);
-
-        Season season = seasonRepo
-                .findById(payload.seasonId())
-                .orElseThrow(() -> new IllegalStateException("Season not found: " + payload.seasonId()));
-
-        List<UUID> unjoinedUserIds = userRepo.findUnjoinedUserIdsAfter(season.getId(), season.getPreSeasonOpensAt());
-        if (unjoinedUserIds.isEmpty()) {
-            return;
-        }
-
-        createPredictionUseCase
-                .resolveJoinContextAsOpen(season)
-                .fold(
-                        error -> {
-                            log.warn(
-                                    "[ROUND_LOCKED] Skipping auto-join batch for season {}: {}", season.getId(), error);
-                            return null;
-                        },
-                        ctx -> {
-                            for (UUID userId : unjoinedUserIds) {
-                                try {
-                                    createPredictionUseCase
-                                            .executeWithContext(userId, ctx, new CreatePredictionCommand(List.of()))
-                                            .peekLeft(error -> log.warn(
-                                                    "[ROUND_LOCKED] Auto-join skipped for user {}: {}", userId, error));
-                                } catch (org.jooq.exception.DataAccessException
-                                        | org.springframework.dao.DataAccessException e) {
-                                    // Not survivable per-user: the batch shares one transaction, and a
-                                    // failed statement aborts it, so every remaining user would fail too
-                                    // and be logged as if they were at fault. Fail now, attributed
-                                    // correctly — the whole batch retries, and the NOT EXISTS filter
-                                    // skips anyone already created.
-                                    //
-                                    // Both types are caught deliberately: the repos surface jOOQ's
-                                    // DataAccessException (verified in OutboxFailureIsolationIT), while
-                                    // Spring's is what a translated JDBC path would throw. They share no
-                                    // supertype, so neither alone is sufficient.
-                                    throw e;
-                                } catch (Exception e) {
-                                    log.error("[ROUND_LOCKED] Auto-join failed for user {}", userId, e);
-                                }
-                            }
-                            return null;
-                        });
+        autoJoinUseCase.execute(objectMapper.readValue(event.getPayload(), RoundLockedPayload.class));
     }
 
-    /**
-     * Gives a round-0 pre-season registration to everyone who was around during pre-season and
-     * never submitted, then chains the welcome fan-out.
-     *
-     * <p>Unlike {@link #processRoundLocked} this uses {@code autoRegisterDefaultTable}, which
-     * writes the row a user would have produced by submitting the default table themselves — the
-     * mid-season {@code NewJoin} shape would quietly cost them the guest-prediction import and
-     * most of their swap allowance.
-     */
     private void processSeasonInPlay(OutboxEvent event) throws Exception {
-        SeasonInPlayPayload payload = objectMapper.readValue(event.getPayload(), SeasonInPlayPayload.class);
-
-        Season season = seasonRepo
-                .findById(payload.seasonId())
-                .orElseThrow(() -> new IllegalStateException("Season not found: " + payload.seasonId()));
-
-        autoRegisterEligibleUsers(season);
-
-        // Always, even when nothing was auto-joined: genuine pre-season registrants are waiting on
-        // this email too, and they exist independently of whether anyone needed auto-joining.
-        // Written in this transaction so "auto-joins committed ⇒ recipients will be welcomed"
-        // holds; processed in a later one so the fan-out gets its own retry budget.
-        writeWelcomeFanoutEvent(season.getId());
-    }
-
-    private void autoRegisterEligibleUsers(Season season) {
-        if (season.getPreSeasonOpensAt() == null) {
-            // The enqueuer guards this, so reaching it means the season was edited in between.
-            // Skip the batch rather than guess a cohort — the welcome fan-out still runs.
-            log.warn("[SEASON_IN_PLAY] No preSeasonOpensAt on season {}; skipping auto-join", season.getId());
-            return;
-        }
-
-        List<UUID> eligibleUserIds =
-                userRepo.findUnjoinedUserIdsActiveSince(season.getId(), season.getPreSeasonOpensAt());
-        if (eligibleUserIds.isEmpty()) {
-            log.info("[SEASON_IN_PLAY] No users to auto-join for season {}", season.getId());
-            return;
-        }
-
-        createPredictionUseCase
-                .resolveMainContest(season)
-                .fold(
-                        error -> {
-                            log.warn(
-                                    "[SEASON_IN_PLAY] Skipping auto-join batch for season {}: {}",
-                                    season.getId(),
-                                    error);
-                            return null;
-                        },
-                        mainContest -> {
-                            int joined = 0;
-                            for (UUID userId : eligibleUserIds) {
-                                try {
-                                    if (createPredictionUseCase
-                                            .autoRegisterDefaultTable(userId, season, mainContest)
-                                            .peekLeft(error -> log.warn(
-                                                    "[SEASON_IN_PLAY] Auto-join skipped for user {}: {}",
-                                                    userId,
-                                                    error))
-                                            .isRight()) {
-                                        joined++;
-                                    }
-                                } catch (org.jooq.exception.DataAccessException
-                                        | org.springframework.dao.DataAccessException e) {
-                                    // See processRoundLocked: a database failure aborts the shared
-                                    // transaction, so continuing would blame every later user for it.
-                                    throw e;
-                                } catch (Exception e) {
-                                    log.error("[SEASON_IN_PLAY] Auto-join failed for user {}", userId, e);
-                                }
-                            }
-                            log.info(
-                                    "[SEASON_IN_PLAY_AUTO_JOINED] seasonId={}, eligible={}, joined={}",
-                                    season.getId(),
-                                    eligibleUserIds.size(),
-                                    joined);
-                            return null;
-                        });
-    }
-
-    private void writeWelcomeFanoutEvent(UUID seasonId) throws Exception {
-        OutboxEvent fanout = OutboxEvent.create(
-                "season-welcome-fanout:" + seasonId,
-                OutboxEventTypes.SEASON_WELCOME_FANOUT,
-                "season",
-                seasonId.toString(),
-                objectMapper.writeValueAsString(new SeasonWelcomeFanoutPayload(seasonId)));
-        outboxRepo.save(fanout);
+        autoJoinUseCase.execute(objectMapper.readValue(event.getPayload(), SeasonInPlayPayload.class));
     }
 
     /**
