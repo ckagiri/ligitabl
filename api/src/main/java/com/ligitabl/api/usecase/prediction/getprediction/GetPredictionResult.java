@@ -20,5 +20,18 @@ public record GetPredictionResult(
         Instant lastSwapAt,
         SwapStatus swapStatus) {
 
-    public record SwapStatus(boolean canSwap, String blockedReason, Instant nextSwapAt, Double hoursUntilNext) {}
+    public record SwapStatus(boolean canSwap, String blockedReason, Instant nextSwapAt, Double hoursUntilNext) {
+
+        public static SwapStatus allowed() {
+            return new SwapStatus(true, null, null, null);
+        }
+
+        public static SwapStatus blocked(String reason) {
+            return new SwapStatus(false, reason, null, null);
+        }
+
+        public static SwapStatus cooldown(Instant nextSwapAt, double hoursUntilNext) {
+            return new SwapStatus(false, "COOLDOWN_ACTIVE", nextSwapAt, hoursUntilNext);
+        }
+    }
 }

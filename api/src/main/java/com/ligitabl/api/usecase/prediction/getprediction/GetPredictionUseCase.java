@@ -10,6 +10,7 @@ import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
+import com.ligitabl.api.usecase.prediction.getprediction.GetPredictionResult.SwapStatus;
 import com.ligitabl.api.usecase.prediction.shared.RankingSource;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.model.domain.Round;
@@ -101,14 +102,14 @@ public class GetPredictionUseCase {
     }
 
     /** Answers for {@code /swap}, the only swap REST exposes, so it follows MakeSwapUseCase's target round. */
-    private GetPredictionResult.SwapStatus resolveSwapStatus(
+    private SwapStatus resolveSwapStatus(
             Season season, SeasonPrediction prediction, Round currentRound, RoundStatus currentRoundStatus) {
         if (prediction == null) {
-            return new GetPredictionResult.SwapStatus(false, "NO_PREDICTION", null, null);
+            return SwapStatus.blocked("NO_PREDICTION");
         }
 
         if (season.isCompleted()) {
-            return new GetPredictionResult.SwapStatus(false, "SEASON_COMPLETED", null, null);
+            return SwapStatus.blocked("SEASON_COMPLETED");
         }
 
         int target = prediction.swapTargetRound(currentRound.getPosition());
@@ -121,21 +122,15 @@ public class GetPredictionUseCase {
 
         Instant now = clock.instant();
         return switch (prediction.swapEligibility(target, targetStatus, now)) {
-            case SwapEligibility.Allowed allowed -> new GetPredictionResult.SwapStatus(true, null, null, null);
-            case SwapEligibility.CooldownActive cooldown -> new GetPredictionResult.SwapStatus(
-                    false,
-                    "COOLDOWN_ACTIVE",
+            case SwapEligibility.Allowed allowed -> SwapStatus.allowed();
+            case SwapEligibility.CooldownActive cooldown -> SwapStatus.cooldown(
                     cooldown.nextSwapAt(),
                     Duration.between(now, cooldown.nextSwapAt()).toMinutes() / 60.0);
-            case SwapEligibility.RoundNotOpen r -> blocked("ROUND_NOT_OPEN");
-            case SwapEligibility.PreSeasonMergeRequired p -> blocked("PRE_SEASON_MERGE_REQUIRED");
-            case SwapEligibility.UseOpeningWindowFirst u -> blocked("USE_OPENING_WINDOW_FIRST");
-            case SwapEligibility.OpeningAlreadyUsed o -> blocked("OPENING_ALREADY_USED");
+            case SwapEligibility.RoundNotOpen r -> SwapStatus.blocked("ROUND_NOT_OPEN");
+            case SwapEligibility.PreSeasonMergeRequired p -> SwapStatus.blocked("PRE_SEASON_MERGE_REQUIRED");
+            case SwapEligibility.UseOpeningWindowFirst u -> SwapStatus.blocked("USE_OPENING_WINDOW_FIRST");
+            case SwapEligibility.OpeningAlreadyUsed o -> SwapStatus.blocked("OPENING_ALREADY_USED");
         };
-    }
-
-    private static GetPredictionResult.SwapStatus blocked(String reason) {
-        return new GetPredictionResult.SwapStatus(false, reason, null, null);
     }
 
     private Either<GetPredictionError, PredictionSnapshot> resolvePredictionSnapshot(
