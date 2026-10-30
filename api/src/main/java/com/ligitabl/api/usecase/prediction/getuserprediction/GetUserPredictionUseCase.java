@@ -242,21 +242,33 @@ public class GetUserPredictionUseCase {
         // A still-unmerged pre-season "easter egg" registration (atRoundNumber == 0) must behave
         // exactly like a brand-new predictor once the season starts — any swap made while it was
         // just a pre-season row must not count toward the real opening-round bonus or first-swap-bonus messaging.
-        SwapCooldown swapCooldown;
-        if (seasonPrediction.isPreSeasonRegistration()) {
-            swapCooldown = SwapCooldown.initial();
-        } else {
-            boolean openingRoundAvailable = rc.currentRound() > seasonPrediction.getOpeningCommittedRound()
-                    && seasonPrediction.getLastSwapAt() != null
-                    && rc.currentRoundStatus() == RoundStatus.OPEN;
-            swapCooldown = new SwapCooldown(seasonPrediction.getLastSwapAt(), true, openingRoundAvailable);
-        }
         // Read once and hand downstream. The controller derives the cooldown banner from the same
         // SwapCooldown this access mode was decided from, so a second read there could disagree
         // with this one across the 24-hour boundary — a page telling the user they may swap while
         // the table it renders is read-only, or the reverse.
         Instant evaluatedAt = clock.instant();
-        PredictionAccessMode accessMode = determineAccessMode(swapCooldown, rc.isCurrentRound(), evaluatedAt);
+        SwapCooldown swapCooldown;
+        PredictionAccessMode accessMode;
+        if (seasonPrediction.isPreSeasonRegistration()) {
+            // Edited through the merge flow, not a swap.
+            swapCooldown = SwapCooldown.initial();
+            accessMode = PredictionAccessMode.EDITABLE;
+        } else {
+            int target = seasonPrediction.swapTargetRound(rc.currentRound());
+            RoundStatus targetStatus = target == rc.currentRound()
+                    ? rc.currentRoundStatus()
+                    : statusForRound(getRoundByPosition(qry.seasonId(), target));
+            SwapEligibility swapEligibility = seasonPrediction.swapEligibility(target, targetStatus, evaluatedAt);
+            // The page spends the free first swap before offering the opening window.
+            boolean openingRoundAvailable = !(swapEligibility instanceof SwapEligibility.FirstSwapFree)
+                    && seasonPrediction
+                            .openingSwapEligibility(target, targetStatus)
+                            .allowed();
+            swapCooldown = new SwapCooldown(seasonPrediction.getLastSwapAt(), true, openingRoundAvailable);
+            accessMode = swapEligibility.allowed() || openingRoundAvailable
+                    ? PredictionAccessMode.EDITABLE
+                    : PredictionAccessMode.READONLY;
+        }
 
         StandingsMaps standingsMaps = getStandingsMaps(qry.seasonId(), rc.currentRound());
 
@@ -331,21 +343,6 @@ public class GetUserPredictionUseCase {
      */
     private List<TeamRank> convertResultRankingsToTeamRankings(RoundResult result) {
         return result.getRankings().stream().map(ResultTeamRank::getRanking).toList();
-    }
-
-    /**
-     * Determine access mode based on swap cooldown status.
-     */
-    private PredictionAccessMode determineAccessMode(SwapCooldown swapCooldown, boolean isCurrentRound, Instant at) {
-        if (!isCurrentRound) {
-            return PredictionAccessMode.READONLY; // Historical rounds are always readonly
-        }
-
-        if (swapCooldown != null && (swapCooldown.canSwap(at) || swapCooldown.openingRoundAvailable())) {
-            return PredictionAccessMode.EDITABLE;
-        }
-
-        return PredictionAccessMode.READONLY;
     }
 
     private StandingsMaps getStandingsMaps(UUID seasonId, int roundPosition) {
@@ -439,8 +436,12 @@ public class GetUserPredictionUseCase {
     }
 
     private String resolveRoundState(Round round) {
+        return statusForRound(round).name();
+    }
+
+    private RoundStatus statusForRound(Round round) {
         List<Match> matches = round == null ? List.of() : matchRepo.findByRoundId(round.getId());
-        return statusForRound(round, matches).name();
+        return statusForRound(round, matches);
     }
 
     /**

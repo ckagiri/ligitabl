@@ -292,6 +292,8 @@ class GetPredictionUseCaseTest {
                 .currentRankings(List.of(TeamRank.of("ARS", 1)))
                 .initialRankings(List.of(TeamRank.of("ARS", 1)))
                 .lastSwapAt(now.minus(Duration.ofHours(23)))
+                .atRoundNumber(1)
+                .openingCommittedRound(1)
                 .build();
 
         when(clock.instant()).thenReturn(now);

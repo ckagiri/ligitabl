@@ -240,9 +240,9 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
         void shouldRejectWhenOpeningWindowNotYetUsed() {
             // The rule pairing this use case with RoundOpeningSwapUseCase: once the first-swap
             // bonus is gone, the round's opening window must be spent before ordinary swaps
-            // resume.
+            // resume. Committed at round 9, so round 10's window is unspent.
             jdbcTemplate.update(
-                    "UPDATE t_season_prediction SET c_last_swap_at = ?, c_opening_committed_round = 0"
+                    "UPDATE t_season_prediction SET c_last_swap_at = ?, c_opening_committed_round = 9"
                             + " WHERE fk_user_id = ?",
                     java.sql.Timestamp.from(MID_SEASON.minus(Duration.ofDays(2))),
                     userId);

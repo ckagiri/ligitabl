@@ -39,6 +39,7 @@ import com.ligitabl.api.usecase.standings.shared.FormService;
 import com.ligitabl.api.web.shared.dto.ResultTeamRankDto;
 import com.ligitabl.api.web.shared.dto.TeamRankDto;
 import com.ligitabl.api.web.shared.season.SeasonPhase;
+import com.ligitabl.api.web.shared.swap.SwapCooldownText;
 import com.ligitabl.api.web.shared.swap.SwapHistoryFormatter;
 import com.ligitabl.model.auth.Email;
 import com.ligitabl.model.auth.PublicId;
@@ -402,8 +403,8 @@ public class UserPredictionsController {
             boolean firstSwapBonus = cooldown.initialPredictionMade() && cooldown.lastSwapAt() == null;
             swapStatus = new SwapStatusDTO(
                     cooldown.canSwap(now),
-                    cooldown.getStatusMessage(now),
-                    cooldown.getLastSwapAtFormatted(),
+                    SwapCooldownText.statusMessage(cooldown, now),
+                    SwapCooldownText.lastSwapAt(cooldown),
                     cooldown.initialPredictionMade(),
                     firstSwapBonus,
                     cooldown.openingRoundAvailable());
