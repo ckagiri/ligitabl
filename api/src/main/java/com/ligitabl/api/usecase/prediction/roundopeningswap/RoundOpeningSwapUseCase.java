@@ -23,27 +23,12 @@ public class RoundOpeningSwapUseCase {
 
     private static final int MIN_SWAPS = 1;
     private static final int MAX_SWAPS = 2;
-    private static final int ROUND_ZERO = 0;
 
     private final SeasonPredictionRepo predictionRepo;
     private final Clock clock;
     private final SwapHelper swapHelper;
 
-    private record Ctx(Season season, Round round, SeasonPrediction prediction) {}
-
-    public Either<SwapError, RoundOpeningSwapResult> execute(UUID userId, RoundOpeningSwapCommand command) {
-        return swapHelper
-                .getActiveSeason()
-                .flatMap(season -> swapHelper.getCurrentRound(season).map(round -> new Ctx(season, round, null)))
-                .flatMap(ctx -> swapHelper.validateRoundOpen(ctx.round()).map(__ -> ctx))
-                .flatMap(ctx -> swapHelper
-                        .getPrediction(userId, ctx.season().getId())
-                        .map(p -> new Ctx(ctx.season(), ctx.round(), p)))
-                .flatMap(ctx ->
-                        validateOpeningNotUsed(ctx.prediction(), ctx.round()).map(__ -> ctx))
-                .flatMap(ctx -> validateBatchSize(command.swaps()).map(__ -> ctx))
-                .flatMap(ctx -> applySwaps(ctx.prediction(), command.swaps(), ctx.season(), ctx.round()));
-    }
+    private record Ctx(Season season, Round round, RoundStatus status, SeasonPrediction prediction) {}
 
     /**
      * <pre>
@@ -52,21 +37,30 @@ public class RoundOpeningSwapUseCase {
      * merged at N                 N              N                      already reshuffled
      * new join at N               N              N                      already reshuffled
      * joined/merged at N-1        N-1            N-1                    allowed — this is it
-     *
-     * Join and merge both stamp openingCommittedRound = atRoundNumber: joining consumes the
-     * opening window of the round you start playing. Legacy rows predating that column, and
-     * rows backfilled to 0, still fall to the atRoundNumber check above.
+     * free swap at N after N-1    N              N-1                    allowed
      * </pre>
+     *
+     * See {@link SeasonPrediction#openingSwapEligibility}.
      */
-    private Either<SwapError, Void> validateOpeningNotUsed(SeasonPrediction prediction, Round round) {
-        if (prediction.getAtRoundNumber() == ROUND_ZERO) {
-            return Either.left(new SwapError.PreSeasonMergeRequired(round.getPosition()));
-        }
-        if (prediction.getAtRoundNumber() == round.getPosition()
-                || prediction.getOpeningCommittedRound() == round.getPosition()) {
-            return Either.left(new SwapError.OpeningAlreadyUsed(round.getPosition()));
-        }
-        return Either.right(null);
+    public Either<SwapError, RoundOpeningSwapResult> execute(UUID userId, RoundOpeningSwapCommand command) {
+        Instant now = clock.instant();
+        return swapHelper
+                .getActiveSeason()
+                .flatMap(season -> swapHelper
+                        .getCurrentRound(season)
+                        .map(round -> new Ctx(season, round, swapHelper.roundStatus(round), null)))
+                .flatMap(ctx -> swapHelper
+                        .getPrediction(userId, ctx.season().getId())
+                        .map(p -> new Ctx(ctx.season(), ctx.round(), ctx.status(), p)))
+                .flatMap(ctx -> swapHelper
+                        .validateEligibility(
+                                ctx.prediction()
+                                        .openingSwapEligibility(ctx.round().getPosition(), ctx.status()),
+                                ctx.round().getPosition(),
+                                now)
+                        .map(__ -> ctx))
+                .flatMap(ctx -> validateBatchSize(command.swaps()).map(__ -> ctx))
+                .flatMap(ctx -> validateTeams(command.swaps(), ctx).map(batch -> applySwaps(ctx, batch, now)));
     }
 
     private Either<SwapError, Void> validateBatchSize(List<SwapCommand> swaps) {
@@ -76,26 +70,20 @@ public class RoundOpeningSwapUseCase {
                 : Either.right(null);
     }
 
-    private Either<SwapError, RoundOpeningSwapResult> applySwaps(
-            SeasonPrediction prediction, List<SwapCommand> swaps, Season season, Round round) {
-        List<TeamRank> currentRankings = new ArrayList<>(prediction.getCurrentRankings());
-        Instant now = clock.instant();
-
+    private Either<SwapError, List<TeamSwap>> validateTeams(List<SwapCommand> swaps, Ctx ctx) {
+        List<TeamSwap> batch = new ArrayList<>();
         for (SwapCommand swap : swaps) {
-            var validated = swapHelper.validateTeams(swap, season, prediction, currentRankings);
+            var validated = swapHelper.validateTeams(swap, ctx.season(), ctx.prediction());
             if (validated.isLeft()) return Either.left(validated.getLeft());
-            var teams = validated.get();
-            prediction.addSwap(
-                    round.getPosition(), swapHelper.applySwap(currentRankings, teams.teamA(), teams.teamB(), now));
+            batch.add(validated.get());
         }
+        return Either.right(batch);
+    }
 
-        prediction.setCurrentRankings(currentRankings);
-        prediction.setOpeningCommittedRound(round.getPosition());
-        prediction.setLastSwapAt(now);
-        prediction.setAtRoundNumber(round.getPosition());
-
+    private RoundOpeningSwapResult applySwaps(Ctx ctx, List<TeamSwap> batch, Instant now) {
+        SeasonPrediction prediction = ctx.prediction();
+        prediction.applyOpeningSwaps(batch, ctx.round().getPosition(), ctx.status(), now);
         SeasonPrediction saved = predictionRepo.save(prediction);
-
-        return Either.right(new RoundOpeningSwapResult(true, swaps.size(), saved));
+        return new RoundOpeningSwapResult(true, batch.size(), saved);
     }
 }

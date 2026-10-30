@@ -437,7 +437,7 @@ public class SeedSeasonUseCase {
 
         // Respect 24h cooldown
         if (lastSwapAt != null) {
-            Instant earliest = lastSwapAt.plus(Duration.ofHours(24));
+            Instant earliest = lastSwapAt.plus(SeasonPrediction.SWAP_COOLDOWN);
             if (zdt.toInstant().isBefore(earliest)) {
                 zdt = earliest.atZone(ZoneId.of("Europe/London"));
             }

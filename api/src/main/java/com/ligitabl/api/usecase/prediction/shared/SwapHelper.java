@@ -1,6 +1,7 @@
 package com.ligitabl.api.usecase.prediction.shared;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Set;
@@ -13,14 +14,15 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.prediction.makeswap.SwapCommand;
 import com.ligitabl.api.usecase.prediction.makeswap.SwapError;
-import com.ligitabl.api.usecase.prediction.makeswap.TeamPair;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
 import com.ligitabl.model.domain.Round;
 import com.ligitabl.model.domain.RoundStatus;
 import com.ligitabl.model.domain.Season;
 import com.ligitabl.model.domain.SeasonPrediction;
 import com.ligitabl.model.domain.SwapChange;
+import com.ligitabl.model.domain.SwapEligibility;
 import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.TeamSwap;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -91,12 +93,23 @@ public class SwapHelper {
                 .orElseGet(() -> Either.left(new SwapError.NoPredictionFound(userId, seasonId)));
     }
 
-    public Either<SwapError, Void> validateRoundOpen(Round round) {
-        if (round.isFinalized()) {
-            return Either.left(new SwapError.RoundNotOpen(RoundStatus.COMPLETED.name()));
-        }
-        RoundStatus status = roundSupport.resolveStatus(round);
-        return status == RoundStatus.OPEN ? Either.right(null) : Either.left(new SwapError.RoundNotOpen(status.name()));
+    /** COMPLETED once finalized, whatever its matches say. */
+    public RoundStatus roundStatus(Round round) {
+        return round.isFinalized() ? RoundStatus.COMPLETED : roundSupport.resolveStatus(round);
+    }
+
+    public Either<SwapError, Void> validateEligibility(SwapEligibility eligibility, int round, Instant now) {
+        return switch (eligibility) {
+            case SwapEligibility.Allowed allowed -> Either.right(null);
+            case SwapEligibility.RoundNotOpen notOpen -> Either.left(
+                    new SwapError.RoundNotOpen(notOpen.status().name()));
+            case SwapEligibility.PreSeasonMergeRequired p -> Either.left(new SwapError.PreSeasonMergeRequired(round));
+            case SwapEligibility.UseOpeningWindowFirst u -> Either.left(new SwapError.UseOpeningWindowFirst(round));
+            case SwapEligibility.OpeningAlreadyUsed o -> Either.left(new SwapError.OpeningAlreadyUsed(round));
+            case SwapEligibility.CooldownActive cooldown -> Either.left(new SwapError.CooldownActive(
+                    cooldown.nextSwapAt(),
+                    Duration.between(now, cooldown.nextSwapAt()).toMinutes() / 60.0));
+        };
     }
 
     public Set<String> resolveValidCodes(Season season, SeasonPrediction prediction) {
@@ -107,38 +120,22 @@ public class SwapHelper {
                 : initialRankings.stream().map(TeamRank::getCode).collect(Collectors.toSet());
     }
 
-    public Either<SwapError, TeamPair> validateTeams(
-            SwapCommand command, Season season, SeasonPrediction prediction, List<TeamRank> rankings) {
+    /** Checks both codes belong to the season and the prediction. Swaps only permute positions, so a batch can check every pair up front. */
+    public Either<SwapError, TeamSwap> validateTeams(SwapCommand command, Season season, SeasonPrediction prediction) {
         String teamACode = command.teamACode().toUpperCase();
         String teamBCode = command.teamBCode().toUpperCase();
         var validCodes = resolveValidCodes(season, prediction);
         if (!validCodes.contains(teamACode)) return Either.left(new SwapError.InvalidTeamCode(teamACode));
         if (!validCodes.contains(teamBCode)) return Either.left(new SwapError.InvalidTeamCode(teamBCode));
-        TeamRank teamA = rankings.stream()
-                .filter(t -> t.getCode().equals(teamACode))
-                .findFirst()
-                .orElse(null);
-        TeamRank teamB = rankings.stream()
-                .filter(t -> t.getCode().equals(teamBCode))
-                .findFirst()
-                .orElse(null);
-        if (teamA == null || teamB == null) return Either.left(new SwapError.TeamsNotFound(teamACode, teamBCode));
-        return Either.right(new TeamPair(teamA, teamB));
+        var predictionCodes =
+                prediction.getCurrentRankings().stream().map(TeamRank::getCode).collect(Collectors.toSet());
+        if (!predictionCodes.contains(teamACode) || !predictionCodes.contains(teamBCode)) {
+            return Either.left(new SwapError.TeamsNotFound(teamACode, teamBCode));
+        }
+        return Either.right(new TeamSwap(teamACode, teamBCode));
     }
 
     public SwapChange applySwap(List<TeamRank> rankings, TeamRank teamA, TeamRank teamB, Instant now) {
-        int indexA = rankings.indexOf(teamA);
-        int indexB = rankings.indexOf(teamB);
-
-        TeamRank newTeamA = teamA.withPosition(teamB.getPosition());
-        TeamRank newTeamB = teamB.withPosition(teamA.getPosition());
-
-        rankings.set(indexA, newTeamA);
-        rankings.set(indexB, newTeamB);
-
-        return new SwapChange(
-                now,
-                String.format("%s:%d→%d", teamA.getCode(), teamA.getPosition(), newTeamA.getPosition()),
-                String.format("%s:%d→%d", teamB.getCode(), teamB.getPosition(), newTeamB.getPosition()));
+        return SwapChange.exchange(rankings, teamA, teamB, now);
     }
 }

@@ -66,6 +66,18 @@ public class MakeSwapController {
                             "next_swap_at", e.nextSwapAt().toString(),
                             "hours_remaining", e.hoursRemaining()));
 
+            case SwapError.UseOpeningWindowFirst e -> ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of(
+                            "error",
+                            "USE_OPENING_WINDOW_FIRST",
+                            "message",
+                            "Use your opening swaps for round " + e.round() + " first"));
+
+            case SwapError.PreSeasonMergeRequired __ -> ResponseEntity.status(HttpStatus.CONFLICT)
+                    .body(Map.of(
+                            "error", "PRE_SEASON_MERGE_REQUIRED",
+                            "message", "Submit your table for the season before swapping"));
+
             case SwapError.TeamsNotFound e -> ResponseEntity.status(HttpStatus.BAD_REQUEST)
                     .body(Map.of(
                             "error",

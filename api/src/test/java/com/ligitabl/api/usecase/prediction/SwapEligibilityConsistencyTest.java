@@ -53,21 +53,20 @@ import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.StandingsRepo;
 
 /**
- * Records what each of the four "can this user swap?" checks answers today, for the same
- * prediction state. Rows where they disagree are task 513's drift list; PR A replaces the four
- * with {@code SeasonPrediction.swapEligibility} and changes only the rows decided there.
+ * The four places that ask "can this user swap?" all answer from {@code SeasonPrediction}'s
+ * eligibility. This pins them to one another for the same prediction state: REST {@code can_swap}
+ * matches {@code /swap}, and the page is editable exactly when one of the two swaps would succeed.
  *
  * <p>Columns: {@code MakeSwapUseCase}, {@code RoundOpeningSwapUseCase}, the prediction page's
  * access mode ({@code GetUserPredictionUseCase}) and REST {@code can_swap}
  * ({@code GetPredictionUseCase}). A rejection is the {@code SwapError} or blocked reason.
  *
- * <p>The page column is the use case's access mode, before {@code UserPredictionsController} ANDs
- * it with "round open, or the prediction is for a future round". So EDITABLE on a LOCKED row
- * renders read-only, except for joined N+1.
+ * <p>An unmerged pre-season row is EDITABLE on the page whatever the round's state: it is edited
+ * through the merge, not a swap, and the controller still gates that on the round being open.
  */
 @ExtendWith(MockitoExtension.class)
 @MockitoSettings(strictness = Strictness.LENIENT)
-class SwapEligibilityCharacterisationTest {
+class SwapEligibilityConsistencyTest {
 
     private static final int N = 10;
 
@@ -177,35 +176,35 @@ class SwapEligibilityCharacterisationTest {
     @ParameterizedTest(name = "{0} lastSwap={3} {4} -> {5}")
     @CsvSource({
         // path,         at, opening, lastSwap, round,  make | opening | page | rest
-        "pre-season,      0,  0,      none,     OPEN,   'OK | PreSeasonMergeRequired | EDITABLE | true'",
+        "pre-season,      0,  0,      none,     OPEN,   'PreSeasonMergeRequired | PreSeasonMergeRequired | EDITABLE | PRE_SEASON_MERGE_REQUIRED'",
         "pre-season,      0,  0,      none,     LOCKED, 'RoundNotOpen | RoundNotOpen | EDITABLE | ROUND_NOT_OPEN'",
         "legacy,          9,  0,      none,     OPEN,   'OK | OK | EDITABLE | true'",
-        "legacy,          9,  0,      1h,       OPEN,   'UseOpeningWindowFirst | OK | EDITABLE | COOLDOWN_ACTIVE'",
-        "legacy,          9,  0,      25h,      OPEN,   'UseOpeningWindowFirst | OK | EDITABLE | true'",
-        "legacy,          9,  0,      none,     LOCKED, 'RoundNotOpen | RoundNotOpen | EDITABLE | ROUND_NOT_OPEN'",
+        "legacy,          9,  0,      1h,       OPEN,   'UseOpeningWindowFirst | OK | EDITABLE | USE_OPENING_WINDOW_FIRST'",
+        "legacy,          9,  0,      25h,      OPEN,   'UseOpeningWindowFirst | OK | EDITABLE | USE_OPENING_WINDOW_FIRST'",
+        "legacy,          9,  0,      none,     LOCKED, 'RoundNotOpen | RoundNotOpen | READONLY | ROUND_NOT_OPEN'",
         "legacy,          9,  0,      1h,       LOCKED, 'RoundNotOpen | RoundNotOpen | READONLY | ROUND_NOT_OPEN'",
-        "legacy,          9,  0,      25h,      LOCKED, 'RoundNotOpen | RoundNotOpen | EDITABLE | ROUND_NOT_OPEN'",
+        "legacy,          9,  0,      25h,      LOCKED, 'RoundNotOpen | RoundNotOpen | READONLY | ROUND_NOT_OPEN'",
         "joined N-1,      9,  9,      none,     OPEN,   'OK | OK | EDITABLE | true'",
-        "joined N-1,      9,  9,      1h,       OPEN,   'UseOpeningWindowFirst | OK | EDITABLE | COOLDOWN_ACTIVE'",
-        "joined N-1,      9,  9,      25h,      OPEN,   'UseOpeningWindowFirst | OK | EDITABLE | true'",
-        "joined N-1,      9,  9,      none,     LOCKED, 'RoundNotOpen | RoundNotOpen | EDITABLE | ROUND_NOT_OPEN'",
+        "joined N-1,      9,  9,      1h,       OPEN,   'UseOpeningWindowFirst | OK | EDITABLE | USE_OPENING_WINDOW_FIRST'",
+        "joined N-1,      9,  9,      25h,      OPEN,   'UseOpeningWindowFirst | OK | EDITABLE | USE_OPENING_WINDOW_FIRST'",
+        "joined N-1,      9,  9,      none,     LOCKED, 'RoundNotOpen | RoundNotOpen | READONLY | ROUND_NOT_OPEN'",
         "joined N-1,      9,  9,      1h,       LOCKED, 'RoundNotOpen | RoundNotOpen | READONLY | ROUND_NOT_OPEN'",
-        "joined N-1,      9,  9,      25h,      LOCKED, 'RoundNotOpen | RoundNotOpen | EDITABLE | ROUND_NOT_OPEN'",
+        "joined N-1,      9,  9,      25h,      LOCKED, 'RoundNotOpen | RoundNotOpen | READONLY | ROUND_NOT_OPEN'",
         "joined N,       10, 10,      none,     OPEN,   'OK | OpeningAlreadyUsed | EDITABLE | true'",
         "joined N,       10, 10,      1h,       OPEN,   'CooldownActive | OpeningAlreadyUsed | READONLY | COOLDOWN_ACTIVE'",
         "joined N,       10, 10,      25h,      OPEN,   'OK | OpeningAlreadyUsed | EDITABLE | true'",
-        "joined N,       10, 10,      none,     LOCKED, 'RoundNotOpen | RoundNotOpen | EDITABLE | ROUND_NOT_OPEN'",
+        "joined N,       10, 10,      none,     LOCKED, 'RoundNotOpen | RoundNotOpen | READONLY | ROUND_NOT_OPEN'",
         "joined N,       10, 10,      1h,       LOCKED, 'RoundNotOpen | RoundNotOpen | READONLY | ROUND_NOT_OPEN'",
-        "joined N,       10, 10,      25h,      LOCKED, 'RoundNotOpen | RoundNotOpen | EDITABLE | ROUND_NOT_OPEN'",
-        "free swap N,    10,  9,      1h,       OPEN,   'UseOpeningWindowFirst | OpeningAlreadyUsed | EDITABLE | COOLDOWN_ACTIVE'",
-        "free swap N,    10,  9,      25h,      OPEN,   'UseOpeningWindowFirst | OpeningAlreadyUsed | EDITABLE | true'",
+        "joined N,       10, 10,      25h,      LOCKED, 'RoundNotOpen | RoundNotOpen | READONLY | ROUND_NOT_OPEN'",
+        "free swap N,    10,  9,      1h,       OPEN,   'UseOpeningWindowFirst | OK | EDITABLE | USE_OPENING_WINDOW_FIRST'",
+        "free swap N,    10,  9,      25h,      OPEN,   'UseOpeningWindowFirst | OK | EDITABLE | USE_OPENING_WINDOW_FIRST'",
         "free swap N,    10,  9,      1h,       LOCKED, 'RoundNotOpen | RoundNotOpen | READONLY | ROUND_NOT_OPEN'",
-        "free swap N,    10,  9,      25h,      LOCKED, 'RoundNotOpen | RoundNotOpen | EDITABLE | ROUND_NOT_OPEN'",
-        "joined N+1,     11, 11,      none,     LOCKED, 'OK | RoundNotOpen | EDITABLE | ROUND_NOT_OPEN'",
-        "joined N+1,     11, 11,      1h,       LOCKED, 'CooldownActive | RoundNotOpen | READONLY | ROUND_NOT_OPEN'",
-        "joined N+1,     11, 11,      25h,      LOCKED, 'OK | RoundNotOpen | EDITABLE | ROUND_NOT_OPEN'",
+        "free swap N,    10,  9,      25h,      LOCKED, 'RoundNotOpen | RoundNotOpen | READONLY | ROUND_NOT_OPEN'",
+        "joined N+1,     11, 11,      none,     LOCKED, 'OK | RoundNotOpen | EDITABLE | true'",
+        "joined N+1,     11, 11,      1h,       LOCKED, 'CooldownActive | RoundNotOpen | READONLY | COOLDOWN_ACTIVE'",
+        "joined N+1,     11, 11,      25h,      LOCKED, 'OK | RoundNotOpen | EDITABLE | true'",
     })
-    void recordsTodaysAnswer(String path, int at, int opening, String lastSwap, String roundStatus, String expected) {
+    void allFourAgree(String path, int at, int opening, String lastSwap, String roundStatus, String expected) {
         Instant lastSwapAt =
                 switch (lastSwap) {
                     case "none" -> null;

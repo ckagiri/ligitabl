@@ -401,22 +401,7 @@ public class CreatePredictionUseCase {
             // starting point is whatever they set during pre-season registration.
             List<TeamRank> baseline = existing.getInitialRankings();
             SwapResult swapResult = applySwaps(baseline, request.swaps(), now);
-
-            // bonus applies only if no swaps were made yet at all — neither during pre-season
-            // registration nor in this merge submission
-            boolean preSeasonHadSwaps =
-                    existing.getSwaps().stream().anyMatch(s -> !s.getChanges().isEmpty());
-            boolean usedSwapsNow = !request.swaps().isEmpty();
-
-            existing.setAtRoundNumber(atRoundNumber);
-            existing.setCurrentRankings(swapResult.rankings());
-            for (SwapChange change : swapResult.changes()) {
-                existing.addSwap(atRoundNumber, change);
-            }
-            existing.setLastSwapAt(preSeasonHadSwaps || usedSwapsNow ? now : null);
-            // Matches createPredictionAndEntry: the commitment belongs to the round this user
-            // starts playing, whose opening window the merge submission consumes.
-            existing.setOpeningCommittedRound(atRoundNumber);
+            existing.mergePreSeason(atRoundNumber, swapResult.rankings(), swapResult.changes(), now);
 
             SeasonPrediction saved = predictionRepo.save(existing);
             log.info(

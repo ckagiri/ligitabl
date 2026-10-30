@@ -235,6 +235,7 @@ class RoundOpeningSwapUseCaseTest {
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
         when(matchRepo.findByRoundId(round.getId()))
                 .thenReturn(List.of(Match.builder().status(MatchStatus.LIVE).build()));
+        when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
 
         var command = new RoundOpeningSwapCommand(List.of(new SwapCommand("ARS", "LIV")));
         var result = useCase.execute(userId, command);
