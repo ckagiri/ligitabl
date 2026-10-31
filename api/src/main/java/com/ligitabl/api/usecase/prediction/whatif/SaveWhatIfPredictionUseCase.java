@@ -6,6 +6,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.model.domain.prediction.WhatIfPrediction;
+import com.ligitabl.model.domain.prediction.WhatIfScore;
 import com.ligitabl.model.repo.WhatIfPredictionRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -25,18 +26,7 @@ public class SaveWhatIfPredictionUseCase {
         whatIfPredictionRepo.save(WhatIfPrediction.builder()
                 .userId(userId)
                 .roundId(roundId)
-                .scores(toDomain(scores))
+                .scores(scores == null ? List.of() : scores)
                 .build());
-    }
-
-    /** The model module can't see the api-module {@link WhatIfScore}, hence the same-shape mirror. */
-    private static List<com.ligitabl.model.domain.prediction.WhatIfScore> toDomain(List<WhatIfScore> scores) {
-        if (scores == null) {
-            return List.of();
-        }
-        return scores.stream()
-                .map(s ->
-                        new com.ligitabl.model.domain.prediction.WhatIfScore(s.matchId(), s.homeGoals(), s.awayGoals()))
-                .toList();
     }
 }

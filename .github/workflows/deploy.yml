@@ -83,6 +83,12 @@ jobs:
             -DDB_HOST=localhost -DDB_PORT=5432 \
             -DDB_NAME=ligitabl_ci -DDB_USER=ligitabl -DDB_PASSWORD=ligitabl
 
+      - name: Compile seed module
+        run: |
+          # seed's tests write a database, so they don't run here, but seed compiles against
+          # model and a model change can break it. Reuses the jOOQ sources generated above.
+          mvn -q -pl seed -am test-compile -B -Pwith-jooq -Djooq.codegen.skip=true
+
       - name: Upload generated jOOQ sources
         uses: actions/upload-artifact@v4
         with:

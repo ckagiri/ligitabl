@@ -26,6 +26,7 @@ import com.ligitabl.model.domain.league.TeamRank;
 import com.ligitabl.model.domain.league.standings.StandingsConverter;
 import com.ligitabl.model.domain.league.standings.stats.Standing;
 import com.ligitabl.model.domain.league.standings.table.StandingsCalculator;
+import com.ligitabl.model.domain.prediction.WhatIfScore;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;

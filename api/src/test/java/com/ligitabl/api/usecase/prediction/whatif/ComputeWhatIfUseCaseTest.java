@@ -30,6 +30,7 @@ import com.ligitabl.model.domain.league.StandingsTeamRank;
 import com.ligitabl.model.domain.league.Team;
 import com.ligitabl.model.domain.league.TeamRank;
 import com.ligitabl.model.domain.league.TeamSlug;
+import com.ligitabl.model.domain.prediction.WhatIfScore;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
