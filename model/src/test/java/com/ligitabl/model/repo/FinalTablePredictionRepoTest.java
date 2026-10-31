@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 
 import com.ligitabl.model.domain.FinalTableLeaderboardEntry;
 import com.ligitabl.model.domain.FinalTablePrediction;
+import com.ligitabl.model.domain.FinalTableScore;
 import com.ligitabl.model.domain.ResultTeamRank;
 import com.ligitabl.model.domain.SwapChange;
 import com.ligitabl.model.domain.TeamRank;
@@ -279,12 +280,13 @@ class FinalTablePredictionRepoTest {
         for (int i = 0; i < 5; i++) {
             busy.addSwap(new SwapChange(BASE, "ARS:1→2", "CHE:2→1"), BASE.plusSeconds(7200));
         }
-        busy.setBaseScore(250);
-        busy.setZeroesCount(5);
-        busy.setBonusPoints(50);
-        busy.setTotalScore(300);
-        busy.setScoredAt(BASE.plusSeconds(999_999));
-        repo.save(busy);
+        repo.save(busy.toBuilder()
+                .baseScore(250)
+                .zeroesCount(5)
+                .bonusPoints(50)
+                .totalScore(300)
+                .scoredAt(BASE.plusSeconds(999_999))
+                .build());
 
         saveScored("thrifty", 300, 5, BASE, null);
 
@@ -345,13 +347,9 @@ class FinalTablePredictionRepoTest {
     void scoredRowRoundTripsItsResultColumns() {
         UUID userId = insertUser("u1");
         FinalTablePrediction row = newRow(userId, BASE);
-        row.setResultRankings(List.of(new ResultTeamRank(TeamRank.of("ARS", 1), 3, 2)));
-        row.setBaseScore(196);
-        row.setZeroesCount(16);
-        row.setBonusPoints(160);
-        row.setChampionBonus(25);
-        row.setTotalScore(381);
-        row.setScoredAt(BASE.plusSeconds(500));
+        row.recordScore(
+                new FinalTableScore(List.of(new ResultTeamRank(TeamRank.of("ARS", 1), 3, 2)), 196, 16, 160, 25, 381),
+                BASE.plusSeconds(500));
 
         repo.save(row);
 
