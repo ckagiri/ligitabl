@@ -39,7 +39,7 @@ public class UpdateMatchKickoffUseCase {
                         return Either.left(UseCaseErrors.validation("Cannot update kickoff for a "
                                 + match.getStatus().name().toLowerCase() + " match"));
                     }
-                    match.setKickOff(cmd.newKickOff());
+                    match.changeKickOff(cmd.newKickOff());
                     var saved = matchRepo.save(match);
                     return Either.<UseCaseError, UpdateMatchKickoffResult>right(
                             new UpdateMatchKickoffResult(saved.getId(), saved.getSlug(), saved.getKickOff()));

@@ -4,13 +4,13 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-@Data
-@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-@SuperBuilder
+@Getter
+@ToString
+@SuperBuilder(toBuilder = true)
 public class Contest extends AbstractModel<UUID> {
     @NotNull
     private UUID seasonId;
@@ -45,5 +45,21 @@ public class Contest extends AbstractModel<UUID> {
 
     public boolean isOwnedBy(UUID userId) {
         return ownerId != null && ownerId.equals(userId);
+    }
+
+    public void rename(String newName) {
+        name = newName;
+    }
+
+    public void replaceJoinCode(String newCode) {
+        joinCode = newCode;
+    }
+
+    public void toggleJoining() {
+        isOpen = !isOpen;
+    }
+
+    public void markRenewedInto(UUID contestId) {
+        renewedIntoContestId = contestId;
     }
 }

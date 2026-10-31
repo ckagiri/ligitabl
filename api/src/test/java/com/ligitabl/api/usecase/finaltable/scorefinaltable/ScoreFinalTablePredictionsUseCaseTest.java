@@ -137,8 +137,10 @@ class ScoreFinalTablePredictionsUseCaseTest {
     @Test
     void skipsAlreadyScoredRowsUnlessRecomputing() {
         FinalTablePrediction alreadyScored = row(ACTUAL_ORDER);
-        alreadyScored.setScoredAt(now.minusSeconds(3600));
-        alreadyScored.setTotalScore(999);
+        alreadyScored = alreadyScored.toBuilder()
+                .scoredAt(now.minusSeconds(3600))
+                .totalScore(999)
+                .build();
         stubFinalRoundStandings();
         when(predictionRepo.findBySeason(seasonId)).thenReturn(List.of(alreadyScored));
 
@@ -153,8 +155,10 @@ class ScoreFinalTablePredictionsUseCaseTest {
     @Test
     void recomputeOverwritesAnAlreadyScoredRow() {
         FinalTablePrediction alreadyScored = row(ACTUAL_ORDER);
-        alreadyScored.setScoredAt(now.minusSeconds(3600));
-        alreadyScored.setTotalScore(999);
+        alreadyScored = alreadyScored.toBuilder()
+                .scoredAt(now.minusSeconds(3600))
+                .totalScore(999)
+                .build();
         stubFinalRoundStandings();
         when(predictionRepo.findBySeason(seasonId)).thenReturn(List.of(alreadyScored));
         stubEchoingSave();
@@ -251,7 +255,7 @@ class ScoreFinalTablePredictionsUseCaseTest {
     void reportsCountsAcrossAMixedSeason() {
         FinalTablePrediction fresh = row(ACTUAL_ORDER);
         FinalTablePrediction done = row(ACTUAL_ORDER);
-        done.setScoredAt(now.minusSeconds(3600));
+        done = done.toBuilder().scoredAt(now.minusSeconds(3600)).build();
         FinalTablePrediction broken = row(List.of("ARS", "LIV", "MCI", "GONE"));
         stubFinalRoundStandings();
         when(predictionRepo.findBySeason(seasonId)).thenReturn(List.of(fresh, done, broken));

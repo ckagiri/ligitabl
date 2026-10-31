@@ -35,7 +35,7 @@ public class ToggleContestJoiningUseCase {
             return Either.left(new ToggleContestJoiningError.PastSeasonContest(contestId));
         }
 
-        contest.setOpen(!contest.isOpen());
+        contest.toggleJoining();
         contestRepo.save(contest);
 
         log.info("User {} toggled joining for contest {} — isOpen={}", userId, contestId, contest.isOpen());

@@ -165,8 +165,7 @@ class CreatePrivateContestUseCaseTest {
         when(codeGenerator.generate()).thenReturn(CODE);
         when(contestRepo.save(any())).thenAnswer(inv -> {
             Contest c = inv.getArgument(0);
-            c.setId(UUID.randomUUID());
-            return c;
+            return c.toBuilder().id(UUID.randomUUID()).build();
         });
         when(entryRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -204,8 +203,7 @@ class CreatePrivateContestUseCaseTest {
         when(codeGenerator.generate()).thenReturn(CODE);
         when(contestRepo.save(any())).thenAnswer(inv -> {
             Contest c = inv.getArgument(0);
-            c.setId(UUID.randomUUID());
-            return c;
+            return c.toBuilder().id(UUID.randomUUID()).build();
         });
         when(entryRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
@@ -370,8 +368,7 @@ class CreatePrivateContestUseCaseTest {
         when(codeGenerator.generate()).thenReturn("FIRST11", "SECOND2");
         when(contestRepo.save(any())).thenAnswer(inv -> {
             Contest c = inv.getArgument(0);
-            c.setId(UUID.randomUUID());
-            return c;
+            return c.toBuilder().id(UUID.randomUUID()).build();
         });
         when(entryRepo.save(any())).thenAnswer(inv -> inv.getArgument(0));
 

@@ -46,7 +46,7 @@ public class UpdateSeasonDatesUseCase {
         if (outgoingSeasonId != null) {
             outgoing = seasonRepo.findById(outgoingSeasonId).orElse(null);
             if (outgoing == null) return new UpdateSeasonDatesResult.OutgoingSeasonNotFound(outgoingSeasonId);
-            outgoing.setPreSeasonOpensAt(preSeasonOpensAt);
+            outgoing.schedulePreSeasonOpening(preSeasonOpensAt);
         }
 
         if (upcomingSeasonId != null) {
@@ -54,7 +54,7 @@ public class UpdateSeasonDatesUseCase {
                     ? outgoing
                     : seasonRepo.findById(upcomingSeasonId).orElse(null);
             if (resolvedUpcoming == null) return new UpdateSeasonDatesResult.UpcomingSeasonNotFound(upcomingSeasonId);
-            resolvedUpcoming.setPredictionsOpenAt(predictionsOpenAt);
+            resolvedUpcoming.schedulePredictionsOpening(predictionsOpenAt);
             upcoming = resolvedUpcoming;
         }
 
@@ -68,12 +68,12 @@ public class UpdateSeasonDatesUseCase {
             UUID competitionUpcomingId = competition != null ? competition.getUpcomingSeasonId() : null;
             if (competitionUpcomingId != null) {
                 if (upcoming != null && competitionUpcomingId.equals(upcomingSeasonId)) {
-                    upcoming.setPreSeasonOpensAt(preSeasonOpensAt);
+                    upcoming.schedulePreSeasonOpening(preSeasonOpensAt);
                 } else {
                     competitionUpcoming =
                             seasonRepo.findById(competitionUpcomingId).orElse(null);
                     if (competitionUpcoming != null) {
-                        competitionUpcoming.setPreSeasonOpensAt(preSeasonOpensAt);
+                        competitionUpcoming.schedulePreSeasonOpening(preSeasonOpensAt);
                     }
                 }
             }

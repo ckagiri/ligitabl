@@ -170,7 +170,7 @@ class SaveFinalTablePredictionUseCaseTest {
         void rejectsACompletedSeasonAsClosedRatherThanNotInPlay() {
             // A completed season is never IN_PLAY, so an isInPlay gate in activeSeason() would shadow
             // the lock predicate and report a merely-frozen table as "season not in play".
-            season.setCompleted(true);
+            season = season.toBuilder().completed(true).build();
             when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
 
             var result =
@@ -186,7 +186,7 @@ class SaveFinalTablePredictionUseCaseTest {
             // resolveStatus short-circuits to OPEN when a round has no match rows, before
             // computeStatus can report FINALIZED. Entry must follow join-eligibility semantics
             // instead, or a finalized round 1 would accept entries into an already-scored game.
-            roundOne.setFinalized(true);
+            roundOne = roundOne.toBuilder().finalized(true).build();
             when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
             when(roundRepo.findBySeasonIdOrderByPosition(seasonId)).thenReturn(List.of(roundOne));
 
@@ -229,7 +229,7 @@ class SaveFinalTablePredictionUseCaseTest {
         void rejectsAnAlreadyScoredRow() {
             stubOpenSeason();
             FinalTablePrediction scored = existingRow(now.minusSeconds(3600));
-            scored.setScoredAt(now.minusSeconds(60));
+            scored = scored.toBuilder().scoredAt(now.minusSeconds(60)).build();
             stubExistingRow(scored);
 
             var result =

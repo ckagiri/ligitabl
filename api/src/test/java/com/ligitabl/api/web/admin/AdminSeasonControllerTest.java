@@ -145,10 +145,13 @@ class AdminSeasonControllerTest {
     @Test
     void countdownsAreMeasuredFromTheSameInstantAsTheStates() {
         Season active = inPlaySeason(activeSeasonId);
-        active.setPreSeasonOpensAt(OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusDays(10));
+        active = active.toBuilder()
+                .preSeasonOpensAt(OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusDays(10))
+                .build();
         Season upcoming = preSeasonSeason(upcomingSeasonId);
-        upcoming.setPredictionsOpenAt(
-                OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusDays(4));
+        upcoming = upcoming.toBuilder()
+                .predictionsOpenAt(OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusDays(4))
+                .build();
         givenCompetition(active, upcoming, List.of(active, upcoming));
 
         controller.seasonsPage(model);
@@ -174,7 +177,7 @@ class AdminSeasonControllerTest {
                 .activeSeasonId(active != null ? active.getId() : null)
                 .upcomingSeasonId(upcoming != null ? upcoming.getId() : null)
                 .build();
-        competition.setId(competitionId);
+        competition = competition.toBuilder().id(competitionId).build();
 
         when(competitionRepo.findBySlug("premier-league")).thenReturn(Optional.of(competition));
         when(seasonRepo.findAllByCompetitionId(competitionId)).thenReturn(all);
@@ -184,19 +187,19 @@ class AdminSeasonControllerTest {
     /** Predictions already open, season under way. */
     private Season inPlaySeason(UUID id) {
         Season season = season(id, TODAY.minusMonths(1), TODAY.plusMonths(8));
-        season.setPreSeasonOpensAt(OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(30));
-        season.setPredictionsOpenAt(
-                OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(7));
-        return season;
+        return season.toBuilder()
+                .preSeasonOpensAt(OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(30))
+                .predictionsOpenAt(OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(7))
+                .build();
     }
 
     /** Pre-season opened, predictions not yet, first kickoff still ahead. */
     private Season preSeasonSeason(UUID id) {
         Season season = season(id, TODAY.plusMonths(1), TODAY.plusMonths(10));
-        season.setPreSeasonOpensAt(OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(3));
-        season.setPredictionsOpenAt(
-                OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusDays(20));
-        return season;
+        return season.toBuilder()
+                .preSeasonOpensAt(OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).minusDays(3))
+                .predictionsOpenAt(OffsetDateTime.ofInstant(NOW, ZoneOffset.UTC).plusDays(20))
+                .build();
     }
 
     private Season season(UUID id, LocalDate start, LocalDate end) {
@@ -209,7 +212,6 @@ class AdminSeasonControllerTest {
                 .endDate(end)
                 .completed(false)
                 .build();
-        season.setId(id);
-        return season;
+        return season.toBuilder().id(id).build();
     }
 }

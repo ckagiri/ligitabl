@@ -93,8 +93,7 @@ public class RoundAdvancementService {
         }
         OffsetDateTime advanceAt = OffsetDateTime.ofInstant(advanceTime, ZoneOffset.UTC);
 
-        round.setAdvanceAt(advanceAt);
-        round.setAdvanced(false);
+        round.scheduleAdvance(advanceAt);
         roundRepo.save(round);
 
         taskScheduler.schedule(() -> attemptAutoAdvancement(finalizedRoundId, seasonId), advanceTime);
@@ -202,7 +201,7 @@ public class RoundAdvancementService {
             throw new IllegalStateException("No advancement scheduled for round: " + roundId);
         }
 
-        round.setAdvanceAt(null);
+        round.cancelScheduledAdvance();
         roundRepo.save(round);
 
         log.info("Cancelled scheduled advancement for round={}", roundId);
@@ -215,8 +214,7 @@ public class RoundAdvancementService {
     private void advanceToNextRound(Season season, Round currentRound) {
         int currentPosition = currentRound.getPosition();
 
-        currentRound.setAdvanced(true);
-        currentRound.setAdvancedAt(now());
+        currentRound.markAdvanced(now());
         roundRepo.save(currentRound);
 
         boolean isLastRound = currentPosition >= season.getMaxRounds();
@@ -233,7 +231,7 @@ public class RoundAdvancementService {
                     .orElseThrow(() -> new IllegalStateException(
                             "Next round not found: seasonId=" + season.getId() + " position=" + (currentPosition + 1)));
 
-            season.setCurrentRoundId(nextRound.getId());
+            season.moveToRound(nextRound);
             seasonRepo.save(season);
             newCurrentRoundPosition = nextRound.getPosition();
         }

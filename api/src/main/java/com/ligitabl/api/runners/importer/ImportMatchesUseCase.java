@@ -190,8 +190,8 @@ public class ImportMatchesUseCase {
         }
 
         var nextRound = nextRoundOpt.get();
-        season.setCurrentRoundId(nextRound.getId());
-        season.setCurrentMatchDay(currentMatchday);
+        season.moveToRound(nextRound);
+        season.advanceMatchday(currentMatchday);
         seasonRepo.save(season);
 
         log.info(
@@ -376,8 +376,7 @@ public class ImportMatchesUseCase {
                 if (!hasChanged(db, match)) {
                     return right(MatchImportResult.unchanged(externalId, slug));
                 }
-                match.withDatabaseId(db.getId());
-                matchRepo.update(match);
+                matchRepo.update(match.withDatabaseId(db.getId()));
                 return right(MatchImportResult.updated(externalId, slug));
             }
 

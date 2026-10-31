@@ -79,15 +79,41 @@ class FinalTablePredictionTest {
     }
 
     @Test
-    void isScoredFollowsScoredAt() {
+    void recordSwapsWithAnEmptyBatchKeepsTheSettleTime() {
+        FinalTablePrediction prediction = newPrediction();
+        List<TeamRank> reordered = List.of(TeamRank.of("CHE", 1), TeamRank.of("ARS", 2));
+
+        prediction.recordSwaps(reordered, List.of(), CREATED.plusSeconds(60));
+
+        assertThat(prediction.getRankings()).isEqualTo(reordered);
+        assertThat(prediction.getSettledAt()).isEqualTo(CREATED);
+        assertThat(prediction.getSwapCount()).isZero();
+    }
+
+    @Test
+    void recordSwapsAppendsTheChangesAndMovesTheSettleTime() {
+        FinalTablePrediction prediction = newPrediction();
+        Instant at = CREATED.plusSeconds(60);
+        List<TeamRank> reordered = List.of(TeamRank.of("CHE", 1), TeamRank.of("ARS", 2));
+
+        prediction.recordSwaps(reordered, List.of(change(at)), at);
+
+        assertThat(prediction.getRankings()).isEqualTo(reordered);
+        assertThat(prediction.getSwaps()).containsExactly(change(at));
+        assertThat(prediction.getSettledAt()).isEqualTo(at);
+    }
+
+    @Test
+    void recordScoreMarksTheRowScored() {
         FinalTablePrediction prediction = newPrediction();
         assertThat(prediction.isScored()).isFalse();
 
-        prediction.setScoredAt(Instant.parse("2027-05-24T18:00:00Z"));
-        assertThat(prediction.isScored()).isTrue();
+        Instant scoredAt = Instant.parse("2027-05-24T18:00:00Z");
+        prediction.recordScore(new FinalTableScore(List.of(), 250, 5, 50, 20, 320), scoredAt);
 
-        // Clearing the results returns the row to the waiting state.
-        prediction.setScoredAt(null);
-        assertThat(prediction.isScored()).isFalse();
+        assertThat(prediction.isScored()).isTrue();
+        assertThat(prediction.getScoredAt()).isEqualTo(scoredAt);
+        assertThat(prediction.getTotalScore()).isEqualTo(320);
+        assertThat(prediction.getChampionBonus()).isEqualTo(20);
     }
 }

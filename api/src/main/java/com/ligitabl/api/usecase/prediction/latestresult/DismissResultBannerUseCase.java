@@ -24,7 +24,7 @@ public class DismissResultBannerUseCase {
         }
 
         var result = roundResult.get();
-        result.setUserViewed(true);
+        result.markViewed();
         roundResultRepo.save(result);
 
         return Either.right(null);

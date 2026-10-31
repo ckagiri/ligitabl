@@ -149,9 +149,7 @@ public class CalculateRoundStandingsUseCase
         }
 
         if (shouldFinalise) {
-            existing.setRankings(rankings);
-            existing.setFinalised(true);
-            existing.setFinalisedAt(now());
+            existing.finalise(rankings, now());
             return Either.right(standingsRepo.save(existing));
         }
 

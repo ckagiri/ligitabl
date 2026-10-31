@@ -100,7 +100,7 @@ public class MatchPersistenceAdapter implements MatchRepo {
         Team away = teams.byId().get(match.getAwayTeamId());
 
         if (home != null && away != null) {
-            match.setTeams(home, away);
+            match.attachTeams(home, away);
         }
 
         return Optional.of(match);
@@ -122,7 +122,7 @@ public class MatchPersistenceAdapter implements MatchRepo {
             Team home = teams.byId().get(match.getHomeTeamId());
             Team away = teams.byId().get(match.getAwayTeamId());
             if (home != null && away != null) {
-                match.setTeams(home, away);
+                match.attachTeams(home, away);
             }
         }
 
@@ -159,7 +159,7 @@ public class MatchPersistenceAdapter implements MatchRepo {
             Team home = teams.byId().get(match.getHomeTeamId());
             Team away = teams.byId().get(match.getAwayTeamId());
             if (home != null && away != null) {
-                match.setTeams(home, away);
+                match.attachTeams(home, away);
             }
         }
 
@@ -195,7 +195,7 @@ public class MatchPersistenceAdapter implements MatchRepo {
             Team home = teams.byId().get(match.getHomeTeamId());
             Team away = teams.byId().get(match.getAwayTeamId());
             if (home != null && away != null) {
-                match.setTeams(home, away);
+                match.attachTeams(home, away);
             }
         }
 

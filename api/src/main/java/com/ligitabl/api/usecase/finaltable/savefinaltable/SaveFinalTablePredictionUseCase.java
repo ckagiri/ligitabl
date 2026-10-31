@@ -107,10 +107,9 @@ public class SaveFinalTablePredictionUseCase {
         }
 
         FinalTablePrediction prediction = ctx.prediction();
-        prediction.setRankings(ordered);
-        // addSwap is the only writer of swaps/swapCount/settledAt, so an empty batch cannot move the
-        // settle time — which is what keeps the tiebreak honest across a nine-month editing window.
-        applied.forEach(change -> prediction.addSwap(change, now));
+        // An empty batch cannot move the settle time, which keeps the tiebreak honest across a
+        // nine-month editing window.
+        prediction.recordSwaps(ordered, applied, now);
 
         return Either.right(predictionRepo.save(prediction));
     }

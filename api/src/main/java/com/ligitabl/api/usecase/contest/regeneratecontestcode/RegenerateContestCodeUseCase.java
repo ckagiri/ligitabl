@@ -38,7 +38,7 @@ public class RegenerateContestCodeUseCase {
         }
 
         String newCode = generateUniqueCode();
-        contest.setJoinCode(newCode);
+        contest.replaceJoinCode(newCode);
         contestRepo.save(contest);
 
         log.info("User {} regenerated code for contest {} — new code={}", userId, contestId, newCode);

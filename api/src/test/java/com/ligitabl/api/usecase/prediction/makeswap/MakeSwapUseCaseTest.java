@@ -127,8 +127,11 @@ class MakeSwapUseCaseTest {
 
     @Test
     void shouldRejectSwap_whenCooldownActive() {
-        prediction.setLastSwapAt(now.minus(Duration.ofHours(23)));
-        prediction.setOpeningCommittedRound(round.getPosition()); // opening window already used
+        // opening window already used
+        prediction = prediction.toBuilder()
+                .lastSwapAt(now.minus(Duration.ofHours(23)))
+                .openingCommittedRound(round.getPosition())
+                .build();
         SwapCommand command = new SwapCommand("ARS", "LIV");
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
@@ -175,9 +178,9 @@ class MakeSwapUseCaseTest {
 
     @Test
     void shouldRejectSwap_whenLastRoundFinalized() {
-        season.setMaxRounds(10);
+        season = season.toBuilder().maxRounds(10).build();
         round = createRound(true, 10);
-        season.setCurrentRoundId(round.getId());
+        season = season.toBuilder().currentRoundId(round.getId()).build();
         SwapCommand command = new SwapCommand("ARS", "LIV");
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
@@ -193,10 +196,10 @@ class MakeSwapUseCaseTest {
 
     @Test
     void shouldRejectSwap_whenLastRoundAdvanced() {
-        season.setMaxRounds(10);
+        season = season.toBuilder().maxRounds(10).build();
         round = createRound(true, 10);
-        round.setAdvanced(true);
-        season.setCurrentRoundId(round.getId());
+        round = round.toBuilder().advanced(true).build();
+        season = season.toBuilder().currentRoundId(round.getId()).build();
         SwapCommand command = new SwapCommand("ARS", "LIV");
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
@@ -212,7 +215,8 @@ class MakeSwapUseCaseTest {
 
     @Test
     void shouldUpdateAtRoundNumber_whenSwapApplied() {
-        prediction.setAtRoundNumber(5); // stale from an earlier round, distinct from the target round
+        // stale from an earlier round, distinct from the target round
+        prediction = prediction.toBuilder().atRoundNumber(5).build();
         SwapCommand command = new SwapCommand("ARS", "LIV");
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
@@ -237,9 +241,9 @@ class MakeSwapUseCaseTest {
                 .name("Round 11")
                 .slug("round-11")
                 .build();
-        prediction.setAtRoundNumber(11);
+        prediction = prediction.toBuilder().atRoundNumber(11).build();
         round = createRound(true, 10);
-        season.setCurrentRoundId(round.getId());
+        season = season.toBuilder().currentRoundId(round.getId()).build();
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.of(prediction));

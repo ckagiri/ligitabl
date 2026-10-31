@@ -6,13 +6,13 @@ import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-@Data
-@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-@SuperBuilder
+@Getter
+@ToString
+@SuperBuilder(toBuilder = true)
 public class RoundResult extends AbstractModel<UUID> {
     @NotNull
     private UUID roundSubmissionId;
@@ -55,5 +55,15 @@ public class RoundResult extends AbstractModel<UUID> {
         }
 
         return new HitDistribution(perfect, closeCalls, nearMisses, bigMisses);
+    }
+
+    /** The user dismissed the result banner. */
+    public void markViewed() {
+        userViewed = true;
+    }
+
+    /** The user brought the result banner back. */
+    public void markUnviewed() {
+        userViewed = false;
     }
 }

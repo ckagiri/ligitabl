@@ -122,8 +122,9 @@ class GetUserContestSummaryUseCaseTest {
     @Test
     void ownedRenewableContest_timingMet_renewalVisibleAndEnabled() {
         List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
-        competition.setPhases(phases);
-        currentRound.setPosition(29); // still within S6, timing gate met, and before S7 (30-34) starts
+        competition = competition.toBuilder().phases(phases).build();
+        // still within S6, timing gate met, and before S7 (30-34) starts
+        currentRound = currentRound.toBuilder().position(29).build();
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
@@ -155,8 +156,9 @@ class GetUserContestSummaryUseCaseTest {
     @Test
     void ownedRenewableContest_renewalWindowElapsed_renewalHidden() {
         List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
-        competition.setPhases(phases);
-        currentRound.setPosition(35); // already in S8 — S7 (30-34), the renewal target, has fully elapsed
+        competition = competition.toBuilder().phases(phases).build();
+        // already in S8 — S7 (30-34), the renewal target, has fully elapsed
+        currentRound = currentRound.toBuilder().position(35).build();
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
@@ -183,8 +185,9 @@ class GetUserContestSummaryUseCaseTest {
     @Test
     void ownedRenewableContest_timingNotMet_renewalVisibleButDisabled() {
         List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
-        competition.setPhases(phases);
-        currentRound.setPosition(26); // within S6 (25-29), before the timing threshold (27)
+        competition = competition.toBuilder().phases(phases).build();
+        // within S6 (25-29), before the timing threshold (27)
+        currentRound = currentRound.toBuilder().position(26).build();
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
@@ -213,8 +216,8 @@ class GetUserContestSummaryUseCaseTest {
     @Test
     void nonOwnedContest_renewalHidden() {
         List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
-        competition.setPhases(phases);
-        currentRound.setPosition(35);
+        competition = competition.toBuilder().phases(phases).build();
+        currentRound = currentRound.toBuilder().position(35).build();
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
@@ -241,8 +244,8 @@ class GetUserContestSummaryUseCaseTest {
     @Test
     void alreadyRenewedContest_renewalHidden() {
         List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
-        competition.setPhases(phases);
-        currentRound.setPosition(35);
+        competition = competition.toBuilder().phases(phases).build();
+        currentRound = currentRound.toBuilder().position(35).build();
         when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
         when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
@@ -305,9 +308,11 @@ class GetUserContestSummaryUseCaseTest {
     @Test
     void buildGeneralRows_currentRoundFinalized_currentSprintUsesRawPosition() {
         List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
-        competition.setPhases(phases);
-        currentRound.setPosition(12); // inside S3 (10-14)
-        currentRound.setFinalized(true);
+        competition = competition.toBuilder().phases(phases).build();
+        // inside S3 (10-14)
+        currentRound = currentRound.toBuilder().position(12).finalized(true).build();
+        when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(contestRepo.findPrivateByUserId(userId, seasonId)).thenReturn(List.of());
         when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
                 .thenReturn(ContestRankResolver.RankInfo.NONE);
@@ -322,9 +327,11 @@ class GetUserContestSummaryUseCaseTest {
     @Test
     void buildGeneralRows_currentRoundNotFinalized_currentSprintStepsBackOnePosition() {
         List<RoundSpan> phases = CompetitionPhaseFixtures.phases();
-        competition.setPhases(phases);
-        currentRound.setPosition(10); // opening round of S3 (10-14), not yet finalized
-        currentRound.setFinalized(false);
+        competition = competition.toBuilder().phases(phases).build();
+        // opening round of S3 (10-14), not yet finalized
+        currentRound = currentRound.toBuilder().position(10).finalized(false).build();
+        when(competitionRepo.findBySlug(SLUG)).thenReturn(Optional.of(competition));
+        when(roundRepo.findById(roundId)).thenReturn(Optional.of(currentRound));
         when(contestRepo.findPrivateByUserId(userId, seasonId)).thenReturn(List.of());
         when(contestRankResolver.resolve(any(), any(), anyInt(), anyInt(), any()))
                 .thenReturn(ContestRankResolver.RankInfo.NONE);

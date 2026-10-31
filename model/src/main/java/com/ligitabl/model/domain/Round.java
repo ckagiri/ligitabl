@@ -6,13 +6,13 @@ import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-@Data
-@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-@SuperBuilder
+@Getter
+@ToString
+@SuperBuilder(toBuilder = true)
 public class Round extends AbstractModel<UUID> {
     @NotNull
     private UUID seasonId;
@@ -39,6 +39,25 @@ public class Round extends AbstractModel<UUID> {
     // Populated by the database (defaults/triggers)
     private OffsetDateTime createDate;
     private OffsetDateTime updateDate;
+
+    /** Not {@code finalize()}: that would override {@link Object#finalize}. */
+    public void markFinalized() {
+        finalized = true;
+    }
+
+    public void scheduleAdvance(OffsetDateTime at) {
+        advanceAt = at;
+        advanced = false;
+    }
+
+    public void cancelScheduledAdvance() {
+        advanceAt = null;
+    }
+
+    public void markAdvanced(OffsetDateTime at) {
+        advanced = true;
+        advancedAt = at;
+    }
 
     /**
      * Computes round status based on associated matches.

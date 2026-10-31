@@ -8,13 +8,13 @@ import java.util.List;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
-@Data
-@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-@SuperBuilder
+@Getter
+@ToString
+@SuperBuilder(toBuilder = true)
 public class Season extends AbstractModel<UUID> {
     @NotNull
     private Integer clientId;
@@ -92,6 +92,29 @@ public class Season extends AbstractModel<UUID> {
 
         this.mainContestId = detachedContestId;
         this.detachedContestId = null;
+    }
+
+    public void moveToRound(Round round) {
+        currentRoundId = round.getId();
+    }
+
+    public void advanceMatchday(int matchday) {
+        currentMatchDay = matchday;
+    }
+
+    public void complete(OffsetDateTime at) {
+        completed = true;
+        completedAt = at;
+    }
+
+    /** A null {@code at} clears the date. */
+    public void schedulePreSeasonOpening(OffsetDateTime at) {
+        preSeasonOpensAt = at;
+    }
+
+    /** A null {@code at} clears the date. */
+    public void schedulePredictionsOpening(OffsetDateTime at) {
+        predictionsOpenAt = at;
     }
 
     /**

@@ -11,7 +11,7 @@ interfaces.
 ## Modules
 
 - **`model`**: the domain and its persistence.
-  - `domain`: entities, value objects and pure rules such as `Season`'s state predicates and the `StandingsCalculator`. It imports no Spring, jOOQ or `infra`. Entities (`AbstractModel` subclasses and `User`) are equal by id; an unsaved one equals only itself. Compare fields in tests with `usingRecursiveComparison()`.
+  - `domain`: entities, value objects and pure rules such as `Season`'s state predicates and the `StandingsCalculator`. It imports no Spring, jOOQ or `infra`. Entities (`AbstractModel` subclasses and `User`) are equal by id; an unsaved one equals only itself. Compare fields in tests with `usingRecursiveComparison()`. Entities have no public setters: a state change is a method named for what happens (`Round.markFinalized()`, `Contest.toggleJoining()`), and adapters, the demo seeder and tests that need another shape build a copy with `toBuilder()`.
   - `repo`: repository interfaces. These are the persistence ports, so `api` has no second layer of them.
   - `infra`: the jOOQ implementations. `db` holds the generated jOOQ code.
   - In `api`, only `config/RepositoryConfig` touches `infra`, to wire it.

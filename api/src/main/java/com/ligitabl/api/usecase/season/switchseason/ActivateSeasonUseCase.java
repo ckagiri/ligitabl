@@ -38,7 +38,7 @@ public class ActivateSeasonUseCase {
         if (predictionsOpenAt != null) {
             Season upcoming = seasonRepo.findById(upcomingSeasonId).orElse(null);
             if (upcoming != null) {
-                upcoming.setPredictionsOpenAt(predictionsOpenAt);
+                upcoming.schedulePredictionsOpening(predictionsOpenAt);
                 seasonRepo.save(upcoming);
             }
         }

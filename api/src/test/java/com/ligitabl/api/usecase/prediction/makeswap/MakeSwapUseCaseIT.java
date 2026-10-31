@@ -178,7 +178,8 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
         void shouldUpdateAtRoundNumberToTargetRound() {
             SeasonPrediction prediction =
                     predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
-            prediction.setAtRoundNumber(5); // stale from an earlier round, distinct from the target round (10)
+            // stale from an earlier round, distinct from the target round (10)
+            prediction = prediction.toBuilder().atRoundNumber(5).build();
             predictionRepo.save(prediction);
 
             Either<SwapError, SwapResult> result = useCase.execute(userId, new SwapCommand("ARS", "LIV"));
@@ -198,7 +199,9 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
 
             SeasonPrediction afterFirst =
                     predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
-            afterFirst.setLastSwapAt(MID_SEASON.minus(Duration.ofHours(24)));
+            afterFirst = afterFirst.toBuilder()
+                    .lastSwapAt(MID_SEASON.minus(Duration.ofHours(24)))
+                    .build();
             predictionRepo.save(afterFirst);
 
             Either<SwapError, SwapResult> second = useCase.execute(userId, new SwapCommand("MCI", "CHE"));
@@ -221,8 +224,10 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
         void shouldRejectWhenCooldownActive() {
             SeasonPrediction prediction =
                     predictionRepo.findByUserAndSeason(userId, seasonId).orElseThrow();
-            prediction.setLastSwapAt(MID_SEASON.minus(Duration.ofHours(23)));
-            prediction.setOpeningCommittedRound(10);
+            prediction = prediction.toBuilder()
+                    .lastSwapAt(MID_SEASON.minus(Duration.ofHours(23)))
+                    .openingCommittedRound(10)
+                    .build();
             predictionRepo.save(prediction);
 
             Either<SwapError, SwapResult> result = useCase.execute(userId, new SwapCommand("ARS", "LIV"));
@@ -290,7 +295,7 @@ class MakeSwapUseCaseIT extends AbstractPostgresIT {
             List<TeamRank> withoutArs = new ArrayList<>(prediction.getCurrentRankings().stream()
                     .filter(t -> !t.getCode().equals("ARS"))
                     .toList());
-            prediction.setCurrentRankings(withoutArs);
+            prediction = prediction.toBuilder().currentRankings(withoutArs).build();
             predictionRepo.save(prediction);
 
             Either<SwapError, SwapResult> result = useCase.execute(userId, new SwapCommand("ARS", "LIV"));

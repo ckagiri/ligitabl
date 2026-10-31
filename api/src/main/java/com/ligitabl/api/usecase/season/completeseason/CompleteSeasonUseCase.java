@@ -67,8 +67,7 @@ public class CompleteSeasonUseCase {
             return new CompleteSeasonResult.SeasonNotEligible("All matches in the last round must be finished");
         }
 
-        season.setCompleted(true);
-        season.setCompletedAt(OffsetDateTime.now(clock));
+        season.complete(OffsetDateTime.now(clock));
 
         // Completing the season should land it on OFF_SEASON (predictions closed, pre-season not
         // yet open), not INACTIVE — INACTIVE here means preSeasonOpensAt isn't configured/ordered

@@ -60,7 +60,7 @@ class MatchUpdateHelperTest {
 
     private Match finishedMatch(int home, int away) {
         var match = baseMatch(MatchStatus.FINISHED);
-        match.setScore(home, away);
+        match.recordScore(home, away);
         return match;
     }
 
