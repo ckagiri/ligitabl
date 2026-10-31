@@ -22,7 +22,7 @@ import lombok.experimental.SuperBuilder;
  * submission/result pair.
  */
 @Data
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
 @SuperBuilder
 public class FinalTablePrediction extends AbstractModel<UUID> {
     @NotNull

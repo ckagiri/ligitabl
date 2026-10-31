@@ -152,6 +152,22 @@ class UserTest {
     }
 
     @Test
+    void sameIdIsTheSameUserWhateverTheOtherFields() {
+        User renamed = testUser.withDisplayName("New Name");
+
+        assertEquals(testUser, renamed);
+        assertEquals(testUser.hashCode(), renamed.hashCode());
+    }
+
+    @Test
+    void unsavedUserEqualsOnlyItself() {
+        User unsaved = User.builder().publicId(publicId).email(email).build();
+
+        assertEquals(unsaved, unsaved);
+        assertNotEquals(unsaved, User.builder().publicId(publicId).email(email).build());
+    }
+
+    @Test
     void rolesSetShouldBeImmutableWhenUsingSetOf() {
         Set<Role> originalRoles = testUser.getRoles();
         assertThrows(UnsupportedOperationException.class, () -> originalRoles.add(Role.ADMIN));
