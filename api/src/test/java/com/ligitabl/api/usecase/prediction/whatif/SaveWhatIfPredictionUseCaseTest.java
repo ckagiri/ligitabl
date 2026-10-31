@@ -13,6 +13,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.model.domain.prediction.WhatIfPrediction;
+import com.ligitabl.model.domain.prediction.WhatIfScore;
 import com.ligitabl.model.repo.WhatIfPredictionRepo;
 
 @ExtendWith(MockitoExtension.class)
