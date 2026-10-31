@@ -6,8 +6,6 @@ import java.util.stream.Collectors;
 
 import com.ligitabl.model.domain.Match;
 import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.standings.formatter.ConsoleFormatter;
-import com.ligitabl.model.domain.standings.formatter.StandingFormatter;
 import com.ligitabl.model.domain.standings.ranking.RankingRule;
 import com.ligitabl.model.domain.standings.ranking.RankingStrategy;
 import com.ligitabl.model.domain.standings.stats.Standing;
@@ -47,28 +45,6 @@ public class LeagueTable {
      */
     public List<Standing> getStandings() {
         return List.copyOf(standings);
-    }
-
-    /**
-     * Format standings using the specified formatter.
-     *
-     * Example:
-     * <pre>
-     * String json = table.format(new JsonFormatter());
-     * String csv = table.format(new CsvFormatter());
-     * String markdown = table.format(new MarkdownFormatter());
-     * </pre>
-     */
-    public String format(StandingFormatter formatter) {
-        Objects.requireNonNull(formatter);
-        return formatter.format(standings, teamMap);
-    }
-
-    /**
-     * Print to console using default ConsoleFormatter.
-     */
-    public void print() {
-        System.out.println(format(new ConsoleFormatter()));
     }
 
     /**

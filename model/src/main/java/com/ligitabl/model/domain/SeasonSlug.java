@@ -5,7 +5,7 @@ import static com.ligitabl.model.validator.AssertionUtils.assertArgumentTrue;
 
 import java.util.Locale;
 
-import com.ligitabl.model.shared.SlugValidator;
+import com.ligitabl.model.validator.SlugValidator;
 
 public record SeasonSlug(String value) {
     public static SeasonSlug of(String raw) {
