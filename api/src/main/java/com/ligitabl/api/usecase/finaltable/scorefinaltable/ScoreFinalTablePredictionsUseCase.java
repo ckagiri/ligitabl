@@ -85,16 +85,7 @@ public class ScoreFinalTablePredictionsUseCase {
     }
 
     private void scoreRow(FinalTablePrediction row, List<StandingsTeamRank> standings, int maxHitPoints, Instant now) {
-        var score = scorer.score(row.getRankings(), standings, maxHitPoints);
-
-        row.setResultRankings(score.resultRankings());
-        row.setBaseScore(score.baseScore());
-        row.setZeroesCount(score.zeroesCount());
-        row.setBonusPoints(score.bonusPoints());
-        row.setChampionBonus(score.championBonus());
-        row.setTotalScore(score.totalScore());
-        row.setScoredAt(now);
-
+        row.recordScore(scorer.score(row.getRankings(), standings, maxHitPoints), now);
         predictionRepo.save(row);
     }
 

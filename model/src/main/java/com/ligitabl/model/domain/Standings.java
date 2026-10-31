@@ -7,13 +7,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
-@Data
-@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-@SuperBuilder
+@Getter
+@SuperBuilder(toBuilder = true)
 public class Standings extends AbstractModel<UUID> {
     @NotNull
     private UUID seasonId;
@@ -54,6 +52,12 @@ public class Standings extends AbstractModel<UUID> {
     public Optional<StandingsTeamRank> findByPosition(int position) {
         if (rankings == null) return Optional.empty();
         return rankings.stream().filter(r -> r.position() == position).findFirst();
+    }
+
+    public void finalise(List<StandingsTeamRank> finalRankings, OffsetDateTime at) {
+        rankings = finalRankings;
+        finalised = true;
+        finalisedAt = at;
     }
 
     @Override

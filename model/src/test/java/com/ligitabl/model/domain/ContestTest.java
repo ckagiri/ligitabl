@@ -68,4 +68,19 @@ class ContestTest {
 
         assertThat(contest.isMain()).isFalse();
     }
+
+    @Test
+    void toggleJoiningFlipsTheOpenFlag() {
+        Contest contest = Contest.builder()
+                .seasonId(UUID.randomUUID())
+                .name("Test")
+                .isOpen(true)
+                .build();
+
+        contest.toggleJoining();
+        assertThat(contest.isOpen()).isFalse();
+
+        contest.toggleJoining();
+        assertThat(contest.isOpen()).isTrue();
+    }
 }

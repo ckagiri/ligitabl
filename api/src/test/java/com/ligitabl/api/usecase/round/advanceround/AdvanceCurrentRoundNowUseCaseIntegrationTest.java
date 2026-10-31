@@ -120,7 +120,7 @@ class AdvanceCurrentRoundNowUseCaseIntegrationTest extends AbstractPostgresIT {
     void shouldReturnConflictWhenAlreadyAdvanced() {
         setupSeasonWithRounds(2);
         Round round1 = createRound(2, true);
-        round1.setAdvanced(true);
+        round1 = round1.toBuilder().advanced(true).build();
         roundRepo.save(round1);
         setCurrentRound(round1.getId());
 
@@ -135,7 +135,7 @@ class AdvanceCurrentRoundNowUseCaseIntegrationTest extends AbstractPostgresIT {
     void shouldReturnConflictWhenNotFinalized() {
         Round round1 = setupSeasonWithRounds(2);
         // round1 not finalized by default in helper
-        round1.setFinalized(false);
+        round1 = round1.toBuilder().finalized(false).build();
         roundRepo.save(round1);
         setCurrentRound(round1.getId());
 

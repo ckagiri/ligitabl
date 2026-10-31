@@ -524,7 +524,8 @@ class EnqueueRoundResultsEmailsUseCaseTest {
 
     @Test
     void skipsEntirelyWhenSeasonHasNoMainContest() {
-        season.setMainContestId(null);
+        season = season.toBuilder().mainContestId(null).build();
+        when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
 
         enqueue();
 

@@ -51,8 +51,7 @@ public class WhatIfPredictionPersistenceAdapter implements WhatIfPredictionRepo 
                 WhatIfPrediction existing = findByUserAndRound(prediction.getUserId(), prediction.getRoundId())
                         .orElseThrow(
                                 () -> new NoSuchElementException("WhatIfPrediction exists but could not be reloaded"));
-                prediction.setId(existing.getId());
-                return update(prediction);
+                return update(prediction.toBuilder().id(existing.getId()).build());
             }
 
             return findById(id).orElseThrow(() -> new NoSuchElementException("Failed to create what-if prediction"));

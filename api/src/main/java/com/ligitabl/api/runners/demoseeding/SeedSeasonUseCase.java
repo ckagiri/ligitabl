@@ -273,16 +273,9 @@ public class SeedSeasonUseCase {
                                     + pairing.awayTeam().getSlug())
                             .wasPostponed(false)
                             .wasSuspended(false)
+                            .status(isFinished ? MatchStatus.FINISHED : MatchStatus.SCHEDULED)
+                            .score(isFinished ? generateRandomScore() : null)
                             .build();
-
-                    if (isFinished) {
-
-                        Score score = generateRandomScore();
-                        match.setStatus(MatchStatus.FINISHED);
-                        match.setScore(score);
-                    } else {
-                        match.setStatus(MatchStatus.SCHEDULED);
-                    }
 
                     matchRepo.save(match);
                     matchesCreated++;
@@ -350,9 +343,13 @@ public class SeedSeasonUseCase {
     private int seedSwaps(Map<UUID, SeasonPrediction> predictions, List<Round> rounds, SeedingConfig config) {
         int totalSwaps = 0;
 
-        for (SeasonPrediction prediction : predictions.values()) {
+        for (Map.Entry<UUID, SeasonPrediction> seeded : predictions.entrySet()) {
+            SeasonPrediction prediction = seeded.getValue();
             List<TeamRank> currentRankings = new ArrayList<>(prediction.getInitialRankings());
             Instant lastSwapAt = null;
+            List<TeamRank> replayedRankings = prediction.getCurrentRankings();
+            Instant replayedLastSwapAt = prediction.getLastSwapAt();
+            int replayedRound = prediction.getAtRoundNumber();
 
             for (int roundIndex = 0; roundIndex < config.getFinishedRounds(); roundIndex++) {
                 Round round = rounds.get(roundIndex);
@@ -409,12 +406,17 @@ public class SeedSeasonUseCase {
                 }
 
                 // Update prediction state for this round
-                prediction.setCurrentRankings(new ArrayList<>(currentRankings));
-                prediction.setLastSwapAt(lastSwapAt);
-                prediction.setAtRoundNumber(round.getPosition());
+                replayedRankings = new ArrayList<>(currentRankings);
+                replayedLastSwapAt = lastSwapAt;
+                replayedRound = round.getPosition();
             }
 
-            predictionRepo.save(prediction);
+            // Fake history outside the swap rules, so it rebuilds the row rather than calling swap().
+            seeded.setValue(predictionRepo.save(prediction.toBuilder()
+                    .currentRankings(replayedRankings)
+                    .lastSwapAt(replayedLastSwapAt)
+                    .atRoundNumber(replayedRound)
+                    .build()));
         }
 
         log.info("Seeded {} total swaps across all users", totalSwaps);

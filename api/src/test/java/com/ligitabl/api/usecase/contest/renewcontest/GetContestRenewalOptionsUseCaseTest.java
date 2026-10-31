@@ -160,7 +160,7 @@ class GetContestRenewalOptionsUseCaseTest {
     @Test
     void notPrivate_hidden() {
         Contest contest = contest(1, 9);
-        contest.setPrivate(false);
+        contest = contest.toBuilder().isPrivate(false).build();
         when(contestRepo.findById(contest.getId())).thenReturn(Optional.of(contest));
 
         var result = useCase.execute(contest.getId(), userId).get();
@@ -171,7 +171,7 @@ class GetContestRenewalOptionsUseCaseTest {
     @Test
     void alreadyRenewed_notRenewable() {
         Contest contest = contest(1, 9);
-        contest.setRenewedIntoContestId(UUID.randomUUID());
+        contest = contest.toBuilder().renewedIntoContestId(UUID.randomUUID()).build();
         when(contestRepo.findById(contest.getId())).thenReturn(Optional.of(contest));
         when(seasonRepo.findById(seasonId)).thenReturn(Optional.of(season));
         when(competitionRepo.findById(competitionId)).thenReturn(Optional.of(competition));

@@ -132,7 +132,7 @@ class MatchRepositoryIntegrationTest extends AbstractPostgresIT {
 
         Match match = matchRepo.findByRoundIdAndSlug(roundId, slug).orElseThrow();
         match.transitionTo(MatchStatus.POSTPONED, "Rain");
-        match.setScore(2, 1);
+        match.recordScore(2, 1);
         match.transitionTo(MatchStatus.CANCELLED, "Cancelled");
 
         matchRepo.save(match);

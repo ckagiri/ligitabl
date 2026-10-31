@@ -386,7 +386,8 @@ class GetUserPredictionUseCaseTest {
     @Test
     void seasonCompleted_trueWhenLastRoundAdvanced_regardlessOfSeasonCompletedFlag() {
         Season season = createSeason(5);
-        season.setCompleted(false); // admin hasn't completed the season — irrelevant to the new derivation
+        // admin hasn't completed the season — irrelevant to the new derivation
+        season = season.toBuilder().completed(false).build();
         Round round = createRound(5, true, true); // finalized + advanced, last round
 
         stubActiveSeason(season);
@@ -404,7 +405,8 @@ class GetUserPredictionUseCaseTest {
     @Test
     void seasonCompleted_falseWhenCurrentRoundNotAdvanced_evenIfSeasonCompletedFlagIsTrue() {
         Season season = createSeason(20);
-        season.setCompleted(true); // stale/admin-set flag — no longer authoritative
+        // stale/admin-set flag — no longer authoritative
+        season = season.toBuilder().completed(true).build();
         Round round = createRound(5, false, false); // not the last round, not advanced
 
         stubActiveSeason(season);

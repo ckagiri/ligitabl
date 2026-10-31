@@ -59,7 +59,7 @@ class MatchTest {
     void unfinishingInSetupMode_clearsTheRecordedScore() {
         for (MatchStatus target : new MatchStatus[] {MatchStatus.SCHEDULED, MatchStatus.POSTPONED}) {
             Match match = matchWithStatus(MatchStatus.FINISHED);
-            match.setScore(2, 1);
+            match.recordScore(2, 1);
 
             match.transitionTo(target, "setup mode correction", true);
 
@@ -172,5 +172,31 @@ class MatchTest {
             Match match = matchWithStatus(status);
             assertFalse(match.isComplete() && match.isBlocking());
         }
+    }
+
+    @Test
+    void updateFromFeed_takesTheFeedStatusEvenWhereTransitionToWouldRefuse() {
+        Match match = matchWithStatus(MatchStatus.SCHEDULED);
+        assertThrows(IllegalStateException.class, () -> matchWithStatus(MatchStatus.SCHEDULED)
+                .transitionTo(MatchStatus.SUSPENDED, "test"));
+
+        match.updateFromFeed(MatchStatus.SUSPENDED, 63, 2);
+
+        assertEquals(MatchStatus.SUSPENDED, match.getStatus());
+        assertEquals(63, match.getMinute());
+        assertEquals(2, match.getInjuryTime());
+    }
+
+    @Test
+    void withDatabaseId_returnsACopyAndLeavesTheOriginal() {
+        Match match = matchWithStatus(MatchStatus.SCHEDULED);
+        UUID originalId = match.getId();
+        UUID databaseId = UUID.randomUUID();
+
+        Match copy = match.withDatabaseId(databaseId);
+
+        assertEquals(databaseId, copy.getId());
+        assertEquals(match.getSlug(), copy.getSlug());
+        assertEquals(originalId, match.getId());
     }
 }

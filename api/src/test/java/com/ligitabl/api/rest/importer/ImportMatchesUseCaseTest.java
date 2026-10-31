@@ -220,8 +220,10 @@ class ImportMatchesUseCaseTest {
         var extCompetition = competition("PL", 2024, 3);
 
         var dbSeason = season(seasonId, 2024);
-        dbSeason.setCurrentRoundId(currentRoundId);
-        dbSeason.setCurrentMatchDay(2);
+        dbSeason = dbSeason.toBuilder()
+                .currentRoundId(currentRoundId)
+                .currentMatchDay(2)
+                .build();
 
         var currentRound = round(currentRoundId, seasonId, 2);
         var nextRound = round(nextRoundId, seasonId, 3);
@@ -257,8 +259,10 @@ class ImportMatchesUseCaseTest {
         var extCompetition = competition("PL", 2024, 5);
 
         var dbSeason = season(seasonId, 2024);
-        dbSeason.setCurrentRoundId(currentRoundId);
-        dbSeason.setCurrentMatchDay(2);
+        dbSeason = dbSeason.toBuilder()
+                .currentRoundId(currentRoundId)
+                .currentMatchDay(2)
+                .build();
 
         var currentRound = round(currentRoundId, seasonId, 2);
 
@@ -293,8 +297,10 @@ class ImportMatchesUseCaseTest {
         var extCompetition = competition("PL", 2024, 3);
 
         var dbSeason = season(seasonId, 2024);
-        dbSeason.setCurrentRoundId(currentRoundId);
-        dbSeason.setCurrentMatchDay(2);
+        dbSeason = dbSeason.toBuilder()
+                .currentRoundId(currentRoundId)
+                .currentMatchDay(2)
+                .build();
 
         var currentRound = round(currentRoundId, seasonId, 2);
 

@@ -10,13 +10,11 @@ import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.experimental.SuperBuilder;
 
-@Data
-@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-@SuperBuilder
+@Getter
+@SuperBuilder(toBuilder = true)
 public class Match extends AbstractModel<UUID> {
     @NotNull
     private Integer clientId;
@@ -61,8 +59,23 @@ public class Match extends AbstractModel<UUID> {
         return wasPostponed;
     }
 
-    public void setScore(int homeGoals, int awayGoals) {
+    public void recordScore(int homeGoals, int awayGoals) {
         this.score = Score.builder().homeGoals(homeGoals).awayGoals(awayGoals).build();
+    }
+
+    /** The feed is the source of truth for live state, so this bypasses {@link #transitionTo}. */
+    public void updateFromFeed(MatchStatus newStatus, Integer newMinute, Integer newInjuryTime) {
+        status = newStatus;
+        minute = newMinute;
+        injuryTime = newInjuryTime;
+    }
+
+    public void changeKickOff(OffsetDateTime newKickOff) {
+        kickOff = newKickOff;
+    }
+
+    public void moveToMatchday(int newMatchday) {
+        matchday = newMatchday;
     }
 
     // Setup mode exists for retroactive data correction (wrong score, wrongly-FINISHED match,
@@ -158,8 +171,8 @@ public class Match extends AbstractModel<UUID> {
         return status == MatchStatus.CANCELLED || status == MatchStatus.SUSPENDED;
     }
 
-    public void withDatabaseId(UUID id) {
-        this.setId(id);
+    public Match withDatabaseId(UUID databaseId) {
+        return toBuilder().id(databaseId).build();
     }
 
     public Optional<MatchResult> result() {
@@ -225,10 +238,8 @@ public class Match extends AbstractModel<UUID> {
         return homeTeam != null && awayTeam != null;
     }
 
-    /**
-     * Sets teams (called by repository).
-     */
-    public void setTeams(Team home, Team away) {
+    /** Called by the repository when it loads the teams. */
+    public void attachTeams(Team home, Team away) {
         this.homeTeam = home;
         this.awayTeam = away;
     }

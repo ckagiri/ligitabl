@@ -118,12 +118,10 @@ class RenewContestUseCaseTest {
         when(contestRepo.findByJoinCode(any())).thenReturn(Optional.empty());
         when(codeGenerator.generate()).thenReturn(CODE);
 
+        UUID renewedId = UUID.randomUUID();
         when(contestRepo.save(any())).thenAnswer(inv -> {
             Contest c = inv.getArgument(0);
-            if (c.getId() == null) {
-                c.setId(UUID.randomUUID());
-            }
-            return c;
+            return c.getId() == null ? c.toBuilder().id(renewedId).build() : c;
         });
 
         var cmd = new RenewContestCommand(userId, original.getId(), "S7");
@@ -143,10 +141,9 @@ class RenewContestUseCaseTest {
         assertThat(savedRenewed.getOwnerId()).isEqualTo(userId);
 
         Contest savedOriginal = contestCaptor.getAllValues().get(1);
-        assertThat(savedOriginal.getRenewedIntoContestId()).isEqualTo(savedRenewed.getId());
+        assertThat(savedOriginal.getRenewedIntoContestId()).isEqualTo(renewedId);
 
-        verify(entryRepo)
-                .copyActiveEntries(original.getId(), savedRenewed.getId(), savedRenewed.getFromRoundPosition());
+        verify(entryRepo).copyActiveEntries(original.getId(), renewedId, savedRenewed.getFromRoundPosition());
     }
 
     @Test
@@ -164,7 +161,7 @@ class RenewContestUseCaseTest {
     @Test
     void notPrivate_returnsError() {
         Contest original = originalContest(1, 9);
-        original.setPrivate(false);
+        original = original.toBuilder().isPrivate(false).build();
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
 
         var cmd = new RenewContestCommand(userId, original.getId(), "S3");
@@ -233,7 +230,7 @@ class RenewContestUseCaseTest {
     @Test
     void alreadyRenewed_returnsError() {
         Contest original = originalContest(1, 9);
-        original.setRenewedIntoContestId(UUID.randomUUID());
+        original = original.toBuilder().renewedIntoContestId(UUID.randomUUID()).build();
         when(contestRepo.findById(original.getId())).thenReturn(Optional.of(original));
 
         var cmd = new RenewContestCommand(userId, original.getId(), "S3");
@@ -307,10 +304,7 @@ class RenewContestUseCaseTest {
         when(codeGenerator.generate()).thenReturn(CODE);
         when(contestRepo.save(any())).thenAnswer(inv -> {
             Contest c = inv.getArgument(0);
-            if (c.getId() == null) {
-                c.setId(UUID.randomUUID());
-            }
-            return c;
+            return c.getId() == null ? c.toBuilder().id(UUID.randomUUID()).build() : c;
         });
 
         // Default TO for a past-season renewal is end of Q1 (S2), per spec — used here as the chosen TO.
@@ -364,7 +358,7 @@ class RenewContestUseCaseTest {
         when(contestRepo.save(any())).thenAnswer(inv -> {
             Contest c = inv.getArgument(0);
             if (c.getId() == null) {
-                c.setId(UUID.randomUUID());
+                c = c.toBuilder().id(UUID.randomUUID()).build();
             }
             return c;
         });
@@ -438,7 +432,7 @@ class RenewContestUseCaseTest {
         when(contestRepo.save(any())).thenAnswer(inv -> {
             Contest c = inv.getArgument(0);
             if (c.getId() == null) {
-                c.setId(UUID.randomUUID());
+                c = c.toBuilder().id(UUID.randomUUID()).build();
             }
             return c;
         });

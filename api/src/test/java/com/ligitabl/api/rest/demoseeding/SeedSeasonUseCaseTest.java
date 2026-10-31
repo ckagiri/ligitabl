@@ -109,7 +109,7 @@ class SeedSeasonUseCaseTest {
         defaultContest = createContest(season);
 
         // SeedSeasonUseCase resolves the default contest via season.mainContestId
-        season.setMainContestId(defaultContest.getId());
+        season = season.toBuilder().mainContestId(defaultContest.getId()).build();
 
         lenient().when(roundAdvancementService.advanceManually(any())).thenReturn(true);
     }

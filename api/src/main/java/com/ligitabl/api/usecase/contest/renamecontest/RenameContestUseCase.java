@@ -36,7 +36,7 @@ public class RenameContestUseCase {
                 trimmed,
                 contest.getId())) return Either.left(new RenameContestError.NameConflict(trimmed));
 
-        contest.setName(trimmed);
+        contest.rename(trimmed);
         Contest saved = contestRepo.save(contest);
 
         log.info("User {} renamed contest {} to '{}'", cmd.userId(), contest.getId(), trimmed);

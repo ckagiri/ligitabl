@@ -155,7 +155,7 @@ public class RenewContestUseCase {
 
         entryRepo.copyActiveEntries(original.getId(), savedRenewed.getId(), savedRenewed.getFromRoundPosition());
 
-        original.setRenewedIntoContestId(savedRenewed.getId());
+        original.markRenewedInto(savedRenewed.getId());
         contestRepo.save(original);
 
         log.info("User {} renewed contest {} into {}", cmd.userId(), original.getId(), savedRenewed.getId());

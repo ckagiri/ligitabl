@@ -8,8 +8,8 @@ import java.util.UUID;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.ToString;
 import lombok.experimental.SuperBuilder;
 
 /**
@@ -21,9 +21,9 @@ import lombok.experimental.SuperBuilder;
  * once — which is why the result lives in nullable fields on this object rather than in a
  * submission/result pair.
  */
-@Data
-@EqualsAndHashCode(callSuper = true, onlyExplicitlyIncluded = true)
-@SuperBuilder
+@Getter
+@ToString
+@SuperBuilder(toBuilder = true)
 public class FinalTablePrediction extends AbstractModel<UUID> {
     @NotNull
     private UUID userId;
@@ -86,5 +86,21 @@ public class FinalTablePrediction extends AbstractModel<UUID> {
         swaps.add(change);
         swapCount = swaps.size();
         settledAt = at;
+    }
+
+    /** The table after {@code changes}. An empty batch leaves the settle time where it was. */
+    public void recordSwaps(List<TeamRank> newRankings, List<SwapChange> changes, Instant at) {
+        rankings = newRankings;
+        changes.forEach(change -> addSwap(change, at));
+    }
+
+    public void recordScore(FinalTableScore score, Instant at) {
+        resultRankings = score.resultRankings();
+        baseScore = score.baseScore();
+        zeroesCount = score.zeroesCount();
+        bonusPoints = score.bonusPoints();
+        championBonus = score.championBonus();
+        totalScore = score.totalScore();
+        scoredAt = at;
     }
 }

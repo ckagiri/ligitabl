@@ -149,14 +149,12 @@ class CreatePredictionUseCaseTest {
 
         when(predictionRepo.save(any())).thenAnswer(i -> {
             SeasonPrediction p = i.getArgument(0);
-            p.setId(predictionId);
-            return p;
+            return p.toBuilder().id(predictionId).build();
         });
 
         when(entryRepo.save(any())).thenAnswer(i -> {
             var e = i.getArgument(0, Entry.class);
-            e.setId(entryId);
-            return e;
+            return e.toBuilder().id(entryId).build();
         });
 
         Either<CreatePredictionError, CreatePredictionResult> result =
@@ -402,8 +400,8 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void shouldReject_whenLastRoundAndNotOpen() {
-        round.setPosition(3);
-        season.setMaxRounds(3);
+        round = round.toBuilder().position(3).build();
+        season = season.toBuilder().maxRounds(3).build();
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
@@ -421,10 +419,8 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void shouldReject_whenLastRoundAdvanced() {
-        round.setPosition(3);
-        round.setFinalized(true);
-        round.setAdvanced(true);
-        season.setMaxRounds(3);
+        round = round.toBuilder().position(3).finalized(true).advanced(true).build();
+        season = season.toBuilder().maxRounds(3).build();
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
@@ -441,9 +437,11 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void shouldRegisterPreSeason_whenSeasonIsPreSeason() {
-        season.setPredictionsOpenAt(atNow().plusDays(30));
-        season.setPreSeasonOpensAt(atNow().minusDays(1));
-        season.setStartDate(atNow().toLocalDate().plusDays(1));
+        season = season.toBuilder()
+                .predictionsOpenAt(atNow().plusDays(30))
+                .preSeasonOpensAt(atNow().minusDays(1))
+                .startDate(atNow().toLocalDate().plusDays(1))
+                .build();
         // isPreSeason() == true: !isOffSeason && !isInPlay && preSeasonOpen && beforeActualStart
 
         UUID predictionId = UUID.randomUUID();
@@ -454,13 +452,11 @@ class CreatePredictionUseCaseTest {
         when(contestRepo.findById(season.getMainContestId())).thenReturn(Optional.of(defaultContest));
         when(predictionRepo.save(any())).thenAnswer(i -> {
             SeasonPrediction p = i.getArgument(0);
-            p.setId(predictionId);
-            return p;
+            return p.toBuilder().id(predictionId).build();
         });
         when(entryRepo.save(any())).thenAnswer(i -> {
             var e = i.getArgument(0, Entry.class);
-            e.setId(entryId);
-            return e;
+            return e.toBuilder().id(entryId).build();
         });
 
         Either<CreatePredictionError, CreatePredictionResult> result =
@@ -483,9 +479,11 @@ class CreatePredictionUseCaseTest {
 
     @Test
     void shouldReject_whenAlreadyPreRegistered_andStillPreSeason() {
-        season.setPredictionsOpenAt(atNow().plusDays(30));
-        season.setPreSeasonOpensAt(atNow().minusDays(1));
-        season.setStartDate(atNow().toLocalDate().plusDays(1));
+        season = season.toBuilder()
+                .predictionsOpenAt(atNow().plusDays(30))
+                .preSeasonOpensAt(atNow().minusDays(1))
+                .startDate(atNow().toLocalDate().plusDays(1))
+                .build();
         SeasonPrediction preSeasonPrediction = SeasonPrediction.builder()
                 .id(UUID.randomUUID())
                 .userId(userId)
@@ -734,13 +732,11 @@ class CreatePredictionUseCaseTest {
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
         when(predictionRepo.save(any())).thenAnswer(i -> {
             SeasonPrediction p = i.getArgument(0);
-            p.setId(predictionId);
-            return p;
+            return p.toBuilder().id(predictionId).build();
         });
         when(entryRepo.save(any())).thenAnswer(i -> {
             var e = i.getArgument(0, Entry.class);
-            e.setId(entryId);
-            return e;
+            return e.toBuilder().id(entryId).build();
         });
 
         Either<CreatePredictionError, CreatePredictionResult> result = useCase.execute(userId, command);
@@ -764,9 +760,11 @@ class CreatePredictionUseCaseTest {
         // Ended / last-round-must-be-OPEN checks, which have no business failing a round-0
         // registration. This is what the lazy Supplier in executeJoinPlan protects — an eagerly
         // resolved value would drag those checks onto this branch.
-        season.setPredictionsOpenAt(atNow().plusDays(30));
-        season.setPreSeasonOpensAt(atNow().minusDays(1));
-        season.setStartDate(atNow().toLocalDate().plusDays(1));
+        season = season.toBuilder()
+                .predictionsOpenAt(atNow().plusDays(30))
+                .preSeasonOpensAt(atNow().minusDays(1))
+                .startDate(atNow().toLocalDate().plusDays(1))
+                .build();
         var command = new JoinLockedRoundCommand(season, defaultContest, round.getPosition());
 
         when(predictionRepo.findByUserAndSeason(userId, season.getId())).thenReturn(Optional.empty());
@@ -820,13 +818,11 @@ class CreatePredictionUseCaseTest {
         // default table during pre-season must be indistinguishable afterwards.
         when(predictionRepo.save(any())).thenAnswer(i -> {
             SeasonPrediction p = i.getArgument(0);
-            p.setId(UUID.randomUUID());
-            return p;
+            return p.toBuilder().id(UUID.randomUUID()).build();
         });
         when(entryRepo.save(any())).thenAnswer(i -> {
             Entry e = i.getArgument(0);
-            e.setId(UUID.randomUUID());
-            return e;
+            return e.toBuilder().id(UUID.randomUUID()).build();
         });
 
         var result = useCase.execute(userId, new RegisterDefaultTableCommand(season, defaultContest));
@@ -862,19 +858,19 @@ class CreatePredictionUseCaseTest {
         // on isPreSeason(), which is false by the time the auto-join fires. A plain
         // CreatePredictionCommand here would produce a NewJoin row instead.
         Season inPlaySeason = createSeason();
-        inPlaySeason.setPreSeasonOpensAt(atNow().minusDays(30));
-        inPlaySeason.setPredictionsOpenAt(atNow().minusHours(1));
+        inPlaySeason = inPlaySeason.toBuilder()
+                .preSeasonOpensAt(atNow().minusDays(30))
+                .predictionsOpenAt(atNow().minusHours(1))
+                .build();
         assertThat(inPlaySeason.isPreSeason(now)).isFalse();
 
         when(predictionRepo.save(any())).thenAnswer(i -> {
             SeasonPrediction p = i.getArgument(0);
-            p.setId(UUID.randomUUID());
-            return p;
+            return p.toBuilder().id(UUID.randomUUID()).build();
         });
         when(entryRepo.save(any())).thenAnswer(i -> {
             Entry e = i.getArgument(0);
-            e.setId(UUID.randomUUID());
-            return e;
+            return e.toBuilder().id(UUID.randomUUID()).build();
         });
 
         var result = useCase.execute(userId, new RegisterDefaultTableCommand(inPlaySeason, defaultContest));
@@ -891,8 +887,10 @@ class CreatePredictionUseCaseTest {
         // The consequence that matters to the user: after auto-join they still get the full
         // 5-swap merge form, not the 1-2 swap round-opening path.
         Season inPlaySeason = createSeason();
-        inPlaySeason.setPreSeasonOpensAt(atNow().minusDays(30));
-        inPlaySeason.setPredictionsOpenAt(atNow().minusHours(1));
+        inPlaySeason = inPlaySeason.toBuilder()
+                .preSeasonOpensAt(atNow().minusDays(30))
+                .predictionsOpenAt(atNow().minusHours(1))
+                .build();
 
         SeasonPrediction autoRegistered = SeasonPrediction.builder()
                 .id(UUID.randomUUID())

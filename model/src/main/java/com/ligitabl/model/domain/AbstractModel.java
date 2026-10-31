@@ -3,12 +3,10 @@ package com.ligitabl.model.domain;
 import com.ligitabl.model.shared.Identifiable;
 
 import lombok.Getter;
-import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 
 @Getter
-@Setter
-@SuperBuilder
+@SuperBuilder(toBuilder = true)
 public abstract class AbstractModel<ID> implements Identifiable<ID> {
     protected ID id;
 

@@ -291,7 +291,7 @@ class SyncMatchesUseCaseTest {
         var season = createSeason();
         var round = createRound();
         var finished = createMatch(1, MatchStatus.FINISHED, OffsetDateTime.now().minusHours(3));
-        finished.setScore(2, 1);
+        finished.recordScore(2, 1);
         var upcoming =
                 createMatch(2, MatchStatus.SCHEDULED, OffsetDateTime.now().plusDays(1));
 

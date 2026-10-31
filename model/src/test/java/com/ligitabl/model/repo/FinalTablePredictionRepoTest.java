@@ -137,12 +137,13 @@ class FinalTablePredictionRepoTest {
     private FinalTablePrediction saveScored(
             String publicId, int totalScore, int zeroes, Instant settledAt, Instant createDate) {
         UUID userId = insertUser(publicId);
-        FinalTablePrediction row = newRow(userId, settledAt);
-        row.setBaseScore(totalScore - zeroes * 10);
-        row.setZeroesCount(zeroes);
-        row.setBonusPoints(zeroes * 10);
-        row.setTotalScore(totalScore);
-        row.setScoredAt(BASE.plusSeconds(999_999));
+        FinalTablePrediction row = newRow(userId, settledAt).toBuilder()
+                .baseScore(totalScore - zeroes * 10)
+                .zeroesCount(zeroes)
+                .bonusPoints(zeroes * 10)
+                .totalScore(totalScore)
+                .scoredAt(BASE.plusSeconds(999_999))
+                .build();
         FinalTablePrediction saved = repo.save(row);
 
         if (createDate != null) {
@@ -249,12 +250,12 @@ class FinalTablePredictionRepoTest {
                 .userId(userId)
                 .seasonId(seasonId)
                 .rankings(rankings())
+                .baseScore(250)
+                .zeroesCount(5)
+                .bonusPoints(50)
+                .totalScore(300)
+                .scoredAt(BASE.plusSeconds(999_999))
                 .build();
-        row.setBaseScore(250);
-        row.setZeroesCount(5);
-        row.setBonusPoints(50);
-        row.setTotalScore(300);
-        row.setScoredAt(BASE.plusSeconds(999_999));
         FinalTablePrediction saved = repo.save(row);
 
         // Force both the create date and the settle time to an earlier instant, mirroring how the

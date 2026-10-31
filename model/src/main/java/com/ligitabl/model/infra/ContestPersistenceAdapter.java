@@ -35,10 +35,10 @@ public class ContestPersistenceAdapter implements ContestRepo {
     }
 
     @Override
-    public Contest save(Contest contest) {
-        if (contest.getId() == null) {
-            contest.setId(UUID.randomUUID());
-        }
+    public Contest save(Contest unsaved) {
+        Contest contest = unsaved.getId() == null
+                ? unsaved.toBuilder().id(UUID.randomUUID()).build()
+                : unsaved;
 
         // c_create_date/c_update_date are never set explicitly — DB default + BEFORE UPDATE
         // trigger populate them, and .returning() reads them straight back onto the saved model.
@@ -69,12 +69,13 @@ public class ContestPersistenceAdapter implements ContestRepo {
                 .returning(T_CONTEST.C_CREATE_DATE, T_CONTEST.C_UPDATE_DATE)
                 .fetchOne();
 
-        if (record != null) {
-            contest.setCreateDate(record.getCreateDate());
-            contest.setUpdateDate(record.getUpdateDate());
+        if (record == null) {
+            return contest;
         }
-
-        return contest;
+        return contest.toBuilder()
+                .createDate(record.getCreateDate())
+                .updateDate(record.getUpdateDate())
+                .build();
     }
 
     @Override

@@ -84,7 +84,7 @@ public class AdvanceMatchdayUseCase {
         log.info("Advancing matchday from {} to {}", currentMatchday, apiMatchday);
 
         var season = context.season();
-        season.setCurrentMatchDay(apiMatchday);
+        season.advanceMatchday(apiMatchday);
         seasonRepo.save(season);
 
         return Either.right(MatchdayAdvancementResult.advanced(context.season().getId(), currentMatchday, apiMatchday));

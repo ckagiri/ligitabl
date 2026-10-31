@@ -26,7 +26,7 @@ public class RestoreResultBannerUseCase {
                 .flatMap(season -> roundResultRepo.findLatestByUserAndSeason(userId, season.getId()))
                 .filter(RoundResult::isUserViewed)
                 .ifPresent(result -> {
-                    result.setUserViewed(false);
+                    result.markUnviewed();
                     roundResultRepo.save(result);
                 });
     }

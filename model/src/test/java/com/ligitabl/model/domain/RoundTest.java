@@ -2,6 +2,7 @@ package com.ligitabl.model.domain;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -126,6 +127,43 @@ class RoundTest {
         var matches = List.of(createMatch(MatchStatus.SCHEDULED));
 
         assertThat(round.computeStatus(matches)).isEqualTo(RoundStatus.FINALIZED);
+    }
+
+    @Test
+    void schedulingAnAdvanceClearsAnEarlierAdvancedFlag() {
+        var round = Round.builder()
+                .id(UUID.randomUUID())
+                .seasonId(UUID.randomUUID())
+                .name("Round 1")
+                .slug("round-1")
+                .advanced(true)
+                .build();
+        var at = OffsetDateTime.parse("2026-01-10T12:00:00Z");
+
+        round.scheduleAdvance(at);
+
+        assertThat(round.getAdvanceAt()).isEqualTo(at);
+        assertThat(round.isAdvanced()).isFalse();
+
+        round.cancelScheduledAdvance();
+
+        assertThat(round.getAdvanceAt()).isNull();
+    }
+
+    @Test
+    void markAdvancedRecordsWhen() {
+        var round = Round.builder()
+                .id(UUID.randomUUID())
+                .seasonId(UUID.randomUUID())
+                .name("Round 1")
+                .slug("round-1")
+                .build();
+        var at = OffsetDateTime.parse("2026-01-10T12:00:00Z");
+
+        round.markAdvanced(at);
+
+        assertThat(round.computeStatus(List.of())).isEqualTo(RoundStatus.ADVANCED);
+        assertThat(round.getAdvancedAt()).isEqualTo(at);
     }
 
     @Test

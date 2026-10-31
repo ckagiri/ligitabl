@@ -79,7 +79,7 @@ class ResultBannerSettingUseCasesTest {
         when(seasonRepo.findActiveSeason(SLUG))
                 .thenReturn(Optional.of(Season.builder().id(SEASON_ID).build()));
         var result = RoundResult.builder().build();
-        result.setUserViewed(viewed);
+        result = result.toBuilder().userViewed(viewed).build();
         when(roundResultRepo.findLatestByUserAndSeason(USER_ID, SEASON_ID)).thenReturn(Optional.of(result));
         return result;
     }

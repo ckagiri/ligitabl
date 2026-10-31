@@ -5,6 +5,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
 import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -172,9 +173,11 @@ class GetFinalTableUseCaseTest {
         UUID userId = UUID.randomUUID();
         FinalTablePrediction prediction = row();
         // Even if score columns were somehow populated, an unscored row must not leak them.
-        prediction.setTotalScore(425);
-        prediction.setZeroesCount(20);
-        prediction.setChampionBonus(25);
+        prediction = prediction.toBuilder()
+                .totalScore(425)
+                .zeroesCount(20)
+                .championBonus(25)
+                .build();
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
 
         var data = useCase.execute(userId, "abc123", "Foobar").get();
@@ -191,12 +194,14 @@ class GetFinalTableUseCaseTest {
         // Reveal follows the row being scored, not the season being complete.
         UUID userId = UUID.randomUUID();
         FinalTablePrediction prediction = row();
-        prediction.setScoredAt(NOW);
-        prediction.setBaseScore(6);
-        prediction.setZeroesCount(2);
-        prediction.setBonusPoints(20);
-        prediction.setChampionBonus(25);
-        prediction.setTotalScore(51);
+        prediction = prediction.toBuilder()
+                .scoredAt(NOW)
+                .baseScore(6)
+                .zeroesCount(2)
+                .bonusPoints(20)
+                .championBonus(25)
+                .totalScore(51)
+                .build();
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
 
         var data = useCase.execute(userId, "abc123", "Foobar").get();
@@ -211,7 +216,7 @@ class GetFinalTableUseCaseTest {
     @Test
     void entryIsClosedOnceTheSeasonIsCompletedEvenThoughThePageStillRenders() {
         // The waiting/result page must stay readable for nine months; only editing closes.
-        season.setCompleted(true);
+        season.complete(NOW.atOffset(ZoneOffset.UTC));
         UUID userId = UUID.randomUUID();
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
 
@@ -316,7 +321,7 @@ class GetFinalTableUseCaseTest {
 
     /** Closes entry and puts a standings table behind the season, i.e. mid-season. */
     private void lockedWithStandings(List<StandingsTeamRank> rankings) {
-        season.setCompleted(true);
+        season.complete(NOW.atOffset(ZoneOffset.UTC));
         when(standingsRepo.findLatestBySeason(seasonId))
                 .thenReturn(Optional.of(Standings.builder()
                         .id(UUID.randomUUID())
@@ -399,7 +404,7 @@ class GetFinalTableUseCaseTest {
         // rather than a table of dashes.
         UUID userId = UUID.randomUUID();
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(row()));
-        season.setCompleted(true);
+        season.complete(NOW.atOffset(ZoneOffset.UTC));
         when(standingsRepo.findLatestBySeason(seasonId)).thenReturn(Optional.empty());
 
         var data = useCase.execute(userId, "abc123", "Foobar").get();
@@ -413,9 +418,9 @@ class GetFinalTableUseCaseTest {
         // Revealed wins: the result table is authoritative, so there is nothing provisional to show.
         UUID userId = UUID.randomUUID();
         FinalTablePrediction prediction = row();
-        prediction.setScoredAt(NOW);
+        prediction = prediction.toBuilder().scoredAt(NOW).build();
         when(predictionRepo.findByUserAndSeason(userId, seasonId)).thenReturn(Optional.of(prediction));
-        season.setCompleted(true);
+        season.complete(NOW.atOffset(ZoneOffset.UTC));
 
         var data = useCase.execute(userId, "abc123", "Foobar").get();
 
@@ -426,7 +431,7 @@ class GetFinalTableUseCaseTest {
 
     @Test
     void liveProgressIsOffForAGuest() {
-        season.setCompleted(true);
+        season.complete(NOW.atOffset(ZoneOffset.UTC));
 
         var data = useCase.execute(null, null, null).get();
 

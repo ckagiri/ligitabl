@@ -166,7 +166,7 @@ public class FinalizeRoundUseCase {
 
             // Step 5: Mark round as finalized (do NOT advance season pointer here)
             if (!ctx.round().isFinalized()) {
-                ctx.round().setFinalized(true);
+                ctx.round().markFinalized();
                 roundRepo.save(ctx.round());
                 log.info("Round {} marked as finalized", ctx.round().getPosition());
             }
@@ -244,9 +244,7 @@ public class FinalizeRoundUseCase {
                             .finalisedAt(null)
                             .build());
 
-            standings.setRankings(rankings);
-            standings.setFinalised(true);
-            standings.setFinalisedAt(now());
+            standings.finalise(rankings, now());
 
             return Either.right(saveStandings(standings));
 

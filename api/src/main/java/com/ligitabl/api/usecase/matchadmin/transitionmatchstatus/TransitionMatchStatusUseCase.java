@@ -78,7 +78,7 @@ public class TransitionMatchStatusUseCase
                                 return Either.left(
                                         UseCaseErrors.validation("Score is required when transitioning to FINISHED"));
                             }
-                            match.setScore(
+                            match.recordScore(
                                     cmd.getScore().getHomeGoals(),
                                     cmd.getScore().getAwayGoals());
                         }

@@ -51,15 +51,13 @@ public class MatchUpdateHelper {
             return false;
         }
 
-        existing.setStatus(newStatus);
+        existing.updateFromFeed(newStatus, feedMatch.minute(), feedMatch.injuryTime());
         if (kickoffChanged) {
-            existing.setKickOff(feedMatch.kickoff());
+            existing.changeKickOff(feedMatch.kickoff());
         }
         if (feedMatch.matchday() != null) {
-            existing.setMatchday(feedMatch.matchday());
+            existing.moveToMatchday(feedMatch.matchday());
         }
-        existing.setMinute(feedMatch.minute());
-        existing.setInjuryTime(feedMatch.injuryTime());
         applyScore(existing, feedMatch);
 
         return true;
@@ -85,7 +83,7 @@ public class MatchUpdateHelper {
 
     private void applyScore(Match existing, FeedMatch feedMatch) {
         if (hasScore(feedMatch)) {
-            existing.setScore(feedMatch.homeGoals(), feedMatch.awayGoals());
+            existing.recordScore(feedMatch.homeGoals(), feedMatch.awayGoals());
         }
     }
 

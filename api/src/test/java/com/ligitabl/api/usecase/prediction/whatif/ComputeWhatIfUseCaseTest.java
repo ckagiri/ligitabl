@@ -246,7 +246,7 @@ class ComputeWhatIfUseCaseTest {
     void shouldExcludePostponedMatch_fromRequiredScoresAndCalculation() {
         stubCurrentRound();
         Match postponed = scheduledMatch(round2Id, teamMciId, teamCheId);
-        postponed.setStatus(MatchStatus.POSTPONED);
+        postponed = postponed.toBuilder().status(MatchStatus.POSTPONED).build();
 
         when(matchRepo.findByRoundId(round2Id))
                 .thenReturn(List.of(currentArsMci, currentLivChe, postponed)); // still OPEN: POSTPONED is neutral
@@ -266,7 +266,7 @@ class ComputeWhatIfUseCaseTest {
     void shouldRejectPostponedMatchScore_asUnknownMatch() {
         stubCurrentRound();
         Match postponed = scheduledMatch(round2Id, teamMciId, teamCheId);
-        postponed.setStatus(MatchStatus.POSTPONED);
+        postponed = postponed.toBuilder().status(MatchStatus.POSTPONED).build();
 
         when(matchRepo.findByRoundId(round2Id)).thenReturn(List.of(currentArsMci, currentLivChe, postponed));
         when(matchRepo.findByRoundIdWithTeams(round2Id)).thenReturn(List.of(currentArsMci, currentLivChe, postponed));

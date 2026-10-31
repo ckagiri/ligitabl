@@ -127,7 +127,9 @@ class RoundOpeningSwapUseCaseTest {
 
     @Test
     void shouldUpdateAtRoundNumber_toRoundPosition() {
-        prediction.setAtRoundNumber(round.getPosition() - 1); // stale, distinct from the round being opened
+        // stale, distinct from the round being opened
+        prediction =
+                prediction.toBuilder().atRoundNumber(round.getPosition() - 1).build();
         var command = new RoundOpeningSwapCommand(List.of(new SwapCommand("ARS", "LIV")));
 
         stubHappyPath();
@@ -191,7 +193,7 @@ class RoundOpeningSwapUseCaseTest {
 
     @Test
     void shouldReject_whenSeasonCompleted() {
-        season.setCompleted(true);
+        season = season.toBuilder().completed(true).build();
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
 
         var command = new RoundOpeningSwapCommand(List.of(new SwapCommand("ARS", "LIV")));
@@ -247,8 +249,8 @@ class RoundOpeningSwapUseCaseTest {
 
     @Test
     void shouldReject_whenLastRoundFinalized() {
-        season.setMaxRounds(5);
-        round.setFinalized(true);
+        season = season.toBuilder().maxRounds(5).build();
+        round = round.toBuilder().finalized(true).build();
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
@@ -263,9 +265,8 @@ class RoundOpeningSwapUseCaseTest {
 
     @Test
     void shouldReject_whenLastRoundAdvanced() {
-        season.setMaxRounds(5);
-        round.setFinalized(true);
-        round.setAdvanced(true);
+        season = season.toBuilder().maxRounds(5).build();
+        round = round.toBuilder().finalized(true).advanced(true).build();
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
@@ -282,7 +283,10 @@ class RoundOpeningSwapUseCaseTest {
 
     @Test
     void shouldReject_whenOpeningAlreadyUsedThisRound() {
-        prediction.setOpeningCommittedRound(round.getPosition()); // already committed
+        // already committed
+        prediction = prediction.toBuilder()
+                .openingCommittedRound(round.getPosition())
+                .build();
 
         when(seasonRepo.findActiveSeason("premier-league")).thenReturn(Optional.of(season));
         when(roundRepo.findById(season.getCurrentRoundId())).thenReturn(Optional.of(round));
@@ -300,7 +304,10 @@ class RoundOpeningSwapUseCaseTest {
 
     @Test
     void shouldAllow_whenOpeningCommittedRoundIsFromPreviousRound() {
-        prediction.setOpeningCommittedRound(round.getPosition() - 1); // previous round
+        // previous round
+        prediction = prediction.toBuilder()
+                .openingCommittedRound(round.getPosition() - 1)
+                .build();
 
         stubHappyPath();
         when(predictionRepo.save(any())).thenAnswer(i -> i.getArgument(0));

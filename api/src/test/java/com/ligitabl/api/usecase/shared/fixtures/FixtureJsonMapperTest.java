@@ -106,9 +106,9 @@ class FixtureJsonMapperTest {
                 .status(status)
                 .matchday(1)
                 .build();
-        match.setTeams(home, away);
+        match.attachTeams(home, away);
         if (homeGoals != null && awayGoals != null) {
-            match.setScore(homeGoals, awayGoals);
+            match.recordScore(homeGoals, awayGoals);
         }
         return match;
     }

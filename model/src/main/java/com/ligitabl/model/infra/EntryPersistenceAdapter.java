@@ -51,11 +51,12 @@ public class EntryPersistenceAdapter implements EntryRepo {
                 .set(T_ENTRY.C_REMOVED_AT, (OffsetDateTime) null)
                 .execute();
 
-        if (entry.getId() == null) {
-            entry.setId(syntheticId(entry.getUserId(), entry.getContestId()));
+        if (entry.getId() != null) {
+            return entry;
         }
-
-        return entry;
+        return entry.toBuilder()
+                .id(syntheticId(entry.getUserId(), entry.getContestId()))
+                .build();
     }
 
     @Override
