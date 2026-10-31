@@ -20,8 +20,8 @@ import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.TeamSlug;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.league.TeamSlug;
 import com.ligitabl.model.infra.TeamPersistenceAdapter;
 
 import liquibase.Contexts;

@@ -4,7 +4,7 @@ import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.usecase.team.createteam.CreateTeamCommand;
 import com.ligitabl.api.usecase.team.updateteam.UpdateTeamCommand;
-import com.ligitabl.model.domain.Team;
+import com.ligitabl.model.domain.league.Team;
 
 @Component
 public class TeamMapper {

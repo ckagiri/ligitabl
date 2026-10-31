@@ -21,10 +21,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.testsupport.TestClock;
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.auth.Role;
-import com.ligitabl.model.domain.EmailVerificationToken;
-import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.identity.Email;
+import com.ligitabl.model.domain.identity.EmailVerificationToken;
+import com.ligitabl.model.domain.identity.Role;
+import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.EmailVerificationTokenRepo;
 import com.ligitabl.model.repo.UserRepo;
 

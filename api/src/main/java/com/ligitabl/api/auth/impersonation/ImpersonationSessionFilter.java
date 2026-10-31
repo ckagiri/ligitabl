@@ -10,7 +10,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.ligitabl.api.auth.security.WebUserDetails;
-import com.ligitabl.model.auth.Role;
+import com.ligitabl.model.domain.identity.Role;
 import com.ligitabl.model.repo.UserRepo;
 
 import jakarta.servlet.FilterChain;

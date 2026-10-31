@@ -25,10 +25,10 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.usecase.account.googlelink.LinkGoogleUseCase;
 import com.ligitabl.api.usecase.auth.recordlogin.RecordLoginUseCase;
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.auth.Role;
-import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.identity.Email;
+import com.ligitabl.model.domain.identity.PublicId;
+import com.ligitabl.model.domain.identity.Role;
+import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.UserRepo;
 
 /**

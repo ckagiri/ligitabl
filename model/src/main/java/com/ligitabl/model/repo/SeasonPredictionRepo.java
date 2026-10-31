@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.SeasonPrediction;
+import com.ligitabl.model.domain.prediction.SeasonPrediction;
 
 public interface SeasonPredictionRepo {
     Optional<SeasonPrediction> findByUserAndSeason(UUID userId, UUID seasonId);

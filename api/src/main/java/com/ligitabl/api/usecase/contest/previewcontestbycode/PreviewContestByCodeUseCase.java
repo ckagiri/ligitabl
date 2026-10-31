@@ -10,16 +10,16 @@ import java.util.Optional;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.Contest;
-import com.ligitabl.model.domain.PhaseType;
-import com.ligitabl.model.domain.RoundSpan;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.contest.Contest;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.PhaseType;
+import com.ligitabl.model.domain.league.RoundSpan;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.query.RoundDateRange;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.MatchRepo;
-import com.ligitabl.model.repo.MatchRepo.RoundDateRange;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;

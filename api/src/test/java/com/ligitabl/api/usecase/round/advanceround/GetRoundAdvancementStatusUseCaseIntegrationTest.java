@@ -25,8 +25,8 @@ import com.ligitabl.api.shared.errors.NotFoundError;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.FixedClockConfig;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.RoundStatus;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.RoundStatus;
 import com.ligitabl.model.repo.RoundRepo;
 
 @SpringBootTest

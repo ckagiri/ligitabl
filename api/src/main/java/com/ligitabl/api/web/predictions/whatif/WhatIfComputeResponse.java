@@ -4,7 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.ligitabl.api.usecase.prediction.whatif.WhatIfResult;
-import com.ligitabl.model.domain.StandingsTeamRank;
+import com.ligitabl.model.domain.league.StandingsTeamRank;
 
 /**
  * teamCode-keyed maps, deliberately the same shape as {@code UserPredictionViewData}'s

@@ -12,7 +12,7 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundCommand;
 import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundError;
 import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundUseCase;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 

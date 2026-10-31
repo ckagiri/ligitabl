@@ -15,7 +15,7 @@ import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.usecase.contest.shared.ContestSeasonSupport;
 import com.ligitabl.api.web.contest.contestdetail.ContestDetailController.MemberRow;
 import com.ligitabl.api.web.shared.security.WebSecurity;
-import com.ligitabl.model.domain.Entry;
+import com.ligitabl.model.domain.contest.Entry;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.UserRepo;

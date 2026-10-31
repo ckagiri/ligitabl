@@ -17,9 +17,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
-import com.ligitabl.model.domain.Contest;
-import com.ligitabl.model.domain.Entry;
-import com.ligitabl.model.domain.SeasonPrediction;
+import com.ligitabl.model.domain.contest.Contest;
+import com.ligitabl.model.domain.contest.Entry;
+import com.ligitabl.model.domain.prediction.SeasonPrediction;
+import com.ligitabl.model.query.UserContestView;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
@@ -187,11 +188,9 @@ class ContestPersistenceAdapterIT extends AbstractPostgresIT {
         joinContest(upcoming.getId());
         joinContest(inProgress.getId());
 
-        List<ContestRepo.UserContestView> result = contestRepo.findContestsByUserId(userId, seasonId, true, 10, 0);
+        List<UserContestView> result = contestRepo.findContestsByUserId(userId, seasonId, true, 10, 0);
 
-        assertThat(result)
-                .extracting(ContestRepo.UserContestView::contestId)
-                .containsExactly(inProgress.getId(), upcoming.getId());
+        assertThat(result).extracting(UserContestView::contestId).containsExactly(inProgress.getId(), upcoming.getId());
     }
 
     private void setCurrentRoundPosition(int position) {

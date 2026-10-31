@@ -7,11 +7,11 @@ import java.util.Objects;
 
 import com.ligitabl.api.usecase.prediction.shared.PredictionAccessMode;
 import com.ligitabl.api.usecase.prediction.shared.RankingSource;
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.RoundResult;
-import com.ligitabl.model.domain.SwapChange;
-import com.ligitabl.model.domain.SwapCooldown;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.prediction.RoundResult;
+import com.ligitabl.model.domain.prediction.SwapChange;
+import com.ligitabl.model.domain.prediction.SwapCooldown;
 
 import lombok.Builder;
 

@@ -1,7 +1,7 @@
 package com.ligitabl.api.web.predictions.whatif;
 
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.Score;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.Score;
 
 import lombok.Builder;
 

@@ -14,9 +14,9 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.MatchStatus;
-import com.ligitabl.model.domain.Score;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.MatchStatus;
+import com.ligitabl.model.domain.league.Score;
 import com.ligitabl.model.repo.MatchRepo;
 
 @SpringBootTest

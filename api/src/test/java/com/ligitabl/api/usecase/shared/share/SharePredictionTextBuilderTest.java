@@ -11,9 +11,9 @@ import java.util.stream.IntStream;
 
 import org.junit.jupiter.api.Test;
 
-import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.TeamRank;
-import com.ligitabl.model.domain.TeamSlug;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.league.TeamSlug;
 
 class SharePredictionTextBuilderTest {
 

@@ -9,10 +9,10 @@ import org.springframework.stereotype.Component;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.RoundStatus;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.RoundStatus;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.TeamRank;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 

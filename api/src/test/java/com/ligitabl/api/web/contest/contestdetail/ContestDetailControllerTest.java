@@ -36,7 +36,7 @@ import com.ligitabl.api.usecase.contest.getprivatecontest.GetPrivateContestUseCa
 import com.ligitabl.api.usecase.contest.renewcontest.GetContestRenewalOptionsUseCase;
 import com.ligitabl.api.usecase.contest.shared.ContestSeasonSupport;
 import com.ligitabl.api.usecase.contest.shared.ContestSupport;
-import com.ligitabl.model.auth.Role;
+import com.ligitabl.model.domain.identity.Role;
 import com.ligitabl.model.repo.UserRepo;
 
 /**

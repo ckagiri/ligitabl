@@ -3,7 +3,7 @@ package com.ligitabl.api.usecase.competition.shared;
 import java.util.List;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.Competition;
+import com.ligitabl.model.domain.league.Competition;
 
 import lombok.Builder;
 import lombok.Value;

@@ -16,9 +16,9 @@ import org.jooq.RecordMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.model.db.tables.records.SeasonRecord;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.SeasonSlug;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.SeasonSlug;
+import com.ligitabl.model.domain.league.TeamRank;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;

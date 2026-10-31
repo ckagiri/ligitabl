@@ -9,7 +9,7 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.match.shared.MatchFeed;
 import com.ligitabl.api.usecase.match.shared.MatchUpdateHelper;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
-import com.ligitabl.model.domain.MatchStatus;
+import com.ligitabl.model.domain.league.MatchStatus;
 import com.ligitabl.model.repo.MatchRepo;
 
 import lombok.RequiredArgsConstructor;

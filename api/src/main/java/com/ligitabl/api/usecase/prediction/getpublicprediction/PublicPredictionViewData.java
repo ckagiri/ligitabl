@@ -5,8 +5,8 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.ligitabl.api.usecase.shared.dto.PublicRankDto;
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.SwapChange;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.prediction.SwapChange;
 
 import lombok.Builder;
 

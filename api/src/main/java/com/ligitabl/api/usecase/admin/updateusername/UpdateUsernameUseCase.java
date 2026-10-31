@@ -8,7 +8,7 @@ import java.util.regex.Pattern;
 import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 
-import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.UserRepo;
 
 import lombok.RequiredArgsConstructor;

@@ -9,7 +9,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.model.domain.Match;
+import com.ligitabl.model.domain.league.Match;
 import com.ligitabl.model.repo.MatchRepo;
 
 import lombok.RequiredArgsConstructor;

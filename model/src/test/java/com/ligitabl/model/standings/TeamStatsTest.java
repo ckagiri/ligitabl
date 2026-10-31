@@ -6,8 +6,8 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import com.ligitabl.model.domain.TeamMatchView;
-import com.ligitabl.model.domain.standings.stats.TeamStats;
+import com.ligitabl.model.domain.league.TeamMatchView;
+import com.ligitabl.model.domain.league.standings.stats.TeamStats;
 
 class TeamStatsTest {
 

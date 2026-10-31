@@ -11,8 +11,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.SeasonSlug;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.SeasonSlug;
 
 /**
  * {@link SeasonPhase} drives the season-phase banners on the homepage and the predictions page —

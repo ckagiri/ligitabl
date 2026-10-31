@@ -14,9 +14,9 @@ import org.jooq.RecordMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.model.db.tables.records.CompetitionRecord;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.CompetitionSlug;
-import com.ligitabl.model.domain.RoundSpan;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.CompetitionSlug;
+import com.ligitabl.model.domain.league.RoundSpan;
 import com.ligitabl.model.repo.CompetitionRepo;
 
 import lombok.RequiredArgsConstructor;

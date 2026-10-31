@@ -4,7 +4,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.RoundStatus;
+import com.ligitabl.model.domain.league.RoundStatus;
 
 import lombok.Builder;
 

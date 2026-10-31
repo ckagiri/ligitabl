@@ -14,8 +14,8 @@ import org.mockito.MockitoAnnotations;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.usecase.competition.shared.CompetitionDto;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.CompetitionSlug;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.CompetitionSlug;
 import com.ligitabl.model.repo.CompetitionRepo;
 
 class GetCompetitionsUseCaseTest {

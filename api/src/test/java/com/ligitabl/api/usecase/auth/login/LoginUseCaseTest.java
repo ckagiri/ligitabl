@@ -19,12 +19,12 @@ import com.ligitabl.api.shared.errors.AuthorizationError;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecase.shared.auth.TokenGenerator;
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.auth.Password;
-import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.auth.Role;
-import com.ligitabl.model.domain.User;
-import com.ligitabl.model.domain.service.PasswordHasher;
+import com.ligitabl.model.domain.identity.Email;
+import com.ligitabl.model.domain.identity.Password;
+import com.ligitabl.model.domain.identity.PasswordHasher;
+import com.ligitabl.model.domain.identity.PublicId;
+import com.ligitabl.model.domain.identity.Role;
+import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.UserRepo;
 
 @ExtendWith(MockitoExtension.class)

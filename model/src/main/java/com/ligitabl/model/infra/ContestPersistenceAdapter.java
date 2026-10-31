@@ -17,7 +17,8 @@ import org.jooq.SelectConditionStep;
 import org.jooq.impl.DSL;
 
 import com.ligitabl.model.db.tables.records.ContestRecord;
-import com.ligitabl.model.domain.Contest;
+import com.ligitabl.model.domain.contest.Contest;
+import com.ligitabl.model.query.UserContestView;
 import com.ligitabl.model.repo.ContestRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -162,7 +163,7 @@ public class ContestPersistenceAdapter implements ContestRepo {
     }
 
     @Override
-    public List<ContestRepo.UserContestView> findContestsByUserId(
+    public List<UserContestView> findContestsByUserId(
             UUID userId, UUID activeSeasonId, boolean activeTab, int limit, int offset) {
         var generals = unionBranchForContests(userId, activeSeasonId, activeTab, false);
         var privates = unionBranchForContests(userId, activeSeasonId, activeTab, true);
@@ -175,7 +176,7 @@ public class ContestPersistenceAdapter implements ContestRepo {
                         DSL.field("joined_at_round").desc())
                 .limit(limit)
                 .offset(offset)
-                .fetch(r -> new ContestRepo.UserContestView(
+                .fetch(r -> new UserContestView(
                         r.get("contest_id", UUID.class),
                         r.get("contest_name", String.class),
                         r.get("season_id", UUID.class),

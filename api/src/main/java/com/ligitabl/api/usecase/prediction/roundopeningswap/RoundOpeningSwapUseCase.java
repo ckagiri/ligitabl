@@ -12,7 +12,11 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.prediction.makeswap.SwapCommand;
 import com.ligitabl.api.usecase.prediction.makeswap.SwapError;
 import com.ligitabl.api.usecase.prediction.shared.SwapHelper;
-import com.ligitabl.model.domain.*;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.RoundStatus;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.prediction.SeasonPrediction;
+import com.ligitabl.model.domain.prediction.TeamSwap;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 
 import lombok.RequiredArgsConstructor;

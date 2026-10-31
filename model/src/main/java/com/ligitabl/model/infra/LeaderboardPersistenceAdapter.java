@@ -16,8 +16,8 @@ import org.jooq.Field;
 import org.jooq.Record7;
 import org.jooq.impl.DSL;
 
-import com.ligitabl.model.domain.LeaderboardEntry;
-import com.ligitabl.model.domain.LeaderboardResponse;
+import com.ligitabl.model.query.LeaderboardEntry;
+import com.ligitabl.model.query.LeaderboardResponse;
 import com.ligitabl.model.repo.LeaderboardRepo;
 
 import lombok.RequiredArgsConstructor;

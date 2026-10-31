@@ -33,10 +33,10 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.leaderboard.getleaderboard.GetLeaderboardQuery;
 import com.ligitabl.api.usecase.leaderboard.getleaderboard.GetLeaderboardResult;
 import com.ligitabl.api.usecase.leaderboard.getleaderboard.GetLeaderboardUseCase;
-import com.ligitabl.model.auth.Role;
-import com.ligitabl.model.domain.LeaderboardEntry;
-import com.ligitabl.model.domain.PhaseType;
-import com.ligitabl.model.domain.RoundSpan;
+import com.ligitabl.model.domain.identity.Role;
+import com.ligitabl.model.domain.league.PhaseType;
+import com.ligitabl.model.domain.league.RoundSpan;
+import com.ligitabl.model.query.LeaderboardEntry;
 
 import jakarta.servlet.http.HttpServletResponse;
 

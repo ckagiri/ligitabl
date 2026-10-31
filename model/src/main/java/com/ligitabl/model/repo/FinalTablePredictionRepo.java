@@ -4,9 +4,9 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.FinalTableEntrant;
-import com.ligitabl.model.domain.FinalTableLeaderboardEntry;
-import com.ligitabl.model.domain.FinalTablePrediction;
+import com.ligitabl.model.domain.prediction.FinalTablePrediction;
+import com.ligitabl.model.query.FinalTableEntrant;
+import com.ligitabl.model.query.FinalTableLeaderboardEntry;
 
 public interface FinalTablePredictionRepo {
     Optional<FinalTablePrediction> findByUserAndSeason(UUID userId, UUID seasonId);

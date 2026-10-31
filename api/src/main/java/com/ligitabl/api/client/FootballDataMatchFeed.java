@@ -11,7 +11,7 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.match.shared.FeedMatch;
 import com.ligitabl.api.usecase.match.shared.MatchFeed;
 import com.ligitabl.api.usecase.match.shared.MatchFeedError;
-import com.ligitabl.model.domain.MatchStatus;
+import com.ligitabl.model.domain.league.MatchStatus;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

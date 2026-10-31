@@ -31,7 +31,7 @@ import com.ligitabl.api.usecase.prediction.createprediction.JoinLockedRoundComma
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.api.usecase.shared.outbox.RoundLockedPayload;
 import com.ligitabl.api.usecase.shared.outbox.SeasonInPlayPayload;
-import com.ligitabl.model.domain.OutboxEvent;
+import com.ligitabl.model.outbox.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 
 /**

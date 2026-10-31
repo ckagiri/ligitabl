@@ -15,8 +15,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.model.domain.LeaderboardEntry;
-import com.ligitabl.model.domain.LeaderboardResponse;
+import com.ligitabl.model.query.LeaderboardEntry;
+import com.ligitabl.model.query.LeaderboardResponse;
 import com.ligitabl.model.repo.LeaderboardRepo;
 
 @ExtendWith(MockitoExtension.class)

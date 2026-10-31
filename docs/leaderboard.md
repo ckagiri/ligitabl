@@ -108,6 +108,6 @@ If a user did not appear in the previous span, movement defaults to 0.
 
 ## Related structures
 
-- `LeaderboardResponse`: [model/src/main/java/com/ligitabl/model/domain/LeaderboardResponse.java](model/src/main/java/com/ligitabl/model/domain/LeaderboardResponse.java)
-- `LeaderboardEntry`: [model/src/main/java/com/ligitabl/model/domain/LeaderboardEntry.java](model/src/main/java/com/ligitabl/model/domain/LeaderboardEntry.java)
+- `LeaderboardResponse`: [model/src/main/java/com/ligitabl/model/query/LeaderboardResponse.java](model/src/main/java/com/ligitabl/model/query/LeaderboardResponse.java)
+- `LeaderboardEntry`: [model/src/main/java/com/ligitabl/model/query/LeaderboardEntry.java](model/src/main/java/com/ligitabl/model/query/LeaderboardEntry.java)
 - `LeaderboardRepo`: [model/src/main/java/com/ligitabl/model/repo/LeaderboardRepo.java](model/src/main/java/com/ligitabl/model/repo/LeaderboardRepo.java)

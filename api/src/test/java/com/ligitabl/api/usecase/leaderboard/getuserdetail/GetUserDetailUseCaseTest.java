@@ -18,19 +18,19 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.CompetitionSlug;
-import com.ligitabl.model.domain.ResultTeamRank;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.RoundResult;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.SeasonPrediction;
-import com.ligitabl.model.domain.SeasonSlug;
-import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.TeamRank;
-import com.ligitabl.model.domain.TeamSlug;
-import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.identity.PublicId;
+import com.ligitabl.model.domain.identity.User;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.CompetitionSlug;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.SeasonSlug;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.league.TeamSlug;
+import com.ligitabl.model.domain.prediction.ResultTeamRank;
+import com.ligitabl.model.domain.prediction.RoundResult;
+import com.ligitabl.model.domain.prediction.SeasonPrediction;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.RoundResultRepo;
@@ -127,7 +127,7 @@ class GetUserDetailUseCaseTest {
 
         int effectiveToRound = 4;
 
-        var submission = com.ligitabl.model.domain.RoundSubmission.builder()
+        var submission = com.ligitabl.model.domain.prediction.RoundSubmission.builder()
                 .id(submissionId)
                 .userId(userId)
                 .seasonId(seasonId)
@@ -250,7 +250,7 @@ class GetUserDetailUseCaseTest {
 
         int effectiveToRound = 4;
 
-        var submission = com.ligitabl.model.domain.RoundSubmission.builder()
+        var submission = com.ligitabl.model.domain.prediction.RoundSubmission.builder()
                 .id(submissionId)
                 .userId(userId)
                 .seasonId(seasonId)

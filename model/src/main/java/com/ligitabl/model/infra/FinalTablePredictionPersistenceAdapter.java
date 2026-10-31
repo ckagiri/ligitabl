@@ -21,12 +21,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.model.db.tables.records.FinalTablePredictionRecord;
-import com.ligitabl.model.domain.FinalTableEntrant;
-import com.ligitabl.model.domain.FinalTableLeaderboardEntry;
-import com.ligitabl.model.domain.FinalTablePrediction;
-import com.ligitabl.model.domain.ResultTeamRank;
-import com.ligitabl.model.domain.SwapChange;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.prediction.FinalTablePrediction;
+import com.ligitabl.model.domain.prediction.ResultTeamRank;
+import com.ligitabl.model.domain.prediction.SwapChange;
+import com.ligitabl.model.query.FinalTableEntrant;
+import com.ligitabl.model.query.FinalTableLeaderboardEntry;
 import com.ligitabl.model.repo.FinalTablePredictionRepo;
 
 import lombok.RequiredArgsConstructor;

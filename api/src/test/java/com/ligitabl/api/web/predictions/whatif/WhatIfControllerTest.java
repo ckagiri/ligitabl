@@ -36,13 +36,13 @@ import com.ligitabl.api.usecase.prediction.whatif.SaveWhatIfPredictionUseCase;
 import com.ligitabl.api.usecase.prediction.whatif.WhatIfError;
 import com.ligitabl.api.usecase.prediction.whatif.WhatIfResult;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.RoundStatus;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.StandingsMetadata;
-import com.ligitabl.model.domain.StandingsTeamRank;
-import com.ligitabl.model.domain.TeamRank;
-import com.ligitabl.model.domain.WhatIfPrediction;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.RoundStatus;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.StandingsMetadata;
+import com.ligitabl.model.domain.league.StandingsTeamRank;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.prediction.WhatIfPrediction;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -316,7 +316,7 @@ class WhatIfControllerTest {
                 .thenReturn(Optional.of(WhatIfPrediction.builder()
                         .userId(userId)
                         .roundId(season.getCurrentRoundId())
-                        .scores(List.of(new com.ligitabl.model.domain.WhatIfScore(matchId, 3, 0)))
+                        .scores(List.of(new com.ligitabl.model.domain.prediction.WhatIfScore(matchId, 3, 0)))
                         .build()));
 
         Map<String, Object> body = controller.savedScores(principal, response);
@@ -448,7 +448,7 @@ class WhatIfControllerTest {
                 .thenReturn(Optional.of(WhatIfPrediction.builder()
                         .userId(userId)
                         .roundId(season.getCurrentRoundId())
-                        .scores(List.of(new com.ligitabl.model.domain.WhatIfScore(matchId, 2, 1)))
+                        .scores(List.of(new com.ligitabl.model.domain.prediction.WhatIfScore(matchId, 2, 1)))
                         .build()));
 
         controller.page(principal, model, response, null);

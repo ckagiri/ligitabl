@@ -29,10 +29,18 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.round.advanceround.RoundAdvancementService;
 import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundError;
 import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundUseCase;
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.auth.Role;
-import com.ligitabl.model.domain.*;
+import com.ligitabl.model.domain.contest.Contest;
+import com.ligitabl.model.domain.contest.Entry;
+import com.ligitabl.model.domain.identity.Email;
+import com.ligitabl.model.domain.identity.PublicId;
+import com.ligitabl.model.domain.identity.Role;
+import com.ligitabl.model.domain.identity.User;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.prediction.SeasonPrediction;
 import com.ligitabl.model.repo.*;
 
 @ExtendWith(MockitoExtension.class)

@@ -16,7 +16,7 @@ import com.ligitabl.api.auth.oauth2.OAuth2AuthenticationSuccessHandler;
 import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.usecase.account.googlelink.UnlinkGoogleError;
 import com.ligitabl.api.usecase.account.googlelink.UnlinkGoogleUseCase;
-import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.UserRepo;
 
 import jakarta.servlet.http.HttpSession;

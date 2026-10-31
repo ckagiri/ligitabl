@@ -16,7 +16,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.usecase.account.AccountTestUsers;
-import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.UserRepo;
 
 @ExtendWith(MockitoExtension.class)

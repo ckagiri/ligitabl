@@ -3,8 +3,8 @@ package com.ligitabl.api.auth.crypto;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.model.auth.Password;
-import com.ligitabl.model.domain.service.PasswordHasher;
+import com.ligitabl.model.domain.identity.Password;
+import com.ligitabl.model.domain.identity.PasswordHasher;
 
 import lombok.RequiredArgsConstructor;
 

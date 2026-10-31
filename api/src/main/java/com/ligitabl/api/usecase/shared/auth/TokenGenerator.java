@@ -4,8 +4,8 @@ import java.util.Set;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.AuthenticationError;
-import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.auth.Role;
+import com.ligitabl.model.domain.identity.PublicId;
+import com.ligitabl.model.domain.identity.Role;
 
 public interface TokenGenerator {
     String generateAccessToken(PublicId publicId, Set<Role> roles);

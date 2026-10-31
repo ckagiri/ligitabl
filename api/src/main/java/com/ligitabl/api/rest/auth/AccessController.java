@@ -16,9 +16,9 @@ import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.api.usecase.auth.getcurrentuser.GetCurrentUserQuery;
 import com.ligitabl.api.usecase.auth.getcurrentuser.GetCurrentUserUseCase;
 import com.ligitabl.api.usecase.auth.getcurrentuser.UserInfo;
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.auth.Role;
+import com.ligitabl.model.domain.identity.Email;
+import com.ligitabl.model.domain.identity.PublicId;
+import com.ligitabl.model.domain.identity.Role;
 import com.ligitabl.model.repo.UserRepo;
 
 import lombok.RequiredArgsConstructor;

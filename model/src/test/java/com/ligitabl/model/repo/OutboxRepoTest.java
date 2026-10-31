@@ -19,8 +19,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import com.ligitabl.model.domain.OutboxEvent;
 import com.ligitabl.model.infra.OutboxPersistenceAdapter;
+import com.ligitabl.model.outbox.OutboxEvent;
 
 @Tag("integration")
 class OutboxRepoTest {

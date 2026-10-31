@@ -500,7 +500,7 @@ instead of duplicating them. `api/pom.xml` depends on it as:
 </dependency>
 ```
 
-Example: `CompetitionPhaseFixtures` (`model/src/test/java/com/ligitabl/model/domain/`) holds the
+Example: `CompetitionPhaseFixtures` (`model/src/test/java/com/ligitabl/model/domain/league/`) holds the
 Premier League's real phase structure (mirrors `seed/src/main/resources/seeding/competition.yaml`)
 and is reused by both `PhaseRulesTest` in `model` and several contest-renewal tests in `api`.
 
@@ -866,7 +866,7 @@ directly against a plain object.
 
 ## Unit-testing Thymeleaf templates: use `SpringTemplateEngine`, not bare `TemplateEngine`
 
-**Issue**: A template using SpEL's `T(...)` static-access operator (e.g. `T(com.ligitabl.model.domain.ScoreTier).forScore(score)`
+**Issue**: A template using SpEL's `T(...)` static-access operator (e.g. `T(com.ligitabl.model.domain.prediction.ScoreTier).forScore(score)`
 in `fragments/score-emoji.html`, `fragments/results-banner.html`, `email/round-results.html`) renders fine in the
 running app but throws `OGNL` evaluation errors when exercised from a hand-rolled unit test that constructs its own
 `TemplateEngine`.

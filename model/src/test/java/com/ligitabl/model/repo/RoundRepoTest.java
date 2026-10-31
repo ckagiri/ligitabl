@@ -19,7 +19,7 @@ import org.junit.jupiter.api.Test;
 import com.ligitabl.model.db.tables.TCompetition;
 import com.ligitabl.model.db.tables.TRound;
 import com.ligitabl.model.db.tables.TSeason;
-import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.domain.league.Round;
 import com.ligitabl.model.infra.RoundPersistenceAdapter;
 
 @Tag("integration")

@@ -8,8 +8,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.MatchStatus;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.MatchStatus;
 
 import lombok.extern.slf4j.Slf4j;
 

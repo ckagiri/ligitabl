@@ -16,10 +16,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import com.ligitabl.api.testsupport.TestClock;
 import com.ligitabl.api.usecase.account.AccountTestUsers;
 import com.ligitabl.api.usecase.shared.AdminAlerts;
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.domain.User;
-import com.ligitabl.model.domain.service.PublicIdGenerator;
+import com.ligitabl.model.domain.identity.Email;
+import com.ligitabl.model.domain.identity.PublicId;
+import com.ligitabl.model.domain.identity.PublicIdGenerator;
+import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.UserRepo;
 
 @ExtendWith(MockitoExtension.class)

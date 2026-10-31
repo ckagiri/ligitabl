@@ -1,0 +1,209 @@
+package com.ligitabl.model.domain.league;
+
+import java.util.List;
+import java.util.Optional;
+
+/** Shared validation rules for sprint/quarter windows, used by contest creation and renewal. */
+public final class PhaseRules {
+
+    private PhaseRules() {}
+
+    public static List<RoundSpan> sprintsOf(List<RoundSpan> phases) {
+        return phases.stream().filter(p -> p.getType() == PhaseType.SPRINT).toList();
+    }
+
+    public static List<RoundSpan> quartersOf(List<RoundSpan> phases) {
+        return phases.stream().filter(p -> p.getType() == PhaseType.QUARTER).toList();
+    }
+
+    public static Optional<RoundSpan> findSprintByCode(List<RoundSpan> phases, String code) {
+        return sprintsOf(phases).stream()
+                .filter(s -> s.getCode().equalsIgnoreCase(code))
+                .findFirst();
+    }
+
+    /** The phase of the given code, across all phase types (sprint, quarter, or full season). */
+    public static Optional<RoundSpan> findByCode(List<RoundSpan> phases, String code) {
+        return phases.stream().filter(p -> p.getCode().equalsIgnoreCase(code)).findFirst();
+    }
+
+    /** The sprint that starts at the given round position, e.g. a contest's fromRoundPosition. */
+    public static Optional<RoundSpan> sprintStartingAt(List<RoundSpan> phases, int roundPosition) {
+        return sprintsOf(phases).stream()
+                .filter(s -> s.getFrom() == roundPosition)
+                .findFirst();
+    }
+
+    /** The sprint that ends at the given round position, e.g. a contest's toRoundPosition. */
+    public static Optional<RoundSpan> sprintEndingAt(List<RoundSpan> phases, int roundPosition) {
+        return sprintsOf(phases).stream()
+                .filter(s -> s.getTo() == roundPosition)
+                .findFirst();
+    }
+
+    /** The sprint that contains the given round position (from <= roundPosition <= to). */
+    public static Optional<RoundSpan> sprintContaining(List<RoundSpan> phases, int roundPosition) {
+        return phaseOfTypeContaining(phases, PhaseType.SPRINT, roundPosition);
+    }
+
+    /** The phase of the given type that contains the given round position (from <= roundPosition <= to). */
+    public static Optional<RoundSpan> phaseOfTypeContaining(List<RoundSpan> phases, PhaseType type, int roundPosition) {
+        return phases.stream()
+                .filter(p -> p.getType() == type)
+                .filter(p -> p.getFrom() <= roundPosition && roundPosition <= p.getTo())
+                .findFirst();
+    }
+
+    /** LIVE / FINISHED / NEXT / FUTURE for a (from, to) window vs. the current round position. */
+    public static String deriveStatus(int from, int to, int currentPosition) {
+        if (currentPosition >= from && currentPosition <= to) return "LIVE";
+        if (to < currentPosition) return "FINISHED";
+        if (from == currentPosition + 1) return "NEXT";
+        return "FUTURE";
+    }
+
+    /**
+     * LIVE / FINISHED / NEXT / FUTURE for a (from, to) window vs. the current round, using
+     * sprint-level adjacency for NEXT: "next" means the sprint immediately following the current
+     * round's own sprint is this window's first sprint — true for the window's entire preceding
+     * sprint, not just the single round right before it starts (unlike {@link #deriveStatus}, which
+     * is round-level and only used for the segment navigator's own sibling-segment highlighting).
+     */
+    public static String deriveWindowStatus(int from, int to, int currentPosition, List<RoundSpan> phases) {
+        if (currentPosition >= from && currentPosition <= to) return "LIVE";
+        if (to < currentPosition) return "FINISHED";
+
+        List<RoundSpan> sprints = sprintsOf(phases);
+        int currentIdx =
+                sprintContaining(phases, currentPosition).map(sprints::indexOf).orElse(-1);
+        if (currentIdx >= 0
+                && currentIdx + 1 < sprints.size()
+                && sprints.get(currentIdx + 1).getFrom() == from) {
+            return "NEXT";
+        }
+        return "FUTURE";
+    }
+
+    public static boolean isQuarterStart(RoundSpan sprint, List<RoundSpan> quarters) {
+        return quarters.stream().anyMatch(q -> sprint.getFrom() == q.getFrom() && sprint.getTo() <= q.getTo());
+    }
+
+    public static boolean isQuarterEnd(RoundSpan sprint, List<RoundSpan> quarters) {
+        return quarters.stream().anyMatch(q -> sprint.getTo() == q.getTo() && sprint.getFrom() >= q.getFrom());
+    }
+
+    /**
+     * Single sprint (from == to) is always valid. Multi-sprint requires from to be a quarter
+     * start, to to be a quarter end, and to to come after from.
+     */
+    public static boolean isValidSprintWindow(RoundSpan from, RoundSpan to, List<RoundSpan> phases) {
+        if (from.getCode().equalsIgnoreCase(to.getCode())) return true;
+
+        List<RoundSpan> quarters = quartersOf(phases);
+        boolean toIsAfterFrom = to.getFrom() > from.getTo();
+
+        return isQuarterStart(from, quarters) && isQuarterEnd(to, quarters) && toIsAfterFrom;
+    }
+
+    /** The quarter's last sprint (the sprint whose `to` matches the quarter's `to`). */
+    public static RoundSpan endOfQuarterContaining(RoundSpan sprint, List<RoundSpan> phases) {
+        List<RoundSpan> quarters = quartersOf(phases);
+        RoundSpan quarter = quarters.stream()
+                .filter(q -> q.getFrom() <= sprint.getFrom() && q.getTo() >= sprint.getTo())
+                .findFirst()
+                .orElseThrow(
+                        () -> new IllegalStateException("Sprint " + sprint.getCode() + " is not within any quarter"));
+
+        return sprintsOf(phases).stream()
+                .filter(s -> s.getTo() == quarter.getTo())
+                .findFirst()
+                .orElseThrow(
+                        () -> new IllegalStateException("Quarter " + quarter.getCode() + " has no closing sprint"));
+    }
+
+    /**
+     * A short label for a from/to window: a single sprint uses its own code (e.g. "S3"); a span
+     * aligned to exactly one quarter uses that quarter's code (e.g. "Q2"); a span covering every
+     * quarter uses "FS" (full season); a span aligned to exactly one half of the season (first or
+     * second pair of quarters) uses "H1"/"H2"; any other multi-quarter span uses a quarter range
+     * (e.g. "Q1-3"). Used both to distinguish repeated contest renewals (e.g. "Homeboyz" →
+     * "Homeboyz H2") and to label a contest's own window.
+     */
+    public static String periodLabel(RoundSpan from, RoundSpan to, List<RoundSpan> phases) {
+        if (from.equals(to)) return from.getCode();
+
+        List<RoundSpan> quarters = quartersOf(phases);
+        int startIdx = indexOfQuarterContaining(quarters, from.getFrom());
+        int endIdx = indexOfQuarterContaining(quarters, to.getTo());
+        if (startIdx < 0 || endIdx < 0) return from.getCode() + "-" + to.getCode();
+
+        if (startIdx == endIdx) return quarters.get(startIdx).getCode();
+
+        if (startIdx == 0 && endIdx == quarters.size() - 1) return "FS";
+
+        int span = endIdx - startIdx + 1;
+        int halfSize = quarters.size() / 2;
+        if (quarters.size() % 2 == 0 && span == halfSize && startIdx % halfSize == 0) {
+            return "H" + (startIdx / halfSize + 1);
+        }
+        return "Q" + (startIdx + 1) + "-" + (endIdx + 1);
+    }
+
+    /**
+     * {@link #periodLabel(RoundSpan, RoundSpan, List)} resolved directly from round positions
+     * (e.g. a contest's or view's from/to), for callers that don't already have the from/to
+     * sprints resolved. Null if either round position doesn't align to a sprint boundary.
+     */
+    public static String resolvePeriodLabel(List<RoundSpan> phases, int fromRoundPosition, int toRoundPosition) {
+        return sprintStartingAt(phases, fromRoundPosition)
+                .flatMap(from -> sprintEndingAt(phases, toRoundPosition).map(to -> periodLabel(from, to, phases)))
+                .orElse(null);
+    }
+
+    /**
+     * The round position to use for "current phase" resolution: while the current round is still
+     * underway (not yet finalized), the round in progress hasn't contributed results yet, so the
+     * previous round is used instead — unless it's round 1, which has nothing before it.
+     */
+    public static int effectivePosition(Round round) {
+        int pos = round.getPosition();
+        return (!round.isFinalized() && pos > 1) ? pos - 1 : pos;
+    }
+
+    /**
+     * Resolves the phase to show: an explicit {@code phaseCode} always wins; otherwise defaults to
+     * the current sprint, falling back to the current quarter, then to the full-season phase.
+     * {@code effectiveRoundPosition} may be null (e.g. no current round yet), in which case the
+     * sprint/quarter lookups are skipped and only the full-season fallback applies.
+     */
+    public static RoundSpan resolvePhase(List<RoundSpan> phases, String phaseCode, Integer effectiveRoundPosition) {
+        if (phaseCode != null) {
+            return findByCode(phases, phaseCode).orElse(null);
+        }
+
+        if (effectiveRoundPosition != null) {
+            RoundSpan resolved = phaseOfTypeContaining(phases, PhaseType.SPRINT, effectiveRoundPosition)
+                    .orElse(null);
+            if (resolved == null) {
+                resolved = phaseOfTypeContaining(phases, PhaseType.QUARTER, effectiveRoundPosition)
+                        .orElse(null);
+            }
+            if (resolved != null) {
+                return resolved;
+            }
+        }
+
+        return phases.stream()
+                .filter(p -> p.getType() == PhaseType.FULL_SEASON)
+                .findFirst()
+                .orElse(null);
+    }
+
+    private static int indexOfQuarterContaining(List<RoundSpan> quarters, int roundPosition) {
+        for (int i = 0; i < quarters.size(); i++) {
+            RoundSpan quarter = quarters.get(i);
+            if (quarter.getFrom() <= roundPosition && roundPosition <= quarter.getTo()) return i;
+        }
+        return -1;
+    }
+}

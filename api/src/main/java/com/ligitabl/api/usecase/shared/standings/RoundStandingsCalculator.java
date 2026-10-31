@@ -9,10 +9,14 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.model.domain.*;
-import com.ligitabl.model.domain.standings.StandingsConverter;
-import com.ligitabl.model.domain.standings.stats.Standing;
-import com.ligitabl.model.domain.standings.table.StandingsCalculator;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.Standings;
+import com.ligitabl.model.domain.league.StandingsTeamRank;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.league.standings.StandingsConverter;
+import com.ligitabl.model.domain.league.standings.stats.Standing;
+import com.ligitabl.model.domain.league.standings.table.StandingsCalculator;
 import com.ligitabl.model.repo.*;
 
 import lombok.RequiredArgsConstructor;

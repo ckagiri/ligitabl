@@ -6,9 +6,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.TeamRank;
-import com.ligitabl.model.domain.TeamSlug;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.league.TeamSlug;
 
 public interface TeamRepo extends BaseCrudRepo<Team, UUID> {
     List<Team> findAll();

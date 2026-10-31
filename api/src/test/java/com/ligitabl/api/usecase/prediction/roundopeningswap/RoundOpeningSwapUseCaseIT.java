@@ -30,9 +30,9 @@ import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.api.testsupport.TestIds;
 import com.ligitabl.api.usecase.prediction.makeswap.SwapCommand;
 import com.ligitabl.api.usecase.prediction.makeswap.SwapError;
-import com.ligitabl.model.domain.RoundStatus;
-import com.ligitabl.model.domain.SeasonPrediction;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.RoundStatus;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.prediction.SeasonPrediction;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 
 /**

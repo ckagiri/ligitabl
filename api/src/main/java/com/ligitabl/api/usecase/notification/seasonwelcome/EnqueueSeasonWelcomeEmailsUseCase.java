@@ -8,8 +8,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.api.usecase.shared.outbox.SeasonWelcomeFanoutPayload;
 import com.ligitabl.api.usecase.shared.outbox.SeasonWelcomePayload;
-import com.ligitabl.model.domain.OutboxEvent;
-import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.identity.User;
+import com.ligitabl.model.outbox.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 import com.ligitabl.model.repo.UserRepo;
 

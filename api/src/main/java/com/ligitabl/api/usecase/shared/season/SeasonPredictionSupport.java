@@ -11,12 +11,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.usecase.shared.share.SharePredictionTextBuilder;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.SeasonPrediction;
-import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.TeamRank;
-import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.identity.User;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.prediction.SeasonPrediction;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;

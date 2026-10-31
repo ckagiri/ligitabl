@@ -13,14 +13,14 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.prediction.getprediction.GetPredictionResult.SwapStatus;
 import com.ligitabl.api.usecase.prediction.shared.RankingSource;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.RoundStatus;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.SeasonPrediction;
-import com.ligitabl.model.domain.Standings;
-import com.ligitabl.model.domain.StandingsTeamRank;
-import com.ligitabl.model.domain.SwapEligibility;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.RoundStatus;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.Standings;
+import com.ligitabl.model.domain.league.StandingsTeamRank;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.prediction.SeasonPrediction;
+import com.ligitabl.model.domain.prediction.SwapEligibility;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -184,7 +184,7 @@ public class GetPredictionUseCase {
             Integer atRoundNumber,
             RankingSource source,
             List<TeamRank> rankings,
-            List<com.ligitabl.model.domain.RoundSwap> swaps,
+            List<com.ligitabl.model.domain.prediction.RoundSwap> swaps,
             Instant lastSwapAt,
             SeasonPrediction prediction) {}
 }

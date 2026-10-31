@@ -22,12 +22,12 @@ import com.ligitabl.api.usecase.auth.googlesignin.GoogleIdentity;
 import com.ligitabl.api.usecase.auth.googlesignin.SignInWithGoogleError;
 import com.ligitabl.api.usecase.auth.googlesignin.SignInWithGoogleUseCase;
 import com.ligitabl.api.usecase.auth.login.VerifyCredentialsUseCase;
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.auth.Password;
-import com.ligitabl.model.auth.Role;
-import com.ligitabl.model.domain.User;
-import com.ligitabl.model.domain.service.PasswordHasher;
-import com.ligitabl.model.domain.service.PublicIdGenerator;
+import com.ligitabl.model.domain.identity.Email;
+import com.ligitabl.model.domain.identity.Password;
+import com.ligitabl.model.domain.identity.PasswordHasher;
+import com.ligitabl.model.domain.identity.PublicIdGenerator;
+import com.ligitabl.model.domain.identity.Role;
+import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.UserRepo;
 
 /**

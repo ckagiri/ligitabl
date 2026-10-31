@@ -26,10 +26,10 @@ import com.ligitabl.api.usecase.prediction.getpublicprediction.PublicPredictionV
 import com.ligitabl.api.usecase.shared.fixtures.FixtureJsonMapper;
 import com.ligitabl.api.usecase.standings.shared.FormService;
 import com.ligitabl.api.web.shared.swap.SwapHistoryFormatter;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.SeasonSlug;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.SeasonSlug;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;

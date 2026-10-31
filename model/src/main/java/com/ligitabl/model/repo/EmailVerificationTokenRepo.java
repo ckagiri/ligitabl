@@ -3,7 +3,7 @@ package com.ligitabl.model.repo;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.EmailVerificationToken;
+import com.ligitabl.model.domain.identity.EmailVerificationToken;
 
 public interface EmailVerificationTokenRepo {
     void save(EmailVerificationToken token);

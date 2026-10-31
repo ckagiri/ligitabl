@@ -17,9 +17,9 @@ import com.ligitabl.api.usecase.leaderboard.getleaderboard.GetLeaderboardQuery;
 import com.ligitabl.api.usecase.leaderboard.getleaderboard.GetLeaderboardResult;
 import com.ligitabl.api.usecase.leaderboard.getleaderboard.GetLeaderboardUseCase;
 import com.ligitabl.api.web.shared.security.WebSecurity;
-import com.ligitabl.model.domain.LeaderboardEntry;
-import com.ligitabl.model.domain.PhaseType;
-import com.ligitabl.model.domain.RoundSpan;
+import com.ligitabl.model.domain.league.PhaseType;
+import com.ligitabl.model.domain.league.RoundSpan;
+import com.ligitabl.model.query.LeaderboardEntry;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

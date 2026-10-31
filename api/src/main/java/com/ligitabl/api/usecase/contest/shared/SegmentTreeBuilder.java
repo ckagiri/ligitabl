@@ -11,11 +11,12 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.Contest;
-import com.ligitabl.model.domain.PhaseRules;
-import com.ligitabl.model.domain.PhaseType;
-import com.ligitabl.model.domain.RoundSpan;
+import com.ligitabl.model.domain.contest.Contest;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.PhaseRules;
+import com.ligitabl.model.domain.league.PhaseType;
+import com.ligitabl.model.domain.league.RoundSpan;
+import com.ligitabl.model.query.RoundDateRange;
 import com.ligitabl.model.repo.MatchRepo;
 
 import lombok.RequiredArgsConstructor;
@@ -42,8 +43,7 @@ public class SegmentTreeBuilder {
 
         if (competition == null || competition.getPhases() == null) return List.of();
 
-        Map<Integer, MatchRepo.RoundDateRange> dateRanges =
-                matchRepo.groupRoundDateRangesBySeason(contest.getSeasonId());
+        Map<Integer, RoundDateRange> dateRanges = matchRepo.groupRoundDateRangesBySeason(contest.getSeasonId());
 
         List<RoundSpan> phases = competition.getPhases();
         int from = contest.getFromRoundPosition();
@@ -155,9 +155,9 @@ public class SegmentTreeBuilder {
     }
 
     public String contestDateLabel(UUID seasonId, int from, int to) {
-        Map<Integer, MatchRepo.RoundDateRange> dateRanges = matchRepo.groupRoundDateRangesBySeason(seasonId);
-        MatchRepo.RoundDateRange startRange = dateRanges.get(from);
-        MatchRepo.RoundDateRange endRange = dateRanges.get(to);
+        Map<Integer, RoundDateRange> dateRanges = matchRepo.groupRoundDateRangesBySeason(seasonId);
+        RoundDateRange startRange = dateRanges.get(from);
+        RoundDateRange endRange = dateRanges.get(to);
         if (startRange == null || endRange == null) return "";
         return format(startRange.firstKickoff()) + " – " + format(endRange.lastKickoff());
     }
@@ -167,7 +167,7 @@ public class SegmentTreeBuilder {
             String label,
             RoundSpan span,
             int currentPosition,
-            Map<Integer, MatchRepo.RoundDateRange> dateRanges,
+            Map<Integer, RoundDateRange> dateRanges,
             Integer rank,
             List<SegmentNodeDto> children) {
         String nodeType = children.isEmpty() ? "SPRINT" : (id.equals("overall") ? "OVERALL" : "QUARTER");
@@ -203,9 +203,9 @@ public class SegmentTreeBuilder {
         return "GW " + span.getFrom() + "–" + span.getTo();
     }
 
-    private String dateLabel(RoundSpan span, Map<Integer, MatchRepo.RoundDateRange> dateRanges) {
-        MatchRepo.RoundDateRange startRange = dateRanges.get(span.getFrom());
-        MatchRepo.RoundDateRange endRange = dateRanges.get(span.getTo());
+    private String dateLabel(RoundSpan span, Map<Integer, RoundDateRange> dateRanges) {
+        RoundDateRange startRange = dateRanges.get(span.getFrom());
+        RoundDateRange endRange = dateRanges.get(span.getTo());
         if (startRange == null || endRange == null) return "";
         return format(startRange.firstKickoff()) + " – " + format(endRange.lastKickoff());
     }

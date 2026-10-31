@@ -32,9 +32,9 @@ import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.FixedClockConfig;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.api.testsupport.TestIds;
-import com.ligitabl.model.domain.MatchStatus;
-import com.ligitabl.model.domain.RoundStatus;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.MatchStatus;
+import com.ligitabl.model.domain.league.RoundStatus;
+import com.ligitabl.model.domain.league.TeamRank;
 import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 import com.ligitabl.api.usecase.auth.googlesignin.GoogleIdentity;
 import com.ligitabl.api.usecase.auth.googlesignin.SignInWithGoogleError;
 import com.ligitabl.api.usecase.auth.googlesignin.SignInWithGoogleUseCase;
-import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.identity.User;
 
 import lombok.RequiredArgsConstructor;
 

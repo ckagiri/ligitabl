@@ -13,8 +13,8 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.model.domain.RoundResult;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.prediction.RoundResult;
 import com.ligitabl.model.repo.RoundResultRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 

@@ -21,9 +21,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.model.db.tables.records.SeasonPredictionRecord;
-import com.ligitabl.model.domain.RoundSwap;
-import com.ligitabl.model.domain.SeasonPrediction;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.prediction.RoundSwap;
+import com.ligitabl.model.domain.prediction.SeasonPrediction;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 
 import lombok.RequiredArgsConstructor;

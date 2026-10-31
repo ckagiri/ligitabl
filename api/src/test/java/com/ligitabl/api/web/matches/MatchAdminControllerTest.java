@@ -31,11 +31,11 @@ import com.ligitabl.api.usecase.matchadmin.transitionmatchstatus.TransitionResul
 import com.ligitabl.api.usecase.matchadmin.updatekickoff.UpdateMatchKickoffResult;
 import com.ligitabl.api.usecase.matchadmin.updatekickoff.UpdateMatchKickoffUseCase;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.MatchStatus;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.MatchStatus;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 

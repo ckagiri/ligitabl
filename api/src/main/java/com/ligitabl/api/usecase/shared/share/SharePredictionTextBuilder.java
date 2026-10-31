@@ -5,8 +5,8 @@ import java.util.Map;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.league.TeamRank;
 
 /**
  * Builds the shareable social-media text for a user's prediction table — short enough to post

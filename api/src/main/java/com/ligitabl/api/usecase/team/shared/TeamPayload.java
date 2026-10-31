@@ -1,6 +1,6 @@
 package com.ligitabl.api.usecase.team.shared;
 
-import com.ligitabl.model.domain.TeamSlug;
+import com.ligitabl.model.domain.league.TeamSlug;
 import com.ligitabl.model.validator.ValidSlug;
 
 import jakarta.validation.constraints.NotNull;

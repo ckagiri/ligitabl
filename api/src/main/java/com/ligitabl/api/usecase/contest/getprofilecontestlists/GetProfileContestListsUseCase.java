@@ -13,11 +13,12 @@ import com.ligitabl.api.usecase.contest.renewcontest.GetContestRenewalOptionsUse
 import com.ligitabl.api.usecase.contest.shared.ContestRankResolver;
 import com.ligitabl.api.usecase.contest.shared.ContestSupport;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.PhaseRules;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.RoundSpan;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.PhaseRules;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.RoundSpan;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.query.UserContestView;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
@@ -68,14 +69,14 @@ public class GetProfileContestListsUseCase {
         int activeTotal = contestRepo.countContestsByUserId(query.userId(), activeSeasonId, true);
         int pastTotal = contestRepo.countContestsByUserId(query.userId(), activeSeasonId, false);
 
-        List<ContestRepo.UserContestView> activeViews =
+        List<UserContestView> activeViews =
                 contestRepo.findContestsByUserId(query.userId(), activeSeasonId, true, PAGE_SIZE, activeOffset);
-        List<ContestRepo.UserContestView> pastViews =
+        List<UserContestView> pastViews =
                 contestRepo.findContestsByUserId(query.userId(), activeSeasonId, false, PAGE_SIZE, pastOffset);
 
         Map<UUID, Integer> memberCounts =
                 entryRepo.countActiveByContestIds(Stream.concat(activeViews.stream(), pastViews.stream())
-                        .map(ContestRepo.UserContestView::contestId)
+                        .map(UserContestView::contestId)
                         .toList());
 
         List<ContestSummary> activeContests = activeViews.stream()
@@ -92,7 +93,7 @@ public class GetProfileContestListsUseCase {
     }
 
     private ContestSummary toSummary(
-            ContestRepo.UserContestView view,
+            UserContestView view,
             UUID userId,
             Map<UUID, Integer> memberCounts,
             List<RoundSpan> phases,
@@ -133,7 +134,7 @@ public class GetProfileContestListsUseCase {
                 .build();
     }
 
-    private Integer resolveRank(ContestRepo.UserContestView view, UUID userId) {
+    private Integer resolveRank(UserContestView view, UUID userId) {
         try {
             return contestRankResolver
                     .resolve(

@@ -14,7 +14,7 @@ import org.jooq.JSONB;
 import org.jooq.impl.DSL;
 
 import com.ligitabl.model.db.tables.records.OutboxEventRecord;
-import com.ligitabl.model.domain.OutboxEvent;
+import com.ligitabl.model.outbox.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 
 import lombok.RequiredArgsConstructor;

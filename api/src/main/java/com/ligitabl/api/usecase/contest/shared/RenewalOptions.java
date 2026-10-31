@@ -2,10 +2,10 @@ package com.ligitabl.api.usecase.contest.shared;
 
 import java.util.List;
 
-import com.ligitabl.model.domain.Contest;
-import com.ligitabl.model.domain.ContestRenewalCalculator;
-import com.ligitabl.model.domain.PhaseRules;
-import com.ligitabl.model.domain.RoundSpan;
+import com.ligitabl.model.domain.contest.Contest;
+import com.ligitabl.model.domain.contest.ContestRenewalCalculator;
+import com.ligitabl.model.domain.league.PhaseRules;
+import com.ligitabl.model.domain.league.RoundSpan;
 
 /** The renew control on a contest row: whether to show it, and the sprint codes it offers. */
 public record RenewalOptions(

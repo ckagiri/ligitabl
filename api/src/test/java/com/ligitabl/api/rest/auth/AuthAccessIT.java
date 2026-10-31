@@ -19,12 +19,12 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.auth.Password;
-import com.ligitabl.model.auth.Role;
-import com.ligitabl.model.domain.User;
-import com.ligitabl.model.domain.service.PasswordHasher;
-import com.ligitabl.model.domain.service.PublicIdGenerator;
+import com.ligitabl.model.domain.identity.Email;
+import com.ligitabl.model.domain.identity.Password;
+import com.ligitabl.model.domain.identity.PasswordHasher;
+import com.ligitabl.model.domain.identity.PublicIdGenerator;
+import com.ligitabl.model.domain.identity.Role;
+import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.UserRepo;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

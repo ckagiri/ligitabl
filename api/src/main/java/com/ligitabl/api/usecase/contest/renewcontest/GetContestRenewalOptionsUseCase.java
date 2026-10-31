@@ -7,12 +7,12 @@ import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.contest.shared.RenewalOptions;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.Contest;
-import com.ligitabl.model.domain.ContestRenewalCalculator;
-import com.ligitabl.model.domain.PhaseRules;
-import com.ligitabl.model.domain.RoundSpan;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.contest.Contest;
+import com.ligitabl.model.domain.contest.ContestRenewalCalculator;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.PhaseRules;
+import com.ligitabl.model.domain.league.RoundSpan;
+import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;

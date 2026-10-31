@@ -7,8 +7,8 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.MatchStatus;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.MatchStatus;
 
 import io.sentry.Sentry;
 import lombok.extern.slf4j.Slf4j;

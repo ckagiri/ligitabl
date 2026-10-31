@@ -3,7 +3,7 @@ package com.ligitabl.api.usecase.prediction.whatif;
 import java.util.List;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.StandingsTeamRank;
+import com.ligitabl.model.domain.league.StandingsTeamRank;
 
 /**
  * @param roundOpen whether the round was still open when this was computed — a closed round's

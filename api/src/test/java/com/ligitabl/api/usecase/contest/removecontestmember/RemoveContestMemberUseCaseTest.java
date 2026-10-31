@@ -13,8 +13,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.usecase.contest.shared.ContestSeasonSupport;
-import com.ligitabl.model.domain.Contest;
-import com.ligitabl.model.domain.Entry;
+import com.ligitabl.model.domain.contest.Contest;
+import com.ligitabl.model.domain.contest.Entry;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
 

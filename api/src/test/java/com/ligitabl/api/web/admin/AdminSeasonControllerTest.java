@@ -30,10 +30,10 @@ import com.ligitabl.api.usecase.season.switchseason.ActivateSeasonUseCase;
 import com.ligitabl.api.usecase.season.switchseason.AssignUpcomingSeasonUseCase;
 import com.ligitabl.api.usecase.season.switchseason.RevertSeasonUseCase;
 import com.ligitabl.api.usecase.season.updateseasondates.UpdateSeasonDatesUseCase;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.CompetitionSlug;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.SeasonSlug;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.CompetitionSlug;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.SeasonSlug;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 

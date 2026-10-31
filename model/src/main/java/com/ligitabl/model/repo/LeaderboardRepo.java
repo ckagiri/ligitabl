@@ -2,7 +2,7 @@ package com.ligitabl.model.repo;
 
 import java.util.UUID;
 
-import com.ligitabl.model.domain.LeaderboardResponse;
+import com.ligitabl.model.query.LeaderboardResponse;
 
 /**
  * Repository for computing user contest leaderboards

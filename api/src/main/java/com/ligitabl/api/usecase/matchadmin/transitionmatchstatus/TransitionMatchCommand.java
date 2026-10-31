@@ -2,7 +2,7 @@ package com.ligitabl.api.usecase.matchadmin.transitionmatchstatus;
 
 import java.util.Optional;
 
-import com.ligitabl.model.domain.MatchStatus;
+import com.ligitabl.model.domain.league.MatchStatus;
 
 import jakarta.annotation.Nullable;
 import lombok.Builder;

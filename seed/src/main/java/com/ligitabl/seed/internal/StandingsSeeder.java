@@ -5,9 +5,9 @@ import static com.ligitabl.model.db.tables.TStandings.T_STANDINGS;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ligitabl.model.domain.StandingsMetadata;
-import com.ligitabl.model.domain.StandingsTeamRank;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.StandingsMetadata;
+import com.ligitabl.model.domain.league.StandingsTeamRank;
+import com.ligitabl.model.domain.league.TeamRank;
 import java.io.IOException;
 import java.util.List;
 import java.util.UUID;

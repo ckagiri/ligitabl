@@ -10,7 +10,7 @@ import java.util.UUID;
 import org.jooq.DSLContext;
 
 import com.ligitabl.model.db.tables.records.EmailVerificationTokenRecord;
-import com.ligitabl.model.domain.EmailVerificationToken;
+import com.ligitabl.model.domain.identity.EmailVerificationToken;
 import com.ligitabl.model.repo.EmailVerificationTokenRepo;
 
 import lombok.RequiredArgsConstructor;

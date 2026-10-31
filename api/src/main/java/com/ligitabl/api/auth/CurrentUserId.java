@@ -11,8 +11,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import com.ligitabl.api.auth.impersonation.CurrentUserFacade;
 import com.ligitabl.api.auth.impersonation.UserSummary;
-import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.identity.PublicId;
+import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.UserRepo;
 
 import lombok.RequiredArgsConstructor;

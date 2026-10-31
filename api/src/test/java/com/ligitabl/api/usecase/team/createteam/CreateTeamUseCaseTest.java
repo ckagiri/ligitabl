@@ -15,7 +15,7 @@ import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.ValidationError;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecase.team.shared.TeamMapper;
-import com.ligitabl.model.domain.Team;
+import com.ligitabl.model.domain.league.Team;
 import com.ligitabl.model.repo.TeamRepo;
 
 class CreateTeamUseCaseTest {

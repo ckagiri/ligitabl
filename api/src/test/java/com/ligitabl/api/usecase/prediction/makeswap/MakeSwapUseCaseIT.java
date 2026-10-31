@@ -30,11 +30,11 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.FixedClockConfig;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
-import com.ligitabl.model.domain.RoundStatus;
-import com.ligitabl.model.domain.RoundSwap;
-import com.ligitabl.model.domain.SeasonPrediction;
-import com.ligitabl.model.domain.SwapChange;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.RoundStatus;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.prediction.RoundSwap;
+import com.ligitabl.model.domain.prediction.SeasonPrediction;
+import com.ligitabl.model.domain.prediction.SwapChange;
 import com.ligitabl.model.repo.SeasonPredictionRepo;
 
 @SpringBootTest

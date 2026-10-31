@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import com.ligitabl.api.scheduling.health.JobHeartbeat;
 import com.ligitabl.api.scheduling.health.JobNames;
 import com.ligitabl.api.scheduling.health.ScheduledJobRunner;
-import com.ligitabl.model.domain.OutboxEvent;
+import com.ligitabl.model.outbox.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 
 import io.sentry.Sentry;

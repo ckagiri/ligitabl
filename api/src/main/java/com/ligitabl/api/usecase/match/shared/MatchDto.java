@@ -6,9 +6,9 @@ import java.util.Map;
 import java.util.UUID;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.Score;
-import com.ligitabl.model.domain.Team;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.Score;
+import com.ligitabl.model.domain.league.Team;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

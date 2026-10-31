@@ -16,8 +16,8 @@ import com.ligitabl.api.usecase.finaltable.savefinaltable.SaveFinalTableCommand;
 import com.ligitabl.api.usecase.finaltable.savefinaltable.SaveFinalTablePredictionUseCase;
 import com.ligitabl.api.usecase.finaltable.shared.FinalTableError;
 import com.ligitabl.api.web.shared.security.WebSecurity;
-import com.ligitabl.model.domain.FinalTablePrediction;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.prediction.FinalTablePrediction;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

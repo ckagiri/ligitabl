@@ -1,6 +1,6 @@
 package com.ligitabl.api.auth.impersonation;
 
-import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.identity.User;
 
 public interface ImpersonationAuthorizationService {
 

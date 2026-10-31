@@ -11,7 +11,7 @@ import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecase.round.shared.RoundDto;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.repo.RoundRepo;
 
 import lombok.RequiredArgsConstructor;

@@ -7,12 +7,12 @@ import java.util.Map;
 
 import org.junit.jupiter.api.Test;
 
-import com.ligitabl.model.domain.ResultTeamRank;
-import com.ligitabl.model.domain.StandingsMetadata;
-import com.ligitabl.model.domain.StandingsTeamRank;
-import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.TeamRank;
-import com.ligitabl.model.domain.TeamSlug;
+import com.ligitabl.model.domain.league.StandingsMetadata;
+import com.ligitabl.model.domain.league.StandingsTeamRank;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.league.TeamSlug;
+import com.ligitabl.model.domain.prediction.ResultTeamRank;
 
 class FinalTableRowsJsonTest {
 

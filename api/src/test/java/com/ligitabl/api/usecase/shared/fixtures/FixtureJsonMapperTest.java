@@ -7,10 +7,10 @@ import java.util.UUID;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.MatchStatus;
-import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.TeamSlug;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.MatchStatus;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.league.TeamSlug;
 
 class FixtureJsonMapperTest {
 

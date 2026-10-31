@@ -8,8 +8,8 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
-import com.ligitabl.model.domain.ContestJoinWindow;
-import com.ligitabl.model.domain.Entry;
+import com.ligitabl.model.domain.contest.ContestJoinWindow;
+import com.ligitabl.model.domain.contest.Entry;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;

@@ -13,8 +13,8 @@ import org.springframework.stereotype.Component;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.Team;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.Team;
 import com.ligitabl.model.repo.TeamRepo;
 
 import lombok.RequiredArgsConstructor;

@@ -12,9 +12,9 @@ import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.config.WorkflowConfiguration;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 

@@ -19,14 +19,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.testsupport.TestCalendar;
-import com.ligitabl.model.domain.FinalTablePrediction;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.Standings;
-import com.ligitabl.model.domain.StandingsMetadata;
-import com.ligitabl.model.domain.StandingsTeamRank;
-import com.ligitabl.model.domain.TeamRank;
-import com.ligitabl.model.domain.service.FinalTableScorer;
-import com.ligitabl.model.domain.service.ScoringEngine;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.Standings;
+import com.ligitabl.model.domain.league.StandingsMetadata;
+import com.ligitabl.model.domain.league.StandingsTeamRank;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.prediction.FinalTablePrediction;
+import com.ligitabl.model.domain.prediction.FinalTableScorer;
+import com.ligitabl.model.domain.prediction.ScoringEngine;
 import com.ligitabl.model.repo.FinalTablePredictionRepo;
 import com.ligitabl.model.repo.StandingsRepo;
 

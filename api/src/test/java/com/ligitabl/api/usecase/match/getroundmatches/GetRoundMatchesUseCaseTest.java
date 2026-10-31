@@ -19,9 +19,9 @@ import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecase.match.shared.MatchDto;
 import com.ligitabl.api.usecase.match.shared.MatchEnricher;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.MatchStatus;
-import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.MatchStatus;
+import com.ligitabl.model.domain.league.Round;
 import com.ligitabl.model.repo.MatchRepo;
 
 class GetRoundMatchesUseCaseTest {

@@ -22,12 +22,13 @@ import com.ligitabl.api.usecase.contest.renewcontest.GetContestRenewalOptionsUse
 import com.ligitabl.api.usecase.contest.shared.ContestRankResolver;
 import com.ligitabl.api.usecase.contest.shared.ContestSupport;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.CompetitionPhaseFixtures;
-import com.ligitabl.model.domain.CompetitionSlug;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.SeasonSlug;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.CompetitionPhaseFixtures;
+import com.ligitabl.model.domain.league.CompetitionSlug;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.SeasonSlug;
+import com.ligitabl.model.query.UserContestView;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
@@ -94,13 +95,13 @@ class GetProfileContestListsUseCaseTest {
         when(entryRepo.countActiveByContestIds(any())).thenReturn(Map.of());
     }
 
-    private ContestRepo.UserContestView view(int from, int to) {
-        return new ContestRepo.UserContestView(
+    private UserContestView view(int from, int to) {
+        return new UserContestView(
                 UUID.randomUUID(), "Homeboyz", seasonId, "2026/27", false, from, to, true, true, false);
     }
 
-    private ContestRepo.UserContestView view(int from, int to, boolean isPrivate, boolean isOwner) {
-        return new ContestRepo.UserContestView(
+    private UserContestView view(int from, int to, boolean isPrivate, boolean isOwner) {
+        return new UserContestView(
                 UUID.randomUUID(), "Homeboyz", seasonId, "2026/27", false, from, to, isPrivate, true, isOwner);
     }
 

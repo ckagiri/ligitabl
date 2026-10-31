@@ -4,8 +4,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.TeamRank;
 
 import lombok.Builder;
 import lombok.Value;

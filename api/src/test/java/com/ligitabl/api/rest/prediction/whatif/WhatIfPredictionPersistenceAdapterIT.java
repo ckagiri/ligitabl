@@ -15,8 +15,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.api.testsupport.TestCalendar;
-import com.ligitabl.model.domain.WhatIfPrediction;
-import com.ligitabl.model.domain.WhatIfScore;
+import com.ligitabl.model.domain.prediction.WhatIfPrediction;
+import com.ligitabl.model.domain.prediction.WhatIfScore;
 import com.ligitabl.model.repo.WhatIfPredictionRepo;
 
 @SpringBootTest

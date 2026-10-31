@@ -268,7 +268,7 @@
                 <div
                   class="mt-0.5 text-[11px] text-gray-400"
                   th:if="${zeroesCount != null}"
-                  th:text="${zeroesCount} + ' × ' + ${T(com.ligitabl.model.domain.service.FinalTableScorer).ZERO_BONUS}"
+                  th:text="${zeroesCount} + ' × ' + ${T(com.ligitabl.model.domain.prediction.FinalTableScorer).ZERO_BONUS}"
                 >
                   2 × 10
                 </div>
@@ -292,7 +292,7 @@
                   th:if="${championBonus != null}"
                   th:text="${championBonus > 0}
                     ? 'called it'
-                    : 'missed · ' + ${T(com.ligitabl.model.domain.service.FinalTableScorer).CHAMPION_BONUS} + ' on offer'"
+                    : 'missed · ' + ${T(com.ligitabl.model.domain.prediction.FinalTableScorer).CHAMPION_BONUS} + ' on offer'"
                 >
                   called it
                 </div>

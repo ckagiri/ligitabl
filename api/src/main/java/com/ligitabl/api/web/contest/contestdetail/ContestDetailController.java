@@ -23,8 +23,8 @@ import com.ligitabl.api.usecase.contest.renewcontest.GetContestRenewalOptionsUse
 import com.ligitabl.api.usecase.contest.shared.ContestSeasonSupport;
 import com.ligitabl.api.usecase.contest.shared.ContestSupport;
 import com.ligitabl.api.web.shared.security.WebSecurity;
-import com.ligitabl.model.domain.Entry;
-import com.ligitabl.model.domain.LeaderboardResponse;
+import com.ligitabl.model.domain.contest.Entry;
+import com.ligitabl.model.query.LeaderboardResponse;
 import com.ligitabl.model.repo.UserRepo;
 
 import lombok.RequiredArgsConstructor;

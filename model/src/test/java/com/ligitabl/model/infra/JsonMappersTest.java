@@ -8,8 +8,8 @@ import java.util.List;
 import org.junit.jupiter.api.Test;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ligitabl.model.domain.RoundSwap;
-import com.ligitabl.model.domain.SwapChange;
+import com.ligitabl.model.domain.prediction.RoundSwap;
+import com.ligitabl.model.domain.prediction.SwapChange;
 
 /**
  * Guards the jsonb Instant encoding. Without {@link JsonMappers} these cases fail on the model test

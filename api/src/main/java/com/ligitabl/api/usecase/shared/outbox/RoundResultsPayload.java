@@ -2,7 +2,7 @@ package com.ligitabl.api.usecase.shared.outbox;
 
 import java.util.UUID;
 
-import com.ligitabl.model.domain.HitDistribution;
+import com.ligitabl.model.domain.prediction.HitDistribution;
 
 import lombok.Builder;
 
