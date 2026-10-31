@@ -6,10 +6,10 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.usecase.prediction.shared.RankingSource;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.Standings;
-import com.ligitabl.model.domain.StandingsTeamRank;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.Standings;
+import com.ligitabl.model.domain.league.StandingsTeamRank;
+import com.ligitabl.model.domain.league.TeamRank;
 import com.ligitabl.model.repo.SeasonRepo;
 import com.ligitabl.model.repo.StandingsRepo;
 

@@ -2,8 +2,8 @@ package com.ligitabl.api.usecase.finaltable.leaderboard;
 
 import java.util.List;
 
-import com.ligitabl.model.domain.FinalTableEntrant;
-import com.ligitabl.model.domain.FinalTableLeaderboardEntry;
+import com.ligitabl.model.query.FinalTableEntrant;
+import com.ligitabl.model.query.FinalTableLeaderboardEntry;
 
 /**
  * @param revealed false while nothing is scored — the page shows a "results at the end of the

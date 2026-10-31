@@ -14,7 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
-import com.ligitabl.model.domain.OutboxEvent;
+import com.ligitabl.model.outbox.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 
 /**

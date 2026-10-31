@@ -1,7 +1,7 @@
 package com.ligitabl.api.usecase.auth.register;
 
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.auth.Password;
+import com.ligitabl.model.domain.identity.Email;
+import com.ligitabl.model.domain.identity.Password;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;

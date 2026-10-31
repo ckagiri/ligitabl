@@ -8,8 +8,8 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.MatchStatus;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.MatchStatus;
 
 class MatchUpdateHelperTest {
 

@@ -8,8 +8,8 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.league.TeamRank;
 import com.ligitabl.model.repo.TeamRepo;
 
 import lombok.RequiredArgsConstructor;

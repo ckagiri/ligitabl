@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.RoundSubmission;
+import com.ligitabl.model.domain.prediction.RoundSubmission;
 
 public interface RoundSubmissionRepo {
     RoundSubmission save(RoundSubmission submission);

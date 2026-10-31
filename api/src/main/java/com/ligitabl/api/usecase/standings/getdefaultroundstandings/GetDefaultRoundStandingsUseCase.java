@@ -19,10 +19,10 @@ import com.ligitabl.api.usecase.shared.fixtures.FixtureJsonMapper;
 import com.ligitabl.api.usecase.standings.shared.FormEntry;
 import com.ligitabl.api.usecase.standings.shared.FormService;
 import com.ligitabl.api.usecase.standings.shared.StandingsEnricher;
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.Standings;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.Standings;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.StandingsRepo;
@@ -113,7 +113,7 @@ public class GetDefaultRoundStandingsUseCase
                 FixtureJsonMapper.resolveGoalsAgainst(match, isHome));
     }
 
-    private String normalizeStatus(com.ligitabl.model.domain.MatchStatus status) {
+    private String normalizeStatus(com.ligitabl.model.domain.league.MatchStatus status) {
         if (status == null) return "SCHEDULED";
         return switch (status) {
             case LIVE, SUSPENDED -> "LIVE";

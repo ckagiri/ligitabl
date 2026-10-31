@@ -30,8 +30,8 @@ import com.ligitabl.api.usecase.shared.outbox.SeasonInPlayPayload;
 import com.ligitabl.api.usecase.shared.outbox.SeasonWelcomeFanoutPayload;
 import com.ligitabl.api.usecase.shared.outbox.SeasonWelcomePayload;
 import com.ligitabl.api.usecase.shared.outbox.SegmentResultsPayload;
-import com.ligitabl.model.domain.OutboxEvent;
-import com.ligitabl.model.domain.PhaseType;
+import com.ligitabl.model.domain.league.PhaseType;
+import com.ligitabl.model.outbox.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 
 import lombok.RequiredArgsConstructor;

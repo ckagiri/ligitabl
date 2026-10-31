@@ -2,7 +2,7 @@ package com.ligitabl.api.web.predictions.whatif;
 
 import java.util.List;
 
-import com.ligitabl.model.domain.WhatIfScore;
+import com.ligitabl.model.domain.prediction.WhatIfScore;
 
 public record WhatIfScoreDto(String matchId, int homeGoals, int awayGoals) {
 

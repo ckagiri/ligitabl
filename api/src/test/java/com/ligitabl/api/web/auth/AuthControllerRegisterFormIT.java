@@ -27,7 +27,7 @@ import com.ligitabl.api.client.TurnstileError;
 import com.ligitabl.api.client.turnstile.TurnstileVerifyResponse;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
-import com.ligitabl.model.auth.Email;
+import com.ligitabl.model.domain.identity.Email;
 import com.ligitabl.model.repo.UserRepo;
 
 /**

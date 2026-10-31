@@ -4,22 +4,10 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.Contest;
+import com.ligitabl.model.domain.contest.Contest;
+import com.ligitabl.model.query.UserContestView;
 
 public interface ContestRepo {
-
-    /** Projection for any contest a user has joined, used for the profile My Contests lists. */
-    record UserContestView(
-            UUID contestId,
-            String contestName,
-            UUID seasonId,
-            String seasonName,
-            boolean seasonCompleted,
-            int fromRoundPosition,
-            int toRoundPosition,
-            boolean isPrivate,
-            boolean isOpen,
-            boolean isOwner) {}
 
     Optional<Contest> findById(UUID id);
 

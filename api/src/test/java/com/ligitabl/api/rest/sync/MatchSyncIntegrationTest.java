@@ -36,7 +36,7 @@ import com.ligitabl.api.usecase.match.syncmatches.SyncMatchesError;
 import com.ligitabl.api.usecase.match.syncmatches.SyncMatchesUseCase;
 import com.ligitabl.api.usecase.round.advancematchday.AdvanceMatchdayCommand;
 import com.ligitabl.api.usecase.round.advancematchday.AdvanceMatchdayUseCase;
-import com.ligitabl.model.domain.MatchStatus;
+import com.ligitabl.model.domain.league.MatchStatus;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 

@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.contest.shared.ContestSeasonSupport;
-import com.ligitabl.model.domain.service.ContestCodeGenerator;
+import com.ligitabl.model.domain.contest.ContestCodeGenerator;
 import com.ligitabl.model.repo.ContestRepo;
 
 import lombok.RequiredArgsConstructor;

@@ -4,7 +4,7 @@ import java.util.UUID;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.model.domain.LeaderboardEntry;
+import com.ligitabl.model.query.LeaderboardEntry;
 import com.ligitabl.model.repo.LeaderboardRepo;
 
 import lombok.RequiredArgsConstructor;

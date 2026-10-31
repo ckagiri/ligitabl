@@ -16,8 +16,8 @@ import org.jooq.RecordMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.model.db.tables.records.WhatIfPredictionRecord;
-import com.ligitabl.model.domain.WhatIfPrediction;
-import com.ligitabl.model.domain.WhatIfScore;
+import com.ligitabl.model.domain.prediction.WhatIfPrediction;
+import com.ligitabl.model.domain.prediction.WhatIfScore;
 import com.ligitabl.model.repo.WhatIfPredictionRepo;
 
 import lombok.RequiredArgsConstructor;

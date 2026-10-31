@@ -8,7 +8,20 @@ import java.util.stream.IntStream;
 
 import com.ligitabl.api.runners.demoseeding.SeedingConfig;
 import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundResult;
-import com.ligitabl.model.domain.*;
+import com.ligitabl.model.domain.contest.Contest;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.CompetitionSlug;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.MatchStatus;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.SeasonSlug;
+import com.ligitabl.model.domain.league.Standings;
+import com.ligitabl.model.domain.league.StandingsMetadata;
+import com.ligitabl.model.domain.league.StandingsTeamRank;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.league.TeamSlug;
 
 public class SeedingTestFixtures {
 

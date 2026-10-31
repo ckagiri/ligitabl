@@ -30,7 +30,7 @@ import com.ligitabl.api.auth.security.WebUserDetails;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.prediction.latestresult.DismissResultBannerUseCase;
 import com.ligitabl.api.usecase.prediction.latestresult.GetLatestResultUseCase;
-import com.ligitabl.model.auth.Role;
+import com.ligitabl.model.domain.identity.Role;
 
 /**
  * The results banner on /my-table must describe the effective user — impersonation lands the

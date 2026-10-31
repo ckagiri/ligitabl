@@ -7,8 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.domain.PasswordResetToken;
+import com.ligitabl.model.domain.identity.Email;
+import com.ligitabl.model.domain.identity.PasswordResetToken;
 import com.ligitabl.model.repo.PasswordResetTokenRepo;
 import com.ligitabl.model.repo.UserRepo;
 

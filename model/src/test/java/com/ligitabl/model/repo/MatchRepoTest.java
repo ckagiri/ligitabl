@@ -24,8 +24,8 @@ import com.ligitabl.model.db.tables.TMatch;
 import com.ligitabl.model.db.tables.TRound;
 import com.ligitabl.model.db.tables.TSeason;
 import com.ligitabl.model.db.tables.TTeam;
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.Score;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.Score;
 import com.ligitabl.model.infra.MatchPersistenceAdapter;
 
 @Tag("integration")

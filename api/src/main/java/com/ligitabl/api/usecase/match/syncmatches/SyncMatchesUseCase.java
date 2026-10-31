@@ -22,10 +22,10 @@ import com.ligitabl.api.usecase.match.shared.FeedMatch;
 import com.ligitabl.api.usecase.match.shared.MatchFeed;
 import com.ligitabl.api.usecase.match.shared.MatchUpdateHelper;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.MatchStatus;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.MatchStatus;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.repo.MatchRepo;
 
 import lombok.RequiredArgsConstructor;

@@ -6,6 +6,10 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.league.TeamSlug;
+
 class AbstractModelTest {
 
     @Test

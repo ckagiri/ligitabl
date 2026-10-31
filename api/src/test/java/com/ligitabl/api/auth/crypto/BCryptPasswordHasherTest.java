@@ -5,7 +5,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
-import com.ligitabl.model.auth.Password;
+import com.ligitabl.model.domain.identity.Password;
 
 class BCryptPasswordHasherTest {
 

@@ -29,8 +29,8 @@ import com.ligitabl.api.usecase.season.switchseason.RevertSeasonResult;
 import com.ligitabl.api.usecase.season.switchseason.RevertSeasonUseCase;
 import com.ligitabl.api.usecase.season.updateseasondates.UpdateSeasonDatesResult;
 import com.ligitabl.api.usecase.season.updateseasondates.UpdateSeasonDatesUseCase;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 

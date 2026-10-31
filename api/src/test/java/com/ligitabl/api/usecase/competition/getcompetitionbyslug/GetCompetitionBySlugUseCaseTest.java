@@ -17,8 +17,8 @@ import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecase.competition.shared.CompetitionDto;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.CompetitionSlug;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.CompetitionSlug;
 
 class GetCompetitionBySlugUseCaseTest {
 

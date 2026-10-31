@@ -14,8 +14,8 @@ import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 import org.mindrot.jbcrypt.BCrypt;
 
-import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.auth.Role;
+import com.ligitabl.model.domain.identity.PublicId;
+import com.ligitabl.model.domain.identity.Role;
 import com.ligitabl.seed.internal.util.SeedCoercions;
 
 public class UserSeeder {

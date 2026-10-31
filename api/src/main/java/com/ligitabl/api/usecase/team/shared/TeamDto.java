@@ -4,7 +4,7 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.Team;
+import com.ligitabl.model.domain.league.Team;
 
 import lombok.Builder;
 import lombok.Value;

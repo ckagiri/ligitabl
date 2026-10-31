@@ -16,8 +16,8 @@ import org.jooq.RecordMapper;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.model.db.tables.records.RoundResultRecord;
-import com.ligitabl.model.domain.ResultTeamRank;
-import com.ligitabl.model.domain.RoundResult;
+import com.ligitabl.model.domain.prediction.ResultTeamRank;
+import com.ligitabl.model.domain.prediction.RoundResult;
 import com.ligitabl.model.repo.RoundResultRepo;
 
 import lombok.RequiredArgsConstructor;

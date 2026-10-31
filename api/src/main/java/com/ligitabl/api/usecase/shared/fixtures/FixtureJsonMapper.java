@@ -8,10 +8,10 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.usecase.shared.dto.FixtureDto;
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.MatchResult;
-import com.ligitabl.model.domain.MatchStatus;
-import com.ligitabl.model.domain.Team;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.MatchResult;
+import com.ligitabl.model.domain.league.MatchStatus;
+import com.ligitabl.model.domain.league.Team;
 
 /**
  * Shapes {@link Match} domain objects into the per-team {@link FixtureDto} lists sent to the

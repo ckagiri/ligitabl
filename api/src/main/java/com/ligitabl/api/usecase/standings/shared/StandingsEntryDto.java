@@ -5,9 +5,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.Standings;
-import com.ligitabl.model.domain.StandingsTeamRank;
-import com.ligitabl.model.domain.Team;
+import com.ligitabl.model.domain.league.Standings;
+import com.ligitabl.model.domain.league.StandingsTeamRank;
+import com.ligitabl.model.domain.league.Team;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

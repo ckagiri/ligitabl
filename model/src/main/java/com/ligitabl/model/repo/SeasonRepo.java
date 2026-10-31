@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.SeasonSlug;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.SeasonSlug;
 
 public interface SeasonRepo {
     Optional<Season> findById(UUID id);

@@ -10,11 +10,11 @@ import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.MatchStatus;
-import com.ligitabl.model.domain.Score;
-import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.WhatIfScore;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.MatchStatus;
+import com.ligitabl.model.domain.league.Score;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.prediction.WhatIfScore;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.WhatIfPredictionRepo;
 

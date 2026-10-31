@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.ligitabl.api.usecase.prediction.shared.RankingSource;
-import com.ligitabl.model.domain.RoundSwap;
+import com.ligitabl.model.domain.prediction.RoundSwap;
 
 public record GetPredictionResult(
         UUID predictionId,

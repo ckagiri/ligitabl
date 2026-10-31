@@ -7,10 +7,10 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.auth.Password;
-import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.identity.Email;
+import com.ligitabl.model.domain.identity.Password;
+import com.ligitabl.model.domain.identity.PublicId;
+import com.ligitabl.model.domain.identity.User;
 
 public interface UserRepo {
     Optional<User> findById(UUID id);

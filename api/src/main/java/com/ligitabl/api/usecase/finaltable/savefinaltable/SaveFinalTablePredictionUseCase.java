@@ -14,10 +14,10 @@ import com.ligitabl.api.usecase.finaltable.savefinaltable.SaveFinalTableCommand.
 import com.ligitabl.api.usecase.finaltable.shared.FinalTableError;
 import com.ligitabl.api.usecase.finaltable.shared.FinalTableSupport;
 import com.ligitabl.api.usecase.prediction.shared.SwapHelper;
-import com.ligitabl.model.domain.FinalTablePrediction;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.SwapChange;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.prediction.FinalTablePrediction;
+import com.ligitabl.model.domain.prediction.SwapChange;
 import com.ligitabl.model.repo.FinalTablePredictionRepo;
 
 import lombok.RequiredArgsConstructor;

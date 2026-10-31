@@ -24,13 +24,13 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import com.ligitabl.model.domain.FinalTableLeaderboardEntry;
-import com.ligitabl.model.domain.FinalTablePrediction;
-import com.ligitabl.model.domain.FinalTableScore;
-import com.ligitabl.model.domain.ResultTeamRank;
-import com.ligitabl.model.domain.SwapChange;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.prediction.FinalTablePrediction;
+import com.ligitabl.model.domain.prediction.FinalTableScore;
+import com.ligitabl.model.domain.prediction.ResultTeamRank;
+import com.ligitabl.model.domain.prediction.SwapChange;
 import com.ligitabl.model.infra.FinalTablePredictionPersistenceAdapter;
+import com.ligitabl.model.query.FinalTableLeaderboardEntry;
 
 /**
  * Tagged, and deliberately NOT named *IT: the model module signals DB tests by tag, so a model

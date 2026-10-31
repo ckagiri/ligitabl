@@ -14,7 +14,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.league.Season;
 
 @ExtendWith(MockitoExtension.class)
 class FinalTableScoringHookTest {

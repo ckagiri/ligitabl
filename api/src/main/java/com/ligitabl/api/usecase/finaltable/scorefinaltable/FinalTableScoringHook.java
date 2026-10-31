@@ -2,7 +2,7 @@ package com.ligitabl.api.usecase.finaltable.scorefinaltable;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.league.Season;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

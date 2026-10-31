@@ -9,8 +9,8 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.domain.service.PublicIdGenerator;
+import com.ligitabl.model.domain.identity.PublicId;
+import com.ligitabl.model.domain.identity.PublicIdGenerator;
 
 @Component
 public class Base56PublicIdGenerator implements PublicIdGenerator {

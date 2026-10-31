@@ -848,7 +848,7 @@
                       class="bg-white rounded-lg border border-indigo-100 divide-y divide-gray-100"
                     >
                       <div
-                        th:each="tier : ${T(com.ligitabl.model.domain.ScoreTier).byGroup(T(com.ligitabl.model.domain.ScoreTier.Group).OUTSTANDING)}"
+                        th:each="tier : ${T(com.ligitabl.model.domain.prediction.ScoreTier).byGroup(T(com.ligitabl.model.domain.prediction.ScoreTier.Group).OUTSTANDING)}"
                         class="flex items-center justify-between px-4 py-2.5"
                       >
                         <div class="flex items-center gap-3">
@@ -886,7 +886,7 @@
                       class="bg-white rounded-lg border border-green-100 divide-y divide-gray-100"
                     >
                       <div
-                        th:each="tier : ${T(com.ligitabl.model.domain.ScoreTier).byGroup(T(com.ligitabl.model.domain.ScoreTier.Group).STRONG)}"
+                        th:each="tier : ${T(com.ligitabl.model.domain.prediction.ScoreTier).byGroup(T(com.ligitabl.model.domain.prediction.ScoreTier.Group).STRONG)}"
                         class="flex items-center justify-between px-4 py-2.5"
                       >
                         <div class="flex items-center gap-3">
@@ -924,7 +924,7 @@
                       class="bg-white rounded-lg border border-orange-100 divide-y divide-gray-100"
                     >
                       <div
-                        th:each="tier : ${T(com.ligitabl.model.domain.ScoreTier).byGroup(T(com.ligitabl.model.domain.ScoreTier.Group).FAIR)}"
+                        th:each="tier : ${T(com.ligitabl.model.domain.prediction.ScoreTier).byGroup(T(com.ligitabl.model.domain.prediction.ScoreTier.Group).FAIR)}"
                         class="flex items-center justify-between px-4 py-2.5"
                       >
                         <div class="flex items-center gap-3">

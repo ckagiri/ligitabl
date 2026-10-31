@@ -11,7 +11,7 @@ import org.jooq.DSLContext;
 import org.jooq.RecordMapper;
 
 import com.ligitabl.model.db.tables.records.RoundRecord;
-import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.domain.league.Round;
 import com.ligitabl.model.repo.RoundRepo;
 
 import lombok.RequiredArgsConstructor;

@@ -10,7 +10,7 @@ import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecase.team.shared.TeamDto;
-import com.ligitabl.model.domain.TeamSlug;
+import com.ligitabl.model.domain.league.TeamSlug;
 import com.ligitabl.model.repo.TeamRepo;
 
 import lombok.RequiredArgsConstructor;

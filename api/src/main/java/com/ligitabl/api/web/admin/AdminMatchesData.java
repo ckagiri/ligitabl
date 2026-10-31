@@ -3,10 +3,10 @@ package com.ligitabl.api.web.admin;
 import java.util.List;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.Score;
-import com.ligitabl.model.domain.Team;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.Score;
+import com.ligitabl.model.domain.league.Team;
 
 import lombok.Builder;
 

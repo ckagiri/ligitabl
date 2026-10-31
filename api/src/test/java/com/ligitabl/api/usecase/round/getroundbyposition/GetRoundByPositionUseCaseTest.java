@@ -17,7 +17,7 @@ import com.ligitabl.api.shared.errors.ValidationError;
 import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecase.round.shared.RoundDto;
 import com.ligitabl.api.usecase.shared.HierarchyValidator;
-import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.domain.league.Round;
 
 class GetRoundByPositionUseCaseTest {
 

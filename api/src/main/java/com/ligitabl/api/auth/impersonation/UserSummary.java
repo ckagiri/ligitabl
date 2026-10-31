@@ -3,8 +3,8 @@ package com.ligitabl.api.auth.impersonation;
 import java.util.Set;
 import java.util.UUID;
 
-import com.ligitabl.model.auth.Role;
-import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.identity.Role;
+import com.ligitabl.model.domain.identity.User;
 
 public record UserSummary(UUID id, String publicId, String email, String displayName, Set<Role> roles) {
 

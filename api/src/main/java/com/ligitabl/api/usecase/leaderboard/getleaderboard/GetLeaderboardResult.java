@@ -3,8 +3,8 @@ package com.ligitabl.api.usecase.leaderboard.getleaderboard;
 import java.util.List;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.LeaderboardEntry;
-import com.ligitabl.model.domain.RoundSpan;
+import com.ligitabl.model.domain.league.RoundSpan;
+import com.ligitabl.model.query.LeaderboardEntry;
 
 import lombok.Builder;
 

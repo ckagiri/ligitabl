@@ -14,7 +14,7 @@ import com.ligitabl.api.usecase.shared.email.EmailCommand;
 import com.ligitabl.api.usecase.shared.email.EmailContent;
 import com.ligitabl.api.usecase.shared.outbox.RoundResultsPayload;
 import com.ligitabl.api.usecase.shared.outbox.SegmentResultsPayload;
-import com.ligitabl.model.domain.HitDistribution;
+import com.ligitabl.model.domain.prediction.HitDistribution;
 
 class ThymeleafEmailTemplateRendererTest {
 

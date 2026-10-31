@@ -15,12 +15,12 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.MatchStatus;
-import com.ligitabl.model.domain.Score;
-import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.WhatIfPrediction;
-import com.ligitabl.model.domain.WhatIfScore;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.MatchStatus;
+import com.ligitabl.model.domain.league.Score;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.prediction.WhatIfPrediction;
+import com.ligitabl.model.domain.prediction.WhatIfScore;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.WhatIfPredictionRepo;
 

@@ -4,10 +4,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.Contest;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.SeasonPrediction;
-import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.contest.Contest;
+import com.ligitabl.model.domain.identity.User;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.prediction.SeasonPrediction;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

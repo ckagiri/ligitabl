@@ -38,8 +38,8 @@ import com.ligitabl.api.usecase.match.syncmatches.TriggerRoundFinalizationError;
 import com.ligitabl.api.usecase.match.syncmatches.TriggerRoundFinalizationUseCase;
 import com.ligitabl.api.usecase.notification.roundlocked.RecordRoundLockedUseCase;
 import com.ligitabl.api.usecase.round.advanceround.RoundAdvancementService;
-import com.ligitabl.model.domain.RoundStatus;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.league.RoundStatus;
+import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.repo.OutboxRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
@@ -274,10 +274,10 @@ class MatchSyncSchedulerTest {
 
         scheduler.triggerManualSync();
 
-        ArgumentCaptor<com.ligitabl.model.domain.OutboxEvent> captor =
-                ArgumentCaptor.forClass(com.ligitabl.model.domain.OutboxEvent.class);
+        ArgumentCaptor<com.ligitabl.model.outbox.OutboxEvent> captor =
+                ArgumentCaptor.forClass(com.ligitabl.model.outbox.OutboxEvent.class);
         verify(outboxRepo).save(captor.capture());
-        com.ligitabl.model.domain.OutboxEvent event = captor.getValue();
+        com.ligitabl.model.outbox.OutboxEvent event = captor.getValue();
         assertEquals("ROUND_LOCKED", event.getEventType());
         assertEquals("round-locked:" + roundId, event.getIdempotencyKey());
         assertEquals("round", event.getAggregateType());

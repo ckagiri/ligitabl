@@ -9,10 +9,10 @@ import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.ligitabl.model.domain.ResultTeamRank;
-import com.ligitabl.model.domain.StandingsTeamRank;
-import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.StandingsTeamRank;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.prediction.ResultTeamRank;
 
 import lombok.extern.slf4j.Slf4j;
 

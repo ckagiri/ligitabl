@@ -23,7 +23,7 @@ import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.InPlaySeasonFixture;
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.api.usecase.shared.outbox.SeasonInPlayPayload;
-import com.ligitabl.model.domain.OutboxEvent;
+import com.ligitabl.model.outbox.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 
 /**

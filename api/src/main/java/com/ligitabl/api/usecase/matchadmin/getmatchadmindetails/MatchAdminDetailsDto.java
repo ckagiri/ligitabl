@@ -3,7 +3,7 @@ package com.ligitabl.api.usecase.matchadmin.getmatchadmindetails;
 import java.util.List;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.MatchStatus;
+import com.ligitabl.model.domain.league.MatchStatus;
 
 import lombok.Builder;
 import lombok.Value;

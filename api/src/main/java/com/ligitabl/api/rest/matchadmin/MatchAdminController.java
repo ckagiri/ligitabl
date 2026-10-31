@@ -21,7 +21,7 @@ import com.ligitabl.api.usecase.matchadmin.reschedulematch.RescheduleResult;
 import com.ligitabl.api.usecase.matchadmin.transitionmatchstatus.TransitionMatchCommand;
 import com.ligitabl.api.usecase.matchadmin.transitionmatchstatus.TransitionMatchStatusUseCase;
 import com.ligitabl.api.usecase.matchadmin.transitionmatchstatus.TransitionResult;
-import com.ligitabl.model.domain.MatchStatus;
+import com.ligitabl.model.domain.league.MatchStatus;
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;

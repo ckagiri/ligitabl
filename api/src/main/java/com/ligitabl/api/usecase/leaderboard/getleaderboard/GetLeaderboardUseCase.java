@@ -4,9 +4,9 @@ import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.model.domain.PhaseRules;
-import com.ligitabl.model.domain.PhaseType;
-import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.domain.league.PhaseRules;
+import com.ligitabl.model.domain.league.PhaseType;
+import com.ligitabl.model.domain.league.Round;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.LeaderboardRepo;

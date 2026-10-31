@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.ligitabl.api.shared.Either;
-import com.ligitabl.model.domain.EmailVerificationToken;
+import com.ligitabl.model.domain.identity.EmailVerificationToken;
 import com.ligitabl.model.repo.EmailVerificationTokenRepo;
 import com.ligitabl.model.repo.UserRepo;
 

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.domain.league.Round;
 
 public interface RoundRepo {
 

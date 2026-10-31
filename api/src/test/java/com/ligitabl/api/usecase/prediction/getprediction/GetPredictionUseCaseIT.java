@@ -26,7 +26,7 @@ import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.FixedClockConfig;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.api.usecase.prediction.shared.RankingSource;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.TeamRank;
 
 @SpringBootTest
 @Import(FixedClockConfig.class)

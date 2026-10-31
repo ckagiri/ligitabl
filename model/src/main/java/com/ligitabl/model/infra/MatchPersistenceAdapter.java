@@ -18,11 +18,12 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.model.db.tables.records.MatchRecord;
 import com.ligitabl.model.db.tables.records.TeamRecord;
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.MatchStatus;
-import com.ligitabl.model.domain.Score;
-import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.TeamSlug;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.MatchStatus;
+import com.ligitabl.model.domain.league.Score;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.league.TeamSlug;
+import com.ligitabl.model.query.RoundDateRange;
 import com.ligitabl.model.repo.MatchRepo;
 
 import lombok.RequiredArgsConstructor;

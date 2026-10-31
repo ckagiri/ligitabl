@@ -16,7 +16,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
 
-import com.ligitabl.model.domain.*;
+import com.ligitabl.model.domain.contest.Contest;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.CompetitionSlug;
+import com.ligitabl.model.domain.league.PhaseType;
+import com.ligitabl.model.domain.league.RoundSpan;
+import com.ligitabl.model.query.LeaderboardEntry;
+import com.ligitabl.model.query.LeaderboardResponse;
 import com.ligitabl.model.repo.LeaderboardRepo;
 import com.ligitabl.model.repo.MatchRepo;
 

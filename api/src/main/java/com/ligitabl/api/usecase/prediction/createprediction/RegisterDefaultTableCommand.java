@@ -1,7 +1,7 @@
 package com.ligitabl.api.usecase.prediction.createprediction;
 
-import com.ligitabl.model.domain.Contest;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.contest.Contest;
+import com.ligitabl.model.domain.league.Season;
 
 /**
  * Writes the round-0 registration a user would have written themselves by submitting the default

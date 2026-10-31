@@ -10,8 +10,8 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.TeamSlug;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.league.TeamSlug;
 import com.ligitabl.model.repo.TeamRepo;
 
 class TeamUpdateGuardTest {

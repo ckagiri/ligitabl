@@ -7,11 +7,11 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
-import com.ligitabl.model.domain.Match;
-import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.standings.StandingsConverter;
-import com.ligitabl.model.domain.standings.ranking.RankingStrategy;
-import com.ligitabl.model.domain.standings.table.LeagueTable;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.league.standings.StandingsConverter;
+import com.ligitabl.model.domain.league.standings.ranking.RankingStrategy;
+import com.ligitabl.model.domain.league.standings.table.LeagueTable;
 
 class StandingsConverterTest {
 

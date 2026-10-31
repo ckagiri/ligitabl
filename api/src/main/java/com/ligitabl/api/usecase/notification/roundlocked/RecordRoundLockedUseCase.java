@@ -8,8 +8,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.ligitabl.api.usecase.match.syncmatches.MatchSyncResult;
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.api.usecase.shared.outbox.RoundLockedPayload;
-import com.ligitabl.model.domain.OutboxEvent;
-import com.ligitabl.model.domain.RoundStatus;
+import com.ligitabl.model.domain.league.RoundStatus;
+import com.ligitabl.model.outbox.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 
 import lombok.RequiredArgsConstructor;

@@ -16,7 +16,7 @@ import org.jooq.DSLContext;
 import org.jooq.impl.DSL;
 
 import com.ligitabl.model.db.tables.records.EntryRecord;
-import com.ligitabl.model.domain.Entry;
+import com.ligitabl.model.domain.contest.Entry;
 import com.ligitabl.model.repo.EntryRepo;
 
 import lombok.RequiredArgsConstructor;

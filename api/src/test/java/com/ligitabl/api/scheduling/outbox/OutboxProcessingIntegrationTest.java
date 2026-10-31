@@ -17,8 +17,8 @@ import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
 import com.ligitabl.api.usecase.shared.outbox.RoundResultsPayload;
-import com.ligitabl.model.domain.HitDistribution;
-import com.ligitabl.model.domain.OutboxEvent;
+import com.ligitabl.model.domain.prediction.HitDistribution;
+import com.ligitabl.model.outbox.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 
 /**

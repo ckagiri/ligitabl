@@ -19,10 +19,10 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
 import com.ligitabl.api.usecase.standings.shared.StandingsEntryDto;
-import com.ligitabl.model.domain.Standings;
-import com.ligitabl.model.domain.StandingsMetadata;
-import com.ligitabl.model.domain.StandingsTeamRank;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.league.Standings;
+import com.ligitabl.model.domain.league.StandingsMetadata;
+import com.ligitabl.model.domain.league.StandingsTeamRank;
+import com.ligitabl.model.domain.league.TeamRank;
 import com.ligitabl.model.repo.StandingsRepo;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)

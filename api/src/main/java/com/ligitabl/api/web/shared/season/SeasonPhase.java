@@ -5,8 +5,8 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.time.temporal.ChronoUnit;
 
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.SeasonState;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.SeasonState;
 
 import lombok.Builder;
 

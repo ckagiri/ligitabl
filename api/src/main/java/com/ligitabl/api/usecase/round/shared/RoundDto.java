@@ -3,7 +3,7 @@ package com.ligitabl.api.usecase.round.shared;
 import java.util.List;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.Round;
+import com.ligitabl.model.domain.league.Round;
 
 import lombok.AllArgsConstructor;
 import lombok.Builder;

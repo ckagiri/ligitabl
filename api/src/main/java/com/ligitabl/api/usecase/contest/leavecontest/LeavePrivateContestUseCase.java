@@ -8,7 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.Unit;
 import com.ligitabl.api.usecase.contest.shared.ContestSeasonSupport;
-import com.ligitabl.model.domain.Contest;
+import com.ligitabl.model.domain.contest.Contest;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.EntryRepo;
 

@@ -15,7 +15,13 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.ligitabl.api.testsupport.TestClock;
-import com.ligitabl.model.domain.*;
+import com.ligitabl.model.domain.contest.Contest;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.CompetitionSlug;
+import com.ligitabl.model.domain.league.PhaseType;
+import com.ligitabl.model.domain.league.RoundSpan;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.SeasonSlug;
 import com.ligitabl.model.repo.*;
 
 @ExtendWith(MockitoExtension.class)

@@ -5,7 +5,7 @@ import java.util.List;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.model.domain.SwapChange;
+import com.ligitabl.model.domain.prediction.SwapChange;
 
 /**
  * Turns the stored {@code "CODE:from→to"} swap encoding into the fields the "Swap history" fragment

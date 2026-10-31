@@ -25,7 +25,7 @@ import org.springframework.dao.DuplicateKeyException;
 import com.ligitabl.api.scheduling.health.JobHeartbeat;
 import com.ligitabl.api.scheduling.health.ScheduledJobRunner;
 import com.ligitabl.api.usecase.shared.outbox.OutboxEventTypes;
-import com.ligitabl.model.domain.OutboxEvent;
+import com.ligitabl.model.outbox.OutboxEvent;
 import com.ligitabl.model.repo.OutboxRepo;
 
 /**

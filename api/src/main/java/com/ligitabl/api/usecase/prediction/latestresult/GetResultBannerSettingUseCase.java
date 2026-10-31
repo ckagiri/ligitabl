@@ -6,7 +6,7 @@ import java.util.UUID;
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.config.CompetitionDefaults;
-import com.ligitabl.model.domain.RoundResult;
+import com.ligitabl.model.domain.prediction.RoundResult;
 import com.ligitabl.model.repo.RoundResultRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 

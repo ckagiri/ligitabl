@@ -5,7 +5,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.Entry;
+import com.ligitabl.model.domain.contest.Entry;
 
 public interface EntryRepo {
     Entry save(Entry entry);

@@ -18,7 +18,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import com.ligitabl.model.domain.EmailVerificationToken;
+import com.ligitabl.model.domain.identity.EmailVerificationToken;
 import com.ligitabl.model.infra.EmailVerificationTokenPersistenceAdapter;
 import com.ligitabl.model.infra.UserPersistenceAdapter;
 

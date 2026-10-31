@@ -26,7 +26,7 @@ import com.ligitabl.api.usecase.match.syncmatches.TriggerRoundFinalizationComman
 import com.ligitabl.api.usecase.match.syncmatches.TriggerRoundFinalizationUseCase;
 import com.ligitabl.api.usecase.notification.roundlocked.RecordRoundLockedUseCase;
 import com.ligitabl.api.usecase.round.advanceround.RoundAdvancementService;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import io.sentry.Sentry;

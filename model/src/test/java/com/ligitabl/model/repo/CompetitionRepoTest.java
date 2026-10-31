@@ -17,8 +17,8 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import com.ligitabl.model.db.tables.TCompetition;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.CompetitionSlug;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.CompetitionSlug;
 import com.ligitabl.model.infra.CompetitionPersistenceAdapter;
 
 @Tag("integration")

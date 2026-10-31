@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.usecase.finaltable.scorefinaltable.ScoreFinalTablePredictionsUseCase;
 import com.ligitabl.api.usecase.finaltable.scorefinaltable.StandingsSource;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.repo.SeasonRepo;
 
 import lombok.RequiredArgsConstructor;

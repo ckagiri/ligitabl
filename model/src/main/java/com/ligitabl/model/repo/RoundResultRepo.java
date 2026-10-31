@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.RoundResult;
+import com.ligitabl.model.domain.prediction.RoundResult;
 
 public interface RoundResultRepo {
     RoundResult save(RoundResult result);

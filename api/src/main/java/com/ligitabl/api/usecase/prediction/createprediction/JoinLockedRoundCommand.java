@@ -1,7 +1,7 @@
 package com.ligitabl.api.usecase.prediction.createprediction;
 
-import com.ligitabl.model.domain.Contest;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.contest.Contest;
+import com.ligitabl.model.domain.league.Season;
 
 /**
  * Joins a user into the round that just locked, as though they had submitted while it was open.

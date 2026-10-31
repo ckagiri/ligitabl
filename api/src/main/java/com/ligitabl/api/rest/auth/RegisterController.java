@@ -17,8 +17,8 @@ import com.ligitabl.api.shared.exceptions.UseCaseException;
 import com.ligitabl.api.usecase.auth.register.RegisterCommand;
 import com.ligitabl.api.usecase.auth.register.RegisterResult;
 import com.ligitabl.api.usecase.auth.register.RegisterUseCase;
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.auth.Password;
+import com.ligitabl.model.domain.identity.Email;
+import com.ligitabl.model.domain.identity.Password;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;

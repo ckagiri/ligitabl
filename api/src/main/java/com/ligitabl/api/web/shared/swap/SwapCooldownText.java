@@ -5,7 +5,7 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 
-import com.ligitabl.model.domain.SwapCooldown;
+import com.ligitabl.model.domain.prediction.SwapCooldown;
 
 /** The cooldown banner's wording. */
 public final class SwapCooldownText {

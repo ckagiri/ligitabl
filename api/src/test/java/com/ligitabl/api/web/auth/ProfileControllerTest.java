@@ -33,11 +33,11 @@ import com.ligitabl.api.usecase.prediction.latestresult.GetResultBannerSettingRe
 import com.ligitabl.api.usecase.prediction.latestresult.GetResultBannerSettingUseCase;
 import com.ligitabl.api.usecase.prediction.latestresult.RestoreResultBannerUseCase;
 import com.ligitabl.api.usecase.shared.season.SeasonPredictionSupport;
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.auth.Role;
-import com.ligitabl.model.domain.User;
-import com.ligitabl.model.domain.service.PasswordHasher;
+import com.ligitabl.model.domain.identity.Email;
+import com.ligitabl.model.domain.identity.PasswordHasher;
+import com.ligitabl.model.domain.identity.PublicId;
+import com.ligitabl.model.domain.identity.Role;
+import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.UserRepo;
 
 /**

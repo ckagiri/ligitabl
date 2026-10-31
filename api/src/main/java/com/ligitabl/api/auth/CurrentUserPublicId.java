@@ -8,9 +8,9 @@ import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.auth.impersonation.CurrentUserFacade;
 import com.ligitabl.api.auth.impersonation.UserSummary;
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.auth.PublicId;
-import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.identity.Email;
+import com.ligitabl.model.domain.identity.PublicId;
+import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.UserRepo;
 
 import lombok.RequiredArgsConstructor;

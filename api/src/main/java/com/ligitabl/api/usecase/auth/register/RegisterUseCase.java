@@ -14,11 +14,11 @@ import com.ligitabl.api.shared.validation.RequestValidator;
 import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationUseCase;
 import com.ligitabl.api.usecase.auth.recordlogin.RecordLoginUseCase;
 import com.ligitabl.api.usecase.shared.AdminAlerts;
-import com.ligitabl.model.auth.Password;
-import com.ligitabl.model.auth.Role;
-import com.ligitabl.model.domain.User;
-import com.ligitabl.model.domain.service.PasswordHasher;
-import com.ligitabl.model.domain.service.PublicIdGenerator;
+import com.ligitabl.model.domain.identity.Password;
+import com.ligitabl.model.domain.identity.PasswordHasher;
+import com.ligitabl.model.domain.identity.PublicIdGenerator;
+import com.ligitabl.model.domain.identity.Role;
+import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.UserRepo;
 
 import lombok.RequiredArgsConstructor;

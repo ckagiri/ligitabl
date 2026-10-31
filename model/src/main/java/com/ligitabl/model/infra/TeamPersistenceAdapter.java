@@ -16,9 +16,9 @@ import org.jooq.RecordMapper;
 import org.jooq.impl.DSL;
 
 import com.ligitabl.model.db.tables.records.TeamRecord;
-import com.ligitabl.model.domain.Team;
-import com.ligitabl.model.domain.TeamRank;
-import com.ligitabl.model.domain.TeamSlug;
+import com.ligitabl.model.domain.league.Team;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.league.TeamSlug;
 import com.ligitabl.model.repo.TeamRepo;
 
 import lombok.RequiredArgsConstructor;

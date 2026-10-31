@@ -16,8 +16,8 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundError;
 import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundResult;
 import com.ligitabl.api.usecase.round.finalizeround.FinalizeRoundUseCase;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.repo.RoundRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 
@@ -50,7 +50,7 @@ class TriggerRoundFinalizationUseCaseTest {
                 .competitionId(UUID.randomUUID())
                 .clientId(1)
                 .name("2024/25")
-                .slug(com.ligitabl.model.domain.SeasonSlug.of("2024-25"))
+                .slug(com.ligitabl.model.domain.league.SeasonSlug.of("2024-25"))
                 .startDate(java.time.LocalDate.of(2024, 8, 1))
                 .endDate(java.time.LocalDate.of(2025, 5, 31))
                 .currentRoundId(roundId)
@@ -92,7 +92,7 @@ class TriggerRoundFinalizationUseCaseTest {
                 .competitionId(UUID.randomUUID())
                 .clientId(1)
                 .name("2024/25")
-                .slug(com.ligitabl.model.domain.SeasonSlug.of("2024-25"))
+                .slug(com.ligitabl.model.domain.league.SeasonSlug.of("2024-25"))
                 .startDate(java.time.LocalDate.of(2024, 8, 1))
                 .endDate(java.time.LocalDate.of(2025, 5, 31))
                 .currentRoundId(roundId)
@@ -145,7 +145,7 @@ class TriggerRoundFinalizationUseCaseTest {
                 .competitionId(UUID.randomUUID())
                 .clientId(1)
                 .name("2024/25")
-                .slug(com.ligitabl.model.domain.SeasonSlug.of("2024-25"))
+                .slug(com.ligitabl.model.domain.league.SeasonSlug.of("2024-25"))
                 .startDate(java.time.LocalDate.of(2024, 8, 1))
                 .endDate(java.time.LocalDate.of(2025, 5, 31))
                 .currentRoundId(roundId)

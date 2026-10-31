@@ -58,7 +58,7 @@
                       You scored
                       <span style="font-weight:700; color:#4f46e5; font-size:18px;" th:text="${score}">156</span>
                       points
-                      <span th:if="${score > 0}" th:with="tier=${T(com.ligitabl.model.domain.ScoreTier).forScore(score)}">
+                      <span th:if="${score > 0}" th:with="tier=${T(com.ligitabl.model.domain.prediction.ScoreTier).forScore(score)}">
                         <span th:text="${tier.emoji}">😃</span>
                         <span th:if="${tier.group.name() == 'OUTSTANDING'}" style="font-size:12px; font-weight:700; color:#6366f1;" th:text="${tier.letter}">B+</span>
                         <span th:if="${tier.group.name() == 'STRONG'}" style="font-size:12px; font-weight:700; color:#059669;" th:text="${tier.letter}">B+</span>

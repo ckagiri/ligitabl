@@ -16,12 +16,12 @@ import org.springframework.jdbc.core.JdbcTemplate;
 
 import com.ligitabl.api.testsupport.AbstractPostgresIT;
 import com.ligitabl.api.testsupport.PostgresTestDbCleaner;
-import com.ligitabl.model.domain.Entry;
-import com.ligitabl.model.domain.ResultTeamRank;
-import com.ligitabl.model.domain.RoundResult;
-import com.ligitabl.model.domain.RoundSubmission;
-import com.ligitabl.model.domain.SeasonPrediction;
-import com.ligitabl.model.domain.TeamRank;
+import com.ligitabl.model.domain.contest.Entry;
+import com.ligitabl.model.domain.league.TeamRank;
+import com.ligitabl.model.domain.prediction.ResultTeamRank;
+import com.ligitabl.model.domain.prediction.RoundResult;
+import com.ligitabl.model.domain.prediction.RoundSubmission;
+import com.ligitabl.model.domain.prediction.SeasonPrediction;
 import com.ligitabl.model.repo.EntryRepo;
 import com.ligitabl.model.repo.RoundResultRepo;
 import com.ligitabl.model.repo.RoundSubmissionRepo;

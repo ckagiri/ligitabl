@@ -24,10 +24,10 @@ import org.springframework.test.util.ReflectionTestUtils;
 
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.testsupport.TestClock;
-import com.ligitabl.model.auth.Email;
-import com.ligitabl.model.auth.Role;
-import com.ligitabl.model.domain.PasswordResetToken;
-import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.identity.Email;
+import com.ligitabl.model.domain.identity.PasswordResetToken;
+import com.ligitabl.model.domain.identity.Role;
+import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.PasswordResetTokenRepo;
 import com.ligitabl.model.repo.UserRepo;
 

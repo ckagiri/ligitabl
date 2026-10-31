@@ -7,7 +7,7 @@ import org.springframework.transaction.annotation.Transactional;
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.match.shared.MatchFeed;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 

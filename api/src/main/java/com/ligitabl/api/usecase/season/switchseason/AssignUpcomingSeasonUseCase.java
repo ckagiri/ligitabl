@@ -5,8 +5,8 @@ import java.util.UUID;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.SeasonRepo;
 

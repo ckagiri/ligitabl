@@ -12,15 +12,16 @@ import org.springframework.stereotype.Component;
 
 import com.ligitabl.api.config.CompetitionDefaults;
 import com.ligitabl.api.usecase.round.shared.RoundSupport;
-import com.ligitabl.model.domain.Competition;
-import com.ligitabl.model.domain.Contest;
-import com.ligitabl.model.domain.ContestJoinWindow;
-import com.ligitabl.model.domain.PhaseRules;
-import com.ligitabl.model.domain.PhaseType;
-import com.ligitabl.model.domain.Round;
-import com.ligitabl.model.domain.RoundSpan;
-import com.ligitabl.model.domain.RoundStatus;
-import com.ligitabl.model.domain.Season;
+import com.ligitabl.model.domain.contest.Contest;
+import com.ligitabl.model.domain.contest.ContestJoinWindow;
+import com.ligitabl.model.domain.league.Competition;
+import com.ligitabl.model.domain.league.PhaseRules;
+import com.ligitabl.model.domain.league.PhaseType;
+import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.RoundSpan;
+import com.ligitabl.model.domain.league.RoundStatus;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.query.RoundDateRange;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.MatchRepo;
 import com.ligitabl.model.repo.SeasonRepo;
@@ -133,7 +134,7 @@ public class ContestSupport {
         if (competition == null || competition.getPhases() == null) return List.of();
 
         var season = seasonRepo.findActiveSeason(competition.getId()).orElse(null);
-        Map<Integer, MatchRepo.RoundDateRange> dateRanges =
+        Map<Integer, RoundDateRange> dateRanges =
                 season != null ? matchRepo.groupRoundDateRangesBySeason(season.getId()) : Map.of();
 
         int currentPos = roundSupport.resolveCurrentRoundPosition();
@@ -178,8 +179,8 @@ public class ContestSupport {
                     boolean isQuarterEnd = !sprintsInQuarter.isEmpty()
                             && sprintsInQuarter.get(sprintsInQuarter.size() - 1).equals(sprint);
 
-                    MatchRepo.RoundDateRange startRange = dateRanges.get(sprint.getFrom());
-                    MatchRepo.RoundDateRange endRange = dateRanges.get(sprint.getTo());
+                    RoundDateRange startRange = dateRanges.get(sprint.getFrom());
+                    RoundDateRange endRange = dateRanges.get(sprint.getTo());
                     String startDate =
                             startRange != null ? startRange.firstKickoff().format(DATE_FMT) : "";
                     String endDate = endRange != null ? endRange.lastKickoff().format(DATE_FMT) : "";

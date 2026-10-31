@@ -121,7 +121,7 @@ incompatible bytecode** (e.g. Lombok-generated builders not matching the current
 - `cannot find symbol: method getId()` on `SeasonPrediction`
 - `cannot find symbol: method id(UUID)` on `SeasonPrediction.builder()`
 - Weird generics mismatches like:
-  - `java.util.List<TeamRank> cannot be converted to java.util.List<com.ligitabl.model.domain.TeamRank>`
+  - `java.util.List<TeamRank> cannot be converted to java.util.List<com.ligitabl.model.domain.league.TeamRank>`
 
 These typically show up:
 
@@ -165,11 +165,11 @@ When the error mentions missing methods (`getId`, builder `.id(...)`), verify th
 ```bash
 # What does the workspace module output contain?
 javap -classpath model/target/classes -public com.ligitabl.model.domain.AbstractModel | head -n 40
-javap -classpath model/target/classes -public com.ligitabl.model.domain.SeasonPrediction\$SeasonPredictionBuilder | head -n 80
+javap -classpath model/target/classes -public com.ligitabl.model.domain.prediction.SeasonPrediction\$SeasonPredictionBuilder | head -n 80
 
 # Compare against what Maven would normally consume for api-only builds
 javap -classpath ~/.m2/repository/com/ligitabl/ligitabl-model/0.1.0-SNAPSHOT/ligitabl-model-0.1.0-SNAPSHOT.jar \
-  -public com.ligitabl.model.domain.SeasonPrediction\$SeasonPredictionBuilder | head -n 120
+  -public com.ligitabl.model.domain.prediction.SeasonPrediction\$SeasonPredictionBuilder | head -n 120
 ```
 
 If the `model/target/classes` builder doesn’t extend `AbstractModel$AbstractModelBuilder` but the jar version
@@ -340,7 +340,7 @@ Short summaries of the test-focused targets in [Makefile](Makefile):
 
 The `model` module contains both:
 
-- pure domain/unit tests (e.g. `model/src/test/java/com/ligitabl/model/domain/*Test.java`)
+- pure domain/unit tests (e.g. `model/src/test/java/com/ligitabl/model/domain/**/*Test.java`)
 - repo/infra tests that depend on jOOQ generated types (`com.ligitabl.model.db.*`)
 
 By default, jOOQ codegen is skipped to allow fast builds. That means repo/infra tests that import generated classes will fail to compile unless codegen has been run.

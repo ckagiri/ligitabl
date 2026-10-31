@@ -1,20 +1,14 @@
 package com.ligitabl.model.repo;
 
-import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.Match;
+import com.ligitabl.model.domain.league.Match;
+import com.ligitabl.model.query.RoundDateRange;
 
 public interface MatchRepo {
-
-    /**
-     * Min/max kickoff times for a single round position within a season.
-     * Used to derive sprint start/end dates for display.
-     */
-    record RoundDateRange(int roundPosition, OffsetDateTime firstKickoff, OffsetDateTime lastKickoff) {}
 
     List<Match> findByRoundId(UUID roundId);
 

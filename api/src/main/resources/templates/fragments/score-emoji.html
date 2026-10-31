@@ -3,7 +3,7 @@
 <span
   th:fragment="emoji(score)"
   th:if="${score > 0}"
-  th:with="tier=${T(com.ligitabl.model.domain.ScoreTier).forScore(score)}"
+  th:with="tier=${T(com.ligitabl.model.domain.prediction.ScoreTier).forScore(score)}"
   class="inline-flex items-center gap-0.5"
 >
   <span th:text="${tier.emoji}"></span>

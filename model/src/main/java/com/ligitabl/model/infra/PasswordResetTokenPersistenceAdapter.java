@@ -9,7 +9,7 @@ import java.util.Optional;
 import org.jooq.DSLContext;
 
 import com.ligitabl.model.db.tables.records.PasswordResetTokenRecord;
-import com.ligitabl.model.domain.PasswordResetToken;
+import com.ligitabl.model.domain.identity.PasswordResetToken;
 import com.ligitabl.model.repo.PasswordResetTokenRepo;
 
 import lombok.RequiredArgsConstructor;

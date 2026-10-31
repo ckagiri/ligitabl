@@ -33,8 +33,8 @@ import com.ligitabl.api.usecase.auth.emailverification.RequestEmailVerificationU
 import com.ligitabl.api.usecase.prediction.latestresult.GetResultBannerSettingUseCase;
 import com.ligitabl.api.usecase.prediction.latestresult.RestoreResultBannerUseCase;
 import com.ligitabl.api.usecase.shared.season.SeasonPredictionSupport;
-import com.ligitabl.model.auth.Role;
-import com.ligitabl.model.domain.User;
+import com.ligitabl.model.domain.identity.Role;
+import com.ligitabl.model.domain.identity.User;
 import com.ligitabl.model.repo.UserRepo;
 
 import jakarta.servlet.http.HttpSession;

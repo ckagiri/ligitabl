@@ -21,7 +21,7 @@ import com.ligitabl.api.client.footballdata.Score;
 import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.usecase.match.shared.FeedMatch;
 import com.ligitabl.api.usecase.match.shared.MatchFeedError;
-import com.ligitabl.model.domain.MatchStatus;
+import com.ligitabl.model.domain.league.MatchStatus;
 
 class FootballDataMatchFeedTest {
 

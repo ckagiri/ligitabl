@@ -8,7 +8,7 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.api.shared.errors.UseCaseError;
 import com.ligitabl.api.shared.errors.UseCaseErrors;
 import com.ligitabl.api.shared.validation.Guard;
-import com.ligitabl.model.domain.Team;
+import com.ligitabl.model.domain.league.Team;
 import com.ligitabl.model.repo.TeamRepo;
 
 import lombok.RequiredArgsConstructor;

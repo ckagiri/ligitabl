@@ -3,7 +3,7 @@ package com.ligitabl.api.scheduling.syncmatches;
 import java.time.OffsetDateTime;
 import java.util.UUID;
 
-import com.ligitabl.model.domain.MatchStatus;
+import com.ligitabl.model.domain.league.MatchStatus;
 
 /**
  * Match status transition tracking

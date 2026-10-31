@@ -7,11 +7,11 @@ import java.util.Optional;
 
 import org.springframework.stereotype.Component;
 
-import com.ligitabl.model.domain.FinalTablePrediction;
-import com.ligitabl.model.domain.Season;
-import com.ligitabl.model.domain.Standings;
-import com.ligitabl.model.domain.StandingsTeamRank;
-import com.ligitabl.model.domain.service.FinalTableScorer;
+import com.ligitabl.model.domain.league.Season;
+import com.ligitabl.model.domain.league.Standings;
+import com.ligitabl.model.domain.league.StandingsTeamRank;
+import com.ligitabl.model.domain.prediction.FinalTablePrediction;
+import com.ligitabl.model.domain.prediction.FinalTableScorer;
 import com.ligitabl.model.repo.FinalTablePredictionRepo;
 import com.ligitabl.model.repo.StandingsRepo;
 
