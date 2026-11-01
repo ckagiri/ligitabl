@@ -79,7 +79,6 @@ class TeamRepoTest {
 
     @Test
     void create_find_update_delete_flow() {
-        // Create
         Team created = repo.create(Team.builder()
                 .name("Arsenal FC")
                 .shortName("Arsenal")
@@ -93,13 +92,11 @@ class TeamRepoTest {
 
         UUID id = created.getId();
 
-        // Find by id
         Optional<Team> foundOpt = repo.findById(id);
         assertThat(foundOpt).isPresent();
         Team found = foundOpt.get();
         assertThat(found.getSlug().value()).isEqualTo("arsenal");
 
-        // Update
         OffsetDateTime originalUpdate = found.getUpdateDate();
         Team updated = repo.update(Team.builder()
                 .id(id)
@@ -111,12 +108,10 @@ class TeamRepoTest {
         assertThat(updated.getSlug().value()).isEqualTo("arsenal-fc");
         assertThat(updated.getUpdateDate()).isAfterOrEqualTo(originalUpdate);
 
-        // Exists checks
         assertThat(repo.existsById(id)).isTrue();
         assertThat(repo.existsBySlug(TeamSlug.of("arsenal-fc"))).isTrue();
         assertThat(repo.isSlugInUseByAnotherTeam(TeamSlug.of("arsenal-fc"), id)).isFalse();
 
-        // Delete
         repo.delete(id);
         assertThat(repo.findById(id)).isEmpty();
     }

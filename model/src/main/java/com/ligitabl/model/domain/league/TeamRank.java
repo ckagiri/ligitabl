@@ -27,9 +27,6 @@ public class TeamRank {
         return new TeamRank(this.code, newPosition);
     }
 
-    /**
-     * The list in the order a table is displayed: by position, ascending.
-     */
     public static List<TeamRank> inPositionOrder(List<TeamRank> ranks) {
         return ranks == null
                 ? List.of()

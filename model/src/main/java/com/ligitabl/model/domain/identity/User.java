@@ -104,20 +104,14 @@ public class User {
         return roles.containsAll(Set.of(requiredRoles));
     }
 
-    /**
-     * Add a role to the user.
-     * Returns a new User instance with the added role.
-     */
+    /** Returns a new User; this one is unchanged. */
     public User addRole(Role role) {
         Set<Role> newRoles = new HashSet<>(roles);
         newRoles.add(role);
         return withRoles(Set.copyOf(newRoles));
     }
 
-    /**
-     * Remove a role from the user.
-     * Returns a new User instance without the role.
-     */
+    /** Returns a new User; this one is unchanged. */
     public User removeRole(Role role) {
         Set<Role> newRoles = new HashSet<>(roles);
         newRoles.remove(role);

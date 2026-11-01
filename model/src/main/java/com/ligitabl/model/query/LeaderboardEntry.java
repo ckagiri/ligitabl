@@ -1,20 +1,15 @@
 package com.ligitabl.model.query;
 
 /**
- * Leaderboard entry for a single user
+ * Leaderboard entry for a single user. Totals cover the selected phase.
  *
- * @param position Current position in leaderboard (1 = first)
- * @param publicId User's unique public identifier
- * @param displayName User's display name
- * @param totalScore Total score across all rounds in phase
- * @param roundScore Score for the latest finalized round in phase
- * @param maxScore Highest single round score in phase
- * @param totalZeroes Total perfect prediction (zeroes) in phase
- * @param totalSwaps Total lineup changes (swaps) in phase
- * @param joinedAtGw Gameweek where the user joined
- * @param movement Position change from previous period (+ = up, - = down, 0 = same)
- * @param scored Whether any rounds in this phase have been scored for this user
- * @param isFormerMember Whether the user has been removed from the contest
+ * @param position current position in leaderboard (1 = first)
+ * @param roundScore score for the latest finalized round in phase
+ * @param maxScore highest single round score in phase
+ * @param joinedAtGw gameweek where the user joined
+ * @param movement position change from previous period (+ = up, - = down, 0 = same)
+ * @param scored whether any rounds in this phase have been scored for this user
+ * @param isFormerMember whether the user has been removed from the contest
  */
 public record LeaderboardEntry(
         int position,

@@ -63,11 +63,8 @@ public final class PhaseRules {
     }
 
     /**
-     * LIVE / FINISHED / NEXT / FUTURE for a (from, to) window vs. the current round, using
-     * sprint-level adjacency for NEXT: "next" means the sprint immediately following the current
-     * round's own sprint is this window's first sprint — true for the window's entire preceding
-     * sprint, not just the single round right before it starts (unlike {@link #deriveStatus}, which
-     * is round-level and only used for the segment navigator's own sibling-segment highlighting).
+     * LIVE / FINISHED / NEXT / FUTURE for a (from, to) window. NEXT holds for the whole sprint before
+     * the window, not only the round before it; {@link #deriveStatus} is the round-level version.
      */
     public static String deriveWindowStatus(int from, int to, int currentPosition, List<RoundSpan> phases) {
         if (currentPosition >= from && currentPosition <= to) return "LIVE";

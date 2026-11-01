@@ -15,29 +15,16 @@ import com.ligitabl.model.domain.league.SeasonSlug;
 /**
  * Shared fixture helpers for the Season_* tests in this package.
  *
- * <p>Dates come from the real Premier League calendar as seeded in
- * {@code seed/src/main/resources/seeding/season.yaml}, and the two window fields follow the
- * conventions this app is actually operated under (see {@link #PRE_SEASON_OPENS_AT} and
- * {@link #PREDICTIONS_OPEN_AT}). A fixture that matches production is worth more than a tidy one:
- * a reader can tell whether a given case is a situation the app really produces, and
- * {@code Season_lifecycleTest} can walk a season through its actual year.
- *
- * <p><b>The calendar is not a substitute for {@link RelativeDate}.</b> The {@code Season_is*Test}
- * truth tables sweep every combination of {@code (completed × preSeasonOpensAt × predictionsOpenAt)}
- * as PAST/FUTURE/NULL, and that exhaustiveness over <em>orderings</em> is the point of them —
- * rewriting those rows as calendar dates would trade it for readability that belongs here instead.
- * The realism buys one thing the truth tables structurally cannot give: a test of the
- * <em>progression</em>, which is {@code Season_lifecycleTest}. Keep both.
+ * <p>Dates follow the real Premier League calendar in {@code seed/src/main/resources/seeding/season.yaml}
+ * and the window conventions the app runs under, so {@code Season_lifecycleTest} can walk a real
+ * year. The {@code Season_is*Test} truth tables still use {@link RelativeDate}: their point is
+ * exhaustiveness over orderings, which calendar dates would lose.
  */
 final class SeasonTestFixtures {
 
     // -- The real calendar -------------------------------------------------------------------
 
-    /**
-     * The year the upcoming season kicks off in — the current year, so these fixtures never read as
-     * a stale snapshot of one particular season. See the api module's {@code TestCalendar} for why deriving it is
-     * safe and how to re-check that.
-     */
+    /** The current year, so these fixtures never read as one season's stale snapshot. See the api module's {@code TestCalendar}. */
     private static final int SEASON_START_YEAR = Year.now(ZoneOffset.UTC).getValue();
 
     /** The upcoming season's slug, in the {@code YYYY-YY} form {@code SeasonSlug} requires. */
@@ -54,14 +41,12 @@ final class SeasonTestFixtures {
     static final LocalDate NEXT_SEASON_END = LocalDate.of(SEASON_START_YEAR + 1, 5, 30);
 
     /**
-     * When the upcoming season opens for pre-season registration: 1 July, roughly six weeks after
-     * the previous season ends.
+     * When the upcoming season opens for pre-season registration: 1 July.
      *
-     * <p>⚠️ The same instant is written to <em>both</em> seasons — {@code UpdateSeasonDatesUseCase}
-     * propagates it onto the incoming season deliberately — and it means two different things
-     * depending on which one you read it from. On the outgoing season it is "promote my successor
-     * now" ({@code AutoActivateSeasonUseCase}); on the incoming season it is "my pre-season has
-     * opened" ({@code getSeasonState}). One handover moment, two readings.
+     * <p>⚠️ {@code UpdateSeasonDatesUseCase} writes the same instant to both seasons, and it means
+     * two things. On the outgoing season it is "promote my successor now"
+     * ({@code AutoActivateSeasonUseCase}); on the incoming one, "my pre-season has opened"
+     * ({@code getSeasonState}).
      */
     static final OffsetDateTime PRE_SEASON_OPENS_AT = utc(LocalDate.of(SEASON_START_YEAR, 7, 1));
 
@@ -71,37 +56,19 @@ final class SeasonTestFixtures {
     // -- The evaluation instant --------------------------------------------------------------
 
     /**
-     * The instant every fixture here is built around, and the one the tests pass to the predicates
-     * under test: <b>midday, halfway through the upcoming season's pre-season</b> — 23 July of
-     * whichever year the suite is run in.
-     *
-     * <p>Fixed rather than {@code Instant.now()}. These predicates used to read the wall clock
-     * internally, so fixtures had no choice but to be relative to real time — which made a test that
-     * happened to run across a date boundary flaky by construction, and made exact-boundary cases (a
-     * {@code predictionsOpenAt} of *this instant*) impossible to express at all. Both are fixed by
-     * {@link Season#getSeasonState(Instant)} taking the instant as an argument; passing a constant
-     * here is what cashes that in.
-     *
-     * <p>Derived rather than written out, because the literal date is not the point — the
-     * <em>position in the year</em> is, and it has to satisfy four things at once for this package's
-     * fixtures to mean anything:
+     * The instant every fixture is built around and the tests evaluate at: midday, halfway through
+     * the upcoming season's pre-season. Derived from the calendar above so editing a date moves it
+     * too. It must sit:
      *
      * <ul>
-     *   <li>after {@link #PREVIOUS_SEASON_END}, so a completed season is genuinely past;
-     *   <li>before {@link #NEXT_SEASON_START}, so an upcoming season is genuinely upcoming;
+     *   <li>after {@link #PREVIOUS_SEASON_END} and before {@link #NEXT_SEASON_START};
      *   <li>between {@link #PRE_SEASON_OPENS_AT} and {@link #PREDICTIONS_OPEN_AT}, so the default
-     *       fixture reads PRE_SEASON — which is also the window the pre-season invite email is sent
-     *       in, so the fixture doubles as a realistic setting for that feature's tests;
-     *   <li>midday, not midnight: UTC and most local zones agree on the calendar date at midday but
-     *       not at midnight, so an anchor at 00:00 would hide a zone bug in
-     *       {@link Season#getSeasonState(Instant)}'s date derivation — i.e. the most natural value
-     *       to write is the one that cannot detect it.
+     *       fixture reads PRE_SEASON;
+     *   <li>at midday, where UTC and most zones agree on the date; midnight would hide a zone bug in
+     *       {@link Season#getSeasonState(Instant)}.
      * </ul>
      *
-     * <p>Taking the midpoint of the pre-season window satisfies all four <em>by construction</em>,
-     * so editing the calendar above moves the anchor with it instead of silently invalidating every
-     * fixture in the package. {@code Season_lifecycleTest} pins the invariants anyway, for the case
-     * where an edit makes them unsatisfiable rather than merely different.
+     * {@code Season_lifecycleTest} pins these.
      */
     static final Instant NOW =
             middayMidwayBetween(PRE_SEASON_OPENS_AT.toLocalDate(), PREDICTIONS_OPEN_AT.toLocalDate());
@@ -118,10 +85,8 @@ final class SeasonTestFixtures {
     }
 
     static Season season(boolean completed, OffsetDateTime preSeasonOpensAt, OffsetDateTime predictionsOpenAt) {
-        // A completed season's own start/end are both in the past; an upcoming (not-yet-started)
-        // season's start is in the future — matches getSeasonState()'s PRE_SEASON/OFF_SEASON
-        // boundary checks (past endDate when completed, before startDate when not). At NOW the two
-        // real seasons land exactly this way round. Use the overload below to vary them freely.
+        // Completed: both dates past. Upcoming: start in the future. Matches getSeasonState()'s
+        // PRE_SEASON/OFF_SEASON boundary checks; use the overload below to vary them.
         LocalDate startDate = completed ? PREVIOUS_SEASON_START : NEXT_SEASON_START;
         LocalDate endDate = completed ? PREVIOUS_SEASON_END : NEXT_SEASON_END;
         return season(completed, preSeasonOpensAt, predictionsOpenAt, startDate, endDate);
@@ -161,11 +126,7 @@ final class SeasonTestFixtures {
         NULL,
         PAST,
         FUTURE,
-        /**
-         * Exactly {@link #NOW}. The windows are tested with {@code isAfter}, which is strict, so a
-         * date landing on this instant counts as *not yet* open. Only expressible since the
-         * predicates stopped reading the clock themselves.
-         */
+        /** Exactly {@link #NOW}. The windows use strict {@code isAfter}, so this counts as not yet open. */
         EXACTLY_NOW;
 
         OffsetDateTime resolve() {

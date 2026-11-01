@@ -5,12 +5,8 @@ import java.time.Instant;
 import java.util.Objects;
 
 /**
- * Value object representing swap cooldown state.
- *
- * <p>Encapsulates the business logic for swap cooldown:
- * - Initial prediction mode: unlimited changes
- * - First swap after submission: free (no wait)
- * - Subsequent swaps: {@link SeasonPrediction#SWAP_COOLDOWN}</p>
+ * Swap cooldown state: unlimited changes before the initial prediction, the first swap after it
+ * free, then {@link SeasonPrediction#SWAP_COOLDOWN} between swaps.
  */
 public record SwapCooldown(Instant lastSwapAt, boolean initialPredictionMade, boolean openingRoundAvailable) {
 
@@ -21,9 +17,6 @@ public record SwapCooldown(Instant lastSwapAt, boolean initialPredictionMade, bo
         return new SwapCooldown(null, false, false);
     }
 
-    /**
-     * Check if the user can swap now.
-     */
     public boolean canSwap(Instant now) {
         Objects.requireNonNull(now, "now is required");
 
@@ -47,9 +40,6 @@ public record SwapCooldown(Instant lastSwapAt, boolean initialPredictionMade, bo
         return elapsed.compareTo(SeasonPrediction.SWAP_COOLDOWN) < 0;
     }
 
-    /**
-     * Get remaining cooldown duration.
-     */
     public Duration getRemainingCooldown(Instant now) {
         if (!isOnCooldown(now)) {
             return Duration.ZERO;

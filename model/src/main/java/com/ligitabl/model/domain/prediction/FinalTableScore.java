@@ -5,13 +5,12 @@ import java.util.List;
 /**
  * The outcome of scoring one Final Table prediction.
  *
- * @param resultRankings Per-team predicted position, actual position and distance
+ * @param resultRankings per-team predicted position, actual position and distance
  * @param baseScore ScoringEngine distance score (maxHitPoints - total hit)
- * @param zeroesCount Positions predicted exactly right
+ * @param zeroesCount positions predicted exactly right
  * @param bonusPoints zeroes * FinalTableScorer.ZERO_BONUS
  * @param championBonus FinalTableScorer.CHAMPION_BONUS when the club placed 1st finished 1st, else
- *     0. Held apart from bonusPoints rather than folded in, so "zeroes × 10" stays true of
- *     bonusPoints and the two rules can be shown as the separate things they are
+ *     0. Kept out of bonusPoints so that one stays exactly zeroes * ZERO_BONUS
  * @param totalScore baseScore + bonusPoints + championBonus
  */
 public record FinalTableScore(

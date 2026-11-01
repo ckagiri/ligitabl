@@ -28,9 +28,6 @@ public sealed interface Password {
         }
     }
 
-    /**
-     * Hashed password (stored in database)
-     */
     record Hashed(String value) implements Password {
 
         public Hashed {

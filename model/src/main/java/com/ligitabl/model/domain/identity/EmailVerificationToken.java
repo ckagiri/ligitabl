@@ -22,12 +22,7 @@ public class EmailVerificationToken {
     @With
     Instant usedAt;
 
-    /**
-     * The instant is an argument rather than a wall-clock read so the caller's {@code Clock} decides
-     * it — the same reason {@link com.ligitabl.model.domain.league.Season#getSeasonState(Instant)} takes one. A token minted from a
-     * different instant than {@link #isExpired(Instant)} later evaluates against describes a
-     * validity window nobody chose.
-     */
+    /** Takes {@code now} rather than reading the clock, so the caller's {@code Clock} sets the validity window. */
     public static EmailVerificationToken create(UUID userId, int validityHours, Instant now) {
         return EmailVerificationToken.builder()
                 .token(UUID.randomUUID().toString())

@@ -5,30 +5,21 @@ import java.util.UUID;
 import com.ligitabl.model.query.LeaderboardResponse;
 
 /**
- * Repository for computing user contest leaderboards
- *
- * Aggregates user prediction results across rounds to calculate rankings.
+ * Contest leaderboards, aggregated from round results.
  *
  * Tiebreaker order:
- * 1. total_score DESC (highest score wins)
- * 2. total_zeroes DESC (more perfect prediction wins)
- * 3. total_swaps ASC (fewer lineup changes wins)
- * 4. max_score DESC (higher best round wins)
- * 5. public_id ASC (unique identifier as final tiebreaker)
+ * 1. total_score DESC
+ * 2. total_zeroes DESC
+ * 3. total_swaps ASC
+ * 4. max_score DESC
+ * 5. public_id ASC (unique, so no ties remain)
  */
 public interface LeaderboardRepo {
     /**
-     * Computes leaderboard for a contest within a specific round range with pagination.
-     *
-     * @param contestId The contest to compute leaderboard for
-     * @param seasonId The season (for filtering round submissions)
-     * @param fromRound Start of round range (inclusive)
-     * @param toRound End of round range (inclusive)
-     * @param userId Optional user to resolve ranking details for
-     * @param offset Pagination offset (0-based)
-     * @param limit Pagination size
-     * @param activeOnly When true, exclude soft-removed members; when false, include them as former members
-     * @return Paginated leaderboard response
+     * @param fromRound start of round range (inclusive)
+     * @param toRound end of round range (inclusive)
+     * @param userId optional user to resolve ranking details for
+     * @param activeOnly when true, exclude soft-removed members; when false, include them as former members
      */
     LeaderboardResponse computeLeaderboard(
             UUID contestId,
@@ -40,13 +31,6 @@ public interface LeaderboardRepo {
             int limit,
             boolean activeOnly);
 
-    /**
-     * Resolves the highest round position with finalized standings within a range.
-     *
-     * @param seasonId The season
-     * @param fromRound Start of round range (inclusive)
-     * @param toRound End of round range (inclusive)
-     * @return The highest finalized round position, or null if none
-     */
+    /** The highest round position with finalized standings within the inclusive range, or null if none. */
     Integer resolveEffectiveToRound(UUID seasonId, int fromRound, int toRound);
 }

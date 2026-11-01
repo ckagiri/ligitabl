@@ -26,14 +26,9 @@ import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.domain.league.SeasonState;
 
 /**
- * Walks the upcoming season through its real year, in order.
- *
- * <p>The {@code Season_is*Test} truth tables vary {@code completed}, {@code preSeasonOpensAt} and
- * {@code predictionsOpenAt} independently, which is what makes them exhaustive — but it also means
- * nothing there asserts that the ordering the app actually produces
- * ({@code preSeasonOpensAt < predictionsOpenAt < startDate < endDate}) yields a sensible
- * <em>progression</em>. A state machine can be right on every isolated combination and still walk
- * its own calendar wrongly. This is the test for that.
+ * Walks the upcoming season through its real year, in order. The {@code Season_is*Test} truth
+ * tables vary each field independently, so none asserts that the ordering the app produces
+ * ({@code preSeasonOpensAt < predictionsOpenAt < startDate < endDate}) progresses sensibly.
  */
 @DisplayName("Season — a full year, in order")
 class Season_lifecycleTest {
@@ -70,17 +65,10 @@ class Season_lifecycleTest {
     }
 
     /**
-     * ⚠️ The one transition that is not automatic, and the reason it is worth its own test.
-     *
-     * <p>Marking the season complete the day after the last match does <em>not</em> put it in
-     * OFF_SEASON. Its own {@code preSeasonOpensAt} is still last July's, so {@code preSeasonOpen} is
-     * true and the {@code completed && preSeasonOpen && predictionsOpen} branch claims it as
-     * INACTIVE. OFF_SEASON only arrives once the admin rolls that field forward to the next
-     * handover date — which is exactly what {@code UpdateSeasonDatesUseCase} does when the
-     * successor is configured.
-     *
-     * <p>So "completed" and "off-season" are two steps, not one. Nothing else in this package says
-     * so, because the truth tables never hold a season still and move the clock past its end.
+     * ⚠️ Completing the season does not reach OFF_SEASON. Its {@code preSeasonOpensAt} is still last
+     * July's, so the {@code completed && preSeasonOpen && predictionsOpen} branch reads INACTIVE until
+     * the admin rolls that date forward, as {@code UpdateSeasonDatesUseCase} does when the successor
+     * is configured.
      */
     @Test
     void completingTheSeasonIsNotEnoughToReachOffSeason_theHandoverDateMustRollForwardToo() {
@@ -95,11 +83,8 @@ class Season_lifecycleTest {
     }
 
     /**
-     * And once that rolled-forward date passes, the outgoing season goes INACTIVE again — the state
-     * its javadoc describes as "a completed season whose preSeasonOpensAt has passed but whose
-     * successor hasn't been promoted yet". It is the same instant that makes the *successor*
-     * PRE_SEASON, which is the dual meaning recorded on
-     * {@link SeasonTestFixtures#PRE_SEASON_OPENS_AT}.
+     * Once the rolled-forward date passes, the outgoing season is INACTIVE again, and the same instant
+     * makes its successor PRE_SEASON — see {@link SeasonTestFixtures#PRE_SEASON_OPENS_AT}.
      */
     @Test
     void afterTheNextHandoverDateTheOutgoingSeasonIsInactive_whileItsSuccessorIsPreSeason() {
@@ -120,14 +105,8 @@ class Season_lifecycleTest {
     }
 
     /**
-     * The fixture anchor is derived from the calendar constants rather than written out, so this
-     * asserts the four properties that derivation is supposed to guarantee.
-     *
-     * <p>Without it, editing a date above could move {@code NOW} outside the pre-season window and
-     * every fixture in the package would quietly start describing a different world — the default
-     * season would read IN_PLAY or OFF_SEASON instead of PRE_SEASON, and the truth tables would go
-     * on passing while asserting something else. A fixture this much is built on should say out
-     * loud what it assumes.
+     * Pins the properties {@code NOW}'s derivation promises. If an edit moved it out of pre-season,
+     * the truth tables would go on passing while describing another state.
      */
     @Test
     void theFixtureAnchorSitsMidPreSeason() {

@@ -28,10 +28,8 @@ class Season_isInactiveTest {
 
     private static Stream<Arguments> truthTable() {
         return Stream.of(
-                // completed=false + predictionsOpenAt=FUTURE + preSeasonOpensAt=NULL/FUTURE, with
-                // this fixture's beforeActualStart always true for completed=false, is exactly the
-                // "OFF_SEASON !completed" branch's target case (an active season promoted before
-                // its own pre-season window has been configured/opened) — NOT inactive.
+                // Not completed, predictions FUTURE, pre-season NULL/FUTURE: the "OFF_SEASON
+                // !completed" branch's case (active season promoted before its pre-season opened).
                 Arguments.of(false, NULL, FUTURE, false),
                 Arguments.of(false, FUTURE, FUTURE, false),
 
@@ -50,23 +48,17 @@ class Season_isInactiveTest {
                 Arguments.of(false, PAST, PAST, false),
                 Arguments.of(false, PAST, FUTURE, false),
                 // completed + preSeasonOpen + predictionsOpen (NULL defaults open, or PAST): the
-                // explicit "completed && preSeasonOpen && predictionsOpen" branch in
-                // getSeasonState() claims these as INACTIVE directly.
+                // "completed && preSeasonOpen && predictionsOpen" branch claims these as INACTIVE.
                 Arguments.of(true, PAST, NULL, true),
                 Arguments.of(true, PAST, PAST, true),
-                // completed + preSeasonOpen + predictions NOT yet open: PRE_SEASON only applies to
-                // an upcoming (not-yet-started) season, so a completed season here falls through to
-                // INACTIVE instead.
+                // completed + preSeasonOpen + predictions NOT yet open: PRE_SEASON needs a season not
+                // yet started, which a completed season never is — falls through to INACTIVE.
                 Arguments.of(true, PAST, FUTURE, true));
     }
 
     /**
-     * With this package's shared fixture, beforeActualStart is unconditionally true for every
-     * completed=false row (startDate is always tomorrow), so most of the truthTable above can
-     * never reach INACTIVE via that path — those cases are claimed by IN_PLAY, PRE_SEASON, or the
-     * OFF_SEASON !completed branch. It's also reachable, as two rows above show, via the explicit
-     * "completed && preSeasonOpen && predictionsOpen" branch. This @Test method covers a third
-     * route: past startDate with neither window open.
+     * The truth table can't reach this route: its fixture puts startDate in the future for every
+     * not-completed row. Covers past startDate with neither window open.
      */
     @Test
     void isInactive_reachable_whenPastStartDateButNeitherWindowHasOpened() {

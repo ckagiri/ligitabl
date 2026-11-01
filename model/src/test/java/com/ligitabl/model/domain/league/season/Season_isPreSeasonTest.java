@@ -42,21 +42,18 @@ class Season_isPreSeasonTest {
                 Arguments.of(true, FUTURE, FUTURE, false),
                 Arguments.of(true, FUTURE, PAST, false),
 
-                // preSeasonOpensAt past: isPreSeasonOpen() is true, and isOffSeason() is false
-                // (preSeasonOpensAt has already passed, regardless of completed) — so, when not
-                // completed, isPreSeason() depends only on whether predictions have opened yet
+                // preSeasonOpensAt past, so not off-season: when not completed, isPreSeason()
+                // depends only on whether predictions have opened
                 Arguments.of(false, PAST, NULL, false), // isInPlay(): null defaults to open
                 Arguments.of(false, PAST, PAST, false), // isInPlay(): already open
                 Arguments.of(false, PAST, FUTURE, true), // isInPlay(): not yet open
 
                 // completed + preSeasonOpen + predictionsOpen (NULL defaults open, or PAST): the
-                // explicit "completed && preSeasonOpen && predictionsOpen" branch in
-                // getSeasonState() claims these as INACTIVE instead, so isPreSeason() is false.
+                // "completed && preSeasonOpen && predictionsOpen" branch claims these as INACTIVE.
                 Arguments.of(true, PAST, NULL, false),
                 Arguments.of(true, PAST, PAST, false),
-                // completed + preSeasonOpen + predictions NOT yet open: PRE_SEASON only applies to
-                // an upcoming (not-yet-started) season, so a *completed* season here falls through
-                // to INACTIVE instead — not PRE_SEASON.
+                // completed + preSeasonOpen + predictions NOT yet open: PRE_SEASON needs a season not
+                // yet started, which a completed season never is — falls through to INACTIVE.
                 Arguments.of(true, PAST, FUTURE, false));
     }
 }

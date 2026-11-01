@@ -81,7 +81,6 @@ public enum RankingStrategy {
     ENGLISH_PREMIER_LEAGUE {
         @Override
         public RankingRule build(List<Match> matches, List<Team> teams) {
-            // H2H tie-breaker
             RankingRule h2hTieBreaker =
                     new RankingBuilder().byMostPoints().byMostAwayGoals().build();
 
@@ -98,8 +97,5 @@ public enum RankingStrategy {
         }
     };
 
-    /**
-     * Build the ranking rule for this strategy.
-     */
     public abstract RankingRule build(List<Match> matches, List<Team> teams);
 }

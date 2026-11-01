@@ -103,7 +103,7 @@ class ContestRenewalCalculatorTest {
         assertThat(ContestRenewalCalculator.resolveRenewalFrom(s("S8"), phases)).isEmpty();
     }
 
-    // ---- Section 5: Valid TO Options ----
+    // ---- Valid TO options ----
 
     @Test
     void validToOptions_fromS3_areS3S4S6S8() {
@@ -230,10 +230,7 @@ class ContestRenewalCalculatorTest {
     }
 
     // ---- Single-sprint timing gate against real multi-round sprints ----
-    //
-    // Comparing sprint *indices* would only equal comparing round *positions* if every sprint
-    // were exactly one round long — real sprints span several rounds (e.g. S1 = GW1-4), so the
-    // gate must compare round positions directly, not jump forward by whole sprints.
+    // Real sprints span several rounds, so the gate must compare round positions, not sprint indices.
 
     @Test
     void timingGate_singleSprint_s1Gw1ToGw2_false() {
@@ -273,7 +270,7 @@ class ContestRenewalCalculatorTest {
                 .isTrue();
     }
 
-    // ---- Section 7: Past season renewal ----
+    // ---- Past season renewal ----
 
     @Test
     void pastSeasonWindow_partialOriginal_fromIsS1_defaultToEndOfQ1_editable() {

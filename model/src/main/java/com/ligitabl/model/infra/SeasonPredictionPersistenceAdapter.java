@@ -31,11 +31,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class SeasonPredictionPersistenceAdapter implements SeasonPredictionRepo {
 
-    /**
-     * See {@link JsonMappers}. Not a plain {@code findAndRegisterModules()} mapper: RoundSwap nests
-     * SwapChange, whose timestamp is an Instant, so this only worked because the api module happens
-     * to pull jackson-datatype-jsr310 in transitively. The encoding is unchanged.
-     */
+    /** See {@link JsonMappers}: RoundSwap nests SwapChange, whose timestamp is an Instant. */
     private static final ObjectMapper OBJECT_MAPPER = JsonMappers.forJsonb();
 
     private static final TypeReference<List<TeamRank>> TEAM_RANK_LIST = new TypeReference<>() {};

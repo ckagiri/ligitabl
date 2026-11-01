@@ -30,9 +30,6 @@ public class LeagueTable {
         this(teams, matches, strategy.build(matches, teams));
     }
 
-    /**
-     * Create a league table using a custom ranking rule.
-     */
     public LeagueTable(List<Team> teams, List<Match> matches, RankingRule rankingRule) {
         this.teams = Objects.requireNonNull(teams);
         this.matches = Objects.requireNonNull(matches);
@@ -40,30 +37,18 @@ public class LeagueTable {
         this.teamMap = teams.stream().collect(Collectors.toMap(Team::getId, Function.identity()));
     }
 
-    /**
-     * Get the standings list.
-     */
     public List<Standing> getStandings() {
         return List.copyOf(standings);
     }
 
-    /**
-     * Get team by ID.
-     */
     public Team getTeam(UUID teamId) {
         return teamMap.get(teamId);
     }
 
-    /**
-     * Get all teams.
-     */
     public List<Team> getTeams() {
         return List.copyOf(teams);
     }
 
-    /**
-     * Get all matches.
-     */
     public List<Match> getMatches() {
         return List.copyOf(matches);
     }
