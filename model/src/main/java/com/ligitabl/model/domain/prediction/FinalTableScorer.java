@@ -29,7 +29,8 @@ public class FinalTableScorer {
 
     /**
      * The best score obtainable in a season: the distance ceiling, a zero on every club, and the
-     * champion called right. Pages quote this, so it must agree with what {@link #score} can produce.
+     * champion called right. Pages quote this number: call this rather than re-deriving it, so it
+     * always agrees with what {@link #score} can produce.
      */
     public static int maxScore(int maxHitPoints, int teamCount) {
         return maxHitPoints + teamCount * ZERO_BONUS + CHAMPION_BONUS;

@@ -18,13 +18,14 @@ import com.ligitabl.model.domain.league.SeasonSlug;
  * <p>Dates follow the real Premier League calendar in {@code seed/src/main/resources/seeding/season.yaml}
  * and the window conventions the app runs under, so {@code Season_lifecycleTest} can walk a real
  * year. The {@code Season_is*Test} truth tables still use {@link RelativeDate}: their point is
- * exhaustiveness over orderings, which calendar dates would lose.
+ * exhaustiveness over orderings, which calendar dates would lose, so don't rewrite them as dates.
  */
 final class SeasonTestFixtures {
 
     // -- The real calendar -------------------------------------------------------------------
 
-    /** The current year, so these fixtures never read as one season's stale snapshot. See the api module's {@code TestCalendar}. */
+    /** The current year, so these fixtures never read as one season's stale snapshot. The api module's {@code TestCalendar} says why
+     * that is safe and how to re-check it. */
     private static final int SEASON_START_YEAR = Year.now(ZoneOffset.UTC).getValue();
 
     /** The upcoming season's slug, in the {@code YYYY-YY} form {@code SeasonSlug} requires. */
@@ -63,7 +64,8 @@ final class SeasonTestFixtures {
      * <ul>
      *   <li>after {@link #PREVIOUS_SEASON_END} and before {@link #NEXT_SEASON_START};
      *   <li>between {@link #PRE_SEASON_OPENS_AT} and {@link #PREDICTIONS_OPEN_AT}, so the default
-     *       fixture reads PRE_SEASON;
+     *       fixture reads PRE_SEASON. That is also the pre-season invite email's window, so the
+     *       fixture suits that feature's tests;
      *   <li>at midday, where UTC and most zones agree on the date; midnight would hide a zone bug in
      *       {@link Season#getSeasonState(Instant)}.
      * </ul>

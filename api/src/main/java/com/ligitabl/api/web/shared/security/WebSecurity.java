@@ -17,8 +17,8 @@ public final class WebSecurity {
     private WebSecurity() {}
 
     /**
-     * The user this request acts as: the impersonated one while an admin impersonates. Permission
-     * checks stay on the real principal's authorities.
+     * The user this request acts as: the impersonated one while an admin impersonates. Use it for
+     * data; permission checks stay on the real principal's authorities.
      */
     public static WebUserDetails resolveUser(Principal principal) {
         if (principal == null) {

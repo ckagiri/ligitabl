@@ -2334,9 +2334,9 @@ const WHAT_IF_CHIPS = {
     A: [[0, 1], [1, 2], [0, 2]]
 };
 
-// Called-off matches carry no hypothesis, as in ComputeWhatIfUseCase.isScoreable. Matches already
-// kicked off or finished stay scoreable: on a locked round the page replays the saved guess, never
-// the real result.
+// ⚠️ Mirrors ComputeWhatIfUseCase.isScoreable; change both together. Called-off matches carry no
+// hypothesis. Matches already kicked off or finished stay scoreable: on a locked round the page
+// replays the saved guess, never the real result.
 const WHAT_IF_UNSCOREABLE_STATUSES = ["POSTPONED", "CANCELLED", "SUSPENDED"];
 const isWhatIfScoreable = (match) => !WHAT_IF_UNSCOREABLE_STATUSES.includes(match.status);
 

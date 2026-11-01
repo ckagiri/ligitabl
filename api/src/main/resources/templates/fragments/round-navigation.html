@@ -5,14 +5,14 @@
      maxRound: Maximum/latest round number
      currentRound: Actual current round number
      htmxTarget: HTMX target selector (e.g., 'body' or '#prediction-page')
-     htmxSwap: HTMX swap config (e.g., 'outerHTML' or 'outerHTML show:window:top')
+     htmxSwap: HTMX swap config (e.g., 'outerHTML' or 'outerHTML swap:300ms show:window:top')
      showJumpToCurrent: Boolean - show "Jump to Current" button
      dismissBanner: Boolean - add data-dismiss-results-banner attribute
      urlStyle: 'path' for /rounds/{n}/matches or 'query' for /base?round={n} (defaults to 'query')
      pathSuffix: For path-based URLs, the suffix (e.g., 'matches' or 'standings'). Defaults to 'matches'
      minRound: Minimum round number to allow navigation to (defaults to 1 if null)
      pathPrefix: When set, builds {baseUrl}/{pathPrefix}/{n} (e.g. '/u/{publicId}/{season}/gw/{n}')
-       instead of {baseUrl}/{n}/{pathSuffix}
+       instead of {baseUrl}/{n}/{pathSuffix}, ignoring pathSuffix
      queryString: Optional query string (e.g. 'from=leaderboard') appended to every path-based URL,
        so markers like the back-link `from` survive round paging
 */-->

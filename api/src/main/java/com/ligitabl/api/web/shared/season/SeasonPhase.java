@@ -26,7 +26,10 @@ public record SeasonPhase(
         boolean predictionsAboutToStart,
         OffsetDateTime predictionsOpenAt) {
 
-    /** @param at one instant for every field, so the countdown and phase can't straddle midnight */
+    /**
+     * @param at {@code clock.instant()} in production; one instant for every field, so the countdown
+     *     and phase can't straddle midnight
+     */
     public static SeasonPhase resolve(Season season, Instant at) {
         OffsetDateTime now = OffsetDateTime.ofInstant(at, ZoneOffset.UTC);
 

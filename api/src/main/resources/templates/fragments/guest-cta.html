@@ -29,7 +29,7 @@
 </a>
 
 <!--/* Inline CTA, once the floating pill hides near the footer. `invisible`, not x-show, so the slot
-     keeps its height; see the authenticated Submit button. */-->
+     keeps its height: hiding it would move the footer and loop the observer behind footerVisible. */-->
 <div x-cloak th:fragment="cta" class="px-6 py-6 bg-gray-50 border-t border-gray-200">
   <div class="flex flex-col items-center space-y-3">
     <div

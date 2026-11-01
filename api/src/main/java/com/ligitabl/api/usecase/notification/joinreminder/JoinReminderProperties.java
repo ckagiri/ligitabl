@@ -10,7 +10,8 @@ import lombok.Data;
 /**
  * Backoff schedule for join-reminder emails.
  *
- * <p>{@code stageDays} must be ascending; see {@link EnqueueJoinRemindersUseCase}.
+ * <p>{@code stageDays} must be ascending. A user gets at most one email per run, at the latest stage
+ * their time since last seen has reached; see {@link EnqueueJoinRemindersUseCase}.
  * {@code quietDaysBeforePredictionsOpen} suppresses runs just before predictions open, when
  * auto-join is about to give these users a table.
  */

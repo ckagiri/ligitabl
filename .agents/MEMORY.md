@@ -29,6 +29,12 @@ examples and when-to-use guidance, especially where similar overloads differ in 
 they do. Say the choice once in the class header rather than on every overload.
 `@param` lines that only rename the argument are still noise.
 
+**When trimming, cut the story and keep the instruction.** "If this happens, do that",
+"never…", "use this rather than…" and "change both together" are what the next
+editor needs; the history around them is what goes. Don't replace a description with
+a bare pointer ("see X", a `{@link}` to a sibling overload): it says nothing on hover.
+Point to X only for the detail, after saying what matters here.
+
 **No incident history in code.** No dates, PR numbers or `.art/` paths: `.art` is
 gitignored, so those links reach nobody else. A test pinning a past bug says what it
 pins, not "Regression:" or "this used to".

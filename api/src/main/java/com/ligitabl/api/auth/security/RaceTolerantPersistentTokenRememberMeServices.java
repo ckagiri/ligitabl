@@ -30,7 +30,8 @@ import lombok.extern.slf4j.Slf4j;
  * <p>So a mismatch counts as theft only once the stored token has gone untouched for longer than
  * {@link #GRACE_WINDOW_MS}. Inside the window the login is accepted, the store is left alone, and
  * the stored cookie is re-issued, which also repairs a lost {@code Set-Cookie}. A replayed cookie
- * outside the window still trips the full theft path. Every other branch behaves exactly as in
+ * outside the window still trips the full theft path; to land inside it, an attacker must race the
+ * browser's own in-flight requests. Every other branch behaves exactly as in
  * {@link PersistentTokenBasedRememberMeServices}, including ordering.
  *
  * @see QuietRememberMeServices which stops a genuine {@link CookieTheftException} from surfacing as

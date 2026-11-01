@@ -6,8 +6,8 @@ import java.util.stream.Collectors;
 
 /**
  * The Premier League's real phase structure from seed/src/main/resources/seeding/competition.yaml:
- * S1-S8 sprints of uneven length, Q1-Q4 quarters, and the full-season phase. Shared with the api
- * module through the model test-jar.
+ * S1-S8 sprints of uneven length, Q1-Q4 quarters, and the full-season phase. For any test that
+ * needs realistic multi-round sprints; the api module gets it through the model test-jar.
  */
 public final class CompetitionPhaseFixtures {
 

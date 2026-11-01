@@ -23,7 +23,8 @@ import com.ligitabl.api.testsupport.AbstractPostgresIT;
  * dev and test envs often set very high.
  *
  * ⚠️ The cached context shares one filter bean, and every request comes from loopback, so all tests
- * share one bucket: the within-limit test is ordered first. The actuator exemption is covered in
+ * share one bucket: the within-limit test is ordered first. A new test that exhausts the bucket
+ * must run in isolation (see {@link DirtiesContext}). The actuator exemption is covered in
  * {@link RateLimitFilterTest}, clear of Spring Security's redirects.
  */
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
