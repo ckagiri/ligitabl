@@ -25,7 +25,9 @@ import com.ligitabl.model.domain.contest.Entry;
 import com.ligitabl.model.domain.league.Competition;
 import com.ligitabl.model.domain.league.CompetitionPhaseFixtures;
 import com.ligitabl.model.domain.league.CompetitionSlug;
+import com.ligitabl.model.domain.league.PhaseType;
 import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.RoundSpan;
 import com.ligitabl.model.domain.league.Season;
 import com.ligitabl.model.domain.league.SeasonSlug;
 import com.ligitabl.model.repo.CompetitionRepo;
@@ -212,5 +214,62 @@ class GetPrivateContestUseCaseTest {
         assertThat(result.get().selectedSegment()).isEqualTo(CompetitionPhaseFixtures.s("S1"));
 
         verify(contestSupport, org.mockito.Mockito.never()).findCurrentSprint(any(), any(), anyInt());
+    }
+
+    @Test
+    void preferredOverall_opensOnTheContestWindow() {
+        stubCurrentRound(12, true);
+
+        var result = useCase.execute(new GetPrivateContestQuery(contestId, userId, null, 0, SegmentLevel.OVERALL));
+
+        RoundSpan selected = result.get().selectedSegment();
+        assertThat(selected.getCode()).isEqualTo("overall");
+        assertThat(selected.getFrom()).isEqualTo(1);
+        assertThat(selected.getTo()).isEqualTo(38);
+        verify(contestSupport, org.mockito.Mockito.never()).findCurrentSprint(any(), any(), anyInt());
+    }
+
+    @Test
+    void preferredOverall_singleQuarterContest_fallsBackToCurrentSprint() {
+        // Q2's window: a single quarter, so no Overall node.
+        contest = contest.toBuilder().fromRoundPosition(10).toRoundPosition(19).build();
+        when(contestRepo.findById(contestId)).thenReturn(Optional.of(contest));
+        when(contestSupport.isOpenForJoining(contest, season, competition)).thenReturn(true);
+        stubCurrentRound(12, true);
+
+        var result = useCase.execute(new GetPrivateContestQuery(contestId, userId, null, 0, SegmentLevel.OVERALL));
+
+        assertThat(result.get().selectedSegment()).isEqualTo(CompetitionPhaseFixtures.s("S3"));
+    }
+
+    @Test
+    void preferredQuarter_opensOnTheCurrentQuarter() {
+        stubCurrentRound(12, true);
+        when(contestSupport.findCurrentPhase(contest, competition, PhaseType.QUARTER, 12))
+                .thenReturn(Optional.of(CompetitionPhaseFixtures.s("Q2")));
+
+        var result = useCase.execute(new GetPrivateContestQuery(contestId, userId, null, 0, SegmentLevel.QUARTER));
+
+        assertThat(result.get().selectedSegment()).isEqualTo(CompetitionPhaseFixtures.s("Q2"));
+    }
+
+    @Test
+    void preferredQuarter_contestHasNone_fallsBackToCurrentSprint() {
+        stubCurrentRound(12, true);
+        when(contestSupport.findCurrentPhase(contest, competition, PhaseType.QUARTER, 12))
+                .thenReturn(Optional.empty());
+
+        var result = useCase.execute(new GetPrivateContestQuery(contestId, userId, null, 0, SegmentLevel.QUARTER));
+
+        assertThat(result.get().selectedSegment()).isEqualTo(CompetitionPhaseFixtures.s("S3"));
+    }
+
+    @Test
+    void explicitSegmentCode_winsOverPreferredLevel() {
+        stubCurrentRound(12, true);
+
+        var result = useCase.execute(new GetPrivateContestQuery(contestId, userId, "S1", 0, SegmentLevel.OVERALL));
+
+        assertThat(result.get().selectedSegment()).isEqualTo(CompetitionPhaseFixtures.s("S1"));
     }
 }

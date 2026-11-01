@@ -13,6 +13,7 @@ import com.ligitabl.model.domain.contest.Contest;
 import com.ligitabl.model.domain.contest.Entry;
 import com.ligitabl.model.domain.league.Competition;
 import com.ligitabl.model.domain.league.PhaseRules;
+import com.ligitabl.model.domain.league.PhaseType;
 import com.ligitabl.model.domain.league.Round;
 import com.ligitabl.model.domain.league.RoundSpan;
 import com.ligitabl.model.domain.league.Season;
@@ -59,7 +60,8 @@ public class GetPrivateContestUseCase {
         int effectivePosition = currentRound != null ? PhaseRules.effectivePosition(currentRound) : 1;
 
         String segmentCode = query.selectedSegmentCode();
-        var segmentResult = resolveSelectedSegment(contest, competition, segmentCode, effectivePosition);
+        var segmentResult =
+                resolveSelectedSegment(contest, competition, segmentCode, query.preferredLevel(), effectivePosition);
         if (segmentResult.isLeft()) return segmentResult.castLeft();
         RoundSpan selectedSegment = segmentResult.get();
 
@@ -137,19 +139,18 @@ public class GetPrivateContestUseCase {
     }
 
     private Either<GetPrivateContestError, RoundSpan> resolveSelectedSegment(
-            Contest contest, Competition competition, String segmentCode, int effectivePosition) {
+            Contest contest,
+            Competition competition,
+            String segmentCode,
+            SegmentLevel preferredLevel,
+            int effectivePosition) {
 
         if (segmentCode == null) {
-            return Either.right(contestSupport.findCurrentSprint(contest, competition, effectivePosition));
+            return Either.right(defaultSegment(contest, competition, preferredLevel, effectivePosition));
         }
 
         if ("overall".equalsIgnoreCase(segmentCode)) {
-            return Either.right(RoundSpan.builder()
-                    .code("overall")
-                    .name("Overall")
-                    .from(contest.getFromRoundPosition())
-                    .to(contest.getToRoundPosition())
-                    .build());
+            return Either.right(overallSpan(contest));
         }
 
         List<RoundSpan> phases =
@@ -164,6 +165,38 @@ public class GetPrivateContestUseCase {
         if (segment == null) return Either.left(new GetPrivateContestError.SegmentNotFound(segmentCode));
 
         return Either.right(segment);
+    }
+
+    // The preferred level's current segment; a level this contest lacks falls back to the current sprint.
+    private RoundSpan defaultSegment(
+            Contest contest, Competition competition, SegmentLevel preferredLevel, int effectivePosition) {
+        // Matches SegmentTreeBuilder: only a contest spanning several quarters has an Overall node.
+        if (preferredLevel == SegmentLevel.OVERALL && quartersInWindow(contest, competition) > 1) {
+            return overallSpan(contest);
+        }
+        if (preferredLevel == SegmentLevel.QUARTER) {
+            var quarter = contestSupport.findCurrentPhase(contest, competition, PhaseType.QUARTER, effectivePosition);
+            if (quarter.isPresent()) return quarter.get();
+        }
+        return contestSupport.findCurrentSprint(contest, competition, effectivePosition);
+    }
+
+    private static long quartersInWindow(Contest contest, Competition competition) {
+        List<RoundSpan> phases =
+                competition != null && competition.getPhases() != null ? competition.getPhases() : List.of();
+        return phases.stream()
+                .filter(p -> p.getType() == PhaseType.QUARTER)
+                .filter(p -> p.getFrom() >= contest.getFromRoundPosition() && p.getTo() <= contest.getToRoundPosition())
+                .count();
+    }
+
+    private static RoundSpan overallSpan(Contest contest) {
+        return RoundSpan.builder()
+                .code("overall")
+                .name("Overall")
+                .from(contest.getFromRoundPosition())
+                .to(contest.getToRoundPosition())
+                .build();
     }
 
     private boolean isSegmentLive(RoundSpan segment, int currentPosition) {

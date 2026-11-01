@@ -244,6 +244,36 @@ class GetLeaderboardUseCaseIntegrationTest extends AbstractPostgresIT {
     }
 
     @Test
+    @DisplayName("opens on the preferred group when no phase is specified")
+    void opensOnPreferredGroup() {
+        UUID round15Id = insertRound(15, true);
+        jdbc.update("UPDATE t_season SET fk_current_round_id = ? WHERE pk_id = ?", round15Id, seasonId);
+
+        var fullSeason = useCase.execute(new GetLeaderboardQuery(null, null, null, null, PhaseType.FULL_SEASON));
+        var quarter = useCase.execute(new GetLeaderboardQuery(null, null, null, null, PhaseType.QUARTER));
+
+        assertThat(fullSeason.get().phase().getCode()).isEqualTo("FS");
+        assertThat(quarter.get().phase().getCode()).isEqualTo("Q2");
+    }
+
+    @Test
+    @DisplayName("an explicit phase wins over the preferred group")
+    void explicitPhaseWinsOverPreferredGroup() {
+        var result = useCase.execute(new GetLeaderboardQuery("Q2", null, null, null, PhaseType.FULL_SEASON));
+
+        assertThat(result.get().phase().getCode()).isEqualTo("Q2");
+    }
+
+    @Test
+    @DisplayName("a preferred group with no current phase falls back to the default")
+    void preferredGroupWithoutCurrentPhaseFallsBack() {
+        // No current round: there is no quarter to place, so the default (FS) applies.
+        var result = useCase.execute(new GetLeaderboardQuery(null, null, null, null, PhaseType.QUARTER));
+
+        assertThat(result.get().phase().getCode()).isEqualTo("FS");
+    }
+
+    @Test
     @DisplayName("ranks by total zeroes when scores are tied")
     void ranksByTotalZeroesWhenScoresTied() {
         // Same score, different zeroes

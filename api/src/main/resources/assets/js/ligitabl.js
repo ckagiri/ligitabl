@@ -231,11 +231,11 @@ window.Ligitabl._savePrefs = function (prefs, key) {
     }
 };
 
-// Cycle order for the delta column's reading. See deltaMode in _predictionBase.
-window.Ligitabl._DELTA_MODES = ["normal", "inverted", "off"];
+// The delta column's readings. See deltaMode in _predictionBase.
+window.Ligitabl._DELTA_MODES = ["normal", "inverted"];
 
-// Prefs written before the third state stored a boolean under deltaInverted; honour it once
-// so an existing reader's inverted table does not silently reset.
+// Older prefs stored a boolean under deltaInverted; honour it so an existing reader's inverted
+// table does not silently reset. A mode no longer offered reads as normal.
 window.Ligitabl._readDeltaMode = function (savedPrefs) {
     if (!savedPrefs) return "normal";
     if (Ligitabl._DELTA_MODES.includes(savedPrefs.deltaMode)) return savedPrefs.deltaMode;
@@ -262,8 +262,7 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         compareOptionsOpen: window.matchMedia('(min-width: 640px)').matches,
         positionsReversed: savedPrefs ? (savedPrefs.positionsReversed ?? false) : false,
         // How the delta column reads: 'normal', arrows say "move this row to match reality";
-        // 'inverted', the team climbing or dropping toward the pick; 'off', only the accuracy
-        // colour scale the read-only views use.
+        // 'inverted', the team climbing or dropping toward the pick.
         deltaMode: Ligitabl._readDeltaMode(savedPrefs),
         alwaysHoverable: false,
         isInitialPrediction: false,
@@ -600,8 +599,8 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
             // Drop a half-made selection — it can't be completed here, and a highlighted
             // row you can't act on reads as stuck. Unsaved swaps deliberately survive.
             if (this.positionsReversed) this.selectedTeam = null;
-            // deltaMode deliberately survives the view switch — it lasts the visit, and the
-            // legend shows in both views to explain however the delta is currently reading.
+            // deltaMode deliberately survives the view switch — the legend shows in both views
+            // to explain however the delta is currently reading.
         },
 
         getDelta(teamCode) {
@@ -622,33 +621,21 @@ window.Ligitabl._predictionBase = function (parsed, userId, roundId) {
         // fact — scoring and the read-only views read that one — so the mode toggle cannot
         // leak into anything that computes a result.
         displayedDeltaDirection(teamCode) {
-            // null is also what a row with no actual position returns, and the markup already
-            // draws no arrow for it — so 'off' needs nothing beyond this.
-            if (this.deltaMode === "off") return null;
             const dir = this.getDeltaDirection(teamCode);
             if (dir === null || this.deltaMode !== "inverted") return dir;
             return dir === "up" ? "down" : "up";
         },
 
-        // Distance from reality rather than direction — the scale the read-only views use.
-        deltaAccuracyClass(teamCode) {
-            const d = this.getDelta(teamCode);
-            if (d === 0) return "text-green-600";
-            return d <= 2 ? "text-yellow-600" : "text-red-600";
-        },
-
         // Colour for the delta number in whatever mode the table is in.
         deltaTextClass(teamCode) {
-            if (this.deltaMode === "off") return this.deltaAccuracyClass(teamCode);
             if (this.getDelta(teamCode) === 0) return "text-green-600";
             return this.displayedDeltaDirection(teamCode) === "down"
                 ? "text-red-600"
                 : "text-green-600";
         },
 
-        cycleDeltaMode() {
-            const modes = Ligitabl._DELTA_MODES;
-            this.deltaMode = modes[(modes.indexOf(this.deltaMode) + 1) % modes.length];
+        toggleDeltaMode() {
+            this.deltaMode = this.deltaMode === "inverted" ? "normal" : "inverted";
         },
 
         _performSwap(teamCode) {

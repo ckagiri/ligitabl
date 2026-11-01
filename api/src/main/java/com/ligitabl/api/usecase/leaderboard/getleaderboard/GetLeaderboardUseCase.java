@@ -1,5 +1,7 @@
 package com.ligitabl.api.usecase.leaderboard.getleaderboard;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import com.ligitabl.api.config.CompetitionDefaults;
@@ -7,6 +9,7 @@ import com.ligitabl.api.shared.Either;
 import com.ligitabl.model.domain.league.PhaseRules;
 import com.ligitabl.model.domain.league.PhaseType;
 import com.ligitabl.model.domain.league.Round;
+import com.ligitabl.model.domain.league.RoundSpan;
 import com.ligitabl.model.repo.CompetitionRepo;
 import com.ligitabl.model.repo.ContestRepo;
 import com.ligitabl.model.repo.LeaderboardRepo;
@@ -57,7 +60,12 @@ public class GetLeaderboardUseCase {
                 : null;
         Integer effectivePosition = currentRound != null ? PhaseRules.effectivePosition(currentRound) : null;
 
-        var phase = PhaseRules.resolvePhase(competition.getPhases(), query.phase(), effectivePosition);
+        RoundSpan phase = query.phase() == null
+                ? preferredPhase(competition.getPhases(), query.preferredType(), effectivePosition)
+                : null;
+        if (phase == null) {
+            phase = PhaseRules.resolvePhase(competition.getPhases(), query.phase(), effectivePosition);
+        }
         if (phase == null) {
             return Either.left(new GetLeaderboardError.InvalidPhase(query.phase()));
         }
@@ -94,5 +102,18 @@ public class GetLeaderboardUseCase {
                 .offset(offset)
                 .limit(limit)
                 .build());
+    }
+
+    // The current phase of the preferred type, or null to fall back to the default (no preference,
+    // or no current round to place a quarter or sprint).
+    private static RoundSpan preferredPhase(List<RoundSpan> phases, PhaseType type, Integer effectivePosition) {
+        if (type == PhaseType.FULL_SEASON) {
+            return phases.stream()
+                    .filter(p -> p.getType() == PhaseType.FULL_SEASON)
+                    .findFirst()
+                    .orElse(null);
+        }
+        if (type == null || effectivePosition == null) return null;
+        return PhaseRules.phaseOfTypeContaining(phases, type, effectivePosition).orElse(null);
     }
 }

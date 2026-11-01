@@ -32,6 +32,10 @@
           select(phase) {
             this.load(phase);
             history.pushState({}, '', '/leaderboard?phase=' + phase);
+            // Remembers the group, not the phase, so the next visit opens on whichever quarter or
+            // sprint is current then. GetLeaderboardController reads it.
+            const type = ({fullSeason: 'FULL_SEASON', quarters: 'QUARTER', sprints: 'SPRINT'})[this.activeGroup];
+            document.cookie = 'lt_lb_group=' + type + '; Path=/leaderboard; Max-Age=31536000; SameSite=Lax';
           },
           // Back/forward: the URL changes but nothing re-fetches, so the table and chips would keep
           // showing the previous phase. Deliberately calls load(), not select() — pushing state

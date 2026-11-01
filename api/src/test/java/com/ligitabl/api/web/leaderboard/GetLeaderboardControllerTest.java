@@ -82,7 +82,7 @@ class GetLeaderboardControllerTest {
         impersonate(admin, target);
         stubUseCase();
 
-        controller.getLeaderboard(null, 1, principal, model, response, null);
+        controller.getLeaderboard(null, 1, null, principal, model, response, null);
 
         assertEquals(target.id(), capturedQuery().userId());
     }
@@ -94,7 +94,7 @@ class GetLeaderboardControllerTest {
         impersonate(admin, target);
         stubUseCase();
 
-        controller.getLeaderboard(null, 1, principal, model, response, null);
+        controller.getLeaderboard(null, 1, null, principal, model, response, null);
 
         assertEquals("Target Player", model.getAttribute("currentUserName"));
     }
@@ -106,7 +106,7 @@ class GetLeaderboardControllerTest {
         bindRequest(ImpersonationContext.notImpersonating(admin));
         stubUseCase();
 
-        controller.getLeaderboard(null, 1, principal, model, response, null);
+        controller.getLeaderboard(null, 1, null, principal, model, response, null);
 
         assertEquals(admin.id(), capturedQuery().userId());
         assertEquals("Admin User", model.getAttribute("currentUserName"));
@@ -117,10 +117,30 @@ class GetLeaderboardControllerTest {
     void anonymousHasNoCurrentUser() {
         stubUseCase();
 
-        controller.getLeaderboard(null, 1, null, model, response, null);
+        controller.getLeaderboard(null, 1, null, null, model, response, null);
 
         assertNull(capturedQuery().userId());
         assertNull(model.getAttribute("currentUserName"));
+    }
+
+    @Test
+    @DisplayName("the group cookie becomes the query's preferred type")
+    void passesPreferredGroupFromCookie() {
+        stubUseCase();
+
+        controller.getLeaderboard(null, 1, "QUARTER", null, model, response, null);
+
+        assertEquals(PhaseType.QUARTER, capturedQuery().preferredType());
+    }
+
+    @Test
+    @DisplayName("an unrecognised group cookie is ignored")
+    void ignoresUnrecognisedGroupCookie() {
+        stubUseCase();
+
+        controller.getLeaderboard(null, 1, "quarters", null, model, response, null);
+
+        assertNull(capturedQuery().preferredType());
     }
 
     private GetLeaderboardQuery capturedQuery() {
