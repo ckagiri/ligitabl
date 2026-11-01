@@ -264,7 +264,7 @@
              (predicted 1st, actually 8th: expected to climb). */-->
         <p
           th:if="${showMoveHelperText}"
-          x-show="showStandings && deltaMode !== 'off'"
+          x-show="showStandings"
           class="text-[11px] text-gray-500 leading-snug pl-6 max-sm:pl-7"
         >
           <span class="sm:hidden">
@@ -283,19 +283,6 @@
             <span class="text-red-600 font-semibold">↓ Red:</span>
             <span x-text="deltaMode === 'inverted' ? 'drop' : 'move'">move</span> down.
           </span>
-        </p>
-
-        <!--/* With the arrows off there is no direction to name, so the colour is all that's left
-             to explain — and it means distance from reality, not direction. */-->
-        <p
-          th:if="${showMoveHelperText}"
-          x-show="showStandings && deltaMode === 'off'"
-          x-cloak
-          class="text-[11px] text-gray-500 leading-snug pl-6 max-sm:pl-7"
-        >
-          <span class="text-green-600 font-semibold">Green:</span> exact.
-          <span class="text-yellow-600 font-semibold">Yellow:</span> within 2.
-          <span class="text-red-600 font-semibold">Red:</span> further off.
         </p>
       </div>
     </div>
@@ -337,7 +324,7 @@
            colour-naming legend is out of sight — so it hides when that panel is open, being
            the weaker of the two. */-->
       <span
-        x-show="!compareOptionsOpen && deltaMode !== 'off'"
+        x-show="!compareOptionsOpen"
         x-cloak
         class="inline-flex shrink-0 items-center gap-2 whitespace-nowrap text-[11px] text-gray-500"
       >
@@ -380,23 +367,15 @@
             <span class="hidden max-[340px]:inline">Actual</span>
           </button>
         </div>
-        <!--/* Cycles how the delta column reads — arrows, flipped arrows, or no arrows at all —
-             never its number. Offered in both views, since the delta reads the same way in each.
-             No aria-pressed: it is a two-state attribute and this control has three, so the
-             live aria-label carries the state instead. */-->
+        <!--/* Flips the delta column's arrows and colours, never its number. Offered in both views,
+             since the delta reads the same way in each. aria-label because there is no text node
+             to name it. */-->
         <button
           type="button"
-          @click="cycleDeltaMode()"
-          :aria-label="deltaMode === 'inverted'
-            ? 'Delta direction: inverted. Activate to hide direction.'
-            : (deltaMode === 'off'
-                ? 'Delta direction: hidden. Activate to show direction.'
-                : 'Delta direction: normal. Activate to invert.')"
-          :title="deltaMode === 'inverted'
-            ? 'Delta arrows inverted — click to hide them. The number stays the same.'
-            : (deltaMode === 'off'
-                ? 'Delta arrows hidden, colour shows accuracy — click to show them again.'
-                : 'Delta direction — click to invert the arrows and colours. The number stays the same.')"
+          @click="toggleDeltaMode()"
+          :aria-pressed="(deltaMode === 'inverted').toString()"
+          aria-label="Invert delta direction"
+          title="Invert delta direction — flips the arrows and colours. The number stays the same."
           :class="deltaMode === 'inverted' ? 'bg-indigo-50 text-indigo-700 border-indigo-300' : 'bg-white text-gray-500 border-gray-300 hover:bg-gray-50 hover:text-gray-700'"
           class="inline-flex shrink-0 items-center justify-center rounded-md border p-1.5 transition-colors max-sm:p-2"
         >
@@ -412,14 +391,6 @@
               stroke-linejoin="round"
               stroke-width="2"
               d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-            />
-            <!--/* Slash marks the off state, the way a muted icon does. */-->
-            <path
-              x-show="deltaMode === 'off'"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              stroke-width="2"
-              d="M4 20L20 4"
             />
           </svg>
         </button>
@@ -633,10 +604,7 @@
                           class="flex items-center gap-0.5 font-semibold"
                           :class="deltaTextClass(team.code)"
                         >
-                          <!--/* Hidden rather than merely arrowless in 'off': both paths would go
-                               false on their own, but the box would still hold its 12px open. */-->
                           <svg
-                            x-show="deltaMode !== 'off'"
                             class="h-3 w-3"
                             fill="currentColor"
                             viewBox="0 0 20 20"
@@ -795,7 +763,7 @@
                   class="flex items-center justify-end gap-1 text-sm font-semibold"
                 >
                   <svg
-                    x-show="getDelta(team.code) !== 0 && getDelta(team.code) !== '-' && deltaMode !== 'off'"
+                    x-show="getDelta(team.code) !== 0 && getDelta(team.code) !== '-'"
                     class="h-4 w-4"
                     :class="deltaTextClass(team.code)"
                     fill="currentColor"
